@@ -40,6 +40,8 @@ namespace ReBuzz.Studio.Shell
         readonly AudioHealthBadge health;
         readonly ProblemBar problems = new ProblemBar();
         readonly TabControl tabs = new TabControl();
+        readonly Shell.ViewSwitcher switcher = new Shell.ViewSwitcher();
+        readonly DockPanel viewHost = new DockPanel();
         readonly DockPanel body = new DockPanel();
         Views.Inspector.InspectorPanel inspector;
         Views.Browser.BrowserPanel browser;
@@ -172,6 +174,7 @@ namespace ReBuzz.Studio.Shell
 
         /// <summary>The inspector on the right (P3a), once the engine runs.</summary>
         internal Views.Inspector.InspectorPanel Inspector => inspector;
+        internal Shell.ViewSwitcher Switcher => switcher;
 
         /// <summary>The browser on the left (P3a), once the engine runs.</summary>
         internal Views.Browser.BrowserPanel Browser => browser;
@@ -214,6 +217,7 @@ namespace ReBuzz.Studio.Shell
                     continue;
                 }
                 tabs.Items.Add(new TabItem { Header = view.Title, Content = content });
+                switcher.Add(view.Title, ToolTipFor(view.Title), () => ShowView(view.Title));
                 sessionView ??= content as Views.Session.SessionView;
             }
             ShowView(StudioViews.FirstShown);
@@ -234,11 +238,22 @@ namespace ReBuzz.Studio.Shell
             if (tracker is PatternPage page)
             {
                 page.Reveal = () => detail.Show(detail.IsMaximised);
-                page.ShowSequence = () => ShowView("Sequence");
+                page.ShowSequence = () => ShowView("Arrangement");
             }
-            Grid.SetRow(tabs, 0);
+            // Fork (ux-overhaul.md decision 37): the segmented switcher is the view strip; the TabControl only hosts the
+            // views (its own strip is hidden), so a narrow window no longer wraps it.
+            tabs.TemplateApplied += (s, e) =>
+            {
+                if (e.NameScope.Find<Avalonia.Controls.Control>("PART_ItemsPresenter") is { } strip) strip.IsVisible = false;
+            };
+            tabs.SelectionChanged += (s, e) => switcher.Select(SelectedTitle);
+            switcher.Select(SelectedTitle);
+            DockPanel.SetDock(switcher, Dock.Top);
+            viewHost.Children.Add(switcher);
+            viewHost.Children.Add(tabs);
+            Grid.SetRow(viewHost, 0);
             Grid.SetRow(detail, 1);
-            centre.Children.Add(tabs);
+            centre.Children.Add(viewHost);
             centre.Children.Add(detail);
             body.Children.Add(browser);
             body.Children.Add(inspector);
@@ -270,7 +285,7 @@ namespace ReBuzz.Studio.Shell
             bool max = detail.IsMaximised;
             centre.RowDefinitions[0].Height = max ? new GridLength(0) : GridLength.Star;
             centre.RowDefinitions[1].Height = max ? GridLength.Star : GridLength.Auto;
-            tabs.IsVisible = !max;
+            viewHost.IsVisible = !max;
             if (!detail.IsOpen && host.Core != null) host.Core.EditContext = null;     // the tracker no longer has the keyboard
             FitPanels();
         }
@@ -432,7 +447,7 @@ namespace ReBuzz.Studio.Shell
         /// <summary>The keymap's command for a view's tab.</summary>
         static string ViewCommand(string title) => title switch
         {
-            "Sequence" => "view.sequence",
+            "Arrangement" => "view.sequence",
             "Session" => "view.session",
             "Machines" => "view.machines",
             "Pattern" => "view.pattern",
@@ -722,7 +737,7 @@ namespace ReBuzz.Studio.Shell
                 e.Handled = true;
                 return;
             }
-            string title = e.Key switch { Key.F3 => "Machines", Key.F4 => "Sequence", _ => null };
+            string title = e.Key switch { Key.F3 => "Machines", Key.F4 => "Arrangement", _ => null };
             if (title == null) return;
             ShowView(title);
             e.Handled = true;
@@ -732,7 +747,7 @@ namespace ReBuzz.Studio.Shell
         void OnSessionKey(object sender, KeyEventArgs e)
         {
             if (tabs.ItemCount == 0 || e.KeyModifiers != KeyModifiers.Control || e.Key != Key.Tab) return;
-            ShowView(SelectedTitle == "Session" && detail?.IsMaximised != true ? "Sequence" : "Session");
+            ShowView(SelectedTitle == "Session" && detail?.IsMaximised != true ? "Arrangement" : "Session");
             e.Handled = true;
         }
 
@@ -750,11 +765,15 @@ namespace ReBuzz.Studio.Shell
         /// <summary>Song Notes: the inspector's Song tab, open, with the editor focused.</summary>
         void ShowSongNotes() => inspector?.ShowTab(Views.Inspector.InspectorPanel.SongTab, focus: true);
 
+        /// <summary>A view segment's tooltip: its name and its key.</summary>
+        static string ToolTipFor(string title) => ViewCommand(title) is { } id ? $"{title} ({Commands.StudioKeymap.Get(id).KeyLabel()})" : title;
+
         string SelectedTitle => (tabs.SelectedItem as TabItem)?.Header as string;
 
         /// <summary>Selects a view's tab.</summary>
         public void ShowView(string title)
         {
+            title = ViewNames.Canonical(title);
             if (title == Views.Notes.SongNotesTab.TabTitle)
             {
                 ShowSongNotes();

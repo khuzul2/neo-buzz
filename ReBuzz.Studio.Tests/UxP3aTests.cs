@@ -23,7 +23,7 @@ namespace ReBuzz.Studio.Tests
 {
     public class UxP3aTests
     {
-        static readonly string[] Views = { "Machines", "Sequence", "Session", "Pattern" };
+        static readonly string[] Views = { "Machines", "Arrangement", "Session", "Pattern" };
 
         sealed class Rig : IDisposable
         {
@@ -188,7 +188,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(layout.ClipOf(rig.Beat).Mode, Is.EqualTo("Gate"), "the edit reaches the song from the Machines view");
 
             // In the arrangement: another machine's clip.
-            rig.Show("Sequence");
+            rig.Show("Arrangement");
             rig.Selection.Set(rig.Bass, rig.Line, this, 0);
             Settle();
             Assert.That(clip.Pattern, Is.SameAs(rig.Line));

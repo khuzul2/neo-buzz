@@ -52,7 +52,7 @@ namespace ReBuzz.Studio.Tests
                 Window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
                 ToolTip.SetServiceEnabled(Window, false);
                 Window.Show();
-                var tab = Window.Tabs.Items.Cast<TabItem>().Single(t => (string)t.Header == "Sequence");
+                var tab = Window.Tabs.Items.Cast<TabItem>().Single(t => (string)t.Header == "Arrangement");
                 tab.IsSelected = true;
                 Settle();
                 View = (SequenceView)tab.Content!;
@@ -459,8 +459,9 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Events(0), Is.EqualTo("0:Hook 32:Hook"));
 
             // The window's keys reach the view when the focus is elsewhere (here the tab's header).
-            var tab = (TabItem)rig.Window.Tabs.SelectedItem!;
-            Assert.That(tab.Focus(), Is.True, "the tab header takes the focus");
+            var tab = rig.Window.Switcher.Segments[(string)((TabItem)rig.Window.Tabs.SelectedItem!).Header!];
+            tab.Focusable = true;       // the switcher's segments take no focus from a click; here one stands for "somewhere else"
+            Assert.That(tab.Focus(), Is.True, "the view's segment takes the focus");
             Settle();
             rig.Key(PhysicalKey.X, Cmd);
             Assert.That(Events(0), Is.EqualTo("32:Hook"), "Ctrl/Command+X from the window cuts the block under the cursor");

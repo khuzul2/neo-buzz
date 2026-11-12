@@ -102,7 +102,7 @@ namespace ReBuzz.Studio.Shell.Commands
             C("transport.start", "Transport", "_Go to Start", "Home", native: false, where: SingleKeyViews),
             C("transport.restartaudio", "Transport", "Restart _Audio", "F12", help: "Opens the audio device again"),
 
-            C("view.sequence", "View", "_Sequence", "Cmd+1|F4", help: "The arrangement"),
+            C("view.sequence", "View", "_Arrangement", "Cmd+1|F4", help: "The arrangement"),
             C("view.session", "View", "S_ession", "Cmd+2|Ctrl+Tab", help: "Ctrl+Tab again: back to the arrangement"),
             C("view.machines", "View", "_Machines", "Cmd+3|F3"),
             C("view.pattern", "View", "_Tracker", "Cmd+4", help: "The detail panel's Tracker, docked under the view"),

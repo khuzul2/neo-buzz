@@ -36,6 +36,9 @@ namespace ReBuzz.Studio.Views.Session
 
     internal sealed partial class SessionView : UserControl, IStudioEditTarget
     {
+        /// <summary>The least width the top bar keeps for its left group before the right group drops under it.</summary>
+        const double NarrowBarLeft = 300;
+
         const double ColumnWidth = 126;     // fork (ux-overhaul.md §3.2): 116 left the name 36 pt beside 20 pt chips
         const double SceneColumnWidth = 140;
         const double RowHeight = 26;
@@ -306,6 +309,20 @@ namespace ReBuzz.Studio.Views.Session
             right.Children.Add(settingsButton);
             Grid.SetColumn(right, 1);
             bar.Children.Add(right);
+            // Fork (ux-overhaul.md decision 37): in a narrow view (640 pt window: ~400 pt) the right group drops to a row of
+            // its own under the left one instead of overlapping it.
+            bar.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            bar.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            bar.SizeChanged += (s, e) =>
+            {
+                right.Measure(Size.Infinity);
+                bool below = e.NewSize.Width > 0 && e.NewSize.Width - right.DesiredSize.Width < NarrowBarLeft;
+                if (below == (Grid.GetRow(right) == 1)) return;
+                Grid.SetRow(right, below ? 1 : 0);
+                Grid.SetColumn(right, below ? 0 : 1);
+                Grid.SetColumnSpan(right, below ? 2 : 1);
+                right.HorizontalAlignment = below ? HorizontalAlignment.Left : HorizontalAlignment.Right;
+            };
 
             // Status line under the top bar (MIDI learn), hidden when empty.
             statusText = new TextBlock

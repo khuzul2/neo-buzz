@@ -121,7 +121,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(rig.Detail.Page.IsEffectivelyVisible, Is.False, "the Tracker isn't shown");
 
             var mods = Rig.Cmd | RawInputModifiers.Alt;
-            foreach (string view in new[] { "Machines", "Sequence", "Session" })
+            foreach (string view in new[] { "Machines", "Arrangement", "Session" })
             {
                 rig.Show(view);
                 rig.Key(PhysicalKey.B, mods);
@@ -276,13 +276,13 @@ namespace ReBuzz.Studio.Tests
         {
             using var restore = Studio.AfterTest(PutBack);
             using var rig = new Rig();
-            Assert.That(rig.Window.Tabs.Items.Cast<TabItem>().Select(t => t.Header), Is.EqualTo(new[] { "Sequence", "Session", "Machines" }));
+            Assert.That(rig.Window.Tabs.Items.Cast<TabItem>().Select(t => t.Header), Is.EqualTo(new[] { "Arrangement", "Session", "Machines" }));
             Assert.That(rig.Detail.Page, Is.SameAs(PatternView.Page));
             rig.Key(PhysicalKey.Digit4, Rig.Cmd);
             Assert.That(rig.Detail.IsOpen, Is.True, "⌘4: the Tracker");
             Assert.That(rig.Detail.IsMaximised, Is.False, "docked");
             Assert.That(rig.Detail.Page.IsEffectivelyVisible, Is.True);
-            Assert.That(rig.Window.Tabs.IsVisible, Is.True, "the view stays above it");
+            Assert.That(rig.Window.Tabs.IsEffectivelyVisible, Is.True, "the view stays above it");
             Assert.That(rig.Window.Tabs.Bounds.Height, Is.GreaterThan(150));
             Assert.That(((TabItem)rig.Window.Tabs.SelectedItem!).Header, Is.EqualTo("Machines"), "the view behind is as it was");
             var item = AppMenu.Find(rig.Window.MenuModel(mac: false), "View").Items().Single(e => e.Text == "Tracker");
@@ -304,12 +304,12 @@ namespace ReBuzz.Studio.Tests
             using var rig = new Rig();
             rig.Key(PhysicalKey.F2);
             Assert.That(rig.Detail.IsMaximised, Is.True, "F2");
-            Assert.That(rig.Window.Tabs.IsVisible, Is.False, "the view is behind it");
+            Assert.That(rig.Window.Tabs.IsEffectivelyVisible, Is.False, "the view is behind it");
             Assert.That(rig.Detail.Bounds.Height, Is.GreaterThan(500), "over the whole window");
             Assert.That(rig.Detail.MaximiseButton.Content, Is.EqualTo("⤡"));
             rig.Key(PhysicalKey.F2);
             Assert.That(rig.Detail.IsOpen, Is.False, "F2 again: back to the bar it came from");
-            Assert.That(rig.Window.Tabs.IsVisible, Is.True);
+            Assert.That(rig.Window.Tabs.IsEffectivelyVisible, Is.True);
 
             rig.Key(PhysicalKey.Digit4, Rig.Cmd);          // docked first
             rig.Key(PhysicalKey.F, Rig.Cmd | RawInputModifiers.Shift);
@@ -322,8 +322,8 @@ namespace ReBuzz.Studio.Tests
             Assert.That(rig.Detail.IsMaximised, Is.True, "the button");
             rig.Key(PhysicalKey.F4);                 // ⌘1–⌘9 are the focused Tracker's own (the beat's subdivision): the F-keys are the views'
             Assert.That(rig.Detail.IsMaximised, Is.False, "F4: the arrangement is back");
-            Assert.That(((TabItem)rig.Window.Tabs.SelectedItem!).Header, Is.EqualTo("Sequence"));
-            Assert.That(rig.Window.Tabs.IsVisible, Is.True);
+            Assert.That(((TabItem)rig.Window.Tabs.SelectedItem!).Header, Is.EqualTo("Arrangement"));
+            Assert.That(rig.Window.Tabs.IsEffectivelyVisible, Is.True);
         }
 
         [AvaloniaTest]
@@ -340,7 +340,7 @@ namespace ReBuzz.Studio.Tests
                 rig.Detail.PanelHeight = 99999;
                 Assert.That(rig.Detail.PanelHeight, Is.EqualTo(DetailPanel.MaxPanelHeight));
                 Settle();
-                Assert.That(rig.Window.Tabs.Bounds.Height, Is.GreaterThanOrEqualTo(MainWindow.MinMainHeight - 1), "the view keeps its room");
+                Assert.That(rig.Window.Tabs.Bounds.Height + rig.Window.Switcher.Bounds.Height, Is.GreaterThanOrEqualTo(MainWindow.MinMainHeight - 1), "the view keeps its room");
                 rig.Detail.PanelHeight = 300;
                 Settle();
                 var start = rig.Detail.Grip.TranslatePoint(new Point(300, 2), rig.Window)!.Value;
@@ -391,7 +391,7 @@ namespace ReBuzz.Studio.Tests
             rig.Detail.Open();
             Settle();
             Assert.That(rig.Window.Tabs.Bounds.Width, Is.GreaterThanOrEqualTo(MainWindow.MinMainWidth - 2), "the panels give way to the view");
-            Assert.That(rig.Window.Tabs.Bounds.Height, Is.GreaterThanOrEqualTo(MainWindow.MinMainHeight - 2));
+            Assert.That(rig.Window.Tabs.Bounds.Height + rig.Window.Switcher.Bounds.Height, Is.GreaterThanOrEqualTo(MainWindow.MinMainHeight - 2), "the switcher is part of the view's room");
             var inspector = rig.Window.Inspector;
             Assert.That(inspector.IsSqueezed, Is.False, "the inspector keeps what it needs to show its header and buttons");
             Assert.That(inspector.Bounds.Width, Is.InRange(Views.Inspector.InspectorPanel.MinPanelWidth - 1, Views.Inspector.InspectorPanel.DefaultWidth + 1));

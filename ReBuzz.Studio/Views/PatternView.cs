@@ -66,7 +66,7 @@ namespace ReBuzz.Studio.Views
         public PatternPage(StudioHost host)
         {
             core = host.Core;
-            var bar = new StackPanel { Orientation = Orientation.Horizontal, Background = StudioTokens.SurfacePanelBrush };
+            var bar = new WrapPanel { Orientation = Orientation.Horizontal, Background = StudioTokens.SurfacePanelBrush };      // wraps in a narrow window (decision 37)
             bar.Children.Add(Label("Machine:"));
             bar.Children.Add(machineBox);
             bar.Children.Add(Label("Pattern:"));
@@ -328,7 +328,7 @@ namespace ReBuzz.Studio.Views
                 return;
             }
             var tabs = this.FindLogicalAncestorOfType<TabControl>();
-            var sequence = tabs?.Items.OfType<TabItem>().FirstOrDefault(t => t.Header as string == "Sequence");
+            var sequence = tabs?.Items.OfType<TabItem>().FirstOrDefault(t => t.Header as string == "Arrangement");
             if (sequence != null) sequence.IsSelected = true;
         }
 

@@ -390,7 +390,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(fileMenu.Items.OfType<NativeMenuItem>().Single(i => i.Header == "Open Recent").Menu, Is.Not.Null);
                 var viewMenu = bar.Items.OfType<NativeMenuItem>().Single(i => i.Header == "View").Menu;
                 var views = viewMenu.Items.OfType<NativeMenuItem>().Take(5).ToList();
-                Assert.That(views.Select(i => i.Header), Is.EqualTo(new[] { "Sequence", "Session", "Machines", "Tracker", "Song Notes" }));
+                Assert.That(views.Select(i => i.Header), Is.EqualTo(new[] { "Arrangement", "Session", "Machines", "Tracker", "Song Notes" }));
                 Assert.That(views.Select(i => i.Gesture), Is.EqualTo(Enumerable.Range(0, 5).Select(i => new KeyGesture(Key.D1 + i, KeyModifiers.Meta))),
                     "⌘1–⌘5 in tab order (ux-overhaul.md §4); Buzz's F-keys stay the window's");
                 var windowMenu = bar.Items.OfType<NativeMenuItem>().Single(i => i.Header == "Window").Menu;
@@ -438,20 +438,20 @@ namespace ReBuzz.Studio.Tests
                 string Selected() => (string)((TabItem)window.Tabs.SelectedItem!).Header!;
                 window.Focus();
                 window.KeyPressQwerty(PhysicalKey.F4, RawInputModifiers.None);
-                Assert.That(Selected(), Is.EqualTo("Sequence"));
+                Assert.That(Selected(), Is.EqualTo("Arrangement"));
                 window.KeyPressQwerty(PhysicalKey.F2, RawInputModifiers.None);
                 Assert.That(window.Detail.IsMaximised, Is.True, "F2: the Tracker over the whole window (P3a)");
-                Assert.That(Selected(), Is.EqualTo("Sequence"), "the view behind it stays");
+                Assert.That(Selected(), Is.EqualTo("Arrangement"), "the view behind it stays");
                 window.KeyPressQwerty(PhysicalKey.F3, RawInputModifiers.None);
                 Assert.That(Selected(), Is.EqualTo("Machines"));
                 Assert.That(window.Detail.IsMaximised, Is.False, "a view's key brings the views back");
                 window.KeyPressQwerty(PhysicalKey.Tab, RawInputModifiers.Control);
                 Assert.That(Selected(), Is.EqualTo("Session"), "Ctrl+Tab: the Session View");
                 window.KeyPressQwerty(PhysicalKey.Tab, RawInputModifiers.Control);
-                Assert.That(Selected(), Is.EqualTo("Sequence"), "and back to the arrangement");
+                Assert.That(Selected(), Is.EqualTo("Arrangement"), "and back to the arrangement");
 
                 // ⌘1–⌘5 (Ctrl elsewhere), in tab order (ux-overhaul.md §4).
-                string[] order = { "Sequence", "Session", "Machines", "Pattern" };
+                string[] order = { "Arrangement", "Session", "Machines", "Pattern" };
                 for (int i = 3; i >= 0; i--)
                 {
                     window.KeyPressQwerty(PhysicalKey.Digit1 + i, Cmd);
@@ -461,13 +461,13 @@ namespace ReBuzz.Studio.Tests
 
                 // The View menu's check follows.
                 var view = AppMenu.Find(window.MenuModel(mac: false), "View").Items().ToList();
-                Assert.That(view.Take(5).Where(e => e.IsChecked()).Select(e => e.Text), Is.EquivalentTo(new[] { "Sequence", "Tracker" }), "the view shown, and the Tracker open");
+                Assert.That(view.Take(5).Where(e => e.IsChecked()).Select(e => e.Text), Is.EquivalentTo(new[] { "Arrangement", "Tracker" }), "the view shown, and the Tracker open");
 
                 window.KeyPressQwerty(PhysicalKey.Digit5, Cmd);
                 Assert.That(window.Inspector.CurrentTab, Is.EqualTo("Song"), "⌘5: Song Notes, the inspector's Song tab (P3a)");
-                Assert.That(Selected(), Is.EqualTo("Sequence"), "no tab of its own: the view stays");
+                Assert.That(Selected(), Is.EqualTo("Arrangement"), "no tab of its own: the view stays");
                 view = AppMenu.Find(window.MenuModel(mac: false), "View").Items().ToList();
-                Assert.That(view.Take(5).Where(e => e.IsChecked()).Select(e => e.Text), Is.EquivalentTo(new[] { "Sequence", "Tracker", "Song Notes" }));
+                Assert.That(view.Take(5).Where(e => e.IsChecked()).Select(e => e.Text), Is.EquivalentTo(new[] { "Arrangement", "Tracker", "Song Notes" }));
             }
             finally
             {
@@ -715,7 +715,7 @@ namespace ReBuzz.Studio.Tests
                 AppMenu.Find(menus, "View/Session").Run();
                 Assert.That(Shown(), Is.EqualTo("Session"), "an item chooses its view");
                 window.KeyPressQwerty(PhysicalKey.Tab, RawInputModifiers.Control);
-                Assert.That(Shown(), Is.EqualTo("Sequence"), "Ctrl+Tab from the Session View goes back, as before");
+                Assert.That(Shown(), Is.EqualTo("Arrangement"), "Ctrl+Tab from the Session View goes back, as before");
 
                 var prefs = PreferencesWindow.Open(Host);
                 Settle(prefs);

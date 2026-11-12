@@ -536,7 +536,7 @@ namespace ReBuzz.Studio.Tests
                 });
                 Try("031-sequence-cursor", () =>
                 {
-                    var seq = Tab<SequenceView>(window, "Sequence");
+                    var seq = Tab<SequenceView>(window, "Arrangement");
                     var geo = seq.Canvas.Geometry;
                     Click(window, seq.Canvas.TranslatePoint(new Point(geo.XOf(8 * 16) + 6, geo.YOf(2) + geo.TrackHeight * 0.6), window)!.Value);
                     Shot(window, "031-sequence-cursor", "Sequence with the cursor on Lead's Hook at bar 9 (selected pattern, the pattern list follows).", "Click a pattern box.");
@@ -838,7 +838,7 @@ namespace ReBuzz.Studio.Tests
                 // The Sequence View's menus.
                 window.ShowView("Sequence");
                 Settle();
-                var seq = Tab<SequenceView>(window, "Sequence");
+                var seq = Tab<SequenceView>(window, "Arrangement");
                 Try("210-sequence-menu", () =>
                 {
                     var geo = seq.Canvas.Geometry;
@@ -1036,7 +1036,7 @@ namespace ReBuzz.Studio.Tests
                 {
                     window.ShowView("Sequence");
                     Settle();
-                    var seq = Tab<SequenceView>(window, "Sequence");
+                    var seq = Tab<SequenceView>(window, "Arrangement");
                     var geo = seq.Canvas.Geometry;
                     Click(window, seq.Canvas.TranslatePoint(new Point(geo.XOf(2 * 16) + 6, geo.YOf(1) + geo.TrackHeight * 0.6), window)!.Value, MouseButton.Right);
                     menus.Add(seq.OpenMenu!);

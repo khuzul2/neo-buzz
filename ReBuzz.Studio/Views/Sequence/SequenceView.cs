@@ -29,10 +29,10 @@ namespace ReBuzz.Studio.Views.Sequence
 {
     using Control = Avalonia.Controls.Control;
 
-    /// <summary>The "Sequence" tab.</summary>
+    /// <summary>The "Arrangement" tab (named "Sequence" before P3a; ShowView still takes that name).</summary>
     internal sealed class SequenceTab : IStudioView
     {
-        public string Title => "Sequence";
+        public string Title => "Arrangement";
 
         public Control Create(StudioHost host) => new SequenceView(host.Core);
 

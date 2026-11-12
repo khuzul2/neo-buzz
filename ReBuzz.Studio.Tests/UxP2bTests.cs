@@ -102,10 +102,10 @@ namespace ReBuzz.Studio.Tests
         public void TheSequenceViewIsDarkByDefaultAndHasNoWhitePanel()
         {
             Assert.That(StudioTheme.Kind, Is.EqualTo(AppearanceTheme.Dark), "Dark is the default");
-            var window = Open("Sequence");
+            var window = Open("Arrangement");
             try
             {
-                var view = (SequenceView)window.Tabs.Items.Cast<TabItem>().Single(t => (string)t.Header == "Sequence").Content!;
+                var view = (SequenceView)window.Tabs.Items.Cast<TabItem>().Single(t => (string)t.Header == "Arrangement").Content!;
                 var frame = Capture(window);
                 var area = ContentArea(window, view);
                 // Dark: the track area is the view surface, the ruler and the pattern list the panel's (measured, not seen).
@@ -159,8 +159,8 @@ namespace ReBuzz.Studio.Tests
                 var area = ContentArea(window, machines);
                 Assert.That(frame.At((int)area.Right - 40, (int)area.Bottom - 40), Is.EqualTo(Color.Parse("#DAD6C9")), "Buzz's machine canvas");
 
-                window.Tabs.Items.Cast<TabItem>().Single(t => (string)t.Header == "Sequence").IsSelected = true;
-                var sequence = (SequenceView)window.Tabs.Items.Cast<TabItem>().Single(t => (string)t.Header == "Sequence").Content!;
+                window.Tabs.Items.Cast<TabItem>().Single(t => (string)t.Header == "Arrangement").IsSelected = true;
+                var sequence = (SequenceView)window.Tabs.Items.Cast<TabItem>().Single(t => (string)t.Header == "Arrangement").Content!;
                 frame = Capture(window);
                 var ruler = sequence.Canvas.TranslatePoint(new Point(SequenceGeometry.HeaderWidth + 600, 2), window)!.Value;
                 Assert.That(frame.At((int)ruler.X, (int)ruler.Y), Is.EqualTo(Color.Parse("#BBAA99")), "Buzz's ruler");

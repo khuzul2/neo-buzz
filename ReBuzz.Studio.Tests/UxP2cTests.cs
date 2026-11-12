@@ -63,7 +63,7 @@ namespace ReBuzz.Studio.Tests
             }
 
             public MachineCanvas Machines => ((MachineView)Show("Machines")).Canvas;
-            public SequenceCanvas Sequence => ((SequenceView)Show("Sequence")).Canvas;
+            public SequenceCanvas Sequence => ((SequenceView)Show("Arrangement")).Canvas;
             public SessionView Session => (SessionView)Show("Session");
             public PatternPage Pattern => (PatternPage)Show("Pattern");
 
