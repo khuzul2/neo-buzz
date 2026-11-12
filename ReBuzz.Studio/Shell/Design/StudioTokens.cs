@@ -32,6 +32,16 @@ namespace ReBuzz.Studio.Shell.Design
         public static readonly Color Accent = Of(Tokens.Accent);
         public static readonly Color SelectionFill = Of(Tokens.SelectionFill);
 
+        // ---- the few colours the tokens' table has no entry for (§3.1: text on the dark ramp)
+        public static readonly Color Link = Color.Parse("#6CB4FF");                // links in notes: 8:1 on the view
+        public static readonly Color ErrorText = Color.Parse("#FF7A70");           // a problem's text: 6.4:1 on the panel
+        public static readonly Color SevereBack = Color.Parse("#4A1F22");          // the problem bar's grounds
+        public static readonly Color NoticeBack = Color.Parse("#3D3320");
+        public static readonly Color BannerBack = Color.Parse("#233A55");          // the notes' banner
+
+        public static readonly Color Glass = Color.Parse("#F5F5F5");               // Classic Buzz's selection glass
+        public static readonly Color Diverged = Color.Parse("#C03030");            // a machine the guard muted: its box
+
         // ---- reserved state colours: never offered as clip, track or scene colours
         public static readonly Color Play = Of(Tokens.Play);
         public static readonly Color Record = Of(Tokens.Record);
@@ -64,6 +74,7 @@ namespace ReBuzz.Studio.Shell.Design
         public const double HalfGrid = Tokens.HalfGrid;
 
         // ---- brushes
+        public static readonly IBrush SurfaceBaseBrush = Brush(SurfaceBase);
         public static readonly IBrush SurfaceViewBrush = Brush(SurfaceView);
         public static readonly IBrush SurfacePanelBrush = Brush(SurfacePanel);
         public static readonly IBrush SurfaceControlBrush = Brush(SurfaceControl);
@@ -71,6 +82,7 @@ namespace ReBuzz.Studio.Shell.Design
         public static readonly IBrush TextPrimaryBrush = Brush(TextPrimary);
         public static readonly IBrush TextSecondaryBrush = Brush(TextSecondary);
         public static readonly IBrush TextPlaceholderBrush = Brush(TextPlaceholder);
+        public static readonly IBrush ErrorTextBrush = Brush(ErrorText);
         public static readonly IBrush AccentBrush = Brush(Accent);
         public static readonly IBrush SelectionFillBrush = Brush(SelectionFill);
         public static readonly IBrush PlayBrush = Brush(Play);

@@ -4,6 +4,7 @@
 // chooser and a pattern chooser sit above it. Other views pick what it shows with Edit(pattern) or
 // Edit(machine); the engine tells it when the pattern changes (SetPatternEditorPattern).
 
+using ReBuzz.Studio.Shell.Design;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,7 +57,7 @@ namespace ReBuzz.Studio.Views
         readonly ComboBox patternBox = new ComboBox { Width = 120, Margin = new Thickness(4) };
         readonly Button newPattern = new Button { Content = "New pattern", Margin = new Thickness(4), Padding = new Thickness(8, 2) };
         readonly ContentControl editorHost = new ContentControl();
-        readonly TextBlock empty = new TextBlock { Foreground = Brushes.Gray, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        readonly TextBlock empty = new TextBlock { Foreground = StudioTokens.TextSecondaryBrush, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         readonly List<IMachine> machines = new List<IMachine>();
         IMachine machine;
         IPattern pattern;
@@ -65,7 +66,7 @@ namespace ReBuzz.Studio.Views
         public PatternPage(StudioHost host)
         {
             core = host.Core;
-            var bar = new StackPanel { Orientation = Orientation.Horizontal, Background = new SolidColorBrush(Color.FromRgb(0x2B, 0x2B, 0x2B)) };
+            var bar = new StackPanel { Orientation = Orientation.Horizontal, Background = StudioTokens.SurfacePanelBrush };
             bar.Children.Add(Label("Machine:"));
             bar.Children.Add(machineBox);
             bar.Children.Add(Label("Pattern:"));
@@ -360,7 +361,7 @@ namespace ReBuzz.Studio.Views
                 : "Choose a pattern.";
         }
 
-        static TextBlock Label(string text) => new TextBlock { Text = text, Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, Foreground = Brushes.LightGray };
+        static TextBlock Label(string text) => new TextBlock { Text = text, Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush };
 
         sealed class MachineItem
         {

@@ -33,7 +33,7 @@ namespace ReBuzz.Studio.Views.Session
             var bars = new TextBox { Width = 72, Text = lengthBars.ToString(CultureInfo.InvariantCulture) };
             var overwrite = new RadioButton { Content = "Overwrite: replace what the scene's tracks have there", IsChecked = true, GroupName = "mode" };
             var insert = new RadioButton { Content = "Insert: move everything from that bar on back to make room", GroupName = "mode" };
-            var problem = new TextBlock { Foreground = Brushes.IndianRed, IsVisible = false, Text = "The bar and the length must be whole numbers of 1 or more." };
+            var problem = new TextBlock { Foreground = ReBuzz.Studio.Shell.Design.StudioTokens.ErrorTextBrush, IsVisible = false, Text = "The bar and the length must be whole numbers of 1 or more." };
             Answer? answer = null;
 
             var form = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto"), RowDefinitions = new RowDefinitions("Auto,Auto"), RowSpacing = 6, ColumnSpacing = 12 };

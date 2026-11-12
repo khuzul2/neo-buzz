@@ -46,7 +46,7 @@ namespace ReBuzz.Studio.Parameters
                 Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(6), Children = { box, range } },
             };
             bool Valid(out int v) => int.TryParse(box.Text, out v) && v >= min && v <= max;
-            box.TextChanged += (s, e) => box.Foreground = Valid(out _) ? Brushes.White : Brushes.IndianRed;
+            box.TextChanged += (s, e) => box.Foreground = Valid(out _) ? ReBuzz.Studio.Shell.Design.StudioTokens.TextPrimaryBrush : ReBuzz.Studio.Shell.Design.StudioTokens.ErrorTextBrush;
             box.KeyDown += (s, e) =>
             {
                 if (e.Key == Key.Escape) { window.Close(); e.Handled = true; }

@@ -55,6 +55,8 @@ namespace ReBuzz.Studio
             {
                 namingWatched = true;
                 BuzzGUI.Common.NoteNames.Changed += () => Dispatcher.UIThread.Post(RedrawAll);
+                // Fork (ux-overhaul.md §3.3): Preferences ▸ Appearance names another theme: every window draws again.
+                Shell.Design.StudioTheme.Changed += () => Dispatcher.UIThread.Post(RedrawAll);
             }
         }
 
@@ -107,6 +109,7 @@ namespace ReBuzz.Studio
                     host.Log($"{clock.Elapsed.TotalSeconds:F1} s: {step}");
                     window.ShowStep(step);
                 });
+                _ = Shell.Design.StudioTheme.Settings;      // the saved theme (Preferences ▸ Appearance), once the settings store is there
                 _ = AfterStart(host);
                 if (Program.Smoke)
                 {

@@ -194,7 +194,7 @@ namespace ReBuzz.Studio.Parameters
             var g = StreamGeometry.Parse(undoArrow
                 ? "M 4,6 L 1,3 L 4,0 M 1.5,3 L 9,3 C 12,3 13,5 13,7.5 C 13,10 11,12 8,12 L 5,12"
                 : "M 10,6 L 13,3 L 10,0 M 12.5,3 L 5,3 C 2,3 1,5 1,7.5 C 1,10 3,12 6,12 L 9,12");
-            return new Avalonia.Controls.Shapes.Path { Data = g, Stroke = new SolidColorBrush(Color.FromRgb(0x6A, 0x9C, 0xF0)), StrokeThickness = 1.6, Width = 14, Height = 13, Stretch = Stretch.None };
+            return new Avalonia.Controls.Shapes.Path { Data = g, Stroke = ReBuzz.Studio.Shell.Design.StudioTokens.AccentBrush, StrokeThickness = 1.6, Width = 14, Height = 13, Stretch = Stretch.None };
         }
 
         // ---------------------------------------------------------------- life

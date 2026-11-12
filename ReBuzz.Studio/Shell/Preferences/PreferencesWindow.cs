@@ -22,7 +22,7 @@ namespace ReBuzz.Studio.Shell.Preferences
         /// <summary>The window while it is open.</summary>
         public static PreferencesWindow Current { get; private set; }
 
-        public const string AudioPageName = "Audio", MidiPageName = "MIDI", SyncPageName = "Sync", AgentPageName = "Agent", GeneralPageName = "General";
+        public const string AudioPageName = "Audio", MidiPageName = "MIDI", SyncPageName = "Sync", AgentPageName = "Agent", GeneralPageName = "General", AppearancePageName = "Appearance";
 
         PreferencesWindow(StudioHost host)
         {
@@ -39,7 +39,8 @@ namespace ReBuzz.Studio.Shell.Preferences
             if (core.SessionSync != null) pages.Add(new SyncPage(core.SessionSync));
             if (host.Agent != null) pages.Add(new AgentPage(host.Agent));
             pages.Add(new GeneralPage());
-            foreach (var page in pages) tabs.Items.Add(new TabItem { Header = new TextBlock { Text = page.Title, FontSize = 17 }, Content = page, MinHeight = 36 });
+            pages.Add(new AppearancePage());
+            foreach (var page in pages) tabs.Items.Add(new TabItem { Header = new TextBlock { Text = page.Title, FontSize = Design.StudioTokens.FontTitle }, Content = page, MinHeight = 36 });
             tabs.SelectionChanged += (s, e) =>
             {
                 if (e.Source == tabs && !filling) Selected?.Show();

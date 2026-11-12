@@ -78,7 +78,7 @@ namespace ReBuzz.Studio.Views
             public Avalonia.Controls.Control Create(StudioHost host) => new TextBlock
             {
                 Text = note,
-                Foreground = Brushes.Gray,
+                Foreground = ReBuzz.Studio.Shell.Design.StudioTokens.TextSecondaryBrush,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
             };

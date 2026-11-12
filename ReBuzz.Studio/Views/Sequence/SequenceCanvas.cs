@@ -6,6 +6,7 @@
 // play position), so playback redraws only that layer. The mouse: click, drag to move, edges to
 // resize, rubber-band selection, double click, the ruler, the wheel and pinch for scroll and zoom.
 
+using ReBuzz.Studio.Shell.Design;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -479,33 +480,28 @@ namespace ReBuzz.Studio.Views.Sequence
         static readonly Typeface Font = new Typeface(new FontFamily("Segoe UI, Arial"));
         static readonly Typeface BoldFont = new Typeface(new FontFamily("Segoe UI, Arial"), FontStyle.Normal, FontWeight.Bold);
 
-        // The Default theme's SequenceEditor.xaml.
-        internal static readonly IBrush BackgroundBrush = Gradient(Color.Parse("#E5E5D7"), Color.Parse("#F7F7F3"), new RelativePoint(0, 0, RelativeUnit.Relative), new RelativePoint(1, 0, RelativeUnit.Relative));
-        static readonly IBrush TrackViewBrush = Gradient(Color.Parse("#BA9"), Color.Parse("#765"), new RelativePoint(0, 0, RelativeUnit.Relative), new RelativePoint(1, 1, RelativeUnit.Relative));
-        static readonly IBrush RulerBrush = new SolidColorBrush(Color.Parse("#BA9"));
-        static readonly IBrush HeaderViewBrush = new SolidColorBrush(Color.Parse("#BA9"));
-        static readonly IBrush HeaderSelectedBrush = new SolidColorBrush(Color.Parse("#3000"));
-        static readonly IPen BorderPen = new Pen(new SolidColorBrush(Color.Parse("#8000")), 1);
-        static readonly IBrush LineBrush = new SolidColorBrush(Color.Parse("#8000"));
-        static readonly IBrush TrackLineBrush = new SolidColorBrush(Color.Parse("#5000"));    // SeqEdBackgroundMarkerLineBrush #55000000
-        static readonly IBrush BarLineBrush = new SolidColorBrush(Color.Parse("#2000"));
-        static readonly IBrush NameBackBrush = new SolidColorBrush(Color.Parse("#90e0e0ff"));
-        static readonly IPen NameBackPen = new Pen(new SolidColorBrush(Color.Parse("#40333333")), 1);
-        static readonly IBrush NoteBrush = Brushes.LightGreen;
-        static readonly IBrush OffBrush = Brushes.Gray;
-        static readonly IBrush ParamBrush = Brushes.Orange;
-        static readonly IPen EventBorderPen = new Pen(Brushes.Black, 1);
-        static readonly IBrush MuteOnBrush = new SolidColorBrush(Color.Parse("#E8907A"));
-        static readonly IBrush SoloOnBrush = new SolidColorBrush(Color.Parse("#9EE08C"));
-        static readonly IBrush ButtonOffBrush = new SolidColorBrush(Color.Parse("#E4E4E4"));
-        static readonly IPen ButtonPen = new Pen(new SolidColorBrush(Color.Parse("#808080")), 1);
-
-        static IBrush Gradient(Color a, Color b, RelativePoint start, RelativePoint end) => new LinearGradientBrush
-        {
-            StartPoint = start,
-            EndPoint = end,
-            GradientStops = { new GradientStop(a, 0), new GradientStop(b, 1) },
-        };
+        // Fork (ux-overhaul.md §3.3, P2b): the colours are the theme's (StudioTheme.Sequence): the tokens' dark by default,
+        // Classic Buzz's beige and brown (the Default theme's SequenceEditor.xaml) as an option.
+        static SequenceLook Look => StudioTheme.Sequence;
+        internal static IBrush BackgroundBrush => Look.Background;
+        static IBrush TrackViewBrush => Look.TrackView;
+        static IBrush RulerBrush => Look.Ruler;
+        static IBrush HeaderViewBrush => Look.Header;
+        static IBrush HeaderSelectedBrush => Look.HeaderSelected;
+        static IPen BorderPen => Look.Border;
+        static IBrush LineBrush => Look.Line;
+        static IBrush TrackLineBrush => Look.TrackLine;
+        static IBrush BarLineBrush => Look.BarLine;
+        static IBrush NameBackBrush => Look.NameBack;
+        static IPen NameBackPen => Look.NameBackPen;
+        static IBrush NoteBrush => Look.Note;
+        static IBrush OffBrush => Look.Off;
+        static IBrush ParamBrush => Look.Param;
+        static IPen EventBorderPen => Look.EventBorder;
+        static IBrush MuteOnBrush => Look.MuteOn;
+        static IBrush SoloOnBrush => Look.SoloOn;
+        static IBrush ButtonOffBrush => Look.ButtonOff;
+        static IPen ButtonPen => Look.ButtonBorder;
 
         Color Theme(string name)
         {
@@ -575,7 +571,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 if (bar.Start > 0) ctx.FillRectangle(LineBrush, new Rect(Math.Floor(x), 0, 1, area.Height));
                 if (x + 3 < lastLabelEnd) continue;
                 var ft = new FormattedText(number.ToString(CultureInfo.InvariantCulture), Culture, FlowDirection.LeftToRight,
-                    tsl.TimeSignatureChangesAt(bar.Start) ? BoldFont : Font, 12, Brushes.Black);
+                    tsl.TimeSignatureChangesAt(bar.Start) ? BoldFont : Font, 12, Look.RulerText);
                 ctx.DrawText(ft, new Point(x + 3, 3));
                 lastLabelEnd = x + 3 + ft.Width + 4;
             }
@@ -641,6 +637,7 @@ namespace ReBuzz.Studio.Views.Sequence
             var palette = SequenceSongState.Palette;
             var colour = ci >= 0 && ci < palette.Count
                 ? Color.FromUInt32(palette[ci].Argb)
+                : Look.BoxColours is { } own ? own[kind]
                 : Theme(kind switch { 1 => "SE Break Box", 2 => "SE Mute Box", 3 => "SE Off Box", _ => "SE Pattern Box" });
             var box = BoxBrushes.Of(colour);
 
@@ -652,7 +649,7 @@ namespace ReBuzz.Studio.Views.Sequence
             ctx.FillRectangle(box.Shadow, new Rect(2, h - 1, w - 2, 1));
             if (h > 3) ctx.FillRectangle(box.Shadow, new Rect(w - 1, 2, 1, h - 3));
 
-            var textBrush = new SolidColorBrush(Theme("SE Text"));
+            var textBrush = Look.BlockText ?? new SolidColorBrush(Theme("SE Text"));
             if (kind == 0)
             {
                 DrawPreview(ctx, e, w, h);
@@ -726,7 +723,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 var r = new Rect(0, y, area.Width, geo.TrackHeight);
                 if (row == cursorRow) ctx.FillRectangle(HeaderSelectedBrush, r);
                 // The machine's name, centred above the buttons.
-                var name = new FormattedText(seq.Machine?.Name ?? "", Culture, FlowDirection.LeftToRight, Font, 12, Brushes.Black)
+                var name = new FormattedText(seq.Machine?.Name ?? "", Culture, FlowDirection.LeftToRight, Font, 12, Look.HeaderText)
                 { MaxTextWidth = area.Width - 8, MaxLineCount = 1, Trimming = TextTrimming.CharacterEllipsis };
                 ctx.DrawText(name, new Point(4 + (area.Width - 8 - name.Width) / 2, y + 4 + (geo.TrackHeight - SequenceGeometry.HeaderButtonSize - 4 - name.Height) / 2));
 
@@ -766,23 +763,23 @@ namespace ReBuzz.Studio.Views.Sequence
                 gc.LineTo(new Point(o.X + 4, o.Y + 9.5));
                 gc.EndFigure(true);
             }
-            ctx.DrawGeometry(on ? new SolidColorBrush(Color.Parse("#5A3A30")) : new SolidColorBrush(Color.Parse("#404040")), null, g);
-            if (on) ctx.DrawLine(new Pen(Brushes.Black, 1.2), new Point(o.X + 4, o.Y + 4), new Point(o.X + 12, o.Y + 12));
+            ctx.DrawGeometry(on ? Look.MuteIconOn : Look.MuteIconOff, null, g);
+            if (on) ctx.DrawLine(new Pen(Look.MuteStrike, 1.2), new Point(o.X + 4, o.Y + 4), new Point(o.X + 12, o.Y + 12));
         }
 
         /// <summary>solo_on/off_icon.png: an S, on green when on.</summary>
         static void DrawSolo(DrawingContext ctx, Rect r, bool on)
         {
             ButtonBox(ctx, r, on ? SoloOnBrush : ButtonOffBrush);
-            var ft = new FormattedText("S", Culture, FlowDirection.LeftToRight, BoldFont, 11, on ? new SolidColorBrush(Color.Parse("#1F5A18")) : new SolidColorBrush(Color.Parse("#3A3A3A")));
+            var ft = new FormattedText("S", Culture, FlowDirection.LeftToRight, BoldFont, 11, on ? Look.SoloTextOn : Look.SoloTextOff);
             ctx.DrawText(ft, new Point(r.X + (r.Width - ft.Width) / 2, r.Y + (r.Height - ft.Height) / 2));
         }
 
         /// <summary>The D toggle (DisableColumnButtonStyle: a plain button with "D").</summary>
         static void DrawDisable(DrawingContext ctx, Rect r, bool on)
         {
-            ButtonBox(ctx, r, on ? Brushes.DimGray : ButtonOffBrush);
-            var ft = new FormattedText("D", Culture, FlowDirection.LeftToRight, Font, 11, on ? Brushes.White : new SolidColorBrush(Color.Parse("#111")));
+            ButtonBox(ctx, r, on ? Look.DisableOn : ButtonOffBrush);
+            var ft = new FormattedText("D", Culture, FlowDirection.LeftToRight, Font, 11, on ? Look.DisableTextOn : Look.DisableTextOff);
             ctx.DrawText(ft, new Point(r.X + (r.Width - ft.Width) / 2, r.Y + (r.Height - ft.Height) / 2));
         }
 
@@ -1170,20 +1167,16 @@ namespace ReBuzz.Studio.Views.Sequence
     {
         readonly SequenceCanvas canvas;
 
-        static readonly IBrush CursorBrush = new SolidColorBrush(Color.Parse("#2000"));
-        static readonly IBrush CursorInactiveBrush = new SolidColorBrush(Color.Parse("#2005"));
-        static readonly IBrush SelectionBrush = new LinearGradientBrush
-        {
-            StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-            EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
-            GradientStops = { new GradientStop(Color.Parse("#100000FF"), 0), new GradientStop(Color.Parse("#200000FF"), 1) },
-        };
-        static readonly IPen SelectionPen = new Pen(new SolidColorBrush(Color.Parse("#600000FF")), 1);
-        static readonly IBrush ResizeFill = new SolidColorBrush(Color.Parse("#33000000"));
-        static readonly IPen ResizePen = new Pen(new SolidColorBrush(Color.Parse("#aa000000")), 1, new DashStyle(new double[] { 4, 4 }, 0));
-        static readonly IBrush LoopBrush = Brushes.Tomato;
-        static readonly IBrush SongEndBrush = Brushes.Black;
-        static readonly IBrush PlayBrush = Brushes.Yellow;
+        static SequenceLook Look => StudioTheme.Sequence;
+        static IBrush CursorBrush => Look.Cursor;
+        static IBrush CursorInactiveBrush => Look.CursorInactive;
+        static IBrush SelectionBrush => Look.Selection;
+        static IPen SelectionPen => Look.SelectionBorder;
+        static IBrush ResizeFill => Look.ResizeFill;
+        static IPen ResizePen => Look.ResizePen;
+        static IBrush LoopBrush => Look.Loop;
+        static IBrush SongEndBrush => Look.SongEnd;
+        static IBrush PlayBrush => Look.Play;
 
         public SequenceOverlay(SequenceCanvas canvas)
         {
@@ -1229,7 +1222,7 @@ namespace ReBuzz.Studio.Views.Sequence
             }
         }
 
-        static readonly IBrush PlayEdge = new SolidColorBrush(Color.Parse("#B0000000"));
+        static IBrush PlayEdge => Look.PlayEdge;
 
         static void Marker(DrawingContext ctx, double x, IBrush brush, double height, int side, bool flag = true)
         {
