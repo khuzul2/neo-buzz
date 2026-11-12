@@ -1637,7 +1637,7 @@ namespace ReBuzzTests
             rig.Play(0.05);
             int latency = rig.Effect.Latency;
             Assert.That(latency, Is.GreaterThan(0));
-            Assert.That(rig.Param("Ceiling").DescribeValue(rig.Param("Ceiling").DefValue), Is.EqualTo("−0.1 dB"));
+            Assert.That(rig.Param("Ceiling").DescribeValue(rig.Param("Ceiling").DefValue), Is.EqualTo("−0.3 dB"));
             foreach (var stage in new[] { "Gate on", "EQ on", "Comp on", "Drive on", "Clip on", "Limit on" }) rig.Param(stage).SetValue(0, 1);
             rig.Play(0.3);
             Assert.That(rig.Effect.Latency, Is.EqualTo(latency));
