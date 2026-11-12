@@ -30,6 +30,8 @@ namespace ReBuzz.AgentTests
         {
             "Pedal Shaper", "Pedal Gate", "Pedal Gain", "Pedal Gain Multi", "Pedal MComp", "AudioBlock", "Connection Mixer Console", "EnvelopeBlock",
             "QuickNote", "ReBuzz Audio In", "ReBuzz Audio Out", "ReBuzz Groove", "ReBuzz Midi Output", "Session Clip Player", "ManagedMultiIOEffect",
+            // U6 for the Pedal synths (§12.15): the Pedal machines that had stayed drafts
+            "Pedal Tracker", "Pedal Chord", "Pedal LFO", "Pedal Peer Control",
             // U7: the natives (tools/native_manifests.py)
             "FSM WahMan", "FSM WahManPro", "FSM WahPro2", "FSM Chorus2", "FSM PhatMan", "Jeskola NiNjA dElaY", "Jeskola Noise Generator", "Jeskola Trilok",
         };
@@ -84,7 +86,7 @@ namespace ReBuzz.AgentTests
             Assert.That(summary.Count, Is.GreaterThanOrEqualTo(108));
 
             Assert.That(Curated().Keys, Is.EquivalentTo(TheCurated), "25 curated");
-            Assert.That(profiled.Values.Where(m => m.IsGeneratedFromSource).Select(m => m.Gear), Is.EquivalentTo(TheFromSource), "15 from source (U6), 8 natives (U7)");
+            Assert.That(profiled.Values.Where(m => m.IsGeneratedFromSource).Select(m => m.Gear), Is.EquivalentTo(TheFromSource), "19 from source (U6, §12.15), 8 natives (U7)");
             Assert.That(profiled.Values.Where(m => !m.IsCurated && !m.IsGeneratedFromSource).All(m => m.IsDraft), Is.True, "the rest drafts");
             Assert.That(generated.Values.All(m => m.Quality == "generated"), Is.True);
         }

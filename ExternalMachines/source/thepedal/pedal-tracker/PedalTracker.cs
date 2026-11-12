@@ -25,6 +25,7 @@ using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;   // fork (neo-buzz): MethodImplOptions.AggressiveOptimization
 using Buzz.MachineInterface;
 using BuzzGUI.Interfaces;
 
@@ -180,7 +181,41 @@ namespace WDE.PedalTracker
         long _triggerFailNoSlot;
         long _triggerFailNoSnap;
         string _lastSnapshotResult = "(none yet)";
-        string _lastTriggerResult  = "(none yet)";
+
+        // Fork (neo-buzz, docs/specs/mcp-server.md §12.15): the last trigger's outcome, kept as its values and worded
+        // only when the diagnostics are shown. It was a string formatted on every note, on the audio thread.
+        enum TriggerOutcome { None, NoSlot, NoSnapshot, Portamento, NoLayer, Delayed, Deferred, Immediate }
+        TriggerOutcome _lastOutcome;
+        byte   _lastNote;
+        int    _lastMidi, _lastSlot, _lastDelayTicks, _lastLayerRoot, _lastLayers;
+        double _lastValue;              // the portamento speed, or the increment
+        string _lastName, _lastSnapshotThen;
+
+        string LastTriggerResult => _lastOutcome switch
+        {
+            TriggerOutcome.NoSlot => string.Format(
+                "FAIL: note {0:X2} on a track with no Wave assigned " +
+                "(put a wave number in the W column)", _lastNote),
+            TriggerOutcome.NoSnapshot => string.Format(
+                "FAIL: note {0:X2} for wave slot {1}, snapshot unavailable. " +
+                "Last snapshot result: {2}", _lastNote, _lastSlot, _lastSnapshotThen),
+            TriggerOutcome.Portamento => string.Format(
+                "OK (portamento): target MIDI {0} speed {1:F3} semi/row",
+                _lastMidi, _lastValue),
+            TriggerOutcome.NoLayer => string.Format(
+                "FAIL: note {0:X2} – no playable layer for slot {1}",
+                _lastNote, _lastSlot),
+            TriggerOutcome.Delayed => string.Format(
+                "OK (delay {0}t): note {1:X2} wave {2}", _lastDelayTicks, _lastNote, _lastSlot),
+            TriggerOutcome.Deferred => string.Format(
+                "OK (deferred): note {0:X2} (MIDI {1}) wave {2} '{3}'",
+                _lastNote, _lastMidi, _lastSlot, _lastName),
+            TriggerOutcome.Immediate => string.Format(
+                "OK: note {0:X2} (MIDI {1}) wave {2} '{3}' inc={4:F4}{5}",
+                _lastNote, _lastMidi, _lastSlot, _lastName, _lastValue,
+                _lastLayers > 1 ? $" (layer root MIDI {_lastLayerRoot} of {_lastLayers})" : ""),
+            _ => "(none yet)",
+        };
 
         // ── Pitch-effect trace ring (for 01/02 debug only) ──────────────────
         // Lock-free single-writer-per-event-source ring buffer.  Writers are
@@ -196,6 +231,8 @@ namespace WDE.PedalTracker
         readonly string[] _pitchTrace = new string[PITCH_TRACE_LEN];
         long _pitchTraceHead;             // monotonic; modulo PITCH_TRACE_LEN gives index
         volatile bool _pitchTraceEnabled;
+        // Fork (neo-buzz, §12.15): callers build the line only while tracing (if (_pitchTraceEnabled)): building it
+        // allocated on the audio thread on every note, traced or not.
         void PitchTrace(string s)
         {
             if (!_pitchTraceEnabled) return;
@@ -225,6 +262,24 @@ namespace WDE.PedalTracker
         // ── Engine sample-rate snapshot (re-read in Work()) ─────────────────
         double _engineRate = 44100.0;
 
+        // ── Fork (neo-buzz, docs/specs/mcp-server.md §12.15): MIDI notes and controllers (MidiIn.cs) ───────
+        // A MIDI note takes a free voice, the highest first (pattern tracks play the first ones), else the one
+        // fading out longest ago, else the oldest; it plays the wave track 1 last chose (wave 1 until it chooses
+        // one), at its velocity's volume (as the Volume column's curve: (velocity / 127)², 127 is unity), with no
+        // effect commands. Pitch bend ±2 semitones; the sustain pedal holds MIDI notes. A track's note plays exactly
+        // as before.
+        readonly MidiIn     _midi          = new MidiIn();
+        readonly MidiVoices _midiVoices    = new MidiVoices(MAX_VOICES);
+        readonly bool[]     _voiceFree     = new bool[MAX_VOICES];
+        readonly bool[]     _voiceReleased = new bool[MAX_VOICES];
+        bool _bendApplied;
+
+        // ── Fork (neo-buzz, §12.15): Master glides to a new setting over 20 ms (ParamGlide, below); a setting that
+        // doesn't move is the same number as before. The first block, and a new sample rate, start at the setting.
+        ParamGlide _gMaster;
+        bool   _glidesSet;
+        double _glideRate;
+
         // ── Constructor ──────────────────────────────────────────────────────
         public PedalTrackerMachine(IBuzzMachineHost host)
         {
@@ -242,7 +297,8 @@ namespace WDE.PedalTracker
             // fire can log into our ring buffer.  Static hook is the
             // simplest cross-class signal; null-safe and free when
             // _pitchTraceEnabled is false.
-            VoiceRender.Trace = PitchTrace;
+            // Fork (neo-buzz, §12.15): wired while tracing only (TogglePitchTrace): VoiceRender builds its line
+            // whenever the hook is set, which allocated on the audio thread on every deferred note.
         }
 
         // ── Finalizer ────────────────────────────────────────────────────────
@@ -648,6 +704,7 @@ namespace WDE.PedalTracker
         // scratch L/R pair, then publish only to the connected outputs at
         // the end of the function.  This keeps render cost independent of
         // routing topology and avoids per-voice connection bookkeeping.
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]   // fork (neo-buzz): never compiled on the audio thread
         public bool Work(IList<Sample[]> output, int n, WorkModes mode)
         {
             if (output == null || n <= 0) return false;
@@ -666,6 +723,11 @@ namespace WDE.PedalTracker
             try { songPos = Buzz?.Song?.PlayPosition ?? -1; } catch { }
             bool newRow = songPos != _prevSongPos;
 
+            // Fork (neo-buzz, §12.15): with no voice sounding, a changed Master needs no glide: the next note starts at it.
+            bool wasIdle = true;
+            for (int t = 0; t < MAX_VOICES; t++)
+                if (_voices[t].Active) { wasIdle = false; break; }
+
             // Consume any pending parameter changes from setters.  The HasNew*
             // flags are one-shot (set in SetXxx, cleared on consume), so
             // calling this every Work() is harmless — and avoids missing a
@@ -680,11 +742,13 @@ namespace WDE.PedalTracker
             // pattern engine has stopped delivering setter calls but Work()
             // keeps being called, so without this, voices ring out forever.
             CheckTransport();
+            ProcessMidi();              // fork (neo-buzz, §12.15): after the tracks' notes
 
             // Pattern-tick edge → run continuous effect-command processors
             // exactly once per row (slides, volume slide, etc).
             if (newRow) RunPerTickEffects();
             _prevSongPos = songPos;
+            ApplyMidiBend();            // fork (neo-buzz, §12.15): MIDI voices only
 
             // ── 0E sub-tick scheduling ────────────────────────────────────────
             // Every Work() we decrement each voice's per-sample countdowns and
@@ -700,6 +764,16 @@ namespace WDE.PedalTracker
             // and NOT to the per-track outputs.
             Interp interp = ClampInterp(InterpParam);
             float  master = MasterParam / 32768f;     // 0x8000 → 1.0
+
+            // Fork (neo-buzz, §12.15): Master glides; the first time, at a new rate, and from silence, it starts at the setting.
+            if (!_glidesSet || _engineRate != _glideRate || wasIdle)
+            {
+                _gMaster.Snap(master);
+                _glidesSet = true;
+                _glideRate = _engineRate;
+            }
+            else _gMaster.Set(master, (int)(ParamGlide.Ms * 0.001 * _engineRate));
+            bool masterGliding = _gMaster.Left > 0;
 
             // Reuse persistent scratch when block fits; allocate fresh on
             // the rare oversized block.  Either way every track buffer
@@ -777,6 +851,7 @@ namespace WDE.PedalTracker
 
             // Out 0 — summed master with master gain * master mute fade.
             // Each track inside the sum is gated by its own per-track fade.
+            int glided = 0;
             if (outCount > 0 && output[0] != null)
             {
                 var dst = output[0];
@@ -792,10 +867,14 @@ namespace WDE.PedalTracker
                         l += tL[t][i] * tg;
                         r += tR[t][i] * tg;
                     }
-                    dst[i].L = l * master * mg * OUT_SCALE;
-                    dst[i].R = r * master * mg * OUT_SCALE;
+                    float m = masterGliding ? _gMaster.Next() : master;   // fork (neo-buzz, §12.15)
+                    dst[i].L = l * m * mg * OUT_SCALE;
+                    dst[i].R = r * m * mg * OUT_SCALE;
                 }
+                glided = copy;
             }
+            if (masterGliding)                        // fork: the glide keeps time with out 0 unconnected too
+                for (int i = glided; i < n; i++) _gMaster.Next();
 
             // Outs 1..N — per-track dry (no master gain), gated by both the
             // track's own mute and the master mute.
@@ -829,7 +908,9 @@ namespace WDE.PedalTracker
             // Returning false when silent lets ReBuzz skip downstream effects.
             // Also report inactive when fully muted, so downstream effects
             // can skip their own work.
-            return anyActive && _muteGain > 1e-4f;
+            // Fork (neo-buzz, docs/specs/mcp-server.md §12.15): once the mute's fade is all the way down (it said
+            // silent from 1e-4, −80 dB, while the block still faded out).
+            return anyActive && (muteStart > 0f || muteEnd > 0f);
         }
 
         // Advance a fade gain toward its target by one Work block's worth.
@@ -926,10 +1007,12 @@ namespace WDE.PedalTracker
                         v.TargetGain        = 0f;
                         v.HasPendingTrigger = false;
                         v.PendingSnap       = null;
+                        _midiVoices.Clear(t);     // fork (neo-buzz, §12.15): no longer a MIDI key's
                     }
                     else
                     {
                         TriggerNote(v, nb);
+                        _midiVoices.Track(t);     // fork (neo-buzz, §12.15): the track's note took the voice
                     }
                 }
             }
@@ -946,9 +1029,7 @@ namespace WDE.PedalTracker
             if (slot <= 0)
             {
                 _triggerFailNoSlot++;
-                _lastTriggerResult = string.Format(
-                    "FAIL: note {0:X2} on a track with no Wave assigned " +
-                    "(put a wave number in the W column)", buzzNote);
+                _lastOutcome = TriggerOutcome.NoSlot; _lastNote = buzzNote;
                 return;
             }
 
@@ -959,9 +1040,8 @@ namespace WDE.PedalTracker
                 if (layers == null || layers.Length == 0)
                 {
                     _triggerFailNoSnap++;
-                    _lastTriggerResult = string.Format(
-                        "FAIL: note {0:X2} for wave slot {1}, snapshot unavailable. " +
-                        "Last snapshot result: {2}", buzzNote, slot, _lastSnapshotResult);
+                    _lastOutcome = TriggerOutcome.NoSnapshot; _lastNote = buzzNote; _lastSlot = slot;
+                    _lastSnapshotThen = _lastSnapshotResult;
                     return;
                 }
             }
@@ -984,9 +1064,7 @@ namespace WDE.PedalTracker
                     v.PortaSpeedSemis = 1.0 / 16.0;     // sane default
                 v.PortaActive = true;
                 _triggerSuccess++;
-                _lastTriggerResult = string.Format(
-                    "OK (portamento): target MIDI {0} speed {1:F3} semi/row",
-                    midi, v.PortaSpeedSemis);
+                _lastOutcome = TriggerOutcome.Portamento; _lastMidi = midi; _lastValue = v.PortaSpeedSemis;
                 return;
             }
 
@@ -994,9 +1072,7 @@ namespace WDE.PedalTracker
             if (snap == null)
             {
                 _triggerFailNoSnap++;
-                _lastTriggerResult = string.Format(
-                    "FAIL: note {0:X2} – no playable layer for slot {1}",
-                    buzzNote, slot);
+                _lastOutcome = TriggerOutcome.NoLayer; _lastNote = buzzNote; _lastSlot = slot;
                 return;
             }
 
@@ -1042,8 +1118,7 @@ namespace WDE.PedalTracker
                     v.NoteDelaySamples   = delayTicks * spt;
                     v.TargetGain         = 0f;       // silence any current voice while we wait
                     _triggerSuccess++;
-                    _lastTriggerResult = string.Format(
-                        "OK (delay {0}t): note {1:X2} wave {2}", delayTicks, buzzNote, slot);
+                    _lastOutcome = TriggerOutcome.Delayed; _lastDelayTicks = delayTicks; _lastNote = buzzNote; _lastSlot = slot;
                     return;
                 }
                 // delayTicks == 0 falls through to immediate trigger.
@@ -1086,10 +1161,8 @@ namespace WDE.PedalTracker
                 v.PendingPos        = (int)startPos;
                 v.TargetGain        = 0f;       // start fading out
                 _triggerSuccess++;
-                _lastTriggerResult = string.Format(
-                    "OK (deferred): note {0:X2} (MIDI {1}) wave {2} '{3}'",
-                    buzzNote, midi, slot, snap.Name);
-                PitchTrace($"TRIGdef t={Array.IndexOf(_voices, v)} pendMidi={midi} (existing midi={v.CurrentMidi:F2})");
+                _lastOutcome = TriggerOutcome.Deferred; _lastNote = buzzNote; _lastMidi = midi; _lastSlot = slot; _lastName = snap.Name;
+                if (_pitchTraceEnabled) PitchTrace($"TRIGdef t={Array.IndexOf(_voices, v)} pendMidi={midi} (existing midi={v.CurrentMidi:F2})");
                 return;
             }
 
@@ -1107,7 +1180,7 @@ namespace WDE.PedalTracker
             v.TargetGain    = 1f;
             v.HasPendingTrigger = false;
             v.PendingSnap   = null;
-            PitchTrace($"TRIGimm t={Array.IndexOf(_voices, v)} midi={midi} inc={newIncrement:F4}");
+            if (_pitchTraceEnabled) PitchTrace($"TRIGimm t={Array.IndexOf(_voices, v)} midi={midi} inc={newIncrement:F4}");
 
             // Reset any in-flight portamento on a fresh trigger (sliding to a
             // new note when one was already in progress is uncommon enough
@@ -1116,10 +1189,8 @@ namespace WDE.PedalTracker
             v.VibratoActive = false;     // 04 must be re-armed on new note
 
             _triggerSuccess++;
-            _lastTriggerResult = string.Format(
-                "OK: note {0:X2} (MIDI {1}) wave {2} '{3}' inc={4:F4}{5}",
-                buzzNote, midi, slot, snap.Name, v.Increment,
-                layers.Length > 1 ? $" (layer root MIDI {snap.RootNote} of {layers.Length})" : "");
+            _lastOutcome = TriggerOutcome.Immediate; _lastNote = buzzNote; _lastMidi = midi; _lastSlot = slot;
+            _lastName = snap.Name; _lastValue = v.Increment; _lastLayerRoot = snap.RootNote; _lastLayers = layers.Length;
         }
 
         // =====================================================================
@@ -1172,7 +1243,117 @@ namespace WDE.PedalTracker
                 v.RetrigActive      = false;
                 v.PortaActive       = false;
                 v.VibratoActive     = false;
+                _midiVoices.Clear(t);   // fork (neo-buzz, §12.15): MIDI notes too
             }
+        }
+
+        // =====================================================================
+        // Fork (neo-buzz, docs/specs/mcp-server.md §12.15): MIDI from ReBuzz
+        // (a keyboard, a pattern's MIDI column), queued and applied at the
+        // start of the next block.
+        // =====================================================================
+
+        /// <summary>ReBuzz: a MIDI note for this machine (velocity 0 releases).</summary>
+        public void MidiNote(int channel, int value, int velocity)
+        {
+            // The wave's snapshot made here, as SetWave makes a track's, not on the audio thread.
+            if (velocity > 0) EnsureWaveSnapshots(MidiWave);
+            _midi.Note(value, velocity);
+        }
+
+        /// <summary>ReBuzz: a MIDI controller, pitch bend (0xE0 / 0xFF) or channel pressure (0xD0 / 0xFC).</summary>
+        public void MidiControlChange(int ctrl, int channel, int value) => _midi.Controller(ctrl, value);
+
+        /// <summary>The wave MIDI notes play: track 1's (wave 1 until it has chosen one).</summary>
+        int MidiWave => _voices[0].ActiveWaveSlot > 0 ? _voices[0].ActiveWaveSlot : 1;
+
+        void ProcessMidi()
+        {
+            while (_midi.Next(out int kind, out int a, out int b))
+            {
+                if (kind == MidiIn.NoteOn) MidiNoteOn(a, b);
+                else if (kind == MidiIn.NoteOff) MidiNoteOff(a);
+                else switch (a)
+                {
+                    case MidiIn.AllNotesOff:
+                        ReleaseMidiVoices();
+                        break;
+                    case MidiIn.AllSoundOff:
+                        StopAllVoices();
+                        break;
+                    default:
+                        if (_midi.Apply(a, b))   // the sustain pedal came up
+                            for (int t = 0; t < MAX_VOICES; t++)
+                                if (_midiVoices.Sustained[t]) ReleaseMidiVoice(t);
+                        break;
+                }
+            }
+        }
+
+        void MidiNoteOn(int key, int velocity)
+        {
+            int t = _midiVoices.Playing(key, MAX_VOICES);   // the same key again: its voice
+            if (t < 0)
+            {
+                for (int i = 0; i < MAX_VOICES; i++)
+                {
+                    var voice = _voices[i];
+                    _voiceFree[i]     = !voice.Active && !voice.HasPendingTrigger && voice.NoteDelaySamples == 0;
+                    _voiceReleased[i] = voice.TargetGain == 0f && !voice.HasPendingTrigger;
+                }
+                t = _midiVoices.Pick(MAX_VOICES, _voiceFree, _voiceReleased);
+            }
+            var v = _voices[t];
+            v.ActiveWaveSlot = MidiWave;
+            for (int s = 0; s < Voice.CMD_SLOTS; s++) { v.ActiveCmd[s] = 0; v.ActiveArg[s] = 0; }
+            float vol = velocity / 127f;
+            v.Volume = vol * vol;
+            // A Buzz note byte for the key (A4 = 69 is A-5, 0x5A), as a track's note gives it.
+            TriggerNote(v, (byte)(((key / 12) << 4) | (key % 12 + 1)));
+            _midiVoices.Start(t, key);
+        }
+
+        void MidiNoteOff(int key)
+        {
+            int t = _midiVoices.Playing(key, MAX_VOICES);
+            if (t < 0 || !_midiVoices.Held[t]) return;
+            if (_midi.Pedal)
+            {
+                _midiVoices.Held[t]      = false;
+                _midiVoices.Sustained[t] = true;
+                return;
+            }
+            ReleaseMidiVoice(t);
+        }
+
+        void ReleaseMidiVoice(int t)
+        {
+            var v = _voices[t];
+            v.TargetGain        = 0f;     // as a track's note off
+            v.HasPendingTrigger = false;
+            v.PendingSnap       = null;
+            _midiVoices.Clear(t);
+        }
+
+        void ReleaseMidiVoices()
+        {
+            for (int t = 0; t < MAX_VOICES; t++)
+                if (_midiVoices.Key[t] >= 0) ReleaseMidiVoice(t);
+        }
+
+        // Pitch bend on the MIDI voices, after the rows' effects (which set a voice's increment back to its base).
+        void ApplyMidiBend()
+        {
+            float bend = _midi.Bend;
+            if (bend == 0f && !_bendApplied) return;
+            double ratio = System.Math.Pow(2.0, bend * MidiIn.BendSemitones / 12.0);
+            for (int t = 0; t < MAX_VOICES; t++)
+            {
+                var v = _voices[t];
+                if (_midiVoices.Key[t] < 0 || !v.Active || v.BaseIncrement <= 0) continue;
+                v.Increment = v.BaseIncrement * ratio;
+            }
+            _bendApplied = bend != 0f;
         }
 
         static int MidiFromBuzzNote(byte b)
@@ -1311,7 +1492,7 @@ namespace WDE.PedalTracker
                         double before = v.CurrentMidi;
                         v.CurrentMidi += arg / 16.0;
                         pitchChanged = true;
-                        PitchTrace($"01 t={Array.IndexOf(_voices, v)} arg={arg:X2} midi {before:F2}->{v.CurrentMidi:F2} active={v.Active} defer={v.HasPendingTrigger}");
+                        if (_pitchTraceEnabled) PitchTrace($"01 t={Array.IndexOf(_voices, v)} arg={arg:X2} midi {before:F2}->{v.CurrentMidi:F2} active={v.Active} defer={v.HasPendingTrigger}");
                     }
                     break;
 
@@ -1321,7 +1502,7 @@ namespace WDE.PedalTracker
                         double before = v.CurrentMidi;
                         v.CurrentMidi -= arg / 16.0;
                         pitchChanged = true;
-                        PitchTrace($"02 t={Array.IndexOf(_voices, v)} arg={arg:X2} midi {before:F2}->{v.CurrentMidi:F2} active={v.Active} defer={v.HasPendingTrigger}");
+                        if (_pitchTraceEnabled) PitchTrace($"02 t={Array.IndexOf(_voices, v)} arg={arg:X2} midi {before:F2}->{v.CurrentMidi:F2} active={v.Active} defer={v.HasPendingTrigger}");
                     }
                     break;
 
@@ -1855,7 +2036,7 @@ namespace WDE.PedalTracker
             sb.AppendFormat("Triggers fail (no snap): {0}\n",   _triggerFailNoSnap);
             sb.AppendFormat("Last snapshot result   : {0}\n",   _lastSnapshotResult);
             sb.AppendFormat("WavetableAccess error  : {0}\n",   WavetableAccess.LastError);
-            sb.AppendFormat("Last trigger result    : {0}\n",   _lastTriggerResult);
+            sb.AppendFormat("Last trigger result    : {0}\n",   LastTriggerResult);
             sb.AppendFormat("Wave cache slots       : {0}\n",   _waveCache.Count);
             foreach (var kv in _waveCache)
             {
@@ -1911,6 +2092,7 @@ namespace WDE.PedalTracker
                 for (int i = 0; i < PITCH_TRACE_LEN; i++) _pitchTrace[i] = null;
                 _pitchTraceHead = 0;
                 _pitchTraceEnabled = true;
+                VoiceRender.Trace = PitchTrace;   // fork (neo-buzz, §12.15): while tracing only
                 try { Buzz?.DCWriteLine("[PedalTracker] pitch trace ON — play test pattern then click menu again to dump"); }
                 catch { }
                 return;
@@ -1918,6 +2100,7 @@ namespace WDE.PedalTracker
 
             // Disable: dump.
             _pitchTraceEnabled = false;
+            VoiceRender.Trace = null;             // fork (neo-buzz, §12.15)
             try
             {
                 Buzz?.DCWriteLine("[PedalTracker] pitch trace OFF — dumping:");
@@ -2118,6 +2301,34 @@ namespace WDE.PedalTracker
             public bool CanExecute(object _) => true;
             public void Execute(object _)    => _a?.Invoke();
             public event EventHandler CanExecuteChanged { add { } remove { } }
+        }
+    }
+
+    // Fork (neo-buzz, docs/specs/mcp-server.md §12.13, §12.15): a setting that glides to a new value in a straight line
+    // over Ms milliseconds, sample by sample, and lands on it exactly, so a setting that doesn't move is the same
+    // number as before. Automation and pattern events change parameters once a tick or subtick; applied once a block
+    // they stepped, which clicks. As in the Pedal effects (U6).
+    struct ParamGlide
+    {
+        public const float Ms = 20f;
+        public float Value, Target, Step;
+        public int Left;
+
+        public void Snap(float v) { Value = Target = v; Left = 0; }
+
+        public void Set(float v, int samples)
+        {
+            if (v == Target) return;
+            Target = v;
+            if (samples <= 1) { Snap(v); return; }
+            Left = samples;
+            Step = (v - Value) / samples;
+        }
+
+        public float Next()
+        {
+            if (Left > 0) Value = --Left == 0 ? Target : Value + Step;
+            return Value;
         }
     }
 }

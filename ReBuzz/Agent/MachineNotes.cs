@@ -1,7 +1,7 @@
 // Fork (docs/specs/mcp-server.md §12.2, U1): how a machine takes notes, as the agent's note tools
 // see it. Most machines play the engine's MIDI column; machines whose profiled manifest says
-// "tracks" (trackers, the Pedal synths) play their Note track parameter only, so their notes go
-// into the pattern's engine-played Note columns, a voice per track. Either way the manifest's pitch
+// "tracks" (trackers; the Pedal synths until §12.15 gave them MIDI) play their Note track parameter
+// only, so their notes go into the pattern's engine-played Note columns, a voice per track. Either way the manifest's pitch
 // offset is applied on the way in and taken off on the way out: the agent writes and reads the
 // pitch heard (A4 = 440 Hz). What the song saves is what the machine gets, as before.
 

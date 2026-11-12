@@ -1,0 +1,246 @@
+# Dye Essence parameters (docs/specs/dye-essence.md §7). The order is permanent once a phase merges:
+# songs and presets store values by position. New parameters go at the end; an enum's maximum may
+# grow, its values never move. Regenerate: python3 tools/gen-machine-params.py Machines/DyeEssence
+namespace NeoBuzz.DyeEssence
+class DyeEssenceMachine
+tracks 16
+summary Hybrid wavetable synth: three engine slots, each a morphing wavetable with 1–16 unison voices and two warps (bend, sync, FM, PM, AM, ring and more), a sub and a noise, two filters per note (ladder, state-variable, comb; serial to parallel), oversampled 2× or 4×. Use it for wide unison leads, evolving pads, FM and sync basses, plucks and bells.
+import wavetable .wav | A WAV wavetable: frames of 2048 samples (or a clm chunk saying the frame size), or one short single cycle. Becomes a slot's "User" table: item 0 is slot A, 1 slot B, 2 slot C.
+
+group Voice
+VoiceMode   "Voice mode"    0 2    0    enum Poly Mono Legato           | Poly; Mono retriggers; Legato glides without retriggering
+Polyphony   "Polyphony"     1 32   8    int 0                           | Notes that sound at once
+GlideMode   "Glide mode"    0 2    0    enum Off Always Legato          | When notes glide
+Glide       "Glide"         0 1000 200  pow 0 2 3 s 3                   | Glide time
+BendRange   "Bend range"    0 24   2    int 0 st                        | Pitch bend range
+Quality     "Quality"       0 1    0    enum Standard_2× High_4×        | Voices at 2× or 4× the sample rate: High keeps hard FM, PM and sync cleaner at twice the CPU
+VelAmp      "Vel → amp"     0 1000 700  pct                             | How much velocity changes loudness
+Volume      "Volume"        0 1000 739  db -40 6 inf                    | Output level
+
+group Osc A
+AType      "A engine"      0 2    1    enum Off Wavetable Analog       | What slot A plays (more engines to come)
+ATable     "A table"       0 10   0    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
+APos       "A position"    0 1000 667  pct                             | Position in the table (frames morph smoothly)
+AOct       "A octave"      0 8    4    int -4 oct signed               | Octave
+ASemi      "A semi"        0 24   12   int -12 st signed               | Semitones
+AFine      "A fine"        0 1000 500  lin -100 100 ct 0               | Fine tune
+ALevel     "A level"       0 1000 1000 pct                             | Level
+APan       "A pan"         0 1000 500  bip                             | Pan
+AUnison    "A unison"      1 16   1    int 0                           | Unison voices
+ADetune    "A detune"      0 1000 447  pow 0 100 2 ct 1                | The outermost unison voices sit this far either side of the note
+ASpread    "A spread"      0 1000 700  pct                             | Stereo spread of the unison voices
+APhase     "A phase"       0 1000 0    lin 0 360 ° 0                   | Start phase
+ARandom    "A random"      0 1000 1000 pct                             | How much of a random phase each voice starts with
+AWarp1     "A warp 1"      0 11   0    enum None Bend+ Bend− Squeeze Mirror Asym Sync Window_sync FM PM AM Ring | First warp: how the cycle is read (FM, PM, AM and Ring take the modulator)
+AWarp1Amt  "A warp 1 amt"  0 1000 0    pct                             | First warp's amount
+AWarp2     "A warp 2"      0 11   0    enum None Bend+ Bend− Squeeze Mirror Asym Sync Window_sync FM PM AM Ring | Second warp, after the first
+AWarp2Amt  "A warp 2 amt"  0 1000 0    pct                             | Second warp's amount
+AMod       "A modulator"   0 4    1    enum Osc_A Osc_B Osc_C Sub Noise | What FM, PM, AM and Ring take (not the slot itself)
+AToF2      "A → filter 2"  0 1000 0    pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
+
+group Osc B
+BType      "B engine"      0 2    0    enum Off Wavetable Analog       | What slot B plays (more engines to come)
+BTable     "B table"       0 10   2    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
+BPos       "B position"    0 1000 0  pct                             | Position in the table (frames morph smoothly)
+BOct       "B octave"      0 8    4    int -4 oct signed               | Octave
+BSemi      "B semi"        0 24   12   int -12 st signed               | Semitones
+BFine      "B fine"        0 1000 500  lin -100 100 ct 0               | Fine tune
+BLevel     "B level"       0 1000 1000 pct                             | Level
+BPan       "B pan"         0 1000 500  bip                             | Pan
+BUnison    "B unison"      1 16   1    int 0                           | Unison voices
+BDetune    "B detune"      0 1000 447  pow 0 100 2 ct 1                | The outermost unison voices sit this far either side of the note
+BSpread    "B spread"      0 1000 700  pct                             | Stereo spread of the unison voices
+BPhase     "B phase"       0 1000 0    lin 0 360 ° 0                   | Start phase
+BRandom    "B random"      0 1000 1000 pct                             | How much of a random phase each voice starts with
+BWarp1     "B warp 1"      0 11   0    enum None Bend+ Bend− Squeeze Mirror Asym Sync Window_sync FM PM AM Ring | First warp: how the cycle is read (FM, PM, AM and Ring take the modulator)
+BWarp1Amt  "B warp 1 amt"  0 1000 0    pct                             | First warp's amount
+BWarp2     "B warp 2"      0 11   0    enum None Bend+ Bend− Squeeze Mirror Asym Sync Window_sync FM PM AM Ring | Second warp, after the first
+BWarp2Amt  "B warp 2 amt"  0 1000 0    pct                             | Second warp's amount
+BMod       "B modulator"   0 4    0    enum Osc_A Osc_B Osc_C Sub Noise | What FM, PM, AM and Ring take (not the slot itself)
+BToF2      "B → filter 2"  0 1000 0    pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
+
+group Osc C
+CType      "C engine"      0 2    0    enum Off Wavetable Analog       | What slot C plays (more engines to come)
+CTable     "C table"       0 10   3    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
+CPos       "C position"    0 1000 0  pct                             | Position in the table (frames morph smoothly)
+COct       "C octave"      0 8    4    int -4 oct signed               | Octave
+CSemi      "C semi"        0 24   12   int -12 st signed               | Semitones
+CFine      "C fine"        0 1000 500  lin -100 100 ct 0               | Fine tune
+CLevel     "C level"       0 1000 1000 pct                             | Level
+CPan       "C pan"         0 1000 500  bip                             | Pan
+CUnison    "C unison"      1 16   1    int 0                           | Unison voices
+CDetune    "C detune"      0 1000 447  pow 0 100 2 ct 1                | The outermost unison voices sit this far either side of the note
+CSpread    "C spread"      0 1000 700  pct                             | Stereo spread of the unison voices
+CPhase     "C phase"       0 1000 0    lin 0 360 ° 0                   | Start phase
+CRandom    "C random"      0 1000 1000 pct                             | How much of a random phase each voice starts with
+CWarp1     "C warp 1"      0 11   0    enum None Bend+ Bend− Squeeze Mirror Asym Sync Window_sync FM PM AM Ring | First warp: how the cycle is read (FM, PM, AM and Ring take the modulator)
+CWarp1Amt  "C warp 1 amt"  0 1000 0    pct                             | First warp's amount
+CWarp2     "C warp 2"      0 11   0    enum None Bend+ Bend− Squeeze Mirror Asym Sync Window_sync FM PM AM Ring | Second warp, after the first
+CWarp2Amt  "C warp 2 amt"  0 1000 0    pct                             | Second warp's amount
+CMod       "C modulator"   0 4    0    enum Osc_A Osc_B Osc_C Sub Noise | What FM, PM, AM and Ring take (not the slot itself)
+CToF2      "C → filter 2"  0 1000 0    pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
+
+group Sub
+SubShape    "Sub shape"     0 3    0    enum Sine Triangle Saw Square   | Sub oscillator wave
+SubOct      "Sub octave"    0 2    1    enum 0 -1 -2                    | Octaves from the note
+SubLevel    "Sub level"     0 1000 0    pct                             | Sub level
+SubPan      "Sub pan"       0 1000 500  bip                             | Sub pan
+SubToF2     "Sub → filter 2" 0 1000 0   pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
+
+group Noise
+NoiseColor  "Noise color"   0 1000 1000 pct                             | 0 %: dark (lowpassed from 100 Hz); 100 %: white
+NoiseLevel  "Noise level"   0 1000 0    pct                             | Noise level
+NoisePan    "Noise pan"     0 1000 500  bip                             | Noise pan
+NoiseToF2   "Noise → filter 2" 0 1000 0 pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
+
+group Filter 1
+F1Type      "F1 type"       0 12   1    enum Off Ladder_24 Ladder_12 LP_12 LP_24 BP_12 BP_24 HP_12 HP_24 Notch Peak Comb+ Comb− | Filter model (Comb: the cutoff is its pitch)
+F1Cutoff    "F1 cutoff"     0 1000 750  freq 20 20000                   | Cutoff
+F1Reso      "F1 reso"       0 1000 150  pct                             | Resonance (comb: feedback)
+F1Drive     "F1 drive"      0 1000 0    lin 0 24 dB 1                   | Drive into the filter
+F1Env       "F1 env"        0 1000 600  lin -6 6 oct 1                  | Filter envelope amount
+F1Key       "F1 key track"  0 1000 500  pct                             | Cutoff follows the keyboard (100 %: an octave per octave)
+F1Vel       "F1 vel"        0 1000 250  lin 0 4 oct 1                   | Softer notes close the filter by up to this
+
+group Filter 2
+F2Type      "F2 type"       0 12   0    enum Off Ladder_24 Ladder_12 LP_12 LP_24 BP_12 BP_24 HP_12 HP_24 Notch Peak Comb+ Comb− | Filter model (Comb: the cutoff is its pitch)
+F2Cutoff    "F2 cutoff"     0 1000 750  freq 20 20000                   | Cutoff
+F2Reso      "F2 reso"       0 1000 150  pct                             | Resonance (comb: feedback)
+F2Drive     "F2 drive"      0 1000 0    lin 0 24 dB 1                   | Drive into the filter
+F2Env       "F2 env"        0 1000 500  lin -6 6 oct 1                  | Filter envelope amount
+F2Key       "F2 key track"  0 1000 500  pct                             | Cutoff follows the keyboard (100 %: an octave per octave)
+F2Vel       "F2 vel"        0 1000 0  lin 0 4 oct 1                   | Softer notes close the filter by up to this
+Routing     "Filter routing" 0 1000 0   pct                             | 0 %: filter 1 into filter 2 (serial); 100 %: side by side (parallel)
+
+group Amp env
+AmpA        "Amp attack"    0 1000 100  time 0.0005 20                  | Attack time
+AmpD        "Amp decay"     0 1000 500  time 0.0005 20                  | Decay time
+AmpS        "Amp sustain"   0 1000 800  pct                             | Sustain level
+AmpR        "Amp release"   0 1000 450  time 0.0005 20                  | Release time
+
+group Filter env
+FltA        "Flt attack"    0 1000 100  time 0.0005 20                  | Attack time
+FltD        "Flt decay"     0 1000 520  time 0.0005 20                  | Decay time
+FltS        "Flt sustain"   0 1000 300  pct                             | Sustain level
+FltR        "Flt release"   0 1000 450  time 0.0005 20                  | Release time
+
+# P1b (appended): the Analog engine's parameters for each slot.
+group Osc A
+AShape     "A shape"       0 4    2    enum Sine Triangle Saw Square Pulse | The Analog engine's wave
+APw        "A pulse width" 0 1000 1000 lin 3 50 % 1                   | The Analog engine's pulse width (Pulse)
+ADrift     "A drift"       0 1000 200  pct                             | The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are
+group Osc B
+BShape     "B shape"       0 4    2    enum Sine Triangle Saw Square Pulse | The Analog engine's wave
+BPw        "B pulse width" 0 1000 1000 lin 3 50 % 1                   | The Analog engine's pulse width (Pulse)
+BDrift     "B drift"       0 1000 200  pct                             | The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are
+group Osc C
+CShape     "C shape"       0 4    2    enum Sine Triangle Saw Square Pulse | The Analog engine's wave
+CPw        "C pulse width" 0 1000 1000 lin 3 50 % 1                   | The Analog engine's pulse width (Pulse)
+CDrift     "C drift"       0 1000 200  pct                             | The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are
+
+# P1b (appended): modulation. Two DAHDSR envelopes with curves, four LFOs, four macros and sixteen
+# routes (source, destination, amount), evaluated per note on the control grid.
+group Mod env 1
+E1Delay    "Env1 delay"    0 1000 0    pow 0 10 3 s 3                  | Delay before the attack
+E1A        "Env1 attack"   0 1000 300  time 0.0005 20                  | Attack time
+E1Hold     "Env1 hold"     0 1000 0    pow 0 10 3 s 3                  | Hold at the top
+E1D        "Env1 decay"    0 1000 600  time 0.0005 20                  | Decay time
+E1S        "Env1 sustain"  0 1000 0    pct                             | Sustain level
+E1R        "Env1 release"  0 1000 500  time 0.0005 20                  | Release time
+E1ACurve   "Env1 att curve" 0 1000 500 bip                             | Attack shape: −100 % fast start, 0 straight, +100 % slow start
+E1DCurve   "Env1 dec curve" 0 1000 200 bip                             | Decay shape: −100 % fast start, 0 straight, +100 % slow start
+E1RCurve   "Env1 rel curve" 0 1000 200 bip                             | Release shape: −100 % fast start, 0 straight, +100 % slow start
+E1Sync     "Env1 sync"     0 1    0    switch Seconds Beats            | Beats: each time is read as beats of the song's tempo (1 s = 1 beat)
+group Mod env 2
+E2Delay    "Env2 delay"    0 1000 0    pow 0 10 3 s 3                  | Delay before the attack
+E2A        "Env2 attack"   0 1000 300  time 0.0005 20                  | Attack time
+E2Hold     "Env2 hold"     0 1000 0    pow 0 10 3 s 3                  | Hold at the top
+E2D        "Env2 decay"    0 1000 600  time 0.0005 20                  | Decay time
+E2S        "Env2 sustain"  0 1000 0    pct                             | Sustain level
+E2R        "Env2 release"  0 1000 500  time 0.0005 20                  | Release time
+E2ACurve   "Env2 att curve" 0 1000 500 bip                             | Attack shape: −100 % fast start, 0 straight, +100 % slow start
+E2DCurve   "Env2 dec curve" 0 1000 200 bip                             | Decay shape: −100 % fast start, 0 straight, +100 % slow start
+E2RCurve   "Env2 rel curve" 0 1000 200 bip                             | Release shape: −100 % fast start, 0 straight, +100 % slow start
+E2Sync     "Env2 sync"     0 1    0    switch Seconds Beats            | Beats: each time is read as beats of the song's tempo (1 s = 1 beat)
+group LFO 1
+L1Shape    "LFO1 shape"    0 6    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth | Waveform
+L1Rate     "LFO1 rate"     0 1000 500  freq 0.02 50                    | Rate (free)
+L1Sync     "LFO1 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
+L1Retrig   "LFO1 retrig"   0 1    1    switch                          | Restart with each note (one per note); off: one free LFO for all notes
+L1Phase    "LFO1 phase"    0 1000 0    lin 0 360 ° 0                   | Start phase (retrig)
+L1Fade     "LFO1 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
+group LFO 2
+L2Shape    "LFO2 shape"    0 6    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth | Waveform
+L2Rate     "LFO2 rate"     0 1000 500  freq 0.02 50                    | Rate (free)
+L2Sync     "LFO2 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
+L2Retrig   "LFO2 retrig"   0 1    1    switch                          | Restart with each note (one per note); off: one free LFO for all notes
+L2Phase    "LFO2 phase"    0 1000 0    lin 0 360 ° 0                   | Start phase (retrig)
+L2Fade     "LFO2 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
+group LFO 3
+L3Shape    "LFO3 shape"    0 6    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth | Waveform
+L3Rate     "LFO3 rate"     0 1000 500  freq 0.02 50                    | Rate (free)
+L3Sync     "LFO3 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
+L3Retrig   "LFO3 retrig"   0 1    1    switch                          | Restart with each note (one per note); off: one free LFO for all notes
+L3Phase    "LFO3 phase"    0 1000 0    lin 0 360 ° 0                   | Start phase (retrig)
+L3Fade     "LFO3 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
+group LFO 4
+L4Shape    "LFO4 shape"    0 6    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth | Waveform
+L4Rate     "LFO4 rate"     0 1000 500  freq 0.02 50                    | Rate (free)
+L4Sync     "LFO4 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
+L4Retrig   "LFO4 retrig"   0 1    1    switch                          | Restart with each note (one per note); off: one free LFO for all notes
+L4Phase    "LFO4 phase"    0 1000 0    lin 0 360 ° 0                   | Start phase (retrig)
+L4Fade     "LFO4 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
+group Macros
+M1       "Macro 1"       0 1000 0    pct                             | A knob for routes to follow
+M2       "Macro 2"       0 1000 0    pct                             | A knob for routes to follow
+M3       "Macro 3"       0 1000 0    pct                             | A knob for routes to follow
+M4       "Macro 4"       0 1000 0    pct                             | A knob for routes to follow
+group Routes
+R1Src      "R1 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 1: what modulates
+R1Dst      "R1 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 1: what it moves
+R1Amt      "R1 amount"     0 1000 500  bip                             | Route 1: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R2Src      "R2 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 2: what modulates
+R2Dst      "R2 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 2: what it moves
+R2Amt      "R2 amount"     0 1000 500  bip                             | Route 2: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R3Src      "R3 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 3: what modulates
+R3Dst      "R3 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 3: what it moves
+R3Amt      "R3 amount"     0 1000 500  bip                             | Route 3: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R4Src      "R4 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 4: what modulates
+R4Dst      "R4 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 4: what it moves
+R4Amt      "R4 amount"     0 1000 500  bip                             | Route 4: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R5Src      "R5 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 5: what modulates
+R5Dst      "R5 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 5: what it moves
+R5Amt      "R5 amount"     0 1000 500  bip                             | Route 5: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R6Src      "R6 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 6: what modulates
+R6Dst      "R6 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 6: what it moves
+R6Amt      "R6 amount"     0 1000 500  bip                             | Route 6: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R7Src      "R7 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 7: what modulates
+R7Dst      "R7 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 7: what it moves
+R7Amt      "R7 amount"     0 1000 500  bip                             | Route 7: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R8Src      "R8 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 8: what modulates
+R8Dst      "R8 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 8: what it moves
+R8Amt      "R8 amount"     0 1000 500  bip                             | Route 8: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R9Src      "R9 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 9: what modulates
+R9Dst      "R9 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 9: what it moves
+R9Amt      "R9 amount"     0 1000 500  bip                             | Route 9: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R10Src      "R10 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 10: what modulates
+R10Dst      "R10 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 10: what it moves
+R10Amt      "R10 amount"     0 1000 500  bip                             | Route 10: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R11Src      "R11 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 11: what modulates
+R11Dst      "R11 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 11: what it moves
+R11Amt      "R11 amount"     0 1000 500  bip                             | Route 11: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R12Src      "R12 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 12: what modulates
+R12Dst      "R12 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 12: what it moves
+R12Amt      "R12 amount"     0 1000 500  bip                             | Route 12: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R13Src      "R13 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 13: what modulates
+R13Dst      "R13 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 13: what it moves
+R13Amt      "R13 amount"     0 1000 500  bip                             | Route 13: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R14Src      "R14 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 14: what modulates
+R14Dst      "R14 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 14: what it moves
+R14Amt      "R14 amount"     0 1000 500  bip                             | Route 14: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R15Src      "R15 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 15: what modulates
+R15Dst      "R15 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 15: what it moves
+R15Amt      "R15 amount"     0 1000 500  bip                             | Route 15: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R16Src      "R16 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 16: what modulates
+R16Dst      "R16 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 16: what it moves
+R16Amt      "R16 amount"     0 1000 500  bip                             | Route 16: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)

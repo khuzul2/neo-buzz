@@ -23,12 +23,12 @@ namespace ReBuzzTests
     /// reaches a managed machine whole.
     /// </summary>
     [Apartment(ApartmentState.STA)]
-    public class NeoMachineTests
+    public partial class NeoMachineTests
     {
         // ------------------------------------------------------------------ machines
 
         /// <summary>A Neo machine as the solution build made it.</summary>
-        internal sealed class NeoInfo(string name, string shortName, bool generator, bool multiIo = false) : ITestMachineInfo
+        internal sealed class NeoInfo(string name, string shortName, bool generator, bool multiIo = false, string builtPath = null) : ITestMachineInfo
         {
             public string Name { get; } = name;
             public bool Generator { get; } = generator;
@@ -71,6 +71,7 @@ namespace ReBuzzTests
             {
                 get
                 {
+                    if (builtPath != null) return builtPath;
                     var bin = File.ReadLines(TestAssemblyDirectory.Value.AddFileName("ReBuzzLocation.txt").ToString()).First();
                     return Path.Combine(bin, "Gear", Generator ? "Generators" : "Effects", DllName);
                 }
@@ -103,6 +104,8 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Drums = new("Neo Drums", "Drums", true);
         // The filter effect (docs/specs/mcp-server.md §12.5): Neo Poly's filters with an envelope follower and an LFO.
         internal static readonly NeoInfo Filter = new("Neo Filter", "Filter", false);
+        // The hybrid wavetable synth (docs/specs/dye-essence.md): a Neo-family machine with its own name.
+        internal static readonly NeoInfo Dye = new("Dye Essence", "Dye", true);
         // The clipper (docs/specs/mastering-tools.md §5.1): oversampled curves into a ceiling no sample passes.
         internal static readonly NeoInfo Clipper = new("Neo Clipper", "Clipper", false);
         // The transient shaper and the low-end shaper (docs/specs/mastering-tools.md §5.4, §5.5).
@@ -1273,6 +1276,51 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void DyeEssencePlaysItsTablesAndAUserTableAndShowsItsEditor()
+        {
+            using var rig = new Rig(Dye);
+            rig.Notes(BuzzNote(4, 0), BuzzNote(4, 7));
+            var basic = rig.PlayUntilSound(0.3);
+            TestContext.Out.WriteLine($"init {Db(Rms(basic)):F1} dB");
+            Assert.That(Rms(basic), Is.GreaterThan(1e-3), "the built-in table sounds once built");
+
+            // A user table for slot B: four frames from a WAV file, kept in the machine state.
+            var machine = rig.Effect.ManagedMachine;
+            var asm = machine.GetType().Assembly;
+            var frames = new float[4 * 2048];
+            for (int f = 0; f < 4; f++)
+                for (int i = 0; i < 2048; i++)
+                    for (int h = 1; h <= 1 + 4 * f; h++) frames[f * 2048 + i] += (float)(Math.Sin(2 * Math.PI * h * i / 2048) / h);
+            var wav = (byte[])asm.GetType("NeoBuzz.Wave.WavReader")!.GetMethod("Write")!.Invoke(null, new object[] { frames, 48000, 2048 })!;
+            var path = Path.Combine(Path.GetTempPath(), "Dye Essence test table.wav");
+            File.WriteAllBytes(path, wav);
+            machine.GetType().GetMethod("LoadUserTable", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(machine, new object[] { 1, path });
+            var stateProperty = machine.GetType().GetProperty("MachineState")!;
+            var state = stateProperty.GetValue(machine)!;
+            Assert.That((string)state.GetType().GetProperty("TableBName")!.GetValue(state)!, Is.EqualTo("Dye Essence test table"));
+            Assert.That(((string)state.GetType().GetProperty("TableBData")!.GetValue(state)!).Length, Is.GreaterThan(4 * 2048 * 4));
+
+            // Through XML, as songs store it, into the machine again.
+            var xml = new System.Xml.Serialization.XmlSerializer(state.GetType());
+            using var ms = new MemoryStream();
+            xml.Serialize(ms, state);
+            ms.Position = 0;
+            stateProperty.SetValue(machine, xml.Deserialize(ms));
+
+            rig.Param("A engine").SetValue(0, 0);   // Off: only slot B sounds
+            rig.Param("B engine").SetValue(0, 1);
+            rig.Param("B table").SetValue(0, 10);   // User
+            rig.Param("B position").SetValue(0, 1000);
+            rig.Play(0.1);
+            var user = rig.Play(0.3);
+            TestContext.Out.WriteLine($"slot B's user table {Db(Rms(user)):F1} dB");
+            Assert.That(Rms(user), Is.GreaterThan(1e-3), "the user table sounds after a state round trip");
+
+            var size = ShootEditor(rig.Effect, "dye-essence-editor");
+            TestContext.Out.WriteLine($"[notice] Dye Essence in ReBuzz: init {Db(Rms(basic)):F1} dB, slot B's user table {Db(Rms(user)):F1} dB after a state round trip, WPF editor {size.Width:0} x {size.Height:0}");
+        }
+
+        [Test]
         public void NeoFm6PlaysLoadsADx7BankAndShowsItsEditor()
         {
             using var rig = new Rig(Fm6);
@@ -1591,7 +1639,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Clipper, Transient, LowEnd })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, Clipper, Transient, LowEnd })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");

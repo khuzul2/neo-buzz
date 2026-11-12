@@ -48,6 +48,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Scope", "NeoScopeEditor", "neo-scope-editor", 1098, 458),
             ("Neo Drums", "NeoDrumsEditor", "neo-drums-editor", 1232, 738),
             ("Neo Filter", "NeoFilterEditor", "neo-filter-editor", 802, 620),
+            ("Dye Essence", "DyeEssenceEditor", "dye-essence-editor", 1299, 1672),
             ("Neo Clipper", "NeoClipperEditor", "neo-clipper-editor", 956, 277),
             ("Neo Transient", "NeoTransientEditor", "neo-transient-editor", 1020, 311),
             ("Neo Low End", "NeoLowEndEditor", "neo-low-end-editor", 1032, 277),
@@ -1428,9 +1429,15 @@ namespace ReBuzz.Studio.Tests
             var sampler = Add("Neo Sampler", "Scope Kick", -0.6f, 0);
             var scope = Add("Neo Scope", "Scope", 0, 0);
             bool looping = Core.Looping;
-            int loopStart = song.LoopStart, loopEnd = song.LoopEnd, songEnd = song.SongEnd;
+            int loopStart = song.LoopStart, loopEnd = song.LoopEnd, songEnd = song.SongEnd, bpm = Core.BPM, tpb = Core.TPB;
             try
             {
+                // Each pass draws the same sweep from a known start: 126 BPM at 4 ticks a beat (5250 samples a tick at
+                // 44.1 kHz), and the transport starting on a tick (below). The engine keeps its place in the tick while
+                // stopped and rescales it when the tempo changes, so earlier tests (ExitTests types 132 BPM) left it
+                // anywhere: from 1458 samples into a tick the second pass drew another sweep than the third.
+                Core.BPM = 126;
+                Core.TPB = 4;
                 song.ConnectMachines(sampler, scope, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
                 song.ConnectMachines(scope, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
                 Global(sampler, "Mode").SetValue(0, 1);                       // Kit: zone 1 on C2
@@ -1453,9 +1460,13 @@ namespace ReBuzz.Studio.Tests
                 Run(0.1);
                 var quiet = Frame(window);
 
-                // ---- Synced: three passes of the loop.
+                // ---- Synced: three passes of the loop, the transport starting on a tick.
                 var sweeps = new List<(long Number, double Start, bool Synced, int Filled, int Columns, float[] Max, float[] Min)>();
-                lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                lock (ReBuzzCore.AudioLock)
+                {
+                    ReBuzzCore.masterInfo.PosInTick = 0;
+                    Core.Playing = true;
+                }
                 double bar = 16.0 * ReBuzzCore.masterInfo.SamplesPerTick / ReBuzzCore.masterInfo.SamplesPerSec;
                 for (int k = 0; k < (int)(3.6 * bar / 0.05); k++)
                 {
@@ -1610,6 +1621,8 @@ namespace ReBuzz.Studio.Tests
                 song.LoopEnd = loopEnd;
                 song.LoopStart = loopStart;
                 song.SongEnd = songEnd;
+                Core.BPM = bpm;
+                Core.TPB = tpb;
                 foreach (var seq in song.Sequences.Where(q => q.Machine == sampler).ToList()) song.RemoveSequence(seq);
                 Remove(scope, sampler);
             }

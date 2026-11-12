@@ -41,12 +41,17 @@ namespace NeoBuzz.MachineTests
             ["Neo Drums"] = (NeoBuzz.Drums.Params.Table, (v, x) => RenderDrums(v, x.Length)),
             // mcp-server.md §12.5: the filter effect (its LFO free-running here: no song plays).
             ["Neo Filter"] = (NeoBuzz.Filter.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Filter.FilterEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
+            // docs/specs/dye-essence.md: a Neo-family machine with its own name.
+            ["Dye Essence"] = (NeoBuzz.DyeEssence.Params.Table, (v, x) => RenderSynth(DyeEngine(v), (e, l, r, n) => ((NeoBuzz.DyeEssence.DyeEngine)e).Process(l, r, n), x.Length)),
             // mastering-tools.md §5.1: the clipper.
             ["Neo Clipper"] = (NeoBuzz.Clipper.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Clipper.ClipperEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             // mastering-tools.md §5.4, §5.5: the transient shaper and the low-end shaper.
             ["Neo Transient"] = (NeoBuzz.Transient.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Transient.TransientEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             ["Neo Low End"] = (NeoBuzz.LowEnd.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.LowEnd.LowEndEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
         };
+
+        /// <summary>The Neo-family machine folders: Neo* and Dye Essence (docs/specs/dye-essence.md §2).</summary>
+        internal static bool IsNeoFamily(string folder) => Path.GetFileName(folder).StartsWith("Neo") || Path.GetFileName(folder) == "DyeEssence";
 
         // The mix and master batch: one engine per preset render, keyed by its parameter values.
         static readonly Dictionary<ParamValues, object> fresh = new(ReferenceEqualityComparer.Instance);
@@ -61,7 +66,7 @@ namespace NeoBuzz.MachineTests
             return (T)e;
         }
 
-        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums" };
+        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence" };
 
         /// <summary>
         /// Neo Sampler: the song's slots 1–16 hold the built-in drums and the sine (the presets that
@@ -116,6 +121,12 @@ namespace NeoBuzz.MachineTests
             // Built-in tables build in the background in the machine; here, before the first note.
             for (int i = 0; i < NeoBuzz.Wave.Tables.Names.Length; i++) NeoBuzz.Wave.Tables.GetNow(i);
             return new NeoBuzz.Wave.WaveEngine(v);
+        }
+
+        static NeoBuzz.DyeEssence.DyeEngine DyeEngine(ParamValues v)
+        {
+            for (int i = 0; i < NeoBuzz.DyeEssence.TableBank.Count; i++) NeoBuzz.DyeEssence.TableBank.GetNow(i);
+            return new NeoBuzz.DyeEssence.DyeEngine(v);
         }
 
         /// <summary>A chord (C3 E3 G3 B3) held for two thirds of the length, then released.</summary>
@@ -189,7 +200,7 @@ namespace NeoBuzz.MachineTests
         {
             foreach (var file in Directory.GetFiles(MachinesDir(), "*.prs.xml", SearchOption.AllDirectories))
             {
-                if (!Path.GetFileName(Path.GetDirectoryName(file)!).StartsWith("Neo")) continue;
+                if (!IsNeoFamily(Path.GetDirectoryName(file)!)) continue;
                 var doc = XDocument.Load(file);
                 foreach (var item in doc.Root!.Elements("Item"))
                 {
@@ -213,7 +224,7 @@ namespace NeoBuzz.MachineTests
             int count = 0;
             foreach (var file in Directory.GetFiles(MachinesDir(), "*.prs.xml", SearchOption.AllDirectories))
             {
-                if (!Path.GetFileName(Path.GetDirectoryName(file)!).StartsWith("Neo")) continue;
+                if (!IsNeoFamily(Path.GetDirectoryName(file)!)) continue;
                 var doc = XDocument.Load(file);
                 foreach (var item in doc.Root!.Elements("Item"))
                 {

@@ -3,23 +3,26 @@
  "gear": "Pedal SH101",
  "kind": "generator",
  "status": "curated",
- "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed",
+ "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed Updated by hand (2026-11-06, mcp-server.md §12.15, U6 for the Pedal synths) for MIDI input.",
  "type": "monosynth",
  "summary": "SH-101-style monosynth: pulse, saw, sub and noise into a resonant 4-pole ladder low-pass, ADSR, LFO and glide. For acid and sub basses, leads, plucks and sweeps.",
  "quirks": [
-  "Monophonic, one track: notes_write writes one note at a time (a chord plays its last note).",
+  "Monophonic: MIDI notes (notes_write's default) play the last key down, and going back to a key still held when it is released (a chord plays its last note); velocity sets the level (velocity / 127), pitch bend moves it ±2 semitones, the mod wheel brings in vibrato up to ±1 semitone (or VCO Mod's, if more) and the sustain pedal holds the note.",
+  "Its Note track (notes_write with input \"tracks\") still plays as before, for old songs: one note at a time on its one track, at full level.",
   "Glide only slides between overlapping notes; a note after silence starts at its own pitch (PedalSH101.cs TriggerNote).",
   "The pulse wave is on by default (Pulse Lvl 79%) and the saw off.",
-  "Sub Lvl at its maximum peaks above 0 dBFS (+2.7 dBFS in the profile): lower Volume when the sub is up."
+  "Sub Lvl at its maximum peaks above 0 dBFS (+0.7 dBFS in the profile at velocity 100, about +2.8 at full level, as a track's note plays): lower Volume when the sub is up."
  ],
  "evidence": [
   "ExternalMachines/source/thepedal/pedal-sh101/README.md — architecture and parameter table",
   "ExternalMachines/source/thepedal/pedal-sh101/PedalSH101.cs — DescribeValue texts and the scaling in Work",
-  "profile (tools/machine-profiler.py, linux 2026-11-03) — A4 at 440 Hz, monophonic, level, hot with Sub Lvl at its maximum"
+  "profile (tools/machine-profiler.py, linux 2026-11-03) — A4 at 440 Hz, monophonic, level, hot with Sub Lvl at its maximum",
+  "ExternalMachines/source/thepedal/pedal-sh101/MidiIn.cs — MIDI notes and controllers (§12.15)",
+  "NeoBuzz.PedalTests/PedalSynthTests.cs — MIDI against a track's note, last-note priority, velocity, bend, mod wheel, sustain (§12.15)"
  ],
  "tracks": 1,
  "notes": {
-  "input": "tracks",
+  "input": "midi",
   "pitch_offset": 0,
   "pitched": true,
   "polyphony": 1
@@ -27,20 +30,20 @@
  "health": {
   "status": "warn",
   "problems": [
-   "hot (loud but steady) with Sub Lvl at its maximum (100%): +2.7 dBFS peak"
+   "hot (loud but steady) with Sub Lvl at its maximum (100%): +0.7 dBFS peak"
   ],
   "hot": true
  },
  "profile": {
   "level": {
    "note": "A4 at velocity 100, 1.5 beats",
-   "integrated_lufs": -5.9,
-   "sample_peak_dbfs": -4.29,
-   "true_peak_dbtp": -4.29
+   "integrated_lufs": -8,
+   "sample_peak_dbfs": -6.37,
+   "true_peak_dbtp": -6.37
   },
   "level_test": {
    "defaults": {
-    "peak_dbfs": -4.29,
+    "peak_dbfs": -6.37,
     "growth_db": -0.01,
     "verdict": "ok"
    },
@@ -50,20 +53,21 @@
      "verdict": "silent"
     },
     "max": {
-     "peak_dbfs": 10.86,
-     "growth_db": 1.09,
+     "peak_dbfs": 39.0,
+     "growth_db": 3.14,
+     "over_seconds": 30,
      "verdict": "hot"
     }
    },
    "swept_because": [
     "every parameter at its maximum at once: hot"
    ],
-   "renders": 38
+   "renders": 40
   },
   "sweeps": {
    "Sub Lvl": {
     "max": {
-     "peak_dbfs": 2.74,
+     "peak_dbfs": 0.69,
      "growth_db": -0.01,
      "verdict": "hot",
      "raw": 127,
@@ -72,7 +76,7 @@
    }
   },
   "envelope": {
-   "peak_db": -5.6,
+   "peak_db": -7.67,
    "attack_s": 0.005,
    "final_db": -2.1,
    "length_s": null,
@@ -86,13 +90,13 @@
    "note": "A4 at velocity 100, held 2 s"
   },
   "velocity": {
-   "range_db": 0.0,
-   "db_per_doubling": 0.0,
-   "curve": "none (velocity doesn't change its level)",
+   "range_db": 17.99,
+   "db_per_doubling": 6.02,
+   "curve": "linear in amplitude (about 6 dB per doubling)",
    "levels_db": {
-    "16": -5.74,
-    "32": -5.74,
-    "64": -5.74,
+    "16": -23.73,
+    "32": -17.72,
+    "64": -11.7,
     "127": -5.74
    }
   },
@@ -101,13 +105,13 @@
     "pitch": 33.0,
     "centroid_hz": 446,
     "peakiness_db": 60.0,
-    "tprom_db": 4.1,
+    "tprom_db": 4.2,
     "tprom_hz": 630,
     "env_attack_s": 0.01,
     "env_half_s": 0.005,
     "env_final_db": -3.74,
     "env_release_s": 0.31,
-    "env_peak_db": -3.07,
+    "env_peak_db": -5.14,
     "env_bright_early_hz": 163.1,
     "env_bright_mid_hz": 175.5,
     "env_bright_late_hz": 175.4,

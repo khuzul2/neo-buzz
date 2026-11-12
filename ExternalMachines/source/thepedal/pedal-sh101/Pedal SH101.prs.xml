@@ -60,7 +60,7 @@
         <Parameter Name="LFO Delay" Group="1" Index="21" Track="0" Value="0" />
         <Parameter Name="Glide" Group="1" Index="22" Track="0" Value="0" />
         <Parameter Name="Tune" Group="1" Index="23" Track="0" Value="50" />
-        <Parameter Name="Volume" Group="1" Index="24" Track="0" Value="96" />
+        <Parameter Name="Volume" Group="1" Index="24" Track="0" Value="60" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -93,7 +93,7 @@
         <Parameter Name="LFO Delay" Group="1" Index="21" Track="0" Value="0" />
         <Parameter Name="Glide" Group="1" Index="22" Track="0" Value="0" />
         <Parameter Name="Tune" Group="1" Index="23" Track="0" Value="50" />
-        <Parameter Name="Volume" Group="1" Index="24" Track="0" Value="100" />
+        <Parameter Name="Volume" Group="1" Index="24" Track="0" Value="66" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -159,7 +159,7 @@
         <Parameter Name="LFO Delay" Group="1" Index="21" Track="0" Value="0" />
         <Parameter Name="Glide" Group="1" Index="22" Track="0" Value="0" />
         <Parameter Name="Tune" Group="1" Index="23" Track="0" Value="50" />
-        <Parameter Name="Volume" Group="1" Index="24" Track="0" Value="100" />
+        <Parameter Name="Volume" Group="1" Index="24" Track="0" Value="85" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -522,7 +522,7 @@
         <Parameter Name="LFO Delay" Group="1" Index="21" Track="0" Value="0" />
         <Parameter Name="Glide" Group="1" Index="22" Track="0" Value="0" />
         <Parameter Name="Tune" Group="1" Index="23" Track="0" Value="50" />
-        <Parameter Name="Volume" Group="1" Index="24" Track="0" Value="100" />
+        <Parameter Name="Volume" Group="1" Index="24" Track="0" Value="95" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -555,7 +555,7 @@
         <Parameter Name="LFO Delay" Group="1" Index="21" Track="0" Value="0" />
         <Parameter Name="Glide" Group="1" Index="22" Track="0" Value="0" />
         <Parameter Name="Tune" Group="1" Index="23" Track="0" Value="50" />
-        <Parameter Name="Volume" Group="1" Index="24" Track="0" Value="90" />
+        <Parameter Name="Volume" Group="1" Index="24" Track="0" Value="83" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -687,7 +687,7 @@
         <Parameter Name="LFO Delay" Group="1" Index="21" Track="0" Value="0" />
         <Parameter Name="Glide" Group="1" Index="22" Track="0" Value="0" />
         <Parameter Name="Tune" Group="1" Index="23" Track="0" Value="50" />
-        <Parameter Name="Volume" Group="1" Index="24" Track="0" Value="110" />
+        <Parameter Name="Volume" Group="1" Index="24" Track="0" Value="91" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -720,7 +720,7 @@
         <Parameter Name="LFO Delay" Group="1" Index="21" Track="0" Value="0" />
         <Parameter Name="Glide" Group="1" Index="22" Track="0" Value="0" />
         <Parameter Name="Tune" Group="1" Index="23" Track="0" Value="50" />
-        <Parameter Name="Volume" Group="1" Index="24" Track="0" Value="100" />
+        <Parameter Name="Volume" Group="1" Index="24" Track="0" Value="124" />
       </Parameters>
       <Attributes />
       <Comment></Comment>

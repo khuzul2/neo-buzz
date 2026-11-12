@@ -18,6 +18,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;   // fork (neo-buzz): MethodImplOptions.AggressiveOptimization
 using BuzzGUI.Interfaces;
 using Buzz.MachineInterface;
 
@@ -52,6 +53,24 @@ namespace WDE.PedalM1
         Func<int,int> _ownNotePValues;
         Func<int,int> _ownVolumePValues;
         bool _pollReady;
+
+        // ── Fork (neo-buzz, docs/specs/mcp-server.md §12.15): MIDI notes and controllers (MidiIn.cs) ───────
+        // A MIDI note takes a free voice (the highest first: tracks take the first ones), else the one released
+        // longest ago, else the oldest, and plays at its own velocity (velocity / 127, as the Volume column's).
+        // Pitch bend ±2 semitones, the mod wheel brings in LFO1's vibrato up to ±1 semitone (LFO1 to Pitch's full
+        // depth, the M1's joystick), the sustain pedal holds MIDI notes. A track's note plays exactly as before.
+        readonly MidiIn     _midi          = new MidiIn();
+        readonly MidiVoices _midiVoices    = new MidiVoices(MAX_VOICES_CONST);
+        readonly bool[]     _voiceFree     = new bool[MAX_VOICES_CONST];
+        readonly bool[]     _voiceReleased = new bool[MAX_VOICES_CONST];
+        readonly bool[]     _voiceSkip     = new bool[MAX_VOICES_CONST];   // finished for this whole block (Voice.Finished)
+
+        // ── Fork (neo-buzz, §12.15): Volume, the oscillators' levels, Cutoff (as its 0…1 position) and Resonance
+        // glide to a new setting over 20 ms (ParamGlide, below); a setting that doesn't move is the same number as
+        // before. The first block, and a new sample rate, start at the setting.
+        ParamGlide _gVolume, _gLevel1, _gLevel2, _gCutoff, _gReso;
+        bool _glidesSet;
+        int  _glideSr;
 
         public PedalM1Machine(IBuzzMachineHost host)
         {
@@ -511,8 +530,94 @@ namespace WDE.PedalM1
         }
 
         // ════════════════════════════════════════════════════════════════
+        // Fork (neo-buzz, docs/specs/mcp-server.md §12.15): MIDI from ReBuzz
+        // (a keyboard, a pattern's MIDI column), queued and applied at the
+        // start of the next block.
+        // ════════════════════════════════════════════════════════════════
+
+        /// <summary>ReBuzz: a MIDI note for this machine (velocity 0 releases).</summary>
+        public void MidiNote(int channel, int value, int velocity) => _midi.Note(value, velocity);
+
+        /// <summary>ReBuzz: a MIDI controller, pitch bend (0xE0 / 0xFF) or channel pressure (0xD0 / 0xFC).</summary>
+        public void MidiControlChange(int ctrl, int channel, int value) => _midi.Controller(ctrl, value);
+
+        void ProcessMidi()
+        {
+            while (_midi.Next(out int kind, out int a, out int b))
+            {
+                if (kind == MidiIn.NoteOn) MidiNoteOn(a, b);
+                else if (kind == MidiIn.NoteOff) MidiNoteOff(a);
+                else switch (a)
+                {
+                    case MidiIn.AllNotesOff:
+                        ReleaseMidiVoices();
+                        break;
+                    case MidiIn.AllSoundOff:
+                        ReleaseMidiVoices();
+                        ForceFadeAllVoices();
+                        break;
+                    default:
+                        if (_midi.Apply(a, b))   // the sustain pedal came up
+                            for (int v = 0; v < MAX_VOICES_CONST; v++)
+                                if (_midiVoices.Sustained[v]) ReleaseMidiVoice(v);
+                        break;
+                }
+            }
+        }
+
+        void MidiNoteOn(int key, int velocity)
+        {
+            int t = _midiVoices.Playing(key, MAX_VOICES_CONST);   // the same key again: its voice
+            if (t < 0)
+            {
+                for (int i = 0; i < MAX_VOICES_CONST; i++)
+                {
+                    var voice = _voices[i];
+                    _voiceFree[i]     = !voice.IsActive || voice.Finished;
+                    _voiceReleased[i] = !voice.HasPendingTrigger
+                                     && (!voice.AmpEnv.IsActive || voice.AmpEnv.CurrentStage == Envelope.Stage.Release);
+                }
+                t = _midiVoices.Pick(MAX_VOICES_CONST, _voiceFree, _voiceReleased);
+            }
+            // A Buzz note byte for the key (A4 = 69 is A-5, 0x5A), as a track's note gives it.
+            byte buzz = (byte)(((key / 12) << 4) | (key % 12 + 1));
+            TriggerVoice(t, buzz, true, velocity / 127f);
+            _midiVoices.Start(t, key);
+        }
+
+        void MidiNoteOff(int key)
+        {
+            int t = _midiVoices.Playing(key, MAX_VOICES_CONST);
+            if (t < 0 || !_midiVoices.Held[t]) return;
+            if (_midi.Pedal)
+            {
+                _midiVoices.Held[t]      = false;
+                _midiVoices.Sustained[t] = true;
+                return;
+            }
+            ReleaseMidiVoice(t);
+        }
+
+        void ReleaseMidiVoice(int t)
+        {
+            var v = _voices[t];
+            // A note still waiting for its voice's fade-out doesn't start after its own note off.
+            if (v.HasPendingTrigger && v.PendingFromMidi) v.HasPendingTrigger = false;
+            v.AmpEnv.NoteOff();
+            v.FilterEnv.NoteOff();
+            _midiVoices.Clear(t);
+        }
+
+        void ReleaseMidiVoices()
+        {
+            for (int t = 0; t < MAX_VOICES_CONST; t++)
+                if (_midiVoices.Key[t] >= 0) ReleaseMidiVoice(t);
+        }
+
+        // ════════════════════════════════════════════════════════════════
         // Work — generator. Writes ±32768 directly (PedalComp §1).
         // ════════════════════════════════════════════════════════════════
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]   // fork (neo-buzz): never compiled on the audio thread
         public bool Work(Sample[] output, int n, WorkModes mode)
         {
             int sr = host?.MasterInfo?.SamplesPerSec ?? 48000;
@@ -520,11 +625,21 @@ namespace WDE.PedalM1
             // Transport stop falling-edge (Core §27).
             bool nowPlaying = _wasPlaying;
             try { nowPlaying = Buzz?.Playing ?? false; } catch { }
-            if (_wasPlaying && !nowPlaying) ForceFadeAllVoices();
+            if (_wasPlaying && !nowPlaying)
+            {
+                ForceFadeAllVoices();
+                for (int t = 0; t < MAX_VOICES_CONST; t++) _midiVoices.Clear(t);   // fork: MIDI notes too
+            }
             _wasPlaying = nowPlaying;
+
+            // Fork (neo-buzz, §12.15): with no voice sounding, a changed setting needs no glide: the next note starts at it.
+            bool wasIdle = true;
+            for (int t = 0; t < MAX_VOICES_CONST; t++)
+                if (!_voices[t].Finished) { wasIdle = false; break; }
 
             // Drain pending pattern events.
             DrainPendingEvents(sr);
+            ProcessMidi();              // fork (neo-buzz, §12.15): after the tracks' notes
 
             // Resolve cached coefficients that are constant across this buffer.
             float ampA  = TimeMs(AmpAttack);
@@ -539,7 +654,8 @@ namespace WDE.PedalM1
             float filtVelN = FilterVel / 127f;
             float keyTrkN  = (KeyTrack - 64) / 64f;       // -1..+1 around 64
             float fegIntN  = FilterEgInt / 127f;          // 0..1 → octaves of cutoff sweep
-            float cutoffBase = CutoffHz(Cutoff);          // Hz
+            float cutoffN    = Cutoff / 127f;             // fork: glides as this
+            float cutoffBase = CutoffHzAt(cutoffN);       // Hz
             float resN      = Resonance / 127f;
             float volN      = Volume / 127f;
 
@@ -547,12 +663,36 @@ namespace WDE.PedalM1
             float lvl1    = (oscMode == 1) ? 0f : Osc1Level / 127f;
             float lvl2    = (oscMode == 0) ? 0f : Osc2Level / 127f;
 
+            // Fork (neo-buzz, §12.15): glide to the settings; the first time, at a new rate, and from silence, start there.
+            if (!_glidesSet || sr != _glideSr || wasIdle)
+            {
+                _gVolume.Snap(volN);
+                _gLevel1.Snap(lvl1);
+                _gLevel2.Snap(lvl2);
+                _gCutoff.Snap(cutoffN);
+                _gReso.Snap(resN);
+                _glidesSet = true;
+                _glideSr   = sr;
+            }
+            else
+            {
+                int len = (int)(ParamGlide.Ms * 0.001f * sr);
+                _gVolume.Set(volN, len);
+                _gLevel1.Set(lvl1, len);
+                _gLevel2.Set(lvl2, len);
+                _gCutoff.Set(cutoffN, len);
+                _gReso.Set(resN, len);
+            }
+            bool gliding = _gVolume.Left > 0 || _gLevel1.Left > 0 || _gLevel2.Left > 0 || _gCutoff.Left > 0 || _gReso.Left > 0;
+
             // LFO update params (per voice — same coefs for all voices).
             float lfo1Hz   = LfoSpeedHz(Lfo1Speed);
             float lfo1DlMs = TimeMs(Lfo1Delay);
             float lfo1FdMs = TimeMs(Lfo1Fade);
             LfoWave lfo1Wv = (LfoWave)Lfo1Wave;
             float lfo1ToP  = Lfo1ToPitch / 127f;          // semitones (×1)
+            if (_midi.Mod > lfo1ToP) lfo1ToP = _midi.Mod; // fork (neo-buzz, §12.15): the mod wheel's vibrato
+            float bendSemi = _midi.Bend * MidiIn.BendSemitones;   // fork: pitch bend (0 without MIDI)
             float lfo1ToF  = Lfo1ToVdf  / 127f;           // octaves (×3)
             float lfo1ToA  = Lfo1ToVda  / 127f;
 
@@ -584,14 +724,34 @@ namespace WDE.PedalM1
 
             bool any = false;
 
+            // Fork (neo-buzz, §12.15): a voice whose note has ended plays exact silence until its next note (which
+            // only comes at a block's start): left out of the loop, only its LFOs keep time.
+            for (int vi = 0; vi < MAX_VOICES_CONST; vi++)
+            {
+                var v = _voices[vi];
+                _voiceSkip[vi] = v.IsActive && v.Finished;
+                if (_voiceSkip[vi]) Lfo.Skip(v.Lfo1, v.Lfo2, n);
+            }
+
             for (int i = 0; i < n; i++)
             {
                 float sumL = 0f, sumR = 0f;
 
+                // Fork (neo-buzz, §12.15): while a setting glides, these follow it sample by sample.
+                if (gliding)
+                {
+                    volN = _gVolume.Next();
+                    lvl1 = _gLevel1.Next();
+                    lvl2 = _gLevel2.Next();
+                    float cn = _gCutoff.Next();
+                    if (cn != cutoffN) { cutoffN = cn; cutoffBase = CutoffHzAt(cn); }
+                    resN = _gReso.Next();
+                }
+
                 for (int vi = 0; vi < MAX_VOICES_CONST; vi++)
                 {
                     var v = _voices[vi];
-                    if (!v.IsActive) continue;
+                    if (!v.IsActive || _voiceSkip[vi]) continue;
                     any = true;
 
                     // ── Per-voice modulation sources ────────────────────
@@ -619,8 +779,8 @@ namespace WDE.PedalM1
                         && v.CurrentGain <= Voice.NEAR_ZERO
                         && v.TargetGain == 0f)
                     {
-                        FireTriggerNow(vi, v.PendingTriggerNote);
-                        v.HasPendingTrigger = false;
+                        v.HasPendingTrigger = false;   // fork: before the trigger, which reads the pending note's
+                        FireTriggerNow(vi, v.PendingTriggerNote, v.PendingFromMidi, v.PendingMidiVelocity);
                     }
 
                     // Portamento — approach TargetMidi.
@@ -633,7 +793,8 @@ namespace WDE.PedalM1
                     // Pitch with LFO modulation (semitones).
                     double pitchMidi = v.CurrentMidi
                                      + lfo1 * lfo1ToP
-                                     + lfo2 * lfo2ToP;
+                                     + lfo2 * lfo2ToP
+                                     + bendSemi;          // fork (neo-buzz, §12.15)
 
                     // Update both osc increments based on pitch.
                     UpdateOscIncrement(v.Osc1, pitchMidi,
@@ -651,7 +812,7 @@ namespace WDE.PedalM1
                     if ((i & FILTER_UPDATE_MASK) == 0)
                     {
                         float kbdOct  = (float)((pitchMidi - 60.0) / 12.0) * keyTrkN;
-                        float velOct  = (v.Velocity - 0.5f) * 2f * filtVelN;     // -1..+1 × N
+                        float velOct  = (v.NoteVelocity - 0.5f) * 2f * filtVelN; // -1..+1 × N (fork: a MIDI note's own)
                         float fegOct  = fenv * fegIntN * 6f;                     // up to 6 octaves
                         float lfoFOct = (lfo1 * lfo1ToF + lfo2 * lfo2ToF) * 4f;
                         float fc      = cutoffBase * Pow2(kbdOct + velOct + fegOct + lfoFOct);
@@ -662,7 +823,7 @@ namespace WDE.PedalM1
                     float filtered = v.Filter.Process(oscMix);
 
                     // Amp stage: env × velocity × LFO tremolo × anti-click ramp.
-                    float velAmp = 1f - ampVelN + ampVelN * v.Velocity;
+                    float velAmp = 1f - ampVelN + ampVelN * v.NoteVelocity;   // fork: a MIDI note's own velocity
                     float trem   = 1f + (lfo1 * lfo1ToA + lfo2 * lfo2ToA) * 0.5f;
                     if (trem < 0f) trem = 0f;
                     float amp    = aenv * velAmp * v.CurrentGain * trem;
@@ -701,12 +862,14 @@ namespace WDE.PedalM1
                 {
                     TriggerVoice(t, v.PendingBuzzNote);
                     v.HasNoteOn = false;
+                    _midiVoices.Track(t);     // fork (neo-buzz, §12.15): the track's note took the voice
                 }
                 if (v.HasNoteOff)
                 {
                     v.AmpEnv.NoteOff();
                     v.FilterEnv.NoteOff();
                     v.HasNoteOff = false;
+                    _midiVoices.Clear(t);     // fork (neo-buzz, §12.15): no longer a MIDI key's
                 }
             }
         }
@@ -714,7 +877,8 @@ namespace WDE.PedalM1
         // TriggerVoice — defers if voice is still sounding, fires immediately
         // if the voice is silent (Pedal Tracker §4 pattern). Avoids click on
         // arpeggio retriggers caused by sample-data discontinuity.
-        void TriggerVoice(int track, byte buzzNote)
+        // Fork (neo-buzz, §12.15): fromMidi and midiVelocity for a MIDI note (a track's note plays at its Volume).
+        void TriggerVoice(int track, byte buzzNote, bool fromMidi = false, float midiVelocity = 1f)
         {
             var v = _voices[track];
 
@@ -723,11 +887,13 @@ namespace WDE.PedalM1
                 // Voice still sounding — fade out, fire when gain reaches zero.
                 v.HasPendingTrigger   = true;
                 v.PendingTriggerNote  = buzzNote;
+                v.PendingFromMidi     = fromMidi;
+                v.PendingMidiVelocity = midiVelocity;
                 v.TargetGain          = 0f;
                 return;
             }
 
-            FireTriggerNow(track, buzzNote);
+            FireTriggerNow(track, buzzNote, fromMidi, midiVelocity);
         }
 
         // Actual trigger logic — only called when CurrentGain is at zero
@@ -737,9 +903,11 @@ namespace WDE.PedalM1
         // The reset clears stale integrator state left from a previous note
         // that went inactive — without it, the frozen filter state feeds
         // back into the first samples of the new note as a click.
-        void FireTriggerNow(int track, byte buzzNote)
+        void FireTriggerNow(int track, byte buzzNote, bool fromMidi, float midiVelocity)
         {
             var v = _voices[track];
+            v.FromMidi     = fromMidi;      // fork (neo-buzz, §12.15)
+            v.MidiVelocity = midiVelocity;
 
             int oct  = (buzzNote >> 4);
             int semi = (buzzNote & 0xF) - 1;
@@ -825,10 +993,10 @@ namespace WDE.PedalM1
         }
 
         // 0..127 → 20 Hz .. 18 kHz exponential.
-        static float CutoffHz(int v)
+        // (fork, neo-buzz §12.15: at a position 0..1, Cutoff / 127, for its glide)
+        static float CutoffHzAt(float t)
         {
             const float minHz = 20f, maxHz = 18000f;
-            float t = v / 127f;
             return minHz * MathF.Pow(maxHz / minHz, t);
         }
 
@@ -862,6 +1030,34 @@ namespace WDE.PedalM1
             if (w3 != 0 && midi >= s3) return w3;
             if (w2 != 0 && midi >= s2) return w2;
             return w1;
+        }
+    }
+
+    // Fork (neo-buzz, docs/specs/mcp-server.md §12.13, §12.15): a setting that glides to a new value in a straight line
+    // over Ms milliseconds, sample by sample, and lands on it exactly, so a setting that doesn't move is the same
+    // number as before. Automation and pattern events change parameters once a tick or subtick; applied once a block
+    // they stepped, which clicks. As in the Pedal effects (U6).
+    struct ParamGlide
+    {
+        public const float Ms = 20f;
+        public float Value, Target, Step;
+        public int Left;
+
+        public void Snap(float v) { Value = Target = v; Left = 0; }
+
+        public void Set(float v, int samples)
+        {
+            if (v == Target) return;
+            Target = v;
+            if (samples <= 1) { Snap(v); return; }
+            Left = samples;
+            Step = (v - Value) / samples;
+        }
+
+        public float Next()
+        {
+            if (Left > 0) Value = --Left == 0 ? Target : Value + Step;
+            return Value;
         }
     }
 }

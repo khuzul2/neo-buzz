@@ -1,0 +1,313 @@
+# Dye Essence factory presets (Trio layout, P1a: one engine type). Rebuild: python3 tools/gen-machine-presets.py Machines/DyeEssence
+machine "Dye Essence"
+
+preset "Init — Basic"
+Volume = -6
+
+preset "Lead — Wide Unison"
+A unison = 7
+A detune = 22
+A spread = 85
+B engine = Wavetable
+B table = Basic
+B position = 66.7
+B octave = 1
+B level = 35
+B unison = 5
+B detune = 15
+B spread = 100
+F1 cutoff = 5200
+F1 reso = 18
+F1 env = 1.4
+Flt decay = 0.6
+Flt sustain = 35
+Amp attack = 0.004
+Amp decay = 0.5
+Amp sustain = 85
+Amp release = 0.3
+Volume = -9
+
+preset "Pad — Glass Choir"
+A table = Formants
+A position = 30
+A unison = 4
+A detune = 14
+A spread = 90
+B engine = Wavetable
+B table = Harmonics
+B position = 60
+B level = 45
+B fine = 7
+F1 type = LP 12
+F1 cutoff = 4200
+F1 env = 0.6
+Amp attack = 0.8
+Amp decay = 2
+Amp sustain = 90
+Amp release = 2.4
+Flt attack = 1.2
+Flt decay = 3
+Volume = -6
+
+preset "Bass — FM Growl"
+Voice mode = Mono
+Glide mode = Legato
+Glide = 0.06
+A position = 0
+A random = 0
+A warp 1 = FM
+A warp 1 amt = 45
+A modulator = Osc B
+B engine = Wavetable
+B table = Basic
+B position = 66.7
+B level = 0
+B random = 0
+Sub level = 55
+F1 cutoff = 700
+F1 reso = 35
+F1 env = 2.6
+F1 key track = 30
+Flt decay = 0.35
+Flt sustain = 15
+Amp sustain = 100
+Amp release = 0.1
+Volume = -4
+
+preset "Bass — Window Sync"
+A random = 0
+A warp 1 = Window sync
+A warp 1 amt = 55
+Sub level = 40
+F1 cutoff = 1100
+F1 reso = 30
+F1 env = 2
+Flt decay = 0.4
+Flt sustain = 20
+Amp sustain = 100
+Amp release = 0.12
+Volume = -5
+
+preset "Pluck — Mirror Bell"
+A table = Harmonics
+A position = 40
+A warp 1 = Mirror
+A warp 1 amt = 50
+A unison = 2
+A detune = 6
+F1 type = LP 24
+F1 cutoff = 2400
+F1 env = 2.5
+Flt decay = 0.3
+Flt sustain = 0
+Amp attack = 0.001
+Amp decay = 0.9
+Amp sustain = 0
+Amp release = 0.7
+Volume = -8
+
+preset "Keys — Bent Organ"
+A table = Organ
+A position = 50
+A warp 1 = Bend+
+A warp 1 amt = 30
+B engine = Wavetable
+B table = Organ
+B position = 20
+B octave = 1
+B level = 40
+F1 type = LP 12
+F1 cutoff = 6500
+F1 env = 0.5
+Amp attack = 0.003
+Amp decay = 1.2
+Amp sustain = 80
+Amp release = 0.25
+Volume = -8
+
+preset "Texture — Comb Noise"
+A engine = Off
+Noise level = 70
+Noise color = 60
+F1 type = Comb+
+F1 cutoff = 261.6
+F1 key track = 100
+F1 reso = 92
+F1 env = 0
+F1 vel = 0
+Amp attack = 0.005
+Amp decay = 1.6
+Amp sustain = 35
+Amp release = 1.2
+Volume = -6
+
+preset "Lead — Sub PM"
+A position = 33.3
+A warp 1 = PM
+A warp 1 amt = 35
+A modulator = Sub
+A unison = 3
+A detune = 10
+Sub level = 25
+Sub octave = 0
+F1 cutoff = 3000
+F1 reso = 25
+F1 env = 1.8
+Flt decay = 0.5
+Flt sustain = 30
+Volume = -7
+
+preset "Pad — Two Filters"
+A table = Grit
+A position = 40
+A unison = 3
+A detune = 16
+B engine = Wavetable
+B table = Resonant
+B position = 50
+B level = 70
+B → filter 2 = 100
+F1 type = LP 24
+F1 cutoff = 1500
+F1 env = 2
+F2 type = BP 12
+F2 cutoff = 2600
+F2 reso = 60
+Filter routing = 100
+Amp attack = 0.6
+Amp decay = 2
+Amp sustain = 85
+Amp release = 2
+Flt attack = 0.8
+Flt decay = 2.5
+Volume = -1
+
+preset "Bass — Detuned Stack"
+A unison = 3
+A detune = 18
+A spread = 0
+C engine = Wavetable
+C table = Basic
+C position = 66.7
+C octave = -1
+C level = 60
+F1 cutoff = 650
+F1 reso = 25
+F1 env = 1.6
+Flt decay = 0.45
+Flt sustain = 25
+Amp sustain = 100
+Amp release = 0.15
+Volume = -7
+
+preset "FX — Squeeze Sweep"
+Quality = High 4×
+A table = Digital
+A position = 50
+A warp 1 = Squeeze
+A warp 1 amt = 60
+A warp 2 = Asym
+A warp 2 amt = 40
+F1 type = HP 12
+F1 cutoff = 180
+F2 type = LP 12
+F2 cutoff = 7000
+Amp attack = 0.3
+Amp decay = 3
+Amp sustain = 70
+Amp release = 1.5
+Volume = -2
+
+preset "Bass — Analog Saw"
+Voice mode = Mono
+Glide mode = Legato
+Glide = 0.05
+A engine = Analog
+A shape = Saw
+A drift = 30
+A random = 0
+B engine = Analog
+B shape = Pulse
+B pulse width = 30
+B octave = -1
+B level = 55
+B random = 0
+F1 cutoff = 650
+F1 reso = 30
+F1 env = 2.2
+Flt decay = 0.3
+Flt sustain = 20
+Amp sustain = 100
+Amp release = 0.1
+Volume = 0
+
+preset "Pad — Analog Strings"
+A engine = Analog
+A shape = Saw
+A unison = 6
+A detune = 18
+A spread = 90
+A drift = 60
+B engine = Analog
+B shape = Pulse
+B pulse width = 20
+B octave = 1
+B level = 30
+B drift = 60
+F1 type = LP 12
+F1 cutoff = 3500
+F1 env = 0.8
+Amp attack = 0.5
+Amp decay = 1.5
+Amp sustain = 85
+Amp release = 1.6
+Flt attack = 0.6
+Flt decay = 2
+Volume = -10
+
+preset "Pad — Position Sweep"
+A table = Formants
+A position = 20
+A unison = 4
+A detune = 14
+A spread = 90
+F1 type = LP 12
+F1 cutoff = 2500
+F1 env = 0
+Amp attack = 0.7
+Amp decay = 2
+Amp sustain = 90
+Amp release = 2.2
+LFO1 shape = Triangle
+LFO1 rate = 0.15
+LFO1 retrig = Off
+Env1 attack = 2.5
+Env1 decay = 3
+Env1 sustain = 40
+R1 source = LFO 1
+R1 dest = A position
+R1 amount = 35
+R2 source = Mod env 1
+R2 dest = F1 cutoff
+R2 amount = 25
+Volume = -6
+
+preset "Lead — Delayed Vibrato"
+A unison = 3
+A detune = 12
+F1 cutoff = 4500
+F1 reso = 20
+LFO1 shape = Sine
+LFO1 rate = 5.5
+LFO1 fade = 0.7
+R1 source = LFO 1
+R1 dest = Pitch
+R1 amount = 1.5
+R2 source = Mod wheel
+R2 dest = F1 cutoff
+R2 amount = 30
+Amp attack = 0.01
+Amp sustain = 90
+Amp release = 0.3
+Volume = -9
+

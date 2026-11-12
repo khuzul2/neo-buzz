@@ -18,7 +18,7 @@ namespace ReBuzz.AgentTests
     public class GuideTests
     {
         static readonly string[] Topics = { "workflow", "concepts", "composition", "sound-design", "mixing", "mastering", "troubleshooting" };
-        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Clipper", "Neo Comp", "Neo Delay", "Neo Drive", "Neo Drums", "Neo EQ", "Neo Ensemble", "Neo Filter", "Neo FM6", "Neo Limiter", "Neo Low End", "Neo Multiband", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Transient", "Neo Utility", "Neo Verb", "Neo Wave" };
+        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Clipper", "Neo Comp", "Neo Delay", "Neo Drive", "Neo Drums", "Neo EQ", "Neo Ensemble", "Neo Filter", "Neo FM6", "Neo Limiter", "Neo Low End", "Neo Multiband", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Transient", "Neo Utility", "Neo Verb", "Neo Wave", "Dye Essence" };
 
         /// <summary>Neo gear being built in parallel (phase A4): parameter names aren't final, so guides give them moves in units and say to read the names with machine_describe.</summary>
         static readonly string[] PendingGear = System.Array.Empty<string>();

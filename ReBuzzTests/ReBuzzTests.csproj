@@ -92,6 +92,19 @@
     <Copy SourceFiles="@(_FakeNativeMachine)" DestinationFolder="$(OutDir)" Condition="Exists('%(_FakeNativeMachine.FullPath)')" SkipUnchangedFiles="true" />
   </Target>
 
+  <!--
+  Fork (docs/specs/dye-essence.md §5.5): Dye Essence's stress machine (704 parameters, megabytes of
+  state) for the WPF parameter window and pattern editor, built beside the tests (DyeStressGear), not
+  into the app's Gear: it is not shipped.
+  -->
+  <Target Name="DyeStressGear" AfterTargets="Build">
+    <PropertyGroup>
+      <_DyeStressGear>$([System.IO.Path]::Combine($(MSBuildProjectDirectory), $(OutDir), 'DyeStressGear'))/</_DyeStressGear>
+    </PropertyGroup>
+    <MSBuild Projects="..\ReBuzz.Studio.Tests\TestMachines\DyeStress\DyeStress.csproj" Targets="Restore" Properties="GearDir=$(_DyeStressGear);Configuration=$(Configuration);_DyeStressRestore=true" />
+    <MSBuild Projects="..\ReBuzz.Studio.Tests\TestMachines\DyeStress\DyeStress.csproj" Targets="Build" Properties="GearDir=$(_DyeStressGear);Configuration=$(Configuration)" />
+  </Target>
+
   <!-- 
   This small snippet saves a path that requires some build-time info
   so that the tests can read it and use it to find the ReBuzzEngine files.
