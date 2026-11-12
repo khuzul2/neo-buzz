@@ -16,7 +16,8 @@ namespace NeoBuzz.Drums
 {
     internal sealed class NeoDrumsEditor : NeoEditor
     {
-        static readonly NeoColor AccentColor = NeoColor.FromRgb(0xFF, 0x7A, 0x45);
+        // Fork (ux-overhaul.md P2a): the Drums identity in the studio, its own colour in the classic app.
+        static readonly NeoColor AccentColor = Tokens.Identity(MachineCategory.Drums, NeoColor.FromRgb(0xFF, 0x7A, 0x45));
 
         protected override string Title => "Neo Drums";
         protected override NeoColor Accent => AccentColor;

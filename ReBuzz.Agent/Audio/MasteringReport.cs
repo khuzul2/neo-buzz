@@ -103,7 +103,8 @@ namespace ReBuzz.Agent.Audio
 
         /// <summary>
         /// The param_set changes that put fitted bands (FitEq's "bands") into a Neo EQ's B2–B7, in order of frequency, with the
-        /// EQ in Parametric mode; the bands left over at 0 dB (exactly transparent), B1 and B8 (the cuts) untouched.
+        /// EQ in Parametric mode; the bands left over at 0 dB (exactly transparent), B1 and B8 (the cuts) untouched. v2 (M3):
+        /// B2–B7 on Stereo, shape Standard and dynamic Off, as the fit assumes (and so a band left at 0 dB is transparent).
         /// </summary>
         public static JsonArray NeoEqChanges(JsonArray bands)
         {
@@ -123,6 +124,9 @@ namespace ReBuzz.Agent.Audio
                     Set($"{b} Q", band["q"]!.GetValue<double>());
                 }
                 else Set($"{b} gain", "0 dB");
+                Set($"{b} channel", "Stereo");
+                Set($"{b} shape", "Standard");
+                Set($"{b} dynamic", "Off");
             }
             return changes;
         }

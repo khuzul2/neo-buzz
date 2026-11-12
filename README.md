@@ -1,6 +1,6 @@
 # NeoBuzz Live
 
-NeoBuzz Live is a fork of [ReBuzz](https://github.com/wasteddesign/ReBuzz), the modular digital audio workstation built upon the foundation of [Jeskola Buzz](https://jeskola.net/buzz/), by WDE and the ReBuzz contributors (MIT). It adds an Ableton-style Session View for playing live, the Neo machines, an MCP server through which AI agents work in your songs, and a studio for macOS; [FORK.md](FORK.md) lists everything it adds and how it is built.
+NeoBuzz Live is a fork of [ReBuzz](https://github.com/wasteddesign/ReBuzz), the modular digital audio workstation built upon the foundation of [Jeskola Buzz](https://jeskola.net/buzz/), by WDE and the ReBuzz contributors (MIT). It adds a clip-launching Session View for playing live, the Neo machines, an MCP server through which AI agents work in your songs, and a studio for macOS; [FORK.md](FORK.md) lists everything it adds and how it is built.
 
 Songs (`.bmx`, `.bmxml`), settings and machines from ReBuzz carry over: NeoBuzz Live keeps ReBuzz's file formats, the machine names songs save and its settings folders.
 

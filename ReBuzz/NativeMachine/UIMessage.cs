@@ -222,6 +222,8 @@ namespace ReBuzz.NativeMachine
             {
                 lock (UIMessageLock)
                 {
+                    // Fork: before the engine's first tick the master info is all zeros: the engine's own now (WorkManager.CopyEngineMasterInfo).
+                    if (!Audio.WorkManager.MasterInfoCopied) Audio.WorkManager.CopyEngineMasterInfo();
                     Reset();
                     SetMessageData((int)UIMessages.UIInit);
                     WriteMasterInfo(machine);

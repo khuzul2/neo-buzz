@@ -17,8 +17,9 @@ namespace NeoBuzz.Ensemble
 {
     internal sealed class NeoEnsembleEditor : NeoEditor
     {
-        static readonly NeoColor AccentColor = NeoColor.FromRgb(0xFF, 0x7E, 0xDB);
-        static readonly NeoColor RightColor = NeoColor.FromRgb(0x7E, 0xC8, 0xFF);
+        // Fork (ux-overhaul.md P2a): the Modulation identity in the studio, its own colour in the classic app.
+        static readonly NeoColor AccentColor = Tokens.Identity(MachineCategory.Modulation, NeoColor.FromRgb(0xFF, 0x7E, 0xDB));
+        static readonly NeoColor RightColor = Tokens.Partner(AccentColor, NeoColor.FromRgb(0x7E, 0xC8, 0xFF));
 
         const int Points = 320, Cycle = 96;
         const double MinHz = 20, MaxHz = 20000, TopDb = 24, BottomDb = -36;

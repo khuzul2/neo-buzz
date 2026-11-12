@@ -72,7 +72,7 @@ namespace PedalFM
         /// <summary>
         /// Trigger a note. Three paths:
         /// <list type="number">
-        /// <item>Voice sounding + glide enabled: legato — ramp pitch, keep envelopes.</item>
+        /// <item>Voice sounding and held + glide enabled: legato — ramp pitch, keep envelopes.</item>
         /// <item>Voice sounding + no glide: deferred fade-cross retrigger.</item>
         /// <item>Voice silent: fresh trigger inline.</item>
         /// </list>
@@ -80,7 +80,10 @@ namespace PedalFM
         public void Trigger(int midi, int trackOwner, float velocity, int glideSamples)
         {
             // Legato glide — voice already sounding, glide enabled.
-            if (Active && _curGain > NearZero && !_pendingTrigger && glideSamples > 0)
+            // Fork (neo-buzz, docs/specs/mcp-server.md §12.15): and its note still held. A released voice's envelopes
+            // are in their release or done, and legato kept them there: the note stayed silent. It retriggers, as
+            // with Glide off.
+            if (Active && Held && _curGain > NearZero && !_pendingTrigger && glideSamples > 0)
             {
                 _glideRemainingSamples = glideSamples;
                 _glideStep             = (midi - _curMidiF) / glideSamples;
@@ -133,6 +136,16 @@ namespace PedalFM
             Held = false;
             for (int i = 0; i < OpCount; i++)
                 Ops[i].Env.NoteOff();
+        }
+
+        /// <summary>
+        /// Fork (neo-buzz, docs/specs/mcp-server.md §12.15): the transport stopped. A held note is released, and a
+        /// retrigger waiting for the fade-out is dropped (the old note fades out, the new one never starts).
+        /// </summary>
+        public void ReleaseForStop()
+        {
+            _pendingTrigger = false;
+            if (Held) Release();
         }
 
         public void Stop()

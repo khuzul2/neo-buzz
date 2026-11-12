@@ -85,7 +85,7 @@ namespace NeoBuzz.Wave
                 FontSize = 10.5,
                 Width = 128,
                 TextWrapping = TextWrapping.Wrap,
-                Text = "WAV with 2048-sample frames (Serum and most editors) or one cycle. Saved with the song.",
+                Text = "A wavetable WAV in the common 2048-samples-per-frame layout, or one cycle. Saved with the song.",
             };
             var user = S("User table", Layout.Column(userName, Layout.Gap(1, 6), load, Layout.Gap(1, 6), hint));
 

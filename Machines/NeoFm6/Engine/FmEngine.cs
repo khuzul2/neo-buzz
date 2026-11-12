@@ -80,6 +80,10 @@ namespace NeoBuzz.Fm6
         public FmEngine(ParamValues values)
         {
             this.values = values;
+            // The DX7 tables and the voices' carrier gains (static) made now, not by the first note on the audio thread
+            // (1.6 KB and 56 bytes there before).
+            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(Dx7).TypeHandle);
+            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(FmVoice).TypeHandle);
             for (int i = 0; i < VoiceCount; i++) voices[i] = new FmVoice(this, (uint)(0x9E3779B1u * (i + 7)));
             alloc = new VoiceAllocator(voices);
             SetSampleRate(48000);

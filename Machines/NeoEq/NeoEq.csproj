@@ -21,6 +21,8 @@
     <Compile Include="..\NeoBuzz.Dsp\**\*.cs" Link="Shared\Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\NeoBuzz.Machine\**\*.cs" Link="Shared\Machine\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\NeoBuzz.Editor\**\*.cs" Link="Shared\Editor\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- The gain-match reading (mastering-tools.md §2, v2), shared with the agent server's meters. -->
+    <Compile Include="..\NeoBuzz.Analysis\Loudness.cs;..\NeoBuzz.Analysis\GainMatch.cs" Link="Shared\Analysis\%(Filename)%(Extension)" />
     <None Include="Params.def" />
     <None Include="Neo EQ.prs.xml" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Neo EQ.machine.json" CopyToOutputDirectory="PreserveNewest" />

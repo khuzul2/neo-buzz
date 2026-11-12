@@ -341,6 +341,13 @@ namespace ReBuzz.AgentTests
             Assert.That(byParam["B2 freq"], Does.EndWith(" Hz\""));
             Assert.That(byParam["B2 gain"], Does.EndWith(" dB\""));
             Assert.That(byParam["B7 gain"], Is.EqualTo(bands.Count == 6 ? byParam["B7 gain"] : "\"0 dB\""), "the bands left over are transparent");
+            // v2 (M3): the bands written are plain stereo bands, as the fit assumes.
+            foreach (string b in new[] { "B2", "B7" })
+            {
+                Assert.That(byParam[$"{b} channel"], Is.EqualTo("\"Stereo\""));
+                Assert.That(byParam[$"{b} shape"], Is.EqualTo("\"Standard\""));
+                Assert.That(byParam[$"{b} dynamic"], Is.EqualTo("\"Off\""));
+            }
             Assert.That(byParam.Keys, Has.None.StartsWith("B1 "), "the cuts are left alone");
             Assert.That(byParam.Keys, Has.None.StartsWith("B8 "));
         }

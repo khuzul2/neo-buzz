@@ -26,7 +26,6 @@ namespace ReBuzzTests
             if (!File.Exists(Path.Combine(bin, "Gear", "Generators", "Neo Drums.NET.dll"))) Assert.Inconclusive("Neo Drums not in this build's Gear");
             var results = new List<(string Label, bool? Within)>();
             var report = new List<string>();
-            WarmUp(client, "Jeskola Reverb");
 
             // Rout 909: two bars of every drum, on its trigger columns (track 1), at its defaults and at the ends of a few scales.
             var beat = new (string Column, double[] Beats)[]

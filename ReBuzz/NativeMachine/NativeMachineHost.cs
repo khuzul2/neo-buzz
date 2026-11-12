@@ -145,6 +145,28 @@ namespace ReBuzz.NativeMachine
             UIMessage.UIDSPInitSync(ReBuzzCore.masterInfo.SamplesPerSec);
         }
 
+        /// <summary>
+        /// Fork (NativeHangReport): a channel's state in the shared memory (whose turn it is: "call" and "send…" wait
+        /// for the host, "reply…" for this side), its callback flag and message size, and what this side's message
+        /// handler for it was doing.
+        /// </summary>
+        internal string DescribeChannel(ChannelType channel)
+        {
+            if (accessor == null) return "no shared memory";
+            int state = accessor.ReadInt32(IPC.GetChannelSharedMemStateOffset(channel));
+            int callback = accessor.ReadInt32(IPC.GetChannelSharedMemCallbackOffset(channel));
+            int size = accessor.ReadInt32(IPC.GetChannelSharedMemSizeOffset(channel));
+            NativeMessage msg = channel switch
+            {
+                ChannelType.AudioChannel => AudioMessage,
+                ChannelType.UIChannel => UIMessage,
+                ChannelType.MidiChannel => MidiMessage,
+                _ => HostMessage,
+            };
+            string state1 = Enum.IsDefined(typeof(ChannelState), state) ? ((ChannelState)state).ToString() : state.ToString();
+            return $"{state1}, callback {callback & 0xFF}, size {size}, {msg?.DescribeHandling() ?? "no handler"}";
+        }
+
         public void Dispose()
         {
             if (IsConnected)

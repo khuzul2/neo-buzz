@@ -3,7 +3,7 @@
  "gear": "Pedal Juno106",
  "kind": "generator",
  "status": "curated",
- "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed Updated by hand (2026-11-06, mcp-server.md §12.15, U6 for the Pedal synths) for MIDI input.",
+ "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed Updated by hand (2026-11-06, mcp-server.md §12.15, U6 for the Pedal synths) for MIDI input, and (§12.15, the follow-ups) for VCF Reso's new default and the voices' tuning.",
  "type": "polysynth",
  "summary": "Juno-106-style 6-voice polysynth: saw, pulse, sub and noise into a resonant 4-pole low-pass, one ADSR for filter and amp, an LFO and the BBD chorus. For pads, brass, keys, plucks and basses.",
  "quirks": [
@@ -11,8 +11,8 @@
   "Its Note track (notes_write with input \"tracks\") still plays as before, for old songs: one voice per track, 6 at most, a chord spread over tracks, at full level (Pattern track = voice, README).",
   "No glide (portamento) between notes (README, v1.0 limitations).",
   "One envelope drives both the filter (VCF Env Amt) and, with VCA Mode at Env, the amplifier, as on the Juno-106.",
-  "Each voice drifts slightly in pitch, like analog oscillators, and voices 1, 3 and 5 play about 10 cents flat (its fast exponential falls short just under a whole octave): a note on track 1 is heard at A4 −11 cents, a lone MIDI note (voice 6) in tune.",
-  "At its defaults (VCF Freq 100, VCF Env Amt 80, VCF Reso 30) the envelope opens the filter to its ceiling (0.45 × the sample rate), where the resonance rings on as a steady tone at 0.41 × the sample rate (18.2 kHz at 44.1 kHz, 19.8 at 48): about 80 % of the output's energy, and so of its peaks and K-weighted loudness; two voices' tones can cancel (the profile heard one voice for a chord through MIDI). Lower VCF Env Amt, VCF Reso or VCF Freq to remove it; none of the factory presets has it.",
+  "Each voice is detuned a little and drifts slowly, like analog oscillators, within a cent: A4 plays at −0.8, +0.2, −0.4, +0.6, −0.1 and +0.5 cents on voices 1 to 6 (tracks 1 to 6; a lone MIDI note takes voice 6). Until the follow-ups (§12.15) voices 1, 3 and 5 played 9.6 cents flatter, and songs made then hear them in tune now.",
+  "VCF Reso defaults to 0. Where the envelope or VCF Freq takes the filter to its ceiling (0.45 × the sample rate: at the default VCF Freq 100 and VCF Env Amt 80, any note from about C2 up), VCF Reso from about 20 rings on there as a steady tone at 0.41 × the rate (18.2 kHz at 44.1 kHz, 19.8 at 48), most of the output's energy, and two voices' tones can cancel: lower VCF Env Amt or VCF Freq before raising VCF Reso. Its default was 30, which rang (a song saved then keeps its 30); none of the factory presets rings.",
   "Mono voices into the chorus: stereo only with Chorus I, II or III on (HPF and chorus come after the voices)."
  ],
  "evidence": [
@@ -23,9 +23,9 @@
   "ExternalMachines/source/thepedal/pedal-juno106/Lfo.cs — LFO rate and fade-in",
   "ExternalMachines/source/thepedal/pedal-juno106/Hpf.cs — HPF positions",
   "ExternalMachines/source/thepedal/pedal-juno106/Chorus.cs — chorus modes",
-  "profile (tools/machine-profiler.py, linux 2026-11-03) — A4 at 440 Hz −11 cents, 6 voices, level",
+  "profile (tools/machine-profiler.py, linux 2026-11-06, the follow-ups) — A4 at 440 Hz +0.5 cents through MIDI (voice 6), level at the new defaults",
   "ExternalMachines/source/thepedal/pedal-juno106/MidiIn.cs — MIDI notes and controllers (§12.15)",
-  "NeoBuzz.PedalTests/PedalSynthTests.cs — MIDI against a track's note, velocity, chords, bend, mod wheel, sustain (§12.15)"
+  "NeoBuzz.PedalTests/PedalSynthTests.cs — MIDI against a track's note, velocity, chords, bend, mod wheel, sustain (§12.15); the default patch's energy above 16 kHz, each voice's tuning, vibrato either side (the follow-ups)"
  ],
  "tracks": 6,
  "notes": {
@@ -41,14 +41,14 @@
  "profile": {
   "level": {
    "note": "A4 at velocity 100, 1.5 beats",
-   "integrated_lufs": -11.9,
-   "sample_peak_dbfs": -6.63,
-   "true_peak_dbtp": -6.52
+   "integrated_lufs": -15.1,
+   "sample_peak_dbfs": -8.34,
+   "true_peak_dbtp": -8.34
   },
   "level_test": {
    "defaults": {
-    "peak_dbfs": -6.63,
-    "growth_db": 0.01,
+    "peak_dbfs": -8.34,
+    "growth_db": 0.0,
     "verdict": "ok"
    },
    "all_at_once": {
@@ -58,24 +58,24 @@
     },
     "max": {
      "peak_dbfs": -5.46,
-     "growth_db": -1.07,
+     "growth_db": -1.27,
      "verdict": "ok"
     }
    }
   },
   "envelope": {
-   "peak_db": -13.6,
-   "attack_s": 0.005,
+   "peak_db": -13.83,
+   "attack_s": 0.0,
    "final_db": -3.85,
-   "half_s": 0.14,
+   "half_s": 0.095,
    "length_s": null,
-   "release_s": 0.22,
+   "release_s": 0.235,
    "release_past_window": false,
-   "bright_mid_hz": 12334.2,
-   "bright_early_hz": 12337.7,
-   "bright_late_hz": 12339.0,
-   "level_wobble_db": 0.0,
-   "bright_wobble": 0.003,
+   "bright_mid_hz": 1565.0,
+   "bright_early_hz": 1557.0,
+   "bright_late_hz": 1563.7,
+   "level_wobble_db": 0.596,
+   "bright_wobble": 0.02,
    "note": "A4 at velocity 100, held 2 s"
   },
   "velocity": {
@@ -83,34 +83,34 @@
    "db_per_doubling": 6.02,
    "curve": "linear in amplitude (about 6 dB per doubling)",
    "levels_db": {
-    "16": -29.6,
-    "32": -23.58,
-    "64": -17.56,
-    "127": -11.61
+    "16": -29.76,
+    "32": -23.74,
+    "64": -17.72,
+    "127": -11.77
    }
   },
   "roles": {
    "default": {
     "pitch": 33.0,
-    "centroid_hz": 2622,
+    "centroid_hz": 1591,
     "peakiness_db": 60.0,
     "tprom_db": -2.1,
     "tprom_hz": 1250,
-    "env_attack_s": 0.005,
-    "env_half_s": 0.06,
-    "env_final_db": -8.1,
-    "env_release_s": 0.19,
-    "env_peak_db": -13.36,
-    "env_bright_early_hz": 12161.6,
-    "env_bright_mid_hz": 545.0,
-    "env_bright_late_hz": 475.9,
-    "env_level_wobble_db": 0.818,
-    "env_bright_wobble": 0.159
+    "env_attack_s": 0.015,
+    "env_half_s": 0.01,
+    "env_final_db": -6.85,
+    "env_release_s": 0.21,
+    "env_peak_db": -11.29,
+    "env_bright_early_hz": 557.6,
+    "env_bright_mid_hz": 413.9,
+    "env_bright_late_hz": 363.5,
+    "env_level_wobble_db": 0.736,
+    "env_bright_wobble": 0.163
    },
    "params": {
     "LFO Rate": {
-     "suggested_role": "env.decay",
-     "evidence": "the level falls half way in 5 ms → 5 ms (the default 10 ms) to the same held level (with VCF Freq a third of the way up)",
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
      "min": {
       "raw": 0,
       "text": "0.1 Hz"
@@ -229,8 +229,8 @@
      }
     },
     "DCO Noise": {
-     "suggested_role": "filter.env.decay",
-     "evidence": "the brightness 150–250 ms in 545 Hz → 4.93 kHz (RMS frequency), the start alike (12.2 kHz → 11.6 kHz)",
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 1.59 kHz → 4.83 kHz",
      "min": {
       "raw": 0,
       "text": "0"
@@ -254,7 +254,7 @@
     },
     "VCF Freq": {
      "suggested_role": "filter.cutoff",
-     "evidence": "the brightness (centroid) 64 Hz → 10.6 kHz",
+     "evidence": "the brightness (centroid) 65 Hz → 2.87 kHz",
      "min": {
       "raw": 0,
       "text": "30 Hz"
@@ -269,7 +269,7 @@
      "evidence": "a peak at 10 kHz stands -2 → +28 dB over the spectrum an octave either side",
      "min": {
       "raw": 0,
-      "text": "0%"
+      "text": "0"
      },
      "max": {
       "raw": 127,
@@ -278,7 +278,7 @@
     },
     "VCF Env Amt": {
      "suggested_role": "filter.cutoff",
-     "evidence": "the brightness (centroid) 452 Hz → 10.6 kHz",
+     "evidence": "the brightness (centroid) 386 Hz → 2.86 kHz",
      "min": {
       "raw": 0,
       "text": "0 oct"
@@ -301,8 +301,8 @@
      }
     },
     "VCF LFO": {
-     "suggested_role": "filter.cutoff",
-     "evidence": "the brightness (centroid) 2.62 kHz → 11 kHz",
+     "suggested_role": "filter.env_amount",
+     "evidence": "the start's brightness 558 Hz → 230 Hz (RMS frequency), the held part's 364 Hz → 519 Hz",
      "min": {
       "raw": 0,
       "text": "0"
@@ -314,7 +314,7 @@
     },
     "VCF Key Trk": {
      "suggested_role": "filter.keytrack",
-     "evidence": "it follows the note: the brightness (centroid) 10.6 kHz → 991 Hz on the low note, 11 kHz → 11 kHz 36 semitones up",
+     "evidence": "it follows the note: the brightness (centroid) 2.86 kHz → 834 Hz on the low note, 4.15 kHz → 4.15 kHz 36 semitones up",
      "min": {
       "raw": 0,
       "text": "0%"
@@ -350,7 +350,7 @@
     },
     "Env A": {
      "suggested_role": "env.attack",
-     "evidence": "the attack 5 ms → 840 ms",
+     "evidence": "the attack 15 ms → 840 ms",
      "min": {
       "raw": 0,
       "text": "1 ms"
@@ -362,7 +362,7 @@
     },
     "Env D": {
      "suggested_role": "filter.cutoff",
-     "evidence": "the brightness (centroid) 1.64 kHz → 10.6 kHz",
+     "evidence": "the brightness (centroid) 1.38 kHz → 2.86 kHz",
      "min": {
       "raw": 0,
       "text": "5 ms"
@@ -373,8 +373,8 @@
      }
     },
     "Env S": {
-     "suggested_role": "filter.cutoff",
-     "evidence": "the brightness (centroid) 930 Hz → 10.6 kHz",
+     "suggested_role": "filter.env.decay",
+     "evidence": "the brightness 150–250 ms in 231 Hz → 544 Hz (RMS frequency), the start alike (496 Hz → 559 Hz)",
      "min": {
       "raw": 0,
       "text": "0%"
@@ -409,7 +409,7 @@
      }
     }
    },
-   "renders": 66
+   "renders": 63
   },
   "denormal": {
    "slowdown": null
@@ -642,7 +642,7 @@
    "group": "Filter",
    "min": 0,
    "max": 127,
-   "default": 30,
+   "default": 0,
    "kind": "linear",
    "a": 0.0,
    "b": 100.0,

@@ -64,27 +64,61 @@ namespace WDE.PedalM1
         /// <summary>
         /// Fork (neo-buzz, docs/specs/mcp-server.md §12.15): <paramref name="n"/> ticks' worth of time for both of a voice's
         /// LFOs, their output unread: the same steps as Tick (the phase, its random values at each wrap, the delay and fade
-        /// counters), for a voice whose note has ended, so its next note's random values are what they were. Side by side,
-        /// the two phases' additions overlap (each is a chain of float adds, one per sample).
+        /// counters), for a voice whose note has ended, so its next note's random values are what they were. The phase
+        /// moves by whole runs of equal steps (Advance), not sample by sample: the ended voices cost next to nothing.
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]   // a loop per block on the audio thread
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]   // on the audio thread: never tiered up there
         public static void Skip(Lfo a, Lfo b, int n)
         {
-            int ia = a.SkipCounting(n), ib = b.SkipCounting(n);
-            float pa = a._phase, pb = b._phase, inca = a._phaseInc, incb = b._phaseInc;
-            int both = n - Math.Max(ia, ib);
-            // The one with the shorter delay or fade first catches up to the other.
-            for (int i = ia; i < ib; i++) { pa += inca; if (pa >= 1f) { a._phase = pa; a.Wrap(); pa = a._phase; } }
-            for (int i = ib; i < ia; i++) { pb += incb; if (pb >= 1f) { b._phase = pb; b.Wrap(); pb = b._phase; } }
-            for (int i = 0; i < both; i++)
+            a.Advance(n - a.SkipCounting(n));
+            b.Advance(n - b.SkipCounting(n));
+        }
+
+        /// <summary>
+        /// Fork (neo-buzz, §12.15, follow-ups): <paramref name="n"/> of Tick's phase steps once its delay and fade are
+        /// done (<c>_phase += _phaseInc</c>, a wrap at 1 drawing two random values), to the same float, in a few runs.
+        /// Within a binade [2^e, 2^(e+1)) every float is a multiple of its ulp u, so <c>p + inc</c> rounds to
+        /// <c>p + d</c> with the same d for every p there whose exact sum stays in it (d depends only on inc's remainder
+        /// below u, except when that remainder is exactly u / 2 and the rounding goes to even: taken a step at a time).
+        /// A run takes all but the last step or two before the binade's top, or 1, in one exact double sum; those and
+        /// every wrap are taken as Tick takes them. It replaced 256 dependent float adds a block per LFO (half a
+        /// millisecond a second for M1's four ended voices, half again its cost before any note).
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]   // on the audio thread
+        internal void Advance(int n)
+        {
+            float p = _phase, inc = _phaseInc;
+            while (n > 0)
             {
-                pa += inca;
-                pb += incb;
-                if (pa >= 1f) { a._phase = pa; a.Wrap(); pa = a._phase; }
-                if (pb >= 1f) { b._phase = pb; b.Wrap(); pb = b._phase; }
+                // A run of equal steps, where p's binade allows one.
+                int bits = BitConverter.SingleToInt32Bits(p);
+                int exp = (bits >> 23) & 0xFF;
+                if (p > 0f && exp != 0)
+                {
+                    double u = Math.ScaleB(1.0, exp - 150);          // p's ulp
+                    double top = Math.ScaleB(1.0, exp - 126);        // the binade's top (1 for [0.5, 1))
+                    double units = Math.Floor(inc / u);
+                    double r = inc - units * u;                      // exact: inc and u are floats, u a power of 2
+                    if (r + r != u)                                  // not a tie
+                    {
+                        double d = units * u + (r + r > u ? u : 0.0);
+                        if (d == 0.0) { _phase = p; return; }       // inc is under half p's ulp: the phase never moves
+                        double room = (top - Math.Max(d, inc) - p) / d;
+                        if (room > 2.0)
+                        {
+                            int k = room - 1.0 >= n ? n : (int)(room - 1.0);
+                            p = (float)(p + k * d);                  // a multiple of u below top: exactly a float
+                            n -= k;
+                            continue;
+                        }
+                    }
+                }
+                // One step as Tick takes it.
+                p += inc;
+                n--;
+                if (p >= 1f) { _phase = p; Wrap(); p = _phase; }
             }
-            a._phase = pa;
-            b._phase = pb;
+            _phase = p;
         }
 
         /// <summary>Tick's steps while its delay or fade counts (rarely, after a note); the samples it took.</summary>

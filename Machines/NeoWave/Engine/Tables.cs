@@ -16,16 +16,22 @@ namespace NeoBuzz.Wave
         static readonly Wavetable[] built = new Wavetable[Names.Length];
         static readonly int[] requested = new int[Names.Length];
 
-        /// <summary>The table if built; otherwise null, and a build is started.</summary>
+        /// <summary>
+        /// The table if built; otherwise null, and a build is started. Called by every voice's block (the sub oscillator's
+        /// table): the build's lambda is in a method of its own, since a lambda that captures a parameter has C# make its
+        /// closure as the method starts, whether or not it runs (24 bytes a call, a voice's every block: Neo Wave's first
+        /// play allocated about 220 KB on the audio thread).
+        /// </summary>
         public static Wavetable Get(int index)
         {
             if (index < 0 || index >= Names.Length) return null;
             var t = Volatile.Read(ref built[index]);
             if (t != null) return t;
-            if (Interlocked.Exchange(ref requested[index], 1) == 0)
-                Task.Run(() => Volatile.Write(ref built[index], Make(index)));
+            if (Interlocked.Exchange(ref requested[index], 1) == 0) Build(index);
             return null;
         }
+
+        static void Build(int index) => Task.Run(() => Volatile.Write(ref built[index], Make(index)));
 
         /// <summary>
         /// Whether every built-in table is built (asking for those nobody has asked for). Any thread.

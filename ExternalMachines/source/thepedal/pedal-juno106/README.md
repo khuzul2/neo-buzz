@@ -103,6 +103,13 @@ saw on, 8' range, mid filter cutoff with positive envelope sweep,
 fast attack, medium release, no chorus. Trigger any note and you
 should hear sound.
 
+Fork (neo-buzz, docs/specs/mcp-server.md §12.15, the follow-ups): VCF Reso
+defaults to 0 (it was 30). VCF Env Amt 80 at VCF Freq 100 opens the filter
+to its ceiling (0.45 × the sample rate) on any note from about C2 up, and
+resonance from about 20 rings on there at 0.41 × the rate (18.2 kHz at
+44.1 kHz): lower VCF Env Amt or VCF Freq before raising VCF Reso. A song
+saved with the old default keeps its 30; every preset sets its own.
+
 ---
 
 ## Known v1.0 limitations

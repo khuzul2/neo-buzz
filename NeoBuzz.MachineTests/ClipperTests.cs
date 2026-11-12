@@ -73,6 +73,42 @@ namespace NeoBuzz.MachineTests
             Assert.That(ClipCurve.Make(ClipShape.Knee, 0).Shape, Is.EqualTo(ClipShape.Hard));
         }
 
+        [Test]
+        public void TheBlockAdaaIsTheOneSampleAdaaBitForBit()
+        {
+            // Two samples at a time (Vector128<double>) against one at a time, across blocks of every parity, with runs of
+            // equal and nearly equal samples (the midpoint fallback) and both signs.
+            var rng = new Random(7);
+            var us = new double[ClipAdaa.ScratchFor(1024)];
+            var fs = new double[ClipAdaa.ScratchFor(1024)];
+            foreach (var shape in Enum.GetValues<ClipShape>())
+                foreach (double knee in new[] { 0.0, 3, 12 })
+                {
+                    var c = ClipCurve.Make(shape, knee);
+                    var one = new ClipAdaa();
+                    var block = new ClipAdaa();
+                    float last = 0;
+                    for (int b = 0; b < 40; b++)
+                    {
+                        int n = b % 7 == 3 ? 1 : 1 + rng.Next(1024);
+                        var x = new float[n];
+                        for (int i = 0; i < n; i++)
+                        {
+                            int kind = rng.Next(4);
+                            last = kind == 0 ? last : kind == 1 ? last + (float)(rng.NextDouble() * 2e-6) : (float)((rng.NextDouble() * 2 - 1) * 3);
+                            x[i] = last;
+                        }
+                        var y = (float[])x.Clone();
+                        block.Process(in c, y, n, us, fs);
+                        for (int i = 0; i < n; i++)
+                        {
+                            float want = (float)one.Process(in c, x[i]);
+                            Assert.That(BitConverter.SingleToInt32Bits(y[i]), Is.EqualTo(BitConverter.SingleToInt32Bits(want)), $"{shape} {knee} dB, block {b} sample {i}");
+                        }
+                    }
+                }
+        }
+
         // ---- the ceiling --------------------------------------------------------------------------
 
         [TestCase(0, 1)]
@@ -408,28 +444,40 @@ namespace NeoBuzz.MachineTests
             Assert.That(bytes, Is.EqualTo(0), why);
         }
 
-        // The card asked 100× at 4×; the shared 4× oversampler alone (up and down, two channels) runs at about 84× on
-        // the 2-core test machine, so the floors are set as the other oversampled machines' (shared runners vary).
-        [TestCase(1, 4, 0, 20)]
-        [TestCase(1, 1, 0, 100)]
-        [TestCase(1, 8, 0, 10)]
-        [TestCase(3, 4, 1, 5)]
-        public void RunsFasterThanRealTime(int bands, int factor, int ms, double target)
+        // The card asks 100× at 4× (M3: the FastOversampler, the block ADAA and GainMatch's filters side by side took it from
+        // about 50× to about 140× as timed on the 2-core test machine). A throughput guard (Throughput.cs; machines.md §4):
+        // timed against the reference workload in the same run, 1 s played untimed, then 2 s; the floors per architecture.
+        // Figures at the reference's speed (1 band 4×, 1×, 8×; three bands M/S 4×): the 2-core Xeon 217, 305, 138, 63; the Linux
+        // runner 201, 305, 138, 72; the Mac runner 138, 312, 87, 43. Floors between the slowest × 0.9 and the fastest's half × 1.1.
+        [TestCase(1, 4, 0, 150, 100)]
+        [TestCase(1, 1, 0, 220, 220)]
+        [TestCase(1, 8, 0, 100, 62)]
+        [TestCase(3, 4, 1, 48, 30)]
+        public void RunsFasterThanRealTime(int bands, int factor, int ms, double x64, double arm64)
         {
-            var (e, _) = Make(v =>
+            var (l, r) = LimiterTests.Drums(Measure.Rate * 3);
+            const int Warm = Measure.Rate;
+            Throughput.Guard($"Neo Clipper CPU ({bands} band(s), {factor}×, {(ms == 1 ? "M/S" : "L/R")}, drums +9 dB)", Throughput.Floor(x64, arm64), 2,
+                Measure.Rate, ClipperEngine.MaxBlock, () =>
             {
-                Set(v, P.Drive, 9);
-                v.Set(P.Bands, bands - 1);
-                v.Set(P.Oversample, (int)Math.Log2(factor));
-                v.Set(P.Stereo, ms);
-            });
-            var (l, r) = LimiterTests.Drums(Measure.Rate * 10);
-            Run(e, l.Take(Measure.Rate).ToArray(), r.Take(Measure.Rate).ToArray());
-            var clock = Stopwatch.StartNew();
-            Run(e, l, r);
-            double factorRt = 10 / clock.Elapsed.TotalSeconds;
-            Measure.Report($"Neo Clipper {bands} band(s), {factor}×, {(ms == 1 ? "M/S" : "L/R")}: {factorRt:F0}× real time");
-            Assert.That(factorRt, Is.GreaterThan(target));
+                var (e, _) = Make(v =>
+                {
+                    Set(v, P.Drive, 9);
+                    v.Set(P.Bands, bands - 1);
+                    v.Set(P.Oversample, (int)Math.Log2(factor));
+                    v.Set(P.Stereo, ms);
+                });
+                var bl = new float[ClipperEngine.MaxBlock];
+                var br = new float[ClipperEngine.MaxBlock];
+                void Block(int pos, int n)
+                {
+                    Array.Copy(l, pos, bl, 0, n);
+                    Array.Copy(r, pos, br, 0, n);
+                    e.Process(bl, br, n);
+                }
+                for (int pos = 0; pos < Warm; pos += ClipperEngine.MaxBlock) Block(pos, ClipperEngine.MaxBlock);
+                return Throughput.InBlocks(ClipperEngine.MaxBlock, (pos, n) => Block(Warm + pos, n));
+            }, Measure.Report);
         }
     }
 }

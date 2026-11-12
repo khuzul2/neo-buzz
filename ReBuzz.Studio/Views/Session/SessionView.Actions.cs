@@ -843,10 +843,10 @@ namespace ReBuzz.Studio.Views.Session
             }
             item.Items.Add(Check(!sync.LinkEnabled ? "Link" : sync.LinkPeers > 0 ? $"Link ({sync.LinkPeers} peer{(sync.LinkPeers == 1 ? "" : "s")})" : "Link (no peers yet)",
                 sync.LinkEnabled, () => { sync.SetLink(!sync.LinkEnabled); Report("Link"); },
-                "On: tempo and bar phase follow Live and other Link apps on the network; alone, they follow the session.\n" +
+                "On: tempo and bar phase follow the other Link apps on the network; alone, they follow the session.\n" +
                 "A start waits for Link's next bar line, so it lands in step. Runs Link in a helper program (ReBuzzLink).", tag: "Link"));
             var startStop = Check("Start and stop with Link peers", sync.LinkStartStop, () => sync.SetLinkStartStop(!sync.LinkStartStop),
-                "On: play and stop are shared with peers that have start/stop sync on (Live: Link › Start Stop Sync).");
+                "On: play and stop are shared with peers that have start/stop sync on (in their own Link settings).");
             startStop.IsEnabled = sync.LinkEnabled;
             item.Items.Add(startStop);
             item.Items.Add(new Separator());

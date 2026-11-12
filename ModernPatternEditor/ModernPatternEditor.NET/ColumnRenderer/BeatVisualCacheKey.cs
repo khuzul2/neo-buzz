@@ -9,13 +9,17 @@ namespace WDE.ModernPatternEditor.ColumnRenderer
         readonly int[] w;
         readonly int[] bc;
         readonly int[] values;
+        readonly int[] shape;
         readonly int hash;
 
-        public BeatVisualCacheKey(IBeat[] beats, int index, int[] w, int h)
+        // Fork (docs/specs/dye-essence.md §5.5): shape tells apart runs of columns that draw differently
+        // with the same widths and values (BeatVisual.Render: each column's type, digits and tie).
+        public BeatVisualCacheKey(IBeat[] beats, int index, int[] w, int h, int[] shape)
         {
             this.index = index;
             this.h = h;
             this.w = w;     // assuming w is immutable
+            this.shape = shape;
             bc = beats.Select(b => b.Rows.Count).ToArray();
             values = beats.SelectMany(b => b.Rows.Select(r => r.Value)).ToArray();
             hash = CreateHash();
@@ -30,6 +34,7 @@ namespace WDE.ModernPatternEditor.ColumnRenderer
             for (int i = 0; i < w.Length; i++) hash = ((hash << 5) + hash) ^ w[i];
             for (int i = 0; i < bc.Length; i++) hash = ((hash << 5) + hash) ^ bc[i];
             for (int i = 0; i < values.Length; i++) hash = ((hash << 5) + hash) ^ values[i];
+            for (int i = 0; i < shape.Length; i++) hash = ((hash << 5) + hash) ^ shape[i];
 
             return hash;
         }
@@ -42,6 +47,7 @@ namespace WDE.ModernPatternEditor.ColumnRenderer
             if (!w.SequenceEqual(x.w)) return false;
             if (!bc.SequenceEqual(x.bc)) return false;
             if (!values.SequenceEqual(x.values)) return false;
+            if (!shape.SequenceEqual(x.shape)) return false;
 
             return true;
         }

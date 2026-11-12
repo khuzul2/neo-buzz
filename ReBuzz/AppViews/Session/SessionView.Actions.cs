@@ -788,7 +788,7 @@ namespace ReBuzz.AppViews.Session
             {
                 Header = !sync.LinkEnabled ? "Ableton Link" : sync.LinkPeers > 0 ? $"Ableton Link ({sync.LinkPeers} peer{(sync.LinkPeers == 1 ? "" : "s")})" : "Ableton Link (no peers yet)",
                 IsChecked = sync.LinkEnabled,
-                ToolTip = "On: tempo and bar phase follow Live and other Link apps on the network; alone, they follow the session.\n" +
+                ToolTip = "On: tempo and bar phase follow the other Link apps on the network; alone, they follow the session.\n" +
                           "A start waits for Link's next bar line, so it lands in step. Runs Link in a helper program (ReBuzzLink).",
                 Command = new RelayCommand(() => { sync.SetLink(!sync.LinkEnabled); Report("Ableton Link"); })
             });
@@ -797,7 +797,7 @@ namespace ReBuzz.AppViews.Session
                 Header = "Start and stop with Link peers",
                 IsChecked = sync.LinkStartStop,
                 IsEnabled = sync.LinkEnabled,
-                ToolTip = "On: play and stop are shared with peers that have start/stop sync on (Live: Link › Start Stop Sync).",
+                ToolTip = "On: play and stop are shared with peers that have start/stop sync on (in their own Link settings).",
                 Command = new RelayCommand(() => sync.SetLinkStartStop(!sync.LinkStartStop))
             });
             item.Items.Add(new Separator());

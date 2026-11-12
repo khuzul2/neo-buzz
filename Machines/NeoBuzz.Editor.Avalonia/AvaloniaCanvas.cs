@@ -76,10 +76,11 @@ namespace NeoBuzz.Editor
         // ------------------------------------------------------------ text
 
         /// <summary>
-        /// The kit's font (Palette.FontFamily, Segoe UI), else one of its widths, so labels fit the
-        /// layouts made with it: Helvetica Neue on macOS, Arial or Liberation Sans; then the studio's.
+        /// The kit's font: the design tokens' Inter (ux-overhaul.md P2a), which the studio bundles (fonts:Inter), as the
+        /// rest of the studio; where it isn't there, fonts of Segoe UI's widths, so labels fit: Helvetica Neue on macOS,
+        /// Arial or Liberation Sans.
         /// </summary>
-        public static readonly FontFamily Font = new FontFamily(Palette.FontFamily + ", Helvetica Neue, Arial, Liberation Sans, fonts:Inter#Inter, $Default");
+        public static readonly FontFamily Font = new FontFamily("fonts:Inter#" + Palette.FontFamily + ", " + Palette.FontFamily + ", Helvetica Neue, Arial, Liberation Sans, $Default");
 
         static readonly Typeface Regular = new Typeface(Font, FontStyle.Normal, FontWeight.Normal);
         static readonly Typeface SemiBold = new Typeface(Font, FontStyle.Normal, FontWeight.SemiBold);

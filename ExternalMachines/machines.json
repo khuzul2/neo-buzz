@@ -16,7 +16,8 @@
       "assembly": "Pedal M1.NET",
       "patches": [
         "Replaced 3 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)",
-        "Fork (mcp-server.md §12.15, U6 for the Pedal synths): MIDI input (MidiNote and MidiControlChange: notes with velocity, pitch bend, mod wheel, sustain, all notes and sound off) beside the Note track; denormal states flushed under 1e-15; levels, mixes and filter settings glide over 20 ms; silence reported once the output is exactly zero. No parameter, range, default or saved datum changed"
+        "Fork (mcp-server.md §12.15, U6 for the Pedal synths): MIDI input (MidiNote and MidiControlChange: notes with velocity, pitch bend, mod wheel, sustain, all notes and sound off) beside the Note track; denormal states flushed under 1e-15; levels, mixes and filter settings glide over 20 ms; silence reported once the output is exactly zero. No parameter, range, default or saved datum changed",
+        "Fork (§12.15, the follow-ups): an ended voice's LFOs skip their time in runs of equal float steps (the same phases and random values as ticking), and idle and ended voices are left out by one flag a block: silence after notes costs what silence before them did (1.49x before). The same samples"
       ]
     },
     {
@@ -34,7 +35,8 @@
       "patches": [
         "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)",
         "Fork (mcp-server.md §12.15, U6 for the Pedal synths): MIDI input (MidiNote and MidiControlChange: notes with velocity, pitch bend, mod wheel, sustain, all notes and sound off) beside the Note track; denormal states flushed under 1e-15; levels, mixes and filter settings glide over 20 ms; silence reported once the output is exactly zero. No parameter, range, default or saved datum changed",
-        "Fork (§12.15): the factory bank levelled by VCA Level alone (31 of 48 presets), every preset under -1 dBFS and -8 LUFS in tools/preset-check.py"
+        "Fork (§12.15): the factory bank levelled by VCA Level alone (31 of 48 presets), every preset under -1 dBFS and -8 LUFS in tools/preset-check.py",
+        "Fork (§12.15, the follow-ups): VCF Reso defaults to 0, was 30 (the default patch rang at 0.41 x the rate; a saved song keeps its value, the bank is unchanged); the pitch's 2^x accurate below 0 (voices 1, 3 and 5 were 9.6 cents flat: old songs change there); the drift steps every 256 samples whatever the blocks, in a line between steps"
       ]
     },
     {
@@ -52,7 +54,8 @@
       "patches": [
         "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)",
         "Fork (mcp-server.md §12.15, U6 for the Pedal synths): MIDI input (MidiNote and MidiControlChange: notes with velocity, pitch bend, mod wheel, sustain, all notes and sound off) beside the Note track; denormal states flushed under 1e-15; levels, mixes and filter settings glide over 20 ms; silence reported once the output is exactly zero. No parameter, range, default or saved datum changed",
-        "Fork (§12.15): the factory bank levelled by Volume alone (7 of 22 presets), every preset under -1 dBFS and -8 LUFS in tools/preset-check.py"
+        "Fork (§12.15): the factory bank levelled by Volume alone (7 of 22 presets), every preset under -1 dBFS and -8 LUFS in tools/preset-check.py",
+        "Fork (§12.15, the follow-ups): the transport stopping releases a track's note too (it rang on)"
       ]
     },
     {
@@ -69,7 +72,8 @@
       "assembly": "Pedal FM.NET",
       "patches": [
         "Replaced 2 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)",
-        "Fork (mcp-server.md §12.15, U6 for the Pedal synths): MIDI input (MidiNote and MidiControlChange: notes with velocity, pitch bend, mod wheel, sustain, all notes and sound off) beside the Note track; denormal states flushed under 1e-15; levels, mixes and filter settings glide over 20 ms; silence reported once the output is exactly zero. No parameter, range, default or saved datum changed"
+        "Fork (mcp-server.md §12.15, U6 for the Pedal synths): MIDI input (MidiNote and MidiControlChange: notes with velocity, pitch bend, mod wheel, sustain, all notes and sound off) beside the Note track; denormal states flushed under 1e-15; levels, mixes and filter settings glide over 20 ms; silence reported once the output is exactly zero. No parameter, range, default or saved datum changed",
+        "Fork (§12.15, the follow-ups): with Glide on, a note on a released voice retriggers (legato took it and it stayed silent: songs change where that happened); the transport stopping releases a track's note too (it rang on)"
       ]
     },
     {

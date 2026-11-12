@@ -13,7 +13,8 @@ namespace NeoBuzz.Poly
 {
     internal sealed class NeoPolyEditor : NeoEditor
     {
-        static readonly NeoColor AccentColor = NeoColor.FromRgb(0xFF, 0x5C, 0x8A);
+        // Fork (ux-overhaul.md P2a): the Synth identity in the studio, its own colour in the classic app.
+        static readonly NeoColor AccentColor = Tokens.Identity(MachineCategory.Synth, NeoColor.FromRgb(0xFF, 0x5C, 0x8A));
         const double D = 38;
 
         protected override string Title => "Neo Poly";

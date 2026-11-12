@@ -96,7 +96,8 @@ namespace PedalSH101
         // to the key still held, without a retrigger (gliding there with Glide on). The velocity is a level on the
         // VCA (velocity / 127; a track's note is 1, exactly as before), moving over 2 ms between overlapping notes.
         // Pitch bend ±2 semitones, the mod wheel brings in the LFO's vibrato up to ±1 semitone (the SH-101's
-        // modulation lever), the sustain pedal holds MIDI notes. The transport stopping releases a MIDI note.
+        // modulation lever), the sustain pedal holds MIDI notes. The transport stopping releases a MIDI note, and a
+        // track's note too.
         readonly MidiIn _midi = new MidiIn();
         readonly int[]  _keys = new int[16];   // MIDI keys down, oldest first: the last one sounds
         int   _keyCount;
@@ -462,13 +463,20 @@ namespace PedalSH101
             _keyCount--;
         }
 
-        // The transport stopping releases a MIDI note (a track's note rings on, as before).
+        // The transport stopping releases the note, a MIDI note or (fork, follow-ups: it rang on) a track's, as a
+        // track's note off does; a track's note queued in the same tick is stale and dropped, as Juno106 drops them.
         void CheckTransport()
         {
             bool nowPlaying;
             try { nowPlaying = host?.Machine?.Graph?.Buzz?.Playing ?? false; }
             catch { nowPlaying = _wasPlaying; }
-            if (_wasPlaying && !nowPlaying) ReleaseMidiNote();
+            if (_wasPlaying && !nowPlaying)
+            {
+                ReleaseMidiNote();
+                _hasNoteOn = false;
+                _hasNoteOff = false;
+                if (_gateActive) { _env.NoteOff(); _gateActive = false; }
+            }
             _wasPlaying = nowPlaying;
         }
 
@@ -481,7 +489,7 @@ namespace PedalSH101
             int sr = host.MasterInfo.SamplesPerSec;
             if (sr != _cSr) _glidesSet = false;   // fork (neo-buzz, §12.15): a new rate starts at the settings
             UpdateCoefs(sr);
-            CheckTransport();                     // fork (neo-buzz, §12.15): for MIDI notes
+            CheckTransport();                     // fork (neo-buzz, §12.15): Stop releases the note
             bool wasIdle = !_env.IsActive && !_gateActive;   // fork: before this block's notes
 
             // Drain pending events. Process note-on before note-off so a

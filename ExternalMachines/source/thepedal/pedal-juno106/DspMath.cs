@@ -94,5 +94,12 @@ namespace PedalJuno106
             if (e > 254) e = 254;
             return BitConverter.Int32BitsToSingle(e << 23) * p;
         }
+
+        // Fork (neo-buzz, docs/specs/mcp-server.md §12.15): 2^x for the pitch's small offsets (detune, drift,
+        // vibrato), accurate on both sides of 0. FastPow2's cubic is 0.56 % short just under a whole octave (the
+        // "~0.03 %" above holds away from there), so any x just below 0 came out 9.6 cents flat: voices 1, 3 and 5,
+        // whose detunes are negative, played that flat, and vibrato stepped by as much as it crossed 0. Below 0 this
+        // takes 1 / FastPow2(-x), as close as FastPow2 is just above 0; from 0 up it is FastPow2's number.
+        public static float FastPow2Signed(float x) => x >= 0f ? FastPow2(x) : 1f / FastPow2(-x);
     }
 }

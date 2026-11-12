@@ -89,7 +89,88 @@ namespace NeoBuzz.Eq
         public const int G12_5k = 78;
         public const int G16k = 79;
         public const int G20k = 80;
-        public const int Count = 81;
+        public const int B1Chan = 81;
+        public const int B1Shape = 82;
+        public const int B1Dyn = 83;
+        public const int B1Thresh = 84;
+        public const int B1Ratio = 85;
+        public const int B1Knee = 86;
+        public const int B1Range = 87;
+        public const int B1Attack = 88;
+        public const int B1Release = 89;
+        public const int B1Detect = 90;
+        public const int B2Chan = 91;
+        public const int B2Shape = 92;
+        public const int B2Dyn = 93;
+        public const int B2Thresh = 94;
+        public const int B2Ratio = 95;
+        public const int B2Knee = 96;
+        public const int B2Range = 97;
+        public const int B2Attack = 98;
+        public const int B2Release = 99;
+        public const int B2Detect = 100;
+        public const int B3Chan = 101;
+        public const int B3Shape = 102;
+        public const int B3Dyn = 103;
+        public const int B3Thresh = 104;
+        public const int B3Ratio = 105;
+        public const int B3Knee = 106;
+        public const int B3Range = 107;
+        public const int B3Attack = 108;
+        public const int B3Release = 109;
+        public const int B3Detect = 110;
+        public const int B4Chan = 111;
+        public const int B4Shape = 112;
+        public const int B4Dyn = 113;
+        public const int B4Thresh = 114;
+        public const int B4Ratio = 115;
+        public const int B4Knee = 116;
+        public const int B4Range = 117;
+        public const int B4Attack = 118;
+        public const int B4Release = 119;
+        public const int B4Detect = 120;
+        public const int B5Chan = 121;
+        public const int B5Shape = 122;
+        public const int B5Dyn = 123;
+        public const int B5Thresh = 124;
+        public const int B5Ratio = 125;
+        public const int B5Knee = 126;
+        public const int B5Range = 127;
+        public const int B5Attack = 128;
+        public const int B5Release = 129;
+        public const int B5Detect = 130;
+        public const int B6Chan = 131;
+        public const int B6Shape = 132;
+        public const int B6Dyn = 133;
+        public const int B6Thresh = 134;
+        public const int B6Ratio = 135;
+        public const int B6Knee = 136;
+        public const int B6Range = 137;
+        public const int B6Attack = 138;
+        public const int B6Release = 139;
+        public const int B6Detect = 140;
+        public const int B7Chan = 141;
+        public const int B7Shape = 142;
+        public const int B7Dyn = 143;
+        public const int B7Thresh = 144;
+        public const int B7Ratio = 145;
+        public const int B7Knee = 146;
+        public const int B7Range = 147;
+        public const int B7Attack = 148;
+        public const int B7Release = 149;
+        public const int B7Detect = 150;
+        public const int B8Chan = 151;
+        public const int B8Shape = 152;
+        public const int B8Dyn = 153;
+        public const int B8Thresh = 154;
+        public const int B8Ratio = 155;
+        public const int B8Knee = 156;
+        public const int B8Range = 157;
+        public const int B8Attack = 158;
+        public const int B8Release = 159;
+        public const int B8Detect = 160;
+        public const int Delta = 161;
+        public const int Count = 162;
     }
 
     internal static class Params
@@ -180,6 +261,87 @@ namespace NeoBuzz.Eq
             new ParamDef(P.G12_5k, "G12_5k", "G 12.5 kHz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 12.5 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
             new ParamDef(P.G16k, "G16k", "G 16 kHz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 16 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
             new ParamDef(P.G20k, "G20k", "G 20 kHz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 20 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.B1Chan, "B1Chan", "B1 channel", 0, 4, 0, MapKind.Enum, names: new[] { "Stereo", "Left", "Right", "Mid", "Side" }, group: "Channel and dynamics 1", description: "Band 1: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)"),
+            new ParamDef(P.B1Shape, "B1Shape", "B1 shape", 0, 4, 0, MapKind.Enum, names: new[] { "Standard", "Proportional Q", "Baxandall", "Vintage", "All-pass" }, group: "Channel and dynamics 1", description: "Band 1: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)"),
+            new ParamDef(P.B1Dyn, "B1Dyn", "B1 dynamic", 0, 2, 0, MapKind.Enum, names: new[] { "Off", "Down", "Up" }, group: "Channel and dynamics 1", description: "Band 1 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)"),
+            new ParamDef(P.B1Thresh, "B1Thresh", "B1 threshold", 0, 600, 300, MapKind.Linear, a: -60, b: 0, unit: "dB", digits: 1, group: "Channel and dynamics 1", description: "Band 1 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)"),
+            new ParamDef(P.B1Ratio, "B1Ratio", "B1 ratio", 0, 1000, 463, MapKind.Ratio, a: 1, b: 20, flag: true, group: "Channel and dynamics 1", description: "Band 1 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)"),
+            new ParamDef(P.B1Knee, "B1Knee", "B1 knee", 0, 240, 60, MapKind.Linear, a: 0, b: 24, unit: "dB", digits: 1, group: "Channel and dynamics 1", description: "Band 1 dynamic: width of the soft knee around the threshold"),
+            new ParamDef(P.B1Range, "B1Range", "B1 range", 0, 240, 60, MapKind.Linear, a: 0, b: 24, unit: "dB", digits: 1, group: "Channel and dynamics 1", description: "Band 1 dynamic: the most the gain moves from its setting"),
+            new ParamDef(P.B1Attack, "B1Attack", "B1 attack", 0, 1000, 639, MapKind.Time, a: 5e-05, b: 0.2, group: "Channel and dynamics 1", description: "Band 1 dynamic: time to 63 % of a gain change"),
+            new ParamDef(P.B1Release, "B1Release", "B1 release", 0, 1000, 532, MapKind.Time, a: 0.005, b: 3, group: "Channel and dynamics 1", description: "Band 1 dynamic: time back to 37 % of a gain change"),
+            new ParamDef(P.B1Detect, "B1Detect", "B1 detector", 0, 1, 0, MapKind.Enum, names: new[] { "Band", "Sidechain" }, group: "Channel and dynamics 1", description: "Band 1 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel"),
+            new ParamDef(P.B2Chan, "B2Chan", "B2 channel", 0, 4, 0, MapKind.Enum, names: new[] { "Stereo", "Left", "Right", "Mid", "Side" }, group: "Channel and dynamics 2", description: "Band 2: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)"),
+            new ParamDef(P.B2Shape, "B2Shape", "B2 shape", 0, 4, 0, MapKind.Enum, names: new[] { "Standard", "Proportional Q", "Baxandall", "Vintage", "All-pass" }, group: "Channel and dynamics 2", description: "Band 2: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)"),
+            new ParamDef(P.B2Dyn, "B2Dyn", "B2 dynamic", 0, 2, 0, MapKind.Enum, names: new[] { "Off", "Down", "Up" }, group: "Channel and dynamics 2", description: "Band 2 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)"),
+            new ParamDef(P.B2Thresh, "B2Thresh", "B2 threshold", 0, 600, 300, MapKind.Linear, a: -60, b: 0, unit: "dB", digits: 1, group: "Channel and dynamics 2", description: "Band 2 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)"),
+            new ParamDef(P.B2Ratio, "B2Ratio", "B2 ratio", 0, 1000, 463, MapKind.Ratio, a: 1, b: 20, flag: true, group: "Channel and dynamics 2", description: "Band 2 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)"),
+            new ParamDef(P.B2Knee, "B2Knee", "B2 knee", 0, 240, 60, MapKind.Linear, a: 0, b: 24, unit: "dB", digits: 1, group: "Channel and dynamics 2", description: "Band 2 dynamic: width of the soft knee around the threshold"),
+            new ParamDef(P.B2Range, "B2Range", "B2 range", 0, 240, 60, MapKind.Linear, a: 0, b: 24, unit: "dB", digits: 1, group: "Channel and dynamics 2", description: "Band 2 dynamic: the most the gain moves from its setting"),
+            new ParamDef(P.B2Attack, "B2Attack", "B2 attack", 0, 1000, 639, MapKind.Time, a: 5e-05, b: 0.2, group: "Channel and dynamics 2", description: "Band 2 dynamic: time to 63 % of a gain change"),
+            new ParamDef(P.B2Release, "B2Release", "B2 release", 0, 1000, 532, MapKind.Time, a: 0.005, b: 3, group: "Channel and dynamics 2", description: "Band 2 dynamic: time back to 37 % of a gain change"),
+            new ParamDef(P.B2Detect, "B2Detect", "B2 detector", 0, 1, 0, MapKind.Enum, names: new[] { "Band", "Sidechain" }, group: "Channel and dynamics 2", description: "Band 2 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel"),
+            new ParamDef(P.B3Chan, "B3Chan", "B3 channel", 0, 4, 0, MapKind.Enum, names: new[] { "Stereo", "Left", "Right", "Mid", "Side" }, group: "Channel and dynamics 3", description: "Band 3: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)"),
+            new ParamDef(P.B3Shape, "B3Shape", "B3 shape", 0, 4, 0, MapKind.Enum, names: new[] { "Standard", "Proportional Q", "Baxandall", "Vintage", "All-pass" }, group: "Channel and dynamics 3", description: "Band 3: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)"),
+            new ParamDef(P.B3Dyn, "B3Dyn", "B3 dynamic", 0, 2, 0, MapKind.Enum, names: new[] { "Off", "Down", "Up" }, group: "Channel and dynamics 3", description: "Band 3 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)"),
+            new ParamDef(P.B3Thresh, "B3Thresh", "B3 threshold", 0, 600, 300, MapKind.Linear, a: -60, b: 0, unit: "dB", digits: 1, group: "Channel and dynamics 3", description: "Band 3 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)"),
+            new ParamDef(P.B3Ratio, "B3Ratio", "B3 ratio", 0, 1000, 463, MapKind.Ratio, a: 1, b: 20, flag: true, group: "Channel and dynamics 3", description: "Band 3 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)"),
+            new ParamDef(P.B3Knee, "B3Knee", "B3 knee", 0, 240, 60, MapKind.Linear, a: 0, b: 24, unit: "dB", digits: 1, group: "Channel and dynamics 3", description: "Band 3 dynamic: width of the soft knee around the threshold"),
+            new ParamDef(P.B3Range, "B3Range", "B3 range", 0, 240, 60, MapKind.Linear, a: 0, b: 24, unit: "dB", digits: 1, group: "Channel and dynamics 3", description: "Band 3 dynamic: the most the gain moves from its setting"),
+            new ParamDef(P.B3Attack, "B3Attack", "B3 attack", 0, 1000, 639, MapKind.Time, a: 5e-05, b: 0.2, group: "Channel and dynamics 3", description: "Band 3 dynamic: time to 63 % of a gain change"),
+            new ParamDef(P.B3Release, "B3Release", "B3 release", 0, 1000, 532, MapKind.Time, a: 0.005, b: 3, group: "Channel and dynamics 3", description: "Band 3 dynamic: time back to 37 % of a gain change"),
+            new ParamDef(P.B3Detect, "B3Detect", "B3 detector", 0, 1, 0, MapKind.Enum, names: new[] { "Band", "Sidechain" }, group: "Channel and dynamics 3", description: "Band 3 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel"),
+            new ParamDef(P.B4Chan, "B4Chan", "B4 channel", 0, 4, 0, MapKind.Enum, names: new[] { "Stereo", "Left", "Right", "Mid", "Side" }, group: "Channel and dynamics 4", description: "Band 4: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)"),
+            new ParamDef(P.B4Shape, "B4Shape", "B4 shape", 0, 4, 0, MapKind.Enum, names: new[] { "Standard", "Proportional Q", "Baxandall", "Vintage", "All-pass" }, group: "Channel and dynamics 4", description: "Band 4: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)"),
+            new ParamDef(P.B4Dyn, "B4Dyn", "B4 dynamic", 0, 2, 0, MapKind.Enum, names: new[] { "Off", "Down", "Up" }, group: "Channel and dynamics 4", description: "Band 4 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)"),
+            new ParamDef(P.B4Thresh, "B4Thresh", "B4 threshold", 0, 600, 300, MapKind.Linear, a: -60, b: 0, unit: "dB", digits: 1, group: "Channel and dynamics 4", description: "Band 4 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)"),
+            new ParamDef(P.B4Ratio, "B4Ratio", "B4 ratio", 0, 1000, 463, MapKind.Ratio, a: 1, b: 20, flag: true, group: "Channel and dynamics 4", description: "Band 4 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)"),
+            new ParamDef(P.B4Knee, "B4Knee", "B4 knee", 0, 240, 60, MapKind.Linear, a: 0, b: 24, unit: "dB", digits: 1, group: "Channel and dynamics 4", description: "Band 4 dynamic: width of the soft knee around the threshold"),
+            new ParamDef(P.B4Range, "B4Range", "B4 range", 0, 240, 60, MapKind.Linear, a: 0, b: 24, unit: "dB", digits: 1, group: "Channel and dynamics 4", description: "Band 4 dynamic: the most the gain moves from its setting"),
+            new ParamDef(P.B4Attack, "B4Attack", "B4 attack", 0, 1000, 639, MapKind.Time, a: 5e-05, b: 0.2, group: "Channel and dynamics 4", description: "Band 4 dynamic: time to 63 % of a gain change"),
+            new ParamDef(P.B4Release, "B4Release", "B4 release", 0, 1000, 532, MapKind.Time, a: 0.005, b: 3, group: "Channel and dynamics 4", description: "Band 4 dynamic: time back to 37 % of a gain change"),
+            new ParamDef(P.B4Detect, "B4Detect", "B4 detector", 0, 1, 0, MapKind.Enum, names: new[] { "Band", "Sidechain" }, group: "Channel and dynamics 4", description: "Band 4 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel"),
+            new ParamDef(P.B5Chan, "B5Chan", "B5 channel", 0, 4, 0, MapKind.Enum, names: new[] { "Stereo", "Left", "Right", "Mid", "Side" }, group: "Channel and dynamics 5", description: "Band 5: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)"),
+            new ParamDef(P.B5Shape, "B5Shape", "B5 shape", 0, 4, 0, MapKind.Enum, names: new[] { "Standard", "Proportional Q", "Baxandall", "Vintage", "All-pass" }, group: "Channel and dynamics 5", description: "Band 5: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)"),
+            new ParamDef(P.B5Dyn, "B5Dyn", "B5 dynamic", 0, 2, 0, MapKind.Enum, names: new[] { "Off", "Down", "Up" }, group: "Channel and dynamics 5", description: "Band 5 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)"),
+            new ParamDef(P.B5Thresh, "B5Thresh", "B5 threshold", 0, 600, 300, MapKind.Linear, a: -60, b: 0, unit: "dB", digits: 1, group: "Channel and dynamics 5", description: "Band 5 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)"),
+            new ParamDef(P.B5Ratio, "B5Ratio", "B5 ratio", 0, 1000, 463, MapKind.Ratio, a: 1, b: 20, flag: true, group: "Channel and dynamics 5", description: "Band 5 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)"),
+            new ParamDef(P.B5Knee, "B5Knee", "B5 knee", 0, 240, 60, MapKind.Linear, a: 0, b: 24, unit: "dB", digits: 1, group: "Channel and dynamics 5", description: "Band 5 dynamic: width of the soft knee around the threshold"),
+            new ParamDef(P.B5Range, "B5Range", "B5 range", 0, 240, 60, MapKind.Linear, a: 0, b: 24, unit: "dB", digits: 1, group: "Channel and dynamics 5", description: "Band 5 dynamic: the most the gain moves from its setting"),
+            new ParamDef(P.B5Attack, "B5Attack", "B5 attack", 0, 1000, 639, MapKind.Time, a: 5e-05, b: 0.2, group: "Channel and dynamics 5", description: "Band 5 dynamic: time to 63 % of a gain change"),
+            new ParamDef(P.B5Release, "B5Release", "B5 release", 0, 1000, 532, MapKind.Time, a: 0.005, b: 3, group: "Channel and dynamics 5", description: "Band 5 dynamic: time back to 37 % of a gain change"),
+            new ParamDef(P.B5Detect, "B5Detect", "B5 detector", 0, 1, 0, MapKind.Enum, names: new[] { "Band", "Sidechain" }, group: "Channel and dynamics 5", description: "Band 5 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel"),
+            new ParamDef(P.B6Chan, "B6Chan", "B6 channel", 0, 4, 0, MapKind.Enum, names: new[] { "Stereo", "Left", "Right", "Mid", "Side" }, group: "Channel and dynamics 6", description: "Band 6: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)"),
+            new ParamDef(P.B6Shape, "B6Shape", "B6 shape", 0, 4, 0, MapKind.Enum, names: new[] { "Standard", "Proportional Q", "Baxandall", "Vintage", "All-pass" }, group: "Channel and dynamics 6", description: "Band 6: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)"),
+            new ParamDef(P.B6Dyn, "B6Dyn", "B6 dynamic", 0, 2, 0, MapKind.Enum, names: new[] { "Off", "Down", "Up" }, group: "Channel and dynamics 6", description: "Band 6 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)"),
+            new ParamDef(P.B6Thresh, "B6Thresh", "B6 threshold", 0, 600, 300, MapKind.Linear, a: -60, b: 0, unit: "dB", digits: 1, group: "Channel and dynamics 6", description: "Band 6 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)"),
+            new ParamDef(P.B6Ratio, "B6Ratio", "B6 ratio", 0, 1000, 463, MapKind.Ratio, a: 1, b: 20, flag: true, group: "Channel and dynamics 6", description: "Band 6 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)"),
+            new ParamDef(P.B6Knee, "B6Knee", "B6 knee", 0, 240, 60, MapKind.Linear, a: 0, b: 24, unit: "dB", digits: 1, group: "Channel and dynamics 6", description: "Band 6 dynamic: width of the soft knee around the threshold"),
+            new ParamDef(P.B6Range, "B6Range", "B6 range", 0, 240, 60, MapKind.Linear, a: 0, b: 24, unit: "dB", digits: 1, group: "Channel and dynamics 6", description: "Band 6 dynamic: the most the gain moves from its setting"),
+            new ParamDef(P.B6Attack, "B6Attack", "B6 attack", 0, 1000, 639, MapKind.Time, a: 5e-05, b: 0.2, group: "Channel and dynamics 6", description: "Band 6 dynamic: time to 63 % of a gain change"),
+            new ParamDef(P.B6Release, "B6Release", "B6 release", 0, 1000, 532, MapKind.Time, a: 0.005, b: 3, group: "Channel and dynamics 6", description: "Band 6 dynamic: time back to 37 % of a gain change"),
+            new ParamDef(P.B6Detect, "B6Detect", "B6 detector", 0, 1, 0, MapKind.Enum, names: new[] { "Band", "Sidechain" }, group: "Channel and dynamics 6", description: "Band 6 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel"),
+            new ParamDef(P.B7Chan, "B7Chan", "B7 channel", 0, 4, 0, MapKind.Enum, names: new[] { "Stereo", "Left", "Right", "Mid", "Side" }, group: "Channel and dynamics 7", description: "Band 7: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)"),
+            new ParamDef(P.B7Shape, "B7Shape", "B7 shape", 0, 4, 0, MapKind.Enum, names: new[] { "Standard", "Proportional Q", "Baxandall", "Vintage", "All-pass" }, group: "Channel and dynamics 7", description: "Band 7: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)"),
+            new ParamDef(P.B7Dyn, "B7Dyn", "B7 dynamic", 0, 2, 0, MapKind.Enum, names: new[] { "Off", "Down", "Up" }, group: "Channel and dynamics 7", description: "Band 7 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)"),
+            new ParamDef(P.B7Thresh, "B7Thresh", "B7 threshold", 0, 600, 300, MapKind.Linear, a: -60, b: 0, unit: "dB", digits: 1, group: "Channel and dynamics 7", description: "Band 7 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)"),
+            new ParamDef(P.B7Ratio, "B7Ratio", "B7 ratio", 0, 1000, 463, MapKind.Ratio, a: 1, b: 20, flag: true, group: "Channel and dynamics 7", description: "Band 7 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)"),
+            new ParamDef(P.B7Knee, "B7Knee", "B7 knee", 0, 240, 60, MapKind.Linear, a: 0, b: 24, unit: "dB", digits: 1, group: "Channel and dynamics 7", description: "Band 7 dynamic: width of the soft knee around the threshold"),
+            new ParamDef(P.B7Range, "B7Range", "B7 range", 0, 240, 60, MapKind.Linear, a: 0, b: 24, unit: "dB", digits: 1, group: "Channel and dynamics 7", description: "Band 7 dynamic: the most the gain moves from its setting"),
+            new ParamDef(P.B7Attack, "B7Attack", "B7 attack", 0, 1000, 639, MapKind.Time, a: 5e-05, b: 0.2, group: "Channel and dynamics 7", description: "Band 7 dynamic: time to 63 % of a gain change"),
+            new ParamDef(P.B7Release, "B7Release", "B7 release", 0, 1000, 532, MapKind.Time, a: 0.005, b: 3, group: "Channel and dynamics 7", description: "Band 7 dynamic: time back to 37 % of a gain change"),
+            new ParamDef(P.B7Detect, "B7Detect", "B7 detector", 0, 1, 0, MapKind.Enum, names: new[] { "Band", "Sidechain" }, group: "Channel and dynamics 7", description: "Band 7 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel"),
+            new ParamDef(P.B8Chan, "B8Chan", "B8 channel", 0, 4, 0, MapKind.Enum, names: new[] { "Stereo", "Left", "Right", "Mid", "Side" }, group: "Channel and dynamics 8", description: "Band 8: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)"),
+            new ParamDef(P.B8Shape, "B8Shape", "B8 shape", 0, 4, 0, MapKind.Enum, names: new[] { "Standard", "Proportional Q", "Baxandall", "Vintage", "All-pass" }, group: "Channel and dynamics 8", description: "Band 8: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)"),
+            new ParamDef(P.B8Dyn, "B8Dyn", "B8 dynamic", 0, 2, 0, MapKind.Enum, names: new[] { "Off", "Down", "Up" }, group: "Channel and dynamics 8", description: "Band 8 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)"),
+            new ParamDef(P.B8Thresh, "B8Thresh", "B8 threshold", 0, 600, 300, MapKind.Linear, a: -60, b: 0, unit: "dB", digits: 1, group: "Channel and dynamics 8", description: "Band 8 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)"),
+            new ParamDef(P.B8Ratio, "B8Ratio", "B8 ratio", 0, 1000, 463, MapKind.Ratio, a: 1, b: 20, flag: true, group: "Channel and dynamics 8", description: "Band 8 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)"),
+            new ParamDef(P.B8Knee, "B8Knee", "B8 knee", 0, 240, 60, MapKind.Linear, a: 0, b: 24, unit: "dB", digits: 1, group: "Channel and dynamics 8", description: "Band 8 dynamic: width of the soft knee around the threshold"),
+            new ParamDef(P.B8Range, "B8Range", "B8 range", 0, 240, 60, MapKind.Linear, a: 0, b: 24, unit: "dB", digits: 1, group: "Channel and dynamics 8", description: "Band 8 dynamic: the most the gain moves from its setting"),
+            new ParamDef(P.B8Attack, "B8Attack", "B8 attack", 0, 1000, 639, MapKind.Time, a: 5e-05, b: 0.2, group: "Channel and dynamics 8", description: "Band 8 dynamic: time to 63 % of a gain change"),
+            new ParamDef(P.B8Release, "B8Release", "B8 release", 0, 1000, 532, MapKind.Time, a: 0.005, b: 3, group: "Channel and dynamics 8", description: "Band 8 dynamic: time back to 37 % of a gain change"),
+            new ParamDef(P.B8Detect, "B8Detect", "B8 detector", 0, 1, 0, MapKind.Enum, names: new[] { "Band", "Sidechain" }, group: "Channel and dynamics 8", description: "Band 8 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel"),
+            new ParamDef(P.Delta, "Delta", "Delta", 0, 1, 0, MapKind.Switch, group: "Monitor", description: "Hear only what the EQ changes: the output minus the input, before Output (zero latency, nothing to delay), gliding over 10 ms. Off for rendering"),
         };
     }
 }

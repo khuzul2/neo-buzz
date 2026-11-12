@@ -108,7 +108,7 @@ namespace ReBuzz.Agent
                     "level-matched and smoothed over a third of an octave, each point clipped to ±limit_db; or a curve you give (hz and db " +
                     "wanted, positive boosts). Least squares on Neo EQ's design, a band at a time, then all together. Returns the bands, " +
                     "how much of the difference they take (RMS before and after) and the param_set changes for a Neo EQ; with machine, writes " +
-                    "them into that Neo EQ (bands B2–B7, the leftovers at 0 dB; B1 and B8, the cuts, untouched) as one undo step. Render and " +
+                    "them into that Neo EQ (bands B2–B7 as plain stereo bands, the leftovers at 0 dB; B1 and B8, the cuts, untouched) as one undo step. Render and " +
                     "compare after. Example: eq_fit(source=\"r4\", target=\"deep house\", bands=4, machine=\"M EQ\").",
                 Input = Object(null,
                     Opt("source", String("The master to correct: a render id, probe or WAV path (with target)")),

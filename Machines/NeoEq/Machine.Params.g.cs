@@ -249,5 +249,248 @@ namespace NeoBuzz.Eq
 
         [ParameterDecl(Name = "G 20 kHz", Description = "Graphic mode: the response at 20 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
         public int G20k { get => Values[P.G20k]; set => Values.Set(P.G20k, value); }
+
+        [ParameterDecl(Name = "B1 channel", Description = "Band 1: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int B1Chan { get => Values[P.B1Chan]; set => Values.Set(P.B1Chan, value); }
+
+        [ParameterDecl(Name = "B1 shape", Description = "Band 1: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int B1Shape { get => Values[P.B1Shape]; set => Values.Set(P.B1Shape, value); }
+
+        [ParameterDecl(Name = "B1 dynamic", Description = "Band 1 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int B1Dyn { get => Values[P.B1Dyn]; set => Values.Set(P.B1Dyn, value); }
+
+        [ParameterDecl(Name = "B1 threshold", Description = "Band 1 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)", MinValue = 0, MaxValue = 600, DefValue = 300)]
+        public int B1Thresh { get => Values[P.B1Thresh]; set => Values.Set(P.B1Thresh, value); }
+
+        [ParameterDecl(Name = "B1 ratio", Description = "Band 1 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)", MinValue = 0, MaxValue = 1000, DefValue = 463)]
+        public int B1Ratio { get => Values[P.B1Ratio]; set => Values.Set(P.B1Ratio, value); }
+
+        [ParameterDecl(Name = "B1 knee", Description = "Band 1 dynamic: width of the soft knee around the threshold", MinValue = 0, MaxValue = 240, DefValue = 60)]
+        public int B1Knee { get => Values[P.B1Knee]; set => Values.Set(P.B1Knee, value); }
+
+        [ParameterDecl(Name = "B1 range", Description = "Band 1 dynamic: the most the gain moves from its setting", MinValue = 0, MaxValue = 240, DefValue = 60)]
+        public int B1Range { get => Values[P.B1Range]; set => Values.Set(P.B1Range, value); }
+
+        [ParameterDecl(Name = "B1 attack", Description = "Band 1 dynamic: time to 63 % of a gain change", MinValue = 0, MaxValue = 1000, DefValue = 639)]
+        public int B1Attack { get => Values[P.B1Attack]; set => Values.Set(P.B1Attack, value); }
+
+        [ParameterDecl(Name = "B1 release", Description = "Band 1 dynamic: time back to 37 % of a gain change", MinValue = 0, MaxValue = 1000, DefValue = 532)]
+        public int B1Release { get => Values[P.B1Release]; set => Values.Set(P.B1Release, value); }
+
+        [ParameterDecl(Name = "B1 detector", Description = "Band 1 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int B1Detect { get => Values[P.B1Detect]; set => Values.Set(P.B1Detect, value); }
+
+        [ParameterDecl(Name = "B2 channel", Description = "Band 2: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int B2Chan { get => Values[P.B2Chan]; set => Values.Set(P.B2Chan, value); }
+
+        [ParameterDecl(Name = "B2 shape", Description = "Band 2: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int B2Shape { get => Values[P.B2Shape]; set => Values.Set(P.B2Shape, value); }
+
+        [ParameterDecl(Name = "B2 dynamic", Description = "Band 2 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int B2Dyn { get => Values[P.B2Dyn]; set => Values.Set(P.B2Dyn, value); }
+
+        [ParameterDecl(Name = "B2 threshold", Description = "Band 2 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)", MinValue = 0, MaxValue = 600, DefValue = 300)]
+        public int B2Thresh { get => Values[P.B2Thresh]; set => Values.Set(P.B2Thresh, value); }
+
+        [ParameterDecl(Name = "B2 ratio", Description = "Band 2 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)", MinValue = 0, MaxValue = 1000, DefValue = 463)]
+        public int B2Ratio { get => Values[P.B2Ratio]; set => Values.Set(P.B2Ratio, value); }
+
+        [ParameterDecl(Name = "B2 knee", Description = "Band 2 dynamic: width of the soft knee around the threshold", MinValue = 0, MaxValue = 240, DefValue = 60)]
+        public int B2Knee { get => Values[P.B2Knee]; set => Values.Set(P.B2Knee, value); }
+
+        [ParameterDecl(Name = "B2 range", Description = "Band 2 dynamic: the most the gain moves from its setting", MinValue = 0, MaxValue = 240, DefValue = 60)]
+        public int B2Range { get => Values[P.B2Range]; set => Values.Set(P.B2Range, value); }
+
+        [ParameterDecl(Name = "B2 attack", Description = "Band 2 dynamic: time to 63 % of a gain change", MinValue = 0, MaxValue = 1000, DefValue = 639)]
+        public int B2Attack { get => Values[P.B2Attack]; set => Values.Set(P.B2Attack, value); }
+
+        [ParameterDecl(Name = "B2 release", Description = "Band 2 dynamic: time back to 37 % of a gain change", MinValue = 0, MaxValue = 1000, DefValue = 532)]
+        public int B2Release { get => Values[P.B2Release]; set => Values.Set(P.B2Release, value); }
+
+        [ParameterDecl(Name = "B2 detector", Description = "Band 2 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int B2Detect { get => Values[P.B2Detect]; set => Values.Set(P.B2Detect, value); }
+
+        [ParameterDecl(Name = "B3 channel", Description = "Band 3: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int B3Chan { get => Values[P.B3Chan]; set => Values.Set(P.B3Chan, value); }
+
+        [ParameterDecl(Name = "B3 shape", Description = "Band 3: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int B3Shape { get => Values[P.B3Shape]; set => Values.Set(P.B3Shape, value); }
+
+        [ParameterDecl(Name = "B3 dynamic", Description = "Band 3 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int B3Dyn { get => Values[P.B3Dyn]; set => Values.Set(P.B3Dyn, value); }
+
+        [ParameterDecl(Name = "B3 threshold", Description = "Band 3 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)", MinValue = 0, MaxValue = 600, DefValue = 300)]
+        public int B3Thresh { get => Values[P.B3Thresh]; set => Values.Set(P.B3Thresh, value); }
+
+        [ParameterDecl(Name = "B3 ratio", Description = "Band 3 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)", MinValue = 0, MaxValue = 1000, DefValue = 463)]
+        public int B3Ratio { get => Values[P.B3Ratio]; set => Values.Set(P.B3Ratio, value); }
+
+        [ParameterDecl(Name = "B3 knee", Description = "Band 3 dynamic: width of the soft knee around the threshold", MinValue = 0, MaxValue = 240, DefValue = 60)]
+        public int B3Knee { get => Values[P.B3Knee]; set => Values.Set(P.B3Knee, value); }
+
+        [ParameterDecl(Name = "B3 range", Description = "Band 3 dynamic: the most the gain moves from its setting", MinValue = 0, MaxValue = 240, DefValue = 60)]
+        public int B3Range { get => Values[P.B3Range]; set => Values.Set(P.B3Range, value); }
+
+        [ParameterDecl(Name = "B3 attack", Description = "Band 3 dynamic: time to 63 % of a gain change", MinValue = 0, MaxValue = 1000, DefValue = 639)]
+        public int B3Attack { get => Values[P.B3Attack]; set => Values.Set(P.B3Attack, value); }
+
+        [ParameterDecl(Name = "B3 release", Description = "Band 3 dynamic: time back to 37 % of a gain change", MinValue = 0, MaxValue = 1000, DefValue = 532)]
+        public int B3Release { get => Values[P.B3Release]; set => Values.Set(P.B3Release, value); }
+
+        [ParameterDecl(Name = "B3 detector", Description = "Band 3 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int B3Detect { get => Values[P.B3Detect]; set => Values.Set(P.B3Detect, value); }
+
+        [ParameterDecl(Name = "B4 channel", Description = "Band 4: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int B4Chan { get => Values[P.B4Chan]; set => Values.Set(P.B4Chan, value); }
+
+        [ParameterDecl(Name = "B4 shape", Description = "Band 4: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int B4Shape { get => Values[P.B4Shape]; set => Values.Set(P.B4Shape, value); }
+
+        [ParameterDecl(Name = "B4 dynamic", Description = "Band 4 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int B4Dyn { get => Values[P.B4Dyn]; set => Values.Set(P.B4Dyn, value); }
+
+        [ParameterDecl(Name = "B4 threshold", Description = "Band 4 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)", MinValue = 0, MaxValue = 600, DefValue = 300)]
+        public int B4Thresh { get => Values[P.B4Thresh]; set => Values.Set(P.B4Thresh, value); }
+
+        [ParameterDecl(Name = "B4 ratio", Description = "Band 4 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)", MinValue = 0, MaxValue = 1000, DefValue = 463)]
+        public int B4Ratio { get => Values[P.B4Ratio]; set => Values.Set(P.B4Ratio, value); }
+
+        [ParameterDecl(Name = "B4 knee", Description = "Band 4 dynamic: width of the soft knee around the threshold", MinValue = 0, MaxValue = 240, DefValue = 60)]
+        public int B4Knee { get => Values[P.B4Knee]; set => Values.Set(P.B4Knee, value); }
+
+        [ParameterDecl(Name = "B4 range", Description = "Band 4 dynamic: the most the gain moves from its setting", MinValue = 0, MaxValue = 240, DefValue = 60)]
+        public int B4Range { get => Values[P.B4Range]; set => Values.Set(P.B4Range, value); }
+
+        [ParameterDecl(Name = "B4 attack", Description = "Band 4 dynamic: time to 63 % of a gain change", MinValue = 0, MaxValue = 1000, DefValue = 639)]
+        public int B4Attack { get => Values[P.B4Attack]; set => Values.Set(P.B4Attack, value); }
+
+        [ParameterDecl(Name = "B4 release", Description = "Band 4 dynamic: time back to 37 % of a gain change", MinValue = 0, MaxValue = 1000, DefValue = 532)]
+        public int B4Release { get => Values[P.B4Release]; set => Values.Set(P.B4Release, value); }
+
+        [ParameterDecl(Name = "B4 detector", Description = "Band 4 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int B4Detect { get => Values[P.B4Detect]; set => Values.Set(P.B4Detect, value); }
+
+        [ParameterDecl(Name = "B5 channel", Description = "Band 5: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int B5Chan { get => Values[P.B5Chan]; set => Values.Set(P.B5Chan, value); }
+
+        [ParameterDecl(Name = "B5 shape", Description = "Band 5: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int B5Shape { get => Values[P.B5Shape]; set => Values.Set(P.B5Shape, value); }
+
+        [ParameterDecl(Name = "B5 dynamic", Description = "Band 5 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int B5Dyn { get => Values[P.B5Dyn]; set => Values.Set(P.B5Dyn, value); }
+
+        [ParameterDecl(Name = "B5 threshold", Description = "Band 5 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)", MinValue = 0, MaxValue = 600, DefValue = 300)]
+        public int B5Thresh { get => Values[P.B5Thresh]; set => Values.Set(P.B5Thresh, value); }
+
+        [ParameterDecl(Name = "B5 ratio", Description = "Band 5 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)", MinValue = 0, MaxValue = 1000, DefValue = 463)]
+        public int B5Ratio { get => Values[P.B5Ratio]; set => Values.Set(P.B5Ratio, value); }
+
+        [ParameterDecl(Name = "B5 knee", Description = "Band 5 dynamic: width of the soft knee around the threshold", MinValue = 0, MaxValue = 240, DefValue = 60)]
+        public int B5Knee { get => Values[P.B5Knee]; set => Values.Set(P.B5Knee, value); }
+
+        [ParameterDecl(Name = "B5 range", Description = "Band 5 dynamic: the most the gain moves from its setting", MinValue = 0, MaxValue = 240, DefValue = 60)]
+        public int B5Range { get => Values[P.B5Range]; set => Values.Set(P.B5Range, value); }
+
+        [ParameterDecl(Name = "B5 attack", Description = "Band 5 dynamic: time to 63 % of a gain change", MinValue = 0, MaxValue = 1000, DefValue = 639)]
+        public int B5Attack { get => Values[P.B5Attack]; set => Values.Set(P.B5Attack, value); }
+
+        [ParameterDecl(Name = "B5 release", Description = "Band 5 dynamic: time back to 37 % of a gain change", MinValue = 0, MaxValue = 1000, DefValue = 532)]
+        public int B5Release { get => Values[P.B5Release]; set => Values.Set(P.B5Release, value); }
+
+        [ParameterDecl(Name = "B5 detector", Description = "Band 5 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int B5Detect { get => Values[P.B5Detect]; set => Values.Set(P.B5Detect, value); }
+
+        [ParameterDecl(Name = "B6 channel", Description = "Band 6: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int B6Chan { get => Values[P.B6Chan]; set => Values.Set(P.B6Chan, value); }
+
+        [ParameterDecl(Name = "B6 shape", Description = "Band 6: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int B6Shape { get => Values[P.B6Shape]; set => Values.Set(P.B6Shape, value); }
+
+        [ParameterDecl(Name = "B6 dynamic", Description = "Band 6 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int B6Dyn { get => Values[P.B6Dyn]; set => Values.Set(P.B6Dyn, value); }
+
+        [ParameterDecl(Name = "B6 threshold", Description = "Band 6 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)", MinValue = 0, MaxValue = 600, DefValue = 300)]
+        public int B6Thresh { get => Values[P.B6Thresh]; set => Values.Set(P.B6Thresh, value); }
+
+        [ParameterDecl(Name = "B6 ratio", Description = "Band 6 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)", MinValue = 0, MaxValue = 1000, DefValue = 463)]
+        public int B6Ratio { get => Values[P.B6Ratio]; set => Values.Set(P.B6Ratio, value); }
+
+        [ParameterDecl(Name = "B6 knee", Description = "Band 6 dynamic: width of the soft knee around the threshold", MinValue = 0, MaxValue = 240, DefValue = 60)]
+        public int B6Knee { get => Values[P.B6Knee]; set => Values.Set(P.B6Knee, value); }
+
+        [ParameterDecl(Name = "B6 range", Description = "Band 6 dynamic: the most the gain moves from its setting", MinValue = 0, MaxValue = 240, DefValue = 60)]
+        public int B6Range { get => Values[P.B6Range]; set => Values.Set(P.B6Range, value); }
+
+        [ParameterDecl(Name = "B6 attack", Description = "Band 6 dynamic: time to 63 % of a gain change", MinValue = 0, MaxValue = 1000, DefValue = 639)]
+        public int B6Attack { get => Values[P.B6Attack]; set => Values.Set(P.B6Attack, value); }
+
+        [ParameterDecl(Name = "B6 release", Description = "Band 6 dynamic: time back to 37 % of a gain change", MinValue = 0, MaxValue = 1000, DefValue = 532)]
+        public int B6Release { get => Values[P.B6Release]; set => Values.Set(P.B6Release, value); }
+
+        [ParameterDecl(Name = "B6 detector", Description = "Band 6 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int B6Detect { get => Values[P.B6Detect]; set => Values.Set(P.B6Detect, value); }
+
+        [ParameterDecl(Name = "B7 channel", Description = "Band 7: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int B7Chan { get => Values[P.B7Chan]; set => Values.Set(P.B7Chan, value); }
+
+        [ParameterDecl(Name = "B7 shape", Description = "Band 7: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int B7Shape { get => Values[P.B7Shape]; set => Values.Set(P.B7Shape, value); }
+
+        [ParameterDecl(Name = "B7 dynamic", Description = "Band 7 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int B7Dyn { get => Values[P.B7Dyn]; set => Values.Set(P.B7Dyn, value); }
+
+        [ParameterDecl(Name = "B7 threshold", Description = "Band 7 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)", MinValue = 0, MaxValue = 600, DefValue = 300)]
+        public int B7Thresh { get => Values[P.B7Thresh]; set => Values.Set(P.B7Thresh, value); }
+
+        [ParameterDecl(Name = "B7 ratio", Description = "Band 7 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)", MinValue = 0, MaxValue = 1000, DefValue = 463)]
+        public int B7Ratio { get => Values[P.B7Ratio]; set => Values.Set(P.B7Ratio, value); }
+
+        [ParameterDecl(Name = "B7 knee", Description = "Band 7 dynamic: width of the soft knee around the threshold", MinValue = 0, MaxValue = 240, DefValue = 60)]
+        public int B7Knee { get => Values[P.B7Knee]; set => Values.Set(P.B7Knee, value); }
+
+        [ParameterDecl(Name = "B7 range", Description = "Band 7 dynamic: the most the gain moves from its setting", MinValue = 0, MaxValue = 240, DefValue = 60)]
+        public int B7Range { get => Values[P.B7Range]; set => Values.Set(P.B7Range, value); }
+
+        [ParameterDecl(Name = "B7 attack", Description = "Band 7 dynamic: time to 63 % of a gain change", MinValue = 0, MaxValue = 1000, DefValue = 639)]
+        public int B7Attack { get => Values[P.B7Attack]; set => Values.Set(P.B7Attack, value); }
+
+        [ParameterDecl(Name = "B7 release", Description = "Band 7 dynamic: time back to 37 % of a gain change", MinValue = 0, MaxValue = 1000, DefValue = 532)]
+        public int B7Release { get => Values[P.B7Release]; set => Values.Set(P.B7Release, value); }
+
+        [ParameterDecl(Name = "B7 detector", Description = "Band 7 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int B7Detect { get => Values[P.B7Detect]; set => Values.Set(P.B7Detect, value); }
+
+        [ParameterDecl(Name = "B8 channel", Description = "Band 8: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int B8Chan { get => Values[P.B8Chan]; set => Values.Set(P.B8Chan, value); }
+
+        [ParameterDecl(Name = "B8 shape", Description = "Band 8: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int B8Shape { get => Values[P.B8Shape]; set => Values.Set(P.B8Shape, value); }
+
+        [ParameterDecl(Name = "B8 dynamic", Description = "Band 8 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int B8Dyn { get => Values[P.B8Dyn]; set => Values.Set(P.B8Dyn, value); }
+
+        [ParameterDecl(Name = "B8 threshold", Description = "Band 8 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)", MinValue = 0, MaxValue = 600, DefValue = 300)]
+        public int B8Thresh { get => Values[P.B8Thresh]; set => Values.Set(P.B8Thresh, value); }
+
+        [ParameterDecl(Name = "B8 ratio", Description = "Band 8 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)", MinValue = 0, MaxValue = 1000, DefValue = 463)]
+        public int B8Ratio { get => Values[P.B8Ratio]; set => Values.Set(P.B8Ratio, value); }
+
+        [ParameterDecl(Name = "B8 knee", Description = "Band 8 dynamic: width of the soft knee around the threshold", MinValue = 0, MaxValue = 240, DefValue = 60)]
+        public int B8Knee { get => Values[P.B8Knee]; set => Values.Set(P.B8Knee, value); }
+
+        [ParameterDecl(Name = "B8 range", Description = "Band 8 dynamic: the most the gain moves from its setting", MinValue = 0, MaxValue = 240, DefValue = 60)]
+        public int B8Range { get => Values[P.B8Range]; set => Values.Set(P.B8Range, value); }
+
+        [ParameterDecl(Name = "B8 attack", Description = "Band 8 dynamic: time to 63 % of a gain change", MinValue = 0, MaxValue = 1000, DefValue = 639)]
+        public int B8Attack { get => Values[P.B8Attack]; set => Values.Set(P.B8Attack, value); }
+
+        [ParameterDecl(Name = "B8 release", Description = "Band 8 dynamic: time back to 37 % of a gain change", MinValue = 0, MaxValue = 1000, DefValue = 532)]
+        public int B8Release { get => Values[P.B8Release]; set => Values.Set(P.B8Release, value); }
+
+        [ParameterDecl(Name = "B8 detector", Description = "Band 8 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int B8Detect { get => Values[P.B8Detect]; set => Values.Set(P.B8Detect, value); }
+
+        [ParameterDecl(Name = "Delta", Description = "Hear only what the EQ changes: the output minus the input, before Output (zero latency, nothing to delay), gliding over 10 ms. Off for rendering", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int Delta { get => Values[P.Delta]; set => Values.Set(P.Delta, value); }
     }
 }

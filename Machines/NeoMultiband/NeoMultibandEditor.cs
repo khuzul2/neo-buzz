@@ -22,12 +22,13 @@ namespace NeoBuzz.Multiband
 {
     internal sealed class NeoMultibandEditor : NeoEditor
     {
-        static readonly NeoColor AccentColor = NeoColor.FromRgb(0xF2, 0xB1, 0x3C);
+        // Fork (ux-overhaul.md P2a): the Dynamics identity in the studio, its own colour in the classic app.
+        static readonly NeoColor AccentColor = Tokens.Identity(MachineCategory.Dynamics, NeoColor.FromRgb(0xF2, 0xB1, 0x3C));
 
-        internal static readonly NeoColor[] BandColors =
+        internal static readonly NeoColor[] BandColors = Tokens.Bands(new[]
         {
             NeoColor.FromRgb(0xFF, 0x6B, 0x6B), NeoColor.FromRgb(0x8F, 0xD1, 0x4F), NeoColor.FromRgb(0x4F, 0xB3, 0xFF), NeoColor.FromRgb(0xC3, 0x8C, 0xFF),
-        };
+        });
 
         const double MeterRangeDb = 24, BoostRangeDb = 12;
 

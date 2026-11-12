@@ -66,9 +66,15 @@ namespace PedalJuno106
         // DriftOctaves is the combined offset converted once per block, added
         // straight into the existing pitchOct add chain in the per-sample
         // loop — costs one extra add per sample, no extra FastPow2 calls.
+        // Fork (neo-buzz, docs/specs/mcp-server.md §12.15): the walk steps every DriftGrid samples, whatever the
+        // block size (it stepped once a block: another block size, another walk), and the per-sample loop moves
+        // in a straight line from one step to the next (it jumped at each): DriftOctaves + DriftSlope × the samples
+        // since the step, which reaches DriftTarget as the next one starts.
         public float StaticDetuneCents;    // immutable per voice
         public float DriftCents;           // slow random-walk state
-        public float DriftOctaves;         // (StaticDetuneCents + DriftCents) / 1200, cached per block
+        public float DriftOctaves;         // (StaticDetuneCents + DriftCents) / 1200 at the last step (fork: where the line starts)
+        public float DriftTarget;          // fork: at this step, where the line ends
+        public float DriftSlope;           // fork: octaves per sample along it
         public uint  DriftSeed;            // per-voice LCG seed
 
         public void SetSampleRate(float sr)
@@ -96,15 +102,16 @@ namespace PedalJuno106
         }
 
         /// <summary>
-        /// Advance the slow drift random walk by one block-rate step, then
-        /// recompute the cached DriftOctaves used by the per-sample loop.
+        /// Advance the slow drift random walk by one step (fork: every DriftGrid
+        /// samples), then set the line the per-sample loop follows to it.
         ///   coef         : lowpass coefficient for the random walk
-        ///                  (≈ blockTimeSec / driftTimeConstantSec)
+        ///                  (≈ stepTimeSec / driftTimeConstantSec)
         ///   wanderCents  : range of the random kick (peak-to-peak ≈ 2× this)
-        /// Always called for every voice every block, including silent ones —
+        ///   gridSamples  : fork: samples to the next step
+        /// Always called for every voice every step, including silent ones —
         /// drift evolves continuously in real hardware, regardless of key state.
         /// </summary>
-        public void UpdateDrift(float coef, float wanderCents)
+        public void UpdateDrift(float coef, float wanderCents, int gridSamples)
         {
             // LCG step, signed value in approximately [-1, 1)
             DriftSeed = DriftSeed * 1664525u + 1013904223u;
@@ -114,8 +121,10 @@ namespace PedalJuno106
             // bounded roughly by ±wanderCents.
             DriftCents += coef * (rnd * wanderCents - DriftCents);
 
-            // Cache the combined detune as octaves for the per-sample loop.
-            DriftOctaves = (StaticDetuneCents + DriftCents) * (1f / 1200f);
+            // Fork: from where the last line ended to the combined detune as octaves, over the next gridSamples.
+            DriftOctaves = DriftTarget;
+            DriftTarget  = (StaticDetuneCents + DriftCents) * (1f / 1200f);
+            DriftSlope   = (DriftTarget - DriftOctaves) * (1f / gridSamples);
         }
 
         /// <summary>

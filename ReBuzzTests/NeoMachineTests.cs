@@ -87,7 +87,7 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Wave = new("Neo Wave", "Wave", true);
         internal static readonly NeoInfo Fm6 = new("Neo FM6", "FM6", true);
         // Mix and master batch (docs/specs/machines.md §5, MCP A4).
-        internal static readonly NeoInfo Eq = new("Neo EQ", "EQ", false);
+        internal static readonly NeoInfo Eq = new("Neo EQ", "EQ", false, multiIo: true);   // v2 (M3): input 2 is the sidechain
         internal static readonly NeoInfo Utility = new("Neo Utility", "Utility", false);
         internal static readonly NeoInfo Limiter = new("Neo Limiter", "Limiter", false);
         // The next batch's first successor (docs/specs/machine-safety.md §4): chorus, flanger, phaser.
@@ -1397,6 +1397,35 @@ namespace ReBuzzTests
             rig.Param("B7 gain").SetValue(0, 300);   // +6 dB high shelf
             rig.Param("B1 on").SetValue(0, 1);
             ShootEditor(rig.Effect, "neo-eq-editor");
+        }
+
+        [Test]
+        public void NeoEqV2DynamicBandMovesItsGainAndShowsItsEditor()
+        {
+            // docs/specs/mastering-tools.md §5.3 (M3): two inputs (2 the sidechain); a dynamic band on the test sine (220 Hz).
+            using var rig = new Rig(Eq);
+            Assert.That(rig.Effect.InputChannelCount, Is.EqualTo(2), "input 2 is the sidechain");
+            Assert.That(rig.Param("B3 channel").DescribeValue(4), Is.EqualTo("Side"));
+            Assert.That(rig.Param("B3 shape").DescribeValue(3), Is.EqualTo("Vintage"));
+            Assert.That(rig.Param("B3 dynamic").DescribeValue(1), Is.EqualTo("Down"));
+            rig.Play(0.2);
+            double flat = Rms(rig.Play(0.3));
+            rig.Param("B3 freq").SetValue(0, (int)Math.Round(Math.Log(220 / 20.0) / Math.Log(1000) * 10000));
+            rig.Param("B3 Q").SetValue(0, 600);
+            rig.Param("B3 dynamic").SetValue(0, 1);       // Down
+            rig.Param("B3 threshold").SetValue(0, 0);     // −60 dB
+            rig.Param("B3 ratio").SetValue(0, 1000);      // ∞
+            rig.Param("B3 range").SetValue(0, 120);       // 12 dB
+            rig.Play(0.5);
+            double ducked = Rms(rig.Play(0.3));
+            TestContext.Out.WriteLine($"flat {Db(flat):F2} dB, the dynamic band down 12 dB on the sine {Db(ducked / flat):F2} dB");
+            Assert.That(Db(ducked / flat), Is.EqualTo(-12).Within(0.5), "the band's gain moved by its range");
+            Assert.That(rig.Effect.Latency, Is.EqualTo(0), "minimum phase: no latency");
+            rig.Param("B6 channel").SetValue(0, 4);       // Side
+            rig.Param("B6 gain").SetValue(0, 300);        // +6 dB
+            rig.Param("B2 shape").SetValue(0, 3);         // Vintage
+            rig.Param("B2 gain").SetValue(0, 300);
+            ShootEditor(rig.Effect, "neo-eq-editor-v2");
         }
 
         [Test]
