@@ -115,6 +115,10 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Imager = new("Neo Imager", "Imager", false);
         internal static readonly NeoInfo Exciter = new("Neo Exciter", "Exciter", false);
         internal static readonly NeoInfo Dither = new("Neo Dither", "Dither", false);
+        // The tape, the de-esser and the gate (docs/specs/mastering-tools.md §5.11 - §5.13).
+        internal static readonly NeoInfo Tape = new("Neo Tape", "Tape", false);
+        internal static readonly NeoInfo DeEsser = new("Neo De-esser", "DeEsser", false);
+        internal static readonly NeoInfo Gate = new("Neo Gate", "Gate", false);
         // The strip (docs/specs/mastering-tools.md §5.10).
         internal static readonly NeoInfo Strip = new("Neo Strip", "Strip", false);
 
@@ -1620,6 +1624,64 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void NeoTapeReportsItsLatencyAndShowsItsEditor()
+        {
+            using var rig = new Rig(Tape);
+            rig.Play(0.05);
+            int high = rig.Effect.Latency;
+            Assert.That(high, Is.GreaterThan(0), "the oversampling's delay");
+            rig.Param("Saturation").SetValue(0, 200);
+            rig.Play(1.0);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(high), "constant whatever the saturation");
+            rig.Param("Quality").SetValue(0, 0);
+            rig.Play(0.5);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(0), "Live has none");
+            rig.Param("Quality").SetValue(0, 1);
+            rig.Play(2.5);
+            var instance = rig.Effect.ManagedMachine;
+            var readings = (System.Collections.Generic.IReadOnlyDictionary<string, double>)instance.GetType().GetProperty("Readings")!.GetValue(instance)!;
+            TestContext.Out.WriteLine($"[notice] Neo Tape readings: {string.Join(", ", readings.Select(kv => $"{kv.Key} {kv.Value}"))}");
+            Assert.That(readings.ContainsKey("added_db"), Is.True);
+            ShootEditor(rig.Effect, "neo-tape-editor");
+        }
+
+        [Test]
+        public void NeoDeEsserReportsItsLookaheadAsLatencyAndShowsItsEditor()
+        {
+            using var rig = new Rig(DeEsser);
+            rig.Play(0.05);
+            Assert.That(rig.Effect.Latency, Is.EqualTo((int)Math.Round(0.001 * rig.Rate)), "the default 1 ms of lookahead, the minimum-phase split");
+            rig.Param("Lookahead").SetValue(0, 0);
+            rig.Play(0.5);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(0), "no lookahead");
+            rig.Param("Lookahead").SetValue(0, 400);
+            rig.Play(0.5);
+            Assert.That(rig.Effect.Latency, Is.EqualTo((int)Math.Round(0.002 * rig.Rate)), "2 ms of lookahead");
+            rig.Param("Action").SetValue(0, 1);
+            rig.Play(0.5);
+            Assert.That(rig.Effect.Latency, Is.EqualTo((int)Math.Round(0.002 * rig.Rate) + 255), "the linear-phase split adds 255");
+            var instance = rig.Effect.ManagedMachine;
+            var readings = (System.Collections.Generic.IReadOnlyDictionary<string, double>)instance.GetType().GetProperty("Readings")!.GetValue(instance)!;
+            Assert.That(readings.ContainsKey("reduction_db"), Is.True);
+            ShootEditor(rig.Effect, "neo-deesser-editor");
+        }
+
+        [Test]
+        public void NeoGateReportsItsLookaheadAsLatencyAndShowsItsEditor()
+        {
+            using var rig = new Rig(Gate);
+            rig.Play(0.05);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(0));
+            rig.Param("Lookahead").SetValue(0, 200);
+            rig.Play(0.5);
+            Assert.That(rig.Effect.Latency, Is.EqualTo((int)Math.Round(0.005 * rig.Rate)), "5 ms of lookahead");
+            var instance = rig.Effect.ManagedMachine;
+            var readings = (System.Collections.Generic.IReadOnlyDictionary<string, double>)instance.GetType().GetProperty("Readings")!.GetValue(instance)!;
+            Assert.That(readings.ContainsKey("gain_db"), Is.True);
+            ShootEditor(rig.Effect, "neo-gate-editor");
+        }
+
+        [Test]
         public void NeoDitherAddsNoLatencyAndShowsItsEditor()
         {
             using var rig = new Rig(Dither);
@@ -1708,7 +1770,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip, Tape, DeEsser, Gate })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");

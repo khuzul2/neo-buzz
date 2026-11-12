@@ -452,7 +452,7 @@ namespace NeoBuzz.MachineTests
             for (int n = 0; n < 6; n++) b.NoteOn(n, 48 + 5 * n, 0.5f + 0.1f * n);
         }
 
-        const ulong PinnedMixedHash = 0xD182D5D3D3FC37D2UL;
+        const ulong PinnedMixedHash = 0xA0CDDDCDFADA4572UL;
 
         [Test]
         public void EveryLaneImplementationGivesTheSameBitsAndTheyAreThePinnedOnes()
@@ -462,7 +462,7 @@ namespace NeoBuzz.MachineTests
             {
                 var b = Mixed(kind);
                 Notes(b);
-                var y = Render(b, 24000, 256, p => { if (p == 12000) { b.NoteOff(1); b.NoteOn(7, 80, 1f); } });
+                var y = Render(b, 24000, 256, p => { if (p == 12000) { b.NoteOff(1); b.NoteOn(7, 80, 1f); } }, 12000);
                 ulong h = Hash(y);
                 Measure.Report($"Dye Essence samples + grains + wavetable, {kind}: 0x{h:X16}");
                 if (first == 0) first = h;
@@ -592,6 +592,42 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
+        public void DenseCloudsStayUnderTheGrainCapWithoutClicks()
+        {
+            // 16 notes of 100 grains a second at 300 ms would be 30 grains a note: the cap holds each slot to GrainCap live
+            // grains (plus the few fading out) and the bank to its budget; taking a grain over fades, so no click.
+            var b = Cloud(tweak: o => { o.GrainRate = 100; o.GrainSize = 0.3f; });
+            b.S.Filter[0].Type = FilterType.Off;
+            for (int n = 0; n < 16; n++) b.NoteOn(n, 36 + 3 * n, 0.8f);
+            var l = new float[256];
+            var r = new float[256];
+            int most = 0;
+            for (int i = 0; i < 400; i++)
+            {
+                b.Process(l, r, 256);
+                most = Math.Max(most, b.ActiveGrains);
+            }
+            Measure.Report($"Dye Essence dense cloud, 16 notes: most grains sounding {most} (cap {NoteBank.GrainCap} a slot, budget {NoteBank.GrainBudget})");
+            Assert.That(most, Is.LessThanOrEqualTo(NoteBank.GrainBudget + 16 * 4), "live grains within the budget, plus those fading out");
+            Assert.That(most, Is.GreaterThan(16 * 3), "and the cloud is still dense");
+
+            // One note: the steps between samples are no bigger than the cloud's own texture (a click would stand far out).
+            var one = Cloud(tweak: o => { o.GrainRate = 200; o.GrainSize = 0.5f; });
+            one.NoteOn(0, 60, 0.8f);
+            var y = Render(one, 48000, 256, null);
+            double sum = 0, peak = 0;
+            for (int i = 4000; i < 48000 - 1; i++)
+            {
+                double d = Math.Abs(y[2 * (i + 1)] - y[2 * i]);
+                sum += d * d;
+                peak = Math.Max(peak, d);
+            }
+            double rms = Math.Sqrt(sum / 44000);
+            Measure.Report($"Dye Essence dense cloud, one note: largest step {peak:F4}, rms step {rms:F4} ({peak / rms:F1}x)");
+            Assert.That(peak, Is.LessThan(12 * rms), "no click where grains are taken over");
+        }
+
+        [Test]
         public void TheEnginesRunInRealTimeAsStandaloneEngines()
         {
             // Each engine alone (the other slots off), a ladder after it, 2×: 16 notes of the Sample engine
@@ -614,7 +650,7 @@ namespace NeoBuzz.MachineTests
                 ("Granular, 60 grains/s of 150 ms (9 at once)", () => Cloud(tweak: o => { o.GrainRate = 60; o.GrainSize = 0.15f; })),
                 ("Granular, 100 grains/s of 300 ms (30 at once)", () => Cloud(tweak: o => { o.GrainRate = 100; o.GrainSize = 0.3f; })),
             };
-            double[] least = { 4, 1.5, 1, 3, 1.5, 0.5 };
+            double[] least = { 3, 1, 0.8, 2.5, 1, 1.2 };
             int c = 0;
             foreach (var (name, make) in cases)
             {

@@ -60,6 +60,21 @@ namespace ReBuzz.Studio.Tests
 
         static Point At(Control c, Window window, double x, double y) => c.TranslatePoint(new Point(x, y), window)!.Value;
 
+        static ReBuzz.Audio.WorkManager work;
+
+        /// <summary>Audio for a moment: the host applies a parameter set from outside on its work thread, and the editor's bindings hear it then.</summary>
+        static void Run(double seconds)
+        {
+            work ??= new ReBuzz.Audio.WorkManager(Core, new ReBuzz.Audio.WorkThreadEngine(1), 0, Core.EngineSettings);
+            var buffer = new float[512];
+            int blocks = (int)Math.Ceiling(seconds * ReBuzzCore.masterInfo.SamplesPerSec / 256.0);
+            lock (ReBuzzCore.AudioLock)
+            {
+                for (int i = 0; i < blocks; i++) work.MainAudioFillBuffer(buffer, 0, 512);
+            }
+            Dispatcher.UIThread.RunJobs();
+        }
+
         static void Pump()
         {
             for (int i = 0; i < 3; i++)
@@ -89,9 +104,9 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void ItsPagesFitALaptopScreenWithTheKeyboard()
         {
-            // 1440 × 900 points, less the dock or task bar's 40: the editor and its keyboard (shown) inside it, not scrolled.
+            // 1280 × 720 points, less the dock or task bar's 40: the editor and its keyboard (shown) inside it, not scrolled.
             var area = MachineWindowFit.WorkArea;
-            MachineWindowFit.WorkArea = w => new Size(1440, 860);
+            MachineWindowFit.WorkArea = w => new Size(1280, 680);
             var m = Add("Pages Dye");
             try
             {
@@ -104,11 +119,11 @@ namespace ReBuzz.Studio.Tests
                 window.UpdateLayout();
                 var size = editor.Bounds.Size;
                 double extra = NeoBuzz.Editor.MachineKeyboardFrame.ExtraHeightOf(window.Content);
-                TestContext.Out.WriteLine($"[notice] Dye Essence's editor: {size.Width:0} x {size.Height:0}, with the keyboard {size.Height + extra:0} (window {window.ClientSize.Width:0} x {window.ClientSize.Height:0} on a 1440 x 860 work area)");
+                TestContext.Out.WriteLine($"[notice] Dye Essence's editor: {size.Width:0} x {size.Height:0}, with the keyboard {size.Height + extra:0} (window {window.ClientSize.Width:0} x {window.ClientSize.Height:0} on a 1280 x 680 work area)");
 
                 var pages = Pages(window);
                 var names = ((IReadOnlyList<string>)Get(pages, "Names")).ToArray();
-                Assert.That(names, Is.EqualTo(new[] { "Oscillators", "Mix & filters", "Modulation" }));
+                Assert.That(names, Is.EqualTo(new[] { "Oscillators", "Mix & filters", "Modulation", "Arp & Seq" }));
                 var pageSize = (Size)Get(pages, "PageSize");
                 Assert.Multiple(() =>
                 {
@@ -128,8 +143,8 @@ namespace ReBuzz.Studio.Tests
                         Studio.Screenshot(window, "dye-essence-editor-" + (i + 1) + "-" + names[i].Split(' ')[0].ToLowerInvariant());
                     }
                 });
-                Assert.That(size.Width + MachineWindowFit.FrameWidth, Is.LessThanOrEqualTo(1440), "as wide as the screen at most");
-                Assert.That(size.Height + extra + MachineWindowFit.FrameHeight, Is.LessThanOrEqualTo(860), "as tall as the screen at most, with the keyboard");
+                Assert.That(size.Width + MachineWindowFit.FrameWidth, Is.LessThanOrEqualTo(1280), "as wide as the screen at most");
+                Assert.That(size.Height + extra + MachineWindowFit.FrameHeight, Is.LessThanOrEqualTo(680), "as tall as the screen at most, with the keyboard");
                 var view = (Control)NeoBuzz.Editor.MachineKeyboardFrame.TopOf(window.Content)!;
                 Assert.That(view.Bounds.Height, Is.GreaterThanOrEqualTo(size.Height - 1), "shown whole: nothing to scroll");
 
@@ -144,6 +159,42 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 MachineWindowFit.WorkArea = area;
+                Remove(m);
+            }
+        }
+
+        [AvaloniaTest]
+        public void EveryEngineTypeKeepsTheOscillatorsPageInItsSize()
+        {
+            // A slot shows the rows of its engine only: wavetable and analog, sample, granular, harmonic each fit the page.
+            var m = Add("Engines Dye");
+            try
+            {
+                var window = Open(m);
+                var pages = Pages(window);
+                var pageSize = (Size)Get(pages, "PageSize");
+                pages.GetType().GetProperty("Selected")!.SetValue(pages, 0);
+                Assert.Multiple(() =>
+                {
+                    foreach (var (type, name) in new[] { (1, "Wavetable"), (2, "Analog"), (3, "Sample"), (4, "Granular"), (5, "Harmonic"), (6, "Modal"), (0, "Off") })
+                    {
+                        foreach (var slot in new[] { "A", "B", "C" }) Global(m, slot + " engine").SetValue(0, type);
+                        Run(0.05);
+                        Pump();
+                        window.UpdateLayout();
+                        var page = (Control)Call(pages, "Page", 0);
+                        page.Measure(Size.Infinity);
+                        var want = page.DesiredSize;
+                        TestContext.Out.WriteLine($"[notice] Dye Essence Oscillators page with {name}: {want.Width:0} x {want.Height:0} of {pageSize.Width:0} x {pageSize.Height:0}");
+                        Assert.That(want.Width, Is.LessThanOrEqualTo(pageSize.Width + 0.5), $"{name}: fits across");
+                        Assert.That(want.Height, Is.LessThanOrEqualTo(pageSize.Height + 0.5), $"{name}: fits down");
+                        window.CaptureRenderedFrame();
+                        Studio.Screenshot(window, "dye-essence-editor-engine-" + name.ToLowerInvariant());
+                    }
+                });
+            }
+            finally
+            {
                 Remove(m);
             }
         }
@@ -286,6 +337,60 @@ namespace ReBuzz.Studio.Tests
                 Pump();
                 Assert.That(Global(m, "LFO1 shape").GetValue(0), Is.EqualTo(7));
                 Assert.That(Shape(m, 0), Does.StartWith("0,-1 0.006,0,-0.5 0.1062,-1"), "the preset's shape");
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+        [AvaloniaTest]
+        public void TheSequencersStepsAreEditedInPlaceAndUndone()
+        {
+            var m = Add("Steps Dye");
+            try
+            {
+                var window = Open(m);
+                var pages = Pages(window);
+                pages.GetType().GetProperty("Selected")!.SetValue(pages, 3);
+                Pump();
+                window.UpdateLayout();
+                var seq = Section(window, "Sequencer");
+                var inner = seq.GetVisualDescendants().OfType<Control>().First(c => c.GetType().Name == "Pages");
+                inner.GetType().GetProperty("Selected")!.SetValue(inner, 0);   // the Note lane
+                Pump();
+                window.UpdateLayout();
+                var view = seq.GetVisualDescendants().OfType<Control>().Single(c => c.GetType().Name == "InteractiveGraph" && c.IsEffectivelyVisible);
+                string Steps() => Get(m.ManagedMachine, "Pattern").ToString()!;
+                var stack = Core.SongCore.ActionStack;
+                int steps = stack.Actions.Count();
+                Assert.That(Steps(), Is.EqualTo(""), "plain steps to start with");
+
+                // A press a quarter of the way down step 5's bar: +12 semitones (the middle is 0, the top +24), one undo step.
+                double w = (view.Bounds.Width - 16) / 32, top = 8, height = view.Bounds.Height - 30;
+                var press = At(view, window, 8 + 4.5 * w, top + 0.25 * height);
+                window.MouseDown(press, MouseButton.Left);
+                // Dragged across to step 6 and down to the middle: that step 0.
+                window.MouseMove(At(view, window, 8 + 5.5 * w, top + 0.5 * height));
+                window.MouseUp(At(view, window, 8 + 5.5 * w, top + 0.5 * height), MouseButton.Left);
+                Pump();
+                var written = Steps().Split(' ');
+                Assert.That(written[4], Does.StartWith("12,"), "step 5: +12");
+                Assert.That(stack.Actions.Count(), Is.EqualTo(steps + 1), "the gesture is one step");
+                Studio.Screenshot(window, "dye-essence-editor-sequencer");
+
+                byte[] data = m.Data;
+                string drawn = Steps();
+                Core.SongCore.Undo();
+                Pump();
+                Assert.That(Steps(), Is.EqualTo(""), "undo puts the steps back");
+                m.Data = data;
+                Assert.That(Steps(), Is.EqualTo(drawn), "the data round trip");
+
+                // A factory preset carries its steps.
+                m.GetPreset("Seq — Acid Line").Apply(m, true);
+                Pump();
+                Assert.That(Steps(), Does.StartWith("0,110,50,0,100 0,70,50,0,100 12,100,50,0,100 0,0,"), "the preset's steps");
+                Assert.That(Global(m, "Seq mode").GetValue(0), Is.EqualTo(1), "Notes");
             }
             finally
             {
