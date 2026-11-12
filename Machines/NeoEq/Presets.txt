@@ -323,3 +323,25 @@ preset "Fix — Phase Turn (All-pass 200 Hz)"
 B3 freq = 200
 B3 Q = 0.7
 B3 shape = All-pass
+
+preset "Linear — Master Tilt (+1.5 dB low, -1.5 dB air)"
+Phase = Linear
+B2 freq = 120
+B2 gain = 1.5
+B7 freq = 9000
+B7 gain = -1.5
+
+preset "Linear — Bus Low Cut (28 Hz, 48 dB/oct)"
+Phase = Linear
+B1 on = On
+B1 freq = 28
+B1 slope = 48 dB/oct
+
+preset "Linear — Mud Dip and Presence"
+Phase = Linear
+B3 freq = 300
+B3 gain = -2.5
+B3 Q = 1.2
+B5 freq = 3500
+B5 gain = 1.5
+B5 Q = 0.9

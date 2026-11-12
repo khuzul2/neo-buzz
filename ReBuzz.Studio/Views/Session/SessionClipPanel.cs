@@ -205,6 +205,23 @@ namespace ReBuzz.Studio.Views.Session
             /// <summary>The clip shown, or null.</summary>
             public IPattern Pattern => shownPattern;
 
+            /// <summary>
+            /// Fork (ux-overhaul.md P3a): in the window's inspector the panel takes the inspector's width and surface, and
+            /// shows always (the inspector shows and hides it).
+            /// </summary>
+            internal void UseInInspector()
+            {
+                Width = double.NaN;
+                HorizontalAlignment = HorizontalAlignment.Stretch;
+                Background = null;
+                BorderThickness = new Thickness(0);
+                Padding = new Thickness(0);
+                IsVisible = true;
+            }
+
+            /// <summary>The slot shown, or null.</summary>
+            internal (int Track, int Scene)? Slot => shownSlot;
+
             // For tests: the controls, as a user would use them.
             internal ComboBox ModeBox => mode;
             internal ComboBox QuantizeBox => quantize;

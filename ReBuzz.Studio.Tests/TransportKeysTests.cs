@@ -137,10 +137,10 @@ namespace ReBuzz.Studio.Tests
             {
                 window.ShowView(SongNotesTab.TabTitle);
                 Settle();
-                var notes = (SongNotesView)window.Tabs.SelectedContent;
+                var notes = window.Inspector.SongNotes;
                 Focus((TabItem)window.Tabs.SelectedItem);
                 Space(window);
-                Assert.That(Core.PlayRequested, Is.True, "Space on the Song Notes tab plays");
+                Assert.That(Core.PlayRequested, Is.True, "Space with Song Notes open plays");
 
                 // In the notes' editor Space types (the platform's text input follows the unhandled key).
                 Focus(notes.Editor);

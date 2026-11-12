@@ -23,6 +23,8 @@
     <Compile Include="..\NeoBuzz.Editor\**\*.cs" Link="Shared\Editor\%(RecursiveDir)%(Filename)%(Extension)" />
     <!-- Neo Wave's table recipes and WAV reader (the built-in tables and user tables). -->
     <Compile Include="..\NeoWave\Engine\Tables.cs;..\NeoWave\Engine\WavReader.cs" Link="Shared\NeoWave\%(Filename)%(Extension)" />
+    <!-- Neo Sampler's sample layer (octave-down copies) and band-limited read: what the Sample and Granular engines play. -->
+    <Compile Include="..\NeoSampler\Engine\Interpolation.cs;..\NeoSampler\Engine\SampleData.cs" Link="Shared\NeoSampler\%(Filename)%(Extension)" />
     <None Include="Params.def" />
     <None Include="Dye Essence.prs.xml" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Dye Essence.machine.json" CopyToOutputDirectory="PreserveNewest" />

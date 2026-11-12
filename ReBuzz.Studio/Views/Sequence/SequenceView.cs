@@ -95,6 +95,20 @@ namespace ReBuzz.Studio.Views.Sequence
             ListStates(patternList, look, listStates);
         }
 
+        /// <summary>Fork (ux-overhaul.md P2c): the cursor's track (and pattern) is the studio's selection; a track another view selected is the cursor's.</summary>
+        void OnCursorChanged()
+        {
+            RefreshPatternList();
+            if (Canvas.FollowingSelection || Canvas.CursorSequence?.Machine is not { } machine) return;
+            StudioSelection.For(core).Set(machine, Canvas.CursorPattern, this);
+        }
+
+        void FollowSelection(object source)
+        {
+            if (source == this) return;
+            if (StudioSelection.For(core).Machine is { } machine) Canvas.FollowTrackOf(machine);
+        }
+
         void OnThemeChanged() => Dispatcher.UIThread.Post(() => { if (root != null) ApplyLook(); });
 
         public SequenceView(ReBuzzCore core)
@@ -146,7 +160,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
             zoom.Value = state.Zoom;
             Canvas.ViewChanged += Sync;
-            Canvas.CursorChanged += RefreshPatternList;
+            Canvas.CursorChanged += OnCursorChanged;
             Canvas.TracksChanged += RefreshPatternList;
             Canvas.PatternDoubleClicked += p => ChoosePattern(p, true);
             Canvas.MenuRequested += p => OpenContextMenu(Canvas);
@@ -195,6 +209,8 @@ namespace ReBuzz.Studio.Views.Sequence
             base.OnAttachedToVisualTree(e);
             attached = true;
             StudioTheme.Changed += OnThemeChanged;
+            StudioSelection.For(core).Changed += FollowSelection;
+            FollowSelection(null);                  // shown again: on the selection the other views made meanwhile
             ApplyLook();
             state.Changed += OnStateChanged;
             OnStateChanged();
@@ -207,6 +223,7 @@ namespace ReBuzz.Studio.Views.Sequence
         {
             attached = false;
             StudioTheme.Changed -= OnThemeChanged;
+            StudioSelection.For(core).Changed -= FollowSelection;
             state.Changed -= OnStateChanged;
             base.OnDetachedFromVisualTree(e);
         }

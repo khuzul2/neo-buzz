@@ -156,6 +156,17 @@ CASES = [
     gen("dye-comb-noise", "Dye Essence", "Texture — Comb Noise", [], KEYS),
     gen("dye-mirror-bell", "Dye Essence", "Pluck — Mirror Bell", [], BELLS),
     gen("dye-squeeze-high", "Dye Essence", "FX — Squeeze Sweep", [], [n("A2", 0, 3.5)]),
+    # Dye Essence P2: the Sample engine (looped, eight-voice unison, one-shot, reversed, two slots) and the
+    # Granular engine (frozen, scanning, a spray of pitched grains with reversed ones); the grain clouds and
+    # the sample recipes are built from the portable maths, so every platform renders the same.
+    gen("dye-sample-choir", "Dye Essence", "Pad — Sample Choir", [], CHORDS),
+    gen("dye-sample-strings", "Dye Essence", "Pad — Eight Strings", [], CHORDS),
+    gen("dye-sample-bell", "Dye Essence", "Keys — Struck Bell", [], BELLS),
+    gen("dye-sample-pluck", "Dye Essence", "Pluck — Double String", [], KEYS),
+    gen("dye-sample-reverse", "Dye Essence", "FX — Reverse Pluck", [], KEYS),
+    gen("dye-grains-frozen", "Dye Essence", "Texture — Frozen Cloud", [], CHORDS),
+    gen("dye-grains-scan", "Dye Essence", "Pad — Scanning Strings", [], CHORDS),
+    gen("dye-grains-rain", "Dye Essence", "FX — Bell Rain", [], BELLS),
     # Neo FM6: algorithms, feedback, the Clean 2x and Raw 1x engines, envelopes, LFO.
     gen("fm6-tine-piano", "Neo FM6", "Keys — Tine Piano", [], KEYS),
     gen("fm6-glass-bell", "Neo FM6", "Bell — Glass Bell", [], BELLS, tail=2.0),
@@ -200,6 +211,11 @@ CASES = [
        ("B5 channel", "Left"), ("B5 gain", "+4 dB"), ("B6 channel", "Right"), ("B6 gain", "-5 dB")]),
     fx("eq-v2-vintage-ms-delta", "Neo EQ", "Character — Vintage Low Boost", [("B1 on", "on"), ("B1 channel", "Side"), ("B1 freq", "150 Hz"),
        ("B8 on", "on"), ("B8 channel", "Mid"), ("B8 freq", "9 kHz")], auto=[("Delta", [(3, "On")])]),
+    # Neo EQ linear phase (docs/specs/mastering-tools.md §5.6, M5b): the FIR from the bands' magnitude, a Mid band and the curve layer
+    # in it, a parameter moving (a redesign, crossfaded), Delta (latency-compensated).
+    fx("eq-linear-tilt", "Neo EQ", "Linear — Master Tilt (+1.5 dB low, -1.5 dB air)"),
+    fx("eq-linear-cut-ms", "Neo EQ", "Linear — Bus Low Cut (28 Hz, 48 dB/oct)", [("B8 on", "on"), ("B8 channel", "Mid"), ("B8 freq", "9 kHz"), ("Curve 12", "+3 dB"), ("Curve 13", "+3 dB")],
+       auto=[("B2 gain", [(1, "+6 dB"), (2, "-3 dB")]), ("Delta", [(3, "On")])]),
     # Neo Limiter: pushed hard, auto and set release; Neo Analyzer after it (audio passes through).
     fx("limiter-loud", "Neo Limiter", "Mastering — Loud", [("Input gain", "+18 dB")], extra=[("Neo Analyzer", "Mix", [])]),
     fx("limiter-smash", "Neo Limiter", "Creative — Smash", [("Input gain", "+24 dB"), ("Auto release", "off")]),
@@ -247,6 +263,26 @@ CASES = [
        auto=[("Peak level", [(0, "-3 dB"), (2, "-9 dB")])]),
     fx("lowend-balance", "Neo Low End", "Mastering — Balance to the Mids (+6 dB)", [],
        auto=[("Crossover", [(0, "150 Hz"), (2, "80 Hz")])]),
+    # Neo Imager (docs/specs/mastering-tools.md §5.7, M5): the widths and Stereoize (a width automated: its smoothed ramps),
+    # Recover sides with every band narrowed, the crossovers moved; Delta switched on by automation.
+    fx("imager-wide", "Neo Imager", "Mastering — Air and Width", [],
+       auto=[("Width 4", [(0, "150%"), (1.5, "40%"), (2.5, "200%")])]),
+    fx("imager-recover", "Neo Imager", "Mixing — Narrow a Wide Mix, Keep the Level", [],
+       auto=[("Crossover 2", [(0, "2000 Hz"), (2, "500 Hz")])]),
+    fx("imager-stereoize", "Neo Imager", "Mono-Safe Widening (Stereoize Only)", [], auto=[("Delta", [(2, "On")])]),
+    # Neo Exciter (§5.8, M5): the five curves (Tape, Tube, Transistor, Diode, Warm), mid/side, auto gain, an Amount automated.
+    fx("exciter-tape", "Neo Exciter", "Mastering — Air", [],
+       auto=[("Amount 4", [(0, "30%"), (1.5, "80%"), (2.5, "10%")])]),
+    fx("exciter-warm-ms", "Neo Exciter", "Mastering — Subtle Warmth", [("Stereo", "M/S"), ("Auto gain", "On")]),
+    fx("exciter-diode-delta", "Neo Exciter", "Drums — Crack and Sizzle", [("Mode", "Diode")], auto=[("Delta", [(2, "On")])]),
+    # Neo Dither (§5.9, M5): TPDF at 16 bits, psychoacoustic shaping, 24 bits with the shaping switched by automation.
+    fx("dither-16", "Neo Dither", "16 bit — TPDF (Standard)", []),
+    fx("dither-16-shaped", "Neo Dither", "16 bit — TPDF, Psychoacoustic Shaping", [], auto=[("Bits", [(0, "16"), (2, "20")])]),
+    # Neo Strip (docs/specs/mastering-tools.md §5.10, M5b): the five stages together, the gate, a stage switched on and off in a pattern, Delta.
+    fx("strip-vocal", "Neo Strip", "Vocal — Up Front"),
+    fx("strip-spoken-gate", "Neo Strip", "Vocal — Spoken Word (Gate and Tidy)", [("Gate threshold", "-30 dB")]),
+    fx("strip-drums", "Neo Strip", "Drums — Punch Bus", auto=[("Drive on", [(1, "Off"), (2, "On")]), ("Delta", [(3, "On")])]),
+    fx("strip-master", "Neo Strip", "Master — Gentle Glue and Ceiling"),
     # Neo Verb: the four algorithms, modulation, shimmer, a 20-second decay, and freeze switched on
     # mid-render by automation (the tail held with no loss).
     fx("verb-hall", "Neo Verb", "Hall — Concert", tail=2.5),

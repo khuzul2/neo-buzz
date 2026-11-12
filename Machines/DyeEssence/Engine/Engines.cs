@@ -5,12 +5,13 @@
 // slot's table at its position; the Analog engine plays the classic waves (sine, triangle, saw,
 // square from the Basic table's exact frames, pulse widths from the PWM table) with each voice a
 // little out of tune, as analog oscillators are. Engines that need kernels of their own (samples,
-// grains, partials) will add them behind this interface.
+// grains, partials) add them behind this interface: the Sample and Granular engines (StreamEngines.cs)
+// read a sample and render beside the lanes.
 
 namespace NeoBuzz.DyeEssence
 {
     /// <summary>What an engine slot holds (append only: the engines to come take the next values).</summary>
-    internal enum SlotType { Off, Wavetable, Analog }
+    internal enum SlotType { Off, Wavetable, Analog, Sample, Granular }
 
     /// <summary>The Analog engine's waves (append only).</summary>
     internal enum AnalogShape { Sine, Triangle, Saw, Square, Pulse }

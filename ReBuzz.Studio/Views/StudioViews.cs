@@ -48,7 +48,7 @@ namespace ReBuzz.Studio.Views
 
         /// <summary>
         /// The views in tab order, which is ⌘1–⌘5's: the three main views first (ux-overhaul.md §2: the arrangement, the
-        /// Session View, the machines), then Pattern and Song Notes, which P3 moves into the window's panels.
+        /// Session View, the machines), then Pattern. Song Notes (machine-safety.md §3.5) are the inspector's Song tab (P3a), not a tab.
         /// </summary>
         public static IReadOnlyList<IStudioView> All { get; } = new IStudioView[]
         {
@@ -56,7 +56,6 @@ namespace ReBuzz.Studio.Views
             new Session.SessionStudioView(),
             new Machines.MachinesTab(),
             new PatternView(),
-            new Notes.SongNotesTab(),       // fork (machine-safety.md §3.5)
         };
 
         /// <summary>The view the window shows when it opens: the machines, where a song starts.</summary>

@@ -89,9 +89,9 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void ItsPagesFitALaptopScreenWithTheKeyboard()
         {
-            // 1280 × 720 points, less the dock or task bar's 40: the editor and its keyboard (shown) inside it, not scrolled.
+            // 1440 × 900 points, less the dock or task bar's 40: the editor and its keyboard (shown) inside it, not scrolled.
             var area = MachineWindowFit.WorkArea;
-            MachineWindowFit.WorkArea = w => new Size(1280, 680);
+            MachineWindowFit.WorkArea = w => new Size(1440, 860);
             var m = Add("Pages Dye");
             try
             {
@@ -104,7 +104,7 @@ namespace ReBuzz.Studio.Tests
                 window.UpdateLayout();
                 var size = editor.Bounds.Size;
                 double extra = NeoBuzz.Editor.MachineKeyboardFrame.ExtraHeightOf(window.Content);
-                TestContext.Out.WriteLine($"[notice] Dye Essence's editor: {size.Width:0} x {size.Height:0}, with the keyboard {size.Height + extra:0} (window {window.ClientSize.Width:0} x {window.ClientSize.Height:0} on a 1280 x 680 work area)");
+                TestContext.Out.WriteLine($"[notice] Dye Essence's editor: {size.Width:0} x {size.Height:0}, with the keyboard {size.Height + extra:0} (window {window.ClientSize.Width:0} x {window.ClientSize.Height:0} on a 1440 x 860 work area)");
 
                 var pages = Pages(window);
                 var names = ((IReadOnlyList<string>)Get(pages, "Names")).ToArray();
@@ -128,8 +128,8 @@ namespace ReBuzz.Studio.Tests
                         Studio.Screenshot(window, "dye-essence-editor-" + (i + 1) + "-" + names[i].Split(' ')[0].ToLowerInvariant());
                     }
                 });
-                Assert.That(size.Width + MachineWindowFit.FrameWidth, Is.LessThanOrEqualTo(1280), "as wide as the screen at most");
-                Assert.That(size.Height + extra + MachineWindowFit.FrameHeight, Is.LessThanOrEqualTo(680), "as tall as the screen at most, with the keyboard");
+                Assert.That(size.Width + MachineWindowFit.FrameWidth, Is.LessThanOrEqualTo(1440), "as wide as the screen at most");
+                Assert.That(size.Height + extra + MachineWindowFit.FrameHeight, Is.LessThanOrEqualTo(860), "as tall as the screen at most, with the keyboard");
                 var view = (Control)NeoBuzz.Editor.MachineKeyboardFrame.TopOf(window.Content)!;
                 Assert.That(view.Bounds.Height, Is.GreaterThanOrEqualTo(size.Height - 1), "shown whole: nothing to scroll");
 

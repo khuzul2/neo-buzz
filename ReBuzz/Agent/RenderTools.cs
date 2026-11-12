@@ -106,11 +106,13 @@ namespace ReBuzz.Agent
                     Opt("mute", Array(String("A machine"), "Silence these")),
                     Opt("probes", Array(String("A machine"), "Also capture these machines' outputs")),
                     Opt("name", String("A label for the file name")),
+                    Opt("bits", Number("Write the master as 16 or 24 bit PCM, rounded with dither (default: 32-bit float). The measurements are of what is in the file", 16, 24)),
+                    Opt("dither", String("With bits: off (plain rounding), tpdf (default), light or psychoacoustic (TPDF with noise shaping; Neo Dither's shapes)", "off", "tpdf", "light", "psychoacoustic")),
                     Opt("cpu", Boolean("Also each machine's own work time per second of audio (ms/s), from the engine's counters")),
                     Opt("cpu_window_seconds", Number("With cpu: also window by window, this long each (a machine slowing down after its input stops: denormals)", 0.05, 60))),
                 Output = Object(null,
                     Req("id", String("Pass to analyze(source=…)")),
-                    Req("file", String("The WAV file (32-bit float, stereo)")),
+                    Req("file", String("The WAV file (32-bit float, stereo; 16 or 24 bit PCM with bits)")),
                     Req("seconds", Number("Length, with the tail")),
                     Req("from_beats", Number("Start")),
                     Req("to_beats", Number("End")),
@@ -127,6 +129,11 @@ namespace ReBuzz.Agent
                     var muteNames = c.List("mute")?.Select(x => x?.GetValue<string>()).ToList();
                     var probeNames = c.List("probes")?.Select(x => x?.GetValue<string>()).ToList();
                     string label = c.String("name");
+                    int? bits = c.Number("bits") is double bd ? (int)bd : null;
+                    if (bits != null && bits != 16 && bits != 24) throw new ToolError("bits: 16 or 24.");
+                    string dither = c.String("dither");
+                    if (dither != null && bits == null) throw new ToolError("dither goes with bits.");
+                    if (bits != null) Requantize.Validate(dither);
                     double? cpuWindow = c.Number("cpu_window_seconds");
                     if (cpuWindow != null && c.Bool("cpu") != true) throw new ToolError("cpu_window_seconds goes with cpu=true.");
                     var meter = c.Bool("cpu") == true ? new CpuMeter(cpuWindow ?? 0) : null;
@@ -161,7 +168,8 @@ namespace ReBuzz.Agent
                         var divergedBefore = SongModel.Machines(core).Where(m => m.IsDiverged).ToHashSet();
                         var (audio, probed) = Render(host, from, to, tail, solo, mute, probes, c, warnings, meter);
                         double fromBeats = SongModel.Beats(core, from), toBeats = SongModel.Beats(core, to);
-                        Write(file, audio);
+                        if (bits != null) audio = Requantize.To(audio, bits.Value, dither);
+                        Write(file, audio, bits);
                         host.Renders[id] = new RenderInfo(id, file, fromBeats, toBeats, audio.Seconds);
                         var measure = AudioReport.Measure(audio, Summary);
                         var probeList = new JsonArray();
@@ -185,6 +193,7 @@ namespace ReBuzz.Agent
                             ["from_beats"] = info.FromBeats,
                             ["to_beats"] = info.ToBeats,
                             ["sample_rate"] = audio.Rate,
+                            ["bits"] = bits ?? 32,
                             ["measure"] = measure,
                             ["probes"] = probeList,
                             ["warnings"] = new JsonArray(warnings.Select(w => (JsonNode)w).ToArray()),
@@ -266,7 +275,7 @@ namespace ReBuzz.Agent
         /// <summary>What render reports by itself; analyze has the rest.</summary>
         static readonly string[] Summary = { "loudness", "peaks" };
 
-        static void Write(string file, StereoAudio audio)
+        static void Write(string file, StereoAudio audio, int? bits = null)
         {
             var interleaved = new float[audio.Frames * 2];
             for (int i = 0; i < audio.Frames; i++)
@@ -274,7 +283,8 @@ namespace ReBuzz.Agent
                 interleaved[2 * i] = audio.Left[i];
                 interleaved[2 * i + 1] = audio.Right?[i] ?? audio.Left[i];
             }
-            Wav.WriteStereoFloat(file, interleaved, audio.Frames, audio.Rate);
+            if (bits != null) Wav.WriteStereoPcm(file, interleaved, audio.Frames, audio.Rate, bits.Value);
+            else Wav.WriteStereoFloat(file, interleaved, audio.Frames, audio.Rate);
         }
 
         static string SafeLabel(string label)

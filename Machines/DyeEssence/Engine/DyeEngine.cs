@@ -8,6 +8,7 @@
 using System;
 using System.Threading;
 using NeoBuzz.Dsp;
+using NeoBuzz.Sampler;
 
 namespace NeoBuzz.DyeEssence
 {
@@ -19,6 +20,7 @@ namespace NeoBuzz.DyeEssence
 
         static readonly int[] OscBase = { P.AType, P.BType, P.CType };
         static readonly int[] AnalogBase = { P.AShape, P.BShape, P.CShape };
+        static readonly int[] SampleBase = { P.ASmpSrc, P.BSmpSrc, P.CSmpSrc };
         static readonly int[] EnvBase = { P.E1Delay, P.E2Delay };
         static readonly int[] LfoBase = { P.L1Shape, P.L2Shape, P.L3Shape, P.L4Shape };
         static readonly int[] MacroParam = { P.M1, P.M2, P.M3, P.M4 };
@@ -31,6 +33,9 @@ namespace NeoBuzz.DyeEssence
         readonly TableArena[] requestedUser = new TableArena[NoteBank.Oscillators];
         readonly TableArena[] userTable = new TableArena[NoteBank.Oscillators];
         readonly string[] userName = { "", "", "" };
+        readonly SampleLayer[] requestedSample = new SampleLayer[NoteBank.Oscillators];
+        readonly SampleLayer[] userSample = new SampleLayer[NoteBank.Oscillators];
+        readonly string[] sampleName = { "", "", "" };
         readonly DrawnShape[] requestedShape = { DrawnShape.Default, DrawnShape.Default, DrawnShape.Default, DrawnShape.Default };
         int userChanged, shapeChanged;
         bool tablesPending;
@@ -60,7 +65,7 @@ namespace NeoBuzz.DyeEssence
         }
 
         /// <summary>Whether a built-in table is still being built (any thread): offline renders wait for it.</summary>
-        public bool TablesBuilding => !TableBank.AllBuilt();
+        public bool TablesBuilding => !TableBank.AllBuilt() || !SampleSources.AllBuilt();
 
         /// <summary>A chosen table is still being built (the slot plays its previous table, or nothing yet).</summary>
         public bool TablesPending => Volatile.Read(ref tablesPending);
@@ -74,6 +79,17 @@ namespace NeoBuzz.DyeEssence
         }
 
         public TableArena UserTable(int osc) => Volatile.Read(ref requestedUser[osc]);
+
+        /// <summary>Any thread: slot <paramref name="osc"/>'s "User" sample from the next block (null: none).</summary>
+        public void SetUserSample(int osc, SampleLayer layer, string name)
+        {
+            sampleName[osc] = name ?? "";
+            Volatile.Write(ref requestedSample[osc], layer);
+            Volatile.Write(ref userChanged, 1);
+        }
+
+        public SampleLayer UserSample(int osc) => Volatile.Read(ref requestedSample[osc]);
+        public string UserSampleName(int osc) => sampleName[osc];
 
         /// <summary>Any thread: LFO <paramref name="lfo"/>'s drawn shape from the next block (null: the default).</summary>
         public void SetLfoShape(int lfo, DrawnShape shape)
@@ -99,7 +115,11 @@ namespace NeoBuzz.DyeEssence
                 for (int l = 0; l < requestedShape.Length; l++) Bank.S.Lfo[l].Drawn = Volatile.Read(ref requestedShape[l]);
             if (!force && !values.AnyDirty && !userNew && !tablesPending) return;
             if (userNew)
-                for (int o = 0; o < userTable.Length; o++) userTable[o] = Volatile.Read(ref requestedUser[o]);
+                for (int o = 0; o < userTable.Length; o++)
+                {
+                    userTable[o] = Volatile.Read(ref requestedUser[o]);
+                    userSample[o] = Volatile.Read(ref requestedSample[o]);
+                }
             var s = Bank.S;
             alloc.Mode = (VoiceMode)values.Choice(P.VoiceMode);
             alloc.Polyphony = (int)values.Value(P.Polyphony);
@@ -150,6 +170,29 @@ namespace NeoBuzz.DyeEssence
                 os.Shape = (AnalogShape)values.Choice(a);
                 os.PulseWidth = values.F(a + (P.APw - P.AShape)) / 100f;
                 os.Drift = values.F(a + (P.ADrift - P.AShape));
+                int m = SampleBase[o];
+                if (os.Type == SlotType.Sample || os.Type == SlotType.Granular)
+                {
+                    int src = values.Choice(m);
+                    var layer = src >= SampleSources.Count ? userSample[o] ?? SampleSources.Get(0) : SampleSources.Get(src);
+                    // Keep playing the previous sample until a newly chosen one is built.
+                    if (layer == null) pendingNow = true;
+                    else os.Source = layer;
+                }
+                os.Root = (int)values.Value(m + (P.ASmpRoot - P.ASmpSrc));
+                os.Loop = (SampleLoop)values.Choice(m + (P.ASmpLoop - P.ASmpSrc));
+                os.LoopStart = values.F(m + (P.ASmpLoopStart - P.ASmpSrc));
+                os.LoopEnd = values.F(m + (P.ASmpLoopEnd - P.ASmpSrc));
+                os.LoopFade = values.F(m + (P.ASmpFade - P.ASmpSrc)) / 1000f;
+                os.Reverse = values.On(m + (P.ASmpRev - P.ASmpSrc));
+                os.GrainSize = values.F(m + (P.AGrSize - P.ASmpSrc));
+                os.GrainRate = values.F(m + (P.AGrRate - P.ASmpSrc));
+                os.Spray = values.F(m + (P.AGrSpray - P.ASmpSrc));
+                os.Scan = values.F(m + (P.AGrScan - P.ASmpSrc));
+                os.GrainPitch = values.F(m + (P.AGrJitter - P.ASmpSrc));
+                os.GrainShape = (GrainShape)values.Choice(m + (P.AGrShape - P.ASmpSrc));
+                os.GrainReverse = values.F(m + (P.AGrRev - P.ASmpSrc));
+                os.GrainWidth = values.F(m + (P.AGrWidth - P.ASmpSrc));
             }
             tablesPending = pendingNow;
 

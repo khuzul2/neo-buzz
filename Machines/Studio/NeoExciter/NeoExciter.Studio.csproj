@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Exciter, studio flavour (docs/specs/studio-mvp.md S1): see ../NeoStudio.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoExciter</NeoFolder>
+    <NeoName>Neo Exciter</NeoName>
+    <NeoKind>Effects</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoStudio.targets" />
+  <ItemGroup>
+    <!-- Neo Drive's shaper curves (the exciter's shapers). -->
+    <Compile Include="$(M)NeoDrive\Engine\Shapers.cs" Link="Shared\Drive\Shapers.cs" />
+    <!-- As NeoExciter.csproj: the gain-match reading. -->
+    <Compile Include="$(M)NeoBuzz.Analysis\Loudness.cs;$(M)NeoBuzz.Analysis\GainMatch.cs" Link="Shared\Analysis\%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,32 @@
+# Neo Dither factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoDither
+machine "Neo Dither"
+
+preset "16 bit — TPDF (Standard)"
+Bits = 16
+Dither = TPDF
+Shaping = Off
+
+preset "16 bit — TPDF, Light Shaping"
+Bits = 16
+Dither = TPDF
+Shaping = Light
+
+preset "16 bit — TPDF, Psychoacoustic Shaping"
+Bits = 16
+Dither = TPDF
+Shaping = Psychoacoustic
+
+preset "24 bit — TPDF"
+Bits = 24
+Dither = TPDF
+Shaping = Off
+
+preset "20 bit — TPDF"
+Bits = 20
+Dither = TPDF
+Shaping = Off
+
+preset "16 bit — Rounding Only (No Dither)"
+Bits = 16
+Dither = Off
+Shaping = Off

@@ -1,0 +1,15 @@
+# Neo Dither parameters (docs/specs/mastering-tools.md §5.9). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoDither
+namespace NeoBuzz.Dither
+class NeoDitherMachine
+summary Word-length reduction for the end of a master: rounds the audio to a 16, 20 or 24 bit grid (any word length from 8 to 24) with TPDF dither of 1 LSB, optional noise shaping (light, or psychoacoustic, which moves the noise away from 2 to 5 kHz), and blanks itself after 0.7 s of digital silence. The output is exactly on the grid, so a 16 or 24 bit file made from it is exact. The noise is seeded at the start of every render, so renders repeat bit for bit. Use it as the last machine, after the limiter, and render to 16 or 24 bits; leave it out if the target is a 32-bit float file.
+
+group Dither
+Bits       "Bits"         8 24    16    int                               | The word length the output is rounded to. 16 for CD and most streaming masters, 24 for an archive or a further stage
+Dither     "Dither"       0 1     1     enum Off TPDF                    | TPDF: noise of 1 LSB (triangular) that makes the rounding error independent of the signal (no distortion, a steady hiss at −98 dBFS in 16 bits). Off: plain rounding
+Shaping    "Shaping"      0 2     0     enum Off Light Psychoacoustic    | Noise shaping by error feedback. Light: 7 dB less noise below 4 kHz, more above 10 kHz (the total power rises 2 dB). Psychoacoustic: 16 dB less noise from 50 Hz to 3 kHz and 23 dB less at 4 kHz, much more above 8 kHz (the total power rises 12 dB)
+Blank      "Auto blank"   0 1     1     switch                           | After the time below of exact digital silence the output is silent (no dither hiss between tracks); it starts again with the first sample of sound
+BlankAfter "Blank after"  0 50    6     lin 0.1 5.1 s 1                  | How long the digital silence has to last before Auto blank silences the output (0.7 s by default)
+
+# What the dither measures (NeoDitherMachine.Readings, machine_readings).
+reading latency_samples   samples | Always 0
