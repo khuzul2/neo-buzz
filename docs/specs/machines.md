@@ -38,6 +38,9 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Neo Imager | effect | Four zero-latency bands with the width of each from 0 to 200 %, Stereoize (a decorrelated mid added to the side, the mono sum untouched), Recover sides, per-band width and correlation readings, Delta and Match (mastering-tools.md §5.7) |
 | Neo Exciter | effect | Successor of Oomek Exciter: up to four bands through oversampled ADAA shapers (tape, tube, transistor, diode, warm), only the harmonics added by an Amount per band, a shelf on them, auto gain, L/R or M/S, Delta and Match (mastering-tools.md §5.8) |
 | Neo Dither | effect | Word-length reduction: TPDF dither, light or psychoacoustic noise shaping, output exactly on the 8 – 24 bit grid, auto blank; `render(bits, dither)` uses the same block (mastering-tools.md §5.9) |
+| Neo Tape | effect | Tape machine: record pre-emphasis into an oversampled, anti-aliased tape saturation with bias, the matching de-emphasis, a head bump and high-frequency loss that follow the tape speed, an even-harmonic electronics stage, hiss, wow and flutter. Mix, Delta, gain match. |
+| Neo De-esser | effect | De-esser: a band-pass detector (relative or absolute) takes the sibilance band down (minimum-phase or linear-phase split, dynamic shelf or bell) with lookahead, Listen and Delta. |
+| Neo Gate | effect | Successor of Pedal Gate: gate and downward expander with hysteresis, hold, range, key filters, an external sidechain, lookahead, Listen and Delta. |
 | Neo Strip | effect | Channel strip: gate, EQ (low cut, low shelf, two bells, high shelf, high cut), compressor, drive, clipper and limiter in that order, each the engine of the Neo machine of that name; a stage that is off passes the audio untouched; constant latency; Delta and Match (mastering-tools.md §5.10) |
 | Neo Analyzer | effect | Spectrum (FFT with peak hold, third-octave bars), loudness (momentary, short-term, integrated LUFS, range, true peak) and stereo (correlation, width, goniometer) with the analysis library's numbers; readings for agents; audio untouched |
 
@@ -310,7 +313,7 @@ The editor keeps its size: a Mode switch sits beside the band controls. In graph
 | Audio thread | 2000 blocks with a slider moving every block (the solver running) and the mode switching; in the studio, a graphic Neo EQ with a slider moved every buffer, each work algorithm | 0 bytes; 0 bytes |
 | Flat passes | every slider at 0 dB: the input bit for bit (negative zero and subnormals included), also after a slider has moved away and back | bit for bit; latency 0 |
 | Parametric unchanged | the parametric mode's renders (the defaults, the three test curves, the 14 factory presets' stored values, a bell automated every block, type and on/off switches; 44.1 and 48 kHz) against origin/main's before graphic mode | 40 of 40 bit-identical |
-| CPU | 31 bands busy, stereo at 48 kHz: ≥ 97× on x64, ≥ 42× on arm64 (a throughput guard, §4: × real time at the reference's speed; on the Linux, Windows and macOS runners and locally, 20 runs quiet and 20 with every core busy each); was ≥ 30× as timed (3.3 % of a core: 31 sections, where the parametric figure is for 14); a slider move's solve under 2 ms, the best of three passes | Linux 113–143, Windows 111–170, macOS 59.1–60.0, locally 136–138; twice the work at most 79.7; a solve 0.15–0.23 ms (at most 4.3 % of a 256-sample block) |
+| CPU | 31 bands busy, stereo at 48 kHz: ≥ 84× on x64, ≥ 42× on arm64 (a throughput guard, §4: × real time at the reference's speed; on the Linux, Windows and macOS runners and locally, 20 runs quiet and 20 with every core busy each); was ≥ 30× as timed (3.3 % of a core: 31 sections, where the parametric figure is for 14); a slider move's solve under 2 ms, the best of three passes | Linux 93.3–143 (93.3 and 93.4 on two CI runs of 2026-11-12 on a different mix of the CPU's balance: the floor was 97), Windows 111–170, macOS 59.1–60.0, locally 136–138; twice the work at most 79.7; a solve 0.15–0.23 ms (at most 4.3 % of a 256-sample block) |
 
 As built:
 
@@ -523,6 +526,28 @@ Six stages in series, each the engine of the machine of that name, run on its ow
 | Delta | output − the delayed input | within 2e-6 |
 | Blk, Alloc | blocks identical with changes in the run; 0 bytes (and in the studio, each work algorithm, a bell's gain moved every buffer) | hold |
 | CPU | all six stages on, stereo | 21× at the reference's speed (Xeon); floors 15 (x64), 10 (arm64) |
+
+### Neo Tape, Neo De-esser, Neo Gate (docs/specs/mastering-tools.md §5.11 - §5.13)
+
+Shared block: `KeyDetector` (NeoBuzz.Dsp): the key through an optional second-order high-pass and low-pass (coefficient-only updates, so a moved band doesn't click), then a linked peak follower (Pedal Gate's) or a sliding-window RMS one. All three machines report `latency_samples` and `gain_match_db`, have Delta, and allocate nothing on the audio thread.
+
+| Machine | Criterion | Target | Measured |
+|---|---|---|---|
+| Neo De-esser | Reduction | the design's 14.66 dB (absolute mode) | Split and Split linear 14.54, Bell 14.53, Shelf 7.26 (design 7.33); relative mode 14.99 against 15.00 |
+| Neo De-esser | Below threshold | the input delayed | bit for bit |
+| Neo De-esser | Latency | lookahead (+255 in Split linear) | measured = reported; blocks of 256, 117 and 16 give identical output |
+| Neo De-esser | CPU | | Split 275x, Split linear 18.7x, Bell 318x (floors 190/130, 13/9, 220/150) |
+| Neo Gate | Range | -12, -40 and -90 dB | exact |
+| Neo Gate | Attack ramp | linear | 0.23 at 2.5 ms, 0.48 at 5 ms (of a 5 ms ramp) |
+| Neo Gate | Against Pedal Gate | five settings | loudness 0.00 dB, worst 50 ms window 0.01 to 0.10 dB |
+| Neo Gate | CPU | | 520x (floors 360/250) |
+| Neo Tape | Small-signal response | the design | within 0.035 dB at all speeds, 31.5 Hz to 16 kHz |
+| Neo Tape | Wow, hiss | the settings | wow depth exact (8, 15, 20 ct); hiss within 0.01 dB of its target |
+| Neo Tape | H2 | | plain -160 dB; bias +50 % -19.2 dB; electronics 100 % -32.6 dB |
+| Neo Tape | Alias floor | under -90 dB | -97.8 dB at moderate settings; -83 dB at the heaviest |
+| Neo Tape | Latency | constant, reported | High 59 (58 + 1), Live 0, +250 with wow or flutter |
+| Neo Tape | Mix 0 | the input delayed | bit for bit |
+| Neo Tape | CPU | | High 44.7x, Live 123x (floors 32/22, 90/62) |
 
 ### Neo Analyzer (spectrum, loudness, stereo; MCP A4)
 

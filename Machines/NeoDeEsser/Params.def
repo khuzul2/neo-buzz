@@ -1,0 +1,27 @@
+# Neo De-esser parameters (docs/specs/mastering-tools.md §5.12). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoDeEsser
+namespace NeoBuzz.DeEsser
+class NeoDeEsserMachine
+summary De-esser with a band-pass detector on the sibilance band: Relative (the band's level against the whole signal's, for vocals: it follows the singer's level) or Absolute (the band's level against the threshold). The reduction is made on a split band (minimum phase, or linear phase with latency) or on the whole signal as a dynamic high shelf or bell. Lookahead, Listen (hear what the detector hears), Delta (hear only what is taken out) and a gain-match reading. Use it for sibilance on vocals, harsh cymbals and hats, or a bright master.
+
+group Detector
+Mode       "Detector"       0 1     0     enum Relative Absolute            | Relative: the band's level against the whole signal's (follows the singer). Absolute: the band's level in dBFS
+Freq       "Frequency"      0 10000 5669  freq 2000 16000                    | Centre of the sibilance band
+Width      "Width"          0 1000  400   lin 0.5 3 oct 2                   | Width of the band in octaves: the detector's band, the split band and the bell
+Threshold  "Threshold"      0 1000  750   lin -60 0 dB 1                    | Where reduction starts: Relative, the band's level under the whole signal's; Absolute, dBFS
+Ratio      "Ratio"          0 1000  463   ratio 1 20                        | How much of the excess is taken out: 1 nothing, 20 nearly all
+group Reduction
+Action     "Action"         0 3     0     enum Split Split_linear Shelf Bell | Split: only the band is reduced, minimum phase, no latency of its own. Split linear: the band by a linear-phase filter (latency 255 samples). Shelf: a dynamic high shelf on the whole signal. Bell: a dynamic bell
+Range      "Max reduction"  0 1000  333   lin 0 24 dB 1                     | The most the de-esser takes out
+Attack     "Attack"         0 1000  435   time 0.0001 0.02                   | How fast the reduction comes in
+Release    "Release"        0 1000  411   time 0.01 0.5                      | How fast it lets go
+Lookahead  "Lookahead"      0 1000  200   lin 0 5 ms 2                      | Delays the audio so the reduction is in place when the sibilant arrives (latency)
+Listen     "Listen"         0 1     0     switch                            | Hear the band the detector hears
+group Output
+Output     "Output"         0 480   240   db -24 24                         | Gain after the de-esser, 0.1 dB steps (the editor's Match sets it from the gain-match reading)
+Delta      "Delta"          0 1     0     switch                            | Hear only what the de-esser takes out: the output minus the input, delayed to match (glides over 10 ms)
+
+# What the de-esser measures (NeoDeEsserMachine.Readings, machine_readings).
+reading reduction_db      dB    | The reduction now, dB (0 or more)
+reading gain_match_db     dB    | Short-term loudness out − in (K-weighted, 3 s)
+reading latency_samples   samples | The lookahead (plus the linear-phase split's 255), reported to NeoBuzz Live

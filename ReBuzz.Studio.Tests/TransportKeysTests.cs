@@ -41,6 +41,14 @@ namespace ReBuzz.Studio.Tests
 
         static Control Focused(MainWindow window) => window.FocusManager?.GetFocusedElement() as Control;
 
+        /// <summary>The switcher's segment of the view shown, made focusable: "the focus is somewhere that isn't an editor".</summary>
+        static Control Segment(MainWindow window)
+        {
+            var segment = window.Switcher.Segments[(string)((TabItem)window.Tabs.SelectedItem!).Header!];
+            segment.Focusable = true;
+            return segment;
+        }
+
         static void Focus(Control c)
         {
             Assert.That(c.Focus(), Is.True, $"{c.GetType().Name} takes the focus");
@@ -138,7 +146,7 @@ namespace ReBuzz.Studio.Tests
                 window.ShowView(SongNotesTab.TabTitle);
                 Settle();
                 var notes = window.Inspector.SongNotes;
-                Focus((TabItem)window.Tabs.SelectedItem);
+                Focus(Segment(window));
                 Space(window);
                 Assert.That(Core.PlayRequested, Is.True, "Space with Song Notes open plays");
 
@@ -161,7 +169,7 @@ namespace ReBuzz.Studio.Tests
                 Space(window);
                 Assert.That(Core.PlayRequested, Is.True, "Space in the BPM box leaves the transport");
 
-                Focus((TabItem)window.Tabs.SelectedItem);
+                Focus(Segment(window));
                 Space(window);
                 Assert.That(Core.PlayRequested, Is.False, "out of the box, Space stops");
             }

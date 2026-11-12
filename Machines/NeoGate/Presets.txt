@@ -1,0 +1,60 @@
+# Neo Gate factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoGate
+machine "Neo Gate"
+
+preset "Drums — Snare, Tight"
+Threshold = -28
+Hysteresis = 8
+Attack = 0.2
+Hold = 60
+Release = 120
+Lookahead = 2
+KeyLow = 150
+
+preset "Drums — Kick, Clean the Spill"
+Threshold = -30
+Hysteresis = 6
+Attack = 0.3
+Hold = 80
+Release = 150
+Lookahead = 1
+KeyLow = 40
+KeyHigh = 5000
+
+preset "Drums — Toms, Gentle Expander"
+Threshold = -34
+Hysteresis = 8
+Ratio = 4
+Range = -30
+Attack = 1
+Hold = 120
+Release = 250
+
+preset "Vocals — Soft Gate Between Phrases"
+Threshold = -42
+Hysteresis = 10
+Ratio = 3
+Range = -18
+Attack = 5
+Hold = 200
+Release = 400
+KeyLow = 120
+
+preset "Bass — Tighten the Tail"
+Threshold = -36
+Hysteresis = 6
+Attack = 2
+Hold = 40
+Release = 80
+Detection = RMS
+
+preset "Noise — Hiss Between Takes"
+Threshold = -55
+Hysteresis = 6
+Attack = 5
+Hold = 100
+Release = 300
+Range = -60
+KeyLow = 200
+KeyHigh = 8000
+
+preset "Pedal Gate — Same Settings"

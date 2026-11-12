@@ -1,0 +1,64 @@
+# Neo De-esser factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoDeEsser
+machine "Neo De-esser"
+
+preset "Vocal — Gentle De-ess"
+Mode = Relative
+Freq = 6500
+Width = 1.5
+Threshold = -15
+Ratio = 3
+Range = 6
+
+preset "Vocal — Female, Strong"
+Mode = Relative
+Freq = 7500
+Width = 1.2
+Threshold = -12
+Ratio = 6
+Range = 12
+Lookahead = 1.5
+
+preset "Vocal — Male, Warm Shelf"
+Mode = Relative
+Freq = 5500
+Width = 1.5
+Threshold = -14
+Ratio = 4
+Range = 8
+Action = Shelf
+
+preset "Vocal — Transparent (Linear Phase Split)"
+Mode = Relative
+Freq = 6500
+Width = 1.5
+Threshold = -15
+Ratio = 4
+Range = 8
+Action = Split linear
+
+preset "Mastering — Tame a Bright Master"
+Mode = Absolute
+Freq = 9000
+Width = 2
+Threshold = -28
+Ratio = 3
+Range = 4
+Attack = 2
+Release = 120
+Action = Bell
+
+preset "Drums — Harsh Hats and Cymbals"
+Mode = Absolute
+Freq = 8500
+Width = 2
+Threshold = -24
+Ratio = 4
+Range = 8
+Attack = 0.5
+Release = 60
+
+preset "Find the Sibilance (Listen)"
+Mode = Relative
+Freq = 6500
+Width = 1.5
+Listen = On

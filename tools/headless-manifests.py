@@ -307,12 +307,13 @@ edit_draft("Effects", "Pedal Gate", gate_never_decays)
 edit_draft("Generators", "Pedal Tracker", tracker_draft)
 s = Server(os.path.join(copy, os.path.basename(exe)), "offset")
 ok, _, g0 = s.call("gear_list", search="Pedal", limit=100)
+if ok: g0["gear"] = [x for x in g0.get("gear", []) if x["name"].startswith("Pedal ")]  # Neo Gate's text names Pedal Gate
 check(ok and sorted(g0.get("hidden_unhealthy", [])) == ["Pedal Filter", "Pedal Gain"] and len(g0.get("gear", [])) == 17
       and not {"Pedal Filter", "Pedal Gain"} & {x["name"] for x in g0.get("gear", [])},
       f"gear_list leaves the unhealthy machines out and names them ({g0.get('hidden_unhealthy')}, {len(g0.get('gear', []))} listed)")
 ok, _, g = s.call("gear_list", search="Pedal", limit=100, include_unhealthy=True)
 rows = {x["name"]: x for x in g.get("gear", [])}
-names = [x["name"] for x in g.get("gear", [])]
+names = [x["name"] for x in g.get("gear", []) if x["name"].startswith("Pedal ")]
 tracker = rows.get("Pedal Tracker", {})
 check(tracker.get("manifest") == "draft" and tracker.get("type") and "profiled draft" in tracker.get("summary", ""),
       f"gear_list: a draft manifest says what the machine is ({tracker.get('type')}: {tracker.get('summary', '')[:80]})")

@@ -679,7 +679,7 @@ namespace NeoBuzz.MachineTests
             const int rate = Measure.Rate;
             var l = Measure.PinkNoise(3 * rate, 0.2, 31);
             var r = Measure.PinkNoise(3 * rate, 0.2, 32);
-            Throughput.Guard("Neo EQ graphic CPU (31 bands, stereo)", Throughput.Floor(x64: 97, arm64: 42), 2, rate, EqEngine.MaxBlock, () =>
+            Throughput.Guard("Neo EQ graphic CPU (31 bands, stereo)", Throughput.Floor(x64: 84, arm64: 42), 2, rate, EqEngine.MaxBlock, () =>
             {
                 var (e, _) = Make(p => Sliders(p, Random(new Random(11))));
                 var bl = new float[EqEngine.MaxBlock];

@@ -16,14 +16,14 @@ using ReBuzz.Core.Session;
 
 namespace ReBuzz.Core.Notes
 {
-    internal sealed class TrackerColumnNotes : NoteSourceBase
+    internal class TrackerColumnNotes : NoteSourceBase
     {
-        readonly ReBuzzCore buzz;
-        readonly IPattern pattern;
-        readonly IParameter noteParameter;
-        readonly IParameter velocityParameter;
+        protected readonly ReBuzzCore buzz;
+        protected readonly IPattern pattern;
+        protected readonly IParameter noteParameter;
+        protected readonly IParameter velocityParameter;
 
-        TrackerColumnNotes(ReBuzzCore buzz, IPattern pattern, IParameter note, IParameter velocity)
+        protected TrackerColumnNotes(ReBuzzCore buzz, IPattern pattern, IParameter note, IParameter velocity)
         {
             this.buzz = buzz;
             this.pattern = pattern;
@@ -34,39 +34,57 @@ namespace ReBuzz.Core.Notes
         /// <summary>The pattern's tracker notes, or null when its machine has no Note track parameter.</summary>
         public static TrackerColumnNotes For(ReBuzzCore buzz, IPattern pattern)
         {
+            var (note, velocity) = Parameters(pattern);
+            return note == null ? null : new TrackerColumnNotes(buzz, pattern, note, velocity);
+        }
+
+        /// <summary>The Note track parameter and the velocity one (as the agent finds them), or nulls.</summary>
+        protected static (IParameter Note, IParameter Velocity) Parameters(IPattern pattern)
+        {
             var groups = pattern?.Machine?.ParameterGroups;
-            if (groups == null || groups.Count < 3) return null;
+            if (groups == null || groups.Count < 3) return (null, null);
             var track = groups[2].Parameters;
             var note = track.FirstOrDefault(p => p.Type == ParameterType.Note);
-            if (note == null) return null;
+            if (note == null) return (null, null);
             // As the agent finds it (MachineNotes.For): a track parameter with "vel" in its name.
             var velocity = track.FirstOrDefault(p => p.Type != ParameterType.Note && p.Name.Contains("vel", StringComparison.OrdinalIgnoreCase) && p.MaxValue > p.MinValue);
-            return new TrackerColumnNotes(buzz, pattern, note, velocity);
+            return (note, velocity);
         }
 
         public override IPattern Pattern => pattern;
 
         /// <summary>The tracks the machine has now.</summary>
-        int Tracks => Math.Max(1, pattern.Machine.TrackCount);
+        protected int Tracks => Math.Max(1, pattern.Machine.TrackCount);
 
-        int PatternTime => Math.Max(1, pattern.Length) * PatternEvent.TimeBase;
+        protected int PatternTime => Math.Max(1, pattern.Length) * PatternEvent.TimeBase;
 
         (int Min, int Max)? VelocityRange => velocityParameter is { } v ? (v.MinValue, v.MaxValue) : null;
 
-        ColumnKey NoteKey(int track) => new ColumnKey(2, noteParameter.IndexInGroup, track);
+        protected ColumnKey NoteKey(int track) => new ColumnKey(2, noteParameter.IndexInGroup, track);
 
         ColumnKey VelocityKey(int track) => new ColumnKey(2, velocityParameter.IndexInGroup, track);
 
-        List<PatternEvent> Events(ColumnKey key) =>
+        protected virtual List<PatternEvent> Events(ColumnKey key) =>
             SessionLayout.ColumnFor(pattern, key, create: false)?.GetEvents(int.MinValue, int.MaxValue).OrderBy(e => e.Time).ToList() ?? new List<PatternEvent>();
 
         /// <summary>The tracks that have Note events: the machine's, and any beyond them still holding notes.</summary>
-        int TracksWithColumns()
+        protected virtual int TracksWithColumns()
         {
             int n = Tracks;
             foreach (var c in pattern.Columns)
                 if (ReferenceEquals(c.Parameter, noteParameter)) n = Math.Max(n, c.Track + 1);
             return n;
+        }
+
+        /// <summary>A note as this store can keep it (the tracker's rows are on a grid); the engine's columns keep any time.</summary>
+        protected virtual ClipNote Fit(ClipNote n) => n;
+
+        /// <summary>The changes made, as one undo step of this store's history; null when done, else why not.</summary>
+        protected virtual string Commit(List<ColumnEventsAction.Change> changes)
+        {
+            buzz.SongCore.ActionStack.Do(new ColumnEventsAction(buzz, pattern, changes));
+            buzz.SetModifiedFlag();
+            return null;
         }
 
         /// <summary>The notes with their tracks, in time order.</summary>
@@ -99,6 +117,7 @@ namespace ReBuzz.Core.Notes
         protected override string Apply(IReadOnlyList<ClipNote> removed, IReadOnlyList<ClipNote> added)
         {
             var notes = Read();
+            if (added.Count > 0) added = added.Select(Fit).ToList();
             // The removed notes' tracks: a note that moves (removed and added at the same place in the lists) keeps its track.
             var freed = new List<int>();
             foreach (var r in removed)
@@ -138,9 +157,7 @@ namespace ReBuzz.Core.Notes
                 AddChange(changes, VelocityKey(t), velocityOld, velocityNew);
             }
             if (changes.Count == 0) return null;
-            buzz.SongCore.ActionStack.Do(new ColumnEventsAction(buzz, pattern, changes));
-            buzz.SetModifiedFlag();
-            return null;
+            return Commit(changes);
         }
 
         static void AddChange(List<ColumnEventsAction.Change> changes, ColumnKey key, List<PatternEvent> before, List<PatternEvent> after)

@@ -32,6 +32,7 @@ namespace ReBuzz.Studio.Tests
 
         public void AfterTest(ITest test)
         {
+            if (Dispatcher.UIThread.CheckAccess()) Studio.ResetPanels();
             if (!Dispatcher.UIThread.CheckAccess()) return;      // a plain [Test]: no windows
             var left = Open();
             if (left.Count == 0) return;

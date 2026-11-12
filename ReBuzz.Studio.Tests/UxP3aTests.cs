@@ -23,7 +23,7 @@ namespace ReBuzz.Studio.Tests
 {
     public class UxP3aTests
     {
-        static readonly string[] Views = { "Machines", "Sequence", "Session", "Pattern" };
+        static readonly string[] Views = { "Machines", "Arrangement", "Session", "Pattern" };
 
         sealed class Rig : IDisposable
         {
@@ -52,6 +52,12 @@ namespace ReBuzz.Studio.Tests
 
             public Avalonia.Controls.Control Show(string tab)
             {
+                if (tab == "Pattern")
+                {
+                    Window.ShowView("Pattern");         // the Tracker: the detail panel's page (P3a)
+                    Settle();
+                    return Window.Detail.Page;
+                }
                 var item = Window.Tabs.Items.Cast<TabItem>().Single(t => (string)t.Header == tab);
                 item.IsSelected = true;
                 Settle();
@@ -128,7 +134,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(panel.Facts.Single(f => f.Label == "Length").Value, Does.StartWith("16 ticks"));
             Assert.That(panel.PatternButton.IsVisible, Is.True);
             rig.Click(panel.PatternButton);
-            Assert.That(((TabItem)rig.Window.Tabs.SelectedItem!).Header, Is.EqualTo("Pattern"));
+            Assert.That(rig.Window.Detail.IsOpen, Is.True, "the Tracker opens");
             Assert.That(rig.Selection.Pattern, Is.SameAs(rig.Beat), "the selection stays");
         }
 
@@ -182,7 +188,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(layout.ClipOf(rig.Beat).Mode, Is.EqualTo("Gate"), "the edit reaches the song from the Machines view");
 
             // In the arrangement: another machine's clip.
-            rig.Show("Sequence");
+            rig.Show("Arrangement");
             rig.Selection.Set(rig.Bass, rig.Line, this, 0);
             Settle();
             Assert.That(clip.Pattern, Is.SameAs(rig.Line));

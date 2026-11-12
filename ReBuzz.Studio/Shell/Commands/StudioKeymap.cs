@@ -102,12 +102,16 @@ namespace ReBuzz.Studio.Shell.Commands
             C("transport.start", "Transport", "_Go to Start", "Home", native: false, where: SingleKeyViews),
             C("transport.restartaudio", "Transport", "Restart _Audio", "F12", help: "Opens the audio device again"),
 
-            C("view.sequence", "View", "_Sequence", "Cmd+1|F4", help: "The arrangement"),
+            C("view.sequence", "View", "_Arrangement", "Cmd+1|F4", help: "The arrangement"),
             C("view.session", "View", "S_ession", "Cmd+2|Ctrl+Tab", help: "Ctrl+Tab again: back to the arrangement"),
             C("view.machines", "View", "_Machines", "Cmd+3|F3"),
-            C("view.pattern", "View", "_Pattern", "Cmd+4|F2", help: "F2 renames a clip in the Session View"),
+            C("view.pattern", "View", "_Tracker", "Cmd+4", help: "The detail panel's Tracker, docked under the view"),
+            C("view.maximise", "View", "_Maximise Tracker", "Shift+Cmd+F|F2", help: "The Tracker over the whole window, and back (F2 renames a clip in the Session View)"),
             C("view.notes", "View", "Song _Notes", "Cmd+5|F10", help: "The inspector's Song tab"),
             C("view.inspector", "View", "_Inspector", "Ctrl+Alt+I", "Alt+Cmd+I", help: "Shows or hides the panel on the right: the selected machine, pattern or clip, and the song"),
+            C("view.browser", "View", "_Browser", "Ctrl+Alt+B", "Alt+Cmd+B", help: "Shows or hides the panel on the left: the machines to add, and the patterns of the selection"),
+            C("view.detail", "View", "_Detail", "Ctrl+Alt+D", "Alt+Cmd+D", help: "Shows or hides the panel under the view: the Tracker and the piano roll"),
+            C("view.pianoroll", "View", "_Piano Roll", "Ctrl+Alt+4", "Alt+Cmd+4", help: "The detail panel's piano roll: the Tracker's notes as a grid, edited in the same pattern"),
             C("view.mixer", "View", "Session Mi_xer", "Ctrl+Alt+M", "Alt+Cmd+M", help: "Shows or hides the mixer under the Session View's grid"),
 
             C("window.minimize", "Window", "_Minimize", null, "Cmd+M"),
@@ -184,10 +188,13 @@ namespace ReBuzz.Studio.Shell.Commands
 
             const string R = "Piano roll";
             yield return new ViewKey(R, "Double-click", "add a note, or delete one");
-            yield return new ViewKey(R, "Drag", "move notes (a note's end: its length; " + (mac ? "⌥" : "Alt+") + "drag: velocity; empty space: select)");
+            yield return new ViewKey(R, "Drag", "move notes (a note's end: its length; empty space: select). The Session View's roll: " + (mac ? "⌥" : "Alt+") + "drag changes velocity");
+            yield return new ViewKey(R, "Shift or " + (mac ? "⌥" : "Alt") + " while dragging", "off the grid (the docked piano roll takes either; the Session View's, Shift)");
             yield return new ViewKey(R, K(mac ? "Back|Delete" : "Delete|Back"), "delete the selected notes");
             yield return new ViewKey(R, K("Cmd+A"), "select all notes");
-            yield return new ViewKey(R, "Arrows", "move the selected notes (Shift: an octave)");
+            yield return new ViewKey(R, "Left / Right", "move the selected notes by a grid step (Shift: lengthen or shorten them)");
+            yield return new ViewKey(R, "Up / Down", "transpose the selected notes by a semitone (Shift: an octave; " + K("Cmd+Up") + " / " + K("Cmd+Down") + ": velocity)");
+            yield return new ViewKey(R, K("Cmd+D"), "duplicate the selected notes after themselves (docked piano roll)");
             yield return new ViewKey(R, "Q", "quantize the selected notes");
 
             const string N = "Song Notes";
