@@ -232,23 +232,27 @@ namespace NeoBuzz.DyeEssence
         /// Any thread: whether a slot's chosen type is still being built. Asks for what is missing, so offline renders
         /// can wait for the rack before they start.
         /// </summary>
-        public bool Pending
+        public bool Pending => PendingFor(s => ChosenType(values, s));
+
+        /// <summary>
+        /// <see cref="Pending"/> for the types <paramref name="typeOf"/> gives (slot to type): the machine reads the host's
+        /// parameter values, which a preset or a set parameter changes at once, where the engine's own values follow at the
+        /// next audio tick, after an offline render has already asked whether the machine is busy.
+        /// </summary>
+        public bool PendingFor(Func<int, int> typeOf)
         {
-            get
+            bool pending = false;
+            for (int s = 0; s < Slots; s++)
             {
-                bool pending = false;
-                for (int s = 0; s < Slots; s++)
+                int t = typeOf(s);
+                if (t <= 0 || t >= FxTypes.Count) continue;
+                if (Ready(s, t) == null)
                 {
-                    int t = values.Choice(TypeParam(s));
-                    if (t <= 0 || t >= FxTypes.Count) continue;
-                    if (Ready(s, t) == null)
-                    {
-                        pending = true;
-                        Want(s, t);
-                    }
+                    pending = true;
+                    Want(s, t);
                 }
-                return pending;
             }
+            return pending;
         }
 
         /// <summary>Builds every chosen type now, on the calling thread (tests and offline tools).</summary>

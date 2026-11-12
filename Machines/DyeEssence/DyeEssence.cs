@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Buzz.MachineInterface;
 using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
@@ -223,8 +224,28 @@ namespace NeoBuzz.DyeEssence
                 if (Engine.TablesBuilding) return true;
                 int sr = SampleRate;
                 if (sr > 0) Engine.Fx.PrepareRate(sr);
-                return Engine.Fx.Pending;
+                return Engine.Fx.PendingFor(HostFxType);
             }
+        }
+
+        /// <summary>
+        /// A rack slot's type as the host holds it now: a set parameter or a preset is there at once, the engine's own values
+        /// only at the next audio tick (the renders ask whether the machine is busy before that).
+        /// </summary>
+        int HostFxType(int slot)
+        {
+            int index = FxRack.TypeParam(slot);
+            try
+            {
+                var globals = host?.Machine?.ParameterGroups?.FirstOrDefault(g => g.Type == ParameterGroupType.Global);
+                var p = globals != null && index < globals.Parameters.Count ? globals.Parameters[index] : null;
+                if (p != null) return p.GetValue(0);
+            }
+            catch (Exception)
+            {
+                // No host machine (tests): the engine's own values.
+            }
+            return Values.Choice(index);
         }
 
         /// <summary>The effects rack's chains.</summary>
