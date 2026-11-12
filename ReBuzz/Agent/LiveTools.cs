@@ -279,7 +279,7 @@ namespace ReBuzz.Agent
                     "Records what is played on a machine's keyboard (the user's MIDI keyboard, or midi_play) into the Session View. " +
                     "arm: the machine's track takes the keyboard. start: a new take in its first empty slot from scene, bars long (0: until stop), " +
                     "counted in from a stopped transport; arms the track if needed. stop: ends the take (whole bars) and disarms a track start armed. " +
-                    "capture: what armed tracks were played lately becomes clips, as Live's Capture MIDI. disarm, status. Studio mode only. " +
+                    "capture: what armed tracks were played lately becomes clips (Capture MIDI). disarm, status. Studio mode only. " +
                     "Takes go on the Session View's undo history, not undo's. Example: session_record(action=\"start\", machine=\"Keys\", scene=1, bars=4).",
                 Input = Object(null,
                     Req("action", String("What to do", "arm", "disarm", "start", "stop", "capture", "status")),

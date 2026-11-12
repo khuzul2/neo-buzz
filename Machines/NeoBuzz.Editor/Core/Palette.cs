@@ -1,6 +1,7 @@
 #nullable disable
 // Neo editor kit, toolkit-free core (docs/specs/cross-platform.md §8.3): the dark theme's colours
-// and the geometry helpers the controls share. The WPF brushes in Theme.cs are made from these.
+// and the geometry helpers the controls share. The WPF brushes in Theme.cs are made from these. On Avalonia (the
+// studio) they are the design tokens (Tokens.cs, ux-overhaul.md P2a); the classic WPF app keeps its own.
 
 using System;
 
@@ -8,6 +9,23 @@ namespace NeoBuzz.Editor
 {
     internal static class Palette
     {
+#if AVALONIA
+        // Fork (ux-overhaul.md P2a): the studio's editors on the design tokens (Core/Tokens.cs).
+        public static readonly NeoColor Background = Tokens.SurfaceBase;
+        public static readonly NeoColor Panel = Tokens.SurfaceView;
+        public static readonly NeoColor PanelEdge = Tokens.SurfaceControl;
+        public static readonly NeoColor Track = Tokens.SurfaceBorder;
+        /// <summary>A knob's unfilled track: 3:1 against the panel, as WCAG asks of a control's parts.</summary>
+        public static readonly NeoColor KnobTrack = Tokens.ControlTrack;
+        public static readonly NeoColor Text = Tokens.TextPrimary;
+        public static readonly NeoColor DimText = Tokens.TextSecondary;
+        public static readonly NeoColor KnobTop = NeoColor.FromRgb(0x34, 0x34, 0x3A);
+        public static readonly NeoColor KnobBottom = NeoColor.FromRgb(0x24, 0x24, 0x28);
+        public static readonly NeoColor Grid = Tokens.GridLine;
+        /// <summary>A level meter above 0 dB.</summary>
+        public static readonly NeoColor Over = Tokens.MeterOver;
+#else
+        // The classic (WPF) app keeps its look (ux-overhaul.md §1).
         public static readonly NeoColor Background = NeoColor.FromRgb(0x15, 0x17, 0x1C);
         public static readonly NeoColor Panel = NeoColor.FromRgb(0x1E, 0x21, 0x27);
         public static readonly NeoColor PanelEdge = NeoColor.FromRgb(0x2B, 0x2F, 0x37);
@@ -24,11 +42,17 @@ namespace NeoBuzz.Editor
         public static readonly NeoColor Grid = NeoColor.FromRgb(0x2A, 0x2E, 0x36);
         /// <summary>A level meter above 0 dB.</summary>
         public static readonly NeoColor Over = NeoColor.FromRgb(0xFF, 0x4D, 0x4D);
+#endif
 
         public static readonly NeoFill KnobBody = NeoFill.Vertical(KnobTop, KnobBottom);
 
+#if AVALONIA
+        /// <summary>The kit's font: the tokens' (Inter, which the studio bundles); backends map it to what the platform has.</summary>
+        public const string FontFamily = Tokens.FontFamily;
+#else
         /// <summary>The kit's font; backends map it to what the platform has.</summary>
         public const string FontFamily = "Segoe UI";
+#endif
     }
 
     /// <summary>WCAG 2's contrast between two colours (1 … 21).</summary>

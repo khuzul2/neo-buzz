@@ -135,28 +135,36 @@ namespace ReBuzz.Studio.Tests
                 if (failed != null) throw failed;
             }
 
-            /// <summary>Reads <paramref name="buffers"/> buffers (each after <paramref name="perBuffer"/>, on that thread).</summary>
-            public Cost Read(int buffers, Action perBuffer = null)
+            /// <summary>
+            /// Reads <paramref name="buffers"/> buffers (each after <paramref name="perBuffer"/>, on that thread). With
+            /// <paramref name="describe"/>, each buffer is measured by ReBuzzTests' AllocationWindow too, and a buffer that
+            /// allocated is described in the log: the types the runtime's allocation ticks name, JIT, type loads, GCs.
+            /// </summary>
+            public Cost Read(int buffers, Action perBuffer = null, bool describe = false)
             {
                 var cost = new Cost();
                 On(() =>
                 {
+                    using var window = describe ? new ReBuzzTests.Automation.AllocationWindow(buffers) : null;
                     long workerMethods = Interlocked.Read(ref RenderJobs.WorkerMethods);
                     long methods = System.Runtime.JitInfo.GetCompiledMethodCount(currentThread: true);
                     for (int i = 0; i < buffers; i++)
                     {
                         int position = Core.SongCore.PlayPosition, inTick = ReBuzzCore.masterInfo.PosInTick;
                         perBuffer?.Invoke();
+                        window?.Begin();
                         long before = GC.GetAllocatedBytesForCurrentThread();
                         long workers = Interlocked.Read(ref RenderJobs.WorkerBytes);
                         work.MainAudioFillBuffer(buffer, 0, Frames * 2);
                         long bytes = GC.GetAllocatedBytesForCurrentThread() - before + Interlocked.Read(ref RenderJobs.WorkerBytes) - workers;
+                        window?.End();
                         cost.Bytes += bytes;
                         if (bytes != 0 && cost.Log.Count < 20)
                             cost.Log.Add($"buffer {i}: {bytes} bytes (tick {position}, {inTick} samples into it)");
                     }
                     cost.Methods = System.Runtime.JitInfo.GetCompiledMethodCount(currentThread: true) - methods
                                  + Interlocked.Read(ref RenderJobs.WorkerMethods) - workerMethods;
+                    if (window != null && cost.Bytes != 0) cost.Log.Add(window.Describe());
                 });
                 return cost;
             }
@@ -676,6 +684,92 @@ namespace ReBuzz.Studio.Tests
                 string compiled = jit.Report(audio.OsThreadId);
                 Assert.That(play.Methods, Is.EqualTo(0), "the first play compiles nothing on the audio or render threads; compiled meanwhile:" + compiled);
                 Assert.That(stop.Methods, Is.EqualTo(0), "nor does its stop:" + compiled);
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                Multithreading = was;
+                NewSong();
+            }
+        }
+
+        /// <summary>
+        /// Every Neo machine, all just created, through the transport's first play and stop: 0 bytes on the audio thread.
+        /// The first play allocated about 340 KB there: Neo Wave a closure every voice block (Tables.Get), Neo Comp an
+        /// enumerator every buffer (the multi-I/O paths' ElementAt over the channel sets), Neo FM6 its DX7 tables and its
+        /// voices' carrier gains (static, made by the first note), the engine its pattern lists' first growth and the
+        /// Playing event posted as a closure (216 bytes at every start, now on the UI event queue). The device's first
+        /// buffers before the play, each machine's first Work since it was made, set it up for the rate (about 3 MB here:
+        /// Neo Verb 1.5 MB, Analyzer 950 KB): reported, not asserted.
+        /// </summary>
+        [AvaloniaTest]
+        public void TheFirstPlayOfEveryNeoMachineAllocatesNothing()
+        {
+            _ = Studio.Host;
+            Assert.That(AudioWarmUp.Wait(), Is.True, "the warm-up finishes");
+            NewSong();
+            bool was = Multithreading;
+            Multithreading = false;                             // every machine's work on the audio thread, which the window reads
+            var song = Core.SongCore;
+            var master = song.MachinesList[0];
+            MachineCore Make(string gear, string name, float x, float y)
+            {
+                song.CreateMachine(gear, null, name, null, null, null, -1, x, y);
+                return song.MachinesList.Last(m => m.Name == name);
+            }
+            void Chain(params MachineCore[] ms)
+            {
+                for (int i = 0; i < ms.Length; i++)
+                    song.ConnectMachines(ms[i], i + 1 < ms.Length ? ms[i + 1] : master, new[] { 0 }, new[] { 0 }, 0x2000, 0x4000);
+            }
+            int length = 0;
+            void Play(MachineCore m, params int[] keys)
+            {
+                m.CreatePattern("00", 16);
+                var p = (PatternCore)m.Patterns.First();
+                Core.SessionLayout.EditNotes(p, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, keys[i % keys.Length], 100)).ToArray());
+                song.AddSequence(m, song.Sequences.Count);
+                song.Sequences.Last().SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, p));
+                length = Math.Max(length, p.Length);
+            }
+            try
+            {
+                var poly = Make("Neo Poly", "First Poly", -0.8f, -0.6f);
+                var wave = Make("Neo Wave", "First Wave", -0.8f, -0.2f);
+                var fm6 = Make("Neo FM6", "First FM6", -0.8f, 0.2f);
+                var drums = Make("Neo Drums", "First Drums", -0.8f, 0.6f);
+                var sampler = Make("Neo Sampler", "First Sampler", -0.8f, 0.9f);
+                Chain(poly, Make("Neo Drive", "First Drive", -0.4f, -0.6f), Make("Neo Comp", "First Comp", 0f, -0.6f), Make("Neo Verb", "First Verb", 0.4f, -0.6f));
+                Chain(wave, Make("Neo EQ", "First EQ", -0.4f, -0.2f), Make("Neo Utility", "First Utility", 0f, -0.2f), Make("Neo Limiter", "First Limiter", 0.4f, -0.2f));
+                Chain(fm6, Make("Neo Ensemble", "First Ensemble", -0.4f, 0.2f), Make("Neo Delay", "First Delay", -0.1f, 0.2f), Make("Neo Multiband", "First Multiband", 0.2f, 0.2f),
+                      Make("Neo Filter", "First Filter", 0.4f, 0.2f), Make("Neo Analyzer", "First Analyzer", 0.6f, 0.2f), Make("Neo Scope", "First Scope", 0.8f, 0.2f));
+                Chain(drums);
+                Chain(sampler);
+                Play(poly, 48, 55, 60, 63);
+                Play(wave, 57, 60, 64, 69, 72);
+                Play(fm6, 60, 67, 72, 76);
+                Play(drums, 36, 42, 38, 42, 46, 39, 49, 51);
+                Play(sampler, 60, 62, 64, 65, 67);
+                Core.Looping = true;
+                song.LoopStart = 0;
+                song.LoopEnd = length;
+                song.SongEnd = length;
+                Assert.That(AudioWarmUp.Wait(), Is.True, "the machines' assemblies compiled");
+
+                using var audio = new AudioThread(DeviceAlgorithm);
+                var stopped = audio.Read(100, describe: true);  // the device running, stopped: each machine's first Work
+                lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                var play = audio.Read(400, describe: true);     // the first play: every machine's first notes
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                var stop = audio.Read(50, describe: true);
+                TestContext.Out.WriteLine($"[notice] every Neo machine's first buffers, stopped: {stopped.Bytes} bytes\n" + string.Join("\n", stopped.Log));
+                Assert.Multiple(() =>
+                {
+                    AssertNoAllocation(play, "the first play of every Neo machine");
+                    AssertNoAllocation(stop, "its stop");
+                });
+                foreach (var m in new[] { poly, wave, fm6, drums, sampler })
+                    Assert.That(m.IsActive || m.Outputs.Count > 0, Is.True, $"{m.Name} is in the song");
             }
             finally
             {

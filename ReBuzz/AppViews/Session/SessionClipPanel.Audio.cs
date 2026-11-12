@@ -50,7 +50,7 @@ namespace ReBuzz.AppViews.Session
                     {
                         Width = 110,
                         VerticalAlignment = VerticalAlignment.Center,
-                        ToolTip = "How the clip follows the song's tempo (Live's warp modes):\n" +
+                        ToolTip = "How the clip follows the song's tempo (its warp mode):\n" +
                                   "Beats: cut at its transients (or a grid), each piece played on its beat at its own speed: drums, loops.\n" +
                                   "Complex: stretched by a phase vocoder, pitch kept: any material.\n" +
                                   "Re-Pitch: faster or slower with the tempo, its pitch with it (a turntable).\n" +
@@ -85,7 +85,7 @@ namespace ReBuzz.AppViews.Session
 
                     markers = new TextBlock { Foreground = SessionPalette.DimText, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0), FontSize = 11 };
                     var editButton = new FlatButton("Warp markers…", () => { if (!loading) editMarkers(); },
-                        "Pin moments of the audio to beats of the clip (Live's warp markers): the audio between two markers\n" +
+                        "Pin moments of the audio to beats of the clip (warp markers): the audio between two markers\n" +
                         "is stretched to fit. For audio that wasn't played to a click.");
                     var markerRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0), Children = { editButton, markers } };
 

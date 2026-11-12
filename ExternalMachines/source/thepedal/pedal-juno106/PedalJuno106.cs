@@ -132,6 +132,11 @@ namespace PedalJuno106
         };
         const float DriftTimeConstSec = 2.0f;   // ~2-second wander
         const float DriftWanderCents  = 0.5f;   // ±0.5 cent random-walk amplitude
+        // Fork (neo-buzz, §12.15): the walk steps every DriftGrid samples, whatever the block size, and the pitch
+        // moves in a straight line between steps (Voice.UpdateDrift).
+        const int   DriftGrid         = 256;
+        int   _driftPos;                        // samples since the last step
+        float _driftCoef;                       // the walk's coefficient for a step at this rate
 
         public PedalJuno106Machine(IBuzzMachineHost host)
         {
@@ -143,6 +148,7 @@ namespace PedalJuno106
                 _voices[i].StaticDetuneCents = _staticDetuneCents[i];
                 _voices[i].DriftSeed         = _voiceDriftSeeds[i];
                 _voices[i].DriftOctaves      = _staticDetuneCents[i] * (1f / 1200f);
+                _voices[i].DriftTarget       = _voices[i].DriftOctaves;   // fork: the first step starts there
             }
             _hasNewNote  = new bool[VOICE_COUNT];
             _pendingNote = new byte[VOICE_COUNT];
@@ -202,8 +208,11 @@ namespace PedalJuno106
             Description = "Filter cutoff frequency")]
         public int VcfFrequency  { get; set; } = 100;
 
-        [ParameterDecl(Name = "VCF Reso",      MinValue = 0, MaxValue = 127, DefValue = 30)]
-        public int VcfResonance  { get; set; } = 30;
+        // Fork (neo-buzz, §12.15): 0, was 30. With VCF Env Amt 80 the envelope opens the filter to its ceiling
+        // (0.45 × the rate), where any resonance from about 20 up rings on at 0.41 × the rate; a new instance
+        // shouldn't. A song keeps the value it saved, the bank lists its own.
+        [ParameterDecl(Name = "VCF Reso",      MinValue = 0, MaxValue = 127, DefValue = 0)]
+        public int VcfResonance  { get; set; } = 0;
 
         [ParameterDecl(Name = "VCF Env Amt",   MinValue = 0, MaxValue = 127, DefValue = 80)]
         public int VcfEnvAmount  { get; set; } = 80;
@@ -421,6 +430,7 @@ namespace PedalJuno106
                 _chorus.SetSampleRate(sr);
                 for (int v = 0; v < VOICE_COUNT; v++) _voices[v].SetSampleRate(sr);
                 _cachedAttack = -1;   // force ADSR recompute
+                _driftCoef = 1f - MathF.Exp(-(DriftGrid / (float)sr) / DriftTimeConstSec);   // fork (neo-buzz, §12.15)
                 _glidesSet = false;   // fork (neo-buzz, §12.15): a new rate starts at the settings
             }
 
@@ -514,13 +524,11 @@ namespace PedalJuno106
             _hpf.Configure(hpfPosL);
             _chorus.Configure(chorusModeL);
 
-            // Per-voice drift — slow analog-like wander, updated once per
-            // Work() block. Coef derived from block size so the time constant
-            // stays ~constant across whatever block size ReBuzz is using.
-            float blockTimeSec = numSamples / srf;
-            float driftCoef    = 1f - MathF.Exp(-blockTimeSec / DriftTimeConstSec);
-            for (int v = 0; v < VOICE_COUNT; v++)
-                _voices[v].UpdateDrift(driftCoef, DriftWanderCents);
+            // Per-voice drift — slow analog-like wander. Fork (neo-buzz, §12.15): stepped every DriftGrid samples
+            // in the loop below (it stepped here, once a block, the coefficient from the block's length), with
+            // the pitch moving in a straight line between steps.
+            float driftCoef = _driftCoef;
+            int   driftPos  = _driftPos;
 
             bool nonSilent = false;
 
@@ -539,6 +547,13 @@ namespace PedalJuno106
 
                 _lfo.Process(lfoRateL, lfoDelayL);
                 float lfoOut = _lfo.Output;
+
+                // Fork (neo-buzz, §12.15): a drift step every DriftGrid samples, for every voice, sounding or not.
+                if (driftPos == 0)
+                    for (int v = 0; v < VOICE_COUNT; v++)
+                        _voices[v].UpdateDrift(driftCoef, DriftWanderCents, DriftGrid);
+                float driftAt = driftPos;
+                if (++driftPos == DriftGrid) driftPos = 0;
 
                 float mix = 0f;
 
@@ -569,9 +584,11 @@ namespace PedalJuno106
                     // Both folded into pitchOct so the existing FastPow2 carries
                     // them — one extra add per sample, no extra transcendentals.
                     // Juno vibrato range: max depth = ±1 semitone (≈ ±100 cents).
-                    float pitchOct = dcoLfoDepth * lfoOut * (1f / 12f) + voice.DriftOctaves;
+                    // Fork (neo-buzz, §12.15): the drift along its line, and 2^x accurate below 0 too (FastPow2 was
+                    // 9.6 cents flat there: voices 1, 3 and 5, and vibrato's lower half).
+                    float pitchOct = dcoLfoDepth * lfoOut * (1f / 12f) + (voice.DriftOctaves + voice.DriftSlope * driftAt);
                     float freqHz   = voice.Frequency * rangeFactor *
-                                     DspMath.FastPow2(pitchOct) * bendRatio;   // fork: × 1 without a bend
+                                     DspMath.FastPow2Signed(pitchOct) * bendRatio;   // fork: × 1 without a bend
 
                     // Pulse width modulation source
                     float pwSource;
@@ -645,6 +662,7 @@ namespace PedalJuno106
                 // Buzz convention: generators write at ±32768 (PedalComp §1)
                 output[i] = new Sample(outL * 32768f, outR * 32768f);
             }
+            _driftPos = driftPos;   // fork (neo-buzz, §12.15): the drift grid runs on across blocks
 
             return nonSilent;
         }

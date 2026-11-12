@@ -17,8 +17,9 @@ namespace NeoBuzz.Filter
 {
     internal sealed class NeoFilterEditor : NeoEditor
     {
-        static readonly NeoColor AccentColor = NeoColor.FromRgb(0xD4, 0xE1, 0x57);
-        static readonly NeoColor RightColor = NeoColor.FromRgb(0x7E, 0xC8, 0xFF);
+        // Fork (ux-overhaul.md P2a): the EqFilter identity in the studio, its own colour in the classic app.
+        static readonly NeoColor AccentColor = Tokens.Identity(MachineCategory.EqFilter, NeoColor.FromRgb(0xD4, 0xE1, 0x57));
+        static readonly NeoColor RightColor = Tokens.Partner(AccentColor, NeoColor.FromRgb(0x7E, 0xC8, 0xFF));
 
         protected override string Title => "Neo Filter";
         protected override NeoColor Accent => AccentColor;

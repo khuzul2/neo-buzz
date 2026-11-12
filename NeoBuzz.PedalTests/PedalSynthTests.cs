@@ -2,7 +2,7 @@
 // run on their own Work (SynthHarness.cs), and their MIDI input:
 //  - a MIDI note plays as a track's note does (the same samples where the voices are alike), at its velocity; chords
 //    take a voice each (SH101: last-note priority), pitch bend moves ±2 semitones, the mod wheel brings in vibrato,
-//    the sustain pedal holds, the transport stopping releases MIDI notes (a track's note rings on where it did);
+//    the sustain pedal holds, the transport stopping releases MIDI notes and a track's notes;
 //  - silence after sound settles to exact zero, with no denormal number on the way, and the machine says it is silent
 //    once it is, and only then;
 //  - silence costs no more than before the first note;
@@ -10,7 +10,9 @@
 //  - blocks of 256 and of 117 give the same output;
 //  - every parameter alone at each end, and MIDI at its ends, stay finite;
 //  - parameter changes glide: a stepped gain moves the output by small steps, a stepped cutoff or width comes in over
-//    the glide, and both land; a setting changed in silence starts the next note at it, with no glide.
+//    the glide, and both land; a setting changed in silence starts the next note at it, with no glide;
+//  - the follow-ups (§12.15): Juno106's default patch doesn't ring, its six voices play in tune; FM's Glide retriggers
+//    a released voice; M1's ended voices' LFOs keep their random values, skipped in runs.
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -79,10 +81,9 @@ namespace NeoBuzz.PedalTests
             if (s.Name == "Pedal Juno106")
             {
                 // The note takes another voice (the highest free, voice 6; a track's is its own), with its own analog
-                // detune. Juno106's FastPow2 is about 10 cents short just under a whole octave, so its voices 1, 3 and 5,
-                // whose static detunes are negative, play that much flat (the profile's −11 cents on track 1), as before.
+                // detune (voice 6 +0.5 cents, voice 1 −0.8: EveryJuno106VoicePlaysInTune).
                 Assert.That(Measure.Cents(hm, 440), Is.EqualTo(0).Within(2), "A4 is 440 Hz (voice 6: +0.5 cents)");
-                Assert.That(Measure.Cents(ht, 440), Is.EqualTo(-10.4).Within(2), "track 1's voice: as before");
+                Assert.That(Measure.Cents(ht, 440), Is.EqualTo(-0.8).Within(1), "track 1's voice, −0.8 cents (−10.4 before the follow-ups)");
                 Assert.That(lm, Is.EqualTo(lt).Within(0.2));
             }
             else
@@ -239,20 +240,25 @@ namespace NeoBuzz.PedalTests
             Assert.That(Measure.Peak(o.L, 4 * q + Tail(s), Rate), Is.EqualTo(0), "released when it comes up");
         }
 
+        /// <summary>
+        /// The transport stopping releases a MIDI note, and a track's note (on SH101 and FM it rang on after Stop until the
+        /// follow-ups; Juno106, M1 and Tracker released it already): silent once its release has run, at its defaults.
+        /// </summary>
         [TestCaseSource(nameof(Synths))]
-        public void TheTransportStoppingReleasesMidiNotes(Synth s)
+        public void TheTransportStoppingReleasesNotes(Synth s)
         {
             int q = Rate / 2;
             var r = new SynthRunner(s, withSong: true);
             var o = r.Run(q + Tail(s) + Rate, 256, Events((0, x => { x.Playing = true; x.Midi(A4, 100); }), (q, x => x.Playing = false)));
             Assert.That(Measure.Peak(o.L, 0, q), Is.GreaterThan(0.01), "playing");
-            Assert.That(Measure.Peak(o.L, q + Tail(s), Rate), Is.EqualTo(0), "released when the transport stops");
-            // A track's note on the SH101 and FM rang on after Stop, and still does (as before); the others release it.
+            Assert.That(Measure.Peak(o.L, q + Tail(s), Rate), Is.EqualTo(0), "a MIDI note released when the transport stops");
             var t = new SynthRunner(s, withSong: true);
             var ot = t.Run(q + Tail(s) + Rate, 256, Events((0, x => { x.Playing = true; x.Note(0, A4); }), (q, x => x.Playing = false)));
-            bool ringsOn = Measure.Peak(ot.L, q + Tail(s), Rate) > 0.001;
-            PedalReport.Report($"{s.Name}: the transport stopping releases a MIDI note; a track's note {(ringsOn ? "rings on, as before" : "is released, as before")}");
-            Assert.That(ringsOn, Is.EqualTo(s.Name == "Pedal SH101" || s.Name == "Pedal FM"), "a track's note as before");
+            double rest = Measure.Peak(ot.L, q + Tail(s), Rate);
+            PedalReport.Report($"{s.Name}: the transport stopping releases a MIDI note and a track's note: " +
+                               (rest == 0 ? "silent once its release has run" : $"a track's note still at {Measure.Db(rest):F1} dBFS {Tail(s) / (double)Rate:F0} s after Stop"));
+            Assert.That(Measure.Peak(ot.L, 0, q), Is.GreaterThan(0.01), "playing");
+            Assert.That(rest, Is.EqualTo(0), "a track's note released when the transport stops");
         }
 
         [TestCaseSource(nameof(Synths))]
@@ -390,9 +396,10 @@ namespace NeoBuzz.PedalTests
         }
 
         /// <summary>
-        /// Silence after notes costs about what silence before the first did (within 2×: M1 keeps its ended voices' LFOs
-        /// in time, about half a millisecond a second for four): a decaying state among the denormal floats (Juno106's HPF
-        /// and chorus), or voices that stayed active after their notes (FM, M1, rendering silence), cost as much as playing.
+        /// Silence after notes costs about what silence before the first did (within 1.3×: M1 keeps its ended voices' LFOs
+        /// in time, now in runs of equal steps; sample by sample it cost 1.5× before the follow-ups): a decaying state among
+        /// the denormal floats (Juno106's HPF and chorus), or voices that stayed active after their notes (FM, M1, rendering
+        /// silence), cost as much as playing.
         /// </summary>
         [TestCaseSource(nameof(Slowdowns))]
         public void SilenceCostsNoMoreAfterNotesThanBefore(string name, string setting, bool midi)
@@ -408,7 +415,7 @@ namespace NeoBuzz.PedalTests
             var t = WorkMsPerSecond(fresh, played, playing);
             double before = t[0], after = t[1], during = t[2];
             PedalReport.Report($"{name} ({setting}{(midi ? ", tracks and MIDI" : "")}): work {before:F2} ms/s before its first note, {during:F2} playing, {after:F2} after silence ({after / Math.Max(before, 1e-9):F2}× before)");
-            Assert.That(after, Is.LessThanOrEqualTo(2 * before + 0.1), "silence after notes costs about what silence before them did");
+            Assert.That(after, Is.LessThanOrEqualTo(1.3 * before + 0.05), "silence after notes costs about what silence before them did");
         }
 
         // ── The audio thread ────────────────────────────────────────────────────────────────────────────────────
@@ -491,17 +498,8 @@ namespace NeoBuzz.PedalTests
                 double d = Math.Max(Math.Abs(a.L[i] - b.L[i]), Math.Abs(a.R[i] - b.R[i]));
                 if (d > 0) { differ++; if (first < 0) first = i; worst = Math.Max(worst, d); }
             }
-            if (s.Name == "Pedal Juno106")
-            {
-                // Its analog drift steps once a block (a random walk of a few hundredths of a cent): another block size,
-                // another walk. Left as it is (a change would move every song's drift); the pitch and level agree.
-                double ca = Pitch(a.L, Rate / 4), cb = Pitch(b.L, Rate / 4);
-                double la = Measure.Db(Measure.Rms(a.L, 0, common)), lb = Measure.Db(Measure.Rms(b.L, 0, common));
-                PedalReport.Report($"Pedal Juno106{(midi ? " (tracks and MIDI)" : "")}: blocks of 256 and 117 differ by up to {Measure.Db(worst):F1} dBFS from {first / (double)Rate:F3} s (its drift steps once a block): pitch {Signed(Measure.Cents(cb, ca), 3)} cents, level {Signed(lb - la, 3)} dB apart");
-                Assert.That(Measure.Cents(cb, ca), Is.EqualTo(0).Within(0.1));
-                Assert.That(lb - la, Is.EqualTo(0).Within(0.05));
-                return;
-            }
+            // (Juno106's analog drift stepped once a block until the follow-ups: another block size, another walk, which
+            // put these two up to −13.4 dBFS apart. It steps every 256 samples now, whatever the blocks, in a line between.)
             string who = s.Name + (midi ? " (tracks and MIDI)" : "");
             PedalReport.Report(differ == 0 ? $"{who}: blocks of 256 and 117 give the same output, bit for bit"
                 : $"{who}: blocks of 256 and 117 differ in {differ} samples from {first / (double)Rate:F3} s, by up to {Measure.Db(worst):F1} dBFS");
@@ -577,7 +575,9 @@ namespace NeoBuzz.PedalTests
             yield return C("Pedal Juno106", "VcaLevel", 100, 50, true, "VcfFrequency=55 VcfEnvAmount=0 VcfResonance=0");   // a smooth wave
             // Into the filter's soft clip, which shapes a square's edges by its level: measured as it comes in.
             yield return C("Pedal Juno106", "DcoSubLevel", 60, 127, false, "DcoSawOn=0 VcfFrequency=60 VcfEnvAmount=0 VcfResonance=0");
-            yield return C("Pedal Juno106", "DcoPulseWidth", 0, 127, false, "DcoSawOn=0 DcoPulseOn=1");
+            // The filter at 6.4 kHz, under the edge's top (the old defaults' VCF Reso 30 rang at 19.8 kHz; open, at the
+            // new defaults, the step's first 5 ms measure −4.3 dB, the edge sharp as it starts to move).
+            yield return C("Pedal Juno106", "DcoPulseWidth", 0, 127, false, "DcoSawOn=0 DcoPulseOn=1 VcfFrequency=70 VcfEnvAmount=0");
             yield return C("Pedal Juno106", "VcfFrequency", 40, 90, false, "VcfEnvAmount=0");
             yield return C("Pedal Juno106", "VcfResonance", 0, 110, false, "VcfEnvAmount=0 VcfFrequency=70");
             yield return C("Pedal SH101", "Volume", 96, 48, true);
@@ -690,7 +690,7 @@ namespace NeoBuzz.PedalTests
                 m.GetType().GetProperty(property)!.SetValue(m, from);
             };
             // A note, silence, and the setting changed a tenth of a second before the next note, or with it (in the block
-            // the note starts). Both set it at both times, to split their blocks alike (Juno106's drift steps by blocks).
+            // the note starts). Both set it at both times, to split their blocks alike (Juno106's drift stepped by blocks).
             int early = again - Rate / 10;
             float[] Phrase(int earlyValue) => SynthRunner.Render(s, frames, 256,
                 Events((0, r => r.Note(0, 57)), (Rate / 2, r => r.Off(0)), (early, r => r.Set(property, earlyValue)),
@@ -709,6 +709,149 @@ namespace NeoBuzz.PedalTests
             PedalReport.Report($"{name}: {property} {from} → {to} in silence, with the next note: its first 50 ms " +
                                (diff == 0 ? "the same as set before" : $"{db:F1} dB from it"));
             Assert.That(diff, Is.EqualTo(0), "the next note starts at the setting");
+        }
+
+        // ── The follow-ups (§12.15) ─────────────────────────────────────────────────────────────────────────────
+
+        /// <summary>The share of a span's energy above <paramref name="hz"/> (a Hann window over 8192 samples).</summary>
+        static double ShareAbove(float[] x, int from, double hz)
+        {
+            const int n = 8192;
+            var w = new float[n];
+            for (int i = 0; i < n; i++) w[i] = (float)(x[from + i] * (0.5 - 0.5 * Math.Cos(2 * Math.PI * i / n)));
+            var m = Measure.Spectrum(w, 0, n);
+            double all = 0, high = 0;
+            for (int k = 1; k < m.Length; k++)
+            {
+                all += m[k] * m[k];
+                if (Measure.BinFrequency(k, n) >= hz) high += m[k] * m[k];
+            }
+            return all > 0 ? high / all : 0;
+        }
+
+        /// <summary>
+        /// A new Juno106 (every parameter at its declared default) doesn't ring: held from C2 to C7, no 8192-sample span of
+        /// its first second has more than 5 % of its energy above 16 kHz. At the old defaults (VCF Reso 30) the envelope
+        /// opened the filter to its ceiling, where the resonance rang on at 0.41 × the rate: 39 % (C2) to 83 % (C7).
+        /// </summary>
+        [Test]
+        public void TheJuno106sDefaultPatchDoesNotRing()
+        {
+            var s = Synth.Named("Pedal Juno106");
+            var worst = new List<string>();
+            double most = 0;
+            foreach (int key in new[] { 36, 48, 60, 72, 84, 96 })
+            {
+                var o = SynthRunner.Render(s, Rate, 256, Events((0, r => r.Note(0, key))));
+                double share = 0;
+                for (int at = 0; at + 8192 <= Rate; at += 8192) share = Math.Max(share, ShareAbove(o.L, at, 16000));
+                worst.Add($"{key}: {share * 100:F2} %");
+                most = Math.Max(most, share);
+            }
+            PedalReport.Report($"Pedal Juno106 at its defaults: its energy above 16 kHz, the most in any 8192 samples of a held note's first second, by key: {string.Join(", ", worst)}");
+            Assert.That(most, Is.LessThan(0.05), "no ring at the top of the band");
+        }
+
+        /// <summary>
+        /// Pedal FM with Glide on: a track's note after that track's note was released starts as it does with Glide off
+        /// (the same samples), during the release or after it; until the follow-ups it took the legato path, keeping the
+        /// released envelopes, and stayed silent. A note while the last is held still glides (legato).
+        /// </summary>
+        [Test]
+        public void FMsGlideRetriggersAReleasedVoice()
+        {
+            var s = Synth.Named("Pedal FM");
+            Action<object> Glide(int g) => m => ((PedalFM.PedalFMMachine)m).Glide = g;
+            int off = Rate / 2, during = Rate, after = Tail(s) + Rate, frames = after + Rate;
+            var e = Events((0, r => r.Note(0, 60)), (off, r => r.Off(0)), (during, r => r.Note(0, 67)), (during + off, r => r.Off(0)),
+                           (after, r => r.Note(0, 64)));
+            var glide = SynthRunner.Render(s, frames, 256, e, Glide(60));
+            var plain = SynthRunner.Render(s, frames, 256, e, Glide(0));
+            double first = Measure.Db(Measure.Rms(plain.L, Rate / 10, Rate / 4));
+            double inRelease = Measure.Db(Measure.Rms(glide.L, during + Rate / 10, Rate / 4));
+            double afterIt = Measure.Db(Measure.Rms(glide.L, after + Rate / 10, Rate / 4));
+            int differ = 0;
+            for (int i = 0; i < frames; i++) if (glide.L[i] != plain.L[i]) differ++;
+            var legato = SynthRunner.Render(s, Rate, 256, Events((0, r => r.Note(0, 60)), (Rate / 2, r => r.Note(0, 67))), Glide(60));
+            var legatoOff = SynthRunner.Render(s, Rate, 256, Events((0, r => r.Note(0, 60)), (Rate / 2, r => r.Note(0, 67))), Glide(0));
+            double moved = 0;
+            for (int i = Rate / 2; i < Rate; i++) moved = Math.Max(moved, Math.Abs(legato.L[i] - legatoOff.L[i]));
+            PedalReport.Report($"Pedal FM, Glide 60: a track's note after its released one at {inRelease:F1} dBFS RMS in the release, {afterIt:F1} after it (the first note {first:F1}); " +
+                               $"{(differ == 0 ? "the same samples as with Glide off" : $"{differ} samples differ from Glide off")}; a held note's next one glides (legato)");
+            Assert.That(differ, Is.EqualTo(0), "a released voice retriggers, as with Glide off");
+            Assert.That(afterIt, Is.EqualTo(first).Within(1), "the note after the release plays");
+            Assert.That(moved, Is.GreaterThan(0.01), "legato still glides");
+        }
+
+        /// <summary>
+        /// Pedal M1's ended voices skip their LFOs' time in runs of equal float steps (Lfo.Skip): the same phase and the
+        /// same random values as ticking them sample by sample, at every LFO speed at 44.1, 48 and 96 kHz, with and without
+        /// a delay and a fade still counting, over blocks of 1 to 256 samples; checked by the next note's S&H values and
+        /// the phase the triangle reads.
+        /// </summary>
+        [Test]
+        public void AnEndedM1VoicesLfosKeepTheirTimeAndRandomValues()
+        {
+            var rnd = new Random(1);
+            int checkedBlocks = 0;
+            foreach (int sr in new[] { 44100, 48000, 96000 })
+                for (int speed = 0; speed <= 127; speed++)
+                    foreach (bool counting in new[] { false, true })
+                    {
+                        float hz = 0.05f * MathF.Pow(30f / 0.05f, speed / 127f);   // M1's LFO speed
+                        float delay = counting ? 3f : 0f, fade = counting ? 5f : 0f;
+                        WDE.PedalM1.Lfo Make(WDE.PedalM1.LfoWave w) { var l = new WDE.PedalM1.Lfo(); l.UpdateCoefs(hz, delay, fade, w, sr); l.NoteOn(); return l; }
+                        var ta = Make(WDE.PedalM1.LfoWave.Triangle); var tb = Make(WDE.PedalM1.LfoWave.SampleHold);   // ticked
+                        var sa = Make(WDE.PedalM1.LfoWave.Triangle); var sb = Make(WDE.PedalM1.LfoWave.SampleHold);   // skipped
+                        for (int block = 0; block < 300; block++)
+                        {
+                            int n = 1 + rnd.Next(256);
+                            for (int i = 0; i < n; i++) { ta.Tick(); tb.Tick(); }
+                            WDE.PedalM1.Lfo.Skip(sa, sb, n);
+                            checkedBlocks++;
+                        }
+                        // The phase, as the triangle reads it, and the S&H's values over the next note.
+                        for (int i = 0; i < 64; i++) Assert.That(sa.Tick(), Is.EqualTo(ta.Tick()), $"phase at {sr} Hz, speed {speed}");
+                        tb.NoteOn(); sb.NoteOn();
+                        for (int i = 0; i < 2 * sr; i++) Assert.That(sb.Tick(), Is.EqualTo(tb.Tick()), $"random values at {sr} Hz, speed {speed}");
+                    }
+            PedalReport.Report($"Pedal M1: an ended voice's LFOs skipped in runs over {checkedBlocks} blocks: the same phases and random values as ticked");
+        }
+
+        /// <summary>
+        /// Each of Juno106's six voices plays A4 within 1.5 cents of 440 Hz (their designed detunes are −0.8 … +0.6 cents,
+        /// the drift a few hundredths); with vibrato, its lowest and highest pitch sit as far either side. Voices 1, 3 and
+        /// 5 played 9.6 cents flatter than designed (FastPow2 just under 0), and vibrato went 7 cents further down than up
+        /// (DCO LFO 127: −107.9 … +99.2 cents on voice 1, −106.8 … +100.2 on voice 2).
+        /// </summary>
+        [Test]
+        public void EveryJuno106VoicePlaysInTune()
+        {
+            var s = Synth.Named("Pedal Juno106");
+            var cents = new List<string>();
+            for (int t = 0; t < 6; t++)
+            {
+                int track = t;
+                var o = SynthRunner.Render(s, Rate * 3 / 2, 256, Events((0, r => r.Note(track, A4))), PureTone(s));
+                double c = Measure.Cents(Pitch(o.L, Rate / 4), 440);
+                cents.Add(Signed(c, 1));
+                Assert.That(c, Is.EqualTo(0).Within(1.5), $"voice {t + 1}");
+            }
+            // Vibrato: DCO LFO at its top (±1 semitone), the LFO at about 1 Hz; the pitch, cycle by cycle, at its ends.
+            Action<object> vib = m => { PureTone(s)(m); var j = (PedalJuno106.PedalJuno106Machine)m; j.DcoLfoDepth = 127; j.LfoRate = 30; };
+            var v = SynthRunner.Render(s, 4 * Rate, 256, Events((0, r => r.Note(0, A4))), vib);
+            double lo = double.MaxValue, hi = double.MinValue;
+            var crossings = new List<double>();   // upward zero crossings, between samples
+            for (int i = Rate / 2; i < v.L.Length; i++)
+                if (v.L[i - 1] < 0 && v.L[i] >= 0) crossings.Add(i - 1 + v.L[i - 1] / (double)(v.L[i - 1] - v.L[i]));
+            for (int k = 1; k < crossings.Count; k++)
+            {
+                double c = Measure.Cents(Rate / (crossings[k] - crossings[k - 1]), 440);
+                lo = Math.Min(lo, c);
+                hi = Math.Max(hi, c);
+            }
+            PedalReport.Report($"Pedal Juno106: A4 on voices 1–6 at {string.Join(", ", cents)} cents; with DCO LFO 127, a cycle at {Signed(lo, 0)} … {Signed(hi, 0)} cents");
+            Assert.That(hi + lo, Is.EqualTo(0).Within(6), "vibrato as far below as above (a cycle's pitch is good to a few cents)");
         }
     }
 }

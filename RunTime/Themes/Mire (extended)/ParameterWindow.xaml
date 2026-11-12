@@ -166,8 +166,25 @@
     
     <ContentControl Grid.Row="5" Content="{Binding EmbeddedGUI}"/>
     
-    <ScrollViewer Grid.Row="6" VerticalScrollBarVisibility="Auto">
-      <ItemsControl ItemsSource="{Binding Parameters}" Focusable="False">
+    <!-- Fork (docs/specs/dye-essence.md §5.5): the rows are virtualised, made only for the parameters in
+         view and recycled as the list scrolls (a machine of 704 parameters made all its rows and took
+         2.5 s to open). The scroll viewer is the list's own, so its panel can virtualise; it scrolls by
+         pixels, as before. -->
+    <ItemsControl Grid.Row="6" ItemsSource="{Binding Parameters}" Focusable="False"
+                  VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                  VirtualizingPanel.ScrollUnit="Pixel" ScrollViewer.CanContentScroll="True">
+        <ItemsControl.Template>
+          <ControlTemplate TargetType="{x:Type ItemsControl}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" CanContentScroll="True">
+              <ItemsPresenter/>
+            </ScrollViewer>
+          </ControlTemplate>
+        </ItemsControl.Template>
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <VirtualizingStackPanel/>
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
         <ItemsControl.ItemTemplate>
           <DataTemplate>
             <Grid Height="16" Visibility="{Binding Visibility}">
@@ -213,8 +230,7 @@
             </Grid>
           </DataTemplate>
         </ItemsControl.ItemTemplate>
-      </ItemsControl>
-    </ScrollViewer>
+    </ItemsControl>
 
   </Grid>
 	</TabItem>
