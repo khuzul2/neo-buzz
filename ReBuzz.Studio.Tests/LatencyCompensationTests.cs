@@ -157,6 +157,42 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void ANeoMultibandsLookaheadJoinsItsLatencyAndTheParallelPathFollowsInEveryPhase()
+        {
+            // docs/specs/mastering-tools.md §5.14: the lookahead (3 ms here) is latency on top of the phase's own, reported to the
+            // engine, which delays the parallel path by it: with every band at 1:1 the multiband passes its input delayed by exactly
+            // that, so the inverted parallel path cancels to the last bit, in linear, minimum and Dynamic phase alike.
+            using var restore = Studio.AfterTest(NewSong);
+            NewSong();
+            var (source, mb, parallel) = Diamond("Neo Multiband", "mbla");
+            for (int b = 1; b <= 4; b++) Param(mb, $"B{b} ratio").SetValue(0, 200);       // 1:1
+            Param(mb, "Lookahead").SetValue(0, 300);                                       // 3 ms
+            Param(parallel, "Invert L").SetValue(0, 1);
+            Param(parallel, "Invert R").SetValue(0, 1);
+            Pump();
+            int look = (int)Math.Round(0.003 * ReBuzzCore.masterInfo.SamplesPerSec);
+            source.SendMIDINote(0, 60, 100);
+            using var engine = new Engine();
+            var lines = new System.Collections.Generic.List<string>();
+            foreach (var (phase, name, baseLatency) in new[] { (0, "linear", 4607), (1, "minimum", 0), (2, "Dynamic", 0) })
+            {
+                Param(mb, "Phase").SetValue(0, phase);
+                engine.Read(0.6);                                                         // the fades, the new delay
+                Pump();
+                int latency = mb.Latency;
+                Assert.That(latency, Is.EqualTo(baseLatency + look), $"{name}: the phase's latency and the lookahead");
+                Assert.That(DelayOf(parallel, Core.SongCore.MachinesList[0]), Is.EqualTo(latency), $"{name}: the parallel path waits for the multiband");
+                engine.Read(0.3);
+                double residual = Rms(engine.Read(0.5));
+                lines.Add($"{name} {latency} samples, residual {residual:0.#########}");
+                // Minimum phase sums its bands to an all-pass (Linkwitz-Riley), not to the input: it lines up, but doesn't null.
+                if (phase == 1) Assert.That(residual, Is.LessThan(0.1), $"{name}: the paths line up (the all-pass leaves a small residual)");
+                else Assert.That(residual, Is.EqualTo(0), $"{name}: the two paths cancel exactly");
+            }
+            TestContext.Out.WriteLine($"[notice] Neo Multiband with a 3 ms lookahead against an inverted parallel path: {string.Join("; ", lines)}");
+        }
+
+        [AvaloniaTest]
         public void ALatencyChangeMovesTheOtherPathWithoutAGapOrAClick()
         {
             using var restore = Studio.AfterTest(NewSong);

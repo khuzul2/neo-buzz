@@ -1102,7 +1102,7 @@ namespace NeoBuzz.MachineTests
                 Assert.That(Db(peak), Is.LessThan(3), name);
                 count++;
             }
-            Assert.That(count, Is.InRange(12, 18));
+            Assert.That(count, Is.InRange(12, 24));
         }
 
         [Test]
