@@ -179,7 +179,7 @@
    "group": "Global",
    "min": 0,
    "max": 1000,
-   "default": 750,
+   "default": 635,
    "kind": "db",
    "a": -36.0,
    "b": 12.0,

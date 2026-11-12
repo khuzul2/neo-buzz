@@ -40,7 +40,7 @@ namespace NeoBuzz.LearnSub
         [ParameterDecl(Name = "Unison / Spread", Description = "0% plays one voice per note; above 0% each note plays 5 detuned, stereo-spread voices (3 in Additive, Granular and Spectral), with detune (up to ±50 cents) and width growing with the value.", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int UnisonDetune { get => Values[P.UnisonDetune]; set => Values.Set(P.UnisonDetune, value); }
 
-        [ParameterDecl(Name = "Output", Description = "Sets the level after synthesis. There is no limiter (NeoBuzz mixes in floating point); a clip light shows when the output passes 0 dBFS.", MinValue = 0, MaxValue = 1000, DefValue = 750)]
+        [ParameterDecl(Name = "Output", Description = "Sets the level after synthesis. There is no limiter (NeoBuzz mixes in floating point); a clip light shows when the output passes 0 dBFS.", MinValue = 0, MaxValue = 1000, DefValue = 635)]
         public int OutputGain { get => Values[P.OutputGain]; set => Values.Set(P.OutputGain, value); }
 
         [ParameterDecl(Name = "Note", IsStateless = true, Description = "Note (off releases the track's note)")]

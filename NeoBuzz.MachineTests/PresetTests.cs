@@ -43,6 +43,14 @@ namespace NeoBuzz.MachineTests
             ["Neo Filter"] = (NeoBuzz.Filter.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Filter.FilterEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             // docs/specs/dye-essence.md: a Neo-family machine with its own name.
             ["Dye Essence"] = (NeoBuzz.DyeEssence.Params.Table, (v, x) => RenderSynth(DyeEngine(v), (e, l, r, n) => ((NeoBuzz.DyeEssence.DyeEngine)e).Process(l, r, n), x.Length)),
+            // docs/specs/neo-learn.md: Neo Learn Subtractive plays Dye Essence's engine from its 12 controls (LearnHost).
+            ["Neo Learn Subtractive"] = (NeoBuzz.LearnSub.Params.Table, (v, x) =>
+            {
+                NeoBuzz.DyeEssence.TableBank.GetNow(0);
+                NeoBuzz.DyeEssence.TableBank.GetNow(1);
+                var host = new NeoBuzz.Learn.LearnHost(new NeoBuzz.Learn.SubtractiveMap(NeoBuzz.LearnSub.Params.Table), v);
+                return RenderSynth(host.Engine, (e, l, r, n) => host.Process(l, r, n), x.Length);
+            }),
             // mastering-tools.md §5.1: the clipper.
             ["Neo Clipper"] = (NeoBuzz.Clipper.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Clipper.ClipperEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             // mastering-tools.md §5.4, §5.5: the transient shaper and the low-end shaper.
@@ -75,7 +83,7 @@ namespace NeoBuzz.MachineTests
             return (T)e;
         }
 
-        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence" };
+        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive" };
 
         /// <summary>
         /// Neo Sampler: the song's slots 1–16 hold the built-in drums and the sine (the presets that
@@ -175,7 +183,7 @@ namespace NeoBuzz.MachineTests
         }
 
         /// <summary>A chord (C3 E3 G3 B3) held for two thirds of the length, then released.</summary>
-        static float[] RenderSynth(INoteSink engine, Func<INoteSink, float[], float[], int, bool> process, int length)
+        internal static float[] RenderSynth(INoteSink engine, Func<INoteSink, float[], float[], int, bool> process, int length)
         {
             ((dynamic)engine).SetSampleRate((float)Measure.Rate);
             var y = new float[length];

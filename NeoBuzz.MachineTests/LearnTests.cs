@@ -87,7 +87,7 @@ namespace NeoBuzz.MachineTests
             Assert.That(t[9].Value(t[9].Max), Is.EqualTo(10).Within(1e-9));
             Assert.That(t[11].Value(t[11].Min), Is.EqualTo(-36));
             Assert.That(t[11].Value(t[11].Max), Is.EqualTo(12));
-            Assert.That(t[11].Value(t[11].Default), Is.EqualTo(0).Within(1e-9), "Output defaults to 0 dB");
+            Assert.That(t[11].Value(t[11].Default), Is.EqualTo(-5.5).Within(0.05), "Output defaults to -5.5 dB: Init sits at -22 dB");
         }
 
         // ------------------------------------------------------------------ the host
@@ -383,16 +383,64 @@ namespace NeoBuzz.MachineTests
             });
         }
 
-        [TestCase("init", 0xC70D0FC755E63420UL)]
-        [TestCase("pluck-bass", 0xD8E4AA4CBF84367AUL)]
-        [TestCase("wide-pad", 0x3EFFBCABDE8BADE6UL)]
-        [TestCase("morph-lead", 0xDBF504FDCF73E9B9UL)]
+        [TestCase("init", 0x921257E30CD12CF4UL)]
+        [TestCase("pluck-bass", 0xA6A1CB8CB5982BA0UL)]
+        [TestCase("wide-pad", 0xA1F9E6C2DC262917UL)]
+        [TestCase("morph-lead", 0x3BBA43A6F18781FEUL)]
         public void PinnedRendersAreTheSameOnEveryPlatform(string patch, ulong pinned)
         {
             var (l, r) = Pinned(patch);
             ulong h = Hash(l) * 1099511628211UL ^ Hash(r);
             TestContext.Out.WriteLine($"{patch}: 0x{h:X16}");
             Assert.That(h, Is.EqualTo(pinned), $"{patch} on {System.Runtime.InteropServices.RuntimeInformation.OSArchitecture}");
+        }
+
+        // ------------------------------------------------------------------ presets
+
+        /// <summary>Loudest 50 ms RMS of the chord (C3 E3 G3 B3 at 0.8, held for two thirds of a second), as the preset tests level it.</summary>
+        static double ChordLevel(ParamValues v)
+        {
+            var host = new LearnHost(new SubtractiveMap(LParams.Table), v);
+            host.SetSampleRate(Rate);
+            var y = PresetTests.RenderSynth(host.Engine, (e, l, r, n) => host.Process(l, r, n), Rate);
+            double loudest = 0;
+            for (int at = 0; at + 2400 <= y.Length * 2 / 3; at += 1200) loudest = Math.Max(loudest, Measure.Rms(y, at, 2400));
+            return Measure.Db(loudest);
+        }
+
+        static IEnumerable<(string Name, Dictionary<int, int> Values)> Presets() =>
+            PresetTests.AllPresets().Where(p => p.Machine == "Neo Learn Subtractive").Select(p => (p.Preset, p.Values.Where(kv => kv.Key >= 0).ToDictionary(kv => kv.Key, kv => kv.Value)));
+
+        [Test]
+        public void EveryFactoryPresetIsLevelledToMinus22dB()
+        {
+            TableBank.GetNow(0);
+            TableBank.GetNow(1);
+            var presets = Presets().ToList();
+            Assert.That(presets.Count, Is.InRange(8, 12), "Init plus about 8 factory presets");
+            foreach (var (name, values) in presets.Prepend(("Init", new Dictionary<int, int>())))
+            {
+                var v = new ParamValues(LParams.Table);
+                foreach (var kv in values) v.Set(kv.Key, kv.Value);
+                double level = ChordLevel(v);
+                TestContext.Out.WriteLine($"{name}: loudest 50 ms {level:F2} dB");
+                Assert.That(level, Is.InRange(-23.0, -21.0), name);
+            }
+        }
+
+        [Test, Explicit("prints the Output each preset needs")]
+        public void PrintLevels()
+        {
+            TableBank.GetNow(0);
+            TableBank.GetNow(1);
+            foreach (var (name, values) in Presets().Prepend(("Init", new Dictionary<int, int>())))
+            {
+                var v = new ParamValues(LParams.Table);
+                foreach (var kv in values) v.Set(kv.Key, kv.Value);
+                v.Set(LP.OutputGain, 750);
+                double level = ChordLevel(v);
+                TestContext.Out.WriteLine($"LEVEL {name}: {level:F2} dB at 0 dB output: Output = {-22 - level:F1}");
+            }
         }
 
         // ------------------------------------------------------------------ safety
@@ -405,7 +453,7 @@ namespace NeoBuzz.MachineTests
             for (int round = 0; round < 40; round++)
             {
                 foreach (var d in LParams.Table) v.Set(d.Index, rng.Next(3) switch { 0 => d.Min, 1 => d.Max, _ => rng.Next(d.Min, d.Max + 1) });
-                v.Set(LP.OutputGain, 750);
+                v.Set(LP.OutputGain, 635);
                 for (int k = 0; k < 6; k++) h.Engine.NoteOn(k, 24 + rng.Next(90), (float)rng.NextDouble());
                 var (l, r) = Render(h, 9600);
                 foreach (var s in l.Concat(r))
