@@ -6,6 +6,12 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "reverb",
  "summary": "Reverb (profiled draft): traits: reverb; tail 0.6 s; latency 0 samples; gain +6.1 dB at the defaults.",
+ "category": "Delay & Reverb",
+ "tags": [
+  "reverb",
+  "stereo-width"
+ ],
+ "use_for": "Stereo reverb with pre-delay and a high cutoff for a wider space.",
  "tracks": 0,
  "health": {
   "status": "warn",

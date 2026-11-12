@@ -18,7 +18,7 @@ namespace ReBuzz.Agent.Guides
     {
         static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
-        /// <summary>Genres with a template in the composition guide: aliases → (template heading, default BPM, BPM range).</summary>
+        /// <summary>Genres with a template in the genres guide: aliases → (template heading, default BPM, BPM range).</summary>
         static readonly (string[] Names, string Template, int Bpm, string Range)[] Genres =
         {
             (new[] { "house", "deep house", "tech house", "garage" }, "House", 124, "120–128"),
@@ -39,7 +39,7 @@ namespace ReBuzz.Agent.Guides
             {
                 Name = "compose",
                 Title = "Compose a track",
-                Description = "Writes a track from a brief: genre template, harmony, drums, bass and melody, arrangement and a quick level check, rendered and measured. Includes the composition guide.",
+                Description = "Writes a track from a brief: genre template, harmony, drums, bass and melody, arrangement and a quick level check, rendered and measured. Includes the composition and genres guides.",
                 Arguments = new[]
                 {
                     new PromptArgument { Name = "genre", Description = "house, techno, dnb, synthwave, hip-hop, trap, ambient, pop, lo-fi, or another style", Required = true },
@@ -53,7 +53,7 @@ namespace ReBuzz.Agent.Guides
             {
                 Name = "design-sound",
                 Title = "Design a sound",
-                Description = "Makes a sound from a description on a Neo synth (or a given machine): preset, parameters, an audition pattern, renders and measurements. Includes the sound-design guide and the machine's page.",
+                Description = "Makes a sound from a description on a Neo synth (or a given machine): preset, parameters, an audition pattern, renders and measurements. Includes the sound-design guides (with the synth and FM recipes) and the machine's page.",
                 Arguments = new[]
                 {
                     new PromptArgument { Name = "machine", Description = "A machine in the song (\"Bass\") or a gear to add (\"Neo Poly\", \"Neo Wave\", \"Neo FM6\"); default: the agent picks" },
@@ -65,7 +65,7 @@ namespace ReBuzz.Agent.Guides
             {
                 Name = "mix",
                 Title = "Mix the song",
-                Description = "Mixes the song step by step: gain staging, frequency slots, sidechain, EQ and compression, space, stereo, each change measured with probes and analyze. Includes the mixing guide.",
+                Description = "Mixes the song step by step: gain staging, frequency slots, sidechain, EQ and compression, space, stereo, each change measured with probes and analyze. Includes the mixing guides (with compression and sidechain).",
                 Arguments = new[]
                 {
                     new PromptArgument { Name = "goals", Description = "e.g. \"punchier kick, wider pads, vocal-style lead on top\" (default: a clean, balanced mix ready for mastering)" },
@@ -131,19 +131,19 @@ namespace ReBuzz.Agent.Guides
             if (length != null) sb.Append($", {length} long");
             sb.Append(".\n\n");
             sb.Append("Brief, worked out:\n");
-            if (g.Names != null) sb.Append($"- Template: \"{g.Template}\" in the composition guide below (tempo range {g.Range} BPM, default {g.Bpm}).\n");
-            else sb.Append($"- No template for \"{genre}\": take the nearest template in the composition guide and say which.\n");
+            if (g.Names != null) sb.Append($"- Template: \"{g.Template}\" in the genres guide below (tempo range {g.Range} BPM, default {g.Bpm}).\n");
+            else sb.Append($"- No template for \"{genre}\": take the nearest template in the genres guide and say which.\n");
             if (tempoText != null && bpm == null) sb.Append($"- Tempo \"{tempoText}\" isn't a number; use the template's.\n");
             if (bars != null && bpm != null)
                 sb.Append($"- Length: {bars} bars of 4/4 at {bpm.Value.ToString("0", Inv)} BPM ({(bars.Value * 240 / bpm.Value).ToString("0", Inv)} s). Scale the template's sections to fit, keeping 4- and 8-bar phrases.\n");
             else if (length != null) sb.Append($"- Length \"{length}\": bars = seconds × BPM ÷ 240 in 4/4; scale the template's sections to fit.\n");
             else sb.Append("- Length: the template's form.\n");
-            sb.Append(mood != null ? $"- Mood \"{mood}\": pick mode, progression, register and sounds from the mood table in the composition guide.\n" : "- Mood: choose one and say it; the mood table sets mode, progression and register.\n");
+            sb.Append(mood != null ? $"- Mood \"{mood}\": pick mode, progression, register and sounds from the mood table in the genres guide.\n" : "- Mood: choose one and say it; the mood table sets mode, progression and register.\n");
             sb.Append(@"
 Plan. Say each step in a sentence before doing it; render and measure before you claim a result.
 1. Orient: `studio_status`, then `machine_list`. If the song isn't empty, build on it or ask; never `song_new` over unsaved work without saving.
 2. Song: `song_set(tempo_bpm=…)`, then `arrangement_markers(set=[…])` with every section of the form at its bar (""9.1"" is bar 9).
-3. Instruments: one machine per role (Kick, Snare, Hats, Bass, Chords, Lead, Pad, FX): `machine_add(gear=…, name=…)`, `preset_load` from the sound-design guide's recipes, `param_set` for the rest.
+3. Instruments: one machine per role (Kick, Snare, Hats, Bass, Chords, Lead, Pad, FX): `machine_add(gear=…, name=…)`, `preset_load` from the synth-recipes and fm-recipes guides' recipes, `param_set` for the rest.
 4. Harmony: `theory(op=""progression"", key=…, progression=…, octave=3)`; write its notes with `notes_write` into a Chords pattern (`pattern_create` with the section's length in beats).
 5. Drums: the genre's grid from the composition guide → `notes_write`; then `notes_transform` with quantize swing and humanize as the template says.
 6. Bass and melody: roots and approach notes for the bass; a 1–2 bar motif developed with `notes_transform` (sequence, invert, stretch) for the lead. Check them with `theory(op=""fit"", key=…, notes=[…])`.
@@ -153,7 +153,7 @@ Plan. Say each step in a sentence before doing it; render and measure before you
 10. Save: `song_save(path=…)` as .bmxml.
 Report the form (sections and bars), key, tempo, the sounds, and the measured loudness, peak, key and tempo.
 ");
-            AppendGuides(sb, "workflow", "composition");
+            AppendGuides(sb, "workflow", "composition", "genres");
             return sb.ToString();
         }
 
@@ -174,7 +174,7 @@ Report the form (sections and bars), key, tempo, the sounds, and the measured lo
 2. Machine: ");
             if (gear != null) sb.Append($"add one with `machine_add(gear=\"{gear}\", name=…)` (or use the song's machine of that gear if one is named so). ");
             else if (machine != null) sb.Append($"use \"{machine}\" if the song has it (`machine_list`); if \"{machine}\" is a gear, `machine_add(gear=\"{machine}\", name=…)`. ");
-            else sb.Append("pick the gear from the sound-design guide (Neo Poly: analog pads, basses, leads, drums; Neo Wave: evolving and digital; Neo FM6: electric pianos, bells, metallic) and `machine_add` it. ");
+            else sb.Append("pick the gear from the recipes (Neo Poly: analog pads, basses, leads, drums; Neo Wave: evolving and digital; Neo FM6: electric pianos, bells, metallic) and `machine_add` it. ");
             sb.Append(@"Read it with `machine_describe(machine=…)`.
 3. Start close: `preset_list(machine=…, search=…)`, `preset_load` the nearest preset, or start from the guide's recipe.
 4. Audition pattern: `pattern_create(machine=…, name=""Audition"", length_beats=8)`, notes in the role's register (bass A1–A2, pad chord A3–E4, lead A4, bell C5), placed with `arrangement_place` at 0 in an empty song or after the song's end (that moves the end: note the length from `studio_status` and restore it with `song_set(song_end_beats=…)` when done).
@@ -183,7 +183,7 @@ Report the form (sections and bars), key, tempo, the sounds, and the measured lo
 7. Keep it: `preset_save(machine=…, name=…, comment=…)` when the user wants it reusable.
 Report the final parameters that matter (with units), the measured targets, and how to vary the sound.
 ");
-            AppendGuides(sb, "sound-design");
+            AppendGuides(sb, "sound-design", "synth-recipes", "fm-recipes");
             if (gear != null)
             {
                 string curated = MachineManual.Curated(gear);
@@ -213,7 +213,7 @@ Report the final parameters that matter (with units), the measured targets, and 
 9. Finish: the whole song rendered, master true peak at or below -6 dBTP, no clipping, correlation above 0.2, lows mono; `song_save`.
 Report each change with its before and after numbers, and anything you couldn't fix.
 ");
-            AppendGuides(sb, "mixing");
+            AppendGuides(sb, "mixing", "mixing-dynamics");
             return sb.ToString();
         }
 
@@ -252,7 +252,7 @@ Report each change with its before and after numbers, and anything you couldn't 
 5. Final checks on the whole song: integrated loudness and true peak on target; PLR and loudness range in the guide's range for the genre (or the reference's); spectrum tilt and stereo unchanged from the mix except as intended (against a reference: the tonal difference under 1.5 dB RMS, LDR and side/mid per band near its); `analyze(metrics=[""platform""])` shows what each service will do to it.
 6. `song_save`. Report the chain with each stage's settings, and the before and after numbers.
 ");
-            AppendGuides(sb, "mastering");
+            AppendGuides(sb, "mastering", "mastering-chain");
             return sb.ToString();
         }
 
@@ -264,12 +264,12 @@ Report each change with its before and after numbers, and anything you couldn't 
             string s = scope.ToLowerInvariant();
             var topics = s switch
             {
-                "all" => new[] { "composition", "sound-design", "mixing", "mastering" },
-                "composition" or "arrangement" or "song" => new[] { "composition" },
-                "sound" or "sounds" or "sound design" or "sound-design" => new[] { "sound-design" },
-                "mix" or "mixing" => new[] { "mixing" },
-                "master" or "mastering" => new[] { "mastering" },
-                _ => new[] { "composition", "sound-design", "mixing" },
+                "all" => new[] { "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain" },
+                "composition" or "arrangement" or "song" => new[] { "composition", "genres" },
+                "sound" or "sounds" or "sound design" or "sound-design" => new[] { "sound-design", "synth-recipes", "fm-recipes" },
+                "mix" or "mixing" => new[] { "mixing", "mixing-dynamics" },
+                "master" or "mastering" => new[] { "mastering", "mastering-chain" },
+                _ => new[] { "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics" },
             };
             bool named = !new[] { "all", "composition", "arrangement", "song", "sound", "sounds", "sound design", "sound-design", "mix", "mixing", "master", "mastering" }.Contains(s);
             var sb = new StringBuilder();

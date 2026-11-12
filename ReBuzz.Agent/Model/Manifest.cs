@@ -244,6 +244,12 @@ namespace ReBuzz.Agent.Model
         /// <summary>"generator" or "effect".</summary>
         public string Kind { get; init; } = "";
         public string Summary { get; init; } = "";
+        /// <summary>K0 (agent-knowledge.md): the studio browser's category ("Synths", "EQ &amp; Filter"…; <see cref="MachineCatalog.Categories"/>); empty when the manifest names none.</summary>
+        public string Category { get; init; } = "";
+        /// <summary>K0: tags from the controlled vocabulary (<see cref="MachineCatalog.Tags"/>: "warm", "bass", "de-esser"…).</summary>
+        public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
+        /// <summary>K0: one line, in our own words, of what to use it for ("Tame harsh s sounds in vocals").</summary>
+        public string UseFor { get; init; } = "";
         public string Source { get; init; } = "";
         public int Tracks { get; init; }
         public IReadOnlyList<ManifestParameter> Parameters { get; init; } = Array.Empty<ManifestParameter>();
@@ -339,6 +345,9 @@ namespace ReBuzz.Agent.Model
                 Gear = (string)root["gear"] ?? throw new FormatException("A manifest names its gear."),
                 Kind = (string)root["kind"] ?? "",
                 Summary = (string)root["summary"] ?? "",
+                Category = (string)root["category"] ?? "",
+                Tags = Strings(root["tags"]),
+                UseFor = (string)root["use_for"] ?? "",
                 Source = (string)root["source"] ?? "",
                 Tracks = (int?)root["tracks"] ?? 0,
                 Parameters = parameters,

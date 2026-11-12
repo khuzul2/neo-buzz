@@ -6,6 +6,12 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "utility",
  "summary": "Utility (profiled draft): traits: utility; tail 0.0 s; latency 0 samples; gain -0.8 dB at the defaults.",
+ "category": "Modulation",
+ "tags": [
+  "filter",
+  "rhythmic"
+ ],
+ "use_for": "Triggered band-pass sweeps for stuttering, chopped filter moves.",
  "tracks": 0,
  "health": {
   "status": "ok",

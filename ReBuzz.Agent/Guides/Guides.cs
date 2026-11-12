@@ -25,7 +25,8 @@ namespace ReBuzz.Agent.Guides
             "Start every session with studio_status, and read guide(topic=\"workflow\") once. Times are in beats from the song start " +
             "(or \"bar.beat\" text); pitches are MIDI numbers or names (60 = C4); levels in dB. Every changing call is one undo step " +
             "(undo reverts it); a call that fails changes nothing. Hear your work with render and check it with analyze. In studio and live mode the user " +
-            "listens live too: transport, session_launch and meters_read play with them. Errors say what to do next.";
+            "listens live too: transport, session_launch and meters_read play with them. machine_find (or rebuzz://catalog) picks a machine for an intent; " +
+            "rebuzz://reference/tools lists every tool and its inputs. Errors say what to do next.";
 
         /// <summary>The app's server as initialize announces it: named after the app (Product), with <see cref="ServerInstructions"/>.</summary>
         public static ServerInfo AppServer(string version) => new ServerInfo
@@ -40,10 +41,17 @@ namespace ReBuzz.Agent.Guides
         {
             ("workflow", "Working in " + Product.Name, "The loop (build, render, measure, adjust), which tool for what, which guide for what, undo, and the checks before calling something done. Read first."),
             ("concepts", Product.Name + " in five minutes","Machines and the graph, parameters and tracks, patterns, the arrangement and the session grid, beats, pitches and levels."),
-            ("composition", "Composition", "Forms and section lengths by genre, harmony and voice leading, melody, drum grids with swing and humanizing, arrangement energy, and templates (tempo, key, structure) for house, techno, DnB, synthwave, hip-hop, ambient, pop and lo-fi."),
-            ("sound-design", "Sound design", "Reading a sound (envelope, spectrum, movement, space) and recipes with exact values for Neo Poly, Neo Wave and Neo FM6: pads, basses, leads, plucks, keys, bells, drums, textures, wavetable sweeps; Neo Drive, Comp, Verb, Ensemble (chorus, flanger, phaser) and Delay (tempo, dub and tape echoes) as sound tools."),
-            ("mixing", "Mixing", "Gain staging targets, balance by reference, frequency slots per instrument, EQ and compression starting points by source, sidechain, sends and pre-delay against tempo, mono lows, and the checks with render probes and analyze."),
-            ("mastering", "Mastering", "Loudness and true-peak targets (streaming, club, broadcast), the chain (corrective EQ, glue compression, multiband control of one band, saturation, limiter), measuring after every change, and what not to do."),
+            ("composition", "Composition", "Time and grid math, harmony and voice leading, melody, drum grids with swing and humanizing, and arrangement energy, with the calls that write them."),
+            ("genres", "Genres and moods", "Forms by genre, the mood table, and templates (tempo, key, structure) for house, techno, DnB, synthwave, hip-hop, ambient, pop and lo-fi."),
+            ("sound-design", "Sound design", "Reading a sound (envelope, spectrum, movement, space), the build-measure loop, and Neo Drive, Comp, Verb, Ensemble (chorus, flanger, phaser), Delay (tempo, dub and tape echoes) and Filter as sound tools."),
+            ("synth-recipes", "Synth recipes: Neo Poly and Neo Wave", "Recipes with exact values: pads, basses, leads, plucks, chords, drums and risers on Neo Poly; wavetable sweeps, wobble and talking leads on Neo Wave."),
+            ("fm-recipes", "FM recipes: Neo FM6", "Electric piano, bell, FM bass, metallic percussion, brass swell and organ from Neo FM6's init patch, with exact values."),
+            ("mixing", "Mixing", "Gain staging targets, balance by reference, frequency slots per instrument, EQ starting points by source, sends and pre-delay against tempo, mono lows, and the checks with render probes and analyze."),
+            ("mixing-dynamics", "Mixing dynamics", "Compression starting points by source on Neo Comp, and the sidechain recipe that keeps kick and bass apart."),
+            ("mastering", "Mastering", "Loudness and true-peak targets (streaming, club, broadcast), the flow, matching a reference, measuring after every change, and what not to do."),
+            ("mastering-chain", "Mastering chain", "The chain stage by stage with settings: corrective EQ, glue compression, saturation, clipping, low end, stereo image, tape, limiter and dither."),
+            ("dye-essence-in-depth", "Dye Essence in depth", "Dye Essence's signal flow (engines, filters, modulation, arpeggiator and sequencer, effects, imports) and how to use it, with recipes."),
+            ("neo-eq-in-depth", "Neo EQ in depth", "Neo EQ's graphic mode, linear phase and curve layer, and the map of its factory presets."),
             ("troubleshooting", "Troubleshooting", "Silence, clipping, phase, latency, CPU, missing machines, machines that ignore notes, hanging notes, and a render that differs from the last one."),
         };
 
@@ -99,7 +107,8 @@ namespace ReBuzz.Agent.Guides
                 Title = "Read a guide",
                 Description =
                     "Returns a guide as markdown: 'workflow' (how to work here; read it first), 'concepts' (machines, patterns, the arrangement, " +
-                    "beats, pitches, levels), 'composition', 'sound-design', 'mixing', 'mastering', 'troubleshooting'. machine gives a gear's manual " +
+                    "beats, pitches, levels), then by craft: 'composition', 'genres', 'sound-design', 'synth-recipes', 'fm-recipes', 'mixing', 'mixing-dynamics', " +
+                    "'mastering', 'mastering-chain', 'troubleshooting', and the machine deep dives 'dye-essence-in-depth' and 'neo-eq-in-depth'. machine gives a gear's manual " +
                     "(every parameter, how to use it, presets). Without arguments, lists the topics. Read-only. " +
                     "Example: guide(topic=\"mixing\"), guide(machine=\"Neo Poly\").",
                 Input = Object(null,

@@ -6,6 +6,12 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "monosynth",
  "summary": "Monosynth (profiled draft): pitched, plays A4 at 440 Hz as written; monophonic; takes notes in its tracks; one note at the defaults -7 LUFS.",
+ "category": "Synths",
+ "tags": [
+  "organ",
+  "keys"
+ ],
+ "use_for": "Drawbar-style organ tones from a set of footage-labelled harmonics.",
  "tracks": 8,
  "notes": {
   "input": "tracks",

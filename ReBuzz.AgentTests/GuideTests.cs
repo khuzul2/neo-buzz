@@ -17,7 +17,7 @@ namespace ReBuzz.AgentTests
     [TestFixture]
     public class GuideTests
     {
-        static readonly string[] Topics = { "workflow", "concepts", "composition", "sound-design", "mixing", "mastering", "troubleshooting" };
+        internal static readonly string[] Topics = { "workflow", "concepts", "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain", "dye-essence-in-depth", "neo-eq-in-depth", "troubleshooting" };
         static readonly string[] NeoGear = { "Neo Analyzer", "Neo Clipper", "Neo Comp", "Neo De-esser", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Gate", "Neo Imager", "Neo Limiter", "Neo Low End", "Neo Multiband", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Strip", "Neo Tape", "Neo Transient", "Neo Utility", "Neo Verb", "Neo Wave", "Dye Essence" };
 
         /// <summary>Neo gear being built in parallel (phase A4): parameter names aren't final, so guides give them moves in units and say to read the names with machine_describe.</summary>
@@ -34,7 +34,7 @@ namespace ReBuzz.AgentTests
         ///   ReBuzz.Agent/Model/CompositionTools.cs (theory) and Transforms.cs (notes_transform).
         /// When a tool or an argument is added, renamed or removed, update this table with it.
         /// </summary>
-        static readonly Dictionary<string, string[]> KnownTools = new()
+        internal static readonly Dictionary<string, string[]> KnownTools = new()
         {
             ["studio_status"] = new string[0],
             ["guide"] = new[] { "topic", "machine" },
@@ -49,6 +49,8 @@ namespace ReBuzz.AgentTests
             ["song_notes_write"] = new[] { "text", "mode" },
             ["gear_list"] = new[] { "kind", "search", "limit", "include_unhealthy" },
             ["machine_list"] = new string[0],
+            // K0 (agent-knowledge.md: ReBuzz.Agent/Guides/MachineCatalog.cs)
+            ["machine_find"] = new[] { "intent", "category", "tag", "role", "kind", "limit" },
             ["machine_add"] = new[] { "gear", "name", "connect_to", "insert_after", "gain_db", "tracks" },
             ["machine_remove"] = new[] { "machines", "keep_chain" },
             ["machine_replace"] = new[] { "machine", "with", "name", "keep_old", "dry_run", "compare", "from", "to", "section" },
@@ -587,11 +589,11 @@ namespace ReBuzz.AgentTests
             Assert.That(Render("master", new Dictionary<string, string> { ["target"] = "-12 LUFS" }), Does.Contain("integrated -12 LUFS ±0.5"));
             Assert.That(Render("master", new Dictionary<string, string>()), Does.Contain("# Mastering"));
             Assert.That(Render("master", new Dictionary<string, string> { ["reference"] = "C:/Refs/a.wav" }), Does.Contain("matching \"C:/Refs/a.wav\""));
-            Assert.That(Render("master", new Dictionary<string, string>()), Does.Not.Contain("matching"));
+            Assert.That(Render("master", new Dictionary<string, string>()), Does.Not.Contain("matching \""));
 
             string critique = Render("critique", new Dictionary<string, string>());
             Assert.That(critique, Does.Contain("read-only"));
-            foreach (var t in new[] { "composition", "sound-design", "mixing", "mastering" })
+            foreach (var t in new[] { "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain" })
                 Assert.That(critique, Does.Contain($"guide(topic=\"{t}\")"), "every checklist comes with it");
             Assert.That(Render("critique", new Dictionary<string, string> { ["scope"] = "Drop" }), Does.Contain("render(section=\"Drop\")"));
             Assert.That(!Render("critique", new Dictionary<string, string> { ["scope"] = "mix" }).Contains("guide(topic=\"mastering\")"), "a scope picks its checklists");
@@ -600,7 +602,7 @@ namespace ReBuzz.AgentTests
         [Test]
         public void EveryGenreTemplateTheComposePromptPicksIsInTheGuide()
         {
-            string guide = GuideLibrary.Get("composition")!;
+            string guide = GuideLibrary.Get("genres")!;
             foreach (var genre in new[] { "house", "techno", "dnb", "drum and bass", "synthwave", "hip-hop", "trap", "ambient", "pop", "lo-fi", "deep house" })
             {
                 var m = Regex.Match(Render("compose", new Dictionary<string, string> { ["genre"] = genre }), "Template: \"([^\"]+)\"");

@@ -6,6 +6,12 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-05; not curated",
  "type": "filter or EQ",
  "summary": "Filter or eq (profiled draft): traits: filter or EQ; tail 0.0 s; latency 10 samples; gain -7.4 dB at the defaults.",
+ "category": "EQ & Filter",
+ "tags": [
+  "filter",
+  "lfo"
+ ],
+ "use_for": "Resonant filter with its own LFO for sweeps and rhythmic filter movement.",
  "tracks": 1,
  "health": {
   "status": "ok",

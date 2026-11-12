@@ -6,6 +6,14 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed Updated by hand (2026-11-06, mcp-server.md §12.15, U6 for the Pedal synths) for MIDI input.",
  "type": "sampler",
  "summary": "M1-style two-oscillator sample synth: each oscillator plays waves from the song's wavetable (up to four key zones), into a 2-pole low-pass, ADSRs and two LFOs. For pianos, strings, brass and other multisampled sounds.",
+ "category": "Samplers",
+ "tags": [
+  "sampler",
+  "keys",
+  "pad",
+  "polyphonic"
+ ],
+ "use_for": "Two-oscillator sample synth for sampled keys, pads and layered textures.",
  "quirks": [
   "Needs a wave: it plays the song's wavetable (OSC1 Wave defaults to slot 1) and is silent until that slot holds one (wave_import).",
   "A wave edited or replaced after it first played is cached: reload the machine to hear the change (README).",

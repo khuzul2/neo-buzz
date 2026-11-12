@@ -6,6 +6,14 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "utility",
  "summary": "Utility (profiled draft): traits: utility; tail 0.05 s; latency 0 samples; gain -0.0 dB at the defaults.",
+ "category": "Distortion",
+ "tags": [
+  "bitcrush",
+  "saturation",
+  "gritty",
+  "vintage"
+ ],
+ "use_for": "Lo-fi character in one: noise, bit and sample-rate reduction, detune, ring modulation and tube drive.",
  "tracks": 0,
  "health": {
   "status": "warn",

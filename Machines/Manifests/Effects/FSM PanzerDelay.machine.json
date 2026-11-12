@@ -6,6 +6,13 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
  "type": "delay",
  "summary": "Stereo multi-tap delay: per track a left and right line with tap level, pans, feedback (optionally ping-pong) and stereo spread, plus a filter on the echoes. For dub echoes and wide, filtered delays.",
+ "category": "Delay & Reverb",
+ "tags": [
+  "delay",
+  "echo",
+  "stereo-width"
+ ],
+ "use_for": "Stereo multi-tap delay with per-tap pans and optional ping-pong for rhythmic echoes.",
  "quirks": [
   "Stereo in and out; each track is a tap (4 at most).",
   "Lengths count in Delay unit: ticks (the default, so echoes follow the tempo), 1/256 ticks, samples or ms.",

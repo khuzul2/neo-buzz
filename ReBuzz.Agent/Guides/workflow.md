@@ -9,7 +9,7 @@ Build, listen, measure, adjust. Never claim a result you haven't rendered and me
 3. In studio mode the user watches and can undo you. Say what you're about to do in a sentence.
 
 ## Build
-- **Sound sources:** `gear_list(kind="generator")`, then `machine_add(gear=…, name="Bass")`. Name machines by role ("Kick", "Pad", "Lead"), not by gear. New machines connect to Master unless you say otherwise.
+- **Sound sources:** `machine_find(intent="warm bass synth")` ranks the installed machines for what you want (the resource rebuzz://catalog lists them all by category, with what each is for); `gear_list(kind="generator")` lists them plainly. Then `machine_add(gear=…, name="Bass")`. Name machines by role ("Kick", "Pad", "Lead"), not by gear. New machines connect to Master unless you say otherwise.
 - **Effects:** `machine_add(gear="Neo Verb", name="Room", connect_to=…)` or `machine_add(gear=…, insert_after="Bass")` for an insert, then `connect`/`disconnect` to route. A send: connect the source to both Master and the effect, set the effect 100% wet.
 - **Sound:** start from a preset (`preset_list(machine=…)`, `preset_load(machine=…, preset=…)`): the Neo machines and the curated classic ones (Pedal, Jeskola, FSM, Oomek…) have factory presets named for what they do ("Echo — Dotted Eighth"), ours levelled to peak below −1 dBFS (a machine's own bank, such as Pedal Juno106's, can run hotter: render and check); then `machine_describe(machine)` lists every parameter with its value in units. `param_set` takes values in those units ("800 Hz", "-6 dB", "35%", "Saw"), relative changes (`by: "+3 dB"`) or factors (`times: 2`). Extreme values are rarely right.
 - **Notes:** `pattern_create(machine, length_beats)` then `notes_write(machine, pattern, notes)`. Pitches are MIDI numbers or names (60 = "C4"); times are in beats from the pattern start. Chords are notes with the same start. `theory` gives exact chord and scale pitches; `notes_transform` edits notes already written.
@@ -41,13 +41,19 @@ Read the one for the job with `guide(topic=…)` (or the resource rebuzz://guide
 | Topic | When |
 |---|---|
 | `concepts` | how NeoBuzz Live works: machines, patterns, time, pitch, levels |
-| `composition` | forms, harmony, melody, drum grids, arrangement, genre templates |
-| `sound-design` | describing a sound in numbers; recipes for the Neo synths and effects |
-| `mixing` | gain staging, balance, EQ, compression, sidechain, space, stereo |
-| `mastering` | loudness targets and the mastering chain |
+| `composition` | harmony, melody, drum grids, arrangement |
+| `genres` | forms by genre, moods, and a template per genre |
+| `sound-design` | describing a sound in numbers; the Neo effects as sound tools |
+| `synth-recipes` | recipes for Neo Poly and Neo Wave |
+| `fm-recipes` | recipes for Neo FM6 |
+| `mixing` | gain staging, balance, EQ, space, stereo |
+| `mixing-dynamics` | compression starting points and sidechain |
+| `mastering` | loudness targets, matching a reference, what not to do |
+| `mastering-chain` | the chain stage by stage with settings |
+| `dye-essence-in-depth`, `neo-eq-in-depth` | the parts of those two machines that their pages leave out |
 | `troubleshooting` | silence, clipping, phase, CPU, notes that hang or don't play |
 
-Machine manuals: `guide(machine="Neo Poly")` (every parameter, how to use it, presets). Prompts give a whole plan: compose, design-sound, mix, master, critique.
+Machine manuals: `guide(machine="Neo Poly")` (every parameter, how to use it, presets). The resource rebuzz://reference/tools lists every tool with its inputs and units, generated from the tools themselves, so it is always current. Prompts give a whole plan: compose, design-sound, mix, master, critique.
 
 ## Undo
 Each changing call is one undo step: `undo` reverts your last call whole. In studio mode the user's own edits share the same history, so check `studio_status`'s `next_undo` before undoing.

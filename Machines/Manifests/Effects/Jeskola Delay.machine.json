@@ -6,6 +6,12 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
  "type": "delay",
  "summary": "Classic Buzz mono delay with up to 8 taps, one per track, each with its own length (ticks, ms or samples), feedback and level. For tempo echoes and slapback.",
+ "category": "Delay & Reverb",
+ "tags": [
+  "delay",
+  "echo"
+ ],
+ "use_for": "Simple mono delay with up to eight taps, one per track.",
  "quirks": [
   "Each track is its own tap (delay line) with its own length, feedback and level (8 at most).",
   "Lengths count in Length unit, ticks by default, so echoes follow the tempo; the Max Delay attribute (1 s by default) caps them.",
