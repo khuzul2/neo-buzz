@@ -106,7 +106,8 @@ namespace ReBuzz.Studio.Shell.Commands
             C("view.session", "View", "S_ession", "Cmd+2|Ctrl+Tab", help: "Ctrl+Tab again: back to the arrangement"),
             C("view.machines", "View", "_Machines", "Cmd+3|F3"),
             C("view.pattern", "View", "_Pattern", "Cmd+4|F2", help: "F2 renames a clip in the Session View"),
-            C("view.notes", "View", "Song _Notes", "Cmd+5|F10"),
+            C("view.notes", "View", "Song _Notes", "Cmd+5|F10", help: "The inspector's Song tab"),
+            C("view.inspector", "View", "_Inspector", "Ctrl+Alt+I", "Alt+Cmd+I", help: "Shows or hides the panel on the right: the selected machine, pattern or clip, and the song"),
             C("view.mixer", "View", "Session Mi_xer", "Ctrl+Alt+M", "Alt+Cmd+M", help: "Shows or hides the mixer under the Session View's grid"),
 
             C("window.minimize", "Window", "_Minimize", null, "Cmd+M"),

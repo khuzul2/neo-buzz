@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Strip, portable (docs/specs/mac-engine.md M2): see ../NeoPortable.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoStrip</NeoFolder>
+    <NeoName>Neo Strip</NeoName>
+    <NeoKind>Effects</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoPortable.targets" />
+  <ItemGroup>
+    <!-- As NeoStrip.csproj: the gain-match reading. -->
+    <Compile Include="$(M)NeoBuzz.Analysis\Loudness.cs;$(M)NeoBuzz.Analysis\GainMatch.cs" Link="Shared\Analysis\%(Filename)%(Extension)" />
+    <!-- Neo Strip is built from these machines' engines, linked as source. -->
+    <Compile Include="$(M)NeoEq\Engine\*.cs" Link="Shared\Eq\%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoComp\Engine\*.cs" Link="Shared\Comp\%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoDrive\Engine\*.cs" Link="Shared\Drive\%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoClipper\Engine\*.cs" Link="Shared\Clipper\%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoLimiter\Engine\*.cs" Link="Shared\Limiter\%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

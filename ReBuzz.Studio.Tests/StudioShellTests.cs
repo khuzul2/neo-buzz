@@ -449,8 +449,8 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(Selected(), Is.EqualTo("Sequence"), "and back to the arrangement");
 
                 // ⌘1–⌘5 (Ctrl elsewhere), in tab order (ux-overhaul.md §4).
-                string[] order = { "Sequence", "Session", "Machines", "Pattern", "Song Notes" };
-                for (int i = 4; i >= 0; i--)
+                string[] order = { "Sequence", "Session", "Machines", "Pattern" };
+                for (int i = 3; i >= 0; i--)
                 {
                     window.KeyPressQwerty(PhysicalKey.Digit1 + i, Cmd);
                     Assert.That(Selected(), Is.EqualTo(order[i]), $"⌘{i + 1}");
@@ -459,6 +459,12 @@ namespace ReBuzz.Studio.Tests
                 // The View menu's check follows.
                 var view = AppMenu.Find(window.MenuModel(mac: false), "View").Items().ToList();
                 Assert.That(view.Take(5).Single(e => e.IsChecked()).Text, Is.EqualTo("Sequence"));
+
+                window.KeyPressQwerty(PhysicalKey.Digit5, Cmd);
+                Assert.That(window.Inspector.CurrentTab, Is.EqualTo("Song"), "⌘5: Song Notes, the inspector's Song tab (P3a)");
+                Assert.That(Selected(), Is.EqualTo("Sequence"), "no tab of its own: the view stays");
+                view = AppMenu.Find(window.MenuModel(mac: false), "View").Items().ToList();
+                Assert.That(view.Take(5).Where(e => e.IsChecked()).Select(e => e.Text), Is.EquivalentTo(new[] { "Sequence", "Song Notes" }));
             }
             finally
             {

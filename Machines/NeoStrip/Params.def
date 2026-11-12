@@ -1,0 +1,56 @@
+# Neo Strip parameters (docs/specs/mastering-tools.md §5.10). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoStrip
+namespace NeoBuzz.Strip
+class NeoStripMachine
+summary Channel strip in one machine, five stages in the classic order: gate, EQ (low cut, low shelf, two bells, high shelf, high cut), compressor, drive, then a clipper and a true-peak limiter at one ceiling. It is built from Neo EQ, Neo Comp, Neo Drive, Neo Clipper and Neo Limiter, so each stage sounds as that machine does with the same settings, and a stage that is off passes the audio untouched (the delay of the whole strip is the same either way, so switching a stage never shifts the track). Use it on a track or a bus when one set of controls is quicker than five machines; Delta hears only what the strip changes.
+
+group Gate
+GateOn      "Gate on"        0 1    0    switch                       | The gate in or out
+GateThresh  "Gate threshold" 0 800  300  lin -80 0 dB 1              | Level (dBFS, the louder channel's peak) the gate opens at; it closes 3 dB lower, after the hold
+GateRange   "Gate range"     0 800  400  lin 0 80 dB 1               | How far a closed gate lowers the signal (80: nearly silence)
+GateAttack  "Gate attack"    0 1000 371  time 0.0001 0.05            | Time to open
+GateHold    "Gate hold"      0 1000 630  time 0.001 0.5              | Time the gate stays open after the level falls under the threshold
+GateRelease "Gate release"   0 1000 511  time 0.01 2                 | Time to close
+group EQ
+EqOn        "EQ on"          0 1    0    switch                       | The EQ stage in or out (a shelf or bell with no gain, and a cut that is off, change nothing)
+LoCutOn     "Low cut on"     0 1    0    switch                       | The low cut (Butterworth, 12 dB/oct)
+LoCutFreq   "Low cut freq"   0 10000 2007 freq 20 20000              | Low cut: −3 dB here
+LoShelfFreq "Low shelf freq" 0 10000 2330 freq 20 20000              | Low shelf: half its gain here
+LoShelfGain "Low shelf gain" 0 480  240  db -24 24                    | Low shelf gain in 0.1 dB steps
+LmFreq      "Low mid freq"   0 10000 4337 freq 20 20000              | Low-mid bell centre
+LmGain      "Low mid gain"   0 480  240  db -24 24                    | Low-mid bell gain in 0.1 dB steps
+LmQ         "Low mid Q"      0 2000 807  exp 0.1 30 2                | Low-mid bell width
+HmFreq      "High mid freq"  0 10000 7254 freq 20 20000              | High-mid bell centre
+HmGain      "High mid gain"  0 480  240  db -24 24                    | High-mid bell gain in 0.1 dB steps
+HmQ         "High mid Q"     0 2000 807  exp 0.1 30 2                | High-mid bell width
+HiShelfFreq "High shelf freq" 0 10000 8673 freq 20 20000             | High shelf: half its gain here
+HiShelfGain "High shelf gain" 0 480 240  db -24 24                    | High shelf gain in 0.1 dB steps
+HiCutOn     "High cut on"    0 1    0    switch                       | The high cut (Butterworth, 12 dB/oct)
+HiCutFreq   "High cut freq"  0 10000 9677 freq 20 20000              | High cut: −3 dB here
+group Compressor
+CompOn      "Comp on"        0 1    0    switch                       | The compressor in or out
+CompMode    "Comp mode"      0 3    0    enum Clean Glue FET Opto     | Clean: transparent VCA. Glue: bus VCA. FET: fast feedback. Opto: smooth, program-dependent
+CompThresh  "Comp threshold" 0 1000 700  lin -60 0 dB 1              | Level where compression starts
+CompRatio   "Comp ratio"     0 1000 463  ratio 1 20 inf              | Compression ratio (top: limiting)
+CompAttack  "Comp attack"    0 1000 639  time 0.00005 0.2            | Time to 63 % of the gain change
+CompRelease "Comp release"   0 1000 532  time 0.005 3                | Time back to 37 % of the gain change
+CompMakeup  "Comp makeup"    0 1000 0    lin 0 24 dB 1               | Gain after compression
+group Drive
+DriveOn     "Drive on"       0 1    0    switch                       | The saturation in or out
+DriveMode   "Drive mode"     0 4    0    enum Tape Tube Transistor Diode Fold | Saturation model
+DriveAmount "Drive"          0 1000 250  lin 0 36 dB 1               | Gain into the saturation (auto gain holds the level steady)
+DriveMix    "Drive mix"      0 1000 1000 pct                         | Dry/wet of the saturation
+group Output
+ClipOn      "Clip on"        0 1    0    switch                       | A 4× oversampled hard clipper at the ceiling
+LimitOn     "Limit on"       0 1    0    switch                       | The true-peak limiter at the ceiling (after the clipper when both are on)
+Ceiling     "Ceiling"        0 240  237  db -24 0                     | The clipper's ceiling (dBFS) and the limiter's true-peak ceiling (dBTP); the limiter's range is −12 to 0 dB
+LimRelease  "Limiter release" 0 1500 1000 time 0.001 1               | Limiter release time
+Output      "Output"         0 480  240  db -24 24                    | Gain after the strip, 0.1 dB steps (the editor's Match sets it from the gain-match reading)
+Delta       "Delta"          0 1    0    switch                       | Hear only what the strip changes: the output minus the input, delayed to match (glides over 10 ms)
+
+# What the strip measures (NeoStripMachine.Readings, machine_readings).
+reading gain_match_db     dB      | Short-term loudness out − in (K-weighted, 3 s): what Output would have to take back for equal loudness
+reading gate_db           dB      | The gate's gain now (0 open, negative: closed by that much)
+reading comp_gr_db        dB      | The compressor's gain reduction now
+reading limiter_gr_db     dB      | The limiter's largest gain reduction in the last 3 s
+reading latency_samples   samples | The strip's latency (the same whichever stages are on), reported to NeoBuzz Live

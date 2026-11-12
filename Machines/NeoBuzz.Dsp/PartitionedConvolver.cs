@@ -518,6 +518,23 @@ namespace NeoBuzz.Dsp
 
         public void Reset() => Convolver.Reset();
 
+        /// <summary>
+        /// The design for the target as it is now, whole and playing at once (no crossfade): for a start or a switch, off the
+        /// per-partition path's budget (it takes the time of a design).
+        /// </summary>
+        public void DesignNow()
+        {
+            // A design under way finishes first (its steps are the coroutine's; it can't be restarted), then is dropped.
+            while (Design.Designing) Design.Step();
+            Design.Taken();
+            Start();
+            while (!Design.Designed) Design.Step();
+            set = 1 - set;
+            target.TookOver();
+            Design.Taken();
+            cooldown = 0;
+        }
+
         /// <summary>One step of the design under way, if any (call at fixed samples of each partition).</summary>
         public void DesignStep()
         {

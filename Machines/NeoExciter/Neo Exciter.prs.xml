@@ -1,0 +1,187 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Mastering — Air">
+    <Preset Machine="Neo Exciter">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Drive" Group="1" Index="1" Track="0" Value="120" />
+        <Parameter Name="Crossover 1" Group="1" Index="2" Track="0" Value="5340" />
+        <Parameter Name="Crossover 2" Group="1" Index="3" Track="0" Value="7253" />
+        <Parameter Name="Crossover 3" Group="1" Index="4" Track="0" Value="8674" />
+        <Parameter Name="Amount 1" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Amount 2" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Amount 3" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Amount 4" Group="1" Index="8" Track="0" Value="200" />
+        <Parameter Name="Shelf freq" Group="1" Index="9" Track="0" Value="6942" />
+        <Parameter Name="Shelf gain" Group="1" Index="10" Track="0" Value="120" />
+        <Parameter Name="Auto gain" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Stereo" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — Presence and Air">
+    <Preset Machine="Neo Exciter">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Drive" Group="1" Index="1" Track="0" Value="100" />
+        <Parameter Name="Crossover 1" Group="1" Index="2" Track="0" Value="5340" />
+        <Parameter Name="Crossover 2" Group="1" Index="3" Track="0" Value="7253" />
+        <Parameter Name="Crossover 3" Group="1" Index="4" Track="0" Value="8674" />
+        <Parameter Name="Amount 1" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Amount 2" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Amount 3" Group="1" Index="7" Track="0" Value="150" />
+        <Parameter Name="Amount 4" Group="1" Index="8" Track="0" Value="250" />
+        <Parameter Name="Shelf freq" Group="1" Index="9" Track="0" Value="6942" />
+        <Parameter Name="Shelf gain" Group="1" Index="10" Track="0" Value="140" />
+        <Parameter Name="Auto gain" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Stereo" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — Subtle Warmth">
+    <Preset Machine="Neo Exciter">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="4" />
+        <Parameter Name="Drive" Group="1" Index="1" Track="0" Value="90" />
+        <Parameter Name="Crossover 1" Group="1" Index="2" Track="0" Value="5340" />
+        <Parameter Name="Crossover 2" Group="1" Index="3" Track="0" Value="7253" />
+        <Parameter Name="Crossover 3" Group="1" Index="4" Track="0" Value="8674" />
+        <Parameter Name="Amount 1" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Amount 2" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Amount 3" Group="1" Index="7" Track="0" Value="150" />
+        <Parameter Name="Amount 4" Group="1" Index="8" Track="0" Value="100" />
+        <Parameter Name="Shelf freq" Group="1" Index="9" Track="0" Value="6942" />
+        <Parameter Name="Shelf gain" Group="1" Index="10" Track="0" Value="120" />
+        <Parameter Name="Auto gain" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Stereo" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Vocal — Bright and Present">
+    <Preset Machine="Neo Exciter">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Drive" Group="1" Index="1" Track="0" Value="140" />
+        <Parameter Name="Crossover 1" Group="1" Index="2" Track="0" Value="5340" />
+        <Parameter Name="Crossover 2" Group="1" Index="3" Track="0" Value="7253" />
+        <Parameter Name="Crossover 3" Group="1" Index="4" Track="0" Value="8674" />
+        <Parameter Name="Amount 1" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Amount 2" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Amount 3" Group="1" Index="7" Track="0" Value="350" />
+        <Parameter Name="Amount 4" Group="1" Index="8" Track="0" Value="250" />
+        <Parameter Name="Shelf freq" Group="1" Index="9" Track="0" Value="6942" />
+        <Parameter Name="Shelf gain" Group="1" Index="10" Track="0" Value="120" />
+        <Parameter Name="Auto gain" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Stereo" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drums — Crack and Sizzle">
+    <Preset Machine="Neo Exciter">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Drive" Group="1" Index="1" Track="0" Value="160" />
+        <Parameter Name="Crossover 1" Group="1" Index="2" Track="0" Value="5340" />
+        <Parameter Name="Crossover 2" Group="1" Index="3" Track="0" Value="7253" />
+        <Parameter Name="Crossover 3" Group="1" Index="4" Track="0" Value="8674" />
+        <Parameter Name="Amount 1" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Amount 2" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Amount 3" Group="1" Index="7" Track="0" Value="300" />
+        <Parameter Name="Amount 4" Group="1" Index="8" Track="0" Value="400" />
+        <Parameter Name="Shelf freq" Group="1" Index="9" Track="0" Value="6942" />
+        <Parameter Name="Shelf gain" Group="1" Index="10" Track="0" Value="120" />
+        <Parameter Name="Auto gain" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Stereo" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Add Harmonics to Be Heard on Small Speakers">
+    <Preset Machine="Neo Exciter">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="4" />
+        <Parameter Name="Drive" Group="1" Index="1" Track="0" Value="150" />
+        <Parameter Name="Crossover 1" Group="1" Index="2" Track="0" Value="2330" />
+        <Parameter Name="Crossover 2" Group="1" Index="3" Track="0" Value="4337" />
+        <Parameter Name="Crossover 3" Group="1" Index="4" Track="0" Value="6667" />
+        <Parameter Name="Amount 1" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Amount 2" Group="1" Index="6" Track="0" Value="450" />
+        <Parameter Name="Amount 3" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Amount 4" Group="1" Index="8" Track="0" Value="250" />
+        <Parameter Name="Shelf freq" Group="1" Index="9" Track="0" Value="6942" />
+        <Parameter Name="Shelf gain" Group="1" Index="10" Track="0" Value="120" />
+        <Parameter Name="Auto gain" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Stereo" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mid/Side — Air on the Sides">
+    <Preset Machine="Neo Exciter">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Drive" Group="1" Index="1" Track="0" Value="120" />
+        <Parameter Name="Crossover 1" Group="1" Index="2" Track="0" Value="5340" />
+        <Parameter Name="Crossover 2" Group="1" Index="3" Track="0" Value="7253" />
+        <Parameter Name="Crossover 3" Group="1" Index="4" Track="0" Value="8674" />
+        <Parameter Name="Amount 1" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Amount 2" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Amount 3" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Amount 4" Group="1" Index="8" Track="0" Value="350" />
+        <Parameter Name="Shelf freq" Group="1" Index="9" Track="0" Value="6942" />
+        <Parameter Name="Shelf gain" Group="1" Index="10" Track="0" Value="120" />
+        <Parameter Name="Auto gain" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Stereo" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Old Exciter (Oomek-style)">
+    <Preset Machine="Neo Exciter">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Drive" Group="1" Index="1" Track="0" Value="180" />
+        <Parameter Name="Crossover 1" Group="1" Index="2" Track="0" Value="5340" />
+        <Parameter Name="Crossover 2" Group="1" Index="3" Track="0" Value="7253" />
+        <Parameter Name="Crossover 3" Group="1" Index="4" Track="0" Value="8674" />
+        <Parameter Name="Amount 1" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Amount 2" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Amount 3" Group="1" Index="7" Track="0" Value="400" />
+        <Parameter Name="Amount 4" Group="1" Index="8" Track="0" Value="600" />
+        <Parameter Name="Shelf freq" Group="1" Index="9" Track="0" Value="6942" />
+        <Parameter Name="Shelf gain" Group="1" Index="10" Track="0" Value="120" />
+        <Parameter Name="Auto gain" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Stereo" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

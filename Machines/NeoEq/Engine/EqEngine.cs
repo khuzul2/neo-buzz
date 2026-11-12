@@ -63,6 +63,14 @@ namespace NeoBuzz.Eq
         readonly double[] pairA = new double[2 * MaxBlock], pairB = new double[2 * MaxBlock], changes = new double[MaxBlock];
         readonly float[] dryL = new float[MaxBlock], dryR = new float[MaxBlock];
         public readonly DeltaListen Delta;
+        // Linear phase (EqLinear.cs): the FIR, the partition being filled, the fade over a switch.
+        EqLinear linear;
+        int phase;                                  // 0 minimum, 1 linear
+        int linPos;
+        float[] linInL = new float[1], linInR = new float[1], linOutL = new float[1], linOutR = new float[1];
+        LinearRamp fade;
+        bool[] designIgnored;
+        int qCapMask;
         public readonly GainMatch Match;
 
         sealed class Band
@@ -124,7 +132,7 @@ namespace NeoBuzz.Eq
         {
             this.values = values;
             for (int b = 0; b < bands.Length; b++) bands[b] = new Band();
-            Delta = new DeltaListen(1, 48000);
+            Delta = new DeltaListen(EqLinearDesign.MaxLatency, 48000);
             Match = new GainMatch(48000);
             SetSampleRate(48000);
         }
@@ -132,8 +140,17 @@ namespace NeoBuzz.Eq
         public readonly LevelMeter InMeter = new LevelMeter();
         public readonly LevelMeter OutMeter = new LevelMeter();
 
-        /// <summary>Minimum phase: no latency.</summary>
-        public int Latency => 0;
+        /// <summary>Minimum phase: none; linear phase: the FIR's centre and a partition, D + P.</summary>
+        public int Latency => phase == 1 ? linear.Latency : 0;
+
+        /// <summary>The phase mode now: 0 minimum, 1 linear (linear phase works in Parametric mode only).</summary>
+        public int Phase => phase;
+
+        /// <summary>A bit per band whose Q linear phase limits (parameters as now).</summary>
+        public int QCappedMask => Volatile.Read(ref qCapMask);
+
+        /// <summary>The linear-phase FIR (tests, the editor).</summary>
+        internal EqLinear Linear => linear;
 
         public float SampleRate => sampleRate;
 
@@ -144,6 +161,14 @@ namespace NeoBuzz.Eq
             output.Setup(GlideSeconds, sr);
             foreach (var b in bands) b.Mix.Setup(FadeSeconds, sr);
             graphicMix.Setup(FadeSeconds, sr);
+            fade.Setup(GlideSeconds, sr);
+            linear = new EqLinear(sr, values);
+            linInL = new float[linear.P];
+            linInR = new float[linear.P];
+            linOutL = new float[linear.P];
+            linOutR = new float[linear.P];
+            linPos = 0;
+            phase = LinearWanted() ? 1 : 0;
             graphic.SetSampleRate(sr);
             graphicStale = true;
             InMeter.SetSampleRate(sr);
@@ -171,7 +196,20 @@ namespace NeoBuzz.Eq
             graphic.Cold = true;
             Delta.Reset();
             Match.Reset();
+            ResetLinear();
         }
+
+        void ResetLinear()
+        {
+            linear.Reset();
+            linPos = 0;
+            Array.Clear(linInL);
+            Array.Clear(linInR);
+            Array.Clear(linOutL);
+            Array.Clear(linOutR);
+        }
+
+        bool LinearWanted() => values.Choice(P.Phase) == 1 && values.Choice(P.Mode) == 0;
 
         /// <summary>The graphic mode's bands and solver (the editor and tests read them).</summary>
         internal GraphicBank Graphic => graphic;
@@ -179,6 +217,10 @@ namespace NeoBuzz.Eq
         void Update(bool force)
         {
             if (!force && !values.AnyDirty) return;
+            int ph = LinearWanted() ? 1 : 0;
+            bool switched = !force && ph != phase;
+            phase = ph;
+            if (switched) force = true;
             graphicWanted = values.Choice(P.Mode) == 1;
             for (int k = 0; k < GraphicDesign.Bands && !graphicStale; k++) graphicStale = values.IsDirty(GraphicDesign.Slider(k));
             if (graphicWanted && graphicStale)
@@ -231,7 +273,41 @@ namespace NeoBuzz.Eq
             }
             if (force) Delta.Set(values.On(P.Delta));
             else Delta.On = values.On(P.Delta);
+            Delta.Latency = Latency;
+            if (phase == 1)
+            {
+                if (force)
+                {
+                    // A start or a switch: the FIR for these settings plays at once, from silence, faded in.
+                    ResetLinear();
+                    linear.Want();
+                    linear.DesignNow();
+                    fade.Reset(switched ? 0 : 1);
+                    if (switched) fade.SetTarget(1);
+                }
+                else if (DesignWanted()) linear.Want();
+                qCapMask = linear.CappedMask(values, sampleRate);
+            }
+            else
+            {
+                if (switched) fade.Reset(1);
+                qCapMask = 0;
+            }
             values.Clean();
+        }
+
+        /// <summary>A parameter the FIR is designed from moved.</summary>
+        bool DesignWanted()
+        {
+            if (designIgnored == null)
+            {
+                designIgnored = new bool[Params.Table.Length];
+                designIgnored[P.Output] = designIgnored[P.Delta] = designIgnored[P.Phase] = designIgnored[P.Mode] = true;
+                for (int k = 0; k < GraphicDesign.Bands; k++) designIgnored[GraphicDesign.Slider(k)] = true;
+            }
+            for (int i = 0; i < designIgnored.Length; i++)
+                if (!designIgnored[i] && values.IsDirty(i)) return true;
+            return false;
         }
 
         /// <summary>v2's settings of band <paramref name="i"/>: the channel, shape and dynamic wanted, the curve and the detector.</summary>
@@ -322,6 +398,8 @@ namespace NeoBuzz.Eq
             InMeter.Feed(left, right, n);
             Array.Copy(left, dryL, n);
             Array.Copy(right, dryR, n);
+            if (phase == 1) ProcessLinear(left, right, n);
+            else
             for (int bi = 0; bi < bands.Length; bi++)
             {
                 var b = bands[bi];
@@ -352,7 +430,7 @@ namespace NeoBuzz.Eq
                 else if (b.Dynamic) ProcessDynamic(b, left, right, keyLeft, keyRight, n);
                 else ProcessChannel(b, left, right, n);
             }
-            if (graphicMix.Value != 0 || graphicMix.Target != 0) ProcessGraphic(left, right, n);
+            if (phase == 0 && (graphicMix.Value != 0 || graphicMix.Target != 0)) ProcessGraphic(left, right, n);
             Delta.Process(dryL, dryR, left, right, n);
             if (!output.At(1))
             {
@@ -374,6 +452,36 @@ namespace NeoBuzz.Eq
             if (!Delta.Active) Match.Process(dryL, dryR, left, right, 0, n);
             Volatile.Write(ref pubMatch, Match.Db);
             count += n;
+        }
+
+        /// <summary>Linear phase: the input through the FIR a partition at a time, D + P samples late, faded in after a switch.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        void ProcessLinear(float[] left, float[] right, int n)
+        {
+            int p = linear.P;
+            for (int i = 0; i < n; i++)
+            {
+                float x0 = left[i], x1 = right[i];
+                linInL[linPos] = float.IsFinite(x0) ? x0 : 0f;
+                linInR[linPos] = float.IsFinite(x1) ? x1 : 0f;
+                left[i] = linOutL[linPos];
+                right[i] = linOutR[linPos];
+                if (++linPos == p)
+                {
+                    linPos = 0;
+                    linear.Process(linInL, linInR);
+                    Array.Copy(linear.OutL, linOutL, p);
+                    Array.Copy(linear.OutR, linOutR, p);
+                }
+                else if ((linPos & (EqLinear.DesignStride - 1)) == 0) linear.DesignStep();
+            }
+            if (!fade.At(1))
+                for (int i = 0; i < n; i++)
+                {
+                    float f = fade.Next();
+                    left[i] *= f;
+                    right[i] *= f;
+                }
         }
 
         // ---- v2: a band on one channel, and the dynamic bands ------------------------------------------------------
@@ -597,6 +705,10 @@ namespace NeoBuzz.Eq
             double m = GainMatchDb;
             if (double.IsFinite(m)) d["gain_match_db"] = Math.Round(m, 2);
             for (int b = 0; b < bands.Length; b++) d[$"b{b + 1}_dynamic_db"] = Math.Round(DynamicDb(b), 2);
+            int caps = 0;
+            for (int bits = QCappedMask; bits != 0; bits &= bits - 1) caps++;
+            d["q_capped_bands"] = caps;
+            d["pre_ringing_db"] = phase == 1 ? Math.Round(linear.PreRingingDb, 1) : -300;
             return d;
         }
 

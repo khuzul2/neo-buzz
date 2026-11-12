@@ -1,0 +1,52 @@
+# Neo Imager factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoImager
+machine "Neo Imager"
+
+preset "Mastering — Widen the Highs"
+Width3 = 115
+Width4 = 135
+
+preset "Mastering — Focus the Lows (Mono Below 150 Hz)"
+Xo1 = 150
+Width1 = 0
+
+preset "Mastering — Air and Width"
+Xo1 = 200
+Xo2 = 2000
+Xo3 = 8000
+Width2 = 105
+Width3 = 120
+Width4 = 150
+
+preset "Mastering — Stereoize the Top"
+Stereo3 = 20
+Stereo4 = 35
+
+preset "Mixing — Narrow a Wide Mix, Keep the Level"
+Width1 = 0
+Width2 = 70
+Width3 = 70
+Width4 = 70
+Recover = 1
+
+preset "Mixing — Mono Check (Everything at 0 %, Recovered)"
+Width1 = 0
+Width2 = 0
+Width3 = 0
+Width4 = 0
+Recover = 1
+
+preset "Mixing — Wide Pad"
+Width1 = 0
+Width2 = 150
+Width3 = 170
+Width4 = 190
+Stereo2 = 15
+
+preset "Mono-Safe Widening (Stereoize Only)"
+Stereo2 = 25
+Stereo3 = 40
+Stereo4 = 50
+
+preset "Lows Mono, Rest as It Is"
+Xo1 = 120
+Width1 = 0

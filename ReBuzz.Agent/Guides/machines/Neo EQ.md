@@ -153,3 +153,14 @@ Static moves first, dynamic ones for what comes and goes (a resonance on some no
 | "Character — Baxandall Tilt" | +2 dB Baxandall shelves at 250 Hz and 4 kHz |
 | "Character — Proportional Presence" | +3 dB at 1.5 kHz, proportional Q |
 | "Fix — Phase Turn (All-pass 200 Hz)" | an all-pass at 200 Hz, Q 0.7 |
+
+## Linear phase and the curve layer
+
+`Phase` Linear runs the same bands as one linear-phase filter: the same dB at every frequency (within 0.05 dB of the minimum-phase design from 30 Hz), no phase turning, so a cut or boost does not smear the transients or shift the low end against the highs. The price is a constant delay of 4607 samples at 44.1/48 kHz (4095 for the filter's centre and 512 for one block of buffering), which the machine reports to the host, and pre-ringing: a narrow, strong band rings before the sound as well as after it (`pre_ringing_db` in machine_readings is the share of the filter's energy before its centre; a bell of +12 dB at 1 kHz with Q 4 is about −17 dB). Use it on a bus or a master, where the delay is compensated; on one track in a mix with others, minimum phase is simpler.
+
+- Linear phase works in `Parametric` mode only; `Graphic` mode stays minimum phase with no delay.
+- Dynamic bands are static in linear phase (their setting).
+- A very narrow band at a low frequency would ring for longer than the filter is, so its Q is limited to π × frequency × 17 ms (1.6 at 30 Hz, 5 at 100 Hz, none above 1.2 kHz); the editor says which bands, and `q_capped_bands` reports how many.
+- The response follows the bands within about a tenth of a second of a change (a new filter is designed in small steps, then crossfaded in; nothing is heard as a click).
+- `Curve 1` … `Curve 32`: a layer of 32 points, log-spaced from 20 Hz to 20 kHz, ±24 dB, joined by a smooth curve and added to the bands before the filter is designed. It is for matching a curve (set the points from a measured difference, the way `eq_fit` reads one) or for broad tilts that would take many bands. It acts in linear phase only; all 0 dB is flat.
+- With every band flat and the curve flat the output equals the input delayed, bit for bit.

@@ -29,12 +29,16 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 
 | Machine | Kind | One line |
 |---|---|---|
-| Neo EQ | effect | 8-band parametric EQ: bell, shelves, cuts at 12/24/48 dB/oct, notch; minimum phase; response graph with draggable bands over the spectrum; v2 (mastering-tools.md §5.3): each band on Stereo, Left, Right, Mid or Side, proportional-Q bells, Baxandall and Vintage shelves, all-pass, dynamic bands (down or up, hearing their own band or the sidechain on input 2), Delta and Match |
+| Neo EQ | effect | 8-band parametric EQ: bell, shelves, cuts at 12/24/48 dB/oct, notch; minimum phase; response graph with draggable bands over the spectrum; v2 (mastering-tools.md §5.3): each band on Stereo, Left, Right, Mid or Side, proportional-Q bells, Baxandall and Vintage shelves, all-pass, dynamic bands (down or up, hearing their own band or the sidechain on input 2), Delta and Match; M5b: `Phase` Linear (one linear-phase FIR from the bands' magnitude, 4607 samples late) and a 32-point `Curve` layer (mastering-tools.md §5.6) |
 | Neo Utility | effect | Gain, balance or mono pan, width, bass mono, polarity, swap and DC removal, each exact; a mid/side matrix (encode, decode) for M/S work with any stereo machine |
 | Neo Limiter | effect | True-peak lookahead limiter: a ceiling in dBTP as BS.1770 measures it, auto or set release, stereo link; v2 (mastering-tools.md §5.2): upward compression, transient emphasis, a 4× soft clip, a two-stage release, transient unlink, Unity listen and Delta, each off by default (v1's bits), set by the "Style —" presets |
 | Neo Clipper | effect | Hard, soft, tanh or knee clipping into a ceiling no sample passes, 1×–8× oversampled with antiderivative anti-aliasing, up to three bands, L/R or M/S, Delta and Match (mastering-tools.md §5.1) |
 | Neo Transient | effect | Attack and Sustain (±12 dB) from two level followers with a lookahead, or four-band Impact mode (microdynamics per band, auto gain), L/R or M/S, Delta and Match (mastering-tools.md §5.4) |
 | Neo Low End | effect | Shapes only the band below a 20–300 Hz Linkwitz–Riley crossover: Punch, Sustain, Contrast, balance to the mids, mono below a frequency, peak control; minimum or linear phase, Delta and Match (mastering-tools.md §5.5) |
+| Neo Imager | effect | Four zero-latency bands with the width of each from 0 to 200 %, Stereoize (a decorrelated mid added to the side, the mono sum untouched), Recover sides, per-band width and correlation readings, Delta and Match (mastering-tools.md §5.7) |
+| Neo Exciter | effect | Successor of Oomek Exciter: up to four bands through oversampled ADAA shapers (tape, tube, transistor, diode, warm), only the harmonics added by an Amount per band, a shelf on them, auto gain, L/R or M/S, Delta and Match (mastering-tools.md §5.8) |
+| Neo Dither | effect | Word-length reduction: TPDF dither, light or psychoacoustic noise shaping, output exactly on the 8 – 24 bit grid, auto blank; `render(bits, dither)` uses the same block (mastering-tools.md §5.9) |
+| Neo Strip | effect | Channel strip: gate, EQ (low cut, low shelf, two bells, high shelf, high cut), compressor, drive, clipper and limiter in that order, each the engine of the Neo machine of that name; a stage that is off passes the audio untouched; constant latency; Delta and Match (mastering-tools.md §5.10) |
 | Neo Analyzer | effect | Spectrum (FFT with peak hold, third-octave bars), loudness (momentary, short-term, integrated LUFS, range, true peak) and stereo (correlation, width, goniometer) with the analysis library's numbers; readings for agents; audio untouched |
 
 **Third batch (successors: machine-safety.md §4)**
@@ -342,6 +346,22 @@ The editor: each band's channel and shape beside its type, a row with its dynami
 | CPU | 8 dynamic bands ≥ 30× | a throughput guard (§4), stereo drums, at the reference's speed: 66× (Xeon), 57× (Linux runner), 43× (Mac runner); floors 44× (x64), 31× (arm64). Static bands as before (Neo EQ's guard: 193× on the Linux runner) |
 | Delta, Readings | output − input; the gain match | exact (0.0); a +6 dB high shelf on pink noise reads +3.43 dB |
 
+#### Linear phase and the curve layer (docs/specs/mastering-tools.md §5.6, M5b)
+
+`Phase` Linear (Parametric mode) runs the eight bands as one linear-phase FIR on the shared partitioned convolution (`PartitionedConvolver`, `SteppedFirDesign`, `LinearPhaseFilters`, as Neo Low End's linear split): partitions of 512 samples (×1, ×2, ×4 above 50 and 100 kHz), 16 of them, 2 × 4095 + 1 taps at 44.1 and 48 kHz, latency D + P = 4607 samples reported to the host. Its zero-phase magnitude is the product of the bands' exact responses (`EqDesign`, evaluated at the design grid's `tan(πf/fs)`) times the curve layer; a band on Left, Right, Mid or Side multiplies its channel's magnitude and four FIRs (hLL = gL(gM + gS)/2, hLR = gR(gM − gS)/2, hRL = gL(gM − gS)/2, hRR = gR(gM + gS)/2) make the 2 × 2 matrix. A band's Q is limited to π · f · D/(5 fs) (1.6 at 30 Hz, 5.4 at 100 Hz at 48 kHz; the editor lists the bands limited and `q_capped_bands` counts them). Dynamic bands are static (their setting); Graphic mode stays minimum phase. A parameter change starts a new design (at most every 4 partitions) in bounded steps taken at fixed samples of each partition, then crossfades the outputs over a partition; a switch of `Phase` designs whole and fades in over 20 ms. When every band is flat and the curve is 0 dB the input passes untouched, delayed, bit for bit. `Curve 1` … `Curve 32` (±24 dB, log-spaced 20 Hz to 20 kHz, a Catmull–Rom spline through the points) are multiplied into the magnitude before the design; they act in linear phase only. Pre-ringing (the FIR's energy before its centre over all of it) is the reading `pre_ringing_db`.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| R=D | response = the minimum-phase design within 0.05 dB from 30 Hz (160 frequencies, 8 bands: cuts, bells, a notch, a shelf) | 0.039 dB (worst, at the notch at 3.3 kHz) |
+| Group delay | constant ±0.5 sample where the magnitude is above −60 dB | 0.000 samples (phase of the response against the latency) |
+| Latency | reported = measured; the impulse response peaks at D + P and is symmetric | 4607 = 4607; taps D ± n equal to 2e-6 |
+| Curve | response = bands + curve within 0.06 dB | holds (a +9 dB bump through point 17) |
+| Channels | a band on Left, Right, Mid or Side makes the minimum-phase magnitude | within 0.25 dB per third octave on noise |
+| Pre-ringing | reported | −16.6 dB for +12 dB, 1 kHz, Q 4; −300 (none) for a flat EQ |
+| Mix0 | flat bands, flat curve: the input delayed, bit for bit | holds (the default settings) |
+| Blk, Alloc, Sil | blocks of 256/128/117/16 identical with changes in the run; 0 bytes while redesigning; NaN leaves no state | hold; the longest block while redesigning is 2.5 ms of the 5.3 ms a block is |
+| CPU | ≥ 100× | 108.7× at the reference's speed (Xeon, the bands moving every 40 blocks); floors 80 (x64), 55 (arm64) |
+
 ### Neo Utility (gain, pan, width)
 
 Matrix decode (M/S in) → DC removal → polarity invert → channel swap → width (mid/side) → bass mono → pan → gain → matrix encode (M/S out). Zero latency. Every move is a linear ramp that lands exactly on its value (gain, pan and width over 20 ms, switches over 5 ms), and a stage at its identity is skipped, so settled values are exact and the defaults pass the input bit for bit.
@@ -451,6 +471,58 @@ A Linkwitz–Riley 24 split at the crossover (20 – 300 Hz); only the low band 
 | Isolation | above the crossover untouched (card: 1e-6) | not met literally: the 24 dB/octave skirt passes ~6 % of the low band's gain one octave up, 0.0002 % at 8×; the linear option is exact |
 | Latency | minimum phase the lookahead; linear reported | 240 samples (5 ms) minimum; 4607 (D+P) linear at 48 kHz |
 | CPU | ≥ 50× | at the reference's speed on the 2-core Xeon: minimum phase 139×, linear 116×; floors (x64/arm64) 70/45 and 55/35 |
+
+### Neo Imager (docs/specs/mastering-tools.md §5.7)
+
+`LrBands` (four zero-latency Linkwitz–Riley bands); per band the mid m = (l + r)/2 and the side s = (l − r)/2 go through: Width w (s' = w·s), Stereoize k (the side gets k times the mid through the 90 degree pair's second branch, so l + r is the input's) and Recover sides (ρ = √(1 − w²) times the side through the pair's second branch goes into the mid, keeping l² + r²). Every width at 100 % and every Stereoize at 0: the input, bit for bit (a 20 ms blend). Parameters: Crossover 1 – 3, Width 1 – 4 (0 – 200 %), Stereoize 1 – 4, Recover sides, Output, Delta. Readings: width_db_1 – 4, correlation_1 – 4, gain_match_db, latency_samples (0).
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Width | S/M ratio per band within 0.01 dB of the setting | 0, 25, 50, 150, 200 % in each band: within 0.01 dB (the band's own output against the band at 100 %) |
+| Stereoize | l + r the input's | the mono sum differs by −146.7 dB (float rounding of the two channels), not bit for bit; mono noise Stereoized 100 %: side/mid −0.0 dB, mid-side correlation −0.025 |
+| Recover sides | energy within 0.5 dB when narrowing to 0 % | +0.06 dB (−2.08 dB without Recover) on partly correlated noise |
+| Readings | correlation against `Stereo.Measures` | 0.566 against 0.563 |
+| Neutral, Blk, Alloc | input bit for bit, blocks of 256/128/117/16/1 identical, 0 bytes | hold |
+| CPU | as above | 90× at the reference's speed on the 2-core Xeon; floors 70 (x64), 45 (arm64) |
+
+### Neo Exciter (docs/specs/mastering-tools.md §5.8)
+
+Four `LrBands` bands, per channel (L/R or M/S) and band a 4× `FastOversampler` and a first-order ADAA shaper (Neo Drive's `Shapers.cs`: Tape, Tube, Transistor, Diode; Warm is u²/(1 + u²), an even function). What is added is the residual r = f(D·u)/D − u (the audio taken half a sample late, the ADAA's own delay), scaled by the band's Amount at the base rate, summed, high-passed at 20 Hz, shelved and added to the input delayed by the oversampling's latency: the audio never passes a filter. Auto gain: output power against input power in 300 ms one-poles, ±6 dB. Parameters: Mode, Drive (0 – 36 dB), Crossover 1 – 3, Amount 1 – 4, Shelf freq, Shelf gain, Auto gain, Stereo, Output, Delta. Readings: added_db, gain_match_db, latency_samples (58 at 48 kHz).
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Alias | ≤ −90 dB at 4× | 3.1 kHz at 0.5, drive 24 dB, Amount 100 %: Tape −134.5, Tube −115.9, Transistor −106.6, Diode −115.3, Warm −111.1 dB |
+| Harmonics | profile per mode reported; Warm: odd ≥ 40 dB under even | 1 kHz at 0.5, drive 12 dB (H2 / H3 / H5 re the tone): Tape —/−21.8/−34.8 (even/odd −205 dB), Tube −34.7/−21.9/−33.7 (−12.9), Transistor —/−20.4/−36.7 (−208), Diode −29.6/−25.2/−38.3 (−4.5), Warm −15.3/—/— with H4 −23.8 and every odd harmonic under −190 dB (+176 dB) |
+| Isolation | a band at Amount 0 leaves the input within 1e-6 | exact (−300 dB): 60 Hz with only band 4 excited |
+| Mix0, Lat | Amount 0 the input delayed bit for bit; the latency constant | exact; 58 samples at every mode and Amount |
+| Auto gain | loudness kept | −0.07 dB without, +0.00 dB with it (Transistor, drive 24 dB, two bands at 100 %) |
+| Delta, Blk, Alloc | output − input; blocks identical; 0 bytes | −300 dB; hold |
+| CPU | (no figure in the card) | Tape 22×, Warm 46× at the reference's speed on the 2-core Xeon; floors 16/10 and 32/20 |
+
+### Neo Dither (docs/specs/mastering-tools.md §5.9)
+
+`NeoBuzz.Dsp.Dither` per channel: TPDF from two xorshift32 generators seeded at Reset, error-feedback shaping (NTF = 1 + Σ b_k z⁻ᵏ: Light {−0.8, 0.25}; Psychoacoustic, the five-tap ear-weighted curve {−2.033, 2.165, −1.959, 1.590, −0.6149}, designed for 44.1 and 48 kHz), the output exactly k/2^(bits−1), clipped samples reset the feedback; Auto blank after Blank after (0.7 s) of exact digital silence. Parameters: Bits (8 – 24), Dither (Off, TPDF), Shaping (Off, Light, Psychoacoustic), Auto blank, Blank after. `render(bits=16|24, dither=off|tpdf|light|psychoacoustic)` rounds the master with the same block (`Requantize`) and writes PCM (`Wav.WriteStereoPcm`); the measurements are of the file.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Grid | every output sample on the grid | 8, 16, 20 and 24 bits, three shapes, full-scale and beyond: all on the grid and in range |
+| Linearity | −90 dBFS 1 kHz at 16 bits: no harmonics above the noise | the strongest of H2 – H14 is +4.4 dB over the mean noise bin with TPDF (+49.5 dB without dither) |
+| Noise | TPDF power LSB²/4 (±0.2 dB); shaped spectrum = design (±1 dB) | −0.01 dB at 16 and 20 bits; shaped bands within 0.19 dB (Light) and 0.06 dB (Psychoacoustic) of the design from 100 Hz to 20 kHz; total noise +2.3 dB (Light), +12.2 dB (Psychoacoustic) |
+| Blk, Alloc, repeat | blocks identical; 0 bytes; renders repeat | hold |
+
+### Neo Strip (docs/specs/mastering-tools.md §5.10)
+
+Six stages in series, each the engine of the machine of that name, run on its own `ParamValues` that the strip fills value for value from its 38 parameters (the same `ParamDef`s, so each stage has the machine's ranges and curves): the gate (the louder channel's peak against `Gate threshold` with 3 dB hysteresis, a hold, attack and release on the gain, down by `Gate range`), Neo EQ (bands 1 – 6: a 12 dB/oct low cut, a low shelf, two bells, a high shelf and a 12 dB/oct high cut, the shelves and cuts at Q 0.7071; a band with no gain or a cut that is off is off), Neo Comp (Clean/Glue/FET/Opto, no lookahead), Neo Drive (five curves, auto gain), Neo Clipper (hard, 4×, one band) and Neo Limiter (true-peak, 2 ms lookahead). The clipper and limiter share `Ceiling`. A stage that is off passes its input untouched, delayed by that stage's latency (drive 8× FIR oversampler, clipper, limiter), so the strip's latency (504 samples at 44.1 kHz) is the same whichever stages are on; a stage switched on or off crossfades over 5 ms, and starts from reset. All stages start off. Delta is the output minus the input delayed by the latency, before Output; Match is the gain-match reading. Readings: `gain_match_db`, `gate_db`, `comp_gr_db`, `limiter_gr_db`, `latency_samples`. Seven presets.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Same as the machines | the strip with one stage on equals that machine alone, delayed to line up | sample for sample, for EQ (six bands), Comp (FET), Drive (diode, mix 70 %), Clipper (hard) and Limiter (release 0.2 s) |
+| Mix0 | every stage off: the input delayed by the latency, bit for bit | holds |
+| Lat | the same latency whichever stages are on | holds; switching 24 times in 4 s stays finite and ends bit for bit |
+| Gate | −40 dB threshold, 30 dB range: open within 0.05 dB, closed −30 ± 0.5 dB | within 0.05 dB open and 0.5 dB closed (tested at those bounds) |
+| Delta | output − the delayed input | within 2e-6 |
+| Blk, Alloc | blocks identical with changes in the run; 0 bytes (and in the studio, each work algorithm, a bell's gain moved every buffer) | hold |
+| CPU | all six stages on, stereo | 21× at the reference's speed (Xeon); floors 15 (x64), 10 (arm64) |
 
 ### Neo Analyzer (spectrum, loudness, stereo; MCP A4)
 
