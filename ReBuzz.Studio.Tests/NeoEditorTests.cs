@@ -55,6 +55,9 @@ namespace ReBuzz.Studio.Tests
             ("Neo Low End", "NeoLowEndEditor", "neo-low-end-editor", 1032, 277),
             ("Neo Imager", "NeoImagerEditor", "neo-imager-editor", 1034, 277),
             ("Neo Exciter", "NeoExciterEditor", "neo-exciter-editor", 977, 277),
+            ("Neo Tape", "NeoTapeEditor", "neo-tape-editor", 879, 351),
+            ("Neo De-esser", "NeoDeEsserEditor", "neo-deesser-editor", 833, 300),
+            ("Neo Gate", "NeoGateEditor", "neo-gate-editor", 1000, 277),
             ("Neo Dither", "NeoDitherEditor", "neo-dither-editor", 667, 277),
             ("Neo Strip", "NeoStripEditor", "neo-strip-editor", 966, 605),
         };

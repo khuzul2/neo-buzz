@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Tape, portable (docs/specs/mac-engine.md M2): see ../NeoPortable.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoTape</NeoFolder>
+    <NeoName>Neo Tape</NeoName>
+    <NeoKind>Effects</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoPortable.targets" />
+  <ItemGroup>
+    <!-- Neo Drive's shaper curves (the tape curve's shaper). -->
+    <Compile Include="$(M)NeoDrive\Engine\Shapers.cs" Link="Shared\Drive\Shapers.cs" />
+    <!-- As NeoTape.csproj: the gain-match reading. -->
+    <Compile Include="$(M)NeoBuzz.Analysis\Loudness.cs;$(M)NeoBuzz.Analysis\GainMatch.cs" Link="Shared\Analysis\%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

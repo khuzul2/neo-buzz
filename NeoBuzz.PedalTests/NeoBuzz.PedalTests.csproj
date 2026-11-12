@@ -44,6 +44,10 @@
     <!-- The Neo tests' measurement helpers and the DSP library they use (spectra, test noise). -->
     <Compile Include="..\Machines\NeoBuzz.Dsp\**\*.cs" Link="Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\NeoBuzz.MachineTests\Measure.cs" Link="Measure.cs" />
+    <!-- Neo Gate against Pedal Gate (docs/specs/mastering-tools.md §5.13): the successor's engine, its parameter table and the
+         gain-match reading it links (the Neo machines' own csproj files link the same). -->
+    <Compile Include="..\Machines\NeoGate\Engine\*.cs" Link="NeoGate\%(Filename)%(Extension)" />
+    <Compile Include="..\Machines\NeoBuzz.Analysis\Loudness.cs;..\Machines\NeoBuzz.Analysis\GainMatch.cs" Link="NeoGate\Analysis\%(Filename)%(Extension)" />
     <!-- The zero-allocation checks measure each block with the engine tests' AllocationWindow (AllocationCheck.cs). -->
     <Compile Include="..\NeoBuzz.MachineTests\AllocationCheck.cs" Link="AllocationCheck.cs" />
     <Compile Include="..\ReBuzzTests\Automation\AllocationWindow.cs" Link="Automation\AllocationWindow.cs" />

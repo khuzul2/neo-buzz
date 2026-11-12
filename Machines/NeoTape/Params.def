@@ -1,0 +1,31 @@
+# Neo Tape parameters (docs/specs/mastering-tools.md §5.11). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoTape
+namespace NeoBuzz.Tape
+class NeoTapeMachine
+summary Tape machine: record pre-emphasis into an oversampled, anti-aliased tape saturation with bias, the playback de-emphasis that undoes the pre-emphasis in the small-signal range, the head bump (a resonant low shelf that moves with the tape speed) and the high-frequency loss of the speed, an even-harmonic electronics stage, optional hiss, and wow and flutter from a modulated read. Quality Live skips the oversampling and the linear-phase parts for zero latency (without wow and flutter). Mix, Delta and a gain-match reading. Use it for glue and warmth on a bus or a master, or to age a sound.
+
+group Tape
+Speed       "Speed"         0 2     1     enum 7.5_ips 15_ips 30_ips         | The tape speed: moves the head bump (35, 70, 140 Hz) and the high-frequency loss (6, 9.5, 14 kHz corners) and sets the hiss (3 dB more at 7.5, 3 dB less at 30)
+Drive       "Saturation"    0 300   60    db 0 30                            | Gain into the tape curve (the small-signal level is unchanged): louder signals are rounded off earlier, 0.1 dB steps
+Bias        "Bias"          0 1000  500   bip                                | Moves the working point on the curve: positive and negative values make even harmonics (the DC they cause is removed)
+Emphasis    "Emphasis"      0 120   60    lin 0 12 dB 1                      | Record pre-emphasis (a high shelf at 2.5 kHz) before the tape and the matching de-emphasis after it: the highs saturate earlier, the small-signal response stays flat
+group Head
+Bump        "Head bump"     0 60    20    lin 0 6 dB 1                       | The resonant low shelf of the playback head; its corner follows the speed
+Loss        "HF loss"       0 120   30    lin 0 12 dB 1                      | The high-frequency loss at the speed's corner (a high shelf cut)
+group Character
+Electronics "Electronics"   0 1000  200   pct                                | An even-harmonic stage after the tape (second harmonic, with its DC removed)
+Noise       "Hiss"          0 400   0     db -80 -40 inf                     | Tape hiss in dBFS (shaped, per speed); off at its minimum
+group Motion
+Wow         "Wow"           0 250   0     lin 0 25 ct 1                      | Slow pitch variation: peak deviation in cents (adds the 5.2 ms the modulated read needs as latency)
+Flutter     "Flutter"       0 120   0     lin 0 12 ct 1                      | Fast pitch variation (8 and 14 Hz): peak deviation in cents
+WowRate     "Wow rate"      0 1000  200   lin 0.5 2 Hz 2                     | The wow's rate
+group Output
+Quality     "Quality"       0 1     1     enum Live High                     | High: 4× oversampling (latency, constant). With Live, no oversampling and no droop compensation, zero latency, a little more aliasing and a softer top
+Mix         "Mix"           0 1000  1000  pct                                | Dry/wet (parallel tape)
+Output      "Output"        0 480   240   db -24 24                          | Gain after the tape, 0.1 dB steps (the editor's Match sets it from the gain-match reading)
+Delta       "Delta"         0 1     0     switch                             | Hear only what the tape adds: the output minus the input, delayed to match (glides over 10 ms)
+
+# What the tape measures (NeoTapeMachine.Readings, machine_readings).
+reading added_db          dB    | Level of what the tape changes (output minus input, RMS) against the input over the last 3 s; −100 when nothing is changed
+reading gain_match_db     dB    | Short-term loudness out − in (K-weighted, 3 s)
+reading latency_samples   samples | The oversampling's delay (High) plus the modulated read's (with Wow or Flutter), reported to NeoBuzz Live

@@ -106,9 +106,8 @@ def verdict(r):
 _, _, gear = s.call("gear_list", search="Pedal", limit=100)
 rows = {g["name"]: g for g in gear.get("gear", [])}
 for name, successor in [("Pedal EQ", "Neo EQ"), ("Pedal Gain", "Neo Utility"), ("Pedal Comp", "Neo Comp"), ("Pedal Chorus", "Neo Ensemble"), ("Pedal M1", "Neo Sampler"),
-                        ("Pedal Filter", "Neo Filter")]:
+                        ("Pedal Filter", "Neo Filter"), ("Pedal Gate", "Neo Gate")]:
     check(successor in (rows.get(name, {}).get("successor") or ""), f"gear_list: {name}'s successor is {successor}")
-check("successor" not in rows.get("Pedal Gate", {}), "gear_list: Pedal Gate has no successor mapping")
 
 # --- Pedal EQ → Neo EQ: settings, automation with a ramp, arrangement, session, undo, redo ---------------
 song("Pedal EQ", [{"param": "LM Gain", "value": "+6 dB"}, {"param": "HS Gain", "value": "-4 dB"}, {"param": "LS Freq", "value": "100 Hz"},
@@ -174,7 +173,7 @@ s.ok("redo")
 _, _, listed = s.call("machine_list")
 check(any(m["name"] == "FX" and m["gear"] == "Neo EQ" for m in listed.get("machines", [])), "redo replaces it again")
 
-# --- Pedal Gain → Neo Utility, Pedal Comp → Neo Comp -------------------------------------------------
+# --- Pedal Gain → Neo Utility, Pedal Comp → Neo Comp, Pedal Gate → Neo Gate -------------------------------------------------
 for effect, settings, label in [
     ("Pedal Gain", [{"param": "Gain", "value": "50%"}], "Pedal Gain 50% → Neo Utility"),
     ("Pedal Gain", [{"param": "Gain", "value": "150%"}], "Pedal Gain 150% → Neo Utility"),
@@ -189,6 +188,9 @@ for effect, settings, label in [
      "Pedal Filter, high pass 24 dB at 500 Hz, resonant → Neo Filter"),
     ("Pedal Filter", [{"param": "Mode", "value": "Band Pass"}, {"param": "Cutoff", "value": "800 Hz"}, {"param": "Resonance", "value": "85%"}],
      "Pedal Filter, band pass 800 Hz, resonance 85 % (its compensation on Output) → Neo Filter"),
+    ("Pedal Gate", [], "Pedal Gate (defaults) → Neo Gate"),
+    ("Pedal Gate", [{"param": "Threshold", "value": "-30 dB"}, {"param": "Hold ms", "value": "40 ms"}, {"param": "Release ms", "value": "120 ms"}, {"param": "Range dB", "value": "-24 dB"}],
+     "Pedal Gate, -30 dB, 24 dB range → Neo Gate"),
 ]:
     song(effect, settings)
     good, text, r = s.call("machine_replace", machine="FX")
@@ -267,7 +269,7 @@ else:
     check(False, "Elak_SVF.bmx opens")
 
 # --- refusals ----------------------------------------------------------------------------------------
-song("Pedal Gate", None)
+song("Pedal Shaper", None)
 good, text, _ = s.call("machine_replace", machine="FX")
 check(not good and "no successor mapping" in text, "a machine without a mapping is refused, with the gear that has one")
 song("Pedal EQ", None)

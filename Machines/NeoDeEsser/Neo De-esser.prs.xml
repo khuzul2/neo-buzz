@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Vocal — Gentle De-ess">
+    <Preset Machine="Neo De-esser">
+      <Parameters>
+        <Parameter Name="Detector" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Frequency" Group="1" Index="1" Track="0" Value="5668" />
+        <Parameter Name="Width" Group="1" Index="2" Track="0" Value="400" />
+        <Parameter Name="Threshold" Group="1" Index="3" Track="0" Value="750" />
+        <Parameter Name="Ratio" Group="1" Index="4" Track="0" Value="367" />
+        <Parameter Name="Action" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Max reduction" Group="1" Index="6" Track="0" Value="250" />
+        <Parameter Name="Attack" Group="1" Index="7" Track="0" Value="435" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="411" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="200" />
+        <Parameter Name="Listen" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="12" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Vocal — Female, Strong">
+    <Preset Machine="Neo De-esser">
+      <Parameters>
+        <Parameter Name="Detector" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Frequency" Group="1" Index="1" Track="0" Value="6356" />
+        <Parameter Name="Width" Group="1" Index="2" Track="0" Value="280" />
+        <Parameter Name="Threshold" Group="1" Index="3" Track="0" Value="800" />
+        <Parameter Name="Ratio" Group="1" Index="4" Track="0" Value="598" />
+        <Parameter Name="Action" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Max reduction" Group="1" Index="6" Track="0" Value="500" />
+        <Parameter Name="Attack" Group="1" Index="7" Track="0" Value="435" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="411" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="300" />
+        <Parameter Name="Listen" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="12" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Vocal — Male, Warm Shelf">
+    <Preset Machine="Neo De-esser">
+      <Parameters>
+        <Parameter Name="Detector" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Frequency" Group="1" Index="1" Track="0" Value="4865" />
+        <Parameter Name="Width" Group="1" Index="2" Track="0" Value="400" />
+        <Parameter Name="Threshold" Group="1" Index="3" Track="0" Value="767" />
+        <Parameter Name="Ratio" Group="1" Index="4" Track="0" Value="463" />
+        <Parameter Name="Action" Group="1" Index="5" Track="0" Value="2" />
+        <Parameter Name="Max reduction" Group="1" Index="6" Track="0" Value="333" />
+        <Parameter Name="Attack" Group="1" Index="7" Track="0" Value="435" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="411" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="200" />
+        <Parameter Name="Listen" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="12" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Vocal — Transparent (Linear Phase Split)">
+    <Preset Machine="Neo De-esser">
+      <Parameters>
+        <Parameter Name="Detector" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Frequency" Group="1" Index="1" Track="0" Value="5668" />
+        <Parameter Name="Width" Group="1" Index="2" Track="0" Value="400" />
+        <Parameter Name="Threshold" Group="1" Index="3" Track="0" Value="750" />
+        <Parameter Name="Ratio" Group="1" Index="4" Track="0" Value="463" />
+        <Parameter Name="Action" Group="1" Index="5" Track="0" Value="1" />
+        <Parameter Name="Max reduction" Group="1" Index="6" Track="0" Value="333" />
+        <Parameter Name="Attack" Group="1" Index="7" Track="0" Value="435" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="411" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="200" />
+        <Parameter Name="Listen" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="12" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — Tame a Bright Master">
+    <Preset Machine="Neo De-esser">
+      <Parameters>
+        <Parameter Name="Detector" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Frequency" Group="1" Index="1" Track="0" Value="7233" />
+        <Parameter Name="Width" Group="1" Index="2" Track="0" Value="600" />
+        <Parameter Name="Threshold" Group="1" Index="3" Track="0" Value="533" />
+        <Parameter Name="Ratio" Group="1" Index="4" Track="0" Value="367" />
+        <Parameter Name="Action" Group="1" Index="5" Track="0" Value="3" />
+        <Parameter Name="Max reduction" Group="1" Index="6" Track="0" Value="167" />
+        <Parameter Name="Attack" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="200" />
+        <Parameter Name="Listen" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="12" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drums — Harsh Hats and Cymbals">
+    <Preset Machine="Neo De-esser">
+      <Parameters>
+        <Parameter Name="Detector" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Frequency" Group="1" Index="1" Track="0" Value="6958" />
+        <Parameter Name="Width" Group="1" Index="2" Track="0" Value="600" />
+        <Parameter Name="Threshold" Group="1" Index="3" Track="0" Value="600" />
+        <Parameter Name="Ratio" Group="1" Index="4" Track="0" Value="463" />
+        <Parameter Name="Action" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Max reduction" Group="1" Index="6" Track="0" Value="333" />
+        <Parameter Name="Attack" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="200" />
+        <Parameter Name="Listen" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="12" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Find the Sibilance (Listen)">
+    <Preset Machine="Neo De-esser">
+      <Parameters>
+        <Parameter Name="Detector" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Frequency" Group="1" Index="1" Track="0" Value="5668" />
+        <Parameter Name="Width" Group="1" Index="2" Track="0" Value="400" />
+        <Parameter Name="Threshold" Group="1" Index="3" Track="0" Value="750" />
+        <Parameter Name="Ratio" Group="1" Index="4" Track="0" Value="463" />
+        <Parameter Name="Action" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Max reduction" Group="1" Index="6" Track="0" Value="333" />
+        <Parameter Name="Attack" Group="1" Index="7" Track="0" Value="435" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="411" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="200" />
+        <Parameter Name="Listen" Group="1" Index="10" Track="0" Value="1" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="12" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>
