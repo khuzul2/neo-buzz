@@ -6,6 +6,11 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "control",
  "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "category": "Control",
+ "tags": [
+  "automation"
+ ],
+ "use_for": "A control-only helper with a single bypass switch; it makes no sound of its own.",
  "tracks": 0,
  "health": {
   "status": "ok",

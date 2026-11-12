@@ -6,6 +6,12 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "delay",
  "summary": "Delay (profiled draft): traits: delay, filter or EQ; tail 0.18 s; latency 8191 samples; gain -1.8 dB at the defaults.",
+ "category": "Modulation",
+ "tags": [
+  "spectral",
+  "pitch-shift"
+ ],
+ "use_for": "Spectral effects through an FFT: pitch shifting, bin scrambling and spectral boosting (adds latency).",
  "tracks": 0,
  "health": {
   "status": "unhealthy",

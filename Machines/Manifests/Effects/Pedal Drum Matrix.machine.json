@@ -6,6 +6,14 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed",
  "type": "multi-effect",
  "summary": "Drum multi-effect rack: six serial slots, each any of 21 effects (bitcrush, drive, filters, ring mod, comb, stutter, delay, reverb, gate, tuned resonator…), with feedback, an envelope follower, a tempo-synced LFO and a scene morph. For mangling and texturing drums.",
+ "category": "Distortion",
+ "tags": [
+  "bitcrush",
+  "filter",
+  "drum-bus",
+  "gritty"
+ ],
+ "use_for": "A six-slot rack of drum effects (bit crush, drive, filters, comb, ring mod and more) to mangle drums.",
  "quirks": [
   "All slots are None at the defaults: it passes sound unchanged until a slot's Type and Amount are set.",
   "A slot's Char and Mode mean different things per effect; their value texts (machine_describe) say what they do for the loaded effect.",

@@ -6,6 +6,13 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed",
  "type": "reverb",
  "summary": "Dattorro plate reverb, stereo, with pre-delay, size, damping, modulation, a low cut and outer feedback. For vocals, snares and quick bright space.",
+ "category": "Delay & Reverb",
+ "tags": [
+  "reverb",
+  "lush",
+  "vocal"
+ ],
+ "use_for": "Smooth plate reverb for vocals and snares, with pre-delay and a low cut.",
  "quirks": [
   "Mix is wet against dry in one knob (50% at the default): on a send, set it to 100%.",
   "The profiler typed it a delay (it heard two early echoes); it is a plate reverb (its source).",

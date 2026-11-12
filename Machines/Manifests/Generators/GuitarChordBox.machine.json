@@ -6,6 +6,12 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "control",
  "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "category": "Control",
+ "tags": [
+  "chords",
+  "midi"
+ ],
+ "use_for": "Strum guitar-style chords from single notes, with per-string delays and humanising.",
  "tracks": 1,
  "health": {
   "status": "ok",

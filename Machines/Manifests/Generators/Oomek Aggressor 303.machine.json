@@ -6,6 +6,14 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
  "type": "monosynth",
  "summary": "TB-303-style acid bass: saw or square into a resonant low-pass with envelope, accent and slide. For acid lines and squelchy basses.",
+ "category": "Synths",
+ "tags": [
+  "acid",
+  "bass",
+  "monophonic",
+  "subtractive"
+ ],
+ "use_for": "Acid bass lines: a resonant low-pass with envelope, accent and slide.",
  "quirks": [
   "Monophonic, one track.",
   "Slide and Accent are per-note pattern switches: param_set can't set them and notes_write doesn't write them yet.",
