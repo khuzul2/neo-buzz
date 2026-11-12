@@ -635,17 +635,19 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void StftCpu()
         {
+            // The transforms alone (N = 2048, hop 512, stereo at 48 kHz): ≥ 50× real time as it was asserted from one stretch of
+            // wall clock; now a throughput guard (Throughput.cs; machines.md §4): timed against the reference workload in the
+            // same run, 1 s played untimed, then 3 s.
             const int rate = 48000;
-            var l = Measure.PinkNoise(rate * 10, 0.1, 31);
-            var r = Measure.PinkNoise(rate * 10, 0.1, 32);
-            var stft = new Stft(2048);
-            var unity = new Unity();
-            for (int i = 0; i < rate; i += 256) stft.Process(l, r, i, 256, unity);
-            var clock = Stopwatch.StartNew();
-            for (int i = rate; i < l.Length; i += 256) stft.Process(l, r, i, Math.Min(256, l.Length - i), unity);
-            double factor = (l.Length - rate) / (double)rate / clock.Elapsed.TotalSeconds;
-            Measure.Report($"Stft N = 2048, hop 512, stereo at 48 kHz (the transforms alone): {factor:F0}× real time");
-            Assert.That(factor, Is.GreaterThan(50));
+            var l = Measure.PinkNoise(rate * 4, 0.1, 31);
+            var r = Measure.PinkNoise(rate * 4, 0.1, 32);
+            Throughput.Guard("Stft CPU (N = 2048, hop 512, stereo)", Throughput.Floor(x64: 150, arm64: 60), 3, rate, 256, () =>
+            {
+                var stft = new Stft(2048);
+                var unity = new Unity();
+                for (int i = 0; i < rate; i += 256) stft.Process(l, r, i, 256, unity);
+                return Throughput.InBlocks(256, (pos, n) => stft.Process(l, r, rate + pos, n, unity));
+            }, Measure.Report);
         }
     }
 }

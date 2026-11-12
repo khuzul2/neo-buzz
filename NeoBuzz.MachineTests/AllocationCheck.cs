@@ -7,12 +7,36 @@
 // their blocks. A failure lists the blocks that allocated, each with what happened in it. The assertion is unchanged:
 // 0 bytes.
 
+using System.Reflection;
+using System.Threading;
 using ReBuzzTests.Automation;
 
 namespace NeoBuzz.MachineTests
 {
     internal static class AllocationCheck
     {
+        static readonly Action pollGc = (Action)Delegate.CreateDelegate(typeof(Action),
+            typeof(Thread).GetMethod("PollGC", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, Type.EmptyTypes)
+            ?? typeof(AllocationCheck).GetMethod(nameof(Nothing), BindingFlags.Static | BindingFlags.NonPublic)!);
+
+        static void Nothing() { }
+
+        /// <summary>
+        /// What the runtime does the first time a collection suspends this thread is not the machine's: Pedal EQ failed with 968
+        /// bytes in one block of its stretch (runs 43239764974 and one before), the block a collection from another thread
+        /// (the finalizer thread, running finalizers of earlier tests' objects) had suspended, whose only event on this thread
+        /// was R2RGetEntryPoint for System.Threading.Thread.PollGC, the runtime's first use of it in the process. So before a
+        /// stretch the thread calls that method once (resolved from then on), and the earlier tests' garbage is collected and
+        /// finalized, so no other thread's collection or finalizers fall in the stretch.
+        /// </summary>
+        static void Settle()
+        {
+            pollGc();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
+
         /// <summary>
         /// Runs blocks 0 … <paramref name="count"/> − 1 of an audio path (<paramref name="block"/>(b): whatever the test does
         /// per block, the parameter changes with it), each measured on this thread. Returns the bytes allocated in all and,
@@ -20,6 +44,7 @@ namespace NeoBuzz.MachineTests
         /// </summary>
         public static (long Bytes, string Why) Run(int count, Action<int> block)
         {
+            Settle();
             using var window = new AllocationWindow(count, unit: "block");
             long total = 0;
             var first = new List<string>();
