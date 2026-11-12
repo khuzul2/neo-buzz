@@ -1,8 +1,11 @@
 #nullable disable
-// Dye Essence's editor (docs/specs/dye-essence.md §8), its first page: the three engine slots, each
-// with a 3-D view of its table (the frame playing now drawn bright) and a user-table loader, then
-// sub and noise, the two filters and their routing, the voice, the envelopes and the output. One
-// source for WPF and Avalonia (the kit's names; the views draw on INeoCanvas). P1c brings the pages.
+// Dye Essence's editor (docs/specs/dye-essence.md §8), in pages, so that it fits a laptop's screen with
+// the machine keyboard under it (a 1280 × 720 screen less its task bar): Oscillators (the three engine
+// slots, each with a 3-D view of its table, the frame playing now drawn bright, and a user-table
+// loader), Mix & filters (the sub and the noise, the two filters and their routing, the amp and filter
+// envelopes, the voice, the output) and Modulation (the two modulation envelopes and the four LFOs,
+// each on a tab, the LFOs' shapes drawn in place; the macros; the route list: DyeEssenceModEditor.cs).
+// One source for WPF and Avalonia (the kit's names; the views draw on INeoCanvas; the kit's Pages).
 
 using System;
 #if !AVALONIA   // the studio's flavour takes these names from its kit (NeoBuzz.Editor.Avalonia/WpfNames.cs)
@@ -19,6 +22,18 @@ namespace NeoBuzz.DyeEssence
         static readonly NeoColor AccentColor = NeoColor.FromRgb(0xE0, 0x6C, 0xD8);
         const double D = 34;
 
+        /// <summary>
+        /// Every page's size: with the header and the tabs, the editor fits a 1280 × 680 work area (a 1280 × 720 screen
+        /// less its task bar) with the keyboard shown under it and the window's frame: 1264 × 534 at most.
+        /// </summary>
+        internal const double PageWidth = 1244, PageHeight = 460;
+
+        /// <summary>The Modulation page's parts: an envelope's or an LFO's page, the macros beside the envelopes, the route list.</summary>
+        const double ModPageWidth = 592, MacrosWidth = 164, RoutesWidth = 400, LfoViewWidth = ModPageWidth + MacrosWidth - 250;
+
+        /// <summary>The pages, in order.</summary>
+        internal static readonly string[] PageNames = { "Oscillators", "Mix & filters", "Modulation" };
+
         protected override string Title => "Dye Essence";
         protected override NeoColor Accent => AccentColor;
         internal override ParamDef[] Table => Params.Table;
@@ -27,6 +42,13 @@ namespace NeoBuzz.DyeEssence
         {
             var machine = ctx.Machine?.ManagedMachine as DyeEssenceMachine;
             Section S(string title, UIElement content) => new Section(title, AccentColor, content);
+            // Knobs named for what they are within their section ("position" in Osc A, not "A position"): narrower.
+            UniformGrid Knobs(int columns, params (int Index, string Label)[] knobs)
+            {
+                var g = new UniformGrid { Columns = columns };
+                foreach (var (index, label) in knobs) g.Children.Add(new ParamKnob(ctx, index, label, D));
+                return g;
+            }
 
             UIElement Slot(int slot)
             {
@@ -39,7 +61,7 @@ namespace NeoBuzz.DyeEssence
                 {
                     Foreground = Theme.DimText,
                     FontFamily = Theme.FontFamily,
-                    FontSize = 10.5,
+                    FontSize = 11,
                     Width = 120,
                     TextTrimming = TextTrimming.CharacterEllipsis,
                     Text = UserLabel(machine, slot),
@@ -69,18 +91,18 @@ namespace NeoBuzz.DyeEssence
                     });
                 };
                 return S("Osc " + DyeEssenceMachine.SlotNames[slot], Layout.Column(
-                    Layout.Row(new ParamDropdown(ctx, I(P.AType), width: 96), Layout.Gap(6), new ParamDropdown(ctx, I(P.ATable), width: 112)),
+                    Layout.Row(new ParamDropdown(ctx, I(P.AType), width: 96), Layout.Gap(6), new ParamDropdown(ctx, I(P.ATable), width: 112),
+                               Layout.Gap(8), Layout.Column(Layout.Gap(1, 16), load)),
+                    Layout.Gap(1, 2),
+                    userName,
                     Layout.Gap(1, 4),
-                    Layout.Row(load, Layout.Gap(6), userName),
-                    Layout.Gap(1, 6),
-                    TableView(ctx, machine, slot, 6 * 50, 92),
-                    Layout.Gap(1, 4),
-                    Build.Knobs(ctx, 6, D, I(P.APos), I(P.AOct), I(P.ASemi), I(P.AFine), I(P.ALevel), I(P.APan),
-                        I(P.AUnison), I(P.ADetune), I(P.ASpread), I(P.APhase), I(P.ARandom), I(P.AToF2)),
-                    Layout.Gap(1, 4),
+                    TableView(ctx, machine, slot, 6 * 50, 76),
+                    Layout.Gap(1, 2),
+                    Knobs(6, (I(P.APos), "position"), (I(P.AOct), "octave"), (I(P.ASemi), "semi"), (I(P.AFine), "fine"), (I(P.ALevel), "level"), (I(P.APan), "pan"),
+                        (I(P.AUnison), "unison"), (I(P.ADetune), "detune"), (I(P.ASpread), "spread"), (I(P.APhase), "phase"), (I(P.ARandom), "random"), (I(P.AToF2), "→ F2")),
+                    Layout.Gap(1, 2),
                     Layout.Row(new ParamDropdown(ctx, I(P.AWarp1), width: 104), Layout.Gap(4), new ParamKnob(ctx, I(P.AWarp1Amt), "amount", 30),
                                Layout.Gap(10), new ParamDropdown(ctx, I(P.AWarp2), width: 104), Layout.Gap(4), new ParamKnob(ctx, I(P.AWarp2Amt), "amount", 30)),
-                    Layout.Gap(1, 4),
                     Layout.Row(new ParamDropdown(ctx, I(P.AMod), width: 104), Layout.Gap(10), new ParamDropdown(ctx, J(P.AShape), width: 92),
                                Layout.Gap(4), new ParamKnob(ctx, J(P.APw), "width", 30), Layout.Gap(4), new ParamKnob(ctx, J(P.ADrift), "drift", 30))));
             }
@@ -93,74 +115,126 @@ namespace NeoBuzz.DyeEssence
                     new ParamDropdown(ctx, I(P.F1Type), width: 112),
                     Layout.Gap(1, 4),
                     Layout.Row(new ParamKnob(ctx, I(P.F1Cutoff), diameter: 50), new ParamKnob(ctx, I(P.F1Reso), diameter: 50)),
-                    Build.Knobs(ctx, 3, D, I(P.F1Drive), I(P.F1Env), I(P.F1Key), I(P.F1Vel))));
+                    Knobs(4, (I(P.F1Drive), "drive"), (I(P.F1Env), "env"), (I(P.F1Key), "key"), (I(P.F1Vel), "vel"))));
             }
 
             var sub = S("Sub", Layout.Column(
                 new ParamChoice(ctx, P.SubShape, cellWidth: 46),
                 Layout.Gap(1, 4),
                 new ParamChoice(ctx, P.SubOct, cellWidth: 46),
-                Build.Knobs(ctx, 3, D, P.SubLevel, P.SubPan, P.SubToF2)));
+                Knobs(3, (P.SubLevel, "level"), (P.SubPan, "pan"), (P.SubToF2, "→ F2"))));
             var noise = S("Noise", Layout.Column(
                 Layout.Row(new ParamKnob(ctx, P.NoiseColor, "color", D), Layout.Gap(8), new ParamKnob(ctx, P.NoiseLevel, "level", D)),
                 Layout.Gap(1, 6),
-                Layout.Row(new ParamKnob(ctx, P.NoisePan, "pan", D), Layout.Gap(8), new ParamKnob(ctx, P.NoiseToF2, "→ filter 2", D))));
+                Layout.Row(new ParamKnob(ctx, P.NoisePan, "pan", D), Layout.Gap(8), new ParamKnob(ctx, P.NoiseToF2, "→ F2", D))));
             var routing = S("Routing", Layout.Column(new ParamKnob(ctx, P.Routing, diameter: 50)));
             var voice = S("Voice", Layout.Column(
                 Layout.Row(new ParamChoice(ctx, P.VoiceMode, cellWidth: 50), Layout.Gap(6), new ParamChoice(ctx, P.GlideMode, cellWidth: 50)),
                 Layout.Gap(1, 4),
                 new ParamChoice(ctx, P.Quality, cellWidth: 84),
-                Build.Knobs(ctx, 3, D, P.Polyphony, P.Glide, P.BendRange, P.VelAmp, P.Volume)));
-            var meter = new Meter("Output", () => machine?.Engine.OutMeter.Peak ?? 0, AccentColor, 140);
+                Build.Knobs(ctx, 5, D, P.Polyphony, P.Glide, P.BendRange, P.VelAmp, P.Volume)));
+            var meter = new Meter("Output", () => machine?.Engine.OutMeter.Peak ?? 0, AccentColor, 120);
 
             UIElement MakeEnv(string title, int a, int d, int s, int r) => S(title, Layout.Column(
                 Build.Envelope(ctx, a, d, s, r, 4 * 60, 44),
                 Build.Knobs(ctx, 4, D, a, d, s, r)));
 
+            // An envelope's page: its picture beside its knobs (times over the curves and the sync).
             UIElement ModEnv(int e)
             {
                 int b = e == 0 ? P.E1Delay : P.E2Delay;
                 int I(int p) => b + (p - P.E1Delay);
-                return S("Mod env " + (e + 1), Layout.Column(
-                    Build.Knobs(ctx, 6, D, I(P.E1Delay), I(P.E1A), I(P.E1Hold), I(P.E1D), I(P.E1S), I(P.E1R)),
-                    Layout.Row(Build.Knobs(ctx, 3, D, I(P.E1ACurve), I(P.E1DCurve), I(P.E1RCurve)), Layout.Gap(8), new ParamChoice(ctx, I(P.E1Sync), cellWidth: 56))));
+                return Layout.Row(
+                    ModEnvView(ctx, b, 196, 124),
+                    Layout.Gap(8),
+                    Layout.Column(
+                        Knobs(6, (I(P.E1Delay), "delay"), (I(P.E1A), "attack"), (I(P.E1Hold), "hold"), (I(P.E1D), "decay"), (I(P.E1S), "sustain"), (I(P.E1R), "release")),
+                        Layout.Row(Knobs(3, (I(P.E1ACurve), "A curve"), (I(P.E1DCurve), "D curve"), (I(P.E1RCurve), "R curve")), Layout.Gap(12),
+                                   Layout.Column(Layout.Gap(1, 10), new ParamChoice(ctx, I(P.E1Sync), cellWidth: 56)))));
             }
+            // An LFO's page: its shape, sync and retrig, and its knobs, beside its shape (drawn ones edited in place).
             UIElement Lfo(int l)
             {
                 int b = P.L1Shape + l * (P.L2Shape - P.L1Shape);
                 int I(int p) => b + (p - P.L1Shape);
-                return S("LFO " + (l + 1), Layout.Column(
-                    Layout.Row(new ParamDropdown(ctx, I(P.L1Shape), width: 92), Layout.Gap(4), new ParamDropdown(ctx, I(P.L1Sync), width: 66)),
-                    Build.Knobs(ctx, 3, D, I(P.L1Rate), I(P.L1Phase), I(P.L1Fade)),
-                    new ParamChoice(ctx, I(P.L1Retrig), "Retrig", 30)));
-            }
-            var routes = new Grid();
-            for (int c = 0; c < 12; c++) routes.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            for (int r = 0; r < 4; r++) routes.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            for (int i = 0; i < 16; i++)
-            {
-                int b = P.R1Src + 3 * i;
-                int row = i % 4, col = (i / 4) * 3;
-                var src = new ParamDropdown(ctx, b, $"{i + 1} source", 96) { Margin = new Thickness(0, 0, 4, 2) };
-                var dst = new ParamDropdown(ctx, b + 1, "dest", 100) { Margin = new Thickness(0, 0, 4, 2) };
-                var amt = new ParamKnob(ctx, b + 2, "amount", 28) { Margin = new Thickness(0, 0, 12, 0) };
-                Grid.SetRow(src, row); Grid.SetColumn(src, col);
-                Grid.SetRow(dst, row); Grid.SetColumn(dst, col + 1);
-                Grid.SetRow(amt, row); Grid.SetColumn(amt, col + 2);
-                routes.Children.Add(src);
-                routes.Children.Add(dst);
-                routes.Children.Add(amt);
+                var edit = new LfoShapeEdit(ctx, machine, l);
+                var input = new BreakpointInput(edit);
+                var view = new InteractiveGraph(LfoViewWidth, 112, (g, r) => BreakpointPainter.Draw(g, r, edit, input, AccentColor), input)
+                {
+                    ToolTip = "The LFO's shape. Drawn: drag a point; press elsewhere to add one; double-click one to remove it; drag a segment's middle " +
+                              "(or turn the wheel over it) to bend it; Shift for finer moves. A built-in shape: press it to draw from it",
+                };
+                ctx.Changed += view.InvalidateVisual;
+                int seen = machine?.ShapesVersion ?? 0;
+                Poll.Every(view, 0.3, () =>
+                {
+                    int now = machine?.ShapesVersion ?? 0;
+                    if (now == seen) return;
+                    seen = now;
+                    view.InvalidateVisual();
+                });
+                return Layout.Row(
+                    Layout.Column(
+                        Layout.Row(new ParamDropdown(ctx, I(P.L1Shape), "shape", 92), Layout.Gap(4), new ParamDropdown(ctx, I(P.L1Sync), "sync", 66),
+                                   Layout.Gap(6), new ParamChoice(ctx, I(P.L1Retrig), "Retrig", 30)),
+                        Layout.Gap(1, 4),
+                        Knobs(3, (I(P.L1Rate), "rate"), (I(P.L1Phase), "phase"), (I(P.L1Fade), "fade"))),
+                    Layout.Gap(8),
+                    view);
             }
 
-            return Layout.Column(
-                Layout.Row(Slot(0), Slot(1), Slot(2)),
-                Layout.Row(sub, noise, Filter(0), Filter(1), routing, voice),
+            var envelopes = new Pages(AccentColor, ModPageWidth, 128, "Dye Essence/envelopes");
+            for (int e = 0; e < 2; e++) envelopes.Add("Mod env " + (e + 1), ModEnv(e));
+            var lfos = new Pages(AccentColor, ModPageWidth + MacrosWidth, 116, "Dye Essence/LFOs");
+            for (int l = 0; l < 4; l++) lfos.Add("LFO " + (l + 1), Lfo(l));
+
+            var pages = new Pages(AccentColor, PageWidth, PageHeight, "Dye Essence");
+            pages.Add(PageNames[0], Layout.Row(Slot(0), Slot(1), Slot(2)));
+            pages.Add(PageNames[1], Layout.Column(
+                Layout.Row(sub, noise, Filter(0), Filter(1), routing),
                 Layout.Row(MakeEnv("Amp envelope", P.AmpA, P.AmpD, P.AmpS, P.AmpR),
                            MakeEnv("Filter envelope", P.FltA, P.FltD, P.FltS, P.FltR),
-                           S("Out", meter)),
-                Layout.Row(ModEnv(0), ModEnv(1), S("Macros", Build.Knobs(ctx, 2, D, P.M1, P.M2, P.M3, P.M4))),
-                Layout.Row(Lfo(0), Lfo(1), Lfo(2), Lfo(3)),
-                Layout.Row(S("Routes", routes)));
+                           voice,
+                           S("Out", meter))));
+            pages.Add(PageNames[2], Layout.Row(
+                Layout.Column(
+                    Layout.Row(S("Envelopes", envelopes), S("Macros", Knobs(2, (P.M1, "Macro 1"), (P.M2, "Macro 2"), (P.M3, "Macro 3"), (P.M4, "Macro 4")))),
+                    S("LFOs", lfos)),
+                S("Routes", new RouteList(ctx, RoutesWidth))));
+            return pages;
+        }
+
+        /// <summary>A modulation envelope's shape: delay, attack, hold, decay to the sustain, a stretch of sustain, release; each with its curve.</summary>
+        static GraphView ModEnvView(EditorContext ctx, int delay, double width, double height)
+        {
+            int I(int p) => delay + (p - P.E1Delay);
+            var view = new GraphView(width, height, (c, r) =>
+            {
+                double dl = ctx.Value(I(P.E1Delay)), a = ctx.Value(I(P.E1A)), h = ctx.Value(I(P.E1Hold)), d = ctx.Value(I(P.E1D)),
+                       s = ctx.Value(I(P.E1S)), rl = ctx.Value(I(P.E1R));
+                float ac = (float)ctx.Value(I(P.E1ACurve)), dc = (float)ctx.Value(I(P.E1DCurve)), rc = (float)ctx.Value(I(P.E1RCurve));
+                // Widths grow with the square root of time (as the amp envelope's picture), so short and long both read.
+                double wd = Math.Sqrt(dl), wa = Math.Sqrt(a), wh = Math.Sqrt(h), wdc = Math.Sqrt(d), ws = 0.3, wr = Math.Sqrt(rl);
+                double total = Math.Max(1e-6, wd + wa + wh + wdc + ws + wr);
+                double x0 = r.Left + 6, w = r.Width - 12, top = r.Top + 5, bottom = r.Bottom - 5, ht = bottom - top;
+                double X(double t) => x0 + t / total * w;
+                double Y(double level) => bottom - level * ht;
+                var path = new NeoPath().MoveTo(X(0), Y(0)).LineTo(X(wd), Y(0));
+                const int N = 24;
+                for (int i = 1; i <= N; i++) path.LineTo(X(wd + wa * i / N), Y(ModEnvelope.Shape(i / (double)N, ac)));
+                path.LineTo(X(wd + wa + wh), Y(1));
+                for (int i = 1; i <= N; i++) path.LineTo(X(wd + wa + wh + wdc * i / N), Y(1 + (s - 1) * ModEnvelope.Shape(i / (double)N, dc)));
+                double rs = wd + wa + wh + wdc + ws;
+                path.LineTo(X(rs), Y(s));
+                for (int i = 1; i <= N; i++) path.LineTo(X(rs + wr * i / N), Y(s * (1 - ModEnvelope.Shape(i / (double)N, rc))));
+                var fill = new NeoPath();
+                for (int i = 0; i < path.PointCount; i++) fill.LineTo(path.Point(i));
+                fill.LineTo(X(total), Y(0)).Close();
+                c.Path(fill, ctx.Accent.WithAlpha(0x30), NeoStroke.None);
+                c.Path(path, NeoFill.None, new NeoStroke(ctx.Accent, 1.5));
+            });
+            ctx.Changed += view.InvalidateVisual;
+            return view;
         }
 
         static string UserLabel(DyeEssenceMachine machine, int slot) =>
@@ -233,7 +307,7 @@ namespace NeoBuzz.DyeEssence
                     else now.LineTo(At(pos, t, y));
                 }
                 g.Path(now, NeoFill.None, new NeoStroke(ctx.Accent, 2));
-                g.Text($"{table.Name} · frame {(int)Math.Round(framePos) + 1} of {table.FrameCount}", r.Left + 7, r.Top + 4, 10.5, Palette.DimText);
+                g.Text($"{table.Name} · frame {(int)Math.Round(framePos) + 1} of {table.FrameCount}", r.Left + 7, r.Top + 4, 11, Palette.DimText);
             });
         }
     }
