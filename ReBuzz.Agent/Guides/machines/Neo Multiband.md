@@ -10,8 +10,6 @@ A multiband compressor and upward expander: the input split into 3 or 4 bands, e
 
 Each band's ratio works above its threshold: above 1:1 it compresses (∞:1 limits), below 1:1 it expands upward (0.5:1 doubles how far a peak rises over the threshold), 1:1 does nothing. `Range` caps the change either way. Measured: a band's static curve is Neo Comp's gain computer to 0.0003 dB; attack and release times within 2.5 % of their settings; with every band at 1:1 the input comes out bit for bit, 4607 samples later at 44.1 and 48 kHz.
 
-Added in M6b: `Lookahead` (0–10 ms; the bands and the dry are delayed so each detector sees what is coming; the latency is reported and compensated), `Detector` Peak or RMS (3 ms mean square on the peak scale), per band `B1 upward ratio` … (below the threshold the band is raised by (threshold − level) × (1 − 1/ratio), within `Range`, on the same knee; nothing is raised under −80 dBFS) and `B1 sidechain` … (Internal, or External: the band's detector hears input 2 through the same crossovers). Existing songs render as before bit for bit: the new parameters sit at the end and default to off.
-
 ## Signal flow
 
 Input → crossovers (`Crossover 1`, `Crossover 2`, and with 4 bands `Crossover 3`; never closer than the one below) → per band: detector (the band's peak; `Stereo` L/R or M/S, `Link`) → threshold, ratio, knee, `Range` → attack and release → `Makeup` → `Solo`, `Bypass` → the bands summed → `Mix` against the dry signal (latency-aligned, so parallel compression never combs) → `Output`.
@@ -32,7 +30,6 @@ Input → crossovers (`Crossover 1`, `Crossover 2`, and with 4 bands `Crossover 
 - Put a crossover at the problem: a de-esser is the top band above 5–8 kHz, mud control a band around 200–500 Hz, boom control band 1 below 80–100 Hz.
 - Upward expansion (ratio under 1:1, `Range` 3–6 dB) restores transients a mix lost, or lifts the air band only when it is there.
 - Upward compression (`B2 upward ratio` 2:1, a threshold under the band's typical level, `Range` 3–6 dB) lifts quiet detail without touching loud parts; set it where `bN_level_db` sits 10 dB over the quiet passages. It never lifts under −80 dBFS, so silence and noise floors stay as they are.
-- A kick-keyed duck of the lows: a send from the kick to the multiband's second input, `B1 sidechain` External, `B1 threshold` around −30 dB, 4:1, a short attack and 120–200 ms release; `Lookahead` 2 ms lets the duck start before the kick. Preset "Bus — Kick Duck on the Lows (Sidechain)".
 - RMS (`Detector`) follows a band's loudness rather than its peaks: a steadier gain for glue; Peak catches the transients.
 - Check: render, `analyze(source=…, metrics=["loudness", "dynamics", "spectrum"])` against the input: loudness within 0.5 LU after makeup, the fixed band 1–4 dB lower on its peaks.
 

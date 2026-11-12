@@ -159,7 +159,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | disconnect | 3 | 1 | yes |
 | eq_fit | 4 | 6 | yes |
 | gear_list | 2 | 4 | yes |
-| guide | 15 | 23 | yes |
+| guide | 16 | 24 | yes |
 | machine_add | 15 | 28 | yes |
 | machine_data_import | 6 | 9 | yes |
 | machine_describe | 8 | 8 | yes |
@@ -174,7 +174,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | notes_read | 5 | 1 | yes |
 | notes_transform | 4 | 5 | no |
 | notes_write | 7 | 6 | yes |
-| param_get | 10 | 12 | yes |
+| param_get | 10 | 14 | yes |
 | param_set | 17 | 7 | yes |
 | pattern_create | 4 | 4 | yes |
 | pattern_delete | 0 | 0 | yes |

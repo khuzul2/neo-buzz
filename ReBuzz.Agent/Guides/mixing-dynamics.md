@@ -60,6 +60,10 @@ Ducking the bass (or pads) under the kick with Neo Comp's second input.
 
 The threshold follows the trigger: set it at the kick's peak level arriving at input 2 minus depth × ratio ÷ (ratio − 1). The kick's probe reads it after its Master connection; add the difference between the sidechain connection's gain and that one.
 
+## Ducking only the lows (Neo Multiband)
+
+- A kick-keyed duck of the lows: a send from the kick to the multiband's second input, `B1 sidechain` External, `B1 threshold` around −30 dB, 4:1, a short attack and 120–200 ms release; `Lookahead` 2 ms lets the duck start before the kick. Preset "Bus — Kick Duck on the Lows (Sidechain)".
+
 ## Checklist
 
 - [ ] The reduction is what the table names: `analyze(source="rN:Part", metrics=["dynamics"])` on the part, before and after, shows the crest factor moving by the amount you set.

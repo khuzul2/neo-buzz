@@ -1,6 +1,6 @@
 # Dye Essence effects
 
-Dye Essence's effects rack: ten slots after the amp, in two layouts, hosting the engines of six Neo machines. Read the machine's page first (`machine(gear="Dye Essence")`).
+Dye Essence's effects rack: ten slots after the amp, in two layouts, hosting the engines of six Neo machines. Read the machine's page first: `guide(machine="Dye Essence")`.
 
 ## The rack
 
@@ -22,6 +22,6 @@ Dye Essence's effects rack: ten slots after the amp, in two layouts, hosting the
 ## Checklist
 
 - [ ] The slot has the type you meant: `param_get(machine=…, params=["FX1 type"])` reads it back (and its value text names it).
-- [ ] The slot is in the chain you meant: a bus slot needs its `FX send` and `FX return` up; a main-chain slot needs its `FX1 mix`.
-- [ ] Each percentage picked what you meant: read the value text of every `FX1 p…` you set.
+- [ ] The slot is in the chain you meant: `param_get(machine=…, params=["FX layout", "FX send A", "FX return A", "FX1 mix"])`; a bus slot needs its send and return up, a main-chain slot its mix.
+- [ ] Each percentage picked what you meant: `param_get(machine=…, params=["FX1 p1", "FX1 p2"])` and read the value text of every `FX1 p…` you set.
 - [ ] It sounds as intended: `render`, then `analyze(source=…)`; a parallel path adds level, so check the peaks.
