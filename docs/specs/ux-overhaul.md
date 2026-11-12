@@ -256,6 +256,17 @@ The package and installer ship the studio as the main exe (`NeoBuzzLive.exe`) an
 
 What each thread changes (as of P2a): **mastering**: Neo Eq's accent → `Identity(EqFilter, …)` and its eight band colours → `Bands(…)` (the first, #FF6B6B, reads as record red: ΔE 24); Neo Limiter's accent → `Identity(Dynamics, …)`, its input colour (#4A5260) → `Palette.Track`; Neo Clipper's accent (#F2A63B, ΔE 19.8 from override orange) → `Identity(Dynamics, …)`; Neo Utility's accent (#8FD14F, ΔE 24 from play green) → `Identity(Utility, …)`. **Dye Essence**: its accent (#E06CD8) → `Identity(Synth, …)`. **Pedal**: the Pedal machines' editors are manifest editors, which take their category from the manifest's `type` already; Pedal Shaper's type should say "distortion" and Pedal Peer Control's "control" for them to get the Distortion and Control identities (both fall back to Utility and Synth today).
 
+**P2b: what the machine editors do now (nothing waits on P2b; each item is one edit in the editor's own file).**
+
+- **Themes don't reach editors.** Classic Buzz (Preferences ▸ Appearance) changes the machine canvas and the sequence only; an editor window is the kit's dark in both themes, so an editor never reads the theme and never branches on it.
+- **`Machines/DyeEssence/DyeEssenceEditor.cs` line 19:** `AccentColor = Tokens.Identity(MachineCategory.Synth, NeoColor.FromRgb(0xE0, 0x6C, 0xD8))`.
+- **`Machines/NeoEq/NeoEqEditor.cs` lines 24 and 28-30:** `AccentColor = Tokens.Identity(MachineCategory.EqFilter, NeoColor.FromRgb(0x4F, 0xB3, 0xFF))`; the eight band colours `= Tokens.Bands(new[] { <the eight now there> })`.
+- **`Machines/NeoLimiter/NeoLimiterEditor.cs` lines 19-20:** `AccentColor = Tokens.Identity(MachineCategory.Dynamics, <old>)`; `InputColor = Palette.Track`.
+- **`Machines/NeoClipper/NeoClipperEditor.cs` line 19:** `AccentColor = Tokens.Identity(MachineCategory.Dynamics, <old>)`.
+- **`Machines/NeoUtility/NeoUtilityEditor.cs` line 17:** `AccentColor = Tokens.Identity(MachineCategory.Utility, <old>)`.
+- **Pedal editors:** no code; set `"type"` in the manifest (Pedal Shaper `"distortion"`, Pedal Peer Control `"control"`), and the editor takes the category's colour.
+- **Check, in each editor's test:** the accent is ΔE 24 or more from the three state colours (`Tokens.IsReservedForState(accent)` is false) and the editor's text is `Palette.Text` or `Palette.DimText` (6.6:1 on the view). `NeoBuzz.MachineTests/TokensTests` has the pattern.
+
 ## 7. Risks
 
 | Risk | Mitigation |
@@ -299,6 +310,14 @@ What WPF has that the studio needs before it replaces it on Windows: native (Win
 15. **The classic WPF app keeps its look**: the kit's palette and the editors' accents are the tokens only where AVALONIA is defined (the studio and the machines' studio builds); the old colours are written beside the new (`Identity(category, classic)`), so the classic look is one place to change at P6.
 16. **Inter in the editors too** (they used Segoe UI's widths: Helvetica Neue on a Mac, Inter on Linux): one typeface across the studio. The local gallery drew them in Inter already, so their layouts fit it.
 17. **Neo Wave keeps its accent until `fix/followups-1` lands** (it edits that editor); Neo Sampler's sixteen zone colours stay for P2b's sweep.
+
+### P2b
+
+18. **Themes are Dark and Classic Buzz, and Classic is only the two code-drawn canvases.** The Machine view (beige, `MV Background` #DAD6C9 and the Buzz theme file's box colours, so a user's own .col theme still applies in Classic) and the Sequence (brown, with its light pattern list and corner buttons). Every other view, dialog and Preferences page is the tokens in both themes; a beige Session View or Preferences would be a second design to keep. The setting is `AppearanceSettings/Theme` (`Dark`, `Classic`; shown "Dark", "Classic Buzz"), a studio-only settings class, so the classic app's Settings window doesn't list a setting it can't use.
+19. **Dark boxes in the Machine view are the identity-neutral ramp for now**: generators blue-tinted, effects violet-tinted, the Master and control machines grey, muted ones darker (each 4.5:1 or more with the name); P3h makes each box its category's identity colour (§3.1.1). The selection is the accent at 25 % and a 2 pt accent outline (Classic keeps its glass).
+20. **The Sequence's dark blocks:** a pattern keeps its saved palette colour (§3.4); a block with none, a break, a mute and a stop get four fixed dark colours. The name sits on a dark plate (the base surface at 82 %) in primary text, so it reads on any palette colour. The playhead is the play colour, the song end primary text, loop markers the warning colour; the cursor's row in the headers is the accent at 20 %.
+21. **The type scale is enforced by a test** (`UxP2bTests.EveryFontSizeIsOnTheScale`): 11, 12, 13, 15, 20; the 14, 16, 17, 24, 19 and 30 the views had are on it now (Song Notes: headings 20 / 15 / 13 bold, body 13). The 8 pt grid is swept through Preferences (pages, rows, hints); the Session View and the shell keep their paddings until P4, which is the polish pass (a grid sweep of 30 files with no visible change isn't worth a risk to P3's layout work).
+22. **"No literal colour" is enforced by a test** (`UxP2bTests.NoViewHardCodesAColour`) over the studio's sources; its allow-list is the token table, the theme file, the Session View's palette (the clips' colours, saved in songs) and two code-drawn controls with their own dark tables, the piano roll and the wire's amp popup (P3 redesigns it).
 
 ## 11. Progress
 
@@ -347,3 +366,24 @@ Measured (Mac gallery, headless, before: main's run 42274820119, after: run 4228
 | Editor accents within ΔE 24 of a state colour | 4 of 13 (Neo Drive 8.3 from override, Neo Drums 13.7, Neo Scope 14.9 from play, Neo Delay 17.9 from record) | 0 (Neo Wave's stays until `fix/followups-1`) |
 | Closest pair of editor accents | ΔE 5.8 (Neo Multiband and Neo Sampler) | ΔE 37 between categories |
 | The headless Mac shell's typeface | the platform's | Inter (the real app's already) |
+
+### P2b: every view on the tokens, Appearance (`ux/overhaul-2b`)
+
+Built: `StudioTheme` (Dark, the default; Classic Buzz) with the Sequence view's and the Machine view's colour tables (`Shell/Design/StudioTheme.cs`), Preferences ▸ Appearance (`AppearanceSettings/Theme`, a new studio-only key), the Sequence's canvas, pattern list and corner buttons, the Machine canvas, the shell's meter, badge, bars and dialogs, Song Notes, the Pattern page, the parameter window and the Preferences pages on the tokens; the font sizes on the scale; Preferences on the 8 pt grid. Tests: `UxP2bTests` (the Sequence and Machine views dark by default, measured from the window's pixels; Classic's beige and brown and back; Appearance's choices; contrast of the dark tables; no literal colour in the sources; every font size on the scale).
+
+Measured (Mac gallery, headless, before: `main` at P2a, after: this branch; `tools/ux-measure.py`, `UxFrameTimeTests`):
+
+| What | Before | After |
+|---|---|---|
+| Light area (luminance above 0.3) of the Sequence screen (mac-030) | 31.6 % | 4.3 % (the clip colours) |
+| Light area of the Machines screen (mac-020) | 81.1 % | 0.2 % |
+| Screens of the gallery that changed | – | 89 of 108 (45 by more than 0.5 point of light area; the rest by the shell's borders and the Preferences' spacing) |
+| Bar numbers on the ruler | 9.32:1 (#000 on #BBAA99) | 5.97:1 (#A0A0AA on #242428) |
+| A track's name in the header | 6.10:1 | 9.49:1 (on the selected row) |
+| A pattern in the list | 19.55:1 | 12.65:1 |
+| A machine's name in its box (Drums) | 9.57:1 | 7.79:1 |
+| Draw time, Machines / Sequence / Session (UxFrameTimeTests, Linux, 2 cores) | not measured before | 8.3 / 9.3 / 13.9 ms |
+
+Contrast fell where a beige canvas had black text at 9:1; every text on the dark canvases is above the 4.5:1 floor (`TheDarkSequenceMeetsTheContrastFloor`).
+
+Left for later: the Session View's and the shell's paddings stay as they are (P4); the amp popup and the piano roll keep their own dark tables; the Machine view's boxes get their identity colours in P3h; P2c (one selection) is the next step.

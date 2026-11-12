@@ -332,6 +332,9 @@ namespace ReBuzz.Studio.Views.Machines
 
             public Color Colour(string name)
             {
+                // Fork (ux-overhaul.md §3.3): the dark theme's table first; Classic Buzz (and a name the table lacks) asks the
+                // Buzz theme file, which a user's own theme sets.
+                if (Shell.Design.StudioTheme.Machines.Colour(name) is { } own) return own;
                 var c = core.GetThemeColour(name);
                 return Color.FromArgb(c.A, c.R, c.G, c.B);
             }
@@ -354,11 +357,11 @@ namespace ReBuzz.Studio.Views.Machines
             Opacity = 0.5,
             GradientStops =
             {
-                new GradientStop(Colors.WhiteSmoke, 0.2),
+                new GradientStop(Shell.Design.StudioTokens.Glass, 0.2),
                 new GradientStop(Colors.Transparent, 0.4),
-                new GradientStop(Colors.WhiteSmoke, 0.5),
+                new GradientStop(Shell.Design.StudioTokens.Glass, 0.5),
                 new GradientStop(Colors.Transparent, 0.75),
-                new GradientStop(Colors.WhiteSmoke, 0.9),
+                new GradientStop(Shell.Design.StudioTokens.Glass, 0.9),
                 new GradientStop(Colors.Transparent, 1),
             },
         };
@@ -429,6 +432,7 @@ namespace ReBuzz.Studio.Views.Machines
             var box = BoxOf(m);
             var type = m.DLL.Info.Type;
             var text = colours["MV Machine Text"];
+            var look = Shell.Design.StudioTheme.Machines;
 
             // Shadow and body (MachineBackgroundColor = IMachine.GetThemeColor), border (MV Machine Border).
             ctx.DrawRectangle(new SolidColorBrush(BackgroundOf(m, colours)), null, box, 0, 0, Shadow);
@@ -446,7 +450,7 @@ namespace ReBuzz.Studio.Views.Machines
             string error = m.DLL.IsMissing ? Shell.PlainWords.Missing : m.DLL.IsCrashed ? "stopped working" : diverged ? "muted: blew up" : null;
             if (error != null)
             {
-                var ft = new FormattedText(error, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, NameFace, diverged ? 11 : 15, diverged ? Brushes.White : Brushes.DarkRed);
+                var ft = new FormattedText(error, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, NameFace, diverged ? 11 : 15, diverged ? look.DivergedText : look.Error);
                 ctx.DrawText(ft, new Point(box.X + (box.Width - ft.Width) / 2, box.Bottom - ft.Height));
             }
 
@@ -476,20 +480,28 @@ namespace ReBuzz.Studio.Views.Machines
             if (hover == m && type != MachineType.Master)
             {
                 var r = MachineGeometry.DeleteButton(box).Deflate(1);
-                var pen = new Pen(hoverDelete ? Brushes.White : Brushes.Black, 2) { LineCap = PenLineCap.Round };
+                var pen = new Pen(hoverDelete ? look.DeleteXHot : look.DeleteX, 2) { LineCap = PenLineCap.Round };
                 ctx.DrawLine(pen, r.TopLeft, r.BottomRight);
                 ctx.DrawLine(pen, r.BottomLeft, r.TopRight);
             }
 
             if (selected.Contains(m))
-                ctx.FillRectangle(Glass, box);
+            {
+                if (look.Glass) ctx.FillRectangle(Glass, box);
+                else
+                {
+                    // The dark theme: the accent over the box and its outline, a selection the same in every view (§3.1).
+                    ctx.FillRectangle(look.Selection, box);
+                    ctx.DrawRectangle(null, new Pen(look.SelectionBorder, 2), box.Deflate(1));
+                }
+            }
         }
 
         /// <summary>Fork (machine-safety.md §3.2): the machine's guard tripped.</summary>
         static bool IsDiverged(IMachine m) => (m as MachineCore)?.IsDiverged == true;
 
         /// <summary>A diverged machine's red.</summary>
-        public static readonly Color DivergedColour = Color.FromRgb(0xc0, 0x30, 0x30);
+        public static readonly Color DivergedColour = Shell.Design.StudioTokens.Diverged;
 
         /// <summary>IMachine.GetThemeColor (BuzzGUI.Common): by type, darker when muted; red when diverged (fork).</summary>
         static Color BackgroundOf(IMachine m, Palette colours)
@@ -501,7 +513,7 @@ namespace ReBuzz.Studio.Views.Machines
                 MachineType.Master => colours.Colour("MV Master"),
                 MachineType.Generator => colours.Colour(m.IsMuted ? "MV Generator Mute" : "MV Generator"),
                 MachineType.Effect => colours.Colour(m.IsMuted ? "MV Effect Mute" : "MV Effect"),
-                _ => Colors.LightCyan,
+                _ => Shell.Design.StudioTokens.TextSecondary,
             };
         }
 
@@ -514,7 +526,7 @@ namespace ReBuzz.Studio.Views.Machines
                 MachineType.Effect => "Effect",
                 _ => null,
             };
-            return kind == null ? Colors.LightCyan : colours.Colour($"MV {kind} LED {(on ? "On" : "Off")}");
+            return kind == null ? Shell.Design.StudioTokens.TextSecondary : colours.Colour($"MV {kind} LED {(on ? "On" : "Off")}");
         }
 
         /// <summary>MachineControl.NameText: (muted), &lt;bypassed&gt;, [not soloed] while another generator is.</summary>

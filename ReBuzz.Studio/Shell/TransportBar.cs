@@ -27,7 +27,7 @@ namespace ReBuzz.Studio.Shell
         readonly ToggleButton loop = new ToggleButton { Content = "Loop" };
         readonly ToggleButton metronome = new ToggleButton { Content = "♩", MinWidth = 40 };
         readonly NumericUpDown bpm = new NumericUpDown { Minimum = 16, Maximum = 500, Increment = 1, FormatString = "0", Width = 120 };
-        readonly TextBlock position = new TextBlock { FontFamily = new FontFamily("monospace"), FontSize = 16, VerticalAlignment = VerticalAlignment.Center, MinWidth = 90 };
+        readonly TextBlock position = new TextBlock { FontFamily = new FontFamily("monospace"), FontSize = StudioTokens.FontTitle, VerticalAlignment = VerticalAlignment.Center, MinWidth = 90 };
         readonly MasterMeter meter;
         bool updating;
 
@@ -36,7 +36,7 @@ namespace ReBuzz.Studio.Shell
             this.host = host;
             meter = new MasterMeter(() => host.Core) { Margin = new Thickness(16, 0, 0, 0) };
             Padding = new Thickness(8, 4);
-            BorderBrush = new SolidColorBrush(Color.FromRgb(0x30, 0x30, 0x30));
+            BorderBrush = StudioTokens.SurfaceBorderBrush;
             BorderThickness = new Thickness(0, 0, 0, 1);
             ToolTip.SetTip(start, StudioKeymap.Tip("transport.start"));
             ToolTip.SetTip(play, StudioKeymap.Tip("transport.play", "Space plays and stops in every view"));

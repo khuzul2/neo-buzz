@@ -49,10 +49,10 @@ namespace ReBuzz.Studio.Shell
         string shownKey;
         string shownSignature;
 
-        static readonly IBrush SevereBack = StudioTokens.Brush(Color.Parse("#4A1F22"));
-        static readonly IBrush NoticeBack = StudioTokens.Brush(Color.Parse("#3D3320"));
+        static readonly IBrush SevereBack = StudioTokens.Brush(StudioTokens.SevereBack);
+        static readonly IBrush NoticeBack = StudioTokens.Brush(StudioTokens.NoticeBack);
         static readonly IBrush SevereEdge = StudioTokens.RecordBrush;
-        static readonly IBrush NoticeEdge = StudioTokens.Brush(Color.Parse("#E8B33A"));
+        static readonly IBrush NoticeEdge = StudioTokens.Brush(StudioTokens.Warning);
 
         public ProblemBar()
         {

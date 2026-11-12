@@ -1,5 +1,7 @@
-# Dye Essence factory presets (Trio layout, P1a: one engine type). Rebuild: python3 tools/gen-machine-presets.py Machines/DyeEssence
+# Dye Essence factory presets (Trio layout). Rebuild: python3 tools/gen-machine-presets.py Machines/DyeEssence
+# A preset's "state Lfo1Shape = …" lines draw its LFOs (DrawnShape's text: phase,value[,curve] points).
 machine "Dye Essence"
+state DyeEssenceState
 
 preset "Init — Basic"
 Volume = -6
@@ -311,3 +313,78 @@ Amp sustain = 90
 Amp release = 0.3
 Volume = -9
 
+preset "Pad — Drawn Gate"
+A table = Harmonics
+A position = 45
+A unison = 5
+A detune = 16
+A spread = 90
+B engine = Analog
+B shape = Saw
+B octave = -1
+B level = 40
+B drift = 40
+F1 type = LP 12
+F1 cutoff = 3800
+F1 env = 0.5
+Amp attack = 0.05
+Amp decay = 1
+Amp sustain = 100
+Amp release = 0.6
+LFO1 shape = Drawn
+LFO1 sync = 1/2
+R1 source = LFO 1
+R1 dest = Amp
+R1 amount = 100
+state Lfo1Shape = 0,-1 0.006,0,-0.5 0.1062,-1 0.25,-1 0.256,0,-0.5 0.3563,-1 0.375,-1 0.381,0,-0.5 0.4813,-1 0.625,-1 0.631,0,-0.5 0.7312,-1 0.875,-1 0.881,0,-0.5 0.9812,-1
+Volume = -5
+
+preset "Bass — Drawn Wobble"
+Voice mode = Mono
+Glide mode = Legato
+Glide = 0.05
+A engine = Analog
+A shape = Saw
+A unison = 3
+A detune = 10
+A drift = 30
+B engine = Analog
+B shape = Square
+B octave = -1
+B level = 60
+F1 type = Ladder 24
+F1 cutoff = 300
+F1 reso = 35
+F1 env = 0
+LFO1 shape = Drawn
+LFO1 sync = 1/8
+R1 source = LFO 1
+R1 dest = F1 cutoff
+R1 amount = 45
+state Lfo1Shape = 0,-1,0.6 0.7,1,-0.5 0.8,-0.3 1,-1
+Amp attack = 0.003
+Amp sustain = 100
+Amp release = 0.08
+Volume = -4
+
+preset "Seq — Drawn Steps"
+A table = Digital
+A position = 40
+A unison = 2
+A detune = 8
+F1 cutoff = 3000
+F1 reso = 25
+F1 env = 1.2
+Flt decay = 0.25
+Flt sustain = 20
+LFO1 shape = Drawn
+LFO1 sync = 1 bar
+R1 source = LFO 1
+R1 dest = Pitch
+R1 amount = 100
+state Lfo1Shape = 0,0 0.125,0 0.125,0.5833 0.25,0.5833 0.25,1 0.375,1 0.375,0.25 0.5,0.25 0.5,0.8333 0.625,0.8333 0.625,0.4167 0.75,0.4167 0.75,0.5833 0.875,0.5833 0.875,0.1667 1,0.1667
+Amp attack = 0.003
+Amp decay = 0.4
+Amp sustain = 70
+Amp release = 0.3
+Volume = -6.5

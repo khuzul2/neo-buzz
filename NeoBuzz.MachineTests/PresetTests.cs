@@ -131,7 +131,35 @@ namespace NeoBuzz.MachineTests
         static NeoBuzz.DyeEssence.DyeEngine DyeEngine(ParamValues v)
         {
             for (int i = 0; i < NeoBuzz.DyeEssence.TableBank.Count; i++) NeoBuzz.DyeEssence.TableBank.GetNow(i);
-            return new NeoBuzz.DyeEssence.DyeEngine(v);
+            var e = new NeoBuzz.DyeEssence.DyeEngine(v);
+            // The preset's drawn LFOs, from its machine data (dye-essence.md §4.6), as the machine takes them.
+            for (int l = 0; l < 4; l++)
+            {
+                string text = (string)dyeState?.Element($"Lfo{l + 1}Shape");
+                if (string.IsNullOrEmpty(text)) continue;
+                Assert.That(NeoBuzz.DyeEssence.DrawnShape.TryParse(text, out var shape, out string error), Is.True, $"LFO {l + 1}'s shape: {error}");
+                e.SetLfoShape(l, shape);
+            }
+            return e;
+        }
+
+        /// <summary>The Dye Essence preset being rendered: its machine state (null: none).</summary>
+        static XElement dyeState;
+
+        /// <summary>
+        /// A preset's machine data as ReBuzz stores it (MachineManager.GetMachineData: a version byte, the size, then the
+        /// MachineState XML), read back to the XML; null for a preset without data.
+        /// </summary>
+        internal static XElement PresetState(string file, string preset)
+        {
+            var item = XDocument.Load(file).Root!.Elements("Item").First(i => (string)i.Attribute("Key")! == preset);
+            string data = (string)item.Element("Preset")!.Element("Data");
+            if (string.IsNullOrEmpty(data)) return null;
+            var bytes = Convert.FromBase64String(data);
+            Assert.That(bytes[0], Is.EqualTo(2), $"{preset}: the data's version");
+            int size = BitConverter.ToInt32(bytes, 1);
+            Assert.That(size, Is.EqualTo(bytes.Length - 5), $"{preset}: the data's size");
+            return XDocument.Parse(System.Text.Encoding.UTF8.GetString(bytes, 5, size)).Root;
         }
 
         /// <summary>A chord (C3 E3 G3 B3) held for two thirds of the length, then released.</summary>
@@ -238,6 +266,9 @@ namespace NeoBuzz.MachineTests
                     Assert.That(Machines.ContainsKey(machine), Is.True, $"{file}: unknown machine {machine}");
                     Assert.That(Path.GetFileName(file), Is.EqualTo(machine + ".prs.xml"), "ReBuzz finds presets by the DLL's name");
                     var table = Machines[machine].Table;
+                    // A preset's machine data (its state lines), when it has some, reads back to its machine's state.
+                    var state = PresetState(file, (string)item.Attribute("Key")!);
+                    if (state != null) Assert.That(state.Name.LocalName, Does.EndWith("State"), $"{item.Attribute("Key")}: its data is a machine state");
                     foreach (var p in preset.Element("Parameters")!.Elements("Parameter"))
                     {
                         int index = (int)p.Attribute("Index")!;
@@ -258,9 +289,10 @@ namespace NeoBuzz.MachineTests
         {
             var x = Measure.PinkNoise(Measure.Rate, DspMath.DbToGain(-18));
             double inRms = Measure.Rms(x, Measure.Rate / 2, Measure.Rate / 2);
-            foreach (var (_, machine, name, values) in AllPresets())
+            foreach (var (file, machine, name, values) in AllPresets())
             {
                 var (table, render) = Machines[machine];
+                dyeState = machine == "Dye Essence" ? PresetState(file, name) : null;
                 var v = new ParamValues(table);
                 foreach (var kv in values) if (kv.Key >= 0) v.Set(kv.Key, kv.Value);
                 var y = render(v, x);

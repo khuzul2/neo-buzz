@@ -38,6 +38,7 @@ namespace NeoBuzz.Editor
         public static readonly Cursor Arrow = new Cursor(StandardCursorType.Arrow);
         public static readonly Cursor Hand = new Cursor(StandardCursorType.Hand);
         public static readonly Cursor SizeNS = new Cursor(StandardCursorType.SizeNorthSouth);
+        public static readonly Cursor SizeWE = new Cursor(StandardCursorType.SizeWestEast);
         public static readonly Cursor SizeAll = new Cursor(StandardCursorType.SizeAll);
     }
 

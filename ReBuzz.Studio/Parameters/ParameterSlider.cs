@@ -4,6 +4,7 @@
 // wheel and the arrow keys step by one; a digit opens the value editor. Its geometry is
 // ParameterSliderGeometry, as the WPF control computes it.
 
+using ReBuzz.Studio.Shell.Design;
 using System;
 using Avalonia;
 using Avalonia.Input;
@@ -275,17 +276,17 @@ namespace ReBuzz.Studio.Parameters
     /// <summary>The parameter window's colours: the studio's dark palette over the WPF window's shapes.</summary>
     internal static class ParameterTheme
     {
-        public static readonly IBrush Background = new SolidColorBrush(Color.FromRgb(0x24, 0x24, 0x24));
-        public static readonly IBrush Text = new SolidColorBrush(Color.FromRgb(0xE4, 0xE4, 0xE4));
-        public static readonly IBrush ValueText = new SolidColorBrush(Color.FromRgb(0xC8, 0xC8, 0xC8));
-        public static readonly IBrush DimText = new SolidColorBrush(Color.FromRgb(0x80, 0x80, 0x80));
-        public static readonly IBrush Track = new SolidColorBrush(Color.FromRgb(0x16, 0x16, 0x16));
+        public static readonly IBrush Background = StudioTokens.SurfacePanelBrush;
+        public static readonly IBrush Text = StudioTokens.TextPrimaryBrush;
+        public static readonly IBrush ValueText = StudioTokens.TextSecondaryBrush;
+        public static readonly IBrush DimText = StudioTokens.TextPlaceholderBrush;
+        public static readonly IBrush Track = StudioTokens.Brush(StudioTokens.SurfaceBase);
         public static readonly IBrush TrackShadow = new SolidColorBrush(Color.FromArgb(0xA0, 0, 0, 0));
-        public static readonly IBrush TrackLight = new SolidColorBrush(Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF));
-        public static readonly IBrush Thumb = new SolidColorBrush(Color.FromRgb(0xCC, 0xCC, 0xCC));
-        public static readonly IBrush ThumbFocused = new SolidColorBrush(Color.FromRgb(0xF0, 0xF0, 0xF0));
-        public static readonly IBrush Indicator = new SolidColorBrush(Color.FromArgb(0x60, 0xFF, 0xFF, 0xFF));
-        public static readonly IBrush Separator = new SolidColorBrush(Color.FromRgb(0x3A, 0x3A, 0x3A));
-        public static readonly IBrush Lock = new SolidColorBrush(Color.FromRgb(0x5A, 0x8C, 0xE6));
+        public static readonly IBrush TrackLight = StudioTheme.Solid(Colors.White, 0x40);
+        public static readonly IBrush Thumb = StudioTokens.TextSecondaryBrush;
+        public static readonly IBrush ThumbFocused = StudioTokens.TextPrimaryBrush;
+        public static readonly IBrush Indicator = StudioTheme.Solid(Colors.White, 0x60);
+        public static readonly IBrush Separator = StudioTokens.SurfaceBorderBrush;
+        public static readonly IBrush Lock = StudioTokens.AccentBrush;
     }
 }

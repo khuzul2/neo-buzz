@@ -19,6 +19,9 @@ namespace ReBuzz.Agent
 {
     internal static class ParamTools
     {
+        /// <summary>machine_describe answers a machine with more parameters than this, without a group, with its groups only.</summary>
+        internal const int LargeMachine = 200;
+
         public static void Register(ToolRegistry tools, AgentHost host)
         {
             var core = host.Core;
@@ -32,12 +35,13 @@ namespace ReBuzz.Agent
                     "choices, meaning and safe_range (where the machine was found to diverge: param_set keeps to it); track parameters per track; the gear's summary, its manifest (generated, curated or a profiled draft) and how it takes notes. " +
                     "Curated manifests add each parameter's plain name and role, and the gear's quirks; drafts a suggested_role measured by the profiler. " +
                     "played_parameters are track parameters that hold no value (a drum's trigger): automation_write writes them as events. " +
-                    "Read it before param_set. Big machines (Neo FM6 has 172 parameters): pass group to read one section. value_table=true adds each " +
+                    "Read it before param_set. Big machines (Neo FM6 has 172 parameters): pass group to read one section; a machine with more than " + LargeMachine + " parameters (Dye Essence) answers without a group with a short summary and its groups (name, parameter count), never the whole list: read it group by group (all=true reads everything at once, hundreds of KB). value_table=true adds each " +
                     "parameter's texts across its range (every value up to 256 values, else table_points of them), for machines whose texts are all you have. " +
                     "Example: machine_describe(machine=\"Bass\", group=\"Filter 1\").",
                 Input = Object(null,
                     Req("machine", String("The machine")),
                     Opt("group", String("Only this parameter group")),
+                    Opt("all", Boolean("A large machine without group: every parameter at once (default false: the summary and its groups)")),
                     Opt("value_table", Boolean("Also each parameter's value texts across its range: [raw, text] pairs")),
                     Opt("table_points", Integer("value_table: at most this many values per parameter, evenly spaced, ends included (default 1025)", 2, 65536))),
                 Output = Object(null,
@@ -49,6 +53,8 @@ namespace ReBuzz.Agent
                     Opt("quirks", Array(String("A quirk"), "Curated: what to know before using it (track 0 only, needs a wave…)")),
                     Opt("successors", Array(Object("A Neo successor", Req("gear", String("Its gear")), Req("how", String("The call that moves the song onto it"))), "machine_replace moves the machine onto these")),
                     Req("groups", Array(String("Group"), "All parameter groups")),
+                    Opt("group_sizes", Array(Object("A group of a large machine", Req("group", String("Its name")), Req("parameters", Integer("How many parameters it has"))), "A large machine without group: each group's parameter count; read one with group")),
+                    Opt("parameter_count", Integer("A large machine without group: how many parameters it has in all")),
                     Req("parameters", Array(Object("A parameter",
                         Req("name", String("Pass this to param_set")),
                         Opt("plain_name", String("Curated: what it is in plain English; param_set takes it too")),
@@ -63,6 +69,7 @@ namespace ReBuzz.Agent
                 {
                     string group = c.String("group");
                     bool table = c.Bool("value_table") ?? false;
+                    bool everything = c.Bool("all") ?? false;
                     int points = c.Int("table_points") ?? 1025;
                     var r = await host.Engine("machine_describe", false, _ =>
                     {
@@ -70,6 +77,9 @@ namespace ReBuzz.Agent
                         var all = SongModel.Params(m);
                         var groups = all.Select(p => p.Info.Group).Where(g => g.Length > 0).Distinct().ToList();
                         IEnumerable<AgentParam> shown = all;
+                        // A large machine without a group: the groups with their sizes, not every parameter (Dye Essence at 704 was 326 KB).
+                        bool overview = group == null && !everything && all.Count > LargeMachine;
+                        if (overview) shown = Enumerable.Empty<AgentParam>();
                         if (group != null)
                         {
                             shown = all.Where(p => string.Equals(p.Info.Group, group, StringComparison.OrdinalIgnoreCase)).ToList();
@@ -105,6 +115,16 @@ namespace ReBuzz.Agent
                             }).ToArray());
                         o["exact_units"] = manifest is { IsDraft: false } && all.Any(p => p.Manifest != null);
                         o["groups"] = new JsonArray(groups.Select(g => (JsonNode)g).ToArray());
+                        if (overview)
+                        {
+                            o["parameter_count"] = all.Count;
+                            o["group_sizes"] = new JsonArray(groups.Select(g => (JsonNode)new JsonObject
+                            {
+                                ["group"] = g,
+                                ["parameters"] = all.Count(p => p.Info.Group == g),
+                            }).ToArray());
+                            o["note"] = $"{m.Name} has {all.Count} parameters: pass group to read one group's parameters (machine_describe(machine=\"{m.Name}\", group=\"{(groups.Count > 0 ? groups[0] : "…")}\")), or all=true for every one at once.";
+                        }
                         o["parameters"] = new JsonArray(shown.Select(p =>
                         {
                             var d = Describe(m, p);
@@ -146,6 +166,10 @@ namespace ReBuzz.Agent
                     string line = string.Join("; ", ps.Take(40).Select(p => $"{p!["name"]} = {p["value"]}"));
                     string successor = r["successors"] is JsonArray su && su.Count > 0
                         ? $" Successor: {string.Join(", ", su.Select(x => x!["gear"]!.GetValue<string>()))} (machine_replace)." : "";
+                    if (r["parameter_count"] != null)
+                        return ToolResult.Ok($"{r["machine"]!["name"]} ({r["machine"]!["gear"]}): {r["parameter_count"]} parameters in {r["groups"]!.AsArray().Count} groups: " +
+                                             string.Join(", ", r["group_sizes"]!.AsArray().Select(g => $"{g!["group"]} ({g["parameters"]})")) +
+                                             ". Pass group to read one group's parameters.", r);
                     return ToolResult.Ok($"{r["machine"]!["name"]} ({r["machine"]!["gear"]}): {ps.Count} parameters{(group != null ? $" in {group}" : "")}" +
                                          (r["manifest"]?.GetValue<string>() == "draft" ? " (units from a profiled draft manifest)" : "") + "." + successor + " " +
                                          line + (ps.Count > 40 ? "; …" : ""), r);

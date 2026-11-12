@@ -3,6 +3,7 @@
 // engine's synchronous questions (IUserMessages.Ask), in a nested dispatcher frame. Dangerous questions
 // name their buttons and default to the safe answer (DialogChoices; UX review).
 
+using ReBuzz.Studio.Shell.Design;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -227,7 +228,7 @@ namespace ReBuzz.Studio.Shell
             }
             var owner = Owner;
             var box = new TextBox { Text = current ?? "", MinWidth = 260 };
-            var error = new TextBlock { Foreground = new SolidColorBrush(Color.Parse("#FF7A70")), TextWrapping = TextWrapping.Wrap, MaxWidth = 320, IsVisible = false, Tag = "error" };
+            var error = new TextBlock { Foreground = StudioTokens.ErrorTextBrush, TextWrapping = TextWrapping.Wrap, MaxWidth = 320, IsVisible = false, Tag = "error" };
             string result = null;
             var window = new Window
             {

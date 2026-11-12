@@ -33,7 +33,7 @@ namespace ReBuzz.Studio.Shell
         const string PlacementName = "MainWindow";
 
         readonly StudioHost host;
-        readonly TextBlock startup = new TextBlock { Foreground = Brushes.Gray, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        readonly TextBlock startup = new TextBlock { Foreground = StudioTokens.TextSecondaryBrush, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         readonly DockPanel root = new DockPanel();
         readonly TransportBar transport;
         readonly TextBlock status = new TextBlock { Margin = new Thickness(8, 3), FontSize = 12, Foreground = StudioTokens.TextSecondaryBrush, VerticalAlignment = VerticalAlignment.Center };
@@ -91,7 +91,7 @@ namespace ReBuzz.Studio.Shell
             DockPanel.SetDock(health, Dock.Left);
             statusRow.Children.Add(health);
             statusRow.Children.Add(status);
-            var statusBar = new Border { Child = statusRow, BorderBrush = new SolidColorBrush(Color.FromRgb(0x30, 0x30, 0x30)), BorderThickness = new Thickness(0, 1, 0, 0) };
+            var statusBar = new Border { Child = statusRow, BorderBrush = StudioTokens.SurfaceBorderBrush, BorderThickness = new Thickness(0, 1, 0, 0) };
             DockPanel.SetDock(statusBar, Dock.Bottom);
             root.Children.Add(transport);
             root.Children.Add(problems);
@@ -174,7 +174,7 @@ namespace ReBuzz.Studio.Shell
                 catch (Exception e)
                 {
                     host.Log($"The {view.Title} view failed: {e}");
-                    content = new TextBlock { Text = $"{view.Title}: {e.Message}", Foreground = Brushes.IndianRed, Margin = new Thickness(12) };
+                    content = new TextBlock { Text = $"{view.Title}: {e.Message}", Foreground = StudioTokens.ErrorTextBrush, Margin = new Thickness(12) };
                 }
                 tabs.Items.Add(new TabItem { Header = view.Title, Content = content });
             }

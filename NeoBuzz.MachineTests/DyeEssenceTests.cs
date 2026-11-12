@@ -80,13 +80,15 @@ namespace NeoBuzz.MachineTests
             s.Routing = 0.4f;
         }
 
-        /// <summary>Modulation onto most destinations: both envelopes (curved, one synced), per-note and free LFOs of every kind of shape, a macro, the wheel, the random.</summary>
+        /// <summary>Modulation onto most destinations: both envelopes (curved, one synced), per-note and free LFOs of every kind of shape (one drawn), a macro, the wheel, the random.</summary>
         static void Routed(BankSettings s)
         {
             s.ModEnv[0].Delay = 0.01f; s.ModEnv[0].A = 0.05f; s.ModEnv[0].Hold = 0.02f; s.ModEnv[0].D = 0.1f; s.ModEnv[0].S = 0.4f; s.ModEnv[0].ACurve = 0.5f;
             s.ModEnv[1].Sync = true; s.ModEnv[1].A = 0.25f; s.ModEnv[1].D = 0.5f; s.ModEnv[1].S = 0.2f;
             s.Lfo[0].Rate = 5; s.Lfo[1].Shape = WaveShape.SampleHold; s.Lfo[1].Rate = 9; s.Lfo[1].Retrig = false;
-            s.Lfo[2].Shape = WaveShape.Smooth; s.Lfo[2].Beats = 0.5f; s.Lfo[2].Fade = 0.05f; s.Lfo[3].Shape = WaveShape.Triangle; s.Lfo[3].Rate = 2;
+            s.Lfo[2].Shape = WaveShape.Smooth; s.Lfo[2].Beats = 0.5f; s.Lfo[2].Fade = 0.05f; s.Lfo[3].Rate = 2;
+            // P1c: LFO 4 drawn (a curved rise, a step, a held low, a jump at the wrap).
+            s.Lfo[3].Shape = WaveShape.Drawn; s.Lfo[3].Drawn = DrawnShape.Parse("0,-1,-0.6 0.4,1 0.4,0.2,0.5 0.7,-0.5 1,0.3");
             s.Macro[0] = 0.6f; s.ModWheel = 0.3f; s.Tempo = 128;
             (RouteSource, RouteDest, float)[] routes =
             {
@@ -199,26 +201,29 @@ namespace NeoBuzz.MachineTests
             Measure.Report($"Dye Essence: lanes {string.Join(", ", Kinds)} render the same bits ({Paths.Length} settings)");
         }
 
-        [TestCase(false, PinnedGateHash)]
-        [TestCase(true, PinnedEverythingHash)]
-        public void PinnedRendersAreTheSameOnEveryPlatform(bool everything, ulong pinned)
+        [TestCase("gate", PinnedGateHash)]
+        [TestCase("everything", PinnedEverythingHash)]
+        [TestCase("routed", PinnedRoutedHash)]
+        public void PinnedRendersAreTheSameOnEveryPlatform(string patch, ulong pinned)
         {
             // Renders pinned by their checksums: the same numbers on Linux x64 (CI) and macOS arm64 (the
             // Mac runner), so the lanes, the tables (built by FFT with the portable maths), the warps and
-            // the filters give the same bits everywhere (docs/specs/machines.md §4).
-            var b = Gate(LaneKind.Auto, 8, 2, everything ? Everything : null);
+            // the filters give the same bits everywhere (docs/specs/machines.md §4); P1c adds the modulation
+            // (envelopes with curves, every LFO shape, drawn included, routes onto most destinations).
+            var b = Gate(LaneKind.Auto, 8, 2, patch == "everything" ? Everything : patch == "routed" ? Routed : null);
             var y = Render(b, Rate, 256, pos =>
             {
                 if (pos == 0) Chord(b);
                 if (pos == Rate / 2) for (int n = 0; n < 16; n += 2) b.NoteOff(n);
             }, Rate / 2);
             ulong h = Hash(y);
-            Measure.Report($"Dye Essence: the {(everything ? "everything" : "gate")} render's checksum {h:X16} ({b.Lanes} lanes, {RuntimeInfo()})");
+            Measure.Report($"Dye Essence: the {patch} render's checksum {h:X16} ({b.Lanes} lanes, {RuntimeInfo()})");
             Assert.That(h, Is.EqualTo(pinned), "the render's bits");
         }
 
         const ulong PinnedGateHash = 0x852B6940C3C1FF68UL;
         const ulong PinnedEverythingHash = 0x56547DF10D4EE17AUL;
+        const ulong PinnedRoutedHash = 0xEABAF9DF6058F021UL;
 
         // ------------------------------------------------------------------ CPU
 
@@ -573,6 +578,71 @@ namespace NeoBuzz.MachineTests
             double z = ZipperDb(y);
             Measure.Report($"Dye Essence, an LFO moving the cutoff ±1 oct at 3 Hz on a 220 Hz sine: energy above 2 kHz {z:F1} dB re the sine");
             Assert.That(z, Is.LessThan(-80));
+        }
+
+        [Test]
+        public void DrawnShapesReadWriteAndPlayTheirPoints()
+        {
+            // Text round trip (four decimals kept, sorted by phase, a step's two sides in their order), the
+            // points' values, a curve's middle (the envelopes' shape), the wrap (a jump from 1 back to the
+            // first point), and texts refused with a reason.
+            var saw = DrawnShape.Parse("1,1 0,-1");
+            Assert.That(saw.ToString(), Is.EqualTo("0,-1 1,1"));
+            Assert.That(saw.Value(0), Is.EqualTo(-1).Within(1e-9));
+            Assert.That(saw.Value(0.5), Is.EqualTo(0).Within(1e-6));
+            Assert.That(saw.Value(0.999), Is.EqualTo(0.998).Within(1e-6));
+            var square = DrawnShape.Parse("0,1 0.5,1 0.5,-1 1,-1");
+            Assert.That(square.Value(0.49), Is.EqualTo(1));
+            Assert.That(square.Value(0.5), Is.EqualTo(-1), "a step: the later point at its phase");
+            Assert.That(square.Value(0.9), Is.EqualTo(-1));
+            var curved = DrawnShape.Parse("0.2,-0.5,0.7 0.6,0.5");
+            Assert.That(curved.ToString(), Is.EqualTo("0.2,-0.5,0.7 0.6,0.5"));
+            Assert.That(curved.Value(0.4), Is.EqualTo(-0.5 + ModEnvelope.Shape(0.5, 0.7f)).Within(1e-6), "the curve bends the segment");
+            Assert.That(curved.Value(0.9), Is.EqualTo(0).Within(1e-6), "after the last point: on to the first, a cycle on");
+            Assert.That(curved.Value(0.1), Is.EqualTo(-1.0 / 3).Within(1e-6), "before the first point: from the last, a cycle back");
+            Assert.That(DrawnShape.Parse("0.123456,0.333333").ToString(), Is.EqualTo("0.1235,0.3333"));
+            Assert.That(DrawnShape.Parse(DrawnShape.Parse("0,0.25,-0.5 0.3,1 0.8,-1,0.25").ToString()).SameAs(DrawnShape.Parse("0,0.25,-0.5 0.3,1 0.8,-1,0.25")), Is.True);
+            double sineError = 0;
+            for (int i = 0; i < 1000; i++) sineError = Math.Max(sineError, Math.Abs(DrawnShape.Default.Value(i / 1000.0) - Math.Sin(2 * Math.PI * i / 1000.0)));
+            Assert.That(sineError, Is.LessThan(0.045), "the default: a sine in four points");
+            foreach (var (bad, why) in new[] { ("0,0 0.5", "isn't a point"), ("0,2", "−1 … 1"), ("1.5,0", "0 … 1"), ("0,0,3", "curve"), ("a,0", "isn't a number") })
+            {
+                Assert.That(DrawnShape.TryParse(bad, out _, out string error), Is.False, bad);
+                Assert.That(error, Does.Contain(why), bad);
+            }
+            Assert.That(DrawnShape.TryParse(string.Join(" ", Enumerable.Range(0, 33).Select(i => (i / 33.0).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) + ",0")), out _, out string many), Is.False);
+            Assert.That(many, Does.Contain("at most 32"));
+            Assert.That(DrawnShape.Parse("").SameAs(DrawnShape.Default), Is.True);
+        }
+
+        [Test]
+        public void DrawnLfosPlayTheirShapeAtTheirRate()
+        {
+            // A drawn square runs at its rate like a built-in shape; a drawn triangle sounds as the built-in
+            // triangle (within −100 dB): the shape is evaluated where the built-in ones are, per note per tick.
+            double rate = LfoRateOf(s => { s.Lfo[0].Shape = WaveShape.Drawn; s.Lfo[0].Drawn = DrawnShape.Parse("0,1 0.5,1 0.5,-1 1,-1"); s.Lfo[0].Rate = 3; });
+            float[] Tri(Action<BankSettings> shape)
+            {
+                var b = Clean(2, SineTable.Value);
+                b.S.Osc[0].Level = 0.5f;
+                b.S.Lfo[0].Rate = 4;
+                shape(b.S);
+                b.S.Routes[0].Source = RouteSource.Lfo1;
+                b.S.Routes[0].Dest = RouteDest.F1Cutoff;
+                b.S.Routes[0].Amount = 0.3f;
+                b.S.Filter[0].Type = FilterType.Lp12;
+                b.S.Filter[0].Cutoff = 800;
+                b.NoteOn(0, 57, 1f);
+                return Left(Render(b, Rate), 0, Rate);
+            }
+            var builtIn = Tri(s => s.Lfo[0].Shape = WaveShape.Triangle);
+            var drawn = Tri(s => { s.Lfo[0].Shape = WaveShape.Drawn; s.Lfo[0].Drawn = DrawnShape.Parse("0,0 0.25,1 0.75,-1 1,0"); });
+            double diff = 0;
+            for (int i = 0; i < Rate; i++) diff = Math.Max(diff, Math.Abs(builtIn[i] - drawn[i]));
+            double diffDb = Measure.Db(diff / Math.Max(1e-9, Measure.Peak(builtIn, 0, Rate)));
+            Measure.Report($"Dye Essence drawn LFOs: a drawn square at 3 Hz runs at {rate:F3} Hz; a drawn triangle against the built-in one, largest difference {diffDb:F1} dB re the peak");
+            Assert.That(rate, Is.EqualTo(3).Within(0.03));
+            Assert.That(diffDb, Is.LessThan(-100));
         }
 
         static double PeakHz(float[] y, double near, int width = 8)
@@ -938,6 +1008,10 @@ namespace NeoBuzz.MachineTests
                 v.Set(P.R2Src, (int)RouteSource.ModEnv1); v.Set(P.R2Dst, (int)RouteDest.F1Cutoff); v.Set(P.R2Amt, 700);
                 v.Set(P.L2Retrig, 0); v.Set(P.L2Shape, (int)WaveShape.SampleHold);
                 v.Set(P.R3Src, (int)RouteSource.Lfo2); v.Set(P.R3Dst, (int)RouteDest.Pitch); v.Set(P.R3Amt, 520);
+                // P1c: a drawn LFO, its shape redrawn now and then (the shapes made beforehand, as the editor makes them on its thread).
+                v.Set(P.L3Shape, (int)WaveShape.Drawn);
+                v.Set(P.R5Src, (int)RouteSource.Lfo3); v.Set(P.R5Dst, (int)RouteDest.BPosition); v.Set(P.R5Amt, 700);
+                var shapes = new[] { DrawnShape.Parse("0,-1 0.5,1,0.4 1,-1"), DrawnShape.Parse("0,1 0.25,1 0.25,-1 0.6,0.3,-0.7"), DrawnShape.Default };
                 for (int k = 0; k < 8; k++) e.NoteOn(k, 40 + 5 * k, 0.8f);
                 for (int i = 0; i < 20; i++) e.Process(l, r, 256);
                 void Block(int i)
@@ -951,10 +1025,11 @@ namespace NeoBuzz.MachineTests
                     v.Set(P.Quality, i / 500 % 2);
                     v.Set(P.R4Dst, i / 120 % 28);
                     v.Set(P.R4Src, i / 90 % 18);
+                    if (i % 70 == 0) e.SetLfoShape(2, shapes[i / 70 % shapes.Length]);
                     e.Process(l, r, 1 + i % 256);
                 }
                 var (bytes, why) = AllocationCheck.Run(2000, Block);
-                Measure.Report($"Dye Essence ({kind}): {bytes} bytes allocated over 2000 blocks with notes, unison, positions, warps, filter models and quality moving");
+                Measure.Report($"Dye Essence ({kind}): {bytes} bytes allocated over 2000 blocks with notes, unison, positions, warps, filter models, quality, routes and drawn LFO shapes moving");
                 Assert.That(bytes, Is.EqualTo(0), why);
             }
         }

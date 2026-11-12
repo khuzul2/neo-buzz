@@ -385,7 +385,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "Env2 sync", Description = "Beats: each time is read as beats of the song's tempo (1 s = 1 beat)", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int E2Sync { get => Values[P.E2Sync]; set => Values.Set(P.E2Sync, value); }
 
-        [ParameterDecl(Name = "LFO1 shape", Description = "Waveform", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        [ParameterDecl(Name = "LFO1 shape", Description = "Waveform (Drawn: the LFO's own breakpoints, drawn in the editor)", MinValue = 0, MaxValue = 7, DefValue = 0)]
         public int L1Shape { get => Values[P.L1Shape]; set => Values.Set(P.L1Shape, value); }
 
         [ParameterDecl(Name = "LFO1 rate", Description = "Rate (free)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
@@ -403,7 +403,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "LFO1 fade", Description = "Fade-in time after the note starts", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int L1Fade { get => Values[P.L1Fade]; set => Values.Set(P.L1Fade, value); }
 
-        [ParameterDecl(Name = "LFO2 shape", Description = "Waveform", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        [ParameterDecl(Name = "LFO2 shape", Description = "Waveform (Drawn: the LFO's own breakpoints, drawn in the editor)", MinValue = 0, MaxValue = 7, DefValue = 0)]
         public int L2Shape { get => Values[P.L2Shape]; set => Values.Set(P.L2Shape, value); }
 
         [ParameterDecl(Name = "LFO2 rate", Description = "Rate (free)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
@@ -421,7 +421,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "LFO2 fade", Description = "Fade-in time after the note starts", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int L2Fade { get => Values[P.L2Fade]; set => Values.Set(P.L2Fade, value); }
 
-        [ParameterDecl(Name = "LFO3 shape", Description = "Waveform", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        [ParameterDecl(Name = "LFO3 shape", Description = "Waveform (Drawn: the LFO's own breakpoints, drawn in the editor)", MinValue = 0, MaxValue = 7, DefValue = 0)]
         public int L3Shape { get => Values[P.L3Shape]; set => Values.Set(P.L3Shape, value); }
 
         [ParameterDecl(Name = "LFO3 rate", Description = "Rate (free)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
@@ -439,7 +439,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "LFO3 fade", Description = "Fade-in time after the note starts", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int L3Fade { get => Values[P.L3Fade]; set => Values.Set(P.L3Fade, value); }
 
-        [ParameterDecl(Name = "LFO4 shape", Description = "Waveform", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        [ParameterDecl(Name = "LFO4 shape", Description = "Waveform (Drawn: the LFO's own breakpoints, drawn in the editor)", MinValue = 0, MaxValue = 7, DefValue = 0)]
         public int L4Shape { get => Values[P.L4Shape]; set => Values.Set(P.L4Shape, value); }
 
         [ParameterDecl(Name = "LFO4 rate", Description = "Rate (free)", MinValue = 0, MaxValue = 1000, DefValue = 500)]

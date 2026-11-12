@@ -49,7 +49,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Scope", "NeoScopeEditor", "neo-scope-editor", 1098, 458),
             ("Neo Drums", "NeoDrumsEditor", "neo-drums-editor", 1232, 738),
             ("Neo Filter", "NeoFilterEditor", "neo-filter-editor", 802, 620),
-            ("Dye Essence", "DyeEssenceEditor", "dye-essence-editor", 1299, 1672),
+            ("Dye Essence", "DyeEssenceEditor", "dye-essence-editor", 1299, 532),
             ("Neo Clipper", "NeoClipperEditor", "neo-clipper-editor", 956, 277),
             ("Neo Transient", "NeoTransientEditor", "neo-transient-editor", 1020, 311),
             ("Neo Low End", "NeoLowEndEditor", "neo-low-end-editor", 1032, 277),
