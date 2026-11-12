@@ -1,10 +1,11 @@
 ## How it sounds
 
-A hybrid synth with three engine slots (A, B, C). Each plays a morphing wavetable of 64 frames (the Wavetable engine) or a classic analog wave (the Analog engine), with up to 16 unison voices and two warps in series; plus a sub and a noise. Every note has two filters (ladder, state-variable, comb) that run from serial to parallel. Voices run at Standard 2× (the default) or High 4×: harmonics reach 18 kHz at every pitch below 9 kHz and a plain saw's alias floor is −92 dB or lower. Good for wide unison leads, evolving pads, FM and sync basses, plucks and bells.
+A hybrid synth with three engine slots (A, B, C). Each plays a morphing wavetable of 64 frames (the Wavetable engine) or a classic analog wave (the Analog engine), plays a sample (the Sample engine: built-in or your own, looped or one-shot) or scatters grains of one (the Granular engine), with up to 16 unison voices and two warps in series; plus a sub and a noise. Every note has two filters (ladder, state-variable, comb) that run from serial to parallel. Voices run at Standard 2× (the default) or High 4×: harmonics reach 18 kHz at every pitch below 9 kHz and a plain saw's alias floor is −92 dB or lower. Good for wide unison leads, evolving pads, FM and sync basses, plucks and bells.
 
 ## Signal flow
 
-- Slots A, B and C: `A engine` (Off, Wavetable or Analog; more engines come later). Wavetable: `A table`, `A position` (0–100 % through the table), octave, semitone and fine tune, level and pan; `A unison` (1–16 voices), `A detune` (the outermost voices this many cents either side), `A spread` (stereo); `A phase` and `A random` (how much of a random start phase each voice gets); `A warp 1` and `A warp 2` with their amounts; `A modulator` (what FM, PM, AM and Ring take: another slot, the sub or the noise); `A → filter 2` (0 %: filter 1, 100 %: filter 2). Analog: `A shape` (sine, triangle, saw, square, pulse), `A pulse width` (3–50 %, for Pulse) and `A drift` (each voice a little out of tune, up to ±12 cents, fixed for the note); the slot's tuning, unison, warps and routing as above. B and C the same; B and C start Off.
+- Slots A, B and C: `A engine` (Off, Wavetable, Analog, Sample or Granular). Wavetable: `A table`, `A position` (0–100 % through the table), octave, semitone and fine tune, level and pan; `A unison` (1–16 voices), `A detune` (the outermost voices this many cents either side), `A spread` (stereo); `A phase` and `A random` (how much of a random start phase each voice gets); `A warp 1` and `A warp 2` with their amounts; `A modulator` (what FM, PM, AM and Ring take: another slot, the sub or the noise); `A → filter 2` (0 %: filter 1, 100 %: filter 2). Analog: `A shape` (sine, triangle, saw, square, pulse), `A pulse width` (3–50 %, for Pulse) and `A drift` (each voice a little out of tune, up to ±12 cents, fixed for the note); the slot's tuning, unison, warps and routing as above. B and C the same; B and C start Off.
+- Sample and Granular engines (both read `A sample`: Choir, Strings, Bell, Pluck or Texture, made by code, or User: one you loaded for the slot). Sample: plays it at the note's pitch (`A root` is the note it sounds at its own pitch, 60 = C4), from `A position`; `A loop` Off (plays once), Forward or Ping pong between `A loop start` and `A loop end` (% of the sample), `A loop fade` (0 ms: a hard wrap, right for a seamless loop; a few ms smooths a loop cut from a recording), `A reverse`. Granular: `A position` is the centre grains are taken from, `A scan` moves it (1× the sample's own speed, 0 frozen, negative backwards, up to ±2×), `A spray` scatters it, `A grain size` (5–500 ms), `A grain rate` (1–100 grains a second), `A grain pitch` (how far each grain may wander in cents), `A grain shape` (Hann, Triangle, Tukey, Gauss, Percussive), `A grain reverse` (share of grains played backwards) and `A grain width` (stereo scatter). The slot's tuning, unison, level, pan and filter-2 send work as for the other engines; warps and the modulator apply to Wavetable and Analog slots only. Playback is band-limited (a 32-tap windowed sinc, a mipmap of the sample for high notes): alias products stay below −85 dB.
 - Sub (sine, triangle, saw or square, 0, −1 or −2 octaves) and noise (`Noise color` 0 % dark … 100 % white), each with level, pan and `→ filter 2`.
 - Filter 1 and Filter 2: Ladder 24, Ladder 12, LP/BP/HP 12 and 24, Notch, Peak, Comb+ and Comb− (the cutoff is the comb's pitch; `F1 key track` 100 % plays it in tune), with drive, envelope amount (±6 octaves), key tracking and velocity. `Filter routing` 0 %: filter 1 into filter 2; 100 %: side by side.
 - Amp and filter envelopes; voice mode (Poly, Mono, Legato), polyphony up to 32, glide, bend range, `Quality`.
@@ -45,6 +46,8 @@ A hybrid synth with three engine slots (A, B, C). Each plays a morphing wavetabl
 - Two filters: send a slot to filter 2 with `B → filter 2` 100 % and set `Filter routing` 100 % for two parallel paths; at 0 % filter 2 also hears filter 1.
 - Edged warps (Bend, Squeeze, Sync) alias on high notes at Standard: `Quality` High 4× keeps them 7–15 dB cleaner at twice the CPU.
 - Analog basses and strings: `A engine` Analog, `A shape` Saw or Pulse, `A drift` 30–60 % for the analog spread; Pulse with a narrow width for reedy tones. The waves are band-limited as the tables are: the same −92 dB alias floor.
+- Your own sample, per slot: `machine_data_import(machine="Dye", kind="sample", path="C:/Samples/mine.wav", item=1)` loads a WAV (8 to 32 bit, mono or stereo; the first 20 s) into slot B, sets `B sample` to User and, unless the slot is Granular, `B engine` to Sample. It lives in the song and the preset's machine data, 24 bit; set `B root` to its pitch. There is no multisample or SFZ import yet: one sample per slot, so layer slots for zones.
+- Pads from a sample: Sample, `A loop` Forward, `A unison` 3–8; for clouds, Granular with `A scan` 0.1–0.5×, `A spray` 10–30 %, size 100–200 ms and 30–60 grains a second. Frozen textures: `A scan` 0.
 - Your own table, per slot: a WAV of 2048-sample frames (or a clm chunk saying the frame size) or a single cycle. `machine_data_import(machine="Dye", kind="wavetable", path="C:/Tables/mine.wav", item=1)` loads it into slot B and sets `B table` to User.
 
 ## Gotchas
@@ -58,6 +61,9 @@ A hybrid synth with three engine slots (A, B, C). Each plays a morphing wavetabl
 - Tables are built in the background on first use; renders wait for them (up to 5 s).
 - Unison costs CPU per voice: 16 notes × 3 slots × 8 voices run some 3–6× real time on a desktop core; prefer fewer, wider voices.
 - Combs with feedback near 100 % ring loud: watch the peaks.
+- Grains cost CPU per grain (up to 32 a voice, each read with the sinc): 100 grains a second at 300 ms (about 30 overlapping) runs at about the speed of real time on a desktop core with 16 notes; keep rate × size under 10 for polyphony, or fewer voices. The first 20 s of a loaded WAV are kept; longer ones are cut.
+- Samples are built in the background like tables; renders wait for them. A Sample slot with `A loop` Off ends silent after the sample ends, whatever the amp envelope does.
+- Samples are normalised to a peak of 0.9 and decaying ones (Bell, Pluck) are quiet by RMS: turn `Volume` up or layer a second slot.
 
 ## Preset map
 
@@ -79,3 +85,13 @@ A hybrid synth with three engine slots (A, B, C). Each plays a morphing wavetabl
 | "Pad — Position Sweep" | Formants swept by a slow free LFO, a mod envelope opening the filter | `R1 amount`, `LFO1 rate` |
 | "Lead — Delayed Vibrato" | vibrato fading in over 0.7 s; the wheel opens the filter | `LFO1 fade`, `R1 amount` |
 | "FX — Squeeze Sweep" | Digital squeezed and warped, High 4× | `A warp 1 amt` |
+| "Pad — Sample Choir" | a looped sung vowel, three voices | `A loop fade`, `F1 cutoff` |
+| "Pad — Eight Strings" | a looped bowed-string sample in eight voices | `A detune`, `F1 cutoff` |
+| "Keys — Struck Bell" | the bell sample played once, two voices | `A detune`, `Amp release` |
+| "Pluck — Double String" | the plucked sample in two slots a few cents apart | `B fine` |
+| "FX — Reverse Pluck" | the pluck backwards | `A reverse`, `Amp release` |
+| "Texture — Frozen Cloud" | grains of a noise texture, the centre frozen | `A position`, `A grain size` |
+| "Pad — Scanning Strings" | a cloud scanning slowly through the strings | `A scan`, `A spray` |
+| "Pad — Choir Cloud" | a cloud of the choir, scanning at half speed | `A grain rate`, `A spray` |
+| "FX — Bell Rain" | sparse percussive grains of the bell, pitch scattered up to 600 ct, some reversed | `A grain pitch`, `A grain reverse` |
+| "Keys — Glass Bell" | the bell sample with a Formants table an octave up | `B level` |

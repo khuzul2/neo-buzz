@@ -210,7 +210,52 @@ namespace NeoBuzz.DyeEssence
         public const int R16Src = 199;
         public const int R16Dst = 200;
         public const int R16Amt = 201;
-        public const int Count = 202;
+        public const int ASmpSrc = 202;
+        public const int ASmpRoot = 203;
+        public const int ASmpLoop = 204;
+        public const int ASmpLoopStart = 205;
+        public const int ASmpLoopEnd = 206;
+        public const int ASmpFade = 207;
+        public const int ASmpRev = 208;
+        public const int AGrSize = 209;
+        public const int AGrRate = 210;
+        public const int AGrSpray = 211;
+        public const int AGrScan = 212;
+        public const int AGrJitter = 213;
+        public const int AGrShape = 214;
+        public const int AGrRev = 215;
+        public const int AGrWidth = 216;
+        public const int BSmpSrc = 217;
+        public const int BSmpRoot = 218;
+        public const int BSmpLoop = 219;
+        public const int BSmpLoopStart = 220;
+        public const int BSmpLoopEnd = 221;
+        public const int BSmpFade = 222;
+        public const int BSmpRev = 223;
+        public const int BGrSize = 224;
+        public const int BGrRate = 225;
+        public const int BGrSpray = 226;
+        public const int BGrScan = 227;
+        public const int BGrJitter = 228;
+        public const int BGrShape = 229;
+        public const int BGrRev = 230;
+        public const int BGrWidth = 231;
+        public const int CSmpSrc = 232;
+        public const int CSmpRoot = 233;
+        public const int CSmpLoop = 234;
+        public const int CSmpLoopStart = 235;
+        public const int CSmpLoopEnd = 236;
+        public const int CSmpFade = 237;
+        public const int CSmpRev = 238;
+        public const int CGrSize = 239;
+        public const int CGrRate = 240;
+        public const int CGrSpray = 241;
+        public const int CGrScan = 242;
+        public const int CGrJitter = 243;
+        public const int CGrShape = 244;
+        public const int CGrRev = 245;
+        public const int CGrWidth = 246;
+        public const int Count = 247;
     }
 
     internal static class Params
@@ -228,7 +273,7 @@ namespace NeoBuzz.DyeEssence
             new ParamDef(P.Quality, "Quality", "Quality", 0, 1, 0, MapKind.Enum, names: new[] { "Standard 2×", "High 4×" }, group: "Voice", description: "Voices at 2× or 4× the sample rate: High keeps hard FM, PM and sync cleaner at twice the CPU"),
             new ParamDef(P.VelAmp, "VelAmp", "Vel → amp", 0, 1000, 700, MapKind.Percent, group: "Voice", description: "How much velocity changes loudness"),
             new ParamDef(P.Volume, "Volume", "Volume", 0, 1000, 739, MapKind.Db, a: -40, b: 6, flag: true, group: "Voice", description: "Output level"),
-            new ParamDef(P.AType, "AType", "A engine", 0, 2, 1, MapKind.Enum, names: new[] { "Off", "Wavetable", "Analog" }, group: "Osc A", description: "What slot A plays (more engines to come)"),
+            new ParamDef(P.AType, "AType", "A engine", 0, 4, 1, MapKind.Enum, names: new[] { "Off", "Wavetable", "Analog", "Sample", "Granular" }, group: "Osc A", description: "What slot A plays: a morphing wavetable, an analog wave, a sample, or grains of a sample (samples and grains take no warps)"),
             new ParamDef(P.ATable, "ATable", "A table", 0, 10, 0, MapKind.Enum, names: new[] { "Basic", "PWM", "Harmonics", "Formants", "Sync sweep", "FM sweep", "Organ", "Resonant", "Digital", "Grit", "User" }, group: "Osc A", description: "Wavetable (User: a table loaded for this slot)"),
             new ParamDef(P.APos, "APos", "A position", 0, 1000, 667, MapKind.Percent, group: "Osc A", description: "Position in the table (frames morph smoothly)"),
             new ParamDef(P.AOct, "AOct", "A octave", 0, 8, 4, MapKind.Int, a: -4, b: 0, flag: true, unit: "oct", group: "Osc A", description: "Octave"),
@@ -247,7 +292,7 @@ namespace NeoBuzz.DyeEssence
             new ParamDef(P.AWarp2Amt, "AWarp2Amt", "A warp 2 amt", 0, 1000, 0, MapKind.Percent, group: "Osc A", description: "Second warp's amount"),
             new ParamDef(P.AMod, "AMod", "A modulator", 0, 4, 1, MapKind.Enum, names: new[] { "Osc A", "Osc B", "Osc C", "Sub", "Noise" }, group: "Osc A", description: "What FM, PM, AM and Ring take (not the slot itself)"),
             new ParamDef(P.AToF2, "AToF2", "A → filter 2", 0, 1000, 0, MapKind.Percent, group: "Osc A", description: "Balance between filter 1 (0 %) and filter 2 (100 %)"),
-            new ParamDef(P.BType, "BType", "B engine", 0, 2, 0, MapKind.Enum, names: new[] { "Off", "Wavetable", "Analog" }, group: "Osc B", description: "What slot B plays (more engines to come)"),
+            new ParamDef(P.BType, "BType", "B engine", 0, 4, 0, MapKind.Enum, names: new[] { "Off", "Wavetable", "Analog", "Sample", "Granular" }, group: "Osc B", description: "What slot B plays: a morphing wavetable, an analog wave, a sample, or grains of a sample (samples and grains take no warps)"),
             new ParamDef(P.BTable, "BTable", "B table", 0, 10, 2, MapKind.Enum, names: new[] { "Basic", "PWM", "Harmonics", "Formants", "Sync sweep", "FM sweep", "Organ", "Resonant", "Digital", "Grit", "User" }, group: "Osc B", description: "Wavetable (User: a table loaded for this slot)"),
             new ParamDef(P.BPos, "BPos", "B position", 0, 1000, 0, MapKind.Percent, group: "Osc B", description: "Position in the table (frames morph smoothly)"),
             new ParamDef(P.BOct, "BOct", "B octave", 0, 8, 4, MapKind.Int, a: -4, b: 0, flag: true, unit: "oct", group: "Osc B", description: "Octave"),
@@ -266,7 +311,7 @@ namespace NeoBuzz.DyeEssence
             new ParamDef(P.BWarp2Amt, "BWarp2Amt", "B warp 2 amt", 0, 1000, 0, MapKind.Percent, group: "Osc B", description: "Second warp's amount"),
             new ParamDef(P.BMod, "BMod", "B modulator", 0, 4, 0, MapKind.Enum, names: new[] { "Osc A", "Osc B", "Osc C", "Sub", "Noise" }, group: "Osc B", description: "What FM, PM, AM and Ring take (not the slot itself)"),
             new ParamDef(P.BToF2, "BToF2", "B → filter 2", 0, 1000, 0, MapKind.Percent, group: "Osc B", description: "Balance between filter 1 (0 %) and filter 2 (100 %)"),
-            new ParamDef(P.CType, "CType", "C engine", 0, 2, 0, MapKind.Enum, names: new[] { "Off", "Wavetable", "Analog" }, group: "Osc C", description: "What slot C plays (more engines to come)"),
+            new ParamDef(P.CType, "CType", "C engine", 0, 4, 0, MapKind.Enum, names: new[] { "Off", "Wavetable", "Analog", "Sample", "Granular" }, group: "Osc C", description: "What slot C plays: a morphing wavetable, an analog wave, a sample, or grains of a sample (samples and grains take no warps)"),
             new ParamDef(P.CTable, "CTable", "C table", 0, 10, 3, MapKind.Enum, names: new[] { "Basic", "PWM", "Harmonics", "Formants", "Sync sweep", "FM sweep", "Organ", "Resonant", "Digital", "Grit", "User" }, group: "Osc C", description: "Wavetable (User: a table loaded for this slot)"),
             new ParamDef(P.CPos, "CPos", "C position", 0, 1000, 0, MapKind.Percent, group: "Osc C", description: "Position in the table (frames morph smoothly)"),
             new ParamDef(P.COct, "COct", "C octave", 0, 8, 4, MapKind.Int, a: -4, b: 0, flag: true, unit: "oct", group: "Osc C", description: "Octave"),
@@ -422,6 +467,51 @@ namespace NeoBuzz.DyeEssence
             new ParamDef(P.R16Src, "R16Src", "R16 source", 0, 17, 0, MapKind.Enum, names: new[] { "Off", "Mod env 1", "Mod env 2", "LFO 1", "LFO 2", "LFO 3", "LFO 4", "Amp env", "Filter env", "Velocity", "Key", "Mod wheel", "Aftertouch", "Macro 1", "Macro 2", "Macro 3", "Macro 4", "Random" }, group: "Routes", description: "Route 16: what modulates"),
             new ParamDef(P.R16Dst, "R16Dst", "R16 dest", 0, 27, 0, MapKind.Enum, names: new[] { "Off", "Pitch", "A pitch", "B pitch", "C pitch", "A position", "B position", "C position", "A warp 1", "A warp 2", "B warp 1", "B warp 2", "C warp 1", "C warp 2", "A level", "B level", "C level", "Sub level", "Noise level", "F1 cutoff", "F2 cutoff", "F1 reso", "F2 reso", "Amp", "LFO 1 rate", "LFO 2 rate", "LFO 3 rate", "LFO 4 rate" }, group: "Routes", description: "Route 16: what it moves"),
             new ParamDef(P.R16Amt, "R16Amt", "R16 amount", 0, 1000, 500, MapKind.Bipolar, group: "Routes", description: "Route 16: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)"),
+            new ParamDef(P.ASmpSrc, "ASmpSrc", "A sample", 0, 5, 0, MapKind.Enum, names: new[] { "Choir", "Strings", "Bell", "Pluck", "Texture", "User" }, group: "Osc A", description: "The sample the Sample and Granular engines play (built-in ones are made by code; User: one loaded for this slot)"),
+            new ParamDef(P.ASmpRoot, "ASmpRoot", "A root", 0, 127, 60, MapKind.Int, a: 0, b: 0, group: "Osc A", description: "The note the sample sounds at its own pitch (MIDI note, 60 = C4)"),
+            new ParamDef(P.ASmpLoop, "ASmpLoop", "A loop", 0, 2, 0, MapKind.Enum, names: new[] { "Off", "Forward", "Ping pong" }, group: "Osc A", description: "Sample engine: how the sample loops while a note is held (Off: plays once)"),
+            new ParamDef(P.ASmpLoopStart, "ASmpLoopStart", "A loop start", 0, 1000, 0, MapKind.Percent, group: "Osc A", description: "Sample engine: where the loop starts, as a share of the sample"),
+            new ParamDef(P.ASmpLoopEnd, "ASmpLoopEnd", "A loop end", 0, 1000, 1000, MapKind.Percent, group: "Osc A", description: "Sample engine: where the loop ends, as a share of the sample"),
+            new ParamDef(P.ASmpFade, "ASmpFade", "A loop fade", 0, 1000, 0, MapKind.Linear, a: 0, b: 500, unit: "ms", digits: 0, group: "Osc A", description: "Sample engine: how long the loop's end fades into its start (0: a hard wrap, right for loops of whole periods; raise it when the loop points are not)"),
+            new ParamDef(P.ASmpRev, "ASmpRev", "A reverse", 0, 1, 0, MapKind.Switch, group: "Osc A", description: "Sample engine: plays the sample backwards"),
+            new ParamDef(P.AGrSize, "AGrSize", "A grain size", 0, 1000, 500, MapKind.Time, a: 0.005, b: 0.5, group: "Osc A", description: "Granular engine: length of each grain"),
+            new ParamDef(P.AGrRate, "AGrRate", "A grain rate", 0, 1000, 700, MapKind.Freq, a: 1, b: 100, group: "Osc A", description: "Granular engine: grains started per second (a little uneven, as grains in a cloud are)"),
+            new ParamDef(P.AGrSpray, "AGrSpray", "A spray", 0, 1000, 100, MapKind.Percent, group: "Osc A", description: "Granular engine: how far from the centre grains may start (100%: anywhere in the sample)"),
+            new ParamDef(P.AGrScan, "AGrScan", "A scan", 0, 1000, 500, MapKind.Linear, a: -2, b: 2, unit: "×", digits: 2, group: "Osc A", description: "Granular engine: how fast the centre moves through the sample (1×: its own speed, 0: frozen, negative: backwards)"),
+            new ParamDef(P.AGrJitter, "AGrJitter", "A grain pitch", 0, 1000, 0, MapKind.Power, a: 0, b: 1200, exponent: 2, unit: "ct", digits: 0, group: "Osc A", description: "Granular engine: how far each grain's pitch may wander from the note"),
+            new ParamDef(P.AGrShape, "AGrShape", "A grain shape", 0, 4, 0, MapKind.Enum, names: new[] { "Hann", "Triangle", "Tukey", "Gauss", "Percussive" }, group: "Osc A", description: "Granular engine: the window every grain fades in and out with"),
+            new ParamDef(P.AGrRev, "AGrRev", "A grain reverse", 0, 1000, 0, MapKind.Percent, group: "Osc A", description: "Granular engine: the share of grains that play backwards"),
+            new ParamDef(P.AGrWidth, "AGrWidth", "A grain width", 0, 1000, 500, MapKind.Percent, group: "Osc A", description: "Granular engine: how far grains scatter across the stereo field"),
+            new ParamDef(P.BSmpSrc, "BSmpSrc", "B sample", 0, 5, 0, MapKind.Enum, names: new[] { "Choir", "Strings", "Bell", "Pluck", "Texture", "User" }, group: "Osc B", description: "The sample the Sample and Granular engines play (built-in ones are made by code; User: one loaded for this slot)"),
+            new ParamDef(P.BSmpRoot, "BSmpRoot", "B root", 0, 127, 60, MapKind.Int, a: 0, b: 0, group: "Osc B", description: "The note the sample sounds at its own pitch (MIDI note, 60 = C4)"),
+            new ParamDef(P.BSmpLoop, "BSmpLoop", "B loop", 0, 2, 0, MapKind.Enum, names: new[] { "Off", "Forward", "Ping pong" }, group: "Osc B", description: "Sample engine: how the sample loops while a note is held (Off: plays once)"),
+            new ParamDef(P.BSmpLoopStart, "BSmpLoopStart", "B loop start", 0, 1000, 0, MapKind.Percent, group: "Osc B", description: "Sample engine: where the loop starts, as a share of the sample"),
+            new ParamDef(P.BSmpLoopEnd, "BSmpLoopEnd", "B loop end", 0, 1000, 1000, MapKind.Percent, group: "Osc B", description: "Sample engine: where the loop ends, as a share of the sample"),
+            new ParamDef(P.BSmpFade, "BSmpFade", "B loop fade", 0, 1000, 0, MapKind.Linear, a: 0, b: 500, unit: "ms", digits: 0, group: "Osc B", description: "Sample engine: how long the loop's end fades into its start (0: a hard wrap, right for loops of whole periods; raise it when the loop points are not)"),
+            new ParamDef(P.BSmpRev, "BSmpRev", "B reverse", 0, 1, 0, MapKind.Switch, group: "Osc B", description: "Sample engine: plays the sample backwards"),
+            new ParamDef(P.BGrSize, "BGrSize", "B grain size", 0, 1000, 500, MapKind.Time, a: 0.005, b: 0.5, group: "Osc B", description: "Granular engine: length of each grain"),
+            new ParamDef(P.BGrRate, "BGrRate", "B grain rate", 0, 1000, 700, MapKind.Freq, a: 1, b: 100, group: "Osc B", description: "Granular engine: grains started per second (a little uneven, as grains in a cloud are)"),
+            new ParamDef(P.BGrSpray, "BGrSpray", "B spray", 0, 1000, 100, MapKind.Percent, group: "Osc B", description: "Granular engine: how far from the centre grains may start (100%: anywhere in the sample)"),
+            new ParamDef(P.BGrScan, "BGrScan", "B scan", 0, 1000, 500, MapKind.Linear, a: -2, b: 2, unit: "×", digits: 2, group: "Osc B", description: "Granular engine: how fast the centre moves through the sample (1×: its own speed, 0: frozen, negative: backwards)"),
+            new ParamDef(P.BGrJitter, "BGrJitter", "B grain pitch", 0, 1000, 0, MapKind.Power, a: 0, b: 1200, exponent: 2, unit: "ct", digits: 0, group: "Osc B", description: "Granular engine: how far each grain's pitch may wander from the note"),
+            new ParamDef(P.BGrShape, "BGrShape", "B grain shape", 0, 4, 0, MapKind.Enum, names: new[] { "Hann", "Triangle", "Tukey", "Gauss", "Percussive" }, group: "Osc B", description: "Granular engine: the window every grain fades in and out with"),
+            new ParamDef(P.BGrRev, "BGrRev", "B grain reverse", 0, 1000, 0, MapKind.Percent, group: "Osc B", description: "Granular engine: the share of grains that play backwards"),
+            new ParamDef(P.BGrWidth, "BGrWidth", "B grain width", 0, 1000, 500, MapKind.Percent, group: "Osc B", description: "Granular engine: how far grains scatter across the stereo field"),
+            new ParamDef(P.CSmpSrc, "CSmpSrc", "C sample", 0, 5, 0, MapKind.Enum, names: new[] { "Choir", "Strings", "Bell", "Pluck", "Texture", "User" }, group: "Osc C", description: "The sample the Sample and Granular engines play (built-in ones are made by code; User: one loaded for this slot)"),
+            new ParamDef(P.CSmpRoot, "CSmpRoot", "C root", 0, 127, 60, MapKind.Int, a: 0, b: 0, group: "Osc C", description: "The note the sample sounds at its own pitch (MIDI note, 60 = C4)"),
+            new ParamDef(P.CSmpLoop, "CSmpLoop", "C loop", 0, 2, 0, MapKind.Enum, names: new[] { "Off", "Forward", "Ping pong" }, group: "Osc C", description: "Sample engine: how the sample loops while a note is held (Off: plays once)"),
+            new ParamDef(P.CSmpLoopStart, "CSmpLoopStart", "C loop start", 0, 1000, 0, MapKind.Percent, group: "Osc C", description: "Sample engine: where the loop starts, as a share of the sample"),
+            new ParamDef(P.CSmpLoopEnd, "CSmpLoopEnd", "C loop end", 0, 1000, 1000, MapKind.Percent, group: "Osc C", description: "Sample engine: where the loop ends, as a share of the sample"),
+            new ParamDef(P.CSmpFade, "CSmpFade", "C loop fade", 0, 1000, 0, MapKind.Linear, a: 0, b: 500, unit: "ms", digits: 0, group: "Osc C", description: "Sample engine: how long the loop's end fades into its start (0: a hard wrap, right for loops of whole periods; raise it when the loop points are not)"),
+            new ParamDef(P.CSmpRev, "CSmpRev", "C reverse", 0, 1, 0, MapKind.Switch, group: "Osc C", description: "Sample engine: plays the sample backwards"),
+            new ParamDef(P.CGrSize, "CGrSize", "C grain size", 0, 1000, 500, MapKind.Time, a: 0.005, b: 0.5, group: "Osc C", description: "Granular engine: length of each grain"),
+            new ParamDef(P.CGrRate, "CGrRate", "C grain rate", 0, 1000, 700, MapKind.Freq, a: 1, b: 100, group: "Osc C", description: "Granular engine: grains started per second (a little uneven, as grains in a cloud are)"),
+            new ParamDef(P.CGrSpray, "CGrSpray", "C spray", 0, 1000, 100, MapKind.Percent, group: "Osc C", description: "Granular engine: how far from the centre grains may start (100%: anywhere in the sample)"),
+            new ParamDef(P.CGrScan, "CGrScan", "C scan", 0, 1000, 500, MapKind.Linear, a: -2, b: 2, unit: "×", digits: 2, group: "Osc C", description: "Granular engine: how fast the centre moves through the sample (1×: its own speed, 0: frozen, negative: backwards)"),
+            new ParamDef(P.CGrJitter, "CGrJitter", "C grain pitch", 0, 1000, 0, MapKind.Power, a: 0, b: 1200, exponent: 2, unit: "ct", digits: 0, group: "Osc C", description: "Granular engine: how far each grain's pitch may wander from the note"),
+            new ParamDef(P.CGrShape, "CGrShape", "C grain shape", 0, 4, 0, MapKind.Enum, names: new[] { "Hann", "Triangle", "Tukey", "Gauss", "Percussive" }, group: "Osc C", description: "Granular engine: the window every grain fades in and out with"),
+            new ParamDef(P.CGrRev, "CGrRev", "C grain reverse", 0, 1000, 0, MapKind.Percent, group: "Osc C", description: "Granular engine: the share of grains that play backwards"),
+            new ParamDef(P.CGrWidth, "CGrWidth", "C grain width", 0, 1000, 500, MapKind.Percent, group: "Osc C", description: "Granular engine: how far grains scatter across the stereo field"),
         };
     }
 }

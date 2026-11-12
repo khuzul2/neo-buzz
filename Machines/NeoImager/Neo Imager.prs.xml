@@ -1,0 +1,201 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Mastering — Widen the Highs">
+    <Preset Machine="Neo Imager">
+      <Parameters>
+        <Parameter Name="Crossover 1" Group="1" Index="0" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="1" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="2" Track="0" Value="8257" />
+        <Parameter Name="Width 1" Group="1" Index="3" Track="0" Value="100" />
+        <Parameter Name="Width 2" Group="1" Index="4" Track="0" Value="100" />
+        <Parameter Name="Width 3" Group="1" Index="5" Track="0" Value="115" />
+        <Parameter Name="Width 4" Group="1" Index="6" Track="0" Value="135" />
+        <Parameter Name="Stereoize 1" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Stereoize 2" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Stereoize 3" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereoize 4" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Recover sides" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — Focus the Lows (Mono Below 150 Hz)">
+    <Preset Machine="Neo Imager">
+      <Parameters>
+        <Parameter Name="Crossover 1" Group="1" Index="0" Track="0" Value="2917" />
+        <Parameter Name="Crossover 2" Group="1" Index="1" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="2" Track="0" Value="8257" />
+        <Parameter Name="Width 1" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Width 2" Group="1" Index="4" Track="0" Value="100" />
+        <Parameter Name="Width 3" Group="1" Index="5" Track="0" Value="100" />
+        <Parameter Name="Width 4" Group="1" Index="6" Track="0" Value="100" />
+        <Parameter Name="Stereoize 1" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Stereoize 2" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Stereoize 3" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereoize 4" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Recover sides" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — Air and Width">
+    <Preset Machine="Neo Imager">
+      <Parameters>
+        <Parameter Name="Crossover 1" Group="1" Index="0" Track="0" Value="3333" />
+        <Parameter Name="Crossover 2" Group="1" Index="1" Track="0" Value="6667" />
+        <Parameter Name="Crossover 3" Group="1" Index="2" Track="0" Value="8674" />
+        <Parameter Name="Width 1" Group="1" Index="3" Track="0" Value="100" />
+        <Parameter Name="Width 2" Group="1" Index="4" Track="0" Value="105" />
+        <Parameter Name="Width 3" Group="1" Index="5" Track="0" Value="120" />
+        <Parameter Name="Width 4" Group="1" Index="6" Track="0" Value="150" />
+        <Parameter Name="Stereoize 1" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Stereoize 2" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Stereoize 3" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereoize 4" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Recover sides" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — Stereoize the Top">
+    <Preset Machine="Neo Imager">
+      <Parameters>
+        <Parameter Name="Crossover 1" Group="1" Index="0" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="1" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="2" Track="0" Value="8257" />
+        <Parameter Name="Width 1" Group="1" Index="3" Track="0" Value="100" />
+        <Parameter Name="Width 2" Group="1" Index="4" Track="0" Value="100" />
+        <Parameter Name="Width 3" Group="1" Index="5" Track="0" Value="100" />
+        <Parameter Name="Width 4" Group="1" Index="6" Track="0" Value="100" />
+        <Parameter Name="Stereoize 1" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Stereoize 2" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Stereoize 3" Group="1" Index="9" Track="0" Value="200" />
+        <Parameter Name="Stereoize 4" Group="1" Index="10" Track="0" Value="350" />
+        <Parameter Name="Recover sides" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mixing — Narrow a Wide Mix, Keep the Level">
+    <Preset Machine="Neo Imager">
+      <Parameters>
+        <Parameter Name="Crossover 1" Group="1" Index="0" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="1" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="2" Track="0" Value="8257" />
+        <Parameter Name="Width 1" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Width 2" Group="1" Index="4" Track="0" Value="70" />
+        <Parameter Name="Width 3" Group="1" Index="5" Track="0" Value="70" />
+        <Parameter Name="Width 4" Group="1" Index="6" Track="0" Value="70" />
+        <Parameter Name="Stereoize 1" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Stereoize 2" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Stereoize 3" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereoize 4" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Recover sides" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mixing — Mono Check (Everything at 0 %, Recovered)">
+    <Preset Machine="Neo Imager">
+      <Parameters>
+        <Parameter Name="Crossover 1" Group="1" Index="0" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="1" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="2" Track="0" Value="8257" />
+        <Parameter Name="Width 1" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Width 2" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Width 3" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Width 4" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Stereoize 1" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Stereoize 2" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Stereoize 3" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereoize 4" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Recover sides" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mixing — Wide Pad">
+    <Preset Machine="Neo Imager">
+      <Parameters>
+        <Parameter Name="Crossover 1" Group="1" Index="0" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="1" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="2" Track="0" Value="8257" />
+        <Parameter Name="Width 1" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Width 2" Group="1" Index="4" Track="0" Value="150" />
+        <Parameter Name="Width 3" Group="1" Index="5" Track="0" Value="170" />
+        <Parameter Name="Width 4" Group="1" Index="6" Track="0" Value="190" />
+        <Parameter Name="Stereoize 1" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Stereoize 2" Group="1" Index="8" Track="0" Value="150" />
+        <Parameter Name="Stereoize 3" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereoize 4" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Recover sides" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mono-Safe Widening (Stereoize Only)">
+    <Preset Machine="Neo Imager">
+      <Parameters>
+        <Parameter Name="Crossover 1" Group="1" Index="0" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="1" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="2" Track="0" Value="8257" />
+        <Parameter Name="Width 1" Group="1" Index="3" Track="0" Value="100" />
+        <Parameter Name="Width 2" Group="1" Index="4" Track="0" Value="100" />
+        <Parameter Name="Width 3" Group="1" Index="5" Track="0" Value="100" />
+        <Parameter Name="Width 4" Group="1" Index="6" Track="0" Value="100" />
+        <Parameter Name="Stereoize 1" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Stereoize 2" Group="1" Index="8" Track="0" Value="250" />
+        <Parameter Name="Stereoize 3" Group="1" Index="9" Track="0" Value="400" />
+        <Parameter Name="Stereoize 4" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Recover sides" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Lows Mono, Rest as It Is">
+    <Preset Machine="Neo Imager">
+      <Parameters>
+        <Parameter Name="Crossover 1" Group="1" Index="0" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="1" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="2" Track="0" Value="8257" />
+        <Parameter Name="Width 1" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Width 2" Group="1" Index="4" Track="0" Value="100" />
+        <Parameter Name="Width 3" Group="1" Index="5" Track="0" Value="100" />
+        <Parameter Name="Width 4" Group="1" Index="6" Track="0" Value="100" />
+        <Parameter Name="Stereoize 1" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Stereoize 2" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Stereoize 3" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereoize 4" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Recover sides" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

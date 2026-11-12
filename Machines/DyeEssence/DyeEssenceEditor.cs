@@ -20,14 +20,15 @@ namespace NeoBuzz.DyeEssence
 {
     internal sealed class DyeEssenceEditor : NeoEditor
     {
-        static readonly NeoColor AccentColor = NeoColor.FromRgb(0xE0, 0x6C, 0xD8);
+        static readonly NeoColor AccentColor = Tokens.Identity(MachineCategory.Synth, NeoColor.FromRgb(0xE0, 0x6C, 0xD8));
         const double D = 34;
 
         /// <summary>
-        /// Every page's size: with the header and the tabs, the editor fits a 1280 × 680 work area (a 1280 × 720 screen
-        /// less its task bar) with the keyboard shown under it and the window's frame: 1264 × 534 at most.
+        /// Every page's size: with the header and the tabs, the editor fits a 1440 × 860 work area (a 1440 × 900 screen
+        /// less its task bar) with the keyboard shown under it and the window's frame (P2 added the Sample and Granular
+        /// engines' rows to the oscillator slots; before them it fitted 1280 × 680).
         /// </summary>
-        internal const double PageWidth = 1244, PageHeight = 460;
+        internal const double PageWidth = 1290, PageHeight = 636;
 
         /// <summary>The Modulation page's parts: an envelope's or an LFO's page, the macros beside the envelopes, the route list.</summary>
         const double ModPageWidth = 592, MacrosWidth = 164, RoutesWidth = 400, LfoViewWidth = ModPageWidth + MacrosWidth - 250;
@@ -58,6 +59,10 @@ namespace NeoBuzz.DyeEssence
                 // The Analog engine's parameters (appended in P1b, a block of their own per slot).
                 int a = slot == 0 ? P.AShape : slot == 1 ? P.BShape : P.CShape;
                 int J(int aParam) => a + (aParam - P.AShape);
+                // The Sample and Granular engines' parameters (appended in P2, a block of their own per slot).
+                int sm = slot == 0 ? P.ASmpSrc : slot == 1 ? P.BSmpSrc : P.CSmpSrc;
+                int K(int aParam) => sm + (aParam - P.ASmpSrc);
+                bool Streams() => ctx.Raw(I(P.AType)) >= (int)SlotType.Sample;
                 var userName = new TextBlock
                 {
                     Foreground = Theme.DimText,
@@ -65,11 +70,11 @@ namespace NeoBuzz.DyeEssence
                     FontSize = 11,
                     Width = 120,
                     TextTrimming = TextTrimming.CharacterEllipsis,
-                    Text = UserLabel(machine, slot),
+                    Text = UserLabel(machine, slot, Streams()),
                 };
                 Poll.Every(userName, 0.5, () =>
                 {
-                    string label = UserLabel(machine, slot);
+                    string label = UserLabel(machine, slot, Streams());
                     if (userName.Text != label) userName.Text = label;
                 });
                 var load = new ActionButton("Load…", AccentColor, 60);
@@ -81,8 +86,28 @@ namespace NeoBuzz.DyeEssence
                         try
                         {
                             machine.LoadUserTable(slot, file);
-                            userName.Text = UserLabel(machine, slot);
+                            userName.Text = UserLabel(machine, slot, Streams());
                             ctx.Set(I(P.ATable), DyeEssenceMachine.UserChoice);
+                            ctx.RaiseChanged();
+                        }
+                        catch (Exception e)
+                        {
+                            MessageBox.Show($"Couldn't load {System.IO.Path.GetFileName(file)}: {e.Message}", "Dye Essence", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
+                    });
+                };
+                var loadSample = new ActionButton("Sample…", AccentColor, 64);
+                loadSample.Click += () =>
+                {
+                    if (machine == null) return;
+                    EditorFiles.Open(loadSample, "Load a sample", "Samples (*.wav)|*.wav|All files (*.*)|*.*", file =>
+                    {
+                        try
+                        {
+                            machine.LoadUserSample(slot, file);
+                            ctx.Set(K(P.ASmpSrc), DyeEssenceMachine.UserSampleChoice);
+                            if (!Streams()) ctx.Set(I(P.AType), (int)SlotType.Sample);
+                            userName.Text = UserLabel(machine, slot, Streams());
                             ctx.RaiseChanged();
                         }
                         catch (Exception e)
@@ -97,7 +122,7 @@ namespace NeoBuzz.DyeEssence
                     Layout.Gap(1, 2),
                     userName,
                     Layout.Gap(1, 4),
-                    TableView(ctx, machine, slot, 6 * 50, 76),
+                    SlotView(ctx, machine, slot, 6 * 50, 76),
                     Layout.Gap(1, 2),
                     Knobs(6, (I(P.APos), "position"), (I(P.AOct), "octave"), (I(P.ASemi), "semi"), (I(P.AFine), "fine"), (I(P.ALevel), "level"), (I(P.APan), "pan"),
                         (I(P.AUnison), "unison"), (I(P.ADetune), "detune"), (I(P.ASpread), "spread"), (I(P.APhase), "phase"), (I(P.ARandom), "random"), (I(P.AToF2), "→ F2")),
@@ -105,7 +130,15 @@ namespace NeoBuzz.DyeEssence
                     Layout.Row(new ParamDropdown(ctx, I(P.AWarp1), width: 104), Layout.Gap(4), new ParamKnob(ctx, I(P.AWarp1Amt), "amount", 30),
                                Layout.Gap(10), new ParamDropdown(ctx, I(P.AWarp2), width: 104), Layout.Gap(4), new ParamKnob(ctx, I(P.AWarp2Amt), "amount", 30)),
                     Layout.Row(new ParamDropdown(ctx, I(P.AMod), width: 104), Layout.Gap(10), new ParamDropdown(ctx, J(P.AShape), width: 92),
-                               Layout.Gap(4), new ParamKnob(ctx, J(P.APw), "width", 30), Layout.Gap(4), new ParamKnob(ctx, J(P.ADrift), "drift", 30))));
+                               Layout.Gap(4), new ParamKnob(ctx, J(P.APw), "width", 30), Layout.Gap(4), new ParamKnob(ctx, J(P.ADrift), "drift", 30)),
+                    Layout.Gap(1, 2),
+                    // Sample and Granular: the sample, its loop and direction; then the cloud.
+                    Layout.Row(new ParamDropdown(ctx, K(P.ASmpSrc), width: 90), Layout.Gap(4), loadSample, Layout.Gap(6),
+                               new ParamDropdown(ctx, K(P.ASmpLoop), width: 84), Layout.Gap(6), new ParamDropdown(ctx, K(P.AGrShape), width: 84)),
+                    Knobs(6, (K(P.ASmpRoot), "root"), (K(P.ASmpLoopStart), "loop in"), (K(P.ASmpLoopEnd), "loop out"), (K(P.ASmpFade), "fade"),
+                        (K(P.AGrSize), "size"), (K(P.AGrRate), "rate")),
+                    Layout.Row(Knobs(5, (K(P.AGrSpray), "spray"), (K(P.AGrScan), "scan"), (K(P.AGrJitter), "pitch"), (K(P.AGrRev), "back"), (K(P.AGrWidth), "width")),
+                               Layout.Gap(6), new ParamChoice(ctx, K(P.ASmpRev), "reverse", 30))));
             }
 
             UIElement Filter(int f)
@@ -238,14 +271,70 @@ namespace NeoBuzz.DyeEssence
             return view;
         }
 
-        static string UserLabel(DyeEssenceMachine machine, int slot) =>
-            string.IsNullOrEmpty(machine?.UserTableName(slot)) ? "No user table" : machine.UserTableName(slot);
+        static string UserLabel(DyeEssenceMachine machine, int slot, bool sample = false) =>
+            sample ? string.IsNullOrEmpty(machine?.UserSampleName(slot)) ? "No user sample" : machine.UserSampleName(slot)
+            : string.IsNullOrEmpty(machine?.UserTableName(slot)) ? "No user table" : machine.UserTableName(slot);
+
+        /// <summary>
+        /// A slot's picture: the wavetable in perspective, or, for the Sample and Granular engines, the sample's
+        /// outline with where it starts (a marker; Sample), its loop (shaded) or where grains are taken from (a band
+        /// as wide as the spray; Granular).
+        /// </summary>
+        static GraphView SlotView(EditorContext ctx, DyeEssenceMachine machine, int slot, double width, double height)
+        {
+            var table = TableDraw(ctx, machine, slot);
+            int b = slot == 0 ? P.AType : slot == 1 ? P.BType : P.CType;
+            int typeParam = b, srcParam = slot == 0 ? P.ASmpSrc : slot == 1 ? P.BSmpSrc : P.CSmpSrc;
+            int posParam = b + (P.APos - P.AType);
+            int K(int aParam) => srcParam + (aParam - P.ASmpSrc);
+            var view = new GraphView(width, height, (g, r) =>
+            {
+                int type = ctx.Raw(typeParam);
+                if (type < (int)SlotType.Sample)
+                {
+                    table(g, r);
+                    return;
+                }
+                int src = ctx.Raw(srcParam);
+                var layer = src >= SampleSources.Count ? machine?.Engine.UserSample(slot) : SampleSources.Get(src);
+                if (layer == null)
+                {
+                    g.Text(src >= SampleSources.Count ? "No user sample: load a WAV" : "Building…", r.Width / 2, r.Height / 2 - 8, 11.5, Palette.DimText, align: NeoAlign.Center);
+                    return;
+                }
+                double x0 = r.Left + 6, w = r.Width - 12, mid = r.Top + r.Height / 2 + 4, amp = (r.Height - 26) / 2;
+                if (type == (int)SlotType.Sample && ctx.Raw(K(P.ASmpLoop)) != 0)
+                {
+                    double la = ctx.Value(K(P.ASmpLoopStart)), le = ctx.Value(K(P.ASmpLoopEnd));
+                    if (le < la) (la, le) = (le, la);
+                    g.Rect(new NeoRect(x0 + la * w, r.Top + 14, Math.Max(1, (le - la) * w), r.Height - 18), ctx.Accent.WithAlpha(0x28), NeoStroke.None);
+                }
+                double pos = ctx.Value(posParam);
+                if (type == (int)SlotType.Granular)
+                {
+                    double spray = ctx.Value(K(P.AGrSpray)) * 0.5;
+                    double lo = Math.Max(0, pos - spray), hi = Math.Min(1, pos + spray);
+                    g.Rect(new NeoRect(x0 + lo * w, r.Top + 14, Math.Max(1, (hi - lo) * w), r.Height - 18), ctx.Accent.WithAlpha(0x28), NeoStroke.None);
+                }
+                var path = new NeoPath();
+                var ov = layer.Overview;
+                int cols = ov.Length / 2;
+                for (int c = 0; c < cols; c++) path.LineTo(x0 + (c + 0.5) / cols * w, mid - ov[2 * c + 1] * amp * 1.8);
+                for (int c = cols - 1; c >= 0; c--) path.LineTo(x0 + (c + 0.5) / cols * w, mid - ov[2 * c] * amp * 1.8);
+                path.Close();
+                g.Path(path, ctx.Accent.WithAlpha(0x70), new NeoStroke(ctx.Accent, 1));
+                g.Line(x0 + pos * w, r.Top + 12, x0 + pos * w, r.Bottom - 3, new NeoStroke(ctx.Accent, 2));
+                g.Text($"{layer.Name} · {layer.Length / (double)layer.Rate:0.0#} s{(layer.Stereo ? " · stereo" : "")}", r.Left + 7, r.Top + 4, 11, Palette.DimText);
+            });
+            ctx.Changed += view.InvalidateVisual;
+            return view;
+        }
 
         /// <summary>
         /// A slot's table in perspective: up to 16 of its frames from front (first) to back (last), and
         /// the frame its position plays now, bright.
         /// </summary>
-        static GraphView TableView(EditorContext ctx, DyeEssenceMachine machine, int slot, double width, double height)
+        static Action<INeoCanvas, NeoRect> TableDraw(EditorContext ctx, DyeEssenceMachine machine, int slot)
         {
             int b = slot == 0 ? P.AType : slot == 1 ? P.BType : P.CType;
             int tableParam = b + (P.ATable - P.AType), posParam = b + (P.APos - P.AType);
@@ -255,7 +344,7 @@ namespace NeoBuzz.DyeEssence
             const int Shown = 16, Points = 64, Level = 6;   // level 6: 256 samples a frame, 16 harmonics
             int len = Wavetable.LevelLength(Level);
 
-            return new GraphView(width, height, (g, r) =>
+            return (g, r) =>
             {
                 int choice = ctx.Raw(tableParam);
                 bool isUser = choice >= TableBank.Count;
@@ -309,7 +398,7 @@ namespace NeoBuzz.DyeEssence
                 }
                 g.Path(now, NeoFill.None, new NeoStroke(ctx.Accent, 2));
                 g.Text($"{table.Name} · frame {(int)Math.Round(framePos) + 1} of {table.FrameCount}", r.Left + 7, r.Top + 4, 11, Palette.DimText);
-            });
+            };
         }
     }
 }

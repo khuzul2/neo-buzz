@@ -388,3 +388,160 @@ Amp decay = 0.4
 Amp sustain = 70
 Amp release = 0.3
 Volume = -6.5
+
+preset "Pad — Sample Choir"
+A engine = Sample
+A sample = Choir
+A loop = Forward
+A unison = 3
+A detune = 12
+A spread = 80
+A drift = 0
+F1 cutoff = 7000
+Amp attack = 0.5
+Amp decay = 1
+Amp sustain = 90
+Amp release = 1.4
+Volume = -5
+
+preset "Pad — Eight Strings"
+A engine = Sample
+A sample = Strings
+A loop = Forward
+A unison = 8
+A detune = 20
+A spread = 100
+F1 type = LP 12
+F1 cutoff = 4500
+F1 env = 0.5
+Flt attack = 0.4
+Flt decay = 2
+Amp attack = 0.35
+Amp decay = 1.5
+Amp sustain = 85
+Amp release = 1.2
+Volume = -6
+
+preset "Keys — Struck Bell"
+A engine = Sample
+A sample = Bell
+A loop = Off
+A unison = 2
+A detune = 6
+A spread = 60
+Amp attack = 0.001
+Amp decay = 3
+Amp sustain = 100
+Amp release = 1.5
+Volume = 6
+
+preset "Pluck — Double String"
+A engine = Sample
+A sample = Pluck
+A loop = Off
+A spread = 40
+B engine = Sample
+B sample = Pluck
+B loop = Off
+B fine = 4
+B spread = 40
+F1 cutoff = 9000
+Amp attack = 0.001
+Amp sustain = 100
+Amp release = 0.5
+Volume = -2
+
+preset "FX — Reverse Pluck"
+A engine = Sample
+A sample = Pluck
+A loop = Off
+A reverse = On
+A unison = 2
+A detune = 8
+Amp attack = 0.001
+Amp sustain = 100
+Amp release = 0.6
+Volume = 4.5
+
+preset "Texture — Frozen Cloud"
+A engine = Granular
+A sample = Texture
+A scan = 0
+A grain size = 0.12
+A grain rate = 40
+A spray = 40
+A grain shape = Hann
+A grain width = 80
+F1 type = LP 12
+F1 cutoff = 3500
+Amp attack = 0.6
+Amp sustain = 100
+Amp release = 1.5
+Volume = 1.5
+
+preset "Pad — Scanning Strings"
+A engine = Granular
+A sample = Strings
+A position = 20
+A scan = 0.25
+A grain size = 0.15
+A grain rate = 50
+A spray = 15
+A grain pitch = 8
+A grain shape = Tukey
+A grain width = 70
+Amp attack = 0.8
+Amp sustain = 100
+Amp release = 2
+Volume = -6
+
+preset "Pad — Choir Cloud"
+A engine = Granular
+A sample = Choir
+A position = 40
+A scan = 0.5
+A grain size = 0.2
+A grain rate = 30
+A spray = 20
+A grain shape = Gauss
+A unison = 2
+A detune = 10
+A spread = 80
+F1 cutoff = 6000
+Amp attack = 0.6
+Amp sustain = 100
+Amp release = 1.6
+Volume = -4
+
+preset "FX — Bell Rain"
+A engine = Granular
+A sample = Bell
+A scan = 0.3
+A grain size = 0.06
+A grain rate = 12
+A spray = 100
+A grain pitch = 600
+A grain shape = Percussive
+A grain reverse = 30
+A grain width = 100
+Amp attack = 0.01
+Amp sustain = 100
+Amp release = 2
+Volume = 6
+
+preset "Keys — Glass Bell"
+A engine = Sample
+A sample = Bell
+A loop = Off
+A level = 80
+B engine = Wavetable
+B table = Formants
+B position = 25
+B octave = 1
+B level = 25
+F1 cutoff = 8000
+Amp attack = 0.002
+Amp decay = 2.5
+Amp sustain = 100
+Amp release = 1.5
+Volume = 6

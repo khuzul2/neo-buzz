@@ -1,0 +1,57 @@
+# Neo Exciter factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoExciter
+machine "Neo Exciter"
+
+preset "Mastering — Air"
+Mode = Tape
+Drive = 12
+Amount4 = 20
+
+preset "Mastering — Presence and Air"
+Mode = Tube
+Drive = 10
+Amount3 = 15
+Amount4 = 25
+ShelfGain = 2
+
+preset "Mastering — Subtle Warmth"
+Mode = Warm
+Drive = 9
+Amount2 = 20
+Amount3 = 15
+Amount4 = 10
+
+preset "Vocal — Bright and Present"
+Mode = Tube
+Drive = 14
+Amount3 = 35
+Amount4 = 25
+Auto = 1
+
+preset "Drums — Crack and Sizzle"
+Mode = Transistor
+Drive = 16
+Amount3 = 30
+Amount4 = 40
+
+preset "Bass — Add Harmonics to Be Heard on Small Speakers"
+Mode = Warm
+Drive = 15
+Xo1 = 100
+Xo2 = 400
+Xo3 = 2000
+Amount1 = 0
+Amount2 = 45
+Auto = 1
+
+preset "Mid/Side — Air on the Sides"
+Mode = Tape
+Drive = 12
+Stereo = M/S
+Amount4 = 35
+
+preset "Old Exciter (Oomek-style)"
+Mode = Tube
+Drive = 18
+Amount4 = 60
+Amount3 = 40
+Amount2 = 20
