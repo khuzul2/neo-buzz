@@ -946,364 +946,364 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "FX return B", Description = "Level of bus B back into the mix (Trio; unused in Duo)", MinValue = 0, MaxValue = 1000, DefValue = 870)]
         public int FxRetB { get => Values[P.FxRetB]; set => Values.Set(P.FxRetB, value); }
 
-        [ParameterDecl(Name = "FX1 type", Description = "Effect slot 1: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        [ParameterDecl(Name = "FX1 type", Description = "Effect slot 1: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)", MinValue = 0, MaxValue = 10, DefValue = 0)]
         public int X1Type { get => Values[P.X1Type]; set => Values.Set(P.X1Type, value); }
 
         [ParameterDecl(Name = "FX1 mix", Description = "Effect slot 1: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
         public int X1Mix { get => Values[P.X1Mix]; set => Values.Set(P.X1Mix, value); }
 
-        [ParameterDecl(Name = "FX1 p1", Description = "Effect slot 1, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX1 p1", Description = "Effect slot 1, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X1P1 { get => Values[P.X1P1]; set => Values.Set(P.X1P1, value); }
 
-        [ParameterDecl(Name = "FX1 p2", Description = "Effect slot 1, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX1 p2", Description = "Effect slot 1, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X1P2 { get => Values[P.X1P2]; set => Values.Set(P.X1P2, value); }
 
-        [ParameterDecl(Name = "FX1 p3", Description = "Effect slot 1, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX1 p3", Description = "Effect slot 1, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X1P3 { get => Values[P.X1P3]; set => Values.Set(P.X1P3, value); }
 
-        [ParameterDecl(Name = "FX1 p4", Description = "Effect slot 1, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX1 p4", Description = "Effect slot 1, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X1P4 { get => Values[P.X1P4]; set => Values.Set(P.X1P4, value); }
 
-        [ParameterDecl(Name = "FX1 p5", Description = "Effect slot 1, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX1 p5", Description = "Effect slot 1, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X1P5 { get => Values[P.X1P5]; set => Values.Set(P.X1P5, value); }
 
-        [ParameterDecl(Name = "FX1 p6", Description = "Effect slot 1, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX1 p6", Description = "Effect slot 1, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X1P6 { get => Values[P.X1P6]; set => Values.Set(P.X1P6, value); }
 
-        [ParameterDecl(Name = "FX1 p7", Description = "Effect slot 1, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX1 p7", Description = "Effect slot 1, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X1P7 { get => Values[P.X1P7]; set => Values.Set(P.X1P7, value); }
 
-        [ParameterDecl(Name = "FX1 p8", Description = "Effect slot 1, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX1 p8", Description = "Effect slot 1, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X1P8 { get => Values[P.X1P8]; set => Values.Set(P.X1P8, value); }
 
-        [ParameterDecl(Name = "FX1 p9", Description = "Effect slot 1, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX1 p9", Description = "Effect slot 1, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X1P9 { get => Values[P.X1P9]; set => Values.Set(P.X1P9, value); }
 
-        [ParameterDecl(Name = "FX1 p10", Description = "Effect slot 1, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX1 p10", Description = "Effect slot 1, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X1P10 { get => Values[P.X1P10]; set => Values.Set(P.X1P10, value); }
 
-        [ParameterDecl(Name = "FX2 type", Description = "Effect slot 2: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        [ParameterDecl(Name = "FX2 type", Description = "Effect slot 2: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)", MinValue = 0, MaxValue = 10, DefValue = 0)]
         public int X2Type { get => Values[P.X2Type]; set => Values.Set(P.X2Type, value); }
 
         [ParameterDecl(Name = "FX2 mix", Description = "Effect slot 2: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
         public int X2Mix { get => Values[P.X2Mix]; set => Values.Set(P.X2Mix, value); }
 
-        [ParameterDecl(Name = "FX2 p1", Description = "Effect slot 2, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX2 p1", Description = "Effect slot 2, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X2P1 { get => Values[P.X2P1]; set => Values.Set(P.X2P1, value); }
 
-        [ParameterDecl(Name = "FX2 p2", Description = "Effect slot 2, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX2 p2", Description = "Effect slot 2, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X2P2 { get => Values[P.X2P2]; set => Values.Set(P.X2P2, value); }
 
-        [ParameterDecl(Name = "FX2 p3", Description = "Effect slot 2, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX2 p3", Description = "Effect slot 2, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X2P3 { get => Values[P.X2P3]; set => Values.Set(P.X2P3, value); }
 
-        [ParameterDecl(Name = "FX2 p4", Description = "Effect slot 2, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX2 p4", Description = "Effect slot 2, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X2P4 { get => Values[P.X2P4]; set => Values.Set(P.X2P4, value); }
 
-        [ParameterDecl(Name = "FX2 p5", Description = "Effect slot 2, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX2 p5", Description = "Effect slot 2, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X2P5 { get => Values[P.X2P5]; set => Values.Set(P.X2P5, value); }
 
-        [ParameterDecl(Name = "FX2 p6", Description = "Effect slot 2, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX2 p6", Description = "Effect slot 2, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X2P6 { get => Values[P.X2P6]; set => Values.Set(P.X2P6, value); }
 
-        [ParameterDecl(Name = "FX2 p7", Description = "Effect slot 2, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX2 p7", Description = "Effect slot 2, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X2P7 { get => Values[P.X2P7]; set => Values.Set(P.X2P7, value); }
 
-        [ParameterDecl(Name = "FX2 p8", Description = "Effect slot 2, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX2 p8", Description = "Effect slot 2, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X2P8 { get => Values[P.X2P8]; set => Values.Set(P.X2P8, value); }
 
-        [ParameterDecl(Name = "FX2 p9", Description = "Effect slot 2, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX2 p9", Description = "Effect slot 2, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X2P9 { get => Values[P.X2P9]; set => Values.Set(P.X2P9, value); }
 
-        [ParameterDecl(Name = "FX2 p10", Description = "Effect slot 2, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX2 p10", Description = "Effect slot 2, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X2P10 { get => Values[P.X2P10]; set => Values.Set(P.X2P10, value); }
 
-        [ParameterDecl(Name = "FX3 type", Description = "Effect slot 3: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        [ParameterDecl(Name = "FX3 type", Description = "Effect slot 3: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)", MinValue = 0, MaxValue = 10, DefValue = 0)]
         public int X3Type { get => Values[P.X3Type]; set => Values.Set(P.X3Type, value); }
 
         [ParameterDecl(Name = "FX3 mix", Description = "Effect slot 3: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
         public int X3Mix { get => Values[P.X3Mix]; set => Values.Set(P.X3Mix, value); }
 
-        [ParameterDecl(Name = "FX3 p1", Description = "Effect slot 3, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX3 p1", Description = "Effect slot 3, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X3P1 { get => Values[P.X3P1]; set => Values.Set(P.X3P1, value); }
 
-        [ParameterDecl(Name = "FX3 p2", Description = "Effect slot 3, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX3 p2", Description = "Effect slot 3, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X3P2 { get => Values[P.X3P2]; set => Values.Set(P.X3P2, value); }
 
-        [ParameterDecl(Name = "FX3 p3", Description = "Effect slot 3, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX3 p3", Description = "Effect slot 3, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X3P3 { get => Values[P.X3P3]; set => Values.Set(P.X3P3, value); }
 
-        [ParameterDecl(Name = "FX3 p4", Description = "Effect slot 3, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX3 p4", Description = "Effect slot 3, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X3P4 { get => Values[P.X3P4]; set => Values.Set(P.X3P4, value); }
 
-        [ParameterDecl(Name = "FX3 p5", Description = "Effect slot 3, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX3 p5", Description = "Effect slot 3, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X3P5 { get => Values[P.X3P5]; set => Values.Set(P.X3P5, value); }
 
-        [ParameterDecl(Name = "FX3 p6", Description = "Effect slot 3, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX3 p6", Description = "Effect slot 3, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X3P6 { get => Values[P.X3P6]; set => Values.Set(P.X3P6, value); }
 
-        [ParameterDecl(Name = "FX3 p7", Description = "Effect slot 3, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX3 p7", Description = "Effect slot 3, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X3P7 { get => Values[P.X3P7]; set => Values.Set(P.X3P7, value); }
 
-        [ParameterDecl(Name = "FX3 p8", Description = "Effect slot 3, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX3 p8", Description = "Effect slot 3, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X3P8 { get => Values[P.X3P8]; set => Values.Set(P.X3P8, value); }
 
-        [ParameterDecl(Name = "FX3 p9", Description = "Effect slot 3, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX3 p9", Description = "Effect slot 3, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X3P9 { get => Values[P.X3P9]; set => Values.Set(P.X3P9, value); }
 
-        [ParameterDecl(Name = "FX3 p10", Description = "Effect slot 3, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX3 p10", Description = "Effect slot 3, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X3P10 { get => Values[P.X3P10]; set => Values.Set(P.X3P10, value); }
 
-        [ParameterDecl(Name = "FX4 type", Description = "Effect slot 4: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        [ParameterDecl(Name = "FX4 type", Description = "Effect slot 4: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)", MinValue = 0, MaxValue = 10, DefValue = 0)]
         public int X4Type { get => Values[P.X4Type]; set => Values.Set(P.X4Type, value); }
 
         [ParameterDecl(Name = "FX4 mix", Description = "Effect slot 4: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
         public int X4Mix { get => Values[P.X4Mix]; set => Values.Set(P.X4Mix, value); }
 
-        [ParameterDecl(Name = "FX4 p1", Description = "Effect slot 4, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX4 p1", Description = "Effect slot 4, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X4P1 { get => Values[P.X4P1]; set => Values.Set(P.X4P1, value); }
 
-        [ParameterDecl(Name = "FX4 p2", Description = "Effect slot 4, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX4 p2", Description = "Effect slot 4, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X4P2 { get => Values[P.X4P2]; set => Values.Set(P.X4P2, value); }
 
-        [ParameterDecl(Name = "FX4 p3", Description = "Effect slot 4, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX4 p3", Description = "Effect slot 4, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X4P3 { get => Values[P.X4P3]; set => Values.Set(P.X4P3, value); }
 
-        [ParameterDecl(Name = "FX4 p4", Description = "Effect slot 4, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX4 p4", Description = "Effect slot 4, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X4P4 { get => Values[P.X4P4]; set => Values.Set(P.X4P4, value); }
 
-        [ParameterDecl(Name = "FX4 p5", Description = "Effect slot 4, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX4 p5", Description = "Effect slot 4, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X4P5 { get => Values[P.X4P5]; set => Values.Set(P.X4P5, value); }
 
-        [ParameterDecl(Name = "FX4 p6", Description = "Effect slot 4, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX4 p6", Description = "Effect slot 4, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X4P6 { get => Values[P.X4P6]; set => Values.Set(P.X4P6, value); }
 
-        [ParameterDecl(Name = "FX4 p7", Description = "Effect slot 4, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX4 p7", Description = "Effect slot 4, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X4P7 { get => Values[P.X4P7]; set => Values.Set(P.X4P7, value); }
 
-        [ParameterDecl(Name = "FX4 p8", Description = "Effect slot 4, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX4 p8", Description = "Effect slot 4, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X4P8 { get => Values[P.X4P8]; set => Values.Set(P.X4P8, value); }
 
-        [ParameterDecl(Name = "FX4 p9", Description = "Effect slot 4, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX4 p9", Description = "Effect slot 4, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X4P9 { get => Values[P.X4P9]; set => Values.Set(P.X4P9, value); }
 
-        [ParameterDecl(Name = "FX4 p10", Description = "Effect slot 4, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX4 p10", Description = "Effect slot 4, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X4P10 { get => Values[P.X4P10]; set => Values.Set(P.X4P10, value); }
 
-        [ParameterDecl(Name = "FX5 type", Description = "Effect slot 5: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        [ParameterDecl(Name = "FX5 type", Description = "Effect slot 5: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)", MinValue = 0, MaxValue = 10, DefValue = 0)]
         public int X5Type { get => Values[P.X5Type]; set => Values.Set(P.X5Type, value); }
 
         [ParameterDecl(Name = "FX5 mix", Description = "Effect slot 5: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
         public int X5Mix { get => Values[P.X5Mix]; set => Values.Set(P.X5Mix, value); }
 
-        [ParameterDecl(Name = "FX5 p1", Description = "Effect slot 5, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX5 p1", Description = "Effect slot 5, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X5P1 { get => Values[P.X5P1]; set => Values.Set(P.X5P1, value); }
 
-        [ParameterDecl(Name = "FX5 p2", Description = "Effect slot 5, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX5 p2", Description = "Effect slot 5, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X5P2 { get => Values[P.X5P2]; set => Values.Set(P.X5P2, value); }
 
-        [ParameterDecl(Name = "FX5 p3", Description = "Effect slot 5, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX5 p3", Description = "Effect slot 5, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X5P3 { get => Values[P.X5P3]; set => Values.Set(P.X5P3, value); }
 
-        [ParameterDecl(Name = "FX5 p4", Description = "Effect slot 5, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX5 p4", Description = "Effect slot 5, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X5P4 { get => Values[P.X5P4]; set => Values.Set(P.X5P4, value); }
 
-        [ParameterDecl(Name = "FX5 p5", Description = "Effect slot 5, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX5 p5", Description = "Effect slot 5, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X5P5 { get => Values[P.X5P5]; set => Values.Set(P.X5P5, value); }
 
-        [ParameterDecl(Name = "FX5 p6", Description = "Effect slot 5, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX5 p6", Description = "Effect slot 5, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X5P6 { get => Values[P.X5P6]; set => Values.Set(P.X5P6, value); }
 
-        [ParameterDecl(Name = "FX5 p7", Description = "Effect slot 5, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX5 p7", Description = "Effect slot 5, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X5P7 { get => Values[P.X5P7]; set => Values.Set(P.X5P7, value); }
 
-        [ParameterDecl(Name = "FX5 p8", Description = "Effect slot 5, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX5 p8", Description = "Effect slot 5, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X5P8 { get => Values[P.X5P8]; set => Values.Set(P.X5P8, value); }
 
-        [ParameterDecl(Name = "FX5 p9", Description = "Effect slot 5, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX5 p9", Description = "Effect slot 5, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X5P9 { get => Values[P.X5P9]; set => Values.Set(P.X5P9, value); }
 
-        [ParameterDecl(Name = "FX5 p10", Description = "Effect slot 5, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX5 p10", Description = "Effect slot 5, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X5P10 { get => Values[P.X5P10]; set => Values.Set(P.X5P10, value); }
 
-        [ParameterDecl(Name = "FX6 type", Description = "Effect slot 6: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        [ParameterDecl(Name = "FX6 type", Description = "Effect slot 6: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)", MinValue = 0, MaxValue = 10, DefValue = 0)]
         public int X6Type { get => Values[P.X6Type]; set => Values.Set(P.X6Type, value); }
 
         [ParameterDecl(Name = "FX6 mix", Description = "Effect slot 6: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
         public int X6Mix { get => Values[P.X6Mix]; set => Values.Set(P.X6Mix, value); }
 
-        [ParameterDecl(Name = "FX6 p1", Description = "Effect slot 6, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX6 p1", Description = "Effect slot 6, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X6P1 { get => Values[P.X6P1]; set => Values.Set(P.X6P1, value); }
 
-        [ParameterDecl(Name = "FX6 p2", Description = "Effect slot 6, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX6 p2", Description = "Effect slot 6, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X6P2 { get => Values[P.X6P2]; set => Values.Set(P.X6P2, value); }
 
-        [ParameterDecl(Name = "FX6 p3", Description = "Effect slot 6, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX6 p3", Description = "Effect slot 6, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X6P3 { get => Values[P.X6P3]; set => Values.Set(P.X6P3, value); }
 
-        [ParameterDecl(Name = "FX6 p4", Description = "Effect slot 6, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX6 p4", Description = "Effect slot 6, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X6P4 { get => Values[P.X6P4]; set => Values.Set(P.X6P4, value); }
 
-        [ParameterDecl(Name = "FX6 p5", Description = "Effect slot 6, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX6 p5", Description = "Effect slot 6, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X6P5 { get => Values[P.X6P5]; set => Values.Set(P.X6P5, value); }
 
-        [ParameterDecl(Name = "FX6 p6", Description = "Effect slot 6, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX6 p6", Description = "Effect slot 6, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X6P6 { get => Values[P.X6P6]; set => Values.Set(P.X6P6, value); }
 
-        [ParameterDecl(Name = "FX6 p7", Description = "Effect slot 6, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX6 p7", Description = "Effect slot 6, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X6P7 { get => Values[P.X6P7]; set => Values.Set(P.X6P7, value); }
 
-        [ParameterDecl(Name = "FX6 p8", Description = "Effect slot 6, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX6 p8", Description = "Effect slot 6, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X6P8 { get => Values[P.X6P8]; set => Values.Set(P.X6P8, value); }
 
-        [ParameterDecl(Name = "FX6 p9", Description = "Effect slot 6, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX6 p9", Description = "Effect slot 6, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X6P9 { get => Values[P.X6P9]; set => Values.Set(P.X6P9, value); }
 
-        [ParameterDecl(Name = "FX6 p10", Description = "Effect slot 6, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX6 p10", Description = "Effect slot 6, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X6P10 { get => Values[P.X6P10]; set => Values.Set(P.X6P10, value); }
 
-        [ParameterDecl(Name = "FX7 type", Description = "Effect slot 7: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        [ParameterDecl(Name = "FX7 type", Description = "Effect slot 7: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)", MinValue = 0, MaxValue = 10, DefValue = 0)]
         public int X7Type { get => Values[P.X7Type]; set => Values.Set(P.X7Type, value); }
 
         [ParameterDecl(Name = "FX7 mix", Description = "Effect slot 7: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
         public int X7Mix { get => Values[P.X7Mix]; set => Values.Set(P.X7Mix, value); }
 
-        [ParameterDecl(Name = "FX7 p1", Description = "Effect slot 7, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX7 p1", Description = "Effect slot 7, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X7P1 { get => Values[P.X7P1]; set => Values.Set(P.X7P1, value); }
 
-        [ParameterDecl(Name = "FX7 p2", Description = "Effect slot 7, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX7 p2", Description = "Effect slot 7, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X7P2 { get => Values[P.X7P2]; set => Values.Set(P.X7P2, value); }
 
-        [ParameterDecl(Name = "FX7 p3", Description = "Effect slot 7, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX7 p3", Description = "Effect slot 7, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X7P3 { get => Values[P.X7P3]; set => Values.Set(P.X7P3, value); }
 
-        [ParameterDecl(Name = "FX7 p4", Description = "Effect slot 7, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX7 p4", Description = "Effect slot 7, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X7P4 { get => Values[P.X7P4]; set => Values.Set(P.X7P4, value); }
 
-        [ParameterDecl(Name = "FX7 p5", Description = "Effect slot 7, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX7 p5", Description = "Effect slot 7, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X7P5 { get => Values[P.X7P5]; set => Values.Set(P.X7P5, value); }
 
-        [ParameterDecl(Name = "FX7 p6", Description = "Effect slot 7, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX7 p6", Description = "Effect slot 7, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X7P6 { get => Values[P.X7P6]; set => Values.Set(P.X7P6, value); }
 
-        [ParameterDecl(Name = "FX7 p7", Description = "Effect slot 7, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX7 p7", Description = "Effect slot 7, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X7P7 { get => Values[P.X7P7]; set => Values.Set(P.X7P7, value); }
 
-        [ParameterDecl(Name = "FX7 p8", Description = "Effect slot 7, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX7 p8", Description = "Effect slot 7, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X7P8 { get => Values[P.X7P8]; set => Values.Set(P.X7P8, value); }
 
-        [ParameterDecl(Name = "FX7 p9", Description = "Effect slot 7, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX7 p9", Description = "Effect slot 7, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X7P9 { get => Values[P.X7P9]; set => Values.Set(P.X7P9, value); }
 
-        [ParameterDecl(Name = "FX7 p10", Description = "Effect slot 7, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX7 p10", Description = "Effect slot 7, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X7P10 { get => Values[P.X7P10]; set => Values.Set(P.X7P10, value); }
 
-        [ParameterDecl(Name = "FX8 type", Description = "Effect slot 8: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        [ParameterDecl(Name = "FX8 type", Description = "Effect slot 8: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)", MinValue = 0, MaxValue = 10, DefValue = 0)]
         public int X8Type { get => Values[P.X8Type]; set => Values.Set(P.X8Type, value); }
 
         [ParameterDecl(Name = "FX8 mix", Description = "Effect slot 8: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
         public int X8Mix { get => Values[P.X8Mix]; set => Values.Set(P.X8Mix, value); }
 
-        [ParameterDecl(Name = "FX8 p1", Description = "Effect slot 8, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX8 p1", Description = "Effect slot 8, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X8P1 { get => Values[P.X8P1]; set => Values.Set(P.X8P1, value); }
 
-        [ParameterDecl(Name = "FX8 p2", Description = "Effect slot 8, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX8 p2", Description = "Effect slot 8, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X8P2 { get => Values[P.X8P2]; set => Values.Set(P.X8P2, value); }
 
-        [ParameterDecl(Name = "FX8 p3", Description = "Effect slot 8, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX8 p3", Description = "Effect slot 8, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X8P3 { get => Values[P.X8P3]; set => Values.Set(P.X8P3, value); }
 
-        [ParameterDecl(Name = "FX8 p4", Description = "Effect slot 8, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX8 p4", Description = "Effect slot 8, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X8P4 { get => Values[P.X8P4]; set => Values.Set(P.X8P4, value); }
 
-        [ParameterDecl(Name = "FX8 p5", Description = "Effect slot 8, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX8 p5", Description = "Effect slot 8, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X8P5 { get => Values[P.X8P5]; set => Values.Set(P.X8P5, value); }
 
-        [ParameterDecl(Name = "FX8 p6", Description = "Effect slot 8, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX8 p6", Description = "Effect slot 8, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X8P6 { get => Values[P.X8P6]; set => Values.Set(P.X8P6, value); }
 
-        [ParameterDecl(Name = "FX8 p7", Description = "Effect slot 8, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX8 p7", Description = "Effect slot 8, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X8P7 { get => Values[P.X8P7]; set => Values.Set(P.X8P7, value); }
 
-        [ParameterDecl(Name = "FX8 p8", Description = "Effect slot 8, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX8 p8", Description = "Effect slot 8, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X8P8 { get => Values[P.X8P8]; set => Values.Set(P.X8P8, value); }
 
-        [ParameterDecl(Name = "FX8 p9", Description = "Effect slot 8, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX8 p9", Description = "Effect slot 8, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X8P9 { get => Values[P.X8P9]; set => Values.Set(P.X8P9, value); }
 
-        [ParameterDecl(Name = "FX8 p10", Description = "Effect slot 8, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX8 p10", Description = "Effect slot 8, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X8P10 { get => Values[P.X8P10]; set => Values.Set(P.X8P10, value); }
 
-        [ParameterDecl(Name = "FX9 type", Description = "Effect slot 9: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        [ParameterDecl(Name = "FX9 type", Description = "Effect slot 9: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)", MinValue = 0, MaxValue = 10, DefValue = 0)]
         public int X9Type { get => Values[P.X9Type]; set => Values.Set(P.X9Type, value); }
 
         [ParameterDecl(Name = "FX9 mix", Description = "Effect slot 9: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
         public int X9Mix { get => Values[P.X9Mix]; set => Values.Set(P.X9Mix, value); }
 
-        [ParameterDecl(Name = "FX9 p1", Description = "Effect slot 9, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX9 p1", Description = "Effect slot 9, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X9P1 { get => Values[P.X9P1]; set => Values.Set(P.X9P1, value); }
 
-        [ParameterDecl(Name = "FX9 p2", Description = "Effect slot 9, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX9 p2", Description = "Effect slot 9, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X9P2 { get => Values[P.X9P2]; set => Values.Set(P.X9P2, value); }
 
-        [ParameterDecl(Name = "FX9 p3", Description = "Effect slot 9, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX9 p3", Description = "Effect slot 9, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X9P3 { get => Values[P.X9P3]; set => Values.Set(P.X9P3, value); }
 
-        [ParameterDecl(Name = "FX9 p4", Description = "Effect slot 9, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX9 p4", Description = "Effect slot 9, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X9P4 { get => Values[P.X9P4]; set => Values.Set(P.X9P4, value); }
 
-        [ParameterDecl(Name = "FX9 p5", Description = "Effect slot 9, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX9 p5", Description = "Effect slot 9, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X9P5 { get => Values[P.X9P5]; set => Values.Set(P.X9P5, value); }
 
-        [ParameterDecl(Name = "FX9 p6", Description = "Effect slot 9, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX9 p6", Description = "Effect slot 9, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X9P6 { get => Values[P.X9P6]; set => Values.Set(P.X9P6, value); }
 
-        [ParameterDecl(Name = "FX9 p7", Description = "Effect slot 9, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX9 p7", Description = "Effect slot 9, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X9P7 { get => Values[P.X9P7]; set => Values.Set(P.X9P7, value); }
 
-        [ParameterDecl(Name = "FX9 p8", Description = "Effect slot 9, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX9 p8", Description = "Effect slot 9, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X9P8 { get => Values[P.X9P8]; set => Values.Set(P.X9P8, value); }
 
-        [ParameterDecl(Name = "FX9 p9", Description = "Effect slot 9, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX9 p9", Description = "Effect slot 9, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X9P9 { get => Values[P.X9P9]; set => Values.Set(P.X9P9, value); }
 
-        [ParameterDecl(Name = "FX9 p10", Description = "Effect slot 9, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX9 p10", Description = "Effect slot 9, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X9P10 { get => Values[P.X9P10]; set => Values.Set(P.X9P10, value); }
 
-        [ParameterDecl(Name = "FX10 type", Description = "Effect slot 10: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        [ParameterDecl(Name = "FX10 type", Description = "Effect slot 10: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)", MinValue = 0, MaxValue = 10, DefValue = 0)]
         public int X10Type { get => Values[P.X10Type]; set => Values.Set(P.X10Type, value); }
 
         [ParameterDecl(Name = "FX10 mix", Description = "Effect slot 10: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
         public int X10Mix { get => Values[P.X10Mix]; set => Values.Set(P.X10Mix, value); }
 
-        [ParameterDecl(Name = "FX10 p1", Description = "Effect slot 10, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX10 p1", Description = "Effect slot 10, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X10P1 { get => Values[P.X10P1]; set => Values.Set(P.X10P1, value); }
 
-        [ParameterDecl(Name = "FX10 p2", Description = "Effect slot 10, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX10 p2", Description = "Effect slot 10, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X10P2 { get => Values[P.X10P2]; set => Values.Set(P.X10P2, value); }
 
-        [ParameterDecl(Name = "FX10 p3", Description = "Effect slot 10, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX10 p3", Description = "Effect slot 10, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X10P3 { get => Values[P.X10P3]; set => Values.Set(P.X10P3, value); }
 
-        [ParameterDecl(Name = "FX10 p4", Description = "Effect slot 10, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX10 p4", Description = "Effect slot 10, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X10P4 { get => Values[P.X10P4]; set => Values.Set(P.X10P4, value); }
 
-        [ParameterDecl(Name = "FX10 p5", Description = "Effect slot 10, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX10 p5", Description = "Effect slot 10, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X10P5 { get => Values[P.X10P5]; set => Values.Set(P.X10P5, value); }
 
-        [ParameterDecl(Name = "FX10 p6", Description = "Effect slot 10, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX10 p6", Description = "Effect slot 10, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X10P6 { get => Values[P.X10P6]; set => Values.Set(P.X10P6, value); }
 
-        [ParameterDecl(Name = "FX10 p7", Description = "Effect slot 10, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX10 p7", Description = "Effect slot 10, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X10P7 { get => Values[P.X10P7]; set => Values.Set(P.X10P7, value); }
 
-        [ParameterDecl(Name = "FX10 p8", Description = "Effect slot 10, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX10 p8", Description = "Effect slot 10, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X10P8 { get => Values[P.X10P8]; set => Values.Set(P.X10P8, value); }
 
-        [ParameterDecl(Name = "FX10 p9", Description = "Effect slot 10, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX10 p9", Description = "Effect slot 10, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X10P9 { get => Values[P.X10P9]; set => Values.Set(P.X10P9, value); }
 
-        [ParameterDecl(Name = "FX10 p10", Description = "Effect slot 10, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "FX10 p10", Description = "Effect slot 10, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X10P10 { get => Values[P.X10P10]; set => Values.Set(P.X10P10, value); }
 
         [ParameterDecl(Name = "Note", IsStateless = true, Description = "Note (off releases the track's note)")]

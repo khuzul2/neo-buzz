@@ -5371,7 +5371,7 @@
    "name": "FX1 type",
    "group": "FX",
    "min": 0,
-   "max": 6,
+   "max": 10,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -5381,9 +5381,13 @@
     "Comp",
     "Clipper",
     "Delay",
-    "Verb"
+    "Verb",
+    "Dimension",
+    "Bitcrusher",
+    "Freq shift",
+    "Pitch delay"
    ],
-   "description": "Effect slot 1: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"
+   "description": "Effect slot 1: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)"
   },
   {
    "index": 314,
@@ -5407,7 +5411,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 1, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"
+   "description": "Effect slot 1, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time"
   },
   {
    "index": 316,
@@ -5419,7 +5423,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 1, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"
+   "description": "Effect slot 1, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch"
   },
   {
    "index": 317,
@@ -5431,7 +5435,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 1, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"
+   "description": "Effect slot 1, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine"
   },
   {
    "index": 318,
@@ -5443,7 +5447,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 1, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"
+   "description": "Effect slot 1, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback"
   },
   {
    "index": 319,
@@ -5455,7 +5459,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 1, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"
+   "description": "Effect slot 1, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain"
   },
   {
    "index": 320,
@@ -5467,7 +5471,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 1, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"
+   "description": "Effect slot 1, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode"
   },
   {
    "index": 321,
@@ -5479,7 +5483,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 1, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"
+   "description": "Effect slot 1, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone"
   },
   {
    "index": 322,
@@ -5491,7 +5495,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 1, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"
+   "description": "Effect slot 1, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut"
   },
   {
    "index": 323,
@@ -5503,7 +5507,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 1, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"
+   "description": "Effect slot 1, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread"
   },
   {
    "index": 324,
@@ -5515,7 +5519,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 1, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"
+   "description": "Effect slot 1, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed"
   },
   {
    "index": 325,
@@ -5523,7 +5527,7 @@
    "name": "FX2 type",
    "group": "FX",
    "min": 0,
-   "max": 6,
+   "max": 10,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -5533,9 +5537,13 @@
     "Comp",
     "Clipper",
     "Delay",
-    "Verb"
+    "Verb",
+    "Dimension",
+    "Bitcrusher",
+    "Freq shift",
+    "Pitch delay"
    ],
-   "description": "Effect slot 2: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"
+   "description": "Effect slot 2: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)"
   },
   {
    "index": 326,
@@ -5559,7 +5567,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 2, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"
+   "description": "Effect slot 2, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time"
   },
   {
    "index": 328,
@@ -5571,7 +5579,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 2, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"
+   "description": "Effect slot 2, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch"
   },
   {
    "index": 329,
@@ -5583,7 +5591,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 2, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"
+   "description": "Effect slot 2, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine"
   },
   {
    "index": 330,
@@ -5595,7 +5603,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 2, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"
+   "description": "Effect slot 2, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback"
   },
   {
    "index": 331,
@@ -5607,7 +5615,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 2, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"
+   "description": "Effect slot 2, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain"
   },
   {
    "index": 332,
@@ -5619,7 +5627,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 2, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"
+   "description": "Effect slot 2, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode"
   },
   {
    "index": 333,
@@ -5631,7 +5639,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 2, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"
+   "description": "Effect slot 2, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone"
   },
   {
    "index": 334,
@@ -5643,7 +5651,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 2, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"
+   "description": "Effect slot 2, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut"
   },
   {
    "index": 335,
@@ -5655,7 +5663,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 2, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"
+   "description": "Effect slot 2, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread"
   },
   {
    "index": 336,
@@ -5667,7 +5675,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 2, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"
+   "description": "Effect slot 2, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed"
   },
   {
    "index": 337,
@@ -5675,7 +5683,7 @@
    "name": "FX3 type",
    "group": "FX",
    "min": 0,
-   "max": 6,
+   "max": 10,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -5685,9 +5693,13 @@
     "Comp",
     "Clipper",
     "Delay",
-    "Verb"
+    "Verb",
+    "Dimension",
+    "Bitcrusher",
+    "Freq shift",
+    "Pitch delay"
    ],
-   "description": "Effect slot 3: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"
+   "description": "Effect slot 3: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)"
   },
   {
    "index": 338,
@@ -5711,7 +5723,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 3, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"
+   "description": "Effect slot 3, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time"
   },
   {
    "index": 340,
@@ -5723,7 +5735,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 3, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"
+   "description": "Effect slot 3, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch"
   },
   {
    "index": 341,
@@ -5735,7 +5747,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 3, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"
+   "description": "Effect slot 3, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine"
   },
   {
    "index": 342,
@@ -5747,7 +5759,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 3, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"
+   "description": "Effect slot 3, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback"
   },
   {
    "index": 343,
@@ -5759,7 +5771,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 3, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"
+   "description": "Effect slot 3, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain"
   },
   {
    "index": 344,
@@ -5771,7 +5783,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 3, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"
+   "description": "Effect slot 3, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode"
   },
   {
    "index": 345,
@@ -5783,7 +5795,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 3, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"
+   "description": "Effect slot 3, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone"
   },
   {
    "index": 346,
@@ -5795,7 +5807,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 3, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"
+   "description": "Effect slot 3, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut"
   },
   {
    "index": 347,
@@ -5807,7 +5819,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 3, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"
+   "description": "Effect slot 3, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread"
   },
   {
    "index": 348,
@@ -5819,7 +5831,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 3, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"
+   "description": "Effect slot 3, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed"
   },
   {
    "index": 349,
@@ -5827,7 +5839,7 @@
    "name": "FX4 type",
    "group": "FX",
    "min": 0,
-   "max": 6,
+   "max": 10,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -5837,9 +5849,13 @@
     "Comp",
     "Clipper",
     "Delay",
-    "Verb"
+    "Verb",
+    "Dimension",
+    "Bitcrusher",
+    "Freq shift",
+    "Pitch delay"
    ],
-   "description": "Effect slot 4: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"
+   "description": "Effect slot 4: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)"
   },
   {
    "index": 350,
@@ -5863,7 +5879,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 4, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"
+   "description": "Effect slot 4, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time"
   },
   {
    "index": 352,
@@ -5875,7 +5891,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 4, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"
+   "description": "Effect slot 4, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch"
   },
   {
    "index": 353,
@@ -5887,7 +5903,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 4, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"
+   "description": "Effect slot 4, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine"
   },
   {
    "index": 354,
@@ -5899,7 +5915,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 4, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"
+   "description": "Effect slot 4, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback"
   },
   {
    "index": 355,
@@ -5911,7 +5927,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 4, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"
+   "description": "Effect slot 4, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain"
   },
   {
    "index": 356,
@@ -5923,7 +5939,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 4, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"
+   "description": "Effect slot 4, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode"
   },
   {
    "index": 357,
@@ -5935,7 +5951,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 4, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"
+   "description": "Effect slot 4, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone"
   },
   {
    "index": 358,
@@ -5947,7 +5963,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 4, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"
+   "description": "Effect slot 4, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut"
   },
   {
    "index": 359,
@@ -5959,7 +5975,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 4, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"
+   "description": "Effect slot 4, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread"
   },
   {
    "index": 360,
@@ -5971,7 +5987,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 4, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"
+   "description": "Effect slot 4, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed"
   },
   {
    "index": 361,
@@ -5979,7 +5995,7 @@
    "name": "FX5 type",
    "group": "FX",
    "min": 0,
-   "max": 6,
+   "max": 10,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -5989,9 +6005,13 @@
     "Comp",
     "Clipper",
     "Delay",
-    "Verb"
+    "Verb",
+    "Dimension",
+    "Bitcrusher",
+    "Freq shift",
+    "Pitch delay"
    ],
-   "description": "Effect slot 5: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"
+   "description": "Effect slot 5: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)"
   },
   {
    "index": 362,
@@ -6015,7 +6035,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 5, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"
+   "description": "Effect slot 5, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time"
   },
   {
    "index": 364,
@@ -6027,7 +6047,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 5, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"
+   "description": "Effect slot 5, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch"
   },
   {
    "index": 365,
@@ -6039,7 +6059,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 5, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"
+   "description": "Effect slot 5, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine"
   },
   {
    "index": 366,
@@ -6051,7 +6071,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 5, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"
+   "description": "Effect slot 5, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback"
   },
   {
    "index": 367,
@@ -6063,7 +6083,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 5, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"
+   "description": "Effect slot 5, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain"
   },
   {
    "index": 368,
@@ -6075,7 +6095,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 5, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"
+   "description": "Effect slot 5, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode"
   },
   {
    "index": 369,
@@ -6087,7 +6107,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 5, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"
+   "description": "Effect slot 5, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone"
   },
   {
    "index": 370,
@@ -6099,7 +6119,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 5, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"
+   "description": "Effect slot 5, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut"
   },
   {
    "index": 371,
@@ -6111,7 +6131,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 5, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"
+   "description": "Effect slot 5, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread"
   },
   {
    "index": 372,
@@ -6123,7 +6143,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 5, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"
+   "description": "Effect slot 5, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed"
   },
   {
    "index": 373,
@@ -6131,7 +6151,7 @@
    "name": "FX6 type",
    "group": "FX",
    "min": 0,
-   "max": 6,
+   "max": 10,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -6141,9 +6161,13 @@
     "Comp",
     "Clipper",
     "Delay",
-    "Verb"
+    "Verb",
+    "Dimension",
+    "Bitcrusher",
+    "Freq shift",
+    "Pitch delay"
    ],
-   "description": "Effect slot 6: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"
+   "description": "Effect slot 6: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)"
   },
   {
    "index": 374,
@@ -6167,7 +6191,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 6, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"
+   "description": "Effect slot 6, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time"
   },
   {
    "index": 376,
@@ -6179,7 +6203,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 6, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"
+   "description": "Effect slot 6, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch"
   },
   {
    "index": 377,
@@ -6191,7 +6215,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 6, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"
+   "description": "Effect slot 6, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine"
   },
   {
    "index": 378,
@@ -6203,7 +6227,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 6, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"
+   "description": "Effect slot 6, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback"
   },
   {
    "index": 379,
@@ -6215,7 +6239,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 6, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"
+   "description": "Effect slot 6, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain"
   },
   {
    "index": 380,
@@ -6227,7 +6251,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 6, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"
+   "description": "Effect slot 6, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode"
   },
   {
    "index": 381,
@@ -6239,7 +6263,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 6, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"
+   "description": "Effect slot 6, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone"
   },
   {
    "index": 382,
@@ -6251,7 +6275,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 6, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"
+   "description": "Effect slot 6, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut"
   },
   {
    "index": 383,
@@ -6263,7 +6287,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 6, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"
+   "description": "Effect slot 6, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread"
   },
   {
    "index": 384,
@@ -6275,7 +6299,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 6, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"
+   "description": "Effect slot 6, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed"
   },
   {
    "index": 385,
@@ -6283,7 +6307,7 @@
    "name": "FX7 type",
    "group": "FX",
    "min": 0,
-   "max": 6,
+   "max": 10,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -6293,9 +6317,13 @@
     "Comp",
     "Clipper",
     "Delay",
-    "Verb"
+    "Verb",
+    "Dimension",
+    "Bitcrusher",
+    "Freq shift",
+    "Pitch delay"
    ],
-   "description": "Effect slot 7: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"
+   "description": "Effect slot 7: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)"
   },
   {
    "index": 386,
@@ -6319,7 +6347,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 7, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"
+   "description": "Effect slot 7, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time"
   },
   {
    "index": 388,
@@ -6331,7 +6359,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 7, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"
+   "description": "Effect slot 7, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch"
   },
   {
    "index": 389,
@@ -6343,7 +6371,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 7, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"
+   "description": "Effect slot 7, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine"
   },
   {
    "index": 390,
@@ -6355,7 +6383,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 7, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"
+   "description": "Effect slot 7, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback"
   },
   {
    "index": 391,
@@ -6367,7 +6395,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 7, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"
+   "description": "Effect slot 7, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain"
   },
   {
    "index": 392,
@@ -6379,7 +6407,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 7, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"
+   "description": "Effect slot 7, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode"
   },
   {
    "index": 393,
@@ -6391,7 +6419,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 7, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"
+   "description": "Effect slot 7, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone"
   },
   {
    "index": 394,
@@ -6403,7 +6431,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 7, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"
+   "description": "Effect slot 7, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut"
   },
   {
    "index": 395,
@@ -6415,7 +6443,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 7, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"
+   "description": "Effect slot 7, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread"
   },
   {
    "index": 396,
@@ -6427,7 +6455,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 7, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"
+   "description": "Effect slot 7, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed"
   },
   {
    "index": 397,
@@ -6435,7 +6463,7 @@
    "name": "FX8 type",
    "group": "FX",
    "min": 0,
-   "max": 6,
+   "max": 10,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -6445,9 +6473,13 @@
     "Comp",
     "Clipper",
     "Delay",
-    "Verb"
+    "Verb",
+    "Dimension",
+    "Bitcrusher",
+    "Freq shift",
+    "Pitch delay"
    ],
-   "description": "Effect slot 8: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"
+   "description": "Effect slot 8: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)"
   },
   {
    "index": 398,
@@ -6471,7 +6503,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 8, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"
+   "description": "Effect slot 8, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time"
   },
   {
    "index": 400,
@@ -6483,7 +6515,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 8, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"
+   "description": "Effect slot 8, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch"
   },
   {
    "index": 401,
@@ -6495,7 +6527,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 8, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"
+   "description": "Effect slot 8, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine"
   },
   {
    "index": 402,
@@ -6507,7 +6539,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 8, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"
+   "description": "Effect slot 8, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback"
   },
   {
    "index": 403,
@@ -6519,7 +6551,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 8, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"
+   "description": "Effect slot 8, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain"
   },
   {
    "index": 404,
@@ -6531,7 +6563,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 8, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"
+   "description": "Effect slot 8, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode"
   },
   {
    "index": 405,
@@ -6543,7 +6575,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 8, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"
+   "description": "Effect slot 8, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone"
   },
   {
    "index": 406,
@@ -6555,7 +6587,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 8, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"
+   "description": "Effect slot 8, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut"
   },
   {
    "index": 407,
@@ -6567,7 +6599,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 8, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"
+   "description": "Effect slot 8, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread"
   },
   {
    "index": 408,
@@ -6579,7 +6611,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 8, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"
+   "description": "Effect slot 8, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed"
   },
   {
    "index": 409,
@@ -6587,7 +6619,7 @@
    "name": "FX9 type",
    "group": "FX",
    "min": 0,
-   "max": 6,
+   "max": 10,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -6597,9 +6629,13 @@
     "Comp",
     "Clipper",
     "Delay",
-    "Verb"
+    "Verb",
+    "Dimension",
+    "Bitcrusher",
+    "Freq shift",
+    "Pitch delay"
    ],
-   "description": "Effect slot 9: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"
+   "description": "Effect slot 9: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)"
   },
   {
    "index": 410,
@@ -6623,7 +6659,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 9, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"
+   "description": "Effect slot 9, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time"
   },
   {
    "index": 412,
@@ -6635,7 +6671,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 9, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"
+   "description": "Effect slot 9, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch"
   },
   {
    "index": 413,
@@ -6647,7 +6683,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 9, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"
+   "description": "Effect slot 9, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine"
   },
   {
    "index": 414,
@@ -6659,7 +6695,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 9, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"
+   "description": "Effect slot 9, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback"
   },
   {
    "index": 415,
@@ -6671,7 +6707,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 9, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"
+   "description": "Effect slot 9, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain"
   },
   {
    "index": 416,
@@ -6683,7 +6719,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 9, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"
+   "description": "Effect slot 9, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode"
   },
   {
    "index": 417,
@@ -6695,7 +6731,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 9, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"
+   "description": "Effect slot 9, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone"
   },
   {
    "index": 418,
@@ -6707,7 +6743,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 9, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"
+   "description": "Effect slot 9, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut"
   },
   {
    "index": 419,
@@ -6719,7 +6755,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 9, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"
+   "description": "Effect slot 9, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread"
   },
   {
    "index": 420,
@@ -6731,7 +6767,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 9, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"
+   "description": "Effect slot 9, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed"
   },
   {
    "index": 421,
@@ -6739,7 +6775,7 @@
    "name": "FX10 type",
    "group": "FX",
    "min": 0,
-   "max": 6,
+   "max": 10,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -6749,9 +6785,13 @@
     "Comp",
     "Clipper",
     "Delay",
-    "Verb"
+    "Verb",
+    "Dimension",
+    "Bitcrusher",
+    "Freq shift",
+    "Pitch delay"
    ],
-   "description": "Effect slot 10: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"
+   "description": "Effect slot 10: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback)"
   },
   {
    "index": 422,
@@ -6775,7 +6815,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 10, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"
+   "description": "Effect slot 10, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time"
   },
   {
    "index": 424,
@@ -6787,7 +6827,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 10, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"
+   "description": "Effect slot 10, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch"
   },
   {
    "index": 425,
@@ -6799,7 +6839,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 10, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"
+   "description": "Effect slot 10, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine"
   },
   {
    "index": 426,
@@ -6811,7 +6851,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 10, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"
+   "description": "Effect slot 10, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback"
   },
   {
    "index": 427,
@@ -6823,7 +6863,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 10, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"
+   "description": "Effect slot 10, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain"
   },
   {
    "index": 428,
@@ -6835,7 +6875,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 10, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"
+   "description": "Effect slot 10, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode"
   },
   {
    "index": 429,
@@ -6847,7 +6887,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 10, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"
+   "description": "Effect slot 10, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone"
   },
   {
    "index": 430,
@@ -6859,7 +6899,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 10, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"
+   "description": "Effect slot 10, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut"
   },
   {
    "index": 431,
@@ -6871,7 +6911,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 10, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"
+   "description": "Effect slot 10, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread"
   },
   {
    "index": 432,
@@ -6883,7 +6923,7 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Effect slot 10, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"
+   "description": "Effect slot 10, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed"
   }
  ],
  "imports": [
