@@ -95,6 +95,24 @@ namespace ReBuzz.Studio.Views.Session
 
         public double RowHeight { get; set; } = 11;
 
+        /// <summary>
+        /// Fork (ux-overhaul.md P3b): the part of the roll the viewer shows, in this control's coordinates (the host sets it as
+        /// the scroll viewer scrolls). Only that part is drawn, and the keys stay at its left edge; empty: all of it.
+        /// </summary>
+        public Rect Viewport { get; set; }
+
+        /// <summary>
+        /// Fork (P3b): Alt held bypasses the grid (the docked roll; Shift does too). Off in the Session View's roll, where Alt+drag
+        /// changes a note's velocity.
+        /// </summary>
+        public bool AltBypassesGrid { get; set; }
+
+        Rect Visible => Viewport.Width > 0 && Viewport.Height > 0 ? Viewport : new Rect(0, 0, Math.Max(Bounds.Width, X(Length) + 40), 128 * RowHeight);
+
+        double KeysLeft => Viewport.Width > 0 ? Viewport.X : 0;
+
+        int GridFor(KeyModifiers mods) => mods.HasFlag(KeyModifiers.Shift) || (AltBypassesGrid && mods.HasFlag(KeyModifiers.Alt)) ? 1 : Grid;
+
         internal IReadOnlyList<ClipNote> Notes => notes;
         internal IReadOnlyCollection<int> Selection => selected;
 
@@ -148,9 +166,13 @@ namespace ReBuzz.Studio.Views.Session
             Changed?.Invoke();
         }
 
+        /// <summary>Why the last edit was refused (the tracker has no track left for a chord…), or null.</summary>
+        public string Refusal { get; private set; }
+
         void Commit(IReadOnlyList<ClipNote> removed, IReadOnlyList<ClipNote> added)
         {
-            if (Source.Edit(removed, added) != null)
+            Refusal = Source.Edit(removed, added);
+            if (Refusal != null)
             {
                 Reload();                                    // nothing changes: show the notes as they are
                 return;
@@ -171,10 +193,29 @@ namespace ReBuzz.Studio.Views.Session
 
         // ------------------------------------------------------------------ commands (keys, buttons, tests)
 
-        internal void AddNote(int time, int note)
+        internal void AddNote(int time, int note, int? grid = null)
         {
-            var n = ClipNotes.Draw(time, note, lastVelocity, Grid, Length, lastDuration);
+            var n = ClipNotes.Draw(time, note, lastVelocity, grid ?? Grid, Length, lastDuration);
             Commit(Array.Empty<ClipNote>(), new[] { n });
+        }
+
+        /// <summary>Copies the selected notes right after themselves (the selection's span later); the copies are selected.</summary>
+        internal void DuplicateSelected()
+        {
+            var from = SelectedNotes();
+            if (from.Count == 0) return;
+            int start = from.Min(n => n.Time), end = from.Max(n => n.End);
+            int step = Grid > 1 ? (int)Math.Ceiling((end - start) / (double)Grid) * Grid : end - start;
+            var copies = from.Select(n => n with { Time = n.Time + step }).Where(n => n.Time < Length).ToList();
+            if (copies.Count > 0) Commit(Array.Empty<ClipNote>(), copies);
+        }
+
+        /// <summary>Selects nothing.</summary>
+        internal void DeselectAll()
+        {
+            selected.Clear();
+            InvalidateVisual();
+            Changed?.Invoke();
         }
 
         internal void SelectAll()
@@ -189,6 +230,13 @@ namespace ReBuzz.Studio.Views.Session
         {
             var gone = SelectedNotes();
             if (gone.Count > 0) Commit(gone, Array.Empty<ClipNote>());
+        }
+
+        /// <summary>Lengthens (or shortens) the selected notes by <paramref name="deltaTime"/>.</summary>
+        internal void ResizeSelected(int deltaTime)
+        {
+            var from = SelectedNotes();
+            if (from.Count > 0) Commit(from, ClipNotes.Resize(from, deltaTime, 1, Length));
         }
 
         internal void MoveSelected(int deltaTime, int deltaNote)
@@ -236,32 +284,42 @@ namespace ReBuzz.Studio.Views.Session
 
         public override void Render(DrawingContext dc)
         {
+            // Only what the viewer shows (P3b): rows, time lines and notes outside it cost nothing.
+            var vis = Visible;
             double width = Math.Max(Bounds.Width, X(Length) + 40);
             double height = 128 * RowHeight;
-            dc.FillRectangle(Back, new Rect(0, 0, width, height));
+            double left = Math.Max(0, vis.X), right = Math.Min(width, vis.Right), top = Math.Max(0, vis.Y), bottom = Math.Min(height, vis.Bottom);
+            dc.FillRectangle(Back, new Rect(left, top, Math.Max(0, right - left), Math.Max(0, bottom - top)));
+            int noteHigh = Math.Clamp(127 - (int)Math.Floor(top / RowHeight), 0, 127);
+            int noteLow = Math.Clamp(127 - (int)Math.Floor((bottom - 0.01) / RowHeight), 0, 127);
+            double gridLeft = Math.Max(left, KeysWidth);
 
             // Rows: black-key rows darker, a line under each C.
-            for (int note = 0; note < 128; note++)
+            for (int note = noteLow; note <= noteHigh; note++)
             {
                 double y = Y(note);
                 if (IsBlack(note))
-                    dc.FillRectangle(BlackKeyRow, new Rect(KeysWidth, y, width - KeysWidth, RowHeight));
+                    dc.FillRectangle(BlackKeyRow, new Rect(gridLeft, y, Math.Max(0, right - gridLeft), RowHeight));
                 if (note % 12 == 0)
-                    dc.DrawLine(RowLine, new Point(KeysWidth, y + RowHeight), new Point(width, y + RowHeight));
+                    dc.DrawLine(RowLine, new Point(gridLeft, y + RowHeight), new Point(right, y + RowHeight));
             }
 
             // Past the clip's end.
             double end = X(Length);
-            dc.FillRectangle(OutOfClip, new Rect(end, 0, Math.Max(0, width - end), height));
+            if (end < right)
+                dc.FillRectangle(OutOfClip, new Rect(Math.Max(end, left), top, right - Math.Max(end, left), bottom - top));
 
-            // Time lines: ticks when they are wide enough, beats, bars.
+            // Time lines: ticks when they are wide enough, beats, bars; those in view.
             int tickTime = ClipNotes.TimeBase;
-            for (int t = 0; t <= Length; t += tickTime)
+            int firstTick = Math.Max(0, (int)Math.Floor((gridLeft - KeysWidth) / TickWidth));
+            int lastTick = Math.Min(Length / tickTime, (int)Math.Ceiling((right - KeysWidth) / TickWidth));
+            for (int k = firstTick; k <= lastTick; k++)
             {
+                int t = k * tickTime;
                 IPen pen = t % BarTime == 0 ? BarLine : t % BeatTime == 0 ? BeatLine : TickWidth >= 10 ? TickLine : null;
                 if (pen == null) continue;
                 double x = Math.Round(X(t)) + 0.5;
-                dc.DrawLine(pen, new Point(x, 0), new Point(x, height));
+                dc.DrawLine(pen, new Point(x, top), new Point(x, bottom));
             }
 
             // Notes: the drag's preview instead of what it moves.
@@ -269,6 +327,7 @@ namespace ReBuzz.Studio.Views.Session
             for (int i = 0; i < notes.Count; i++)
             {
                 if (hidden != null && hidden.Contains(i)) continue;
+                if (!InView(notes[i], vis)) continue;
                 DrawNote(dc, notes[i], selected.Contains(i));
             }
             if (dragTo != null)
@@ -285,24 +344,34 @@ namespace ReBuzz.Studio.Views.Session
                 if (position >= 0)
                 {
                     double x = X(position * ClipNotes.TimeBase);
-                    dc.DrawLine(PlayheadPen, new Point(x, 0), new Point(x, height));
+                    dc.DrawLine(PlayheadPen, new Point(x, top), new Point(x, bottom));
                 }
             }
 
-            // Keys.
-            for (int note = 0; note < 128; note++)
+            // Keys, at the viewer's left edge.
+            double keysX = KeysLeft;
+            for (int note = noteLow; note <= noteHigh; note++)
             {
                 double y = Y(note);
                 bool black = IsBlack(note);
-                dc.DrawRectangle(black ? BlackKey : WhiteKey, NoteEdge, new Rect(0, y, KeysWidth, RowHeight));
+                dc.DrawRectangle(black ? BlackKey : WhiteKey, NoteEdge, new Rect(keysX, y, KeysWidth, RowHeight));
                 if (note % 12 == 0 || note == keyNote)
                 {
                     var text = new FormattedText(ClipNotes.Name(note), CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
                         Typeface.Default, Math.Min(10, RowHeight - 1), black ? WhiteKey : BlackKey);
-                    dc.DrawText(text, new Point(3, y + (RowHeight - text.Height) / 2));
+                    dc.DrawText(text, new Point(keysX + 3, y + (RowHeight - text.Height) / 2));
                 }
             }
         }
+
+        bool InView(ClipNote n, Rect vis)
+        {
+            var r = RectOf(n);
+            return r.Right >= vis.X && r.X <= vis.Right && r.Bottom >= vis.Y && r.Y <= vis.Bottom;
+        }
+
+        /// <summary>How many notes the last redraw would draw in the current view (tests: only the visible region is drawn).</summary>
+        internal int NotesInView() => notes.Count(n => InView(n, Visible));
 
         void DrawNote(DrawingContext dc, ClipNote n, bool isSelected)
         {
@@ -328,7 +397,7 @@ namespace ReBuzz.Studio.Views.Session
             var mods = e.KeyModifiers;
             bool additive = Additive(mods);
 
-            if (p.X < KeysWidth)
+            if (p.X < KeysLeft + KeysWidth && p.X >= KeysLeft)
             {
                 keyNote = downNote;
                 Source.Preview(keyNote, lastVelocity, true);
@@ -349,7 +418,7 @@ namespace ReBuzz.Studio.Views.Session
                 }
                 else if (downTime < Length)
                 {
-                    AddNote(downTime, downNote);
+                    AddNote(downTime, downNote, GridFor(mods));
                     Source.Preview(downNote, lastVelocity, true);
                     Source.Preview(downNote, 0, false);
                 }
@@ -369,7 +438,7 @@ namespace ReBuzz.Studio.Views.Session
                     selected.Add(hit);
                 }
                 var r = RectOf(notes[hit]);
-                drag = mods.HasFlag(KeyModifiers.Alt) ? Drag.Velocity
+                drag = mods.HasFlag(KeyModifiers.Alt) && !AltBypassesGrid ? Drag.Velocity
                      : p.X >= r.Right - EdgeGrab ? Drag.Resize
                      : Drag.Move;
                 dragFrom = SelectedNotes();
@@ -400,7 +469,7 @@ namespace ReBuzz.Studio.Views.Session
             var mods = e.KeyModifiers;
             if (drag == Drag.None)
             {
-                int hit = p.X >= KeysWidth ? ClipNotes.HitTest(notes, TimeAt(p.X), NoteAt(p.Y)) : -1;
+                int hit = p.X >= KeysLeft + KeysWidth ? ClipNotes.HitTest(notes, TimeAt(p.X), NoteAt(p.Y)) : -1;
                 Cursor = hit >= 0 && p.X >= RectOf(notes[hit]).Right - EdgeGrab ? SizeWE : hit >= 0 ? SizeAll : null;
                 return;
             }
@@ -416,7 +485,7 @@ namespace ReBuzz.Studio.Views.Session
                     {
                         int dt = TimeAt(p.X) - downTime;
                         int dn = NoteAt(p.Y) - downNote;
-                        dragTo = ClipNotes.Move(dragFrom, dt, dn, mods.HasFlag(KeyModifiers.Shift) ? 1 : Grid, Length);
+                        dragTo = ClipNotes.Move(dragFrom, dt, dn, GridFor(mods), Length);
                         int heard = dragTo.Count > 0 ? dragTo[0].Note : -1;
                         if (heard != keyNote && heard >= 0)
                         {
@@ -429,7 +498,7 @@ namespace ReBuzz.Studio.Views.Session
                 case Drag.Resize:
                     {
                         int dd = (int)Math.Round((p.X - down.X) / TickWidth * ClipNotes.TimeBase);
-                        dragTo = ClipNotes.Resize(dragFrom, dd, mods.HasFlag(KeyModifiers.Shift) ? 1 : Grid, Length);
+                        dragTo = ClipNotes.Resize(dragFrom, dd, GridFor(mods), Length);
                         break;
                     }
                 case Drag.Velocity:
@@ -510,6 +579,12 @@ namespace ReBuzz.Studio.Views.Session
                     break;
                 case Key.A when mods == KeyModifiers.Control:
                     SelectAll();
+                    break;
+                case Key.Left when mods.HasFlag(KeyModifiers.Shift):
+                    ResizeSelected(-step);
+                    break;
+                case Key.Right when mods.HasFlag(KeyModifiers.Shift):
+                    ResizeSelected(step);
                     break;
                 case Key.Left:
                     MoveSelected(-step, 0);

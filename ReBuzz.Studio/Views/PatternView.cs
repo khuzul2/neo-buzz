@@ -57,6 +57,7 @@ namespace ReBuzz.Studio.Views
         readonly ComboBox patternBox = new ComboBox { Width = 120, Margin = new Thickness(4) };
         readonly Button newPattern = new Button { Content = "New pattern", Margin = new Thickness(4), Padding = new Thickness(8, 2) };
         readonly ContentControl editorHost = new ContentControl();
+        readonly Detail.TrackerRoll rollView;
         readonly TextBlock empty = new TextBlock { Foreground = StudioTokens.TextSecondaryBrush, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         readonly List<IMachine> machines = new List<IMachine>();
         IMachine machine;
@@ -66,6 +67,7 @@ namespace ReBuzz.Studio.Views
         public PatternPage(StudioHost host)
         {
             core = host.Core;
+            rollView = new Detail.TrackerRoll(core) { IsVisible = false };
             var bar = new WrapPanel { Orientation = Orientation.Horizontal, Background = StudioTokens.SurfacePanelBrush };      // wraps in a narrow window (decision 37)
             bar.Children.Add(Label("Machine:"));
             bar.Children.Add(machineBox);
@@ -74,7 +76,7 @@ namespace ReBuzz.Studio.Views
             bar.Children.Add(newPattern);
             SetDock(bar, Dock.Top);
             Children.Add(bar);
-            Children.Add(new Panel { Children = { empty, editorHost } });
+            Children.Add(new Panel { Children = { empty, editorHost, rollView } });
 
             machineBox.SelectionChanged += (s, e) =>
             {
@@ -182,6 +184,26 @@ namespace ReBuzz.Studio.Views
         /// <summary>The editor control the page shows now (the Modern Pattern Editor's view), or null.</summary>
         public Control EditorControl => editorHost.Content as Control;
 
+        // Fork (ux-overhaul.md P3b): the Tracker and the piano roll are two views of the pattern the choosers name.
+        bool rollMode;
+
+        /// <summary>Whether the piano roll is shown instead of the Tracker's grid.</summary>
+        public bool IsRollMode => rollMode;
+
+        /// <summary>The piano roll (tests, the window).</summary>
+        internal Detail.TrackerRoll Roll => rollView;
+
+        /// <summary>Shows the piano roll (true) or the Tracker (false) for the same pattern.</summary>
+        public void SetRollMode(bool roll)
+        {
+            if (rollMode == roll) return;
+            rollMode = roll;
+            editorHost.IsVisible = !roll;
+            rollView.IsVisible = roll;
+            if (roll) rollView.Show(pattern);
+            UpdateEmpty();
+        }
+
         public IMachine Machine => machine;
 
         public IPattern Pattern => pattern;
@@ -228,6 +250,7 @@ namespace ReBuzz.Studio.Views
         {
             if (!CanUndo) return false;
             EditContext.ActionStack.Undo();
+            if (rollMode) rollView.Poll();
             return true;
         }
 
@@ -235,11 +258,18 @@ namespace ReBuzz.Studio.Views
         {
             if (!CanRedo) return false;
             EditContext.ActionStack.Redo();
+            if (rollMode) rollView.Poll();
             return true;
         }
-        public bool Cut() => Run(EditContext?.CutCommand);
-        public bool Copy() => Run(EditContext?.CopyCommand);
-        public bool Paste() => Run(EditContext?.PasteCommand);
+
+        // The notes of the piano roll answer the Edit commands while it is shown (the tracker has its own keys for these).
+        public bool Delete() => rollMode && rollView.Delete();
+        public bool SelectAll() => rollMode && rollView.SelectAll();
+        public bool DeselectAll() => rollMode && rollView.DeselectAll();
+        public bool Duplicate() => rollMode && rollView.Duplicate();
+        public bool Cut() => !rollMode && Run(EditContext?.CutCommand);
+        public bool Copy() => !rollMode && Run(EditContext?.CopyCommand);
+        public bool Paste() => !rollMode && Run(EditContext?.PasteCommand);
 
         static bool Run(System.Windows.Input.ICommand command)
         {
@@ -266,7 +296,8 @@ namespace ReBuzz.Studio.Views
             }
             Dispatcher.UIThread.Post(() =>
             {
-                if (pattern != null) core.ActivatePatternEditor();
+                if (rollMode) rollView.FocusRoll();
+                else if (pattern != null) core.ActivatePatternEditor();
             });
         }
 
@@ -367,6 +398,7 @@ namespace ReBuzz.Studio.Views
             }
             if (pattern == null && m != null && m.Patterns.Count == 0)
                 editorHost.Content = null;
+            if (rollMode) rollView.Show(pattern);
             ShowPatternsEditor();
             UpdateEmpty();
             PatternView.RaisePatternShown(pattern);
@@ -419,7 +451,7 @@ namespace ReBuzz.Studio.Views
         void UpdateEmpty()
         {
             bool none = editorHost.Content == null;
-            empty.IsVisible = none;
+            empty.IsVisible = none && !rollMode;
             empty.Text = machine == null ? "No machine." : machine.Patterns.Count == 0
                 ? $"{machine.Name} has no patterns. New pattern makes one."
                 : "Choose a pattern.";

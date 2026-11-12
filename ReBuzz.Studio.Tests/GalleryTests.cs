@@ -687,6 +687,21 @@ namespace ReBuzz.Studio.Tests
                     Click(window, Centre(help, window));
                 });
 
+                // The piano roll in the detail panel (ux-overhaul.md P3b): the same pattern as the Tracker above, as a note grid.
+                Try("058-piano-roll", () =>
+                {
+                    window.Detail.ShowPage(true, true);
+                    PatternView.Edit(demo.LineA);
+                    Wait(250);
+                    var roll = PatternView.Page.Roll;
+                    roll.Poll();
+                    roll.Roll?.SelectAll();
+                    Wait(100);
+                    Shot(window, "058-piano-roll", "Piano roll: Bass's Line A, the same pattern as the Tracker (the notes of its MIDI lanes), maximised over the window, all notes selected.",
+                        "The Piano roll button in the detail bar (Alt+Cmd+4), after choosing a pattern.");
+                    window.Detail.SetPage(false);
+                });
+
                 Try("060-song-notes", () =>
                 {
                     window.Detail.Restore();

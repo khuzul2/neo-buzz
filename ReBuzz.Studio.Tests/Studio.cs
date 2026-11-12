@@ -33,6 +33,7 @@ namespace ReBuzz.Studio.Tests
         {
             if (host?.Registry is not { } registry) return;
             registry.Write("DetailOpen", false, "Studio");
+            registry.Write("DetailPianoRoll", false, "Studio");
             registry.Write("BrowserOpen", false, "Studio");
         }
 

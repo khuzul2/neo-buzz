@@ -476,6 +476,7 @@ namespace ReBuzz.Studio.Shell
             yield return Command("view.browser", mac, () => browser?.Toggle(), () => browser != null, () => browser?.IsOpen == true);
             yield return Command("view.inspector", mac, () => inspector?.Toggle(), () => inspector != null, () => inspector?.IsOpen == true);
             yield return Command("view.detail", mac, () => detail?.Toggle(), () => detail != null, () => detail?.IsOpen == true);
+            yield return Command("view.pianoroll", mac, ShowPianoRoll, () => detail != null, () => detail?.IsOpen == true && detail.IsPianoRoll);
             yield return Command("view.maximise", mac, () => ToggleTrackerMaximised(), () => detail != null, () => detail?.IsMaximised == true);
             yield return Command("view.mixer", mac, ToggleSessionMixer, () => host.Core?.SessionLayout != null, () => host.Core?.SessionLayout?.Document?.ShowMixer == true);
         }
@@ -691,6 +692,7 @@ namespace ReBuzz.Studio.Shell
                 Bind(ViewCommand(title), () => ShowView(title), k => k.KeyModifiers == CommandModifiers && k.Key >= Key.D1 && k.Key <= Key.D9);
             }
             Bind("view.notes", () => UnlessEditorKeeps("view.notes", ShowSongNotes), k => k.KeyModifiers == CommandModifiers && k.Key == Key.D5);
+            Bind("view.pianoroll", ShowPianoRoll);
             Bind("view.maximise", () => ToggleTrackerMaximised(), k => k.Key == Key.F);
             Bind("view.browser", () => browser?.Toggle());
             Bind("view.inspector", () => inspector?.Toggle());
@@ -783,7 +785,7 @@ namespace ReBuzz.Studio.Shell
             {
                 // The Tracker in the detail panel, docked (maximised stays so), with the keyboard in the editor.
                 if (detail == null) return;
-                detail.Show(detail.IsMaximised);
+                detail.ShowPage(false, detail.IsMaximised);
                 PatternView.Show();
                 return;
             }
@@ -793,6 +795,14 @@ namespace ReBuzz.Studio.Shell
                 detail?.Restore();      // the views are behind the maximised Tracker
                 tabs.SelectedItem = tab;
             }
+        }
+
+        /// <summary>⌥⌘4: the detail panel's piano roll, docked (maximised stays so), with the keyboard in it.</summary>
+        internal void ShowPianoRoll()
+        {
+            if (detail == null) return;
+            detail.ShowPage(true, detail.IsMaximised);
+            PatternView.Show();
         }
 
         /// <summary>F2 and ⇧⌘F: the Tracker over the whole window, and back to the panel.</summary>
