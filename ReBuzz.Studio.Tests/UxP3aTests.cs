@@ -313,8 +313,9 @@ namespace ReBuzz.Studio.Tests
             {
                 rig.Show(view);
                 bool was = rig.Inspector.IsOpen;
-                rig.Window.KeyPressQwerty(PhysicalKey.I, RawInputModifiers.Control | RawInputModifiers.Alt);
-                rig.Window.KeyReleaseQwerty(PhysicalKey.I, RawInputModifiers.Control | RawInputModifiers.Alt);
+                var mods = (OperatingSystem.IsMacOS() ? RawInputModifiers.Meta : RawInputModifiers.Control) | RawInputModifiers.Alt;
+                rig.Window.KeyPressQwerty(PhysicalKey.I, mods);
+                rig.Window.KeyReleaseQwerty(PhysicalKey.I, mods);
                 Settle();
                 Assert.That(rig.Inspector.IsOpen, Is.Not.EqualTo(was), $"{view}: ⌥⌘I");
             }
