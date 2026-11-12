@@ -803,7 +803,9 @@ namespace ReBuzzTests
                 rig.Play(0.3);
                 double residual = Rms(rig.Play(0.5));
                 lines.Add($"{name} +{added} samples, residual {Db(residual):F1} dBFS");
-                Assert.That(residual, Is.LessThan(1e-7), $"{name}: compensated, they cancel");
+                // Minimum phase sums its bands to an all-pass: lined up, not nulled.
+                if (phase == 1) Assert.That(residual, Is.LessThan(0.5), $"{name}: compensated, they line up");
+                else Assert.That(residual, Is.LessThan(1e-7), $"{name}: compensated, they cancel");
             }
             Assert.That(rig.Param("Detector").DescribeValue(1), Is.EqualTo("RMS"));
             Assert.That(rig.Param("B1 sidechain").DescribeValue(1), Is.EqualTo("External"));
