@@ -51,6 +51,8 @@ namespace ReBuzz.Studio.Views.Machines
         HashSet<IMachine> bandBase = new HashSet<IMachine>();
         IMachine hover;
         bool hoverDelete;
+        IMachine hoverPort, connectRefused;     // P3d: the machine whose port dot the pointer is on; the invalid target of a connect drag
+        string connectWhy;
 
         public MachineCanvas(ReBuzzCore core)
         {
@@ -78,6 +80,45 @@ namespace ReBuzz.Studio.Views.Machines
         public Vector Offset => offset;
         public Size Extent => new Size(map.Width * Zoom, map.Height * Zoom);
         public IReadOnlyCollection<IMachine> Selection => selected;
+
+        /// <summary>P3d: why the last connect drag was refused (shown by the canvas for two seconds), else null.</summary>
+        public string Refusal { get; private set; }
+
+        Point refusalAt;
+
+        /// <summary>P3d: the machine whose port dot the pointer is on (tests).</summary>
+        public IMachine PortHover => hoverPort;
+
+        /// <summary>P3d: a dot is drawn on a machine that is hovered or selected, and on every input while a wire is being dragged.</summary>
+        bool PortShown(IMachine m, bool input) =>
+            hover == m || selected.Contains(m) || (drag == Drag.Connect && input);
+
+        static bool HasOutput(IMachine m) => !m.IsControlMachine && m.DLL.Info.Type is MachineType.Generator or MachineType.Effect;
+
+        static bool HasInput(IMachine m) => !m.IsControlMachine && m.DLL.Info.Type is MachineType.Effect or MachineType.Master;
+
+        /// <summary>The canvas point of a machine's port dot (tests).</summary>
+        public Point OutPortOf(IMachine m) => MachineGeometry.OutPort(BoxOf(m));
+
+        public Point InPortOf(IMachine m) => MachineGeometry.InPort(BoxOf(m));
+
+        /// <summary>The machine whose output dot is at the point (a dot is found when the pointer arrives at it, and then drawn), or null.</summary>
+        IMachine OutPortAt(Point p)
+        {
+            var list = Ordered();
+            for (int i = list.Count - 1; i >= 0; i--)
+                if (HasOutput(list[i]) && MachineGeometry.Near(MachineGeometry.OutPort(BoxOf(list[i])), p)) return list[i];
+            return null;
+        }
+
+        /// <summary>The machine whose input dot is at the point, or null.</summary>
+        IMachine InPortAt(Point p)
+        {
+            var list = Ordered();
+            for (int i = list.Count - 1; i >= 0; i--)
+                if (HasInput(list[i]) && MachineGeometry.Near(MachineGeometry.InPort(BoxOf(list[i])), p)) return list[i];
+            return null;
+        }
 
         IEnumerable<IMachine> Machines => song?.Machines ?? (IEnumerable<IMachine>)Array.Empty<IMachine>();
 
@@ -134,6 +175,7 @@ namespace ReBuzz.Studio.Views.Machines
                 foreach (var m in song.Machines) WatchMachine(m);
             }
             Redraw();
+            MachinesChanged?.Invoke();
         }
 
         void WatchMachine(IMachine m)
@@ -141,10 +183,14 @@ namespace ReBuzz.Studio.Views.Machines
             if (watched.Add(m)) m.PropertyChanged += OnMachineChanged;
         }
 
+        /// <summary>P3d: the song's machines changed (the empty state follows).</summary>
+        public event Action MachinesChanged;
+
         void OnMachineAdded(IMachine m)
         {
             WatchMachine(m);
             Redraw();
+            MachinesChanged?.Invoke();
         }
 
         void OnMachineRemoved(IMachine m)
@@ -156,6 +202,7 @@ namespace ReBuzz.Studio.Views.Machines
             if (hover == m) hover = null;
             if (connectFrom == m || connectTo == m) EndDrag(commit: false);
             Redraw();
+            MachinesChanged?.Invoke();
         }
 
         void OnConnectionChanged(IMachineConnection c)
@@ -409,8 +456,49 @@ namespace ReBuzz.Studio.Views.Machines
                 foreach (var m in machines)
                     DrawMachine(ctx, m, colours, solo);
 
+                DrawPorts(ctx, machines);
+
                 if (drag == Drag.Select)
                     ctx.DrawRectangle(BandFill, BandPen, band, 2, 2);
+            }
+        }
+
+        static readonly IBrush PortFill = Shell.Design.StudioTokens.SurfaceBaseBrush;
+
+        /// <summary>P3d: the port dots (a filled output dot, a hollow input dot), the refused target and the refusal's words.</summary>
+        void DrawPorts(DrawingContext ctx, List<IMachine> machines)
+        {
+            var accent = Shell.Design.StudioTokens.AccentBrush;
+            var ring = Shell.Design.StudioTokens.TextPrimaryBrush;
+            var bad = Shell.Design.StudioTokens.ErrorTextBrush;
+            double r = MachineGeometry.PortRadius;
+            foreach (var m in machines)
+            {
+                var box = BoxOf(m);
+                bool refused = m == connectRefused;
+                if (HasOutput(m) && PortShown(m, false))
+                {
+                    bool hot = hoverPort == m && MachineGeometry.Near(MachineGeometry.OutPort(box), lastLogical) || (drag == Drag.Connect && connectFrom == m);
+                    ctx.DrawEllipse(accent, new Pen(ring, 1.5), MachineGeometry.OutPort(box), hot ? r + 2 : r, hot ? r + 2 : r);
+                }
+                if (HasInput(m) && PortShown(m, true))
+                {
+                    bool valid = drag == Drag.Connect && m != connectFrom && core.SongCore.CanConnectMachines(connectFrom, m);
+                    bool hot = (hoverPort == m && !MachineGeometry.Near(MachineGeometry.OutPort(box), lastLogical)) || m == connectTo;
+                    var pen = new Pen(refused ? bad : valid || !(drag == Drag.Connect) ? accent : ring, hot || refused ? 3 : 2);
+                    ctx.DrawEllipse(PortFill, pen, MachineGeometry.InPort(box), hot ? r + 2 : r, hot ? r + 2 : r);
+                }
+                if (refused)
+                    ctx.DrawRectangle(null, new Pen(bad, 2), box.Deflate(1));
+            }
+            string words = connectWhy ?? Refusal;
+            if (words != null)
+            {
+                var at = connectWhy != null ? connectPoint + new Vector(12, 14) : refusalAt + new Vector(-40, 30);
+                var ft = new FormattedText(words, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, PlainFace, 12, bad);
+                var plate = new Rect(at.X - 4, at.Y - 2, ft.Width + 8, ft.Height + 4);
+                ctx.DrawRectangle(new SolidColorBrush(Shell.Design.StudioTokens.SevereBack), new Pen(bad, 1), plate, 3, 3);
+                ctx.DrawText(ft, at);
             }
         }
 
@@ -624,10 +712,12 @@ namespace ReBuzz.Studio.Views.Machines
             var p = ToLogical(view);
             var kind = pt.Properties.PointerUpdateKind;
             var mods = e.KeyModifiers;
-            var machine = MachineAt(p);
+            var outPort = pt.Properties.PointerUpdateKind == PointerUpdateKind.LeftButtonPressed && mods == KeyModifiers.None ? OutPortAt(p) : null;
+            var machine = MachineAt(p) ?? outPort ?? InPortAt(p);
             var wire = machine == null ? WireAt(p) : null;
             e.Handled = true;
             if (drag != Drag.None) return;
+            Refusal = null;
             dragButton = kind switch
             {
                 PointerUpdateKind.MiddleButtonPressed => MouseButton.Middle,
@@ -661,6 +751,13 @@ namespace ReBuzz.Studio.Views.Machines
             }
 
             if (kind != PointerUpdateKind.LeftButtonPressed) return;
+
+            if (outPort != null)
+            {
+                // P3d: a drag from the output dot connects, as Shift-drag does from anywhere on the box.
+                BeginConnect(outPort, p, e);
+                return;
+            }
 
             if (machine != null)
             {
@@ -703,8 +800,30 @@ namespace ReBuzz.Studio.Views.Machines
                 return;
             }
 
+            if (e.ClickCount == 2 && mods == KeyModifiers.None)
+            {
+                // P3d: a double click on empty canvas opens the machine browser there.
+                BrowseRequested?.Invoke(p, view, "");
+                return;
+            }
             if (mods.HasFlag(KeyModifiers.Shift)) BeginPan(view, e);
             else BeginSelect(p, add: mods.HasFlag(CommandKey), e);
+        }
+
+        /// <summary>P3d: the machine browser is wanted at a canvas point (logical pixels), a view point, with the text typed so far.</summary>
+        public event Action<Point, Point, string> BrowseRequested;
+
+        /// <summary>P3d: typing on the canvas with nothing selected seeds the browser's search (with machines selected, M, S and B act on them).</summary>
+        public bool TypesToSearch => selected.Count == 0;
+
+        Point lastView = new Point(80, 80), lastLogical;
+
+        protected override void OnTextInput(TextInputEventArgs e)
+        {
+            base.OnTextInput(e);
+            if (e.Handled || drag != Drag.None || string.IsNullOrEmpty(e.Text) || !char.IsLetterOrDigit(e.Text[0])) return;
+            BrowseRequested?.Invoke(ToLogical(lastView), lastView, e.Text);
+            e.Handled = true;
         }
 
         Point TranslateToAmp(Point view) => Amp?.Parent is Visual parent ? this.TranslatePoint(view, parent) ?? view : view;
@@ -714,6 +833,7 @@ namespace ReBuzz.Studio.Views.Machines
             base.OnPointerMoved(e);
             var view = e.GetPosition(this);
             var p = ToLogical(view);
+            lastLogical = p;
             switch (drag)
             {
                 case Drag.Move:
@@ -729,12 +849,15 @@ namespace ReBuzz.Studio.Views.Machines
                     ScrollTo(panStart - (view - dragLast));
                     break;
                 default:
-                    var m = MachineAt(p);
-                    bool overDelete = m != null && MachineGeometry.DeleteButton(BoxOf(m)).Contains(p);
-                    if (m != hover || overDelete != hoverDelete)
+                    lastView = view;
+                    var port = OutPortAt(p) ?? InPortAt(p);
+                    var m = port ?? MachineAt(p);
+                    bool overDelete = port == null && m != null && MachineGeometry.DeleteButton(BoxOf(m)).Contains(p);
+                    if (m != hover || overDelete != hoverDelete || port != hoverPort)
                     {
                         hover = m;
                         hoverDelete = overDelete;
+                        hoverPort = port;
                         UpdateTip();
                         InvalidateVisual();
                     }
@@ -749,7 +872,11 @@ namespace ReBuzz.Studio.Views.Machines
         }
 
         /// <summary>The tip the canvas shows now (tests).</summary>
-        public string HoverTip => hover is MachineCore mc && mc.IsDiverged
+        public string HoverTip => hoverPort != null
+            ? (HasOutput(hoverPort) && MachineGeometry.Near(MachineGeometry.OutPort(BoxOf(hoverPort)), lastLogical)
+                ? "Output of " + hoverPort.Name + ": drag to another machine's input to connect (Shift-drag from the box does the same)"
+                : "Input of " + hoverPort.Name + ": drop a wire from another machine's output here")
+            : hover is MachineCore mc && mc.IsDiverged
             ? $"Muted to protect your ears: it {Shell.PlainWords.Diverged(mc)} at beat {mc.DivergedPosition / (double)Math.Max(1, core.TPB):0.##}, " +
               "so the guard silenced and stopped it. Reset and Unmute is on its menu and in the bar above."
             : null;
@@ -869,7 +996,9 @@ namespace ReBuzz.Studio.Views.Machines
         void DragConnect(Point p)
         {
             connectPoint = p;
-            var target = MachineAt(p);
+            var target = MachineAt(p) ?? InPortAt(p);
+            connectRefused = null;
+            connectWhy = null;
             if (target == null || target == connectFrom)
             {
                 connectTo = null;
@@ -883,6 +1012,8 @@ namespace ReBuzz.Studio.Views.Machines
             else
             {
                 connectTo = null;
+                connectRefused = target;
+                connectWhy = MachineEdits.WhyNotConnect(core, connectFrom, target);
                 Cursor = NoCursor;
             }
             InvalidateVisual();
@@ -942,8 +1073,19 @@ namespace ReBuzz.Studio.Views.Machines
             {
                 var from = connectFrom;
                 var to = connectTo;
-                connectFrom = connectTo = null;
+                var refused = connectRefused;
+                string why = connectWhy;
+                connectFrom = connectTo = connectRefused = null;
+                connectWhy = null;
                 if (commit && to != null) MachineEdits.Connect(core, from, to);
+                else if (commit && refused != null && why != null)
+                {
+                    // P3d: a refused drop says why, on the canvas, for two seconds; the song is untouched.
+                    Refusal = why;
+                    refusalAt = BoxOf(refused).Center;
+                    string shown = why;
+                    DispatcherTimer.RunOnce(() => { if (Refusal == shown) { Refusal = null; InvalidateVisual(); } }, TimeSpan.FromSeconds(2));
+                }
             }
             InvalidateVisual();
         }

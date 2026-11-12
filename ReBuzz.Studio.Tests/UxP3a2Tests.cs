@@ -153,7 +153,7 @@ namespace ReBuzz.Studio.Tests
             rig.Browser.Open();
             Settle();
             var rows = rig.Browser.Rows;
-            Assert.That(rows, Does.Contain("#Instruments").And.Contain("#Effects").And.Contain("gear:Neo Poly").And.Contain("gear:Neo EQ"));
+            Assert.That(rows, Does.Contain("#Synths").And.Contain("#EQ & Filter").And.Contain("gear:Neo Poly").And.Contain("gear:Neo EQ"));
             Assert.That(rows.Any(r => r.StartsWith("#Patterns of")), Is.False, "no patterns while nothing is selected");
 
             rig.Selection.Set(rig.Drums, null, this);
@@ -181,7 +181,7 @@ namespace ReBuzz.Studio.Tests
             rig.Browser.Search.Text = "poly";
             Settle();
             Assert.That(rig.Browser.Rows, Does.Contain("gear:Neo Poly").And.Not.Contain("gear:Neo EQ"), "a part of the name, any case");
-            Assert.That(rig.Browser.Rows.Where(r => r.StartsWith("gear:")), Is.All.Matches<string>(r => r.Contains("poly", StringComparison.OrdinalIgnoreCase)));
+            Assert.That(rig.Browser.Rows.First(r => r.StartsWith("gear:")), Is.EqualTo("gear:Neo Poly"), "the name's match is the best (P3d: tags and use_for match too, below it)");
             rig.Browser.Search.Text = "line";
             Settle();
             Assert.That(rig.Browser.Rows, Does.Contain("pattern:Line"), "patterns too");
@@ -226,6 +226,8 @@ namespace ReBuzz.Studio.Tests
             rig.Browser.Open();
             Settle();
             int before = rig.Song.Core.Song.Machines.Count;
+            rig.Browser.Search.Text = "neo eq";        // the list is long now (categories, tags): the row is at the top
+            Settle();
             DoubleClick(rig.Window, rig.CentreOf(rig.Row("gear:Neo EQ")));
             Settle();
             Assert.That(rig.Song.Core.Song.Machines.Count, Is.EqualTo(before + 1));

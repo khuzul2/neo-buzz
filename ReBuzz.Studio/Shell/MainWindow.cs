@@ -713,6 +713,8 @@ namespace ReBuzz.Studio.Shell
         void OnSingleKey(object sender, KeyEventArgs e)
         {
             if (e.Handled || tabs.ItemCount == 0 || e.KeyModifiers != KeyModifiers.None || !SingleKeysWork || TransportKeys.KeepsSpace(e.Source)) return;
+            // P3d (decision 58): on the Machine View's canvas with nothing selected a letter is typing, which seeds the browser's search.
+            if (e.Key >= Key.A && e.Key <= Key.Z && FocusManager?.GetFocusedElement() is Views.Machines.MachineCanvas { TypesToSearch: true }) return;
             foreach (var (id, run) in singleKeys)
             {
                 if (StudioKeymap.Get(id).Gestures().Any(g => g.Key == e.Key && g.KeyModifiers == KeyModifiers.None))
