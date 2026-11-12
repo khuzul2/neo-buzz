@@ -82,7 +82,7 @@ namespace ReBuzz.Agent
                 catch (Exception) { return p.Default; }
             }
             var face = MachineFace.Plan(m.DLL.Name, manifest.Quality, manifest.Summary, m.DLL.Info.Type == MachineType.Generator,
-                m.TrackCount, faceParams, Raw, () => Math.Max(1, ReBuzzCore.masterInfo.SamplesPerSec));
+                m.TrackCount, faceParams, Raw, () => Math.Max(1, ReBuzzCore.masterInfo.SamplesPerSec), manifest.Type);
             return (face, table.ToArray(), slots);
         }
 

@@ -1,47 +1,67 @@
-// Fork (docs/specs/ux-overhaul.md §3): the studio's design tokens, one table for every view: surfaces,
-// text, the one accent, the reserved state colours, and the contrast and size floor. P1 uses the state,
-// text and contrast parts; P2 moves the values into the editor kit's toolkit-free core so the machine
-// editors read the same table.
+// Fork (docs/specs/ux-overhaul.md §3): the studio's design tokens, one table for every view: surfaces, text, the one
+// accent, the reserved state colours, the type scale and the 8 pt grid, and the contrast and size floor. The values are
+// the editor kit's toolkit-free table (Machines/NeoBuzz.Editor/Core/Tokens.cs, P2a), which the machine editors read
+// too; this file gives them to Avalonia.
 
 using System;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
+using NeoBuzz.Editor;
 
 namespace ReBuzz.Studio.Shell.Design
 {
     internal static class StudioTokens
     {
+        /// <summary>A token's colour on Avalonia.</summary>
+        public static Color Of(NeoColor c) => Color.FromArgb(c.A, c.R, c.G, c.B);
+
         // ---- surfaces (dark ramp; ux-overhaul.md §3.1)
-        public static readonly Color SurfaceBase = Color.Parse("#141416");
-        public static readonly Color SurfaceView = Color.Parse("#1B1B1E");
-        public static readonly Color SurfacePanel = Color.Parse("#242428");
-        public static readonly Color SurfaceControl = Color.Parse("#2E2E34");
-        public static readonly Color SurfaceBorder = Color.Parse("#37373F");
+        public static readonly Color SurfaceBase = Of(Tokens.SurfaceBase);
+        public static readonly Color SurfaceView = Of(Tokens.SurfaceView);
+        public static readonly Color SurfacePanel = Of(Tokens.SurfacePanel);
+        public static readonly Color SurfaceControl = Of(Tokens.SurfaceControl);
+        public static readonly Color SurfaceBorder = Of(Tokens.SurfaceBorder);
 
         // ---- text
-        public static readonly Color TextPrimary = Color.Parse("#E8E8EC");
-        public static readonly Color TextSecondary = Color.Parse("#A0A0AA");
-        public static readonly Color TextPlaceholder = Color.Parse("#8C8C96");
+        public static readonly Color TextPrimary = Of(Tokens.TextPrimary);
+        public static readonly Color TextSecondary = Of(Tokens.TextSecondary);
+        public static readonly Color TextPlaceholder = Of(Tokens.TextPlaceholder);
+        public static readonly Color TextDisabled = Of(Tokens.TextDisabled);
 
         // ---- the one accent (focus and selection, never a state)
-        public static readonly Color Accent = Color.Parse("#4C8DF6");
-        public static readonly Color SelectionFill = Color.Parse("#1F5FA8");
+        public static readonly Color Accent = Of(Tokens.Accent);
+        public static readonly Color SelectionFill = Of(Tokens.SelectionFill);
 
         // ---- reserved state colours: never offered as clip, track or scene colours
-        public static readonly Color Play = Color.Parse("#34C759");
-        public static readonly Color Record = Color.Parse("#FF453A");
-        public static readonly Color Override = Color.Parse("#E8823A");
+        public static readonly Color Play = Of(Tokens.Play);
+        public static readonly Color Record = Of(Tokens.Record);
+        public static readonly Color Override = Of(Tokens.Override);
+        public static readonly Color Warning = Of(Tokens.Warning);
 
         /// <summary>The state colours, in the order the palette check compares them.</summary>
         public static readonly Color[] StateColours = { Play, Record, Override };
 
         /// <summary>A palette colour this close (ΔE, CIE76) to a state colour isn't offered as a clip colour.</summary>
-        public const double ReservedDistance = 20;
+        public const double ReservedDistance = Tokens.ReservedDistance;
 
-        // ---- size floor (points)
-        public const double MinFontSize = 11;
-        public const double MinControl = 20;
-        public const double HitTarget = 24;
+        /// <summary>A machine category's identity colour (its editor's accent).</summary>
+        public static Color Identity(MachineCategory category) => Of(Tokens.Identity(category));
+
+        // ---- type: Inter (bundled: Avalonia.Fonts.Inter), one scale
+        /// <summary>The UI's font family: the bundled Inter, then the platform's.</summary>
+        public const string FontFamilyName = "fonts:Inter#" + Tokens.FontFamily;
+        public static readonly FontFamily UiFont = new FontFamily(FontFamilyName + ", $Default");
+        public const double FontCaption = Tokens.FontCaption;
+        public const double FontBody = Tokens.FontBody;
+        public const double FontTitle = Tokens.FontTitle;
+        public const double FontHeading = Tokens.FontHeading;
+
+        // ---- size floor and the 8 pt grid (points)
+        public const double MinFontSize = Tokens.FontCaption;
+        public const double MinControl = Tokens.MinControl;
+        public const double HitTarget = Tokens.HitTarget;
+        public const double Grid = Tokens.Grid;
+        public const double HalfGrid = Tokens.HalfGrid;
 
         // ---- brushes
         public static readonly IBrush SurfaceViewBrush = Brush(SurfaceView);

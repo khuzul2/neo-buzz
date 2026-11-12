@@ -6,7 +6,7 @@ namespace NeoBuzz.MachineTests
     /// The machine keyboard's toolkit-free face (docs/specs/studio-mvp.md §3.12): how many octaves fit a width (two at
     /// least), where each key is and which one a point hits (black keys over white ones, every point of the keys on
     /// exactly one key), the velocity of a strike's height (top soft, bottom loud), a drum machine's octaves and where
-    /// they start, the names (scientific, C4 = 60) and the labels shortened to fit, and how a key is drawn.
+    /// they start, the names (as Preferences name notes; C3 = 60 by default) and the labels shortened to fit, and how a key is drawn.
     /// </summary>
     [TestFixture]
     public class KeyboardFaceTests

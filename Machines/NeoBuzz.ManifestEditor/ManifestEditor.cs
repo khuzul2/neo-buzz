@@ -37,7 +37,7 @@ namespace NeoBuzz.Editor
 {
     internal sealed class ManifestEditor : NeoEditor
     {
-        /// <summary>Generators warm, effects cool: kit colours no Neo machine uses.</summary>
+        /// <summary>The classic app's accents: generators warm, effects cool, kit colours no Neo machine uses.</summary>
         static readonly NeoColor GeneratorAccent = NeoColor.FromRgb(0xE8, 0xA8, 0x4A);
         static readonly NeoColor EffectAccent = NeoColor.FromRgb(0x6F, 0xA8, 0xF0);
 
@@ -70,7 +70,8 @@ namespace NeoBuzz.Editor
         }
 
         protected override string Title => face.Gear;
-        protected override NeoColor Accent => face.Generator ? GeneratorAccent : EffectAccent;
+        /// <summary>Its category's identity (from the manifest's type, ux-overhaul.md P2a); the classic app's warm or cool.</summary>
+        protected override NeoColor Accent => Tokens.Identity(Tokens.CategoryOf(face.Generator, face.Type), face.Generator ? GeneratorAccent : EffectAccent);
         internal override ParamDef[] Table => table;
         internal override IReadOnlyList<ParamSlot> Slots => slots;
 

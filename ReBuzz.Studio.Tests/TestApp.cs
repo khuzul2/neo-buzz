@@ -18,6 +18,9 @@ namespace ReBuzz.Studio.Tests
             AppBuilder.Configure<ReBuzz.Studio.App>()
                 .UseSkia()
                 .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
+                // The app's typeface, as Program.BuildAvaloniaApp has it (ux-overhaul.md P2a), so every machine draws the same.
+                .WithInterFont()
+                .With(ReBuzz.Studio.App.FontOptions)
                 // Double clicks and menu hovers by the tests, not by the clock (HeadlessInput.cs).
                 .AfterPlatformServicesSetup(_ => HeadlessInput.Install());
     }

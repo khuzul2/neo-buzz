@@ -10,6 +10,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Themes.Fluent;
 using Avalonia.Threading;
@@ -19,6 +20,9 @@ namespace ReBuzz.Studio
 {
     public sealed class App : Application
     {
+        /// <summary>The app's default typeface: Inter, the design tokens' (ux-overhaul.md P2a), bundled.</summary>
+        internal static FontManagerOptions FontOptions => new FontManagerOptions { DefaultFamilyName = Shell.Design.StudioTokens.FontFamilyName };
+
         /// <summary>The macOS menu bar (NativeMenu) rather than the windows' own menus; tests set it to check the Mac's.</summary>
         internal static bool MacMenus { get; set; } = OperatingSystem.IsMacOS();
 

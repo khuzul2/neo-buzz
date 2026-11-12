@@ -18,8 +18,9 @@ namespace NeoBuzz.Scope
 {
     internal sealed class NeoScopeEditor : NeoEditor
     {
-        static readonly NeoColor AccentColor = NeoColor.FromRgb(0x7E, 0xE0, 0x6A);
-        static readonly NeoColor RightColor = NeoColor.FromRgb(0xFF, 0x9F, 0x5A);
+        // Fork (ux-overhaul.md P2a): the Utility identity in the studio, its own colour in the classic app.
+        static readonly NeoColor AccentColor = Tokens.Identity(MachineCategory.Utility, NeoColor.FromRgb(0x7E, 0xE0, 0x6A));
+        static readonly NeoColor RightColor = Tokens.Partner(AccentColor, NeoColor.FromRgb(0xFF, 0x9F, 0x5A));
         static readonly string[] DisplayNames = { "Left", "Right", "Mid", "Side", "Left and right" };
 
         protected override string Title => "Neo Scope";

@@ -58,6 +58,8 @@ namespace ReBuzz.Studio
         /// </summary>
         public static AppBuilder BuildAvaloniaApp() =>
             AppBuilder.Configure<App>().UsePlatformDetect().WithInterFont().LogToTrace()
-                .With(new MacOSPlatformOptions { DisableDefaultApplicationMenuItems = true });
+                .With(new MacOSPlatformOptions { DisableDefaultApplicationMenuItems = true })
+                // Fork (ux-overhaul.md P2a): Inter everywhere, the design tokens' typeface (bundled: Avalonia.Fonts.Inter).
+                .With(App.FontOptions);
     }
 }
