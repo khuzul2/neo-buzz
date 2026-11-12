@@ -1,8 +1,9 @@
 #nullable disable
 // Dye Essence (docs/specs/dye-essence.md): the hybrid wavetable synth, a Neo-family machine. 16
 // tracks of Note and Velocity, plus MIDI. Each engine slot can play a user wavetable (from a WAV
-// file) kept in the machine state, so songs and presets carry it. DSP in Engine/ (NoteBank, the
-// lanes), parameters generated from Params.def, the editor in DyeEssenceEditor.cs.
+// file), and each LFO a drawn shape, both kept in the machine state, so songs and presets carry
+// them. DSP in Engine/ (NoteBank, the lanes), parameters generated from Params.def, the editor in
+// DyeEssenceEditor.cs (its pages) and the other *Editor.cs files.
 
 using System;
 using System.Collections.Generic;
@@ -16,7 +17,10 @@ using NeoBuzz.Wave;
 
 namespace NeoBuzz.DyeEssence
 {
-    /// <summary>Saved with the song: each slot's user wavetable (32-bit float samples, base64).</summary>
+    /// <summary>
+    /// Saved with the song: each slot's user wavetable (32-bit float samples, base64) and each LFO's drawn
+    /// shape (DrawnShape's text; empty: the default). Songs from before a field load it empty.
+    /// </summary>
     public class DyeEssenceState
     {
         public string TableAName { get; set; } = "";
@@ -28,6 +32,25 @@ namespace NeoBuzz.DyeEssence
         public string TableCName { get; set; } = "";
         public int TableCFrameSize { get; set; }
         public string TableCData { get; set; } = "";
+        public string Lfo1Shape { get; set; } = "";
+        public string Lfo2Shape { get; set; } = "";
+        public string Lfo3Shape { get; set; } = "";
+        public string Lfo4Shape { get; set; } = "";
+
+        internal string Shape(int lfo) => lfo switch { 0 => Lfo1Shape, 1 => Lfo2Shape, 2 => Lfo3Shape, _ => Lfo4Shape } ?? "";
+
+        internal DyeEssenceState WithShape(int lfo, string text)
+        {
+            var s = (DyeEssenceState)MemberwiseClone();
+            switch (lfo)
+            {
+                case 0: s.Lfo1Shape = text; break;
+                case 1: s.Lfo2Shape = text; break;
+                case 2: s.Lfo3Shape = text; break;
+                default: s.Lfo4Shape = text; break;
+            }
+            return s;
+        }
 
         internal (string Name, int FrameSize, string Data) Get(int slot) => slot switch
         {
@@ -54,6 +77,8 @@ namespace NeoBuzz.DyeEssence
     {
         internal static readonly string[] SlotNames = { "A", "B", "C" };
         static readonly int[] TableParam = { P.ATable, P.BTable, P.CTable };
+        internal static readonly int[] LfoShapeParam = { P.L1Shape, P.L2Shape, P.L3Shape, P.L4Shape };
+        internal const int Lfos = 4;
 
         readonly float[] left = new float[DyeEngine.MaxBlock], right = new float[DyeEngine.MaxBlock];
         int rate;
@@ -85,6 +110,8 @@ namespace NeoBuzz.DyeEssence
             set
             {
                 state = value ?? new DyeEssenceState();
+                for (int l = 0; l < Lfos; l++) Engine.SetLfoShape(l, DrawnShape.Parse(state.Shape(l)));
+                ShapesVersion++;
                 for (int slot = 0; slot < SlotNames.Length; slot++)
                 {
                     var (name, frameSize, data) = state.Get(slot);
@@ -114,14 +141,43 @@ namespace NeoBuzz.DyeEssence
         /// </summary>
         public bool Busy => Engine.TablesBuilding;
 
+        /// <summary>LFO <paramref name="lfo"/>'s drawn shape (the default when none was drawn).</summary>
+        internal DrawnShape LfoShape(int lfo) => Engine.LfoShape(lfo);
+
         /// <summary>
-        /// Agent server (mcp-server.md A3, machine_data_import): "wavetable" loads a WAV as a slot's
-        /// user table (item 0, 1, 2: slot A, B, C) and sets that slot's table to User.
+        /// Draws LFO <paramref name="lfo"/>'s shape (UI thread; the audio thread takes it at its next block). Null or the
+        /// default shape clears it from the state.
+        /// </summary>
+        internal void SetLfoShape(int lfo, DrawnShape shape)
+        {
+            shape ??= DrawnShape.Default;
+            state = state.WithShape(lfo, shape.SameAs(DrawnShape.Default) ? "" : shape.ToString());
+            Engine.SetLfoShape(lfo, shape);
+            ShapesVersion++;
+        }
+
+        /// <summary>Counts changes of the drawn shapes (drawn, a song or preset loaded, undone): the editor redraws when it moves.</summary>
+        internal int ShapesVersion { get; private set; }
+
+        /// <summary>
+        /// Agent server (mcp-server.md A3, machine_data_import): "wavetable" loads a WAV as a slot's user table
+        /// (item 0, 1, 2: slot A, B, C) and sets that slot's table to User; "lfo_shape" reads a drawn
+        /// shape from a text file (item 0–3: LFO 1–4) and sets that LFO's shape to Drawn.
         /// </summary>
         public string ImportData(string kind, string path, int item, Action<int, int> setParameter)
         {
-            if (kind != "wavetable") throw new ArgumentException($"Dye Essence doesn't import \"{kind}\"; it takes wavetable.");
-            int slot = item >= 0 && item < SlotNames.Length ? item : 0;
+            if (kind == "lfo_shape")
+            {
+                if (item < 0 || item >= Lfos) throw new ArgumentException($"Dye Essence has {Lfos} LFOs; item {item} doesn't exist (0–{Lfos - 1}: LFO 1–{Lfos})");
+                int lfo = item;
+                if (!DrawnShape.TryParse(File.ReadAllText(path), out var shape, out string error)) throw new InvalidDataException(error);
+                SetLfoShape(lfo, shape);
+                setParameter?.Invoke(LfoShapeParam[lfo], (int)WaveShape.Drawn);
+                return $"Drew LFO {lfo + 1}'s shape ({shape.Count} points: {shape}) and set LFO{lfo + 1} shape to Drawn.";
+            }
+            if (kind != "wavetable") throw new ArgumentException($"Dye Essence doesn't import \"{kind}\"; it takes wavetable and lfo_shape.");
+            if (item < 0 || item >= SlotNames.Length) throw new ArgumentException($"Dye Essence has {SlotNames.Length} slots; item {item} doesn't exist (0 A, 1 B, 2 C)");
+            int slot = item;
             LoadUserTable(slot, path);
             setParameter?.Invoke(TableParam[slot], UserChoice);
             return $"Loaded the wavetable \"{UserTableName(slot)}\" as slot {SlotNames[slot]}'s User table, and set {SlotNames[slot]} table to User.";
@@ -169,12 +225,13 @@ namespace NeoBuzz.DyeEssence
                 {
                     CanExecuteDelegate = _ => true,
                     ExecuteDelegate = _ => NeoAbout.Show(
-                        "Dye Essence — hybrid wavetable synth: three engine slots, each a morphing wavetable with " +
-                        "1–16 unison voices and two warps (bend, squeeze, mirror, asym, sync, window sync, FM, PM, " +
-                        "AM, ring), a sub and a noise, two filters per note (ladder, state-variable, comb) from serial " +
-                        "to parallel, oversampled 2× or 4×. Ten generated tables plus your own (WAV files of " +
-                        "2048-sample frames, a clm chunk's frame size, or a single cycle).\n\nPart of neo-buzz " +
-                        "(docs/specs/dye-essence.md).", "Dye Essence"),
+                        "Dye Essence — hybrid wavetable synth: three engine slots, each a morphing wavetable or an " +
+                        "analog oscillator with 1–16 unison voices and two warps (bend, squeeze, mirror, asym, sync, " +
+                        "window sync, FM, PM, AM, ring), a sub and a noise, two filters per note (ladder, state-variable, " +
+                        "comb) from serial to parallel, oversampled 2× or 4×; two modulation envelopes, four LFOs " +
+                        "(built-in or drawn shapes), four macros and sixteen routes. Ten generated tables plus your own " +
+                        "(WAV files of 2048-sample frames, a clm chunk's frame size, or a single cycle).\n\nPart of " +
+                        "neo-buzz (docs/specs/dye-essence.md).", "Dye Essence"),
                 },
             },
         };
