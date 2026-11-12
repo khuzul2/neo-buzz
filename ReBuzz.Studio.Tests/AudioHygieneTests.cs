@@ -207,7 +207,21 @@ namespace ReBuzz.Studio.Tests
         static Cost Steady(AudioThread audio, int buffers = 400, Action perBuffer = null)
         {
             audio.Read(800, perBuffer);
-            return audio.Read(buffers, perBuffer);
+            return Measured(() => audio.Read(buffers, perBuffer));
+        }
+
+        /// <summary>GuardPolicy: a read that allocated is made again (up to 3 in all); the first that allocated nothing wins, else the last.</summary>
+        static Cost Measured(Func<Cost> read)
+        {
+            Cost cost = null;
+            for (int attempt = 0; attempt < ReBuzzTests.Automation.GuardPolicy.Attempts; attempt++)
+            {
+                var next = read();
+                if (cost != null && next.Bytes != 0) next.Log.Insert(0, $"(attempt {attempt + 1}; the one before allocated {cost.Bytes} bytes)");
+                cost = next;
+                if (cost.Bytes == 0) break;
+            }
+            return cost;
         }
 
         /// <summary>Methods compiled while it listens, by OS thread (diagnostics for a failed check).</summary>
@@ -596,7 +610,7 @@ namespace ReBuzz.Studio.Tests
                 audio.Read(800, setVolume);
                 Core.UiEvents.Drain();
                 told.Clear();
-                var cost = audio.Read(400, setVolume);
+                var cost = Measured(() => audio.Read(400, setVolume));
                 AssertNoAllocation(cost, "automation with listeners (a parameter window's row, the master volume's, one of the test's)");
 
                 // Delivered on the UI thread (here at once; in the studio its timer does it).

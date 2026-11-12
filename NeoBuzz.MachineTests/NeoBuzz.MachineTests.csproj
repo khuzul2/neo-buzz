@@ -41,6 +41,7 @@
          agent server measures with (docs/specs/mcp-server.md §7). Only this file, by name. -->
     <Compile Include="..\Machines\NeoBuzz.Analysis\Loudness.cs" Link="Analysis\Loudness.cs" />
     <!-- The zero-allocation tests measure each block with the engine tests' AllocationWindow (AllocationCheck.cs). -->
+    <Compile Include="..\ReBuzzTests\Automation\GuardPolicy.cs" Link="Automation\GuardPolicy.cs" />
     <Compile Include="..\ReBuzzTests\Automation\AllocationWindow.cs" Link="Automation\AllocationWindow.cs" />
     <!-- The throughput guards time a render against a reference workload in the same run (Throughput.cs; machines.md §6). -->
     <Compile Include="..\ReBuzzTests\Automation\Throughput.cs" Link="Automation\Throughput.cs" />
