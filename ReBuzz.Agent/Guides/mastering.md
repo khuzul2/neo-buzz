@@ -134,6 +134,10 @@ Neo Imager sets the width of four bands and keeps them mono-safe: narrow the low
 
 Neo Strip puts a gate, an EQ, a compressor, a drive, a clipper and a limiter in one machine, each the engine of the Neo machine of that name. It is for tracks and buses before the master; the master chain above uses the separate machines, which have more controls. Its latency is the same whichever stages are on.
 
+### 3f. Sibilance and tape (Neo De-esser, Neo Tape, optional)
+
+A bright or sibilant master (or vocal bus) goes through Neo De-esser before the limiter: `Detector` Absolute at 8 – 10 kHz with `Action` Bell for a bright master, Relative at 6.5 kHz with `Action` Split for a vocal; find the band with `Listen`, then read `reduction_db` (3 – 6 dB on the worst passages). Neo Tape before the clipper or limiter adds a little glue and warmth: start from "Mastering — Subtle Glue (15 ips)", match the loudness with `gain_match_db`, and compare with it bypassed. Neo Gate (the successor of Pedal Gate) belongs on tracks, not on the master.
+
 ### 4. Limiter
 
 Neo Limiter: `Ceiling` (dBTP), `Input gain` (how hard it is driven), `Auto release` or `Release`, `Lookahead` (default is fine), `Stereo link` 100 %. Set:

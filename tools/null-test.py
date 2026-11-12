@@ -267,6 +267,16 @@ CASES = [
     # Neo Dither (§5.9, M5): TPDF at 16 bits, psychoacoustic shaping, 24 bits with the shaping switched by automation.
     fx("dither-16", "Neo Dither", "16 bit — TPDF (Standard)", []),
     fx("dither-16-shaped", "Neo Dither", "16 bit — TPDF, Psychoacoustic Shaping", [], auto=[("Bits", [(0, "16"), (2, "20")])]),
+    # Neo Tape, Neo De-esser, Neo Gate (docs/specs/mastering-tools.md §5.11 - §5.13, M6a).
+    fx("tape-glue", "Neo Tape", "Mastering — Subtle Glue (15 ips)"),
+    fx("tape-cassette-wow", "Neo Tape", "Lo-Fi — Worn Cassette Feel"),
+    fx("tape-live-delta", "Neo Tape", "Drums — Tape Crunch", [("Quality", "Live")], auto=[("Delta", [(2, "On")])]),
+    fx("deesser-vocal", "Neo De-esser", "Vocal — Gentle De-ess"),
+    fx("deesser-linear", "Neo De-esser", "Vocal — Transparent (Linear Phase Split)"),
+    fx("deesser-bell-abs", "Neo De-esser", "Mastering — Tame a Bright Master", [("Threshold", "-30 dB")]),
+    fx("gate-snare", "Neo Gate", "Drums — Snare, Tight"),
+    fx("gate-expander", "Neo Gate", "Drums — Toms, Gentle Expander", [("Detection", "RMS")]),
+    fx("gate-pedal-same", "Neo Gate", "Pedal Gate — Same Settings"),
     # Neo Strip (docs/specs/mastering-tools.md §5.10, M5b): the five stages together, the gate, a stage switched on and off in a pattern, Delta.
     fx("strip-vocal", "Neo Strip", "Vocal — Up Front"),
     fx("strip-spoken-gate", "Neo Strip", "Vocal — Spoken Word (Gate and Tidy)", [("Gate threshold", "-30 dB")]),
