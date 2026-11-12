@@ -112,7 +112,7 @@ namespace NeoBuzz.DyeEssence
         readonly ActionButton[] pick = new ActionButton[FxRack.Slots];
         readonly UIElement[] panels = new UIElement[FxRack.Slots];
         readonly ActionButton[] chainButtons = new ActionButton[FxRouting.Chains];
-        readonly TextBlock title, chains;
+        readonly TextBlock title, chains, clips;
         int selected;
 
         public FxPage(EditorContext ctx, DyeEssenceMachine machine, Func<string, UIElement, UIElement> section)
@@ -124,6 +124,38 @@ namespace NeoBuzz.DyeEssence
             title = Text(300);
             chains = Text(300, 11);
             chains.Height = 64;
+            clips = Text(300, 11);
+            clips.TextTrimming = TextTrimming.CharacterEllipsis;
+        }
+
+        string ClipsText() => $"IR: {(string.IsNullOrEmpty(machine?.UserIrName) ? "none" : machine.UserIrName)}   Modulator: {(string.IsNullOrEmpty(machine?.UserModulatorName) ? "none" : machine.UserModulatorName)}";
+
+        /// <summary>A button that loads a WAV as the convolution's response or the vocoder's modulator into the selected slot (the slot takes that type).</summary>
+        ActionButton ClipButton(string text, string title, bool ir)
+        {
+            var btn = new ActionButton(text, ctx.Accent, 120);
+            btn.Click += () =>
+            {
+                if (machine == null) return;
+                int slot = selected;
+                EditorFiles.Open(btn, title, "Audio (*.wav)|*.wav|All files (*.*)|*.*", file =>
+                {
+                    try
+                    {
+                        if (ir) machine.LoadUserIr(file);
+                        else machine.LoadUserModulator(file);
+                        ctx.Set(FxRack.TypeParam(slot), (int)(ir ? FxType.Convolution : FxType.Vocoder));
+                        ctx.Set(FxRack.GenericParam(slot, 0), 1000);
+                        ctx.RaiseChanged();
+                        Refresh();
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show($"Couldn't load {System.IO.Path.GetFileName(file)}: {e.Message}", "Dye Essence", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                });
+            };
+            return btn;
         }
 
         /// <summary>The chain's name in the layout now.</summary>
@@ -199,6 +231,8 @@ namespace NeoBuzz.DyeEssence
                 if (c < FxRouting.Chains - 1) sb.Append('\n');
             }
             if (chains.Text != sb.ToString()) chains.Text = sb.ToString();
+            string clipText = ClipsText();
+            if (clips.Text != clipText) clips.Text = clipText;
         }
 
         public UIElement Build()
@@ -256,7 +290,11 @@ namespace NeoBuzz.DyeEssence
                 Layout.Gap(1, 6),
                 Layout.Row(chainButtons[0], Layout.Gap(4), chainButtons[1], Layout.Gap(4), chainButtons[2]),
                 Layout.Gap(1, 4),
-                Layout.Row(earlier, Layout.Gap(4), later)));
+                Layout.Row(earlier, Layout.Gap(4), later),
+                Layout.Gap(1, 4),
+                Layout.Row(ClipButton("Load IR…", "Load an impulse response", true), Layout.Gap(4), ClipButton("Load modulator…", "Load a modulator", false)),
+                Layout.Gap(1, 2),
+                clips));
 
             var buses = section("Buses", Layout.Column(
                 new ParamChoice(ctx, P.FxLayout, "Layout", 56),

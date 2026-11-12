@@ -164,6 +164,8 @@ namespace NeoBuzz.MachineTests
             (FxType.Bitcrusher, new[] { 250, 350, 1000 }),
             (FxType.Shifter, new[] { 800, 500, 0 }),
             (FxType.PitchDelay, new[] { 500, 500, 500, 700 }),
+            (FxType.Convolution, new[] { 500 }),
+            (FxType.Vocoder, new[] { 0, 500 }),
         };
 
         [TestCaseSource(nameof(TypeValues))]
@@ -526,6 +528,15 @@ namespace NeoBuzz.MachineTests
                 Slot(0, FxType.Dimension, 800), Slot(1, FxType.Bitcrusher, 900), Slot(2, FxType.Shifter, 1000), Slot(3, FxType.PitchDelay, 700),
                 Slot(4, FxType.Shifter, 600), Slot(5, FxType.Dimension, 500), Slot(6, FxType.PitchDelay, 1000), Slot(7, FxType.Bitcrusher, 300),
                 Slot(8, FxType.PitchDelay, 400), Slot(9, FxType.Bitcrusher, 1000)), "the four new types");
+        }
+
+        [Test]
+        public void NothingIsAllocatedByTheConvolutionAndTheVocoder()
+        {
+            Allocation(All(
+                Slot(0, FxType.Convolution, 800), Slot(1, FxType.Vocoder, 900), Slot(2, FxType.Convolution, 1000), Slot(3, FxType.Vocoder, 700),
+                Slot(4, FxType.Convolution, 600), Slot(5, FxType.Vocoder, 500), Slot(6, FxType.Convolution, 1000), Slot(7, FxType.Vocoder, 300),
+                Slot(8, FxType.Convolution, 400), Slot(9, FxType.Vocoder, 1000)), "the convolution and the vocoder");
         }
 
         static void Allocation(Action<ParamValues> set, string what)

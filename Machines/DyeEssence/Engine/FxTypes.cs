@@ -11,7 +11,7 @@ using NeoBuzz.Dsp;
 namespace NeoBuzz.DyeEssence
 {
     /// <summary>What a slot can host. Values are saved in songs and presets and never move; new types go at the end.</summary>
-    internal enum FxType { Off = 0, Eq = 1, Filter = 2, Comp = 3, Clipper = 4, Delay = 5, Verb = 6, Dimension = 7, Bitcrusher = 8, Shifter = 9, PitchDelay = 10 }
+    internal enum FxType { Off = 0, Eq = 1, Filter = 2, Comp = 3, Clipper = 4, Delay = 5, Verb = 6, Dimension = 7, Bitcrusher = 8, Shifter = 9, PitchDelay = 10, Convolution = 11, Vocoder = 12 }
 
     /// <summary>One of a type's ten generic parameters: the engine parameter it drives, the engine value 50 % stands for (-1: the engine's default) and the label the type gives it.</summary>
     internal readonly struct FxParam
@@ -51,7 +51,7 @@ namespace NeoBuzz.DyeEssence
 
     internal static class FxTypes
     {
-        public const int Count = 11;
+        public const int Count = 13;
         public const int PerType = 10;
 
         static readonly FxTypeInfo[] infos = Build();
@@ -155,6 +155,18 @@ namespace NeoBuzz.DyeEssence
                 F(FxNew.PitchDelay.Grain, "Grain"), F(FxNew.PitchDelay.Mode, "Mode"), F(FxNew.PitchDelay.Tone, "Tone"),
                 F(FxNew.PitchDelay.LowCut, "Low cut"), F(FxNew.PitchDelay.Spread, "Spread"), F(FxNew.PitchDelay.Cross, "Cross-feed"),
             });
+            list[(int)FxType.Convolution] = new FxTypeInfo(FxType.Convolution, "Convolution", FxNew.Conv.Table, new[]
+            {
+                F(FxNew.Conv.Ir, "IR"), F(FxNew.Conv.Size, "Size"), F(FxNew.Conv.PreDelay, "Pre-delay"), F(FxNew.Conv.Decay, "Decay"),
+                F(FxNew.Conv.Damping, "Damping"), F(FxNew.Conv.LowCut, "Low cut"), F(FxNew.Conv.HighCut, "High cut"), F(FxNew.Conv.Width, "Width"),
+                F(FxNew.Conv.Reverse, "Reverse"), F(FxNew.Conv.Output, "Output"),
+            });
+            list[(int)FxType.Vocoder] = new FxTypeInfo(FxType.Vocoder, "Vocoder", FxNew.Voc.Table, new[]
+            {
+                F(FxNew.Voc.Source, "Modulator"), F(FxNew.Voc.Bands, "Bands"), F(FxNew.Voc.Formant, "Formant"), F(FxNew.Voc.Low, "Low"),
+                F(FxNew.Voc.High, "High"), F(FxNew.Voc.Attack, "Attack"), F(FxNew.Voc.Release, "Release"), F(FxNew.Voc.Sibilance, "Sibilance"),
+                F(FxNew.Voc.Speed, "Speed"), F(FxNew.Voc.Output, "Output"),
+            });
             return list;
         }
     }
@@ -181,8 +193,20 @@ namespace NeoBuzz.DyeEssence
         public abstract void Reset();
         public virtual void SetTempo(double bpm) { }
 
+        // Types whose data is built in the background after the host exists (convolution: the response; vocoder: the user's modulator).
+        /// <summary>The host can play (a type that needs its data first says no until it has it).</summary>
+        public virtual bool IsReady => true;
+        /// <summary>A request is waiting for the builder.</summary>
+        public virtual bool HasWork => false;
+        /// <summary>Nothing is outstanding with the builder (a request made, or one being built, makes it false).</summary>
+        public virtual bool Settled => true;
+        /// <summary>Any thread, allocation-free: asks the builder for what the parameters now want.</summary>
+        public virtual void Poll() { }
+        /// <summary>The builder's thread: does the waiting request.</summary>
+        public virtual void Work() { }
+
         /// <summary>Builds a type's host (any thread but the audio thread's: it allocates).</summary>
-        public static FxHost Create(FxType type, float rate) => type switch
+        public static FxHost Create(FxType type, float rate, FxUserData user = null) => type switch
         {
             FxType.Eq => new EqHost(rate),
             FxType.Filter => new FilterHost(rate),
@@ -194,6 +218,8 @@ namespace NeoBuzz.DyeEssence
             FxType.Bitcrusher => new BitcrusherHost(rate),
             FxType.Shifter => new ShifterHost(rate),
             FxType.PitchDelay => new PitchDelayHost(rate),
+            FxType.Convolution => new ConvolutionHost(rate, user ?? new FxUserData()),
+            FxType.Vocoder => new VocoderHost(rate, user ?? new FxUserData()),
             _ => null,
         };
 
