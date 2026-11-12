@@ -27,6 +27,7 @@ namespace ReBuzz.Agent.Guides
             ("Session View and live play", new[] { "session_*", "transport", "midi_play", "meters_read", "machine_readings" }),
             ("Render and analysis", new[] { "render", "analyze", "analyze_mix", "compare", "plot", "target_build", "eq_fit" }),
             ("Waves", new[] { "wave_*" }),
+            ("App control", new[] { "settings_*", "midi_bind", "midi_bindings_list", "midi_unbind", "midi_learn", "audio_*", "export_audio", "app_status", "view_show", "machine_open_editor", "select", "panel_set", "window_layout" }),
         };
 
         /// <summary>The area a tool belongs to ("Other" when none names it).</summary>
