@@ -380,6 +380,7 @@ namespace ReBuzz.Agent.Guides
                 case "s": return Seconds(v);
                 case "Hz": return Hz(v);
                 case "dB": return Signed(v, "0.0") + " dB";
+                case "dB/oct": return Signed(v, "0.0") + " dB/oct";
                 case "%": return Number(v, 1) + "%";
                 case "ct": return Signed(v, "0.#") + " ct";
                 case ":1": return Number(v, 1) + ":1";

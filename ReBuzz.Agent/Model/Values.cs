@@ -160,6 +160,8 @@ namespace ReBuzz.Agent.Model
                 case "hz": case "khz": return "Hz";
                 case "s": case "sec": case "ms": return "s";
                 case "db": case "dbfs": case "db fs": return "dB";
+                // A slope (a tilt: dB per octave): its own dimension, so "6 dB/oct" is not taken for a level in dB.
+                case "db/oct": case "db/octave": case "db per octave": case "db an octave": return "dB/oct";
                 case "%": return "%";
                 case "st": case "semi": case "semitones": case "semitone": return "st";
                 case "ct": case "cents": case "cent": return "ct";

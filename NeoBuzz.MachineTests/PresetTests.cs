@@ -145,6 +145,13 @@ namespace NeoBuzz.MachineTests
                 Assert.That(NeoBuzz.DyeEssence.DrawnShape.TryParse(text, out var shape, out string error), Is.True, $"LFO {l + 1}'s shape: {error}");
                 e.SetLfoShape(l, shape);
             }
+            // And its sequencer's steps (§4.9).
+            string steps = (string)dyeState?.Element("SeqSteps");
+            if (!string.IsNullOrEmpty(steps))
+            {
+                Assert.That(NeoBuzz.DyeEssence.SeqPattern.TryParse(steps, out var pattern, out string error), Is.True, $"the sequence: {error}");
+                e.SetPattern(pattern);
+            }
             return e;
         }
 

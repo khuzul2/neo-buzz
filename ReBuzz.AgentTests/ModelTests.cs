@@ -93,6 +93,27 @@ namespace ReBuzz.AgentTests
         }
 
         [Test]
+        public void ASlopeInDbPerOctaveIsItsOwnUnit()
+        {
+            // Dye Essence's Harmonic tilt: -24 … +24 dB/oct. The unit is read (it was rejected), kept apart from a level in dB, and the others still behave.
+            Assert.That(Quantity.DimensionOf("dB/oct"), Is.EqualTo("dB/oct"));
+            Assert.That(Quantity.DimensionOf("db/oct"), Is.EqualTo("dB/oct"));
+            Assert.That(Quantity.DimensionOf("dB"), Is.EqualTo("dB"));
+            Assert.That(Quantity.DimensionOf("oct"), Is.EqualTo("oct"));
+            Assert.That(Quantity.TryParse("-6 dB/oct", out double v, out string unit) && v == -6 && unit == "dB/oct", Is.True);
+            var tilt = Neo("A tilt", MappingKind.Linear, 0, 1000, -24, 24, unit: "dB/oct");
+            Assert.That(tilt.Mapping!.Dimension, Is.EqualTo("dB/oct"));
+            int raw = R(tilt, "6 dB/oct");
+            Assert.That(tilt.Mapping.Value(raw, 0, 1000), Is.EqualTo(6).Within(0.05));
+            Assert.That(tilt.Mapping.Value(R(tilt, "-3 dB/oct", raw, V.Mode.By), 0, 1000), Is.EqualTo(3).Within(0.1), "by an amount in the same unit");
+            Assert.That(tilt.Mapping.Value(R(tilt, 12), 0, 1000), Is.EqualTo(12).Within(0.05), "a bare number is in the unit");
+            var wrong = Assert.Throws<ToolError>(() => R(tilt, "6 dB"));
+            Assert.That(wrong!.Message, Does.Contain("dB/oct"));
+            var level = Neo("Level", MappingKind.Linear, 0, 1000, -24, 24, unit: "dB");
+            Assert.Throws<ToolError>(() => R(level, "6 dB/oct"));
+        }
+
+        [Test]
         public void NeoParametersTakeExactUnits()
         {
             var cutoff = Neo("F1 cutoff", MappingKind.Freq, 0, 1000, 20, 20000);
