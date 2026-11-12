@@ -177,6 +177,16 @@ CASES = [
     gen("dye-harm-wire", "Dye Essence", "Pluck — Damped Wire", [], KEYS),
     gen("dye-harm-pipe", "Dye Essence", "Bass — Hollow Pipe", [], BASS),
     gen("dye-harm-random", "Dye Essence", "Texture — Random Partials", [], CHORDS),
+    # Dye Essence P3b: the Modal engine (struck, plucked and continuous exciters; the six bodies; stiffness, loss, ring, size); the
+    # resonators are rotations from polynomial sine and cosine and the portable exponential, so every platform renders the same.
+    gen("dye-modal-marimba", "Dye Essence", "Keys — Glass Marimba", [], KEYS),
+    gen("dye-modal-bronze", "Dye Essence", "Bell — Struck Bronze", [], BELLS),
+    gen("dye-modal-nylon", "Dye Essence", "Pluck — Nylon String", [], KEYS),
+    gen("dye-modal-bowed", "Dye Essence", "Pad — Bowed Glass", [], CHORDS),
+    gen("dye-modal-pipe", "Dye Essence", "Lead — Breath Pipe", [], KEYS),
+    gen("dye-modal-skin", "Dye Essence", "Bass — Skin Drum", [], BASS),
+    gen("dye-modal-plate", "Dye Essence", "Keys — Steel Plate", [], KEYS),
+    gen("dye-modal-bellpipe", "Dye Essence", "Pad — Bowed Bell and Pipe", [], CHORDS),
     # Neo FM6: algorithms, feedback, the Clean 2x and Raw 1x engines, envelopes, LFO.
     gen("fm6-tine-piano", "Neo FM6", "Keys — Tine Piano", [], KEYS),
     gen("fm6-glass-bell", "Neo FM6", "Bell — Glass Bell", [], BELLS, tail=2.0),

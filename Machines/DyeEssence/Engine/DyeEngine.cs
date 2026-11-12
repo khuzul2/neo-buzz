@@ -37,6 +37,7 @@ namespace NeoBuzz.DyeEssence
         readonly float[][][] requestedPartials = new float[NoteBank.Oscillators][][];
         readonly float[][][] userPartials = new float[NoteBank.Oscillators][][];
         static readonly int[] HarmBase = { P.AHSet, P.BHSet, P.CHSet };
+        static readonly int[] ModalBase = { P.AMExc, P.BMExc, P.CMExc };
         readonly SampleLayer[] requestedSample = new SampleLayer[NoteBank.Oscillators];
         readonly SampleLayer[] userSample = new SampleLayer[NoteBank.Oscillators];
         readonly string[] sampleName = { "", "", "" };
@@ -212,6 +213,15 @@ namespace NeoBuzz.DyeEssence
                 os.OddEven = values.F(h + (P.AHOddEven - P.AHSet)) / 100f;
                 os.Stretch = values.F(h + (P.AHStretch - P.AHSet)) / 100f;
                 os.Damp = values.F(h + (P.AHDamp - P.AHSet)) / 100f;
+                int md = ModalBase[o];
+                os.Exciter = values.Choice(md);
+                os.Force = values.F(md + (P.AMForce - P.AMExc)) / 100f;
+                os.Geometry = values.Choice(md + (P.AMGeom - P.AMExc));
+                os.Modes = (int)values.Value(md + (P.AMModes - P.AMExc));
+                os.Material = values.F(md + (P.AMMat - P.AMExc)) / 100f;
+                os.Ring = values.F(md + (P.AMRing - P.AMExc));
+                os.HfDamp = values.F(md + (P.AMHfDamp - P.AMExc)) / 100f;
+                os.BodySize = values.F(md + (P.AMSize - P.AMExc)) / 100f;
             }
             tablesPending = pendingNow;
 

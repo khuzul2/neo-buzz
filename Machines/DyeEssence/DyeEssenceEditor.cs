@@ -62,6 +62,9 @@ namespace NeoBuzz.DyeEssence
                 // The Harmonic engine's parameters (appended in P3a, a block of their own per slot).
                 int hm = slot == 0 ? P.AHSet : slot == 1 ? P.BHSet : P.CHSet;
                 int H(int aParam) => hm + (aParam - P.AHSet);
+                // The Modal engine's parameters (appended in P3b, a block of their own per slot).
+                int md = slot == 0 ? P.AMExc : slot == 1 ? P.BMExc : P.CMExc;
+                int M(int aParam) => md + (aParam - P.AMExc);
                 // The Sample and Granular engines' parameters (appended in P2, a block of their own per slot).
                 int sm = slot == 0 ? P.ASmpSrc : slot == 1 ? P.BSmpSrc : P.CSmpSrc;
                 int K(int aParam) => sm + (aParam - P.ASmpSrc);
@@ -159,6 +162,10 @@ namespace NeoBuzz.DyeEssence
                                Layout.Gap(8), Layout.Column(Layout.Gap(1, 16), load2)),
                     Layout.Gap(1, 4),
                     Knobs(5, (H(P.AHPartials), "partials"), (H(P.AHTilt), "tilt"), (H(P.AHOddEven), "odd/even"), (H(P.AHStretch), "stretch"), (H(P.AHDamp), "damp")));
+                var modalPanel = Layout.Column(
+                    Layout.Row(new ParamDropdown(ctx, M(P.AMExc), "exciter", 112), Layout.Gap(8), new ParamDropdown(ctx, M(P.AMGeom), "body", 112)),
+                    Layout.Gap(1, 4),
+                    Knobs(6, (M(P.AMForce), "force"), (M(P.AMModes), "modes"), (M(P.AMMat), "material"), (M(P.AMRing), "ring"), (M(P.AMHfDamp), "hf damp"), (M(P.AMSize), "size")));
                 void ShowEngine()
                 {
                     int type = ctx.Raw(I(P.AType));
@@ -166,6 +173,7 @@ namespace NeoBuzz.DyeEssence
                     samplePanel.Visibility = type == (int)SlotType.Sample ? Visibility.Visible : Visibility.Collapsed;
                     granularPanel.Visibility = type == (int)SlotType.Granular ? Visibility.Visible : Visibility.Collapsed;
                     harmonicPanel.Visibility = type == (int)SlotType.Harmonic ? Visibility.Visible : Visibility.Collapsed;
+                    modalPanel.Visibility = type == (int)SlotType.Modal ? Visibility.Visible : Visibility.Collapsed;
                 }
                 ShowEngine();
                 ctx.Changed += ShowEngine;
@@ -181,7 +189,7 @@ namespace NeoBuzz.DyeEssence
                         (I(P.AUnison), "unison"), (I(P.ADetune), "detune"), (I(P.ASpread), "spread"), (I(P.APhase), "phase"), (I(P.ARandom), "random"), (I(P.AToF2), "→ F2")),
                     Layout.Gap(1, 2),
                     // The engine's own rows: one set shows at a time (the type picks it), so the slot keeps one height.
-                    wavetablePanel, samplePanel, granularPanel, harmonicPanel));
+                    wavetablePanel, samplePanel, granularPanel, harmonicPanel, modalPanel));
             }
 
             UIElement Filter(int f)
@@ -363,9 +371,52 @@ namespace NeoBuzz.DyeEssence
                 }
                 g.Text($"{HarmonicSets.Names[ctx.Raw(H(P.AHSet))]} → {HarmonicSets.Names[ctx.Raw(H(P.AHSet2))]} · {fullN} partials", r.Left + 7, r.Top + 4, 11, Palette.DimText);
             }
+            int mb = slot == 0 ? P.AMExc : slot == 1 ? P.BMExc : P.CMExc;
+            int Mo(int aParam) => mb + (aParam - P.AMExc);
+            // The Modal engine: a line for each mode (up to 64) at its place in the body's spacing (the material's stiffness moves them), as tall as the
+            // level it is struck at (where on the body, how the body radiates); the bright part is what is left a quarter second later (the ring and the loss).
+            void ModalDraw(INeoCanvas g, NeoRect r)
+            {
+                int body = Math.Clamp(ctx.Raw(Mo(P.AMGeom)), 0, ModalBodies.Names.Length - 1);
+                int n = Math.Min((int)ctx.Value(Mo(P.AMModes)), ModalBodies.Count[body]);
+                float mat = (float)ctx.Value(Mo(P.AMMat)) / 100f, hf = (float)ctx.Value(Mo(P.AMHfDamp)) / 100f, size = (float)ctx.Value(Mo(P.AMSize)) / 100f;
+                double ring = ctx.Value(Mo(P.AMRing)) * Math.Pow(2, 1.5 * (size - 0.5));
+                double pp = 0.02 + 0.48 * ctx.Value(posParam), fc = 2000 * Math.Pow(2, -4 * (size - 0.5)), h = 24 * hf * (1 - 0.8 * mat);
+                var ratios = ModalBodies.Ratios[body];
+                var at = new double[n];
+                var level = new double[n];
+                var left = new double[n];
+                double top = 1e-9;
+                for (int j = 0; j < n; j++)
+                {
+                    at[j] = ratios[j] * Math.Sqrt(1 + 0.003 * mat * mat * (j + 1) * (j + 1));
+                    double hz = 220 * at[j];
+                    level[j] = Math.Abs(Math.Sin(Math.PI * (j + 1) * pp)) / Math.Sqrt(1 + hz * hz / (fc * fc)) / ratios[j];
+                    top = Math.Max(top, level[j]);
+                    // 60 dB in ring / (1 + h f²) seconds: the share left after a quarter second.
+                    left[j] = Math.Pow(10, -3 * 0.25 * (1 + h * (hz / 1000) * (hz / 1000)) / ring);
+                }
+                double x0 = r.Left + 6, w = r.Width - 12, bottom = r.Bottom - 5, ht = r.Height - 24;
+                double reach = n > 0 ? at[n - 1] : 1;
+                g.Line(x0, bottom, x0 + w, bottom, new NeoStroke(Palette.DimText.WithAlpha(0x60), 1));
+                double thick = w / Math.Max(1, n) > 5 ? 3 : 1.6;
+                for (int j = 0; j < n; j++)
+                {
+                    double x = x0 + at[j] / reach * (w - 2), tall = level[j] / top * ht;
+                    g.Line(x, bottom, x, bottom - tall, new NeoStroke(ctx.Accent.WithAlpha(0x50), thick));
+                    g.Line(x, bottom, x, bottom - tall * left[j], new NeoStroke(ctx.Accent, thick));
+                }
+                string[] excite = { "struck", "plucked", "continuous" };
+                g.Text($"{ModalBodies.Names[body]} · {excite[Math.Clamp(ctx.Raw(Mo(P.AMExc)), 0, 2)]} · {n} modes", r.Left + 7, r.Top + 4, 11, Palette.DimText);
+            }
             var view = new GraphView(width, height, (g, r) =>
             {
                 int type = ctx.Raw(typeParam);
+                if (type == (int)SlotType.Modal)
+                {
+                    ModalDraw(g, r);
+                    return;
+                }
                 if (type < (int)SlotType.Sample)
                 {
                     table(g, r);

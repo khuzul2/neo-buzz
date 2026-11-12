@@ -4,7 +4,7 @@
 namespace NeoBuzz.DyeEssence
 class DyeEssenceMachine
 tracks 16
-summary Hybrid wavetable synth: three engine slots, each a morphing wavetable or an analog oscillator with 1–16 unison voices and two warps (bend, sync, FM, PM, AM, ring and more), a sub and a noise, samples (looped, reversed, tuned by root), granular clouds of them and additive partials (up to 128, morphing between sets, tilt, odd/even, stretch, damp), two filters per note (ladder, state-variable, comb; serial to parallel), oversampled 2× or 4×; two modulation envelopes, four LFOs (built-in or drawn shapes), four macros and sixteen routes. Use it for wide unison leads, evolving pads, FM and sync basses, plucks and bells.
+summary Hybrid wavetable synth: three engine slots, each a morphing wavetable or an analog oscillator with 1–16 unison voices and two warps (bend, sync, FM, PM, AM, ring and more), a sub and a noise, samples (looped, reversed, tuned by root), granular clouds of them and additive partials (up to 128, morphing between sets, tilt, odd/even, stretch, damp), modal bodies (a bank of up to 64 resonating modes struck, plucked or bowed: string, tube, bar, membrane, plate or bell), two filters per note (ladder, state-variable, comb; serial to parallel), oversampled 2× or 4×; two modulation envelopes, four LFOs (built-in or drawn shapes), four macros and sixteen routes. Use it for wide unison leads, evolving pads, FM and sync basses, plucks and bells.
 import wavetable .wav | A WAV wavetable: frames of 2048 samples (or a clm chunk saying the frame size), or one short single cycle. Becomes a slot's "User" table: item 0 is slot A, 1 slot B, 2 slot C. The Harmonic engine reads its partial levels: the first frame is the "User" set, the last the "User" second set.
 import lfo_shape .txt | A drawn LFO shape: a text file of breakpoints "phase,value[,curve]" separated by spaces (phase 0–1 across one cycle, value −1–1, curve −1–1: 0 straight, below 0 a fast start, above a slow one; a point at 0 and one at 1 make a jump at the wrap). item 0–3 picks LFO 1–4; its shape is set to Drawn.
 
@@ -21,7 +21,7 @@ VelAmp      "Vel → amp"     0 1000 700  pct                             | How 
 Volume      "Volume"        0 1000 739  db -40 6 inf                    | Output level
 
 group Osc A
-AType      "A engine"      0 5    1    enum Off Wavetable Analog Sample Granular Harmonic | What slot A plays: a morphing wavetable, an analog wave, a sample, grains of a sample, or additive partials (samples, grains and partials take no warps)
+AType      "A engine"      0 6    1    enum Off Wavetable Analog Sample Granular Harmonic Modal | What slot A plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, or a struck, plucked or bowed resonating body (samples, grains, partials and bodies take no warps)
 ATable     "A table"       0 10   0    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
 APos       "A position"    0 1000 667  pct                             | Position in the table (frames morph smoothly)
 AOct       "A octave"      0 8    4    int -4 oct signed               | Octave
@@ -42,7 +42,7 @@ AMod       "A modulator"   0 4    1    enum Osc_A Osc_B Osc_C Sub Noise | What F
 AToF2      "A → filter 2"  0 1000 0    pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
 
 group Osc B
-BType      "B engine"      0 5    0    enum Off Wavetable Analog Sample Granular Harmonic | What slot B plays: a morphing wavetable, an analog wave, a sample, grains of a sample, or additive partials (samples, grains and partials take no warps)
+BType      "B engine"      0 6    0    enum Off Wavetable Analog Sample Granular Harmonic Modal | What slot B plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, or a struck, plucked or bowed resonating body (samples, grains, partials and bodies take no warps)
 BTable     "B table"       0 10   2    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
 BPos       "B position"    0 1000 0  pct                             | Position in the table (frames morph smoothly)
 BOct       "B octave"      0 8    4    int -4 oct signed               | Octave
@@ -63,7 +63,7 @@ BMod       "B modulator"   0 4    0    enum Osc_A Osc_B Osc_C Sub Noise | What F
 BToF2      "B → filter 2"  0 1000 0    pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
 
 group Osc C
-CType      "C engine"      0 5    0    enum Off Wavetable Analog Sample Granular Harmonic | What slot C plays: a morphing wavetable, an analog wave, a sample, grains of a sample, or additive partials (samples, grains and partials take no warps)
+CType      "C engine"      0 6    0    enum Off Wavetable Analog Sample Granular Harmonic Modal | What slot C plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, or a struck, plucked or bowed resonating body (samples, grains, partials and bodies take no warps)
 CTable     "C table"       0 10   3    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
 CPos       "C position"    0 1000 0  pct                             | Position in the table (frames morph smoothly)
 COct       "C octave"      0 8    4    int -4 oct signed               | Octave
@@ -306,7 +306,7 @@ group Osc A
 AHSet     "A harmonics"  0 13   0    enum Saw Square Triangle Organ Reed Brass Strings Vowel_A Vowel_O Bright Comb Random Octaves User | Harmonic engine: the first set of partial levels (made by code; User: the first frame of the slot's loaded wavetable, analysed)
 AHSet2    "A harmonics 2" 0 13  1    enum Saw Square Triangle Organ Reed Brass Strings Vowel_A Vowel_O Bright Comb Random Octaves User | Harmonic engine: the second set, which "position" morphs to (User: the last frame of the slot's loaded wavetable)
 AHPartials "A partials"  1 128  32   int 0                           | Harmonic engine: how many partials sound (those above the Nyquist limit are dropped on high notes anyway); each added partial costs CPU
-AHTilt    "A tilt"      0 1000 500  lin -24 24 dB 1                 | Harmonic engine: brightness; each octave of partials louder (+) or softer (−) by this many dB on top of the set (loudness stays)
+AHTilt    "A tilt"      0 1000 500  lin -24 24 dB/oct 1                 | Harmonic engine: brightness; each octave of partials louder (+) or softer (−) by this many dB on top of the set (loudness stays)
 AHOddEven "A odd even"  0 1000 500  lin -100 100 % 0                | Harmonic engine: + weakens the even partials (towards a hollow, odd-only tone), − weakens the odd ones (towards the octave above)
 AHStretch "A stretch"   0 1000 500  lin -100 100 % 0                | Harmonic engine: spreads the partials from whole multiples of the pitch: + stretches them apart (bells, glass, plucked wire), − bunches them (clusters)
 AHDamp    "A damp"      0 1000 0    pct                             | Harmonic engine: how fast the upper partials die away while a note is held (0: they last; 100%: a pluck)
@@ -314,7 +314,7 @@ group Osc B
 BHSet     "B harmonics"  0 13   0    enum Saw Square Triangle Organ Reed Brass Strings Vowel_A Vowel_O Bright Comb Random Octaves User | Harmonic engine: the first set of partial levels (made by code; User: the first frame of the slot's loaded wavetable, analysed)
 BHSet2    "B harmonics 2" 0 13  1    enum Saw Square Triangle Organ Reed Brass Strings Vowel_A Vowel_O Bright Comb Random Octaves User | Harmonic engine: the second set, which "position" morphs to (User: the last frame of the slot's loaded wavetable)
 BHPartials "B partials"  1 128  32   int 0                           | Harmonic engine: how many partials sound (those above the Nyquist limit are dropped on high notes anyway); each added partial costs CPU
-BHTilt    "B tilt"      0 1000 500  lin -24 24 dB 1                 | Harmonic engine: brightness; each octave of partials louder (+) or softer (−) by this many dB on top of the set (loudness stays)
+BHTilt    "B tilt"      0 1000 500  lin -24 24 dB/oct 1                 | Harmonic engine: brightness; each octave of partials louder (+) or softer (−) by this many dB on top of the set (loudness stays)
 BHOddEven "B odd even"  0 1000 500  lin -100 100 % 0                | Harmonic engine: + weakens the even partials (towards a hollow, odd-only tone), − weakens the odd ones (towards the octave above)
 BHStretch "B stretch"   0 1000 500  lin -100 100 % 0                | Harmonic engine: spreads the partials from whole multiples of the pitch: + stretches them apart (bells, glass, plucked wire), − bunches them (clusters)
 BHDamp    "B damp"      0 1000 0    pct                             | Harmonic engine: how fast the upper partials die away while a note is held (0: they last; 100%: a pluck)
@@ -322,7 +322,40 @@ group Osc C
 CHSet     "C harmonics"  0 13   0    enum Saw Square Triangle Organ Reed Brass Strings Vowel_A Vowel_O Bright Comb Random Octaves User | Harmonic engine: the first set of partial levels (made by code; User: the first frame of the slot's loaded wavetable, analysed)
 CHSet2    "C harmonics 2" 0 13  1    enum Saw Square Triangle Organ Reed Brass Strings Vowel_A Vowel_O Bright Comb Random Octaves User | Harmonic engine: the second set, which "position" morphs to (User: the last frame of the slot's loaded wavetable)
 CHPartials "C partials"  1 128  32   int 0                           | Harmonic engine: how many partials sound (those above the Nyquist limit are dropped on high notes anyway); each added partial costs CPU
-CHTilt    "C tilt"      0 1000 500  lin -24 24 dB 1                 | Harmonic engine: brightness; each octave of partials louder (+) or softer (−) by this many dB on top of the set (loudness stays)
+CHTilt    "C tilt"      0 1000 500  lin -24 24 dB/oct 1                 | Harmonic engine: brightness; each octave of partials louder (+) or softer (−) by this many dB on top of the set (loudness stays)
 CHOddEven "C odd even"  0 1000 500  lin -100 100 % 0                | Harmonic engine: + weakens the even partials (towards a hollow, odd-only tone), − weakens the odd ones (towards the octave above)
 CHStretch "C stretch"   0 1000 500  lin -100 100 % 0                | Harmonic engine: spreads the partials from whole multiples of the pitch: + stretches them apart (bells, glass, plucked wire), − bunches them (clusters)
 CHDamp    "C damp"      0 1000 0    pct                             | Harmonic engine: how fast the upper partials die away while a note is held (0: they last; 100%: a pluck)
+
+# P3b (appended): the Modal engine's parameters for each slot: a bank of resonating modes (spacing by geometry, loss by material,
+# ring time and body size) excited by a mallet, a pluck or a continuous bow/breath. "position" (above) is where on the body it is
+# excited. Tuning, level, pan, unison, detune, spread and phase are the slot's own. Modes take no warps.
+group Osc A
+AMExc     "A exciter" 0 2 0 enum Struck Plucked Continuous | Modal engine: what excites the body: a mallet strike, a plucked release, or a continuous noise-driven bow or breath that sounds while the key is held
+AMForce   "A force" 0 1000 500 pct | Modal engine: how hard it is excited: harder is brighter (a harder mallet, a sharper pluck, a pressed bow); loudness stays
+AMGeom    "A geometry" 0 5 0 enum String Tube Bar Membrane Plate Bell | Modal engine: the body whose modes sound: a string (whole multiples), a tube closed at one end (odd multiples), a free bar, a drum membrane, a plate or a bell (the spacings of each, not whole multiples)
+AMModes   "A modes" 1 64 24 int 0 | Modal engine: how many modes sound, lowest first (a membrane has 31, a bell 12; those above the Nyquist limit are dropped on high notes); each mode costs CPU
+AMMat     "A material" 0 1000 500 pct | Modal engine: soft to hard: 0 is gut, felt or skin (exact spacing, the upper modes die fast), 100% is glass or steel (stiffness stretches the spacing, the upper modes ring on)
+AMRing    "A ring time" 0 1000 568 time 0.05 20 | Modal engine: how long the lowest mode takes to fall by 60 dB (the damping of the body)
+AMHfDamp  "A hf damp" 0 1000 300 pct | Modal engine: how much faster the upper modes die than the lowest (the loss grows with the square of the frequency; the material softens or hardens it)
+AMSize    "A body size" 0 1000 500 pct | Modal engine: small to large body: a larger one rings longer and favours the low modes, a smaller one the high ones
+
+group Osc B
+BMExc     "B exciter" 0 2 0 enum Struck Plucked Continuous | Modal engine: what excites the body: a mallet strike, a plucked release, or a continuous noise-driven bow or breath that sounds while the key is held
+BMForce   "B force" 0 1000 500 pct | Modal engine: how hard it is excited: harder is brighter (a harder mallet, a sharper pluck, a pressed bow); loudness stays
+BMGeom    "B geometry" 0 5 0 enum String Tube Bar Membrane Plate Bell | Modal engine: the body whose modes sound: a string (whole multiples), a tube closed at one end (odd multiples), a free bar, a drum membrane, a plate or a bell (the spacings of each, not whole multiples)
+BMModes   "B modes" 1 64 24 int 0 | Modal engine: how many modes sound, lowest first (a membrane has 31, a bell 12; those above the Nyquist limit are dropped on high notes); each mode costs CPU
+BMMat     "B material" 0 1000 500 pct | Modal engine: soft to hard: 0 is gut, felt or skin (exact spacing, the upper modes die fast), 100% is glass or steel (stiffness stretches the spacing, the upper modes ring on)
+BMRing    "B ring time" 0 1000 568 time 0.05 20 | Modal engine: how long the lowest mode takes to fall by 60 dB (the damping of the body)
+BMHfDamp  "B hf damp" 0 1000 300 pct | Modal engine: how much faster the upper modes die than the lowest (the loss grows with the square of the frequency; the material softens or hardens it)
+BMSize    "B body size" 0 1000 500 pct | Modal engine: small to large body: a larger one rings longer and favours the low modes, a smaller one the high ones
+
+group Osc C
+CMExc     "C exciter" 0 2 0 enum Struck Plucked Continuous | Modal engine: what excites the body: a mallet strike, a plucked release, or a continuous noise-driven bow or breath that sounds while the key is held
+CMForce   "C force" 0 1000 500 pct | Modal engine: how hard it is excited: harder is brighter (a harder mallet, a sharper pluck, a pressed bow); loudness stays
+CMGeom    "C geometry" 0 5 0 enum String Tube Bar Membrane Plate Bell | Modal engine: the body whose modes sound: a string (whole multiples), a tube closed at one end (odd multiples), a free bar, a drum membrane, a plate or a bell (the spacings of each, not whole multiples)
+CMModes   "C modes" 1 64 24 int 0 | Modal engine: how many modes sound, lowest first (a membrane has 31, a bell 12; those above the Nyquist limit are dropped on high notes); each mode costs CPU
+CMMat     "C material" 0 1000 500 pct | Modal engine: soft to hard: 0 is gut, felt or skin (exact spacing, the upper modes die fast), 100% is glass or steel (stiffness stretches the spacing, the upper modes ring on)
+CMRing    "C ring time" 0 1000 568 time 0.05 20 | Modal engine: how long the lowest mode takes to fall by 60 dB (the damping of the body)
+CMHfDamp  "C hf damp" 0 1000 300 pct | Modal engine: how much faster the upper modes die than the lowest (the loss grows with the square of the frequency; the material softens or hardens it)
+CMSize    "C body size" 0 1000 500 pct | Modal engine: small to large body: a larger one rings longer and favours the low modes, a smaller one the high ones

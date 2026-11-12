@@ -31,7 +31,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "Volume", Description = "Output level", MinValue = 0, MaxValue = 1000, DefValue = 739)]
         public int Volume { get => Values[P.Volume]; set => Values.Set(P.Volume, value); }
 
-        [ParameterDecl(Name = "A engine", Description = "What slot A plays: a morphing wavetable, an analog wave, a sample, grains of a sample, or additive partials (samples, grains and partials take no warps)", MinValue = 0, MaxValue = 5, DefValue = 1)]
+        [ParameterDecl(Name = "A engine", Description = "What slot A plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, or a struck, plucked or bowed resonating body (samples, grains, partials and bodies take no warps)", MinValue = 0, MaxValue = 6, DefValue = 1)]
         public int AType { get => Values[P.AType]; set => Values.Set(P.AType, value); }
 
         [ParameterDecl(Name = "A table", Description = "Wavetable (User: a table loaded for this slot)", MinValue = 0, MaxValue = 10, DefValue = 0)]
@@ -88,7 +88,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "A → filter 2", Description = "Balance between filter 1 (0 %) and filter 2 (100 %)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int AToF2 { get => Values[P.AToF2]; set => Values.Set(P.AToF2, value); }
 
-        [ParameterDecl(Name = "B engine", Description = "What slot B plays: a morphing wavetable, an analog wave, a sample, grains of a sample, or additive partials (samples, grains and partials take no warps)", MinValue = 0, MaxValue = 5, DefValue = 0)]
+        [ParameterDecl(Name = "B engine", Description = "What slot B plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, or a struck, plucked or bowed resonating body (samples, grains, partials and bodies take no warps)", MinValue = 0, MaxValue = 6, DefValue = 0)]
         public int BType { get => Values[P.BType]; set => Values.Set(P.BType, value); }
 
         [ParameterDecl(Name = "B table", Description = "Wavetable (User: a table loaded for this slot)", MinValue = 0, MaxValue = 10, DefValue = 2)]
@@ -145,7 +145,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "B → filter 2", Description = "Balance between filter 1 (0 %) and filter 2 (100 %)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int BToF2 { get => Values[P.BToF2]; set => Values.Set(P.BToF2, value); }
 
-        [ParameterDecl(Name = "C engine", Description = "What slot C plays: a morphing wavetable, an analog wave, a sample, grains of a sample, or additive partials (samples, grains and partials take no warps)", MinValue = 0, MaxValue = 5, DefValue = 0)]
+        [ParameterDecl(Name = "C engine", Description = "What slot C plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, or a struck, plucked or bowed resonating body (samples, grains, partials and bodies take no warps)", MinValue = 0, MaxValue = 6, DefValue = 0)]
         public int CType { get => Values[P.CType]; set => Values.Set(P.CType, value); }
 
         [ParameterDecl(Name = "C table", Description = "Wavetable (User: a table loaded for this slot)", MinValue = 0, MaxValue = 10, DefValue = 3)]
@@ -810,6 +810,78 @@ namespace NeoBuzz.DyeEssence
 
         [ParameterDecl(Name = "C damp", Description = "Harmonic engine: how fast the upper partials die away while a note is held (0: they last; 100%: a pluck)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int CHDamp { get => Values[P.CHDamp]; set => Values.Set(P.CHDamp, value); }
+
+        [ParameterDecl(Name = "A exciter", Description = "Modal engine: what excites the body: a mallet strike, a plucked release, or a continuous noise-driven bow or breath that sounds while the key is held", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int AMExc { get => Values[P.AMExc]; set => Values.Set(P.AMExc, value); }
+
+        [ParameterDecl(Name = "A force", Description = "Modal engine: how hard it is excited: harder is brighter (a harder mallet, a sharper pluck, a pressed bow); loudness stays", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int AMForce { get => Values[P.AMForce]; set => Values.Set(P.AMForce, value); }
+
+        [ParameterDecl(Name = "A geometry", Description = "Modal engine: the body whose modes sound: a string (whole multiples), a tube closed at one end (odd multiples), a free bar, a drum membrane, a plate or a bell (the spacings of each, not whole multiples)", MinValue = 0, MaxValue = 5, DefValue = 0)]
+        public int AMGeom { get => Values[P.AMGeom]; set => Values.Set(P.AMGeom, value); }
+
+        [ParameterDecl(Name = "A modes", Description = "Modal engine: how many modes sound, lowest first (a membrane has 31, a bell 12; those above the Nyquist limit are dropped on high notes); each mode costs CPU", MinValue = 1, MaxValue = 64, DefValue = 24)]
+        public int AMModes { get => Values[P.AMModes]; set => Values.Set(P.AMModes, value); }
+
+        [ParameterDecl(Name = "A material", Description = "Modal engine: soft to hard: 0 is gut, felt or skin (exact spacing, the upper modes die fast), 100% is glass or steel (stiffness stretches the spacing, the upper modes ring on)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int AMMat { get => Values[P.AMMat]; set => Values.Set(P.AMMat, value); }
+
+        [ParameterDecl(Name = "A ring time", Description = "Modal engine: how long the lowest mode takes to fall by 60 dB (the damping of the body)", MinValue = 0, MaxValue = 1000, DefValue = 568)]
+        public int AMRing { get => Values[P.AMRing]; set => Values.Set(P.AMRing, value); }
+
+        [ParameterDecl(Name = "A hf damp", Description = "Modal engine: how much faster the upper modes die than the lowest (the loss grows with the square of the frequency; the material softens or hardens it)", MinValue = 0, MaxValue = 1000, DefValue = 300)]
+        public int AMHfDamp { get => Values[P.AMHfDamp]; set => Values.Set(P.AMHfDamp, value); }
+
+        [ParameterDecl(Name = "A body size", Description = "Modal engine: small to large body: a larger one rings longer and favours the low modes, a smaller one the high ones", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int AMSize { get => Values[P.AMSize]; set => Values.Set(P.AMSize, value); }
+
+        [ParameterDecl(Name = "B exciter", Description = "Modal engine: what excites the body: a mallet strike, a plucked release, or a continuous noise-driven bow or breath that sounds while the key is held", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int BMExc { get => Values[P.BMExc]; set => Values.Set(P.BMExc, value); }
+
+        [ParameterDecl(Name = "B force", Description = "Modal engine: how hard it is excited: harder is brighter (a harder mallet, a sharper pluck, a pressed bow); loudness stays", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int BMForce { get => Values[P.BMForce]; set => Values.Set(P.BMForce, value); }
+
+        [ParameterDecl(Name = "B geometry", Description = "Modal engine: the body whose modes sound: a string (whole multiples), a tube closed at one end (odd multiples), a free bar, a drum membrane, a plate or a bell (the spacings of each, not whole multiples)", MinValue = 0, MaxValue = 5, DefValue = 0)]
+        public int BMGeom { get => Values[P.BMGeom]; set => Values.Set(P.BMGeom, value); }
+
+        [ParameterDecl(Name = "B modes", Description = "Modal engine: how many modes sound, lowest first (a membrane has 31, a bell 12; those above the Nyquist limit are dropped on high notes); each mode costs CPU", MinValue = 1, MaxValue = 64, DefValue = 24)]
+        public int BMModes { get => Values[P.BMModes]; set => Values.Set(P.BMModes, value); }
+
+        [ParameterDecl(Name = "B material", Description = "Modal engine: soft to hard: 0 is gut, felt or skin (exact spacing, the upper modes die fast), 100% is glass or steel (stiffness stretches the spacing, the upper modes ring on)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int BMMat { get => Values[P.BMMat]; set => Values.Set(P.BMMat, value); }
+
+        [ParameterDecl(Name = "B ring time", Description = "Modal engine: how long the lowest mode takes to fall by 60 dB (the damping of the body)", MinValue = 0, MaxValue = 1000, DefValue = 568)]
+        public int BMRing { get => Values[P.BMRing]; set => Values.Set(P.BMRing, value); }
+
+        [ParameterDecl(Name = "B hf damp", Description = "Modal engine: how much faster the upper modes die than the lowest (the loss grows with the square of the frequency; the material softens or hardens it)", MinValue = 0, MaxValue = 1000, DefValue = 300)]
+        public int BMHfDamp { get => Values[P.BMHfDamp]; set => Values.Set(P.BMHfDamp, value); }
+
+        [ParameterDecl(Name = "B body size", Description = "Modal engine: small to large body: a larger one rings longer and favours the low modes, a smaller one the high ones", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int BMSize { get => Values[P.BMSize]; set => Values.Set(P.BMSize, value); }
+
+        [ParameterDecl(Name = "C exciter", Description = "Modal engine: what excites the body: a mallet strike, a plucked release, or a continuous noise-driven bow or breath that sounds while the key is held", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int CMExc { get => Values[P.CMExc]; set => Values.Set(P.CMExc, value); }
+
+        [ParameterDecl(Name = "C force", Description = "Modal engine: how hard it is excited: harder is brighter (a harder mallet, a sharper pluck, a pressed bow); loudness stays", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int CMForce { get => Values[P.CMForce]; set => Values.Set(P.CMForce, value); }
+
+        [ParameterDecl(Name = "C geometry", Description = "Modal engine: the body whose modes sound: a string (whole multiples), a tube closed at one end (odd multiples), a free bar, a drum membrane, a plate or a bell (the spacings of each, not whole multiples)", MinValue = 0, MaxValue = 5, DefValue = 0)]
+        public int CMGeom { get => Values[P.CMGeom]; set => Values.Set(P.CMGeom, value); }
+
+        [ParameterDecl(Name = "C modes", Description = "Modal engine: how many modes sound, lowest first (a membrane has 31, a bell 12; those above the Nyquist limit are dropped on high notes); each mode costs CPU", MinValue = 1, MaxValue = 64, DefValue = 24)]
+        public int CMModes { get => Values[P.CMModes]; set => Values.Set(P.CMModes, value); }
+
+        [ParameterDecl(Name = "C material", Description = "Modal engine: soft to hard: 0 is gut, felt or skin (exact spacing, the upper modes die fast), 100% is glass or steel (stiffness stretches the spacing, the upper modes ring on)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int CMMat { get => Values[P.CMMat]; set => Values.Set(P.CMMat, value); }
+
+        [ParameterDecl(Name = "C ring time", Description = "Modal engine: how long the lowest mode takes to fall by 60 dB (the damping of the body)", MinValue = 0, MaxValue = 1000, DefValue = 568)]
+        public int CMRing { get => Values[P.CMRing]; set => Values.Set(P.CMRing, value); }
+
+        [ParameterDecl(Name = "C hf damp", Description = "Modal engine: how much faster the upper modes die than the lowest (the loss grows with the square of the frequency; the material softens or hardens it)", MinValue = 0, MaxValue = 1000, DefValue = 300)]
+        public int CMHfDamp { get => Values[P.CMHfDamp]; set => Values.Set(P.CMHfDamp, value); }
+
+        [ParameterDecl(Name = "C body size", Description = "Modal engine: small to large body: a larger one rings longer and favours the low modes, a smaller one the high ones", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int CMSize { get => Values[P.CMSize]; set => Values.Set(P.CMSize, value); }
 
         [ParameterDecl(Name = "Note", IsStateless = true, Description = "Note (off releases the track's note)")]
         public void SetNote(Note value, int track) => Notes.SetNote(track, value.Value);

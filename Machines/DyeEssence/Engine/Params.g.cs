@@ -276,7 +276,31 @@ namespace NeoBuzz.DyeEssence
         public const int CHOddEven = 265;
         public const int CHStretch = 266;
         public const int CHDamp = 267;
-        public const int Count = 268;
+        public const int AMExc = 268;
+        public const int AMForce = 269;
+        public const int AMGeom = 270;
+        public const int AMModes = 271;
+        public const int AMMat = 272;
+        public const int AMRing = 273;
+        public const int AMHfDamp = 274;
+        public const int AMSize = 275;
+        public const int BMExc = 276;
+        public const int BMForce = 277;
+        public const int BMGeom = 278;
+        public const int BMModes = 279;
+        public const int BMMat = 280;
+        public const int BMRing = 281;
+        public const int BMHfDamp = 282;
+        public const int BMSize = 283;
+        public const int CMExc = 284;
+        public const int CMForce = 285;
+        public const int CMGeom = 286;
+        public const int CMModes = 287;
+        public const int CMMat = 288;
+        public const int CMRing = 289;
+        public const int CMHfDamp = 290;
+        public const int CMSize = 291;
+        public const int Count = 292;
     }
 
     internal static class Params
@@ -294,7 +318,7 @@ namespace NeoBuzz.DyeEssence
             new ParamDef(P.Quality, "Quality", "Quality", 0, 1, 0, MapKind.Enum, names: new[] { "Standard 2×", "High 4×" }, group: "Voice", description: "Voices at 2× or 4× the sample rate: High keeps hard FM, PM and sync cleaner at twice the CPU"),
             new ParamDef(P.VelAmp, "VelAmp", "Vel → amp", 0, 1000, 700, MapKind.Percent, group: "Voice", description: "How much velocity changes loudness"),
             new ParamDef(P.Volume, "Volume", "Volume", 0, 1000, 739, MapKind.Db, a: -40, b: 6, flag: true, group: "Voice", description: "Output level"),
-            new ParamDef(P.AType, "AType", "A engine", 0, 5, 1, MapKind.Enum, names: new[] { "Off", "Wavetable", "Analog", "Sample", "Granular", "Harmonic" }, group: "Osc A", description: "What slot A plays: a morphing wavetable, an analog wave, a sample, grains of a sample, or additive partials (samples, grains and partials take no warps)"),
+            new ParamDef(P.AType, "AType", "A engine", 0, 6, 1, MapKind.Enum, names: new[] { "Off", "Wavetable", "Analog", "Sample", "Granular", "Harmonic", "Modal" }, group: "Osc A", description: "What slot A plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, or a struck, plucked or bowed resonating body (samples, grains, partials and bodies take no warps)"),
             new ParamDef(P.ATable, "ATable", "A table", 0, 10, 0, MapKind.Enum, names: new[] { "Basic", "PWM", "Harmonics", "Formants", "Sync sweep", "FM sweep", "Organ", "Resonant", "Digital", "Grit", "User" }, group: "Osc A", description: "Wavetable (User: a table loaded for this slot)"),
             new ParamDef(P.APos, "APos", "A position", 0, 1000, 667, MapKind.Percent, group: "Osc A", description: "Position in the table (frames morph smoothly)"),
             new ParamDef(P.AOct, "AOct", "A octave", 0, 8, 4, MapKind.Int, a: -4, b: 0, flag: true, unit: "oct", group: "Osc A", description: "Octave"),
@@ -313,7 +337,7 @@ namespace NeoBuzz.DyeEssence
             new ParamDef(P.AWarp2Amt, "AWarp2Amt", "A warp 2 amt", 0, 1000, 0, MapKind.Percent, group: "Osc A", description: "Second warp's amount"),
             new ParamDef(P.AMod, "AMod", "A modulator", 0, 4, 1, MapKind.Enum, names: new[] { "Osc A", "Osc B", "Osc C", "Sub", "Noise" }, group: "Osc A", description: "What FM, PM, AM and Ring take (not the slot itself)"),
             new ParamDef(P.AToF2, "AToF2", "A → filter 2", 0, 1000, 0, MapKind.Percent, group: "Osc A", description: "Balance between filter 1 (0 %) and filter 2 (100 %)"),
-            new ParamDef(P.BType, "BType", "B engine", 0, 5, 0, MapKind.Enum, names: new[] { "Off", "Wavetable", "Analog", "Sample", "Granular", "Harmonic" }, group: "Osc B", description: "What slot B plays: a morphing wavetable, an analog wave, a sample, grains of a sample, or additive partials (samples, grains and partials take no warps)"),
+            new ParamDef(P.BType, "BType", "B engine", 0, 6, 0, MapKind.Enum, names: new[] { "Off", "Wavetable", "Analog", "Sample", "Granular", "Harmonic", "Modal" }, group: "Osc B", description: "What slot B plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, or a struck, plucked or bowed resonating body (samples, grains, partials and bodies take no warps)"),
             new ParamDef(P.BTable, "BTable", "B table", 0, 10, 2, MapKind.Enum, names: new[] { "Basic", "PWM", "Harmonics", "Formants", "Sync sweep", "FM sweep", "Organ", "Resonant", "Digital", "Grit", "User" }, group: "Osc B", description: "Wavetable (User: a table loaded for this slot)"),
             new ParamDef(P.BPos, "BPos", "B position", 0, 1000, 0, MapKind.Percent, group: "Osc B", description: "Position in the table (frames morph smoothly)"),
             new ParamDef(P.BOct, "BOct", "B octave", 0, 8, 4, MapKind.Int, a: -4, b: 0, flag: true, unit: "oct", group: "Osc B", description: "Octave"),
@@ -332,7 +356,7 @@ namespace NeoBuzz.DyeEssence
             new ParamDef(P.BWarp2Amt, "BWarp2Amt", "B warp 2 amt", 0, 1000, 0, MapKind.Percent, group: "Osc B", description: "Second warp's amount"),
             new ParamDef(P.BMod, "BMod", "B modulator", 0, 4, 0, MapKind.Enum, names: new[] { "Osc A", "Osc B", "Osc C", "Sub", "Noise" }, group: "Osc B", description: "What FM, PM, AM and Ring take (not the slot itself)"),
             new ParamDef(P.BToF2, "BToF2", "B → filter 2", 0, 1000, 0, MapKind.Percent, group: "Osc B", description: "Balance between filter 1 (0 %) and filter 2 (100 %)"),
-            new ParamDef(P.CType, "CType", "C engine", 0, 5, 0, MapKind.Enum, names: new[] { "Off", "Wavetable", "Analog", "Sample", "Granular", "Harmonic" }, group: "Osc C", description: "What slot C plays: a morphing wavetable, an analog wave, a sample, grains of a sample, or additive partials (samples, grains and partials take no warps)"),
+            new ParamDef(P.CType, "CType", "C engine", 0, 6, 0, MapKind.Enum, names: new[] { "Off", "Wavetable", "Analog", "Sample", "Granular", "Harmonic", "Modal" }, group: "Osc C", description: "What slot C plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, or a struck, plucked or bowed resonating body (samples, grains, partials and bodies take no warps)"),
             new ParamDef(P.CTable, "CTable", "C table", 0, 10, 3, MapKind.Enum, names: new[] { "Basic", "PWM", "Harmonics", "Formants", "Sync sweep", "FM sweep", "Organ", "Resonant", "Digital", "Grit", "User" }, group: "Osc C", description: "Wavetable (User: a table loaded for this slot)"),
             new ParamDef(P.CPos, "CPos", "C position", 0, 1000, 0, MapKind.Percent, group: "Osc C", description: "Position in the table (frames morph smoothly)"),
             new ParamDef(P.COct, "COct", "C octave", 0, 8, 4, MapKind.Int, a: -4, b: 0, flag: true, unit: "oct", group: "Osc C", description: "Octave"),
@@ -536,24 +560,48 @@ namespace NeoBuzz.DyeEssence
             new ParamDef(P.AHSet, "AHSet", "A harmonics", 0, 13, 0, MapKind.Enum, names: new[] { "Saw", "Square", "Triangle", "Organ", "Reed", "Brass", "Strings", "Vowel A", "Vowel O", "Bright", "Comb", "Random", "Octaves", "User" }, group: "Osc A", description: "Harmonic engine: the first set of partial levels (made by code; User: the first frame of the slot's loaded wavetable, analysed)"),
             new ParamDef(P.AHSet2, "AHSet2", "A harmonics 2", 0, 13, 1, MapKind.Enum, names: new[] { "Saw", "Square", "Triangle", "Organ", "Reed", "Brass", "Strings", "Vowel A", "Vowel O", "Bright", "Comb", "Random", "Octaves", "User" }, group: "Osc A", description: "Harmonic engine: the second set, which \"position\" morphs to (User: the last frame of the slot's loaded wavetable)"),
             new ParamDef(P.AHPartials, "AHPartials", "A partials", 1, 128, 32, MapKind.Int, a: 0, b: 0, group: "Osc A", description: "Harmonic engine: how many partials sound (those above the Nyquist limit are dropped on high notes anyway); each added partial costs CPU"),
-            new ParamDef(P.AHTilt, "AHTilt", "A tilt", 0, 1000, 500, MapKind.Linear, a: -24, b: 24, unit: "dB", digits: 1, group: "Osc A", description: "Harmonic engine: brightness; each octave of partials louder (+) or softer (−) by this many dB on top of the set (loudness stays)"),
+            new ParamDef(P.AHTilt, "AHTilt", "A tilt", 0, 1000, 500, MapKind.Linear, a: -24, b: 24, unit: "dB/oct", digits: 1, group: "Osc A", description: "Harmonic engine: brightness; each octave of partials louder (+) or softer (−) by this many dB on top of the set (loudness stays)"),
             new ParamDef(P.AHOddEven, "AHOddEven", "A odd even", 0, 1000, 500, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "Osc A", description: "Harmonic engine: + weakens the even partials (towards a hollow, odd-only tone), − weakens the odd ones (towards the octave above)"),
             new ParamDef(P.AHStretch, "AHStretch", "A stretch", 0, 1000, 500, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "Osc A", description: "Harmonic engine: spreads the partials from whole multiples of the pitch: + stretches them apart (bells, glass, plucked wire), − bunches them (clusters)"),
             new ParamDef(P.AHDamp, "AHDamp", "A damp", 0, 1000, 0, MapKind.Percent, group: "Osc A", description: "Harmonic engine: how fast the upper partials die away while a note is held (0: they last; 100%: a pluck)"),
             new ParamDef(P.BHSet, "BHSet", "B harmonics", 0, 13, 0, MapKind.Enum, names: new[] { "Saw", "Square", "Triangle", "Organ", "Reed", "Brass", "Strings", "Vowel A", "Vowel O", "Bright", "Comb", "Random", "Octaves", "User" }, group: "Osc B", description: "Harmonic engine: the first set of partial levels (made by code; User: the first frame of the slot's loaded wavetable, analysed)"),
             new ParamDef(P.BHSet2, "BHSet2", "B harmonics 2", 0, 13, 1, MapKind.Enum, names: new[] { "Saw", "Square", "Triangle", "Organ", "Reed", "Brass", "Strings", "Vowel A", "Vowel O", "Bright", "Comb", "Random", "Octaves", "User" }, group: "Osc B", description: "Harmonic engine: the second set, which \"position\" morphs to (User: the last frame of the slot's loaded wavetable)"),
             new ParamDef(P.BHPartials, "BHPartials", "B partials", 1, 128, 32, MapKind.Int, a: 0, b: 0, group: "Osc B", description: "Harmonic engine: how many partials sound (those above the Nyquist limit are dropped on high notes anyway); each added partial costs CPU"),
-            new ParamDef(P.BHTilt, "BHTilt", "B tilt", 0, 1000, 500, MapKind.Linear, a: -24, b: 24, unit: "dB", digits: 1, group: "Osc B", description: "Harmonic engine: brightness; each octave of partials louder (+) or softer (−) by this many dB on top of the set (loudness stays)"),
+            new ParamDef(P.BHTilt, "BHTilt", "B tilt", 0, 1000, 500, MapKind.Linear, a: -24, b: 24, unit: "dB/oct", digits: 1, group: "Osc B", description: "Harmonic engine: brightness; each octave of partials louder (+) or softer (−) by this many dB on top of the set (loudness stays)"),
             new ParamDef(P.BHOddEven, "BHOddEven", "B odd even", 0, 1000, 500, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "Osc B", description: "Harmonic engine: + weakens the even partials (towards a hollow, odd-only tone), − weakens the odd ones (towards the octave above)"),
             new ParamDef(P.BHStretch, "BHStretch", "B stretch", 0, 1000, 500, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "Osc B", description: "Harmonic engine: spreads the partials from whole multiples of the pitch: + stretches them apart (bells, glass, plucked wire), − bunches them (clusters)"),
             new ParamDef(P.BHDamp, "BHDamp", "B damp", 0, 1000, 0, MapKind.Percent, group: "Osc B", description: "Harmonic engine: how fast the upper partials die away while a note is held (0: they last; 100%: a pluck)"),
             new ParamDef(P.CHSet, "CHSet", "C harmonics", 0, 13, 0, MapKind.Enum, names: new[] { "Saw", "Square", "Triangle", "Organ", "Reed", "Brass", "Strings", "Vowel A", "Vowel O", "Bright", "Comb", "Random", "Octaves", "User" }, group: "Osc C", description: "Harmonic engine: the first set of partial levels (made by code; User: the first frame of the slot's loaded wavetable, analysed)"),
             new ParamDef(P.CHSet2, "CHSet2", "C harmonics 2", 0, 13, 1, MapKind.Enum, names: new[] { "Saw", "Square", "Triangle", "Organ", "Reed", "Brass", "Strings", "Vowel A", "Vowel O", "Bright", "Comb", "Random", "Octaves", "User" }, group: "Osc C", description: "Harmonic engine: the second set, which \"position\" morphs to (User: the last frame of the slot's loaded wavetable)"),
             new ParamDef(P.CHPartials, "CHPartials", "C partials", 1, 128, 32, MapKind.Int, a: 0, b: 0, group: "Osc C", description: "Harmonic engine: how many partials sound (those above the Nyquist limit are dropped on high notes anyway); each added partial costs CPU"),
-            new ParamDef(P.CHTilt, "CHTilt", "C tilt", 0, 1000, 500, MapKind.Linear, a: -24, b: 24, unit: "dB", digits: 1, group: "Osc C", description: "Harmonic engine: brightness; each octave of partials louder (+) or softer (−) by this many dB on top of the set (loudness stays)"),
+            new ParamDef(P.CHTilt, "CHTilt", "C tilt", 0, 1000, 500, MapKind.Linear, a: -24, b: 24, unit: "dB/oct", digits: 1, group: "Osc C", description: "Harmonic engine: brightness; each octave of partials louder (+) or softer (−) by this many dB on top of the set (loudness stays)"),
             new ParamDef(P.CHOddEven, "CHOddEven", "C odd even", 0, 1000, 500, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "Osc C", description: "Harmonic engine: + weakens the even partials (towards a hollow, odd-only tone), − weakens the odd ones (towards the octave above)"),
             new ParamDef(P.CHStretch, "CHStretch", "C stretch", 0, 1000, 500, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "Osc C", description: "Harmonic engine: spreads the partials from whole multiples of the pitch: + stretches them apart (bells, glass, plucked wire), − bunches them (clusters)"),
             new ParamDef(P.CHDamp, "CHDamp", "C damp", 0, 1000, 0, MapKind.Percent, group: "Osc C", description: "Harmonic engine: how fast the upper partials die away while a note is held (0: they last; 100%: a pluck)"),
+            new ParamDef(P.AMExc, "AMExc", "A exciter", 0, 2, 0, MapKind.Enum, names: new[] { "Struck", "Plucked", "Continuous" }, group: "Osc A", description: "Modal engine: what excites the body: a mallet strike, a plucked release, or a continuous noise-driven bow or breath that sounds while the key is held"),
+            new ParamDef(P.AMForce, "AMForce", "A force", 0, 1000, 500, MapKind.Percent, group: "Osc A", description: "Modal engine: how hard it is excited: harder is brighter (a harder mallet, a sharper pluck, a pressed bow); loudness stays"),
+            new ParamDef(P.AMGeom, "AMGeom", "A geometry", 0, 5, 0, MapKind.Enum, names: new[] { "String", "Tube", "Bar", "Membrane", "Plate", "Bell" }, group: "Osc A", description: "Modal engine: the body whose modes sound: a string (whole multiples), a tube closed at one end (odd multiples), a free bar, a drum membrane, a plate or a bell (the spacings of each, not whole multiples)"),
+            new ParamDef(P.AMModes, "AMModes", "A modes", 1, 64, 24, MapKind.Int, a: 0, b: 0, group: "Osc A", description: "Modal engine: how many modes sound, lowest first (a membrane has 31, a bell 12; those above the Nyquist limit are dropped on high notes); each mode costs CPU"),
+            new ParamDef(P.AMMat, "AMMat", "A material", 0, 1000, 500, MapKind.Percent, group: "Osc A", description: "Modal engine: soft to hard: 0 is gut, felt or skin (exact spacing, the upper modes die fast), 100% is glass or steel (stiffness stretches the spacing, the upper modes ring on)"),
+            new ParamDef(P.AMRing, "AMRing", "A ring time", 0, 1000, 568, MapKind.Time, a: 0.05, b: 20, group: "Osc A", description: "Modal engine: how long the lowest mode takes to fall by 60 dB (the damping of the body)"),
+            new ParamDef(P.AMHfDamp, "AMHfDamp", "A hf damp", 0, 1000, 300, MapKind.Percent, group: "Osc A", description: "Modal engine: how much faster the upper modes die than the lowest (the loss grows with the square of the frequency; the material softens or hardens it)"),
+            new ParamDef(P.AMSize, "AMSize", "A body size", 0, 1000, 500, MapKind.Percent, group: "Osc A", description: "Modal engine: small to large body: a larger one rings longer and favours the low modes, a smaller one the high ones"),
+            new ParamDef(P.BMExc, "BMExc", "B exciter", 0, 2, 0, MapKind.Enum, names: new[] { "Struck", "Plucked", "Continuous" }, group: "Osc B", description: "Modal engine: what excites the body: a mallet strike, a plucked release, or a continuous noise-driven bow or breath that sounds while the key is held"),
+            new ParamDef(P.BMForce, "BMForce", "B force", 0, 1000, 500, MapKind.Percent, group: "Osc B", description: "Modal engine: how hard it is excited: harder is brighter (a harder mallet, a sharper pluck, a pressed bow); loudness stays"),
+            new ParamDef(P.BMGeom, "BMGeom", "B geometry", 0, 5, 0, MapKind.Enum, names: new[] { "String", "Tube", "Bar", "Membrane", "Plate", "Bell" }, group: "Osc B", description: "Modal engine: the body whose modes sound: a string (whole multiples), a tube closed at one end (odd multiples), a free bar, a drum membrane, a plate or a bell (the spacings of each, not whole multiples)"),
+            new ParamDef(P.BMModes, "BMModes", "B modes", 1, 64, 24, MapKind.Int, a: 0, b: 0, group: "Osc B", description: "Modal engine: how many modes sound, lowest first (a membrane has 31, a bell 12; those above the Nyquist limit are dropped on high notes); each mode costs CPU"),
+            new ParamDef(P.BMMat, "BMMat", "B material", 0, 1000, 500, MapKind.Percent, group: "Osc B", description: "Modal engine: soft to hard: 0 is gut, felt or skin (exact spacing, the upper modes die fast), 100% is glass or steel (stiffness stretches the spacing, the upper modes ring on)"),
+            new ParamDef(P.BMRing, "BMRing", "B ring time", 0, 1000, 568, MapKind.Time, a: 0.05, b: 20, group: "Osc B", description: "Modal engine: how long the lowest mode takes to fall by 60 dB (the damping of the body)"),
+            new ParamDef(P.BMHfDamp, "BMHfDamp", "B hf damp", 0, 1000, 300, MapKind.Percent, group: "Osc B", description: "Modal engine: how much faster the upper modes die than the lowest (the loss grows with the square of the frequency; the material softens or hardens it)"),
+            new ParamDef(P.BMSize, "BMSize", "B body size", 0, 1000, 500, MapKind.Percent, group: "Osc B", description: "Modal engine: small to large body: a larger one rings longer and favours the low modes, a smaller one the high ones"),
+            new ParamDef(P.CMExc, "CMExc", "C exciter", 0, 2, 0, MapKind.Enum, names: new[] { "Struck", "Plucked", "Continuous" }, group: "Osc C", description: "Modal engine: what excites the body: a mallet strike, a plucked release, or a continuous noise-driven bow or breath that sounds while the key is held"),
+            new ParamDef(P.CMForce, "CMForce", "C force", 0, 1000, 500, MapKind.Percent, group: "Osc C", description: "Modal engine: how hard it is excited: harder is brighter (a harder mallet, a sharper pluck, a pressed bow); loudness stays"),
+            new ParamDef(P.CMGeom, "CMGeom", "C geometry", 0, 5, 0, MapKind.Enum, names: new[] { "String", "Tube", "Bar", "Membrane", "Plate", "Bell" }, group: "Osc C", description: "Modal engine: the body whose modes sound: a string (whole multiples), a tube closed at one end (odd multiples), a free bar, a drum membrane, a plate or a bell (the spacings of each, not whole multiples)"),
+            new ParamDef(P.CMModes, "CMModes", "C modes", 1, 64, 24, MapKind.Int, a: 0, b: 0, group: "Osc C", description: "Modal engine: how many modes sound, lowest first (a membrane has 31, a bell 12; those above the Nyquist limit are dropped on high notes); each mode costs CPU"),
+            new ParamDef(P.CMMat, "CMMat", "C material", 0, 1000, 500, MapKind.Percent, group: "Osc C", description: "Modal engine: soft to hard: 0 is gut, felt or skin (exact spacing, the upper modes die fast), 100% is glass or steel (stiffness stretches the spacing, the upper modes ring on)"),
+            new ParamDef(P.CMRing, "CMRing", "C ring time", 0, 1000, 568, MapKind.Time, a: 0.05, b: 20, group: "Osc C", description: "Modal engine: how long the lowest mode takes to fall by 60 dB (the damping of the body)"),
+            new ParamDef(P.CMHfDamp, "CMHfDamp", "C hf damp", 0, 1000, 300, MapKind.Percent, group: "Osc C", description: "Modal engine: how much faster the upper modes die than the lowest (the loss grows with the square of the frequency; the material softens or hardens it)"),
+            new ParamDef(P.CMSize, "CMSize", "C body size", 0, 1000, 500, MapKind.Percent, group: "Osc C", description: "Modal engine: small to large body: a larger one rings longer and favours the low modes, a smaller one the high ones"),
         };
     }
 }

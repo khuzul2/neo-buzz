@@ -62,6 +62,9 @@ namespace NeoBuzz.DyeEssence
         public int Partials = 32;
         public float Tilt, OddEven, Stretch, Damp;
         public float[] SetA, SetB;
+        /// <summary>The Modal engine (§4.8): exciter, force (0 … 1), body, modes sounding, material (0 soft … 1 hard), ring time (s), hf damping (0 … 1), body size (0 … 1).</summary>
+        public int Exciter, Geometry, Modes = 24;
+        public float Force = 0.5f, Material = 0.5f, Ring = 1.5f, HfDamp = 0.3f, BodySize = 0.5f;
     }
 
     internal sealed class SourceSettings
@@ -144,7 +147,7 @@ namespace NeoBuzz.DyeEssence
         public readonly BankSettings S = new BankSettings();
 
         /// <summary>The engines, by <see cref="SlotType"/> (Off has none).</summary>
-        public readonly IEngine[] Engines = { null, new WavetableEngine(), new AnalogEngine(), new SampleEngine(), new GranularEngine(), new HarmonicEngine() };
+        public readonly IEngine[] Engines = { null, new WavetableEngine(), new AnalogEngine(), new SampleEngine(), new GranularEngine(), new HarmonicEngine(), new ModalEngine() };
         public AnalogEngine Analog => (AnalogEngine)Engines[(int)SlotType.Analog];
 
         IEngine EngineOf(OscSettings os) => (int)os.Type < Engines.Length ? Engines[(int)os.Type] : null;
@@ -354,6 +357,8 @@ namespace NeoBuzz.DyeEssence
 
         public NoteBank(LaneKind lanes = LaneKind.Auto)
         {
+            // The Modal engine's mode tables are built here, not on the audio thread at the first Modal note.
+            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(ModalBodies).TypeHandle);
             for (int n = 0; n < Notes; n++)
             {
                 seeds[n] = 0x9E3779B9u * (uint)(n + 1);
