@@ -35,6 +35,9 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         public static readonly ImmutableSolidColorBrush ColumnSetLabel = B(0xFFCCCCCC);        // ColumnSetLabelBrush
         public static readonly ImmutableSolidColorBrush ColumnSetLabelMuted = B(0x4DCCCCCC);   // the same at 0.3 opacity
         public static readonly ImmutableSolidColorBrush ColumnLabel = B(0xFFCCCCCC);           // ColumnLabelBrush
+        // Fork (ux-overhaul.md P3c): the beat and bar rules, 3.4:1 and 7.4:1 against the lighter of the two beat shades (#373737).
+        public static readonly ImmutableSolidColorBrush BeatRule = B(0xFF888888);
+        public static readonly ImmutableSolidColorBrush BarRule = B(0xFFCCCCCC);
         public static readonly ImmutableSolidColorBrush LabelHover = B(0x28000000);            // PatternControl's highlight
         public static readonly ImmutableSolidColorBrush PlayPosition = B(0x40000000);          // playPosRectangle
         // Fork (ux-overhaul.md §3.1, UX review mac-052): the block selection in the studio's accent at 35 % with an accent

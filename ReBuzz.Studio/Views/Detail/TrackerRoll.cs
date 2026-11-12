@@ -359,7 +359,10 @@ namespace ReBuzz.Studio.Views.Detail
         void OnSourceEdited() { loopUndoable = false; loopRedoable = false; }
 
         /// <summary>The song's tick where this pattern's first tick lies: its event that plays now, else its first in the song; null if it isn't in the song.</summary>
-        internal int? Anchor()
+        internal int? Anchor() => AnchorOf(core, pattern);
+
+        /// <summary>Anchor for any pattern (the Tracker's bar rules use it too).</summary>
+        internal static int? AnchorOf(ReBuzzCore core, IPattern pattern)
         {
             var song = core.Song;
             if (song == null || pattern == null) return null;
@@ -381,7 +384,9 @@ namespace ReBuzz.Studio.Views.Detail
         }
 
         /// <summary>The bar length in ticks the song's list has where the pattern lies (the first bar's when it isn't in the song).</summary>
-        internal int BarLength() => Math.Max(1, core.SongMeter.GetBarLengthAt(Math.Max(0, Anchor() ?? 0)));
+        internal int BarLength() => BarLengthOf(core, pattern);
+
+        internal static int BarLengthOf(ReBuzzCore core, IPattern pattern) => Math.Max(1, core.SongMeter.GetBarLengthAt(Math.Max(0, AnchorOf(core, pattern) ?? 0)));
 
         /// <summary>The bars, the loop and the length the ruler shows, read from the song again.</summary>
         internal void RefreshBars()
