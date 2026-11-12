@@ -144,7 +144,7 @@ class LicenceExceptionTests(unittest.TestCase):
 
     def test_every_exception_is_the_recorded_one_on_an_unlicensed_x64_rebuild(self):
         excepted = [n for n in nc.natives() if "licenseException" in n]
-        self.assertEqual(sorted(n["gear"] for n in excepted), ["Jeskola Distortion", "Jeskola Noise Generator", "Jeskola Trilok"])
+        self.assertEqual(sorted(n["gear"] for n in excepted), ["Jeskola Delay", "Jeskola Distortion", "Jeskola NiNjA dElaY", "Jeskola Noise Generator", "Jeskola Trilok"])
         for n in excepted:
             self.assertEqual(n["licenseException"], self.recorded(), n["gear"])
             self.assertTrue(n["license"].startswith("None"), f"{n['gear']}: the exception is for sources without a licence")
@@ -256,12 +256,12 @@ class NativeSongsTests(unittest.TestCase):
                                        ("Effects", "FSM WahManPro.x64.dll", b"rebuilt with a fix")):
                 with open(os.path.join(gear, folder, name), "wb") as f:
                     f.write(data)
-            shutil.copyfile(os.path.join(shipped, "Effects", "Jeskola Delay.dll"), os.path.join(gear, "Effects", "Jeskola Delay.dll"))
-            with open(os.path.join(cand, "Effects", "Jeskola Delay.x64.dll"), "wb") as f:
+            shutil.copyfile(os.path.join(shipped, "Effects", "Jeskola Cross Delay.dll"), os.path.join(gear, "Effects", "Jeskola Cross Delay.dll"))
+            with open(os.path.join(cand, "Effects", "Jeskola Cross Delay.x64.dll"), "wb") as f:
                 f.write(b"x64 rebuild")
             got = {e["gear"]: (e["role"], e["upstream"][1], e["ours"][1]) for e in ns.plan(gear, shipped, cand)}
             self.assertEqual(got, {"FSM WahManPro": ("fixed", "FSM WahManPro.x64.dll", "FSM WahManPro.x64.dll"),
-                                   "Jeskola Delay": ("candidate", "Jeskola Delay.dll", "Jeskola Delay.x64.dll"),
+                                   "Jeskola Cross Delay": ("candidate", "Jeskola Cross Delay.dll", "Jeskola Cross Delay.x64.dll"),
                                    "Jeskola Distortion": ("rebuilt", "Jeskola Distortion.dll", "Jeskola Distortion.x64.dll")})
 
     def test_the_dlls_platforms(self):

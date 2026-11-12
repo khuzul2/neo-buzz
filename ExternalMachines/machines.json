@@ -638,9 +638,11 @@
           ],
           "license": "None stated (Jeskola folder: no licence file or header)",
           "redistribute": false,
+          "licenseException": "no licence in source; shipped by user decision 2026-11-06 for private use",
           "upstreamBinary": "x86",
-          "notes": "Its x64 rebuild matches upstream's 32-bit binary within -150.5 dBFS (tools/native-compare.py), not bit for bit, so it isn't shipped: only rebuilds bit-identical to upstream's in every case ship under the licence exception (user decision 2026-11-06)",
-          "ship": "upstream"
+          "notes": "Its x64 rebuild matches upstream's 32-bit binary within -150.5 dBFS (tools/native-compare.py), not bit for bit, inside the gate's line; shipped by the user's decision of 2026-11-12",
+          "ship": "rebuilt",
+          "shipPlatform": "x64"
         },
         {
           "gear": "Jeskola Cross Delay",
@@ -681,9 +683,11 @@
           ],
           "license": "None stated (Jeskola folder: no licence file or header)",
           "redistribute": false,
+          "licenseException": "no licence in source; shipped by user decision 2026-11-06 for private use",
           "upstreamBinary": "x86",
-          "notes": "Its x64 rebuild matches upstream's 32-bit binary within -119.4 dBFS (tools/native-compare.py), not bit for bit, so it isn't shipped: only rebuilds bit-identical to upstream's in every case ship under the licence exception (user decision 2026-11-06)",
-          "ship": "upstream"
+          "notes": "Its x64 rebuild matches upstream's 32-bit binary within -119.4 dBFS (tools/native-compare.py), not bit for bit, inside the gate's line; shipped by the user's decision of 2026-11-12",
+          "ship": "rebuilt",
+          "shipPlatform": "x64"
         },
         {
           "gear": "Jeskola Trilok",
