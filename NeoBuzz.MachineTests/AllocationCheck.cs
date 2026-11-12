@@ -43,18 +43,19 @@ namespace NeoBuzz.MachineTests
         /// per block, the parameter changes with it), each measured on this thread. Returns the bytes allocated in all and,
         /// when any were, which blocks and what the thread did in them ("" when none did).
         /// </summary>
-        public static (long Bytes, string Why) Run(int count, Action<int> block)
+        public static (long Bytes, string Why) Run(int count, Action<int> block, Func<long> standIn = null)
         {
             // Two unmeasured passes over the first blocks (what the first measured blocks would otherwise be the first of),
             // then the measured stretch, repeated while it allocates (GuardPolicy.Allocation).
             int warm = Math.Min(count, 64);
             GuardPolicy.Warm(() => { for (int b = 0; b < warm; b++) block(b); });
-            return GuardPolicy.Allocation(() => Once(count, block));
+            return GuardPolicy.Allocation(() => Once(count, block, standIn));
         }
 
-        static (long Bytes, string Why) Once(int count, Action<int> block)
+        static (long Bytes, string Why) Once(int count, Action<int> block, Func<long> standIn)
         {
             Settle();
+            long standIn0 = standIn?.Invoke() ?? 0;
             using var window = new AllocationWindow(count, unit: "block");
             long total = 0;
             var first = new List<string>();
@@ -67,7 +68,9 @@ namespace NeoBuzz.MachineTests
                 total += bytes;
                 if (first.Count < 10) first.Add($"block {b}: {bytes} bytes");
             }
-            if (total == 0) return (0, "");
+            // What the test's stand-ins (an IBuzz that boxes its answers) allocated in the stretch is not the machine's.
+            if (standIn != null) total -= standIn() - standIn0;
+            if (total <= 0) return (0, "");
             return (total, $"{total} bytes in {count} blocks ({string.Join(", ", first)})" + window.Describe());
         }
     }

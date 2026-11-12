@@ -471,11 +471,10 @@ namespace NeoBuzz.PedalTests
                 r.Block(256, l, rr, 0);
             }
             for (int b = 0; b < 3 * Rate / 256; b++) Step(b);              // warm up: first notes, waves, the JIT
-            long calls = Fake.Calls;
-            var (bytes, why) = AllocationCheck.Run(2 * Rate / 256, b => Step(b));
-            long fake = (Fake.Calls - calls) * FakeCallBytes();
-            PedalReport.Report($"{s.Name}: {bytes - fake} bytes allocated over 2 s of blocks of 256 (notes{(midi ? ", MIDI" : "")} and parameters moving)");
-            Assert.That(bytes - fake, Is.EqualTo(0), why);
+            long perCall = FakeCallBytes();
+            var (bytes, why) = AllocationCheck.Run(2 * Rate / 256, b => Step(b), () => Fake.Calls * perCall);
+            PedalReport.Report($"{s.Name}: {bytes} bytes allocated over 2 s of blocks of 256 (notes{(midi ? ", MIDI" : "")} and parameters moving)");
+            Assert.That(bytes, Is.EqualTo(0), why);
         }
 
         [TestCaseSource(nameof(SynthsBothWays))]
