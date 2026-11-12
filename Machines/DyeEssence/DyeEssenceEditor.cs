@@ -11,6 +11,7 @@ using System;
 #if !AVALONIA   // the studio's flavour takes these names from its kit (NeoBuzz.Editor.Avalonia/WpfNames.cs)
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 #endif
 using NeoBuzz.Dsp;
 using NeoBuzz.Editor;
