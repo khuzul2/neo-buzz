@@ -347,7 +347,7 @@ namespace ReBuzz.Studio.Tests
                 Click(window, view.PointOf(0.3, 0.6, window));
                 Key(window, PhysicalKey.F2);
                 var page = PatternView.Page;
-                Assert.That(((TabItem)window.Tabs.SelectedItem!).Header, Is.EqualTo("Pattern"), "F2: the Pattern tab");
+                Assert.That(window.Detail.IsMaximised, Is.True, "F2: the Tracker over the whole window");
                 var boxes = page.GetLogicalDescendants().OfType<ComboBox>().ToList();
                 ComboBox machineBox = boxes[0], patternBox = boxes[1];
 
@@ -681,7 +681,7 @@ namespace ReBuzz.Studio.Tests
                     Assert.That(sequence.Canvas.Rows, Is.EqualTo(Core.Song.Sequences.Count), $"{name}: the arrangement's tracks");
                     // F2: the Pattern tab, as the song left it. A pattern it names is the one its editor shows.
                     Key(window, PhysicalKey.F2);
-                    Assert.That(((TabItem)window.Tabs.SelectedItem!).Header, Is.EqualTo("Pattern"));
+                    Assert.That(window.Detail.IsMaximised, Is.True, "F2: the Tracker");
                     var page = PatternView.Page;
                     if (page.Pattern != null)
                         Assert.That(page.EditorControl, Is.Not.Null, $"{name}: the Pattern tab names {page.Machine?.Name}'s {page.Pattern.Name}, and shows its editor");
@@ -690,7 +690,7 @@ namespace ReBuzz.Studio.Tests
                     {
                         PatternView.Edit(patterned);
                         Settle();
-                        Assert.That(((TabItem)window.Tabs.SelectedItem!).Header, Is.EqualTo("Pattern"), $"{name}: the Pattern tab shows {patterned.Name}");
+                        Assert.That(window.Detail.IsOpen, Is.True, $"{name}: the Tracker shows {patterned.Name}");
                         Assert.That(PatternView.Page.Machine, Is.SameAs(patterned));
                         Assert.That(PatternView.Page.EditorControl, Is.Not.Null, $"{name}: {patterned.Name}'s patterns in the Modern Pattern Editor");
                     }

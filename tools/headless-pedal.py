@@ -115,7 +115,7 @@ proc.stdin.write(json.dumps({"jsonrpc": "2.0", "method": "notifications/initiali
 proc.stdin.flush()
 
 ok, text, data = call("gear_list", search="Pedal", limit=100)
-installed = sorted(g["name"] for g in data.get("gear", []))
+installed = sorted(g["name"] for g in data.get("gear", []) if g["name"].startswith("Pedal "))  # Neo Gate's text names Pedal Gate
 expected = sorted(SYNTHS + EFFECTS + CONTROLS)
 check(installed == expected, f"the 19 Pedal machines are installed ({len(installed)}; missing: {sorted(set(expected) - set(installed))})")
 

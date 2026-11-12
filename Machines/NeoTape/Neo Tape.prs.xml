@@ -1,0 +1,187 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Mastering — Subtle Glue (15 ips)">
+    <Preset Machine="Neo Tape">
+      <Parameters>
+        <Parameter Name="Speed" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Saturation" Group="1" Index="1" Track="0" Value="40" />
+        <Parameter Name="Bias" Group="1" Index="2" Track="0" Value="500" />
+        <Parameter Name="Emphasis" Group="1" Index="3" Track="0" Value="60" />
+        <Parameter Name="Head bump" Group="1" Index="4" Track="0" Value="15" />
+        <Parameter Name="HF loss" Group="1" Index="5" Track="0" Value="15" />
+        <Parameter Name="Electronics" Group="1" Index="6" Track="0" Value="100" />
+        <Parameter Name="Hiss" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Wow" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Flutter" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Wow rate" Group="1" Index="10" Track="0" Value="200" />
+        <Parameter Name="Quality" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — Warm and Rounded (7.5 ips)">
+    <Preset Machine="Neo Tape">
+      <Parameters>
+        <Parameter Name="Speed" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Saturation" Group="1" Index="1" Track="0" Value="60" />
+        <Parameter Name="Bias" Group="1" Index="2" Track="0" Value="500" />
+        <Parameter Name="Emphasis" Group="1" Index="3" Track="0" Value="60" />
+        <Parameter Name="Head bump" Group="1" Index="4" Track="0" Value="25" />
+        <Parameter Name="HF loss" Group="1" Index="5" Track="0" Value="40" />
+        <Parameter Name="Electronics" Group="1" Index="6" Track="0" Value="250" />
+        <Parameter Name="Hiss" Group="1" Index="7" Track="0" Value="40" />
+        <Parameter Name="Wow" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Flutter" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Wow rate" Group="1" Index="10" Track="0" Value="200" />
+        <Parameter Name="Quality" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — Open and Fast (30 ips)">
+    <Preset Machine="Neo Tape">
+      <Parameters>
+        <Parameter Name="Speed" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Saturation" Group="1" Index="1" Track="0" Value="30" />
+        <Parameter Name="Bias" Group="1" Index="2" Track="0" Value="500" />
+        <Parameter Name="Emphasis" Group="1" Index="3" Track="0" Value="60" />
+        <Parameter Name="Head bump" Group="1" Index="4" Track="0" Value="10" />
+        <Parameter Name="HF loss" Group="1" Index="5" Track="0" Value="10" />
+        <Parameter Name="Electronics" Group="1" Index="6" Track="0" Value="50" />
+        <Parameter Name="Hiss" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Wow" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Flutter" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Wow rate" Group="1" Index="10" Track="0" Value="200" />
+        <Parameter Name="Quality" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mix Bus — Tape Glue">
+    <Preset Machine="Neo Tape">
+      <Parameters>
+        <Parameter Name="Speed" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Saturation" Group="1" Index="1" Track="0" Value="70" />
+        <Parameter Name="Bias" Group="1" Index="2" Track="0" Value="550" />
+        <Parameter Name="Emphasis" Group="1" Index="3" Track="0" Value="80" />
+        <Parameter Name="Head bump" Group="1" Index="4" Track="0" Value="20" />
+        <Parameter Name="HF loss" Group="1" Index="5" Track="0" Value="30" />
+        <Parameter Name="Electronics" Group="1" Index="6" Track="0" Value="150" />
+        <Parameter Name="Hiss" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Wow" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Flutter" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Wow rate" Group="1" Index="10" Track="0" Value="200" />
+        <Parameter Name="Quality" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drums — Tape Crunch">
+    <Preset Machine="Neo Tape">
+      <Parameters>
+        <Parameter Name="Speed" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Saturation" Group="1" Index="1" Track="0" Value="140" />
+        <Parameter Name="Bias" Group="1" Index="2" Track="0" Value="500" />
+        <Parameter Name="Emphasis" Group="1" Index="3" Track="0" Value="90" />
+        <Parameter Name="Head bump" Group="1" Index="4" Track="0" Value="20" />
+        <Parameter Name="HF loss" Group="1" Index="5" Track="0" Value="30" />
+        <Parameter Name="Electronics" Group="1" Index="6" Track="0" Value="300" />
+        <Parameter Name="Hiss" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Wow" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Flutter" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Wow rate" Group="1" Index="10" Track="0" Value="200" />
+        <Parameter Name="Quality" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="700" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Vocal — Gentle Tape Warmth">
+    <Preset Machine="Neo Tape">
+      <Parameters>
+        <Parameter Name="Speed" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Saturation" Group="1" Index="1" Track="0" Value="50" />
+        <Parameter Name="Bias" Group="1" Index="2" Track="0" Value="500" />
+        <Parameter Name="Emphasis" Group="1" Index="3" Track="0" Value="60" />
+        <Parameter Name="Head bump" Group="1" Index="4" Track="0" Value="20" />
+        <Parameter Name="HF loss" Group="1" Index="5" Track="0" Value="20" />
+        <Parameter Name="Electronics" Group="1" Index="6" Track="0" Value="150" />
+        <Parameter Name="Hiss" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Wow" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Flutter" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Wow rate" Group="1" Index="10" Track="0" Value="200" />
+        <Parameter Name="Quality" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Lo-Fi — Worn Cassette Feel">
+    <Preset Machine="Neo Tape">
+      <Parameters>
+        <Parameter Name="Speed" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Saturation" Group="1" Index="1" Track="0" Value="100" />
+        <Parameter Name="Bias" Group="1" Index="2" Track="0" Value="625" />
+        <Parameter Name="Emphasis" Group="1" Index="3" Track="0" Value="60" />
+        <Parameter Name="Head bump" Group="1" Index="4" Track="0" Value="20" />
+        <Parameter Name="HF loss" Group="1" Index="5" Track="0" Value="90" />
+        <Parameter Name="Electronics" Group="1" Index="6" Track="0" Value="400" />
+        <Parameter Name="Hiss" Group="1" Index="7" Track="0" Value="200" />
+        <Parameter Name="Wow" Group="1" Index="8" Track="0" Value="120" />
+        <Parameter Name="Flutter" Group="1" Index="9" Track="0" Value="60" />
+        <Parameter Name="Wow rate" Group="1" Index="10" Track="0" Value="133" />
+        <Parameter Name="Quality" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Parallel — Tape Crush">
+    <Preset Machine="Neo Tape">
+      <Parameters>
+        <Parameter Name="Speed" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Saturation" Group="1" Index="1" Track="0" Value="220" />
+        <Parameter Name="Bias" Group="1" Index="2" Track="0" Value="500" />
+        <Parameter Name="Emphasis" Group="1" Index="3" Track="0" Value="100" />
+        <Parameter Name="Head bump" Group="1" Index="4" Track="0" Value="20" />
+        <Parameter Name="HF loss" Group="1" Index="5" Track="0" Value="30" />
+        <Parameter Name="Electronics" Group="1" Index="6" Track="0" Value="350" />
+        <Parameter Name="Hiss" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Wow" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Flutter" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Wow rate" Group="1" Index="10" Track="0" Value="200" />
+        <Parameter Name="Quality" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="350" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

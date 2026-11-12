@@ -1,0 +1,164 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Drums — Snare, Tight">
+    <Preset Machine="Neo Gate">
+      <Parameters>
+        <Parameter Name="Threshold" Group="1" Index="0" Track="0" Value="650" />
+        <Parameter Name="Hysteresis" Group="1" Index="1" Track="0" Value="400" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Range" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="892" />
+        <Parameter Name="Hold" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Lookahead" Group="1" Index="7" Track="0" Value="80" />
+        <Parameter Name="Detection" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Sidechain" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Key low cut" Group="1" Index="10" Track="0" Value="511" />
+        <Parameter Name="Key high cut" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Listen" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drums — Kick, Clean the Spill">
+    <Preset Machine="Neo Gate">
+      <Parameters>
+        <Parameter Name="Threshold" Group="1" Index="0" Track="0" Value="625" />
+        <Parameter Name="Hysteresis" Group="1" Index="1" Track="0" Value="300" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Range" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="940" />
+        <Parameter Name="Hold" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Lookahead" Group="1" Index="7" Track="0" Value="40" />
+        <Parameter Name="Detection" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Sidechain" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Key low cut" Group="1" Index="10" Track="0" Value="262" />
+        <Parameter Name="Key high cut" Group="1" Index="11" Track="0" Value="521" />
+        <Parameter Name="Listen" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drums — Toms, Gentle Expander">
+    <Preset Machine="Neo Gate">
+      <Parameters>
+        <Parameter Name="Threshold" Group="1" Index="0" Track="0" Value="575" />
+        <Parameter Name="Hysteresis" Group="1" Index="1" Track="0" Value="400" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="463" />
+        <Parameter Name="Range" Group="1" Index="3" Track="0" Value="60" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Hold" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Lookahead" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Detection" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Sidechain" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Key low cut" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Key high cut" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Listen" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Vocals — Soft Gate Between Phrases">
+    <Preset Machine="Neo Gate">
+      <Parameters>
+        <Parameter Name="Threshold" Group="1" Index="0" Track="0" Value="475" />
+        <Parameter Name="Hysteresis" Group="1" Index="1" Track="0" Value="500" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="367" />
+        <Parameter Name="Range" Group="1" Index="3" Track="0" Value="72" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Hold" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Lookahead" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Detection" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Sidechain" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Key low cut" Group="1" Index="10" Track="0" Value="469" />
+        <Parameter Name="Key high cut" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Listen" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Tighten the Tail">
+    <Preset Machine="Neo Gate">
+      <Parameters>
+        <Parameter Name="Threshold" Group="1" Index="0" Track="0" Value="550" />
+        <Parameter Name="Hysteresis" Group="1" Index="1" Track="0" Value="300" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Range" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Hold" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Lookahead" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Detection" Group="1" Index="8" Track="0" Value="1" />
+        <Parameter Name="Sidechain" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Key low cut" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Key high cut" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Listen" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Noise — Hiss Between Takes">
+    <Preset Machine="Neo Gate">
+      <Parameters>
+        <Parameter Name="Threshold" Group="1" Index="0" Track="0" Value="312" />
+        <Parameter Name="Hysteresis" Group="1" Index="1" Track="0" Value="300" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Range" Group="1" Index="3" Track="0" Value="30" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Hold" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Lookahead" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Detection" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Sidechain" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Key low cut" Group="1" Index="10" Track="0" Value="565" />
+        <Parameter Name="Key high cut" Group="1" Index="11" Track="0" Value="673" />
+        <Parameter Name="Listen" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pedal Gate — Same Settings">
+    <Preset Machine="Neo Gate">
+      <Parameters>
+        <Parameter Name="Threshold" Group="1" Index="0" Track="0" Value="625" />
+        <Parameter Name="Hysteresis" Group="1" Index="1" Track="0" Value="300" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Range" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="459" />
+        <Parameter Name="Hold" Group="1" Index="5" Track="0" Value="606" />
+        <Parameter Name="Release" Group="1" Index="6" Track="0" Value="697" />
+        <Parameter Name="Lookahead" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Detection" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Sidechain" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Key low cut" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Key high cut" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Listen" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="14" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

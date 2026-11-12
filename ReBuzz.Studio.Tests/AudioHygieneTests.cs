@@ -1005,6 +1005,65 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void ANeoTapeANeoDeEsserAndANeoGateWithEveryControlAllocateNothing()
+        {
+            // mastering-tools.md §5.11 - §5.13: Neo Tape (speed and quality switched, wow, flutter, hiss, bias), Neo De-esser (every action,
+            // lookahead moved) and Neo Gate (detection and sidechain switched, a lookahead moved) over a pattern.
+            NewSong();
+            var m = AddPoly("Hygiene Dynamics Poly");
+            m.CreatePattern("00", 16);
+            var pattern = (PatternCore)m.Patterns.First();
+            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 36 + (i * 5) % 24, 100)).ToArray());
+            Arrange(m, pattern);
+            var tape = InsertAfter(m, "Neo Tape", "Hygiene Tape");
+            var deesser = InsertAfter(tape, "Neo De-esser", "Hygiene De-esser");
+            var gate = InsertAfter(deesser, "Neo Gate", "Hygiene Gate");
+            var tg = tape.ParameterGroupsList.SelectMany(g => g.ParametersList).ToList();
+            tg.First(p => p.Name == "Saturation").SetValue(0, 200);
+            tg.First(p => p.Name == "Hiss").SetValue(0, 100);
+            tg.First(p => p.Name == "Wow").SetValue(0, 120);
+            tg.First(p => p.Name == "Flutter").SetValue(0, 60);
+            var speed = tg.First(p => p.Name == "Speed");
+            var quality = tg.First(p => p.Name == "Quality");
+            var bias = tg.First(p => p.Name == "Bias");
+            var dg = deesser.ParameterGroupsList.SelectMany(g => g.ParametersList).ToList();
+            var action = dg.First(p => p.Name == "Action");
+            var detector = dg.First(p => p.Name == "Detector");
+            var dLook = dg.First(p => p.Name == "Lookahead");
+            var gg = gate.ParameterGroupsList.SelectMany(g => g.ParametersList).ToList();
+            var detection = gg.First(p => p.Name == "Detection");
+            var gLook = gg.First(p => p.Name == "Lookahead");
+            try
+            {
+                int n = 0;
+                foreach (int algorithm in new[] { 0, 1, 2 })
+                {
+                    using var audio = new AudioThread(algorithm);
+                    lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                    var cost = Steady(audio, perBuffer: () =>
+                    {
+                        n++;
+                        if (n % 90 == 0) speed.SetValue(1 << 16, (n / 90) % 3);
+                        if (n % 110 == 0) quality.SetValue(1 << 16, (n / 110) % 2);
+                        bias.SetValue(1 << 16, 100 + n % 200);
+                        if (n % 70 == 0) action.SetValue(1 << 16, (n / 70) % 4);
+                        if (n % 150 == 0) detector.SetValue(1 << 16, (n / 150) % 2);
+                        dLook.SetValue(1 << 16, n % 50);
+                        if (n % 120 == 0) detection.SetValue(1 << 16, (n / 120) % 2);
+                        gLook.SetValue(1 << 16, (n * 3) % 250);
+                    });
+                    AssertNoAllocation(cost, $"a pattern through a Neo Tape, a Neo De-esser and a Neo Gate with every control (algorithm {algorithm})");
+                    lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                }
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                NewSong();
+            }
+        }
+
+        [AvaloniaTest]
         public void ANeoImagerANeoExciterANeoDitherAndANeoStripWithEveryControlAllocateNothing()
         {
             // mastering-tools.md §5.7 - §5.9: a pattern through Neo Imager (every band shaped, Recover on, a width moved every

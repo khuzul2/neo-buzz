@@ -144,13 +144,35 @@ namespace ReBuzz.Studio.Views.Notes
             pageScroll.Content = page;
             var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,5,*") };
             var splitter = new GridSplitter { Background = BarBrush, ResizeDirection = GridResizeDirection.Columns };
-            Grid.SetColumn(Editor, 0);
-            Grid.SetColumn(splitter, 1);
-            Grid.SetColumn(pageScroll, 2);
             grid.Children.Add(Editor);
             grid.Children.Add(splitter);
             grid.Children.Add(pageScroll);
             Children.Add(grid);
+            // Fork (ux-overhaul.md decision 38): in the inspector's width the two columns are 90 pt each, so below
+            // StackBelow pt the editor sits over the notes as they read, with a horizontal splitter between.
+            void Layout(bool stacked)
+            {
+                grid.ColumnDefinitions = new ColumnDefinitions(stacked ? "*" : "*,5,*");
+                grid.RowDefinitions = new RowDefinitions(stacked ? "*,5,*" : "*");
+                splitter.ResizeDirection = stacked ? GridResizeDirection.Rows : GridResizeDirection.Columns;
+                splitter.Width = stacked ? double.NaN : 5;
+                splitter.Height = stacked ? 5 : double.NaN;
+                splitter.HorizontalAlignment = HorizontalAlignment.Stretch;
+                splitter.VerticalAlignment = VerticalAlignment.Stretch;
+                Grid.SetRow(Editor, 0);
+                Grid.SetColumn(Editor, 0);
+                Grid.SetRow(splitter, stacked ? 1 : 0);
+                Grid.SetColumn(splitter, stacked ? 0 : 1);
+                Grid.SetRow(pageScroll, stacked ? 2 : 0);
+                Grid.SetColumn(pageScroll, stacked ? 0 : 2);
+                Stacked = stacked;
+            }
+            Layout(false);
+            grid.SizeChanged += (s, e) =>
+            {
+                bool want = e.NewSize.Width > 0 && e.NewSize.Width < StackBelow;
+                if (want != Stacked) Layout(want);
+            };
 
             Editor.TextChanged += (s, e) =>
             {
@@ -166,6 +188,12 @@ namespace ReBuzz.Studio.Views.Notes
             DetachedFromVisualTree += (s, e) => Detach();
             Sync();
         }
+
+        /// <summary>The width under which the editor and the notes as they read are stacked, not side by side.</summary>
+        internal const double StackBelow = 520;
+
+        /// <summary>Whether the editor is over the notes (a narrow view) and not beside them.</summary>
+        internal bool Stacked { get; private set; }
 
         /// <summary>The Markdown editor.</summary>
         internal SongHistoryTextBox Editor { get; }

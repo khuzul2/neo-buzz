@@ -25,6 +25,18 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        /// <summary>
+        /// The browser and the detail panel closed again (P3a): their open state is a setting, kept across windows, and a test
+        /// that opened one would start the next test's window with it open.
+        /// </summary>
+        public static void ResetPanels()
+        {
+            if (host?.Registry is not { } registry) return;
+            registry.Write("DetailOpen", false, "Studio");
+            registry.Write("DetailPianoRoll", false, "Studio");
+            registry.Write("BrowserOpen", false, "Studio");
+        }
+
         /// <summary>Where screenshots go: SCREENSHOTS_DIR, else beside the tests.</summary>
         public static string ScreenshotFolder
         {

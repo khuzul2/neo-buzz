@@ -50,6 +50,12 @@ namespace ReBuzz.Studio.Tests
 
             public Avalonia.Controls.Control Show(string tab)
             {
+                if (tab == "Pattern")
+                {
+                    Window.ShowView("Pattern");         // the Tracker: the detail panel's page (P3a)
+                    Settle();
+                    return Window.Detail.Page;
+                }
                 var item = Window.Tabs.Items.Cast<TabItem>().Single(t => (string)t.Header == tab);
                 item.IsSelected = true;
                 Settle();
@@ -57,7 +63,7 @@ namespace ReBuzz.Studio.Tests
             }
 
             public MachineCanvas Machines => ((MachineView)Show("Machines")).Canvas;
-            public SequenceCanvas Sequence => ((SequenceView)Show("Sequence")).Canvas;
+            public SequenceCanvas Sequence => ((SequenceView)Show("Arrangement")).Canvas;
             public SessionView Session => (SessionView)Show("Session");
             public PatternPage Pattern => (PatternPage)Show("Pattern");
 

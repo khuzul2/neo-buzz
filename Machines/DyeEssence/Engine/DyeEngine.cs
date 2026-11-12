@@ -12,7 +12,7 @@ using NeoBuzz.Sampler;
 
 namespace NeoBuzz.DyeEssence
 {
-    internal sealed class DyeEngine : INoteSink
+    internal sealed class DyeEngine : IChannelNoteSink, IDriverOut
     {
         public const int MaxBlock = NoteBank.MaxBlock;
         /// <summary>Headroom: one note of the init sound peaks round −12 dBFS at 0 dB volume.</summary>
@@ -33,6 +33,11 @@ namespace NeoBuzz.DyeEssence
         readonly TableArena[] requestedUser = new TableArena[NoteBank.Oscillators];
         readonly TableArena[] userTable = new TableArena[NoteBank.Oscillators];
         readonly string[] userName = { "", "", "" };
+        // The Harmonic engine's "User" sets: the first and last frames of the slot's user table, analysed when it was loaded.
+        readonly float[][][] requestedPartials = new float[NoteBank.Oscillators][][];
+        readonly float[][][] userPartials = new float[NoteBank.Oscillators][][];
+        static readonly int[] HarmBase = { P.AHSet, P.BHSet, P.CHSet };
+        static readonly int[] ModalBase = { P.AMExc, P.BMExc, P.CMExc };
         readonly SampleLayer[] requestedSample = new SampleLayer[NoteBank.Oscillators];
         readonly SampleLayer[] userSample = new SampleLayer[NoteBank.Oscillators];
         readonly string[] sampleName = { "", "", "" };
@@ -40,6 +45,14 @@ namespace NeoBuzz.DyeEssence
         int userChanged, shapeChanged;
         bool tablesPending;
         float bend, bendRange = 2;
+        // The arpeggiator and the step sequencer (§4.9), run on the song's grid; sub-blocks are rendered into scratch.
+        readonly NoteDriver driver = new NoteDriver();
+        readonly float[] segL = new float[MaxBlock], segR = new float[MaxBlock];
+        SeqPattern requestedPattern = SeqPattern.Default;
+        bool freeRunning;
+        long freeSamples, freeAnchorSamples;
+        double freeAnchorBeats, freeTempo = 120;
+        bool usedSong;
 
         public DyeEngine(ParamValues values, LaneKind lanes = LaneKind.Auto)
         {
@@ -50,6 +63,7 @@ namespace NeoBuzz.DyeEssence
             alloc = new VoiceAllocator(slots);
             SetSampleRate(48000);
             Update(true);
+            UpdateDriver();
         }
 
         public NoteBank Bank { get; }
@@ -57,6 +71,19 @@ namespace NeoBuzz.DyeEssence
         public float ModWheelValue, AftertouchValue;
         /// <summary>The song's tempo (BPM), for synced LFOs and envelopes.</summary>
         public double Tempo = 120;
+        /// <summary>Where the song is (set before each block): the arpeggiator and the sequencer follow it while it plays, and a free clock otherwise.</summary>
+        public DriverTransport Transport;
+        /// <summary>The notes the arpeggiator or sequencer have sounding, and the keys it holds (for the editor and tests).</summary>
+        internal NoteDriver Driver => driver;
+
+        /// <summary>The sequencer's steps (any thread; the audio thread takes them at its next block).</summary>
+        public void SetPattern(SeqPattern pattern) => Volatile.Write(ref requestedPattern, pattern ?? SeqPattern.Default);
+
+        public SeqPattern Pattern => Volatile.Read(ref requestedPattern);
+
+        /// <summary>For tests: sees every note the driver plays or stops, with <see cref="EventAt"/> the sample of the block it is on.</summary>
+        internal IDriverOut Tap;
+        internal int EventAt;
 
         public void SetSampleRate(float sr)
         {
@@ -74,11 +101,15 @@ namespace NeoBuzz.DyeEssence
         public void SetUserTable(int osc, TableArena table, string name)
         {
             userName[osc] = name ?? "";
+            Volatile.Write(ref requestedPartials[osc], table == null ? null : new[] { HarmonicSets.FromTable(table, 0), HarmonicSets.FromTable(table, table.FrameCount - 1) });
             Volatile.Write(ref requestedUser[osc], table);
             Volatile.Write(ref userChanged, 1);
         }
 
         public TableArena UserTable(int osc) => Volatile.Read(ref requestedUser[osc]);
+
+        /// <summary>The Harmonic engine's two "User" sets of slot <paramref name="osc"/> (its table's first and last frames; null: no table).</summary>
+        public float[][] UserPartials(int osc) => Volatile.Read(ref requestedPartials[osc]);
 
         /// <summary>Any thread: slot <paramref name="osc"/>'s "User" sample from the next block (null: none).</summary>
         public void SetUserSample(int osc, SampleLayer layer, string name)
@@ -118,6 +149,7 @@ namespace NeoBuzz.DyeEssence
                 for (int o = 0; o < userTable.Length; o++)
                 {
                     userTable[o] = Volatile.Read(ref requestedUser[o]);
+                    userPartials[o] = Volatile.Read(ref requestedPartials[o]);
                     userSample[o] = Volatile.Read(ref requestedSample[o]);
                 }
             var s = Bank.S;
@@ -193,6 +225,25 @@ namespace NeoBuzz.DyeEssence
                 os.GrainShape = (GrainShape)values.Choice(m + (P.AGrShape - P.ASmpSrc));
                 os.GrainReverse = values.F(m + (P.AGrRev - P.ASmpSrc));
                 os.GrainWidth = values.F(m + (P.AGrWidth - P.ASmpSrc));
+                int h = HarmBase[o];
+                int setA = values.Choice(h), setB = values.Choice(h + (P.AHSet2 - P.AHSet));
+                var user = userPartials[o];
+                os.SetA = setA == (int)HarmonicSet.User ? user?[0] ?? HarmonicSets.Get(0) : HarmonicSets.Get(setA);
+                os.SetB = setB == (int)HarmonicSet.User ? user?[1] ?? HarmonicSets.Get(1) : HarmonicSets.Get(setB);
+                os.Partials = (int)values.Value(h + (P.AHPartials - P.AHSet));
+                os.Tilt = values.F(h + (P.AHTilt - P.AHSet));
+                os.OddEven = values.F(h + (P.AHOddEven - P.AHSet)) / 100f;
+                os.Stretch = values.F(h + (P.AHStretch - P.AHSet)) / 100f;
+                os.Damp = values.F(h + (P.AHDamp - P.AHSet));
+                int md = ModalBase[o];
+                os.Exciter = values.Choice(md);
+                os.Force = values.F(md + (P.AMForce - P.AMExc));
+                os.Geometry = values.Choice(md + (P.AMGeom - P.AMExc));
+                os.Modes = (int)values.Value(md + (P.AMModes - P.AMExc));
+                os.Material = values.F(md + (P.AMMat - P.AMExc));
+                os.Ring = values.F(md + (P.AMRing - P.AMExc));
+                os.HfDamp = values.F(md + (P.AMHfDamp - P.AMExc));
+                os.BodySize = values.F(md + (P.AMSize - P.AMExc));
             }
             tablesPending = pendingNow;
 
@@ -273,18 +324,215 @@ namespace NeoBuzz.DyeEssence
             Bank.S.ModWheel = ModWheelValue;
             Bank.S.Aftertouch = AftertouchValue;
             Bank.S.Tempo = Tempo;
-            bool any = Bank.Process(left, right, n);
+            Bank.S.Mpe = values.On(P.MpeMode);
+            Bank.S.MpeBendRange = (float)values.Value(P.MpeBend);
+            UpdateDriver();
+            bool any = driver.Running ? ProcessDriven(left, right, n) : Bank.Process(left, right, n);
             OutMeter.Feed(left, right, n);
             return any || OutMeter.Peak > 1e-6f;
         }
 
-        public void NoteOn(int key, int note, float velocity) => alloc.NoteOn(key, note, velocity);
-        public void NoteOff(int key) => alloc.NoteOff(key);
+        /// <summary>The step length in beats: a rate (1/32 … a bar) and a feel (straight, dotted, triplet).</summary>
+        internal static double StepBeats(int rate, int feel)
+        {
+            double b = rate switch { 0 => 0.125, 1 => 0.25, 2 => 0.5, 3 => 1, 4 => 2, _ => 4 };
+            return feel == 1 ? b * 1.5 : feel == 2 ? b * (2.0 / 3.0) : b;
+        }
+
+        void UpdateDriver()
+        {
+            driver.SetModes((ArpMode)values.Choice(P.ArpMode), (SeqMode)values.Choice(P.SeqMode), this);
+            driver.Latch = values.On(P.ArpLatch);
+            driver.ArpOctaves = (int)values.Value(P.ArpOct);
+            driver.ArpGate = values.F(P.ArpGate);
+            driver.ArpSwing = values.F(P.ArpSwing);
+            driver.ArpStep = StepBeats(values.Choice(P.ArpRate), values.Choice(P.ArpFeel));
+            driver.SeqLength = (int)values.Value(P.SeqLength);
+            driver.SeqStep = StepBeats(values.Choice(P.SeqRate), values.Choice(P.SeqFeel));
+            driver.SeqSwing = values.F(P.SeqSwing);
+            driver.Seed = (uint)values.Value(P.ArpSeed);
+            driver.Pattern = Volatile.Read(ref requestedPattern);
+            var s = Bank.S;
+            // The sources glide over a share of the step (0: stepped); a step's length in seconds from the tempo.
+            double tau = values.F(P.SeqSlew) * driver.SeqStep * 60.0 / Math.Max(1.0, Tempo);
+            s.SeqTau = (float)tau;
+            if (driver.Seq == SeqMode.Off) { s.SeqStep = 0; s.SeqVel = 0; s.SeqTau = 0; }
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveOptimization)]
+        bool ProcessDriven(float[] left, float[] right, int n)
+        {
+            var tr = Transport;
+            bool song = tr.Playing && tr.SamplesPerTick > 0 && tr.TicksPerBeat > 0;
+            double beat0, spb;
+            if (song)
+            {
+                beat0 = tr.Beats(0);
+                spb = (double)tr.SamplesPerTick * tr.TicksPerBeat;
+            }
+            else
+            {
+                spb = 60.0 * Bank.SampleRate / Math.Max(1.0, Tempo);
+                if (Tempo != freeTempo)
+                {
+                    freeAnchorBeats += (freeSamples - freeAnchorSamples) * (60.0 / Math.Max(1.0, freeTempo)) / Bank.SampleRate;
+                    freeAnchorSamples = freeSamples;
+                    freeTempo = Tempo;
+                }
+                beat0 = freeAnchorBeats + (freeSamples - freeAnchorSamples) / spb;
+            }
+            if (song != usedSong)
+            {
+                usedSong = song;
+                driver.Resync(this);
+            }
+            driver.BeginBlock(beat0, spb, this);
+            bool any = false;
+            int cursor = 0;
+            for (int guard = 0; guard < 8192; guard++)
+            {
+                int at = driver.NextEvent(beat0, spb, cursor, n);
+                if (at >= n) break;
+                if (at > cursor)
+                {
+                    any |= Segment(left, right, cursor, at, n);
+                    cursor = at;
+                }
+                EventAt = at;
+                driver.Fire(at, beat0, spb, this);
+            }
+            any |= Segment(left, right, cursor, n, n);
+            if (!song) freeSamples += n;
+            return any;
+        }
+
+        bool Segment(float[] left, float[] right, int from, int to, int n)
+        {
+            if (to <= from) return false;
+            if (from == 0 && to == n) return Bank.Process(left, right, n);
+            bool any = Bank.Process(segL, segR, to - from);
+            Array.Copy(segL, 0, left, from, to - from);
+            Array.Copy(segR, 0, right, from, to - from);
+            return any;
+        }
+
+        // The driver's voices: through the allocator, as keys.
+        void IDriverOut.Play(int key, int note, float velocity)
+        {
+            Tap?.Play(key, note, velocity);
+            alloc.NoteOn(key, note, velocity);
+        }
+
+        void IDriverOut.Stop(int key)
+        {
+            Tap?.Stop(key);
+            alloc.NoteOff(key);
+        }
+
+        void IDriverOut.SeqValues(float step, float velocity)
+        {
+            Tap?.SeqValues(step, velocity);
+            Bank.S.SeqStep = step;
+            Bank.S.SeqVel = velocity;
+        }
+
+        /// <summary>The first key of a phrase starts the free clock afresh (the steps then start on the first key's beat).</summary>
+        void RestartFreeClock()
+        {
+            if (!driver.Intercepts || Transport.Playing) return;
+            ResetClock();
+        }
+
+        /// <summary>The free clock (the one the steps follow while the song is stopped) starts again at beat 0.</summary>
+        internal void ResetClock()
+        {
+            freeSamples = 0;
+            freeAnchorSamples = 0;
+            freeAnchorBeats = 0;
+            freeTempo = Tempo;
+            driver.Resync(this);
+        }
+
+        public void NoteOn(int key, int note, float velocity)
+        {
+            if (values.AnyDirty) UpdateDriver();
+            bool first = driver.HeldCount == 0;
+            driver.Press(key, note, velocity);
+            if (first) RestartFreeClock();
+            if (!driver.Intercepts) alloc.NoteOn(key, note, velocity);
+        }
+
+        public void NoteOff(int key)
+        {
+            if (values.AnyDirty) UpdateDriver();
+            driver.Release(key);
+            if (!driver.Intercepts) alloc.NoteOff(key);
+        }
+
         public void ModWheel(float value) => ModWheelValue = value;
         public void PitchBend(float value) => bend = value;
         public void Sustain(bool down) => alloc.Sustain(down);
         public void Aftertouch(float value) => AftertouchValue = value;
-        public void AllNotesOff(bool hard) => alloc.AllNotesOff(hard);
+
+        public void AllNotesOff(bool hard)
+        {
+            driver.Clear(this);
+            alloc.AllNotesOff(hard);
+        }
+
+        // Live MPE (§4.9): MIDI notes keep their channel.
+        const int MpeKeyBase = 4000;
+
+        public void NoteOn(int key, int note, float velocity, int channel)
+        {
+            if (!values.On(P.MpeMode))
+            {
+                NoteOn(key, note, velocity);
+                return;
+            }
+            int k = MpeKeyBase + 128 * channel + note;
+            bool first = driver.HeldCount == 0;
+            driver.Press(k, note, velocity);
+            if (first) RestartFreeClock();
+            if (driver.Intercepts) return;
+            Bank.NextChannel = channel;
+            alloc.NoteOn(k, note, velocity);
+            Bank.NextChannel = -1;
+        }
+
+        public void NoteOff(int key, int note, int channel)
+        {
+            if (!values.On(P.MpeMode))
+            {
+                NoteOff(key);
+                return;
+            }
+            NoteOff(MpeKeyBase + 128 * channel + note);
+        }
+
+        public bool Control(int channel, int ctrl, int value)
+        {
+            var s = Bank.S;
+            bool member = values.On(P.MpeMode) && channel > 0;
+            switch (ctrl)
+            {
+                case 74:
+                    if (member) s.ChSlide[channel] = Math.Clamp(value, 0, 127) / 127f;
+                    else s.Slide = Math.Clamp(value, 0, 127) / 127f;
+                    return true;
+                case 0xE0:
+                case 0xFF:
+                    if (!member) return false;
+                    s.ChBend[channel] = Math.Clamp((value - 8192) / 8192f, -1f, 1f);
+                    return true;
+                case 0xD0:
+                case 0xFC:
+                    if (!member) return false;
+                    s.ChPressure[channel] = Math.Clamp(value, 0, 127) / 127f;
+                    return true;
+            }
+            return false;
+        }
 
         /// <summary>A note slot of the bank as the allocator's voice.</summary>
         sealed class Slot : IVoice

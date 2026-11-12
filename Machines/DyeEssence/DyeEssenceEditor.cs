@@ -24,17 +24,17 @@ namespace NeoBuzz.DyeEssence
         const double D = 34;
 
         /// <summary>
-        /// Every page's size: with the header and the tabs, the editor fits a 1440 × 860 work area (a 1440 × 900 screen
-        /// less its task bar) with the keyboard shown under it and the window's frame (P2 added the Sample and Granular
-        /// engines' rows to the oscillator slots; before them it fitted 1280 × 680).
+        /// Every page's size: with the header and the tabs, the editor fits a 1280 × 680 work area (a 1280 × 720 screen
+        /// less its task bar) with the keyboard shown under it and the window's frame: 1264 × 534 at most. A slot shows
+        /// the rows of its engine only (wavetable and analog, sample, granular), so more engines do not make it taller.
         /// </summary>
-        internal const double PageWidth = 1290, PageHeight = 636;
+        internal const double PageWidth = 1244, PageHeight = 460;
 
         /// <summary>The Modulation page's parts: an envelope's or an LFO's page, the macros beside the envelopes, the route list.</summary>
         const double ModPageWidth = 592, MacrosWidth = 164, RoutesWidth = 400, LfoViewWidth = ModPageWidth + MacrosWidth - 250;
 
         /// <summary>The pages, in order.</summary>
-        internal static readonly string[] PageNames = { "Oscillators", "Mix & filters", "Modulation" };
+        internal static readonly string[] PageNames = { "Oscillators", "Mix & filters", "Modulation", "Arp & Seq" };
 
         protected override string Title => "Dye Essence";
         protected override NeoColor Accent => AccentColor;
@@ -59,10 +59,16 @@ namespace NeoBuzz.DyeEssence
                 // The Analog engine's parameters (appended in P1b, a block of their own per slot).
                 int a = slot == 0 ? P.AShape : slot == 1 ? P.BShape : P.CShape;
                 int J(int aParam) => a + (aParam - P.AShape);
+                // The Harmonic engine's parameters (appended in P3a, a block of their own per slot).
+                int hm = slot == 0 ? P.AHSet : slot == 1 ? P.BHSet : P.CHSet;
+                int H(int aParam) => hm + (aParam - P.AHSet);
+                // The Modal engine's parameters (appended in P3b, a block of their own per slot).
+                int md = slot == 0 ? P.AMExc : slot == 1 ? P.BMExc : P.CMExc;
+                int M(int aParam) => md + (aParam - P.AMExc);
                 // The Sample and Granular engines' parameters (appended in P2, a block of their own per slot).
                 int sm = slot == 0 ? P.ASmpSrc : slot == 1 ? P.BSmpSrc : P.CSmpSrc;
                 int K(int aParam) => sm + (aParam - P.ASmpSrc);
-                bool Streams() => ctx.Raw(I(P.AType)) >= (int)SlotType.Sample;
+                bool Streams() => ctx.Raw(I(P.AType)) == (int)SlotType.Sample || ctx.Raw(I(P.AType)) == (int)SlotType.Granular;
                 var userName = new TextBlock
                 {
                     Foreground = Theme.DimText,
@@ -77,17 +83,25 @@ namespace NeoBuzz.DyeEssence
                     string label = UserLabel(machine, slot, Streams());
                     if (userName.Text != label) userName.Text = label;
                 });
-                var load = new ActionButton("Load…", AccentColor, 60);
-                load.Click += () =>
+                ActionButton LoadButton()
+                {
+                var btn = new ActionButton("Load…", AccentColor, 60);
+                btn.Click += () =>
                 {
                     if (machine == null) return;
-                    EditorFiles.Open(load, "Load a wavetable", "Wavetables (*.wav)|*.wav|All files (*.*)|*.*", file =>
+                    EditorFiles.Open(btn, "Load a wavetable", "Wavetables (*.wav)|*.wav|All files (*.*)|*.*", file =>
                     {
                         try
                         {
                             machine.LoadUserTable(slot, file);
                             userName.Text = UserLabel(machine, slot, Streams());
                             ctx.Set(I(P.ATable), DyeEssenceMachine.UserChoice);
+                            // The Harmonic engine reads the table's first and last frames as its two sets.
+                            if (ctx.Raw(I(P.AType)) == (int)SlotType.Harmonic)
+                            {
+                                ctx.Set(H(P.AHSet), (int)HarmonicSet.User);
+                                ctx.Set(H(P.AHSet2), (int)HarmonicSet.User);
+                            }
                             ctx.RaiseChanged();
                         }
                         catch (Exception e)
@@ -96,11 +110,17 @@ namespace NeoBuzz.DyeEssence
                         }
                     });
                 };
-                var loadSample = new ActionButton("Sample…", AccentColor, 64);
-                loadSample.Click += () =>
+                return btn;
+                }
+                var load = LoadButton();
+                var load2 = LoadButton();
+                ActionButton SampleButton()
                 {
+                    var btn = new ActionButton("Sample…", AccentColor, 64);
+                    btn.Click += () =>
+                    {
                     if (machine == null) return;
-                    EditorFiles.Open(loadSample, "Load a sample", "Samples (*.wav)|*.wav|All files (*.*)|*.*", file =>
+                    EditorFiles.Open(btn, "Load a sample", "Samples (*.wav)|*.wav|All files (*.*)|*.*", file =>
                     {
                         try
                         {
@@ -115,7 +135,48 @@ namespace NeoBuzz.DyeEssence
                             MessageBox.Show($"Couldn't load {System.IO.Path.GetFileName(file)}: {e.Message}", "Dye Essence", MessageBoxButton.OK, MessageBoxImage.Warning);
                         }
                     });
-                };
+                    };
+                    return btn;
+                }
+                var loadSample = SampleButton();
+                var loadSample2 = SampleButton();
+                var wavetablePanel = Layout.Column(
+                    Layout.Row(new ParamDropdown(ctx, I(P.AWarp1), width: 104), Layout.Gap(4), new ParamKnob(ctx, I(P.AWarp1Amt), "amount", 30),
+                               Layout.Gap(10), new ParamDropdown(ctx, I(P.AWarp2), width: 104), Layout.Gap(4), new ParamKnob(ctx, I(P.AWarp2Amt), "amount", 30)),
+                    Layout.Row(new ParamDropdown(ctx, I(P.AMod), width: 104), Layout.Gap(10), new ParamDropdown(ctx, J(P.AShape), width: 92),
+                               Layout.Gap(4), new ParamKnob(ctx, J(P.APw), "width", 30), Layout.Gap(4), new ParamKnob(ctx, J(P.ADrift), "drift", 30)));
+                // Sample: the sample, its loop and direction, then the loop's points. Granular: the sample and the grain's shape, then the cloud.
+                var samplePanel = Layout.Column(
+                    Layout.Row(new ParamDropdown(ctx, K(P.ASmpSrc), width: 90), Layout.Gap(4), loadSample, Layout.Gap(6),
+                               new ParamDropdown(ctx, K(P.ASmpLoop), width: 84), Layout.Gap(6), new ParamChoice(ctx, K(P.ASmpRev), "reverse", 30)),
+                    Layout.Gap(1, 4),
+                    Knobs(4, (K(P.ASmpRoot), "root"), (K(P.ASmpLoopStart), "loop in"), (K(P.ASmpLoopEnd), "loop out"), (K(P.ASmpFade), "fade")));
+                var granularPanel = Layout.Column(
+                    Layout.Row(new ParamDropdown(ctx, K(P.ASmpSrc), width: 90), Layout.Gap(4), loadSample2, Layout.Gap(6),
+                               new ParamDropdown(ctx, K(P.AGrShape), width: 84), Layout.Gap(6), new ParamKnob(ctx, K(P.AGrWidth), "width", 30)),
+                    Layout.Gap(1, 4),
+                    Knobs(6, (K(P.AGrSize), "size"), (K(P.AGrRate), "rate"), (K(P.AGrSpray), "spray"), (K(P.AGrScan), "scan"),
+                        (K(P.AGrJitter), "pitch"), (K(P.AGrRev), "back")));
+                var harmonicPanel = Layout.Column(
+                    Layout.Row(new ParamDropdown(ctx, H(P.AHSet), "from", 112), Layout.Gap(8), new ParamDropdown(ctx, H(P.AHSet2), "to", 112),
+                               Layout.Gap(8), Layout.Column(Layout.Gap(1, 16), load2)),
+                    Layout.Gap(1, 4),
+                    Knobs(5, (H(P.AHPartials), "partials"), (H(P.AHTilt), "tilt"), (H(P.AHOddEven), "odd/even"), (H(P.AHStretch), "stretch"), (H(P.AHDamp), "damp")));
+                var modalPanel = Layout.Column(
+                    Layout.Row(new ParamDropdown(ctx, M(P.AMExc), "exciter", 112), Layout.Gap(8), new ParamDropdown(ctx, M(P.AMGeom), "body", 112)),
+                    Layout.Gap(1, 4),
+                    Knobs(6, (M(P.AMForce), "force"), (M(P.AMModes), "modes"), (M(P.AMMat), "material"), (M(P.AMRing), "ring"), (M(P.AMHfDamp), "hf damp"), (M(P.AMSize), "size")));
+                void ShowEngine()
+                {
+                    int type = ctx.Raw(I(P.AType));
+                    wavetablePanel.Visibility = type < (int)SlotType.Sample ? Visibility.Visible : Visibility.Collapsed;
+                    samplePanel.Visibility = type == (int)SlotType.Sample ? Visibility.Visible : Visibility.Collapsed;
+                    granularPanel.Visibility = type == (int)SlotType.Granular ? Visibility.Visible : Visibility.Collapsed;
+                    harmonicPanel.Visibility = type == (int)SlotType.Harmonic ? Visibility.Visible : Visibility.Collapsed;
+                    modalPanel.Visibility = type == (int)SlotType.Modal ? Visibility.Visible : Visibility.Collapsed;
+                }
+                ShowEngine();
+                ctx.Changed += ShowEngine;
                 return S("Osc " + DyeEssenceMachine.SlotNames[slot], Layout.Column(
                     Layout.Row(new ParamDropdown(ctx, I(P.AType), width: 96), Layout.Gap(6), new ParamDropdown(ctx, I(P.ATable), width: 112),
                                Layout.Gap(8), Layout.Column(Layout.Gap(1, 16), load)),
@@ -127,18 +188,8 @@ namespace NeoBuzz.DyeEssence
                     Knobs(6, (I(P.APos), "position"), (I(P.AOct), "octave"), (I(P.ASemi), "semi"), (I(P.AFine), "fine"), (I(P.ALevel), "level"), (I(P.APan), "pan"),
                         (I(P.AUnison), "unison"), (I(P.ADetune), "detune"), (I(P.ASpread), "spread"), (I(P.APhase), "phase"), (I(P.ARandom), "random"), (I(P.AToF2), "→ F2")),
                     Layout.Gap(1, 2),
-                    Layout.Row(new ParamDropdown(ctx, I(P.AWarp1), width: 104), Layout.Gap(4), new ParamKnob(ctx, I(P.AWarp1Amt), "amount", 30),
-                               Layout.Gap(10), new ParamDropdown(ctx, I(P.AWarp2), width: 104), Layout.Gap(4), new ParamKnob(ctx, I(P.AWarp2Amt), "amount", 30)),
-                    Layout.Row(new ParamDropdown(ctx, I(P.AMod), width: 104), Layout.Gap(10), new ParamDropdown(ctx, J(P.AShape), width: 92),
-                               Layout.Gap(4), new ParamKnob(ctx, J(P.APw), "width", 30), Layout.Gap(4), new ParamKnob(ctx, J(P.ADrift), "drift", 30)),
-                    Layout.Gap(1, 2),
-                    // Sample and Granular: the sample, its loop and direction; then the cloud.
-                    Layout.Row(new ParamDropdown(ctx, K(P.ASmpSrc), width: 90), Layout.Gap(4), loadSample, Layout.Gap(6),
-                               new ParamDropdown(ctx, K(P.ASmpLoop), width: 84), Layout.Gap(6), new ParamDropdown(ctx, K(P.AGrShape), width: 84)),
-                    Knobs(6, (K(P.ASmpRoot), "root"), (K(P.ASmpLoopStart), "loop in"), (K(P.ASmpLoopEnd), "loop out"), (K(P.ASmpFade), "fade"),
-                        (K(P.AGrSize), "size"), (K(P.AGrRate), "rate")),
-                    Layout.Row(Knobs(5, (K(P.AGrSpray), "spray"), (K(P.AGrScan), "scan"), (K(P.AGrJitter), "pitch"), (K(P.AGrRev), "back"), (K(P.AGrWidth), "width")),
-                               Layout.Gap(6), new ParamChoice(ctx, K(P.ASmpRev), "reverse", 30))));
+                    // The engine's own rows: one set shows at a time (the type picks it), so the slot keeps one height.
+                    wavetablePanel, samplePanel, granularPanel, harmonicPanel, modalPanel));
             }
 
             UIElement Filter(int f)
@@ -235,8 +286,70 @@ namespace NeoBuzz.DyeEssence
                     Layout.Row(S("Envelopes", envelopes), S("Macros", Knobs(2, (P.M1, "Macro 1"), (P.M2, "Macro 2"), (P.M3, "Macro 3"), (P.M4, "Macro 4")))),
                     S("LFOs", lfos)),
                 S("Routes", new RouteList(ctx, RoutesWidth))));
+            pages.Add(PageNames[3], ArpPage(ctx, machine, Knobs, S));
             return pages;
         }
+
+        /// <summary>
+        /// The arpeggiator, live MPE and the step sequencer (§4.9): the arpeggiator's mode, step and notes; MPE's switch and
+        /// range; the sequencer's mode, length, step and the steps themselves, one lane at a time.
+        /// </summary>
+        static UIElement ArpPage(EditorContext ctx, DyeEssenceMachine machine, Func<int, (int Index, string Label)[], UniformGrid> knobs, Func<string, UIElement, UIElement> section)
+        {
+            var arp = section("Arpeggiator", Layout.Column(
+                new ParamDropdown(ctx, P.ArpMode, width: 120),
+                Layout.Gap(1, 4),
+                Layout.Row(new ParamDropdown(ctx, P.ArpRate, "rate", 56), Layout.Gap(4), new ParamDropdown(ctx, P.ArpFeel, "feel", 72)),
+                Layout.Gap(1, 4),
+                knobs(3, new[] { (P.ArpOct, "octaves"), (P.ArpGate, "gate"), (P.ArpSwing, "swing") }),
+                Layout.Gap(1, 2),
+                Layout.Row(new ParamChoice(ctx, P.ArpLatch, "Latch", 30), Layout.Gap(8), new ParamKnob(ctx, P.ArpSeed, "seed", D))));
+            var mpe = section("Live MPE", Layout.Column(
+                Layout.Row(new ParamChoice(ctx, P.MpeMode, "MPE", 30), Layout.Gap(8), new ParamKnob(ctx, P.MpeBend, "range", D)),
+                Layout.Gap(1, 4),
+                new TextBlock { Foreground = Theme.DimText, FontFamily = Theme.FontFamily, FontSize = 11, Width = 232, TextWrapping = TextWrapping.Wrap, Text = "Per-note bend, pressure and slide, as the sources MPE bend, MPE pressure and MPE slide" }));
+            var edit = new SeqEdit(ctx, machine);
+            var lanes = new Pages(AccentColor, StepsWidth, StepsHeight, "Dye Essence/steps");
+            string[] laneNames = { "Note", "Velocity", "Gate", "Tie", "Probability" };
+            string[] laneHelp =
+            {
+                "Each step's note, in semitones from the key held (the middle is 0). Drag across the bars; the wheel moves a step by one; double-click puts it back to 0",
+                "Each step's velocity; 0 is a rest. Drag across the bars; the wheel moves a step by 5 (Shift: 1)",
+                "How much of its step each note sounds. Drag across the bars; the wheel moves a step by 5 (Shift: 1)",
+                "A tied step holds into the next, which then plays legato (the same note just goes on). Press a step to tie or untie it; drag across to do the same to more",
+                "The chance each step plays (seeded: the same seed plays the same notes). Drag across the bars; the wheel moves a step by 5 (Shift: 1)",
+            };
+            for (int i = 0; i < laneNames.Length; i++)
+            {
+                var lane = (SeqLane)i;
+                var input = new SeqStepInput(edit, lane);
+                var view = new InteractiveGraph(StepsWidth, StepsHeight, (g, r) => SeqStepPainter.Draw(g, r, edit, input, lane, AccentColor), input) { ToolTip = laneHelp[i] };
+                ctx.Changed += view.InvalidateVisual;
+                int seen = machine?.ShapesVersion ?? 0;
+                Poll.Every(view, 0.3, () =>
+                {
+                    int now = machine?.ShapesVersion ?? 0;
+                    if (now == seen) return;
+                    seen = now;
+                    view.InvalidateVisual();
+                });
+                lanes.Add(laneNames[i], view);
+            }
+            var seq = section("Sequencer", Layout.Column(
+                Layout.Row(
+                    new ParamDropdown(ctx, P.SeqMode, width: 80),
+                    Layout.Gap(8), new ParamDropdown(ctx, P.SeqRate, "rate", 56),
+                    Layout.Gap(4), new ParamDropdown(ctx, P.SeqFeel, "feel", 72),
+                    Layout.Gap(12), new ParamKnob(ctx, P.SeqLength, "length", D),
+                    Layout.Gap(8), new ParamKnob(ctx, P.SeqSwing, "swing", D),
+                    Layout.Gap(8), new ParamKnob(ctx, P.SeqSlew, "slew", D)),
+                Layout.Gap(1, 6),
+                lanes));
+            return Layout.Row(Layout.Column(arp, mpe), seq);
+        }
+
+        /// <summary>The step view's size: 32 steps across the page beside the arpeggiator's column.</summary>
+        const double StepsWidth = 900, StepsHeight = 250;
 
         /// <summary>A modulation envelope's shape: delay, attack, hold, decay to the sustain, a stretch of sustain, release; each with its curve.</summary>
         static GraphView ModEnvView(EditorContext ctx, int delay, double width, double height)
@@ -287,12 +400,93 @@ namespace NeoBuzz.DyeEssence
             int typeParam = b, srcParam = slot == 0 ? P.ASmpSrc : slot == 1 ? P.BSmpSrc : P.CSmpSrc;
             int posParam = b + (P.APos - P.AType);
             int K(int aParam) => srcParam + (aParam - P.ASmpSrc);
+            int hb = slot == 0 ? P.AHSet : slot == 1 ? P.BHSet : P.CHSet;
+            int H(int aParam) => hb + (aParam - P.AHSet);
+            // The Harmonic engine: a line for each partial (up to 64) at its pitch (stretch moves them), as tall as its level.
+            void HarmonicDraw(INeoCanvas g, NeoRect r)
+            {
+                int n = Math.Min(64, (int)ctx.Value(H(P.AHPartials)));
+                int fullN = (int)ctx.Value(H(P.AHPartials));
+                float tilt = (float)ctx.Value(H(P.AHTilt)), oddEven = (float)ctx.Value(H(P.AHOddEven)) / 100f, stretch = (float)ctx.Value(H(P.AHStretch)) / 100f;
+                float m = (float)ctx.Value(posParam);
+                float[] Set(int param)
+                {
+                    int choice = ctx.Raw(param);
+                    var user = machine?.Engine.UserPartials(slot);
+                    return choice == (int)HarmonicSet.User ? user?[param == H(P.AHSet) ? 0 : 1] ?? HarmonicSets.Get(0) : HarmonicSets.Get(choice);
+                }
+                var a = Set(H(P.AHSet)); var c = Set(H(P.AHSet2));
+                var level = new double[n];
+                double top = 1e-9;
+                for (int j = 0; j < n; j++)
+                {
+                    level[j] = Math.Abs((a[j] + (c[j] - a[j]) * m) * HarmonicSets.Base(j + 1, fullN, tilt, oddEven));
+                    top = Math.Max(top, level[j]);
+                }
+                double x0 = r.Left + 6, w = r.Width - 12, bottom = r.Bottom - 5, ht = r.Height - 24;
+                double reach = HarmonicSets.Ratio(n, stretch);
+                g.Line(x0, bottom, x0 + w, bottom, new NeoStroke(Palette.DimText.WithAlpha(0x60), 1));
+                for (int j = 0; j < n; j++)
+                {
+                    double x = x0 + HarmonicSets.Ratio(j + 1, stretch) / reach * (w - 2);
+                    g.Line(x, bottom, x, bottom - level[j] / top * ht, new NeoStroke(ctx.Accent, w / n > 5 ? 3 : 1.6));
+                }
+                g.Text($"{HarmonicSets.Names[ctx.Raw(H(P.AHSet))]} → {HarmonicSets.Names[ctx.Raw(H(P.AHSet2))]} · {fullN} partials", r.Left + 7, r.Top + 4, 11, Palette.DimText);
+            }
+            int mb = slot == 0 ? P.AMExc : slot == 1 ? P.BMExc : P.CMExc;
+            int Mo(int aParam) => mb + (aParam - P.AMExc);
+            // The Modal engine: a line for each mode (up to 64) at its place in the body's spacing (the material's stiffness moves them), as tall as the
+            // level it is struck at (where on the body, how the body radiates); the bright part is what is left a quarter second later (the ring and the loss).
+            void ModalDraw(INeoCanvas g, NeoRect r)
+            {
+                int body = Math.Clamp(ctx.Raw(Mo(P.AMGeom)), 0, ModalBodies.Names.Length - 1);
+                int n = Math.Min((int)ctx.Value(Mo(P.AMModes)), ModalBodies.Count[body]);
+                float mat = (float)ctx.Value(Mo(P.AMMat)) / 100f, hf = (float)ctx.Value(Mo(P.AMHfDamp)) / 100f, size = (float)ctx.Value(Mo(P.AMSize)) / 100f;
+                double ring = ctx.Value(Mo(P.AMRing)) * Math.Pow(2, 1.5 * (size - 0.5));
+                double pp = 0.02 + 0.48 * ctx.Value(posParam), fc = 2000 * Math.Pow(2, -4 * (size - 0.5)), h = 24 * hf * (1 - 0.8 * mat);
+                var ratios = ModalBodies.Ratios[body];
+                var at = new double[n];
+                var level = new double[n];
+                var left = new double[n];
+                double top = 1e-9;
+                for (int j = 0; j < n; j++)
+                {
+                    at[j] = ratios[j] * Math.Sqrt(1 + 0.003 * mat * mat * (j + 1) * (j + 1));
+                    double hz = 220 * at[j];
+                    level[j] = Math.Abs(Math.Sin(Math.PI * (j + 1) * pp)) / Math.Sqrt(1 + hz * hz / (fc * fc)) / ratios[j];
+                    top = Math.Max(top, level[j]);
+                    // 60 dB in ring / (1 + h f²) seconds: the share left after a quarter second.
+                    left[j] = Math.Pow(10, -3 * 0.25 * (1 + h * (hz / 1000) * (hz / 1000)) / ring);
+                }
+                double x0 = r.Left + 6, w = r.Width - 12, bottom = r.Bottom - 5, ht = r.Height - 24;
+                double reach = n > 0 ? at[n - 1] : 1;
+                g.Line(x0, bottom, x0 + w, bottom, new NeoStroke(Palette.DimText.WithAlpha(0x60), 1));
+                double thick = w / Math.Max(1, n) > 5 ? 3 : 1.6;
+                for (int j = 0; j < n; j++)
+                {
+                    double x = x0 + at[j] / reach * (w - 2), tall = level[j] / top * ht;
+                    g.Line(x, bottom, x, bottom - tall, new NeoStroke(ctx.Accent.WithAlpha(0x50), thick));
+                    g.Line(x, bottom, x, bottom - tall * left[j], new NeoStroke(ctx.Accent, thick));
+                }
+                string[] excite = { "struck", "plucked", "continuous" };
+                g.Text($"{ModalBodies.Names[body]} · {excite[Math.Clamp(ctx.Raw(Mo(P.AMExc)), 0, 2)]} · {n} modes", r.Left + 7, r.Top + 4, 11, Palette.DimText);
+            }
             var view = new GraphView(width, height, (g, r) =>
             {
                 int type = ctx.Raw(typeParam);
+                if (type == (int)SlotType.Modal)
+                {
+                    ModalDraw(g, r);
+                    return;
+                }
                 if (type < (int)SlotType.Sample)
                 {
                     table(g, r);
+                    return;
+                }
+                if (type == (int)SlotType.Harmonic)
+                {
+                    HarmonicDraw(g, r);
                     return;
                 }
                 int src = ctx.Raw(srcParam);

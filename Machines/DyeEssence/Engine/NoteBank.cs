@@ -58,6 +58,13 @@ namespace NeoBuzz.DyeEssence
         public float GrainSize = 0.05f, GrainRate = 25, Spray = 0.1f, Scan, GrainPitch;
         public GrainShape GrainShape;
         public float GrainReverse, GrainWidth = 0.5f;
+        /// <summary>The Harmonic engine (§4.7): partials sounding, tilt (dB an octave), odd/even (−1 … 1), stretch (−1 … 1), damp (0 … 1), and the two sets' levels (null: Saw and Square).</summary>
+        public int Partials = 32;
+        public float Tilt, OddEven, Stretch, Damp;
+        public float[] SetA, SetB;
+        /// <summary>The Modal engine (§4.8): exciter, force (0 … 1), body, modes sounding, material (0 soft … 1 hard), ring time (s), hf damping (0 … 1), body size (0 … 1).</summary>
+        public int Exciter, Geometry, Modes = 24;
+        public float Force = 0.5f, Material = 0.5f, Ring = 1.5f, HfDamp = 0.3f, BodySize = 0.5f;
     }
 
     internal sealed class SourceSettings
@@ -99,6 +106,23 @@ namespace NeoBuzz.DyeEssence
         public readonly RouteSettings[] Routes = NewRoutes();
         public double Tempo = 120;
         public float ModWheel, Aftertouch;
+        /// <summary>
+        /// Live MPE (§4.9): with <see cref="Mpe"/>, a note keeps the MIDI channel it came on; member channels 1 … 15 (the master
+        /// is 0) carry a pitch bend (−1 … 1 of <see cref="MpeBendRange"/> semitones), a pressure and a slide (CC74), 0 … 1 each
+        /// (slide −1: none received). <see cref="Slide"/> is the master's (or any channel's, with MPE off).
+        /// </summary>
+        public bool Mpe;
+        public float MpeBendRange = 48, Slide;
+        public readonly float[] ChBend = new float[16], ChPressure = new float[16], ChSlide = NewSlides();
+        /// <summary>The sequencer's step values (−1 … 1; 0 … 1) the sources Seq step and Seq velocity glide to, over <see cref="SeqTau"/> seconds (0: at once).</summary>
+        public float SeqStep, SeqVel, SeqTau;
+
+        static float[] NewSlides()
+        {
+            var a = new float[16];
+            Array.Fill(a, -1f);
+            return a;
+        }
 
         static RouteSettings[] NewRoutes()
         {
@@ -140,7 +164,7 @@ namespace NeoBuzz.DyeEssence
         public readonly BankSettings S = new BankSettings();
 
         /// <summary>The engines, by <see cref="SlotType"/> (Off has none).</summary>
-        public readonly IEngine[] Engines = { null, new WavetableEngine(), new AnalogEngine(), new SampleEngine(), new GranularEngine() };
+        public readonly IEngine[] Engines = { null, new WavetableEngine(), new AnalogEngine(), new SampleEngine(), new GranularEngine(), new HarmonicEngine(), new ModalEngine() };
         public AnalogEngine Analog => (AnalogEngine)Engines[(int)SlotType.Analog];
 
         IEngine EngineOf(OscSettings os) => (int)os.Type < Engines.Length ? Engines[(int)os.Type] : null;
@@ -207,6 +231,12 @@ namespace NeoBuzz.DyeEssence
         readonly float[] noteRandom = new float[Notes];
         readonly float[] dest = new float[Notes * DestCount], destLast = new float[Notes * DestCount];
         readonly float[] srcValue = new float[(int)RouteSource.Count];
+        // MPE: the channel each note slot plays (−1: none); NextChannel is what the next NoteOn or Legato gives its slot.
+        readonly int[] noteCh = new int[Notes], pendCh = new int[Notes];
+        public int NextChannel = -1;
+        float seqStepSm, seqVelSm;
+        /// <summary>The sequencer's sources as the notes read them now (after the slew).</summary>
+        public float SeqStepNow => seqStepSm;
         readonly bool[] modMoved = new bool[Notes];
         // The free LFOs (retrig off): one for every note.
         readonly double[] freePhase = new double[4];
@@ -350,6 +380,8 @@ namespace NeoBuzz.DyeEssence
 
         public NoteBank(LaneKind lanes = LaneKind.Auto)
         {
+            // The Modal engine's mode tables are built here, not on the audio thread at the first Modal note.
+            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(ModalBodies).TypeHandle);
             for (int n = 0; n < Notes; n++)
             {
                 seeds[n] = 0x9E3779B9u * (uint)(n + 1);
@@ -385,6 +417,17 @@ namespace NeoBuzz.DyeEssence
         /// <summary>The amp envelope's level now (steal priority).</summary>
         public float Loudness(int slot) => ampLevel[slot];
 
+        /// <summary>Grains sounding now (live and fading), across every note and slot: the cap's figure for the tests.</summary>
+        public int ActiveGrains
+        {
+            get
+            {
+                int n = 0;
+                for (int g = 0; g < grains.Length; g++) if (grains[g].On) n++;
+                return n;
+            }
+        }
+
         public int ActiveNotes
         {
             get
@@ -411,6 +454,7 @@ namespace NeoBuzz.DyeEssence
                 pendKey[slot] = key;
                 pendVel[slot] = velocity;
                 pendFrom[slot] = glideFrom;
+                pendCh[slot] = NextChannel;
                 if (!fading[slot])
                 {
                     fading[slot] = true;
@@ -418,6 +462,7 @@ namespace NeoBuzz.DyeEssence
                 }
                 return;
             }
+            noteCh[slot] = NextChannel;
             Begin(slot, key, velocity, glideFrom, true);
         }
 
@@ -427,8 +472,10 @@ namespace NeoBuzz.DyeEssence
             if (pending[slot])
             {
                 pendKey[slot] = key;
+                pendCh[slot] = NextChannel;
                 return;
             }
+            noteCh[slot] = NextChannel;
             noteTarget[slot] = key;
             if (!glide) noteKey[slot] = key;
         }
@@ -542,38 +589,31 @@ namespace NeoBuzz.DyeEssence
                 decL.Reset(); decR.Reset(); dec4L.Reset(); dec4R.Reset();
                 controlCounter = 0;
             }
-            if (idle)
-            {
-                bool wake = false;
-                for (int note = 0; note < Notes && !wake; note++) wake = Active(note);
-                if (!wake)
-                {
-                    // Resting (nothing has sounded for a while): only the grid's ticks run, for the
-                    // settings' glides, and the output is silence.
-                    for (int at = 0; at < n;)
-                    {
-                        if (controlCounter <= 0)
-                        {
-                            controlCounter = ControlRate;
-                            Tick();
-                        }
-                        int step = Math.Min(controlCounter, n - at);
-                        controlCounter -= step;
-                        at += step;
-                    }
-                    Array.Clear(left, 0, n);
-                    Array.Clear(right, 0, n);
-                    return false;
-                }
-                idle = false;
-            }
             int os = oversample;
-            Array.Clear(hiL, 0, os * n);
-            Array.Clear(hiR, 0, os * n);
-            bool any = false;
+            bool anyAtAll = false;
             int pos = 0;
             while (pos < n)
             {
+                if (idle)
+                {
+                    if (!Awake() && controlCounter <= 0)
+                    {
+                        controlCounter = ControlRate;
+                        Tick();
+                    }
+                    if (!Awake())
+                    {
+                        // Resting (nothing has sounded for a while): only the grid's ticks run, for the
+                        // settings' glides, and the output is silence.
+                        int step = Math.Min(controlCounter, n - pos);
+                        controlCounter -= step;
+                        Array.Clear(left, pos, step);
+                        Array.Clear(right, pos, step);
+                        pos += step;
+                        continue;
+                    }
+                    idle = false;
+                }
                 if (controlCounter <= 0)
                 {
                     controlCounter = ControlRate;
@@ -587,49 +627,71 @@ namespace NeoBuzz.DyeEssence
                         Control(note, os * controlCounter);
                     }
                 int m = Math.Min(controlCounter, n - pos);
-                any |= Render<TL, TF, TU>(os * pos, os * m);
+                Array.Clear(hiL, os * pos, os * m);
+                Array.Clear(hiR, os * pos, os * m);
+                bool any = Render<TL, TF, TU>(os * pos, os * m);
+                anyAtAll |= any;
+                // The decimators are sample-by-sample: a segment at a time gives the bits of the whole block.
+                if (os == 4)
+                {
+                    for (int i = 2 * pos; i < 2 * (pos + m); i++)
+                    {
+                        hiL[i] = dec4L.Down(hiL[2 * i], hiL[2 * i + 1]);
+                        hiR[i] = dec4R.Down(hiR[2 * i], hiR[2 * i + 1]);
+                    }
+                }
+                if (os >= 2)
+                {
+                    for (int i = pos; i < pos + m; i++)
+                    {
+                        left[i] = decL.Down(hiL[2 * i], hiL[2 * i + 1]);
+                        right[i] = decR.Down(hiR[2 * i], hiR[2 * i + 1]);
+                    }
+                }
+                else
+                {
+                    Array.Copy(hiL, pos, left, pos, m);
+                    Array.Copy(hiR, pos, right, pos, m);
+                }
                 controlCounter -= m;
                 pos += m;
-            }
-            if (os == 4)
-            {
-                for (int i = 0; i < 2 * n; i++)
+                quietSamples = any ? 0 : quietSamples + m;
+                // What follows is decided on the control grid only, never at a block's end, so the bits
+                // do not depend on the block size.
+                if (controlCounter == 0)
                 {
-                    hiL[i] = dec4L.Down(hiL[2 * i], hiL[2 * i + 1]);
-                    hiR[i] = dec4R.Down(hiR[2 * i], hiR[2 * i + 1]);
+                    if (os == 4)
+                    {
+                        dec4L.Flush();
+                        dec4R.Flush();
+                    }
+                    if (os >= 2)
+                    {
+                        decL.Flush();
+                        decR.Flush();
+                    }
+                    for (int f = 0; f < 2; f++)
+                    {
+                        var st = filterState[f];
+                        for (int i = 0; i < st.Length; i++) st[i] = DspMath.Flush(st[i]);
+                    }
+                    // After 100 ms with nothing sounding the decimators' tails are long gone: rest.
+                    if (quietSamples >= sampleRate / 10)
+                    {
+                        idle = true;
+                        quietSamples = 0;
+                        decL.Reset(); decR.Reset(); dec4L.Reset(); dec4R.Reset();
+                    }
                 }
-                dec4L.Flush();
-                dec4R.Flush();
             }
-            if (os >= 2)
-            {
-                for (int i = 0; i < n; i++)
-                {
-                    left[i] = decL.Down(hiL[2 * i], hiL[2 * i + 1]);
-                    right[i] = decR.Down(hiR[2 * i], hiR[2 * i + 1]);
-                }
-                decL.Flush();
-                decR.Flush();
-            }
-            else
-            {
-                Array.Copy(hiL, left, n);
-                Array.Copy(hiR, right, n);
-            }
-            for (int f = 0; f < 2; f++)
-            {
-                var st = filterState[f];
-                for (int i = 0; i < st.Length; i++) st[i] = DspMath.Flush(st[i]);
-            }
-            // After 100 ms with nothing sounding the decimators' tails are long gone: rest.
-            quietSamples = any ? 0 : quietSamples + n;
-            if (quietSamples >= sampleRate / 10)
-            {
-                idle = true;
-                quietSamples = 0;
-                decL.Reset(); decR.Reset(); dec4L.Reset(); dec4R.Reset();
-            }
-            return any;
+            return anyAtAll;
+        }
+
+        bool Awake()
+        {
+            for (int note = 0; note < Notes; note++)
+                if (Active(note)) return true;
+            return false;
         }
 
         /// <summary>At each tick of the grid: what the settings decide for every note, then each sounding note's values.</summary>
@@ -637,6 +699,18 @@ namespace NeoBuzz.DyeEssence
         {
             var s = S;
             Smooth();
+            GrainShare();
+            if (s.SeqTau > 0)
+            {
+                double k = -PortableMath.Expm1(-ControlRate / (double)sampleRate / s.SeqTau);
+                seqStepSm += (float)((s.SeqStep - seqStepSm) * k);
+                seqVelSm += (float)((s.SeqVel - seqVelSm) * k);
+            }
+            else
+            {
+                seqStepSm = s.SeqStep;
+                seqVelSm = s.SeqVel;
+            }
             settingsMoved = SettingsMoved();
             tickDt = ControlRate / (double)sampleRate;
             NoteEnvelope.Factors(s.Amp, tickDt, out ampKa, out ampKd, out ampKr);
@@ -698,7 +772,11 @@ namespace NeoBuzz.DyeEssence
                 {
                     // A steal or a kill has faded out: start the waiting note, or rest.
                     fading[note] = false;
-                    if (pending[note]) Begin(note, pendKey[note], pendVel[note], pendFrom[note], pendGate[note]);
+                    if (pending[note])
+                    {
+                        noteCh[note] = pendCh[note];
+                        Begin(note, pendKey[note], pendVel[note], pendFrom[note], pendGate[note]);
+                    }
                     else
                     {
                         ampStage[note] = fltStage[note] = NoteEnvelope.Idle;
@@ -769,7 +847,9 @@ namespace NeoBuzz.DyeEssence
             float target = ampStage[note] == NoteEnvelope.Idle ? 0f : amp * Sm(SmVolume) * (1f - s.VelAmp + s.VelAmp * vel) * f * Math.Max(0f, 1f + Md(note, RouteDest.Amp));
             noteGain[Notes + note] = (target - noteGain[note]) * invCount;
 
-            double noteHz = DspMath.NoteToHz(noteKey[note] + s.Bend + 12f * Md(note, RouteDest.Pitch));
+            int ch = noteCh[note];
+            float memberBend = s.Mpe && ch > 0 && ch < 16 ? s.ChBend[ch] * s.MpeBendRange : 0f;
+            double noteHz = DspMath.NoteToHz(noteKey[note] + s.Bend + memberBend + 12f * Md(note, RouteDest.Pitch));
             double vr = VoiceRate;
             // Mip levels: the plain ones keep harmonics under 44 kHz (the decimator takes 20–24 kHz
             // out); a warped one allows for how fast its warps read, up to the voice rate's Nyquist.
@@ -1047,6 +1127,15 @@ namespace NeoBuzz.DyeEssence
             srcValue[(int)RouteSource.Key] = (noteKey[note] - 60f) / 60f;
             srcValue[(int)RouteSource.ModWheel] = s.ModWheel;
             srcValue[(int)RouteSource.Aftertouch] = s.Aftertouch;
+            {
+                int mc = noteCh[note];
+                bool member = s.Mpe && mc > 0 && mc < 16;
+                srcValue[(int)RouteSource.MpePressure] = member ? Math.Max(s.ChPressure[mc], s.Aftertouch) : s.Aftertouch;
+                srcValue[(int)RouteSource.MpeSlide] = member && s.ChSlide[mc] >= 0 ? s.ChSlide[mc] : s.Slide;
+                srcValue[(int)RouteSource.MpeBend] = member ? s.ChBend[mc] : 0f;
+                srcValue[(int)RouteSource.SeqStep] = seqStepSm;
+                srcValue[(int)RouteSource.SeqVelocity] = seqVelSm;
+            }
             for (int m = 0; m < 4; m++) srcValue[(int)RouteSource.Macro1 + m] = s.Macro[m];
             srcValue[(int)RouteSource.Random] = noteRandom[note];
             Array.Copy(dest, db, destLast, db, DestCount);

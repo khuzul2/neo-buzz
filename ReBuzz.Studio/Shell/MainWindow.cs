@@ -40,8 +40,13 @@ namespace ReBuzz.Studio.Shell
         readonly AudioHealthBadge health;
         readonly ProblemBar problems = new ProblemBar();
         readonly TabControl tabs = new TabControl();
+        readonly Shell.ViewSwitcher switcher = new Shell.ViewSwitcher();
+        readonly DockPanel viewHost = new DockPanel();
         readonly DockPanel body = new DockPanel();
         Views.Inspector.InspectorPanel inspector;
+        Views.Browser.BrowserPanel browser;
+        Views.Detail.DetailPanel detail;
+        readonly Grid centre = new Grid { RowDefinitions = new RowDefinitions("*,Auto") };
         readonly DispatcherTimer refresh = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         readonly Command undo, redo;
         readonly Menu menu;
@@ -113,7 +118,7 @@ namespace ReBuzz.Studio.Shell
             AddHandler(KeyDownEvent, OnSessionKey, RoutingStrategies.Tunnel);
             AddHandler(KeyDownEvent, OnNotesKey, RoutingStrategies.Tunnel);
             // Space: play and stop in every view, before a focused button takes it; not while typing.
-            _ = new TransportKeys(this, () => tabs.ItemCount > 0 ? host.Core : null, () => SelectedTitle == "Pattern");
+            _ = new TransportKeys(this, () => tabs.ItemCount > 0 ? host.Core : null, () => detail?.IsOpen == true && InDetail(FocusManager?.GetFocusedElement()));
 
             Opened += (s, e) => open.Add(this);
             Closed += (s, e) => open.Remove(this);
@@ -142,9 +147,14 @@ namespace ReBuzz.Studio.Shell
                 // Song Notes in the inspector, when the keyboard is in it; else the selected view.
                 if (inspector?.SongNotes is { } notes && inspector.IsOpen && FocusManager?.GetFocusedElement() is Visual focused && notes.IsVisualAncestorOf(focused))
                     return notes;
+                // The Tracker in the detail panel, when the keyboard is in it.
+                if (detail?.IsOpen == true && InDetail(FocusManager?.GetFocusedElement())) return detail.Page as IStudioEditTarget;
                 return (tabs.SelectedItem as TabItem)?.Content as IStudioEditTarget;
             }
         }
+
+        /// <summary>Whether this control is in the detail panel (the Tracker).</summary>
+        bool InDetail(object element) => detail?.Page is Visual page && element is Visual v && (ReferenceEquals(page, v) || page.IsVisualAncestorOf(v));
 
         /// <summary>
         /// The text box with the keyboard focus, if any: the Edit commands act on it first, as a Mac app's
@@ -164,6 +174,13 @@ namespace ReBuzz.Studio.Shell
 
         /// <summary>The inspector on the right (P3a), once the engine runs.</summary>
         internal Views.Inspector.InspectorPanel Inspector => inspector;
+        internal Shell.ViewSwitcher Switcher => switcher;
+
+        /// <summary>The browser on the left (P3a), once the engine runs.</summary>
+        internal Views.Browser.BrowserPanel Browser => browser;
+
+        /// <summary>The detail panel under the view (P3a): the Tracker.</summary>
+        internal Views.Detail.DetailPanel Detail => detail;
 
         public TransportBar Transport => transport;
 
@@ -180,6 +197,7 @@ namespace ReBuzz.Studio.Shell
         {
             root.Children.Remove(startup);
             Views.Session.SessionView sessionView = null;
+            Avalonia.Controls.Control tracker = null;
             foreach (var view in StudioViews.All)
             {
                 Avalonia.Controls.Control content;
@@ -192,7 +210,14 @@ namespace ReBuzz.Studio.Shell
                     host.Log($"The {view.Title} view failed: {e}");
                     content = new TextBlock { Text = $"{view.Title}: {e.Message}", Foreground = StudioTokens.ErrorTextBrush, Margin = new Thickness(12) };
                 }
+                // Fork (ux-overhaul.md P3a): the Pattern editor is the detail panel's Tracker, not a tab.
+                if (view.Title == "Pattern")
+                {
+                    tracker = content;
+                    continue;
+                }
                 tabs.Items.Add(new TabItem { Header = view.Title, Content = content });
+                switcher.Add(view.Title, ToolTipFor(view.Title), () => ShowView(view.Title));
                 sessionView ??= content as Views.Session.SessionView;
             }
             ShowView(StudioViews.FirstShown);
@@ -208,13 +233,79 @@ namespace ReBuzz.Studio.Shell
                 host.Log($"The Song Notes view failed: {e}");
             }
             inspector = new Views.Inspector.InspectorPanel(host.Core, host.Registry, ShowView, sessionView, notes);
+            browser = new Views.Browser.BrowserPanel(host.Core, host.Registry, p => PatternView.Edit(p));
+            detail = new Views.Detail.DetailPanel(host.Registry, tracker ?? new TextBlock { Text = "The Tracker failed to start.", Foreground = StudioTokens.ErrorTextBrush, Margin = new Thickness(12) });
+            if (tracker is PatternPage page)
+            {
+                page.Reveal = () => detail.Show(detail.IsMaximised);
+                page.ShowSequence = () => ShowView("Arrangement");
+            }
+            // Fork (ux-overhaul.md decision 37): the segmented switcher is the view strip; the TabControl only hosts the
+            // views (its own strip is hidden), so a narrow window no longer wraps it.
+            tabs.TemplateApplied += (s, e) =>
+            {
+                if (e.NameScope.Find<Avalonia.Controls.Control>("PART_ItemsPresenter") is { } strip) strip.IsVisible = false;
+            };
+            tabs.SelectionChanged += (s, e) => switcher.Select(SelectedTitle);
+            switcher.Select(SelectedTitle);
+            DockPanel.SetDock(switcher, Dock.Top);
+            viewHost.Children.Add(switcher);
+            viewHost.Children.Add(tabs);
+            Grid.SetRow(viewHost, 0);
+            Grid.SetRow(detail, 1);
+            centre.Children.Add(viewHost);
+            centre.Children.Add(detail);
+            body.Children.Add(browser);
             body.Children.Add(inspector);
-            body.Children.Add(tabs);
+            body.Children.Add(centre);
             root.Children.Add(body);
+            detail.Changed += ApplyDetailLayout;
+            browser.Changed += FitPanels;
+            inspector.Changed += FitPanels;
+            body.SizeChanged += (s, e) => FitPanels();
+            ApplyDetailLayout();
             transport.IsEnabled = true;
             if (host.Agent != null) host.Agent.Changed += Refresh;
             refresh.Start();
             Refresh();
+        }
+
+        // ------------------------------------------------------------------ the panels
+
+        /// <summary>The least width the main view keeps; the side panels give way to it in a narrow window.</summary>
+        internal const double MinMainWidth = 360;
+
+        /// <summary>The least height the main view keeps above the detail panel.</summary>
+        internal const double MinMainHeight = 160;
+
+        /// <summary>The detail panel docked under the view, or over all of it (maximised).</summary>
+        void ApplyDetailLayout()
+        {
+            if (detail == null) return;
+            bool max = detail.IsMaximised;
+            centre.RowDefinitions[0].Height = max ? new GridLength(0) : GridLength.Star;
+            centre.RowDefinitions[1].Height = max ? GridLength.Star : GridLength.Auto;
+            viewHost.IsVisible = !max;
+            if (!detail.IsOpen && host.Core != null) host.Core.EditContext = null;     // the tracker no longer has the keyboard
+            FitPanels();
+        }
+
+        /// <summary>
+        /// Keeps the main view usable: in a narrow window the inspector is narrower than it was set (not under its least width,
+        /// then it is a rail), and the browser gets what is left (else a rail); the settings are kept. In a low window the
+        /// detail panel is lower.
+        /// </summary>
+        void FitPanels()
+        {
+            if (browser == null || inspector == null) return;
+            if (body.Bounds.Width > 0)
+            {
+                double room = body.Bounds.Width - MinMainWidth;
+                inspector.Fit(inspector.IsOpen ? Math.Max(0, room - Views.Browser.BrowserPanel.RailWidth) : double.PositiveInfinity);
+                browser.Fit(browser.IsOpen ? Math.Max(0, room - inspector.EffectiveWidth) : double.PositiveInfinity);
+            }
+            if (detail != null && body.Bounds.Height > 0)
+                detail.MaxHeight = detail.IsMaximised ? double.PositiveInfinity : Math.Max(Views.Detail.DetailPanel.BarHeight, body.Bounds.Height - MinMainHeight);
         }
 
         // ------------------------------------------------------------------ menus and keys
@@ -356,7 +447,7 @@ namespace ReBuzz.Studio.Shell
         /// <summary>The keymap's command for a view's tab.</summary>
         static string ViewCommand(string title) => title switch
         {
-            "Sequence" => "view.sequence",
+            "Arrangement" => "view.sequence",
             "Session" => "view.session",
             "Machines" => "view.machines",
             "Pattern" => "view.pattern",
@@ -374,13 +465,19 @@ namespace ReBuzz.Studio.Shell
             {
                 string title = view.Title;
                 string id = ViewCommand(title);
-                var entry = Command(id, mac, () => UnlessEditorKeeps(id, () => ShowView(title)), () => tabs.ItemCount > 0, () => SelectedTitle == title);
+                bool tracker = title == "Pattern";
+                var entry = Command(id, mac, () => UnlessEditorKeeps(id, () => ShowView(title)), () => tabs.ItemCount > 0,
+                    () => tracker ? detail?.IsOpen == true : SelectedTitle == title);
                 yield return entry;
             }
             yield return Command("view.notes", mac, () => UnlessEditorKeeps("view.notes", ShowSongNotes), () => inspector != null,
                 () => inspector is { IsOpen: true, CurrentTab: Views.Inspector.InspectorPanel.SongTab });
             yield return MenuEntry.Separator;
+            yield return Command("view.browser", mac, () => browser?.Toggle(), () => browser != null, () => browser?.IsOpen == true);
             yield return Command("view.inspector", mac, () => inspector?.Toggle(), () => inspector != null, () => inspector?.IsOpen == true);
+            yield return Command("view.detail", mac, () => detail?.Toggle(), () => detail != null, () => detail?.IsOpen == true);
+            yield return Command("view.pianoroll", mac, ShowPianoRoll, () => detail != null, () => detail?.IsOpen == true && detail.IsPianoRoll);
+            yield return Command("view.maximise", mac, () => ToggleTrackerMaximised(), () => detail != null, () => detail?.IsMaximised == true);
             yield return Command("view.mixer", mac, ToggleSessionMixer, () => host.Core?.SessionLayout != null, () => host.Core?.SessionLayout?.Document?.ShowMixer == true);
         }
 
@@ -469,9 +566,9 @@ namespace ReBuzz.Studio.Shell
         /// </summary>
         internal bool EditorKeepsKey(KeyGesture key)
         {
-            if (key == null || !key.KeyModifiers.HasFlag(CommandModifiers) || key.KeyModifiers.HasFlag(KeyModifiers.Alt) || SelectedTitle != "Pattern") return false;
+            if (key == null || !key.KeyModifiers.HasFlag(CommandModifiers) || key.KeyModifiers.HasFlag(KeyModifiers.Alt) || detail?.IsOpen != true) return false;
             if (!(key.Key is Key.R or Key.W or Key.I or Key.T || (key.Key >= Key.D0 && key.Key <= Key.D9))) return false;
-            return (tabs.SelectedItem as TabItem)?.Content is Visual page && FocusManager?.GetFocusedElement() is Visual focused && page.IsVisualAncestorOf(focused);
+            return InDetail(FocusManager?.GetFocusedElement());
         }
 
         /// <summary>A command the tracker may have under the same key: chosen by that key while it has the focus, the key is its.</summary>
@@ -595,7 +692,11 @@ namespace ReBuzz.Studio.Shell
                 Bind(ViewCommand(title), () => ShowView(title), k => k.KeyModifiers == CommandModifiers && k.Key >= Key.D1 && k.Key <= Key.D9);
             }
             Bind("view.notes", () => UnlessEditorKeeps("view.notes", ShowSongNotes), k => k.KeyModifiers == CommandModifiers && k.Key == Key.D5);
+            Bind("view.pianoroll", ShowPianoRoll);
+            Bind("view.maximise", () => ToggleTrackerMaximised(), k => k.Key == Key.F);
+            Bind("view.browser", () => browser?.Toggle());
             Bind("view.inspector", () => inspector?.Toggle());
+            Bind("view.detail", () => detail?.Toggle());
             Bind("view.mixer", ToggleSessionMixer);
             Bind("help.shortcuts", ShowShortcuts);
             KeyBindings.Add(new KeyBinding { Gesture = Keys(Key.OemComma, CommandModifiers), Command = new Command(ShowPreferences) });
@@ -626,12 +727,19 @@ namespace ReBuzz.Studio.Shell
         (string Id, Action Run)[] singleKeys;
 
         /// <summary>Whether the selected view leaves single letters to the transport: not the arrangement (pattern keys) or the tracker (notes).</summary>
-        bool SingleKeysWork => SelectedTitle is "Machines" or "Session";
+        bool SingleKeysWork => SelectedTitle is "Machines" or "Session" && !InDetail(FocusManager?.GetFocusedElement());
 
         void OnViewKey(object sender, KeyEventArgs e)
         {
             if (e.Handled || tabs.ItemCount == 0 || e.KeyModifiers != KeyModifiers.None) return;
-            string title = e.Key switch { Key.F2 => "Pattern", Key.F3 => "Machines", Key.F4 => "Sequence", _ => null };
+            if (e.Key == Key.F2)
+            {
+                // F2: the Tracker over the whole window, and back.
+                ToggleTrackerMaximised();
+                e.Handled = true;
+                return;
+            }
+            string title = e.Key switch { Key.F3 => "Machines", Key.F4 => "Arrangement", _ => null };
             if (title == null) return;
             ShowView(title);
             e.Handled = true;
@@ -641,7 +749,7 @@ namespace ReBuzz.Studio.Shell
         void OnSessionKey(object sender, KeyEventArgs e)
         {
             if (tabs.ItemCount == 0 || e.KeyModifiers != KeyModifiers.Control || e.Key != Key.Tab) return;
-            ShowView(SelectedTitle == "Session" ? "Sequence" : "Session");
+            ShowView(SelectedTitle == "Session" && detail?.IsMaximised != true ? "Arrangement" : "Session");
             e.Handled = true;
         }
 
@@ -659,18 +767,50 @@ namespace ReBuzz.Studio.Shell
         /// <summary>Song Notes: the inspector's Song tab, open, with the editor focused.</summary>
         void ShowSongNotes() => inspector?.ShowTab(Views.Inspector.InspectorPanel.SongTab, focus: true);
 
+        /// <summary>A view segment's tooltip: its name and its key.</summary>
+        static string ToolTipFor(string title) => ViewCommand(title) is { } id ? $"{title} ({Commands.StudioKeymap.Get(id).KeyLabel()})" : title;
+
         string SelectedTitle => (tabs.SelectedItem as TabItem)?.Header as string;
 
         /// <summary>Selects a view's tab.</summary>
         public void ShowView(string title)
         {
+            title = ViewNames.Canonical(title);
             if (title == Views.Notes.SongNotesTab.TabTitle)
             {
                 ShowSongNotes();
                 return;
             }
+            if (title == "Pattern")
+            {
+                // The Tracker in the detail panel, docked (maximised stays so), with the keyboard in the editor.
+                if (detail == null) return;
+                detail.ShowPage(false, detail.IsMaximised);
+                PatternView.Show();
+                return;
+            }
             var tab = tabs.Items.OfType<TabItem>().FirstOrDefault(t => t.Header as string == title);
-            if (tab != null) tabs.SelectedItem = tab;
+            if (tab != null)
+            {
+                detail?.Restore();      // the views are behind the maximised Tracker
+                tabs.SelectedItem = tab;
+            }
+        }
+
+        /// <summary>⌥⌘4: the detail panel's piano roll, docked (maximised stays so), with the keyboard in it.</summary>
+        internal void ShowPianoRoll()
+        {
+            if (detail == null) return;
+            detail.ShowPage(true, detail.IsMaximised);
+            PatternView.Show();
+        }
+
+        /// <summary>F2 and ⇧⌘F: the Tracker over the whole window, and back to the panel.</summary>
+        void ToggleTrackerMaximised()
+        {
+            if (detail == null) return;
+            detail.ToggleMaximised();
+            if (detail.IsMaximised) PatternView.Show();
         }
 
         void ShowPreferences() => PreferencesWindow.Open(host);
@@ -692,6 +832,7 @@ namespace ReBuzz.Studio.Shell
             if (core == null) return;
             transport.Refresh();
             inspector?.Refresh();
+            browser?.Refresh();
             undo.Refresh();
             redo.Refresh();
             string name = core.SongCore.SongName == null ? "Untitled" : Path.GetFileName(core.SongCore.SongName);
@@ -818,6 +959,7 @@ namespace ReBuzz.Studio.Shell
         {
             refresh.Stop();
             inspector?.Dispose();
+            browser?.Dispose();
             if (host.Agent != null) host.Agent.Changed -= Refresh;
             base.OnClosed(e);
         }

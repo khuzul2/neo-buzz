@@ -1,0 +1,84 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Pedal Gate",
+  "to": "Neo Gate",
+  "summary": "Every Pedal Gate setting carries over in its own units: threshold, hysteresis, attack, hold, release, range, detection and lookahead. Neo Gate's Ratio is set to infinity (a hard gate down to Range), the key filters are off and the sidechain internal.",
+  "set": {
+    "Ratio": "inf",
+    "Sidechain": "Internal",
+    "Key low cut": "10 Hz",
+    "Key high cut": "22 kHz",
+    "Listen": "Off",
+    "Output": "0 dB",
+    "Delta": "Off"
+  },
+  "rules": [
+    {
+      "kind": "unit",
+      "from": "Threshold",
+      "to": "Threshold"
+    },
+    {
+      "kind": "unit",
+      "from": "Hysteresis",
+      "to": "Hysteresis"
+    },
+    {
+      "kind": "unit",
+      "from": "Attack ms",
+      "to": "Attack"
+    },
+    {
+      "kind": "unit",
+      "from": "Hold ms",
+      "to": "Hold"
+    },
+    {
+      "kind": "unit",
+      "from": "Release ms",
+      "to": "Release"
+    },
+    {
+      "kind": "unit",
+      "from": "Range dB",
+      "to": "Range"
+    },
+    {
+      "kind": "choice",
+      "from": "Detection",
+      "to": "Detection",
+      "map": {
+        "Peak": "Peak",
+        "RMS": "RMS"
+      }
+    },
+    {
+      "kind": "unit",
+      "from": "Lookahead ms",
+      "to": "Lookahead"
+    },
+    {
+      "kind": "bypass",
+      "from": "Bypass",
+      "why": "Neo Gate has no bypass parameter: the machine's bypass takes it."
+    }
+  ],
+  "unmapped": [],
+  "remarks": [
+    "Neo Gate keeps Pedal Gate's state machine (open at the threshold, close Hysteresis below it, hold, then the release) and its linear gain ramps, on the shared detector the de-esser also uses; at the carried settings it matches Pedal Gate to within 0.1 dB over any 50 ms window.",
+    "Neo Gate adds what Pedal Gate does not have: an expansion ratio, key filters, an external sidechain on its second input, Listen and Delta."
+  ],
+  "tolerance": {
+    "loudness_db": 0.1,
+    "band_db": 0.5,
+    "from_hz": 40,
+    "to_hz": 16000,
+    "measured": "NeoBuzz.PedalTests (Linux), noise bursts through both at five settings (defaults, a short hold, RMS detection, 12 dB range, 5 ms lookahead): loudness difference 0.00 dB, worst 50 ms window 0.01 to 0.10 dB; 0.01 to 1.22 % of samples differ by more than 1e-5 (Pedal Gate ramps in float, Neo Gate in double)"
+  },
+  "evidence": [
+    "ExternalMachines/source/thepedal/pedal-gate/PedalGate.cs (its source: units of every parameter)",
+    "Machines/Manifests/Effects/Pedal Gate.machine.json (curated)",
+    "Machines/NeoGate/Params.def",
+    "NeoBuzz.PedalTests/PedalGateSuccessorTests.cs"
+  ]
+}

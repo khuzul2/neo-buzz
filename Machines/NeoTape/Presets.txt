@@ -1,0 +1,64 @@
+# Neo Tape factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoTape
+machine "Neo Tape"
+
+preset "Mastering — Subtle Glue (15 ips)"
+Speed = 15 ips
+Drive = 4
+Bump = 1.5
+Loss = 1.5
+Electronics = 10
+
+preset "Mastering — Warm and Rounded (7.5 ips)"
+Speed = 7.5 ips
+Drive = 6
+Bump = 2.5
+Loss = 4
+Electronics = 25
+Noise = -76
+
+preset "Mastering — Open and Fast (30 ips)"
+Speed = 30 ips
+Drive = 3
+Bump = 1
+Loss = 1
+Electronics = 5
+
+preset "Mix Bus — Tape Glue"
+Speed = 15 ips
+Drive = 7
+Bias = 10
+Emphasis = 8
+Electronics = 15
+Mix = 100
+
+preset "Drums — Tape Crunch"
+Speed = 15 ips
+Drive = 14
+Emphasis = 9
+Bump = 2
+Electronics = 30
+Mix = 70
+
+preset "Vocal — Gentle Tape Warmth"
+Speed = 15 ips
+Drive = 5
+Loss = 2
+Electronics = 15
+
+preset "Lo-Fi — Worn Cassette Feel"
+Speed = 7.5 ips
+Drive = 10
+Bias = 25
+Loss = 9
+Electronics = 40
+Noise = -60
+Wow = 12
+Flutter = 6
+WowRate = 0.7
+
+preset "Parallel — Tape Crush"
+Speed = 7.5 ips
+Drive = 22
+Emphasis = 10
+Electronics = 35
+Mix = 35
