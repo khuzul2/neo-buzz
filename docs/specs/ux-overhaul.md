@@ -319,6 +319,13 @@ What WPF has that the studio needs before it replaces it on Windows: native (Win
 21. **The type scale is enforced by a test** (`UxP2bTests.EveryFontSizeIsOnTheScale`): 11, 12, 13, 15, 20; the 14, 16, 17, 24, 19 and 30 the views had are on it now (Song Notes: headings 20 / 15 / 13 bold, body 13). The 8 pt grid is swept through Preferences (pages, rows, hints); the Session View and the shell keep their paddings until P4, which is the polish pass (a grid sweep of 30 files with no visible change isn't worth a risk to P3's layout work).
 22. **"No literal colour" is enforced by a test** (`UxP2bTests.NoViewHardCodesAColour`) over the studio's sources; its allow-list is the token table, the theme file, the Session View's palette (the clips' colours, saved in songs) and two code-drawn controls with their own dark tables, the piano roll and the wire's amp popup (P3 redesigns it).
 
+### P2c
+
+23. **The selection is a machine, with at most one of its patterns and the Session's scene** (`StudioSelection`, `Views/StudioSelection.cs`). A track is its machine's row in the Sequence and column in the Session View, so "select a track" and "select its machine" are one thing; a clip is a pattern in a scene. "Nothing" (no machine) is the song. A wire isn't selectable in the Machine View yet, so it isn't in the model; it joins when P3 makes wires selectable.
+24. **Publish what the user selects, follow what the others select, never echo.** A view that only follows doesn't publish what it followed; a selection that changes nothing raises nothing. A view whose tab isn't shown (the Machines, Sequence and Session views leave the visual tree) catches up when it is shown; the Pattern page, which lives as long as its window, follows at once.
+25. **What following does in each view.** Machines: that machine is the only one selected. Sequence: the cursor moves to the machine's first track and keeps its time (it selects the pattern under the cursor on the way, as it did). Session: the machine's column is selected, in the selected scene, or in the scene of the selected pattern's slot if the scene hasn't a say; nothing moves when the column already is selected. Pattern: shows the selected pattern, else the machine's pattern; it doesn't switch to its tab. The window starts with nothing selected (the Pattern page's first pattern isn't a selection).
+26. **The windows and the tab strip are the base surface** (#141416; an application-wide style on `Window`), not Fluent's #000. The measured shell figures are below.
+
 ## 11. Progress
 
 ### P1: quick wins (`ux/overhaul-1-quick-wins`)
@@ -387,3 +394,9 @@ Measured (Mac gallery, headless, before: `main` at P2a, after: this branch; `too
 Contrast fell where a beige canvas had black text at 9:1; every text on the dark canvases is above the 4.5:1 floor (`TheDarkSequenceMeetsTheContrastFloor`).
 
 Left for later: the Session View's and the shell's paddings stay as they are (P4); the amp popup and the piano roll keep their own dark tables; the Machine view's boxes get their identity colours in P3h; P2c (one selection) is the next step.
+
+### P2c: one selection, the base surface (`ux/overhaul-2c`)
+
+Built: `StudioSelection` (§10, 23-25) published and followed by the Machine, Sequence, Session and Pattern views; the window ground on the base surface. Tests: `UxP2cTests` (the model; select a machine in the Machine View and every other view is on it; the Sequence cursor, a Session clip and a Pattern choice each selecting the machine, pattern and scene in the others; nothing selected is the song; no echo, counted; the Session keeps its scene; the tab strip and the status bar are #141416, measured from the window's pixels).
+
+mac-410 (Neo Limiter), mac-413 (Neo Sampler) and mac-414 (Neo Scope) differed between the P2a and P2b galleries by 85, 333 and 132 pixels, each at anti-aliasing level (at most 34 summed channel levels): the limiter's meter column, the sampler's waveform and the scope's trace, the editors that draw live signal. Every static part is identical, the other editors (mac-401, mac-402) are identical, and two runs of one build are identical to the pixel (mac-410, 413, 414: 0 differing pixels), so it is the signal the demo song feeds them at the moment of capture, which changes with the build's timing, not a colour or layout change.

@@ -362,6 +362,28 @@ namespace ReBuzz.Studio.Views.Sequence
             CursorMoved();
         }
 
+        /// <summary>Fork (ux-overhaul.md P2c): true while the cursor moves because another view selected a track (nothing to publish).</summary>
+        internal bool FollowingSelection { get; private set; }
+
+        /// <summary>Another view selected a machine: the cursor goes to its track (the first one it has), keeping its time.</summary>
+        internal void FollowTrackOf(IMachine machine)
+        {
+            int row = -1;
+            for (int i = 0; i < Rows; i++)
+                if (Song.Sequences[i].Machine == machine) { row = i; break; }
+            if (row < 0 || row == cursorRow) return;
+            FollowingSelection = true;
+            try
+            {
+                cursorRow = row;
+                CursorMoved();
+            }
+            finally
+            {
+                FollowingSelection = false;
+            }
+        }
+
         void CursorMoved()
         {
             BringCursorIntoView();

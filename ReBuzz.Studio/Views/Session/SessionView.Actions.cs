@@ -46,6 +46,43 @@ namespace ReBuzz.Studio.Views.Session
             selected = (track, scene);
             Focus();                              // commits a marker being typed for the clip shown so far
             clipPanel.Follow(selected);
+            PublishSelection();
+        }
+
+        /// <summary>Fork (ux-overhaul.md P2c): the selected slot's track (its machine), clip (its pattern) and scene are the studio's selection.</summary>
+        void PublishSelection()
+        {
+            if (followingSelection || selected is not { } sel) return;
+            var machine = headers.FirstOrDefault(h => h.Track == sel.Track)?.Machine;
+            if (machine == null) return;
+            StudioSelection.For(buzz).Set(machine, CellAt(sel.Track, sel.Scene)?.Pattern, this, sel.Scene);
+        }
+
+        bool followingSelection;
+
+        /// <summary>
+        /// Another view selected a machine: its track is selected here, in the scene already selected, else the scene of the
+        /// selected pattern's slot, else the first. Nothing moves when the track already is the selected one.
+        /// </summary>
+        void FollowSelection(object source)
+        {
+            if (source == this) return;
+            var selection = StudioSelection.For(buzz);
+            if (selection.Machine is not { } machine || headers.FirstOrDefault(h => h.Machine == machine) is not { } header) return;
+            if (selected?.Track == header.Track) return;
+            int scene = selected?.Scene ?? 0;
+            if (selection.Pattern is { } pattern && slots.FirstOrDefault(c => c.Track == header.Track && c.Pattern == pattern) is { } cell) scene = cell.Scene;
+            followingSelection = true;
+            try
+            {
+                selected = (header.Track, Math.Clamp(scene, 0, Math.Max(0, sceneCount - 1)));
+                clipPanel.Follow(selected);
+                RefreshState();
+            }
+            finally
+            {
+                followingSelection = false;
+            }
         }
 
         SlotCell CellAt(int track, int scene) => slots.FirstOrDefault(c => c.Track == track && c.Scene == scene);
@@ -117,6 +154,7 @@ namespace ReBuzz.Studio.Views.Session
             if (track < 0 || track >= Math.Max(1, trackCount)) return;
             selected = (track, scene);
             clipPanel.Follow(selected);
+            PublishSelection();
         }
 
         void ShowClipPanel()
@@ -389,7 +427,10 @@ namespace ReBuzz.Studio.Views.Session
             var target = dropTarget;
             dropTarget = null;
             if (target is { } t && layout.MoveSlot(source.Track, source.Scene, t.Scene, copy))
+            {
                 selected = t;
+                PublishSelection();
+            }
             RefreshState();
         }
 
@@ -532,6 +573,7 @@ namespace ReBuzz.Studio.Views.Session
             if (CellAt(selected.Value.Track, selected.Value.Scene) is SlotCell cell)
                 cell.BringIntoView();
             RefreshState();
+            PublishSelection();
         }
 
         static T FindParent<T>(Visual v) where T : class

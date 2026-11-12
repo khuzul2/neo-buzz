@@ -402,6 +402,8 @@ namespace ReBuzz.Studio.Views.Session
             }
             session.PropertyChanged += OnSessionChanged;
             Rebuild();
+            StudioSelection.For(buzz).Changed += FollowSelection;
+            FollowSelection(null);                  // shown again: on the selection the other views made meanwhile
             timer.Start();
             // Shown (its tab selected): the view takes the keys, unless something in it has them.
             Dispatcher.UIThread.Post(() => { if (attached && !IsKeyboardFocusWithin) Focus(); });
@@ -410,6 +412,7 @@ namespace ReBuzz.Studio.Views.Session
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
             attached = false;
+            StudioSelection.For(buzz).Changed -= FollowSelection;
             timer.Stop();
             layout.Changed -= RebuildWhenSeen;
             layout.RecordingChanged -= OnRecordingChanged;
