@@ -2390,8 +2390,10 @@ def write_report(root, merged):
         f.write(health_report(merged, curated_roles(root), from_source(root), rebuilt_natives(root)))
 
 
-# build.ps1's one exception to the licence gate (its $NativeLicenceException; tools/test_native_compare.py keeps the two the same).
+# build.ps1's one exception to the licence gate (its $NativeLicenceException and $NativeLicenceException2; tools/test_native_compare.py keeps them the same).
 NATIVE_LICENCE_EXCEPTION = "no licence in source; shipped by user decision 2026-11-06 for private use"
+NATIVE_LICENCE_EXCEPTION_2 = "no licence in source; shipped by user decision 2026-11-12 for private use (NOT FOR PUBLIC RELEASE AS IS)"
+NATIVE_LICENCE_EXCEPTIONS = (NATIVE_LICENCE_EXCEPTION, NATIVE_LICENCE_EXCEPTION_2)
 
 
 def rebuilt_natives(root):
@@ -2403,7 +2405,7 @@ def rebuilt_natives(root):
     except (OSError, ValueError):
         return []
     return [n for n in bt.get("natives", []) if n.get("ship") == "rebuilt"
-            and (n.get("licenseException") == NATIVE_LICENCE_EXCEPTION if "licenseException" in n else n.get("redistribute", True))]
+            and (n.get("licenseException") in NATIVE_LICENCE_EXCEPTIONS if "licenseException" in n else n.get("redistribute", True))]
 
 
 PACK = "MACHINE-PROFILE-PACK"

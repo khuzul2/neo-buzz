@@ -138,15 +138,24 @@ class LicenceExceptionTests(unittest.TestCase):
         self.assertEqual(len(m), 1, "build.ps1 records the exception once")
         return m[0]
 
+    def recorded2(self):
+        import re
+        with open(os.path.join(ROOT, "build.ps1"), encoding="utf-8-sig") as f:
+            m = re.findall(r"^\$NativeLicenceException2 = '([^']*)'", f.read(), re.M)
+        self.assertEqual(len(m), 1, "build.ps1 records the second exception once")
+        return m[0]
+
     def test_build_and_the_profiler_record_the_same_exception(self):
         self.assertEqual(self.recorded(), "no licence in source; shipped by user decision 2026-11-06 for private use")
         self.assertEqual(mp.NATIVE_LICENCE_EXCEPTION, self.recorded())
+        self.assertEqual(mp.NATIVE_LICENCE_EXCEPTION_2, self.recorded2())
 
     def test_every_exception_is_the_recorded_one_on_an_unlicensed_x64_rebuild(self):
         excepted = [n for n in nc.natives() if "licenseException" in n]
         self.assertEqual(sorted(n["gear"] for n in excepted), ["Jeskola Delay", "Jeskola Distortion", "Jeskola NiNjA dElaY", "Jeskola Noise Generator", "Jeskola Trilok"])
         for n in excepted:
-            self.assertEqual(n["licenseException"], self.recorded(), n["gear"])
+            want = self.recorded2() if n["gear"] in ("Jeskola Delay", "Jeskola NiNjA dElaY") else self.recorded()
+            self.assertEqual(n["licenseException"], want, n["gear"])
             self.assertTrue(n["license"].startswith("None"), f"{n['gear']}: the exception is for sources without a licence")
             self.assertIs(n["redistribute"], False, n["gear"])
             self.assertEqual((n["ship"], n.get("shipPlatform"), n["upstreamBinary"]), ("rebuilt", "x64", "x86"), n["gear"])
