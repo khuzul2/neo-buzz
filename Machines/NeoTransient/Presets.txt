@@ -1,0 +1,66 @@
+# Neo Transient factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoTransient
+machine "Neo Transient"
+
+preset "Drums — More Snap"
+Attack = 6
+Sustain = -2
+Speed = Punchy
+
+preset "Drums — Tighter (Less Room)"
+Attack = 2
+Sustain = -6
+
+preset "Drums — Bigger Tails"
+Attack = 0
+Sustain = 5
+Speed = Smooth
+
+preset "Drums — Hit Harder, Keep the Tail"
+Attack = 8
+Sustain = 0
+Speed = Punchy
+
+preset "Mastering — Gentle Punch"
+Attack = 1.5
+Speed = Smooth
+
+preset "Mastering — Soften the Hits"
+Attack = -2
+Sustain = 1
+Speed = Smooth
+
+preset "Mastering — Impact (Lows Up, Highs Calm)"
+Mode = Impact
+Impact 1 = 30
+Impact 2 = 15
+Impact 3 = 0
+Impact 4 = -20
+
+preset "Mastering — Impact (Tighten the Mids)"
+Mode = Impact
+Impact 1 = 0
+Impact 2 = 25
+Impact 3 = 25
+Impact 4 = 0
+
+preset "Mastering — Impact (Flatten the Dynamics a Little)"
+Mode = Impact
+Impact 1 = -25
+Impact 2 = -25
+Impact 3 = -25
+Impact 4 = -25
+
+preset "Bus — Glue the Sustain"
+Attack = -1
+Sustain = 3
+Mix = 70
+
+preset "Mid/Side — Punch the Mid"
+Stereo = M/S
+Attack = 4
+Sustain = 0
+
+preset "Live — No Latency"
+Attack = 3
+Sustain = -1
+Lookahead = 0

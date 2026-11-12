@@ -2,7 +2,8 @@
 // Dye Essence (docs/specs/dye-essence.md §3): the engine behind the machine. Parameters (in real
 // units, from the generated table) become the note bank's settings at the start of a block when any
 // has changed; notes go through Neo's voice allocator (poly, mono, legato, glide, sustain, steals)
-// to the bank's note slots. User wavetables arrive from any thread and are picked up at a block.
+// to the bank's note slots. User wavetables and drawn LFO shapes arrive from any thread and are
+// picked up at a block.
 
 using System;
 using System.Threading;
@@ -30,7 +31,8 @@ namespace NeoBuzz.DyeEssence
         readonly TableArena[] requestedUser = new TableArena[NoteBank.Oscillators];
         readonly TableArena[] userTable = new TableArena[NoteBank.Oscillators];
         readonly string[] userName = { "", "", "" };
-        int userChanged;
+        readonly DrawnShape[] requestedShape = { DrawnShape.Default, DrawnShape.Default, DrawnShape.Default, DrawnShape.Default };
+        int userChanged, shapeChanged;
         bool tablesPending;
         float bend, bendRange = 2;
 
@@ -72,6 +74,16 @@ namespace NeoBuzz.DyeEssence
         }
 
         public TableArena UserTable(int osc) => Volatile.Read(ref requestedUser[osc]);
+
+        /// <summary>Any thread: LFO <paramref name="lfo"/>'s drawn shape from the next block (null: the default).</summary>
+        public void SetLfoShape(int lfo, DrawnShape shape)
+        {
+            Volatile.Write(ref requestedShape[lfo], shape ?? DrawnShape.Default);
+            Volatile.Write(ref shapeChanged, 1);
+        }
+
+        /// <summary>LFO <paramref name="lfo"/>'s drawn shape (the one asked for last).</summary>
+        public DrawnShape LfoShape(int lfo) => Volatile.Read(ref requestedShape[lfo]);
         public string UserTableName(int osc) => userName[osc];
 
         /// <summary>The table slot <paramref name="osc"/> plays now (null while a built-in one is still being built).</summary>
@@ -82,6 +94,9 @@ namespace NeoBuzz.DyeEssence
         void Update(bool force)
         {
             bool userNew = Interlocked.Exchange(ref userChanged, 0) == 1;
+            bool shapeNew = Interlocked.Exchange(ref shapeChanged, 0) == 1;
+            if (shapeNew || force)
+                for (int l = 0; l < requestedShape.Length; l++) Bank.S.Lfo[l].Drawn = Volatile.Read(ref requestedShape[l]);
             if (!force && !values.AnyDirty && !userNew && !tablesPending) return;
             if (userNew)
                 for (int o = 0; o < userTable.Length; o++) userTable[o] = Volatile.Read(ref requestedUser[o]);

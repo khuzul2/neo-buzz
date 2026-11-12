@@ -1,7 +1,7 @@
 #nullable disable
 // Dye Essence (docs/specs/dye-essence.md §4.5): modulation. Two DAHDSR envelopes with a curve per
-// segment, four LFOs (per note or one free), four macros and sixteen routes, each a source, a
-// destination and an amount, evaluated per note on the control grid (every 16 samples, the
+// segment, four LFOs (per note or one free; their shapes built in or drawn, DrawnShape.cs), four
+// macros and sixteen routes, each a source, a destination and an amount, evaluated per note on the control grid (every 16 samples, the
 // destinations ramping across the tick as every control value does). Envelopes and LFOs advance in
 // closed form per tick from portable maths, so the same bits everywhere and any block size.
 
@@ -20,7 +20,8 @@ namespace NeoBuzz.DyeEssence
         ALevel, BLevel, CLevel, SubLevel, NoiseLevel, F1Cutoff, F2Cutoff, F1Reso, F2Reso, Amp, Lfo1Rate, Lfo2Rate, Lfo3Rate, Lfo4Rate, Count,
     }
 
-    internal enum WaveShape { Sine, Triangle, SawUp, SawDown, Square, SampleHold, Smooth }
+    /// <summary>An LFO's shape (append only): Drawn plays the LFO's breakpoints (the machine state).</summary>
+    internal enum WaveShape { Sine, Triangle, SawUp, SawDown, Square, SampleHold, Smooth, Drawn }
 
     internal sealed class ModEnvSettings
     {
@@ -39,6 +40,8 @@ namespace NeoBuzz.DyeEssence
         public bool Retrig = true;
         /// <summary>Start phase in cycles; fade-in seconds.</summary>
         public float Phase, Fade;
+        /// <summary>The drawn shape <see cref="WaveShape.Drawn"/> plays (immutable: replaced whole).</summary>
+        public DrawnShape Drawn = DrawnShape.Default;
     }
 
     internal sealed class RouteSettings
@@ -119,12 +122,13 @@ namespace NeoBuzz.DyeEssence
         /// <summary>
         /// The value (−1 … 1) at <paramref name="phase"/> (cycles, 0 … 1) for the shapes without memory;
         /// S&amp;H and Smooth use <paramref name="held"/> and <paramref name="next"/> (the random values
-        /// either side of this cycle).
+        /// either side of this cycle); Drawn its <paramref name="drawn"/> shape.
         /// </summary>
-        public static float Value(WaveShape shape, double phase, float held, float next)
+        public static float Value(WaveShape shape, double phase, float held, float next, DrawnShape drawn)
         {
             switch (shape)
             {
+                case WaveShape.Drawn: return (float)(drawn ?? DrawnShape.Default).Value(phase);
                 case WaveShape.Sine: return (float)PortableMath.Sin(2 * Math.PI * phase);
                 case WaveShape.Triangle: return (float)(phase < 0.25 ? 4 * phase : phase < 0.75 ? 2 - 4 * phase : 4 * phase - 4);
                 case WaveShape.SawUp: return (float)(2 * phase - 1);

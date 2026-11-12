@@ -33,6 +33,8 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Neo Utility | effect | Gain, balance or mono pan, width, bass mono, polarity, swap and DC removal, each exact; a mid/side matrix (encode, decode) for M/S work with any stereo machine |
 | Neo Limiter | effect | True-peak lookahead limiter: a ceiling in dBTP as BS.1770 measures it, auto or set release, stereo link; v2 (mastering-tools.md §5.2): upward compression, transient emphasis, a 4× soft clip, a two-stage release, transient unlink, Unity listen and Delta, each off by default (v1's bits), set by the "Style —" presets |
 | Neo Clipper | effect | Hard, soft, tanh or knee clipping into a ceiling no sample passes, 1×–8× oversampled with antiderivative anti-aliasing, up to three bands, L/R or M/S, Delta and Match (mastering-tools.md §5.1) |
+| Neo Transient | effect | Attack and Sustain (±12 dB) from two level followers with a lookahead, or four-band Impact mode (microdynamics per band, auto gain), L/R or M/S, Delta and Match (mastering-tools.md §5.4) |
+| Neo Low End | effect | Shapes only the band below a 20–300 Hz Linkwitz–Riley crossover: Punch, Sustain, Contrast, balance to the mids, mono below a frequency, peak control; minimum or linear phase, Delta and Match (mastering-tools.md §5.5) |
 | Neo Analyzer | effect | Spectrum (FFT with peak hold, third-octave bars), loudness (momentary, short-term, integrated LUFS, range, true peak) and stereo (correlation, width, goniometer) with the analysis library's numbers; readings for agents; audio untouched |
 
 **Third batch (successors: machine-safety.md §4)**
@@ -415,6 +417,40 @@ Drive → (mid/side) → (bands: zero-latency Linkwitz–Riley crossovers, each 
 | Delta, Match | Delta the output minus the input; the gain match against the integrated difference | exact (0.0); +9 dB on drums: 7.40 dB against 7.36 LU; the studio's Match set Output −11.5 dB for 11.55 |
 | CPU | ≥ 100× (the card) | M3, throughput guards (§4), at the reference's speed: 1 band 4× 217 (Xeon), 201 (Linux runner), 138 (Mac runner); 1× 305, 305, 312; 8× 138, 138, 87; three bands M/S 4× 63, 72, 43 (M2, as timed on the Xeon: 50×, 275×, 28×, 14×); floors x64 150, 220, 100, 48, arm64 100, 220, 62, 30. The `FastOversampler` (each halfband branch over the whole block, its outputs in vector lanes: 4× up and down for two channels 276–414× as timed against `FirOversampler`'s 52–85×) and the ADAA four or eight samples at a time (min/max curves without branches) |
 
+
+### Neo Transient (docs/specs/mastering-tools.md §5.4)
+
+Attack/Sustain mode: two followers of the level (NeoBuzz.Dsp `TransientSplit`, Punchy, Balanced or Smooth) give weights; the gain is `1 + (a − 1)t + (b − 1)(1 − t)` (exactly 1 at unity) and is applied to the audio delayed by the Lookahead (default 3 ms), so it is up at a hit's first sample. M/S keeps a detector and a gain per channel. Impact mode: four bands (`LrBands`, zero-latency Linkwitz–Riley, three crossovers), per band `MicroGain` (short-term over long-term power, one bipolar knob, auto gain), linked or per-channel power. Mix, Delta (output minus the delayed input), Output and a Match button (gain-match reading). Gains ramp through `SmoothRamp` (the zipper target). Parameters: Attack, Sustain (±12 dB), Speed, Lookahead (0 – 5 ms), Mode, Crossover 1 – 3, Impact 1 – 4 (±100 %), Auto gain, Stereo, Mix, Output, Delta. Readings: gain_match_db, gain_max_db, gain_min_db, transient_percent, latency_samples.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Attack | the first 5 ms peak moves by the set gain ±0.5 dB (3 ms lookahead) | kick and snare at ±12, 6, 3, −6, −12 dB: exact (±0.02 dB); 0 ms lookahead +12: kick +11.99, snare +11.85 |
+| Steady tones | Attack leaves a held sine alone | 100 / 1000 / 8000 Hz at Attack +12: 0.0000 dB; Sustain −9 on a kick tail: −9.00 dB |
+| M/S | a side-only hit shaped, the mid untouched | side kick +12.00 dB, mid bed unchanged |
+| Impact | one knob per band moves the burst-to-bed ratio, energy kept | ±100 %: 20.00 → 31.13 / 5.68 dB; ±50 %: 26.36 / 12.79 dB; energy within 0.42 dB; four zeros pass the audio |
+| Bands | sum flat | 0.0000 dB at 44.1, 48 and 96 kHz |
+| Zipper | parameters stepped per block, 220 Hz sine, above 2 kHz ≤ −90 dB | −109.8 dB |
+| Switches | Mode and Impact switches without a step | 1.00× the sine's own step |
+| Blk, Alloc, Mix0 | blocks of 256/128/117/16/1 identical; 0 bytes; neutral = input delayed bit for bit | hold |
+| Latency | the lookahead | 144 samples at 3 ms (44.1 kHz) |
+| CPU | ≥ 100× attack/sustain | at the reference's speed on the 2-core Xeon: A/S L/R 559×, M/S 313×, Impact L/R 70×, M/S 66×; floors (x64/arm64) 250/150, 140/90, 30/20, 28/18 |
+
+### Neo Low End (docs/specs/mastering-tools.md §5.5)
+
+A Linkwitz–Riley 24 split at the crossover (20 – 300 Hz); only the low band is shaped, everything above is added back untouched. Gains are worked out from the low band as it arrives (Punch/Sustain through `TransientSplit`, Contrast through `MicroGain`, Balance a slow servo against a 2 kHz mid measure, at most ±9 dB) and applied to the audio the Lookahead later (minimum phase: the lookahead is the latency; default 5 ms), then mono (a 4th-order high-pass on the side below the frequency), peak control (a 6 dB knee, ADAA, on the low band) and the sum with the rest. Linear phase uses one FIR (`LowLinear`, `LinearPhaseFilters`, partitioned convolution) designed on the 16-sample grid; the switch fades over 20 ms. At rest the output is the input, delayed, bit for bit. Parameters: Crossover, Phase, Punch, Sustain, Speed, Lookahead (0 – 10 ms), Contrast, Target, Balance, Peak, Peak level, Mono, Mono freq, Output, Delta. Readings: gain_match_db, low_crest_in_db, low_crest_out_db, balance_db, balance_gain_db, peak_clip_db, latency_samples.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Punch | the first 8 ms peak moves by the set gain ±0.5 dB (kick below the crossover) | +12 dB: +12.00; +6: +6.01 (minimum) / +5.99 (linear); −6: −5.93 / −5.97 |
+| Sustain, crest | tail follows Sustain, the low crest rises with Punch | Sustain −9, Punch +3: tail −8.23 dB, low crest 13.53 → 16.54 dB |
+| Contrast | ±100 % widens or narrows loud against quiet, energy kept | 13.98 → 22.07 / 8.93 dB, energy ±1.10 dB |
+| Balance | the low band moves toward the target, the mids stay | +6.03 / +3.00 / −5.66 dB, mid within 0.071 dB |
+| Peak control | the low band under the level | −6 dB: −5.975 dBFS (crossover 300 Hz) |
+| Mono | the side removed below the frequency | 100 Hz: 40 Hz −32.0, 100 Hz −6.3, 200 Hz −1.8, 1 kHz 0.00 dB |
+| Split | flat sum; the linear FIR against the Linkwitz–Riley 24 design | minimum phase 0.0000 dB; linear within 0.0001 dB at 60/120/300 Hz, 0.52 dB at 20 Hz |
+| Isolation | above the crossover untouched (card: 1e-6) | not met literally: the 24 dB/octave skirt passes ~6 % of the low band's gain one octave up, 0.0002 % at 8×; the linear option is exact |
+| Latency | minimum phase the lookahead; linear reported | 240 samples (5 ms) minimum; 4607 (D+P) linear at 48 kHz |
+| CPU | ≥ 50× | at the reference's speed on the 2-core Xeon: minimum phase 139×, linear 116×; floors (x64/arm64) 70/45 and 55/35 |
 
 ### Neo Analyzer (spectrum, loudness, stereo; MCP A4)
 

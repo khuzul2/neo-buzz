@@ -644,7 +644,7 @@ namespace NeoBuzz.DyeEssence
                     freeSeed = rng.NextUInt() | 1u;
                 }
                 freePhase[l] = p;
-                freeValue[l] = LfoWave.Value(lfo.Shape, p, freeHeld[l], freeNext[l]);
+                freeValue[l] = LfoWave.Value(lfo.Shape, p, freeHeld[l], freeNext[l], lfo.Drawn);
             }
             for (int f = 0; f < 2; f++)
             {
@@ -1019,7 +1019,7 @@ namespace NeoBuzz.DyeEssence
                         lfoSeed[note] = rng.NextUInt() | 1u;
                     }
                     lfoPhase[i] = p;
-                    v = LfoWave.Value(lfo.Shape, p, lfoHeld[i], lfoNext[i]);
+                    v = LfoWave.Value(lfo.Shape, p, lfoHeld[i], lfoNext[i], lfo.Drawn);
                 }
                 else v = freeValue[l];
                 if (lfo.Fade > 0) v *= (float)Math.Min(1.0, noteAge[note] / lfo.Fade);

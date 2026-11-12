@@ -108,6 +108,9 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Dye = new("Dye Essence", "Dye", true);
         // The clipper (docs/specs/mastering-tools.md §5.1): oversampled curves into a ceiling no sample passes.
         internal static readonly NeoInfo Clipper = new("Neo Clipper", "Clipper", false);
+        // The transient shaper and the low-end shaper (docs/specs/mastering-tools.md §5.4, §5.5).
+        internal static readonly NeoInfo Transient = new("Neo Transient", "Transient", false);
+        internal static readonly NeoInfo LowEnd = new("Neo Low End", "LowEnd", false);
 
         /// <summary>A test machine compiled from source held here.</summary>
         internal sealed class SourceInfo(string name, string source, bool generator) : IDynamicTestMachineInfo
@@ -1533,6 +1536,49 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void NeoTransientReportsItsLookaheadAndReadingsAndShowsItsEditor()
+        {
+            using var rig = new Rig(Transient);
+            Assert.That(rig.Param("Attack").DescribeValue(rig.Param("Attack").DefValue), Is.EqualTo("0.0 dB"));
+            rig.Play(0.05);
+            Assert.That(rig.Effect.Latency, Is.EqualTo((int)Math.Round(0.003 * rig.Rate)), "the default lookahead is reported");
+            rig.Param("Lookahead").SetValue(0, 0);
+            rig.Play(0.05);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(0), "and none without it");
+            rig.Param("Lookahead").SetValue(0, rig.Param("Lookahead").DefValue);
+            rig.Param("Attack").SetValue(0, 180);   // +6 dB
+            rig.Play(0.5);
+            rig.Play(3.5);
+            var instance = rig.Effect.ManagedMachine;
+            var readings = (System.Collections.Generic.IReadOnlyDictionary<string, double>)instance.GetType().GetProperty("Readings")!.GetValue(instance)!;
+            TestContext.Out.WriteLine($"[notice] Neo Transient readings: {string.Join(", ", readings.Select(kv => $"{kv.Key} {kv.Value}"))}");
+            Assert.That(readings.ContainsKey("gain_max_db"), Is.True);
+            Assert.That(readings.ContainsKey("gain_match_db"), Is.True, "3 s of sound: the gain match is known");
+            ShootEditor(rig.Effect, "neo-transient-editor");
+        }
+
+        [Test]
+        public void NeoLowEndReportsItsLatencyInBothPhasesAndShowsItsEditor()
+        {
+            using var rig = new Rig(LowEnd);
+            rig.Play(0.05);
+            Assert.That(rig.Effect.Latency, Is.EqualTo((int)Math.Round(0.005 * rig.Rate)), "minimum phase: the lookahead");
+            rig.Param("Phase").SetValue(0, 1);
+            rig.Play(0.1);
+            int p = 512 * (rig.Rate <= 50000 ? 1 : rig.Rate <= 100000 ? 2 : 4);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(16 * p / 2 - 1 + p), "linear phase: the FIR's");
+            rig.Param("Phase").SetValue(0, 0);
+            rig.Param("Punch").SetValue(0, 180);   // +6 dB
+            rig.Play(3.6);
+            var instance = rig.Effect.ManagedMachine;
+            var readings = (System.Collections.Generic.IReadOnlyDictionary<string, double>)instance.GetType().GetProperty("Readings")!.GetValue(instance)!;
+            TestContext.Out.WriteLine($"[notice] Neo Low End readings: {string.Join(", ", readings.Select(kv => $"{kv.Key} {kv.Value}"))}");
+            Assert.That(readings.ContainsKey("latency_samples"), Is.True);
+            Assert.That(readings.ContainsKey("gain_match_db"), Is.True, "3 s of sound: the gain match is known");
+            ShootEditor(rig.Effect, "neo-low-end-editor");
+        }
+
+        [Test]
         public void NeoLimiterHoldsTheCeilingReportsItsLatencyAndShowsItsEditor()
         {
             using var rig = new Rig(Limiter);
@@ -1593,7 +1639,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, Clipper })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, Clipper, Transient, LowEnd })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");
