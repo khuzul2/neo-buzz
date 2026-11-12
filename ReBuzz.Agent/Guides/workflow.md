@@ -50,7 +50,7 @@ Read the one for the job with `guide(topic=…)` (or the resource rebuzz://guide
 | `mixing-dynamics` | compression starting points and sidechain |
 | `mastering` | loudness targets, matching a reference, what not to do |
 | `mastering-chain` | the chain stage by stage with settings |
-| `dye-essence-in-depth`, `neo-eq-in-depth` | the parts of those two machines that their pages leave out |
+| `dye-essence-in-depth`, `dye-essence-effects`, `neo-eq-in-depth` | the parts of those two machines that their pages leave out |
 | `troubleshooting` | silence, clipping, phase, CPU, notes that hang or don't play |
 
 Machine manuals: `guide(machine="Neo Poly")` (every parameter, how to use it, presets). The resource rebuzz://reference/tools lists every tool with its inputs and units, generated from the tools themselves, so it is always current. Prompts give a whole plan: compose, design-sound, mix, master, critique.

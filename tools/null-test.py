@@ -198,6 +198,15 @@ CASES = [
     gen("dye-seq-bass", "Dye Essence", "Seq — Pulse Bass", [], BASS),
     gen("dye-seq-filter", "Dye Essence", "Seq — Filter Steps", [], CHORDS),
     gen("dye-seq-prob", "Dye Essence", "Seq — Probability Pluck", [], KEYS),
+    # The effects rack (docs/specs/dye-essence.md §4.10): each hosted type, the layouts, the chains' order.
+    gen("dye-fx-hall", "Dye Essence", "Rack — Bell In A Hall", [], KEYS, tail=3.0),
+    gen("dye-fx-echo", "Dye Essence", "Rack — Dotted Echo Keys", [], KEYS, tail=3.0),
+    gen("dye-fx-clip", "Dye Essence", "Rack — Saturated Bass", [], BASS),
+    gen("dye-fx-filter", "Dye Essence", "Rack — Sweeping Choir", [], CHORDS),
+    gen("dye-fx-eqcomp", "Dye Essence", "Rack — Tilted And Squeezed Pluck", [], KEYS),
+    gen("dye-fx-duo", "Dye Essence", "Rack — Duo Plate Keys", [], KEYS, tail=3.0),
+    gen("dye-fx-parallel", "Dye Essence", "Rack — Parallel Crush Bass", [], BASS, tail=2.0),
+    gen("dye-fx-choir", "Dye Essence", "Rack — Delayed Choir", [], CHORDS, tail=3.0),
     # Neo FM6: algorithms, feedback, the Clean 2x and Raw 1x engines, envelopes, LFO.
     gen("fm6-tine-piano", "Neo FM6", "Keys — Tine Piano", [], KEYS),
     gen("fm6-glass-bell", "Neo FM6", "Bell — Glass Bell", [], BELLS, tail=2.0),

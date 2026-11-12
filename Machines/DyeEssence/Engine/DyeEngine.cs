@@ -57,6 +57,7 @@ namespace NeoBuzz.DyeEssence
         public DyeEngine(ParamValues values, LaneKind lanes = LaneKind.Auto)
         {
             this.values = values;
+            Fx = new FxRack(values);
             Bank = new NoteBank(lanes);
             var slots = new IVoice[NoteBank.Notes];
             for (int i = 0; i < slots.Length; i++) slots[i] = new Slot(Bank, i);
@@ -67,6 +68,9 @@ namespace NeoBuzz.DyeEssence
         }
 
         public NoteBank Bank { get; }
+
+        /// <summary>The effects rack after the bank (§4.10): every slot Off runs nothing.</summary>
+        public FxRack Fx { get; }
         public readonly LevelMeter OutMeter = new LevelMeter();
         public float ModWheelValue, AftertouchValue;
         /// <summary>The song's tempo (BPM), for synced LFOs and envelopes.</summary>
@@ -88,6 +92,7 @@ namespace NeoBuzz.DyeEssence
         public void SetSampleRate(float sr)
         {
             Bank.SetSampleRate(sr);
+            Fx.SetSampleRate(sr);
             OutMeter.SetSampleRate(sr);
         }
 
@@ -328,6 +333,8 @@ namespace NeoBuzz.DyeEssence
             Bank.S.MpeBendRange = (float)values.Value(P.MpeBend);
             UpdateDriver();
             bool any = driver.Running ? ProcessDriven(left, right, n) : Bank.Process(left, right, n);
+            Fx.Tempo = Tempo;
+            any |= Fx.Process(left, right, n);
             OutMeter.Feed(left, right, n);
             return any || OutMeter.Peak > 1e-6f;
         }
