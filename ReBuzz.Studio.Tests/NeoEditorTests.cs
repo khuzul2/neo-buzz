@@ -51,6 +51,8 @@ namespace ReBuzz.Studio.Tests
             ("Neo Filter", "NeoFilterEditor", "neo-filter-editor", 802, 620),
             ("Dye Essence", "DyeEssenceEditor", "dye-essence-editor", 1299, 532),
             ("Neo Clipper", "NeoClipperEditor", "neo-clipper-editor", 956, 277),
+            ("Neo Transient", "NeoTransientEditor", "neo-transient-editor", 1020, 311),
+            ("Neo Low End", "NeoLowEndEditor", "neo-low-end-editor", 1032, 277),
         };
 
         static ReBuzzCore Core => Studio.Host.Core;

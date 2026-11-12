@@ -1,0 +1,36 @@
+# Neo Low End parameters (docs/specs/mastering-tools.md §5.5). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoLowEnd
+namespace NeoBuzz.LowEnd
+class NeoLowEndMachine
+summary Low end for masters, buses and drums: the band below a crossover (20–300 Hz, Linkwitz–Riley 24, minimum phase or linear phase) goes through a transient/sustain shaper (Punch and Sustain), Contrast (keep the strongest parts of the low end and pull the rest, or the reverse), Balance (the low band toward a set level against the mid band), Peak control (a soft clipper on the low band only) and mono below a frequency, then is added back to everything above the crossover, which is left alone. Delta (hear only what it changes) and a gain-match reading. Use it to tighten, focus or mono-ise the bass and kick of a mix or master.
+
+group Band
+Xo         "Crossover"    0 10000 6616  freq 20 300                        | Where the low band ends (−6 dB here). Everything above it is left as it was
+Phase      "Phase"        0 1     0     enum Minimum Linear                | Minimum: the Linkwitz–Riley split, its only latency the lookahead. Linear: a linear-phase split on FIRs of 8192 taps (latency 96 ms at 48 kHz, reported and compensated), the band's phase untouched. Set it before playing
+group Dynamics
+Punch      "Punch"        0 240   120   db -12 12                          | Gain on the onsets of the low band (kick, bass attack), 0.1 dB steps
+Sustain    "Sustain"      0 240   120   db -12 12                          | Gain on the body and tail of the low band, 0.1 dB steps
+Speed      "Speed"        0 2     1     enum Punchy Balanced Smooth        | The followers' time constants for Punch and Sustain. Smooth: for sustained bass
+Lookahead  "Lookahead"    0 100   50    lin 0 10 ms 1                      | The shaping's gains are worked out this long before the audio they act on, so Punch is already up at a kick's first peak. Minimum phase: the audio is delayed this long (the latency, reported and compensated). Linear phase: free (the FIR's latency is far longer)
+Contrast   "Contrast"     0 1000  500   bip                                | Gain from how far the low band is above or below its slow level (300 ms): +100 % keeps the strongest parts and pulls the rest (up to 12 dB), −100 % does the reverse, 0 leaves it. The band's energy is kept
+group Balance
+Target     "Target"       0 300   180   db -12 18                          | The level of the low band over the mid band (the band above the crossover up to 2 kHz) Balance moves toward, measured over 1 s
+Balance    "Balance"      0 1000  0     pct                                | How much of the distance to Target is corrected (at most ±9 dB on the low band, moving slowly); 0 leaves the low band's level alone
+group Peak
+Peak       "Peak control" 0 1     0     switch                             | A soft clipper (a 6 dB knee, antiderivative anti-aliased) on the low band only: its peaks stay under Peak level, the rest of the sound is untouched
+PeakLevel  "Peak level"   0 240   180   db -24 0                           | Where the low band's peaks are held, dBFS (0.1 dB steps)
+group Mono
+Mono       "Mono"         0 1     0     switch                             | Makes the low band mono below Mono freq (the side signal is removed there)
+MonoFreq   "Mono freq"    0 10000 5119  freq 20 300                        | Below this the low band's side signal is removed (a 4th-order Linkwitz–Riley high-pass on it, −6 dB here)
+group Output
+Output     "Output"       0 480   240   db -24 24                          | Gain after the shaper, 0.1 dB steps (the editor's Match sets it from the gain-match reading)
+Delta      "Delta"        0 1     0     switch                             | Hear only what Low End changes: the output minus the input, delayed to match (gliding over 10 ms)
+
+# What Low End measures (NeoLowEndMachine.Readings, machine_readings), over the last 3 s.
+reading gain_match_db       dB    | Short-term loudness out − in (K-weighted, 3 s): what Output would have to take back for equal loudness
+reading low_crest_in_db     dB    | The low band's crest factor (peak over RMS) going in
+reading low_crest_out_db    dB    | The low band's crest factor going out: the change is what Punch, Contrast and Peak control did
+reading balance_db          dB    | The low band's level over the mid band's now (measured on the input, 1 s average)
+reading balance_gain_db     dB    | The gain Balance is applying to the low band
+reading peak_clip_db        dB    | How far the low band went over Peak level (0 when it stayed under, or Peak control is off)
+reading latency_samples     samples | The latency (0 in minimum phase), reported to NeoBuzz Live
