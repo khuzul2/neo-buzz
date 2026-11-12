@@ -201,6 +201,8 @@ namespace ReBuzz.Agent
             return string.IsNullOrWhiteSpace(text) ? raw.ToString(CultureInfo.InvariantCulture) : text.Trim();
         }
 
+        static bool IsSnakeId(string s) => s.Length > 0 && s[0] >= 'a' && s[0] <= 'z' && s.All(ch => (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_');
+
         /// <param name="track">Whether the caller named a track (param_set's track): a global and a track parameter
         /// with the same name (Pedal M1's Volume) then resolve to the track one.</param>
         public static AgentParam Param(MachineCore m, List<AgentParam> all, string name, bool track = false)
@@ -217,7 +219,9 @@ namespace ReBuzz.Agent
             // A curated manifest's plain name ("Filter cutoff" for "VCF Freq", U3) names the parameter too.
             if (found.Count == 0) found = all.Where(p => p.Manifest is { PlainName.Length: > 0 } e && string.Equals(e.PlainName, name, StringComparison.OrdinalIgnoreCase)).ToList();
             // The manifest's id ("filter_cutoff", neo-learn.md §5.3) names it too.
-            if (found.Count == 0) found = all.Where(p => p.Manifest is { Id.Length: > 0 } e && string.Equals(e.Id, name, StringComparison.OrdinalIgnoreCase)).ToList();
+            // Only a snake_case id (Neo Learn's); the older manifests' ids are display words (Neo Drums' global "Accent gain" has the id "Accent",
+            // the name of a track trigger that takes events in a second pass).
+            if (found.Count == 0 && IsSnakeId(name)) found = all.Where(p => p.Manifest is { Id.Length: > 0 } e && string.Equals(e.Id, name, StringComparison.Ordinal)).ToList();
             if (found.Count == 1) return found[0];
             if (found.Count > 1 && track && found.Count(p => p.IsTrack) == 1) return found.First(p => p.IsTrack);
             if (found.Count > 1)

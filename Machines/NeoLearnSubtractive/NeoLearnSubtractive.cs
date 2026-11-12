@@ -32,7 +32,7 @@ namespace NeoBuzz.LearnSub
         internal LearnHost Host { get; }
 
         /// <summary>Agent server (mcp-server.md A3): true while the tables the Analog engine reads are still being built. Offline renders wait for it.</summary>
-        public bool Busy => TableBank.Get(0) == null || TableBank.Get(1) == null || Host.Engine.TablesPending;
+        public bool Busy => Host.Engine.TablesBuilding;
 
         /// <summary>Agent server (machine_readings): what the output measures, and the notes sounding.</summary>
         public IReadOnlyDictionary<string, double> Readings => Host.Readings();
