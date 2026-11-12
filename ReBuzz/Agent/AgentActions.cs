@@ -41,15 +41,18 @@ namespace ReBuzz.Agent
         {
             int old = p.GetValue(track), group = p.Group.Type == ParameterGroupType.Track ? 2 : 1, index = p.IndexInGroup;
             string name = m.Name;
-            void Set(int v)
+            void Set(int v, bool byAgent)
             {
                 var machine = Find(core, name);
                 if (machine == null || group >= machine.ParameterGroups.Count) return;
                 var ps = machine.ParameterGroups[group].Parameters;
                 // Not recorded into patterns or session automation while the user records.
-                if (index < ps.Count) ps[index].SetValue(track | (1 << 16), v);
+                if (index >= ps.Count) return;
+                // Explain (neo-learn.md §5.3): the editor shows an agent's write with the Agent badge.
+                if (byAgent) ParamSource.MarkAgent(ps[index], track);
+                ps[index].SetValue(track | (1 << 16), v);
             }
-            Do(core, new DelegateAction(() => Set(value), () => Set(old)));
+            Do(core, new DelegateAction(() => Set(value, true), () => Set(old, false)));
         }
 
         /// <summary>Sets a connection's amp and pan (Buzz values).</summary>

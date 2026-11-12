@@ -31,6 +31,18 @@ namespace NeoBuzz.Editor
             Default = Binding.Normalized(def.Default);
             UserChanged += t => Binding.Set(Binding.RawFromNormalized(t));
             ToolTip = def.Description;
+            // Explain (neo-learn.md §5.3): hovering and dragging the knob show it in the strip.
+            if (ctx.Explain is { } explain)
+                Phase += ph =>
+                {
+                    switch (ph)
+                    {
+                        case KnobPhase.Enter: explain.Hover(index); break;
+                        case KnobPhase.Leave: explain.Unhover(index); break;
+                        case KnobPhase.Touch: explain.BeginDrag(index); break;
+                        case KnobPhase.Release: explain.EndDrag(index); break;
+                    }
+                };
             Show(Binding.Value);
         }
 
@@ -212,6 +224,24 @@ namespace NeoBuzz.Editor
             var r = new NeoRect(0, 0, ActualWidth > 0 ? ActualWidth : Width, ActualHeight > 0 ? ActualHeight : Height);
             GraphFrame.Draw(canvas.On(dc), r, draw);
         }
+    }
+
+    /// <summary>
+    /// The Explain strip (neo-learn.md §5.3): the control you touch, its value and who set it (Manual, Agent or Automation),
+    /// what it does and what you will hear. State and drawing are the kit's core (Core/Explain.cs).
+    /// </summary>
+    internal sealed class ExplainStrip : GraphView
+    {
+        readonly EditorContext ctx;
+
+        public ExplainStrip(EditorContext ctx, double width)
+            : base(width, ExplainPainter.Height, (c, r) => ExplainPainter.Draw(c, r, ctx.Explain?.Current, ctx.Accent), animate: true)
+        {
+            this.ctx = ctx;
+        }
+
+        /// <summary>What it shows now (null: nothing touched yet).</summary>
+        public ExplainLine Line => ctx.Explain?.Current;
     }
 
     /// <summary>Vertical level meter in dB (−60 … +6), reading a value 30 times a second.</summary>

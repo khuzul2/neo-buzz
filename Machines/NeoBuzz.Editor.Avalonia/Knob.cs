@@ -99,6 +99,9 @@ namespace NeoBuzz.Editor
             }
         }
 
+        /// <summary>Raised when the pointer enters or leaves the knob, a gesture starts (a press, the wheel, a double click) or ends (Explain, neo-learn.md §5.3).</summary>
+        public event Action<KnobPhase> Phase;
+
         /// <summary>Raised when the user moves the knob (not when Value is set in code).</summary>
         public event Action<double> UserChanged;
 
@@ -115,23 +118,27 @@ namespace NeoBuzz.Editor
 
         protected override void OnMouseEnter(MouseEventArgs e)
         {
+            Phase?.Invoke(KnobPhase.Enter);
             model.Hover = true;
             InvalidateVisual();
         }
 
         protected override void OnMouseLeave(MouseEventArgs e)
         {
+            Phase?.Invoke(KnobPhase.Leave);
             model.Hover = false;
             InvalidateVisual();
         }
 
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
+            Phase?.Invoke(KnobPhase.Touch);
             if (e.ClickCount == 2)
             {
                 gesture.Begin();
                 UserMoved(model.ResetToDefault());
                 gesture.End();
+                Phase?.Invoke(KnobPhase.Release);
                 e.Handled = true;
                 return;
             }
@@ -151,6 +158,7 @@ namespace NeoBuzz.Editor
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
             if (!model.EndDrag()) return;
+            Phase?.Invoke(KnobPhase.Release);
             ReleaseMouseCapture();
             gesture.End();
             e.Handled = true;
@@ -161,6 +169,7 @@ namespace NeoBuzz.Editor
         {
             base.OnPointerCaptureLost(e);
             if (!model.EndDrag()) return;   // the drag ended without a release (the window lost the pointer)
+            Phase?.Invoke(KnobPhase.Release);
             gesture.End();
             InvalidateVisual();
         }
@@ -174,8 +183,10 @@ namespace NeoBuzz.Editor
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
+            Phase?.Invoke(KnobPhase.Touch);
             gesture.Wheel();
             UserMoved(model.Wheel(e.Delta, Fine(e)));
+            Phase?.Invoke(KnobPhase.Release);
             e.Handled = true;
         }
 

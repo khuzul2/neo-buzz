@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Learn Subtractive, studio flavour (docs/specs/studio-mvp.md S1): see ../NeoStudio.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoLearnSubtractive</NeoFolder>
+    <NeoName>Neo Learn Subtractive</NeoName>
+    <NeoKind>Generators</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoStudio.targets" />
+  <ItemGroup>
+    <!-- Dye Essence's engine, hosted by LearnHost, with what its Analog engine reads (Neo Wave's table recipes, Neo Sampler's sample layer). -->
+    <Compile Include="$(M)DyeEssence\Engine\**\*.cs" Link="Shared\DyeEssence\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoLearn\**\*.cs" Exclude="$(M)NeoLearn\**\*Editor.cs;$(M)NeoLearn\obj\**;$(M)NeoLearn\bin\**" Link="Shared\Learn\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoWave\Engine\Tables.cs;$(M)NeoWave\Engine\WavReader.cs" Link="Shared\NeoWave\%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoSampler\Engine\Interpolation.cs;$(M)NeoSampler\Engine\SampleData.cs" Link="Shared\NeoSampler\%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

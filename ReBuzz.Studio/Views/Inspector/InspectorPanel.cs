@@ -54,6 +54,10 @@ namespace ReBuzz.Studio.Views.Inspector
         readonly Avalonia.Controls.Control songPage;
         readonly TextBlock heading, subtitle, hint;
         readonly Grid facts;
+        // Explain (neo-learn.md §5.3): the focused control of a machine whose editor has Explain text.
+        readonly Border explain;
+        readonly TextBlock explainTitle, explainBadge, explainHow, explainSound;
+        string lastExplain;
 
         bool open;
         double width;
@@ -96,10 +100,25 @@ namespace ReBuzz.Studio.Views.Inspector
             hint = new TextBlock { FontSize = 12, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
             patternButton = ActionButton("Open in Tracker", "Edit this pattern in the Tracker", () => showView("Pattern"));
             notesButton = ActionButton("Song notes", "Write about the song: the Song tab", () => ShowTab(SongTab, focus: true));
+            explainTitle = new TextBlock { FontSize = 12, FontWeight = FontWeight.SemiBold, Foreground = StudioTokens.TextPrimaryBrush, TextWrapping = TextWrapping.Wrap };
+            explainBadge = new TextBlock { FontSize = 11, Foreground = StudioTokens.AccentBrush, Margin = new Thickness(0, 2, 0, 0) };
+            explainHow = new TextBlock { FontSize = 12, Foreground = StudioTokens.TextPrimaryBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) };
+            explainSound = new TextBlock { FontSize = 12, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0) };
+            explain = new Border
+            {
+                Margin = new Thickness(0, 10, 0, 0),
+                Padding = new Thickness(8),
+                BorderBrush = StudioTokens.SurfaceBorderBrush,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+                IsVisible = false,
+                Child = new StackPanel { Children = { explainTitle, explainBadge, explainHow, explainSound } },
+            };
+            AutomationProperties.SetName(explain, "Explain");
             var top = new StackPanel
             {
                 Margin = new Thickness(12, 0, 12, 8),
-                Children = { heading, subtitle, facts, hint, patternButton, notesButton },
+                Children = { heading, subtitle, facts, explain, hint, patternButton, notesButton },
             };
             DockPanel.SetDock(top, Dock.Top);
             selectionPage = new DockPanel { LastChildFill = true };
@@ -381,6 +400,8 @@ namespace ReBuzz.Studio.Views.Inspector
                 notesButton.IsVisible = machine == null;
             }
 
+            RefreshExplain(machine);
+
             if (clip != null)
             {
                 bool hasTrack = TrackOf(machine) != null;
@@ -388,6 +409,28 @@ namespace ReBuzz.Studio.Views.Inspector
                 if (hasTrack) clip.Follow(ClipSlot());
             }
         }
+
+        /// <summary>The Explain card: the control last focused in the machine's editor, as its strip shows it.</summary>
+        void RefreshExplain(IMachine machine)
+        {
+            bool has = machine != null && ExplainBoard.IsRegistered(machine);
+            var card = has ? ExplainBoard.Get(machine) : null;
+            string signature = has ? (card == null ? "-" : $"{card.Name}|{card.Value}|{card.Source}|{card.How}|{card.Sound}") : null;
+            if (signature == lastExplain) return;
+            lastExplain = signature;
+            explain.IsVisible = has;
+            if (!has) return;
+            explainTitle.Text = card == null ? "Explain" : $"{card.Name} · {card.Value}";
+            explainBadge.Text = card == null ? "" : card.Source;
+            explainBadge.IsVisible = card != null;
+            explainHow.Text = card == null ? "Touch a control in the machine's window to see what it does." : "How  " + card.How;
+            explainSound.Text = card == null ? "" : "Sound  " + card.Sound;
+            explainSound.IsVisible = card != null;
+        }
+
+        /// <summary>The Explain card's lines (for tests): null when it is hidden.</summary>
+        internal (string Title, string Badge, string How, string Sound)? ExplainCardText =>
+            explain.IsVisible ? (explainTitle.Text, explainBadge.Text, explainHow.Text, explainSound.Text) : null;
 
         // ------------------------------------------------------------------ resizing
 

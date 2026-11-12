@@ -216,6 +216,8 @@ namespace ReBuzz.Agent
             if (found.Count == 0) found = all.Where(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)).ToList();
             // A curated manifest's plain name ("Filter cutoff" for "VCF Freq", U3) names the parameter too.
             if (found.Count == 0) found = all.Where(p => p.Manifest is { PlainName.Length: > 0 } e && string.Equals(e.PlainName, name, StringComparison.OrdinalIgnoreCase)).ToList();
+            // The manifest's id ("filter_cutoff", neo-learn.md §5.3) names it too.
+            if (found.Count == 0) found = all.Where(p => p.Manifest is { Id.Length: > 0 } e && string.Equals(e.Id, name, StringComparison.OrdinalIgnoreCase)).ToList();
             if (found.Count == 1) return found[0];
             if (found.Count > 1 && track && found.Count(p => p.IsTrack) == 1) return found.First(p => p.IsTrack);
             if (found.Count > 1)
