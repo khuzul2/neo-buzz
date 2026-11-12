@@ -50,7 +50,7 @@ namespace NeoBuzz.Dsp
         public void Configure(int bits, bool tpdf, DitherShape shape)
         {
             bits = Math.Clamp(bits, 2, 24);
-            scale = Math.Pow(2, bits - 1);
+            scale = (double)(1L << (bits - 1));
             inv = 1.0 / scale;
             lo = -scale;
             hi = scale - 1;
