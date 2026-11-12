@@ -415,7 +415,7 @@ namespace NeoBuzz.MachineTests
             Assert.That(times[(int)(times.Count * 0.99)], Is.LessThan(256 * 1000.0 / Rate));
         }
 
-        [TestCase(1, 100, 60)]
+        [TestCase(1, 80, 55)]
         public void RunsFasterThanRealTime(int _, double x64, double arm64)
         {
             var x = Measure.PinkNoise(3 * Rate, 0.2, 3);

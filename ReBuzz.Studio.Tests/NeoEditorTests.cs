@@ -56,7 +56,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Imager", "NeoImagerEditor", "neo-imager-editor", 1034, 277),
             ("Neo Exciter", "NeoExciterEditor", "neo-exciter-editor", 977, 277),
             ("Neo Dither", "NeoDitherEditor", "neo-dither-editor", 667, 277),
-            ("Neo Strip", "NeoStripEditor", "neo-strip-editor", 1000, 600),
+            ("Neo Strip", "NeoStripEditor", "neo-strip-editor", 966, 605),
         };
 
         static ReBuzzCore Core => Studio.Host.Core;

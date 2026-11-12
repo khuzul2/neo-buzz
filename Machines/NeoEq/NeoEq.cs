@@ -71,7 +71,7 @@ namespace NeoBuzz.Eq
             return active;
         }
 
-        /// <summary>Minimum phase: no latency.</summary>
+        /// <summary>Minimum phase: none; Phase Linear: 4607 samples at 44.1/48 kHz.</summary>
         public int GetLatency() => Engine.Latency;
 
         public string GetChannelName(bool input, int index) => input ? (index == 0 ? "Input" : "Sidechain") : "Output";
@@ -89,7 +89,7 @@ namespace NeoBuzz.Eq
                     CanExecuteDelegate = _ => true,
                     ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
                         "Neo EQ — eight-band parametric equaliser: bell, shelves, cuts at 12/24/48 dB/oct and notch, " +
-                        "minimum phase, zero latency. Drag a band's handle for frequency and gain, the wheel for Q, " +
+                        "minimum phase and zero latency (Phase Linear: one linear-phase filter). Drag a band's handle for frequency and gain, the wheel for Q, " +
                         "double-click to switch it.\n\nMode Graphic: a 31-band graphic equaliser at the ISO third-octave " +
                         "centres, constant-Q, whose response passes through its sliders (±18 dB). Drag a slider, or draw " +
                         "across them.\n\nv2: each band on Stereo, Left, Right, Mid or Side; proportional-Q bells, Baxandall " +

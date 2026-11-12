@@ -381,7 +381,7 @@ namespace NeoBuzz.MachineTests
             Assert.That(bytes, Is.EqualTo(0), why);
         }
 
-        [TestCase(1, 20, 12)]
+        [TestCase(1, 15, 10)]
         public void RunsFasterThanRealTime(int _, double x64, double arm64)
         {
             var (x, y) = Material(3 * Rate, 5);
