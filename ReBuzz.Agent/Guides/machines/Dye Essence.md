@@ -8,6 +8,7 @@ A hybrid synth with three engine slots (A, B, C). Each plays a morphing wavetabl
 - Sub (sine, triangle, saw or square, 0, −1 or −2 octaves) and noise (`Noise color` 0 % dark … 100 % white), each with level, pan and `→ filter 2`.
 - Filter 1 and Filter 2: Ladder 24, Ladder 12, LP/BP/HP 12 and 24, Notch, Peak, Comb+ and Comb− (the cutoff is the comb's pitch; `F1 key track` 100 % plays it in tune), with drive, envelope amount (±6 octaves), key tracking and velocity. `Filter routing` 0 %: filter 1 into filter 2; 100 %: side by side.
 - Amp and filter envelopes; voice mode (Poly, Mono, Legato), polyphony up to 32, glide, bend range, `Quality`.
+- Modulation: two DAHDSR envelopes (`Env1 delay` … `Env1 release`, a curve per segment, −100 % a fast start, +100 % a slow one; `Env1 sync` Beats reads the times as beats), four LFOs (`LFO1 shape`, rate or `LFO1 sync`, `LFO1 retrig` On: one per note from `LFO1 phase`, Off: one free LFO; `LFO1 fade`), four macros, and sixteen routes: `R1 source`, `R1 dest`, `R1 amount`. Full amount moves pitch ±12 st, a cutoff ±6 octaves, an LFO's rate ±4 octaves, and positions, warp amounts, levels and resonance across their whole range; Amp scales the gain by 1 + amount.
 
 | Table | Position 0 % → 100 % |
 |---|---|
@@ -48,6 +49,9 @@ A hybrid synth with three engine slots (A, B, C). Each plays a morphing wavetabl
 
 ## Gotchas
 
+- Routes are parameters (source, destination, amount), so `param_set` and presets set them like any other; a route with source or dest Off, or amount 0 %, does nothing.
+- Free LFOs (retrig Off) don't take the LFO-rate destinations; per-note ones do.
+
 - Freshly added it plays a saw (`A table` Basic at 67 %) through a Ladder 24; B and C are Off.
 - A silent slot still renders when it is another's modulator (its level only mutes it).
 - `Sub octave` takes the text "0", "-1" or "-2" (quoted), not a number.
@@ -72,4 +76,6 @@ A hybrid synth with three engine slots (A, B, C). Each plays a morphing wavetabl
 | "Pluck — Mirror Bell" | Harmonics mirrored, a fast filter envelope | `A warp 1 amt` |
 | "Keys — Bent Organ" | Organ with Bend+, an octave layer | `A warp 1 amt` |
 | "Texture — Comb Noise" | noise through a tuned comb | `F1 reso` |
+| "Pad — Position Sweep" | Formants swept by a slow free LFO, a mod envelope opening the filter | `R1 amount`, `LFO1 rate` |
+| "Lead — Delayed Vibrato" | vibrato fading in over 0.7 s; the wheel opens the filter | `LFO1 fade`, `R1 amount` |
 | "FX — Squeeze Sweep" | Digital squeezed and warped, High 4× | `A warp 1 amt` |

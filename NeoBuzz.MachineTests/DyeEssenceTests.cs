@@ -80,6 +80,25 @@ namespace NeoBuzz.MachineTests
             s.Routing = 0.4f;
         }
 
+        /// <summary>Modulation onto most destinations: both envelopes (curved, one synced), per-note and free LFOs of every kind of shape, a macro, the wheel, the random.</summary>
+        static void Routed(BankSettings s)
+        {
+            s.ModEnv[0].Delay = 0.01f; s.ModEnv[0].A = 0.05f; s.ModEnv[0].Hold = 0.02f; s.ModEnv[0].D = 0.1f; s.ModEnv[0].S = 0.4f; s.ModEnv[0].ACurve = 0.5f;
+            s.ModEnv[1].Sync = true; s.ModEnv[1].A = 0.25f; s.ModEnv[1].D = 0.5f; s.ModEnv[1].S = 0.2f;
+            s.Lfo[0].Rate = 5; s.Lfo[1].Shape = WaveShape.SampleHold; s.Lfo[1].Rate = 9; s.Lfo[1].Retrig = false;
+            s.Lfo[2].Shape = WaveShape.Smooth; s.Lfo[2].Beats = 0.5f; s.Lfo[2].Fade = 0.05f; s.Lfo[3].Shape = WaveShape.Triangle; s.Lfo[3].Rate = 2;
+            s.Macro[0] = 0.6f; s.ModWheel = 0.3f; s.Tempo = 128;
+            (RouteSource, RouteDest, float)[] routes =
+            {
+                (RouteSource.ModEnv1, RouteDest.APosition, 0.5f), (RouteSource.Lfo1, RouteDest.Pitch, 0.02f), (RouteSource.Lfo2, RouteDest.F1Cutoff, 0.3f),
+                (RouteSource.Lfo3, RouteDest.BWarp1, 0.4f), (RouteSource.ModEnv2, RouteDest.F2Reso, 0.5f), (RouteSource.Macro1, RouteDest.CLevel, -0.5f),
+                (RouteSource.ModWheel, RouteDest.Lfo1Rate, 0.5f), (RouteSource.Random, RouteDest.BPitch, 0.01f), (RouteSource.Lfo4, RouteDest.Amp, -0.3f),
+                (RouteSource.Velocity, RouteDest.SubLevel, 0.4f), (RouteSource.Key, RouteDest.F2Cutoff, 0.2f),
+            };
+            for (int i = 0; i < routes.Length; i++) (s.Routes[i].Source, s.Routes[i].Dest, s.Routes[i].Amount) = routes[i];
+            s.Osc[1].Warp1 = Warp.BendPlus; s.Osc[1].Amount1 = 0.2f;
+        }
+
         static void Chord(NoteBank b, int notes = 16)
         {
             for (int n = 0; n < notes; n++) b.NoteOn(n, 36 + 3 * n, 0.4f + 0.6f * n / 16);
@@ -146,6 +165,7 @@ namespace NeoBuzz.MachineTests
                                          s.Osc[2].Warp1 = Warp.Sync; s.Osc[2].Amount1 = 0.45f; }),
             ("the Analog engine: a pulse, a drifting saw stack filling its groups, a square", 8, 2, s => { foreach (var o in s.Osc) { o.Type = SlotType.Analog; o.Drift = 0.7f; }
                                          s.Osc[0].Shape = AnalogShape.Pulse; s.Osc[0].PulseWidth = 0.2f; s.Osc[0].Unison = 3; s.Osc[2].Shape = AnalogShape.Square; s.Osc[2].Unison = 1; }),
+            ("routes: envelopes, LFOs per note and free, macros, wheel, random onto pitch, position, warp, level, cutoff, reso, amp, LFO rate", 3, 2, Routed),
             ("AM, ring, FM in a ring of modulators, noise", 2, 2, s => { s.Osc[0].Warp1 = Warp.Am; s.Osc[0].Amount1 = 0.8f; s.Osc[0].Mod = ModSource.Noise;
                                          s.Osc[1].Warp1 = Warp.Ring; s.Osc[1].Amount1 = 0.5f; s.Osc[1].Mod = ModSource.OscC;
                                          s.Osc[2].Warp1 = Warp.Fm; s.Osc[2].Amount1 = 0.9f; s.Osc[2].Mod = ModSource.OscB; s.Noise.Level = 0.2f; s.Noise.ToF2 = 0.5f; }),
@@ -468,6 +488,93 @@ namespace NeoBuzz.MachineTests
             Measure.Report("Dye Essence, the Analog engine: " + string.Join("; ", lines));
         }
 
+        [Test]
+        public void ModulationEnvelopesFollowTheirTimesAndCurves()
+        {
+            // DAHDSR in closed form: delay 50 ms, a straight 100 ms attack (half way at 100 ms), hold
+            // 50 ms, a straight 200 ms decay to 30 %, a straight 200 ms release; curves bend a segment
+            // (+100 % a slow start, −100 % a fast one); synced, a 1-beat attack at 120 BPM takes 0.5 s.
+            var e = new ModEnvSettings { Delay = 0.05f, A = 0.1f, Hold = 0.05f, D = 0.2f, S = 0.3f, R = 0.2f, ACurve = 0, DCurve = 0, RCurve = 0 };
+            int stage = ModEnvelope.Delay;
+            double time = 0;
+            float level = 0, from = 0;
+            float At(double t, bool gate, ref double now)
+            {
+                float l = ModEnvelope.Advance(ref stage, ref time, ref level, ref from, gate, e, t - now, 0.5);
+                now = t;
+                return l;
+            }
+            double clock = 0;
+            var got = new[] { At(0.04, true, ref clock), At(0.10, true, ref clock), At(0.18, true, ref clock), At(0.30, true, ref clock), At(0.45, true, ref clock), At(0.55, false, ref clock), At(0.65, false, ref clock), At(0.80, false, ref clock) };
+            // The gate closes from the step after 0.45 s (a closed gate counts from the start of the step that sees it).
+            var want = new[] { 0f, 0.5f, 1f, 0.65f, 0.3f, 0.15f, 0f, 0f };
+            Measure.Report("Dye Essence mod envelope (DAHDSR, straight): " + string.Join(", ", got.Select(x => x.ToString("F3"))) + " against " + string.Join(", ", want.Select(x => x.ToString("F3"))));
+            for (int i = 0; i < want.Length; i++) Assert.That(got[i], Is.EqualTo(want[i]).Within(1e-4), $"point {i}");
+            Assert.That(stage, Is.EqualTo(ModEnvelope.Idle));
+            Assert.That(ModEnvelope.Shape(0.5, 1f), Is.LessThan(0.1), "slow start");
+            Assert.That(ModEnvelope.Shape(0.5, -1f), Is.GreaterThan(0.9), "fast start");
+            Assert.That(ModEnvelope.Shape(1, 0.7f), Is.EqualTo(1).Within(1e-12));
+            var synced = new ModEnvSettings { A = 1, Sync = true, S = 1 };
+            stage = ModEnvelope.Delay; time = 0; level = 0;
+            float half = ModEnvelope.Advance(ref stage, ref time, ref level, ref from, true, synced, 0.25, 0.5);
+            Assert.That(half, Is.EqualTo(0.5f).Within(1e-4), "a beat at 120 BPM: half way at 0.25 s");
+        }
+
+        /// <summary>A 1 kHz sine whose amp an LFO moves by half; the measured rate of the movement.</summary>
+        static double LfoRateOf(Action<BankSettings> lfo)
+        {
+            var b = Clean(2, SineTable.Value);
+            b.S.Osc[0].Level = 0.5f;
+            lfo(b.S);
+            b.S.Routes[0].Source = RouteSource.Lfo1;
+            b.S.Routes[0].Dest = RouteDest.Amp;
+            b.S.Routes[0].Amount = 0.5f;
+            b.NoteOn(0, 84, 1f);
+            var y = Left(Render(b, 4 * Rate), Rate / 2, 3 * Rate);
+            // The envelope (peak per 1 ms), then upward crossings of its mean.
+            int w = Rate / 1000;
+            var env = new double[y.Length / w];
+            for (int i = 0; i < env.Length; i++) env[i] = Measure.Peak(y, i * w, w);
+            double mean = env.Average();
+            var ups = new List<double>();
+            for (int i = 1; i < env.Length; i++)
+                if (env[i - 1] < mean && env[i] >= mean) ups.Add(i - 1 + (mean - env[i - 1]) / (env[i] - env[i - 1]));
+            return 1000.0 * (ups.Count - 1) / (ups[^1] - ups[0]);
+        }
+
+        [Test]
+        public void LfosRunAtTheirRates()
+        {
+            // A sine LFO at 2 Hz free; synced to 1/4 at 120 BPM (2 Hz) and at 90 BPM (1.5 Hz); within 1 %.
+            double free = LfoRateOf(s => s.Lfo[0].Rate = 2);
+            double synced = LfoRateOf(s => { s.Lfo[0].Beats = 1; s.Tempo = 120; });
+            double slower = LfoRateOf(s => { s.Lfo[0].Beats = 1; s.Tempo = 90; });
+            Measure.Report($"Dye Essence LFO onto the amp: 2 Hz free {free:F3} Hz; 1/4 at 120 BPM {synced:F3} Hz; at 90 BPM {slower:F3} Hz");
+            Assert.That(free, Is.EqualTo(2).Within(0.02));
+            Assert.That(synced, Is.EqualTo(2).Within(0.02));
+            Assert.That(slower, Is.EqualTo(1.5).Within(0.015));
+        }
+
+        [Test]
+        public void AnLfoOnTheCutoffMakesNoZipperNoise()
+        {
+            // A 3 Hz sine LFO moving the SVF lowpass ±1 octave round 1 kHz on a 220 Hz sine: the cutoff
+            // changes every tick and ramps across it, so nothing reaches above 2 kHz (under −80 dB).
+            var b = Clean(2, SineTable.Value);
+            b.S.Osc[0].Level = 0.5f;
+            b.S.Filter[0].Type = FilterType.Lp12;
+            b.S.Filter[0].Cutoff = 1000;
+            b.S.Lfo[0].Rate = 3;
+            b.S.Routes[0].Source = RouteSource.Lfo1;
+            b.S.Routes[0].Dest = RouteDest.F1Cutoff;
+            b.S.Routes[0].Amount = 1f / 6;
+            b.NoteOn(0, (float)(69 + 12 * Math.Log2(220 / 440.0)), 1f);
+            var y = Left(Render(b, 8192 + (1 << 16)), 0, 8192 + (1 << 16));
+            double z = ZipperDb(y);
+            Measure.Report($"Dye Essence, an LFO moving the cutoff ±1 oct at 3 Hz on a 220 Hz sine: energy above 2 kHz {z:F1} dB re the sine");
+            Assert.That(z, Is.LessThan(-80));
+        }
+
         static double PeakHz(float[] y, double near, int width = 8)
         {
             int n = y.Length;
@@ -719,12 +826,12 @@ namespace NeoBuzz.MachineTests
             // The control grid runs across blocks and a note started mid-tick gets its values for the rest
             // of it, so blocks of 256, 117 and 16 give the same samples, notes starting, ending and stolen
             // included, the warped patch with the comb included.
-            foreach (bool everything in new[] { false, true })
+            foreach (var (everything, tweak) in new (bool, Action<BankSettings>)[] { (false, null), (true, Everything), (true, Routed) })
             {
                 ulong first = 0;
                 foreach (int block in new[] { 256, 117, 16 })
                 {
-                    var b = Gate(LaneKind.Auto, 8, 2, everything ? Everything : null);
+                    var b = Gate(LaneKind.Auto, 8, 2, tweak);
                     var y = Render(b, 12000, block, pos =>
                     {
                         if (pos == 0) Chord(b, 6);
@@ -827,6 +934,10 @@ namespace NeoBuzz.MachineTests
                 v.Set(P.BWarp1Amt, 500);
                 v.Set(P.CType, 1);
                 v.Set(P.SubLevel, 500);
+                v.Set(P.R1Src, (int)RouteSource.Lfo1); v.Set(P.R1Dst, (int)RouteDest.APosition); v.Set(P.R1Amt, 800);
+                v.Set(P.R2Src, (int)RouteSource.ModEnv1); v.Set(P.R2Dst, (int)RouteDest.F1Cutoff); v.Set(P.R2Amt, 700);
+                v.Set(P.L2Retrig, 0); v.Set(P.L2Shape, (int)WaveShape.SampleHold);
+                v.Set(P.R3Src, (int)RouteSource.Lfo2); v.Set(P.R3Dst, (int)RouteDest.Pitch); v.Set(P.R3Amt, 520);
                 for (int k = 0; k < 8; k++) e.NoteOn(k, 40 + 5 * k, 0.8f);
                 for (int i = 0; i < 20; i++) e.Process(l, r, 256);
                 void Block(int i)
@@ -838,6 +949,8 @@ namespace NeoBuzz.MachineTests
                     v.Set(P.CWarp1, i / 150 % 12);
                     v.Set(P.F1Type, i / 200 % 13);
                     v.Set(P.Quality, i / 500 % 2);
+                    v.Set(P.R4Dst, i / 120 % 28);
+                    v.Set(P.R4Src, i / 90 % 18);
                     e.Process(l, r, 1 + i % 256);
                 }
                 var (bytes, why) = AllocationCheck.Run(2000, Block);

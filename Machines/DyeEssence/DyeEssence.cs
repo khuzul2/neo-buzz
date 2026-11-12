@@ -153,6 +153,7 @@ namespace NeoBuzz.DyeEssence
                 rate = SampleRate;
                 Engine.SetSampleRate(rate);
             }
+            Engine.Tempo = BeatsPerMinute > 0 ? BeatsPerMinute : 120;
             BeginBlock(Engine);
             n = Math.Min(n, DyeEngine.MaxBlock);
             if (!Engine.Process(left, right, n)) return false;
