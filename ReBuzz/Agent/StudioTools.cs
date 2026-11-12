@@ -1,7 +1,8 @@
 // Agent server (docs/specs/mcp-server.md §5.1–5.2): orientation, undo, and the song itself.
-// studio_status, undo, redo, song_new, song_open, song_save, song_set.
+// studio_status, undo, redo, history_list, history_jump, song_new, song_open, song_save, song_set.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
@@ -84,6 +85,59 @@ namespace ReBuzz.Agent
                     core.SetModifiedFlag();
                     return ToolResult.Ok("Redone.", new JsonObject { ["can_undo"] = stack.CanUndo, ["can_redo"] = stack.CanRedo });
                 }, c.Cancellation),
+            });
+
+            // history-snapshots.md HS1b: the shared history, as a list and a jump.
+            tools.Add(new ToolDef
+            {
+                Name = "history_list",
+                Title = "Undo history",
+                Description =
+                    "Lists the song's undo history, newest first: each step's id, name, source (manual: the person in the window, agent: an agent call, " +
+                    "midi: a controller), time and whether it is applied (done: true) or undone and waiting on the redo side (done: false). " +
+                    "'current' is the id of the newest applied step (0: nothing applied). The history is shared with the person's edits, and one agent call is one step. " +
+                    "Use it before history_jump or undo to see what would be reverted. Example: history_list(limit=10).",
+                Input = Object(null, Opt("limit", Integer("Most steps to return, newest first (default 20)", 1, 500))),
+                Output = HistoryListSchema(),
+                Annotations = ToolAnnotations.Read,
+                Handler = async c =>
+                {
+                    int limit = c.Int("limit") ?? 20;
+                    return await host.Engine("history_list", false, _ => HistoryList(host, limit), c.Cancellation);
+                },
+            });
+
+            tools.Add(new ToolDef
+            {
+                Name = "history_jump",
+                Title = "Jump in the undo history",
+                Description =
+                    "Undoes or redoes as many steps as it takes to put the song in the state right after step 'step' (an id from history_list; 0: before the oldest step kept). " +
+                    "Destructive: jumping back can undo many steps, the person's among them (they stay on the redo side until something new is done). " +
+                    "Check history_list first. Returns the new current step. Example: history_jump(step=41).",
+                Input = Object(null, Req("step", Integer("A step id from history_list; 0 for before the oldest step kept", 0))),
+                Output = HistoryListSchema(),
+                Annotations = new ToolAnnotations(Destructive: true, Idempotent: true),
+                Handler = async c =>
+                {
+                    int step = c.Int("step") ?? throw new ToolError("step is required: an id from history_list.");
+                    return await host.Engine("history_jump", false, _ =>
+                    {
+                        var stack = core.SongCore.ActionStack;
+                        var steps = HistorySteps(host);
+                        if (step != 0 && !steps.Any(s => s.Id == step))
+                            throw new ToolError($"No step {step} in the history (it may have been dropped by the memory cap, or the song was opened since). Call history_list for the ids.");
+                        int undone = steps.Count(s => s.Done);
+                        int target = step == 0 ? 0 : steps.FindIndex(s => s.Id == step) + 1;
+                        if (host.FailedCallOnRedo && host.UndosSinceFailedCall == 0 && target > undone)
+                            throw new ToolError("Nothing to redo there: the steps after the current one are a failed call's, taken back.");
+                        if (!stack.JumpTo(step)) throw new ToolError($"Could not jump to step {step}.");
+                        if (host.FailedCallOnRedo) host.UndosSinceFailedCall = Math.Max(0, host.UndosSinceFailedCall + (undone - target));
+                        core.SetModifiedFlag();
+                        var result = HistoryList(host, 5);
+                        return ToolResult.Ok($"Jumped to step {step}.", result.Structured);
+                    }, c.Cancellation);
+                },
             });
 
             tools.Add(new ToolDef
@@ -252,6 +306,63 @@ namespace ReBuzz.Agent
         }
 
         static double Beats(int ticks, int tpb) => Math.Round(ticks / (double)Math.Max(1, tpb), 4);
+
+        static JsonObject HistoryListSchema() => Object(null,
+            Req("steps", Array(Object(null,
+                Req("id", Integer("What history_jump takes")),
+                Req("name", String("What the step did")),
+                Req("source", String("Who made it", "manual", "agent", "midi")),
+                Req("time", String("When, UTC, ISO 8601")),
+                Req("done", Boolean("Applied; false: undone, on the redo side")),
+                Req("current", Boolean("The newest applied step"))), "Newest first")),
+            Req("current", Integer("Id of the newest applied step; 0 when none")),
+            Req("total", Integer("Steps kept")),
+            Req("dropped", Integer("Steps dropped by the memory cap")),
+            Req("can_undo", Boolean("Something to undo")), Req("can_redo", Boolean("Something to redo")));
+
+        /// <summary>The steps oldest first, without a failed call's taken-back step (redo hides it).</summary>
+        static List<BuzzGUI.Common.HistoryStep> HistorySteps(AgentHost host)
+        {
+            var steps = host.Core.SongCore.ActionStack.Steps.ToList();
+            if (host.FailedCallOnRedo && host.UndosSinceFailedCall == 0)
+            {
+                int phantom = steps.FindIndex(s => !s.Done);
+                if (phantom >= 0) steps.RemoveAt(phantom);
+            }
+            return steps;
+        }
+
+        static ToolResult HistoryList(AgentHost host, int limit)
+        {
+            var stack = host.Core.SongCore.ActionStack;
+            var steps = HistorySteps(host);
+            int current = stack.CurrentStepId;
+            var rows = new JsonArray();
+            for (int i = steps.Count - 1; i >= 0 && rows.Count < limit; i--)
+            {
+                var s = steps[i];
+                rows.Add(new JsonObject
+                {
+                    ["id"] = s.Id,
+                    ["name"] = s.Name,
+                    ["source"] = s.Source.ToString().ToLowerInvariant(),
+                    ["time"] = s.Time.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture),
+                    ["done"] = s.Done,
+                    ["current"] = s.Id == current,
+                });
+            }
+            bool canRedo = stack.CanRedo && !(host.FailedCallOnRedo && host.UndosSinceFailedCall == 0);
+            var data = new JsonObject
+            {
+                ["steps"] = rows,
+                ["current"] = current,
+                ["total"] = steps.Count,
+                ["dropped"] = (int)stack.DroppedSteps,
+                ["can_undo"] = stack.CanUndo,
+                ["can_redo"] = canRedo,
+            };
+            return ToolResult.Ok($"{steps.Count} steps, {rows.Count} shown, newest first; current step {current}.", data);
+        }
 
         static JsonObject UndoSchema() => Object(null, Req("can_undo", Boolean("Something left to undo")), Req("can_redo", Boolean("Something to redo")));
 

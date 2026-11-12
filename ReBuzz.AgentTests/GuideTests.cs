@@ -40,6 +40,8 @@ namespace ReBuzz.AgentTests
             ["guide"] = new[] { "topic", "machine" },
             ["undo"] = new string[0],
             ["redo"] = new string[0],
+            ["history_list"] = new[] { "limit" },
+            ["history_jump"] = new[] { "step" },
             ["song_new"] = new[] { "tempo_bpm", "discard_unsaved" },
             ["song_open"] = new[] { "path", "discard_unsaved" },
             ["song_save"] = new[] { "path", "overwrite" },
