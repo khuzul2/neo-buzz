@@ -342,7 +342,6 @@ namespace ReBuzz.Studio.Tests
             ((Control)view.TrackerGrid.Body).Focus();
             Pump();
             void Type(PhysicalKey k) { r.Window.KeyPressQwerty(k, RawInputModifiers.None); r.Window.KeyReleaseQwerty(k, RawInputModifiers.None); Pump(); }
-            Type(PhysicalKey.Tab);
             foreach (var k in new[] { PhysicalKey.Z, PhysicalKey.C, PhysicalKey.B, PhysicalKey.Digit1 }) Type(k);
             var typed = r.Column();
             Assert.That(typed.Length, Is.EqualTo(4), "three notes and an off");

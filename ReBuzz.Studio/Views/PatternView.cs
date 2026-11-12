@@ -319,7 +319,18 @@ namespace ReBuzz.Studio.Views
             if (c != null && c.Parent is ContentControl other && other != editorHost)
                 other.Content = null;           // another page had it (a window that isn't closed yet)
             editorHost.Content = c;
+            HookBars(c);
             UpdateEmpty();
+        }
+
+        /// <summary>
+        /// The Tracker's bar rules follow the song's time signature where the pattern lies (ux-overhaul.md P3c, decision 55). The
+        /// studio doesn't reference the editor, so its grid is found by name (as EditContext is).
+        /// </summary>
+        void HookBars(Control editor)
+        {
+            var grid = editor?.GetType().GetProperty("TrackerGrid")?.GetValue(editor);
+            grid?.GetType().GetProperty("BarTicksSource")?.SetValue(grid, (Func<int>)(() => Detail.TrackerRoll.BarLengthOf(core, pattern)));
         }
 
         void OnPatternChanged(IPattern p)

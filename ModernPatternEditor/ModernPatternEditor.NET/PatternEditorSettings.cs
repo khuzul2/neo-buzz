@@ -45,6 +45,13 @@ namespace WDE.ModernPatternEditor
         [BuzzSetting(CursorScrollMode.Standard, Description = "Select CenterWithMargins for classic tracker style scrolling.")]
         public CursorScrollMode CursorScrollMode { get; set; }
 
+#if !WINDOWS
+        // Fork (docs/specs/ux-overhaul.md P3c, decision 54): the studio's editor keeps the cursor row (the play row while it plays)
+        // in the middle of the view; the Windows build keeps its own CursorScrollMode.
+        [BuzzSetting(true, Description = "Keep the cursor row in the middle of the view as it moves, and the play row while the pattern plays; the first and last rows can reach the middle. Off: scroll as Cursor scroll mode says.")]
+        public bool CenteredScrolling { get; set; }
+
+#endif
         [BuzzSetting(false)]
         public bool EditStayOnRow { get; set; }
 

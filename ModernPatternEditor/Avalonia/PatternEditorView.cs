@@ -47,6 +47,25 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         readonly ToggleButton helpToggle = SmallToggle("Help", "Show Help (F1)");
         readonly Control[] mappingControls;
 
+        // Fork (ux-overhaul.md P3c): the empty automation columns' control, the value base, centred scrolling.
+        readonly Button automationButton = new Button { Content = "+ Automation", FontSize = 11, Padding = new Thickness(8, 1), Margin = new Thickness(8, 4, 0, 4), Focusable = false, VerticalAlignment = VerticalAlignment.Center };
+        readonly ToggleButton hexToggle = SmallToggle("Hex", "Show and type values in hex, as Buzz does (Preferences > General > Pattern values)");
+        readonly ToggleButton centreToggle = SmallToggle("Centre", "Keep the cursor row in the middle of the view (the play row while it plays)");
+        readonly TextBox automationFilter = new TextBox { Watermark = "Filter parameters", Width = 240, FontSize = 12 };
+        readonly ListBox automationList = new ListBox { Width = 240, MaxHeight = 320 };
+        readonly Button automationAll = new Button { Content = "Show all", FontSize = 11, Padding = new Thickness(8, 1), Margin = new Thickness(0, 4, 0, 0), HorizontalAlignment = HorizontalAlignment.Right };
+        readonly TextBlock emptyHint = new TextBlock
+        {
+            Text = "No columns to show yet.\nUse + Automation above to pick the parameters this pattern should show.",
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = PatternTheme.StatusText,
+            FontSize = 13,
+            IsHitTestVisible = false,
+            IsVisible = false,
+        };
+
         MachineVM machine;
         PatternVM pattern;
         bool updating;
@@ -77,7 +96,9 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 Label("Base Octave:"), octaveBox, mappingToggle,
             });
             toolbar.Children.AddRange(mappingControls);
-            toolbar.Children.AddRange(new Control[] { playNotesToggle, zoom });
+            toolbar.Children.AddRange(new Control[] { playNotesToggle, zoom, automationButton, hexToggle, centreToggle });
+            ToolTip.SetTip(automationButton, "Show columns for parameters this pattern has no data for");
+            automationButton.Flyout = MakeAutomationFlyout();
 
             var bar = new DockPanel { Background = PatternTheme.ToolbarBackground };
             DockPanel.SetDock(helpToggle, Dock.Right);
@@ -113,7 +134,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             main.Children.Add(bar);
             main.Children.Add(statusBar);
             main.Children.Add(help);
-            main.Children.Add(grid);
+            main.Children.Add(new Panel { Children = { grid, emptyHint } });
             Content = main;
 
             Wire();
@@ -132,6 +153,20 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             // Fork (ux-overhaul.md §3.5): the base octave as Preferences name notes (Buzz's 4 is 2 when C3 is 60).
             octaveBox.ItemTemplate = new FuncDataTemplate<int>((o, _) => new TextBlock { Text = NoteNames.Octave(o).ToString(System.Globalization.CultureInfo.InvariantCulture) });
             NoteNames.Changed += OnNoteNames;
+            ValueDisplay.Changed += OnValueDisplay;
+            hexToggle.IsCheckedChanged += (s, e) =>
+            {
+                if (updating) return;
+                var to = hexToggle.IsChecked == true ? ValueBase.Hex : ValueBase.Decimal;
+                // Through the settings, so that Preferences shows it and it is saved; the value itself where there are none.
+                if (Global.GeneralSettings != null) Global.GeneralSettings.Set(nameof(Global.GeneralSettings.PatternValues), to.ToString());
+                else ValueDisplay.Base = to;
+            };
+            centreToggle.IsCheckedChanged += (s, e) =>
+            {
+                if (updating) return;
+                PatternEditor.Settings.Set("CenteredScrolling", centreToggle.IsChecked == true);
+            };
             Follow(editor.SelectedMachine);
             UpdateAll();
         }
@@ -148,8 +183,78 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         /// <summary>The base octaves as the list shows them, for tests.</summary>
         public IEnumerable<string> OctaveTexts => octaveBox.Items.OfType<int>().Select(o => NoteNames.Octave(o).ToString(System.Globalization.CultureInfo.InvariantCulture));
 
+        /// <summary>Preferences (or the Hex toggle) changed the value base: the toggle follows (the grid lays out again itself).</summary>
+        void OnValueDisplay() => Dispatcher.UIThread.Post(UpdateAll);
+
+        /// <summary>The + Automation menu: the parameters whose columns are hidden, filtered by what is typed; a click shows its columns.</summary>
+        Flyout MakeAutomationFlyout()
+        {
+            automationList.ItemTemplate = new FuncDataTemplate<HiddenColumn>((h, _) => new TextBlock { Text = h.Name + "   " + h.Group, FontSize = 12 });
+            automationFilter.TextChanged += (s, e) => FillAutomation();
+            automationList.SelectionChanged += (s, e) =>
+            {
+                if (automationList.SelectedItem is HiddenColumn h && pattern != null)
+                {
+                    pattern.RevealColumns(new[] { h.Parameter });
+                    FillAutomation();
+                    Dispatcher.UIThread.Post(() => grid.FocusGrid());
+                }
+            };
+            automationAll.Click += (s, e) =>
+            {
+                if (pattern == null) return;
+                pattern.RevealColumns(FilteredAutomation().Select(h => h.Parameter).ToArray());
+                FillAutomation();
+                Dispatcher.UIThread.Post(() => grid.FocusGrid());
+            };
+            var panel = new StackPanel { Spacing = 4, Children = { automationFilter, automationList, automationAll } };
+            var flyout = new Flyout { Content = panel, Placement = PlacementMode.BottomEdgeAlignedLeft };
+            flyout.Opening += (s, e) => { automationFilter.Text = ""; FillAutomation(); };
+            return flyout;
+        }
+
+        IEnumerable<HiddenColumn> FilteredAutomation()
+        {
+            var all = pattern?.HiddenColumns ?? (IReadOnlyList<HiddenColumn>)Array.Empty<HiddenColumn>();
+            var f = automationFilter.Text?.Trim();
+            return string.IsNullOrEmpty(f) ? all : all.Where(h => h.Name.Contains(f, StringComparison.OrdinalIgnoreCase));
+        }
+
+        void FillAutomation()
+        {
+            automationList.ItemsSource = FilteredAutomation().ToList();
+            automationList.SelectedItem = null;
+            automationAll.IsEnabled = automationList.ItemCount > 0;
+            automationAll.Content = automationList.ItemCount > 0 ? "Show all " + automationList.ItemCount : "Show all";
+        }
+
+        /// <summary>The hidden columns' parameter names, as + Automation lists them (for tests).</summary>
+        public IReadOnlyList<string> AutomationChoices => (pattern?.HiddenColumns ?? (IReadOnlyList<HiddenColumn>)Array.Empty<HiddenColumn>()).Select(h => h.Name).ToList();
+
+        /// <summary>Shows a hidden column by its parameter's name, as picking it in + Automation does (for tests).</summary>
+        public bool ShowAutomation(string parameter)
+        {
+            var found = pattern?.HiddenColumns.Where(h => h.Name == parameter).Select(h => h.Parameter).ToArray();
+            if (found == null || found.Length == 0) return false;
+            pattern.RevealColumns(found);
+            return true;
+        }
+
+        /// <summary>Shows every hidden column at once ("Show all" in + Automation).</summary>
+        public void ShowAllAutomation()
+        {
+            if (pattern?.HiddenColumns is { Count: > 0 } hidden) pattern.RevealColumns(hidden.Select(h => h.Parameter).ToArray());
+        }
+
+        /// <summary>The + Automation control and the other toggles, for tests.</summary>
+        public Button AutomationButton => automationButton;
+        public ToggleButton HexToggle => hexToggle;
+        public ToggleButton CentreToggle => centreToggle;
+        public bool EmptyHintShown => emptyHint.IsVisible;
+
         public void Dispose()
         {
+            ValueDisplay.Changed -= OnValueDisplay;
             NoteNames.Changed -= OnNoteNames;
             editor.PropertyChanged -= Editor_PropertyChanged;
             Follow(null);
@@ -313,6 +418,12 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 zoom.Value = editor.ScaleFactor;
                 helpToggle.IsChecked = editor.IsHelpVisible;
                 help.IsVisible = editor.IsHelpVisible;
+                int hidden = pattern?.HiddenColumns?.Count ?? 0;
+                automationButton.IsEnabled = hasPattern && hidden > 0;
+                ToolTip.SetTip(automationButton, hidden > 0 ? "Show columns for the " + hidden + " parameters this pattern has no data for" : "Every parameter's column is shown");
+                hexToggle.IsChecked = ValueDisplay.IsHex;
+                centreToggle.IsChecked = PatternEditor.Settings.CenteredScrolling;
+                emptyHint.IsVisible = hasPattern && (pattern.ColumnSets == null || pattern.ColumnSets.Count == 0);
                 status1.Text = editor.StatusBarItem1;
                 status2.Text = editor.StatusBarItem2;
                 status3.Text = editor.StatusBarItem3;
