@@ -25,6 +25,14 @@
     <Compile Include="..\NeoWave\Engine\Tables.cs;..\NeoWave\Engine\WavReader.cs" Link="Shared\NeoWave\%(Filename)%(Extension)" />
     <!-- Neo Sampler's sample layer (octave-down copies) and band-limited read: what the Sample and Granular engines play. -->
     <Compile Include="..\NeoSampler\Engine\Interpolation.cs;..\NeoSampler\Engine\SampleData.cs" Link="Shared\NeoSampler\%(Filename)%(Extension)" />
+    <!-- The effects rack (docs/specs/dye-essence.md §4.10) hosts these machines' engines, linked as source: the gain-match reading and each engine. -->
+    <Compile Include="..\NeoBuzz.Analysis\Loudness.cs;..\NeoBuzz.Analysis\GainMatch.cs" Link="Shared\Analysis\%(Filename)%(Extension)" />
+    <Compile Include="..\NeoEq\Engine\*.cs" Link="Shared\Eq\%(Filename)%(Extension)" />
+    <Compile Include="..\NeoFilter\Engine\*.cs" Link="Shared\Filter\%(Filename)%(Extension)" />
+    <Compile Include="..\NeoComp\Engine\*.cs" Link="Shared\Comp\%(Filename)%(Extension)" />
+    <Compile Include="..\NeoClipper\Engine\*.cs" Link="Shared\Clipper\%(Filename)%(Extension)" />
+    <Compile Include="..\NeoDelay\Engine\*.cs" Link="Shared\Delay\%(Filename)%(Extension)" />
+    <Compile Include="..\NeoVerb\Engine\*.cs" Link="Shared\Verb\%(Filename)%(Extension)" />
     <None Include="Params.def" />
     <None Include="Dye Essence.prs.xml" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Dye Essence.machine.json" CopyToOutputDirectory="PreserveNewest" />

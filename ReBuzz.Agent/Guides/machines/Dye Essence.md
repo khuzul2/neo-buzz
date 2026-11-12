@@ -29,7 +29,6 @@ A hybrid synth with three engine slots (A, B, C). Each plays a morphing wavetabl
 | Digital | stepped saw, 4 → 256 steps |
 | Grit | seeded spectra, morphing |
 | User | that slot's own table (`machine_data_import`) |
-
 | Warp | What it does at full amount | Aliasing at 70 %, 880 Hz |
 |---|---|---|
 | Bend+, Bend− | reads the cycle slowly at the start and fast at the end (or the reverse): brighter, vocal | edged: −55 to −71 dB at Standard, −63 to −86 dB at High |
@@ -42,6 +41,17 @@ A hybrid synth with three engine slots (A, B, C). Each plays a morphing wavetabl
 | PM | phase modulation from the modulator (±1 cycle) | clean |
 | AM | amplitude modulation from the modulator | clean |
 | Ring | ring modulation, crossfaded in | clean |
+
+- Effects rack (after the amp, all Off by default): ten slots `FX1 type` ... `FX10 type` (Off, EQ, Filter, Comp, Clipper, Delay, Verb: the engines of Neo EQ (four bands: a low shelf, two bells, a high shelf), Neo Filter, Neo Comp, Neo Clipper, Neo Delay and Neo Verb), each with `FX1 mix` (dry to wet, 100 % by default: set a delay or reverb below that in a serial chain) and ten generic parameters `FX1 p1` ... `FX1 p10`, 0-100 %, whose names and units the slot's type gives (the table). 50 % is the engine's own default for the parameter (the EQ's bands at 100 Hz, 500 Hz, 2.5 kHz and 8 kHz, 0 dB). A choice (a mode, a sync value) spans 0-100 % in equal steps with its default at 50 %: read the value text back to see what a percentage picked. Three chains: `FX layout` Trio is bus A and bus B (parallel: `FX send A` and `FX send B` take the synth in, `FX return A` and `FX return B` bring it back, added to the dry) and a main chain (serial, on the sum); Duo is insert 1 and insert 2 in series, then an aux (`FX send A` and `FX return A`). Slots 1-4 start in bus A (insert 1), 5-7 in bus B (insert 2), 8-10 in main (aux), in order; move them with `machine_data_import(machine="Dye", kind="fx_routing", path=...)` of a text file such as "1 2 3 4 | 5 6 7 | 8 9 10" (bus A or insert 1 | bus B or insert 2 | main or aux; each slot once, in order) or on the Effects page. All slots Off run nothing: the output is the synth's, bit for bit.
+
+| Type | p1 ... p10 |
+|---|---|
+| EQ | Low freq, Low gain, Mid 1 freq, Mid 1 gain, Mid 1 Q, Mid 2 freq, Mid 2 gain, Mid 2 Q, High freq, High gain |
+| Filter | Type, Slope, Cutoff, Resonance, Drive, Env amount, LFO rate, LFO sync, LFO shape, LFO depth |
+| Comp | Mode, Threshold, Ratio, Knee, Attack, Release, SC low cut, Makeup, Character, Link |
+| Clipper | Drive, Ceiling, Shape, Knee, Oversampling, Bands, Crossover 1, Crossover 2, Stereo, Output |
+| Delay | Mode, Sync, Feel, Time, Offset, Feedback, Low cut, High cut, Mod depth, Width |
+| Verb | Mode, Pre-delay, Size, Decay, Low decay, Damping, Shimmer, Width, Low cut, High cut |
 
 ## How to use it
 
@@ -59,6 +69,7 @@ A hybrid synth with three engine slots (A, B, C). Each plays a morphing wavetabl
 - Arpeggios: `Arp mode` Up Down, `Arp rate` 1/16, `Arp octaves` 2, `Arp gate` 40–60 % over a plucked or short sound; Chord with `Arp feel` Triplet for stabs; `Arp latch` On with Played at 1/4 for a pad that plays itself. Hold the chord from a pattern or the keyboard.
 - Sequenced lines: `Seq mode` Notes, `Voice mode` Legato with a little glide for a tied acid line, steps with velocities 70–120 and `R1 source` Seq velocity to `F1 cutoff` for accents; probabilities of 50–70 % on some steps and a fixed `Arp seed` for a pattern that varies but repeats. `Seq mode` Mod with `Seq slew` 70 % and `R1 source` Seq step → `F1 cutoff` makes a stepped filter sweep under chords you play.
 - Expressive MIDI controllers: `MPE` On, `R1` MPE pressure → `F1 cutoff`, `R2` MPE slide → `A position`; set the controller's bend range to match `MPE bend range`.
+- Effects: a reverb beside the dry: `FX1 type` Verb (slot 1 is in bus A), `FX1 p4` (Decay) 50-70 %, `FX return A` -5 to -8 dB. A saturator or an EQ on everything: slots 8-10 (main). A delay in bus A: `FX1 p2` is Sync (50 % is 1/8) and `FX1 p3` Feel (50 % is Dotted), `FX1 p6` Feedback. Parallel clipping: a Clipper in bus A at `FX1 mix` 100 % and `FX return A` -9 dB.
 
 ## Gotchas
 
@@ -77,6 +88,8 @@ A hybrid synth with three engine slots (A, B, C). Each plays a morphing wavetabl
 - Grains cost CPU per grain (each read with the sinc), so a slot of a note keeps at most 10 grains live and the whole bank shares 160 between its granular slots (never fewer than 4 a slot); past the cap the oldest grain fades out over a millisecond or so. 100 grains a second at 300 ms on 16 notes runs about twice real time on a desktop core; keep rate × size under 10 for polyphony, or fewer voices. The first 20 s of a loaded WAV are kept; longer ones are cut.
 - Samples are built in the background like tables; renders wait for them. A Sample slot with `A loop` Off ends silent after the sample ends, whatever the amp envelope does.
 - Samples are normalised to a peak of 0.9 and decaying ones (Bell, Pluck) are quiet by RMS: turn `Volume` up or layer a second slot.
+- The effects rack builds an engine in the background the first time a slot takes a type (renders wait for it); until then the slot passes its input. A slot's `FX1 mix` ramps over 5 ms and a changed type fades in. The Clipper has a latency (its oversampling and ceiling guard, a few hundred samples): the rack delays the dry signals and parallel paths to match, so everything stays in time, and the rack reports the latency to the host (`GetLatency`), whose machine delay compensation delays the other paths into the mix by it. The rack stops running when every slot is Off (its tails end then); it keeps the machine awake while a tail sounds, up to 5 s after it falls below -100 dB.
+- The chains are in the song's machine data, not parameters: `param_set` cannot move a slot between chains; import an `fx_routing` file or use the Effects page.
 
 ## Preset map
 
@@ -135,3 +148,11 @@ A hybrid synth with three engine slots (A, B, C). Each plays a morphing wavetabl
 | "Seq — Filter Steps" | the sequencer as modulation: stepped, slewed filter and position under held chords | `Seq slew`, `R1 amount` |
 | "Seq — Probability Pluck" | a plucked 16-step pattern with probabilities of 50–100 % | `Arp seed`, `A force` |
 | "MPE — Expressive Lead" | pressure opens the filter and the level, slide moves the position, per-note bend | `MPE bend range`, `R1 amount` |
+| "Rack — Bell In A Hall" | the mirror bell into a reverb on bus A | `FX1 p4`, `FX return A` |
+| "Rack — Dotted Echo Keys" | the organ into a dotted echo on bus A | `FX1 p6`, `FX return A` |
+| "Rack — Saturated Bass" | the detuned bass through a Clipper in the main chain at 80 % | `FX8 p1`, `FX8 mix` |
+| "Rack — Sweeping Choir" | the glass choir through a Filter with a slow LFO in the main chain | `FX8 p10`, `FX8 p7` |
+| "Rack — Tilted And Squeezed Pluck" | an EQ then a compressor in the main chain (moved there by the routing) | `FX1 p2`, `FX2 p2` |
+| "Rack — Duo Plate Keys" | the Duo layout: an EQ insert and a reverb on the aux | `FX8 p4`, `FX return A` |
+| "Rack — Parallel Crush Bass" | a Clipper in bus A (parallel) and a small reverb in bus B | `FX return A`, `FX1 p1` |
+| "Rack — Delayed Choir" | an echo in bus B and a light reverb in the main chain | `FX5 p6`, `FX return B` |

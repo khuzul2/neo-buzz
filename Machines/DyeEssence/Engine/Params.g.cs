@@ -316,7 +316,132 @@ namespace NeoBuzz.DyeEssence
         public const int SeqSlew = 305;
         public const int MpeMode = 306;
         public const int MpeBend = 307;
-        public const int Count = 308;
+        public const int FxLayout = 308;
+        public const int FxSendA = 309;
+        public const int FxSendB = 310;
+        public const int FxRetA = 311;
+        public const int FxRetB = 312;
+        public const int X1Type = 313;
+        public const int X1Mix = 314;
+        public const int X1P1 = 315;
+        public const int X1P2 = 316;
+        public const int X1P3 = 317;
+        public const int X1P4 = 318;
+        public const int X1P5 = 319;
+        public const int X1P6 = 320;
+        public const int X1P7 = 321;
+        public const int X1P8 = 322;
+        public const int X1P9 = 323;
+        public const int X1P10 = 324;
+        public const int X2Type = 325;
+        public const int X2Mix = 326;
+        public const int X2P1 = 327;
+        public const int X2P2 = 328;
+        public const int X2P3 = 329;
+        public const int X2P4 = 330;
+        public const int X2P5 = 331;
+        public const int X2P6 = 332;
+        public const int X2P7 = 333;
+        public const int X2P8 = 334;
+        public const int X2P9 = 335;
+        public const int X2P10 = 336;
+        public const int X3Type = 337;
+        public const int X3Mix = 338;
+        public const int X3P1 = 339;
+        public const int X3P2 = 340;
+        public const int X3P3 = 341;
+        public const int X3P4 = 342;
+        public const int X3P5 = 343;
+        public const int X3P6 = 344;
+        public const int X3P7 = 345;
+        public const int X3P8 = 346;
+        public const int X3P9 = 347;
+        public const int X3P10 = 348;
+        public const int X4Type = 349;
+        public const int X4Mix = 350;
+        public const int X4P1 = 351;
+        public const int X4P2 = 352;
+        public const int X4P3 = 353;
+        public const int X4P4 = 354;
+        public const int X4P5 = 355;
+        public const int X4P6 = 356;
+        public const int X4P7 = 357;
+        public const int X4P8 = 358;
+        public const int X4P9 = 359;
+        public const int X4P10 = 360;
+        public const int X5Type = 361;
+        public const int X5Mix = 362;
+        public const int X5P1 = 363;
+        public const int X5P2 = 364;
+        public const int X5P3 = 365;
+        public const int X5P4 = 366;
+        public const int X5P5 = 367;
+        public const int X5P6 = 368;
+        public const int X5P7 = 369;
+        public const int X5P8 = 370;
+        public const int X5P9 = 371;
+        public const int X5P10 = 372;
+        public const int X6Type = 373;
+        public const int X6Mix = 374;
+        public const int X6P1 = 375;
+        public const int X6P2 = 376;
+        public const int X6P3 = 377;
+        public const int X6P4 = 378;
+        public const int X6P5 = 379;
+        public const int X6P6 = 380;
+        public const int X6P7 = 381;
+        public const int X6P8 = 382;
+        public const int X6P9 = 383;
+        public const int X6P10 = 384;
+        public const int X7Type = 385;
+        public const int X7Mix = 386;
+        public const int X7P1 = 387;
+        public const int X7P2 = 388;
+        public const int X7P3 = 389;
+        public const int X7P4 = 390;
+        public const int X7P5 = 391;
+        public const int X7P6 = 392;
+        public const int X7P7 = 393;
+        public const int X7P8 = 394;
+        public const int X7P9 = 395;
+        public const int X7P10 = 396;
+        public const int X8Type = 397;
+        public const int X8Mix = 398;
+        public const int X8P1 = 399;
+        public const int X8P2 = 400;
+        public const int X8P3 = 401;
+        public const int X8P4 = 402;
+        public const int X8P5 = 403;
+        public const int X8P6 = 404;
+        public const int X8P7 = 405;
+        public const int X8P8 = 406;
+        public const int X8P9 = 407;
+        public const int X8P10 = 408;
+        public const int X9Type = 409;
+        public const int X9Mix = 410;
+        public const int X9P1 = 411;
+        public const int X9P2 = 412;
+        public const int X9P3 = 413;
+        public const int X9P4 = 414;
+        public const int X9P5 = 415;
+        public const int X9P6 = 416;
+        public const int X9P7 = 417;
+        public const int X9P8 = 418;
+        public const int X9P9 = 419;
+        public const int X9P10 = 420;
+        public const int X10Type = 421;
+        public const int X10Mix = 422;
+        public const int X10P1 = 423;
+        public const int X10P2 = 424;
+        public const int X10P3 = 425;
+        public const int X10P4 = 426;
+        public const int X10P5 = 427;
+        public const int X10P6 = 428;
+        public const int X10P7 = 429;
+        public const int X10P8 = 430;
+        public const int X10P9 = 431;
+        public const int X10P10 = 432;
+        public const int Count = 433;
     }
 
     internal static class Params
@@ -634,6 +759,131 @@ namespace NeoBuzz.DyeEssence
             new ParamDef(P.SeqSlew, "SeqSlew", "Seq slew", 0, 1000, 0, MapKind.Percent, group: "Seq", description: "Step sequencer: how smoothly the modulation sources glide from one step to the next (0: stepped, 100%: a whole step)"),
             new ParamDef(P.MpeMode, "MpeMode", "MPE", 0, 1, 0, MapKind.Switch, names: new[] { "Off", "On" }, group: "MPE", description: "Live MPE: notes keep the MIDI channel they came on (channel 1 is the master): each member channel's pitch bend, pressure and slide (CC74) move that note alone, as the modulation sources MPE bend, MPE pressure and MPE slide. Off: channels are ignored"),
             new ParamDef(P.MpeBend, "MpeBend", "MPE bend range", 0, 96, 48, MapKind.Int, a: 0, b: 0, unit: "st", group: "MPE", description: "Live MPE: the pitch bend range of a member channel, in semitones (48 is the MPE default)"),
+            new ParamDef(P.FxLayout, "FxLayout", "FX layout", 0, 1, 0, MapKind.Enum, names: new[] { "Trio", "Duo" }, group: "FX", description: "Trio: bus A and bus B (parallel sends from the synth) and a main chain (serial on the sum). Duo: insert 1 and insert 2 in series, then an aux (a send and return). Which slots sit in which chain: the machine state (default: slots 1-4 bus A or insert 1, 5-7 bus B or insert 2, 8-10 main or aux)"),
+            new ParamDef(P.FxSendA, "FxSendA", "FX send A", 0, 1000, 870, MapKind.Db, a: -40, b: 6, flag: true, group: "FX", description: "Level sent to bus A (Trio) or to the aux (Duo)"),
+            new ParamDef(P.FxSendB, "FxSendB", "FX send B", 0, 1000, 870, MapKind.Db, a: -40, b: 6, flag: true, group: "FX", description: "Level sent to bus B (Trio; unused in Duo)"),
+            new ParamDef(P.FxRetA, "FxRetA", "FX return A", 0, 1000, 870, MapKind.Db, a: -40, b: 6, flag: true, group: "FX", description: "Level of bus A (Trio) or of the aux (Duo) back into the mix"),
+            new ParamDef(P.FxRetB, "FxRetB", "FX return B", 0, 1000, 870, MapKind.Db, a: -40, b: 6, flag: true, group: "FX", description: "Level of bus B back into the mix (Trio; unused in Duo)"),
+            new ParamDef(P.X1Type, "X1Type", "FX1 type", 0, 6, 0, MapKind.Enum, names: new[] { "Off", "EQ", "Filter", "Comp", "Clipper", "Delay", "Verb" }, group: "FX", description: "Effect slot 1: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"),
+            new ParamDef(P.X1Mix, "X1Mix", "FX1 mix", 0, 1000, 1000, MapKind.Percent, group: "FX", description: "Effect slot 1: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain"),
+            new ParamDef(P.X1P1, "X1P1", "FX1 p1", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 1, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"),
+            new ParamDef(P.X1P2, "X1P2", "FX1 p2", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 1, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"),
+            new ParamDef(P.X1P3, "X1P3", "FX1 p3", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 1, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"),
+            new ParamDef(P.X1P4, "X1P4", "FX1 p4", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 1, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"),
+            new ParamDef(P.X1P5, "X1P5", "FX1 p5", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 1, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"),
+            new ParamDef(P.X1P6, "X1P6", "FX1 p6", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 1, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"),
+            new ParamDef(P.X1P7, "X1P7", "FX1 p7", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 1, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"),
+            new ParamDef(P.X1P8, "X1P8", "FX1 p8", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 1, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"),
+            new ParamDef(P.X1P9, "X1P9", "FX1 p9", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 1, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"),
+            new ParamDef(P.X1P10, "X1P10", "FX1 p10", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 1, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"),
+            new ParamDef(P.X2Type, "X2Type", "FX2 type", 0, 6, 0, MapKind.Enum, names: new[] { "Off", "EQ", "Filter", "Comp", "Clipper", "Delay", "Verb" }, group: "FX", description: "Effect slot 2: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"),
+            new ParamDef(P.X2Mix, "X2Mix", "FX2 mix", 0, 1000, 1000, MapKind.Percent, group: "FX", description: "Effect slot 2: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain"),
+            new ParamDef(P.X2P1, "X2P1", "FX2 p1", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 2, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"),
+            new ParamDef(P.X2P2, "X2P2", "FX2 p2", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 2, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"),
+            new ParamDef(P.X2P3, "X2P3", "FX2 p3", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 2, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"),
+            new ParamDef(P.X2P4, "X2P4", "FX2 p4", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 2, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"),
+            new ParamDef(P.X2P5, "X2P5", "FX2 p5", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 2, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"),
+            new ParamDef(P.X2P6, "X2P6", "FX2 p6", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 2, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"),
+            new ParamDef(P.X2P7, "X2P7", "FX2 p7", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 2, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"),
+            new ParamDef(P.X2P8, "X2P8", "FX2 p8", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 2, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"),
+            new ParamDef(P.X2P9, "X2P9", "FX2 p9", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 2, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"),
+            new ParamDef(P.X2P10, "X2P10", "FX2 p10", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 2, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"),
+            new ParamDef(P.X3Type, "X3Type", "FX3 type", 0, 6, 0, MapKind.Enum, names: new[] { "Off", "EQ", "Filter", "Comp", "Clipper", "Delay", "Verb" }, group: "FX", description: "Effect slot 3: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"),
+            new ParamDef(P.X3Mix, "X3Mix", "FX3 mix", 0, 1000, 1000, MapKind.Percent, group: "FX", description: "Effect slot 3: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain"),
+            new ParamDef(P.X3P1, "X3P1", "FX3 p1", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 3, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"),
+            new ParamDef(P.X3P2, "X3P2", "FX3 p2", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 3, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"),
+            new ParamDef(P.X3P3, "X3P3", "FX3 p3", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 3, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"),
+            new ParamDef(P.X3P4, "X3P4", "FX3 p4", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 3, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"),
+            new ParamDef(P.X3P5, "X3P5", "FX3 p5", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 3, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"),
+            new ParamDef(P.X3P6, "X3P6", "FX3 p6", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 3, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"),
+            new ParamDef(P.X3P7, "X3P7", "FX3 p7", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 3, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"),
+            new ParamDef(P.X3P8, "X3P8", "FX3 p8", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 3, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"),
+            new ParamDef(P.X3P9, "X3P9", "FX3 p9", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 3, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"),
+            new ParamDef(P.X3P10, "X3P10", "FX3 p10", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 3, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"),
+            new ParamDef(P.X4Type, "X4Type", "FX4 type", 0, 6, 0, MapKind.Enum, names: new[] { "Off", "EQ", "Filter", "Comp", "Clipper", "Delay", "Verb" }, group: "FX", description: "Effect slot 4: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"),
+            new ParamDef(P.X4Mix, "X4Mix", "FX4 mix", 0, 1000, 1000, MapKind.Percent, group: "FX", description: "Effect slot 4: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain"),
+            new ParamDef(P.X4P1, "X4P1", "FX4 p1", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 4, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"),
+            new ParamDef(P.X4P2, "X4P2", "FX4 p2", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 4, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"),
+            new ParamDef(P.X4P3, "X4P3", "FX4 p3", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 4, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"),
+            new ParamDef(P.X4P4, "X4P4", "FX4 p4", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 4, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"),
+            new ParamDef(P.X4P5, "X4P5", "FX4 p5", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 4, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"),
+            new ParamDef(P.X4P6, "X4P6", "FX4 p6", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 4, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"),
+            new ParamDef(P.X4P7, "X4P7", "FX4 p7", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 4, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"),
+            new ParamDef(P.X4P8, "X4P8", "FX4 p8", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 4, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"),
+            new ParamDef(P.X4P9, "X4P9", "FX4 p9", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 4, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"),
+            new ParamDef(P.X4P10, "X4P10", "FX4 p10", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 4, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"),
+            new ParamDef(P.X5Type, "X5Type", "FX5 type", 0, 6, 0, MapKind.Enum, names: new[] { "Off", "EQ", "Filter", "Comp", "Clipper", "Delay", "Verb" }, group: "FX", description: "Effect slot 5: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"),
+            new ParamDef(P.X5Mix, "X5Mix", "FX5 mix", 0, 1000, 1000, MapKind.Percent, group: "FX", description: "Effect slot 5: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain"),
+            new ParamDef(P.X5P1, "X5P1", "FX5 p1", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 5, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"),
+            new ParamDef(P.X5P2, "X5P2", "FX5 p2", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 5, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"),
+            new ParamDef(P.X5P3, "X5P3", "FX5 p3", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 5, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"),
+            new ParamDef(P.X5P4, "X5P4", "FX5 p4", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 5, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"),
+            new ParamDef(P.X5P5, "X5P5", "FX5 p5", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 5, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"),
+            new ParamDef(P.X5P6, "X5P6", "FX5 p6", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 5, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"),
+            new ParamDef(P.X5P7, "X5P7", "FX5 p7", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 5, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"),
+            new ParamDef(P.X5P8, "X5P8", "FX5 p8", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 5, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"),
+            new ParamDef(P.X5P9, "X5P9", "FX5 p9", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 5, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"),
+            new ParamDef(P.X5P10, "X5P10", "FX5 p10", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 5, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"),
+            new ParamDef(P.X6Type, "X6Type", "FX6 type", 0, 6, 0, MapKind.Enum, names: new[] { "Off", "EQ", "Filter", "Comp", "Clipper", "Delay", "Verb" }, group: "FX", description: "Effect slot 6: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"),
+            new ParamDef(P.X6Mix, "X6Mix", "FX6 mix", 0, 1000, 1000, MapKind.Percent, group: "FX", description: "Effect slot 6: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain"),
+            new ParamDef(P.X6P1, "X6P1", "FX6 p1", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 6, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"),
+            new ParamDef(P.X6P2, "X6P2", "FX6 p2", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 6, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"),
+            new ParamDef(P.X6P3, "X6P3", "FX6 p3", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 6, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"),
+            new ParamDef(P.X6P4, "X6P4", "FX6 p4", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 6, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"),
+            new ParamDef(P.X6P5, "X6P5", "FX6 p5", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 6, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"),
+            new ParamDef(P.X6P6, "X6P6", "FX6 p6", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 6, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"),
+            new ParamDef(P.X6P7, "X6P7", "FX6 p7", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 6, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"),
+            new ParamDef(P.X6P8, "X6P8", "FX6 p8", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 6, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"),
+            new ParamDef(P.X6P9, "X6P9", "FX6 p9", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 6, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"),
+            new ParamDef(P.X6P10, "X6P10", "FX6 p10", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 6, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"),
+            new ParamDef(P.X7Type, "X7Type", "FX7 type", 0, 6, 0, MapKind.Enum, names: new[] { "Off", "EQ", "Filter", "Comp", "Clipper", "Delay", "Verb" }, group: "FX", description: "Effect slot 7: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"),
+            new ParamDef(P.X7Mix, "X7Mix", "FX7 mix", 0, 1000, 1000, MapKind.Percent, group: "FX", description: "Effect slot 7: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain"),
+            new ParamDef(P.X7P1, "X7P1", "FX7 p1", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 7, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"),
+            new ParamDef(P.X7P2, "X7P2", "FX7 p2", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 7, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"),
+            new ParamDef(P.X7P3, "X7P3", "FX7 p3", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 7, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"),
+            new ParamDef(P.X7P4, "X7P4", "FX7 p4", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 7, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"),
+            new ParamDef(P.X7P5, "X7P5", "FX7 p5", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 7, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"),
+            new ParamDef(P.X7P6, "X7P6", "FX7 p6", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 7, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"),
+            new ParamDef(P.X7P7, "X7P7", "FX7 p7", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 7, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"),
+            new ParamDef(P.X7P8, "X7P8", "FX7 p8", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 7, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"),
+            new ParamDef(P.X7P9, "X7P9", "FX7 p9", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 7, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"),
+            new ParamDef(P.X7P10, "X7P10", "FX7 p10", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 7, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"),
+            new ParamDef(P.X8Type, "X8Type", "FX8 type", 0, 6, 0, MapKind.Enum, names: new[] { "Off", "EQ", "Filter", "Comp", "Clipper", "Delay", "Verb" }, group: "FX", description: "Effect slot 8: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"),
+            new ParamDef(P.X8Mix, "X8Mix", "FX8 mix", 0, 1000, 1000, MapKind.Percent, group: "FX", description: "Effect slot 8: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain"),
+            new ParamDef(P.X8P1, "X8P1", "FX8 p1", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 8, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"),
+            new ParamDef(P.X8P2, "X8P2", "FX8 p2", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 8, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"),
+            new ParamDef(P.X8P3, "X8P3", "FX8 p3", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 8, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"),
+            new ParamDef(P.X8P4, "X8P4", "FX8 p4", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 8, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"),
+            new ParamDef(P.X8P5, "X8P5", "FX8 p5", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 8, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"),
+            new ParamDef(P.X8P6, "X8P6", "FX8 p6", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 8, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"),
+            new ParamDef(P.X8P7, "X8P7", "FX8 p7", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 8, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"),
+            new ParamDef(P.X8P8, "X8P8", "FX8 p8", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 8, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"),
+            new ParamDef(P.X8P9, "X8P9", "FX8 p9", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 8, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"),
+            new ParamDef(P.X8P10, "X8P10", "FX8 p10", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 8, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"),
+            new ParamDef(P.X9Type, "X9Type", "FX9 type", 0, 6, 0, MapKind.Enum, names: new[] { "Off", "EQ", "Filter", "Comp", "Clipper", "Delay", "Verb" }, group: "FX", description: "Effect slot 9: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"),
+            new ParamDef(P.X9Mix, "X9Mix", "FX9 mix", 0, 1000, 1000, MapKind.Percent, group: "FX", description: "Effect slot 9: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain"),
+            new ParamDef(P.X9P1, "X9P1", "FX9 p1", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 9, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"),
+            new ParamDef(P.X9P2, "X9P2", "FX9 p2", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 9, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"),
+            new ParamDef(P.X9P3, "X9P3", "FX9 p3", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 9, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"),
+            new ParamDef(P.X9P4, "X9P4", "FX9 p4", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 9, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"),
+            new ParamDef(P.X9P5, "X9P5", "FX9 p5", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 9, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"),
+            new ParamDef(P.X9P6, "X9P6", "FX9 p6", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 9, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"),
+            new ParamDef(P.X9P7, "X9P7", "FX9 p7", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 9, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"),
+            new ParamDef(P.X9P8, "X9P8", "FX9 p8", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 9, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"),
+            new ParamDef(P.X9P9, "X9P9", "FX9 p9", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 9, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"),
+            new ParamDef(P.X9P10, "X9P10", "FX9 p10", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 9, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"),
+            new ParamDef(P.X10Type, "X10Type", "FX10 type", 0, 6, 0, MapKind.Enum, names: new[] { "Off", "EQ", "Filter", "Comp", "Clipper", "Delay", "Verb" }, group: "FX", description: "Effect slot 10: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb"),
+            new ParamDef(P.X10Mix, "X10Mix", "FX10 mix", 0, 1000, 1000, MapKind.Percent, group: "FX", description: "Effect slot 10: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain"),
+            new ParamDef(P.X10P1, "X10P1", "FX10 p1", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 10, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode"),
+            new ParamDef(P.X10P2, "X10P2", "FX10 p2", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 10, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay"),
+            new ParamDef(P.X10P3, "X10P3", "FX10 p3", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 10, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size"),
+            new ParamDef(P.X10P4, "X10P4", "FX10 p4", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 10, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay"),
+            new ParamDef(P.X10P5, "X10P5", "FX10 p5", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 10, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay"),
+            new ParamDef(P.X10P6, "X10P6", "FX10 p6", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 10, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping"),
+            new ParamDef(P.X10P7, "X10P7", "FX10 p7", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 10, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer"),
+            new ParamDef(P.X10P8, "X10P8", "FX10 p8", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 10, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width"),
+            new ParamDef(P.X10P9, "X10P9", "FX10 p9", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 10, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut"),
+            new ParamDef(P.X10P10, "X10P10", "FX10 p10", 0, 1000, 500, MapKind.Percent, group: "FX", description: "Effect slot 10, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut"),
         };
     }
 }

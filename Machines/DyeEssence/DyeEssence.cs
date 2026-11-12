@@ -50,6 +50,15 @@ namespace NeoBuzz.DyeEssence
         public string Lfo4Shape { get; set; } = "";
         /// <summary>The sequencer's steps (SeqPattern's text; empty: the default, 32 plain steps).</summary>
         public string SeqSteps { get; set; } = "";
+        /// <summary>The effects rack's chains (FxRouting's text: "1 2 3 4 | 5 6 7 | 8 9 10", slots from 1; empty: that default).</summary>
+        public string FxRouting { get; set; } = "";
+
+        internal DyeEssenceState WithRouting(string text)
+        {
+            var s = (DyeEssenceState)MemberwiseClone();
+            s.FxRouting = text;
+            return s;
+        }
 
         internal DyeEssenceState WithSteps(string text)
         {
@@ -164,6 +173,7 @@ namespace NeoBuzz.DyeEssence
                 state = value ?? new DyeEssenceState();
                 for (int l = 0; l < Lfos; l++) Engine.SetLfoShape(l, DrawnShape.Parse(state.Shape(l)));
                 Engine.SetPattern(SeqPattern.Parse(state.SeqSteps));
+                Engine.Fx.SetRouting(FxRouting.Parse(state.FxRouting));
                 ShapesVersion++;
                 for (int slot = 0; slot < SlotNames.Length; slot++)
                 {
@@ -206,7 +216,34 @@ namespace NeoBuzz.DyeEssence
         /// Agent server (mcp-server.md A3): true while the built-in tables are still being built in
         /// the background. Offline renders wait for it, so they don't start silent.
         /// </summary>
-        public bool Busy => Engine.TablesBuilding;
+        public bool Busy
+        {
+            get
+            {
+                if (Engine.TablesBuilding) return true;
+                int sr = SampleRate;
+                if (sr > 0) Engine.Fx.PrepareRate(sr);
+                return Engine.Fx.Pending;
+            }
+        }
+
+        /// <summary>The effects rack's chains.</summary>
+        internal FxRouting FxChains => Engine.Fx.Routing;
+
+        /// <summary>Sets the rack's chains (UI thread; the audio thread takes them at its next block). The default clears them from the state.</summary>
+        internal void SetRouting(FxRouting routing)
+        {
+            routing ??= FxRouting.Default;
+            state = state.WithRouting(routing.IsDefault ? "" : routing.ToString());
+            Engine.Fx.SetRouting(routing);
+            ShapesVersion++;
+        }
+
+        /// <summary>
+        /// The rack's latency (a slot with the clipper has one): the same whatever the audio. The host reads it at every tick on
+        /// the audio thread (so no allocation) and its delay compensation counts it for this generator too.
+        /// </summary>
+        public int GetLatency() => Engine.Fx.Latency;
 
         /// <summary>LFO <paramref name="lfo"/>'s drawn shape (the default when none was drawn).</summary>
         internal DrawnShape LfoShape(int lfo) => Engine.LfoShape(lfo);
@@ -255,6 +292,13 @@ namespace NeoBuzz.DyeEssence
                 setParameter?.Invoke(LfoShapeParam[lfo], (int)WaveShape.Drawn);
                 return $"Drew LFO {lfo + 1}'s shape ({shape.Count} points: {shape}) and set LFO{lfo + 1} shape to Drawn.";
             }
+            if (kind == "fx_routing")
+            {
+                if (!FxRouting.TryParse(File.ReadAllText(path).Trim(), out var routing))
+                    throw new InvalidDataException("the routing must list the slots 1 to 10 once each in three groups separated by |, as \"1 2 3 4 | 5 6 7 | 8 9 10\" (bus A or insert 1 | bus B or insert 2 | main or aux)");
+                SetRouting(routing);
+                return $"Set the effects rack's chains: {routing}.";
+            }
             if (kind == "sequence")
             {
                 if (!SeqPattern.TryParse(File.ReadAllText(path), out var pattern, out string error)) throw new InvalidDataException(error);
@@ -270,7 +314,7 @@ namespace NeoBuzz.DyeEssence
                 if (engine != (int)SlotType.Sample && engine != (int)SlotType.Granular) setParameter?.Invoke(TypeParam[item], (int)SlotType.Sample);
                 return $"Loaded the sample \"{UserSampleName(item)}\" as slot {SlotNames[item]}'s User sample, and set {SlotNames[item]} sample to User{(engine != (int)SlotType.Sample && engine != (int)SlotType.Granular ? $" and {SlotNames[item]} engine to Sample" : "")}.{note}";
             }
-            if (kind != "wavetable") throw new ArgumentException($"Dye Essence doesn't import \"{kind}\"; it takes wavetable, sample, lfo_shape and sequence.");
+            if (kind != "wavetable") throw new ArgumentException($"Dye Essence doesn't import \"{kind}\"; it takes wavetable, sample, lfo_shape, sequence and fx_routing.");
             if (item < 0 || item >= SlotNames.Length) throw new ArgumentException($"Dye Essence has {SlotNames.Length} slots; item {item} doesn't exist (0 A, 1 B, 2 C)");
             int slot = item;
             LoadUserTable(slot, path);
