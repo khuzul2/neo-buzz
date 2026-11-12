@@ -9,5 +9,7 @@
   <ItemGroup>
     <!-- Neo Wave's table recipes and WAV reader (the built-in tables and user tables). -->
     <Compile Include="$(M)NeoWave\Engine\Tables.cs;$(M)NeoWave\Engine\WavReader.cs" Link="Shared\NeoWave\%(Filename)%(Extension)" />
+    <!-- Neo Sampler's sample layer (octave-down copies) and band-limited read: what the Sample and Granular engines play. -->
+    <Compile Include="$(M)NeoSampler\Engine\Interpolation.cs;$(M)NeoSampler\Engine\SampleData.cs" Link="Shared\NeoSampler\%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

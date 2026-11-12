@@ -32,6 +32,18 @@ namespace NeoBuzz.DyeEssence
         public string TableCName { get; set; } = "";
         public int TableCFrameSize { get; set; }
         public string TableCData { get; set; } = "";
+        public string SampleAName { get; set; } = "";
+        public int SampleARate { get; set; }
+        public bool SampleAStereo { get; set; }
+        public string SampleAData { get; set; } = "";
+        public string SampleBName { get; set; } = "";
+        public int SampleBRate { get; set; }
+        public bool SampleBStereo { get; set; }
+        public string SampleBData { get; set; } = "";
+        public string SampleCName { get; set; } = "";
+        public int SampleCRate { get; set; }
+        public bool SampleCStereo { get; set; }
+        public string SampleCData { get; set; } = "";
         public string Lfo1Shape { get; set; } = "";
         public string Lfo2Shape { get; set; } = "";
         public string Lfo3Shape { get; set; } = "";
@@ -58,6 +70,25 @@ namespace NeoBuzz.DyeEssence
             1 => (TableBName, TableBFrameSize, TableBData),
             _ => (TableCName, TableCFrameSize, TableCData),
         };
+
+        internal (string Name, int Rate, bool Stereo, string Data) GetSample(int slot) => slot switch
+        {
+            0 => (SampleAName, SampleARate, SampleAStereo, SampleAData),
+            1 => (SampleBName, SampleBRate, SampleBStereo, SampleBData),
+            _ => (SampleCName, SampleCRate, SampleCStereo, SampleCData),
+        };
+
+        internal DyeEssenceState WithSample(int slot, string name, int rate, bool stereo, string data)
+        {
+            var s = (DyeEssenceState)MemberwiseClone();
+            switch (slot)
+            {
+                case 0: s.SampleAName = name; s.SampleARate = rate; s.SampleAStereo = stereo; s.SampleAData = data; break;
+                case 1: s.SampleBName = name; s.SampleBRate = rate; s.SampleBStereo = stereo; s.SampleBData = data; break;
+                default: s.SampleCName = name; s.SampleCRate = rate; s.SampleCStereo = stereo; s.SampleCData = data; break;
+            }
+            return s;
+        }
 
         internal DyeEssenceState With(int slot, string name, int frameSize, string data)
         {
@@ -92,6 +123,7 @@ namespace NeoBuzz.DyeEssence
             Engine = new DyeEngine(Values);
             // Build the built-in tables in the background now, not when the audio thread first asks.
             for (int i = 0; i < TableBank.Count; i++) TableBank.Get(i);
+            for (int i = 0; i < SampleSources.Count; i++) SampleSources.Get(i);
         }
 
         internal DyeEngine Engine { get; }
@@ -103,6 +135,17 @@ namespace NeoBuzz.DyeEssence
         internal static int UserChoice => TableBank.Count;
 
         internal static int TableParameter(int slot) => TableParam[slot];
+
+        static readonly int[] SampleParam = { P.ASmpSrc, P.BSmpSrc, P.CSmpSrc };
+        static readonly int[] TypeParam = { P.AType, P.BType, P.CType };
+
+        /// <summary>Slot <paramref name="slot"/>'s user sample's name ("" when none is loaded).</summary>
+        internal string UserSampleName(int slot) => state.GetSample(slot).Name;
+
+        /// <summary>The "User" choice of a slot's sample parameter.</summary>
+        internal static int UserSampleChoice => SampleSources.Count;
+
+        internal static int SampleParameter(int slot) => SampleParam[slot];
 
         public DyeEssenceState MachineState
         {
@@ -130,6 +173,20 @@ namespace NeoBuzz.DyeEssence
                     {
                         // A damaged table loads as "no user table" rather than failing the song.
                         Engine.SetUserTable(slot, null, "");
+                    }
+                    var (sname, srate, sstereo, sdata) = state.GetSample(slot);
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(sdata) && srate > 0)
+                        {
+                            var (l, r) = SampleSources.Decode(sdata, sstereo);
+                            Engine.SetUserSample(slot, l.Length >= 16 ? SampleSources.Layer(sname, l, r, srate) : null, sname);
+                        }
+                        else Engine.SetUserSample(slot, null, "");
+                    }
+                    catch (Exception)
+                    {
+                        Engine.SetUserSample(slot, null, "");
                     }
                 }
             }
@@ -161,8 +218,9 @@ namespace NeoBuzz.DyeEssence
 
         /// <summary>
         /// Agent server (mcp-server.md A3, machine_data_import): "wavetable" loads a WAV as a slot's user table
-        /// (item 0, 1, 2: slot A, B, C) and sets that slot's table to User; "lfo_shape" reads a drawn
-        /// shape from a text file (item 0–3: LFO 1–4) and sets that LFO's shape to Drawn.
+        /// (item 0, 1, 2: slot A, B, C) and sets that slot's table to User; "sample" loads a WAV as a slot's
+        /// user sample, sets that slot's sample to User and its engine to Sample (unless it is Granular);
+        /// "lfo_shape" reads a drawn shape from a text file (item 0–3: LFO 1–4) and sets that LFO's shape to Drawn.
         /// </summary>
         public string ImportData(string kind, string path, int item, Action<int, int> setParameter)
         {
@@ -175,7 +233,16 @@ namespace NeoBuzz.DyeEssence
                 setParameter?.Invoke(LfoShapeParam[lfo], (int)WaveShape.Drawn);
                 return $"Drew LFO {lfo + 1}'s shape ({shape.Count} points: {shape}) and set LFO{lfo + 1} shape to Drawn.";
             }
-            if (kind != "wavetable") throw new ArgumentException($"Dye Essence doesn't import \"{kind}\"; it takes wavetable and lfo_shape.");
+            if (kind == "sample")
+            {
+                if (item < 0 || item >= SlotNames.Length) throw new ArgumentException($"Dye Essence has {SlotNames.Length} slots; item {item} doesn't exist (0 A, 1 B, 2 C)");
+                string note = LoadUserSample(item, path);
+                setParameter?.Invoke(SampleParam[item], UserSampleChoice);
+                int engine = Values.Choice(TypeParam[item]);
+                if (engine != (int)SlotType.Sample && engine != (int)SlotType.Granular) setParameter?.Invoke(TypeParam[item], (int)SlotType.Sample);
+                return $"Loaded the sample \"{UserSampleName(item)}\" as slot {SlotNames[item]}'s User sample, and set {SlotNames[item]} sample to User{(engine != (int)SlotType.Sample && engine != (int)SlotType.Granular ? $" and {SlotNames[item]} engine to Sample" : "")}.{note}";
+            }
+            if (kind != "wavetable") throw new ArgumentException($"Dye Essence doesn't import \"{kind}\"; it takes wavetable, sample and lfo_shape.");
             if (item < 0 || item >= SlotNames.Length) throw new ArgumentException($"Dye Essence has {SlotNames.Length} slots; item {item} doesn't exist (0 A, 1 B, 2 C)");
             int slot = item;
             LoadUserTable(slot, path);
@@ -200,6 +267,31 @@ namespace NeoBuzz.DyeEssence
             Buffer.BlockCopy(kept, 0, bytes, 0, bytes.Length);
             state = state.With(slot, name, frameSize, Convert.ToBase64String(bytes));
             Engine.SetUserTable(slot, table, name);
+        }
+
+        /// <summary>
+        /// Loads a WAV file as a slot's user sample (UI thread): mono or stereo, kept as 24-bit PCM in the machine
+        /// state, at most <see cref="SampleSources.MaxSeconds"/> s (the rest is cut; the text says so). Throws with a
+        /// readable message on bad files. Returns "" or a note for the user.
+        /// </summary>
+        internal string LoadUserSample(int slot, string path)
+        {
+            var (left, right, rate) = SampleSources.ReadWav(File.ReadAllBytes(path));
+            int keep = (int)Math.Min(left.Length, (long)SampleSources.MaxSeconds * rate);
+            string note = keep < left.Length ? $" The file is longer than {SampleSources.MaxSeconds} s; the first {SampleSources.MaxSeconds} s are kept." : "";
+            if (keep < left.Length)
+            {
+                Array.Resize(ref left, keep);
+                if (right != null) Array.Resize(ref right, keep);
+            }
+            string name = Path.GetFileNameWithoutExtension(path);
+            string data = SampleSources.Encode(left, right);
+            // What plays is what the state keeps (24-bit), so a reloaded song sounds the same.
+            var (l, r) = SampleSources.Decode(data, right != null);
+            var layer = SampleSources.Layer(name, l, r, rate);
+            state = state.WithSample(slot, name, rate, right != null, data);
+            Engine.SetUserSample(slot, layer, name);
+            return note;
         }
 
         public bool Work(Sample[] output, int n, WorkModes mode)

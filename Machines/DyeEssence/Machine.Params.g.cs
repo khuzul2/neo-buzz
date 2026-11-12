@@ -31,7 +31,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "Volume", Description = "Output level", MinValue = 0, MaxValue = 1000, DefValue = 739)]
         public int Volume { get => Values[P.Volume]; set => Values.Set(P.Volume, value); }
 
-        [ParameterDecl(Name = "A engine", Description = "What slot A plays (more engines to come)", MinValue = 0, MaxValue = 2, DefValue = 1)]
+        [ParameterDecl(Name = "A engine", Description = "What slot A plays: a morphing wavetable, an analog wave, a sample, or grains of a sample (samples and grains take no warps)", MinValue = 0, MaxValue = 4, DefValue = 1)]
         public int AType { get => Values[P.AType]; set => Values.Set(P.AType, value); }
 
         [ParameterDecl(Name = "A table", Description = "Wavetable (User: a table loaded for this slot)", MinValue = 0, MaxValue = 10, DefValue = 0)]
@@ -88,7 +88,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "A → filter 2", Description = "Balance between filter 1 (0 %) and filter 2 (100 %)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int AToF2 { get => Values[P.AToF2]; set => Values.Set(P.AToF2, value); }
 
-        [ParameterDecl(Name = "B engine", Description = "What slot B plays (more engines to come)", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        [ParameterDecl(Name = "B engine", Description = "What slot B plays: a morphing wavetable, an analog wave, a sample, or grains of a sample (samples and grains take no warps)", MinValue = 0, MaxValue = 4, DefValue = 0)]
         public int BType { get => Values[P.BType]; set => Values.Set(P.BType, value); }
 
         [ParameterDecl(Name = "B table", Description = "Wavetable (User: a table loaded for this slot)", MinValue = 0, MaxValue = 10, DefValue = 2)]
@@ -145,7 +145,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "B → filter 2", Description = "Balance between filter 1 (0 %) and filter 2 (100 %)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int BToF2 { get => Values[P.BToF2]; set => Values.Set(P.BToF2, value); }
 
-        [ParameterDecl(Name = "C engine", Description = "What slot C plays (more engines to come)", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        [ParameterDecl(Name = "C engine", Description = "What slot C plays: a morphing wavetable, an analog wave, a sample, or grains of a sample (samples and grains take no warps)", MinValue = 0, MaxValue = 4, DefValue = 0)]
         public int CType { get => Values[P.CType]; set => Values.Set(P.CType, value); }
 
         [ParameterDecl(Name = "C table", Description = "Wavetable (User: a table loaded for this slot)", MinValue = 0, MaxValue = 10, DefValue = 3)]
@@ -612,6 +612,141 @@ namespace NeoBuzz.DyeEssence
 
         [ParameterDecl(Name = "R16 amount", Description = "Route 16: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int R16Amt { get => Values[P.R16Amt]; set => Values.Set(P.R16Amt, value); }
+
+        [ParameterDecl(Name = "A sample", Description = "The sample the Sample and Granular engines play (built-in ones are made by code; User: one loaded for this slot)", MinValue = 0, MaxValue = 5, DefValue = 0)]
+        public int ASmpSrc { get => Values[P.ASmpSrc]; set => Values.Set(P.ASmpSrc, value); }
+
+        [ParameterDecl(Name = "A root", Description = "The note the sample sounds at its own pitch (MIDI note, 60 = C4)", MinValue = 0, MaxValue = 127, DefValue = 60)]
+        public int ASmpRoot { get => Values[P.ASmpRoot]; set => Values.Set(P.ASmpRoot, value); }
+
+        [ParameterDecl(Name = "A loop", Description = "Sample engine: how the sample loops while a note is held (Off: plays once)", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int ASmpLoop { get => Values[P.ASmpLoop]; set => Values.Set(P.ASmpLoop, value); }
+
+        [ParameterDecl(Name = "A loop start", Description = "Sample engine: where the loop starts, as a share of the sample", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int ASmpLoopStart { get => Values[P.ASmpLoopStart]; set => Values.Set(P.ASmpLoopStart, value); }
+
+        [ParameterDecl(Name = "A loop end", Description = "Sample engine: where the loop ends, as a share of the sample", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int ASmpLoopEnd { get => Values[P.ASmpLoopEnd]; set => Values.Set(P.ASmpLoopEnd, value); }
+
+        [ParameterDecl(Name = "A loop fade", Description = "Sample engine: how long the loop's end fades into its start (0: a hard wrap, right for loops of whole periods; raise it when the loop points are not)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int ASmpFade { get => Values[P.ASmpFade]; set => Values.Set(P.ASmpFade, value); }
+
+        [ParameterDecl(Name = "A reverse", Description = "Sample engine: plays the sample backwards", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int ASmpRev { get => Values[P.ASmpRev]; set => Values.Set(P.ASmpRev, value); }
+
+        [ParameterDecl(Name = "A grain size", Description = "Granular engine: length of each grain", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int AGrSize { get => Values[P.AGrSize]; set => Values.Set(P.AGrSize, value); }
+
+        [ParameterDecl(Name = "A grain rate", Description = "Granular engine: grains started per second (a little uneven, as grains in a cloud are)", MinValue = 0, MaxValue = 1000, DefValue = 700)]
+        public int AGrRate { get => Values[P.AGrRate]; set => Values.Set(P.AGrRate, value); }
+
+        [ParameterDecl(Name = "A spray", Description = "Granular engine: how far from the centre grains may start (100%: anywhere in the sample)", MinValue = 0, MaxValue = 1000, DefValue = 100)]
+        public int AGrSpray { get => Values[P.AGrSpray]; set => Values.Set(P.AGrSpray, value); }
+
+        [ParameterDecl(Name = "A scan", Description = "Granular engine: how fast the centre moves through the sample (1×: its own speed, 0: frozen, negative: backwards)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int AGrScan { get => Values[P.AGrScan]; set => Values.Set(P.AGrScan, value); }
+
+        [ParameterDecl(Name = "A grain pitch", Description = "Granular engine: how far each grain's pitch may wander from the note", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int AGrJitter { get => Values[P.AGrJitter]; set => Values.Set(P.AGrJitter, value); }
+
+        [ParameterDecl(Name = "A grain shape", Description = "Granular engine: the window every grain fades in and out with", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int AGrShape { get => Values[P.AGrShape]; set => Values.Set(P.AGrShape, value); }
+
+        [ParameterDecl(Name = "A grain reverse", Description = "Granular engine: the share of grains that play backwards", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int AGrRev { get => Values[P.AGrRev]; set => Values.Set(P.AGrRev, value); }
+
+        [ParameterDecl(Name = "A grain width", Description = "Granular engine: how far grains scatter across the stereo field", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int AGrWidth { get => Values[P.AGrWidth]; set => Values.Set(P.AGrWidth, value); }
+
+        [ParameterDecl(Name = "B sample", Description = "The sample the Sample and Granular engines play (built-in ones are made by code; User: one loaded for this slot)", MinValue = 0, MaxValue = 5, DefValue = 0)]
+        public int BSmpSrc { get => Values[P.BSmpSrc]; set => Values.Set(P.BSmpSrc, value); }
+
+        [ParameterDecl(Name = "B root", Description = "The note the sample sounds at its own pitch (MIDI note, 60 = C4)", MinValue = 0, MaxValue = 127, DefValue = 60)]
+        public int BSmpRoot { get => Values[P.BSmpRoot]; set => Values.Set(P.BSmpRoot, value); }
+
+        [ParameterDecl(Name = "B loop", Description = "Sample engine: how the sample loops while a note is held (Off: plays once)", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int BSmpLoop { get => Values[P.BSmpLoop]; set => Values.Set(P.BSmpLoop, value); }
+
+        [ParameterDecl(Name = "B loop start", Description = "Sample engine: where the loop starts, as a share of the sample", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int BSmpLoopStart { get => Values[P.BSmpLoopStart]; set => Values.Set(P.BSmpLoopStart, value); }
+
+        [ParameterDecl(Name = "B loop end", Description = "Sample engine: where the loop ends, as a share of the sample", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int BSmpLoopEnd { get => Values[P.BSmpLoopEnd]; set => Values.Set(P.BSmpLoopEnd, value); }
+
+        [ParameterDecl(Name = "B loop fade", Description = "Sample engine: how long the loop's end fades into its start (0: a hard wrap, right for loops of whole periods; raise it when the loop points are not)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int BSmpFade { get => Values[P.BSmpFade]; set => Values.Set(P.BSmpFade, value); }
+
+        [ParameterDecl(Name = "B reverse", Description = "Sample engine: plays the sample backwards", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int BSmpRev { get => Values[P.BSmpRev]; set => Values.Set(P.BSmpRev, value); }
+
+        [ParameterDecl(Name = "B grain size", Description = "Granular engine: length of each grain", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int BGrSize { get => Values[P.BGrSize]; set => Values.Set(P.BGrSize, value); }
+
+        [ParameterDecl(Name = "B grain rate", Description = "Granular engine: grains started per second (a little uneven, as grains in a cloud are)", MinValue = 0, MaxValue = 1000, DefValue = 700)]
+        public int BGrRate { get => Values[P.BGrRate]; set => Values.Set(P.BGrRate, value); }
+
+        [ParameterDecl(Name = "B spray", Description = "Granular engine: how far from the centre grains may start (100%: anywhere in the sample)", MinValue = 0, MaxValue = 1000, DefValue = 100)]
+        public int BGrSpray { get => Values[P.BGrSpray]; set => Values.Set(P.BGrSpray, value); }
+
+        [ParameterDecl(Name = "B scan", Description = "Granular engine: how fast the centre moves through the sample (1×: its own speed, 0: frozen, negative: backwards)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int BGrScan { get => Values[P.BGrScan]; set => Values.Set(P.BGrScan, value); }
+
+        [ParameterDecl(Name = "B grain pitch", Description = "Granular engine: how far each grain's pitch may wander from the note", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int BGrJitter { get => Values[P.BGrJitter]; set => Values.Set(P.BGrJitter, value); }
+
+        [ParameterDecl(Name = "B grain shape", Description = "Granular engine: the window every grain fades in and out with", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int BGrShape { get => Values[P.BGrShape]; set => Values.Set(P.BGrShape, value); }
+
+        [ParameterDecl(Name = "B grain reverse", Description = "Granular engine: the share of grains that play backwards", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int BGrRev { get => Values[P.BGrRev]; set => Values.Set(P.BGrRev, value); }
+
+        [ParameterDecl(Name = "B grain width", Description = "Granular engine: how far grains scatter across the stereo field", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int BGrWidth { get => Values[P.BGrWidth]; set => Values.Set(P.BGrWidth, value); }
+
+        [ParameterDecl(Name = "C sample", Description = "The sample the Sample and Granular engines play (built-in ones are made by code; User: one loaded for this slot)", MinValue = 0, MaxValue = 5, DefValue = 0)]
+        public int CSmpSrc { get => Values[P.CSmpSrc]; set => Values.Set(P.CSmpSrc, value); }
+
+        [ParameterDecl(Name = "C root", Description = "The note the sample sounds at its own pitch (MIDI note, 60 = C4)", MinValue = 0, MaxValue = 127, DefValue = 60)]
+        public int CSmpRoot { get => Values[P.CSmpRoot]; set => Values.Set(P.CSmpRoot, value); }
+
+        [ParameterDecl(Name = "C loop", Description = "Sample engine: how the sample loops while a note is held (Off: plays once)", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int CSmpLoop { get => Values[P.CSmpLoop]; set => Values.Set(P.CSmpLoop, value); }
+
+        [ParameterDecl(Name = "C loop start", Description = "Sample engine: where the loop starts, as a share of the sample", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int CSmpLoopStart { get => Values[P.CSmpLoopStart]; set => Values.Set(P.CSmpLoopStart, value); }
+
+        [ParameterDecl(Name = "C loop end", Description = "Sample engine: where the loop ends, as a share of the sample", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int CSmpLoopEnd { get => Values[P.CSmpLoopEnd]; set => Values.Set(P.CSmpLoopEnd, value); }
+
+        [ParameterDecl(Name = "C loop fade", Description = "Sample engine: how long the loop's end fades into its start (0: a hard wrap, right for loops of whole periods; raise it when the loop points are not)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int CSmpFade { get => Values[P.CSmpFade]; set => Values.Set(P.CSmpFade, value); }
+
+        [ParameterDecl(Name = "C reverse", Description = "Sample engine: plays the sample backwards", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int CSmpRev { get => Values[P.CSmpRev]; set => Values.Set(P.CSmpRev, value); }
+
+        [ParameterDecl(Name = "C grain size", Description = "Granular engine: length of each grain", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int CGrSize { get => Values[P.CGrSize]; set => Values.Set(P.CGrSize, value); }
+
+        [ParameterDecl(Name = "C grain rate", Description = "Granular engine: grains started per second (a little uneven, as grains in a cloud are)", MinValue = 0, MaxValue = 1000, DefValue = 700)]
+        public int CGrRate { get => Values[P.CGrRate]; set => Values.Set(P.CGrRate, value); }
+
+        [ParameterDecl(Name = "C spray", Description = "Granular engine: how far from the centre grains may start (100%: anywhere in the sample)", MinValue = 0, MaxValue = 1000, DefValue = 100)]
+        public int CGrSpray { get => Values[P.CGrSpray]; set => Values.Set(P.CGrSpray, value); }
+
+        [ParameterDecl(Name = "C scan", Description = "Granular engine: how fast the centre moves through the sample (1×: its own speed, 0: frozen, negative: backwards)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int CGrScan { get => Values[P.CGrScan]; set => Values.Set(P.CGrScan, value); }
+
+        [ParameterDecl(Name = "C grain pitch", Description = "Granular engine: how far each grain's pitch may wander from the note", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int CGrJitter { get => Values[P.CGrJitter]; set => Values.Set(P.CGrJitter, value); }
+
+        [ParameterDecl(Name = "C grain shape", Description = "Granular engine: the window every grain fades in and out with", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        public int CGrShape { get => Values[P.CGrShape]; set => Values.Set(P.CGrShape, value); }
+
+        [ParameterDecl(Name = "C grain reverse", Description = "Granular engine: the share of grains that play backwards", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int CGrRev { get => Values[P.CGrRev]; set => Values.Set(P.CGrRev, value); }
+
+        [ParameterDecl(Name = "C grain width", Description = "Granular engine: how far grains scatter across the stereo field", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int CGrWidth { get => Values[P.CGrWidth]; set => Values.Set(P.CGrWidth, value); }
 
         [ParameterDecl(Name = "Note", IsStateless = true, Description = "Note (off releases the track's note)")]
         public void SetNote(Note value, int track) => Notes.SetNote(track, value.Value);
