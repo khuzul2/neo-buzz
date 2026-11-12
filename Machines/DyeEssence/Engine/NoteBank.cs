@@ -106,6 +106,23 @@ namespace NeoBuzz.DyeEssence
         public readonly RouteSettings[] Routes = NewRoutes();
         public double Tempo = 120;
         public float ModWheel, Aftertouch;
+        /// <summary>
+        /// Live MPE (§4.9): with <see cref="Mpe"/>, a note keeps the MIDI channel it came on; member channels 1 … 15 (the master
+        /// is 0) carry a pitch bend (−1 … 1 of <see cref="MpeBendRange"/> semitones), a pressure and a slide (CC74), 0 … 1 each
+        /// (slide −1: none received). <see cref="Slide"/> is the master's (or any channel's, with MPE off).
+        /// </summary>
+        public bool Mpe;
+        public float MpeBendRange = 48, Slide;
+        public readonly float[] ChBend = new float[16], ChPressure = new float[16], ChSlide = NewSlides();
+        /// <summary>The sequencer's step values (−1 … 1; 0 … 1) the sources Seq step and Seq velocity glide to, over <see cref="SeqTau"/> seconds (0: at once).</summary>
+        public float SeqStep, SeqVel, SeqTau;
+
+        static float[] NewSlides()
+        {
+            var a = new float[16];
+            Array.Fill(a, -1f);
+            return a;
+        }
 
         static RouteSettings[] NewRoutes()
         {
@@ -214,6 +231,12 @@ namespace NeoBuzz.DyeEssence
         readonly float[] noteRandom = new float[Notes];
         readonly float[] dest = new float[Notes * DestCount], destLast = new float[Notes * DestCount];
         readonly float[] srcValue = new float[(int)RouteSource.Count];
+        // MPE: the channel each note slot plays (−1: none); NextChannel is what the next NoteOn or Legato gives its slot.
+        readonly int[] noteCh = new int[Notes], pendCh = new int[Notes];
+        public int NextChannel = -1;
+        float seqStepSm, seqVelSm;
+        /// <summary>The sequencer's sources as the notes read them now (after the slew).</summary>
+        public float SeqStepNow => seqStepSm;
         readonly bool[] modMoved = new bool[Notes];
         // The free LFOs (retrig off): one for every note.
         readonly double[] freePhase = new double[4];
@@ -431,6 +454,7 @@ namespace NeoBuzz.DyeEssence
                 pendKey[slot] = key;
                 pendVel[slot] = velocity;
                 pendFrom[slot] = glideFrom;
+                pendCh[slot] = NextChannel;
                 if (!fading[slot])
                 {
                     fading[slot] = true;
@@ -438,6 +462,7 @@ namespace NeoBuzz.DyeEssence
                 }
                 return;
             }
+            noteCh[slot] = NextChannel;
             Begin(slot, key, velocity, glideFrom, true);
         }
 
@@ -447,8 +472,10 @@ namespace NeoBuzz.DyeEssence
             if (pending[slot])
             {
                 pendKey[slot] = key;
+                pendCh[slot] = NextChannel;
                 return;
             }
+            noteCh[slot] = NextChannel;
             noteTarget[slot] = key;
             if (!glide) noteKey[slot] = key;
         }
@@ -658,6 +685,17 @@ namespace NeoBuzz.DyeEssence
             var s = S;
             Smooth();
             GrainShare();
+            if (s.SeqTau > 0)
+            {
+                double k = -PortableMath.Expm1(-ControlRate / (double)sampleRate / s.SeqTau);
+                seqStepSm += (float)((s.SeqStep - seqStepSm) * k);
+                seqVelSm += (float)((s.SeqVel - seqVelSm) * k);
+            }
+            else
+            {
+                seqStepSm = s.SeqStep;
+                seqVelSm = s.SeqVel;
+            }
             settingsMoved = SettingsMoved();
             tickDt = ControlRate / (double)sampleRate;
             NoteEnvelope.Factors(s.Amp, tickDt, out ampKa, out ampKd, out ampKr);
@@ -719,7 +757,11 @@ namespace NeoBuzz.DyeEssence
                 {
                     // A steal or a kill has faded out: start the waiting note, or rest.
                     fading[note] = false;
-                    if (pending[note]) Begin(note, pendKey[note], pendVel[note], pendFrom[note], pendGate[note]);
+                    if (pending[note])
+                    {
+                        noteCh[note] = pendCh[note];
+                        Begin(note, pendKey[note], pendVel[note], pendFrom[note], pendGate[note]);
+                    }
                     else
                     {
                         ampStage[note] = fltStage[note] = NoteEnvelope.Idle;
@@ -790,7 +832,9 @@ namespace NeoBuzz.DyeEssence
             float target = ampStage[note] == NoteEnvelope.Idle ? 0f : amp * Sm(SmVolume) * (1f - s.VelAmp + s.VelAmp * vel) * f * Math.Max(0f, 1f + Md(note, RouteDest.Amp));
             noteGain[Notes + note] = (target - noteGain[note]) * invCount;
 
-            double noteHz = DspMath.NoteToHz(noteKey[note] + s.Bend + 12f * Md(note, RouteDest.Pitch));
+            int ch = noteCh[note];
+            float memberBend = s.Mpe && ch > 0 && ch < 16 ? s.ChBend[ch] * s.MpeBendRange : 0f;
+            double noteHz = DspMath.NoteToHz(noteKey[note] + s.Bend + memberBend + 12f * Md(note, RouteDest.Pitch));
             double vr = VoiceRate;
             // Mip levels: the plain ones keep harmonics under 44 kHz (the decimator takes 20–24 kHz
             // out); a warped one allows for how fast its warps read, up to the voice rate's Nyquist.
@@ -1068,6 +1112,15 @@ namespace NeoBuzz.DyeEssence
             srcValue[(int)RouteSource.Key] = (noteKey[note] - 60f) / 60f;
             srcValue[(int)RouteSource.ModWheel] = s.ModWheel;
             srcValue[(int)RouteSource.Aftertouch] = s.Aftertouch;
+            {
+                int mc = noteCh[note];
+                bool member = s.Mpe && mc > 0 && mc < 16;
+                srcValue[(int)RouteSource.MpePressure] = member ? Math.Max(s.ChPressure[mc], s.Aftertouch) : s.Aftertouch;
+                srcValue[(int)RouteSource.MpeSlide] = member && s.ChSlide[mc] >= 0 ? s.ChSlide[mc] : s.Slide;
+                srcValue[(int)RouteSource.MpeBend] = member ? s.ChBend[mc] : 0f;
+                srcValue[(int)RouteSource.SeqStep] = seqStepSm;
+                srcValue[(int)RouteSource.SeqVelocity] = seqVelSm;
+            }
             for (int m = 0; m < 4; m++) srcValue[(int)RouteSource.Macro1 + m] = s.Macro[m];
             srcValue[(int)RouteSource.Random] = noteRandom[note];
             Array.Copy(dest, db, destLast, db, DestCount);

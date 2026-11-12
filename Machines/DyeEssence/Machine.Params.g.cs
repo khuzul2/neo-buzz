@@ -469,7 +469,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "Macro 4", Description = "A knob for routes to follow", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int M4 { get => Values[P.M4]; set => Values.Set(P.M4, value); }
 
-        [ParameterDecl(Name = "R1 source", Description = "Route 1: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        [ParameterDecl(Name = "R1 source", Description = "Route 1: what modulates", MinValue = 0, MaxValue = 22, DefValue = 0)]
         public int R1Src { get => Values[P.R1Src]; set => Values.Set(P.R1Src, value); }
 
         [ParameterDecl(Name = "R1 dest", Description = "Route 1: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
@@ -478,7 +478,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "R1 amount", Description = "Route 1: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int R1Amt { get => Values[P.R1Amt]; set => Values.Set(P.R1Amt, value); }
 
-        [ParameterDecl(Name = "R2 source", Description = "Route 2: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        [ParameterDecl(Name = "R2 source", Description = "Route 2: what modulates", MinValue = 0, MaxValue = 22, DefValue = 0)]
         public int R2Src { get => Values[P.R2Src]; set => Values.Set(P.R2Src, value); }
 
         [ParameterDecl(Name = "R2 dest", Description = "Route 2: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
@@ -487,7 +487,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "R2 amount", Description = "Route 2: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int R2Amt { get => Values[P.R2Amt]; set => Values.Set(P.R2Amt, value); }
 
-        [ParameterDecl(Name = "R3 source", Description = "Route 3: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        [ParameterDecl(Name = "R3 source", Description = "Route 3: what modulates", MinValue = 0, MaxValue = 22, DefValue = 0)]
         public int R3Src { get => Values[P.R3Src]; set => Values.Set(P.R3Src, value); }
 
         [ParameterDecl(Name = "R3 dest", Description = "Route 3: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
@@ -496,7 +496,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "R3 amount", Description = "Route 3: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int R3Amt { get => Values[P.R3Amt]; set => Values.Set(P.R3Amt, value); }
 
-        [ParameterDecl(Name = "R4 source", Description = "Route 4: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        [ParameterDecl(Name = "R4 source", Description = "Route 4: what modulates", MinValue = 0, MaxValue = 22, DefValue = 0)]
         public int R4Src { get => Values[P.R4Src]; set => Values.Set(P.R4Src, value); }
 
         [ParameterDecl(Name = "R4 dest", Description = "Route 4: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
@@ -505,7 +505,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "R4 amount", Description = "Route 4: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int R4Amt { get => Values[P.R4Amt]; set => Values.Set(P.R4Amt, value); }
 
-        [ParameterDecl(Name = "R5 source", Description = "Route 5: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        [ParameterDecl(Name = "R5 source", Description = "Route 5: what modulates", MinValue = 0, MaxValue = 22, DefValue = 0)]
         public int R5Src { get => Values[P.R5Src]; set => Values.Set(P.R5Src, value); }
 
         [ParameterDecl(Name = "R5 dest", Description = "Route 5: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
@@ -514,7 +514,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "R5 amount", Description = "Route 5: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int R5Amt { get => Values[P.R5Amt]; set => Values.Set(P.R5Amt, value); }
 
-        [ParameterDecl(Name = "R6 source", Description = "Route 6: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        [ParameterDecl(Name = "R6 source", Description = "Route 6: what modulates", MinValue = 0, MaxValue = 22, DefValue = 0)]
         public int R6Src { get => Values[P.R6Src]; set => Values.Set(P.R6Src, value); }
 
         [ParameterDecl(Name = "R6 dest", Description = "Route 6: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
@@ -523,7 +523,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "R6 amount", Description = "Route 6: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int R6Amt { get => Values[P.R6Amt]; set => Values.Set(P.R6Amt, value); }
 
-        [ParameterDecl(Name = "R7 source", Description = "Route 7: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        [ParameterDecl(Name = "R7 source", Description = "Route 7: what modulates", MinValue = 0, MaxValue = 22, DefValue = 0)]
         public int R7Src { get => Values[P.R7Src]; set => Values.Set(P.R7Src, value); }
 
         [ParameterDecl(Name = "R7 dest", Description = "Route 7: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
@@ -532,7 +532,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "R7 amount", Description = "Route 7: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int R7Amt { get => Values[P.R7Amt]; set => Values.Set(P.R7Amt, value); }
 
-        [ParameterDecl(Name = "R8 source", Description = "Route 8: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        [ParameterDecl(Name = "R8 source", Description = "Route 8: what modulates", MinValue = 0, MaxValue = 22, DefValue = 0)]
         public int R8Src { get => Values[P.R8Src]; set => Values.Set(P.R8Src, value); }
 
         [ParameterDecl(Name = "R8 dest", Description = "Route 8: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
@@ -541,7 +541,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "R8 amount", Description = "Route 8: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int R8Amt { get => Values[P.R8Amt]; set => Values.Set(P.R8Amt, value); }
 
-        [ParameterDecl(Name = "R9 source", Description = "Route 9: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        [ParameterDecl(Name = "R9 source", Description = "Route 9: what modulates", MinValue = 0, MaxValue = 22, DefValue = 0)]
         public int R9Src { get => Values[P.R9Src]; set => Values.Set(P.R9Src, value); }
 
         [ParameterDecl(Name = "R9 dest", Description = "Route 9: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
@@ -550,7 +550,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "R9 amount", Description = "Route 9: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int R9Amt { get => Values[P.R9Amt]; set => Values.Set(P.R9Amt, value); }
 
-        [ParameterDecl(Name = "R10 source", Description = "Route 10: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        [ParameterDecl(Name = "R10 source", Description = "Route 10: what modulates", MinValue = 0, MaxValue = 22, DefValue = 0)]
         public int R10Src { get => Values[P.R10Src]; set => Values.Set(P.R10Src, value); }
 
         [ParameterDecl(Name = "R10 dest", Description = "Route 10: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
@@ -559,7 +559,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "R10 amount", Description = "Route 10: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int R10Amt { get => Values[P.R10Amt]; set => Values.Set(P.R10Amt, value); }
 
-        [ParameterDecl(Name = "R11 source", Description = "Route 11: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        [ParameterDecl(Name = "R11 source", Description = "Route 11: what modulates", MinValue = 0, MaxValue = 22, DefValue = 0)]
         public int R11Src { get => Values[P.R11Src]; set => Values.Set(P.R11Src, value); }
 
         [ParameterDecl(Name = "R11 dest", Description = "Route 11: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
@@ -568,7 +568,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "R11 amount", Description = "Route 11: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int R11Amt { get => Values[P.R11Amt]; set => Values.Set(P.R11Amt, value); }
 
-        [ParameterDecl(Name = "R12 source", Description = "Route 12: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        [ParameterDecl(Name = "R12 source", Description = "Route 12: what modulates", MinValue = 0, MaxValue = 22, DefValue = 0)]
         public int R12Src { get => Values[P.R12Src]; set => Values.Set(P.R12Src, value); }
 
         [ParameterDecl(Name = "R12 dest", Description = "Route 12: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
@@ -577,7 +577,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "R12 amount", Description = "Route 12: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int R12Amt { get => Values[P.R12Amt]; set => Values.Set(P.R12Amt, value); }
 
-        [ParameterDecl(Name = "R13 source", Description = "Route 13: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        [ParameterDecl(Name = "R13 source", Description = "Route 13: what modulates", MinValue = 0, MaxValue = 22, DefValue = 0)]
         public int R13Src { get => Values[P.R13Src]; set => Values.Set(P.R13Src, value); }
 
         [ParameterDecl(Name = "R13 dest", Description = "Route 13: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
@@ -586,7 +586,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "R13 amount", Description = "Route 13: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int R13Amt { get => Values[P.R13Amt]; set => Values.Set(P.R13Amt, value); }
 
-        [ParameterDecl(Name = "R14 source", Description = "Route 14: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        [ParameterDecl(Name = "R14 source", Description = "Route 14: what modulates", MinValue = 0, MaxValue = 22, DefValue = 0)]
         public int R14Src { get => Values[P.R14Src]; set => Values.Set(P.R14Src, value); }
 
         [ParameterDecl(Name = "R14 dest", Description = "Route 14: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
@@ -595,7 +595,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "R14 amount", Description = "Route 14: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int R14Amt { get => Values[P.R14Amt]; set => Values.Set(P.R14Amt, value); }
 
-        [ParameterDecl(Name = "R15 source", Description = "Route 15: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        [ParameterDecl(Name = "R15 source", Description = "Route 15: what modulates", MinValue = 0, MaxValue = 22, DefValue = 0)]
         public int R15Src { get => Values[P.R15Src]; set => Values.Set(P.R15Src, value); }
 
         [ParameterDecl(Name = "R15 dest", Description = "Route 15: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
@@ -604,7 +604,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "R15 amount", Description = "Route 15: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int R15Amt { get => Values[P.R15Amt]; set => Values.Set(P.R15Amt, value); }
 
-        [ParameterDecl(Name = "R16 source", Description = "Route 16: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        [ParameterDecl(Name = "R16 source", Description = "Route 16: what modulates", MinValue = 0, MaxValue = 22, DefValue = 0)]
         public int R16Src { get => Values[P.R16Src]; set => Values.Set(P.R16Src, value); }
 
         [ParameterDecl(Name = "R16 dest", Description = "Route 16: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
@@ -882,6 +882,54 @@ namespace NeoBuzz.DyeEssence
 
         [ParameterDecl(Name = "C body size", Description = "Modal engine: small to large body: a larger one rings longer and favours the low modes, a smaller one the high ones", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int CMSize { get => Values[P.CMSize]; set => Values.Set(P.CMSize, value); }
+
+        [ParameterDecl(Name = "Arp mode", Description = "Arpeggiator: how the held notes are played one by one on the song's grid (Off: the notes sound as played; Played: in the order they were pressed; Random: a seeded draw; Chord: all held notes at once, shifted up each step across the octave range). Overridden by the sequencer in Notes mode", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        public int ArpMode { get => Values[P.ArpMode]; set => Values.Set(P.ArpMode, value); }
+
+        [ParameterDecl(Name = "Arp rate", Description = "Arpeggiator: the length of a step (a quarter note is a beat)", MinValue = 0, MaxValue = 5, DefValue = 1)]
+        public int ArpRate { get => Values[P.ArpRate]; set => Values.Set(P.ArpRate, value); }
+
+        [ParameterDecl(Name = "Arp feel", Description = "Arpeggiator: straight steps, dotted (1.5 x as long) or triplet (2/3 as long)", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int ArpFeel { get => Values[P.ArpFeel]; set => Values.Set(P.ArpFeel, value); }
+
+        [ParameterDecl(Name = "Arp octaves", Description = "Arpeggiator: how many octaves the held notes are repeated across (upwards)", MinValue = 0, MaxValue = 3, DefValue = 0)]
+        public int ArpOct { get => Values[P.ArpOct]; set => Values.Set(P.ArpOct, value); }
+
+        [ParameterDecl(Name = "Arp gate", Description = "Arpeggiator: how much of its step each note sounds (5% at least)", MinValue = 0, MaxValue = 1000, DefValue = 600)]
+        public int ArpGate { get => Values[P.ArpGate]; set => Values.Set(P.ArpGate, value); }
+
+        [ParameterDecl(Name = "Arp swing", Description = "Arpeggiator: delays every second step, by up to half a step at 100% (66% is a triplet feel)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int ArpSwing { get => Values[P.ArpSwing]; set => Values.Set(P.ArpSwing, value); }
+
+        [ParameterDecl(Name = "Arp latch", Description = "Arpeggiator: keep the notes going after the keys are released; the next key played replaces them", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int ArpLatch { get => Values[P.ArpLatch]; set => Values.Set(P.ArpLatch, value); }
+
+        [ParameterDecl(Name = "Arp seed", Description = "Arpeggiator and sequencer: the seed of the random mode and of the step probabilities (the same seed gives the same notes in every render)", MinValue = 0, MaxValue = 255, DefValue = 0)]
+        public int ArpSeed { get => Values[P.ArpSeed]; set => Values.Set(P.ArpSeed, value); }
+
+        [ParameterDecl(Name = "Seq mode", Description = "Step sequencer: Notes plays the steps on the held key (the arpeggiator stands aside), Mod only runs the steps as modulation sources (Seq step, Seq velocity). The steps are edited on the Arp page and kept in the song", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int SeqMode { get => Values[P.SeqMode]; set => Values.Set(P.SeqMode, value); }
+
+        [ParameterDecl(Name = "Seq length", Description = "Step sequencer: the number of steps (1 to 32)", MinValue = 0, MaxValue = 31, DefValue = 15)]
+        public int SeqLength { get => Values[P.SeqLength]; set => Values.Set(P.SeqLength, value); }
+
+        [ParameterDecl(Name = "Seq rate", Description = "Step sequencer: the length of a step", MinValue = 0, MaxValue = 5, DefValue = 1)]
+        public int SeqRate { get => Values[P.SeqRate]; set => Values.Set(P.SeqRate, value); }
+
+        [ParameterDecl(Name = "Seq feel", Description = "Step sequencer: straight steps, dotted or triplet", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int SeqFeel { get => Values[P.SeqFeel]; set => Values.Set(P.SeqFeel, value); }
+
+        [ParameterDecl(Name = "Seq swing", Description = "Step sequencer: delays every second step, by up to half a step at 100%", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int SeqSwing { get => Values[P.SeqSwing]; set => Values.Set(P.SeqSwing, value); }
+
+        [ParameterDecl(Name = "Seq slew", Description = "Step sequencer: how smoothly the modulation sources glide from one step to the next (0: stepped, 100%: a whole step)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int SeqSlew { get => Values[P.SeqSlew]; set => Values.Set(P.SeqSlew, value); }
+
+        [ParameterDecl(Name = "MPE", Description = "Live MPE: notes keep the MIDI channel they came on (channel 1 is the master): each member channel's pitch bend, pressure and slide (CC74) move that note alone, as the modulation sources MPE bend, MPE pressure and MPE slide. Off: channels are ignored", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int MpeMode { get => Values[P.MpeMode]; set => Values.Set(P.MpeMode, value); }
+
+        [ParameterDecl(Name = "MPE bend range", Description = "Live MPE: the pitch bend range of a member channel, in semitones (48 is the MPE default)", MinValue = 0, MaxValue = 96, DefValue = 48)]
+        public int MpeBend { get => Values[P.MpeBend]; set => Values.Set(P.MpeBend, value); }
 
         [ParameterDecl(Name = "Note", IsStateless = true, Description = "Note (off releases the track's note)")]
         public void SetNote(Note value, int track) => Notes.SetNote(track, value.Value);

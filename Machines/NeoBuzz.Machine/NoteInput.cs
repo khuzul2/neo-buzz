@@ -10,6 +10,7 @@ namespace NeoBuzz.Machine
 {
     internal sealed class NoteInput
     {
+    {
         public const int MidiKeyBase = 1000;
         const int DefaultVelocity = 100;
 
@@ -23,7 +24,7 @@ namespace NeoBuzz.Machine
 
         // MIDI events: (kind, a, b) ring buffer, multiple producers under a lock, one consumer.
         const int RingSize = 1024;
-        readonly int[] ringKind = new int[RingSize], ringA = new int[RingSize], ringB = new int[RingSize];
+        readonly int[] ringKind = new int[RingSize], ringA = new int[RingSize], ringB = new int[RingSize], ringC = new int[RingSize];
         int ringWrite, ringRead;
         readonly object midiLock = new object();
 
@@ -63,7 +64,7 @@ namespace NeoBuzz.Machine
         public void MidiNote(int channel, int note, int velocity)
         {
             if (note < 0 || note > 127) return;
-            Push(velocity > 0 ? KindNoteOn : KindNoteOff, note, velocity);
+            Push(velocity > 0 ? KindNoteOn : KindNoteOff, note, velocity, channel);
         }
 
         /// <summary>
@@ -72,10 +73,10 @@ namespace NeoBuzz.Machine
         /// </summary>
         public void MidiControl(int ctrl, int channel, int value)
         {
-            Push(KindControl, ctrl, value);
+            Push(KindControl, ctrl, value, channel);
         }
 
-        void Push(int kind, int a, int b)
+        void Push(int kind, int a, int b, int channel)
         {
             lock (midiLock)
             {
@@ -84,6 +85,7 @@ namespace NeoBuzz.Machine
                 ringKind[ringWrite] = kind;
                 ringA[ringWrite] = a;
                 ringB[ringWrite] = b;
+                ringC[ringWrite] = channel;
                 Volatile.Write(ref ringWrite, next);
             }
         }
@@ -130,13 +132,22 @@ namespace NeoBuzz.Machine
             int write = Volatile.Read(ref ringWrite);
             while (read != write)
             {
-                int kind = ringKind[read], a = ringA[read], b = ringB[read];
+                int kind = ringKind[read], a = ringA[read], b = ringB[read], c = ringC[read];
                 read = (read + 1) & (RingSize - 1);
+                var ch = sink as IChannelNoteSink;
                 switch (kind)
                 {
-                    case KindNoteOn: sink.NoteOn(MidiKeyBase + a, a, Math.Clamp(b, 1, 127) / 127f); break;
-                    case KindNoteOff: sink.NoteOff(MidiKeyBase + a); break;
-                    case KindControl: Control(sink, a, b); break;
+                    case KindNoteOn:
+                        if (ch != null) ch.NoteOn(MidiKeyBase + a, a, Math.Clamp(b, 1, 127) / 127f, Math.Clamp(c, 0, 15));
+                        else sink.NoteOn(MidiKeyBase + a, a, Math.Clamp(b, 1, 127) / 127f);
+                        break;
+                    case KindNoteOff:
+                        if (ch != null) ch.NoteOff(MidiKeyBase + a, a, Math.Clamp(c, 0, 15));
+                        else sink.NoteOff(MidiKeyBase + a);
+                        break;
+                    case KindControl:
+                        if (ch == null || !ch.Control(Math.Clamp(c, 0, 15), a, b)) Control(sink, a, b);
+                        break;
                 }
             }
             Volatile.Write(ref ringRead, read);

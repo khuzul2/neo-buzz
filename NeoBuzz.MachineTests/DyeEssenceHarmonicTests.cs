@@ -40,7 +40,8 @@ namespace NeoBuzz.MachineTests
             return b;
         }
 
-        static float[] Render(NoteBank b, int frames, int block = 256, Action<int> at = null)
+        /// <summary>A block also ends at each of <paramref name="cuts"/>, so an event there lands on that sample whatever the block size.</summary>
+        static float[] Render(NoteBank b, int frames, int block = 256, Action<int> at = null, params int[] cuts)
         {
             var y = new float[2 * frames];
             var l = new float[NoteBank.MaxBlock];
@@ -49,6 +50,7 @@ namespace NeoBuzz.MachineTests
             {
                 at?.Invoke(pos);
                 n = Math.Min(block, frames - pos);
+                foreach (int c in cuts) if (c > pos && c < pos + n) n = c - pos;
                 b.Process(l, r, n);
                 for (int i = 0; i < n; i++)
                 {
@@ -244,7 +246,7 @@ namespace NeoBuzz.MachineTests
             b.S.Lfo[0].Rate = 2f;
         }
 
-        const ulong PinnedHash = 0xF63756EFB0BE684AUL;
+        const ulong PinnedHash = 0x6A771AE6CB434435UL;
 
         [Test]
         public void EveryLaneImplementationGivesTheSameBitsAndTheyAreThePinnedOnes()
@@ -256,7 +258,7 @@ namespace NeoBuzz.MachineTests
                 b.SetSampleRate(Rate);
                 Patch(b);
                 for (int n = 0; n < 6; n++) b.NoteOn(n, 48 + 5 * n, 0.5f + 0.1f * n);
-                var y = Render(b, 24000, 256, p => { if (p == 12000) { b.NoteOff(1); b.NoteOn(7, 80, 1f); } });
+                var y = Render(b, 24000, 256, p => { if (p == 12000) { b.NoteOff(1); b.NoteOn(7, 80, 1f); } }, 12000);
                 ulong h = Hash(y);
                 Measure.Report($"Dye Essence harmonics (three slots, unison, morph, damp), {kind}: 0x{h:X16}");
                 if (first == 0) first = h;

@@ -48,6 +48,15 @@ namespace NeoBuzz.DyeEssence
         public string Lfo2Shape { get; set; } = "";
         public string Lfo3Shape { get; set; } = "";
         public string Lfo4Shape { get; set; } = "";
+        /// <summary>The sequencer's steps (SeqPattern's text; empty: the default, 32 plain steps).</summary>
+        public string SeqSteps { get; set; } = "";
+
+        internal DyeEssenceState WithSteps(string text)
+        {
+            var s = (DyeEssenceState)MemberwiseClone();
+            s.SeqSteps = text;
+            return s;
+        }
 
         internal string Shape(int lfo) => lfo switch { 0 => Lfo1Shape, 1 => Lfo2Shape, 2 => Lfo3Shape, _ => Lfo4Shape } ?? "";
 
@@ -154,6 +163,7 @@ namespace NeoBuzz.DyeEssence
             {
                 state = value ?? new DyeEssenceState();
                 for (int l = 0; l < Lfos; l++) Engine.SetLfoShape(l, DrawnShape.Parse(state.Shape(l)));
+                Engine.SetPattern(SeqPattern.Parse(state.SeqSteps));
                 ShapesVersion++;
                 for (int slot = 0; slot < SlotNames.Length; slot++)
                 {
@@ -213,6 +223,18 @@ namespace NeoBuzz.DyeEssence
             ShapesVersion++;
         }
 
+        /// <summary>The sequencer's steps.</summary>
+        internal SeqPattern Pattern => Engine.Pattern;
+
+        /// <summary>Sets the sequencer's steps (UI thread; the audio thread takes them at its next block).</summary>
+        internal void SetPattern(SeqPattern pattern)
+        {
+            pattern ??= SeqPattern.Default;
+            state = state.WithSteps(pattern.SameAs(SeqPattern.Default) ? "" : pattern.ToString());
+            Engine.SetPattern(pattern);
+            ShapesVersion++;
+        }
+
         /// <summary>Counts changes of the drawn shapes (drawn, a song or preset loaded, undone): the editor redraws when it moves.</summary>
         internal int ShapesVersion { get; private set; }
 
@@ -233,6 +255,12 @@ namespace NeoBuzz.DyeEssence
                 setParameter?.Invoke(LfoShapeParam[lfo], (int)WaveShape.Drawn);
                 return $"Drew LFO {lfo + 1}'s shape ({shape.Count} points: {shape}) and set LFO{lfo + 1} shape to Drawn.";
             }
+            if (kind == "sequence")
+            {
+                if (!SeqPattern.TryParse(File.ReadAllText(path), out var pattern, out string error)) throw new InvalidDataException(error);
+                SetPattern(pattern);
+                return $"Set the sequencer's steps ({pattern.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries).Length} written; the rest are plain steps). Set Seq mode to Notes or Mod to run them.";
+            }
             if (kind == "sample")
             {
                 if (item < 0 || item >= SlotNames.Length) throw new ArgumentException($"Dye Essence has {SlotNames.Length} slots; item {item} doesn't exist (0 A, 1 B, 2 C)");
@@ -242,7 +270,7 @@ namespace NeoBuzz.DyeEssence
                 if (engine != (int)SlotType.Sample && engine != (int)SlotType.Granular) setParameter?.Invoke(TypeParam[item], (int)SlotType.Sample);
                 return $"Loaded the sample \"{UserSampleName(item)}\" as slot {SlotNames[item]}'s User sample, and set {SlotNames[item]} sample to User{(engine != (int)SlotType.Sample && engine != (int)SlotType.Granular ? $" and {SlotNames[item]} engine to Sample" : "")}.{note}";
             }
-            if (kind != "wavetable") throw new ArgumentException($"Dye Essence doesn't import \"{kind}\"; it takes wavetable, sample and lfo_shape.");
+            if (kind != "wavetable") throw new ArgumentException($"Dye Essence doesn't import \"{kind}\"; it takes wavetable, sample, lfo_shape and sequence.");
             if (item < 0 || item >= SlotNames.Length) throw new ArgumentException($"Dye Essence has {SlotNames.Length} slots; item {item} doesn't exist (0 A, 1 B, 2 C)");
             int slot = item;
             LoadUserTable(slot, path);
@@ -294,6 +322,30 @@ namespace NeoBuzz.DyeEssence
             return note;
         }
 
+        /// <summary>Where the song is now (valid in Work), for the arpeggiator and the sequencer, which follow it.</summary>
+        DriverTransport Transport()
+        {
+            var t = new DriverTransport();
+            try
+            {
+                var info = host?.MasterInfo;
+                var buzz = host?.Machine?.Graph?.Buzz;
+                if (info != null && buzz != null)
+                {
+                    t.Playing = buzz.Playing;
+                    t.Tick = buzz.Song?.PlayPosition ?? 0;
+                    t.PosInTick = info.PosInTick;
+                    t.SamplesPerTick = info.SamplesPerTick;
+                    t.TicksPerBeat = info.TicksPerBeat;
+                }
+            }
+            catch
+            {
+                t.Playing = false;
+            }
+            return t;
+        }
+
         public bool Work(Sample[] output, int n, WorkModes mode)
         {
             if (SampleRate != rate)
@@ -302,6 +354,7 @@ namespace NeoBuzz.DyeEssence
                 Engine.SetSampleRate(rate);
             }
             Engine.Tempo = BeatsPerMinute > 0 ? BeatsPerMinute : 120;
+            Engine.Transport = Transport();
             BeginBlock(Engine);
             n = Math.Min(n, DyeEngine.MaxBlock);
             if (!Engine.Process(left, right, n)) return false;

@@ -27,6 +27,18 @@ namespace NeoBuzz.Dsp
         void AllNotesOff(bool hard);
     }
 
+    /// <summary>
+    /// A note sink that also wants each MIDI event's channel (live MPE): notes, pitch bend, channel pressure and CC74 come
+    /// with it; the rest takes the plain <see cref="INoteSink"/> path. Pattern notes stay on the plain path.
+    /// </summary>
+    internal interface IChannelNoteSink : INoteSink
+    {
+        void NoteOn(int key, int note, float velocity, int channel);
+        void NoteOff(int key, int note, int channel);
+        /// <summary>A controller or bend (0xE0 / 0xFF) or pressure (0xD0 / 0xFC) on a channel; false: not taken, the plain path gets it.</summary>
+        bool Control(int channel, int ctrl, int value);
+    }
+
     internal interface IVoice
     {
         /// <summary>Making sound (or about to).</summary>

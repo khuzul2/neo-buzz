@@ -11,7 +11,7 @@ using NeoBuzz.Dsp;
 namespace NeoBuzz.DyeEssence
 {
     /// <summary>A route's source (append only).</summary>
-    internal enum RouteSource { Off, ModEnv1, ModEnv2, Lfo1, Lfo2, Lfo3, Lfo4, AmpEnv, FilterEnv, Velocity, Key, ModWheel, Aftertouch, Macro1, Macro2, Macro3, Macro4, Random, Count }
+    internal enum RouteSource { Off, ModEnv1, ModEnv2, Lfo1, Lfo2, Lfo3, Lfo4, AmpEnv, FilterEnv, Velocity, Key, ModWheel, Aftertouch, Macro1, Macro2, Macro3, Macro4, Random, MpePressure, MpeSlide, MpeBend, SeqStep, SeqVelocity, Count }
 
     /// <summary>A route's destination (append only).</summary>
     internal enum RouteDest

@@ -2318,7 +2318,7 @@
    "name": "R1 source",
    "group": "Routes",
    "min": 0,
-   "max": 17,
+   "max": 22,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -2339,7 +2339,12 @@
     "Macro 2",
     "Macro 3",
     "Macro 4",
-    "Random"
+    "Random",
+    "MPE pressure",
+    "MPE slide",
+    "MPE bend",
+    "Seq step",
+    "Seq velocity"
    ],
    "description": "Route 1: what modulates"
   },
@@ -2402,7 +2407,7 @@
    "name": "R2 source",
    "group": "Routes",
    "min": 0,
-   "max": 17,
+   "max": 22,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -2423,7 +2428,12 @@
     "Macro 2",
     "Macro 3",
     "Macro 4",
-    "Random"
+    "Random",
+    "MPE pressure",
+    "MPE slide",
+    "MPE bend",
+    "Seq step",
+    "Seq velocity"
    ],
    "description": "Route 2: what modulates"
   },
@@ -2486,7 +2496,7 @@
    "name": "R3 source",
    "group": "Routes",
    "min": 0,
-   "max": 17,
+   "max": 22,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -2507,7 +2517,12 @@
     "Macro 2",
     "Macro 3",
     "Macro 4",
-    "Random"
+    "Random",
+    "MPE pressure",
+    "MPE slide",
+    "MPE bend",
+    "Seq step",
+    "Seq velocity"
    ],
    "description": "Route 3: what modulates"
   },
@@ -2570,7 +2585,7 @@
    "name": "R4 source",
    "group": "Routes",
    "min": 0,
-   "max": 17,
+   "max": 22,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -2591,7 +2606,12 @@
     "Macro 2",
     "Macro 3",
     "Macro 4",
-    "Random"
+    "Random",
+    "MPE pressure",
+    "MPE slide",
+    "MPE bend",
+    "Seq step",
+    "Seq velocity"
    ],
    "description": "Route 4: what modulates"
   },
@@ -2654,7 +2674,7 @@
    "name": "R5 source",
    "group": "Routes",
    "min": 0,
-   "max": 17,
+   "max": 22,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -2675,7 +2695,12 @@
     "Macro 2",
     "Macro 3",
     "Macro 4",
-    "Random"
+    "Random",
+    "MPE pressure",
+    "MPE slide",
+    "MPE bend",
+    "Seq step",
+    "Seq velocity"
    ],
    "description": "Route 5: what modulates"
   },
@@ -2738,7 +2763,7 @@
    "name": "R6 source",
    "group": "Routes",
    "min": 0,
-   "max": 17,
+   "max": 22,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -2759,7 +2784,12 @@
     "Macro 2",
     "Macro 3",
     "Macro 4",
-    "Random"
+    "Random",
+    "MPE pressure",
+    "MPE slide",
+    "MPE bend",
+    "Seq step",
+    "Seq velocity"
    ],
    "description": "Route 6: what modulates"
   },
@@ -2822,7 +2852,7 @@
    "name": "R7 source",
    "group": "Routes",
    "min": 0,
-   "max": 17,
+   "max": 22,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -2843,7 +2873,12 @@
     "Macro 2",
     "Macro 3",
     "Macro 4",
-    "Random"
+    "Random",
+    "MPE pressure",
+    "MPE slide",
+    "MPE bend",
+    "Seq step",
+    "Seq velocity"
    ],
    "description": "Route 7: what modulates"
   },
@@ -2906,7 +2941,7 @@
    "name": "R8 source",
    "group": "Routes",
    "min": 0,
-   "max": 17,
+   "max": 22,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -2927,7 +2962,12 @@
     "Macro 2",
     "Macro 3",
     "Macro 4",
-    "Random"
+    "Random",
+    "MPE pressure",
+    "MPE slide",
+    "MPE bend",
+    "Seq step",
+    "Seq velocity"
    ],
    "description": "Route 8: what modulates"
   },
@@ -2990,7 +3030,7 @@
    "name": "R9 source",
    "group": "Routes",
    "min": 0,
-   "max": 17,
+   "max": 22,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -3011,7 +3051,12 @@
     "Macro 2",
     "Macro 3",
     "Macro 4",
-    "Random"
+    "Random",
+    "MPE pressure",
+    "MPE slide",
+    "MPE bend",
+    "Seq step",
+    "Seq velocity"
    ],
    "description": "Route 9: what modulates"
   },
@@ -3074,7 +3119,7 @@
    "name": "R10 source",
    "group": "Routes",
    "min": 0,
-   "max": 17,
+   "max": 22,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -3095,7 +3140,12 @@
     "Macro 2",
     "Macro 3",
     "Macro 4",
-    "Random"
+    "Random",
+    "MPE pressure",
+    "MPE slide",
+    "MPE bend",
+    "Seq step",
+    "Seq velocity"
    ],
    "description": "Route 10: what modulates"
   },
@@ -3158,7 +3208,7 @@
    "name": "R11 source",
    "group": "Routes",
    "min": 0,
-   "max": 17,
+   "max": 22,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -3179,7 +3229,12 @@
     "Macro 2",
     "Macro 3",
     "Macro 4",
-    "Random"
+    "Random",
+    "MPE pressure",
+    "MPE slide",
+    "MPE bend",
+    "Seq step",
+    "Seq velocity"
    ],
    "description": "Route 11: what modulates"
   },
@@ -3242,7 +3297,7 @@
    "name": "R12 source",
    "group": "Routes",
    "min": 0,
-   "max": 17,
+   "max": 22,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -3263,7 +3318,12 @@
     "Macro 2",
     "Macro 3",
     "Macro 4",
-    "Random"
+    "Random",
+    "MPE pressure",
+    "MPE slide",
+    "MPE bend",
+    "Seq step",
+    "Seq velocity"
    ],
    "description": "Route 12: what modulates"
   },
@@ -3326,7 +3386,7 @@
    "name": "R13 source",
    "group": "Routes",
    "min": 0,
-   "max": 17,
+   "max": 22,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -3347,7 +3407,12 @@
     "Macro 2",
     "Macro 3",
     "Macro 4",
-    "Random"
+    "Random",
+    "MPE pressure",
+    "MPE slide",
+    "MPE bend",
+    "Seq step",
+    "Seq velocity"
    ],
    "description": "Route 13: what modulates"
   },
@@ -3410,7 +3475,7 @@
    "name": "R14 source",
    "group": "Routes",
    "min": 0,
-   "max": 17,
+   "max": 22,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -3431,7 +3496,12 @@
     "Macro 2",
     "Macro 3",
     "Macro 4",
-    "Random"
+    "Random",
+    "MPE pressure",
+    "MPE slide",
+    "MPE bend",
+    "Seq step",
+    "Seq velocity"
    ],
    "description": "Route 14: what modulates"
   },
@@ -3494,7 +3564,7 @@
    "name": "R15 source",
    "group": "Routes",
    "min": 0,
-   "max": 17,
+   "max": 22,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -3515,7 +3585,12 @@
     "Macro 2",
     "Macro 3",
     "Macro 4",
-    "Random"
+    "Random",
+    "MPE pressure",
+    "MPE slide",
+    "MPE bend",
+    "Seq step",
+    "Seq velocity"
    ],
    "description": "Route 15: what modulates"
   },
@@ -3578,7 +3653,7 @@
    "name": "R16 source",
    "group": "Routes",
    "min": 0,
-   "max": 17,
+   "max": 22,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -3599,7 +3674,12 @@
     "Macro 2",
     "Macro 3",
     "Macro 4",
-    "Random"
+    "Random",
+    "MPE pressure",
+    "MPE slide",
+    "MPE bend",
+    "Seq step",
+    "Seq velocity"
    ],
    "description": "Route 16: what modulates"
   },
@@ -4975,6 +5055,240 @@
    "kind": "percent",
    "unit": "%",
    "description": "Modal engine: small to large body: a larger one rings longer and favours the low modes, a smaller one the high ones"
+  },
+  {
+   "index": 292,
+   "id": "ArpMode",
+   "name": "Arp mode",
+   "group": "Arp",
+   "min": 0,
+   "max": 6,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Off",
+    "Up",
+    "Down",
+    "Up Down",
+    "Played",
+    "Random",
+    "Chord"
+   ],
+   "description": "Arpeggiator: how the held notes are played one by one on the song's grid (Off: the notes sound as played; Played: in the order they were pressed; Random: a seeded draw; Chord: all held notes at once, shifted up each step across the octave range). Overridden by the sequencer in Notes mode"
+  },
+  {
+   "index": 293,
+   "id": "ArpRate",
+   "name": "Arp rate",
+   "group": "Arp",
+   "min": 0,
+   "max": 5,
+   "default": 1,
+   "kind": "enum",
+   "choices": [
+    "1/32",
+    "1/16",
+    "1/8",
+    "1/4",
+    "1/2",
+    "1 bar"
+   ],
+   "description": "Arpeggiator: the length of a step (a quarter note is a beat)"
+  },
+  {
+   "index": 294,
+   "id": "ArpFeel",
+   "name": "Arp feel",
+   "group": "Arp",
+   "min": 0,
+   "max": 2,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Straight",
+    "Dotted",
+    "Triplet"
+   ],
+   "description": "Arpeggiator: straight steps, dotted (1.5 x as long) or triplet (2/3 as long)"
+  },
+  {
+   "index": 295,
+   "id": "ArpOct",
+   "name": "Arp octaves",
+   "group": "Arp",
+   "min": 0,
+   "max": 3,
+   "default": 0,
+   "kind": "int",
+   "a": 1.0,
+   "unit": "oct",
+   "description": "Arpeggiator: how many octaves the held notes are repeated across (upwards)"
+  },
+  {
+   "index": 296,
+   "id": "ArpGate",
+   "name": "Arp gate",
+   "group": "Arp",
+   "min": 0,
+   "max": 1000,
+   "default": 600,
+   "kind": "percent",
+   "unit": "%",
+   "description": "Arpeggiator: how much of its step each note sounds (5% at least)"
+  },
+  {
+   "index": 297,
+   "id": "ArpSwing",
+   "name": "Arp swing",
+   "group": "Arp",
+   "min": 0,
+   "max": 1000,
+   "default": 0,
+   "kind": "percent",
+   "unit": "%",
+   "description": "Arpeggiator: delays every second step, by up to half a step at 100% (66% is a triplet feel)"
+  },
+  {
+   "index": 298,
+   "id": "ArpLatch",
+   "name": "Arp latch",
+   "group": "Arp",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "switch",
+   "choices": [
+    "Off",
+    "On"
+   ],
+   "description": "Arpeggiator: keep the notes going after the keys are released; the next key played replaces them"
+  },
+  {
+   "index": 299,
+   "id": "ArpSeed",
+   "name": "Arp seed",
+   "group": "Arp",
+   "min": 0,
+   "max": 255,
+   "default": 0,
+   "kind": "int",
+   "a": 0.0,
+   "description": "Arpeggiator and sequencer: the seed of the random mode and of the step probabilities (the same seed gives the same notes in every render)"
+  },
+  {
+   "index": 300,
+   "id": "SeqMode",
+   "name": "Seq mode",
+   "group": "Seq",
+   "min": 0,
+   "max": 2,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Off",
+    "Notes",
+    "Mod"
+   ],
+   "description": "Step sequencer: Notes plays the steps on the held key (the arpeggiator stands aside), Mod only runs the steps as modulation sources (Seq step, Seq velocity). The steps are edited on the Arp page and kept in the song"
+  },
+  {
+   "index": 301,
+   "id": "SeqLength",
+   "name": "Seq length",
+   "group": "Seq",
+   "min": 0,
+   "max": 31,
+   "default": 15,
+   "kind": "int",
+   "a": 1.0,
+   "description": "Step sequencer: the number of steps (1 to 32)"
+  },
+  {
+   "index": 302,
+   "id": "SeqRate",
+   "name": "Seq rate",
+   "group": "Seq",
+   "min": 0,
+   "max": 5,
+   "default": 1,
+   "kind": "enum",
+   "choices": [
+    "1/32",
+    "1/16",
+    "1/8",
+    "1/4",
+    "1/2",
+    "1 bar"
+   ],
+   "description": "Step sequencer: the length of a step"
+  },
+  {
+   "index": 303,
+   "id": "SeqFeel",
+   "name": "Seq feel",
+   "group": "Seq",
+   "min": 0,
+   "max": 2,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Straight",
+    "Dotted",
+    "Triplet"
+   ],
+   "description": "Step sequencer: straight steps, dotted or triplet"
+  },
+  {
+   "index": 304,
+   "id": "SeqSwing",
+   "name": "Seq swing",
+   "group": "Seq",
+   "min": 0,
+   "max": 1000,
+   "default": 0,
+   "kind": "percent",
+   "unit": "%",
+   "description": "Step sequencer: delays every second step, by up to half a step at 100%"
+  },
+  {
+   "index": 305,
+   "id": "SeqSlew",
+   "name": "Seq slew",
+   "group": "Seq",
+   "min": 0,
+   "max": 1000,
+   "default": 0,
+   "kind": "percent",
+   "unit": "%",
+   "description": "Step sequencer: how smoothly the modulation sources glide from one step to the next (0: stepped, 100%: a whole step)"
+  },
+  {
+   "index": 306,
+   "id": "MpeMode",
+   "name": "MPE",
+   "group": "MPE",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "switch",
+   "choices": [
+    "Off",
+    "On"
+   ],
+   "description": "Live MPE: notes keep the MIDI channel they came on (channel 1 is the master): each member channel's pitch bend, pressure and slide (CC74) move that note alone, as the modulation sources MPE bend, MPE pressure and MPE slide. Off: channels are ignored"
+  },
+  {
+   "index": 307,
+   "id": "MpeBend",
+   "name": "MPE bend range",
+   "group": "MPE",
+   "min": 0,
+   "max": 96,
+   "default": 48,
+   "kind": "int",
+   "a": 0.0,
+   "unit": "st",
+   "description": "Live MPE: the pitch bend range of a member channel, in semitones (48 is the MPE default)"
   }
  ],
  "imports": [
@@ -4991,6 +5305,13 @@
     ".txt"
    ],
    "description": "A drawn LFO shape: a text file of breakpoints \"phase,value[,curve]\" separated by spaces (phase 0–1 across one cycle, value −1–1, curve −1–1: 0 straight, below 0 a fast start, above a slow one; a point at 0 and one at 1 make a jump at the wrap). item 0–3 picks LFO 1–4; its shape is set to Drawn."
+  },
+  {
+   "kind": "sequence",
+   "extensions": [
+    ".txt"
+   ],
+   "description": "The step sequencer's steps: a text file of steps separated by spaces, each \"offset,velocity,gate,tie,probability\" (note offset in semitones from the held key, velocity 1-127 or 0 for a rest, gate 1-100 % of the step, tie 0 or 1, probability 0-100 %; every field after the first is optional: \"0,100,80,0,100\" is a plain step). Up to 32 steps; the rest are plain steps. Set Seq mode to Notes or Mod to run it, and Seq length for how many steps play."
   },
   {
    "kind": "sample",
