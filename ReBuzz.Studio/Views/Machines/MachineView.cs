@@ -47,7 +47,7 @@ namespace ReBuzz.Studio.Views.Machines
             {
                 Height = 32,
                 BorderThickness = new Thickness(0, 0, 0, 1),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(0x30, 0x30, 0x30)),
+                BorderBrush = Shell.Design.StudioTokens.SurfaceBorderBrush,
                 Child = new DockPanel { LastChildFill = false, Children = { Right(zoom) } },
             };
             SetDock(bar, Dock.Top);

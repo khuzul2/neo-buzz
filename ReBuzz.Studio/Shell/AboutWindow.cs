@@ -2,6 +2,7 @@
 // what it is based on (ReBuzz, its authors and link) and the credits in white on black, rolling slowly
 // upwards (the WPF window's particles aren't ported).
 
+using ReBuzz.Studio.Shell.Design;
 using System;
 using Avalonia;
 using Avalonia.Controls;
@@ -27,13 +28,13 @@ namespace ReBuzz.Studio.Shell
             Height = 400;
             CanResize = false;
             ShowInTaskbar = false;
-            Background = Brushes.Black;
+            Background = StudioTokens.SurfaceBaseBrush;
             Text = CreditsText();
             var text = new TextBlock
             {
                 Text = Text,
-                Foreground = new SolidColorBrush(Color.FromRgb(0xf8, 0xf8, 0xff)),     // GhostWhite
-                FontSize = 30,
+                Foreground = StudioTokens.TextPrimaryBrush,     // GhostWhite
+                FontSize = StudioTokens.FontHeading,
                 TextAlignment = TextAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
                 HorizontalAlignment = HorizontalAlignment.Stretch,

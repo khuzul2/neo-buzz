@@ -4,6 +4,7 @@
 // as Ableton's master meter does; and a "limiting" lamp, lit while the safety limiter turns the
 // output down. The main window refreshes it ten times a second.
 
+using ReBuzz.Studio.Shell.Design;
 using System;
 using Avalonia;
 using Avalonia.Controls;
@@ -17,10 +18,10 @@ namespace ReBuzz.Studio.Shell
 
     internal sealed class MasterMeter : StackPanel
     {
-        public static readonly IBrush ClipBrush = new SolidColorBrush(Color.FromRgb(0xd9, 0x2b, 0x2b));
-        static readonly IBrush LimitBrush = new SolidColorBrush(Color.FromRgb(0xf0, 0xa0, 0x20));
-        static readonly IBrush Off = new SolidColorBrush(Color.FromRgb(0x3a, 0x3a, 0x3a));
-        static readonly IBrush OffText = new SolidColorBrush(Color.FromRgb(0x9a, 0x9a, 0x9a));
+        public static readonly IBrush ClipBrush = StudioTokens.RecordBrush;
+        static readonly IBrush LimitBrush = StudioTokens.Brush(StudioTokens.Warning);
+        static readonly IBrush Off = StudioTokens.SurfaceBorderBrush;
+        static readonly IBrush OffText = StudioTokens.TextSecondaryBrush;
 
         readonly Func<ReBuzzCore> core;
         readonly Bars bars = new Bars { Width = 120, Height = 16, VerticalAlignment = VerticalAlignment.Center };
@@ -76,19 +77,19 @@ namespace ReBuzz.Studio.Shell
             bool on = over.Length > 0;
             clip.Content = on ? over : "clip";
             clip.Background = on ? ClipBrush : Off;
-            clip.Foreground = on ? Brushes.White : OffText;
+            clip.Foreground = on ? StudioTokens.White : OffText;
             limit.Background = limiting ? LimitBrush : Off;
-            limitText.Foreground = limiting ? Brushes.Black : OffText;
+            limitText.Foreground = limiting ? StudioTokens.Black : OffText;
         }
 
         /// <summary>Two peak bars, −60 to +6 dBFS, green to yellow to red above 0 dBFS; they fall back in about half a second.</summary>
         sealed class Bars : Control
         {
             const double Floor = -60, Top = 6;
-            static readonly IBrush Back = new SolidColorBrush(Color.FromRgb(0x22, 0x22, 0x22));
-            static readonly IBrush Green = new SolidColorBrush(Color.FromRgb(0x3c, 0xc8, 0x50));
-            static readonly IBrush Yellow = new SolidColorBrush(Color.FromRgb(0xe6, 0xd2, 0x32));
-            static readonly IPen ZeroPen = new Pen(new SolidColorBrush(Color.FromRgb(0x80, 0x80, 0x80)), 1);
+            static readonly IBrush Back = StudioTokens.SurfaceViewBrush;
+            static readonly IBrush Green = StudioTokens.Brush(StudioTokens.Of(NeoBuzz.Editor.Tokens.MeterNormal));
+            static readonly IBrush Yellow = StudioTokens.Brush(StudioTokens.Of(NeoBuzz.Editor.Tokens.MeterHot));
+            static readonly IPen ZeroPen = new Pen(StudioTokens.Brush(StudioTokens.Of(NeoBuzz.Editor.Tokens.ControlTrack)), 1);
             double left = Floor, right = Floor;
 
             public void Set(float peakLeft, float peakRight)
