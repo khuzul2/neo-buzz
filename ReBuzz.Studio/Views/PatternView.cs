@@ -109,11 +109,56 @@ namespace ReBuzz.Studio.Views
             core.PropertyChanged += OnCorePropertyChanged;
             core.Song.MachineAdded += OnMachinesChanged;
             core.Song.MachineRemoved += OnMachinesChanged;
+            StudioSelection.For(core).Changed += FollowSelection;
             RefreshMachines();
             var start = core.PatternEditorPattern ?? machines.Select(m => m.Patterns.FirstOrDefault()).FirstOrDefault(p => p != null);
             if (start != null && !start.Machine.Patterns.Contains(start)) start = null;
-            if (start != null) Edit(start, activate: false);
-            else Show(machines.FirstOrDefault(m => m.DLL.Info.Type != MachineType.Master) ?? machines.FirstOrDefault(), null);
+            followingSelection = true;      // what the page starts on isn't something the user selected
+            try
+            {
+                if (start != null) Edit(start, activate: false);
+                else Show(machines.FirstOrDefault(m => m.DLL.Info.Type != MachineType.Master) ?? machines.FirstOrDefault(), null);
+                FollowSelection(null);
+            }
+            finally
+            {
+                followingSelection = false;
+            }
+        }
+
+        // Fork (ux-overhaul.md P2c): what the user chooses here is the studio's selection; the page shows what the others select.
+        bool followingSelection;
+
+        /// <summary>The machine and the pattern the page shows (for tests).</summary>
+        internal IMachine ShownMachine => machine;
+        internal IPattern ShownPattern => pattern;
+
+        void FollowSelection(object source)
+        {
+            if (source == this || !attached) return;
+            var selection = StudioSelection.For(core);
+            followingSelection = true;
+            try
+            {
+                if (selection.Pattern is { } p)
+                {
+                    if (p != pattern) Edit(p, activate: false);
+                }
+                else if (selection.Machine is { } m && m != machine)
+                {
+                    var own = (core.PatternEditorPattern != null && core.PatternEditorPattern.Machine == m ? core.PatternEditorPattern : null) ?? m.Patterns.FirstOrDefault();
+                    if (own != null) Edit(own, activate: false);
+                    else
+                    {
+                        core.SetPatternEditorMachine(m);
+                        Show(m, null);
+                    }
+                }
+            }
+            finally
+            {
+                followingSelection = false;
+            }
         }
 
         // A closed window lets go of the editor's control, so another page can show it.
@@ -128,6 +173,7 @@ namespace ReBuzz.Studio.Views
             core.PropertyChanged -= OnCorePropertyChanged;
             core.Song.MachineAdded -= OnMachinesChanged;
             core.Song.MachineRemoved -= OnMachinesChanged;
+            StudioSelection.For(core).Changed -= FollowSelection;
             Follow(null);
             editorHost.Content = null;
             if (PatternView.Page == this) PatternView.Page = null;
@@ -147,6 +193,7 @@ namespace ReBuzz.Studio.Views
             if (p == null) return;
             core.SetPatternEditorPattern(p);      // the engine links the machine's editor and raises the events below
             Show(p.Machine, p);
+            if (!followingSelection) StudioSelection.For(core).Set(p.Machine, p, this);
             if (activate) Activate();
         }
 
@@ -162,6 +209,7 @@ namespace ReBuzz.Studio.Views
             }
             core.SetPatternEditorMachine(m);
             Show(m, null);
+            if (!followingSelection) StudioSelection.For(core).SelectMachine(m, this);
             Activate();
         }
 

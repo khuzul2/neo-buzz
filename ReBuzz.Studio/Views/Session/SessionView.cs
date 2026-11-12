@@ -61,6 +61,41 @@ namespace ReBuzz.Studio.Views.Session
         readonly FlatButton clipButton;
         readonly ClipPanel clipPanel;
         internal ClipPanel ClipPanelView => clipPanel;
+
+        /// <summary>
+        /// Fork (ux-overhaul.md P3a): the window's inspector, which holds the clip panel once the view is in a main window.
+        /// </summary>
+        internal interface IInspectorLink
+        {
+            bool IsOpen { get; }
+            void Toggle();
+            void Open();
+        }
+
+        IInspectorLink inspectorLink;
+
+        /// <summary>
+        /// The clip panel, moved out of this view into the window's inspector (which then follows the studio's selection in
+        /// every view and decides when the panel shows; the song's "show clip panel" setting is left alone).
+        /// </summary>
+        internal ClipPanel MoveClipPanelToInspector(IInspectorLink link)
+        {
+            if (inspectorLink != null) return clipPanel;
+            inspectorLink = link;
+            if (clipPanel.Parent is Panel parent) parent.Children.Remove(clipPanel);
+            clipPanel.UseInInspector();
+            InspectorChanged();
+            return clipPanel;
+        }
+
+        /// <summary>The inspector opened or closed: the Clip button follows.</summary>
+        internal void InspectorChanged() =>
+            clipButton.SetLit(inspectorLink?.IsOpen == true ? SessionPalette.Fader : null);
+
+        void FollowClip(bool force = false)
+        {
+            if (inspectorLink == null) clipPanel.Follow(selected, force);
+        }
         readonly TextBlock clockText;
         readonly TextBlock hintText;
         readonly TextBlock statusText;
@@ -258,7 +293,11 @@ namespace ReBuzz.Studio.Views.Session
             right.Children.Add(addSceneButton);
             addTrackButton = new FlatButton("+ Track", () => ShowAddTrackMenu(addTrackButton), "Add a track for a machine that has none");
             right.Children.Add(addTrackButton);
-            clipButton = new FlatButton("Clip", () => layout.SetShowClipPanel(!layout.Ensure().ShowClipPanel),
+            clipButton = new FlatButton("Clip", () =>
+                {
+                    if (inspectorLink != null) inspectorLink.Toggle();
+                    else layout.SetShowClipPanel(!layout.Ensure().ShowClipPanel);
+                },
                 "Show or hide the clip panel: how the selected clip launches (mode, quantization, legato, loop region, velocity)");
             right.Children.Add(clipButton);
             mixerButton = new FlatButton("Mixer", ToggleMixer, $"Show or hide the mixer under the grid ({Shell.Commands.StudioKeymap.Get("view.mixer").KeyLabel()})\nReturn tracks and the cue output: ⚙");
@@ -402,6 +441,8 @@ namespace ReBuzz.Studio.Views.Session
             }
             session.PropertyChanged += OnSessionChanged;
             Rebuild();
+            StudioSelection.For(buzz).Changed += FollowSelection;
+            FollowSelection(null);                  // shown again: on the selection the other views made meanwhile
             timer.Start();
             // Shown (its tab selected): the view takes the keys, unless something in it has them.
             Dispatcher.UIThread.Post(() => { if (attached && !IsKeyboardFocusWithin) Focus(); });
@@ -410,6 +451,7 @@ namespace ReBuzz.Studio.Views.Session
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
             attached = false;
+            StudioSelection.For(buzz).Changed -= FollowSelection;
             timer.Stop();
             layout.Changed -= RebuildWhenSeen;
             layout.RecordingChanged -= OnRecordingChanged;
@@ -633,9 +675,9 @@ namespace ReBuzz.Studio.Views.Session
             body.InvalidateMeasure();
             UpdateBarTips();
             followButton.SetLit(doc.FollowActionsEnabled ? SessionPalette.Fader : null);
-            clipPanel.IsVisible = doc.ShowClipPanel;
-            clipButton.SetLit(doc.ShowClipPanel ? SessionPalette.Fader : null);
-            clipPanel.Follow(selected, force: true);
+            if (inspectorLink == null) clipPanel.IsVisible = doc.ShowClipPanel;
+            clipButton.SetLit((inspectorLink?.IsOpen ?? doc.ShowClipPanel) ? SessionPalette.Fader : null);
+            FollowClip(force: true);
             RefreshState();
         }
 
@@ -761,7 +803,7 @@ namespace ReBuzz.Studio.Views.Session
             foreach (var h in headers)
                 h.Refresh();
             RefreshMixer();
-            if (clipPanel.IsVisible)
+            if (inspectorLink == null && clipPanel.IsVisible)
                 clipPanel.Follow(selected);
 
             // Machine groups change without an event the layout hears: look now and then.

@@ -73,8 +73,9 @@ namespace ReBuzz.Studio.Tests
         {
             var (window, _) = OpenEmpty();
             Key(window, PhysicalKey.F10);
-            Assert.That((window.Tabs.SelectedItem as TabItem)?.Header, Is.EqualTo("Song Notes"), "F10 shows Song Notes");
-            var view = (SongNotesView)window.Tabs.SelectedContent;
+            Assert.That(window.Inspector.CurrentTab, Is.EqualTo("Song"), "F10 shows Song Notes: the inspector's Song tab");
+            Assert.That(window.Inspector.IsOpen, Is.True);
+            var view = window.Inspector.SongNotes;
             view.Editor.Focus();
             Settle();
             return (window, view);

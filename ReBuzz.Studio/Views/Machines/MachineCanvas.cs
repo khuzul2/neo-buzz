@@ -95,11 +95,14 @@ namespace ReBuzz.Studio.Views.Machines
             base.OnAttachedToVisualTree(e);
             Watch(core.SongCore);
             core.PropertyChanged += OnCoreChanged;
+            StudioSelection.For(core).Changed += FollowSelection;
+            FollowSelection(null);                  // shown again: on the selection the other views made meanwhile
         }
 
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
             core.PropertyChanged -= OnCoreChanged;
+            StudioSelection.For(core).Changed -= FollowSelection;
             Watch(null);
             base.OnDetachedFromVisualTree(e);
         }
@@ -558,8 +561,39 @@ namespace ReBuzz.Studio.Views.Machines
         public void Select(IEnumerable<IMachine> machines, bool add = false)
         {
             if (!add) selected.Clear();
-            foreach (var m in machines) selected.Add(m);
+            IMachine last = null;
+            foreach (var m in machines) selected.Add(last = m);
             InvalidateVisual();
+            PublishSelection(last);
+        }
+
+        /// <summary>Fork (ux-overhaul.md P2c): what the user selected here is the studio's selection (a band's: its first machine).</summary>
+        void PublishSelection(IMachine primary = null)
+        {
+            if (following) return;
+            var machine = primary != null && selected.Contains(primary) ? primary : selected.FirstOrDefault(Machines.Contains);
+            StudioSelection.For(core).SelectMachine(machine, this);
+        }
+
+        bool following;
+
+        /// <summary>The other views selected a machine (or nothing): it is the one selected here.</summary>
+        void FollowSelection(object source)
+        {
+            if (source == this) return;
+            var machine = StudioSelection.For(core).Machine;
+            if (machine == null ? selected.Count == 0 : selected.Count == 1 && selected.Contains(machine)) return;
+            following = true;
+            try
+            {
+                selected.Clear();
+                if (machine != null) selected.Add(machine);
+                InvalidateVisual();
+            }
+            finally
+            {
+                following = false;
+            }
         }
 
         public void SelectAll() => Select(Machines);
@@ -865,6 +899,7 @@ namespace ReBuzz.Studio.Views.Machines
                 if (bandBase.Contains(m) || BoxOf(m).Contains(p)) selected.Add(m);
             e.Pointer.Capture(this);
             InvalidateVisual();
+            PublishSelection();
         }
 
         void DragSelect(Point p)
@@ -874,6 +909,7 @@ namespace ReBuzz.Studio.Views.Machines
             foreach (var m in Machines)
                 if (bandBase.Contains(m) || BoxOf(m).Intersects(band)) selected.Add(m);
             InvalidateVisual();
+            PublishSelection();
         }
 
         void BeginPan(Point view, PointerPressedEventArgs e)

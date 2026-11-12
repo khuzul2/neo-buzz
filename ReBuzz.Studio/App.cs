@@ -39,6 +39,11 @@ namespace ReBuzz.Studio
                 // The template sets its opacity itself, which a style can't override: a local value can.
                 if (e.NameScope.Find<Avalonia.Controls.Control>("PART_Placeholder") is { } placeholder) placeholder.Opacity = 1;
             }, RoutingStrategies.Direct);
+            // Fork (ux-overhaul.md P2c): the windows' ground is the base surface, not Fluent's black.
+            Styles.Add(new Avalonia.Styling.Style(x => x.OfType<Window>())
+            {
+                Setters = { new Avalonia.Styling.Setter(Avalonia.Controls.Primitives.TemplatedControl.BackgroundProperty, Shell.Design.StudioTokens.SurfaceBaseBrush) },
+            });
             Name = Product.Name;     // the macOS app menu: About, Hide and Quit NeoBuzz Live
             // Fork (ui-gallery.md): the app menu here, before Avalonia's exporter starts (it starts after Initialize and
             // makes its own "About Avalonia" menu when the application has none; a menu set later never reached it).

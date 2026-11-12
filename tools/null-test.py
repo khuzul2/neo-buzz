@@ -156,6 +156,17 @@ CASES = [
     gen("dye-comb-noise", "Dye Essence", "Texture — Comb Noise", [], KEYS),
     gen("dye-mirror-bell", "Dye Essence", "Pluck — Mirror Bell", [], BELLS),
     gen("dye-squeeze-high", "Dye Essence", "FX — Squeeze Sweep", [], [n("A2", 0, 3.5)]),
+    # Dye Essence P2: the Sample engine (looped, eight-voice unison, one-shot, reversed, two slots) and the
+    # Granular engine (frozen, scanning, a spray of pitched grains with reversed ones); the grain clouds and
+    # the sample recipes are built from the portable maths, so every platform renders the same.
+    gen("dye-sample-choir", "Dye Essence", "Pad — Sample Choir", [], CHORDS),
+    gen("dye-sample-strings", "Dye Essence", "Pad — Eight Strings", [], CHORDS),
+    gen("dye-sample-bell", "Dye Essence", "Keys — Struck Bell", [], BELLS),
+    gen("dye-sample-pluck", "Dye Essence", "Pluck — Double String", [], KEYS),
+    gen("dye-sample-reverse", "Dye Essence", "FX — Reverse Pluck", [], KEYS),
+    gen("dye-grains-frozen", "Dye Essence", "Texture — Frozen Cloud", [], CHORDS),
+    gen("dye-grains-scan", "Dye Essence", "Pad — Scanning Strings", [], CHORDS),
+    gen("dye-grains-rain", "Dye Essence", "FX — Bell Rain", [], BELLS),
     # Neo FM6: algorithms, feedback, the Clean 2x and Raw 1x engines, envelopes, LFO.
     gen("fm6-tine-piano", "Neo FM6", "Keys — Tine Piano", [], KEYS),
     gen("fm6-glass-bell", "Neo FM6", "Bell — Glass Bell", [], BELLS, tail=2.0),
