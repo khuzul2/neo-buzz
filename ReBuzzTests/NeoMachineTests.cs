@@ -111,6 +111,10 @@ namespace ReBuzzTests
         // The transient shaper and the low-end shaper (docs/specs/mastering-tools.md §5.4, §5.5).
         internal static readonly NeoInfo Transient = new("Neo Transient", "Transient", false);
         internal static readonly NeoInfo LowEnd = new("Neo Low End", "LowEnd", false);
+        // The imager, the exciter and the dither (docs/specs/mastering-tools.md §5.7 - §5.9).
+        internal static readonly NeoInfo Imager = new("Neo Imager", "Imager", false);
+        internal static readonly NeoInfo Exciter = new("Neo Exciter", "Exciter", false);
+        internal static readonly NeoInfo Dither = new("Neo Dither", "Dither", false);
 
         /// <summary>A test machine compiled from source held here.</summary>
         internal sealed class SourceInfo(string name, string source, bool generator) : IDynamicTestMachineInfo
@@ -1579,6 +1583,52 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void NeoImagerAddsNoLatencyReportsItsBandsAndShowsItsEditor()
+        {
+            using var rig = new Rig(Imager);
+            rig.Play(0.05);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(0));
+            rig.Param("Width 4").SetValue(0, 150);
+            rig.Param("Stereoize 2").SetValue(0, 300);
+            rig.Play(3.6);
+            var instance = rig.Effect.ManagedMachine;
+            var readings = (System.Collections.Generic.IReadOnlyDictionary<string, double>)instance.GetType().GetProperty("Readings")!.GetValue(instance)!;
+            TestContext.Out.WriteLine($"[notice] Neo Imager readings: {string.Join(", ", readings.Select(kv => $"{kv.Key} {kv.Value}"))}");
+            Assert.That(readings.ContainsKey("width_db_4"), Is.True);
+            Assert.That(readings.ContainsKey("gain_match_db"), Is.True, "3 s of sound: the gain match is known");
+            ShootEditor(rig.Effect, "neo-imager-editor");
+        }
+
+        [Test]
+        public void NeoExciterReportsItsConstantLatencyAndShowsItsEditor()
+        {
+            using var rig = new Rig(Exciter);
+            rig.Play(0.05);
+            int latency = rig.Effect.Latency;
+            Assert.That(latency, Is.GreaterThan(0));
+            rig.Param("Mode").SetValue(0, 4);
+            rig.Param("Amount 3").SetValue(0, 400);
+            rig.Play(3.6);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(latency), "the oversampling's delay, whatever the settings");
+            var instance = rig.Effect.ManagedMachine;
+            var readings = (System.Collections.Generic.IReadOnlyDictionary<string, double>)instance.GetType().GetProperty("Readings")!.GetValue(instance)!;
+            TestContext.Out.WriteLine($"[notice] Neo Exciter readings: {string.Join(", ", readings.Select(kv => $"{kv.Key} {kv.Value}"))}");
+            Assert.That(readings.ContainsKey("added_db"), Is.True);
+            ShootEditor(rig.Effect, "neo-exciter-editor");
+        }
+
+        [Test]
+        public void NeoDitherAddsNoLatencyAndShowsItsEditor()
+        {
+            using var rig = new Rig(Dither);
+            rig.Play(0.05);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(0));
+            Assert.That(rig.Param("Bits").DescribeValue(rig.Param("Bits").DefValue), Is.EqualTo("16"));
+            rig.Play(0.5);
+            ShootEditor(rig.Effect, "neo-dither-editor");
+        }
+
+        [Test]
         public void NeoLimiterHoldsTheCeilingReportsItsLatencyAndShowsItsEditor()
         {
             using var rig = new Rig(Limiter);
@@ -1639,7 +1689,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, Clipper, Transient, LowEnd })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, Clipper, Transient, LowEnd, Imager, Exciter, Dither })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");

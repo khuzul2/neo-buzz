@@ -1,0 +1,60 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Oomek Exciter",
+  "to": "Neo Exciter",
+  "summary": "Drive becomes the drive into the Tape curve, Pre Cut the crossover under the excited band, Amount that band's Amount; Neo Exciter adds the harmonics through oversampled, anti-aliased shapers where Oomek Exciter adds the whole shaped signal.",
+  "set": {
+    "Mode": "Tape",
+    "Crossover 1": "20 Hz",
+    "Crossover 2": "20 Hz",
+    "Amount 1": "0%",
+    "Amount 2": "0%",
+    "Amount 3": "0%",
+    "Shelf gain": "0.0 dB",
+    "Auto gain": "Off",
+    "Stereo": "L/R"
+  },
+  "rules": [
+    {
+      "kind": "db",
+      "from": "Drive",
+      "to": "Drive",
+      "scale": 16,
+      "why": "Oomek Exciter divides the sample by 2048 (full scale 32768 is 16) and multiplies by Drive before its shaper, so the shaper sees 16 × Drive for a full-scale input: that gain in dB, 20·log10(16 × Drive), clipped to Neo Exciter's 0 … 36 dB."
+    },
+    {
+      "kind": "unit",
+      "from": "Pre Cut",
+      "to": "Crossover 3",
+      "why": "Both in Hz: Oomek Exciter high-passes the input at Pre Cut before the shaper; Neo Exciter excites the band above Crossover 3 (Amount 1 – 3 are 0 %)."
+    },
+    {
+      "kind": "from_db",
+      "from": "Amount",
+      "to": "Amount 4",
+      "max": 1,
+      "why": "Amount is the level of the shaped signal added to the dry one, in dB with 0 dB at raw 120; Neo Exciter's Amount is that share of the added harmonics (100 % = 0 dB), so Oomek's +6 dB at the top of the range is held at 100 %."
+    }
+  ],
+  "unmapped": [
+    {
+      "param": "Post Cut",
+      "why": "Oomek Exciter high-passes the shaped signal again at Post Cut; Neo Exciter adds only the harmonics (the residual after the audio is taken out), so the shaped signal's fundamental, which Post Cut was there to keep out, is not added. A shelf on the harmonics (Shelf freq, Shelf gain) is the nearest control and is left flat."
+    }
+  ],
+  "remarks": [
+    "Oomek Exciter's shaper is 2x / (1 + 2|x|) at 44.1 kHz with no oversampling, so it aliases; Neo Exciter's Tape curve (tanh) is oversampled 4× with anti-aliasing and adds the odd harmonics only. The harmonic mix differs, the level of the added band is matched."
+  ],
+  "tolerance": {
+    "loudness_db": 3,
+    "band_db": 6,
+    "from_hz": 80,
+    "to_hz": 12000,
+    "measured": "Not measured yet: Oomek Exciter is a native Windows machine and the figures need the Windows package run. Derived from the source (Exciter.cpp: pre high-pass, Drive/2048 into 2x/(1 + 2|x|), post high-pass, times Amount, added to the dry signal)."
+  },
+  "evidence": [
+    "ExternalMachines/source/buzztrax-buzzmachines/Oomek/Exciter/Exciter.cpp: HP pre, Drive/2048, shaper 2x/(1 + 2|x|), HP post, times Amount, plus the dry signal",
+    "Machines/Manifests/Effects/Oomek Exciter.machine.json (curated: Drive in ×, cuts in Hz, Amount in dB)",
+    "Machines/NeoExciter/Params.def"
+  ]
+}

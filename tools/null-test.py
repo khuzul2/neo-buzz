@@ -247,6 +247,21 @@ CASES = [
        auto=[("Peak level", [(0, "-3 dB"), (2, "-9 dB")])]),
     fx("lowend-balance", "Neo Low End", "Mastering — Balance to the Mids (+6 dB)", [],
        auto=[("Crossover", [(0, "150 Hz"), (2, "80 Hz")])]),
+    # Neo Imager (docs/specs/mastering-tools.md §5.7, M5): the widths and Stereoize (a width automated: its smoothed ramps),
+    # Recover sides with every band narrowed, the crossovers moved; Delta switched on by automation.
+    fx("imager-wide", "Neo Imager", "Mastering — Air and Width", [],
+       auto=[("Width 4", [(0, "150%"), (1.5, "40%"), (2.5, "200%")])]),
+    fx("imager-recover", "Neo Imager", "Mixing — Narrow a Wide Mix, Keep the Level", [],
+       auto=[("Crossover 2", [(0, "2000 Hz"), (2, "500 Hz")])]),
+    fx("imager-stereoize", "Neo Imager", "Mono-Safe Widening (Stereoize Only)", [], auto=[("Delta", [(2, "On")])]),
+    # Neo Exciter (§5.8, M5): the five curves (Tape, Tube, Transistor, Diode, Warm), mid/side, auto gain, an Amount automated.
+    fx("exciter-tape", "Neo Exciter", "Mastering — Air", [],
+       auto=[("Amount 4", [(0, "30%"), (1.5, "80%"), (2.5, "10%")])]),
+    fx("exciter-warm-ms", "Neo Exciter", "Mastering — Subtle Warmth", [("Stereo", "M/S"), ("Auto gain", "On")]),
+    fx("exciter-diode-delta", "Neo Exciter", "Drums — Crack and Sizzle", [("Mode", "Diode")], auto=[("Delta", [(2, "On")])]),
+    # Neo Dither (§5.9, M5): TPDF at 16 bits, psychoacoustic shaping, 24 bits with the shaping switched by automation.
+    fx("dither-16", "Neo Dither", "16 bit — TPDF (Standard)", []),
+    fx("dither-16-shaped", "Neo Dither", "16 bit — TPDF, Psychoacoustic Shaping", [], auto=[("Bits", [(0, "16"), (2, "20")])]),
     # Neo Verb: the four algorithms, modulation, shimmer, a 20-second decay, and freeze switched on
     # mid-render by automation (the tail held with no loss).
     fx("verb-hall", "Neo Verb", "Hall — Concert", tail=2.5),

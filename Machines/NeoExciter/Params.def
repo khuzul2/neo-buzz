@@ -1,0 +1,29 @@
+# Neo Exciter parameters (docs/specs/mastering-tools.md §5.8). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoExciter
+namespace NeoBuzz.Exciter
+class NeoExciterMachine
+summary Harmonic exciter, the successor of Oomek Exciter: up to four Linkwitz–Riley bands, each driven through an oversampled, anti-aliased shaper (tape, tube, transistor, diode, or warm: even harmonics only), and only the harmonics it makes (the shaper's output minus the audio) are added back, by an Amount per band. A band at 0 % is left alone, bit for bit. A high shelf on the added harmonics, optional auto gain, left/right or mid/side, Delta (hear only what it adds) and a gain-match reading. Use it for air and presence on masters, vocals and drum buses, or for warmth in the lows with Warm mode.
+
+group Exciter
+Mode       "Mode"         0 4     0     enum Tape Tube Transistor Diode Warm | The curve: Tape (tanh, odd harmonics), Tube (asymmetric, even and odd), Transistor (towards a hard clip), Diode (soft logarithmic, asymmetric), Warm (even harmonics only)
+Drive      "Drive"        0 360   120   db 0 36                          | Gain into the shaper (before its output is brought back), 0.1 dB steps. More drive, more harmonics, higher orders
+group Bands
+Xo1        "Crossover 1"  0 10000 5340  freq 20 20000                      | Between the first and the second band
+Xo2        "Crossover 2"  0 10000 7253  freq 20 20000                      | Between the second and the third band (never below Crossover 1)
+Xo3        "Crossover 3"  0 10000 8674  freq 20 20000                      | Between the third and the fourth band (never below Crossover 2)
+Amount1    "Amount 1"     0 1000  0     pct                                | How much of the first band's harmonics is added. 0 % leaves the band alone
+Amount2    "Amount 2"     0 1000  0     pct                                | The second band's Amount
+Amount3    "Amount 3"     0 1000  0     pct                                | The third band's Amount
+Amount4    "Amount 4"     0 1000  250   pct                                | The fourth band's Amount
+group Output
+ShelfFreq  "Shelf freq"   0 10000 6942  freq 1000 20000                    | The corner of the high shelf on the added harmonics
+ShelfGain  "Shelf gain"   0 240   120   db -12 12                          | The high shelf's gain on the added harmonics: brighter or duller excitation without touching the audio
+Auto       "Auto gain"    0 1     0     switch                             | Keeps the loudness: the output's level (300 ms) follows the input's, within ±6 dB
+Stereo     "Stereo"       0 1     0     enum L/R M/S                       | What is excited: left and right, or mid and side (harmonics of the side widen, of the mid centre)
+Output     "Output"       0 480   240   db -24 24                          | Gain after the exciter, 0.1 dB steps (the editor's Match sets it from the gain-match reading)
+Delta      "Delta"        0 1     0     switch                             | Hear only what the exciter adds: the output minus the input, delayed to match (glides over 10 ms)
+
+# What the exciter measures (NeoExciterMachine.Readings, machine_readings), over the last 3 s.
+reading added_db          dB    | Level of the added harmonics against the input (RMS, dB); −100 when nothing is added
+reading gain_match_db     dB    | Short-term loudness out − in (K-weighted, 3 s): what Output would have to take back for equal loudness
+reading latency_samples   samples | The oversampling's delay, constant, reported to NeoBuzz Live

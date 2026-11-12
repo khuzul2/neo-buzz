@@ -35,6 +35,9 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Neo Clipper | effect | Hard, soft, tanh or knee clipping into a ceiling no sample passes, 1×–8× oversampled with antiderivative anti-aliasing, up to three bands, L/R or M/S, Delta and Match (mastering-tools.md §5.1) |
 | Neo Transient | effect | Attack and Sustain (±12 dB) from two level followers with a lookahead, or four-band Impact mode (microdynamics per band, auto gain), L/R or M/S, Delta and Match (mastering-tools.md §5.4) |
 | Neo Low End | effect | Shapes only the band below a 20–300 Hz Linkwitz–Riley crossover: Punch, Sustain, Contrast, balance to the mids, mono below a frequency, peak control; minimum or linear phase, Delta and Match (mastering-tools.md §5.5) |
+| Neo Imager | effect | Four zero-latency bands with the width of each from 0 to 200 %, Stereoize (a decorrelated mid added to the side, the mono sum untouched), Recover sides, per-band width and correlation readings, Delta and Match (mastering-tools.md §5.7) |
+| Neo Exciter | effect | Successor of Oomek Exciter: up to four bands through oversampled ADAA shapers (tape, tube, transistor, diode, warm), only the harmonics added by an Amount per band, a shelf on them, auto gain, L/R or M/S, Delta and Match (mastering-tools.md §5.8) |
+| Neo Dither | effect | Word-length reduction: TPDF dither, light or psychoacoustic noise shaping, output exactly on the 8 – 24 bit grid, auto blank; `render(bits, dither)` uses the same block (mastering-tools.md §5.9) |
 | Neo Analyzer | effect | Spectrum (FFT with peak hold, third-octave bars), loudness (momentary, short-term, integrated LUFS, range, true peak) and stereo (correlation, width, goniometer) with the analysis library's numbers; readings for agents; audio untouched |
 
 **Third batch (successors: machine-safety.md §4)**
@@ -451,6 +454,44 @@ A Linkwitz–Riley 24 split at the crossover (20 – 300 Hz); only the low band 
 | Isolation | above the crossover untouched (card: 1e-6) | not met literally: the 24 dB/octave skirt passes ~6 % of the low band's gain one octave up, 0.0002 % at 8×; the linear option is exact |
 | Latency | minimum phase the lookahead; linear reported | 240 samples (5 ms) minimum; 4607 (D+P) linear at 48 kHz |
 | CPU | ≥ 50× | at the reference's speed on the 2-core Xeon: minimum phase 139×, linear 116×; floors (x64/arm64) 70/45 and 55/35 |
+
+### Neo Imager (docs/specs/mastering-tools.md §5.7)
+
+`LrBands` (four zero-latency Linkwitz–Riley bands); per band the mid m = (l + r)/2 and the side s = (l − r)/2 go through: Width w (s' = w·s), Stereoize k (the side gets k times the mid through the 90 degree pair's second branch, so l + r is the input's) and Recover sides (ρ = √(1 − w²) times the side through the pair's second branch goes into the mid, keeping l² + r²). Every width at 100 % and every Stereoize at 0: the input, bit for bit (a 20 ms blend). Parameters: Crossover 1 – 3, Width 1 – 4 (0 – 200 %), Stereoize 1 – 4, Recover sides, Output, Delta. Readings: width_db_1 – 4, correlation_1 – 4, gain_match_db, latency_samples (0).
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Width | S/M ratio per band within 0.01 dB of the setting | 0, 25, 50, 150, 200 % in each band: within 0.01 dB (the band's own output against the band at 100 %) |
+| Stereoize | l + r the input's | the mono sum differs by −146.7 dB (float rounding of the two channels), not bit for bit; mono noise Stereoized 100 %: side/mid −0.0 dB, mid-side correlation −0.025 |
+| Recover sides | energy within 0.5 dB when narrowing to 0 % | +0.06 dB (−2.08 dB without Recover) on partly correlated noise |
+| Readings | correlation against `Stereo.Measures` | 0.566 against 0.563 |
+| Neutral, Blk, Alloc | input bit for bit, blocks of 256/128/117/16/1 identical, 0 bytes | hold |
+| CPU | as above | 90× at the reference's speed on the 2-core Xeon; floors 70 (x64), 45 (arm64) |
+
+### Neo Exciter (docs/specs/mastering-tools.md §5.8)
+
+Four `LrBands` bands, per channel (L/R or M/S) and band a 4× `FastOversampler` and a first-order ADAA shaper (Neo Drive's `Shapers.cs`: Tape, Tube, Transistor, Diode; Warm is u²/(1 + u²), an even function). What is added is the residual r = f(D·u)/D − u (the audio taken half a sample late, the ADAA's own delay), scaled by the band's Amount at the base rate, summed, high-passed at 20 Hz, shelved and added to the input delayed by the oversampling's latency: the audio never passes a filter. Auto gain: output power against input power in 300 ms one-poles, ±6 dB. Parameters: Mode, Drive (0 – 36 dB), Crossover 1 – 3, Amount 1 – 4, Shelf freq, Shelf gain, Auto gain, Stereo, Output, Delta. Readings: added_db, gain_match_db, latency_samples (58 at 48 kHz).
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Alias | ≤ −90 dB at 4× | 3.1 kHz at 0.5, drive 24 dB, Amount 100 %: Tape −134.5, Tube −115.9, Transistor −106.6, Diode −115.3, Warm −111.1 dB |
+| Harmonics | profile per mode reported; Warm: odd ≥ 40 dB under even | 1 kHz at 0.5, drive 12 dB (H2 / H3 / H5 re the tone): Tape —/−21.8/−34.8 (even/odd −205 dB), Tube −34.7/−21.9/−33.7 (−12.9), Transistor —/−20.4/−36.7 (−208), Diode −29.6/−25.2/−38.3 (−4.5), Warm −15.3/—/— with H4 −23.8 and every odd harmonic under −190 dB (+176 dB) |
+| Isolation | a band at Amount 0 leaves the input within 1e-6 | exact (−300 dB): 60 Hz with only band 4 excited |
+| Mix0, Lat | Amount 0 the input delayed bit for bit; the latency constant | exact; 58 samples at every mode and Amount |
+| Auto gain | loudness kept | −0.07 dB without, +0.00 dB with it (Transistor, drive 24 dB, two bands at 100 %) |
+| Delta, Blk, Alloc | output − input; blocks identical; 0 bytes | −300 dB; hold |
+| CPU | (no figure in the card) | Tape 22×, Warm 46× at the reference's speed on the 2-core Xeon; floors 16/10 and 32/20 |
+
+### Neo Dither (docs/specs/mastering-tools.md §5.9)
+
+`NeoBuzz.Dsp.Dither` per channel: TPDF from two xorshift32 generators seeded at Reset, error-feedback shaping (NTF = 1 + Σ b_k z⁻ᵏ: Light {−0.8, 0.25}; Psychoacoustic, the five-tap ear-weighted curve {−2.033, 2.165, −1.959, 1.590, −0.6149}, designed for 44.1 and 48 kHz), the output exactly k/2^(bits−1), clipped samples reset the feedback; Auto blank after Blank after (0.7 s) of exact digital silence. Parameters: Bits (8 – 24), Dither (Off, TPDF), Shaping (Off, Light, Psychoacoustic), Auto blank, Blank after. `render(bits=16|24, dither=off|tpdf|light|psychoacoustic)` rounds the master with the same block (`Requantize`) and writes PCM (`Wav.WriteStereoPcm`); the measurements are of the file.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Grid | every output sample on the grid | 8, 16, 20 and 24 bits, three shapes, full-scale and beyond: all on the grid and in range |
+| Linearity | −90 dBFS 1 kHz at 16 bits: no harmonics above the noise | the strongest of H2 – H14 is +4.4 dB over the mean noise bin with TPDF (+49.5 dB without dither) |
+| Noise | TPDF power LSB²/4 (±0.2 dB); shaped spectrum = design (±1 dB) | −0.01 dB at 16 and 20 bits; shaped bands within 0.19 dB (Light) and 0.06 dB (Psychoacoustic) of the design from 100 Hz to 20 kHz; total noise +2.3 dB (Light), +12.2 dB (Psychoacoustic) |
+| Blk, Alloc, repeat | blocks identical; 0 bytes; renders repeat | hold |
 
 ### Neo Analyzer (spectrum, loudness, stereo; MCP A4)
 
