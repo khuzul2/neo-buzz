@@ -12,6 +12,9 @@ A hybrid synth with three engine slots (A, B, C). Each plays a morphing wavetabl
 - Filter 1 and Filter 2: Ladder 24, Ladder 12, LP/BP/HP 12 and 24, Notch, Peak, Comb+ and Comb− (the cutoff is the comb's pitch; `F1 key track` 100 % plays it in tune), with drive, envelope amount (±6 octaves), key tracking and velocity. `Filter routing` 0 %: filter 1 into filter 2; 100 %: side by side.
 - Amp and filter envelopes; voice mode (Poly, Mono, Legato), polyphony up to 32, glide, bend range, `Quality`.
 - Modulation: two DAHDSR envelopes (`Env1 delay` … `Env1 release`, a curve per segment, −100 % a fast start, +100 % a slow one; `Env1 sync` Beats reads the times as beats), four LFOs (`LFO1 shape`, rate or `LFO1 sync`, `LFO1 retrig` On: one per note from `LFO1 phase`, Off: one free LFO; `LFO1 fade`), four macros, and sixteen routes: `R1 source`, `R1 dest`, `R1 amount`. Full amount moves pitch ±12 st, a cutoff ±6 octaves, an LFO's rate ±4 octaves, and positions, warp amounts, levels and resonance across their whole range; Amp scales the gain by 1 + amount.
+- Arpeggiator (`Arp mode`: Up, Down, Up Down, Played, Random or Chord; Off plays the keys as they come): the held notes one by one on the song's grid. `Arp rate` (1/32 … 1 bar) and `Arp feel` (Straight, Dotted, Triplet) give the step, `Arp octaves` (1–4) repeats the notes upwards, `Arp gate` is how much of a step each note sounds, `Arp swing` delays every second step (100 % by half a step), `Arp latch` keeps the notes after the keys are up (the next key replaces them). Random (and the sequencer's probabilities) draw from `Arp seed`: the same seed plays the same notes every time. While the song plays the steps follow its position (a bar's first step is on the beat); stopped, they start on the first key.
+- Step sequencer (`Seq mode`: Notes plays the steps on the key held (the last one pressed; the arpeggiator stands aside), Mod only runs the steps as modulation sources, Off): `Seq length` 1–32 steps of `Seq rate`/`Seq feel`, `Seq swing`, `Seq slew` (how smoothly the sources glide from step to step). Each step has a note offset (±48 semitones from the key), a velocity (0 is a rest), a gate (1–100 % of the step), a tie (holds into the next step, which then plays legato; the same note just goes on) and a probability. The steps are in the song (the machine state), not parameters: set them with `machine_data_import(machine="Dye", kind="sequence", path="seq.txt")`, a text file of steps separated by spaces, each `offset,velocity,gate,tie,probability` (every field after the first optional: `0,100,80,0,100` is a plain step; `7,110,60,1` is a tied +7). Route sources `Seq step` (the step's offset / 24, −1…1) and `Seq velocity` work in both modes.
+- Live MPE (`MPE` On): MIDI notes keep their channel (1 is the master; 2–16 member channels), and each member channel's pitch bend (`MPE bend range`, 48 semitones by default), pressure and slide (CC74) move that note alone: bend always, pressure and slide as the route sources `MPE pressure` and `MPE slide` (and `MPE bend`, ±1). The master channel's bend is the plain `Bend range` one for every note; Off ignores channels (pressure is then the plain `Aftertouch`, CC74 the slide for every note). Pattern notes are unchanged.
 
 | Table | Position 0 % → 100 % |
 |---|---|
@@ -53,11 +56,17 @@ A hybrid synth with three engine slots (A, B, C). Each plays a morphing wavetabl
 - Your own sample, per slot: `machine_data_import(machine="Dye", kind="sample", path="C:/Samples/mine.wav", item=1)` loads a WAV (8 to 32 bit, mono or stereo; the first 20 s) into slot B, sets `B sample` to User and, unless the slot is Granular, `B engine` to Sample. It lives in the song and the preset's machine data, 24 bit; set `B root` to its pitch. There is no multisample or SFZ import yet: one sample per slot, so layer slots for zones.
 - Pads from a sample: Sample, `A loop` Forward, `A unison` 3–8; for clouds, Granular with `A scan` 0.1–0.5×, `A spray` 10–30 %, size 100–200 ms and 30–60 grains a second. Frozen textures: `A scan` 0.
 - Your own table, per slot: a WAV of 2048-sample frames (or a clm chunk saying the frame size) or a single cycle. `machine_data_import(machine="Dye", kind="wavetable", path="C:/Tables/mine.wav", item=1)` loads it into slot B and sets `B table` to User.
+- Arpeggios: `Arp mode` Up Down, `Arp rate` 1/16, `Arp octaves` 2, `Arp gate` 40–60 % over a plucked or short sound; Chord with `Arp feel` Triplet for stabs; `Arp latch` On with Played at 1/4 for a pad that plays itself. Hold the chord from a pattern or the keyboard.
+- Sequenced lines: `Seq mode` Notes, `Voice mode` Legato with a little glide for a tied acid line, steps with velocities 70–120 and `R1 source` Seq velocity to `F1 cutoff` for accents; probabilities of 50–70 % on some steps and a fixed `Arp seed` for a pattern that varies but repeats. `Seq mode` Mod with `Seq slew` 70 % and `R1 source` Seq step → `F1 cutoff` makes a stepped filter sweep under chords you play.
+- Expressive MIDI controllers: `MPE` On, `R1` MPE pressure → `F1 cutoff`, `R2` MPE slide → `A position`; set the controller's bend range to match `MPE bend range`.
 
 ## Gotchas
 
 - Routes are parameters (source, destination, amount), so `param_set` and presets set them like any other; a route with source or dest Off, or amount 0 %, does nothing.
 - Free LFOs (retrig Off) don't take the LFO-rate destinations; per-note ones do.
+- The arpeggiator and the sequencer play only while there are held notes (the sequencer's Mod mode runs always); the sequencer's Notes mode takes over from the arpeggiator. A latched arpeggio ends with an All notes off or a transport stop. Changing `Arp mode` or `Seq mode` releases what they were sounding.
+- Steps are in the song, so `param_set` can't change them: import a `sequence` file (see above), or edit them on the Arp & Seq page.
+- Held notes and the grid: a key played while the song is stopped starts the steps at that moment; while the song plays the first step after the key is the next grid step, and note-ons land on exact samples whatever the block size.
 
 - Freshly added it plays a saw (`A table` Basic at 67 %) through a Ladder 24; B and C are Off.
 - A silent slot still renders when it is another's modulator (its level only mutes it).
@@ -115,3 +124,14 @@ A hybrid synth with three engine slots (A, B, C). Each plays a morphing wavetabl
 | "Keys — Steel Plate" | a hard struck plate, 48 modes, a long ring | `A material`, `A modes` |
 | "Pad — Bowed Bell and Pipe" | a bowed bell and an octave-up bowed tube, slowly moving | `B level`, `A position` |
 | "Keys — Glass Bell" | the bell sample with a Formants table an octave up | `B level` |
+| "Arp — Glass Pluck Up" | a plucked string up two octaves in sixteenths | `Arp octaves`, `Arp gate` |
+| "Arp — Saw Up Down" | detuned saws up and down in swung eighths, a resonant filter envelope | `Arp swing`, `F1 reso` |
+| "Arp — Triplet Chord Stabs" | the whole chord in triplet eighths, short | `Arp gate`, `Flt decay` |
+| "Arp — Random Bells" | struck bells in a seeded random order over three octaves | `Arp seed`, `Arp gate` |
+| "Arp — Dotted Organ Down" | the organ set down in dotted eighths | `Arp feel`, `A tilt` |
+| "Arp — Latched Played Pad" | a pad arpeggiated in played order, latched | `Arp latch`, `Arp rate` |
+| "Seq — Acid Line" | a 16-step legato line with ties, rests and accents on the key held | `Seq mode`, `R1 amount` |
+| "Seq — Pulse Bass" | an 8-step swung pulse bass | `Seq swing`, `A pulse width` |
+| "Seq — Filter Steps" | the sequencer as modulation: stepped, slewed filter and position under held chords | `Seq slew`, `R1 amount` |
+| "Seq — Probability Pluck" | a plucked 16-step pattern with probabilities of 50–100 % | `Arp seed`, `A force` |
+| "MPE — Expressive Lead" | pressure opens the filter and the level, slide moves the position, per-note bend | `MPE bend range`, `R1 amount` |

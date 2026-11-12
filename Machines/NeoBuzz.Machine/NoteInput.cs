@@ -10,7 +10,6 @@ namespace NeoBuzz.Machine
 {
     internal sealed class NoteInput
     {
-    {
         public const int MidiKeyBase = 1000;
         const int DefaultVelocity = 100;
 

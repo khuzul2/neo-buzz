@@ -187,6 +187,17 @@ CASES = [
     gen("dye-modal-skin", "Dye Essence", "Bass — Skin Drum", [], BASS),
     gen("dye-modal-plate", "Dye Essence", "Keys — Steel Plate", [], KEYS),
     gen("dye-modal-bellpipe", "Dye Essence", "Pad — Bowed Bell and Pipe", [], CHORDS),
+    # P4a (docs/specs/dye-essence.md §4.9): the arpeggiator and the sequencer follow the song's position; the notes land on exact samples.
+    gen("dye-arp-pluck", "Dye Essence", "Arp — Glass Pluck Up", [], CHORDS),
+    gen("dye-arp-saw", "Dye Essence", "Arp — Saw Up Down", [], CHORDS),
+    gen("dye-arp-triplet", "Dye Essence", "Arp — Triplet Chord Stabs", [], CHORDS),
+    gen("dye-arp-bells", "Dye Essence", "Arp — Random Bells", [], CHORDS),
+    gen("dye-arp-organ", "Dye Essence", "Arp — Dotted Organ Down", [], CHORDS),
+    gen("dye-arp-latch", "Dye Essence", "Arp — Latched Played Pad", [], CHORDS),
+    gen("dye-seq-acid", "Dye Essence", "Seq — Acid Line", [], BASS),
+    gen("dye-seq-bass", "Dye Essence", "Seq — Pulse Bass", [], BASS),
+    gen("dye-seq-filter", "Dye Essence", "Seq — Filter Steps", [], CHORDS),
+    gen("dye-seq-prob", "Dye Essence", "Seq — Probability Pluck", [], KEYS),
     # Neo FM6: algorithms, feedback, the Clean 2x and Raw 1x engines, envelopes, LFO.
     gen("fm6-tine-piano", "Neo FM6", "Keys — Tine Piano", [], KEYS),
     gen("fm6-glass-bell", "Neo FM6", "Bell — Glass Bell", [], BELLS, tail=2.0),

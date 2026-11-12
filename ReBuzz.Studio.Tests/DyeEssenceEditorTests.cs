@@ -123,7 +123,7 @@ namespace ReBuzz.Studio.Tests
 
                 var pages = Pages(window);
                 var names = ((IReadOnlyList<string>)Get(pages, "Names")).ToArray();
-                Assert.That(names, Is.EqualTo(new[] { "Oscillators", "Mix & filters", "Modulation" }));
+                Assert.That(names, Is.EqualTo(new[] { "Oscillators", "Mix & filters", "Modulation", "Arp & Seq" }));
                 var pageSize = (Size)Get(pages, "PageSize");
                 Assert.Multiple(() =>
                 {
@@ -337,6 +337,60 @@ namespace ReBuzz.Studio.Tests
                 Pump();
                 Assert.That(Global(m, "LFO1 shape").GetValue(0), Is.EqualTo(7));
                 Assert.That(Shape(m, 0), Does.StartWith("0,-1 0.006,0,-0.5 0.1062,-1"), "the preset's shape");
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+        [AvaloniaTest]
+        public void TheSequencersStepsAreEditedInPlaceAndUndone()
+        {
+            var m = Add("Steps Dye");
+            try
+            {
+                var window = Open(m);
+                var pages = Pages(window);
+                pages.GetType().GetProperty("Selected")!.SetValue(pages, 3);
+                Pump();
+                window.UpdateLayout();
+                var seq = Section(window, "Sequencer");
+                var inner = seq.GetVisualDescendants().OfType<Control>().First(c => c.GetType().Name == "Pages");
+                inner.GetType().GetProperty("Selected")!.SetValue(inner, 0);   // the Note lane
+                Pump();
+                window.UpdateLayout();
+                var view = seq.GetVisualDescendants().OfType<Control>().Single(c => c.GetType().Name == "InteractiveGraph" && c.IsEffectivelyVisible);
+                string Steps() => Get(m.ManagedMachine, "Pattern").ToString()!;
+                var stack = Core.SongCore.ActionStack;
+                int steps = stack.Actions.Count();
+                Assert.That(Steps(), Is.EqualTo(""), "plain steps to start with");
+
+                // A press a quarter of the way down step 5's bar: +12 semitones (the middle is 0, the top +24), one undo step.
+                double w = (view.Bounds.Width - 16) / 32, top = 8, height = view.Bounds.Height - 30;
+                var press = At(view, window, 8 + 4.5 * w, top + 0.25 * height);
+                window.MouseDown(press, MouseButton.Left);
+                // Dragged across to step 6 and down to the middle: that step 0.
+                window.MouseMove(At(view, window, 8 + 5.5 * w, top + 0.5 * height));
+                window.MouseUp(At(view, window, 8 + 5.5 * w, top + 0.5 * height), MouseButton.Left);
+                Pump();
+                var written = Steps().Split(' ');
+                Assert.That(written[4], Does.StartWith("12,"), "step 5: +12");
+                Assert.That(stack.Actions.Count(), Is.EqualTo(steps + 1), "the gesture is one step");
+                Studio.Screenshot(window, "dye-essence-editor-sequencer");
+
+                byte[] data = m.Data;
+                string drawn = Steps();
+                Core.SongCore.Undo();
+                Pump();
+                Assert.That(Steps(), Is.EqualTo(""), "undo puts the steps back");
+                m.Data = data;
+                Assert.That(Steps(), Is.EqualTo(drawn), "the data round trip");
+
+                // A factory preset carries its steps.
+                m.GetPreset("Seq — Acid Line").Apply(m, true);
+                Pump();
+                Assert.That(Steps(), Does.StartWith("0,110,50,0,100 0,70,50,0,100 12,100,50,0,100 0,0,"), "the preset's steps");
+                Assert.That(Global(m, "Seq mode").GetValue(0), Is.EqualTo(1), "Notes");
             }
             finally
             {

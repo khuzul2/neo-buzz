@@ -34,7 +34,7 @@ namespace NeoBuzz.DyeEssence
         const double ModPageWidth = 592, MacrosWidth = 164, RoutesWidth = 400, LfoViewWidth = ModPageWidth + MacrosWidth - 250;
 
         /// <summary>The pages, in order.</summary>
-        internal static readonly string[] PageNames = { "Oscillators", "Mix & filters", "Modulation" };
+        internal static readonly string[] PageNames = { "Oscillators", "Mix & filters", "Modulation", "Arp & Seq" };
 
         protected override string Title => "Dye Essence";
         protected override NeoColor Accent => AccentColor;
@@ -286,8 +286,70 @@ namespace NeoBuzz.DyeEssence
                     Layout.Row(S("Envelopes", envelopes), S("Macros", Knobs(2, (P.M1, "Macro 1"), (P.M2, "Macro 2"), (P.M3, "Macro 3"), (P.M4, "Macro 4")))),
                     S("LFOs", lfos)),
                 S("Routes", new RouteList(ctx, RoutesWidth))));
+            pages.Add(PageNames[3], ArpPage(ctx, machine, Knobs, S));
             return pages;
         }
+
+        /// <summary>
+        /// The arpeggiator, live MPE and the step sequencer (§4.9): the arpeggiator's mode, step and notes; MPE's switch and
+        /// range; the sequencer's mode, length, step and the steps themselves, one lane at a time.
+        /// </summary>
+        static UIElement ArpPage(EditorContext ctx, DyeEssenceMachine machine, Func<int, (int Index, string Label)[], UniformGrid> knobs, Func<string, UIElement, UIElement> section)
+        {
+            var arp = section("Arpeggiator", Layout.Column(
+                new ParamDropdown(ctx, P.ArpMode, width: 120),
+                Layout.Gap(1, 4),
+                Layout.Row(new ParamDropdown(ctx, P.ArpRate, "rate", 56), Layout.Gap(4), new ParamDropdown(ctx, P.ArpFeel, "feel", 72)),
+                Layout.Gap(1, 4),
+                knobs(3, new[] { (P.ArpOct, "octaves"), (P.ArpGate, "gate"), (P.ArpSwing, "swing") }),
+                Layout.Gap(1, 2),
+                Layout.Row(new ParamChoice(ctx, P.ArpLatch, "Latch", 30), Layout.Gap(8), new ParamKnob(ctx, P.ArpSeed, "seed", D))));
+            var mpe = section("Live MPE", Layout.Column(
+                Layout.Row(new ParamChoice(ctx, P.MpeMode, "MPE", 30), Layout.Gap(8), new ParamKnob(ctx, P.MpeBend, "range", D)),
+                Layout.Gap(1, 4),
+                new TextBlock { Foreground = Theme.DimText, FontFamily = Theme.FontFamily, FontSize = 11, Width = 232, TextWrapping = TextWrapping.Wrap, Text = "Per-note bend, pressure and slide, as the sources MPE bend, MPE pressure and MPE slide" }));
+            var edit = new SeqEdit(ctx, machine);
+            var lanes = new Pages(AccentColor, StepsWidth, StepsHeight, "Dye Essence/steps");
+            string[] laneNames = { "Note", "Velocity", "Gate", "Tie", "Probability" };
+            string[] laneHelp =
+            {
+                "Each step's note, in semitones from the key held (the middle is 0). Drag across the bars; the wheel moves a step by one; double-click puts it back to 0",
+                "Each step's velocity; 0 is a rest. Drag across the bars; the wheel moves a step by 5 (Shift: 1)",
+                "How much of its step each note sounds. Drag across the bars; the wheel moves a step by 5 (Shift: 1)",
+                "A tied step holds into the next, which then plays legato (the same note just goes on). Press a step to tie or untie it; drag across to do the same to more",
+                "The chance each step plays (seeded: the same seed plays the same notes). Drag across the bars; the wheel moves a step by 5 (Shift: 1)",
+            };
+            for (int i = 0; i < laneNames.Length; i++)
+            {
+                var lane = (SeqLane)i;
+                var input = new SeqStepInput(edit, lane);
+                var view = new InteractiveGraph(StepsWidth, StepsHeight, (g, r) => SeqStepPainter.Draw(g, r, edit, input, lane, AccentColor), input) { ToolTip = laneHelp[i] };
+                ctx.Changed += view.InvalidateVisual;
+                int seen = machine?.ShapesVersion ?? 0;
+                Poll.Every(view, 0.3, () =>
+                {
+                    int now = machine?.ShapesVersion ?? 0;
+                    if (now == seen) return;
+                    seen = now;
+                    view.InvalidateVisual();
+                });
+                lanes.Add(laneNames[i], view);
+            }
+            var seq = section("Sequencer", Layout.Column(
+                Layout.Row(
+                    new ParamDropdown(ctx, P.SeqMode, width: 80),
+                    Layout.Gap(8), new ParamDropdown(ctx, P.SeqRate, "rate", 56),
+                    Layout.Gap(4), new ParamDropdown(ctx, P.SeqFeel, "feel", 72),
+                    Layout.Gap(12), new ParamKnob(ctx, P.SeqLength, "length", D),
+                    Layout.Gap(8), new ParamKnob(ctx, P.SeqSwing, "swing", D),
+                    Layout.Gap(8), new ParamKnob(ctx, P.SeqSlew, "slew", D)),
+                Layout.Gap(1, 6),
+                lanes));
+            return Layout.Row(Layout.Column(arp, mpe), seq);
+        }
+
+        /// <summary>The step view's size: 32 steps across the page beside the arpeggiator's column.</summary>
+        const double StepsWidth = 900, StepsHeight = 250;
 
         /// <summary>A modulation envelope's shape: delay, attack, hold, decay to the sustain, a stretch of sustain, release; each with its curve.</summary>
         static GraphView ModEnvView(EditorContext ctx, int delay, double width, double height)
