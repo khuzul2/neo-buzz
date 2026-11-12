@@ -626,7 +626,12 @@ def main(argv):
             # The package's own binary where it is upstream's file is the same machine: a difference there is the machine
             # not rendering the same twice (reported, not a failure).
             if gate and label == "package (rebuilt)":
-                quiet = sorted(set(silent_cases(b["cases"])) | set(silent_cases(r["builds"][r["reference"]]["cases"])))
+                # The reference is upstream's first instance, which for a machine with a source fix starts on heap garbage and may
+                # play silence where its others play (FSM WahMan's quiet-input: run 43239778599, "peak silent" against -37 dBFS in
+                # every other build): then the references are the zeroed builds (deterministic), not that instance.
+                refs = [lb for lb, role in r["roles"].items() if role == "zeroed"] if r["fixed"] else []
+                refs = refs or [r["reference"]]
+                quiet = sorted(set(silent_cases(b["cases"])).union(*(silent_cases(r["builds"][lb]["cases"]) for lb in refs)))
                 if quiet:
                     failed.append(f"{gear} ({label})")
                     reasons += [f"{gear} ({label}): {c}: silent (peak under {SOUNDS_DBFS:.0f} dBFS) in the reference or this build: it compares nothing"
