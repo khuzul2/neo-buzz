@@ -59,8 +59,93 @@ namespace WDE.ModernPatternEditor.ColumnRenderer
                 ExtentWidth = ColumnWidths.Sum();
             }
 
+            UpdateColumnGeometry();
             Clear();
             InvalidateMeasure();
+        }
+
+        // Fork (docs/specs/dye-essence.md §5.5): the columns the beats draw. A machine's globals are one
+        // column set, so with hundreds of parameters every beat laid out and drew the text of all of them
+        // (a frame at 704 parameters cost 2.3 times one at 106 with the same pixels on screen). The beats
+        // draw the columns in view and half a view either side, and are drawn again when the view leaves
+        // those (as PatternGrid.DrawBeat does in the studio). Positions and hit tests are unchanged.
+        int[] columnWidthArray = new int[0];
+        int[] columnLeftArray = new int[] { 0 };    // columnLeftArray[c] = x of column c; [count] = ExtentWidth
+        int drawnFirst, drawnEnd;                   // the columns drawn: [drawnFirst, drawnEnd)
+
+        /// <summary>The first column the beats draw.</summary>
+        public int FirstDrawnColumn => drawnFirst;
+        /// <summary>How many columns the beats draw, from <see cref="FirstDrawnColumn"/>.</summary>
+        public int DrawnColumnCount => drawnEnd - drawnFirst;
+        /// <summary>The x of a column in this element.</summary>
+        public int ColumnLeft(int column) => columnLeftArray[column];
+        /// <summary>The width of a column (BeatVisual.GetColumnWidth, as when the set was shown).</summary>
+        public int ColumnWidthAt(int column) => columnWidthArray[column];
+
+        void UpdateColumnGeometry()
+        {
+            columnWidthArray = columnSet != null ? ColumnWidths.ToArray() : new int[0];
+            columnLeftArray = new int[columnWidthArray.Length + 1];
+            for (int c = 0; c < columnWidthArray.Length; c++)
+                columnLeftArray[c + 1] = columnLeftArray[c] + columnWidthArray[c];
+            drawnFirst = drawnEnd = 0;
+        }
+
+        /// <summary>The column at x (in this element), held to the set's columns.</summary>
+        int ColumnAt(double x)
+        {
+            int lo = 0, hi = columnWidthArray.Length - 1;
+            while (lo < hi)
+            {
+                int mid = (lo + hi + 1) / 2;
+                if (columnLeftArray[mid] <= x) lo = mid; else hi = mid - 1;
+            }
+            return lo;
+        }
+
+        /// <summary>This element's x in its scroll viewer's content: after the column sets before it.</summary>
+        double LeftInContent()
+        {
+            double x = Margin.Left;
+            if (VisualTreeHelper.GetParent(this) is StackPanel sp && sp.Orientation == Orientation.Horizontal)
+            {
+                foreach (UIElement child in sp.Children)
+                {
+                    if (child == this) break;
+                    if (child is FrameworkElement fe)
+                        x += fe.Margin.Left + (fe is ColumnSetElement cse ? cse.ExtentWidth : fe.ActualWidth) + fe.Margin.Right;
+                }
+            }
+            return x;
+        }
+
+        /// <summary>
+        /// The columns to draw for the view (its x in the scroll viewer's content and its width); true
+        /// when they change, so the beats in view are drawn again.
+        /// </summary>
+        bool UpdateDrawnColumns(double viewX, double viewWidth)
+        {
+            if (columnWidthArray.Length == 0)
+            {
+                bool changed = drawnEnd != 0 || drawnFirst != 0;
+                drawnFirst = drawnEnd = 0;
+                return changed;
+            }
+
+            // Before the first layout of the scroll viewer: as wide as the screen.
+            if (!(viewWidth > 0)) viewWidth = SystemParameters.PrimaryScreenWidth;
+
+            double from = viewX - LeftInContent();
+            double to = from + viewWidth;
+            int v0 = ColumnAt(from), v1 = ColumnAt(to) + 1;
+            if (drawnEnd > drawnFirst && v0 >= drawnFirst && v1 <= drawnEnd) return false;
+
+            double margin = viewWidth / 2;
+            int first = ColumnAt(from - margin), end = ColumnAt(to + margin) + 1;
+            if (first == drawnFirst && end == drawnEnd) return false;
+            drawnFirst = first;
+            drawnEnd = end;
+            return true;
         }
 
         DispatcherAction invalidateBeatsAction;
@@ -201,6 +286,10 @@ namespace WDE.ModernPatternEditor.ColumnRenderer
             Point offset = new Point(sv.HorizontalOffset, sv.VerticalOffset - mgrid.Margin.Top);
             Size viewport = new Size(scp.ViewportWidth, scp.ViewportHeight);
 
+            // Fork (docs/specs/dye-essence.md §5.5): other columns in view: the beats in view draw them.
+            if (UpdateDrawnColumns(offset.X - mgrid.Margin.Left, viewport.Width))
+                Clear();
+
             int fvb = Math.Max(0, Math.Min(columnSet.BeatCount - 1, (int)Math.Floor(offset.Y / BeatHeight)));
             int lvb = Math.Max(0, Math.Min(columnSet.BeatCount - 1, (int)Math.Floor((offset.Y + viewport.Height) / BeatHeight)));
 
@@ -235,7 +324,8 @@ namespace WDE.ModernPatternEditor.ColumnRenderer
 
         void sv_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
-            if (e.VerticalChange != 0)
+            // Fork (docs/specs/dye-essence.md §5.5): and horizontally, for the columns drawn.
+            if (e.VerticalChange != 0 || e.HorizontalChange != 0 || e.ViewportWidthChange != 0)
                 UpdateVisuals();
         }
 
