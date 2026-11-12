@@ -322,7 +322,7 @@ namespace ReBuzz.AppViews.Session
             });
 
             var effects = SessionMixer.EffectMachines(buzz.Song).ToList();
-            var returnItem = new MenuItem { Header = "Return tracks", ToolTip = "Effect machines that tracks send to from their mixer strips (like Live's return tracks)" };
+            var returnItem = new MenuItem { Header = "Return tracks", ToolTip = "Effect machines that tracks send to from their mixer strips (return tracks)" };
             foreach (var m in effects)
             {
                 var machine = m;

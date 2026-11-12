@@ -16,28 +16,47 @@ namespace WDE.ModernPatternEditor.ColumnRenderer
 
         public void Render(ColumnSetElement cse, IColumnSet columnSet, int index, int h)
         {
-            var beats = columnSet.Columns.Select(c => c.FetchBeat(index)).ToArray();
-            var widths = columnSet.Columns.Select(c => GetColumnWidth(c)).ToArray();
+            // Fork (docs/specs/dye-essence.md §5.5): the columns the element draws (those in or near the
+            // view), at their place in the set, not every column of the set.
+            int c0 = cse.FirstDrawnColumn;
+            var beats = new IBeat[cse.DrawnColumnCount];
+            var widths = new int[beats.Length];
+            var shape = new int[beats.Length + 1];
+            for (int i = 0; i < beats.Length; i++)
+            {
+                var column = columnSet.Columns[c0 + i];
+                beats[i] = column.FetchBeat(index);
+                widths[i] = cse.ColumnWidthAt(c0 + i);
+                shape[i] = (int)column.Type | column.DigitCount << 4 | (column.TiedToNext ? 1 << 12 : 0);
+            }
+            // The first row's highlight takes its height from the set's first column, as before.
+            int firstRows = columnSet.Columns.Count > 0 ? (c0 == 0 && beats.Length > 0 ? beats[0] : columnSet.Columns[0].FetchBeat(index)).Rows.Count : 0;
+            shape[beats.Length] = firstRows;
+            int x0 = cse.ColumnLeft(c0);
 
             if (usecache)
             {
-                var key = new BeatVisualCacheKey(beats, index & 1, widths, h);
+                // The shape (each column's type, digits and tie, and the first column's rows) tells apart
+                // two runs of columns of the same widths and values, which draw differently.
+                var key = new BeatVisualCacheKey(beats, index & 1, widths, h, shape);
 
                 var br = BeatVisualCache.Lookup(key);
                 if (br == null)
                 {
-                    br = CreateBitmapCacheBrush(cse, beats, index, widths, h);
+                    br = CreateBitmapCacheBrush(cse, beats, c0, firstRows, index, widths, h);
                     BeatVisualCache.Cache(key, br);
                 }
 
                 var dc = RenderOpen();
-                dc.DrawRectangle(br, null, new Rect(0, 0, widths.Sum(), h));
+                dc.DrawRectangle(br, null, new Rect(x0, 0, widths.Sum(), h));
                 dc.Close();
             }
             else
             {
                 var dc = RenderOpen();
-                RenderVisual(cse, dc, beats, index, widths, h);
+                dc.PushTransform(new TranslateTransform(x0, 0));
+                RenderVisual(cse, dc, beats, c0, firstRows, index, widths, h);
+                dc.Pop();
                 dc.Close();
             }
         }
@@ -49,12 +68,12 @@ namespace WDE.ModernPatternEditor.ColumnRenderer
         }
 
 
-        BitmapCacheBrush CreateBitmapCacheBrush(ColumnSetElement cse, IBeat[] beats, int index, int[] w, int h)
+        BitmapCacheBrush CreateBitmapCacheBrush(ColumnSetElement cse, IBeat[] beats, int firstColumn, int firstRows, int index, int[] w, int h)
         {
             var dv = new DrawingVisual();
             var dc = dv.RenderOpen();
 
-            RenderVisual(cse, dc, beats, index, w, h);
+            RenderVisual(cse, dc, beats, firstColumn, firstRows, index, w, h);
 
             dc.Close();
 
@@ -105,7 +124,8 @@ namespace WDE.ModernPatternEditor.ColumnRenderer
             return null;
         }
 
-        void RenderVisual(ColumnSetElement cse, DrawingContext dc, IBeat[] beats, int index, int[] w, int h)
+        // beats[i] is column firstColumn + i of the set; firstRows the rows of the set's first column.
+        void RenderVisual(ColumnSetElement cse, DrawingContext dc, IBeat[] beats, int firstColumn, int firstRows, int index, int[] w, int h)
         {
             if (backgroundBrush == null)
             {
@@ -137,9 +157,9 @@ namespace WDE.ModernPatternEditor.ColumnRenderer
 
                 dc.DrawRectangle(br, null, new Rect(0, 0, w.Sum(), h));
             }
-            else if (PatternEditor.Settings.BeatHighlight == BeatHighlightMode.FirstRow && beats.Count() > 0)
+            else if (PatternEditor.Settings.BeatHighlight == BeatHighlightMode.FirstRow && firstRows > 0)
             {
-                int rowHeight = h / beats[0].Rows.Count;
+                int rowHeight = h / firstRows;
                 br = darkBackgroundBrush;
                 dc.DrawRectangle(br, null, new Rect(0, 0, w.Sum(), rowHeight));
                 br = backgroundBrush;
@@ -150,7 +170,7 @@ namespace WDE.ModernPatternEditor.ColumnRenderer
 
             for (int i = 0; i < beats.Length; i++)
             {
-                int xoffset = cse.ColumnSet.Columns[i].TiedToNext ? (int)(Math.Ceiling(Font.GetWidth(0)) / 2) : 0;
+                int xoffset = cse.ColumnSet.Columns[firstColumn + i].TiedToNext ? (int)(Math.Ceiling(Font.GetWidth(0)) / 2) : 0;
 
                 if (PatternEditor.Settings.TextDropShadow && textDropShadowBrush != null)
                     DrawColumn(dc, i, beats[i], x + xoffset + 1, 1, w[i], h, true);

@@ -68,7 +68,7 @@ namespace ReBuzz.Core
     /// The class is large because it brings together many subsystems; comments
     /// are added to explain high-level responsibilities and key public methods.
     /// </summary>
-    public class ReBuzzCore : IBuzz, INotifyPropertyChanged, ISessionHost
+    public class ReBuzzCore : IBuzz, INotifyPropertyChanged, ISessionHost, UiEventQueue.ITarget
     {
         // Build and runtime info
         public static int buildNumber = int.Parse(BuildInfo.Number);
@@ -382,17 +382,24 @@ namespace ReBuzz.Core
                 GlobalState.StateFlags |= SF_PLAYING;
                 // Fork: posted, not Invoke. This runs on the audio thread under AudioLock: waiting
                 // for the UI here made the first buffer late whenever the UI was busy, and could
-                // deadlock with a UI request waiting for AudioLock.
-                dispatcher.BeginInvoke(() =>
-                {
-                    PropertyChanged.Raise(this, "Playing");
-                });
+                // deadlock with a UI request waiting for AudioLock. Fork (audio hygiene): through the
+                // UI event queue, as the play position is: a posted closure and the dispatcher's
+                // operation were 216 bytes on the audio thread at every start.
+                if (Interlocked.Exchange(ref playingEventPending, 1) == 0)
+                    UiEvents.Enqueue(this, 0, 0);
                 return true;
             }
             return false;
         }
 
         bool preparePlaying;
+        int playingEventPending;
+
+        void UiEventQueue.ITarget.Deliver(int arg, int kind)
+        {
+            Volatile.Write(ref playingEventPending, 0);
+            PropertyChanged.Raise(this, "Playing");
+        }
 
         /// <summary>
         /// Fork: playing, or set to play and waiting for the next tick. Start/stop toggles
@@ -898,6 +905,7 @@ namespace ReBuzz.Core
             SessionCore = new SessionCore(this);
             global::ReBuzz.Core.Session.SessionClipEngine.Install();      // fork (1.0): audio tracks
             UiEvents = UiEventQueue.For(dispatcher);    // fork (audio hygiene): with its signal, made here on the UI thread
+            UiEvents.Reserve(1);                        // the transport's Playing event (StartPlaying)
 
             midiActivityTimer = dispatcher.CreateTimer(TimeSpan.FromSeconds(0.5), () =>
             {

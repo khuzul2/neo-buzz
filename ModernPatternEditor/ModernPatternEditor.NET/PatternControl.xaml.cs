@@ -146,17 +146,48 @@ namespace WDE.ModernPatternEditor
 
         }
 
-        List<Tuple<IParameter, Action<IParameter, int>, Knob, RoutedPropertyChangedEventHandler<double>>> knobParameters = new List<Tuple<IParameter, Action<IParameter, int>, Knob, RoutedPropertyChangedEventHandler<double>>>();
+        // Fork (docs/specs/dye-essence.md §5.5): the knobs made (those of the columns in or near the view),
+        // each with what lets it go: its parameter's subscription and its handler.
+        Dictionary<UIElement, Tuple<IParameter, Action<IParameter, int>, Knob, RoutedPropertyChangedEventHandler<double>>> knobParameters = new Dictionary<UIElement, Tuple<IParameter, Action<IParameter, int>, Knob, RoutedPropertyChangedEventHandler<double>>>();
+
+        // Fork (docs/specs/dye-essence.md §5.5): the header rows of labels and knobs, which make the cells
+        // of the columns in view only (ColumnRenderer.ColumnStrip).
+        readonly List<ColumnRenderer.ColumnStrip> headerStrips = new List<ColumnRenderer.ColumnStrip>();
+
+        void ReleaseKnob(UIElement cell)
+        {
+            if (!knobParameters.TryGetValue(cell, out var p)) return;
+            knobParameters.Remove(cell);
+            p.Item1.UnsubscribeEvents(0, p.Item2, null);        // TODO: track
+            p.Item3.ValueChanged -= p.Item4;
+        }
 
         public void ReleaseHeaders()
         {
-            foreach (var p in knobParameters)
-            {
-                p.Item1.UnsubscribeEvents(0, p.Item2, null);        // TODO: track
-                p.Item3.ValueChanged -= p.Item4;
-            }
+            foreach (var s in headerStrips)
+                s.ReleaseCells();
+            headerStrips.Clear();
+
+            foreach (var cell in knobParameters.Keys.ToList())
+                ReleaseKnob(cell);
 
             knobParameters.Clear();
+        }
+
+        /// <summary>
+        /// Fork (docs/specs/dye-essence.md §5.5): the part of a column set's header in view, in the set's
+        /// coordinates (the header scrolls with the grid).
+        /// </summary>
+        Tuple<double, double> HeaderView(double setLeft)
+        {
+            double x = headerSV.HorizontalOffset - setLeft;
+            return Tuple.Create(x, x + headerSV.ViewportWidth);
+        }
+
+        void InvalidateHeaderStrips()
+        {
+            foreach (var s in headerStrips)
+                s.InvalidateMeasure();
         }
 
         public void CreateHeaders()
@@ -165,10 +196,15 @@ namespace WDE.ModernPatternEditor
 
             var setpanel = new StackPanel() { Orientation = Orientation.Horizontal };
             var knobstyle = TryFindResource("ParameterKnobStyle") as Style;
+            double nextSetLeft = 0;
 
             foreach (ColumnRenderer.ColumnSetElement _e in (patternGrid.Children[0] as StackPanel).Children)
             {
                 var e = _e;
+                double setLeft = nextSetLeft;
+                nextSetLeft += e.ExtentWidth + ColumnSetGap;
+                var columns = e.ColumnSet.Columns;
+                var widths = columns.Select(c => ColumnRenderer.BeatVisual.GetColumnWidth(c)).ToArray();
                 var hlbrush = new SolidColorBrush(Color.FromArgb(40, 0, 0, 0));
                 var hlbrushMuted = TryFindResource("ColumnSetLabelBrush") as SolidColorBrush;
 
@@ -209,12 +245,11 @@ namespace WDE.ModernPatternEditor
 
                 if (PatternEditor.Settings.ColumnLabels)
                 {
-                    var colpanel = new StackPanel() { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, ColumnSetGap, 0) };
-
-                    foreach (var _c in e.ColumnSet.Columns)
+                    // Fork (docs/specs/dye-essence.md §5.5): a label made for the columns in view only.
+                    UIElement CreateLabel(int i)
                     {
-                        var c = _c;
-                        var b = new Border() { Width = ColumnRenderer.BeatVisual.GetColumnWidth(c), Height = 80, Background = Brushes.Transparent, CornerRadius = new CornerRadius(3, 3, PatternEditor.Settings.ParameterKnobs ? 3 : 0, PatternEditor.Settings.ParameterKnobs ? 3 : 0) };
+                        var c = columns[i];
+                        var b = new Border() { Width = widths[i], Height = 80, Background = Brushes.Transparent, CornerRadius = new CornerRadius(3, 3, PatternEditor.Settings.ParameterKnobs ? 3 : 0, PatternEditor.Settings.ParameterKnobs ? 3 : 0) };
                         b.MouseEnter += (sender, ea) => { b.Background = hlbrush; };
                         b.MouseLeave += (sender, ea) => { b.Background = Brushes.Transparent; };
                         b.MouseLeftButtonDown += (sender, ea) =>
@@ -236,8 +271,11 @@ namespace WDE.ModernPatternEditor
                         //TextOptions.SetTextRenderingMode(tb, TextRenderingMode.Grayscale);
                         tb.LayoutTransform = new RotateTransform(-90);
                         b.Child = tb;
-                        colpanel.Children.Add(b);
+                        return b;
                     }
+
+                    var colpanel = new ColumnRenderer.ColumnStrip(widths, 80, CreateLabel, null, () => HeaderView(setLeft)) { Margin = new Thickness(0, 0, ColumnSetGap, 0) };
+                    headerStrips.Add(colpanel);
 
                     Grid.SetRow(colpanel, 1);
                     setgrid.Children.Add(colpanel);
@@ -252,12 +290,12 @@ namespace WDE.ModernPatternEditor
 
                 if (anyKnobs && PatternEditor.Settings.ParameterKnobs)
                 {
-                    var knobpanel = new StackPanel() { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, ColumnSetGap, 0) };
-
-                    foreach (var _c in e.ColumnSet.Columns)
+                    // Fork (docs/specs/dye-essence.md §5.5): a knob made, and following its parameter, for
+                    // the columns in view only; let go (ReleaseKnob) when its column leaves.
+                    UIElement CreateKnob(int i)
                     {
-                        var pc = _c as ParameterColumn;
-                        var b = new Border() { Width = ColumnRenderer.BeatVisual.GetColumnWidth(pc), Height = 17, Background = Brushes.Transparent, Padding = new Thickness(1.0) };
+                        var pc = columns[i] as ParameterColumn;
+                        var b = new Border() { Width = widths[i], Height = 17, Background = Brushes.Transparent, Padding = new Thickness(1.0) };
 
                         if (pc != null && pc.PatternColumn.Parameter != null && pc.PatternColumn.Parameter.Flags.HasFlag(ParameterFlags.State))
                         {
@@ -309,13 +347,16 @@ namespace WDE.ModernPatternEditor
                             };
                             knob.ValueChanged += kvc;
 
-                            knobParameters.Add(Tuple.Create(param, pvc, knob, kvc));
+                            knobParameters.Add(b, Tuple.Create(param, pvc, knob, kvc));
 
                             b.Child = knob;
                         }
 
-                        knobpanel.Children.Add(b);
+                        return b;
                     }
+
+                    var knobpanel = new ColumnRenderer.ColumnStrip(widths, 17, CreateKnob, ReleaseKnob, () => HeaderView(setLeft)) { Margin = new Thickness(0, 0, ColumnSetGap, 0) };
+                    headerStrips.Add(knobpanel);
 
                     Grid.SetRow(knobpanel, 2);
                     setgrid.Children.Add(knobpanel);
@@ -376,6 +417,13 @@ namespace WDE.ModernPatternEditor
                 {
                     UpdateScrollMargins();
                 }
+            };
+
+            // Fork (docs/specs/dye-essence.md §5.5): the header's cells follow its view.
+            headerSV.ScrollChanged += (sender, e) =>
+            {
+                if (e.HorizontalChange != 0 || e.ViewportWidthChange != 0 || e.ExtentWidthChange != 0)
+                    InvalidateHeaderStrips();
             };
 
             rowNumberSV.PreviewMouseWheel += (sender, e) =>

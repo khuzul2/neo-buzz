@@ -1480,12 +1480,12 @@ namespace ReBuzz.Core
                 if (!IsVisibleInput(input))
                     continue;
                 var inputCore = input as MachineConnectionCore;
-                var targetChannelList = inputCore.DestinationChannels;
+                var targetChannelList = inputCore.DestinationChannelArray;     // fork: no enumerator boxed per buffer
 
                 // Output to multiple channels, so we need to mix the input to all target channels
-                for (int targetChannelIndex = 0; targetChannelIndex < targetChannelList.Count(); targetChannelIndex++)
+                for (int targetChannelIndex = 0; targetChannelIndex < targetChannelList.Length; targetChannelIndex++)
                 {
-                    int targetChannel = targetChannelList.ElementAt(targetChannelIndex);
+                    int targetChannel = targetChannelList[targetChannelIndex];
 
                     if (multiSamplesInBuffers[targetChannel] == null)
                     {
@@ -1513,12 +1513,12 @@ namespace ReBuzz.Core
                 if (!IsVisibleInput(input))
                     continue;
                 var inputCore = input as MachineConnectionCore;
-                var targetChannelList = inputCore.DestinationChannels;
+                var targetChannelList = inputCore.DestinationChannelArray;     // fork: no enumerator boxed per buffer
 
                 // Output to multiple channels, so we need to mix the input to all target channels
-                for (int targetChannelIndex = 0; targetChannelIndex < targetChannelList.Count(); targetChannelIndex++)
+                for (int targetChannelIndex = 0; targetChannelIndex < targetChannelList.Length; targetChannelIndex++)
                 {
-                    int targetChannel = targetChannelList.ElementAt(targetChannelIndex);
+                    int targetChannel = targetChannelList[targetChannelIndex];
 
                     Sample[] samples = activeChannels[targetChannel];
 
@@ -1549,9 +1549,10 @@ namespace ReBuzz.Core
                 outputCore.ClearBuffer(nSamples);
                 outputCore.PreUpdateBufferActions(nSamples);
 
-                for (int channelIndex = 0; channelIndex < outputCore.SourceChannels.Count(); channelIndex++)
+                var sourceChannels = outputCore.SourceChannelArray;            // fork: no enumerator boxed per buffer
+                for (int channelIndex = 0; channelIndex < sourceChannels.Length; channelIndex++)
                 {
-                    int channel = outputCore.SourceChannels.ElementAt(channelIndex);
+                    int channel = sourceChannels[channelIndex];
 
                     if (channel < multiSamplesOut.Count &&
                         multiSamplesOut[channel] != null)

@@ -29,9 +29,9 @@ namespace ReBuzz.Studio.Shell.Preferences
             this.sync = sync;
             Heading("Link");
             Row("", new StackPanel { Spacing = 2, Children = { link, linkState } },
-                "Tempo and bar phase follow Live and other Link apps on the network; alone, they follow the session. " +
+                "Tempo and bar phase follow the other Link apps on the network; alone, they follow the session. " +
                 "A start waits for Link's next bar line, so it lands in step. Link runs in a helper program (ReBuzzLink).");
-            Row("", startStop, "Play and stop are shared with peers that have start/stop sync on (Live: Link › Start Stop Sync).");
+            Row("", startStop, "Play and stop are shared with peers that have start/stop sync on (in their own Link settings).");
             Heading("MIDI clock");
             Row("", clockIn, "Tempo and beat follow the MIDI clock coming in (any open MIDI input), and so do Start, Continue and Stop. Turns Link off.");
             Row("Send MIDI clock to", clockOuts, "Open MIDI outputs (Preferences ▸ MIDI). The clock runs while the transport plays, in step with what is heard.");

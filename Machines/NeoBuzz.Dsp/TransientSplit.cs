@@ -79,24 +79,46 @@ namespace NeoBuzz.Dsp
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void Process(float[] l, float[] r, int offset, int n, float[] weights)
         {
-            double f = fast, s = slow;
+            for (int done = 0; done < n; done += Chunk)
+                Process(l, r, offset + done, Math.Min(Chunk, n - done), weights, done);
+        }
+
+        // M3: the pair a block at a time (QuadratureAllpass.Block), then the followers; the same bits as one sample at a
+        // time (each sample's pair outputs, then its followers, the state flushed after every 64th sample of the count).
+        const int Chunk = 256;
+        readonly double[] pairA = new double[2 * Chunk], pairB = new double[2 * Chunk];
+
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        void Process(float[] l, float[] r, int offset, int n, float[] weights, int at)
+        {
+            var pa = pairA;
+            var pb = pairB;
             for (int i = 0; i < n; i++)
             {
-                left.Process(l[offset + i], out double la, out double lb);
-                right.Process(r[offset + i], out double ra, out double rb);
+                pa[2 * i] = l[offset + i];
+                pa[2 * i + 1] = r[offset + i];
+            }
+            // The first sample of this chunk after which the count reaches a multiple of 64.
+            int first = 63 - (count & 63);
+            QuadratureAllpass.Block(left, right, pa, pb, n, first);
+            double f = fast, s = slow;
+            int next = first;
+            for (int i = 0; i < n; i++)
+            {
+                double la = pa[2 * i], ra = pa[2 * i + 1], lb = pb[2 * i], rb = pb[2 * i + 1];
                 double level = Math.Sqrt(Math.Max(la * la + lb * lb, ra * ra + rb * rb));
                 f = level + (f - level) * (level > f ? fastAttack : fastRelease);
                 s = level + (s - level) * (level > s ? slowAttack : slowRelease);
                 double t = f > 1e-12 ? 1 - deadband * s / f : 0;
-                weights[i] = t > 0 ? (float)t : 0f;
-                if ((++count & 63) == 0)
+                weights[at + i] = t > 0 ? (float)t : 0f;
+                if (i == next)
                 {
                     f = DspMath.Flush(f);
                     s = DspMath.Flush(s);
-                    left.Flush();
-                    right.Flush();
+                    next += 64;
                 }
             }
+            count += n;
             fast = f;
             slow = s;
         }

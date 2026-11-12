@@ -24146,7 +24146,7 @@
   "Neo EQ": {
    "gear": "Neo EQ",
    "kind": "effect",
-   "load_seconds": 0.12,
+   "load_seconds": 0.32,
    "gear_info": {
     "file": "Effects/Neo EQ.NET.dll",
     "managed": true,
@@ -24154,13 +24154,13 @@
     "max_tracks": 0,
     "takes_midi": false
    },
-   "parameters": 81,
+   "parameters": 162,
    "track_parameters": 0,
-   "inferred": 81,
+   "inferred": 162,
    "from_description": 0,
    "inference_check": {
-    "agree": 81,
-    "of": 81
+    "agree": 162,
+    "of": 162
    },
    "effect": {
     "gain_db": 0.0,
@@ -24500,8 +24500,8 @@
     },
     "thd_percent": 2.38
    },
-   "cpu_ms_per_s": 0.0,
-   "type": "EQ",
+   "cpu_ms_per_s": 79.6,
+   "type": "dynamics",
    "level_test": {
     "defaults": {
      "peak_dbfs": -9.22,
@@ -24515,7 +24515,7 @@
       "verdict": "ok"
      },
      "max": {
-      "peak_dbfs": 32.8,
+      "peak_dbfs": 31.63,
       "growth_db": 0.21,
       "verdict": "hot"
      }
@@ -24524,7 +24524,7 @@
      "every parameter at its maximum at once: hot",
      "an effect with B1 gain, B1 Q, B2 gain, B2 Q"
     ],
-    "renders": 145
+    "renders": 274
    },
    "sweeps": {
     "B4 gain": {
@@ -24574,33 +24574,33 @@
     }
    },
    "denormal": {
-    "playing_ms_per_s": 2.507,
-    "silent_ms_per_s": 0.567,
-    "silent_worst_ms_per_s": 2.138,
+    "playing_ms_per_s": 8.439,
+    "silent_ms_per_s": 0.922,
+    "silent_worst_ms_per_s": 11.428,
     "windows_ms_per_s": [
-     2.507,
-     2.138,
-     0.839,
-     0.666,
-     0.567,
-     0.575,
-     0.543,
-     0.517,
-     0.489,
-     0.484,
-     0.459
+     8.439,
+     11.428,
+     5.383,
+     0.922,
+     0.799,
+     10.561,
+     0.699,
+     0.656,
+     0.645,
+     1.712,
+     0.594
     ]
    },
-   "seconds": 14.6,
-   "platform": "windows",
-   "date": "2026-11-04",
+   "seconds": 91.6,
+   "platform": "linux",
+   "date": "2026-11-06",
    "problems": [],
    "warnings": [],
    "hot": [
     "hot (loud but steady) with B4 gain at its maximum (+24.0 dB): +0.7 dBFS peak; B5 gain at its maximum (+24.0 dB): +3.7 dBFS peak; B6 gain at its maximum (+24.0 dB): +7.2 dBFS peak; B7 gain at its maximum (+24.0 dB): +10.8 dBFS peak; Output at its maximum (+24.0 dB): +15.0 dBFS peak"
    ],
    "notes_profiler": [
-    "flat at its defaults; an EQ by its parameters (frequencies and gains)"
+    "unchanged at its defaults; dynamics by its parameters (threshold, ratio)"
    ],
    "generated": true,
    "health": "warn"
@@ -25166,7 +25166,7 @@
   "Neo Limiter": {
    "gear": "Neo Limiter",
    "kind": "effect",
-   "load_seconds": 0.1,
+   "load_seconds": 0.28,
    "gear_info": {
     "file": "Effects/Neo Limiter.NET.dll",
     "managed": true,
@@ -25174,13 +25174,13 @@
     "max_tracks": 0,
     "takes_midi": false
    },
-   "parameters": 6,
+   "parameters": 16,
    "track_parameters": 0,
-   "inferred": 6,
+   "inferred": 16,
    "from_description": 0,
    "inference_check": {
-    "agree": 6,
-    "of": 6
+    "agree": 16,
+    "of": 16
    },
    "effect": {
     "gain_db": 0.0,
@@ -25520,8 +25520,8 @@
     },
     "thd_percent": 2.38
    },
-   "cpu_ms_per_s": 0.0,
-   "type": "utility",
+   "cpu_ms_per_s": 10.1,
+   "type": "dynamics",
    "level_test": {
     "defaults": {
      "peak_dbfs": -9.22,
@@ -25535,47 +25535,46 @@
       "verdict": "ok"
      },
      "max": {
-      "peak_dbfs": 0.0,
-      "growth_db": 0.0,
-      "verdict": "hot"
+      "peak_dbfs": -10.81,
+      "growth_db": 0.06,
+      "verdict": "ok"
      }
     },
     "swept_because": [
-     "every parameter at its maximum at once: hot",
      "an effect with Input gain"
     ],
-    "renders": 13
+    "renders": 25
    },
    "sweeps": {},
    "denormal": {
-    "playing_ms_per_s": 3.867,
-    "silent_ms_per_s": 0.386,
-    "silent_worst_ms_per_s": 0.468,
+    "playing_ms_per_s": 5.534,
+    "silent_ms_per_s": 0.516,
+    "silent_worst_ms_per_s": 6.605,
     "windows_ms_per_s": [
-     3.867,
-     0.468,
-     0.361,
-     0.407,
-     0.375,
-     0.386,
-     0.379,
-     0.384,
-     0.362,
-     0.402,
-     0.396
+     5.534,
+     0.743,
+     0.486,
+     0.489,
+     6.605,
+     0.608,
+     4.588,
+     0.512,
+     0.509,
+     0.493,
+     0.516
     ]
    },
-   "seconds": 3.2,
-   "platform": "windows",
-   "date": "2026-11-04",
+   "seconds": 16.8,
+   "platform": "linux",
+   "date": "2026-11-06",
    "problems": [],
    "warnings": [],
-   "hot": [
-    "hot with every parameter at its maximum at once (+0.0 dBFS peak), but with no parameter alone"
+   "hot": [],
+   "notes_profiler": [
+    "unchanged at its defaults; dynamics by its parameters (threshold, ratio)"
    ],
-   "notes_profiler": [],
    "generated": true,
-   "health": "warn"
+   "health": "ok"
   },
   "Neo Multiband": {
    "gear": "Neo Multiband",
@@ -32338,7 +32337,7 @@
   "Pedal FM": {
    "gear": "Pedal FM",
    "kind": "generator",
-   "load_seconds": 0.05,
+   "load_seconds": 0.04,
    "gear_info": {
     "file": "Generators/Pedal FM.NET.dll",
     "managed": true,
@@ -32991,24 +32990,24 @@
     "renders": 121
    },
    "denormal": {
-    "playing_ms_per_s": 2.858,
-    "silent_ms_per_s": 1.359,
-    "silent_worst_ms_per_s": 2.116,
+    "playing_ms_per_s": 2.138,
+    "silent_ms_per_s": 1.244,
+    "silent_worst_ms_per_s": 1.857,
     "windows_ms_per_s": [
-     2.858,
-     2.055,
-     2.084,
-     2.116,
-     1.67,
-     1.359,
-     0.979,
-     0.443,
-     0.405,
-     0.386,
-     0.388
+     2.138,
+     1.833,
+     1.857,
+     1.856,
+     1.61,
+     1.244,
+     0.91,
+     0.377,
+     0.402,
+     0.378,
+     0.392
     ]
    },
-   "seconds": 39.1,
+   "seconds": 25.1,
    "platform": "linux",
    "date": "2026-11-06",
    "problems": [],
@@ -34593,32 +34592,32 @@
     "input": "midi",
     "pitched": true,
     "pitch_offset": 0,
-    "cents": -0.4,
+    "cents": 0.5,
     "heard": {
-     "A4": 69.02,
-     "A3": 56.99,
-     "A5": 80.98
+     "A4": 69.01,
+     "A3": 57.01,
+     "A5": 81.01
     },
-    "polyphony": 1,
+    "polyphony": 8,
     "polyphony_levels": {
-     "1": -11.9,
-     "2": -10.7,
-     "4": -7.7,
-     "8": -4.6
+     "1": -15.4,
+     "2": -12.3,
+     "4": -9.1,
+     "8": -7.3
     }
    },
    "level": {
     "note": "A4 at velocity 100, 1.5 beats",
-    "integrated_lufs": -11.9,
-    "sample_peak_dbfs": -6.63,
-    "true_peak_dbtp": -6.52
+    "integrated_lufs": -15.1,
+    "sample_peak_dbfs": -8.34,
+    "true_peak_dbtp": -8.34
    },
    "cpu_ms_per_s": 0.0,
-   "type": "monosynth",
+   "type": "polysynth",
    "level_test": {
     "defaults": {
-     "peak_dbfs": -6.63,
-     "growth_db": 0.01,
+     "peak_dbfs": -8.34,
+     "growth_db": 0.0,
      "verdict": "ok"
     },
     "all_at_once": {
@@ -34628,24 +34627,24 @@
      },
      "max": {
       "peak_dbfs": -5.46,
-      "growth_db": -1.07,
+      "growth_db": -1.27,
       "verdict": "ok"
      }
     }
    },
    "envelope": {
-    "peak_db": -13.6,
-    "attack_s": 0.005,
+    "peak_db": -13.83,
+    "attack_s": 0.0,
     "final_db": -3.85,
-    "half_s": 0.14,
+    "half_s": 0.095,
     "length_s": null,
-    "release_s": 0.22,
+    "release_s": 0.235,
     "release_past_window": false,
-    "bright_mid_hz": 12334.2,
-    "bright_early_hz": 12337.7,
-    "bright_late_hz": 12339.0,
-    "level_wobble_db": 0.0,
-    "bright_wobble": 0.003,
+    "bright_mid_hz": 1565.0,
+    "bright_early_hz": 1557.0,
+    "bright_late_hz": 1563.7,
+    "level_wobble_db": 0.596,
+    "bright_wobble": 0.02,
     "note": "A4 at velocity 100, held 2 s"
    },
    "velocity": {
@@ -34653,34 +34652,34 @@
     "db_per_doubling": 6.02,
     "curve": "linear in amplitude (about 6 dB per doubling)",
     "levels_db": {
-     "16": -29.6,
-     "32": -23.58,
-     "64": -17.56,
-     "127": -11.61
+     "16": -29.76,
+     "32": -23.74,
+     "64": -17.72,
+     "127": -11.77
     }
    },
    "roles": {
     "default": {
      "pitch": 33.0,
-     "centroid_hz": 2622,
+     "centroid_hz": 1591,
      "peakiness_db": 60.0,
      "tprom_db": -2.1,
      "tprom_hz": 1250,
-     "env_attack_s": 0.005,
-     "env_half_s": 0.06,
-     "env_final_db": -8.1,
-     "env_release_s": 0.19,
-     "env_peak_db": -13.36,
-     "env_bright_early_hz": 12161.6,
-     "env_bright_mid_hz": 545.0,
-     "env_bright_late_hz": 475.9,
-     "env_level_wobble_db": 0.818,
-     "env_bright_wobble": 0.159
+     "env_attack_s": 0.015,
+     "env_half_s": 0.01,
+     "env_final_db": -6.85,
+     "env_release_s": 0.21,
+     "env_peak_db": -11.29,
+     "env_bright_early_hz": 557.6,
+     "env_bright_mid_hz": 413.9,
+     "env_bright_late_hz": 363.5,
+     "env_level_wobble_db": 0.736,
+     "env_bright_wobble": 0.163
     },
     "params": {
      "LFO Rate": {
-      "suggested_role": "env.decay",
-      "evidence": "the level falls half way in 5 ms → 5 ms (the default 10 ms) to the same held level (with VCF Freq a third of the way up)",
+      "suggested_role": null,
+      "evidence": "no measurable change between its ends with the others at their defaults",
       "min": {
        "raw": 0,
        "text": "0.1 Hz"
@@ -34799,8 +34798,8 @@
       }
      },
      "DCO Noise": {
-      "suggested_role": "filter.env.decay",
-      "evidence": "the brightness 150–250 ms in 545 Hz → 4.93 kHz (RMS frequency), the start alike (12.2 kHz → 11.6 kHz)",
+      "suggested_role": "filter.cutoff",
+      "evidence": "the brightness (centroid) 1.59 kHz → 4.83 kHz",
       "min": {
        "raw": 0,
        "text": "0"
@@ -34824,7 +34823,7 @@
      },
      "VCF Freq": {
       "suggested_role": "filter.cutoff",
-      "evidence": "the brightness (centroid) 64 Hz → 10.6 kHz",
+      "evidence": "the brightness (centroid) 65 Hz → 2.87 kHz",
       "min": {
        "raw": 0,
        "text": "30 Hz"
@@ -34839,7 +34838,7 @@
       "evidence": "a peak at 10 kHz stands -2 → +28 dB over the spectrum an octave either side",
       "min": {
        "raw": 0,
-       "text": "0%"
+       "text": "0"
       },
       "max": {
        "raw": 127,
@@ -34848,7 +34847,7 @@
      },
      "VCF Env Amt": {
       "suggested_role": "filter.cutoff",
-      "evidence": "the brightness (centroid) 452 Hz → 10.6 kHz",
+      "evidence": "the brightness (centroid) 386 Hz → 2.86 kHz",
       "min": {
        "raw": 0,
        "text": "0 oct"
@@ -34871,8 +34870,8 @@
       }
      },
      "VCF LFO": {
-      "suggested_role": "filter.cutoff",
-      "evidence": "the brightness (centroid) 2.62 kHz → 11 kHz",
+      "suggested_role": "filter.env_amount",
+      "evidence": "the start's brightness 558 Hz → 230 Hz (RMS frequency), the held part's 364 Hz → 519 Hz",
       "min": {
        "raw": 0,
        "text": "0"
@@ -34884,7 +34883,7 @@
      },
      "VCF Key Trk": {
       "suggested_role": "filter.keytrack",
-      "evidence": "it follows the note: the brightness (centroid) 10.6 kHz → 991 Hz on the low note, 11 kHz → 11 kHz 36 semitones up",
+      "evidence": "it follows the note: the brightness (centroid) 2.86 kHz → 834 Hz on the low note, 4.15 kHz → 4.15 kHz 36 semitones up",
       "min": {
        "raw": 0,
        "text": "0%"
@@ -34920,7 +34919,7 @@
      },
      "Env A": {
       "suggested_role": "env.attack",
-      "evidence": "the attack 5 ms → 840 ms",
+      "evidence": "the attack 15 ms → 840 ms",
       "min": {
        "raw": 0,
        "text": "1 ms"
@@ -34932,7 +34931,7 @@
      },
      "Env D": {
       "suggested_role": "filter.cutoff",
-      "evidence": "the brightness (centroid) 1.64 kHz → 10.6 kHz",
+      "evidence": "the brightness (centroid) 1.38 kHz → 2.86 kHz",
       "min": {
        "raw": 0,
        "text": "5 ms"
@@ -34943,8 +34942,8 @@
       }
      },
      "Env S": {
-      "suggested_role": "filter.cutoff",
-      "evidence": "the brightness (centroid) 930 Hz → 10.6 kHz",
+      "suggested_role": "filter.env.decay",
+      "evidence": "the brightness 150–250 ms in 231 Hz → 544 Hz (RMS frequency), the start alike (496 Hz → 559 Hz)",
       "min": {
        "raw": 0,
        "text": "0%"
@@ -34979,27 +34978,27 @@
       }
      }
     },
-    "renders": 66
+    "renders": 63
    },
    "denormal": {
-    "playing_ms_per_s": 4.224,
-    "silent_ms_per_s": 0.817,
-    "silent_worst_ms_per_s": 2.991,
+    "playing_ms_per_s": 2.655,
+    "silent_ms_per_s": 0.921,
+    "silent_worst_ms_per_s": 1.237,
     "windows_ms_per_s": [
-     4.224,
-     1.172,
-     0.819,
-     0.817,
-     0.833,
-     0.812,
-     0.793,
-     2.991,
-     0.786,
-     0.798,
-     0.806
+     2.655,
+     1.237,
+     0.912,
+     0.911,
+     0.913,
+     0.945,
+     0.926,
+     0.913,
+     0.935,
+     0.912,
+     0.921
     ]
    },
-   "seconds": 6.8,
+   "seconds": 5.8,
    "platform": "linux",
    "date": "2026-11-06",
    "problems": [],
@@ -35043,7 +35042,7 @@
   "Pedal M1": {
    "gear": "Pedal M1",
    "kind": "generator",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Generators/Pedal M1.NET.dll",
     "managed": true,
@@ -35798,24 +35797,24 @@
     "renders": 115
    },
    "denormal": {
-    "playing_ms_per_s": 10.329,
-    "silent_ms_per_s": 4.194,
-    "silent_worst_ms_per_s": 7.373,
+    "playing_ms_per_s": 8.064,
+    "silent_ms_per_s": 0.869,
+    "silent_worst_ms_per_s": 2.88,
     "windows_ms_per_s": [
-     10.329,
-     6.054,
-     6.114,
-     6.128,
-     4.194,
-     1.499,
-     3.354,
-     3.335,
-     1.323,
-     3.318,
-     7.373
+     8.064,
+     0.897,
+     0.865,
+     2.88,
+     0.869,
+     0.926,
+     0.863,
+     0.831,
+     0.823,
+     1.652,
+     0.843
     ]
    },
-   "seconds": 13.8,
+   "seconds": 9.9,
    "platform": "linux",
    "date": "2026-11-06",
    "problems": [],
@@ -37772,24 +37771,24 @@
     "renders": 66
    },
    "denormal": {
-    "playing_ms_per_s": 1.863,
-    "silent_ms_per_s": 0.28,
-    "silent_worst_ms_per_s": 0.864,
+    "playing_ms_per_s": 1.854,
+    "silent_ms_per_s": 0.29,
+    "silent_worst_ms_per_s": 0.918,
     "windows_ms_per_s": [
-     1.863,
-     0.864,
-     0.28,
-     0.296,
-     0.272,
-     0.295,
-     0.275,
-     0.28,
-     0.274,
+     1.854,
+     0.918,
      0.283,
-     0.277
+     0.29,
+     0.312,
+     0.289,
+     0.29,
+     0.282,
+     0.279,
+     0.291,
+     0.273
     ]
    },
-   "seconds": 12.8,
+   "seconds": 10.6,
    "platform": "linux",
    "date": "2026-11-06",
    "problems": [],

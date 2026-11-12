@@ -38,6 +38,16 @@ namespace ReBuzz.Core
         HashSet<int> sourceChannels = new HashSet<int>();
         public IEnumerable<int> SourceChannels => sourceChannels;
 
+        /// <summary>
+        /// Fork (follow-ups): the channels for the audio thread, as arrays made anew (on the thread that changes them) whenever
+        /// they change, in the sets' order. The multi-I/O paths enumerated the sets with Count() and ElementAt(), which boxed
+        /// an enumerator each time: Neo Comp, the multi-I/O machine among the Neo ones, allocated about 320 bytes a buffer.
+        /// </summary>
+        internal int[] SourceChannelArray { get; private set; } = Array.Empty<int>();
+
+        /// <inheritdoc cref="SourceChannelArray"/>
+        internal int[] DestinationChannelArray { get; private set; } = Array.Empty<int>();
+
         public void SetSourceChannel(int channel, bool set)
         {
             if (set)
@@ -56,6 +66,7 @@ namespace ReBuzz.Core
                 ? SourceChannels.Min()
                 : 0; // Get the lowest channel or default to 0 if none are selected
             sourceChannel = lowest;
+            SourceChannelArray = sourceChannels.ToArray();
             PropertyChanged.Raise(this, "SourceChannel");
             PropertyChanged.Raise(this, "SourceChannels");
         }
@@ -81,6 +92,7 @@ namespace ReBuzz.Core
                 ? DestinationChannels.Min()
                 : 0; // Get the lowest channel or default to 0 if none are selected
             destinationChannel = lowest;
+            DestinationChannelArray = destinationChannels.ToArray();
             PropertyChanged.Raise(this, "DestinationChannel");
             PropertyChanged.Raise(this, "DestinationChannels");
         }

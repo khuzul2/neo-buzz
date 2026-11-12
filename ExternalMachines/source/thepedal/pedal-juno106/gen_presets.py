@@ -65,7 +65,7 @@ DEFAULTS = {
     "DCO Noise":     0,
     "HPF":           0,   # 0=Off, 1/2/3=positions
     "VCF Freq":    100,
-    "VCF Reso":     30,
+    "VCF Reso":      0,   # fork (neo-buzz, §12.15): the machine's default, was 30; every preset sets its own
     "VCF Env Amt":  80,
     "VCF Env Pol":   0,   # 0=+, 1=-
     "VCF LFO":       0,

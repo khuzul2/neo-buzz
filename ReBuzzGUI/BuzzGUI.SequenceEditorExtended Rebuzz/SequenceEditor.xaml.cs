@@ -148,7 +148,10 @@ namespace BuzzGUI.SequenceEditor
 					{
                         UpdateWidth();
                         cursorElement.BringIntoView();
-                        UpdateSelectedRow();
+                        // Fork: the Pattern View opens on what the pattern editor was given (a machine's
+                        // pattern opened from the machine view, a menu or the agent), not on the cursor's
+                        // machine: moving the cursor already chose a pattern when it moved.
+                        UpdateSelectedRow(selectPattern: false);
 
                         Global.Buzz.ActivatePatternEditor(); // Always focus pattern editor
                     }
@@ -1256,7 +1259,9 @@ namespace BuzzGUI.SequenceEditor
             PropertyChanged.Raise(this, "MoveCursor");
         }
 
-		public void UpdateSelectedRow()
+		public void UpdateSelectedRow() => UpdateSelectedRow(selectPattern: true);
+
+		void UpdateSelectedRow(bool selectPattern)
 		{
 			if (cursorElement.Row < 0 || cursorElement.Row >= trackHeaderStack.Children.Count) return;
 
@@ -1270,7 +1275,7 @@ namespace BuzzGUI.SequenceEditor
 			if (m != null && m.DLL.Info.Type == MachineType.Generator || m.IsControlMachine)
 				Buzz.MIDIFocusMachine = m;
 
-			if (Settings.AutoSelectPattern && SelectPatternCommand.CanExecute(null))
+			if (selectPattern && Settings.AutoSelectPattern && SelectPatternCommand.CanExecute(null))
 				SelectPatternCommand.Execute(true);
 
 		}

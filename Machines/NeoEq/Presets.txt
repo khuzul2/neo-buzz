@@ -233,3 +233,93 @@ G 3.15 kHz = 3
 G 4 kHz = 2.5
 G 5 kHz = 1.5
 G 6.3 kHz = 0.5
+
+# v2 (docs/specs/mastering-tools.md §5.3): dynamic bands, channels and shapes. Times in seconds.
+preset "Dynamic — De-ess"
+B6 freq = 6500
+B6 Q = 2
+B6 dynamic = Down
+B6 threshold = -30
+B6 ratio = 4
+B6 knee = 6
+B6 range = 8
+B6 attack = 0.001
+B6 release = 0.06
+
+preset "Dynamic — Tame Low Mids"
+B3 freq = 300
+B3 Q = 1.2
+B3 dynamic = Down
+B3 threshold = -24
+B3 ratio = 3
+B3 knee = 6
+B3 range = 6
+B3 attack = 0.01
+B3 release = 0.15
+
+preset "Dynamic — Resonance Control (Mid)"
+B4 freq = 2500
+B4 Q = 3
+B4 channel = Mid
+B4 dynamic = Down
+B4 threshold = -30
+B4 ratio = 4
+B4 range = 6
+B4 attack = 0.005
+B4 release = 0.08
+
+preset "Dynamic — Bass Ducks the Kick (Sidechain)"
+B2 freq = 120
+B2 dynamic = Down
+B2 threshold = -30
+B2 ratio = 4
+B2 knee = 6
+B2 range = 9
+B2 attack = 0.005
+B2 release = 0.12
+B2 detector = Sidechain
+
+preset "Dynamic — Click on Hits (Up)"
+B6 freq = 4000
+B6 Q = 1.5
+B6 dynamic = Up
+B6 threshold = -30
+B6 ratio = 2
+B6 range = 4
+B6 attack = 0.001
+B6 release = 0.05
+
+preset "Mastering — Mono Bass (Side Cut 100 Hz)"
+B1 on = On
+B1 freq = 100
+B1 slope = 24 dB/oct
+B1 channel = Side
+
+preset "Mastering — Side Air"
+B7 freq = 10000
+B7 gain = 2
+B7 channel = Side
+
+preset "Character — Vintage Low Boost"
+B2 freq = 60
+B2 gain = 4
+B2 shape = Vintage
+
+preset "Character — Baxandall Tilt"
+B2 freq = 250
+B2 gain = 2
+B2 shape = Baxandall
+B7 freq = 4000
+B7 gain = 2
+B7 shape = Baxandall
+
+preset "Character — Proportional Presence"
+B4 freq = 1500
+B4 gain = 3
+B4 Q = 0.8
+B4 shape = Proportional Q
+
+preset "Fix — Phase Turn (All-pass 200 Hz)"
+B3 freq = 200
+B3 Q = 0.7
+B3 shape = All-pass

@@ -209,6 +209,11 @@ single notes and held chords still have subtle analog motion. Updated
 once per Work() block via lowpass-filtered LCG noise; per-sample cost
 is one extra add into the existing `pitchOct` chain — no new FastPow2
 calls. Drift evolves continuously regardless of key state.
+Fork (neo-buzz, docs/specs/mcp-server.md §12.15, the follow-ups): the
+walk steps every 256 samples whatever the block size, the pitch moving in
+a straight line between steps; and the pitch's 2^x is accurate below 0
+(`DspMath.FastPow2Signed`), where FastPow2 put voices 1, 3 and 5 (negative
+detunes) 9.6 cents flat.
 
 **Transport handling** — IBuzz.Playing is polled at the top of every
 Work() call. On the falling edge (was playing, now not), all active

@@ -76,7 +76,6 @@ namespace ReBuzzTests
         {
             using var client = StartAgent(out string bin);
             void Report(string line) => TestContext.Out.WriteLine("[notice] " + line);
-            WarmUp(client, "Jeskola Reverb");
             if (voice == "KickXP")
             {
                 if (!Has(bin, "Generators", "FSM KickXP")) Assert.Inconclusive("FSM KickXP is not in this build's Gear");

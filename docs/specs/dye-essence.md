@@ -213,6 +213,17 @@ Package run 42266048469 (99bd76f6) (Windows, `windows-latest`), ReBuzzTests `Dye
 
 **Verdict: ReBuzz's WPF views carry Dye Essence (106 parameters) within the targets but not 704.** Frames here are drawn by `RenderTargetBitmap`, in software on the runner, so they read slower than the app's own; what matters is the ratio: at 704 parameters a frame of the pattern editor costs 2.3× the 106-parameter one with the same pixels on screen, because the WPF editor, like the studio's before P0's fix, lays out and draws every column of a column set, not only those in view; and the parameter window builds every row up front (2.5–3.7 s at 704). Before the table grows past a few hundred parameters (P1c onwards): cull columns horizontally in the WPF pattern editor's column renderer (as `PatternGrid.DrawBeat` does in the studio) and virtualise the WPF parameter window's rows. Both are outside Dye Essence; to schedule.
 
+**Since fixed** (`fix/wpf-big-machines`). The WPF pattern editor's beats draw the columns in view and half a view either side, and are drawn again when the view leaves them (`ColumnSetElement`, `BeatVisual`; the beat cache's key tells apart runs of columns of the same widths and values that draw differently); its header makes the labels and knobs of those columns only, a knob following its parameter only while it is made (`ColumnStrip`); positions, hit tests, the cursor, selection and the header's clicks are as before. The parameter window's rows are virtualised: a recycling `VirtualizingStackPanel` in the list's own scroll viewer, scrolling by pixels as before, in both themes. The test asserts it, with room for the runners' spread: at most 250 rows made at opening, no parameter moved by opening the window and paging through every row (recycled rows bind other parameters), the last row's slider moving its parameter, the window open in under 2 s; the header's labels for the columns in view only, End taking the cursor to the last column with its label over it and its neighbours drawn, a label's click moving the cursor, and a frame and a full redraw at 704 parameters within 1.6× of those of Dye Essence. Package run 42295670817 (a16b4031), Dye Essence still at 106 parameters:
+
+| | Dye Stress (704): before → after | Dye Essence (106): before → after |
+|---|---|---|
+| Parameter window, opened and laid out | 2.5 s (3.7 s) → 707 ms, 61 rows made | 464 → 401 ms, 61 rows made |
+| Pattern editor, a frame as drawn | 201 → 85 ms (2.3× → 0.99× Dye Essence's) | 86 → 87 ms |
+| Pattern editor, a full redraw at the first / the last columns | 279 / 228 → 106 / 94 ms (0.93× / 1.04×) | 97 / 88 → 114 / 90 ms |
+| Pattern editor, opened | 1.1 s → 548 ms | 136 → 167 ms |
+
+"At the last columns" before scrolled the header only (the test took the first of the two scroll viewers as wide as the grid); it scrolls the grid now, and the header follows it.
+
 ### 5.6 Modulation measurements (P1b)
 
 | Criterion | Target | Result (the same bits on both runners) |
