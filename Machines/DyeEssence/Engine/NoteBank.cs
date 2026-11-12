@@ -14,6 +14,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using NeoBuzz.Dsp;
+using NeoBuzz.Sampler;
 
 namespace NeoBuzz.DyeEssence
 {
@@ -45,6 +46,18 @@ namespace NeoBuzz.DyeEssence
         /// <summary>The Analog engine: its wave, pulse width (0.03 … 0.5) and drift (0 … 1).</summary>
         public AnalogShape Shape = AnalogShape.Saw;
         public float PulseWidth = 0.5f, Drift;
+        /// <summary>The Sample and Granular engines (§4.6): the sample, the note it sounds at its own pitch, its start and loop (shares of its length), its direction.</summary>
+        public SampleLayer Source;
+        public int Root = 60;
+        public SampleLoop Loop;
+        public float LoopStart, LoopEnd = 1;
+        /// <summary>Seconds the loop's end fades into its start (0: a hard wrap).</summary>
+        public float LoopFade;
+        public bool Reverse;
+        /// <summary>Granular: grain length (s), grains a second, spray (0 … 1 of the sample), scan speed (× the sample's own), pitch wander (cents), window, share played backwards, stereo scatter.</summary>
+        public float GrainSize = 0.05f, GrainRate = 25, Spray = 0.1f, Scan, GrainPitch;
+        public GrainShape GrainShape;
+        public float GrainReverse, GrainWidth = 0.5f;
     }
 
     internal sealed class SourceSettings
@@ -95,7 +108,7 @@ namespace NeoBuzz.DyeEssence
         }
     }
 
-    internal sealed class NoteBank
+    internal sealed partial class NoteBank
     {
         public const int Notes = 32;
         public const int Groups = Notes / 8;
@@ -127,7 +140,7 @@ namespace NeoBuzz.DyeEssence
         public readonly BankSettings S = new BankSettings();
 
         /// <summary>The engines, by <see cref="SlotType"/> (Off has none).</summary>
-        public readonly IEngine[] Engines = { null, new WavetableEngine(), new AnalogEngine() };
+        public readonly IEngine[] Engines = { null, new WavetableEngine(), new AnalogEngine(), new SampleEngine(), new GranularEngine() };
         public AnalogEngine Analog => (AnalogEngine)Engines[(int)SlotType.Analog];
 
         IEngine EngineOf(OscSettings os) => (int)os.Type < Engines.Length ? Engines[(int)os.Type] : null;
@@ -461,6 +474,7 @@ namespace NeoBuzz.DyeEssence
                 placedUnison[slot * Oscillators + o] = 0;
             }
             laid[slot] = false;
+            ExtBegin(slot);
             // Each voice's own fixed detune for engines that drift, from a stream of its own (the phases
             // above stay as they were).
             var drift = new Rng(seeds[slot] ^ 0x5BD1E995u);
@@ -708,6 +722,7 @@ namespace NeoBuzz.DyeEssence
                 for (int r = 0; r < NoteFilters.Rows; r++) coefStep[f][r * Notes + note] = 0;
             for (int r = 4; r < 8; r++) subGain[r * Notes + note] = noiseGain[r * Notes + note] = 0;
             groupCount[note] = 0;
+            extAny[note] = extToF2[note] = false;
         }
 
         static void Quiet(LaneState s, int at)
@@ -774,6 +789,7 @@ namespace NeoBuzz.DyeEssence
                 laid[note] = true;
                 rampsLive[note] = true;
             }
+            ExtControl(note, invCount, noteHz, vr);
             Filters(note, invCount, fe, vr);
             snap[note] = false;
         }
@@ -1226,7 +1242,7 @@ namespace NeoBuzz.DyeEssence
             {
                 if (!live[note]) continue;
                 active |= 1 << (note >> 3);
-                anyF2 |= noteToF2[note];
+                anyF2 |= noteToF2[note] || extToF2[note];
                 subOn |= noteSubMod[note];
                 noiseOn |= noteNoiseMod[note];
             }
@@ -1248,7 +1264,12 @@ namespace NeoBuzz.DyeEssence
             // The oscillators, note by note, then summed across their lanes into the filters' inputs.
             for (int note = 0; note < Notes; note++)
             {
-                if (!live[note] || groupCount[note] == 0) continue;
+                if (!live[note]) continue;
+                if (groupCount[note] == 0)
+                {
+                    if (extAny[note]) RenderExt(note, count);
+                    continue;
+                }
                 Array.Clear(acc, 0, count * UnisonKernel.AccStride);
                 int nb = note * MaxLanes, gb = note * MaxGroups;
                 for (int k = 0; k < groupCount[note]; k++)
@@ -1273,6 +1294,7 @@ namespace NeoBuzz.DyeEssence
                     }
                 }
                 UnisonKernel.SumLanes<TL, TF, TU>(acc, in1L, in1R, in2L, in2R, noteToF2[note], note, Notes, count, scratch);
+                if (extAny[note]) RenderExt(note, count);
             }
             for (int g = 0; g < Groups; g++)
             {

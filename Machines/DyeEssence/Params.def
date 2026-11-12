@@ -4,9 +4,11 @@
 namespace NeoBuzz.DyeEssence
 class DyeEssenceMachine
 tracks 16
-summary Hybrid wavetable synth: three engine slots, each a morphing wavetable or an analog oscillator with 1–16 unison voices and two warps (bend, sync, FM, PM, AM, ring and more), a sub and a noise, two filters per note (ladder, state-variable, comb; serial to parallel), oversampled 2× or 4×; two modulation envelopes, four LFOs (built-in or drawn shapes), four macros and sixteen routes. Use it for wide unison leads, evolving pads, FM and sync basses, plucks and bells.
+summary Hybrid wavetable synth: three engine slots, each a morphing wavetable or an analog oscillator with 1–16 unison voices and two warps (bend, sync, FM, PM, AM, ring and more), a sub and a noise, samples (looped, reversed, tuned by root) and granular clouds of them, two filters per note (ladder, state-variable, comb; serial to parallel), oversampled 2× or 4×; two modulation envelopes, four LFOs (built-in or drawn shapes), four macros and sixteen routes. Use it for wide unison leads, evolving pads, FM and sync basses, plucks and bells.
 import wavetable .wav | A WAV wavetable: frames of 2048 samples (or a clm chunk saying the frame size), or one short single cycle. Becomes a slot's "User" table: item 0 is slot A, 1 slot B, 2 slot C.
 import lfo_shape .txt | A drawn LFO shape: a text file of breakpoints "phase,value[,curve]" separated by spaces (phase 0–1 across one cycle, value −1–1, curve −1–1: 0 straight, below 0 a fast start, above a slow one; a point at 0 and one at 1 make a jump at the wrap). item 0–3 picks LFO 1–4; its shape is set to Drawn.
+
+import sample .wav | A WAV sample (mono or stereo, up to 20 s, kept in the machine state). Becomes a slot's "User" sample and sets that slot to the Sample engine (unless it is Granular): item 0 is slot A, 1 slot B, 2 slot C. The Sample and Granular engines play it; "A position" is where playback starts (Sample) or where grains are taken from (Granular).
 
 group Voice
 VoiceMode   "Voice mode"    0 2    0    enum Poly Mono Legato           | Poly; Mono retriggers; Legato glides without retriggering
@@ -19,7 +21,7 @@ VelAmp      "Vel → amp"     0 1000 700  pct                             | How 
 Volume      "Volume"        0 1000 739  db -40 6 inf                    | Output level
 
 group Osc A
-AType      "A engine"      0 2    1    enum Off Wavetable Analog       | What slot A plays (more engines to come)
+AType      "A engine"      0 4    1    enum Off Wavetable Analog Sample Granular | What slot A plays: a morphing wavetable, an analog wave, a sample, or grains of a sample (samples and grains take no warps)
 ATable     "A table"       0 10   0    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
 APos       "A position"    0 1000 667  pct                             | Position in the table (frames morph smoothly)
 AOct       "A octave"      0 8    4    int -4 oct signed               | Octave
@@ -40,7 +42,7 @@ AMod       "A modulator"   0 4    1    enum Osc_A Osc_B Osc_C Sub Noise | What F
 AToF2      "A → filter 2"  0 1000 0    pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
 
 group Osc B
-BType      "B engine"      0 2    0    enum Off Wavetable Analog       | What slot B plays (more engines to come)
+BType      "B engine"      0 4    0    enum Off Wavetable Analog Sample Granular | What slot B plays: a morphing wavetable, an analog wave, a sample, or grains of a sample (samples and grains take no warps)
 BTable     "B table"       0 10   2    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
 BPos       "B position"    0 1000 0  pct                             | Position in the table (frames morph smoothly)
 BOct       "B octave"      0 8    4    int -4 oct signed               | Octave
@@ -61,7 +63,7 @@ BMod       "B modulator"   0 4    0    enum Osc_A Osc_B Osc_C Sub Noise | What F
 BToF2      "B → filter 2"  0 1000 0    pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
 
 group Osc C
-CType      "C engine"      0 2    0    enum Off Wavetable Analog       | What slot C plays (more engines to come)
+CType      "C engine"      0 4    0    enum Off Wavetable Analog Sample Granular | What slot C plays: a morphing wavetable, an analog wave, a sample, or grains of a sample (samples and grains take no warps)
 CTable     "C table"       0 10   3    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
 CPos       "C position"    0 1000 0  pct                             | Position in the table (frames morph smoothly)
 COct       "C octave"      0 8    4    int -4 oct signed               | Octave
@@ -245,3 +247,55 @@ R15Amt      "R15 amount"     0 1000 500  bip                             | Route
 R16Src      "R16 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 16: what modulates
 R16Dst      "R16 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 16: what it moves
 R16Amt      "R16 amount"     0 1000 500  bip                             | Route 16: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+
+# P2 (appended): the Sample and Granular engines' parameters for each slot. "position" (above) is the
+# sample's start (Sample) or the centre grains are taken from (Granular); tuning, level, pan, unison,
+# detune and spread are the slot's own. Samples and grains take no warps.
+group Osc A
+ASmpSrc    "A sample"      0 5    0    enum Choir Strings Bell Pluck Texture User | The sample the Sample and Granular engines play (built-in ones are made by code; User: one loaded for this slot)
+ASmpRoot   "A root"        0 127  60   int 0                           | The note the sample sounds at its own pitch (MIDI note, 60 = C4)
+ASmpLoop   "A loop"        0 2    0    enum Off Forward Ping_pong      | Sample engine: how the sample loops while a note is held (Off: plays once)
+ASmpLoopStart "A loop start" 0 1000 0  pct                             | Sample engine: where the loop starts, as a share of the sample
+ASmpLoopEnd "A loop end"   0 1000 1000 pct                             | Sample engine: where the loop ends, as a share of the sample
+ASmpFade   "A loop fade"    0 1000 0    lin 0 500 ms 0                  | Sample engine: how long the loop's end fades into its start (0: a hard wrap, right for loops of whole periods; raise it when the loop points are not)
+ASmpRev    "A reverse"     0 1    0    switch                          | Sample engine: plays the sample backwards
+AGrSize    "A grain size"  0 1000 500  time 0.005 0.5                  | Granular engine: length of each grain
+AGrRate    "A grain rate"  0 1000 700  freq 1 100                      | Granular engine: grains started per second (a little uneven, as grains in a cloud are)
+AGrSpray   "A spray"       0 1000 100  pct                             | Granular engine: how far from the centre grains may start (100%: anywhere in the sample)
+AGrScan    "A scan"        0 1000 500  lin -2 2 × 2                    | Granular engine: how fast the centre moves through the sample (1×: its own speed, 0: frozen, negative: backwards)
+AGrJitter  "A grain pitch" 0 1000 0    pow 0 1200 2 ct 0               | Granular engine: how far each grain's pitch may wander from the note
+AGrShape   "A grain shape" 0 4    0    enum Hann Triangle Tukey Gauss Percussive | Granular engine: the window every grain fades in and out with
+AGrRev     "A grain reverse" 0 1000 0  pct                             | Granular engine: the share of grains that play backwards
+AGrWidth   "A grain width" 0 1000 500  pct                             | Granular engine: how far grains scatter across the stereo field
+group Osc B
+BSmpSrc    "B sample"      0 5    0    enum Choir Strings Bell Pluck Texture User | The sample the Sample and Granular engines play (built-in ones are made by code; User: one loaded for this slot)
+BSmpRoot   "B root"        0 127  60   int 0                           | The note the sample sounds at its own pitch (MIDI note, 60 = C4)
+BSmpLoop   "B loop"        0 2    0    enum Off Forward Ping_pong      | Sample engine: how the sample loops while a note is held (Off: plays once)
+BSmpLoopStart "B loop start" 0 1000 0  pct                             | Sample engine: where the loop starts, as a share of the sample
+BSmpLoopEnd "B loop end"   0 1000 1000 pct                             | Sample engine: where the loop ends, as a share of the sample
+BSmpFade   "B loop fade"    0 1000 0    lin 0 500 ms 0                  | Sample engine: how long the loop's end fades into its start (0: a hard wrap, right for loops of whole periods; raise it when the loop points are not)
+BSmpRev    "B reverse"     0 1    0    switch                          | Sample engine: plays the sample backwards
+BGrSize    "B grain size"  0 1000 500  time 0.005 0.5                  | Granular engine: length of each grain
+BGrRate    "B grain rate"  0 1000 700  freq 1 100                      | Granular engine: grains started per second (a little uneven, as grains in a cloud are)
+BGrSpray   "B spray"       0 1000 100  pct                             | Granular engine: how far from the centre grains may start (100%: anywhere in the sample)
+BGrScan    "B scan"        0 1000 500  lin -2 2 × 2                    | Granular engine: how fast the centre moves through the sample (1×: its own speed, 0: frozen, negative: backwards)
+BGrJitter  "B grain pitch" 0 1000 0    pow 0 1200 2 ct 0               | Granular engine: how far each grain's pitch may wander from the note
+BGrShape   "B grain shape" 0 4    0    enum Hann Triangle Tukey Gauss Percussive | Granular engine: the window every grain fades in and out with
+BGrRev     "B grain reverse" 0 1000 0  pct                             | Granular engine: the share of grains that play backwards
+BGrWidth   "B grain width" 0 1000 500  pct                             | Granular engine: how far grains scatter across the stereo field
+group Osc C
+CSmpSrc    "C sample"      0 5    0    enum Choir Strings Bell Pluck Texture User | The sample the Sample and Granular engines play (built-in ones are made by code; User: one loaded for this slot)
+CSmpRoot   "C root"        0 127  60   int 0                           | The note the sample sounds at its own pitch (MIDI note, 60 = C4)
+CSmpLoop   "C loop"        0 2    0    enum Off Forward Ping_pong      | Sample engine: how the sample loops while a note is held (Off: plays once)
+CSmpLoopStart "C loop start" 0 1000 0  pct                             | Sample engine: where the loop starts, as a share of the sample
+CSmpLoopEnd "C loop end"   0 1000 1000 pct                             | Sample engine: where the loop ends, as a share of the sample
+CSmpFade   "C loop fade"    0 1000 0    lin 0 500 ms 0                  | Sample engine: how long the loop's end fades into its start (0: a hard wrap, right for loops of whole periods; raise it when the loop points are not)
+CSmpRev    "C reverse"     0 1    0    switch                          | Sample engine: plays the sample backwards
+CGrSize    "C grain size"  0 1000 500  time 0.005 0.5                  | Granular engine: length of each grain
+CGrRate    "C grain rate"  0 1000 700  freq 1 100                      | Granular engine: grains started per second (a little uneven, as grains in a cloud are)
+CGrSpray   "C spray"       0 1000 100  pct                             | Granular engine: how far from the centre grains may start (100%: anywhere in the sample)
+CGrScan    "C scan"        0 1000 500  lin -2 2 × 2                    | Granular engine: how fast the centre moves through the sample (1×: its own speed, 0: frozen, negative: backwards)
+CGrJitter  "C grain pitch" 0 1000 0    pow 0 1200 2 ct 0               | Granular engine: how far each grain's pitch may wander from the note
+CGrShape   "C grain shape" 0 4    0    enum Hann Triangle Tukey Gauss Percussive | Granular engine: the window every grain fades in and out with
+CGrRev     "C grain reverse" 0 1000 0  pct                             | Granular engine: the share of grains that play backwards
+CGrWidth   "C grain width" 0 1000 500  pct                             | Granular engine: how far grains scatter across the stereo field
