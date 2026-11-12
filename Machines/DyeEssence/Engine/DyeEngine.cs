@@ -63,6 +63,7 @@ namespace NeoBuzz.DyeEssence
             alloc = new VoiceAllocator(slots);
             SetSampleRate(48000);
             Update(true);
+            UpdateDriver();
         }
 
         public NoteBank Bank { get; }
@@ -233,16 +234,16 @@ namespace NeoBuzz.DyeEssence
                 os.Tilt = values.F(h + (P.AHTilt - P.AHSet));
                 os.OddEven = values.F(h + (P.AHOddEven - P.AHSet)) / 100f;
                 os.Stretch = values.F(h + (P.AHStretch - P.AHSet)) / 100f;
-                os.Damp = values.F(h + (P.AHDamp - P.AHSet)) / 100f;
+                os.Damp = values.F(h + (P.AHDamp - P.AHSet));
                 int md = ModalBase[o];
                 os.Exciter = values.Choice(md);
-                os.Force = values.F(md + (P.AMForce - P.AMExc)) / 100f;
+                os.Force = values.F(md + (P.AMForce - P.AMExc));
                 os.Geometry = values.Choice(md + (P.AMGeom - P.AMExc));
                 os.Modes = (int)values.Value(md + (P.AMModes - P.AMExc));
-                os.Material = values.F(md + (P.AMMat - P.AMExc)) / 100f;
+                os.Material = values.F(md + (P.AMMat - P.AMExc));
                 os.Ring = values.F(md + (P.AMRing - P.AMExc));
-                os.HfDamp = values.F(md + (P.AMHfDamp - P.AMExc)) / 100f;
-                os.BodySize = values.F(md + (P.AMSize - P.AMExc)) / 100f;
+                os.HfDamp = values.F(md + (P.AMHfDamp - P.AMExc));
+                os.BodySize = values.F(md + (P.AMSize - P.AMExc));
             }
             tablesPending = pendingNow;
 
@@ -453,6 +454,7 @@ namespace NeoBuzz.DyeEssence
 
         public void NoteOn(int key, int note, float velocity)
         {
+            if (values.AnyDirty) UpdateDriver();
             bool first = driver.HeldCount == 0;
             driver.Press(key, note, velocity);
             if (first) RestartFreeClock();
@@ -461,6 +463,7 @@ namespace NeoBuzz.DyeEssence
 
         public void NoteOff(int key)
         {
+            if (values.AnyDirty) UpdateDriver();
             driver.Release(key);
             if (!driver.Intercepts) alloc.NoteOff(key);
         }
