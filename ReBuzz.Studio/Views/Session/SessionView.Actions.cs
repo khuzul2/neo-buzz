@@ -45,7 +45,7 @@ namespace ReBuzz.Studio.Views.Session
         {
             selected = (track, scene);
             Focus();                              // commits a marker being typed for the clip shown so far
-            clipPanel.Follow(selected);
+            FollowClip();
             PublishSelection();
         }
 
@@ -76,7 +76,7 @@ namespace ReBuzz.Studio.Views.Session
             try
             {
                 selected = (header.Track, Math.Clamp(scene, 0, Math.Max(0, sceneCount - 1)));
-                clipPanel.Follow(selected);
+                FollowClip();
                 RefreshState();
             }
             finally
@@ -153,12 +153,17 @@ namespace ReBuzz.Studio.Views.Session
             if (track < 0) track = selected?.Track ?? 0;
             if (track < 0 || track >= Math.Max(1, trackCount)) return;
             selected = (track, scene);
-            clipPanel.Follow(selected);
+            FollowClip();
             PublishSelection();
         }
 
         void ShowClipPanel()
         {
+            if (inspectorLink != null)
+            {
+                inspectorLink.Open();
+                return;
+            }
             if (!layout.Ensure().ShowClipPanel)
                 layout.SetShowClipPanel(true);
         }

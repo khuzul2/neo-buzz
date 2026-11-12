@@ -40,6 +40,8 @@ namespace ReBuzz.Studio.Shell
         readonly AudioHealthBadge health;
         readonly ProblemBar problems = new ProblemBar();
         readonly TabControl tabs = new TabControl();
+        readonly DockPanel body = new DockPanel();
+        Views.Inspector.InspectorPanel inspector;
         readonly DispatcherTimer refresh = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         readonly Command undo, redo;
         readonly Menu menu;
@@ -132,7 +134,17 @@ namespace ReBuzz.Studio.Shell
         /// The selected view, when it has edit commands of its own and this is the key window: on a Mac every window has the
         /// menus (ui-gallery.md), and ⌘Z in a machine window undoes in the song, not in the Pattern View behind it.
         /// </summary>
-        IStudioEditTarget Target => ActiveWindow == this ? (tabs.SelectedItem as TabItem)?.Content as IStudioEditTarget : null;
+        IStudioEditTarget Target
+        {
+            get
+            {
+                if (ActiveWindow != this) return null;
+                // Song Notes in the inspector, when the keyboard is in it; else the selected view.
+                if (inspector?.SongNotes is { } notes && inspector.IsOpen && FocusManager?.GetFocusedElement() is Visual focused && notes.IsVisualAncestorOf(focused))
+                    return notes;
+                return (tabs.SelectedItem as TabItem)?.Content as IStudioEditTarget;
+            }
+        }
 
         /// <summary>
         /// The text box with the keyboard focus, if any: the Edit commands act on it first, as a Mac app's
@@ -150,6 +162,9 @@ namespace ReBuzz.Studio.Shell
         /// <summary>The views' tabs, once the engine runs.</summary>
         public TabControl Tabs => tabs;
 
+        /// <summary>The inspector on the right (P3a), once the engine runs.</summary>
+        internal Views.Inspector.InspectorPanel Inspector => inspector;
+
         public TransportBar Transport => transport;
 
         /// <summary>The window's own menu (null on a Mac, where the menu bar has it).</summary>
@@ -164,6 +179,7 @@ namespace ReBuzz.Studio.Shell
         void OnStarted()
         {
             root.Children.Remove(startup);
+            Views.Session.SessionView sessionView = null;
             foreach (var view in StudioViews.All)
             {
                 Avalonia.Controls.Control content;
@@ -177,9 +193,24 @@ namespace ReBuzz.Studio.Shell
                     content = new TextBlock { Text = $"{view.Title}: {e.Message}", Foreground = StudioTokens.ErrorTextBrush, Margin = new Thickness(12) };
                 }
                 tabs.Items.Add(new TabItem { Header = view.Title, Content = content });
+                sessionView ??= content as Views.Session.SessionView;
             }
             ShowView(StudioViews.FirstShown);
-            root.Children.Add(tabs);
+
+            // Fork (ux-overhaul.md P3a): the inspector on the right in every view; Song Notes are its Song tab.
+            Views.Notes.SongNotesView notes = null;
+            try
+            {
+                notes = new Views.Notes.SongNotesView(host.Core);
+            }
+            catch (Exception e)
+            {
+                host.Log($"The Song Notes view failed: {e}");
+            }
+            inspector = new Views.Inspector.InspectorPanel(host.Core, host.Registry, ShowView, sessionView, notes);
+            body.Children.Add(inspector);
+            body.Children.Add(tabs);
+            root.Children.Add(body);
             transport.IsEnabled = true;
             if (host.Agent != null) host.Agent.Changed += Refresh;
             refresh.Start();
@@ -329,7 +360,6 @@ namespace ReBuzz.Studio.Shell
             "Session" => "view.session",
             "Machines" => "view.machines",
             "Pattern" => "view.pattern",
-            Views.Notes.SongNotesTab.TabTitle => "view.notes",
             _ => null,
         };
 
@@ -347,7 +377,10 @@ namespace ReBuzz.Studio.Shell
                 var entry = Command(id, mac, () => UnlessEditorKeeps(id, () => ShowView(title)), () => tabs.ItemCount > 0, () => SelectedTitle == title);
                 yield return entry;
             }
+            yield return Command("view.notes", mac, () => UnlessEditorKeeps("view.notes", ShowSongNotes), () => inspector != null,
+                () => inspector is { IsOpen: true, CurrentTab: Views.Inspector.InspectorPanel.SongTab });
             yield return MenuEntry.Separator;
+            yield return Command("view.inspector", mac, () => inspector?.Toggle(), () => inspector != null, () => inspector?.IsOpen == true);
             yield return Command("view.mixer", mac, ToggleSessionMixer, () => host.Core?.SessionLayout != null, () => host.Core?.SessionLayout?.Document?.ShowMixer == true);
         }
 
@@ -436,7 +469,7 @@ namespace ReBuzz.Studio.Shell
         /// </summary>
         internal bool EditorKeepsKey(KeyGesture key)
         {
-            if (key == null || !key.KeyModifiers.HasFlag(CommandModifiers) || SelectedTitle != "Pattern") return false;
+            if (key == null || !key.KeyModifiers.HasFlag(CommandModifiers) || key.KeyModifiers.HasFlag(KeyModifiers.Alt) || SelectedTitle != "Pattern") return false;
             if (!(key.Key is Key.R or Key.W or Key.I or Key.T || (key.Key >= Key.D0 && key.Key <= Key.D9))) return false;
             return (tabs.SelectedItem as TabItem)?.Content is Visual page && FocusManager?.GetFocusedElement() is Visual focused && page.IsVisualAncestorOf(focused);
         }
@@ -561,6 +594,8 @@ namespace ReBuzz.Studio.Shell
                 string title = view.Title;
                 Bind(ViewCommand(title), () => ShowView(title), k => k.KeyModifiers == CommandModifiers && k.Key >= Key.D1 && k.Key <= Key.D9);
             }
+            Bind("view.notes", () => UnlessEditorKeeps("view.notes", ShowSongNotes), k => k.KeyModifiers == CommandModifiers && k.Key == Key.D5);
+            Bind("view.inspector", () => inspector?.Toggle());
             Bind("view.mixer", ToggleSessionMixer);
             Bind("help.shortcuts", ShowShortcuts);
             KeyBindings.Add(new KeyBinding { Gesture = Keys(Key.OemComma, CommandModifiers), Command = new Command(ShowPreferences) });
@@ -591,7 +626,7 @@ namespace ReBuzz.Studio.Shell
         (string Id, Action Run)[] singleKeys;
 
         /// <summary>Whether the selected view leaves single letters to the transport: not the arrangement (pattern keys) or the tracker (notes).</summary>
-        bool SingleKeysWork => SelectedTitle is "Machines" or "Session" or Views.Notes.SongNotesTab.TabTitle;
+        bool SingleKeysWork => SelectedTitle is "Machines" or "Session";
 
         void OnViewKey(object sender, KeyEventArgs e)
         {
@@ -617,15 +652,23 @@ namespace ReBuzz.Studio.Shell
         void OnNotesKey(object sender, KeyEventArgs e)
         {
             if (tabs.ItemCount == 0 || e.KeyModifiers != KeyModifiers.None || e.Key != Key.F10) return;
-            ShowView(Views.Notes.SongNotesTab.TabTitle);
+            ShowSongNotes();
             e.Handled = true;
         }
+
+        /// <summary>Song Notes: the inspector's Song tab, open, with the editor focused.</summary>
+        void ShowSongNotes() => inspector?.ShowTab(Views.Inspector.InspectorPanel.SongTab, focus: true);
 
         string SelectedTitle => (tabs.SelectedItem as TabItem)?.Header as string;
 
         /// <summary>Selects a view's tab.</summary>
         public void ShowView(string title)
         {
+            if (title == Views.Notes.SongNotesTab.TabTitle)
+            {
+                ShowSongNotes();
+                return;
+            }
             var tab = tabs.Items.OfType<TabItem>().FirstOrDefault(t => t.Header as string == title);
             if (tab != null) tabs.SelectedItem = tab;
         }
@@ -648,6 +691,7 @@ namespace ReBuzz.Studio.Shell
             var core = host.Core;
             if (core == null) return;
             transport.Refresh();
+            inspector?.Refresh();
             undo.Refresh();
             redo.Refresh();
             string name = core.SongCore.SongName == null ? "Untitled" : Path.GetFileName(core.SongCore.SongName);
@@ -773,6 +817,7 @@ namespace ReBuzz.Studio.Shell
         protected override void OnClosed(EventArgs e)
         {
             refresh.Stop();
+            inspector?.Dispose();
             if (host.Agent != null) host.Agent.Changed -= Refresh;
             base.OnClosed(e);
         }
