@@ -492,5 +492,104 @@ namespace NeoBuzz.Eq
 
         [ParameterDecl(Name = "Delta", Description = "Hear only what the EQ changes: the output minus the input, before Output (zero latency, nothing to delay), gliding over 10 ms. Off for rendering", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int Delta { get => Values[P.Delta]; set => Values.Set(P.Delta, value); }
+
+        [ParameterDecl(Name = "Phase", Description = "Minimum: the bands as always, zero latency. Linear: one FIR from the bands' zero-phase magnitude (same dB at every frequency from 30 Hz, no phase turning, constant delay of 4095 + 512 samples at 44.1/48 kHz, reported to the host); Parametric mode only; dynamic bands are static in it; the Curve layer applies; a very narrow band at a low frequency is limited in Q (the editor says so)", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int Phase { get => Values[P.Phase]; set => Values.Set(P.Phase, value); }
+
+        [ParameterDecl(Name = "Curve 1", Description = "Curve layer point 1 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve1 { get => Values[P.Curve1]; set => Values.Set(P.Curve1, value); }
+
+        [ParameterDecl(Name = "Curve 2", Description = "Curve layer point 2 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve2 { get => Values[P.Curve2]; set => Values.Set(P.Curve2, value); }
+
+        [ParameterDecl(Name = "Curve 3", Description = "Curve layer point 3 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve3 { get => Values[P.Curve3]; set => Values.Set(P.Curve3, value); }
+
+        [ParameterDecl(Name = "Curve 4", Description = "Curve layer point 4 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve4 { get => Values[P.Curve4]; set => Values.Set(P.Curve4, value); }
+
+        [ParameterDecl(Name = "Curve 5", Description = "Curve layer point 5 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve5 { get => Values[P.Curve5]; set => Values.Set(P.Curve5, value); }
+
+        [ParameterDecl(Name = "Curve 6", Description = "Curve layer point 6 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve6 { get => Values[P.Curve6]; set => Values.Set(P.Curve6, value); }
+
+        [ParameterDecl(Name = "Curve 7", Description = "Curve layer point 7 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve7 { get => Values[P.Curve7]; set => Values.Set(P.Curve7, value); }
+
+        [ParameterDecl(Name = "Curve 8", Description = "Curve layer point 8 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve8 { get => Values[P.Curve8]; set => Values.Set(P.Curve8, value); }
+
+        [ParameterDecl(Name = "Curve 9", Description = "Curve layer point 9 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve9 { get => Values[P.Curve9]; set => Values.Set(P.Curve9, value); }
+
+        [ParameterDecl(Name = "Curve 10", Description = "Curve layer point 10 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve10 { get => Values[P.Curve10]; set => Values.Set(P.Curve10, value); }
+
+        [ParameterDecl(Name = "Curve 11", Description = "Curve layer point 11 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve11 { get => Values[P.Curve11]; set => Values.Set(P.Curve11, value); }
+
+        [ParameterDecl(Name = "Curve 12", Description = "Curve layer point 12 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve12 { get => Values[P.Curve12]; set => Values.Set(P.Curve12, value); }
+
+        [ParameterDecl(Name = "Curve 13", Description = "Curve layer point 13 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve13 { get => Values[P.Curve13]; set => Values.Set(P.Curve13, value); }
+
+        [ParameterDecl(Name = "Curve 14", Description = "Curve layer point 14 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve14 { get => Values[P.Curve14]; set => Values.Set(P.Curve14, value); }
+
+        [ParameterDecl(Name = "Curve 15", Description = "Curve layer point 15 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve15 { get => Values[P.Curve15]; set => Values.Set(P.Curve15, value); }
+
+        [ParameterDecl(Name = "Curve 16", Description = "Curve layer point 16 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve16 { get => Values[P.Curve16]; set => Values.Set(P.Curve16, value); }
+
+        [ParameterDecl(Name = "Curve 17", Description = "Curve layer point 17 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve17 { get => Values[P.Curve17]; set => Values.Set(P.Curve17, value); }
+
+        [ParameterDecl(Name = "Curve 18", Description = "Curve layer point 18 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve18 { get => Values[P.Curve18]; set => Values.Set(P.Curve18, value); }
+
+        [ParameterDecl(Name = "Curve 19", Description = "Curve layer point 19 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve19 { get => Values[P.Curve19]; set => Values.Set(P.Curve19, value); }
+
+        [ParameterDecl(Name = "Curve 20", Description = "Curve layer point 20 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve20 { get => Values[P.Curve20]; set => Values.Set(P.Curve20, value); }
+
+        [ParameterDecl(Name = "Curve 21", Description = "Curve layer point 21 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve21 { get => Values[P.Curve21]; set => Values.Set(P.Curve21, value); }
+
+        [ParameterDecl(Name = "Curve 22", Description = "Curve layer point 22 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve22 { get => Values[P.Curve22]; set => Values.Set(P.Curve22, value); }
+
+        [ParameterDecl(Name = "Curve 23", Description = "Curve layer point 23 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve23 { get => Values[P.Curve23]; set => Values.Set(P.Curve23, value); }
+
+        [ParameterDecl(Name = "Curve 24", Description = "Curve layer point 24 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve24 { get => Values[P.Curve24]; set => Values.Set(P.Curve24, value); }
+
+        [ParameterDecl(Name = "Curve 25", Description = "Curve layer point 25 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve25 { get => Values[P.Curve25]; set => Values.Set(P.Curve25, value); }
+
+        [ParameterDecl(Name = "Curve 26", Description = "Curve layer point 26 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve26 { get => Values[P.Curve26]; set => Values.Set(P.Curve26, value); }
+
+        [ParameterDecl(Name = "Curve 27", Description = "Curve layer point 27 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve27 { get => Values[P.Curve27]; set => Values.Set(P.Curve27, value); }
+
+        [ParameterDecl(Name = "Curve 28", Description = "Curve layer point 28 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve28 { get => Values[P.Curve28]; set => Values.Set(P.Curve28, value); }
+
+        [ParameterDecl(Name = "Curve 29", Description = "Curve layer point 29 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve29 { get => Values[P.Curve29]; set => Values.Set(P.Curve29, value); }
+
+        [ParameterDecl(Name = "Curve 30", Description = "Curve layer point 30 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve30 { get => Values[P.Curve30]; set => Values.Set(P.Curve30, value); }
+
+        [ParameterDecl(Name = "Curve 31", Description = "Curve layer point 31 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve31 { get => Values[P.Curve31]; set => Values.Set(P.Curve31, value); }
+
+        [ParameterDecl(Name = "Curve 32", Description = "Curve layer point 32 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        public int Curve32 { get => Values[P.Curve32]; set => Values.Set(P.Curve32, value); }
     }
 }

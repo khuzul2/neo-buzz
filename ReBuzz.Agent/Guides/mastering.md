@@ -126,6 +126,14 @@ A clipper before the limiter shaves the first milliseconds of the loudest transi
 
 Neo Low End shapes only the band below its crossover (`Punch`, `Sustain`, `Contrast`, `Balance` to the mids, mono below a frequency, `Peak control`): put it after "M EQ" when a kick or bass is muddy, uneven or too wide. Neo Transient shapes the attack and sustain of the whole signal (or four bands in Impact mode): small moves after "M Glue" when a mix lacks snap. Both report `gain_match_db` and a `Delta` listen; read `machine_readings` after a few seconds of playback.
 
+### 3d. Stereo image and air (Neo Imager, Neo Exciter, optional)
+
+Neo Imager sets the width of four bands and keeps them mono-safe: narrow the lows (`Width 1` 0 %), widen the highs a little, and read `correlation_N` and `width_db_N` from `machine_readings` after a few seconds. Neo Exciter adds only the harmonics a driven shaper makes, per band: a little `Amount 4` for air, `added_db` between −25 and −18 dB is gentle. Both go before the limiter; check the loudness they add with `gain_match_db`.
+
+### 3e. One machine for a track (Neo Strip, optional)
+
+Neo Strip puts a gate, an EQ, a compressor, a drive, a clipper and a limiter in one machine, each the engine of the Neo machine of that name. It is for tracks and buses before the master; the master chain above uses the separate machines, which have more controls. Its latency is the same whichever stages are on.
+
 ### 4. Limiter
 
 Neo Limiter: `Ceiling` (dBTP), `Input gain` (how hard it is driven), `Auto release` or `Release`, `Lookahead` (default is fine), `Stereo link` 100 %. Set:
@@ -153,6 +161,10 @@ Without Neo Limiter, Neo Comp as the last stage (it catches peaks within about 1
 | Release | 80 ms | |
 | Lookahead | 2 ms | sees the peaks coming |
 | Makeup | 0 dB | |
+
+### 5. Dither (Neo Dither), only for a 16 or 24 bit file
+
+Neo Dither is the last machine after the limiter: `Bits` 16, TPDF, `Shaping` Off ("16 bit — TPDF (Standard)"). The simpler way is `render(bits=16, dither="tpdf")`, which writes the master as 16 bit PCM through the same dither and measures what is in the file; do not use both. A 32-bit float file needs no dither.
 
 ## Against a reference
 

@@ -170,7 +170,40 @@ namespace NeoBuzz.Eq
         public const int B8Release = 159;
         public const int B8Detect = 160;
         public const int Delta = 161;
-        public const int Count = 162;
+        public const int Phase = 162;
+        public const int Curve1 = 163;
+        public const int Curve2 = 164;
+        public const int Curve3 = 165;
+        public const int Curve4 = 166;
+        public const int Curve5 = 167;
+        public const int Curve6 = 168;
+        public const int Curve7 = 169;
+        public const int Curve8 = 170;
+        public const int Curve9 = 171;
+        public const int Curve10 = 172;
+        public const int Curve11 = 173;
+        public const int Curve12 = 174;
+        public const int Curve13 = 175;
+        public const int Curve14 = 176;
+        public const int Curve15 = 177;
+        public const int Curve16 = 178;
+        public const int Curve17 = 179;
+        public const int Curve18 = 180;
+        public const int Curve19 = 181;
+        public const int Curve20 = 182;
+        public const int Curve21 = 183;
+        public const int Curve22 = 184;
+        public const int Curve23 = 185;
+        public const int Curve24 = 186;
+        public const int Curve25 = 187;
+        public const int Curve26 = 188;
+        public const int Curve27 = 189;
+        public const int Curve28 = 190;
+        public const int Curve29 = 191;
+        public const int Curve30 = 192;
+        public const int Curve31 = 193;
+        public const int Curve32 = 194;
+        public const int Count = 195;
     }
 
     internal static class Params
@@ -342,6 +375,39 @@ namespace NeoBuzz.Eq
             new ParamDef(P.B8Release, "B8Release", "B8 release", 0, 1000, 532, MapKind.Time, a: 0.005, b: 3, group: "Channel and dynamics 8", description: "Band 8 dynamic: time back to 37 % of a gain change"),
             new ParamDef(P.B8Detect, "B8Detect", "B8 detector", 0, 1, 0, MapKind.Enum, names: new[] { "Band", "Sidechain" }, group: "Channel and dynamics 8", description: "Band 8 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel"),
             new ParamDef(P.Delta, "Delta", "Delta", 0, 1, 0, MapKind.Switch, group: "Monitor", description: "Hear only what the EQ changes: the output minus the input, before Output (zero latency, nothing to delay), gliding over 10 ms. Off for rendering"),
+            new ParamDef(P.Phase, "Phase", "Phase", 0, 1, 0, MapKind.Enum, names: new[] { "Minimum", "Linear" }, group: "Linear phase", description: "Minimum: the bands as always, zero latency. Linear: one FIR from the bands' zero-phase magnitude (same dB at every frequency from 30 Hz, no phase turning, constant delay of 4095 + 512 samples at 44.1/48 kHz, reported to the host); Parametric mode only; dynamic bands are static in it; the Curve layer applies; a very narrow band at a low frequency is limited in Q (the editor says so)"),
+            new ParamDef(P.Curve1, "Curve1", "Curve 1", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 1 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve2, "Curve2", "Curve 2", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 2 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve3, "Curve3", "Curve 3", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 3 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve4, "Curve4", "Curve 4", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 4 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve5, "Curve5", "Curve 5", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 5 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve6, "Curve6", "Curve 6", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 6 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve7, "Curve7", "Curve 7", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 7 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve8, "Curve8", "Curve 8", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 8 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve9, "Curve9", "Curve 9", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 9 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve10, "Curve10", "Curve 10", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 10 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve11, "Curve11", "Curve 11", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 11 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve12, "Curve12", "Curve 12", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 12 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve13, "Curve13", "Curve 13", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 13 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve14, "Curve14", "Curve 14", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 14 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve15, "Curve15", "Curve 15", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 15 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve16, "Curve16", "Curve 16", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 16 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve17, "Curve17", "Curve 17", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 17 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve18, "Curve18", "Curve 18", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 18 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve19, "Curve19", "Curve 19", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 19 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve20, "Curve20", "Curve 20", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 20 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve21, "Curve21", "Curve 21", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 21 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve22, "Curve22", "Curve 22", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 22 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve23, "Curve23", "Curve 23", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 23 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve24, "Curve24", "Curve 24", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 24 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve25, "Curve25", "Curve 25", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 25 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve26, "Curve26", "Curve 26", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 26 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve27, "Curve27", "Curve 27", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 27 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve28, "Curve28", "Curve 28", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 28 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve29, "Curve29", "Curve 29", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 29 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve30, "Curve30", "Curve 30", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 30 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve31, "Curve31", "Curve 31", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 31 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
+            new ParamDef(P.Curve32, "Curve32", "Curve 32", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Linear phase", description: "Curve layer point 32 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)"),
         };
     }
 }

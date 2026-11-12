@@ -25,7 +25,10 @@
 //  - a pattern through a Neo Clipper (three bands, mid/side, its drive moved every buffer, Delta switched) and a Neo
 //    Limiter with every v2 stage (its soft clip switched, so its latency moves): 0 bytes a buffer, each algorithm;
 //  - a pattern through a Neo Transient (mid/side, Impact mode now and then, its gains moved every buffer) and a Neo Low End
-//    (every control working, the phase mode switched now and then, so its latency moves): 0 bytes a buffer, each algorithm.
+//    (every control working, the phase mode switched now and then, so its latency moves): 0 bytes a buffer, each algorithm;
+//  - a pattern through a Neo Imager (every band shaped, Recover on), a Neo Exciter (its curve switched, mid/side, auto gain) and a
+//    Neo Dither (its shaping switched): 0 bytes a buffer, each algorithm.
+//    Neo Strip (every stage on, a bell's gain moved a buffer): 0 bytes a buffer, each algorithm.
 // The tests build in Debug, where the JIT doesn't optimize: no allocation here is one that only an
 // optimizing compiler (tier 1) would remove.
 
@@ -991,6 +994,63 @@ namespace ReBuzz.Studio.Tests
                         if (n % 200 == 0) phase.SetValue(1 << 16, (n / 200) % 2);
                     });
                     AssertNoAllocation(cost, $"a pattern through a Neo Transient and a Neo Low End with every control (algorithm {algorithm})");
+                    lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                }
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                NewSong();
+            }
+        }
+
+        [AvaloniaTest]
+        public void ANeoImagerANeoExciterANeoDitherAndANeoStripWithEveryControlAllocateNothing()
+        {
+            // mastering-tools.md §5.7 - §5.9: a pattern through Neo Imager (every band shaped, Recover on, a width moved every
+            // buffer), Neo Exciter (its curve switched now and then, mid/side, auto gain) and Neo Dither (shaping switched).
+            NewSong();
+            var m = AddPoly("Hygiene Finisher Poly");
+            m.CreatePattern("00", 16);
+            var pattern = (PatternCore)m.Patterns.First();
+            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 36 + (i * 5) % 24, 100)).ToArray());
+            Arrange(m, pattern);
+            var imager = InsertAfter(m, "Neo Imager", "Hygiene Imager");
+            var exciter = InsertAfter(imager, "Neo Exciter", "Hygiene Exciter");
+            var dither = InsertAfter(exciter, "Neo Dither", "Hygiene Dither");
+            var strip = InsertAfter(dither, "Neo Strip", "Hygiene Strip");
+            var ig = imager.ParameterGroupsList.SelectMany(g => g.ParametersList).ToList();
+            ig.First(p => p.Name == "Width 1").SetValue(0, 0);
+            ig.First(p => p.Name == "Width 3").SetValue(0, 160);
+            ig.First(p => p.Name == "Stereoize 2").SetValue(0, 400);
+            ig.First(p => p.Name == "Recover sides").SetValue(0, 1);
+            var width = ig.First(p => p.Name == "Width 4");
+            var eg = exciter.ParameterGroupsList.SelectMany(g => g.ParametersList).ToList();
+            eg.First(p => p.Name == "Amount 3").SetValue(0, 400);
+            eg.First(p => p.Name == "Auto gain").SetValue(0, 1);
+            eg.First(p => p.Name == "Stereo").SetValue(0, 1);
+            var curve = eg.First(p => p.Name == "Mode");
+            var dg = dither.ParameterGroupsList.SelectMany(g => g.ParametersList).ToList();
+            var shaping = dg.First(p => p.Name == "Shaping");
+            var sg = strip.ParameterGroupsList.SelectMany(g => g.ParametersList).ToList();
+            foreach (var stageName in new[] { "Gate on", "EQ on", "Comp on", "Drive on", "Clip on", "Limit on" }) sg.First(p => p.Name == stageName).SetValue(0, 1);
+            sg.First(p => p.Name == "Low mid gain").SetValue(0, 280);
+            var lmGain = sg.First(p => p.Name == "Low mid gain");
+            try
+            {
+                int n = 0;
+                foreach (int algorithm in new[] { 0, 1, 2 })
+                {
+                    using var audio = new AudioThread(algorithm);
+                    lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                    var cost = Steady(audio, perBuffer: () =>
+                    {
+                        width.SetValue(1 << 16, 20 + (n % 60) * 3);
+                        if (++n % 100 == 0) curve.SetValue(1 << 16, (n / 100) % 5);
+                        if (n % 130 == 0) shaping.SetValue(1 << 16, (n / 130) % 3);
+                        lmGain.SetValue(1 << 16, 200 + (n % 80));
+                    });
+                    AssertNoAllocation(cost, $"a pattern through a Neo Imager, a Neo Exciter, a Neo Dither and a Neo Strip with every control (algorithm {algorithm})");
                     lock (ReBuzzCore.AudioLock) Core.Playing = false;
                 }
             }

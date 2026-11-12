@@ -18,7 +18,7 @@ namespace ReBuzz.AgentTests
     public class GuideTests
     {
         static readonly string[] Topics = { "workflow", "concepts", "composition", "sound-design", "mixing", "mastering", "troubleshooting" };
-        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Clipper", "Neo Comp", "Neo Delay", "Neo Drive", "Neo Drums", "Neo EQ", "Neo Ensemble", "Neo Filter", "Neo FM6", "Neo Limiter", "Neo Low End", "Neo Multiband", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Transient", "Neo Utility", "Neo Verb", "Neo Wave", "Dye Essence" };
+        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Clipper", "Neo Comp", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Imager", "Neo Limiter", "Neo Low End", "Neo Multiband", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Strip", "Neo Transient", "Neo Utility", "Neo Verb", "Neo Wave", "Dye Essence" };
 
         /// <summary>Neo gear being built in parallel (phase A4): parameter names aren't final, so guides give them moves in units and say to read the names with machine_describe.</summary>
         static readonly string[] PendingGear = System.Array.Empty<string>();
@@ -69,7 +69,7 @@ namespace ReBuzz.AgentTests
             ["arrangement_get"] = new[] { "from", "to" },
             ["arrangement_place"] = new[] { "machine", "pattern", "at", "repeat_every_beats", "times" },
             ["arrangement_clear"] = new[] { "machine", "from", "to" },
-            ["render"] = new[] { "from", "to", "range", "section", "tail_seconds", "solo", "mute", "probes", "name", "cpu", "cpu_window_seconds" },
+            ["render"] = new[] { "from", "to", "range", "section", "tail_seconds", "solo", "mute", "probes", "name", "bits", "dither", "cpu", "cpu_window_seconds" },
             ["analyze"] = new[] { "source", "metrics", "from_seconds", "to_seconds", "target" },
             // A2 (main: ReBuzz/Agent/AnalysisTools.cs, StateTools.cs, WaveTools.cs)
             ["analyze_mix"] = new[] { "from", "to", "section", "machines" },

@@ -1,0 +1,134 @@
+# Neo Strip factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoStrip
+machine "Neo Strip"
+
+preset "Vocal — Up Front"
+EQ on = On
+Low cut on = On
+Low cut freq = 90
+Low mid freq = 300
+Low mid gain = -2
+Low mid Q = 1.2
+High mid freq = 3500
+High mid gain = 2
+High mid Q = 0.9
+High shelf freq = 10000
+High shelf gain = 2
+Comp on = On
+Comp mode = Opto
+Comp threshold = -20
+Comp ratio = 3.5
+Comp attack = 0.012
+Comp release = 0.18
+Comp makeup = 3
+Limit on = On
+Ceiling = -1
+
+preset "Vocal — Spoken Word (Gate and Tidy)"
+Gate on = On
+Gate threshold = -48
+Gate range = 30
+Gate attack = 0.002
+Gate hold = 0.08
+Gate release = 0.2
+EQ on = On
+Low cut on = On
+Low cut freq = 100
+Low mid freq = 250
+Low mid gain = -2.5
+Low mid Q = 1
+High mid freq = 4000
+High mid gain = 2
+High mid Q = 1
+Comp on = On
+Comp mode = Clean
+Comp threshold = -22
+Comp ratio = 3
+Comp attack = 0.008
+Comp release = 0.15
+Comp makeup = 4
+Limit on = On
+Ceiling = -1
+
+preset "Drums — Punch Bus"
+EQ on = On
+Low shelf freq = 80
+Low shelf gain = 2
+High mid freq = 4500
+High mid gain = 1.5
+High mid Q = 0.8
+Comp on = On
+Comp mode = Glue
+Comp threshold = -16
+Comp ratio = 4
+Comp attack = 0.03
+Comp release = 0.1
+Comp makeup = 3
+Drive on = On
+Drive mode = Tape
+Drive = 6
+Drive mix = 60
+Clip on = On
+Ceiling = -1.5
+
+preset "Bass — DI Solid"
+EQ on = On
+Low cut on = On
+Low cut freq = 35
+Low mid freq = 250
+Low mid gain = -3
+Low mid Q = 1.4
+High mid freq = 1800
+High mid gain = 2.5
+High mid Q = 0.8
+Comp on = On
+Comp mode = FET
+Comp threshold = -18
+Comp ratio = 5
+Comp attack = 0.02
+Comp release = 0.12
+Comp makeup = 3
+Drive on = On
+Drive mode = Tube
+Drive = 8
+Drive mix = 50
+
+preset "Guitar — Crunch and Air"
+EQ on = On
+Low cut on = On
+Low cut freq = 80
+Low mid freq = 400
+Low mid gain = -2
+Low mid Q = 1
+High mid freq = 3000
+High mid gain = 2
+High mid Q = 1
+High shelf freq = 9000
+High shelf gain = 1.5
+Drive on = On
+Drive mode = Transistor
+Drive = 12
+Drive mix = 70
+Limit on = On
+Ceiling = -1
+
+preset "Master — Safety (Clip and Limit)"
+Clip on = On
+Limit on = On
+Ceiling = -1
+Limiter release = 0.2
+
+preset "Master — Gentle Glue and Ceiling"
+EQ on = On
+Low shelf freq = 100
+Low shelf gain = 1
+High shelf freq = 10000
+High shelf gain = 1
+Comp on = On
+Comp mode = Glue
+Comp threshold = -14
+Comp ratio = 2
+Comp attack = 0.03
+Comp release = 0.2
+Comp makeup = 1.5
+Limit on = On
+Ceiling = -1

@@ -52,6 +52,37 @@ namespace ReBuzz.Agent.Audio
             w.Write(bytes);
         }
 
+        /// <summary>Writes stereo frames (interleaved L R, already on the grid: see <see cref="Requantize"/>) as 16 or 24 bit PCM.</summary>
+        public static void WriteStereoPcm(string path, float[] interleaved, int frames, int rate, int bits)
+        {
+            if (bits != 16 && bits != 24) throw new ArgumentOutOfRangeException(nameof(bits));
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+            int bytesPer = bits / 8, dataBytes = frames * 2 * bytesPer;
+            using var w = new BinaryWriter(File.Create(path));
+            w.Write(Encoding.ASCII.GetBytes("RIFF"));
+            w.Write(4 + (8 + 16) + (8 + dataBytes + (dataBytes & 1)));
+            w.Write(Encoding.ASCII.GetBytes("WAVE"));
+            w.Write(Encoding.ASCII.GetBytes("fmt "));
+            w.Write(16);
+            w.Write(PcmFormat);
+            w.Write((short)2);
+            w.Write(rate);
+            w.Write(rate * 2 * bytesPer);
+            w.Write((short)(2 * bytesPer));
+            w.Write((short)bits);
+            w.Write(Encoding.ASCII.GetBytes("data"));
+            w.Write(dataBytes);
+            double scale = Math.Pow(2, bits - 1);
+            var bytes = new byte[dataBytes];
+            for (int i = 0; i < frames * 2; i++)
+            {
+                int code = (int)Math.Clamp(Math.Round(interleaved[i] * scale), -scale, scale - 1);
+                for (int b = 0; b < bytesPer; b++) bytes[i * bytesPer + b] = (byte)(code >> (8 * b));
+            }
+            w.Write(bytes);
+            if ((dataBytes & 1) != 0) w.Write((byte)0);
+        }
+
         public static StereoAudio Read(string path)
         {
             if (!File.Exists(path)) throw new ToolError($"No file at {path}.");

@@ -1,0 +1,36 @@
+# Neo Imager parameters (docs/specs/mastering-tools.md §5.7). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoImager
+namespace NeoBuzz.Imager
+class NeoImagerMachine
+summary Stereo imager for masters and buses: four bands (zero-latency Linkwitz–Riley crossovers) with the width of each from 0 to 200 % (the side against the mid, in the band), a Stereoize amount per band that adds a decorrelated copy of the mid to the side (the mono sum is untouched, so it is safe in mono), and Recover sides, which returns the side that narrowing took away to the mid through a 90 degree allpass pair so it does not comb in mono. Per-band width and correlation readings, Delta (hear only what it changes) and a gain-match reading. Use it to widen the highs, narrow and focus the lows, or fix a mix that collapses in mono.
+
+group Bands
+Xo1        "Crossover 1"  0 10000 2594  freq 20 20000                      | Between the first and the second band
+Xo2        "Crossover 2"  0 10000 5663  freq 20 20000                      | Between the second and the third band (never below Crossover 1)
+Xo3        "Crossover 3"  0 10000 8257  freq 20 20000                      | Between the third and the fourth band (never below Crossover 2)
+group Width
+Width1     "Width 1"      0 200   100   lin 0 200 % 0                      | The first band's width: the side against the mid. 0 % is mono, 100 % as it came in, 200 % twice the side
+Width2     "Width 2"      0 200   100   lin 0 200 % 0                      | The second band's width
+Width3     "Width 3"      0 200   100   lin 0 200 % 0                      | The third band's width
+Width4     "Width 4"      0 200   100   lin 0 200 % 0                      | The fourth band's width
+group Stereoize
+Stereo1    "Stereoize 1"  0 1000  0     pct                                | Adds a decorrelated copy of the first band's mid to its side (the mono sum is not changed). 0 % off
+Stereo2    "Stereoize 2"  0 1000  0     pct                                | The second band's Stereoize
+Stereo3    "Stereoize 3"  0 1000  0     pct                                | The third band's Stereoize
+Stereo4    "Stereoize 4"  0 1000  0     pct                                | The fourth band's Stereoize
+Recover    "Recover sides" 0 1    0     switch                             | The side that narrowing takes away is returned to the mid, turned 90 degrees against it so it adds to the level without combing
+group Output
+Output     "Output"       0 480   240   db -24 24                          | Gain after the imager, 0.1 dB steps (the editor's Match sets it from the gain-match reading)
+Delta      "Delta"        0 1     0     switch                             | Hear only what the imager changes: the output minus the input (glides over 10 ms)
+
+# What the imager measures (NeoImagerMachine.Readings, machine_readings), over the last 3 s.
+reading width_db_1        dB    | Side against mid in the first band, dB of energy, at the output (−100 when there is no side)
+reading width_db_2        dB    | The second band's side against mid
+reading width_db_3        dB    | The third band's side against mid
+reading width_db_4        dB    | The fourth band's side against mid
+reading correlation_1     ratio | Correlation of left and right in the first band at the output, −1 … +1
+reading correlation_2     ratio | The second band's correlation
+reading correlation_3     ratio | The third band's correlation
+reading correlation_4     ratio | The fourth band's correlation
+reading gain_match_db     dB    | Short-term loudness out − in (K-weighted, 3 s): what Output would have to take back for equal loudness
+reading latency_samples   samples | Always 0: the imager adds no latency
