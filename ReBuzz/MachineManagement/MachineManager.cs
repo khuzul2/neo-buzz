@@ -1184,6 +1184,46 @@ namespace ReBuzz.MachineManagement
         internal bool ImportClipNotes(MachineCore machine, PatternCore pattern, int[] notes) =>
             ClipNotesEditor(machine)?.ImportClipNotes(pattern, notes) == true;
 
+        /// <summary>Fork (ux-overhaul.md P3b): the machine's pattern editor, if it takes note edits on its tracker's Note columns.</summary>
+        ManagedMachineHost TrackerEditor(MachineCore machine)
+        {
+            var editor = machine?.EditorMachine;
+            return editor != null && managedMachines.TryGetValue(editor, out var host) && host.HasTrackerEvents ? host : null;
+        }
+
+        internal bool HasTrackerEditor(MachineCore machine) => TrackerEditor(machine) != null;
+
+        /// <summary>Fork (P3b): the machine's pattern editor, if it takes its MIDI note lanes' notes as undoable edits.</summary>
+        ManagedMachineHost ClipNoteEditor(MachineCore machine)
+        {
+            var editor = machine?.EditorMachine;
+            return editor != null && managedMachines.TryGetValue(editor, out var host) && host.HasClipNoteEdits ? host : null;
+        }
+
+        internal bool HasClipNoteEditor(MachineCore machine) => ClipNoteEditor(machine) != null;
+
+        /// <summary>Fork (P3b): replaces the notes of the pattern's MIDI note lanes in its editor as one undo step of the editor; false if some didn't fit.</summary>
+        internal bool EditClipNotes(MachineCore machine, PatternCore pattern, int[] notes) =>
+            ClipNoteEditor(machine)?.EditClipNotes(pattern, notes) == true;
+
+        /// <summary>Fork (P3b): events (records of parameter index, track, add, time, value) removed from and added to the tracker's Note columns, one undo step of the editor.</summary>
+        internal bool EditTrackerEvents(MachineCore machine, PatternCore pattern, int[] changes) =>
+            TrackerEditor(machine)?.EditTrackerEvents(pattern, changes) == true;
+
+        /// <summary>Fork (P3b): the rows in each beat of a track parameter's column in the tracker, or null.</summary>
+        internal int[] GetTrackerBeatRows(MachineCore machine, PatternCore pattern, int indexInGroup, int track) =>
+            TrackerEditor(machine)?.GetTrackerBeatRows(pattern, indexInGroup, track);
+
+        /// <summary>Fork (P3b): the editor's own undo and redo (the tracker's history, which the piano roll shares).</summary>
+        internal bool EditorHistory(MachineCore machine, bool redo)
+        {
+            var host = TrackerEditor(machine) ?? ClipNoteEditor(machine);
+            if (host == null) return false;
+            var cmd = redo ? BuzzCommand.Redo : BuzzCommand.Undo;
+            host.ExecuteCommad(cmd);
+            return true;
+        }
+
         internal void SetPatternEditorMachineMIDIEvents(MachineCore machine, PatternCore pattern, int[] data)
         {
             var editor = machine.EditorMachine;

@@ -819,6 +819,11 @@ namespace WDE.ModernPatternEditor
             return list;
         }
 
+        internal static List<MPEPatternColumn> LaneColumns(MPEPattern pattern) =>
+            pattern.MPEPatternColumns.Where(c => IsAnyLane(c, pattern.Pattern.Machine)).ToList();
+
+        internal static List<int> BeatRowsOf(MPEPattern pattern, MPEPatternColumn lane) => BeatRows(pattern, lane);
+
         /// <summary>The notes the pattern's MIDI note lanes play.</summary>
         public static int[] ExportClipNotes(MPEPattern pattern)
         {

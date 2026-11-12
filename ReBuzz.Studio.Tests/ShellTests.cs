@@ -28,7 +28,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(host.Core.MachineDLLs.Keys, Does.Contain("Neo Poly").And.Contain("Neo Verb"), "the portable Neo machines are installed");
             var window = Open();
             // Fork (ux-overhaul.md §4): the three main views first, so ⌘1–⌘3 are theirs; the window opens on the machines.
-            Assert.That(window.Tabs.Items.Cast<TabItem>().Select(t => (string)t.Header), Is.EqualTo(new[] { "Sequence", "Session", "Machines", "Pattern" }));
+            Assert.That(window.Tabs.Items.Cast<TabItem>().Select(t => (string)t.Header), Is.EqualTo(new[] { "Arrangement", "Session", "Machines" }));
             Assert.That((window.Tabs.SelectedItem as TabItem)?.Header, Is.EqualTo("Machines"));
             Assert.That(window.Health.Text, Is.EqualTo("No audio output"), "the audio-health badge (ux-overhaul.md P1)");
             Studio.Screenshot(window, "studio-main");

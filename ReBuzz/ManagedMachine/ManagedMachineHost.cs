@@ -77,6 +77,13 @@ namespace ReBuzz.ManagedMachine
 
         private delegate bool ImportClipNotesDelegate(IPattern pattern, int[] notes);
 
+        // Fork (ux-overhaul.md P3b): the piano roll edits the tracker's Note columns, one undo step an edit.
+        private delegate bool EditTrackerEventsDelegate(IPattern pattern, int[] changes);
+
+        private delegate bool EditClipNotesDelegate(IPattern pattern, int[] notes);
+
+        private delegate int[] GetTrackerBeatRowsDelegate(IPattern pattern, int indexInGroup, int track);
+
         private delegate IEnumerable<IPatternEditorColumn> GetPatternEditorEventsDelegate(IPattern pattern, int tbegin, int tend);
 
         private delegate void ActivateDelegate();
@@ -144,6 +151,12 @@ namespace ReBuzz.ManagedMachine
         private ExportClipNotesDelegate ExportClipNotesFunction;
 
         private ImportClipNotesDelegate ImportClipNotesFunction;
+
+        private EditTrackerEventsDelegate EditTrackerEventsFunction;
+
+        private EditClipNotesDelegate EditClipNotesFunction;
+
+        private GetTrackerBeatRowsDelegate GetTrackerBeatRowsFunction;
 
         private GetPatternEditorEventsDelegate GetPatternEditorEventsFunction;
 
@@ -239,6 +252,9 @@ namespace ReBuzz.ManagedMachine
             SetPatternEditorMachineMIDIEventsFunction = (SetPatternEditorMachineMIDIEventsDelegate)GetMethod(typeof(SetPatternEditorMachineMIDIEventsDelegate), "SetPatternEditorMachineMIDIEvents");
             ExportClipNotesFunction = (ExportClipNotesDelegate)GetMethod(typeof(ExportClipNotesDelegate), "ExportClipNotes");
             ImportClipNotesFunction = (ImportClipNotesDelegate)GetMethod(typeof(ImportClipNotesDelegate), "ImportClipNotes");
+            EditTrackerEventsFunction = (EditTrackerEventsDelegate)GetMethod(typeof(EditTrackerEventsDelegate), "EditTrackerEvents");
+            EditClipNotesFunction = (EditClipNotesDelegate)GetMethod(typeof(EditClipNotesDelegate), "EditClipNotes");
+            GetTrackerBeatRowsFunction = (GetTrackerBeatRowsDelegate)GetMethod(typeof(GetTrackerBeatRowsDelegate), "GetTrackerBeatRows");
             GetPatternEditorEventsFunction = (GetPatternEditorEventsDelegate)GetMethod(typeof(GetPatternEditorEventsDelegate), "GetPatternEditorEvents");
             DescribeValueFunction = (DescribeValueDelegate)GetMethod(typeof(DescribeValueDelegate), "DescribeValue");
             ActivateFunction = (ActivateDelegate)GetMethod(typeof(ActivateDelegate), "Activate");
@@ -712,6 +728,21 @@ namespace ReBuzz.ManagedMachine
 
         internal bool ImportClipNotes(PatternCore pattern, int[] notes) =>
             ImportClipNotesFunction != null && ImportClipNotesFunction(pattern, notes);
+
+        /// <summary>Fork (ux-overhaul.md P3b): whether this pattern editor takes note edits on the tracker's Note columns.</summary>
+        internal bool HasTrackerEvents => EditTrackerEventsFunction != null && GetTrackerBeatRowsFunction != null;
+
+        /// <summary>Fork (P3b): whether this pattern editor takes clip notes (the MIDI note lanes) as one undo step of its own.</summary>
+        internal bool HasClipNoteEdits => EditClipNotesFunction != null && HasClipNotes;
+
+        internal bool EditClipNotes(PatternCore pattern, int[] notes) =>
+            EditClipNotesFunction != null && EditClipNotesFunction(pattern, notes);
+
+        internal bool EditTrackerEvents(PatternCore pattern, int[] changes) =>
+            EditTrackerEventsFunction != null && EditTrackerEventsFunction(pattern, changes);
+
+        internal int[] GetTrackerBeatRows(PatternCore pattern, int indexInGroup, int track) =>
+            GetTrackerBeatRowsFunction?.Invoke(pattern, indexInGroup, track);
 
         internal IEnumerable<IPatternEditorColumn> GetPatternCloumnEvents(PatternCore pattern, int tbegin, int tend)
         {

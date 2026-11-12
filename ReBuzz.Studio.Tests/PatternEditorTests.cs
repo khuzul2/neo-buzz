@@ -56,6 +56,7 @@ namespace ReBuzz.Studio.Tests
             var window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
             window.Show();
             Pump();
+            window.Detail.Show(true);       // the Tracker over the whole window, as the tab was: the tests click its grid
             PatternView.Edit(pattern);
             Pump();
             var page = PatternView.Page;
@@ -385,24 +386,23 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(page.Pattern, Is.EqualTo(second), "and the tab shows it");
 
                 // The API other views use: another tab in front, then Edit(pattern) brings the Pattern tab back.
-                var tabs = s.Window.Tabs;
-                var patternTab = tabs.Items.OfType<TabItem>().First(t => t.Header as string == "Pattern");
-                tabs.SelectedItem = tabs.Items.OfType<TabItem>().First(t => t != patternTab);
+                var detail = s.Window.Detail;
+                detail.Close();
                 Pump();
                 PatternView.Edit(s.Pattern);
                 Pump();
                 Assert.That(page.Pattern, Is.EqualTo(s.Pattern));
-                Assert.That(tabs.SelectedItem, Is.EqualTo(patternTab), "the Pattern tab is in front");
+                Assert.That(detail.IsOpen, Is.True, "the Tracker is open");
 
                 // As the Session View opens a double-clicked clip: the engine's pattern editor pattern,
                 // then ActiveView. The tab follows both.
-                tabs.SelectedItem = tabs.Items.OfType<TabItem>().First(t => t != patternTab);
+                detail.Close();
                 Pump();
                 core.SetPatternEditorPattern(second);
                 core.ActiveView = BuzzView.PatternView;
                 Pump();
                 Assert.That(page.Pattern, Is.EqualTo(second), "SetPatternEditorPattern picks the pattern");
-                Assert.That(tabs.SelectedItem, Is.EqualTo(patternTab), "ActiveView = PatternView brings the tab to the front");
+                Assert.That(detail.IsOpen, Is.True, "ActiveView = PatternView opens the Tracker");
                 PatternView.Edit(s.Pattern);
                 Pump();
                 Assert.That(core.PatternEditorPattern, Is.EqualTo(s.Pattern), "the engine's pattern editor pattern");

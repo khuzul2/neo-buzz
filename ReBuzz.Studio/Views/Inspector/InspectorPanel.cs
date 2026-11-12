@@ -94,7 +94,7 @@ namespace ReBuzz.Studio.Views.Inspector
             subtitle = new TextBlock { FontSize = 11, Foreground = StudioTokens.TextSecondaryBrush, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 2, 0, 0) };
             facts = new Grid { Margin = new Thickness(0, 8, 0, 0), ColumnDefinitions = new ColumnDefinitions("Auto,*") };
             hint = new TextBlock { FontSize = 12, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
-            patternButton = ActionButton("Open in Pattern view", "Edit this pattern in the tracker", () => showView("Pattern"));
+            patternButton = ActionButton("Open in Tracker", "Edit this pattern in the Tracker", () => showView("Pattern"));
             notesButton = ActionButton("Song notes", "Write about the song: the Song tab", () => ShowTab(SongTab, focus: true));
             var top = new StackPanel
             {
@@ -153,6 +153,28 @@ namespace ReBuzz.Studio.Views.Inspector
         }
 
         // ------------------------------------------------------------------ state
+
+        /// <summary>The layout around it changed: the window fits the panels to its width.</summary>
+        public event Action Changed;
+
+        /// <summary>
+        /// The room the window leaves it (a narrow window): less than its least width, it shows as the rail while it is open
+        /// (the setting is unchanged), else it is as wide as the room if that is less than its width.
+        /// </summary>
+        public void Fit(double available)
+        {
+            if (available == fit) return;
+            fit = available;
+            ApplyOpen(notify: false);
+        }
+
+        double fit = double.PositiveInfinity;
+
+        /// <summary>Open and squeezed into the rail by a narrow window.</summary>
+        public bool IsSqueezed => open && fit < MinPanelWidth;
+
+        /// <summary>The width it takes now.</summary>
+        public double EffectiveWidth => open && !IsSqueezed ? Math.Min(width, fit) : RailWidth;
 
         /// <summary>Shown (as opposed to the rail only).</summary>
         public bool IsOpen => open;
@@ -225,12 +247,14 @@ namespace ReBuzz.Studio.Views.Inspector
             if (open) Refresh();
         }
 
-        void ApplyOpen()
+        void ApplyOpen(bool notify = true)
         {
-            full.IsVisible = open;
-            rail.IsVisible = !open;
-            grip.IsVisible = open;
-            Width = open ? width : RailWidth;
+            bool shown = open && !IsSqueezed;
+            full.IsVisible = shown;
+            rail.IsVisible = !shown;
+            grip.IsVisible = shown;
+            Width = EffectiveWidth;
+            if (notify) Changed?.Invoke();
         }
 
         void ApplyTab(bool focus)
