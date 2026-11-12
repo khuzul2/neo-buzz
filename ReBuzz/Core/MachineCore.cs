@@ -1480,10 +1480,13 @@ namespace ReBuzz.Core
                 if (!IsVisibleInput(input))
                     continue;
                 var inputCore = input as MachineConnectionCore;
-                // Fork (mastering-tools.md M3): the set itself, so the audio thread allocates nothing (MachineConnectionCore).
+                var targetChannelList = inputCore.DestinationChannelArray;     // fork: no enumerator boxed per buffer
+
                 // Output to multiple channels, so we need to mix the input to all target channels
-                foreach (int targetChannel in inputCore.DestinationChannelSet)
+                for (int targetChannelIndex = 0; targetChannelIndex < targetChannelList.Length; targetChannelIndex++)
                 {
+                    int targetChannel = targetChannelList[targetChannelIndex];
+
                     if (multiSamplesInBuffers[targetChannel] == null)
                     {
                         multiSamplesInBuffers[targetChannel] = new Sample[256];
@@ -1510,9 +1513,13 @@ namespace ReBuzz.Core
                 if (!IsVisibleInput(input))
                     continue;
                 var inputCore = input as MachineConnectionCore;
+                var targetChannelList = inputCore.DestinationChannelArray;     // fork: no enumerator boxed per buffer
+
                 // Output to multiple channels, so we need to mix the input to all target channels
-                foreach (int targetChannel in inputCore.DestinationChannelSet)
+                for (int targetChannelIndex = 0; targetChannelIndex < targetChannelList.Length; targetChannelIndex++)
                 {
+                    int targetChannel = targetChannelList[targetChannelIndex];
+
                     Sample[] samples = activeChannels[targetChannel];
 
                     for (int i = 0; i < nSamples; i++)
@@ -1542,8 +1549,11 @@ namespace ReBuzz.Core
                 outputCore.ClearBuffer(nSamples);
                 outputCore.PreUpdateBufferActions(nSamples);
 
-                foreach (int channel in outputCore.SourceChannelSet)
+                var sourceChannels = outputCore.SourceChannelArray;            // fork: no enumerator boxed per buffer
+                for (int channelIndex = 0; channelIndex < sourceChannels.Length; channelIndex++)
                 {
+                    int channel = sourceChannels[channelIndex];
+
                     if (channel < multiSamplesOut.Count &&
                         multiSamplesOut[channel] != null)
                     {

@@ -656,23 +656,22 @@ namespace NeoBuzz.MachineTests
         public void SilenceAfterNoiseLeavesNoSubnormalsAndRunsAtFullSpeed(int mode)
         {
             // 2 s of noise, then 20 s of silence with the loop decaying (feedback 90 %, both filters on, the wow moving): nothing
-            // subnormal in the lines or the filters, and silence costs what noise does. The machine stops working once the
-            // lines are silent (Idle).
-            var (e, _) = Make(v => { v.Set(P.Mode, mode); Set(v, P.Feedback, 90); v.Set(P.Sync, 0); Set(v, P.Time, 0.02); v.Set(P.ModDepth, 300); });
+            // subnormal in the lines or the filters, and a second of silence costs less than 3 seconds of noise, timed as the
+            // throughput guards are (Measure.SilenceCost). The machine stops working once the lines are silent (Idle).
+            Action<ParamValues> setup = v => { v.Set(P.Mode, mode); Set(v, P.Feedback, 90); v.Set(P.Sync, 0); Set(v, P.Time, 0.02); v.Set(P.ModDepth, 300); };
+            var (e, _) = Make(setup);
             var noise = Noise(2 * Rate, 0.3, 9);
             var silent = new float[20 * Rate];
-            var sw = Stopwatch.StartNew();
             Run(e, noise, noise);
-            double noiseSeconds = sw.Elapsed.TotalSeconds / 2;
-            sw.Restart();
             var (l, r) = Run(e, silent, silent);
-            double silenceSeconds = sw.Elapsed.TotalSeconds / 20;
-            Assert.That(e.HoldsSubnormals(), Is.False, "no subnormal state");
-            Assert.That(l.Concat(r).Any(float.IsSubnormal), Is.False, "no subnormal output");
-            Assert.That(l.Concat(r).All(float.IsFinite), Is.True);
-            Assert.That(e.Idle, Is.True, "silent lines: idle");
-            Measure.Report($"Neo Delay {(DelayMode)mode}, feedback 90 %: silence after noise costs {silenceSeconds / noiseSeconds:F2}× noise; no subnormals; idle after the tail");
-            Assert.That(silenceSeconds, Is.LessThan(3 * noiseSeconds + 0.002));
+            Assert.Multiple(() =>
+            {
+                Assert.That(e.HoldsSubnormals(), Is.False, "no subnormal state");
+                Assert.That(l.Concat(r).Any(float.IsSubnormal), Is.False, "no subnormal output");
+                Assert.That(l.Concat(r).All(float.IsFinite), Is.True);
+                Assert.That(e.Idle, Is.True, "silent lines: idle");
+                Measure.SilenceCost($"Neo Delay {(DelayMode)mode}, feedback 90 %, silence after noise", 3, DelayEngine.MaxBlock, () => Make(setup).Engine.Process, noise);
+            });
         }
 
         [Test]

@@ -36,7 +36,7 @@ A wavetable synth: two oscillators read through tables of 64 frames that morph s
 - Movement comes from modulating the position: the mod envelope for one sweep per note, an LFO (free or synced) for repeating motion, velocity or the mod wheel for playing it. Matrix amounts are fractions of the whole table: +50 % covers half of it.
 - Pads: two tables at different positions, `B fine` +5 to +8 ct, unison 2–4, slow amp and mod envelopes.
 - Basses: `Voice mode` Mono, the sub at −1 octave for weight, a synced LFO on the position for rhythm, drive into the ladder for growl.
-- Your own table: a WAV of 2048-sample frames (as Serum writes them) or a single cycle of any length. `machine_data_import(machine="Wave", kind="wavetable", path="C:/Tables/mine.wav")`, then set `A table` (or B) to User.
+- Your own table: a wavetable WAV in the common 2048-samples-per-frame layout, or a single cycle of any length. `machine_data_import(machine="Wave", kind="wavetable", path="C:/Tables/mine.wav")`, then set `A table` (or B) to User.
 
 Movement on the position from the mod envelope:
 

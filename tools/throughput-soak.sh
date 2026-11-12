@@ -16,10 +16,11 @@ runs=${3:-20}
 shift $(( $# < 3 ? $# : 3 ))
 out=${SOAK_OUT:-soak}
 mkdir -p "$out"
+out=$(cd "$out" && pwd)
 run() {
   label=$1; shift
   rm -rf "$out/$label"; mkdir -p "$out/$label"
-  env MEASUREMENTS_DIR="$PWD/$out/$label" "$@" dotnet test "$target" --no-build --filter "$filter" --logger "console;verbosity=minimal" ${EXTRA[@]+"${EXTRA[@]}"} > "$out/$label.log" 2>&1
+  env MEASUREMENTS_DIR="$out/$label" "$@" dotnet test "$target" --no-build --filter "$filter" --logger "console;verbosity=minimal" ${EXTRA[@]+"${EXTRA[@]}"} > "$out/$label.log" 2>&1
   echo "== $label (exit $?)"
   sed "s/^/[$label] /" "$out/$label/throughput.txt" 2>/dev/null
 }

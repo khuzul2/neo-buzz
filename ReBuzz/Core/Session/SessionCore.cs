@@ -38,7 +38,7 @@ namespace ReBuzz.Core.Session
         readonly object gate = new object();
 
         // Audio thread only (OnTick): copy of the scheduler's changes, reused to avoid allocation.
-        readonly List<SessionChange<SequenceCore, PatternCore>> tickChanges = new List<SessionChange<SequenceCore, PatternCore>>();
+        readonly List<SessionChange<SequenceCore, PatternCore>> tickChanges = new List<SessionChange<SequenceCore, PatternCore>>(64);   // fork (follow-ups): sized ahead
 
         int beatsPerBar = 4;
         LaunchQuantization launchQuantization = LaunchQuantization.Bar;

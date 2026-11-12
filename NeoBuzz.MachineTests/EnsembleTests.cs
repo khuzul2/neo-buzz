@@ -622,22 +622,22 @@ namespace NeoBuzz.MachineTests
         [TestCase(2)]
         public void SilenceAfterNoiseLeavesNoSubnormalsAndRunsAtFullSpeed(int mode)
         {
-            // 2 s of noise, then 20 s of silence with the loop decaying: nothing subnormal in the lines,
-            // filters or allpasses (feedback paths are flushed), and silence costs what noise does.
-            var (e, _) = Make(v => { v.Set(P.Mode, mode); Set(v, P.Feedback, 90); v.Set(P.Voices, 4); v.Set(P.Stages, 12); Set(v, P.Delay, 0.002); });
+            // 2 s of noise, then 20 s of silence with the loop decaying: nothing subnormal in the lines, filters or allpasses
+            // (feedback paths are flushed), and a second of silence costs less than 3 seconds of noise, timed as the throughput
+            // guards are (Measure.SilenceCost).
+            Action<ParamValues> setup = v => { v.Set(P.Mode, mode); Set(v, P.Feedback, 90); v.Set(P.Voices, 4); v.Set(P.Stages, 12); Set(v, P.Delay, 0.002); };
+            var (e, _) = Make(setup);
             var noise = Noise(2 * Rate, 0.3, 9);
             var silent = new float[20 * Rate];
-            var sw = Stopwatch.StartNew();
             Run(e, noise, noise);
-            double noiseSeconds = sw.Elapsed.TotalSeconds / 2;
-            sw.Restart();
             var (l, r) = Run(e, silent, silent);
-            double silenceSeconds = sw.Elapsed.TotalSeconds / 20;
-            Assert.That(e.HoldsSubnormals(), Is.False, "no subnormal state");
-            Assert.That(l.Concat(r).Any(float.IsSubnormal), Is.False, "no subnormal output");
-            Assert.That(l.Concat(r).All(float.IsFinite), Is.True);
-            Measure.Report($"Neo Ensemble {(EnsembleMode)mode}, feedback 90 %: silence after noise costs {silenceSeconds / noiseSeconds:F2}× noise; no subnormals");
-            Assert.That(silenceSeconds, Is.LessThan(3 * noiseSeconds + 0.002));
+            Assert.Multiple(() =>
+            {
+                Assert.That(e.HoldsSubnormals(), Is.False, "no subnormal state");
+                Assert.That(l.Concat(r).Any(float.IsSubnormal), Is.False, "no subnormal output");
+                Assert.That(l.Concat(r).All(float.IsFinite), Is.True);
+                Measure.SilenceCost($"Neo Ensemble {(EnsembleMode)mode}, feedback 90 %, silence after noise", 3, EnsembleEngine.MaxBlock, () => Make(setup).Engine.Process, noise);
+            });
         }
 
         // ------------------------------------------------------------------ smoothing

@@ -22,7 +22,6 @@ namespace ReBuzzTests
         {
             using var client = StartAgent(out string bin);
             void Report(string line) => TestContext.Out.WriteLine(line);   // as it comes: a failure later keeps what was measured
-            WarmUp(client, "Jeskola Filter");
             var hz = FineTransfer.Frequencies(20, 20000, 12);
             bool Present(string gear) => Has(bin, "Effects", gear) || Has(bin, "Effects", gear + ".NET");
             void Response(string label, string gear, JsonArray changes, string volume = "-12 dB")

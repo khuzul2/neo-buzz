@@ -45,6 +45,11 @@
     <Compile Include="..\Machines\NeoBuzz.Analysis\Yin.cs;..\Machines\NeoBuzz.Analysis\Fft.cs" Link="Analysis\%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <!-- The audio hygiene tests describe a buffer that allocated as the engine's and the machines' tests do (AllocationWindow). -->
+  <ItemGroup>
+    <Compile Include="..\ReBuzzTests\Automation\AllocationWindow.cs" Link="Automation\AllocationWindow.cs" />
+  </ItemGroup>
+
   <!-- The UI gallery's demo song (docs/specs/ui-gallery.md), shared with ReBuzz.exe (its ui-shots switch). -->
   <ItemGroup>
     <Compile Include="..\ReBuzz\AppViews\GallerySong.cs" Link="GallerySong.cs" />

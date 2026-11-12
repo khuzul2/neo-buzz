@@ -3,7 +3,7 @@ using NeoBuzz.Dsp;
 namespace NeoBuzz.MachineTests
 {
     /// <summary>Measurement helpers: coherent spectra, alias floors, levels, decay times.</summary>
-    internal static class Measure
+    internal static partial class Measure
     {
         public const int Rate = 48000;
         public const int N = 65536;
