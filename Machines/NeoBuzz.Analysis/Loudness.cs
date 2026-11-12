@@ -8,6 +8,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
 
 namespace NeoBuzz.Analysis
 {
@@ -104,6 +106,76 @@ namespace NeoBuzz.Analysis
                 }
                 x1 = sx1; x2 = sx2; y1 = sy1; y2 = sy2; u1 = su1; u2 = su2; v1 = sv1; v2 = sv2;
                 return sum;
+            }
+
+            /// <summary>
+            /// <see cref="SumOfSquares"/> on four streams at once (each with its filter), in the lanes of two Vector128&lt;double&gt;:
+            /// each lane the same operations in the same order as one stream alone, so the same bits (M3: GainMatch's
+            /// four filters, a tenth of Neo Clipper's CPU one at a time).
+            /// </summary>
+            public static void SumOfSquares4(ref KWeighting k0, ref KWeighting k1, ref KWeighting k2, ref KWeighting k3,
+                float[] x0, float[] x1, float[] x2, float[] x3, int offset, int n, out double s0, out double s1, out double s2, out double s3)
+            {
+                if (offset < 0 || n < 0 || offset + n > Math.Min(Math.Min(x0.Length, x1.Length), Math.Min(x2.Length, x3.Length)))
+                    throw new ArgumentOutOfRangeException(nameof(n));
+                Lanes(k0, k1, out var b0a, out var b1a, out var b2a, out var a1a, out var a2a, out var c0a, out var c1a, out var c2a, out var d1a, out var d2a);
+                Lanes(k2, k3, out var b0b, out var b1b, out var b2b, out var a1b, out var a2b, out var c0b, out var c1b, out var c2b, out var d1b, out var d2b);
+                var xa1 = V(k0.x1, k1.x1); var xa2 = V(k0.x2, k1.x2); var ya1 = V(k0.y1, k1.y1); var ya2 = V(k0.y2, k1.y2);
+                var ua1 = V(k0.u1, k1.u1); var ua2 = V(k0.u2, k1.u2); var va1 = V(k0.v1, k1.v1); var va2 = V(k0.v2, k1.v2);
+                var xb1 = V(k2.x1, k3.x1); var xb2 = V(k2.x2, k3.x2); var yb1 = V(k2.y1, k3.y1); var yb2 = V(k2.y2, k3.y2);
+                var ub1 = V(k2.u1, k3.u1); var ub2 = V(k2.u2, k3.u2); var vb1 = V(k2.v1, k3.v1); var vb2 = V(k2.v2, k3.v2);
+                var tiny = Vector128.Create(Tiny);
+                var suma = Vector128<double>.Zero;
+                var sumb = Vector128<double>.Zero;
+                for (int i = offset, end = offset + n; i < end; i++)
+                {
+                    var xa = V(x0[i], x1[i]);
+                    var xb = V(x2[i], x3[i]);
+                    var ya = b0a * xa + b1a * xa1 + b2a * xa2 - a1a * ya1 - a2a * ya2;
+                    var yb = b0b * xb + b1b * xb1 + b2b * xb2 - a1b * yb1 - a2b * yb2;
+                    ya = Vector128.ConditionalSelect(Vector128.LessThan(Vector128.Abs(ya), tiny), Vector128<double>.Zero, ya);
+                    yb = Vector128.ConditionalSelect(Vector128.LessThan(Vector128.Abs(yb), tiny), Vector128<double>.Zero, yb);
+                    xa2 = xa1; xa1 = xa; ya2 = ya1; ya1 = ya;
+                    xb2 = xb1; xb1 = xb; yb2 = yb1; yb1 = yb;
+                    var za = c0a * ya + c1a * ua1 + c2a * ua2 - d1a * va1 - d2a * va2;
+                    var zb = c0b * yb + c1b * ub1 + c2b * ub2 - d1b * vb1 - d2b * vb2;
+                    za = Vector128.ConditionalSelect(Vector128.LessThan(Vector128.Abs(za), tiny), Vector128<double>.Zero, za);
+                    zb = Vector128.ConditionalSelect(Vector128.LessThan(Vector128.Abs(zb), tiny), Vector128<double>.Zero, zb);
+                    ua2 = ua1; ua1 = ya; va2 = va1; va1 = za;
+                    ub2 = ub1; ub1 = yb; vb2 = vb1; vb1 = zb;
+                    suma += za * za;
+                    sumb += zb * zb;
+                }
+                Back(ref k0, ref k1, xa1, xa2, ya1, ya2, ua1, ua2, va1, va2);
+                Back(ref k2, ref k3, xb1, xb2, yb1, yb2, ub1, ub2, vb1, vb2);
+                s0 = suma.GetElement(0);
+                s1 = suma.GetElement(1);
+                s2 = sumb.GetElement(0);
+                s3 = sumb.GetElement(1);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            static Vector128<double> V(double a, double b) => Vector128.Create(a, b);
+
+            static void Lanes(in KWeighting p, in KWeighting q, out Vector128<double> b0, out Vector128<double> b1, out Vector128<double> b2,
+                out Vector128<double> a1, out Vector128<double> a2, out Vector128<double> c0, out Vector128<double> c1, out Vector128<double> c2,
+                out Vector128<double> d1, out Vector128<double> d2)
+            {
+                b0 = V(p.b0, q.b0); b1 = V(p.b1, q.b1); b2 = V(p.b2, q.b2); a1 = V(p.a1, q.a1); a2 = V(p.a2, q.a2);
+                c0 = V(p.c0, q.c0); c1 = V(p.c1, q.c1); c2 = V(p.c2, q.c2); d1 = V(p.d1, q.d1); d2 = V(p.d2, q.d2);
+            }
+
+            static void Back(ref KWeighting p, ref KWeighting q, Vector128<double> x1, Vector128<double> x2, Vector128<double> y1, Vector128<double> y2,
+                Vector128<double> u1, Vector128<double> u2, Vector128<double> v1, Vector128<double> v2)
+            {
+                p.x1 = x1.GetElement(0); q.x1 = x1.GetElement(1);
+                p.x2 = x2.GetElement(0); q.x2 = x2.GetElement(1);
+                p.y1 = y1.GetElement(0); q.y1 = y1.GetElement(1);
+                p.y2 = y2.GetElement(0); q.y2 = y2.GetElement(1);
+                p.u1 = u1.GetElement(0); q.u1 = u1.GetElement(1);
+                p.u2 = u2.GetElement(0); q.u2 = u2.GetElement(1);
+                p.v1 = v1.GetElement(0); q.v1 = v1.GetElement(1);
+                p.v2 = v2.GetElement(0); q.v2 = v2.GetElement(1);
             }
         }
 

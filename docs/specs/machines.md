@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | v1.3 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02. Next batch (successors, machine-safety.md §4, mcp-server.md §12.5): Neo Ensemble, Neo EQ's graphic mode and Neo Delay built, 2026-11-04; and Neo Multiband (mcp-server.md §8.2), 2026-11-04; and Neo Sampler (mcp-server.md §8.2, §12.5), 2026-11-04; and Neo Scope (mcp-server.md §8.1), 2026-11-04; and Neo Drums (mcp-server.md §8.2, §12.5), 2026-11-05; and Neo Filter (mcp-server.md §12.5), 2026-11-05; and Neo Clipper and Neo Limiter v2 (mastering-tools.md M2), 2026-11-06 |
+| Status | v1.3 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02. Next batch (successors, machine-safety.md §4, mcp-server.md §12.5): Neo Ensemble, Neo EQ's graphic mode and Neo Delay built, 2026-11-04; and Neo Multiband (mcp-server.md §8.2), 2026-11-04; and Neo Sampler (mcp-server.md §8.2, §12.5), 2026-11-04; and Neo Scope (mcp-server.md §8.1), 2026-11-04; and Neo Drums (mcp-server.md §8.2, §12.5), 2026-11-05; and Neo Filter (mcp-server.md §12.5), 2026-11-05; and Neo Clipper and Neo Limiter v2 (mastering-tools.md M2), 2026-11-06; and Neo EQ v2 (mastering-tools.md M3), 2026-11-06 |
 | Date | 2026-11-05 |
 | Scope | New high-quality machines for sound design, mixing and mastering, written in C# with custom editors: first batch "core six", second batch "mix and master", third the successors of closed machines that misbehave |
 
@@ -29,7 +29,7 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 
 | Machine | Kind | One line |
 |---|---|---|
-| Neo EQ | effect | 8-band parametric EQ: bell, shelves, cuts at 12/24/48 dB/oct, notch; minimum phase; response graph with draggable bands over the spectrum |
+| Neo EQ | effect | 8-band parametric EQ: bell, shelves, cuts at 12/24/48 dB/oct, notch; minimum phase; response graph with draggable bands over the spectrum; v2 (mastering-tools.md §5.3): each band on Stereo, Left, Right, Mid or Side, proportional-Q bells, Baxandall and Vintage shelves, all-pass, dynamic bands (down or up, hearing their own band or the sidechain on input 2), Delta and Match |
 | Neo Utility | effect | Gain, balance or mono pan, width, bass mono, polarity, swap and DC removal, each exact; a mid/side matrix (encode, decode) for M/S work with any stereo machine |
 | Neo Limiter | effect | True-peak lookahead limiter: a ceiling in dBTP as BS.1770 measures it, auto or set release, stereo link; v2 (mastering-tools.md §5.2): upward compression, transient emphasis, a 4× soft clip, a two-stage release, transient unlink, Unity listen and Delta, each off by default (v1's bits), set by the "Style —" presets |
 | Neo Clipper | effect | Hard, soft, tanh or knee clipping into a ceiling no sample passes, 1×–8× oversampled with antiderivative anti-aliasing, up to three bands, L/R or M/S, Delta and Match (mastering-tools.md §5.1) |
@@ -313,6 +313,31 @@ As built:
 - The Linux profile (`docs/machine-health.md`): hot as before, with B4–B7 gain and Output at their maximum; no parameter alone diverges or fails to decay, so no safe range.
 - Joachims Hyperion moves onto graphic mode with `machine_replace` (U5): its pair file reads Hyperion's measured curve at the ISO centres (machine-safety.md §4, mcp-server.md §12.10).
 
+#### v2 (docs/specs/mastering-tools.md §5.3, M3)
+
+Ten parameters per band after `G 20 kHz` (groups "Channel and dynamics 1" … "8"), then `Delta`: songs and presets keep their values, and at the defaults (Stereo, Standard, dynamic Off) every band runs v1's code (EqClassicTests pins six renders; the null test's eight EQ cases identical). Neo EQ now has two inputs, the second a sidechain (Neo Comp's pattern; ReBuzz's multi-I/O path no longer allocates, below).
+
+- **Channel**: Stereo, Left, Right, Mid ((L+R)/2) or Side ((L−R)/2). Mid and side are encoded in double around the band and decoded after it, the other half untouched; only bands set so run these chains.
+- **Shape** (`EqDesign`, so the editor, the engine, the tests and `eq_fit` share it): Proportional Q (a bell's Q × 10^(|gain|/40)); Baxandall (a first-order shelf, (s + √V)/(s + 1/√V) for a low shelf of gain V, on one SVF section whose numerator shares a pole); Vintage (the shelf, then a bell of half its gain the other way, Q 1, an octave inside it, after a Pultec's boost-and-cut); All-pass ((s² − ks + 1)/(s² + ks + 1), whatever the type).
+- **Dynamic bands** (bells and shelves): the detector hears the band's input, or the sidechain, in its channel through the band's own shape (a unity-peak band-pass at its frequency and Q for a bell, a Butterworth low- or high-pass for a shelf); its envelope is exact for any sound from 20 Hz (the shared 90° pair, √(a² + b²), the stereo bands' louder channel); its level goes through `GainComputer` (threshold, ratio, knee) and is limited to Range, then smoothed by attack and release in dB (`Detector.Smooth`), every sample. The band is designed with its gain moved by that (down or up, within ±30 dB) on a 16-sample grid of the engine's own count, and its sections' six coefficients follow the uniform quadratic B-spline of the last three designs, sample by sample: straight lines between designs left kinks whose images (3 kHz ± the sound) measured 8 dB over designing every sample; the spline's are under it. It trails the detector by 24 samples.
+- **Delta** before Output; the gain-match reading `gain_match_db` and each band's `b<n>_dynamic_db` (machine_readings); the editor's Match.
+- **A fix.** A live cut band ignored a new slope (`SectionCount(cut, 12 dB/oct)` is 1, as every other type's, so the slope check passed) until it was switched off and on; a slope change now fades the band out and in as a type change does. Only renders that change a live cut's slope move (EqGraphicTests "switches", EqClassicTests "moving bands").
+
+The editor: each band's channel and shape beside its type, a row with its dynamics; a dynamic band's range drawn and its curve where its gain is now; bands off Stereo labelled L, R, M or S at their handles; Delta and Match under Output (892 × 598 in the studio).
+
+| Criterion | Target | Measured |
+|---|---|---|
+| R=D | at rest per channel mode within ±0.01 dB, M/S included | 8 shapes × 5 channels, 20 Hz – 20 kHz: within 0.0091 dB (a proportional-Q bell +12 dB at 657 Hz) |
+| M/S | an S-only band leaves L+R bit for bit | at rest (0 dB) L and R bit for bit; boosting 9 dB, L+R within the outputs' own rounding (at most half an ulp of each): with float outputs the sum can't be bit for bit once the side outgrows the quieter channel's binade (L = 1, R = 0.001: no pair of floats near the new L and R adds to 1.001 exactly). Mid bands likewise for L−R |
+| Dynamics | static curve vs `Dynamics` within 0.25 dB; attack and release 63 % within ±10 % | six bands (bells, shelves, down and up, knee, ∞:1, range), seven levels: within 0.010 dB; 4 kHz bell: attack 10/30/100 ms → 10.71/30.60/100.27 ms, release 50/300 ms → 50.6/300.6 ms (the band-pass, the 90° pair and the grid add about 0.5 ms at 4 kHz, 0.9 ms at 1 kHz: a 5 ms attack reads 5.5–5.9 ms) |
+| Zip | the dynamic gain moving: ≤ −90 dB | a 220 Hz bell swinging 12 dB every 50 ms (attack 10 ms, release 100 ms) on a 220 Hz sine: −98.3 dB above 2 kHz (designing every sample: −91.6); attack 2 ms, release 20 ms: −77.9 dB (−77.3 designing every sample: the gain's own movement) |
+| Unchanged | the parametric and graphic modes' renders bit for bit | six settings (defaults, a mastering curve at 48 and 44.1 kHz, automation, graphic, mode switches) at blocks of 256 and 128, and the 40 renders pinned before graphic mode: equal, but the three that change a live cut's slope (the fix); the null test's eight EQ cases identical |
+| Blk | blocks of 256/117/16/1/200 identical | identical with every channel, shape and dynamic kind and the sidechain; with moves at 256/128/16/1 identical (a type, channel, shape or dynamic switch changes at the next host block, as v1's) |
+| Alloc | 0 bytes | 0 bytes over 2000 blocks with everything moving; 0 on the studio's audio thread, each work algorithm |
+| Sidechain | from input 2 | a −40 dBFS input under a −10 dBFS key: −15.007 dB (the curve −15.00); a quiet key or none: 0.000 dB |
+| CPU | 8 dynamic bands ≥ 30× | a throughput guard (§4), stereo drums, at the reference's speed: 66× (Xeon), 57× (Linux runner), 43× (Mac runner); floors 44× (x64), 31× (arm64). Static bands as before (Neo EQ's guard: 193× on the Linux runner) |
+| Delta, Readings | output − input; the gain match | exact (0.0); a +6 dB high shelf on pink noise reads +3.43 dB |
+
 ### Neo Utility (gain, pan, width)
 
 Matrix decode (M/S in) → DC removal → polarity invert → channel swap → width (mid/side) → bass mono → pan → gain → matrix encode (M/S out). Zero latency. Every move is a linear ramp that lands exactly on its value (gain, pan and width over 20 ms, switches over 5 ms), and a stage at its identity is skipped, so settled values are exact and the defaults pass the input bit for bit.
@@ -367,12 +392,12 @@ Not built: a target-LUFS mode. Integrated loudness needs the whole programme, so
 | Loudness at a distortion budget | the drive at 1 % SMPTE IMD, and drums through it there | Classic 4.2 dB (drums −14.0 LUFS); Transparent 18.6 dB (−9.5); Punchy 4.2 (−14.0); Dense and Loud past 1 % at 0 dB |
 | Stages | Upward: a −30 dBFS passage under −20 dB lifted by 5 (±0.6), −14 dBFS not, silence silent; Transients +6 dB: a kick's onset > +3 dB, its tail within 0.3 dB; unlink lets the other side duck less; Unity within 0.5 LU of the input; Delta exact | +5.39 dB, +0.00, silent; +5.7 dB, +0.00; −6.09 dB linked, −3.41 at 100 %; −0.19 LU; within 6·10⁻⁸ |
 | Blk, Alloc | every stage on: blocks of 256/128/117/16 identical; 0 bytes | identical; 0 bytes (and 0 on the studio's audio thread) |
-| CPU | ≥ 50× (the card) | every stage on, the soft clip at 4×: 30× on the 2-core test machine (Classic 159× there; the 4× oversampler is most of it) |
+| CPU | ≥ 50× (the card) | every stage on, the soft clip at 4×, a throughput guard (§4): 88× at the reference's speed on the 2-core Xeon, 91× on the Linux runner, 66× on the Mac runner (M2: 30× as timed on the Xeon); floors 64× (x64), 50× (arm64). M3 took it there: the `FastOversampler`, the block ADAA, Upward on a 16-sample grid, the transient split's allpasses a section at a time, the gain match's filters side by side |
 | Listening | ABX notes at −9 and −7 LUFS on a fixed corpus | not done: needs a person |
 
 ### Neo Clipper (docs/specs/mastering-tools.md §5.1)
 
-Drive → (mid/side) → (bands: zero-latency Linkwitz–Riley crossovers, each band with its drive) → per band: ÷ ceiling → `FirOversampler` up → the curve with first-order ADAA (NeoBuzz.Dsp `ClipCurve`, `ClipAdaa`; 1× plain) → down → × ceiling → (the bands summed, mid/side decoded, and with bands or M/S the curve again on left and right) → the ceiling guard → mix with the dry signal (delayed to match) → Delta → Output. Curves, normalised to the ceiling: Hard; Soft, u − 4u³/27 to 1.5; Tanh; Knee, straight to T = 10^(−knee/20), then u − (u − T)²/(4(1 − T)) to 2 − T. The latency is the same at every setting: two oversampled stages at 8× (124 samples) and the guard (5 ms) − 1: 363 samples at 48 kHz.
+Drive → (mid/side) → (bands: zero-latency Linkwitz–Riley crossovers, each band with its drive) → per band: ÷ ceiling → `FastOversampler` up (M3: `FirOversampler`'s filters, faster) → the curve with first-order ADAA (NeoBuzz.Dsp `ClipCurve`, `ClipAdaa`; 1× plain) → down → × ceiling → (the bands summed, mid/side decoded, and with bands or M/S the curve again on left and right) → the ceiling guard → mix with the dry signal (delayed to match) → Delta → Output. Curves, normalised to the ceiling: Hard; Soft, u − 4u³/27 to 1.5; Tanh; Knee, straight to T = 10^(−knee/20), then u − (u − T)²/(4(1 − T)) to 2 − T. The latency is the same at every setting: two oversampled stages at 8× (124 samples) and the guard (5 ms) − 1: 363 samples at 48 kHz.
 
 - **The ceiling guard.** The curves never pass the ceiling, but downsampling rings past it (up to 2 dB on drums driven 18 dB). Clamping those samples aliased like a 1× clipper (the floor −42 dB); instead Neo Limiter's construction on sample peaks, linked: the needed gain's sliding minimum over 5 ms, averaged by two box filters, so every sample ends ≤ the ceiling and the gain moves smoothly. A 0.5 ms hold left −64 dB, 1 ms −67, 2 ms −71, 5 ms −94.
 - Parameters: Drive (−12 … +24 dB), Ceiling (−24 … 0 dBFS), Shape, Knee (0 – 12 dB), Oversampling (1×, 2×, 4×, 8×), Bands (1 – 3), Crossover 1 and 2, Low, Mid and High drive (±12 dB), Stereo (L/R, M/S), Mix, Output (±24 dB), Delta. Readings: `gain_match_db`, `clip_db`, `clipped_percent`, `latency_samples`. The editor: the curve with the input's peak on it, and Match (Output from the gain-match reading, one undo step).
@@ -386,7 +411,7 @@ Drive → (mid/side) → (bands: zero-latency Linkwitz–Riley crossovers, each 
 | Response | under the knee | 20 kHz: 1× 0.00 dB, 2× −2.01, 4× −0.47, 8× −0.12; three bands flat to −0.53 dB at 15 kHz (two ADAA stages) |
 | Mix0, Blk, Lat, Alloc | Mix 0 the input delayed bit for bit; blocks of 256/128/117/16 identical; the same latency at every setting; 0 bytes | all hold; 0 bytes (and 0 on the studio's audio thread) |
 | Delta, Match | Delta the output minus the input; the gain match against the integrated difference | exact (0.0); +9 dB on drums: 7.40 dB against 7.36 LU; the studio's Match set Output −11.5 dB for 11.55 |
-| CPU | ≥ 100× (the card) | 1 band 4× 50×, 8× 28×, 1× 275×; three bands M/S 4× 14× (the 2-core test machine; the shared 4× oversampler alone runs at 84×): floors set at 20×, 10×, 100×, 5× |
+| CPU | ≥ 100× (the card) | M3, throughput guards (§4), at the reference's speed: 1 band 4× 217 (Xeon), 201 (Linux runner), 138 (Mac runner); 1× 305, 305, 312; 8× 138, 138, 87; three bands M/S 4× 63, 72, 43 (M2, as timed on the Xeon: 50×, 275×, 28×, 14×); floors x64 150, 220, 100, 48, arm64 100, 220, 62, 30. The `FastOversampler` (each halfband branch over the whole block, its outputs in vector lanes: 4× up and down for two channels 276–414× as timed against `FirOversampler`'s 52–85×) and the ADAA four or eight samples at a time (min/max curves without branches) |
 
 
 ### Neo Analyzer (spectrum, loudness, stereo; MCP A4)

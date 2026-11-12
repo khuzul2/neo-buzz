@@ -36,7 +36,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo FM6", "NeoFm6Editor", "neo-fm6-editor", 1276, 946),
             ("Neo Comp", "NeoCompEditor", "neo-comp-editor", 880, 294),
             ("Neo Drive", "NeoDriveEditor", "neo-drive-editor", 746, 322),
-            ("Neo EQ", "NeoEqEditor", "neo-eq-editor", 822, 508),
+            ("Neo EQ", "NeoEqEditor", "neo-eq-editor", 892, 598),
             ("Neo Limiter", "NeoLimiterEditor", "neo-limiter-editor", 940, 363),
             ("Neo Utility", "NeoUtilityEditor", "neo-utility-editor", 679, 296),   // its switches as toggles, 92 px each (627 before); M1's Matrix drop-down, 96 px, widens the column (675 before)
             ("Neo Verb", "NeoVerbEditor", "neo-verb-editor", 880, 332),
@@ -1415,6 +1415,13 @@ namespace ReBuzz.Studio.Tests
             // the loop draws the same sweep, from the bar's first sample. Then a held sine and the free time base with the trigger:
             // it locks at the level, rising. The controls are one undo step each; Freeze holds the picture; Polar redraws the
             // vectorscope. The scope passes its input bit for bit, and its editor's frames are timed.
+            // A new song first: after ExitTests' songs the loop's first wrap came a column (82 samples) late, so pass 2 drew
+            // the kick shifted and passes 1 and 3 didn't (on main too, run after ExitTests alone).
+            lock (ReBuzzCore.AudioLock) Core.Playing = false;
+            Core.ExecuteCommand(BuzzCommand.Stop);
+            Core.Modified = false;
+            Core.ExecuteCommand(BuzzCommand.NewFile);
+            Run(0.1);
             var song = Core.SongCore;
             var master = song.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
             var sampler = Add("Neo Sampler", "Scope Kick", -0.6f, 0);

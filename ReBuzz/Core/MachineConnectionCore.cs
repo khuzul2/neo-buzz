@@ -38,6 +38,12 @@ namespace ReBuzz.Core
         HashSet<int> sourceChannels = new HashSet<int>();
         public IEnumerable<int> SourceChannels => sourceChannels;
 
+        // Fork (mastering-tools.md M3): the channel sets themselves, for the audio thread. foreach over a HashSet<int> takes
+        // its struct enumerator; Count() and ElementAt(i) on the IEnumerable boxed one per call (a multi-I/O machine
+        // allocated about 320 bytes a buffer). The same order either way.
+        internal HashSet<int> SourceChannelSet => sourceChannels;
+        internal HashSet<int> DestinationChannelSet => destinationChannels;
+
         public void SetSourceChannel(int channel, bool set)
         {
             if (set)

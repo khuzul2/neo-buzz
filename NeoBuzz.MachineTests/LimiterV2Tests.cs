@@ -286,7 +286,7 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void RunsFasterThanRealTimeWithEveryStage()
         {
-            var (e, _) = Make(v =>
+            static void Setup(ParamValues v)
             {
                 Set(v, P.InputGain, 9);
                 Set(v, P.Upward, 3);
@@ -294,14 +294,28 @@ namespace NeoBuzz.MachineTests
                 v.Set(P.SoftClip, 2);
                 Set(v, P.SlowStage, 0.5);
                 Set(v, P.Unlink, 0.5);
-            });
-            var (l, r) = LimiterTests.Drums(Measure.Rate * 10);
-            Run(e, l[..Measure.Rate], r[..Measure.Rate]);
-            var clock = Stopwatch.StartNew();
-            Run(e, l, r);
-            double speed = 10 / clock.Elapsed.TotalSeconds;
-            Measure.Report($"Neo Limiter v2 CPU, every stage on (the soft clip at 4×), drums: {speed:F0}× real time");
-            Assert.That(speed, Is.GreaterThan(20));
+            }
+            // The card asks 50× (M3: Upward on a 16-sample grid, the transient split's allpasses a section at a time, the
+            // FastOversampler and the block ADAA took it from about 30× to about 60× as timed on the 2-core test machine). A
+            // throughput guard (Throughput.cs): timed against the reference workload in the same run, 1 s untimed, then 2 s.
+            // At the reference's speed: the 2-core Xeon 88, the Linux runner 91, the Mac runner 66.
+            var (l, r) = LimiterTests.Drums(Measure.Rate * 3);
+            const int Warm = Measure.Rate;
+            Throughput.Guard("Neo Limiter v2 CPU (every stage, the soft clip at 4×, drums)", Throughput.Floor(x64: 64, arm64: 50), 2, Measure.Rate,
+                LimiterEngine.MaxBlock, () =>
+            {
+                var (e, _) = Make(Setup);
+                var bl = new float[LimiterEngine.MaxBlock];
+                var br = new float[LimiterEngine.MaxBlock];
+                void Block(int pos, int n)
+                {
+                    Array.Copy(l, pos, bl, 0, n);
+                    Array.Copy(r, pos, br, 0, n);
+                    e.Process(bl, br, n);
+                }
+                for (int pos = 0; pos < Warm; pos += LimiterEngine.MaxBlock) Block(pos, LimiterEngine.MaxBlock);
+                return Throughput.InBlocks(LimiterEngine.MaxBlock, (pos, n) => Block(Warm + pos, n));
+            }, Measure.Report);
         }
 
         // ---- the styles against v1 --------------------------------------------------------------------

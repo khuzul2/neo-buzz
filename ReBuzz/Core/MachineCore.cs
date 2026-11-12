@@ -1480,13 +1480,10 @@ namespace ReBuzz.Core
                 if (!IsVisibleInput(input))
                     continue;
                 var inputCore = input as MachineConnectionCore;
-                var targetChannelList = inputCore.DestinationChannels;
-
+                // Fork (mastering-tools.md M3): the set itself, so the audio thread allocates nothing (MachineConnectionCore).
                 // Output to multiple channels, so we need to mix the input to all target channels
-                for (int targetChannelIndex = 0; targetChannelIndex < targetChannelList.Count(); targetChannelIndex++)
+                foreach (int targetChannel in inputCore.DestinationChannelSet)
                 {
-                    int targetChannel = targetChannelList.ElementAt(targetChannelIndex);
-
                     if (multiSamplesInBuffers[targetChannel] == null)
                     {
                         multiSamplesInBuffers[targetChannel] = new Sample[256];
@@ -1513,13 +1510,9 @@ namespace ReBuzz.Core
                 if (!IsVisibleInput(input))
                     continue;
                 var inputCore = input as MachineConnectionCore;
-                var targetChannelList = inputCore.DestinationChannels;
-
                 // Output to multiple channels, so we need to mix the input to all target channels
-                for (int targetChannelIndex = 0; targetChannelIndex < targetChannelList.Count(); targetChannelIndex++)
+                foreach (int targetChannel in inputCore.DestinationChannelSet)
                 {
-                    int targetChannel = targetChannelList.ElementAt(targetChannelIndex);
-
                     Sample[] samples = activeChannels[targetChannel];
 
                     for (int i = 0; i < nSamples; i++)
@@ -1549,10 +1542,8 @@ namespace ReBuzz.Core
                 outputCore.ClearBuffer(nSamples);
                 outputCore.PreUpdateBufferActions(nSamples);
 
-                for (int channelIndex = 0; channelIndex < outputCore.SourceChannels.Count(); channelIndex++)
+                foreach (int channel in outputCore.SourceChannelSet)
                 {
-                    int channel = outputCore.SourceChannels.ElementAt(channelIndex);
-
                     if (channel < multiSamplesOut.Count &&
                         multiSamplesOut[channel] != null)
                     {

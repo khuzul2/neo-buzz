@@ -903,5 +903,57 @@ namespace ReBuzz.Studio.Tests
                 NewSong();
             }
         }
+
+        [AvaloniaTest]
+        public void ANeoEqWithDynamicBandsOnEveryChannelAllocatesNothing()
+        {
+            // mastering-tools.md §5.3: a pattern through Neo EQ v2, bands dynamic down and up on Stereo, Mid and Side, the
+            // shapes, a dynamic band's frequency moved every buffer and Delta switched now and then.
+            NewSong();
+            var m = AddPoly("Hygiene EQ Poly");
+            m.CreatePattern("00", 16);
+            var pattern = (PatternCore)m.Patterns.First();
+            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 40 + (i * 5) % 24, 100)).ToArray());
+            Arrange(m, pattern);
+            var eq = InsertAfter(m, "Neo EQ", "Hygiene EQ v2");
+            var g = eq.ParameterGroupsList[1].ParametersList;
+            IParameter P(string name) => g.First(p => p.Name == name);
+            P("B2 dynamic").SetValue(0, 1);
+            P("B2 threshold").SetValue(0, 150);
+            P("B2 shape").SetValue(0, 3);
+            P("B3 dynamic").SetValue(0, 2);
+            P("B3 channel").SetValue(0, 3);
+            P("B3 threshold").SetValue(0, 100);
+            P("B5 dynamic").SetValue(0, 1);
+            P("B5 channel").SetValue(0, 4);
+            P("B5 threshold").SetValue(0, 100);
+            P("B6 shape").SetValue(0, 1);
+            P("B6 gain").SetValue(0, 330);
+            P("B7 shape").SetValue(0, 2);
+            var freq = P("B3 freq");
+            var delta = P("Delta");
+            try
+            {
+                int n = 0;
+                foreach (int algorithm in new[] { 0, 1, 2 })
+                {
+                    using var audio = new AudioThread(algorithm);
+                    lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                    var cost = Steady(audio, perBuffer: () =>
+                    {
+                        freq.SetValue(1 << 16, 3000 + (n % 40) * 20);
+                        if (++n % 100 == 0) delta.SetValue(1 << 16, (n / 100) % 2);
+                    });
+                    AssertNoAllocation(cost, $"a pattern through a Neo EQ with dynamic bands on Stereo, Mid and Side (algorithm {algorithm})");
+                    Assert.That(eq.IsActive, Is.True, $"the EQ sounds (algorithm {algorithm})");
+                    lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                }
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                NewSong();
+            }
+        }
     }
 }

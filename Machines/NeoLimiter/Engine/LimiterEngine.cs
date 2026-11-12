@@ -7,9 +7,10 @@
 // v2 (docs/specs/mastering-tools.md §5.2), each stage after the existing parameters and off by default, so
 // v1's renders stay bit for bit ("Classic"; LimiterClassicTests pins v1's hashes). In signal order:
 //  - Upward: a slow RMS detector (3 s, linked), quiet passages lifted by half a dB for each dB under the
-//    threshold, at most Upward (≤ 6 dB), never below −60 dBFS (no noise floor raised), the lift gliding (0.5 s);
+//    threshold, at most Upward (≤ 6 dB), never below −60 dBFS (no noise floor raised), the lift gliding (0.5 s), on
+//    a 16-sample grid with the gain ramped between (M3);
 //  - Transients: the shared TransientSplit on the driven signal, its transient weight raising hits by up to 6 dB;
-//  - Soft clip: 4× FirOversampler with first-order ADAA on the shared Knee curve (3, 9 or 30 dB under the
+//  - Soft clip: 4× FastOversampler (M3: FirOversampler's filters, faster) with first-order ADAA on the shared Knee curve (3, 9 or 30 dB under the
 //    ceiling), wet/dry, 58 samples of latency while on (the guarantee still holds: the limiter is after it);
 //  - the limiter, with a slow stage beside the release (a one-pole on the reduction, 50 ms up, Slow release down,
 //    holding Slow stage of it) and Transient unlink (the stereo link lowered by the transient weight);
@@ -138,13 +139,14 @@ namespace NeoBuzz.Limiter
         const double SlowAttackSeconds = 0.05, UnityGlideSeconds = 0.3;
         static readonly double[] ClipKnees = { 0, 3, 9, 30 };
         /// <summary>The soft clip's latency while it is on: the 4× oversampler's.</summary>
-        public static int ClipLatency => FirOversampler.LatencyFor(4);
+        public static int ClipLatency => FastOversampler.LatencyFor(4);
         readonly float[] drivenL = new float[MaxBlock], drivenR = new float[MaxBlock], ceilBuf = new float[MaxBlock];
         readonly float[] weights = new float[MaxBlock];
-        readonly FirOversampler[] clipOs = { new FirOversampler(MaxBlock), new FirOversampler(MaxBlock) };
+        readonly FastOversampler[] clipOs = { new FastOversampler(MaxBlock), new FastOversampler(MaxBlock) };
         readonly DelayLineF[] clipDry = { new DelayLineF(64), new DelayLineF(64) };
         readonly float[] clipL = new float[MaxBlock], clipR = new float[MaxBlock];
         ClipAdaa clipAdaaL, clipAdaaR;
+        readonly double[] adaaU = new double[ClipAdaa.ScratchFor(4 * MaxBlock)], adaaF = new double[ClipAdaa.ScratchFor(4 * MaxBlock)];
         ClipCurve clipCurve;
         TransientSplit split;
         bool upwardOn, transientsOn, clipOn, slowOn, unlinkOn, unityOn;
@@ -262,7 +264,7 @@ namespace NeoBuzz.Limiter
             foreach (var os in clipOs) os.SetFactor(4);
             clipMix.Setup(GlideSeconds, sr);
             upwardA = PortableMath.Exp(-1.0 / (UpwardSeconds * sr));
-            upwardGlideA = PortableMath.Exp(-1.0 / (UpwardGlideSeconds * sr));
+            upwardGlideA = PortableMath.Exp(-UpwardGrid / (UpwardGlideSeconds * sr));
             slowAttackA = PortableMath.Exp(-1.0 / (SlowAttackSeconds * sr));
             unityA = PortableMath.Exp(-1.0 / (UnityGlideSeconds * sr));
             Delta.SetSampleRate(sr);
@@ -281,6 +283,8 @@ namespace NeoBuzz.Limiter
             clipAdaaR.Reset();
             upwardMs = 0;
             upwardLiftDb = 0;
+            upwardGain0 = upwardGain1 = 1;
+            upwardStep = 0;
             unityTrim = 1;
             Delta.Reset();
             Match.Reset();
@@ -564,24 +568,37 @@ namespace NeoBuzz.Limiter
         readonly float[] dryL = new float[MaxBlock], dryR = new float[MaxBlock];
         readonly DelayLineF weightDelay = new DelayLineF(64);
 
-        /// <summary>Upward compression (v2): the lift from a slow linked RMS, gliding, never on silence.</summary>
+        /// <summary>
+        /// Upward compression (v2): the lift from a slow linked RMS, gliding, never on silence. The level, the lift and its
+        /// gain on a grid of 16 samples of the limiter's own count (M3: the logarithm and the exponential per sample were
+        /// a fifth of the CPU with every stage on), the gain ramped linearly between grid points; exactly 1 at rest.
+        /// </summary>
         void Upward(int n)
         {
             for (int i = 0; i < n; i++)
             {
+                int k = (int)((index + i) & (UpwardGrid - 1));
+                if (k == 0)
+                {
+                    upwardMs = DspMath.Flush(upwardMs);
+                    double level = upwardMs > 1e-12 ? 10 * PortableMath.Log10(upwardMs) : -120;
+                    double target = level > UpwardFloorDb ? Math.Min(upwardMax, Math.Max(0, upwardThreshold - level) * 0.5) : 0;
+                    upwardLiftDb = DspMath.Flush(target + (upwardLiftDb - target) * upwardGlideA);
+                    upwardGain0 = upwardGain1;
+                    upwardGain1 = upwardLiftDb > 1e-6 ? DspMath.DbToGain(upwardLiftDb) : 1;
+                    upwardStep = (upwardGain1 - upwardGain0) / UpwardGrid;
+                }
                 double l = drivenL[i], r = drivenR[i];
                 double ms = 0.5 * (l * l + r * r);
                 upwardMs = ms + (upwardMs - ms) * upwardA;
-                double level = upwardMs > 1e-12 ? 10 * PortableMath.Log10(upwardMs) : -120;
-                double target = level > UpwardFloorDb ? Math.Min(upwardMax, Math.Max(0, upwardThreshold - level) * 0.5) : 0;
-                upwardLiftDb = target + (upwardLiftDb - target) * upwardGlideA;
-                float gain = upwardLiftDb > 1e-6 ? (float)DspMath.DbToGain(upwardLiftDb) : 1f;
+                float gain = (float)(upwardGain0 + upwardStep * (k + 1));
                 drivenL[i] *= gain;
                 drivenR[i] *= gain;
             }
-            upwardMs = DspMath.Flush(upwardMs);
-            upwardLiftDb = DspMath.Flush(upwardLiftDb);
         }
+
+        const int UpwardGrid = 16;
+        double upwardGain0 = 1, upwardGain1 = 1, upwardStep;
 
         /// <summary>The soft clip (v2): ÷ ceiling, 4× up, the Knee curve with ADAA, down, × ceiling, mixed with the signal delayed to match.</summary>
         void SoftClip(int n)
@@ -593,10 +610,8 @@ namespace NeoBuzz.Limiter
                 for (int i = 0; i < n; i++) y[i] = x[i] / ceilBuf[i];
                 var hi = clipOs[c].Up(y, 0, n);
                 var curve = clipCurve;
-                if (c == 0)
-                    for (int i = 0; i < 4 * n; i++) hi[i] = (float)clipAdaaL.Process(in curve, hi[i]);
-                else
-                    for (int i = 0; i < 4 * n; i++) hi[i] = (float)clipAdaaR.Process(in curve, hi[i]);
+                if (c == 0) clipAdaaL.Process(in curve, hi, 4 * n, adaaU, adaaF);
+                else clipAdaaR.Process(in curve, hi, 4 * n, adaaU, adaaF);
                 clipOs[c].Down(y, 0, n);
                 var dry = clipDry[c];
                 int lat = ClipLatency;

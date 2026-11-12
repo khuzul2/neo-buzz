@@ -184,10 +184,9 @@ namespace ReBuzz.MachineManagement
                 {
                     if (outConnection.Destination.InputChannelCount == 0 || (outConnection.Destination as MachineCore).Hidden) continue;
 
-                    var channels = outConnection.SourceChannels;
-                    for (int channelIndex = 0; channelIndex < channels.Count(); channelIndex++)
+                    // Fork (mastering-tools.md M3): the set itself, so the audio thread allocates nothing (MachineConnectionCore).
+                    foreach (int channel in ((MachineConnectionCore)outConnection).SourceChannelSet)
                     {
-                        int channel = channels.ElementAt(channelIndex);
                         if (multiSamplesOutBuffers[channel] == null)
                             multiSamplesOutBuffers[channel] = new Sample[256];
 
@@ -309,10 +308,9 @@ namespace ReBuzz.MachineManagement
                 {
                     if (outConnection.Destination.InputChannelCount == 0 || (outConnection.Destination as MachineCore).Hidden) continue;
 
-                    var channels = outConnection.SourceChannels;
-                    for (int channelIndex = 0; channelIndex < channels.Count(); channelIndex++)
+                    // Fork (mastering-tools.md M3): the set itself, so the audio thread allocates nothing (MachineConnectionCore).
+                    foreach (int channel in ((MachineConnectionCore)outConnection).SourceChannelSet)
                     {
-                        int channel = channels.ElementAt(channelIndex);
                         if (multiSamplesOutBuffers[channel] == null)
                             multiSamplesOutBuffers[channel] = new Sample[256];
 
