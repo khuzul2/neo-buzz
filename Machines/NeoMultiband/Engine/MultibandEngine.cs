@@ -16,6 +16,14 @@
 //    factor follows band 3's, and band 3's detector hears both; switching the count crossfades that
 //    over 10 ms. Phase changes fade the output out over 10 ms, switch and fade back in; the latency
 //    changes at the switch and ReBuzz realigns its other paths.
+//  - M6b (docs/specs/mastering-tools.md §5.14), every option off at its default so old renders keep their bits:
+//    Lookahead delays the bands and the dry by a fixed count of samples while each detector hears them undelayed
+//    (the count joins the latency, reported; a change fades out, switches and fades back in); the RMS detector
+//    (3 ms mean square on the peak scale); upward compression (Dynamics.cs GainComputer.Up: below the threshold);
+//    a per-band external sidechain (input 2 through its own minimum-phase crossovers, held back by the linear
+//    path's D so it lines up with the bands it controls); and the Dynamic phase: the minimum-phase bands, the raw
+//    input as the dry (y = x + sum (f - 1) band, so no static phase shift and no latency), the dry blending to the
+//    bands' sum while a band is soloed.
 // No allocation after SetSampleRate. Parameters latch at block starts; the linear path applies them
 // at its partition boundaries and designs its FIRs in steps at every 16th sample of a partition
 // (LinearSplit.DesignStep), which fall on fixed samples, so the output doesn't depend on how the
@@ -32,7 +40,10 @@ namespace NeoBuzz.Multiband
     {
         public const int MaxBlock = 256;
         public const int Bands = MultibandDesign.MaxBands;
+        /// <summary>The longest lookahead (seconds).</summary>
+        public const double MaxLookahead = 0.01;
         public const int ScopeLength = 4096;
+        const double RmsSeconds = 0.003;
         const double MakeupSeconds = 0.02, SwitchSeconds = 0.01, MixSeconds = 0.02, FadeSeconds = 0.01, TimeGlideSeconds = 0.02;
         const int Segment = 16;
         const double Ln10Over20 = 0.11512925464970229;
@@ -45,8 +56,8 @@ namespace NeoBuzz.Multiband
             public double Range, AttackA, ReleaseA;
             // Attack and release glide in log time (a jump from 200 ms to 0.05 ms would let a lagging gain snap).
             public double AttackLog, AttackTarget, ReleaseLog, ReleaseTarget;
-            public bool Expands;
-            public double G0, G1;
+            public bool Expands, Up, Key;
+            public double G0, G1, Ms0, Ms1, UpEnv = -300;
             public LinearRamp Makeup, Solo, Bypass;
             // This block's, for the meters; this step's, for the readings.
             public double BlockMax, BlockMin, BlockLevel;
@@ -82,7 +93,22 @@ namespace NeoBuzz.Multiband
         float link = 1;
         Xover target;
         readonly Band[] band = { new Band(), new Band(), new Band(), new Band() };
-        LinearRamp mix, output, merge;
+        LinearRamp mix, output, merge, dryBlend;
+
+        // M6b. Lookahead: samples now / asked for, and the delay rings of the bands and the dry.
+        int look, wantedLook, maxLook, ringPos, ringMask;
+        bool rms;
+        double rmsA;
+        double[][] ringBL, ringBR;
+        double[] ringDL, ringDR;
+        // The external sidechain: its own minimum-phase split; its bands for this block (minimum) or segment (linear, then
+        // through rings held back by the linear path's D, so they line up with the partition's bands).
+        MinimumSplit keyMin;
+        readonly float[] keyTmpL = new float[MaxBlock], keyTmpR = new float[MaxBlock];
+        double[][] keyBandL, keyBandR, kSegL, kSegR, kRingL, kRingR;
+        int kMask;
+        long kWritten;
+        bool anyKey;
 
         // The linear path's partition: its input as it arrives, its output as it leaves.
         float[] inL, inR, outL, outR;
@@ -116,8 +142,11 @@ namespace NeoBuzz.Multiband
 
         public float SampleRate => sampleRate;
 
-        /// <summary>Samples ReBuzz compensates: linear phase's D + P (4607 at 44.1 and 48 kHz), 0 in minimum phase.</summary>
-        public int Latency => phase == PhaseMode.Linear ? linear.Latency : 0;
+        /// <summary>Samples ReBuzz compensates: linear phase's D + P (4607 at 44.1 and 48 kHz), 0 in the others, plus the lookahead.</summary>
+        public int Latency => (phase == PhaseMode.Linear ? linear.Latency : 0) + look;
+
+        /// <summary>The lookahead in samples as applied now (a change lands at its fade's switch).</summary>
+        public int Lookahead => look;
 
         /// <summary>The phase the engine runs now (Phase, once a switch has faded through).</summary>
         public PhaseMode Phase => phase;
@@ -162,6 +191,36 @@ namespace NeoBuzz.Multiband
             }
             dryL = new double[work];
             dryR = new double[work];
+            maxLook = (int)Math.Ceiling(MaxLookahead * sr);
+            int ringSize = 1;
+            while (ringSize < maxLook + 2) ringSize <<= 1;
+            ringMask = ringSize - 1;
+            ringBL = new double[Bands][];
+            ringBR = new double[Bands][];
+            keyBandL = new double[Bands][];
+            keyBandR = new double[Bands][];
+            kSegL = new double[Bands][];
+            kSegR = new double[Bands][];
+            kRingL = new double[Bands][];
+            kRingR = new double[Bands][];
+            int kSize = 1;
+            while (kSize < linear.D + linear.P + 2) kSize <<= 1;
+            kMask = kSize - 1;
+            for (int b = 0; b < Bands; b++)
+            {
+                ringBL[b] = new double[ringSize];
+                ringBR[b] = new double[ringSize];
+                keyBandL[b] = new double[work];
+                keyBandR[b] = new double[work];
+                kSegL[b] = new double[MaxBlock];
+                kSegR[b] = new double[MaxBlock];
+                kRingL[b] = new double[kSize];
+                kRingR[b] = new double[kSize];
+            }
+            ringDL = new double[ringSize];
+            ringDR = new double[ringSize];
+            keyMin = new MinimumSplit(sr, target);
+            rmsA = Detector.Coef(RmsSeconds, sr);
             foreach (var b in band)
             {
                 b.Makeup.Setup(MakeupSeconds, sr);
@@ -171,12 +230,14 @@ namespace NeoBuzz.Multiband
             mix.Setup(MixSeconds, sr);
             output.Setup(MakeupSeconds, sr);
             merge.Setup(SwitchSeconds, sr);
+            dryBlend.Setup(SwitchSeconds, sr);
             InMeter.SetSampleRate(sr);
             OutMeter.SetSampleRate(sr);
             stepLength = Math.Max(1, (int)Math.Round(sr / 10));
             timeGlide = 1 - PortableMath.Exp(-Segment / (TimeGlideSeconds * sr));
             phase = wanted = (PhaseMode)v.Choice(P.Phase);
             Update(true);
+            look = wantedLook;
             Reset();
         }
 
@@ -189,9 +250,12 @@ namespace NeoBuzz.Multiband
             Array.Clear(outL);
             Array.Clear(outR);
             pos = 0;
+            ClearLookahead();
+            ClearKey();
             foreach (var b in band)
             {
-                b.G0 = b.G1 = 0;
+                b.G0 = b.G1 = b.Ms0 = b.Ms1 = 0;
+                b.UpEnv = -300;
                 b.Reduction = b.Boost = 0;
                 b.Level = -120;
                 Array.Fill(b.RingMax, 0.0);
@@ -207,6 +271,31 @@ namespace NeoBuzz.Multiband
             quiet = 0;
         }
 
+        /// <summary>The lookahead's rings emptied (a switch, a reset).</summary>
+        void ClearLookahead()
+        {
+            ringPos = 0;
+            for (int b = 0; b < Bands; b++)
+            {
+                Array.Clear(ringBL[b]);
+                Array.Clear(ringBR[b]);
+            }
+            Array.Clear(ringDL);
+            Array.Clear(ringDR);
+        }
+
+        /// <summary>The sidechain's split and rings emptied.</summary>
+        void ClearKey()
+        {
+            keyMin.Reset();
+            kWritten = 0;
+            for (int b = 0; b < Bands; b++)
+            {
+                Array.Clear(kRingL[b]);
+                Array.Clear(kRingR[b]);
+            }
+        }
+
         void Update(bool force)
         {
             if (!force && !values.AnyDirty) return;
@@ -217,7 +306,18 @@ namespace NeoBuzz.Multiband
             link = v.F(P.Link);
             target = MultibandDesign.Effective(v, sampleRate);
             minimum.SetTarget(target);
-            if (force) minimum.Settle();
+            keyMin.SetTarget(target);
+            if (force)
+            {
+                minimum.Settle();
+                keyMin.Settle();
+            }
+            rms = v.Choice(P.Detector) == 1;
+            wantedLook = Math.Clamp((int)Math.Round(v.Value(P.Lookahead) * 0.001 * sampleRate), 0, maxLook);
+            bool keyWanted = false;
+            for (int b = 0; b < bandCount; b++) keyWanted |= v.Choice(ExtParam(b, ExtraParam.Key)) == 1;
+            if (keyWanted && !anyKey) ClearKey();
+            anyKey = keyWanted;
             bool anySolo = false;
             for (int b = 0; b < bandCount; b++) anySolo |= v.On(Param(b, BandParam.Solo));
             for (int b = 0; b < Bands; b++)
@@ -225,6 +325,10 @@ namespace NeoBuzz.Multiband
                 var s = band[b];
                 double ratio = MultibandDesign.Ratio(v.Value(Param(b, BandParam.Ratio)));
                 s.Gc = GainComputer.Make(v.Value(Param(b, BandParam.Threshold)), ratio, v.Value(Param(b, BandParam.Knee)));
+                double upRatio = v.Value(ExtParam(b, ExtraParam.UpRatio));
+                s.Gc.SlopeUp = upRatio > 1 ? 1 - 1 / upRatio : 0;
+                s.Up = s.Gc.SlopeUp > 0;
+                s.Key = v.Choice(ExtParam(b, ExtraParam.Key)) == 1;
                 s.Expands = s.Gc.SlopeFf < 0;
                 s.Range = v.Value(Param(b, BandParam.Range));
                 s.AttackTarget = PortableMath.Log(v.Value(Param(b, BandParam.Attack)));
@@ -245,6 +349,7 @@ namespace NeoBuzz.Multiband
                 }
             }
             mix.SetTarget(anySolo ? 1f : v.F(P.Mix));
+            dryBlend.SetTarget(anySolo ? 1f : 0f);
             output.SetTarget((float)DspMath.DbToGain(v.Value(P.Output)));
             merge.SetTarget(bandCount == 4 ? 1f : 0f);
             if (force)
@@ -252,17 +357,29 @@ namespace NeoBuzz.Multiband
                 mix.Reset(mix.Target);
                 output.Reset(output.Target);
                 merge.Reset(merge.Target);
+                dryBlend.Reset(dryBlend.Target);
             }
             v.Clean();
         }
 
         internal enum BandParam { Threshold, Ratio, Attack, Release, Knee, Range, Makeup, Solo, Bypass }
 
+        internal enum ExtraParam { UpRatio, Key }
+
+        /// <summary>Band <paramref name="b"/>'s M6b parameter: two per band, from B1 upward ratio on.</summary>
+        internal static int ExtParam(int b, ExtraParam what) => P.B1UpRatio + 2 * b + (int)what;
+
         /// <summary>Band <paramref name="b"/>'s parameter: nine per band, from B1 threshold on.</summary>
         internal static int Param(int b, BandParam what) => P.B1Threshold + 9 * b + (int)what;
 
-        /// <summary>Processes a stereo block in place (n ≤ MaxBlock).</summary>
-        public void Process(float[] left, float[] right, int n)
+        /// <summary>Processes a stereo block in place (n ≤ MaxBlock), without a sidechain.</summary>
+        public void Process(float[] left, float[] right, int n) => Process(left, right, null, null, n);
+
+        /// <summary>
+        /// Processes a stereo block in place (n ≤ MaxBlock). <paramref name="keyLeft"/>, <paramref name="keyRight"/>: input 2
+        /// (null: nothing connected, the external bands hear silence).
+        /// </summary>
+        public void Process(float[] left, float[] right, float[] keyLeft, float[] keyRight, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);
@@ -279,14 +396,15 @@ namespace NeoBuzz.Multiband
             scopePos = sp;
 
             int fadeLength = Math.Max(1, (int)Math.Round(FadeSeconds * sampleRate));
-            if (wanted != phase && !fadingOut)
+            bool change = wanted != phase || wantedLook != look;
+            if (change && !fadingOut)
             {
                 fadingOut = true;
                 fadeHold = 0;
                 fadeLeft = fadeLength;
                 fadeStep = -fade / fadeLeft;
             }
-            else if (wanted == phase && fadingOut)
+            else if (!change && fadingOut)
             {
                 // Changed back before the switch: fade back in from here.
                 fadingOut = false;
@@ -299,6 +417,7 @@ namespace NeoBuzz.Multiband
             {
                 int count = n - done;
                 if (fadingOut) count = Math.Min(count, Math.Max(1, fadeLeft));
+                if (anyKey) PrepareKey(keyLeft, keyRight, done, count);
                 if (phase == PhaseMode.Linear) LinearBlock(left, right, done, count);
                 else MinimumBlock(left, right, done, count);
                 for (int i = done; i < done + count; i++)
@@ -324,22 +443,36 @@ namespace NeoBuzz.Multiband
                 done += count;
                 if (fadingOut && fadeLeft == 0)
                 {
-                    // Silent now: switch, start the other path afresh, and fade in.
+                    // Silent now: switch, start the other path afresh, and fade in. A lookahead change alone keeps the paths:
+                    // only its rings are emptied.
+                    bool phaseChange = wanted != phase;
                     phase = wanted;
-                    linear.Reset();
-                    minimum.Reset();
-                    Array.Clear(inL);
-                    Array.Clear(inR);
-                    Array.Clear(outL);
-                    Array.Clear(outR);
-                    pos = 0;
-                    foreach (var b in band) b.G0 = b.G1 = 0;
+                    look = wantedLook;
+                    ClearLookahead();
+                    if (phaseChange)
+                    {
+                        linear.Reset();
+                        minimum.Reset();
+                        Array.Clear(inL);
+                        Array.Clear(inR);
+                        Array.Clear(outL);
+                        Array.Clear(outR);
+                        pos = 0;
+                        ClearKey();
+                        dryBlend.Reset(dryBlend.Target);
+                    }
+                    foreach (var b in band)
+                    {
+                        b.G0 = b.G1 = b.Ms0 = b.Ms1 = 0;
+                        b.UpEnv = -300;
+                    }
                     fadingOut = false;
                     fade = 0;
-                    if (phase == PhaseMode.Linear)
+                    int hold = (phaseChange && phase == PhaseMode.Linear ? linear.Latency : 0) + look;
+                    if (hold > 0)
                     {
                         // Silent until the first input reaches the output, then the fade in.
-                        fadeHold = linear.Latency;
+                        fadeHold = hold;
                         fadeLeft = 0;
                     }
                     else
@@ -355,11 +488,37 @@ namespace NeoBuzz.Multiband
 
         static float Clean(float x) => float.IsFinite(x) ? x : 0f;
 
+        /// <summary>
+        /// The sidechain's bands for <paramref name="count"/> samples from <paramref name="offset"/>: through the key's own
+        /// minimum-phase crossovers (silence where nothing is connected), into the block's arrays (minimum phases) or the
+        /// segment's (linear, which LinearBlock puts in the rings).
+        /// </summary>
+        void PrepareKey(float[] keyLeft, float[] keyRight, int offset, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                keyTmpL[i] = keyLeft != null ? Clean(keyLeft[offset + i]) : 0f;
+                keyTmpR[i] = keyRight != null ? Clean(keyRight[offset + i]) : 0f;
+            }
+            if (phase == PhaseMode.Linear) keyMin.Process(keyTmpL, keyTmpR, count, kSegL, kSegR);
+            else keyMin.Process(keyTmpL, keyTmpR, count, keyBandL, keyBandR);
+        }
+
         void LinearBlock(float[] left, float[] right, int offset, int count)
         {
             int p = linear.P;
             for (int i = offset; i < offset + count; i++)
             {
+                if (anyKey)
+                {
+                    int w = (int)(kWritten & kMask);
+                    for (int b = 0; b < Bands; b++)
+                    {
+                        kRingL[b][w] = kSegL[b][i - offset];
+                        kRingR[b][w] = kSegR[b][i - offset];
+                    }
+                    kWritten++;
+                }
                 inL[pos] = Clean(left[i]);
                 inR[pos] = Clean(right[i]);
                 left[i] = outL[pos];
@@ -398,6 +557,25 @@ namespace NeoBuzz.Multiband
                 dryL[i] = linear.DryL[i];
                 dryR[i] = linear.DryR[i];
             }
+            if (anyKey)
+            {
+                // The bands are the input D samples back: the key's bands the same.
+                long from = kWritten - p - linear.D;
+                for (int b = 0; b < Bands; b++)
+                {
+                    var kl = kRingL[b];
+                    var kr = kRingR[b];
+                    var dl = keyBandL[b];
+                    var dr = keyBandR[b];
+                    for (int i = 0; i < p; i++)
+                    {
+                        long t = from + i;
+                        int r = (int)(t & kMask);
+                        dl[i] = t >= 0 ? kl[r] : 0;
+                        dr[i] = t >= 0 ? kr[r] : 0;
+                    }
+                }
+            }
             Dynamics(p, outL, outR, 0);
         }
 
@@ -409,10 +587,26 @@ namespace NeoBuzz.Multiband
                 tmpR[i] = Clean(right[offset + i]);
             }
             minimum.Process(tmpL, tmpR, count, bandL, bandR);
-            for (int i = 0; i < count; i++)
+            if (phase == PhaseMode.Dynamic)
             {
-                dryL[i] = bandL[0][i] + bandL[1][i] + bandL[2][i] + bandL[3][i];
-                dryR[i] = bandR[0][i] + bandR[1][i] + bandR[2][i] + bandR[3][i];
+                // The raw input is the dry, so a band at no change adds nothing; while a band is soloed the dry glides to
+                // the bands' sum (the crossovers' allpass of the input), so the solo hears the band alone.
+                for (int i = 0; i < count; i++)
+                {
+                    double sl = bandL[0][i] + bandL[1][i] + bandL[2][i] + bandL[3][i];
+                    double sr = bandR[0][i] + bandR[1][i] + bandR[2][i] + bandR[3][i];
+                    float blend = dryBlend.Next();
+                    dryL[i] = blend == 0 ? tmpL[i] : tmpL[i] + blend * (sl - tmpL[i]);
+                    dryR[i] = blend == 0 ? tmpR[i] : tmpR[i] + blend * (sr - tmpR[i]);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    dryL[i] = bandL[0][i] + bandL[1][i] + bandL[2][i] + bandL[3][i];
+                    dryR[i] = bandR[0][i] + bandR[1][i] + bandR[2][i] + bandR[3][i];
+                }
             }
             Dynamics(count, left, right, offset);
         }
@@ -421,6 +615,7 @@ namespace NeoBuzz.Multiband
         static double Step(Band s, double g, double level)
         {
             double t = s.Gc.Ff(level);
+            if (s.Up) t -= s.Gc.Up(level) * GainComputer.UpFloorGain(s.UpEnv);
             if (t > s.Range) t = s.Range;
             else if (t < -s.Range) t = -s.Range;
             return s.Expands ? -Detector.Smooth(-g, -t, s.AttackA, s.ReleaseA) : Detector.Smooth(g, t, s.AttackA, s.ReleaseA);
@@ -440,6 +635,10 @@ namespace NeoBuzz.Multiband
             bool ms = stereo == StereoMode.MidSide;
             bool linked = link >= 1f;
             float lk = link;
+            bool useRms = rms;
+            double rmsCoef = rmsA;
+            int lookNow = look, rp = ringPos, rmask = ringMask;
+            double upFall = GainComputer.UpHoldDbPerSecond / sampleRate;
             foreach (var s in band)
             {
                 s.BlockMax = 0;
@@ -474,28 +673,59 @@ namespace NeoBuzz.Multiband
                 {
                     var s = band[b];
                     double l = bandL[b][i], r = bandR[b][i];
+                    // What the gain is applied to: the band, held back by the lookahead; what it is detected from: the band as it
+                    // arrives, or the sidechain's.
+                    double al = l, ar = r;
+                    if (lookNow > 0)
+                    {
+                        ringBL[b][rp] = l;
+                        ringBR[b][rp] = r;
+                        int q = (rp - lookNow) & rmask;
+                        al = ringBL[b][q];
+                        ar = ringBR[b][q];
+                    }
                     double xl = l, xr = r;
+                    if (s.Key)
+                    {
+                        xl = keyBandL[b][i];
+                        xr = keyBandR[b][i];
+                    }
                     if (b == 2 && u < 1)
                     {
                         // Three bands: band 3's detector hears band 4 too.
-                        xl += (1 - u) * bandL[3][i];
-                        xr += (1 - u) * bandR[3][i];
+                        xl += (1 - u) * (s.Key ? keyBandL[3][i] : bandL[3][i]);
+                        xr += (1 - u) * (s.Key ? keyBandR[3][i] : bandR[3][i]);
                     }
-                    double a0 = l, a1 = r, x0 = xl, x1 = xr;
+                    double a0 = al, a1 = ar, x0 = xl, x1 = xr;
                     if (ms)
                     {
-                        a0 = 0.5 * (l + r);
-                        a1 = 0.5 * (l - r);
+                        a0 = 0.5 * (al + ar);
+                        a1 = 0.5 * (al - ar);
                         x0 = 0.5 * (xl + xr);
                         x1 = 0.5 * (xl - xr);
                     }
                     double lv0, lv1;
-                    if (linked) lv0 = lv1 = Detector.PeakDb(Math.Max(Math.Abs(x0), Math.Abs(x1)));
+                    if (useRms)
+                    {
+                        s.Ms0 = x0 * x0 + (s.Ms0 - x0 * x0) * rmsCoef;
+                        s.Ms1 = x1 * x1 + (s.Ms1 - x1 * x1) * rmsCoef;
+                        lv0 = Detector.RmsDb(s.Ms0);
+                        lv1 = Detector.RmsDb(s.Ms1);
+                        if (linked) lv0 = lv1 = Math.Max(lv0, lv1);
+                        else if (lk > 0) Detector.Link(ref lv0, ref lv1, lk);
+                    }
+                    else if (linked) lv0 = lv1 = Detector.PeakDb(Math.Max(Math.Abs(x0), Math.Abs(x1)));
                     else
                     {
                         lv0 = Detector.PeakDb(x0);
                         lv1 = Detector.PeakDb(x1);
                         if (lk > 0) Detector.Link(ref lv0, ref lv1, lk);
+                    }
+                    if (s.Up)
+                    {
+                        // The held level the upward curve's floor is judged on.
+                        double held = Math.Max(lv0, lv1);
+                        s.UpEnv = held > s.UpEnv ? held : s.UpEnv - upFall;
                     }
                     s.G0 = Step(s, s.G0, lv0);
                     s.G1 = linked ? s.G0 : Step(s, s.G1, lv1);
@@ -534,14 +764,27 @@ namespace NeoBuzz.Multiband
                     }
                 }
                 double dl = dryL[i], dr = dryR[i];
+                if (lookNow > 0)
+                {
+                    ringDL[rp] = dl;
+                    ringDR[rp] = dr;
+                    int q = (rp - lookNow) & rmask;
+                    dl = ringDL[q];
+                    dr = ringDR[q];
+                    rp = (rp + 1) & rmask;
+                }
                 yl[at + i] = wl == 0 ? (float)dl : (float)(dl + m * wl);
                 yr[at + i] = wr == 0 ? (float)dr : (float)(dr + m * wr);
                 if (++stepFill == stepLength) PushStep();
             }
+            ringPos = rp;
             foreach (var s in band)
             {
                 s.G0 = DspMath.Flush(s.G0);
                 s.G1 = DspMath.Flush(s.G1);
+                s.Ms0 = DspMath.Flush(s.Ms0);
+                s.Ms1 = DspMath.Flush(s.Ms1);
+                if (s.UpEnv < -300) s.UpEnv = -300;
             }
         }
 
@@ -628,7 +871,7 @@ namespace NeoBuzz.Multiband
             get
             {
                 if (fadeLeft > 0 || fadeHold > 0 || fadingOut) return false;
-                if (phase == PhaseMode.Linear ? quiet < (long)(linear.K + 2) * linear.P : quiet < MaxBlock || !minimum.AtRest) return false;
+                if (phase == PhaseMode.Linear ? quiet < (long)(linear.K + 2) * linear.P + look : quiet < MaxBlock + look || !minimum.AtRest) return false;
                 foreach (var s in band) if (Math.Abs(s.G0) > 1e-4 || Math.Abs(s.G1) > 1e-4) return false;
                 return true;
             }
@@ -636,7 +879,7 @@ namespace NeoBuzz.Multiband
 
         public bool HoldsSubnormals()
         {
-            if (linear.HoldsSubnormals() || minimum.HoldsSubnormals()) return true;
+            if (linear.HoldsSubnormals() || minimum.HoldsSubnormals() || keyMin.HoldsSubnormals()) return true;
             foreach (var s in band) if (double.IsSubnormal(s.G0) || double.IsSubnormal(s.G1)) return true;
             foreach (var x in outL) if (float.IsSubnormal(x)) return true;
             foreach (var x in outR) if (float.IsSubnormal(x)) return true;
@@ -645,7 +888,7 @@ namespace NeoBuzz.Multiband
 
         public bool HoldsNonFinite()
         {
-            if (linear.HoldsNonFinite() || minimum.HoldsNonFinite()) return true;
+            if (linear.HoldsNonFinite() || minimum.HoldsNonFinite() || keyMin.HoldsNonFinite()) return true;
             foreach (var s in band) if (!double.IsFinite(s.G0) || !double.IsFinite(s.G1)) return true;
             foreach (var x in outL) if (!float.IsFinite(x)) return true;
             foreach (var x in outR) if (!float.IsFinite(x)) return true;
