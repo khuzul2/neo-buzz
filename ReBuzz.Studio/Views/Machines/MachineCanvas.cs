@@ -636,7 +636,7 @@ namespace ReBuzz.Studio.Views.Machines
             {
                 var w = MachineGeometry.Wire(BoxOf(link.Source), BoxOf(link.Target));
                 if (!w.Visible) continue;
-                var colour = MachineIdentity.ColourOf(link.Source) ?? Colors.YellowGreen;
+                var colour = MachineIdentity.ColourOf(link.Source) ?? Shell.Design.StudioTokens.Identity(NeoBuzz.Editor.MachineCategory.Control);
                 bool hot = link == hoverMod;
                 var pen = new Pen(new SolidColorBrush(colour), hot ? 2.5 : 1.5, ModDash) { LineCap = PenLineCap.Round };
                 ctx.DrawLine(pen, w.Start, w.End);
@@ -644,9 +644,9 @@ namespace ReBuzz.Studio.Views.Machines
                 ctx.DrawEllipse(new SolidColorBrush(colour), null, w.End, hot ? 4 : 3, hot ? 4 : 3);
                 if (hot)
                 {
-                    var ft = new FormattedText(link.Source.Name + " → " + link.Label, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, PlainFace, 12, Brushes.White);
+                    var ft = new FormattedText(link.Source.Name + " → " + link.Label, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, PlainFace, 12, Shell.Design.StudioTokens.TextPrimaryBrush);
                     var at = new Point(w.Mid.X + 6, w.Mid.Y - ft.Height - 4);
-                    ctx.DrawRectangle(new SolidColorBrush(Color.FromArgb(0xE0, 0x20, 0x20, 0x20)), new Pen(new SolidColorBrush(colour), 1), new Rect(at.X - 4, at.Y - 2, ft.Width + 8, ft.Height + 4), 3, 3);
+                    ctx.DrawRectangle(Shell.Design.StudioTokens.SurfaceBaseBrush, new Pen(new SolidColorBrush(colour), 1), new Rect(at.X - 4, at.Y - 2, ft.Width + 8, ft.Height + 4), 3, 3);
                     ctx.DrawText(ft, at);
                 }
             }

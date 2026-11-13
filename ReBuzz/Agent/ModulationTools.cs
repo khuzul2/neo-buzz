@@ -246,7 +246,7 @@ namespace ReBuzz.Agent
                 Description =
                     "What drives what: every modulator (Neo LFO, Neo Envelope, Neo Step, Neo Macro) with its targets, each with its depth, polarity, the base value you set, " +
                     "where the modulation reaches, its value now, its range and safe range, and its state (a target whose machine was deleted shows as machine missing). " +
-                    "Pass machine to see only the modulations that reach one machine's parameters, or one modulator's targets. machine_describe also lists a machine's incoming modulations.",
+                    "Pass machine to see only the modulations that reach one machine's parameters, or one modulator's targets. machine_describe also lists a machine's incoming modulations. Example: modulation_list(machine=\"Bass\") shows what moves Bass.",
                 Input = Object(null,
                     Opt("machine", String("A modulator, or a machine to list its incoming modulations (default: all)"))),
                 Output = Object(null,
@@ -290,7 +290,7 @@ namespace ReBuzz.Agent
                 Title = "Remove a modulation",
                 Description =
                     "Takes a target off a modulator, or all of them: the parameter goes back to the value you set (its base). Give slot, or target_machine (with param to take just that " +
-                    "parameter), or all=true. One undo step; undo puts the modulation back.",
+                    "parameter), or all=true. One undo step; undo puts the modulation back. Example: modulation_remove(source=\"LFO\", target_machine=\"Bass\", param=\"F1 cutoff\").",
                 Input = Object(null,
                     Req("source", String("The modulator machine")),
                     Opt("slot", Integer("The target's slot (0–7)", 0, 7)),
