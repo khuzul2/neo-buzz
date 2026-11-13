@@ -255,7 +255,7 @@ namespace ReBuzz.Studio.Views.Device
 
         static Rect CellRect(MacroItem m, int index, double width)
         {
-            double w = width / Math.Max(1, Math.Min(m.Cells.Count, DeviceLayout.MacroCount));
+            double w = width / Math.Max(4, Math.Min(m.Cells.Count, DeviceLayout.MacroCount));
             return new Rect(index * w, 0, w, MacroItem.StripHeight);
         }
 
@@ -479,7 +479,7 @@ namespace ReBuzz.Studio.Views.Device
                 }
                 case MacroItem mi:
                 {
-                    double w = width / Math.Max(1, mi.Cells.Count);
+                    double w = width / Math.Max(4, mi.Cells.Count);
                     int k = (int)Math.Clamp(pt.X / w, 0, mi.Cells.Count - 1);
                     var r = CellRect(mi, k, width).Deflate(new Thickness(4, 4));
                     if (pt.Y < r.Y + 20) return new Hit { Part = Part.Name, Param = mi.Cells[k], Area = r };

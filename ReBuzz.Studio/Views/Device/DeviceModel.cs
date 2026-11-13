@@ -250,9 +250,10 @@ namespace ReBuzz.Studio.Views.Device
                 {
                     if (members.Count == 0) continue;
                     var s = new DeviceSection { Name = title, Source = plan.Source };
+                    int cut = CommonWord(members.Select(m => m.Shown).ToList());
                     foreach (var (i, shown) in members)
                     {
-                        var dp = Make(ps[i], 0, shown, title, false, false, entries[i]);
+                        var dp = Make(ps[i], 0, cut > 0 ? shown.Substring(cut).TrimStart() : shown, title, false, false, entries[i]);
                         s.Params.Add(dp);
                         all.Add(dp);
                     }
@@ -297,6 +298,16 @@ namespace ReBuzz.Studio.Views.Device
                 case MappingKind.Int when -m.A > min && -m.A < max: return (-m.A - min) / (double)(max - min);
                 default: return null;
             }
+        }
+
+        /// <summary>The length of the first word every name of a group starts with ("O1 shape", "O1 PW": "O1 "), which the header says; 0 when they share none.</summary>
+        static int CommonWord(List<string> names)
+        {
+            if (names.Count < 3) return 0;
+            int space = names[0].IndexOf(' ');
+            if (space <= 0) return 0;
+            string word = names[0].Substring(0, space);
+            return names.All(n => n.Length > space + 1 && n.StartsWith(word, StringComparison.OrdinalIgnoreCase) && n[space] == ' ' && n.Substring(space).Trim().Length > 0) ? space + 1 : 0;
         }
 
         /// <summary>A state parameter a view shows (notes, triggers and internals are played, not set).</summary>

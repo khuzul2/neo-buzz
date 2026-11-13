@@ -67,9 +67,7 @@ namespace ReBuzz.Studio.Views.Device
                 }
             };
             count = new TextBlock { FontSize = StudioTokens.FontCaption, Foreground = StudioTokens.TextSecondaryBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
-            var top = new DockPanel { Margin = new Thickness(Pad, 6, Pad, 6), LastChildFill = false };
-            top.Children.Add(search);
-            top.Children.Add(count);
+            Toolbar = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Children = { search, count } };
 
             list = new DeviceList(machine);
             macros = new DeviceList(machine) { Height = MacroItem.StripHeight };
@@ -111,8 +109,6 @@ namespace ReBuzz.Studio.Views.Device
             Avalonia.Automation.AutomationProperties.SetName(explain, "Explain");
 
             var root = new DockPanel { LastChildFill = true };
-            DockPanel.SetDock(top, Dock.Top);
-            root.Children.Add(top);
             DockPanel.SetDock(macros, Dock.Top);
             root.Children.Add(macros);
             DockPanel.SetDock(explain, Dock.Bottom);
@@ -135,7 +131,7 @@ namespace ReBuzz.Studio.Views.Device
         }
 
         const double Pad = 12;
-        const double ExplainHeight = 84;
+        const double ExplainHeight = 72;
         public const string ExplainPrompt = "Click a parameter to see what it does.";
 
         public static string FindKeyLabel => OperatingSystem.IsMacOS() ? "⌘F" : "Ctrl+F";
@@ -149,6 +145,9 @@ namespace ReBuzz.Studio.Views.Device
         public DeviceList MacroStrip => macros;
 
         public TextBox Search => search;
+
+        /// <summary>The search box and the count, for the page's bar (they share its row, so the rows get the height).</summary>
+        public Avalonia.Controls.Control Toolbar { get; }
 
         public ScrollViewer Scroller => scroller;
 

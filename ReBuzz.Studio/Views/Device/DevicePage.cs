@@ -67,6 +67,8 @@ namespace ReBuzz.Studio.Views.Device
             bar.Children.Add(right);
             bar.Children.Add(title);
             bar.Children.Add(tabs);
+            view.Toolbar.Margin = new Thickness(12, 0, 8, 0);
+            bar.Children.Add(view.Toolbar);
             var root = new DockPanel { LastChildFill = true };
             DockPanel.SetDock(bar, Dock.Top);
             root.Children.Add(bar);
@@ -133,6 +135,7 @@ namespace ReBuzz.Studio.Views.Device
                 }
             }
             else body.Child = view;
+            view.Toolbar.IsVisible = !editorMode;
             Mark(editorButton, editorMode);
             Mark(parametersButton, !editorMode);
             Mark(floatButton, false);

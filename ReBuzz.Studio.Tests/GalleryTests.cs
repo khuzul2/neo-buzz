@@ -530,6 +530,26 @@ namespace ReBuzz.Studio.Tests
                     machines.Popup.Hide();
                     Settle();
                 });
+                Try("027-device-docked", () =>
+                {
+                    ReBuzz.Studio.Views.StudioSelection.For(Core).SelectMachine(demo.Lead, window);
+                    window.Detail.ShowDevice();
+                    Settle();
+                    Shot(window, "027-device-docked", "Detail > Device (P3e): the selected generator's parameters, grouped from its manifest, the macro strip over the list, sliders filled from zero with units, segmented choices and toggles, search and Editor | Parameters in the bar, the piano keyboard under it.", "Select a machine, Alt+Cmd+5, or the Device button under the view.");
+                });
+                Try("028-device-search-explain", () =>
+                {
+                    var view = ((ReBuzz.Studio.Views.Device.DeviceDock)window.Detail.DevicePage).Page!.Parameters;
+                    view.Query = "cutoff";
+                    Settle();
+                    var first = view.Layout.All.First(p => p.FullName.Contains("cutoff", System.StringComparison.OrdinalIgnoreCase));
+                    view.List.SetFocus(first);
+                    Settle();
+                    Shot(window, "028-device-search-explain", "The device view searching \"cutoff\" (Cmd+F): the groups with a match, the focused parameter's name and value under the list with its description (How and Sound where the manifest has them).", "Cmd+F in the Device page, then click a parameter.");
+                    view.Query = "";
+                    window.Detail.Close();
+                    Settle();
+                });
                 Try("023-machines-amp", () =>
                 {
                     var wire = demo.Delay.Outputs.First(o => o.Destination == demo.Verb);
