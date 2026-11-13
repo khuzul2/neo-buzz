@@ -1069,6 +1069,7 @@ namespace ReBuzzTests
 
                 Change();
                 RestoreResultHolder holder = new();
+                using var types = new AllocationTypes();
                 bool started = false;
                 var during = Read(buffers, () =>
                 {
@@ -1085,6 +1086,7 @@ namespace ReBuzzTests
                     $"baseline median {Median(baseline):F3} ms max {baseline.Max():F3} ms; restoring median {Median(during):F3} ms max {during.Max():F3} ms; allocated {bytes} bytes (baseline {baseBytes}); " +
                     $"largest sample-to-sample step: baseline {baseStep:G4}, across the restore {restoreStep:G4} (level {levelNow:G4})");
 
+                if (bytes != 0) TestContext.Out.WriteLine("[notice] restore live test: allocation ticks: " + string.Join("; ", types.Ticks));
                 Assert.That(bytes, Is.EqualTo(0), "a restore must not allocate on the audio thread");
                 Assert.That(snapshots.Diff(snap, null), Is.Empty, "the song is what the snapshot holds");
                 Assert.That(rig.Core.SongCore.Machines.Count(m => m.DLL.Info.Type != BuzzGUI.Interfaces.MachineType.Master), Is.EqualTo(machines));
@@ -1100,6 +1102,22 @@ namespace ReBuzzTests
         }
 
         sealed class RestoreResultHolder { public ReBuzz.Core.SongHistory.RestoreResult? Result; }
+
+        /// <summary>Names the types behind an allocation (the runtime's GC allocation ticks, one per ~100 KB), for the live restore test's diagnosis.</summary>
+        sealed class AllocationTypes : System.Diagnostics.Tracing.EventListener
+        {
+            public readonly System.Collections.Concurrent.ConcurrentQueue<string> Ticks = new();
+            protected override void OnEventSourceCreated(System.Diagnostics.Tracing.EventSource source)
+            {
+                if (source.Name == "Microsoft-Windows-DotNETRuntime") EnableEvents(source, System.Diagnostics.Tracing.EventLevel.Verbose, (System.Diagnostics.Tracing.EventKeywords)1);
+            }
+            protected override void OnEventWritten(System.Diagnostics.Tracing.EventWrittenEventArgs e)
+            {
+                if (e.EventName == null || !e.EventName.StartsWith("GCAllocationTick")) return;
+                int t = e.PayloadNames?.IndexOf("TypeName") ?? -1, a = e.PayloadNames?.IndexOf("AllocationAmount64") ?? -1;
+                Ticks.Enqueue($"{(t >= 0 ? e.Payload![t] : "?")} ({(a >= 0 ? e.Payload![a] : "?")} bytes) on thread {e.OSThreadId}");
+            }
+        }
 
         // ------------------------------------------------------------------ 10. autosave
 
