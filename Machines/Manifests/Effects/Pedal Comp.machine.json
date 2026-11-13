@@ -560,7 +560,9 @@
    "b": -60.0,
    "unit": "dB",
    "own_texts": false,
-   "description": "Level where compression starts, 0 to −60 dBFS."
+   "description": "Level where compression starts, 0 to −60 dBFS.",
+   "how": "Sets the level, from 0 down to -60 dB, above which the signal is turned down.",
+   "sound": "A lower threshold compresses more of the signal; a higher one only catches the peaks."
   },
   {
    "index": 1,
@@ -577,7 +579,9 @@
    "b": 30.0,
    "unit": ":1",
    "own_texts": false,
-   "description": "Compression ratio, 1:1 (none) to 30:1 (near limiting)."
+   "description": "Compression ratio, 1:1 (none) to 30:1 (near limiting).",
+   "how": "Sets how strongly the signal is turned down above the threshold, from 1:1 to 30:1.",
+   "sound": "Low ratios level gently; high ratios flatten peaks almost like a limiter."
   },
   {
    "index": 2,
@@ -594,7 +598,9 @@
    "b": 12.0,
    "unit": "dB",
    "own_texts": false,
-   "description": "Soft-knee width, 0 (hard) to 12 dB."
+   "description": "Soft-knee width, 0 (hard) to 12 dB.",
+   "how": "Sets the width of the bend into compression, from 0 (hard) to 12 dB.",
+   "sound": "A wide knee eases in unnoticed; a hard one bites at the threshold."
   },
   {
    "index": 3,
@@ -611,7 +617,9 @@
    "b": 0.2,
    "unit": "s",
    "own_texts": false,
-   "description": "Attack time, 1–200 ms."
+   "description": "Attack time, 1–200 ms.",
+   "how": "Sets how fast the gain is turned down after a peak, from 1 to 200 ms.",
+   "sound": "Slow attacks let the front of a hit through; fast ones soften it."
   },
   {
    "index": 4,
@@ -628,7 +636,9 @@
    "b": 2.0,
    "unit": "s",
    "own_texts": false,
-   "description": "Release time, 10 ms – 2 s."
+   "description": "Release time, 10 ms – 2 s.",
+   "how": "Sets how fast the gain returns after the signal drops, from 10 ms to 2 s.",
+   "sound": "Short releases pump with the beat; long ones glide and glue."
   },
   {
    "index": 5,
@@ -645,7 +655,9 @@
    "b": 24.0,
    "unit": "dB",
    "own_texts": false,
-   "description": "Gain after compression, 0 to +24 dB (ignored with Auto Makeup on)."
+   "description": "Gain after compression, 0 to +24 dB (ignored with Auto Makeup on).",
+   "how": "Raises the level after compression by 0 to 24 dB; it is ignored while Auto Makeup is on.",
+   "sound": "Restores the loudness the compression took away."
   },
   {
    "index": 6,
@@ -658,7 +670,9 @@
    "max": 1,
    "default": 0,
    "kind": "switch",
-   "description": "Sets the makeup gain from threshold and ratio."
+   "description": "Sets the makeup gain from threshold and ratio.",
+   "how": "Sets the makeup gain from the threshold and ratio, up to +24 dB.",
+   "sound": "The level stays close to where it was before compression."
   },
   {
    "index": 7,
@@ -675,7 +689,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Compressed signal against the original: 100% fully compressed, lower for parallel compression."
+   "description": "Compressed signal against the original: 100% fully compressed, lower for parallel compression.",
+   "how": "Blends the compressed signal with the original, from 0 to 100 percent.",
+   "sound": "Below 100 percent keeps the natural attack under the squeezed body: parallel compression."
   },
   {
    "index": 8,
@@ -692,7 +708,9 @@
    "b": 0.02,
    "unit": "s",
    "own_texts": false,
-   "description": "0–20 ms; adds as much delay."
+   "description": "0–20 ms; adds as much delay.",
+   "how": "Delays the audio by 0 to 20 ms so the compressor can react before a peak arrives.",
+   "sound": "Fast peaks are caught cleanly; the output is that much later."
   },
   {
    "index": 9,
@@ -709,7 +727,9 @@
     "Peak",
     "RMS"
    ],
-   "description": "Peak (fast, for transients) or RMS (smoother, for full mixes)."
+   "description": "Peak (fast, for transients) or RMS (smoother, for full mixes).",
+   "how": "Chooses whether the compressor listens to peaks or to the average level (RMS).",
+   "sound": "Peak reacts to every transient; RMS follows the loudness and sounds smoother."
   }
  ],
  "track_parameters": []

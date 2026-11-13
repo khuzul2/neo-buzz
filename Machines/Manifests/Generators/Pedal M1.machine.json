@@ -775,7 +775,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 200.0,
-   "description": "Wavetable slot oscillator 1 plays (zone 1, below the splits)."
+   "description": "Wavetable slot oscillator 1 plays (zone 1, below the splits).",
+   "how": "Chooses which wavetable slot oscillator 1 plays in its first key zone (1 to 200).",
+   "sound": "The sample you picked sounds; an empty slot stays silent."
   },
   {
    "index": 1,
@@ -792,7 +794,9 @@
    "b": 2.0,
    "unit": "oct",
    "own_texts": false,
-   "description": "Octave shift, −2 to +2, for all its zones."
+   "description": "Octave shift, −2 to +2, for all its zones.",
+   "how": "Shifts oscillator 1 by whole octaves, from -2 to +2.",
+   "sound": "Moves the sample up or down in register, changing its length and brightness with it."
   },
   {
    "index": 2,
@@ -809,7 +813,9 @@
    "b": 12.0,
    "unit": "st",
    "own_texts": false,
-   "description": "Semitone shift, −12 to +12."
+   "description": "Semitone shift, −12 to +12.",
+   "how": "Shifts oscillator 1 by semitones, from -12 to +12.",
+   "sound": "Retunes the sample against the other oscillator, for intervals and chords."
   },
   {
    "index": 3,
@@ -826,7 +832,9 @@
    "b": 50.0,
    "unit": "ct",
    "own_texts": false,
-   "description": "Fine detune, ±50 cents."
+   "description": "Fine detune, ±50 cents.",
+   "how": "Detunes oscillator 1 by up to 50 cents either way.",
+   "sound": "Small differences between the two oscillators add slow chorus-like beating."
   },
   {
    "index": 4,
@@ -843,7 +851,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Its level in the mix."
+   "description": "Its level in the mix.",
+   "how": "Sets oscillator 1's level in the mix, from 0 to 100 percent.",
+   "sound": "Balances the two samples against each other."
   },
   {
    "index": 5,
@@ -858,7 +868,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 200.0,
-   "description": "Wavetable slot oscillator 2 plays (zone 1, below the splits)."
+   "description": "Wavetable slot oscillator 2 plays (zone 1, below the splits).",
+   "how": "Chooses which wavetable slot oscillator 2 plays in its first key zone (1 to 200).",
+   "sound": "The sample you picked sounds; an empty slot stays silent."
   },
   {
    "index": 6,
@@ -875,7 +887,9 @@
    "b": 2.0,
    "unit": "oct",
    "own_texts": false,
-   "description": "Octave shift, −2 to +2, for all its zones."
+   "description": "Octave shift, −2 to +2, for all its zones.",
+   "how": "Shifts oscillator 2 by whole octaves, from -2 to +2.",
+   "sound": "Moves the sample up or down in register, changing its length and brightness with it."
   },
   {
    "index": 7,
@@ -892,7 +906,9 @@
    "b": 12.0,
    "unit": "st",
    "own_texts": false,
-   "description": "Semitone shift, −12 to +12."
+   "description": "Semitone shift, −12 to +12.",
+   "how": "Shifts oscillator 2 by semitones, from -12 to +12.",
+   "sound": "Retunes the sample against the other oscillator, for intervals and chords."
   },
   {
    "index": 8,
@@ -909,7 +925,9 @@
    "b": 50.0,
    "unit": "ct",
    "own_texts": false,
-   "description": "Fine detune, ±50 cents."
+   "description": "Fine detune, ±50 cents.",
+   "how": "Detunes oscillator 2 by up to 50 cents either way.",
+   "sound": "Small differences between the two oscillators add slow chorus-like beating."
   },
   {
    "index": 9,
@@ -926,7 +944,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Its level in the mix."
+   "description": "Its level in the mix.",
+   "how": "Sets oscillator 2's level in the mix, from 0 to 100 percent.",
+   "sound": "Balances the two samples against each other."
   },
   {
    "index": 10,
@@ -944,7 +964,9 @@
     "OSC2 only",
     "Both"
    ],
-   "description": "Which oscillators sound: 1 only, 2 only, or both."
+   "description": "Which oscillators sound: 1 only, 2 only, or both.",
+   "how": "Chooses whether oscillator 1, oscillator 2 or both sound.",
+   "sound": "Using both layers two samples; using one plays a single sample."
   },
   {
    "index": 11,
@@ -1473,7 +1495,9 @@
     ]
    ],
    "own_texts": false,
-   "description": "Glide time between notes: off at 0, else 1 ms – 8 s exponential."
+   "description": "Glide time between notes: off at 0, else 1 ms – 8 s exponential.",
+   "how": "Sets the glide time between notes from off to 8 s.",
+   "sound": "Notes slide into each other."
   },
   {
    "index": 12,
@@ -1490,7 +1514,9 @@
    "b": 18000.0,
    "unit": "Hz",
    "own_texts": false,
-   "description": "2-pole low-pass cutoff, 20 Hz – 18 kHz exponential."
+   "description": "2-pole low-pass cutoff, 20 Hz – 18 kHz exponential.",
+   "how": "Sets the two-pole low-pass cutoff from 20 Hz to 18 kHz.",
+   "sound": "Low cutoffs sound dark and muffled; high ones leave the sample untouched."
   },
   {
    "index": 13,
@@ -1507,7 +1533,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Gentle; never self-oscillates."
+   "description": "Gentle; never self-oscillates.",
+   "how": "Adds a gentle boost at the cutoff, from 0 to 100 percent.",
+   "sound": "Gives a little colour to sweeps; it never self-oscillates."
   },
   {
    "index": 14,
@@ -1524,7 +1552,9 @@
    "b": 98.4375,
    "unit": "%",
    "own_texts": false,
-   "description": "Cutoff follows the note around C4: 0% none (raw 64), +98% about an octave per octave, −100% inverse."
+   "description": "Cutoff follows the note around C4: 0% none (raw 64), +98% about an octave per octave, −100% inverse.",
+   "how": "Makes the cutoff follow the note around C4, from -100 to +98 percent.",
+   "sound": "With tracking the tone stays alike across the keyboard; without, high notes are duller."
   },
   {
    "index": 15,
@@ -1541,7 +1571,9 @@
    "b": 6.0,
    "unit": "oct",
    "own_texts": false,
-   "description": "Filter envelope to cutoff, up to 6 octaves."
+   "description": "Filter envelope to cutoff, up to 6 octaves.",
+   "how": "Sends the filter envelope to the cutoff, up to 6 octaves.",
+   "sound": "Notes open from dark to bright."
   },
   {
    "index": 16,
@@ -1558,7 +1590,9 @@
    "b": 1.0,
    "unit": "oct",
    "own_texts": false,
-   "description": "Velocity to cutoff, up to ±1 octave around velocity 64."
+   "description": "Velocity to cutoff, up to ±1 octave around velocity 64.",
+   "how": "Makes velocity move the cutoff by up to one octave around velocity 64.",
+   "sound": "Harder notes sound brighter."
   },
   {
    "index": 17,
@@ -1575,7 +1609,9 @@
    "b": 8.0,
    "unit": "s",
    "own_texts": false,
-   "description": "1 ms – 8 s exponential."
+   "description": "1 ms – 8 s exponential.",
+   "how": "Sets the filter envelope's attack from 1 ms to 8 s.",
+   "sound": "Short attacks open at once; long ones sweep slowly."
   },
   {
    "index": 18,
@@ -1592,7 +1628,9 @@
    "b": 8.0,
    "unit": "s",
    "own_texts": false,
-   "description": "1 ms – 8 s exponential."
+   "description": "1 ms – 8 s exponential.",
+   "how": "Sets how long the filter envelope takes to fall to its sustain level, from 1 ms to 8 s.",
+   "sound": "Short decays pluck the brightness; long ones hold it."
   },
   {
    "index": 19,
@@ -1609,7 +1647,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Sustain level."
+   "description": "Sustain level.",
+   "how": "Sets the level the filter envelope holds, from 0 to 100 percent.",
+   "sound": "Low values let the note settle dark; high values keep it bright."
   },
   {
    "index": 20,
@@ -1626,7 +1666,9 @@
    "b": 8.0,
    "unit": "s",
    "own_texts": false,
-   "description": "1 ms – 8 s exponential."
+   "description": "1 ms – 8 s exponential.",
+   "how": "Sets how long the filter envelope takes to fall after the key is let go, from 1 ms to 8 s.",
+   "sound": "Short releases close the filter at once; long ones fade the brightness."
   },
   {
    "index": 21,
@@ -1643,7 +1685,9 @@
    "b": 8.0,
    "unit": "s",
    "own_texts": false,
-   "description": "Amp envelope, 1 ms – 8 s exponential."
+   "description": "Amp envelope, 1 ms – 8 s exponential.",
+   "how": "Sets the amplifier envelope's attack from 1 ms to 8 s.",
+   "sound": "Short attacks are immediate; long ones swell in like strings."
   },
   {
    "index": 22,
@@ -1660,7 +1704,9 @@
    "b": 8.0,
    "unit": "s",
    "own_texts": false,
-   "description": "Amp envelope, 1 ms – 8 s exponential."
+   "description": "Amp envelope, 1 ms – 8 s exponential.",
+   "how": "Sets how long the amplifier envelope takes to fall to its sustain level, from 1 ms to 8 s.",
+   "sound": "Short decays pluck; long ones keep the note ringing."
   },
   {
    "index": 23,
@@ -1677,7 +1723,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Amp envelope sustain level."
+   "description": "Amp envelope sustain level.",
+   "how": "Sets the level the amplifier envelope holds, from 0 to 100 percent.",
+   "sound": "Low values make plucks; full level holds the note."
   },
   {
    "index": 24,
@@ -1694,7 +1742,9 @@
    "b": 8.0,
    "unit": "s",
    "own_texts": false,
-   "description": "Amp envelope, 1 ms – 8 s exponential."
+   "description": "Amp envelope, 1 ms – 8 s exponential.",
+   "how": "Sets how long the amplifier envelope takes to fall after the key is let go, from 1 ms to 8 s.",
+   "sound": "Short releases cut off; long ones leave a tail."
   },
   {
    "index": 25,
@@ -1711,7 +1761,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "How much velocity (the track Volume) sets the level; 0% ignores it."
+   "description": "How much velocity (the track Volume) sets the level; 0% ignores it.",
+   "how": "Sets how much velocity scales the level, from 0 to 100 percent.",
+   "sound": "At 0 every note is equally loud; higher values make soft notes quieter."
   },
   {
    "index": 26,
@@ -1731,7 +1783,9 @@
     "S+H",
     "Smooth"
    ],
-   "description": "Triangle, sawtooth, square, sample and hold, or smooth random; restarts with each note."
+   "description": "Triangle, sawtooth, square, sample and hold, or smooth random; restarts with each note.",
+   "how": "Chooses the shape of LFO 1: triangle, sawtooth, square, sample and hold, or smooth random.",
+   "sound": "Triangle and sine-like shapes sway; square jumps; random shapes wander."
   },
   {
    "index": 27,
@@ -1748,7 +1802,9 @@
    "b": 30.0,
    "unit": "Hz",
    "own_texts": false,
-   "description": "0.05–30 Hz exponential."
+   "description": "0.05–30 Hz exponential.",
+   "how": "Sets LFO 1's rate, from 0.05 to 30 Hz on an exponential scale.",
+   "sound": "Slow rates drift over seconds; fast ones turn into vibrato or tremolo."
   },
   {
    "index": 28,
@@ -1765,7 +1821,9 @@
    "b": 8.0,
    "unit": "s",
    "own_texts": false,
-   "description": "Time after a note before it starts, 1 ms – 8 s exponential."
+   "description": "Time after a note before it starts, 1 ms – 8 s exponential.",
+   "how": "Waits 1 ms to 8 s after a note starts before LFO 1 begins.",
+   "sound": "The note starts steady and the movement arrives later."
   },
   {
    "index": 29,
@@ -1782,7 +1840,9 @@
    "b": 8.0,
    "unit": "s",
    "own_texts": false,
-   "description": "Fade-in time once started, 1 ms – 8 s exponential."
+   "description": "Fade-in time once started, 1 ms – 8 s exponential.",
+   "how": "Fades LFO 1 in over 1 ms to 8 s once it has started.",
+   "sound": "The movement grows in gently instead of appearing at full strength."
   },
   {
    "index": 30,
@@ -1799,7 +1859,9 @@
    "b": 1.0,
    "unit": "st",
    "own_texts": false,
-   "description": "To pitch, up to ±1 semitone."
+   "description": "To pitch, up to ±1 semitone.",
+   "how": "Sends LFO 1 to the pitch, up to one semitone either way.",
+   "sound": "Gives vibrato: a little is natural, a lot sounds seasick."
   },
   {
    "index": 31,
@@ -1816,7 +1878,9 @@
    "b": 4.0,
    "unit": "oct",
    "own_texts": false,
-   "description": "To filter cutoff, up to ±4 octaves."
+   "description": "To filter cutoff, up to ±4 octaves.",
+   "how": "Sends LFO 1 to the filter cutoff, up to 4 octaves either way.",
+   "sound": "Sweeps the brightness in time with the LFO, like a wah."
   },
   {
    "index": 32,
@@ -1833,7 +1897,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "To the amplifier (tremolo)."
+   "description": "To the amplifier (tremolo).",
+   "how": "Sends LFO 1 to the amplifier, from 0 to 100 percent.",
+   "sound": "Gives tremolo: the level swells and dips with the LFO."
   },
   {
    "index": 33,
@@ -1853,7 +1919,9 @@
     "S+H",
     "Smooth"
    ],
-   "description": "Triangle, sawtooth, square, sample and hold, or smooth random; restarts with each note."
+   "description": "Triangle, sawtooth, square, sample and hold, or smooth random; restarts with each note.",
+   "how": "Chooses the shape of LFO 2: triangle, sawtooth, square, sample and hold, or smooth random.",
+   "sound": "Triangle and sine-like shapes sway; square jumps; random shapes wander."
   },
   {
    "index": 34,
@@ -1870,7 +1938,9 @@
    "b": 30.0,
    "unit": "Hz",
    "own_texts": false,
-   "description": "0.05–30 Hz exponential."
+   "description": "0.05–30 Hz exponential.",
+   "how": "Sets LFO 2's rate, from 0.05 to 30 Hz on an exponential scale.",
+   "sound": "Slow rates drift over seconds; fast ones turn into vibrato or tremolo."
   },
   {
    "index": 35,
@@ -1887,7 +1957,9 @@
    "b": 8.0,
    "unit": "s",
    "own_texts": false,
-   "description": "Time after a note before it starts, 1 ms – 8 s exponential."
+   "description": "Time after a note before it starts, 1 ms – 8 s exponential.",
+   "how": "Waits 1 ms to 8 s after a note starts before LFO 2 begins.",
+   "sound": "The note starts steady and the movement arrives later."
   },
   {
    "index": 36,
@@ -1904,7 +1976,9 @@
    "b": 8.0,
    "unit": "s",
    "own_texts": false,
-   "description": "Fade-in time once started, 1 ms – 8 s exponential."
+   "description": "Fade-in time once started, 1 ms – 8 s exponential.",
+   "how": "Fades LFO 2 in over 1 ms to 8 s once it has started.",
+   "sound": "The movement grows in gently instead of appearing at full strength."
   },
   {
    "index": 37,
@@ -1921,7 +1995,9 @@
    "b": 1.0,
    "unit": "st",
    "own_texts": false,
-   "description": "To pitch, up to ±1 semitone."
+   "description": "To pitch, up to ±1 semitone.",
+   "how": "Sends LFO 2 to the pitch, up to one semitone either way.",
+   "sound": "Gives vibrato: a little is natural, a lot sounds seasick."
   },
   {
    "index": 38,
@@ -1938,7 +2014,9 @@
    "b": 4.0,
    "unit": "oct",
    "own_texts": false,
-   "description": "To filter cutoff, up to ±4 octaves."
+   "description": "To filter cutoff, up to ±4 octaves.",
+   "how": "Sends LFO 2 to the filter cutoff, up to 4 octaves either way.",
+   "sound": "Sweeps the brightness in time with the LFO, like a wah."
   },
   {
    "index": 39,
@@ -1955,7 +2033,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "To the amplifier (tremolo)."
+   "description": "To the amplifier (tremolo).",
+   "how": "Sends LFO 2 to the amplifier, from 0 to 100 percent.",
+   "sound": "Gives tremolo: the level swells and dips with the LFO."
   },
   {
    "index": 40,
@@ -1972,7 +2052,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Master output."
+   "description": "Master output.",
+   "how": "Sets the master output from 0 to 100 percent; the machine runs about 6 dB below other synths.",
+   "sound": "Raise it to match the rest of the mix."
   },
   {
    "index": 41,
@@ -1987,7 +2069,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 200.0,
-   "description": "Wavetable slot for zone 2, from Split 2 up (higher zones win)."
+   "description": "Wavetable slot for zone 2, from Split 2 up (higher zones win).",
+   "how": "Chooses the wavetable slot oscillator 1 plays from zone 2 upward (1 to 200).",
+   "sound": "Higher notes switch to this sample, so a multisample keeps its natural tone across the keyboard."
   },
   {
    "index": 42,
@@ -2002,7 +2086,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "MIDI note (60 = C4) where zone 2 takes over, when its wave is set."
+   "description": "MIDI note (60 = C4) where zone 2 takes over, when its wave is set.",
+   "how": "Sets the MIDI note, 0 to 127, where zone 2 of oscillator 1 takes over from the zone below.",
+   "sound": "Moves the point on the keyboard where the sample changes."
   },
   {
    "index": 43,
@@ -2017,7 +2103,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 200.0,
-   "description": "Wavetable slot for zone 3, from Split 3 up (higher zones win)."
+   "description": "Wavetable slot for zone 3, from Split 3 up (higher zones win).",
+   "how": "Chooses the wavetable slot oscillator 1 plays from zone 3 upward (1 to 200).",
+   "sound": "Higher notes switch to this sample, so a multisample keeps its natural tone across the keyboard."
   },
   {
    "index": 44,
@@ -2032,7 +2120,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "MIDI note (60 = C4) where zone 3 takes over, when its wave is set."
+   "description": "MIDI note (60 = C4) where zone 3 takes over, when its wave is set.",
+   "how": "Sets the MIDI note, 0 to 127, where zone 3 of oscillator 1 takes over from the zone below.",
+   "sound": "Moves the point on the keyboard where the sample changes."
   },
   {
    "index": 45,
@@ -2047,7 +2137,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 200.0,
-   "description": "Wavetable slot for zone 4, from Split 4 up (higher zones win)."
+   "description": "Wavetable slot for zone 4, from Split 4 up (higher zones win).",
+   "how": "Chooses the wavetable slot oscillator 1 plays from zone 4 upward (1 to 200).",
+   "sound": "Higher notes switch to this sample, so a multisample keeps its natural tone across the keyboard."
   },
   {
    "index": 46,
@@ -2062,7 +2154,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "MIDI note (60 = C4) where zone 4 takes over, when its wave is set."
+   "description": "MIDI note (60 = C4) where zone 4 takes over, when its wave is set.",
+   "how": "Sets the MIDI note, 0 to 127, where zone 4 of oscillator 1 takes over from the zone below.",
+   "sound": "Moves the point on the keyboard where the sample changes."
   },
   {
    "index": 47,
@@ -2077,7 +2171,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 200.0,
-   "description": "Wavetable slot for zone 2, from Split 2 up (higher zones win)."
+   "description": "Wavetable slot for zone 2, from Split 2 up (higher zones win).",
+   "how": "Chooses the wavetable slot oscillator 2 plays from zone 2 upward (1 to 200).",
+   "sound": "Higher notes switch to this sample, so a multisample keeps its natural tone across the keyboard."
   },
   {
    "index": 48,
@@ -2092,7 +2188,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "MIDI note (60 = C4) where zone 2 takes over, when its wave is set."
+   "description": "MIDI note (60 = C4) where zone 2 takes over, when its wave is set.",
+   "how": "Sets the MIDI note, 0 to 127, where zone 2 of oscillator 2 takes over from the zone below.",
+   "sound": "Moves the point on the keyboard where the sample changes."
   },
   {
    "index": 49,
@@ -2107,7 +2205,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 200.0,
-   "description": "Wavetable slot for zone 3, from Split 3 up (higher zones win)."
+   "description": "Wavetable slot for zone 3, from Split 3 up (higher zones win).",
+   "how": "Chooses the wavetable slot oscillator 2 plays from zone 3 upward (1 to 200).",
+   "sound": "Higher notes switch to this sample, so a multisample keeps its natural tone across the keyboard."
   },
   {
    "index": 50,
@@ -2122,7 +2222,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "MIDI note (60 = C4) where zone 3 takes over, when its wave is set."
+   "description": "MIDI note (60 = C4) where zone 3 takes over, when its wave is set.",
+   "how": "Sets the MIDI note, 0 to 127, where zone 3 of oscillator 2 takes over from the zone below.",
+   "sound": "Moves the point on the keyboard where the sample changes."
   },
   {
    "index": 51,
@@ -2137,7 +2239,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 200.0,
-   "description": "Wavetable slot for zone 4, from Split 4 up (higher zones win)."
+   "description": "Wavetable slot for zone 4, from Split 4 up (higher zones win).",
+   "how": "Chooses the wavetable slot oscillator 2 plays from zone 4 upward (1 to 200).",
+   "sound": "Higher notes switch to this sample, so a multisample keeps its natural tone across the keyboard."
   },
   {
    "index": 52,
@@ -2152,7 +2256,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "MIDI note (60 = C4) where zone 4 takes over, when its wave is set."
+   "description": "MIDI note (60 = C4) where zone 4 takes over, when its wave is set.",
+   "how": "Sets the MIDI note, 0 to 127, where zone 4 of oscillator 2 takes over from the zone below.",
+   "sound": "Moves the point on the keyboard where the sample changes."
   }
  ],
  "track_parameters": [
@@ -2169,7 +2275,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "Note velocity 0–127 (127 full), per track."
+   "description": "Note velocity 0–127 (127 full), per track.",
+   "how": "Sets the velocity of this track's notes, from 0 to 127 (127 is full).",
+   "sound": "Quieter and duller notes at lower values, through Amp Vel and Filter Vel."
   }
  ]
 }

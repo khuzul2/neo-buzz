@@ -9,12 +9,12 @@ Wavetable = Formants
 Motion Rate = 0.3
 Motion Depth = 60
 Sub Anchor = 20
-Attack = 600
-Decay = 2000
+Attack = 0.6
+Decay = 2
 Sustain = 80
-Release = 1500
+Release = 1.5
 Unison / Spread = 50
-Output = 8.0
+Output = -6.5
 
 preset "Lead — Sync Sweep"
 Frame Pos = 50
@@ -23,12 +23,12 @@ Wavetable = Sync sweep
 Motion Rate = 4
 Motion Depth = 30
 Sub Anchor = 0
-Attack = 2
-Decay = 400
+Attack = 0.002
+Decay = 0.4
 Sustain = 75
-Release = 250
+Release = 0.25
 Unison / Spread = 20
-Output = 0.3
+Output = -6.0
 
 preset "Bass — Pinch"
 Frame Pos = 20
@@ -37,12 +37,12 @@ Wavetable = Basic
 Motion Rate = 0.5
 Motion Depth = 0
 Sub Anchor = 60
-Attack = 1
-Decay = 350
+Attack = 0.001
+Decay = 0.35
 Sustain = 50
-Release = 120
+Release = 0.12
 Unison / Spread = 0
-Output = -10.6
+Output = -11.4
 
 preset "Keys — Organ Table"
 Frame Pos = 30
@@ -51,12 +51,12 @@ Wavetable = Organ
 Motion Rate = 0.2
 Motion Depth = 20
 Sub Anchor = 15
-Attack = 3
-Decay = 800
+Attack = 0.003
+Decay = 0.8
 Sustain = 70
-Release = 250
+Release = 0.25
 Unison / Spread = 10
-Output = 8.2
+Output = -2.9
 
 preset "Pad — Digital Glass"
 Frame Pos = 55
@@ -65,12 +65,12 @@ Wavetable = Digital
 Motion Rate = 0.15
 Motion Depth = 80
 Sub Anchor = 10
-Attack = 900
-Decay = 2500
+Attack = 0.9
+Decay = 2.5
 Sustain = 70
-Release = 2500
+Release = 2.5
 Unison / Spread = 70
-Output = 2.4
+Output = -9.9
 
 preset "Lead — Grit Wobble"
 Frame Pos = 35
@@ -79,12 +79,12 @@ Wavetable = Grit
 Motion Rate = 6
 Motion Depth = 40
 Sub Anchor = 10
-Attack = 2
-Decay = 500
+Attack = 0.002
+Decay = 0.5
 Sustain = 70
-Release = 200
+Release = 0.2
 Unison / Spread = 15
-Output = 0.2
+Output = -5.8
 
 preset "Bass — PWM Wobble"
 Frame Pos = 50
@@ -93,12 +93,12 @@ Wavetable = PWM
 Motion Rate = 2
 Motion Depth = 70
 Sub Anchor = 50
-Attack = 1
-Decay = 400
+Attack = 0.001
+Decay = 0.4
 Sustain = 60
-Release = 150
+Release = 0.15
 Unison / Spread = 0
-Output = -5.1
+Output = -6.9
 
 preset "Pluck — Harmonic Stab"
 Frame Pos = 70
@@ -107,9 +107,9 @@ Wavetable = Harmonics
 Motion Rate = 1
 Motion Depth = 0
 Sub Anchor = 25
-Attack = 0.5
-Decay = 220
+Attack = 0.0005
+Decay = 0.22
 Sustain = 0
-Release = 120
+Release = 0.12
 Unison / Spread = 0
-Output = -9.6
+Output = -4.3

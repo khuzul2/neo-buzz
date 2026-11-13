@@ -25,6 +25,8 @@ namespace NeoBuzz.Learn
         readonly ParamValues controls;
         readonly ParamValues dyeValues;
         readonly Sink sink;
+        LearnFxSet fx;
+        float[] pieceL, pieceR;
         readonly double[] c = new double[MacroMap.Count];
         readonly LevelMeter meter = new LevelMeter();
         float gain = 1f, rate = 48000;
@@ -48,7 +50,9 @@ namespace NeoBuzz.Learn
             map.Map(c, sink);
             Engine = new DyeEngine(dyeValues);
             sink.Push(Engine);
+            if (map.TickSamples > 0) { pieceL = new float[DyeEngine.MaxBlock]; pieceR = new float[DyeEngine.MaxBlock]; }
             SetSampleRate(48000);
+            map.Post(c, fx);
             gain = TargetGain();
             controls.Clean();
         }
@@ -63,8 +67,16 @@ namespace NeoBuzz.Learn
         public void SetSampleRate(float sr)
         {
             rate = sr;
+            map.SetSampleRate(sr);
             Engine.SetSampleRate(sr);
+            if (map.StringOversample > 0) Engine.Bank.PrepareStrings(sr * map.StringOversample);
             meter.SetSampleRate(sr);
+            if (map.FxFlags != 0)
+            {
+                int f = map.FxFlags;
+                fx = new LearnFxSet(sr, (f & MacroMap.FxChorus) != 0, (f & MacroMap.FxGrit) != 0, (f & MacroMap.FxRoom) != 0, (f & MacroMap.FxTilt) != 0);
+                map.Post(c, fx);
+            }
         }
 
         void Read()
@@ -105,9 +117,27 @@ namespace NeoBuzz.Learn
                 Read();
                 map.Map(c, sink);
                 sink.Push(Engine);
+                if (fx != null) map.Post(c, fx);
                 controls.Clean();
             }
-            bool any = Engine.Process(left, right, n);
+            bool any;
+            int piece = map.TickSamples;
+            if (piece <= 0) any = Engine.Process(left, right, n);
+            else
+            {
+                // A map that moves something between ticks (the orbit): the engine plays in pieces and the map moves before each.
+                any = false;
+                for (int at = 0; at < n; at += piece)
+                {
+                    int len = Math.Min(piece, n - at);
+                    map.Tick(c, len, sink);
+                    sink.Push(Engine);
+                    any |= Engine.Process(pieceL, pieceR, len);
+                    Array.Copy(pieceL, 0, left, at, len);
+                    Array.Copy(pieceR, 0, right, at, len);
+                }
+            }
+            fx?.Process(left, right, n);
             float target = TargetGain();
             float g0 = gain, step = (target - g0) / n;
             double sum = 0;
@@ -160,8 +190,8 @@ namespace NeoBuzz.Learn
         {
             readonly ParamValues values;
             // The engine's additions a map writes (OscSettings; a map that never writes one leaves it off), pushed to the engine after each Map.
-            readonly float[] ext = new float[3 * ExtCount];
-            const int ExtCount = 11;
+            readonly float[] ext = new float[ExtSlot.Count * ExtCount];
+            static readonly int ExtCount = Enum.GetValues(typeof(SlotExt)).Length;
             bool extUsed;
 
             public Sink(ParamValues values)
@@ -172,7 +202,9 @@ namespace NeoBuzz.Learn
                 {
                     ext[o * ExtCount + (int)SlotExt.GrainMorph] = -1f;
                     ext[o * ExtCount + (int)SlotExt.ExciterMorph] = -1f;
+                    ext[o * ExtCount + (int)SlotExt.PdShape] = -1f;
                 }
+                for (int o = 0; o < ExtSlot.Count; o++) ext[o * ExtCount + (int)SlotExt.LevelExt] = 1f;
             }
 
             public void Set(int dyeParam, double value) => values.Set(dyeParam, values.Table[dyeParam].Raw(value));
@@ -202,6 +234,36 @@ namespace NeoBuzz.Learn
                     os.ExciterMorph = ext[b + (int)SlotExt.ExciterMorph];
                     os.GeomBlend = ext[b + (int)SlotExt.GeomBlend];
                     os.GeomTo = (int)ext[b + (int)SlotExt.GeomTo];
+                    os.TypeExt = (int)ext[b + (int)SlotExt.TypeExt];
+                    if (os.TypeExt > 0) os.Type = (SlotType)os.TypeExt;                         // Dye's settings code does the same on its next read; this one is for the block that follows a map
+                    os.StrPick = ext[b + (int)SlotExt.StrPick];
+                    os.StrDamp = ext[b + (int)SlotExt.StrDamp];
+                    os.StrHard = ext[b + (int)SlotExt.StrHard];
+                    os.StrDecay = ext[b + (int)SlotExt.StrDecay];
+                    os.StrStiff = ext[b + (int)SlotExt.StrStiff];
+                    os.StrSymp = ext[b + (int)SlotExt.StrSymp];
+                    os.FoldStages = (int)ext[b + (int)SlotExt.FoldStages];
+                    os.FoldDrive = ext[b + (int)SlotExt.FoldDrive];
+                    os.FoldSym = ext[b + (int)SlotExt.FoldSym];
+                    os.PdOn = ext[b + (int)SlotExt.PdShape] >= 0f;
+                    os.PdShape = os.PdOn ? (int)ext[b + (int)SlotExt.PdShape] : 0;
+                    if (os.PdOn) os.Warp1 = Warps.Pd;                                              // as for the type above
+                    os.LevelExt = ext[b + (int)SlotExt.LevelExt];
+                }
+                engine.Bank.S.Sub.LevelExt = ext[ExtSlot.Sub * ExtCount + (int)SlotExt.LevelExt];
+                engine.Bank.S.Noise.LevelExt = ext[ExtSlot.Noise * ExtCount + (int)SlotExt.LevelExt];
+                for (int f = 0; f < 2; f++)
+                {
+                    var fs = engine.Bank.S.Filter[f];
+                    int b = (ExtSlot.Filter1 + f) * ExtCount;
+                    fs.Kind = (int)ext[b + (int)SlotExt.FKind];
+                    if (fs.Kind > 0) fs.Type = FilterType.Vowel + (fs.Kind - 1);                  // as for the oscillator type above
+                    fs.Morph = ext[b + (int)SlotExt.FMorph];
+                    fs.Tract = ext[b + (int)SlotExt.FTract];
+                    fs.Q = ext[b + (int)SlotExt.FQ];
+                    fs.EnvMod = ext[b + (int)SlotExt.FEnvMod];
+                    fs.Mode = ext[b + (int)SlotExt.FMode];
+                    fs.Strike = ext[b + (int)SlotExt.FStrike];
                 }
             }
         }

@@ -66,8 +66,8 @@
      "verdict": "silent"
     },
     "max": {
-     "peak_dbfs": -5.46,
-     "growth_db": -1.27,
+     "peak_dbfs": -5.52,
+     "growth_db": -0.37,
      "verdict": "ok"
     }
    }
@@ -239,7 +239,7 @@
     },
     "DCO Noise": {
      "suggested_role": "filter.cutoff",
-     "evidence": "the brightness (centroid) 1.59 kHz → 4.83 kHz",
+     "evidence": "the brightness (centroid) 1.59 kHz → 4.82 kHz",
      "min": {
       "raw": 0,
       "text": "0"
@@ -440,7 +440,9 @@
    "b": 30.0,
    "unit": "Hz",
    "own_texts": false,
-   "description": "Speed of the triangle LFO, 0.1–30 Hz on an exponential scale."
+   "description": "Speed of the triangle LFO, 0.1–30 Hz on an exponential scale.",
+   "how": "Sets the triangle LFO's speed from 0.1 to 30 Hz.",
+   "sound": "Slow rates drift; fast ones give vibrato or wobble."
   },
   {
    "index": 1,
@@ -457,7 +459,9 @@
    "b": 5.0,
    "unit": "s",
    "own_texts": false,
-   "description": "Time the LFO takes to fade in after each note starts, 0–5 s (0: at once)."
+   "description": "Time the LFO takes to fade in after each note starts, 0–5 s (0: at once).",
+   "how": "Fades the LFO in over 0 to 5 s after each note starts.",
+   "sound": "Notes start steady and the vibrato arrives afterward."
   },
   {
    "index": 2,
@@ -474,7 +478,9 @@
    "b": 1.0,
    "unit": "st",
    "own_texts": false,
-   "description": "LFO to oscillator pitch, up to ±1 semitone."
+   "description": "LFO to oscillator pitch, up to ±1 semitone.",
+   "how": "Sends the LFO to pitch, up to one semitone.",
+   "sound": "Gives vibrato from subtle to wide."
   },
   {
    "index": 3,
@@ -491,7 +497,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "How far the PWM source moves the pulse width (100%: ±45 points of width)."
+   "description": "How far the PWM source moves the pulse width (100%: ±45 points of width).",
+   "how": "Sets how far the PWM source moves the pulse width, up to 45 points either way.",
+   "sound": "Gives the moving, thickening sound of pulse width modulation."
   },
   {
    "index": 4,
@@ -509,7 +517,9 @@
     "LFO",
     "Env"
    ],
-   "description": "What moves the pulse width: Manual (DCO PW alone), the LFO or the envelope."
+   "description": "What moves the pulse width: Manual (DCO PW alone), the LFO or the envelope.",
+   "how": "Chooses what moves the pulse width: the manual knob, the LFO or the envelope.",
+   "sound": "A manual width is static; the LFO gives chorus-like movement; the envelope makes it change with each note."
   },
   {
    "index": 5,
@@ -526,7 +536,9 @@
    "b": 95.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Pulse width with PWM Src at Manual, 50% (square) to 95% (thin)."
+   "description": "Pulse width with PWM Src at Manual, 50% (square) to 95% (thin).",
+   "how": "Sets the pulse width from 50 percent (square) to 95 percent (thin) when the source is Manual.",
+   "sound": "A square sounds hollow; thin pulses sound reedy and nasal."
   },
   {
    "index": 6,
@@ -544,7 +556,9 @@
     "8'",
     "4'"
    ],
-   "description": "16' plays an octave down, 8' as written, 4' an octave up."
+   "description": "16' plays an octave down, 8' as written, 4' an octave up.",
+   "how": "Chooses 16', 8' or 4' for the oscillator's register.",
+   "sound": "Sounds an octave down, as written, or an octave up."
   },
   {
    "index": 7,
@@ -557,7 +571,9 @@
    "max": 1,
    "default": 0,
    "kind": "switch",
-   "description": "Adds the pulse wave."
+   "description": "Adds the pulse wave.",
+   "how": "Switches the pulse wave on or off.",
+   "sound": "Adds a hollow, woody tone to the mix."
   },
   {
    "index": 8,
@@ -570,7 +586,9 @@
    "max": 1,
    "default": 1,
    "kind": "switch",
-   "description": "Adds the sawtooth wave (on by default)."
+   "description": "Adds the sawtooth wave (on by default).",
+   "how": "Switches the sawtooth wave on or off; it is on by default.",
+   "sound": "Adds a bright, buzzy tone to the mix."
   },
   {
    "index": 9,
@@ -587,7 +605,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Square wave one octave below."
+   "description": "Square wave one octave below.",
+   "how": "Sets the level of a square wave one octave down, from 0 to 100 percent.",
+   "sound": "Adds weight and bass."
   },
   {
    "index": 10,
@@ -604,7 +624,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "White noise into the filter."
+   "description": "White noise into the filter.",
+   "how": "Sets the level of white noise into the filter, from 0 to 100 percent.",
+   "sound": "Adds breath, hiss and a rough edge."
   },
   {
    "index": 11,
@@ -623,7 +645,9 @@
     "2",
     "3"
    ],
-   "description": "One-pole high-pass after the voices: Off, 1 ≈ 100 Hz, 2 ≈ 200 Hz, 3 ≈ 400 Hz."
+   "description": "One-pole high-pass after the voices: Off, 1 ≈ 100 Hz, 2 ≈ 200 Hz, 3 ≈ 400 Hz.",
+   "how": "Chooses a one-pole high-pass after the voices: off, or about 100, 200 or 400 Hz.",
+   "sound": "Higher settings thin out the bass."
   },
   {
    "index": 12,
@@ -640,7 +664,9 @@
    "b": 16000.0,
    "unit": "Hz",
    "own_texts": false,
-   "description": "Low-pass cutoff before modulation, 30 Hz – 16 kHz exponential."
+   "description": "Low-pass cutoff before modulation, 30 Hz – 16 kHz exponential.",
+   "how": "Sets the low-pass cutoff before modulation, from 30 Hz to 16 kHz.",
+   "sound": "Low cutoffs sound dark and muffled; high ones open up and brighten."
   },
   {
    "index": 13,
@@ -657,7 +683,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "4-pole ladder feedback; self-oscillates at the top."
+   "description": "4-pole ladder feedback; self-oscillates at the top.",
+   "how": "Adds feedback at the cutoff, from 0 to 100 percent; the top self-oscillates.",
+   "sound": "Low values are smooth; higher values whistle and squelch."
   },
   {
    "index": 14,
@@ -674,7 +702,9 @@
    "b": 6.0,
    "unit": "oct",
    "own_texts": false,
-   "description": "How far the envelope opens the cutoff, up to 6 octaves."
+   "description": "How far the envelope opens the cutoff, up to 6 octaves.",
+   "how": "Sets how far the envelope opens the cutoff, up to 6 octaves.",
+   "sound": "Notes start bright and settle dark: the classic pluck or brass swell."
   },
   {
    "index": 15,
@@ -691,7 +721,9 @@
     "+",
     "-"
    ],
-   "description": "+ opens the filter with the envelope, − closes it."
+   "description": "+ opens the filter with the envelope, − closes it.",
+   "how": "Chooses whether the envelope opens (+) or closes (-) the filter.",
+   "sound": "A negative envelope makes notes start dark and open later in reverse."
   },
   {
    "index": 16,
@@ -708,7 +740,9 @@
    "b": 4.0,
    "unit": "oct",
    "own_texts": false,
-   "description": "LFO to cutoff, up to ±4 octaves."
+   "description": "LFO to cutoff, up to ±4 octaves.",
+   "how": "Sends the LFO to the cutoff, up to 4 octaves either way.",
+   "sound": "Gives a wah-like sweep."
   },
   {
    "index": 17,
@@ -725,7 +759,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "How much the cutoff follows the note (100%: an octave per octave, around C4)."
+   "description": "How much the cutoff follows the note (100%: an octave per octave, around C4).",
+   "how": "Sets how much the cutoff follows the note, up to 100 percent (an octave per octave around C4).",
+   "sound": "At 0 high notes are duller; at 100 the tone stays the same across the keyboard."
   },
   {
    "index": 18,
@@ -742,7 +778,9 @@
     "Env",
     "Gate"
    ],
-   "description": "Env: the envelope shapes the level; Gate: full level while the note is held."
+   "description": "Env: the envelope shapes the level; Gate: full level while the note is held.",
+   "how": "Chooses whether the envelope shapes the level (Env) or the note simply holds at full level (Gate).",
+   "sound": "Env gives plucks and swells; Gate gives an organ-like on and off."
   },
   {
    "index": 19,
@@ -759,7 +797,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Master gain after the voices."
+   "description": "Master gain after the voices.",
+   "how": "Sets the output level after the voices, from 0 to 100 percent.",
+   "sound": "Turns the whole synth up or down."
   },
   {
    "index": 20,
@@ -776,7 +816,9 @@
    "b": 4.0,
    "unit": "s",
    "own_texts": false,
-   "description": "Envelope attack (linear rise), 1 ms – 4 s exponential."
+   "description": "Envelope attack (linear rise), 1 ms – 4 s exponential.",
+   "how": "Sets the envelope's attack from 1 ms to 4 s.",
+   "sound": "Short attacks are percussive; long ones swell in slowly."
   },
   {
    "index": 21,
@@ -793,7 +835,9 @@
    "b": 8.0,
    "unit": "s",
    "own_texts": false,
-   "description": "Envelope decay to the sustain level, 5 ms – 8 s exponential."
+   "description": "Envelope decay to the sustain level, 5 ms – 8 s exponential.",
+   "how": "Sets the time the envelope takes to fall to the sustain level, from 5 ms to 8 s.",
+   "sound": "Short decays pluck; long ones keep the note bright."
   },
   {
    "index": 22,
@@ -810,7 +854,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Level held while the note is down."
+   "description": "Level held while the note is down.",
+   "how": "Sets the level held while the key is down, from 0 to 100 percent.",
+   "sound": "Low sustain makes plucks; high sustain holds pads."
   },
   {
    "index": 23,
@@ -827,7 +873,9 @@
    "b": 8.0,
    "unit": "s",
    "own_texts": false,
-   "description": "Envelope release after the note ends, 5 ms – 8 s exponential."
+   "description": "Envelope release after the note ends, 5 ms – 8 s exponential.",
+   "how": "Sets how long the envelope takes to fall after the key is let go, from 5 ms to 8 s.",
+   "sound": "Short releases cut off; long ones leave a tail."
   },
   {
    "index": 24,
@@ -846,7 +894,9 @@
     "II",
     "III"
    ],
-   "description": "BBD chorus: I ≈ 0.5 Hz lush, II ≈ 0.9 Hz denser, III ≈ 9.9 Hz fast warble; makes the output stereo."
+   "description": "BBD chorus: I ≈ 0.5 Hz lush, II ≈ 0.9 Hz denser, III ≈ 9.9 Hz fast warble; makes the output stereo.",
+   "how": "Chooses the chorus: off, I (slow and lush), II (denser) or III (fast warble).",
+   "sound": "Widens the sound into stereo and adds shimmer."
   }
  ],
  "track_parameters": []

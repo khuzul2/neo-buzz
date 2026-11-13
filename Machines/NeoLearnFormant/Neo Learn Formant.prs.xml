@@ -1,0 +1,163 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Choir — Ah Pad">
+    <Preset Machine="Neo Learn Formant">
+      <Parameters>
+        <Parameter Name="Vowel (A-E-I-O-U)" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Tract Size" Group="1" Index="1" Track="0" Value="500" />
+        <Parameter Name="Formant Q" Group="1" Index="2" Track="0" Value="250" />
+        <Parameter Name="Glottal / Bass" Group="1" Index="3" Track="0" Value="300" />
+        <Parameter Name="Breath Noise" Group="1" Index="4" Track="0" Value="100" />
+        <Parameter Name="Talking Env" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="695" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="812" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="800" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="668" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="300" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="513" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Choir — Ooh Swell">
+    <Preset Machine="Neo Learn Formant">
+      <Parameters>
+        <Parameter Name="Vowel (A-E-I-O-U)" Group="1" Index="0" Track="0" Value="1000" />
+        <Parameter Name="Tract Size" Group="1" Index="1" Track="0" Value="550" />
+        <Parameter Name="Formant Q" Group="1" Index="2" Track="0" Value="300" />
+        <Parameter Name="Glottal / Bass" Group="1" Index="3" Track="0" Value="250" />
+        <Parameter Name="Breath Noise" Group="1" Index="4" Track="0" Value="150" />
+        <Parameter Name="Talking Env" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="801" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="812" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="850" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="721" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="400" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="344" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Voice — Whisper">
+    <Preset Machine="Neo Learn Formant">
+      <Parameters>
+        <Parameter Name="Vowel (A-E-I-O-U)" Group="1" Index="0" Track="0" Value="500" />
+        <Parameter Name="Tract Size" Group="1" Index="1" Track="0" Value="600" />
+        <Parameter Name="Formant Q" Group="1" Index="2" Track="0" Value="450" />
+        <Parameter Name="Glottal / Bass" Group="1" Index="3" Track="0" Value="50" />
+        <Parameter Name="Breath Noise" Group="1" Index="4" Track="0" Value="900" />
+        <Parameter Name="Talking Env" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="500" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="718" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="700" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="577" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="352" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Wah Talker">
+    <Preset Machine="Neo Learn Formant">
+      <Parameters>
+        <Parameter Name="Vowel (A-E-I-O-U)" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Tract Size" Group="1" Index="1" Track="0" Value="300" />
+        <Parameter Name="Formant Q" Group="1" Index="2" Track="0" Value="600" />
+        <Parameter Name="Glottal / Bass" Group="1" Index="3" Track="0" Value="700" />
+        <Parameter Name="Breath Noise" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Talking Env" Group="1" Index="5" Track="0" Value="800" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="151" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="594" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="600" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="447" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="527" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Lead — Yoi Synth">
+    <Preset Machine="Neo Learn Formant">
+      <Parameters>
+        <Parameter Name="Vowel (A-E-I-O-U)" Group="1" Index="0" Track="0" Value="250" />
+        <Parameter Name="Tract Size" Group="1" Index="1" Track="0" Value="650" />
+        <Parameter Name="Formant Q" Group="1" Index="2" Track="0" Value="550" />
+        <Parameter Name="Glottal / Bass" Group="1" Index="3" Track="0" Value="650" />
+        <Parameter Name="Breath Noise" Group="1" Index="4" Track="0" Value="50" />
+        <Parameter Name="Talking Env" Group="1" Index="5" Track="0" Value="250" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="250" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="624" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="750" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="485" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="504" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Voice — Giant Bass">
+    <Preset Machine="Neo Learn Formant">
+      <Parameters>
+        <Parameter Name="Vowel (A-E-I-O-U)" Group="1" Index="0" Track="0" Value="750" />
+        <Parameter Name="Tract Size" Group="1" Index="1" Track="0" Value="50" />
+        <Parameter Name="Formant Q" Group="1" Index="2" Track="0" Value="400" />
+        <Parameter Name="Glottal / Bass" Group="1" Index="3" Track="0" Value="450" />
+        <Parameter Name="Breath Noise" Group="1" Index="4" Track="0" Value="100" />
+        <Parameter Name="Talking Env" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="500" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="718" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="900" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="606" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="358" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Voice — Child Choir">
+    <Preset Machine="Neo Learn Formant">
+      <Parameters>
+        <Parameter Name="Vowel (A-E-I-O-U)" Group="1" Index="0" Track="0" Value="500" />
+        <Parameter Name="Tract Size" Group="1" Index="1" Track="0" Value="900" />
+        <Parameter Name="Formant Q" Group="1" Index="2" Track="0" Value="350" />
+        <Parameter Name="Glottal / Bass" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Breath Noise" Group="1" Index="4" Track="0" Value="200" />
+        <Parameter Name="Talking Env" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="651" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="773" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="800" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="630" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="350" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="371" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Texture — Robot Chant">
+    <Preset Machine="Neo Learn Formant">
+      <Parameters>
+        <Parameter Name="Vowel (A-E-I-O-U)" Group="1" Index="0" Track="0" Value="400" />
+        <Parameter Name="Tract Size" Group="1" Index="1" Track="0" Value="500" />
+        <Parameter Name="Formant Q" Group="1" Index="2" Track="0" Value="900" />
+        <Parameter Name="Glottal / Bass" Group="1" Index="3" Track="0" Value="850" />
+        <Parameter Name="Breath Noise" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Talking Env" Group="1" Index="5" Track="0" Value="900" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="151" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="555" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="394" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="633" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

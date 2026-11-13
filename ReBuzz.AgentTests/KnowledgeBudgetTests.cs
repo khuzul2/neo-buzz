@@ -76,7 +76,7 @@ namespace ReBuzz.AgentTests
                 .Any(m => GuideTests.KnownTools.ContainsKey(m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value));
 
         /// <summary>What is wrong with a page against the template: missing or misordered sections, a Key controls list outside 5 to 8, a Checklist with no items.</summary>
-        internal static List<string> TemplateProblems(string page)
+        internal static List<string> TemplateProblems(string page, int controlCount = int.MaxValue)
         {
             var problems = new List<string>();
             var headings = Regex.Matches(page, @"(?m)^## (.+?)\s*$").Select(m => m.Groups[1].Value).ToList();
@@ -98,7 +98,9 @@ namespace ReBuzz.AgentTests
             {
                 int rows = Regex.Matches(controls, @"(?m)^\s*(?:-|\*|\d+\.)\s+\S").Count;
                 if (rows == 0) rows = Math.Max(0, Regex.Matches(controls, @"(?m)^\|.+\|\s*$").Count - 2);
-                if (rows < 5 || rows > 8) problems.Add($"\"Key controls\" lists {rows} controls (5 to 8)");
+                // 5 to 8; a machine with fewer controls than that lists them all (Pedal Gain has three parameters).
+                int least = Math.Min(5, controlCount);
+                if (rows < least || rows > 8) problems.Add($"\"Key controls\" lists {rows} controls ({(least < 5 ? $"all {least} of the machine's, at most 8" : "5 to 8")})");
             }
             string checklist = Section("Checklist");
             if (checklist.Length > 0)
@@ -119,7 +121,8 @@ namespace ReBuzz.AgentTests
             int conforming = 0;
             foreach (var gear in MachineManual.CuratedGear)
             {
-                var problems = TemplateProblems(MachineManual.Curated(gear)!);
+                var manifest = CuratedManifestTests.Profiled().GetValueOrDefault(gear);
+                var problems = TemplateProblems(MachineManual.Curated(gear)!, manifest == null ? int.MaxValue : manifest.Parameters.Count + manifest.TrackParameters.Count);
                 if (problems.Count == 0) conforming++;
                 else (KnowledgePending.Gear.Contains(gear) ? pending : failures).Add($"{gear}: {string.Join("; ", problems)}");
             }
@@ -143,6 +146,8 @@ namespace ReBuzz.AgentTests
             Assert.That(TemplateProblems("## Use it for\nBuses.\n\n## How it sounds\nSmooth.\n"), Has.Some.Contain("out of order"));
             string table = good.Replace("- A: 1 dB\n- B: 2 dB\n- C: 3 dB\n- D: 4 dB\n- E: 5 dB\n", "| Param | Value |\n|---|---|\n| A | 1 |\n| B | 2 |\n| C | 3 |\n| D | 4 |\n| E | 5 |\n");
             Assert.That(TemplateProblems(table), Is.Empty, "a table of controls counts its rows");
+            Assert.That(TemplateProblems(good.Replace("- D: 4 dB\n- E: 5 dB\n", ""), 3), Is.Empty, "a machine with three controls lists its three");
+            Assert.That(TemplateProblems(good.Replace("- D: 4 dB\n- E: 5 dB\n", ""), 5), Has.Some.Contain("lists 3 controls"), "but a machine with five lists five");
         }
 
         // ---- the coverage report --------------------------------------------------------------------
