@@ -31,12 +31,14 @@
     <Reference Include="NAudio.Midi"><HintPath>..\3rdParty\NAudio\NAudio.Midi.dll</HintPath></Reference>
     <!-- ASIO on Windows (WindowsHostAudioDriverFactory): NAudio.Asio (MIT), which uses the installed drivers' COM interface. -->
     <Reference Include="NAudio.Asio"><HintPath>..\3rdParty\NAudio\NAudio.Asio.dll</HintPath></Reference>
+    <Reference Include="NAudio.Wasapi"><HintPath>..\3rdParty\NAudio\NAudio.Wasapi.dll</HintPath></Reference>
     <Reference Include="NAudio.WinMM"><HintPath>..\3rdParty\NAudio\NAudio.WinMM.dll</HintPath></Reference>
   </ItemGroup>
 
-  <!-- The WPF app's ASIO driver, shared as it is (it builds in ReBuzz.exe too); the engine excludes it (EngineFiles.props). -->
+  <!-- The WPF app's ASIO and WASAPI drivers, shared as it is (it builds in ReBuzz.exe too); the engine excludes it (EngineFiles.props). -->
   <ItemGroup>
     <Compile Include="..\ReBuzz\Audio\Driver\AsioAudioDriver.cs" Link="Asio\AsioAudioDriver.cs" />
+    <Compile Include="..\ReBuzz\Audio\Driver\WasapiAudioDriver.cs" Link="Asio\WasapiAudioDriver.cs" />
   </ItemGroup>
 
   <ItemGroup>

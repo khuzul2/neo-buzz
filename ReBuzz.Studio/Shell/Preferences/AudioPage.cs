@@ -12,6 +12,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using ReBuzz.Audio;
+using ReBuzz.Host;
 using ReBuzz.Core;
 using ReBuzz.Platform;
 
@@ -40,6 +41,8 @@ namespace ReBuzz.Studio.Shell.Preferences
         readonly TextBlock status = new TextBlock { TextWrapping = Avalonia.Media.TextWrapping.Wrap };
         readonly TextBlock missing;
         Button asioPanel;
+        readonly CheckBox exclusive = new CheckBox { Content = "Exclusive (other apps go silent)" }, advanced = new CheckBox { Content = "Show advanced devices (WDM-KS)" };
+        string note;
         List<string> listed = new List<string>(), outputs = new List<string>(), inputs = new List<string>();
 
         public AudioPage(ReBuzzCore core, IRegistryEx registry, PrefsModel model) : base(model)
@@ -50,6 +53,15 @@ namespace ReBuzz.Studio.Shell.Preferences
             Heading("Output");
             missing = Note("PortAudio isn't installed here (macOS: brew install portaudio; Linux: libportaudio2), so there are no devices.", Problem);
             Row("Output device", output, "\"PortAudio: default\" follows the system's output device. On Windows the installed ASIO drivers come first (they use their own buffer size and rate: their control panel), then WASAPI, WDM-KS, DirectSound and MME.");
+            if (OperatingSystem.IsWindows())
+            {
+                // The user's choice for Windows (ux-overhaul.md P6, decision 3): ASIO first (the default when a driver is installed), WASAPI shared
+                // with low latency (the default without ASIO), shared, and exclusive behind this switch; WDM-KS under advanced; no DirectSound or MME.
+                Row("WASAPI mode", exclusive, "Off: shared, so other apps keep playing. On: the device is yours alone, event-driven, and every other app goes silent while it plays.");
+                Row("Advanced", advanced, "Also lists the WDM-KS devices.");
+                exclusive.IsCheckedChanged += (s, e) => { if (!Filling) SetSwitch("audio.WasapiExclusive", WindowsHostAudioDriverFactory.ExclusiveKey, exclusive.IsChecked == true, exclusiveChanged: true); };
+                advanced.IsCheckedChanged += (s, e) => { if (!Filling) SetSwitch("audio.ShowAdvancedDevices", WindowsHostAudioDriverFactory.AdvancedKey, advanced.IsChecked == true, exclusiveChanged: false); };
+            }
             Row("Input", input, "What audio takes record from (the Session View); none plays without input.");
             Row("Sample rate", rate);
             Row("Buffer size", buffer, "Smaller: less latency, more CPU. Dropouts in the status line mean it's too small.");
@@ -145,7 +157,9 @@ namespace ReBuzz.Studio.Shell.Preferences
                 algorithm.ItemsSource = Algorithms;
                 algorithm.SelectedIndex = Math.Clamp(registry.Read("WorkAlgorithm", DefaultAlgorithm, "Settings"), 0, Algorithms.Length - 1);
 
-                status.Text = DeviceStatus(core);
+                exclusive.IsChecked = registry.Read(WindowsHostAudioDriverFactory.ExclusiveKey, 0, "Settings") == 1;
+                advanced.IsChecked = registry.Read(WindowsHostAudioDriverFactory.AdvancedKey, 0, "Settings") == 1;
+                status.Text = note == null ? DeviceStatus(core) : note + " " + DeviceStatus(core);
                 if (asioPanel != null) asioPanel.IsVisible = core.AudioEngine?.SelectedOutDevice?.Type == Audio.Engine.AudioEngine.AudioOutType.ASIO;
             }
             finally
@@ -164,6 +178,8 @@ namespace ReBuzz.Studio.Shell.Preferences
             string text = $"Playing through {device.Name} at {core.SelectedAudioDriverSampleRate} Hz, {driver?.BufferSize} frames";
             if (driver is PortAudioDriver pa && core.SelectedAudioDriverSampleRate > 0)
                 text += $" ({pa.LatencyFrames * 1000.0 / core.SelectedAudioDriverSampleRate:0.#} ms to the speakers)";
+            else if (core.SelectedAudioDriverSampleRate > 0 && core.OutputLatencySamples > 0)
+                text += $" ({core.OutputLatencySamples * 1000.0 / core.SelectedAudioDriverSampleRate:0.#} ms to the speakers)";
             if (engine.SelectedInDevice != null) text += $"; input from {engine.SelectedInDevice.Name}";
             return text + ".";
         }
@@ -187,7 +203,45 @@ namespace ReBuzz.Studio.Shell.Preferences
                 ReopenHook(device);
                 return;
             }
+            if (OperatingSystem.IsWindows() && core.AudioEngine?.SelectedOutDevice != null && core.AudioEngine.SelectedOutDevice.Name != device)
+            {
+                _ = ReopenChecked(device);
+                return;
+            }
+            note = null;
             Reopen(core, device);
+        }
+
+        /// <summary>
+        /// A new device, with the way back audio_set has (AudioSwitch, ReBuzz.Agent): if it doesn't open, no audio flows or the dropouts
+        /// spike, the one that played is put back and the status says why.
+        /// </summary>
+        async System.Threading.Tasks.Task ReopenChecked(string device)
+        {
+            var audio = new ReBuzz.Agent.AudioBackend(core);
+            var previous = audio.Current();
+            var wanted = new ReBuzz.Agent.App.AudioConfig(device, previous.BufferFrames, previous.SampleRate);
+            var done = await ReBuzz.Agent.App.AudioSwitch.Apply(audio, (work, ct) => System.Threading.Tasks.Task.FromResult(work()), previous, wanted, default);
+            note = done.Applied ? null : $"Not applied: {done.Reason} {previous.Device} is back." + done.RevertNote;
+            if (!done.Applied) registry.Write("AudioDriver", previous.Device, "Settings");
+            if (done.Applied && core.AudioEngine.SelectedOutDevice != null)
+                System.Runtime.GCSettings.LatencyMode = System.Runtime.GCLatencyMode.SustainedLowLatency;
+            Refresh();
+        }
+
+        /// <summary>A switch of the audio section (WASAPI exclusive, advanced devices): saved, the device list made again, and the device chosen again where the mode changed.</summary>
+        void SetSwitch(string settingKey, string key, bool on, bool exclusiveChanged)
+        {
+            string before = Model?.Get(settingKey) ?? "";
+            registry.Write(key, on ? 1 : 0, "Settings");
+            Model?.Record(settingKey, before, Model.Get(settingKey));
+            listed = (OutputSource?.Invoke() ?? Outputs()).ToList();
+            if (exclusiveChanged && WasapiModes.IsWasapi(SavedOutput))
+            {
+                registry.Write("AudioDriver", on ? WasapiModes.Exclusive : WasapiModes.SharedLowLatency, "Settings");
+                Reopen();
+            }
+            Refresh();
         }
 
         /// <summary>

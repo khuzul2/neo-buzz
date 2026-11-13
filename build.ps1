@@ -893,7 +893,9 @@ x86 and x64, run in its own copy of bin32 and bin64) and the songs, but not the 
   - Managed machines built for the app above (WPF) aren't loaded; a song with one shows it as not
     installed. The Neo machines, the Pattern Editor and the Pedal machines are there with their new editors.
   - Audio: Preferences > Audio lists the installed ASIO drivers (the same path as the app above, through NAudio;
-    the default when one is installed), then the WASAPI, WDM-KS, DirectSound and MME devices (PortAudio).
+    the default when one is installed), then WASAPI: shared with low latency (the default without ASIO),
+    shared, and exclusive behind a switch (other apps go silent). WDM-KS (PortAudio) under Advanced. No
+    DirectSound or MME. If a device doesn't start or stays silent, the one that played comes back.
   - MIDI: WinMM inputs, outputs and clock; no Windows MIDI Services endpoint, no virtual ports.
   - No installer, no file associations, no vertical sequence editor, wavetable, Latency and Signal Analysis
     windows, CPU monitor or Hard Disk Recorder yet (docs/specs/ux-overhaul.md section 9).
