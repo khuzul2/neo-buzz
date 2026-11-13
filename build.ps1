@@ -738,7 +738,7 @@ if (Test-Path -LiteralPath ([IO.Path]::Combine($StudioStage, 'NeoBuzzLiveStudio.
     $studioSummary = "Studio\ $([math]::Round($studioBytes / 1MB, 1)) MB: $sharedNative native DLLs and $sharedOther other files shared from Gear, $leftOut managed (WPF) DLLs left out"
     Write-Host $studioSummary
 } elseif (-not $SkipStudio) {
-    Write-Warning "NeoBuzz Live Studio (preview) not found in $StudioStage: the package has no Studio\ folder"
+    Write-Warning "NeoBuzz Live Studio (preview) not found in ${StudioStage}: the package has no Studio\ folder"
 }
 
 $toolsetText = if ($PlatformToolset) { $PlatformToolset } else { 'project default (v145)' }
