@@ -54,9 +54,10 @@ namespace ReBuzz.Studio.Parameters
             core.SongCore.ActionStack.Do(new PresetChange(core, machine, () => preset));
         }
 
-        internal sealed class ParameterChange : IAction
+        internal sealed class ParameterChange : IAction, BuzzGUI.Common.IHistoryAction
         {
             readonly ReBuzzCore core;
+            readonly string parameterName;
             readonly string machine;
             readonly int group, index, track;
             readonly int from;
@@ -68,6 +69,7 @@ namespace ReBuzz.Studio.Parameters
             {
                 this.core = core;
                 machine = p.Group.Machine.Name;
+                parameterName = p.Name;
                 group = p.Group.Machine.ParameterGroups.IndexOf(p.Group);
                 index = p.IndexInGroup;
                 this.track = track;
@@ -75,6 +77,10 @@ namespace ReBuzz.Studio.Parameters
                 this.to = to;
                 this.stepped = stepped;
             }
+
+            string BuzzGUI.Common.IHistoryAction.HistoryName => "Set " + machine + " " + parameterName;
+            long BuzzGUI.Common.IHistoryAction.HistoryBytes => 0;
+            System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<object, long>> BuzzGUI.Common.IHistoryAction.HistoryBlobs => null;
 
             public bool Extends(IParameter p, int t) =>
                 stepped && t == track && p.IndexInGroup == index && p.Group.Machine.Name == machine
@@ -106,6 +112,7 @@ namespace ReBuzz.Studio.Parameters
         /// function): <paramref name="change"/> runs once, the first time, and returns the state to
         /// apply (or null when it set the values itself); redo and undo apply the snapshots.
         /// </summary>
+        [BuzzGUI.Common.HistoryName("Load preset")]
         internal sealed class PresetChange : IAction
         {
             readonly ReBuzzCore core;

@@ -245,6 +245,7 @@ namespace ReBuzz.Core
         {
             this.dispatcher = dispatcher;
             this.engineSettings = engineSettings;
+            HookHistory(actionStack, true);
             if (dispatcher != null)
             {
                 uiEvents = UiEventQueue.For(dispatcher);
@@ -325,7 +326,7 @@ namespace ReBuzz.Core
         public bool CanUndo { get => ActionStack.CanUndo; }
 
         public bool CanRedo { get => ActionStack.CanRedo; }
-        ManagedActionStack actionStack = new ManagedActionStack();
+        ManagedActionStack actionStack = HistorySettings.NewStack();
         private IDictionary<string, string> importDictionary;
 
         private readonly IUiDispatcher dispatcher;
@@ -335,7 +336,41 @@ namespace ReBuzz.Core
 
         //internal bool Importing { get; set; }
 
-        public ManagedActionStack ActionStack { get => actionStack; set => actionStack = value; }
+        public ManagedActionStack ActionStack
+        {
+            get => actionStack;
+            set
+            {
+                HookHistory(actionStack, false);
+                actionStack = value;
+                HookHistory(actionStack, true);
+                HistoryChanged?.Invoke();
+            }
+        }
+
+        /// <summary>Fork (history-snapshots.md HS1): the song's history changed (a step, undo, redo, a new song's stack).</summary>
+        public event Action HistoryChanged;
+
+        /// <summary>Fork (history-snapshots.md HS1): a group was done, undone or redone, whichever view asked.</summary>
+        public event Action<HistoryChange> HistoryApplied;
+
+        void HookHistory(ManagedActionStack stack, bool on)
+        {
+            if (stack == null) return;
+            if (on)
+            {
+                stack.Changed += RaiseHistoryChanged;
+                stack.Applied += RaiseHistoryApplied;
+            }
+            else
+            {
+                stack.Changed -= RaiseHistoryChanged;
+                stack.Applied -= RaiseHistoryApplied;
+            }
+        }
+
+        void RaiseHistoryChanged() => HistoryChanged?.Invoke();
+        void RaiseHistoryApplied(HistoryChange change) => HistoryApplied?.Invoke(change);
 
         /// <summary>
         /// Fork (0.4.1): patterns given a play position in the last block, so the next block

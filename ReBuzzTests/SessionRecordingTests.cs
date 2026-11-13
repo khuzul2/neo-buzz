@@ -393,6 +393,7 @@ namespace ReBuzzTests
             automation.SetEvents(new[] { new PatternEvent(2 * TB, 1) }, true);
             var layout = rig.Layout;
             layout.Ensure();
+            rig.Core.SongCore.ActionStack.Clear();                // the history is the song's: the rig's own steps aren't this test's
             var track = layout.SequenceOf(0)!;
             rig.Session.Launch(track, clip);
             rig.PlayTo(1);

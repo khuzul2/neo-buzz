@@ -250,6 +250,7 @@ namespace ReBuzz.Core.Session
     /// changed them since. The edit is already made when the action is pushed, so the first Do
     /// does nothing.
     /// </summary>
+    [BuzzGUI.Common.HistoryName("Edit arrangement")]
     internal sealed class ArrangementSnapshotAction : IAction
     {
         internal readonly record struct SequenceChange(ISequence Sequence, KeyValuePair<int, SequenceEvent>[] Before, KeyValuePair<int, SequenceEvent>[] After);

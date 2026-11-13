@@ -11,6 +11,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using ReBuzz.Core;
+using ReBuzz.Core.Actions;
 using ReBuzz.Studio.Shell.Commands;
 using ReBuzz.Studio.Shell.Design;
 using BuzzCommand = BuzzGUI.Interfaces.BuzzCommand;
@@ -53,13 +54,13 @@ namespace ReBuzz.Studio.Shell
             play.Click += (s, e) => Play();
             stop.Click += (s, e) => Stop();
             record.Click += (s, e) => { if (!updating) ToggleRecord(); };
-            loop.Click += (s, e) => { if (!updating && Core != null) Core.Looping = loop.IsChecked == true; };
+            loop.Click += (s, e) => { if (!updating && Core != null) TransportEdits.SetLooping(Core, loop.IsChecked == true); };
             metronome.Click += (s, e) => { if (!updating) SetMetronome(metronome.IsChecked == true); };
             bpm.ValueChanged += (s, e) =>
             {
                 if (updating || Core == null || e.NewValue is not decimal v) return;
                 int value = (int)Math.Round(v);
-                if (value != Core.BPM) Core.BPM = value;
+                if (value != Core.BPM) TransportEdits.SetTempo(Core, value);
             };
             Child = new StackPanel
             {
@@ -120,7 +121,7 @@ namespace ReBuzz.Studio.Shell
 
         public void ToggleLoop()
         {
-            if (Core != null) Core.Looping = !Core.Looping;
+            if (Core != null) TransportEdits.SetLooping(Core, !Core.Looping);
         }
 
         /// <summary>The metronome (the session's click on every beat, heard and never recorded).</summary>

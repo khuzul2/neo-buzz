@@ -36,6 +36,10 @@
         [BuzzSetting(false, Description = "Prototype (#107): use a cached topological work order instead of the per-chunk graph re-scan. Affects the single-thread, Groups (algorithm 0) and Threads (algorithm 2) paths.")]
         public bool UseCachedWorkOrder { get; set; }
 
+        // Fork (docs/specs/history-snapshots.md HS1): what a song's undo history may hold; the oldest steps drop first.
+        [BuzzSetting(256, Description = "Memory the song's undo history may use, in MB (per song). The oldest steps drop first.")]
+        public int HistoryMemoryMB { get; set; }
+
         [BuzzSetting(PriorityProfileType.NormalAppPriority, Description = "Priority setting for threads and processes (restart).")]
         public PriorityProfileType PriorityProfile { get; set; }
 

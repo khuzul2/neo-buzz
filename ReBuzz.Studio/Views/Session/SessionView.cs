@@ -285,8 +285,8 @@ namespace ReBuzz.Studio.Views.Session
             bar.Children.Add(left);
 
             var right = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 4, 6, 4), VerticalAlignment = VerticalAlignment.Top };
-            undoButton = new FlatButton("↶", () => layout.Undo(), $"Undo grid edit ({Shell.Commands.KeyText.Of("Cmd+Z")})") { Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(0, 0, 2, 0) };
-            redoButton = new FlatButton("↷", () => layout.Redo(), $"Redo grid edit ({Shell.Commands.KeyText.Of(OperatingSystem.IsMacOS() ? "Shift+Cmd+Z" : "Cmd+Y")})") { Padding = new Thickness(8, 3, 8, 3) };
+            undoButton = new FlatButton("↶", () => layout.Undo(), $"Undo the last edit ({Shell.Commands.KeyText.Of("Cmd+Z")})") { Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(0, 0, 2, 0) };
+            redoButton = new FlatButton("↷", () => layout.Redo(), $"Redo the last edit ({Shell.Commands.KeyText.Of(OperatingSystem.IsMacOS() ? "Shift+Cmd+Z" : "Cmd+Y")})") { Padding = new Thickness(8, 3, 8, 3) };
             // Fork (ux-overhaul.md §3.2): the ↶ ↷ glyphs at 16 pt (they drew about 6 pt tall, gallery mac-012).
             Avalonia.Controls.Documents.TextElement.SetFontSize(undoButton, 16);
             Avalonia.Controls.Documents.TextElement.SetFontSize(redoButton, 16);

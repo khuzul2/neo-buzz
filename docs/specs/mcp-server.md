@@ -34,7 +34,7 @@ From a code inventory (file references in §13):
 | Rendering | `WorkManager.MainAudioFillBuffer` renders any amount of audio, faster than real time, with no device (the test Driver uses it). `IBuzz.RenderAudio` needs an open driver; the HD recorder is window code | Offline render uses the WorkManager path; internal, so the server lives in the ReBuzz assembly's trust boundary |
 | Headless | `ReBuzzCore` runs without a window, with injected dispatcher, registry, file choices and user messages (the test Driver does it). Windows only | A headless mode is a small step, not a rewrite |
 | Threading | One audio lock per render buffer; a per-machine lock for parameter sets; property changes on the UI dispatcher | All tool calls go through one engine queue |
-| Undo | Graph actions are undoable (`SongCore.ActionStack`, action groups); the Session View has its own stack | Each mutating tool call becomes one undo group |
+| Undo | Graph actions are undoable (`SongCore.ActionStack`, action groups); the Session View's edits are on the same stack ([`history-snapshots.md`](history-snapshots.md) HS1) | Each mutating tool call becomes one undo group, a step with source Agent |
 | Modal dialogs | Open, save and preset failures call `MessageBox` | The server injects non-modal user messages and turns them into tool errors |
 | Analysis | Onsets, tempo and slices (`Core/Clips/AudioAnalysis.cs`), an FFT. No loudness or true peak | A real analysis library is needed (§7) |
 
@@ -74,7 +74,7 @@ The server announces itself as `neobuzz-live`, titled "NeoBuzz Live" (`GuideLibr
 - **One engine queue.** Tools run one at a time on the engine thread (the WPF dispatcher in studio mode, a dedicated thread in headless mode). Reads are cheap; writes take the locks ReBuzz already uses. A call never blocks the audio callback for longer than a parameter set does today.
 - **Long work** (renders over ~2 s, analyses of long ranges, bounces) reports progress notifications. With the tasks extension it runs as a task the client can poll or cancel.
 - **No modal dialogs.** The server injects `IUserMessages`/file-choice implementations that fail fast with a message instead of opening a dialog. Those messages become tool errors that say what to do next.
-- **Undo.** Each mutating call opens an action group and closes it at the end, so `undo` reverts a whole call. Session View edits go to its own stack inside the same logical step.
+- **Undo.** Each mutating call opens an action group and closes it at the end, so `undo` reverts a whole call. Session View edits are steps of the same stack (`history-snapshots.md` HS1), so they are in the same group.
 
 ### 3.3 Addressing and units (the agent never guesses)
 
