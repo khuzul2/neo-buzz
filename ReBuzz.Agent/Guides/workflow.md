@@ -56,7 +56,7 @@ Read the one for the job with `guide(topic=…)` (or the resource rebuzz://guide
 Machine manuals: `guide(machine="Neo Poly")` (every parameter, how to use it, presets). The resource rebuzz://reference/tools lists every tool with its inputs and units, generated from the tools themselves, so it is always current. Prompts give a whole plan: compose, design-sound, mix, master, critique.
 
 ## Undo
-Each changing call is one undo step: `undo` reverts your last call whole. In studio mode the user's own edits share the same history, so check `studio_status`'s `next_undo` before undoing.
+Each changing call is one undo step: `undo` reverts your last call whole. In studio mode the user's own edits share the same history, so check `studio_status`'s `next_undo` before undoing. `history_list(limit=10)` shows the steps (name, source, time); `history_jump(step=…)` goes back or forward to one: it can undo several steps, the user's too, so list first.
 
 ## Errors
 Errors say what to do next ("Did you mean …", the valid range, the call that lists the names). Read them and adjust the call; don't retry the same arguments.
@@ -67,4 +67,5 @@ Errors say what to do next ("Did you mean …", the valid range, the call that l
 - [ ] Nothing clips: `analyze(source=…, metrics=["peaks"])` shows no clipped samples; a master's true peak is -1 dBTP or lower.
 - [ ] Notes read back as you meant them: `notes_read`.
 - [ ] Every claim has a number behind it: `analyze` on the render you describe.
+- [ ] A change that measured worse is backed out: `undo`, or `history_list` then `history_jump` for several steps.
 - [ ] Saved: `song_save(path=…)`; `.bmxml` keeps everything.

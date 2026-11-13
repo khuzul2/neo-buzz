@@ -1,3 +1,5 @@
+using ReBuzz.Core;
+using ReBuzz.Core.Actions;
 using System;
 using System.IO;
 using System.Linq;
@@ -205,6 +207,47 @@ namespace ReBuzzTests
 
             var cleared = Ok(rig, "arrangement_clear", new JsonObject { ["machine"] = "Lead", ["from"] = 16, ["to"] = "13.1" });
             Assert.That(cleared.Data["removed"]!.GetValue<int>(), Is.EqualTo(2));
+        }
+
+        /// <summary>history-snapshots.md HS1b: the shared history as a list, and a jump over several steps, the person's included.</summary>
+        [Test]
+        public void HistoryListAndJumpWalkTheSharedHistory()
+        {
+            using var rig = new Rig(NeoMachineTests.Poly);
+            var core = rig.Driver.Core;
+            Ok(rig, "song_set", new JsonObject { ["tempo_bpm"] = 100 });
+            Ok(rig, "machine_add", new JsonObject { ["gear"] = "Neo Poly", ["name"] = "Bass" });
+            TransportEdits.SetTempo(core, 111);                       // a person's edit in the window
+            Ok(rig, "song_set", new JsonObject { ["tempo_bpm"] = 130 });
+
+            var first = Ok(rig, "history_list").Data;
+            var steps = first["steps"]!.AsArray();
+            Assert.That(steps.Count, Is.GreaterThanOrEqualTo(4));
+            Assert.That(steps[0]!["current"]!.GetValue<bool>(), Is.True, "newest first, and it is where we are");
+            Assert.That(steps[0]!["source"]!.GetValue<string>(), Is.EqualTo("agent"));
+            Assert.That(steps.Select(x => x!["source"]!.GetValue<string>()), Does.Contain("manual"), "the person's edit is a step too");
+            Assert.That(Ok(rig, "history_list", new JsonObject { ["limit"] = 2 }).Data["steps"]!.AsArray().Count, Is.EqualTo(2));
+
+            int manual = steps.First(x => x!["source"]!.GetValue<string>() == "manual")!["id"]!.GetValue<int>();
+            var jumped = Ok(rig, "history_jump", new JsonObject { ["step"] = manual });
+            Assert.That(jumped.Error, Is.False, jumped.Text);
+            Assert.That(core.BPM, Is.EqualTo(111), "the song is right after the person's edit");
+            Assert.That(jumped.Data["current"]!.GetValue<int>(), Is.EqualTo(manual));
+            Assert.That(jumped.Data["can_redo"]!.GetValue<bool>(), Is.True);
+
+            int newest = steps[0]!["id"]!.GetValue<int>();
+            Ok(rig, "history_jump", new JsonObject { ["step"] = newest });
+            Assert.That(core.BPM, Is.EqualTo(130), "forward again");
+            Ok(rig, "history_jump", new JsonObject { ["step"] = 0 });
+            Assert.That(core.BPM, Is.Not.EqualTo(130), "before the oldest step");
+            var refused = rig.Call("history_jump", new JsonObject { ["step"] = 987654 });
+            Assert.That(refused.Error, Is.True);
+            Assert.That(refused.Text, Does.Contain("history_list"));
+
+            // A failed call's taken-back step is not on the list.
+            int before = Ok(rig, "history_list").Data["total"]!.GetValue<int>();
+            Assert.That(rig.Call("machine_remove", new JsonObject { ["machines"] = new JsonArray("No such machine") }).Error, Is.True);
+            Assert.That(Ok(rig, "history_list").Data["total"]!.GetValue<int>(), Is.EqualTo(before));
         }
     }
 }
