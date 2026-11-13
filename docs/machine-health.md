@@ -298,7 +298,7 @@ Drafts:
 | BTDSys PeerChord | control |  |  |  |  |  |  |  |  | ok |
 | Connection Mixer Console | control |  |  |  |  |  |  |  |  | ok |
 | DAWControl | control |  |  |  |  |  |  |  |  | ok |
-| Dye Essence | polysynth | midi | +0 | 8 | -28 | 2.79 | 0 ms / 45 ms / — | 0.0 | 2.86 | ok |
+| Dye Essence | polysynth | midi | +0 | 8 | -28 | 2.79 | 0 ms / 45 ms / — | 1.8 | 3.419 | ok |
 | EnvelopeBlock | control |  |  |  |  |  |  |  |  | ok |
 | FSM Infector | polysynth | tracks | +12 (-4 ct) | 12 | -26 | 10.47 | 20 ms / — / 540 ms | 9.2 | 10.847 | ok |
 | FSM KickXP | monosynth | tracks | +0 | 1 | -13.8 | 0.0 | 0 ms / — / 310 ms | 3.8 | 5.337 | ok |

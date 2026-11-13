@@ -44,6 +44,10 @@ namespace ReBuzz.Studio.Shell
             this.studio = studio;
             store = new JsonSettingsStore(Path.Combine(studio.SettingsFolder, "settings.json"));
             Host = new AgentHost(studio.Core, studio.Services.Dispatcher, "studio", Path.Combine(studio.SettingsFolder, "agent-logs"));
+            // K3 (agent-knowledge.md §5): the studio's own settings and its window, for settings_get and the view tools.
+            Host.AppControl.AddSettings("appearance", Design.StudioTheme.Settings);
+            Host.AppControl.AddSettings("agent", Settings);
+            Host.AppControl.View = new StudioViewControl(studio);
             Host.Queue.CurrentChanged += name => studio.Services.Dispatcher.BeginInvoke(() =>
             {
                 current = name;

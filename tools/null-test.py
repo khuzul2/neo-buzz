@@ -230,6 +230,12 @@ CASES = [
     gen("dye-fx-barber", "Dye Essence", "Rack — Barber Shift Pad", [], CHORDS, tail=2.0),
     gen("dye-fx-shimmer", "Dye Essence", "Rack — Shimmer Echoes", [], KEYS, tail=3.0),
     gen("dye-fx-falling", "Dye Essence", "Rack — Falling Octave Echoes", [], KEYS, tail=3.0),
+    gen("dye-fx-room", "Dye Essence", "Rack — Small Room Keys", [], KEYS, tail=2.0),
+    gen("dye-fx-plate", "Dye Essence", "Rack — Plate Bell", [], BELLS, tail=3.0),
+    gen("dye-fx-hall", "Dye Essence", "Rack — Hall Pad", [], CHORDS, tail=4.0),
+    gen("dye-fx-cathedral", "Dye Essence", "Rack — Cathedral Choir", [], CHORDS, tail=6.0),
+    gen("dye-fx-reverse", "Dye Essence", "Rack — Reverse Room Swell", [], BELLS, tail=3.0),
+    gen("dye-fx-vocoder", "Dye Essence", "Rack — Robot Choir", [], CHORDS, tail=2.0),
     # Neo FM6: algorithms, feedback, the Clean 2x and Raw 1x engines, envelopes, LFO.
     gen("fm6-tine-piano", "Neo FM6", "Keys — Tine Piano", [], KEYS),
     gen("fm6-glass-bell", "Neo FM6", "Bell — Glass Bell", [], BELLS, tail=2.0),

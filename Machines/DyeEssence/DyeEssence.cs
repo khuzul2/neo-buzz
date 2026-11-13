@@ -53,6 +53,29 @@ namespace NeoBuzz.DyeEssence
         public string SeqSteps { get; set; } = "";
         /// <summary>The effects rack's chains (FxRouting's text: "1 2 3 4 | 5 6 7 | 8 9 10", slots from 1; empty: that default).</summary>
         public string FxRouting { get; set; } = "";
+        /// <summary>The convolution reverb's imported impulse response (24-bit PCM, base64; mono or stereo; at most 10 s at 48 kHz, 480000 frames).</summary>
+        public string IrName { get; set; } = "";
+        public int IrRate { get; set; }
+        public bool IrStereo { get; set; }
+        public string IrData { get; set; } = "";
+        /// <summary>The vocoder's imported modulator (mono 24-bit PCM, base64; at most 20 s at 48 kHz).</summary>
+        public string ModulatorName { get; set; } = "";
+        public int ModulatorRate { get; set; }
+        public string ModulatorData { get; set; } = "";
+
+        internal DyeEssenceState WithIr(string name, int rate, bool stereo, string data)
+        {
+            var s = (DyeEssenceState)MemberwiseClone();
+            s.IrName = name; s.IrRate = rate; s.IrStereo = stereo; s.IrData = data;
+            return s;
+        }
+
+        internal DyeEssenceState WithModulator(string name, int rate, string data)
+        {
+            var s = (DyeEssenceState)MemberwiseClone();
+            s.ModulatorName = name; s.ModulatorRate = rate; s.ModulatorData = data;
+            return s;
+        }
 
         internal DyeEssenceState WithRouting(string text)
         {
@@ -175,6 +198,7 @@ namespace NeoBuzz.DyeEssence
                 for (int l = 0; l < Lfos; l++) Engine.SetLfoShape(l, DrawnShape.Parse(state.Shape(l)));
                 Engine.SetPattern(SeqPattern.Parse(state.SeqSteps));
                 Engine.Fx.SetRouting(FxRouting.Parse(state.FxRouting));
+                LoadRackClips();
                 ShapesVersion++;
                 for (int slot = 0; slot < SlotNames.Length; slot++)
                 {
@@ -213,6 +237,87 @@ namespace NeoBuzz.DyeEssence
             }
         }
 
+        /// <summary>The rack's imported clips (the convolution's response, the vocoder's modulator) from the state, damaged ones as none.</summary>
+        void LoadRackClips()
+        {
+            var user = Engine.Fx.User;
+            try
+            {
+                if (!string.IsNullOrEmpty(state.IrData) && state.IrRate > 0)
+                {
+                    var (l, r) = SampleSources.Decode(state.IrData, state.IrStereo);
+                    user.SetIr(state.IrName, l.Length >= 16 ? l : null, state.IrStereo ? r : null, state.IrRate);
+                }
+                else user.SetIr("", null, null, 0);
+            }
+            catch (Exception)
+            {
+                user.SetIr("", null, null, 0);
+            }
+            try
+            {
+                if (!string.IsNullOrEmpty(state.ModulatorData) && state.ModulatorRate > 0)
+                {
+                    var (l, _) = SampleSources.Decode(state.ModulatorData, false);
+                    user.SetModulator(state.ModulatorName, l.Length >= 16 ? l : null, state.ModulatorRate);
+                }
+                else user.SetModulator("", null, 0);
+            }
+            catch (Exception)
+            {
+                user.SetModulator("", null, 0);
+            }
+        }
+
+        /// <summary>The imported impulse response's name ("" when none).</summary>
+        internal string UserIrName => state.IrName;
+
+        /// <summary>The imported modulator's name ("" when none).</summary>
+        internal string UserModulatorName => state.ModulatorName;
+
+        /// <summary>
+        /// Loads a WAV file as the convolution reverb's impulse response (UI thread): mono or stereo, kept as 24-bit PCM in the machine state, at most
+        /// <see cref="FxUserData.MaxIrFrames"/> frames (10 s at 48 kHz; the rest is cut and the text says so). Throws with a readable message on bad files.
+        /// </summary>
+        internal string LoadUserIr(string path)
+        {
+            var (left, right, rate) = SampleSources.ReadWav(File.ReadAllBytes(path));
+            if (left.Length < 16) throw new InvalidDataException("the file holds no audio");
+            int keep = Math.Min(left.Length, FxUserData.MaxIrFrames);
+            string note = keep < left.Length ? $" The file is longer than {FxUserData.MaxIrFrames} frames ({FxUserData.MaxIrFrames / (double)rate:0.0} s at {rate} Hz, the limit for a response); the first {keep} frames are kept." : "";
+            if (keep < left.Length)
+            {
+                Array.Resize(ref left, keep);
+                if (right != null) Array.Resize(ref right, keep);
+            }
+            string name = Path.GetFileNameWithoutExtension(path);
+            string data = SampleSources.Encode(left, right);
+            // What plays is what the state keeps (24-bit), so a reloaded song sounds the same.
+            var (l, r) = SampleSources.Decode(data, right != null);
+            state = state.WithIr(name, rate, right != null, data);
+            Engine.Fx.User.SetIr(name, l, right != null ? r : null, rate);
+            ShapesVersion++;
+            return note;
+        }
+
+        /// <summary>Loads a WAV file as the vocoder's modulator (UI thread): mixed to mono, 24-bit PCM in the state, at most <see cref="FxUserData.MaxModulatorFrames"/> frames.</summary>
+        internal string LoadUserModulator(string path)
+        {
+            var (left, right, rate) = SampleSources.ReadWav(File.ReadAllBytes(path));
+            if (left.Length < 16) throw new InvalidDataException("the file holds no audio");
+            int keep = Math.Min(left.Length, FxUserData.MaxModulatorFrames);
+            string note = keep < left.Length ? $" The file is longer than {FxUserData.MaxModulatorFrames} frames ({FxUserData.MaxModulatorFrames / (double)rate:0.0} s at {rate} Hz); the first {keep} frames are kept." : "";
+            var mono = new float[keep];
+            for (int i = 0; i < keep; i++) mono[i] = right == null ? left[i] : 0.5f * (left[i] + right[i]);
+            string name = Path.GetFileNameWithoutExtension(path);
+            string data = SampleSources.Encode(mono, null);
+            var (l, _) = SampleSources.Decode(data, false);
+            state = state.WithModulator(name, rate, data);
+            Engine.Fx.User.SetModulator(name, l, rate);
+            ShapesVersion++;
+            return note;
+        }
+
         /// <summary>
         /// Agent server (mcp-server.md A3): true while the built-in tables are still being built in
         /// the background. Offline renders wait for it, so they don't start silent.
@@ -224,7 +329,7 @@ namespace NeoBuzz.DyeEssence
                 if (Engine.TablesBuilding) return true;
                 int sr = SampleRate;
                 if (sr > 0) Engine.Fx.PrepareRate(sr);
-                return Engine.Fx.PendingFor(HostFxType);
+                return Engine.Fx.PendingFor(HostFxType, HostFxValue);
             }
         }
 
@@ -232,9 +337,11 @@ namespace NeoBuzz.DyeEssence
         /// A rack slot's type as the host holds it now: a set parameter or a preset is there at once, the engine's own values
         /// only at the next audio tick (the renders ask whether the machine is busy before that).
         /// </summary>
-        int HostFxType(int slot)
+        int HostFxType(int slot) => HostFxValue(FxRack.TypeParam(slot));
+
+        /// <summary>A parameter of the rack as the host holds it now (the engine's own value when there is no host machine).</summary>
+        int HostFxValue(int index)
         {
-            int index = FxRack.TypeParam(slot);
             try
             {
                 var globals = host?.Machine?.ParameterGroups?.FirstOrDefault(g => g.Type == ParameterGroupType.Global);
@@ -245,7 +352,7 @@ namespace NeoBuzz.DyeEssence
             {
                 // No host machine (tests): the engine's own values.
             }
-            return Values.Choice(index);
+            return Values[index];
         }
 
         /// <summary>The effects rack's chains.</summary>
@@ -300,7 +407,9 @@ namespace NeoBuzz.DyeEssence
         /// Agent server (mcp-server.md A3, machine_data_import): "wavetable" loads a WAV as a slot's user table
         /// (item 0, 1, 2: slot A, B, C) and sets that slot's table to User; "sample" loads a WAV as a slot's
         /// user sample, sets that slot's sample to User and its engine to Sample (unless it is Granular);
-        /// "lfo_shape" reads a drawn shape from a text file (item 0–3: LFO 1–4) and sets that LFO's shape to Drawn.
+        /// "lfo_shape" reads a drawn shape from a text file (item 0–3: LFO 1–4) and sets that LFO's shape to Drawn;
+        /// "ir" loads a WAV as the convolution reverb's impulse response and "modulator" a WAV as the vocoder's (item 0–9: the
+        /// effect slot, set to that type with its first parameter on User / Sample).
         /// </summary>
         public string ImportData(string kind, string path, int item, Action<int, int> setParameter)
         {
@@ -320,6 +429,21 @@ namespace NeoBuzz.DyeEssence
                 SetRouting(routing);
                 return $"Set the effects rack's chains: {routing}.";
             }
+            if (kind == "ir" || kind == "modulator")
+            {
+                if (item < 0 || item >= FxRack.Slots) throw new ArgumentException($"Dye Essence has {FxRack.Slots} effect slots; item {item} doesn't exist (0–{FxRack.Slots - 1}: FX1–FX{FxRack.Slots})");
+                bool ir = kind == "ir";
+                string note = ir ? LoadUserIr(path) : LoadUserModulator(path);
+                var type = ir ? FxType.Convolution : FxType.Vocoder;
+                int current = Values.Choice(FxRack.TypeParam(item));
+                if (current != (int)type) setParameter?.Invoke(FxRack.TypeParam(item), (int)type);
+                // The IR / Modulator choice is the slot's first generic parameter: its last choice (User / Sample) is the top of the range.
+                setParameter?.Invoke(FxRack.GenericParam(item, 0), 1000);
+                string slotName = $"FX{item + 1}";
+                return ir
+                    ? $"Loaded the impulse response \"{UserIrName}\" ({Engine.Fx.User.Ir?.Left.Length ?? 0} frames at {Engine.Fx.User.Ir?.Rate ?? 0} Hz) and set {slotName} type to Convolution, {slotName} p1 (IR) to User.{note}"
+                    : $"Loaded the modulator \"{UserModulatorName}\" ({Engine.Fx.User.Modulator?.Left.Length ?? 0} frames at {Engine.Fx.User.Modulator?.Rate ?? 0} Hz) and set {slotName} type to Vocoder, {slotName} p1 (Modulator) to Sample.{note}";
+            }
             if (kind == "sequence")
             {
                 if (!SeqPattern.TryParse(File.ReadAllText(path), out var pattern, out string error)) throw new InvalidDataException(error);
@@ -335,7 +459,7 @@ namespace NeoBuzz.DyeEssence
                 if (engine != (int)SlotType.Sample && engine != (int)SlotType.Granular) setParameter?.Invoke(TypeParam[item], (int)SlotType.Sample);
                 return $"Loaded the sample \"{UserSampleName(item)}\" as slot {SlotNames[item]}'s User sample, and set {SlotNames[item]} sample to User{(engine != (int)SlotType.Sample && engine != (int)SlotType.Granular ? $" and {SlotNames[item]} engine to Sample" : "")}.{note}";
             }
-            if (kind != "wavetable") throw new ArgumentException($"Dye Essence doesn't import \"{kind}\"; it takes wavetable, sample, lfo_shape, sequence and fx_routing.");
+            if (kind != "wavetable") throw new ArgumentException($"Dye Essence doesn't import \"{kind}\"; it takes wavetable, sample, lfo_shape, sequence, fx_routing, ir and modulator.");
             if (item < 0 || item >= SlotNames.Length) throw new ArgumentException($"Dye Essence has {SlotNames.Length} slots; item {item} doesn't exist (0 A, 1 B, 2 C)");
             int slot = item;
             LoadUserTable(slot, path);

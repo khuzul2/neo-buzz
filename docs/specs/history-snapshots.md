@@ -1,6 +1,6 @@
 # History and snapshots
 
-Status: HS1 in progress (this round). HS2 and HS3 are specified here and not started.
+Status: HS1 built (HS1a the engine, HS1b the panel, the agent tools and the live test). HS2 and HS3 are specified here and not started.
 
 **Goal.** One history for the whole song that every view shares, and full-song snapshots kept beside the song. Neither may disturb a performance: nothing here runs on the audio thread, takes `AudioLock` longer than today, or allocates while audio plays. A snapshot can be restored while the song plays, without a click.
 
@@ -70,6 +70,13 @@ Not covered, by choice: mute/solo toggles in the Session View mixer (performance
 ### 3.6 Tests
 
 `ReBuzz.Studio.Tests/HistoryTests.cs`: each new edit kind; undo and redo across views (Session, Machine, Sequence) in the order done; coalescing; the cap; blob counting; jump; agent tools. HS1b adds the live test: while a big song plays headless, 1,000 edits plus undo and redo, with no audio-thread allocation (`AllocationWindow`) and the worst-block time within the throughput guard's tolerance. Songs load and render bit-identically; the null tests are unchanged.
+
+### 3.7 As built (HS1)
+
+- **HS1a (engine).** `ManagedActionStack` (`History.cs`): steps with name, time and source, `JumpTo`, `Record`, `RecordCoalesced`, `BeginSource`, the `MaxBytes` cap with shared blobs counted once, `Applying`, and `Changed`/`Applied` events that `SongCore` forwards as `HistoryChanged`/`HistoryApplied`. The Session View uses the song's stack, so Session undo reverts the newest step of any view. Steps for tempo and loop, MIDI controller moves (stopped only, 500 ms coalesce), state blobs, AudioBlock wave edits and pattern renames; agent calls are steps with source Agent.
+- **History tab (HS1b).** `ReBuzz.Studio/Views/Inspector/HistoryTab.cs`, a class of its own that `InspectorPanel` adds as a third tab (the Selection tab's code is untouched). Newest step at the top: name, source (Manual, Agent, MIDI) and time. The current step is marked with a triangle and the row fill; steps undone (the redo side) are italic in the secondary text colour, not faded by opacity. Click, or Enter or Space on a focused row, jumps there (`JumpTo`: undo or redo as many steps as it takes) and marks the song modified. The panel redraws once per burst of changes, on the UI thread, whichever thread made them, and draws the newest 300 steps (the summary line says so and shows the dropped count). The line under the summary names Undo and Redo with `StudioKeymap` labels, so they are right per platform. Text colours are `StudioTokens` and every pair is at least 4.5:1 (`HistoryPanelTests`; the secondary colour is only 2.5:1 on the selection fill, so the current row's source and time use the primary colour).
+- **Agent tools (HS1b).** `history_list` (`limit`, default 20, at most 500; read-only) returns the steps newest first with `id`, `name`, `source`, `time` (UTC), `done` and `current`, plus `current`, `total`, `dropped`, `can_undo`, `can_redo`. `history_jump` (`step`; destructive, idempotent) undoes or redoes to the state right after that step (0: before the oldest kept) and returns the same list's head; an unknown or dropped id is an error that names `history_list`. A failed call's taken-back step (the one `redo` already refuses) is left out of the list and cannot be redone by a jump. `undo` and `redo` are unchanged. The workflow guide's Undo section and checklist name them.
+- **Live-safety test (HS1b).** `EngineHardeningTests.ThousandEditsWithUndoRedoAndJumpsWhileTheBigSongPlaysAreLiveSafe` (Windows package job): the 32-machine song of `AHeavySongRendersFasterThanRealTime` playing, 1,000 edits (tempo, pattern renames, undo, redo, jumps over many steps) each made between two 256-frame buffers, outside the timed read and the `AllocationWindow`. It asserts zero bytes allocated reading the buffers, the median buffer within 1.5x of the same song read without edits (plus 50 us), at least the guard's 25x real time, and the worst buffer inside its real-time budget. The edits run on the reading thread between buffers, not concurrently: what it shows is that undo and redo leave nothing behind for the audio thread to do, not lock contention with a UI thread.
 
 ## 4. HS2: full snapshots
 

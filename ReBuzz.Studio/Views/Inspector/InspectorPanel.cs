@@ -26,6 +26,7 @@ namespace ReBuzz.Studio.Views.Inspector
     {
         public const string SelectionTab = "Selection";
         public const string SongTab = "Song";
+        public const string HistoryTabName = "History";
 
         // The settings (section "Studio"): whether it is open and its width. The tab is not kept: it opens on the selection.
         internal const string RegistrySection = "Studio";
@@ -46,12 +47,13 @@ namespace ReBuzz.Studio.Views.Inspector
         readonly SongNotesView notes;
 
         readonly Border grip;
-        readonly Button selectionButton, songButton, collapseButton, railButton, patternButton, notesButton;
+        readonly Button selectionButton, songButton, historyButton, collapseButton, railButton, patternButton, notesButton;
         readonly Grid frame;
         readonly DockPanel full;
         readonly Avalonia.Controls.Control rail;
         readonly DockPanel selectionPage;
         readonly Avalonia.Controls.Control songPage;
+        readonly HistoryTab historyPage;
         readonly TextBlock heading, subtitle, hint;
         readonly Grid facts;
         // Explain (neo-learn.md §5.3): the focused control of a machine whose editor has Explain text.
@@ -87,9 +89,10 @@ namespace ReBuzz.Studio.Views.Inspector
             // The header: the two tabs and the collapse button.
             selectionButton = TabButton(SelectionTab);
             songButton = TabButton(SongTab);
+            historyButton = TabButton(HistoryTabName);
             collapseButton = IconButton("›", "Hide the inspector", "Hide inspector", Close);
             DockPanel.SetDock(collapseButton, Dock.Right);
-            var tabs = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { selectionButton, songButton } };
+            var tabs = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { selectionButton, songButton, historyButton } };
             var header = new DockPanel { Margin = new Thickness(8, 8, 8, 8), LastChildFill = true, Children = { collapseButton, tabs } };
             DockPanel.SetDock(header, Dock.Top);
 
@@ -135,7 +138,10 @@ namespace ReBuzz.Studio.Views.Inspector
             songPage = notes;
             if (songPage != null) songPage.IsVisible = false;
 
+            historyPage = new HistoryTab(core) { IsVisible = false };
+
             var pages = new Panel();
+            pages.Children.Add(historyPage);
             pages.Children.Add(selectionPage);
             if (songPage != null) pages.Children.Add(songPage);
 
@@ -221,6 +227,8 @@ namespace ReBuzz.Studio.Views.Inspector
         // For tests: the controls, as a user would use them.
         internal Button SelectionTabButton => selectionButton;
         internal Button SongTabButton => songButton;
+        internal Button HistoryTabButton => historyButton;
+        internal HistoryTab History => historyPage;
         internal Button CollapseButton => collapseButton;
         internal Button RailButton => railButton;
         internal Button PatternButton => patternButton;
@@ -251,7 +259,7 @@ namespace ReBuzz.Studio.Views.Inspector
         /// <summary>Opens the inspector on a tab (the Song tab with the editor focused: Song Notes).</summary>
         public void ShowTab(string name, bool focus = false)
         {
-            tab = name == SongTab ? SongTab : SelectionTab;
+            tab = name == SongTab ? SongTab : name == HistoryTabName ? HistoryTabName : SelectionTab;
             SetOpen(true);
             ApplyTab(focus);
         }
@@ -279,10 +287,13 @@ namespace ReBuzz.Studio.Views.Inspector
         void ApplyTab(bool focus)
         {
             bool song = tab == SongTab && songPage != null;
-            selectionPage.IsVisible = !song;
+            bool history = tab == HistoryTabName;
+            selectionPage.IsVisible = !song && !history;
             if (songPage != null) songPage.IsVisible = song;
-            Mark(selectionButton, !song);
+            historyPage.IsVisible = history;
+            Mark(selectionButton, !song && !history);
             Mark(songButton, song);
+            Mark(historyButton, history);
             if (song && focus) Dispatcher.UIThread.Post(() => notes.Editor.Focus(), DispatcherPriority.Input);
         }
 
@@ -526,6 +537,7 @@ namespace ReBuzz.Studio.Views.Inspector
             if (disposed) return;
             disposed = true;
             selection.Changed -= OnSelectionChanged;
+            historyPage.Dispose();
             if (core.SessionLayout != null) core.SessionLayout.Changed -= OnLayoutChanged;
         }
     }

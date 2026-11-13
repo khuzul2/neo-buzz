@@ -65,7 +65,7 @@ namespace ReBuzz.Studio.Shell.Commands
 
     internal static class StudioKeymap
     {
-        public const string SingleKeyViews = "Machines, Session and Song Notes (the Sequence and the Pattern editor type letters: use the F-key or the button there)";
+        public const string SingleKeyViews = "Machines (letters there search the machine browser when no machine is selected: use the F-key or the button), Session and Song Notes (the Sequence and the Pattern editor type letters: use the F-key or the button there)";
 
         static CommandInfo C(string id, string menu, string title, string keys = null, string mac = null, bool native = true, string where = null, string help = null) =>
             new CommandInfo { Id = id, Menu = menu, Title = title, Keys = keys, MacKeys = mac, Native = native, Where = where, Help = help };
