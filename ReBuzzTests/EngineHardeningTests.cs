@@ -885,6 +885,104 @@ namespace ReBuzzTests
             Assert.That(editedWorst, Is.LessThan(budgetMs), "the worst buffer stays inside its real-time budget");
         }
 
+        /// <summary>
+        /// Snapshots are live-safe (docs/specs/history-snapshots.md HS2): while the heavy song plays, a full snapshot is captured
+        /// (UI thread) and stored (background) every 50 buffers. The audio thread allocates nothing, its median buffer stays within
+        /// the throughput guard's tolerance of the same song without snapshots, and the UI-thread pause of a capture is reported.
+        /// </summary>
+        [Test]
+        public void FullSnapshotsWhileTheBigSongPlaysAreLiveSafe()
+        {
+            const int machines = 32, buffers = 1200;
+            string root = System.IO.Path.Combine(TestContext.CurrentContext.WorkDirectory, "snapshots-" + Guid.NewGuid().ToString("N"));
+            string oldRoot = ReBuzz.Core.SongHistory.SongSnapshots.UntitledRoot;
+            ReBuzz.Core.SongHistory.SongSnapshots.UntitledRoot = root;
+            try
+            {
+                using var rig = new Rig(machines, hum: true);
+                for (int i = 0; i < machines; i++)
+                {
+                    var m = rig.Machines[i];
+                    var patterns = Enumerable.Range(0, 4).Select(k => rig.Pattern(m, "P" + k, Bar)).ToList();
+                    for (int t = 0; t < 32; t++)
+                        rig.Track(i).SetEvent(t * Bar, new SequenceEvent(SequenceEventType.PlayPattern, patterns[(t + i) % 4]));
+                    if (i % 2 == 0)
+                        rig.Session.Launch(rig.Track(i), patterns[0]);
+                }
+                rig.Song.LoopEnd = 2 * Bar;
+                var reader = rig.Driver.CreateAudioReader(256);
+                rig.Core.Playing = true;
+                var snapshots = rig.Core.Snapshots;
+                WarmUp(reader, "snapshot live test");
+                snapshots.Capture("warm up");                           // the capture's own first run (JIT, type loads)
+                snapshots.Flush();
+                // The storing thread's allocations make the runtime collect now and then, and the first time a collection stops the reading
+                // thread the runtime binds its own poll method there (a few hundred bytes that are the runtime's, not the audio path's):
+                // let that happen here, with captures running beside the reads, before anything is measured.
+                for (int round = 0; round < 8; round++)
+                {
+                    snapshots.Capture("warm up " + round);
+                    for (int i = 0; i < 60; i++) { reader.Read(256); if (i % 20 == 0) GC.Collect(0); }
+                }
+                snapshots.Flush();
+                for (int i = 0; i < 20; i++) reader.Read(256);
+
+                double[] Read(int count, Action? between)
+                {
+                    var times = new double[count];
+                    for (int i = 0; i < count; i++)
+                    {
+                        between?.Invoke();
+                        long t0 = Stopwatch.GetTimestamp();
+                        reader.Read(256);
+                        times[i] = (Stopwatch.GetTimestamp() - t0) * 1000.0 / Stopwatch.Frequency;
+                    }
+                    return times;
+                }
+                double budgetMs = 256 * 1000.0 / ReBuzzCore.masterInfo.SamplesPerSec;
+                var baseline = Read(buffers, null);
+
+                using var window = new AllocationWindow(buffers);
+                var pauses = new List<double>();
+                var edited = new double[buffers];
+                long bytes = 0;
+                var log = new List<string>();
+                for (int i = 0; i < buffers; i++)
+                {
+                    if (i % 50 == 0)
+                    {
+                        long c0 = Stopwatch.GetTimestamp();
+                        snapshots.Capture("live " + i);                  // the UI thread's part, between two buffers; the storing runs on its own thread
+                        pauses.Add((Stopwatch.GetTimestamp() - c0) * 1000.0 / Stopwatch.Frequency);
+                    }
+                    window.Begin();
+                    long t0 = Stopwatch.GetTimestamp();
+                    reader.Read(256);
+                    edited[i] = (Stopwatch.GetTimestamp() - t0) * 1000.0 / Stopwatch.Frequency;
+                    long b = window.End();
+                    bytes += b;
+                    if (b > 0 && log.Count < 20) log.Add($"buffer {i}: {b} bytes");
+                }
+                snapshots.Flush();
+
+                double Median(double[] x) => x.OrderBy(v => v).ElementAt(x.Length / 2);
+                double baseMedian = Median(baseline), editedMedian = Median(edited), editedWorst = edited.Max();
+                pauses.Sort();
+                TestContext.Out.WriteLine($"[notice] snapshot live test: {pauses.Count} captures of the {machines}-machine song; UI-thread pause median {pauses[pauses.Count / 2]:F1} ms, max {pauses.Max():F1} ms; " +
+                    $"per 256-frame buffer (budget {budgetMs:F2} ms): baseline median {baseMedian:F3} ms, with snapshots median {editedMedian:F3} ms, max {editedWorst:F3} ms; allocated {bytes} bytes");
+                Assert.That(snapshots.List().Count(s => s.Name.StartsWith("live ")), Is.EqualTo(pauses.Count), "every capture was stored");
+
+                Assert.That(bytes, Is.EqualTo(0), "snapshots must not allocate on the audio thread:\n" + string.Join("\n", log) + (bytes > 0 ? window.Describe() : ""));
+                Assert.That(editedMedian, Is.LessThan(baseMedian * 1.5 + 0.05), "capturing and storing must not make the audio thread slower");
+                // No absolute floor here: the runner's own baseline for this song is ~23x, and what matters is that snapshots add nothing to it.
+            }
+            finally
+            {
+                ReBuzz.Core.SongHistory.SongSnapshots.UntitledRoot = oldRoot;
+                try { System.IO.Directory.Delete(root, true); } catch (System.IO.IOException) { }
+            }
+        }
+
         // ------------------------------------------------------------------ 10. autosave
 
         static string UseTemporaryAutosaveFolder()

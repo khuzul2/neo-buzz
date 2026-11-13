@@ -1,6 +1,6 @@
 # History and snapshots
 
-Status: HS1 built (HS1a the engine, HS1b the panel, the agent tools and the live test). HS2 and HS3 are specified here and not started.
+Status: HS1 and HS2 built (HS1a the engine, HS1b the panel, the agent tools and the live test; HS2 full snapshots). HS3 is specified here and not started.
 
 **Goal.** One history for the whole song that every view shares, and full-song snapshots kept beside the song. Neither may disturb a performance: nothing here runs on the audio thread, takes `AudioLock` longer than today, or allocates while audio plays. A snapshot can be restored while the song plays, without a click.
 
@@ -89,6 +89,17 @@ Not covered, by choice: mute/solo toggles in the Session View mixer (performance
 **UI.** List, name, delete, diff (machines, parameters, patterns, sequence), A/B toggle between two snapshots, restore. Restore is itself one history step, so it can be undone.
 
 **Agent.** `snapshot_*` tools use the full snapshots; `history_list` and `history_jump` cover the step history.
+
+### 4.1 As built (HS2)
+
+- **Capture.** `ReBuzzCore.CaptureSongSections` runs `BMXFile.BuildSections` on the UI thread: the song-file sections a save builds before it touches the disk (so every machine's state comes through its own save, Dye Essence samples and wavetables and native data blobs included, and the Session View layout through the `SaveSong` subsections), plus `SongSummary` (machines, parameter values, wires, patterns and sequences by content hash, waves). No file, no `AudioLock`. The background queue (`SongSnapshots`) cuts each section into content-defined chunks (`ChunkStore.Split`, a gear hash, 16-256 KB, one chunk under 64 KB), hashes (SHA-256), deflates and writes them, then the manifest. A snapshot is pending (listed, "saving…") until stored; `Flush` waits.
+- **Store.** `<song>.history/manifests/<id>.json` and `chunks/xx/<hash>`. Untitled songs use `%LOCALAPPDATA%/NeoBuzz/History/untitled-<guid>` until the first save moves it (Save As to another name copies it). Deleting a snapshot removes the chunks no other one holds.
+- **Autosnapshots** (trigger auto, named "Auto: ..."; the newest 40 kept, manual ones never dropped): on save (before the file is written, so an embed includes it), every `SnapshotIntervalMinutes` (default 5, 0 off) when the song changed and the transport is stopped, and before `machine_replace`, an agent `history_jump` over more than 20 steps, importing a song and every restore. The timer rides the autosave's one-minute tick.
+- **Embed.** `EmbedHistoryInSong`: a save adds a `HIST` section (manifests plus the chunks they use, as stored); without it, or with no snapshots, the file is byte-for-byte what a save wrote before. Loading keeps the history folder's own snapshots if it has any, else imports the embedded ones into the folder. `.bmxml` songs keep the folder only.
+- **Restore** replaces the song as opening a file does (`ReBuzzCore.RestoreSongBytes`: the name, the history folder and "modified" are kept or set), so the undo history starts again; the spec's "restore is one history step" is met by the auto snapshot taken first (restore it to go back), not by an undo step. Only while stopped: "Stop to restore (glitch-free restore while playing comes next)".
+- **UI.** History tab, Snapshots section: list (name, time, manual or auto), save under a name, rename, delete, diff (A against B, or the selected one against the song now), A/B toggle (Set A, Set B, A/B), restore, the embed checkbox.
+- **Agent.** `snapshot_save`, `snapshot_list`, `snapshot_restore` (destructive), `snapshot_diff` take full snapshots by name or id; `kind="parameters"` is the old session-only snapshot; `snapshot_delete` (destructive) is new.
+- **Not done / limits.** Pattern hashes cover pattern columns and built-in data, not a pattern editor machine's private state beyond what its own save writes. Waves are compared by name and size in diffs. The History panel's list is not capped (40 auto snapshots at most).
 
 ## 5. HS3: glitch-free restore while playing
 

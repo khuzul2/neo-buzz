@@ -57,22 +57,22 @@ namespace ReBuzzTests
             var presets = Ok(rig, "preset_list", new JsonObject { ["machine"] = "Pad", ["search"] = "pad" })["presets"]!.AsArray();
             Assert.That(presets.Count, Is.GreaterThan(0), "Neo Poly's factory presets are read beside its DLL");
             string preset = presets[0]!["name"]!.GetValue<string>();
-            Ok(rig, "snapshot_save", new JsonObject { ["name"] = "before" });
+            Ok(rig, "snapshot_save", new JsonObject { ["name"] = "before", ["kind"] = "parameters" });
             var loaded = Ok(rig, "preset_load", new JsonObject { ["machine"] = "Pad", ["preset"] = preset });
             Assert.That(loaded["changed"]!.GetValue<int>(), Is.GreaterThan(0));
-            var diff = Ok(rig, "snapshot_diff", new JsonObject { ["a"] = "before" })["machines"]!.AsArray();
+            var diff = Ok(rig, "snapshot_diff", new JsonObject { ["a"] = "before", ["kind"] = "parameters" })["machines"]!.AsArray();
             Assert.That(diff.Single()!["machine"]!.GetValue<string>(), Is.EqualTo("Pad"), "only the pad changed");
 
             // A/B: change the mix, then go back with one call (one undo step).
             Ok(rig, "connection_set", new JsonObject { ["changes"] = new JsonArray(new JsonObject { ["from"] = "Bass", ["to"] = "Master", ["gain_db"] = -20 }) });
             Ok(rig, "machine_set", new JsonObject { ["machine"] = "Pad", ["mute"] = true });
-            var restored = Ok(rig, "snapshot_restore", new JsonObject { ["name"] = "before" });
+            var restored = Ok(rig, "snapshot_restore", new JsonObject { ["name"] = "before", ["kind"] = "parameters" });
             Assert.That(restored["changed"]!.GetValue<int>(), Is.GreaterThan(2));
-            Assert.That(Ok(rig, "snapshot_diff", new JsonObject { ["a"] = "before" })["machines"]!.AsArray().Count, Is.EqualTo(0), "back exactly");
+            Assert.That(Ok(rig, "snapshot_diff", new JsonObject { ["a"] = "before", ["kind"] = "parameters" })["machines"]!.AsArray().Count, Is.EqualTo(0), "back exactly");
             Ok(rig, "undo");
-            var undone = Ok(rig, "snapshot_diff", new JsonObject { ["a"] = "before" })["machines"]!.AsArray();
+            var undone = Ok(rig, "snapshot_diff", new JsonObject { ["a"] = "before", ["kind"] = "parameters" })["machines"]!.AsArray();
             Assert.That(undone.Count, Is.EqualTo(2), "undo takes the whole restore back");
-            var bad = rig.Call("snapshot_restore", new JsonObject { ["name"] = "befor" });
+            var bad = rig.Call("snapshot_restore", new JsonObject { ["name"] = "befor", ["kind"] = "parameters" });
             Assert.That(bad.Error, Is.True);
             Assert.That(bad.Text, Does.Contain("before"));
         }
