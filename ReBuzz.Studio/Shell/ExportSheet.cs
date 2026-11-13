@@ -136,6 +136,18 @@ namespace ReBuzz.Studio.Shell
             Content = new StackPanel { Margin = new Thickness(20), Spacing = 12, MinWidth = 480, Children = { grid, Bar, Status, buttons } };
         }
 
+        /// <summary>The window's own close button while rendering is a Cancel: the render must end (and put the song back) first.</summary>
+        protected override void OnClosing(WindowClosingEventArgs e)
+        {
+            if (Running)
+            {
+                e.Cancel = true;
+                cancel?.Cancel();
+                Status.Text = "Cancelling…";
+            }
+            base.OnClosing(e);
+        }
+
         static string DefaultPath(ReBuzzCore core)
         {
             string song = core.SongCore.SongName;
@@ -210,9 +222,30 @@ namespace ReBuzz.Studio.Shell
             }
         }
 
+        /// <summary>True while a sheet renders: the song is in the render's hands (the autosave and the snapshot timer wait).</summary>
+        public static bool Rendering { get; private set; }
+
+        readonly List<Window> blocked = new();
+
         void Lock(bool running)
         {
             Running = running;
+            Rendering = running;
+            if (running)
+            {
+                // Block edits: every other window of the studio (the main window is under this sheet already; tool windows are not).
+                var others = new List<Window>();
+                if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+                    others.AddRange(desktop.Windows);
+                if (Owner is Window owner && !others.Contains(owner)) others.Add(owner);
+                foreach (var w in others)
+                    if (w != this && w.IsEnabled) { w.IsEnabled = false; blocked.Add(w); }
+            }
+            else
+            {
+                foreach (var w in blocked) w.IsEnabled = true;
+                blocked.Clear();
+            }
             foreach (Control c in new Control[] { Range, Bits, Dither, Rate, Normalise, Stems, PathBox, Choose, Export }) c.IsEnabled = !running;
             if (!running) Dither.IsEnabled = BitDepths[Math.Max(0, Bits.SelectedIndex)] != 32;
             Bar.IsVisible = running;
@@ -246,17 +279,21 @@ namespace ReBuzz.Studio.Shell
             bool done = false;
             try
             {
+                // The render runs on a worker thread of its own (Background), so this thread draws the sheet and hears its Cancel button
+                // as it always does. The song is not safe to edit while it renders (the render sets the loop, the mutes and the position,
+                // and puts them back): edits are blocked, not worked around (every other window is disabled, the autosave and the
+                // snapshot timer wait, an agent call queues behind it), and the cancel stops it within a block.
                 var context = new ToolContext("export_audio", args, cancel.Token, (seconds, total, message) =>
                 {
-                    // The render runs on this thread (the engine's), so the sheet is drawn, and its Cancel button heard, from here. Only
-                    // input, layout and drawing run (not the Background timers: an autosave must not read the song while the render has
-                    // its loop set).
-                    Bar.IsIndeterminate = total is not > 0;
-                    if (total is > 0) Bar.Value = Math.Min(1, seconds / total.Value);
-                    Status.Text = message == "seconds rendered" ? $"Rendering… {seconds:0} of {total:0} s" : message == null ? "Rendering…" : char.ToUpper(message[0]) + message.Substring(1) + "…";
-                    OnProgress?.Invoke(seconds);
-                    Dispatcher.UIThread.RunJobs(DispatcherPriority.Input);
-                });
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        if (!Running) return;
+                        Bar.IsIndeterminate = total is not > 0;
+                        if (total is > 0) Bar.Value = Math.Min(1, seconds / total.Value);
+                        Status.Text = message == "seconds rendered" ? $"Rendering… {seconds:0} of {total:0} s" : message == null ? "Rendering…" : char.ToUpper(message[0]) + message.Substring(1) + "…";
+                        OnProgress?.Invoke(seconds);
+                    }, DispatcherPriority.Input);
+                }) { Background = true };
                 var result = await tool.Handler(context);
                 if (result.IsError)
                 {
