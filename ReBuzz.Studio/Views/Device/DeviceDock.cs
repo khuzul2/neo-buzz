@@ -21,7 +21,7 @@ namespace ReBuzz.Studio.Views.Device
 
         readonly ReBuzzCore core;
         readonly StudioSelection selection;
-        readonly TextBlock hint;
+        readonly Shell.EmptyState hint;
         IMachine shown;
         DevicePage page;
         bool attached;
@@ -31,14 +31,7 @@ namespace ReBuzz.Studio.Views.Device
             this.core = core;
             selection = StudioSelection.For(core);
             Background = StudioTokens.SurfacePanelBrush;
-            hint = new TextBlock
-            {
-                FontSize = StudioTokens.FontBody,
-                Foreground = StudioTokens.TextSecondaryBrush,
-                Margin = new Thickness(16),
-                TextWrapping = Avalonia.Media.TextWrapping.Wrap,
-                HorizontalAlignment = HorizontalAlignment.Left,
-            };
+            hint = new Shell.EmptyState(core);
             Avalonia.Automation.AutomationProperties.SetName(this, "Device");
         }
 
@@ -46,6 +39,9 @@ namespace ReBuzz.Studio.Views.Device
         public DevicePage Page => page;
 
         public IMachine Machine => shown;
+
+        /// <summary>The empty state shown while no machine is selected (P3i).</summary>
+        internal Shell.EmptyState Empty => hint;
 
         /// <summary>The page, with the machine's keyboard under it, or null.</summary>
         public Avalonia.Controls.Control Frame => Child as Avalonia.Controls.Control;
@@ -74,12 +70,16 @@ namespace ReBuzz.Studio.Views.Device
         public void Follow()
         {
             var m = selection.Machine;
-            if (m == shown && (m == null || Child != null)) return;
+            if (m == shown && Child != null) return;
             Clear();
             shown = m;
             if (m == null)
             {
-                hint.Text = "Select a machine to see its parameters here.";
+                bool bare = Shell.EmptyState.SongIsEmpty(core);
+                hint.Update(true, bare ? "none:bare" : "none", "No machine selected",
+                    bare ? "The device view shows a machine's parameters. Start with a sound, or search every machine."
+                         : "Select a machine in any view to see its parameters here, grouped and searchable.",
+                    Shell.EmptyState.AddMachineStep(), bare);
                 Child = hint;
                 return;
             }
@@ -92,7 +92,18 @@ namespace ReBuzz.Studio.Views.Device
             }
             page = new DevicePage(m, floating: false);
             page.FloatToggled += () => Float(m);
-            Child = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(m, page, scroll: false);
+            Child = Framed(m, page);
+        }
+
+        /// <summary>The settings key of the device view's keyboard (hidden unless the person opened it; one choice for the docked page and the windows).</summary>
+        public const string KeyboardKey = "DeviceKeyboard";
+
+        /// <summary>The page with the machine's keyboard under it, collapsed at first and remembering its state apart from the machine windows'.</summary>
+        static Avalonia.Controls.Control Framed(IMachine m, DevicePage content)
+        {
+            var frame = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(m, content, scroll: false);
+            NeoBuzz.Editor.MachineKeyboardFrame.Of(frame)?.UseOwnState(DevicePage.Read(KeyboardKey, false), on => DevicePage.Write(KeyboardKey, on));
+            return (Avalonia.Controls.Control)frame;
         }
 
         void Clear()
@@ -112,7 +123,7 @@ namespace ReBuzz.Studio.Views.Device
                 w = new Window
                 {
                     Title = m.Name + " — device",
-                    Content = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(m, content, scroll: false),
+                    Content = Framed(m, content),
                     Width = 720,
                     Height = 620,
                     ShowInTaskbar = false,

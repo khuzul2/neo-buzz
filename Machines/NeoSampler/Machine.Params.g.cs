@@ -43,7 +43,7 @@ namespace NeoBuzz.Sampler
         [ParameterDecl(Name = "Filter", Description = "Filter on every voice: off, ladder low-pass 24 or 12 dB/oct, state-variable band-pass or high-pass", MinValue = 0, MaxValue = 4, DefValue = 0)]
         public int FType { get => Values[P.FType]; set => Values.Set(P.FType, value); }
 
-        [ParameterDecl(Name = "Cutoff", Description = "Cutoff", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        [ParameterDecl(Name = "Cutoff", Description = "Sets the filter cutoff frequency, from 20 Hz to 20 kHz.", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
         public int FCutoff { get => Values[P.FCutoff]; set => Values.Set(P.FCutoff, value); }
 
         [ParameterDecl(Name = "Resonance", Description = "Resonance (the ladder self-oscillates at the top)", MinValue = 0, MaxValue = 1000, DefValue = 0)]

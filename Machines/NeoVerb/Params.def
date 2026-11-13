@@ -6,21 +6,55 @@ summary Algorithmic reverb (Hall, Room, Chamber, Plate) with pre-delay, size, de
 
 group Space
 Mode       "Mode"          0 3    0    enum Hall Room Chamber Plate    | Algorithm: delay lengths, diffusion and early reflections
+    how Chooses the reverb algorithm: Hall, Room, Chamber or Plate.
+    sound Hall is big and smooth, Room is small and natural, Chamber is dense and even, and Plate is bright and fast to build up.
 PreDelay   "Pre-delay"     0 1000 80   lin 0 250 ms 1                  | Gap before the reverb starts
+    how Sets the gap before the reverb starts, from 0 to 250 ms.
+    sound A longer gap keeps the dry sound clear in front of the tail and adds a sense of distance.
 Size       "Size"          0 1000 500  pct                             | Scales the space (delay lengths and reflections)
+    how Scales the size of the space from 0 to 100 %.
+    sound Small values sound like a tight room and large values like a vast hall.
 Decay      "Decay"         0 1000 504  time 0.2 30                     | Reverb time (T60) in the mid band
+    how Sets how long the tail lasts, from 0.2 to 30 seconds.
+    sound Short decays add a touch of space and long ones wash the sound out into a wide atmosphere.
 LowDecay   "Low decay"     0 1000 566  exp 0.25 4 × 2                  | Low-frequency decay time relative to the mid band
+    how Sets how long the low frequencies ring compared with the mids, from a quarter to four times.
+    sound Below 1x the lows die away fast and stay clean, and above 1x they linger and rumble.
 Damping    "High damping"  0 1000 598  freq 1000 20000                 | Above this, the tail decays four times faster
+    how Sets the frequency above which the tail dies out four times faster, from 1 to 20 kHz.
+    sound Lower values make a dark, soft tail and higher values a bright, airy one.
 Diffusion  "Diffusion"     0 1000 700  pct                             | Density of the build-up
+    how Sets how densely the echoes build up, from 0 to 100 %.
+    sound High diffusion is smooth and creamy, and low diffusion lets the individual echoes be heard.
 group Motion
 ModDepth   "Mod depth"     0 1000 300  pct                             | Movement in the tail (breaks up metallic ringing)
+    how Sets the amount of movement in the tail, from 0 to 100 %.
+    sound A little breaks up metallic ringing, and a lot gives a lush, chorused wash.
 ModRate    "Mod rate"      0 1000 540  freq 0.05 5                     | Speed of the movement
+    how Sets the speed of the tail movement, from 0.05 to 5 Hz.
+    sound Slow rates are barely noticeable, faster ones add a visible shimmer.
 Freeze     "Freeze"        0 1    0    switch                          | Holds the tail forever and stops taking input
+    how Holds the current tail forever and stops taking in new sound.
+    sound It turns the reverb into a sustained pad that stays until you release it.
 Shimmer    "Shimmer"       0 1000 0    pct                             | Feeds the tail back an octave up
+    how Feeds the tail back an octave higher, from 0 to 100 %.
+    sound The tail climbs upwards in a bright, angelic glow.
 group Output
 Early      "Early"         0 1000 739  db -40 6 inf                    | Early reflections level
+    how Sets the level of the early reflections, from -40 to +6 dB, or off.
+    sound More early reflections place the sound in a definite room, fewer leave it more diffuse.
 Late       "Late"          0 1000 870  db -40 6 inf                    | Tail level
+    how Sets the level of the late tail, from -40 to +6 dB, or off.
+    sound A higher tail sounds more spacious, and a lower one keeps the reverb tight.
 Width      "Width"         0 1000 667  lin 0 150 % 0                   | Stereo width of the reverb
+    how Sets the stereo width of the reverb, from 0 to 150 %.
+    sound A low width is focused in the middle, and a high width is wide and enveloping.
 LowCut     "Low cut"       0 1000 389  freq 10 1000                    | High-pass on the reverb
+    how Removes low frequencies from the reverb, from 10 Hz to 1 kHz.
+    sound Raising it keeps the reverb from muddying the bass.
 HighCut    "High cut"      0 1000 804  freq 1000 22000                 | Low-pass on the reverb
+    how Rolls off high frequencies of the reverb, from 1 to 22 kHz.
+    sound Lowering it softens the reverb so it sits behind the dry sound.
 Mix        "Mix"           0 1000 300  pct                             | Dry/wet (100 % for a send)
+    how Blends the dry sound with the reverb from 0 to 100 %.
+    sound Use a low value as an insert, or 100 % when the reverb sits on a send.

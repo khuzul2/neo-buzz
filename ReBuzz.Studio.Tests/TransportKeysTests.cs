@@ -164,7 +164,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(Core.PlayRequested, Is.True, "Shift+Space in a box: not the transport's either");
 
                 // The transport's BPM box (a NumericUpDown's text box).
-                var bpmBox = window.Transport.GetVisualDescendants().OfType<TextBox>().First();
+                var bpmBox = window.Transport.Tempo.Box;
                 Focus(bpmBox);
                 Space(window);
                 Assert.That(Core.PlayRequested, Is.True, "Space in the BPM box leaves the transport");

@@ -6,10 +6,20 @@ summary Word-length reduction for the end of a master: rounds the audio to a 16,
 
 group Dither
 Bits       "Bits"         8 24    16    int                               | The word length the output is rounded to. 16 for CD and most streaming masters, 24 for an archive or a further stage
+    how Sets the word length the output is rounded to, from 8 to 24 bits.
+    sound 16 bits suits most final masters; lower values add audible noise and grain, 24 bits is for archives and further processing.
 Dither     "Dither"       0 1     1     enum Off TPDF                    | TPDF: noise of 1 LSB (triangular) that makes the rounding error independent of the signal (no distortion, a steady hiss at −98 dBFS in 16 bits). Off: plain rounding
+    how Turns TPDF dither noise on or off before the rounding.
+    sound On, quiet tails fade smoothly with a faint steady hiss; off, they turn into grainy distortion.
 Shaping    "Shaping"      0 2     0     enum Off Light Psychoacoustic    | Noise shaping by error feedback. Light: 7 dB less noise below 4 kHz, more above 10 kHz (the total power rises 2 dB). Psychoacoustic: 16 dB less noise from 50 Hz to 3 kHz and 23 dB less at 4 kHz, much more above 8 kHz (the total power rises 12 dB)
+    how Pushes the rounding noise away from the most audible range with Off, Light or Psychoacoustic shaping.
+    sound Shaped noise is quieter where the ear is most sensitive and louder in the top octaves, so fades and quiet passages sound cleaner.
 Blank      "Auto blank"   0 1     1     switch                           | After the time below of exact digital silence the output is silent (no dither hiss between tracks); it starts again with the first sample of sound
+    how Silences the output after a stretch of exact digital silence.
+    sound There is no hiss between tracks or in gaps; the dither starts again with the first sound.
 BlankAfter "Blank after"  0 50    6     lin 0.1 5.1 s 1                  | How long the digital silence has to last before Auto blank silences the output (0.7 s by default)
+    how Sets how long digital silence must last, from 0.1 to 5.1 seconds, before Auto blank mutes the output.
+    sound Short times mute even tiny gaps; long times keep the dither running through brief pauses.
 
 # What the dither measures (NeoDitherMachine.Readings, machine_readings).
 reading latency_samples   samples | Always 0

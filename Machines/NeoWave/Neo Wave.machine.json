@@ -34,7 +34,9 @@
     "Mono",
     "Legato"
    ],
-   "description": "Poly; Mono retriggers; Legato glides without retriggering"
+   "description": "Poly; Mono retriggers; Legato glides without retriggering",
+   "how": "Chooses how notes share voices: Poly plays chords, Mono retriggers on each note, Legato glides between overlapping notes.",
+   "sound": "Poly suits pads and chords, Mono gives a punchy lead or bass line, and Legato gives smooth, connected phrases."
   },
   {
    "index": 1,
@@ -46,7 +48,9 @@
    "default": 8,
    "kind": "int",
    "a": 0.0,
-   "description": "Notes that sound at once"
+   "description": "Notes that sound at once",
+   "how": "Sets how many notes can sound at once, from 1 to 16.",
+   "sound": "More voices let chords and long releases overlap, while fewer save processing power and make notes cut each other off."
   },
   {
    "index": 2,
@@ -58,7 +62,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Voices per note"
+   "description": "Voices per note",
+   "how": "Sets the number of stacked voices per note, from 1 to 8.",
+   "sound": "More voices make the note thicker and wider, and one voice is a single clean oscillator."
   },
   {
    "index": 3,
@@ -70,7 +76,9 @@
    "default": 200,
    "kind": "percent",
    "unit": "%",
-   "description": "Detune between unison voices (up to ±50 cents)"
+   "description": "Detune between unison voices (up to ±50 cents)",
+   "how": "Sets how far apart the unison voices are tuned, up to 50 cents.",
+   "sound": "Small amounts give a warm thickness and large ones a wide, swarming supersaw sound."
   },
   {
    "index": 4,
@@ -82,7 +90,9 @@
    "default": 600,
    "kind": "percent",
    "unit": "%",
-   "description": "Stereo spread of unison voices"
+   "description": "Stereo spread of unison voices",
+   "how": "Sets how widely the unison voices are spread across the stereo field, from 0 to 100 %.",
+   "sound": "More spread makes the note wider and more enveloping, and zero keeps it centred."
   },
   {
    "index": 5,
@@ -98,7 +108,9 @@
     "Always",
     "Legato"
    ],
-   "description": "When notes glide"
+   "description": "When notes glide",
+   "how": "Chooses when notes slide into each other: never, always, or only on overlapping notes.",
+   "sound": "Gliding adds a singing, synth-bass slur between notes."
   },
   {
    "index": 6,
@@ -113,7 +125,9 @@
    "b": 2.0,
    "exponent": 3.0,
    "unit": "s",
-   "description": "Glide time"
+   "description": "Glide time",
+   "how": "Sets how long the slide takes, up to 2 seconds.",
+   "sound": "Short glides are subtle and long ones sweep slowly between pitches."
   },
   {
    "index": 7,
@@ -126,7 +140,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "st",
-   "description": "Pitch bend range"
+   "description": "Pitch bend range",
+   "how": "Sets how far the pitch bend wheel moves the pitch, from 0 to 24 semitones.",
+   "sound": "A small range gives expressive nudges, and a large one gives dive-bomb sweeps."
   },
   {
    "index": 8,
@@ -141,7 +157,9 @@
    "b": 6.0,
    "flag": true,
    "unit": "dB",
-   "description": "Output level"
+   "description": "Output level",
+   "how": "Sets the output level of the synth, from -40 to +6 dB, or off.",
+   "sound": "Use it to place the instrument in the mix without changing its tone."
   },
   {
    "index": 9,
@@ -153,7 +171,9 @@
    "default": 700,
    "kind": "percent",
    "unit": "%",
-   "description": "How much velocity changes loudness"
+   "description": "How much velocity changes loudness",
+   "how": "Sets how strongly note velocity changes the loudness, from 0 to 100 %.",
+   "sound": "High values make playing dynamics audible, and 0 % makes all notes equally loud."
   },
   {
    "index": 10,
@@ -177,7 +197,9 @@
     "Grit",
     "User"
    ],
-   "description": "Wavetable (User: the table loaded in the editor)"
+   "description": "Wavetable (User: the table loaded in the editor)",
+   "how": "Chooses the wavetable for oscillator A, from the built-in sets or the loaded User table.",
+   "sound": "Each table has its own family of tones, from basic shapes to vowels, sweeping sync and gritty digital sounds."
   },
   {
    "index": 11,
@@ -189,7 +211,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "Position in the table (frames morph smoothly)"
+   "description": "Position in the table (frames morph smoothly)",
+   "how": "Moves through the frames of oscillator A's wavetable, from 0 to 100 %.",
+   "sound": "Moving the position morphs the tone smoothly from one timbre to the next, and modulating it makes evolving sounds."
   },
   {
    "index": 12,
@@ -210,7 +234,9 @@
     "Window sync",
     "PM from B"
    ],
-   "description": "How the cycle is read"
+   "description": "How the cycle is read",
+   "how": "Chooses how the cycle of oscillator A is bent or read: bend, squeeze, mirror, asymmetry, window sync or phase modulation.",
+   "sound": "Each warp reshapes the waveform and adds harmonics, from subtle fattening to hard, metallic edges."
   },
   {
    "index": 13,
@@ -222,7 +248,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "Warp amount"
+   "description": "Warp amount",
+   "how": "Sets how strongly the warp is applied to oscillator A, from 0 to 100 %.",
+   "sound": "Zero leaves the table untouched, and more warp makes the tone progressively more extreme."
   },
   {
    "index": 14,
@@ -236,7 +264,9 @@
    "a": -3.0,
    "flag": true,
    "unit": "oct",
-   "description": "Octave"
+   "description": "Octave",
+   "how": "Transposes oscillator A up or down by up to three octaves.",
+   "sound": "Lower octaves give weight and higher ones brightness or a thin layer."
   },
   {
    "index": 15,
@@ -250,7 +280,9 @@
    "a": -12.0,
    "flag": true,
    "unit": "st",
-   "description": "Semitones"
+   "description": "Semitones",
+   "how": "Transposes oscillator A by up to 12 semitones either way.",
+   "sound": "Use it to build intervals and chords from the two oscillators, such as a fifth."
   },
   {
    "index": 16,
@@ -264,7 +296,9 @@
    "a": -50.0,
    "b": 50.0,
    "unit": "ct",
-   "description": "Fine tune"
+   "description": "Fine tune",
+   "how": "Detunes oscillator A by up to 50 cents either way.",
+   "sound": "A few cents between the oscillators gives a slow, warm beating."
   },
   {
    "index": 17,
@@ -276,7 +310,9 @@
    "default": 1000,
    "kind": "percent",
    "unit": "%",
-   "description": "Level"
+   "description": "Level",
+   "how": "Sets the level of oscillator A into the filter, from 0 to 100 %.",
+   "sound": "Use it to balance the two oscillators against each other."
   },
   {
    "index": 18,
@@ -300,7 +336,9 @@
     "Grit",
     "User"
    ],
-   "description": "Wavetable (User: the table loaded in the editor)"
+   "description": "Wavetable (User: the table loaded in the editor)",
+   "how": "Chooses the wavetable for oscillator B, from the built-in sets or the loaded User table.",
+   "sound": "Each table has its own family of tones, from basic shapes to vowels, sweeping sync and gritty digital sounds."
   },
   {
    "index": 19,
@@ -312,7 +350,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "Position in the table (frames morph smoothly)"
+   "description": "Position in the table (frames morph smoothly)",
+   "how": "Moves through the frames of oscillator B's wavetable, from 0 to 100 %.",
+   "sound": "Moving the position morphs the tone smoothly from one timbre to the next, and modulating it makes evolving sounds."
   },
   {
    "index": 20,
@@ -333,7 +373,9 @@
     "Window sync",
     "PM from B"
    ],
-   "description": "How the cycle is read (PM from B acts on osc A only; here it reads plainly)"
+   "description": "How the cycle is read (PM from B acts on osc A only; here it reads plainly)",
+   "how": "Chooses how the cycle of oscillator B is bent or read: bend, squeeze, mirror, asymmetry, window sync or phase modulation.",
+   "sound": "Each warp reshapes the waveform and adds harmonics, from subtle fattening to hard, metallic edges."
   },
   {
    "index": 21,
@@ -345,7 +387,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "Warp amount"
+   "description": "Warp amount",
+   "how": "Sets how strongly the warp is applied to oscillator B, from 0 to 100 %.",
+   "sound": "Zero leaves the table untouched, and more warp makes the tone progressively more extreme."
   },
   {
    "index": 22,
@@ -359,7 +403,9 @@
    "a": -3.0,
    "flag": true,
    "unit": "oct",
-   "description": "Octave"
+   "description": "Octave",
+   "how": "Transposes oscillator B up or down by up to three octaves.",
+   "sound": "Lower octaves give weight and higher ones brightness or a thin layer."
   },
   {
    "index": 23,
@@ -373,7 +419,9 @@
    "a": -12.0,
    "flag": true,
    "unit": "st",
-   "description": "Semitones"
+   "description": "Semitones",
+   "how": "Transposes oscillator B by up to 12 semitones either way.",
+   "sound": "Use it to build intervals and chords from the two oscillators, such as a fifth."
   },
   {
    "index": 24,
@@ -387,7 +435,9 @@
    "a": -50.0,
    "b": 50.0,
    "unit": "ct",
-   "description": "Fine tune"
+   "description": "Fine tune",
+   "how": "Detunes oscillator B by up to 50 cents either way.",
+   "sound": "A few cents between the oscillators gives a slow, warm beating."
   },
   {
    "index": 25,
@@ -399,7 +449,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "Level"
+   "description": "Level",
+   "how": "Sets the level of oscillator B into the filter, from 0 to 100 %.",
+   "sound": "Use it to balance the two oscillators against each other."
   },
   {
    "index": 26,
@@ -414,7 +466,9 @@
     "Sine",
     "Square"
    ],
-   "description": "Sub oscillator wave"
+   "description": "Sub oscillator wave",
+   "how": "Chooses a sine or a square wave for the sub oscillator.",
+   "sound": "Sine gives a smooth, deep foundation and square a more audible, buzzy bass."
   },
   {
    "index": 27,
@@ -429,7 +483,9 @@
     "-1",
     "-2"
    ],
-   "description": "Octaves below the note"
+   "description": "Octaves below the note",
+   "how": "Chooses whether the sub oscillator sits one or two octaves below the note.",
+   "sound": "One octave down adds weight and two octaves down adds a rumble."
   },
   {
    "index": 28,
@@ -441,7 +497,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "Sub level"
+   "description": "Sets the level of the sub oscillator, from 0 to 100 %.",
+   "how": "Sets the level of the sub oscillator, from 0 to 100 %.",
+   "sound": "Raise it for more low-end weight in bass and lead sounds."
   },
   {
    "index": 29,
@@ -453,7 +511,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "Noise level"
+   "description": "Noise level",
+   "how": "Sets the level of the noise source, from 0 to 100 %.",
+   "sound": "A little adds air and breath, and a lot makes the sound hissy and percussive."
   },
   {
    "index": 30,
@@ -473,7 +533,9 @@
     "SVF Notch",
     "Off"
    ],
-   "description": "Filter model"
+   "description": "Filter model",
+   "how": "Chooses the filter model: 24 or 12 dB ladder, state-variable low-pass, band-pass, high-pass or notch, or off.",
+   "sound": "The ladder is warm and smooth, the state-variable types are cleaner and more flexible, and Off leaves the oscillators open."
   },
   {
    "index": 31,
@@ -487,7 +549,9 @@
    "a": 20.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "Cutoff"
+   "description": "Sets the filter cutoff frequency, from 20 Hz to 20 kHz.",
+   "how": "Sets the filter cutoff frequency, from 20 Hz to 20 kHz.",
+   "sound": "Low values make the sound dark and muffled, and high values open it up and brighten it."
   },
   {
    "index": 32,
@@ -499,7 +563,9 @@
    "default": 150,
    "kind": "percent",
    "unit": "%",
-   "description": "Resonance"
+   "description": "Resonance",
+   "how": "Sets the filter resonance, from 0 to 100 %.",
+   "sound": "More resonance puts a whistling peak at the cutoff, and a lot makes it ring."
   },
   {
    "index": 33,
@@ -513,7 +579,9 @@
    "a": 0.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Drive into the filter"
+   "description": "Drive into the filter",
+   "how": "Pushes the signal into the filter by up to 24 dB.",
+   "sound": "A little adds warmth and a lot makes the sound thick and distorted."
   },
   {
    "index": 34,
@@ -525,7 +593,9 @@
    "default": 600,
    "kind": "bipolar",
    "unit": "%",
-   "description": "Filter envelope amount (±6 octaves)"
+   "description": "Filter envelope amount (±6 octaves)",
+   "how": "Sets how much the filter envelope moves the cutoff, up to six octaves either way.",
+   "sound": "Positive amounts make each note open and close, and negative ones sweep the other way."
   },
   {
    "index": 35,
@@ -537,7 +607,9 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Cutoff follows the keyboard"
+   "description": "Cutoff follows the keyboard",
+   "how": "Sets how much the cutoff follows the note pitch, from 0 to 100 %.",
+   "sound": "At 100 % the brightness stays the same over the keyboard, and lower values make high notes duller."
   },
   {
    "index": 36,
@@ -549,7 +621,9 @@
    "default": 300,
    "kind": "percent",
    "unit": "%",
-   "description": "Softer notes close the filter (up to 3 octaves)"
+   "description": "Softer notes close the filter (up to 3 octaves)",
+   "how": "Sets how much soft notes close the filter, up to three octaves.",
+   "sound": "Harder playing sounds brighter, which makes the instrument feel more expressive."
   },
   {
    "index": 37,
@@ -563,7 +637,9 @@
    "a": 0.0005,
    "b": 20.0,
    "unit": "s",
-   "description": "Attack time"
+   "description": "Attack time",
+   "how": "Sets how long the amp envelope takes to rise from nothing to full, from 0.5 ms to 20 seconds.",
+   "sound": "Short attacks hit instantly for plucks and basses, and long ones fade in slowly like a pad."
   },
   {
    "index": 38,
@@ -577,7 +653,9 @@
    "a": 0.0005,
    "b": 20.0,
    "unit": "s",
-   "description": "Decay time"
+   "description": "Decay time",
+   "how": "Sets how long the amp envelope takes to fall to its sustain level, from 0.5 ms to 20 seconds.",
+   "sound": "Short decays give a plucky, percussive note, and long ones let the note ring down slowly."
   },
   {
    "index": 39,
@@ -589,7 +667,9 @@
    "default": 800,
    "kind": "percent",
    "unit": "%",
-   "description": "Sustain level"
+   "description": "Sustain level",
+   "how": "Sets the level the amp envelope holds while the key stays down, from 0 to 100 %.",
+   "sound": "A low sustain makes the note die away even when held, and a high one keeps it at full volume."
   },
   {
    "index": 40,
@@ -603,7 +683,9 @@
    "a": 0.0005,
    "b": 20.0,
    "unit": "s",
-   "description": "Release time"
+   "description": "Release time",
+   "how": "Sets how long the amp envelope takes to fall back after the key is released, from 0.5 ms to 20 seconds.",
+   "sound": "Short releases stop the note cleanly, and long ones let it fade out after you let go."
   },
   {
    "index": 41,
@@ -617,7 +699,9 @@
    "a": 0.0005,
    "b": 20.0,
    "unit": "s",
-   "description": "Attack time"
+   "description": "Attack time",
+   "how": "Sets how long the filter envelope takes to rise from nothing to full, from 0.5 ms to 20 seconds.",
+   "sound": "Short attacks open at once, and long ones make the effect swell in after the note starts."
   },
   {
    "index": 42,
@@ -631,7 +715,9 @@
    "a": 0.0005,
    "b": 20.0,
    "unit": "s",
-   "description": "Decay time"
+   "description": "Decay time",
+   "how": "Sets how long the filter envelope takes to fall to its sustain level, from 0.5 ms to 20 seconds.",
+   "sound": "Short decays make a quick snap in the effect, and long ones a slow, gradual sweep down."
   },
   {
    "index": 43,
@@ -643,7 +729,9 @@
    "default": 300,
    "kind": "percent",
    "unit": "%",
-   "description": "Sustain level"
+   "description": "Sustain level",
+   "how": "Sets the level the filter envelope holds while the key stays down, from 0 to 100 %.",
+   "sound": "A high sustain keeps the effect on while the key is held, and a low one lets it fade back."
   },
   {
    "index": 44,
@@ -657,7 +745,9 @@
    "a": 0.0005,
    "b": 20.0,
    "unit": "s",
-   "description": "Release time"
+   "description": "Release time",
+   "how": "Sets how long the filter envelope takes to fall back after the key is released, from 0.5 ms to 20 seconds.",
+   "sound": "Short releases end the effect at once, and long ones let it tail off after the note."
   },
   {
    "index": 45,
@@ -671,7 +761,9 @@
    "a": 0.0005,
    "b": 20.0,
    "unit": "s",
-   "description": "Attack time"
+   "description": "Attack time",
+   "how": "Sets how long the mod envelope takes to rise from nothing to full, from 0.5 ms to 20 seconds.",
+   "sound": "Short attacks open at once, and long ones make the effect swell in after the note starts."
   },
   {
    "index": 46,
@@ -685,7 +777,9 @@
    "a": 0.0005,
    "b": 20.0,
    "unit": "s",
-   "description": "Decay time"
+   "description": "Decay time",
+   "how": "Sets how long the mod envelope takes to fall to its sustain level, from 0.5 ms to 20 seconds.",
+   "sound": "Short decays make a quick snap in the effect, and long ones a slow, gradual sweep down."
   },
   {
    "index": 47,
@@ -697,7 +791,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "Sustain level"
+   "description": "Sustain level",
+   "how": "Sets the level the mod envelope holds while the key stays down, from 0 to 100 %.",
+   "sound": "A high sustain keeps the effect on while the key is held, and a low one lets it fade back."
   },
   {
    "index": 48,
@@ -711,7 +807,9 @@
    "a": 0.0005,
    "b": 20.0,
    "unit": "s",
-   "description": "Release time"
+   "description": "Release time",
+   "how": "Sets how long the mod envelope takes to fall back after the key is released, from 0.5 ms to 20 seconds.",
+   "sound": "Short releases end the effect at once, and long ones let it tail off after the note."
   },
   {
    "index": 49,
@@ -731,7 +829,9 @@
     "S&H",
     "Smooth"
    ],
-   "description": "Waveform"
+   "description": "Waveform",
+   "how": "Chooses the waveform of LFO 1: sine, triangle, rising or falling saw, square, random steps or smooth random.",
+   "sound": "Smooth shapes give gentle sweeps, square gives on-off jumps, and random shapes give unpredictable movement."
   },
   {
    "index": 50,
@@ -745,7 +845,9 @@
    "a": 0.02,
    "b": 50.0,
    "unit": "Hz",
-   "description": "Rate (free)"
+   "description": "Rate (free)",
+   "how": "Sets the speed of LFO 1 from 0.02 to 50 Hz when its sync is Free.",
+   "sound": "Slow rates drift over seconds, and fast rates turn into vibrato and tremolo."
   },
   {
    "index": 51,
@@ -770,7 +872,9 @@
     "2 bars",
     "4 bars"
    ],
-   "description": "Tempo sync (overrides the rate)"
+   "description": "Tempo sync (overrides the rate)",
+   "how": "Locks LFO 1 to a note length of the song tempo instead of the Rate control.",
+   "sound": "Synced modulation moves in time with the track."
   },
   {
    "index": 52,
@@ -785,7 +889,9 @@
     "Off",
     "On"
    ],
-   "description": "Restart with each note (per voice); off: one free LFO"
+   "description": "Restart with each note (per voice); off: one free LFO",
+   "how": "Chooses whether LFO 1 restarts with each note or runs freely.",
+   "sound": "Restarting gives every note the same movement, and free running makes each note slightly different."
   },
   {
    "index": 53,
@@ -800,7 +906,9 @@
    "b": 5.0,
    "exponent": 2.0,
    "unit": "s",
-   "description": "Fade-in time after the note starts"
+   "description": "Fade-in time after the note starts",
+   "how": "Sets how long LFO 1 takes to fade in after a note starts, up to 5 seconds.",
+   "sound": "A fade delays vibrato or sweeps until the note has settled, as a player would add vibrato late."
   },
   {
    "index": 54,
@@ -820,7 +928,9 @@
     "S&H",
     "Smooth"
    ],
-   "description": "Waveform"
+   "description": "Waveform",
+   "how": "Chooses the waveform of LFO 2: sine, triangle, rising or falling saw, square, random steps or smooth random.",
+   "sound": "Smooth shapes give gentle sweeps, square gives on-off jumps, and random shapes give unpredictable movement."
   },
   {
    "index": 55,
@@ -834,7 +944,9 @@
    "a": 0.02,
    "b": 50.0,
    "unit": "Hz",
-   "description": "Rate (free)"
+   "description": "Rate (free)",
+   "how": "Sets the speed of LFO 2 from 0.02 to 50 Hz when its sync is Free.",
+   "sound": "Slow rates drift over seconds, and fast rates turn into vibrato and tremolo."
   },
   {
    "index": 56,
@@ -859,7 +971,9 @@
     "2 bars",
     "4 bars"
    ],
-   "description": "Tempo sync (overrides the rate)"
+   "description": "Tempo sync (overrides the rate)",
+   "how": "Locks LFO 2 to a note length of the song tempo instead of the Rate control.",
+   "sound": "Synced modulation moves in time with the track."
   },
   {
    "index": 57,
@@ -874,7 +988,9 @@
     "Off",
     "On"
    ],
-   "description": "Restart with each note (per voice); off: one free LFO"
+   "description": "Restart with each note (per voice); off: one free LFO",
+   "how": "Chooses whether LFO 2 restarts with each note or runs freely.",
+   "sound": "Restarting gives every note the same movement, and free running makes each note slightly different."
   },
   {
    "index": 58,
@@ -889,7 +1005,9 @@
    "b": 5.0,
    "exponent": 2.0,
    "unit": "s",
-   "description": "Fade-in time after the note starts"
+   "description": "Fade-in time after the note starts",
+   "how": "Sets how long LFO 2 takes to fade in after a note starts, up to 5 seconds.",
+   "sound": "A fade delays vibrato or sweeps until the note has settled, as a player would add vibrato late."
   },
   {
    "index": 59,
@@ -914,7 +1032,9 @@
     "Random",
     "Unison"
    ],
-   "description": "Modulation source"
+   "description": "Modulation source",
+   "how": "Chooses what drives matrix slot 1, such as an LFO, an envelope, velocity or the mod wheel.",
+   "sound": "The source decides how the destination moves: steadily, with the note, or with your playing."
   },
   {
    "index": 60,
@@ -945,7 +1065,9 @@
     "LFO 1 rate",
     "LFO 2 rate"
    ],
-   "description": "Modulation destination"
+   "description": "Modulation destination",
+   "how": "Chooses which control matrix slot 1 moves.",
+   "sound": "Pointing a source at pitch, filter, level or pan changes what the movement does to the sound."
   },
   {
    "index": 61,
@@ -957,7 +1079,9 @@
    "default": 500,
    "kind": "bipolar",
    "unit": "%",
-   "description": "Amount"
+   "description": "Amount",
+   "how": "Sets how strongly slot 1 moves its destination, from minus 100 % to plus 100 %.",
+   "sound": "Positive values push the destination up, negative values push it down, and zero does nothing."
   },
   {
    "index": 62,
@@ -982,7 +1106,9 @@
     "Random",
     "Unison"
    ],
-   "description": "Modulation source"
+   "description": "Modulation source",
+   "how": "Chooses what drives matrix slot 2, such as an LFO, an envelope, velocity or the mod wheel.",
+   "sound": "The source decides how the destination moves: steadily, with the note, or with your playing."
   },
   {
    "index": 63,
@@ -1013,7 +1139,9 @@
     "LFO 1 rate",
     "LFO 2 rate"
    ],
-   "description": "Modulation destination"
+   "description": "Modulation destination",
+   "how": "Chooses which control matrix slot 2 moves.",
+   "sound": "Pointing a source at pitch, filter, level or pan changes what the movement does to the sound."
   },
   {
    "index": 64,
@@ -1025,7 +1153,9 @@
    "default": 500,
    "kind": "bipolar",
    "unit": "%",
-   "description": "Amount"
+   "description": "Amount",
+   "how": "Sets how strongly slot 2 moves its destination, from minus 100 % to plus 100 %.",
+   "sound": "Positive values push the destination up, negative values push it down, and zero does nothing."
   },
   {
    "index": 65,
@@ -1050,7 +1180,9 @@
     "Random",
     "Unison"
    ],
-   "description": "Modulation source"
+   "description": "Modulation source",
+   "how": "Chooses what drives matrix slot 3, such as an LFO, an envelope, velocity or the mod wheel.",
+   "sound": "The source decides how the destination moves: steadily, with the note, or with your playing."
   },
   {
    "index": 66,
@@ -1081,7 +1213,9 @@
     "LFO 1 rate",
     "LFO 2 rate"
    ],
-   "description": "Modulation destination"
+   "description": "Modulation destination",
+   "how": "Chooses which control matrix slot 3 moves.",
+   "sound": "Pointing a source at pitch, filter, level or pan changes what the movement does to the sound."
   },
   {
    "index": 67,
@@ -1093,7 +1227,9 @@
    "default": 500,
    "kind": "bipolar",
    "unit": "%",
-   "description": "Amount"
+   "description": "Amount",
+   "how": "Sets how strongly slot 3 moves its destination, from minus 100 % to plus 100 %.",
+   "sound": "Positive values push the destination up, negative values push it down, and zero does nothing."
   },
   {
    "index": 68,
@@ -1118,7 +1254,9 @@
     "Random",
     "Unison"
    ],
-   "description": "Modulation source"
+   "description": "Modulation source",
+   "how": "Chooses what drives matrix slot 4, such as an LFO, an envelope, velocity or the mod wheel.",
+   "sound": "The source decides how the destination moves: steadily, with the note, or with your playing."
   },
   {
    "index": 69,
@@ -1149,7 +1287,9 @@
     "LFO 1 rate",
     "LFO 2 rate"
    ],
-   "description": "Modulation destination"
+   "description": "Modulation destination",
+   "how": "Chooses which control matrix slot 4 moves.",
+   "sound": "Pointing a source at pitch, filter, level or pan changes what the movement does to the sound."
   },
   {
    "index": 70,
@@ -1161,7 +1301,9 @@
    "default": 500,
    "kind": "bipolar",
    "unit": "%",
-   "description": "Amount"
+   "description": "Amount",
+   "how": "Sets how strongly slot 4 moves its destination, from minus 100 % to plus 100 %.",
+   "sound": "Positive values push the destination up, negative values push it down, and zero does nothing."
   },
   {
    "index": 71,
@@ -1186,7 +1328,9 @@
     "Random",
     "Unison"
    ],
-   "description": "Modulation source"
+   "description": "Modulation source",
+   "how": "Chooses what drives matrix slot 5, such as an LFO, an envelope, velocity or the mod wheel.",
+   "sound": "The source decides how the destination moves: steadily, with the note, or with your playing."
   },
   {
    "index": 72,
@@ -1217,7 +1361,9 @@
     "LFO 1 rate",
     "LFO 2 rate"
    ],
-   "description": "Modulation destination"
+   "description": "Modulation destination",
+   "how": "Chooses which control matrix slot 5 moves.",
+   "sound": "Pointing a source at pitch, filter, level or pan changes what the movement does to the sound."
   },
   {
    "index": 73,
@@ -1229,7 +1375,9 @@
    "default": 500,
    "kind": "bipolar",
    "unit": "%",
-   "description": "Amount"
+   "description": "Amount",
+   "how": "Sets how strongly slot 5 moves its destination, from minus 100 % to plus 100 %.",
+   "sound": "Positive values push the destination up, negative values push it down, and zero does nothing."
   },
   {
    "index": 74,
@@ -1254,7 +1402,9 @@
     "Random",
     "Unison"
    ],
-   "description": "Modulation source"
+   "description": "Modulation source",
+   "how": "Chooses what drives matrix slot 6, such as an LFO, an envelope, velocity or the mod wheel.",
+   "sound": "The source decides how the destination moves: steadily, with the note, or with your playing."
   },
   {
    "index": 75,
@@ -1285,7 +1435,9 @@
     "LFO 1 rate",
     "LFO 2 rate"
    ],
-   "description": "Modulation destination"
+   "description": "Modulation destination",
+   "how": "Chooses which control matrix slot 6 moves.",
+   "sound": "Pointing a source at pitch, filter, level or pan changes what the movement does to the sound."
   },
   {
    "index": 76,
@@ -1297,7 +1449,9 @@
    "default": 500,
    "kind": "bipolar",
    "unit": "%",
-   "description": "Amount"
+   "description": "Amount",
+   "how": "Sets how strongly slot 6 moves its destination, from minus 100 % to plus 100 %.",
+   "sound": "Positive values push the destination up, negative values push it down, and zero does nothing."
   },
   {
    "index": 77,
@@ -1322,7 +1476,9 @@
     "Random",
     "Unison"
    ],
-   "description": "Modulation source"
+   "description": "Modulation source",
+   "how": "Chooses what drives matrix slot 7, such as an LFO, an envelope, velocity or the mod wheel.",
+   "sound": "The source decides how the destination moves: steadily, with the note, or with your playing."
   },
   {
    "index": 78,
@@ -1353,7 +1509,9 @@
     "LFO 1 rate",
     "LFO 2 rate"
    ],
-   "description": "Modulation destination"
+   "description": "Modulation destination",
+   "how": "Chooses which control matrix slot 7 moves.",
+   "sound": "Pointing a source at pitch, filter, level or pan changes what the movement does to the sound."
   },
   {
    "index": 79,
@@ -1365,7 +1523,9 @@
    "default": 500,
    "kind": "bipolar",
    "unit": "%",
-   "description": "Amount"
+   "description": "Amount",
+   "how": "Sets how strongly slot 7 moves its destination, from minus 100 % to plus 100 %.",
+   "sound": "Positive values push the destination up, negative values push it down, and zero does nothing."
   },
   {
    "index": 80,
@@ -1390,7 +1550,9 @@
     "Random",
     "Unison"
    ],
-   "description": "Modulation source"
+   "description": "Modulation source",
+   "how": "Chooses what drives matrix slot 8, such as an LFO, an envelope, velocity or the mod wheel.",
+   "sound": "The source decides how the destination moves: steadily, with the note, or with your playing."
   },
   {
    "index": 81,
@@ -1421,7 +1583,9 @@
     "LFO 1 rate",
     "LFO 2 rate"
    ],
-   "description": "Modulation destination"
+   "description": "Modulation destination",
+   "how": "Chooses which control matrix slot 8 moves.",
+   "sound": "Pointing a source at pitch, filter, level or pan changes what the movement does to the sound."
   },
   {
    "index": 82,
@@ -1433,7 +1597,9 @@
    "default": 500,
    "kind": "bipolar",
    "unit": "%",
-   "description": "Amount"
+   "description": "Amount",
+   "how": "Sets how strongly slot 8 moves its destination, from minus 100 % to plus 100 %.",
+   "sound": "Positive values push the destination up, negative values push it down, and zero does nothing."
   }
  ],
  "imports": [

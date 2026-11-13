@@ -31,7 +31,7 @@ namespace ReBuzz.Studio.Shell.Preferences
         readonly List<DeviceRow> inputRows = new List<DeviceRow>(), outputRows = new List<DeviceRow>();
         string shown;
 
-        public MidiPage(MidiEngine midi, IRegistryEx registry)
+        public MidiPage(MidiEngine midi, IRegistryEx registry, PrefsModel model) : base(model)
         {
             this.midi = midi;
             this.registry = registry;
@@ -48,12 +48,15 @@ namespace ReBuzz.Studio.Shell.Preferences
                 Note($"This system has no MIDI devices for {Product.Name} (it uses CoreMIDI on macOS).");
 
             Heading("Options");
-            AddSettings(Global.MIDISettings);
+            AddSection("midi");
 
             PollWhileShown(TimeSpan.FromSeconds(1));
         }
 
         public override string Title => "MIDI";
+
+        /// <summary>Restore Defaults: the options (the devices a person checked stay checked).</summary>
+        public override void RestoreOwn() { }
 
         internal IReadOnlyList<DeviceRow> Inputs => inputRows;
         internal IReadOnlyList<DeviceRow> Outputs => outputRows;
@@ -82,28 +85,51 @@ namespace ReBuzz.Studio.Shell.Preferences
             Fill(outputPanel, outputRows, outs, openOuts, savedOuts, input: false);
         }
 
+        /// <summary>
+        /// The devices as a table (ux-overhaul.md P3f): a column to use the device (its name, a check box), a column for its state, a header
+        /// above, and a rule between the rows.
+        /// </summary>
         void Fill(StackPanel panel, List<DeviceRow> rows, List<string> connected, HashSet<string> open, Dictionary<string, int> saved, bool input)
         {
             panel.Children.Clear();
             rows.Clear();
             // Connected devices first, then the remembered ones that aren't (as ReBuzz.exe lists them).
             var names = connected.Distinct().Concat(saved.Keys.Where(k => !connected.Contains(k))).ToList();
+            if (names.Count == 0)
+            {
+                panel.Children.Add(new TextBlock { Text = input ? "No MIDI inputs." : "No MIDI outputs.", Foreground = Dim, Margin = new Thickness(4, 2) });
+                return;
+            }
+            var table = new Grid { ColumnDefinitions = new ColumnDefinitions("*,140"), MaxWidth = 520, HorizontalAlignment = HorizontalAlignment.Left };
+            table.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+            void Cell(Avalonia.Controls.Control c, int row, int column)
+            {
+                Grid.SetRow(c, row);
+                Grid.SetColumn(c, column);
+                table.Children.Add(c);
+            }
+            Cell(new TextBlock { Text = "Device (check to use)", Foreground = Dim, FontSize = 12, Margin = new Thickness(4, 2) }, 0, 0);
+            Cell(new TextBlock { Text = "State", Foreground = Dim, FontSize = 12, Margin = new Thickness(4, 2) }, 0, 1);
+            int r = 1;
             foreach (var name in names)
             {
                 bool isConnected = connected.Contains(name);
                 bool on = saved.TryGetValue(name, out int flags) && (flags & 1) != 0;
-                var box = new CheckBox { Content = name, IsChecked = on, MinWidth = 280 };
-                string state = !isConnected ? "not connected" : open.Contains(name) ? "open" : on ? "didn't open" : "";
-                var row = new DockPanel { LastChildFill = false };
-                var status = new TextBlock { Text = state, Foreground = state == "didn't open" ? Problem : Dim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
-                row.Children.Add(box);
-                row.Children.Add(status);
+                var box = new CheckBox { Content = name, IsChecked = on, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0) };
+                string state = !isConnected ? "not connected" : open.Contains(name) ? "open" : on ? "didn't open" : "closed";
+                var status = new TextBlock { Text = state, Foreground = state == "didn't open" ? Problem : Dim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0) };
                 string device = name;
                 box.IsCheckedChanged += (s, e) => Toggle(device, input, box.IsChecked == true);
-                panel.Children.Add(row);
+                table.RowDefinitions.Add(new RowDefinition(new GridLength(28)));
+                var rule = new Border { BorderBrush = ReBuzz.Studio.Shell.Design.StudioTokens.SurfaceBorderBrush, BorderThickness = new Thickness(0, 1, 0, 0) };
+                Grid.SetColumnSpan(rule, 2);
+                Cell(rule, r, 0);
+                Cell(box, r, 0);
+                Cell(status, r, 1);
                 rows.Add(new DeviceRow(name, isConnected, open.Contains(name), box));
+                r++;
             }
-            if (names.Count == 0) panel.Children.Add(new TextBlock { Text = input ? "No MIDI inputs." : "No MIDI outputs.", Foreground = Dim, Margin = new Thickness(4, 2) });
+            panel.Children.Add(table);
         }
 
         /// <summary>

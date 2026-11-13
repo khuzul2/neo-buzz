@@ -42,6 +42,15 @@ namespace ReBuzz.Studio.Views.Device
         public string Sound { get; init; } = "";
         /// <summary>The manifest's role ("filter.cutoff"), the macro strip's pick; empty without one.</summary>
         public string Role { get; init; } = "";
+        /// <summary>The manifest's plain English name ("Filter cutoff"); empty without one.</summary>
+        public string PlainName { get; init; } = "";
+        /// <summary>The macro strip's label: the plain name, else the name, in Title Case ("L depth" is "L Depth").</summary>
+        public string MacroLabel => TitleCase(PlainName.Length > 0 ? PlainName : Name);
+
+        /// <summary>Capitalises each lower-case word; words with a capital in them (LFO, PEG, Hz) stay.</summary>
+        public static string TitleCase(string s) =>
+            string.Join(" ", (s ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(w => char.IsLower(w[0]) ? char.ToUpperInvariant(w[0]) + w.Substring(1) : w));
+
         public ParamInfo Info { get; init; }
         /// <summary>Where the manifest's value is zero inside the range (a bipolar mapping, a linear one through zero, a count that starts below it); null: not inside it.</summary>
         public double? ZeroAt { get; init; }
@@ -200,6 +209,7 @@ namespace ReBuzz.Studio.Views.Device
                     How = DeviceExplain.How(entry),
                     Sound = DeviceExplain.Sound(entry),
                     Role = entry?.Role ?? "",
+                    PlainName = entry?.PlainName ?? "",
                     ZeroAt = ZeroOf(entry, p.MinValue, p.MaxValue),
                     Info = new ParamInfo
                     {
@@ -324,17 +334,25 @@ namespace ReBuzz.Studio.Views.Device
             var globals = sections.Where(s => !s.IsTable && s.Name != "Inputs").SelectMany(s => s.Params).Where(p => p.Kind == DeviceKind.Slider && p.Max > p.Min).ToList();
             var picks = new List<DeviceParam>();
             void Add(DeviceParam p) { if (picks.Count < MacroCount && !picks.Contains(p)) picks.Add(p); }
+            // The manifest's roles first; names only fill what they leave (and never an envelope stage, an operator or an LFO's numbered part).
             foreach (var role in MacroRoles)
                 foreach (var p in globals.Where(p => p.Role == role)) Add(p);
-            if (picks.Count == 0)
+            if (picks.Count < 4)
             {
+                var plain = globals.Where(p => !p.FullName.Any(char.IsDigit) && !p.Group.Any(char.IsDigit)).ToList();
+                foreach (var word in MacroWords)       // a name that is the word, then one that holds it
+                    foreach (var p in plain.Where(p => p.Name.Equals(word, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        Add(p);
+                        break;
+                    }
                 foreach (var word in MacroWords)
-                    foreach (var p in globals.Where(p => p.FullName.Contains(word, StringComparison.OrdinalIgnoreCase)))
+                    foreach (var p in plain.Where(p => p.FullName.Contains(word, StringComparison.OrdinalIgnoreCase)))
                     {
                         Add(p);
                         break;                      // one of each kind: the first filter's cutoff, not every cutoff
                     }
-                foreach (var p in globals) if (picks.Count < 4) Add(p);
+                foreach (var p in plain) if (picks.Count < 4) Add(p);
             }
             return picks;
         }

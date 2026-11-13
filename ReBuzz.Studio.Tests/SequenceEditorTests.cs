@@ -469,7 +469,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Events(0), Is.EqualTo("0:Hook 32:Hook"));
 
             // A focused text box takes the Edit menu's commands (the BPM box), not the view.
-            var bpmBox = rig.Window.Transport.GetVisualDescendants().OfType<TextBox>().First();
+            var bpmBox = ((MainWindow)rig.Window).Transport.Tempo.Box;
             Assert.That(bpmBox.Focus(), Is.True);
             bpmBox.SelectAll();
             Settle();

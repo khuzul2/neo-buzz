@@ -542,5 +542,29 @@ namespace ReBuzz.Studio.Tests
                 try { Directory.Delete(dir, true); } catch (IOException) { }
             }
         }
+
+        [AvaloniaTest]
+        public void ItsEditorFeedsTheInspectorsExplainCardFromItsHoveredKnob()
+        {
+            var m = Add("Explain Dye");
+            try
+            {
+                var window = Open(m);
+                Assert.That(ExplainBoard.IsRegistered(m), Is.True, "Dye Essence's controls have Explain text");
+                var knob = window.GetVisualDescendants().OfType<Control>()
+                    .First(c => c.GetType().Name == "ParamKnob" && c.IsEffectivelyVisible);
+                var at = knob.TranslatePoint(new Point(knob.Bounds.Width / 2, knob.Bounds.Height / 2), window)!.Value;
+                window.MouseMove(at);
+                var card = ExplainBoard.Get(m);
+                Assert.That(card?.Name, Is.EqualTo("A position"));
+                Assert.That(card?.How, Is.Not.Empty);
+                Assert.That(card?.Sound, Is.Not.Empty);
+                Studio.Screenshot(window, "dye-essence-editor-explain");
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
     }
 }

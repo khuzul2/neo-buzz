@@ -6,19 +6,47 @@ summary Chorus, flanger and phaser in one: one to four modulated delays (Chorus)
 
 group Mode
 Mode      "Mode"      0 2    0    enum Chorus Flanger Phaser          | Chorus: 1–4 voices of a modulated delay; Flanger: one short swept delay with feedback (a comb); Phaser: allpass stages swept in frequency
+    how Chooses the effect: a multi-voice chorus, a swept flanger or a phaser.
+    sound Chorus thickens and widens, the flanger sweeps a jet-like comb through the sound, and the phaser adds a softer, vowel-like swirl.
 group LFO
 Rate      "Rate"      0 1000 492  freq 0.02 20                        | LFO speed, when Sync is Free
+    how Sets the speed of the sweep from 0.02 to 20 Hz when Sync is Free.
+    sound Slow rates give a gentle drift and fast rates a vibrato-like wobble.
 Sync      "Sync"      0 13   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars 8_bars 16_bars | Tempo sync: one LFO cycle per division of the song's tempo (overrides Rate)
+    how Locks one sweep cycle to a note length of the song tempo instead of the Rate knob.
+    sound Synced sweeps breathe in time with the track.
 Shape     "Shape"     0 1    0    enum Sine Triangle                  | LFO waveform
+    how Chooses a sine or a triangle for the sweep.
+    sound Sine is smooth and even; triangle moves at a steady speed and sounds slightly more mechanical.
 Depth     "Depth"     0 1000 300  pct                                 | Sweep: at 100 % the delay moves an octave either side of Delay (Chorus), two octaves (Flanger); the phaser's frequency three octaves either side of Centre
+    how Sets how far the sweep moves the delay or the filter frequency, from 0 to 100 %.
+    sound Low depth is a subtle shimmer, and high depth is a dramatic, obvious sweep.
 Spread    "Spread"    0 180  90   lin 0 180 ° 0                       | The right channel's LFO phase against the left's: 0° moves both alike, 180° opposite (with several chorus voices, a share of the gap between them: at 180° the right's voices fall halfway between the left's)
+    how Offsets the right channel's sweep against the left, from 0 to 180 degrees.
+    sound At 0 degrees both sides move together; wider values make the movement circle through the stereo picture.
 group Sound
 Delay     "Delay"     0 1000 710  time 0.0002 0.03                    | Chorus and Flanger: the delay at the centre of the sweep (geometric), 0.2–30 ms
+    how Sets the delay at the centre of the sweep for Chorus and Flanger, from 0.2 to 30 ms.
+    sound Short delays make a metallic flanger tone, and longer ones a thicker, more detuned chorus.
 Voices    "Voices"    1 4    2    int 0                               | Chorus: delayed voices, their LFOs spread evenly over the cycle
+    how Sets the number of chorus voices, from 1 to 4.
+    sound More voices make a lusher, denser ensemble; one voice is a clear single doubling.
 Centre    "Centre"    0 1000 469  freq 50 10000                       | Phaser: the stages' frequency at the centre of the sweep (geometric)
+    how Sets the middle frequency of the phaser sweep, from 50 Hz to 10 kHz.
+    sound A low centre swirls the body of the sound and a high one makes the sweep thinner and airier.
 Stages    "Stages"    2 12   4    int 0                               | Phaser: first-order allpass stages (an even count gives Stages ÷ 2 notches)
+    how Sets the number of phaser stages, from 2 to 12.
+    sound More stages add more notches and a deeper, more complex swirl.
 Feedback  "Feedback"  0 1980 990  lin -99 99 % 1                      | The wet signal back into the delay or the stages; negative inverts it. Bounded to ±99 % and saturating above full scale, so it can't run away
+    how Feeds the wet signal back into the effect, from minus 99 % to plus 99 %.
+    sound Positive feedback sharpens the peaks into a ringing resonance, and negative feedback gives a hollower tone.
 Tone      "Tone"      0 1000 862  freq 500 20000                      | One-pole high cut, −3 dB at this frequency, on the wet signal and in the feedback loop (Chorus, Flanger) or in the loop (Phaser); at its top (20 kHz) it is open
+    how Rolls off the highs of the wet signal from 500 Hz to 20 kHz.
+    sound Lowering it makes the effect darker and softer, and fully open it stays bright.
 group Output
 Mix       "Mix"       0 1000 500  pct                                 | Dry against wet: 50 % the deepest comb or notches, 100 % only the wet (vibrato)
+    how Blends the dry sound with the effect from 0 to 100 %.
+    sound Around 50 % gives the deepest notches, while 100 % leaves only the pitch-wobbling wet sound.
 Output    "Output"    0 240  120  db -12 12                           | Output gain, −12 … +12 dB in 0.1 dB steps
+    how Sets the output gain, from minus 12 to plus 12 dB.
+    sound Use it to match the level with the dry sound.

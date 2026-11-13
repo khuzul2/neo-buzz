@@ -351,6 +351,15 @@ namespace ReBuzz.Studio.Shell
             Destructive = UserAnswer.Yes,
         };
 
+        /// <summary>Restore Defaults: Restore (Yes) or Cancel (No), Cancel on Return and Escape.</summary>
+        public static DialogChoices Restore => new DialogChoices
+        {
+            Labels = new() { [UserAnswer.Yes] = "Restore", [UserAnswer.No] = "Cancel" },
+            Default = UserAnswer.No,
+            Safe = UserAnswer.No,
+            Destructive = UserAnswer.Yes,
+        };
+
         /// <summary>Deleting: Delete (Yes) or Cancel (No), Cancel on Return and Escape.</summary>
         public static DialogChoices Delete => new DialogChoices
         {
