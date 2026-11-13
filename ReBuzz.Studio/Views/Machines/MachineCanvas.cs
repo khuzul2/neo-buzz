@@ -652,6 +652,9 @@ namespace ReBuzz.Studio.Views.Machines
             }
         }
 
+        /// <summary>The middle of a modulation wire (tests).</summary>
+        internal Point ModMidOf(ModLink link) => MachineGeometry.Wire(BoxOf(link.Source), BoxOf(link.Target)).Mid;
+
         /// <summary>The modulation wire under a logical point (within a few pixels of its line), or null.</summary>
         internal ModLink ModAt(Point p)
         {

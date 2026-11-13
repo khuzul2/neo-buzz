@@ -251,7 +251,7 @@ namespace ReBuzz.Agent
                     Opt("machine", String("A modulator, or a machine to list its incoming modulations (default: all)"))),
                 Output = Object(null,
                     Req("modulators", Array(Object("A modulator",
-                        Req("name", String("Its name")), Req("kind", String("LFO, Envelope, Step or Macro")),
+                        Req("name", String("Its name")), Req("kind", String("LFO, Envelope, Step or Macro")), Opt("output", Number("Its output now, 0 … 1")), Opt("listens_to", String("The machine whose notes or level it listens to")),
                         Req("targets", Array(Object("A target", Req("slot", Integer("Slot")), Req("target_machine", String("Machine")), Req("param", String("Parameter")),
                             Req("depth", Integer("Percent")), Req("polarity", String("uni or bi")), Req("state", String("active, machine missing…"))), "Its targets"))), "Modulators"))),
                 Annotations = ToolAnnotations.Read,

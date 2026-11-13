@@ -2,6 +2,8 @@
 
 Status: approved by the user 2026-11-13 ("Neo Patch + the canvas modulators"). Planning by the lead. This file is the contract the phases build to.
 
+Status notes (phase NM, branch machines/neo-modulators): built and tested: Neo LFO, Neo Envelope (Note and Follower), Neo Step and Neo Macro with up to 8 targets each; the host side (`modulate`, `modulation_list`, `modulation_remove`, the incoming modulations in `machine_describe`); the studio (dashed wires, the live-range ring, the target picker and scope in each editor). Notes: the modulators carry no factory presets (their setup is the targets, which the song holds); the Pedal LFO to Neo LFO pair maps the wave and the phase, and Pedal Peer Control has no pair (its per-track Value has no single counterpart in Neo Macro: the reason is on the Neo Macro page); a Note envelope sees the notes patterns and midi_play send, not a MIDI keyboard's.
+
 ## 1. What and why
 
 Two pieces. Together they give NeoBuzz Live modular synthesis without changing how the engine's wires work.

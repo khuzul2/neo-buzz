@@ -17,6 +17,7 @@ using System.Linq;
 using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.NUnit;
 using Avalonia.VisualTree;
 using BuzzGUI.Interfaces;
@@ -378,6 +379,12 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(link.Target, Is.SameAs(filter));
                 Assert.That(link.Label, Does.Contain("Cutoff").And.Contain("+50"));
                 Assert.That(MachineIdentity.CategoryOf(lfo), Is.EqualTo(NeoBuzz.Editor.MachineCategory.Control), "the wire wears the Control identity colour");
+                // The pointer on the wire: its label (the tip and the plate drawn over it).
+                window.MouseMove(view.FromCanvas(canvas.ModMidOf(link), window) + new Vector(2, 2));
+                window.MouseMove(view.FromCanvas(canvas.ModMidOf(link), window));
+                MachineViewTests.Settle();
+                Assert.That(canvas.HoverTip, Does.Contain("Mod LFO moves").And.Contain("Cutoff"), "the tip names the parameter");
+                Studio.Screenshot(window, "neo-modulation-wire");
 
                 // The device view of the target: the ring.
                 var device = new DeviceView(filter);
@@ -388,6 +395,9 @@ namespace ReBuzz.Studio.Tests
                 device.List.Reveal(row);
                 MachineViewTests.Settle();
                 Assert.That(device.List.IsModulated(row), Is.True, "the modulated parameter has a ring");
+                device.List.SetFocus(row);
+                MachineViewTests.Settle();
+                Studio.Screenshot(host, "neo-modulation-ring");
                 Assert.That(device.List.IsModulated(device.Layout.All.First(p => p.Parameter == Param(filter, "Resonance"))), Is.False, "another one has none");
                 host.Close();
 
@@ -399,6 +409,73 @@ namespace ReBuzz.Studio.Tests
             {
                 lock (ReBuzzCore.AudioLock) Core.Playing = false;
                 MachineViewTests.Close(window);
+                NewSong();
+            }
+        }
+
+        // ------------------------------------------------------------------ the editors
+
+        static object Static(System.Reflection.Assembly a, string type, string property) =>
+            a.GetType(type)!.GetProperty(property, System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)!.GetValue(null)!;
+
+        [AvaloniaTest]
+        public void EachModulatorsEditorPicksATargetFromItsMachineAndParameterLists()
+        {
+            NewSong();
+            var filter = Add("Neo Filter", "Editor Filter");
+            try
+            {
+                foreach (var gear in new[] { "Neo LFO", "Neo Envelope", "Neo Step", "Neo Macro" })
+                {
+                    var m = Add(gear, "Editor " + gear);
+                    try
+                    {
+                        Core.UiHost.OpenGui(m, null);
+                        var window = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(window, Is.Not.Null, gear + ": its GUI opened");
+                        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                        var editor = StudioMachineUiHost.ContentOf(window!);
+                        Assert.That(editor, Is.Not.Null);
+                        Assert.That(editor!.GetType().Name, Is.EqualTo("Neo" + char.ToUpper(gear[4]) + gear.Substring(5).ToLower() + "Editor"), gear + ": its own editor");
+                        var type = editor.GetType();
+                        var asm = type.Assembly;
+                        Assert.That(ModulationBoard.Of(m), Is.Not.Null, gear + " registered itself");
+
+                        type.GetMethod("PickMachine")!.Invoke(editor, new object[] { -1, 20.0, 40.0 });
+                        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                        var machines = (ListBox)Static(asm, "NeoBuzz.Editor.PickerPopup", "List");
+                        var names = ((System.Collections.IEnumerable)machines.ItemsSource!).Cast<string>().ToList();
+                        Assert.That(names, Does.Contain("Editor Filter"), gear + ": the machine list");
+                        Assert.That(names, Does.Not.Contain(m.Name), gear + ": not itself");
+                        machines.SelectedIndex = names.IndexOf("Editor Filter");
+                        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+                        var parameters = (ListBox)Static(asm, "NeoBuzz.Editor.PickerPopup", "List");
+                        var search = (TextBox)Static(asm, "NeoBuzz.Editor.PickerPopup", "Search");
+                        Assert.That(search, Is.Not.Null, gear + ": the parameter list is searchable");
+                        search.Text = "cutoff";
+                        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                        var shown = ((System.Collections.IEnumerable)parameters.ItemsSource!).Cast<string>().ToList();
+                        Assert.That(shown, Is.Not.Empty.And.All.Matches<string>(x => x.Contains("cutoff", StringComparison.OrdinalIgnoreCase)), gear + ": the search narrows the list");
+                        parameters.SelectedIndex = shown.IndexOf("Cutoff");
+                        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+                        var target = ModulationBoard.Of(m)!.Targets.Single();
+                        Assert.That(target.Machine, Is.EqualTo("Editor Filter"), gear);
+                        Assert.That(target.Param, Is.EqualTo("Cutoff"), gear);
+                        Assert.That(target.Bipolar, Is.EqualTo(gear == "Neo LFO"), gear + ": bipolar for an LFO, unipolar for the rest");
+                        window!.CaptureRenderedFrame();
+                        Studio.Screenshot(window, gear.ToLowerInvariant().Replace(' ', '-') + "-editor");
+                    }
+                    finally
+                    {
+                        Core.UiHost.ReleaseMachine(m);
+                        Core.SongCore.DeleteMachines(new[] { m });
+                    }
+                }
+            }
+            finally
+            {
                 NewSong();
             }
         }

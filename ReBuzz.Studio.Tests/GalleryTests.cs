@@ -619,6 +619,65 @@ namespace ReBuzz.Studio.Tests
                     window.MouseMove(new Point(20, 860));
                     Settle();
                 });
+                Try("029-machines-modulation", () =>
+                {
+                    // neo-patch.md §3 (phase NM): two modulators on the demo song: an LFO on the lead and an envelope on the delay, each a dashed wire
+                    // in the Control identity colour; the pointer rests on the LFO's wire for its label. Then the lead's device view with the ring.
+                    var song = Core.SongCore;
+                    var added = new List<MachineCore>();
+                    try
+                    {
+                        song.CreateMachine("Neo LFO", null, "Wobble", null, null, null, -1, -0.62f, -0.6f);
+                        song.CreateMachine("Neo Envelope", null, "Pluck", null, null, null, -1, 0.2f, -0.72f);
+                        added.AddRange(song.MachinesList.Where(m => m.Name is "Wobble" or "Pluck"));
+                        IParameter Slider(MachineCore m, string name) => m.ParameterGroups[1].Parameters.FirstOrDefault(p => p.Name == name)
+                            ?? m.ParameterGroups[1].Parameters.First(p => p.Type != ParameterType.Note && p.MaxValue - p.MinValue >= 100);
+                        var lead = Slider((MachineCore)demo.Lead, "F1 cutoff");
+                        var fb = Slider((MachineCore)demo.Delay, "Feedback");
+                        var lfo = ModulationBoard.Of(added.First(m => m.Name == "Wobble"));
+                        var env = ModulationBoard.Of(added.First(m => m.Name == "Pluck"));
+                        lfo.SetTarget(-1, demo.Lead, lead, 0, new ModulationInfo { Depth = 40, Bipolar = true }, out _);
+                        env.SetTarget(-1, demo.Delay, fb, 0, new ModulationInfo { Depth = 30, Bipolar = false }, out _);
+                        for (int i = 0; i < 60 && !(lfo.Targets.Count == 1 && lfo.Targets[0].State == ModulationState.Active && env.Targets[0].State == ModulationState.Active); i++)
+                        {
+                            Wait(100);
+                            Settle();
+                        }
+                        window.ShowView("Machines");
+                        Settle();
+                        var link = machines.Canvas.ModLinks.First(l => l.Source.Name == "Wobble");
+                        window.MouseMove(machines.FromCanvas(machines.Canvas.ModMidOf(link), window) + new Vector(2, 2));
+                        Wait(100);
+                        window.MouseMove(machines.FromCanvas(machines.Canvas.ModMidOf(link), window));
+                        Settle();
+                        Shot(window, "029-machines-modulation", "Machines with two modulators (Neo LFO \"Wobble\" on Lead's cutoff, Neo Envelope \"Pluck\" on Delay's feedback): a dashed wire in the Control identity colour from each modulator to the machine it moves (no arrow: it is not a signal), the label of the one under the pointer.",
+                            "Add a Neo LFO, Envelope, Step or Macro and pick a target in its editor (or the agent's modulate); point at a dashed wire for its parameters.");
+                        window.MouseMove(new Point(5, 5));
+
+                        ReBuzz.Studio.Views.StudioSelection.For(Core).SelectMachine(demo.Lead, window);
+                        window.Detail.ShowDevice();
+                        Settle();
+                        var view = ((ReBuzz.Studio.Views.Device.DeviceDock)window.Detail.DevicePage).Page!.Parameters;
+                        var row = view.Layout.All.First(p => p.Parameter == lead);
+                        view.List.Reveal(row);
+                        view.List.SetFocus(row);
+                        Wait(300);
+                        Settle();
+                        Shot(window, "029-device-modulation-ring", "The device view of Lead with its cutoff modulated: a ring in the Control colour over the slider shows where the modulation reaches, a tick the value you set and a dot the value now.",
+                            "Modulate a parameter, then select its machine.");
+                        window.Detail.Close();
+                        Settle();
+                    }
+                    finally
+                    {
+                        foreach (var m in added)
+                        {
+                            Core.UiHost.ReleaseMachine(m);
+                            song.DeleteMachines(new[] { m });
+                        }
+                        Settle();
+                    }
+                });
                 Try("024-machines-zoomed", () =>
                 {
                     machines.ZoomSlider.Value = 3;

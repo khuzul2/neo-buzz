@@ -11,10 +11,12 @@ One knob that moves up to 8 parameters of other machines at once, with no audio 
 
 ## Key controls
 
-| Parameter | Value | Why |
-|---|---|---|
-| Value | 0 % | the knob |
-| Write glide | 100 ms | how fast the targets follow a jump |
+- `Value` (0 %): the knob; automate it, set it with `param_set`, or bind a MIDI controller to it.
+- `Write glide` (100 ms): how fast the targets follow a jump of the knob.
+- Each target's depth (−100 … +100 %; 50 is a good start): how far the target moves at Value 100 %; negative moves it the other way.
+- Each target's polarity: uni adds 0 … depth above the base, bi swings around it.
+- Each target's range: confines the swing to part of the parameter's range.
+- Each target's curve: bends the response (an eased start or an eased end).
 
 ## Starting points
 

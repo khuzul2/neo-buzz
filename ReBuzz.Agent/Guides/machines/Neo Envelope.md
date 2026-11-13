@@ -45,5 +45,5 @@ Nothing replaces it: Pedal LFO's free-running wave is Neo LFO. Pedal Peer Contro
 ## Checklist
 
 - [ ] `modulation_list(machine="Env")` shows each target `active`.
-- [ ] `machine_readings` or `modulation_list` shows the output moving after a note (Note) or with the source's level (Follower).
+- [ ] `modulation_list(machine="Env")` twice, a moment apart: the `output` moves after a note (Note) or with the source's level (Follower).
 - [ ] `render(probes=["Lead"])`: the filter opens on every note.

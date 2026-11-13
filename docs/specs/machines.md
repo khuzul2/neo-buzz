@@ -49,6 +49,10 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Neo Gate | effect | Successor of Pedal Gate: gate and downward expander with hysteresis, hold, range, key filters, an external sidechain, lookahead, Listen and Delta. |
 | Neo Strip | effect | Channel strip: gate, EQ (low cut, low shelf, two bells, high shelf, high cut), compressor, drive, clipper and limiter in that order, each the engine of the Neo machine of that name; a stage that is off passes the audio untouched; constant latency; Delta and Match (mastering-tools.md §5.10) |
 | Neo Analyzer | effect | Spectrum (FFT with peak hold, third-octave bars), loudness (momentary, short-term, integrated LUFS, range, true peak) and stereo (correlation, width, goniometer) with the analysis library's numbers; readings for agents; audio untouched |
+| Neo LFO | control | A low-frequency oscillator that moves up to 8 parameters of other machines (neo-patch.md §3): seven shapes, a free rate or a tempo length (straight, dotted, triplet), phase, retrigger on the beat, the bar or a note, smoothing; no audio, no undo steps. |
+| Neo Envelope | control | An ADSR started by the notes of a chosen machine (or its Gate switch), or a follower of a machine's output level; moves up to 8 parameters. |
+| Neo Step | control | A 1 to 32 step value sequencer at a synced rate with swing, glide and a random amount; moves up to 8 parameters. |
+| Neo Macro | control | One knob (a parameter: automatable, bindable) that moves up to 8 parameters at once, each by its own depth, range and curve. |
 
 **Third batch (successors: machine-safety.md §4)**
 
