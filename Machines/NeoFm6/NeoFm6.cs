@@ -34,7 +34,13 @@ namespace NeoBuzz.Fm6
             Engine = new FmEngine(Values);
         }
 
-        internal FmEngine Engine { get; }
+        internal FmEngine Engine { get; private set; }
+
+        internal override void Restart()
+        {
+            Engine = new FmEngine(Values);
+            rate = 0;
+        }
 
         /// <summary>The loaded bank's voices (empty when none is loaded).</summary>
         internal IReadOnlyList<Sysex.Voice> Bank => bank;

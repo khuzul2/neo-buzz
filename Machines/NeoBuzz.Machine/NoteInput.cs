@@ -98,6 +98,17 @@ namespace NeoBuzz.Machine
             return midi >= 0 && midi <= 127 ? midi : -1;
         }
 
+        /// <summary>Forgets everything queued (a render starts from nothing).</summary>
+        public void Clear()
+        {
+            lock (trackLock)
+            {
+                anyTrack = false;
+                for (int t = 0; t < Tracks; t++) { hasNote[t] = false; pendingVelocity[t] = -1; }
+            }
+            lock (midiLock) Volatile.Write(ref ringRead, Volatile.Read(ref ringWrite));
+        }
+
         /// <summary>Audio thread, at the start of a block: applies everything queued.</summary>
         public void Drain(INoteSink sink)
         {

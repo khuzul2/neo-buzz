@@ -70,7 +70,7 @@ namespace ReBuzz.Studio.Views.Notes
         readonly StackPanel bar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Margin = new Thickness(6, 3) };
         readonly Border banner = new Border { Background = BannerBrush, Padding = new Thickness(10, 6), IsVisible = false };
         readonly TextBlock bannerText = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = TextBrush, VerticalAlignment = VerticalAlignment.Center };
-        readonly Button dismiss = new Button { Content = "Dismiss", Padding = new Thickness(10, 2), Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        readonly Button dismiss = new Button { Content = "Dismiss", Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         readonly StackPanel page = new StackPanel { Margin = new Thickness(18, 14, 18, 24) };
         readonly ScrollViewer pageScroll = new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
         readonly TextBlock emptyPage = new TextBlock { Text = "The notes appear here as they read.", Foreground = DimBrush, FontStyle = FontStyle.Italic };
@@ -212,21 +212,17 @@ namespace ReBuzz.Studio.Views.Notes
 
         void Tool(string text, string tip, Action run, Action<Button> look = null)
         {
-            var b = new Button
+            var b = StudioButtons.KeepFocus(new Button     // the editor keeps the keyboard and its selection
             {
                 Content = text,
-                MinWidth = 28,
-                Height = 26,
-                MinHeight = 0,
-                Padding = new Thickness(7, 0),
-                FontSize = 13,
-                HorizontalContentAlignment = HorizontalAlignment.Center,
-                VerticalContentAlignment = VerticalAlignment.Center,
-                Focusable = false,      // the editor keeps the keyboard and its selection
+                MinWidth = StudioStyles.ControlHeight,
                 Tag = text,
-            };
+            });
             look?.Invoke(b);
             ToolTip.SetTip(b, tip);
+            // A screen reader hears the tool's words ("Bold"), not its letter: the tip's first words, before its key or its explanation.
+            int cut = tip.IndexOfAny(new[] { '(', ':', ',' });
+            Avalonia.Automation.AutomationProperties.SetName(b, (cut > 0 ? tip.Substring(0, cut) : tip).Trim());
             b.Click += (s, e) =>
             {
                 run();

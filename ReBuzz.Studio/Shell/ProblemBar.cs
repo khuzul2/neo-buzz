@@ -44,7 +44,7 @@ namespace ReBuzz.Studio.Shell
         readonly TextBlock text = new TextBlock { TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center, FontSize = 13 };
         readonly TextBlock more = new TextBlock { VerticalAlignment = VerticalAlignment.Center, FontSize = 12, Margin = new Thickness(12, 0, 0, 0) };
         readonly StackPanel buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        readonly Button dismiss = new Button { Content = "×", Padding = new Thickness(8, 2), Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        readonly Button dismiss = new Button { Content = "×", Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         readonly HashSet<string> dismissed = new HashSet<string>();
         string shownKey;
         string shownSignature;
@@ -115,7 +115,7 @@ namespace ReBuzz.Studio.Shell
             buttons.Children.Clear();
             foreach (var (label, fix) in first.Fixes)
             {
-                var b = new Button { Content = label, Padding = new Thickness(10, 3), Tag = label };
+                var b = new Button { Content = label, Tag = label };
                 b.Click += (s, e) => fix();
                 buttons.Children.Add(b);
             }

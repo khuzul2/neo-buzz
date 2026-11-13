@@ -93,7 +93,7 @@ namespace ReBuzz.Studio.Shell
 
         void Add(string label, Action act, string automationName)
         {
-            var b = new Button { Content = label, FontSize = StudioTokens.FontBody, Padding = new Thickness(12, 4), MinHeight = 24, Margin = new Thickness(4, 4, 4, 0), Tag = label };
+            var b = new Button { Content = label, Margin = new Thickness(4, 4, 4, 0), Tag = label };
             Avalonia.Automation.AutomationProperties.SetName(b, automationName);
             b.Click += (s, e) => act();
             steps.Children.Add(b);

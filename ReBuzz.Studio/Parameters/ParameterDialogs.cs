@@ -33,7 +33,7 @@ namespace ReBuzz.Studio.Parameters
         public static async Task<int?> AskValue(Visual near, Point at, int start, int min, int max, bool replace)
         {
             if (ValueResponder != null) return ValueResponder(start, min, max);
-            var box = new TextBox { Text = start.ToString(), MinWidth = 80, FontSize = 12 };
+            var box = new TextBox { Text = start.ToString(), MinWidth = 80 };
             var range = new TextBlock { Text = $"[{min}..{max}]", FontSize = 11, Foreground = ParameterTheme.DimText, VerticalAlignment = VerticalAlignment.Center };
             int? result = null;
             var window = new Window
@@ -78,8 +78,8 @@ namespace ReBuzz.Studio.Parameters
             if (BindResponder != null) return BindResponder();
             var channel = new TextBox { Width = 50, HorizontalAlignment = HorizontalAlignment.Left };
             var controller = new TextBox { Width = 50, HorizontalAlignment = HorizontalAlignment.Left };
-            var ok = new Button { Content = "OK", MinWidth = 60, IsDefault = true };
-            var cancel = new Button { Content = "Cancel", MinWidth = 60, IsCancel = true };
+            var ok = ReBuzz.Studio.Shell.Design.StudioDialog.Primary();
+            var cancel = ReBuzz.Studio.Shell.Design.StudioDialog.Secondary();
             (int, int)? result = null;
             bool Valid(out int ch, out int cc) =>
                 int.TryParse(channel.Text, out ch) & int.TryParse(controller.Text, out cc) && ch >= 1 && ch <= 16 && cc >= 0 && cc <= 127;
@@ -87,7 +87,7 @@ namespace ReBuzz.Studio.Parameters
             channel.TextChanged += (s, e) => Check();
             controller.TextChanged += (s, e) => Check();
             Check();
-            var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("100,*"), RowDefinitions = new RowDefinitions("Auto,Auto,Auto,Auto"), Margin = new Thickness(12) };
+            var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("100,*"), RowDefinitions = new RowDefinitions("Auto,Auto,Auto,Auto"), Margin = new Thickness(ReBuzz.Studio.Shell.Design.StudioDialog.Margin) };
             void Add(Control c, int row, int col, int span = 1)
             {
                 Grid.SetRow(c, row);
@@ -101,16 +101,9 @@ namespace ReBuzz.Studio.Parameters
             Add(channel, 1, 1);
             Add(new TextBlock { Text = "Controller", VerticalAlignment = VerticalAlignment.Center }, 2, 0);
             Add(controller, 2, 1);
-            Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right, Children = { ok, cancel } }, 3, 0, 2);
-            var window = new Window
-            {
-                Title = "Midi Controller",
-                SizeToContent = SizeToContent.WidthAndHeight,
-                CanResize = false,
-                ShowInTaskbar = false,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Content = grid,
-            };
+            Add(ReBuzz.Studio.Shell.Design.StudioDialog.Buttons(ok, cancel), 3, 0, 2);
+            var window = ReBuzz.Studio.Shell.Design.StudioDialog.Create("Midi Controller");
+            window.Content = grid;
             ok.Click += (s, e) =>
             {
                 if (Valid(out int ch, out int cc)) result = (ch, cc);
@@ -134,14 +127,7 @@ namespace ReBuzz.Studio.Parameters
             if (buzz != null) buzz.MIDIInput += Learn;
             try
             {
-                if (Dialogs.Owner is Window owner) await window.ShowDialog(owner);
-                else
-                {
-                    var closed = new TaskCompletionSource();
-                    window.Closed += (s, e) => closed.TrySetResult();
-                    window.Show();
-                    await closed.Task;
-                }
+                await ReBuzz.Studio.Shell.Design.StudioDialog.Run(window);
             }
             finally
             {

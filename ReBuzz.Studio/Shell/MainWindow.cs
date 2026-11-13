@@ -100,6 +100,7 @@ namespace ReBuzz.Studio.Shell
             statusRow.Children.Add(status);
             var statusBar = new Border { Child = statusRow, BorderBrush = StudioTokens.SurfaceBorderBrush, BorderThickness = new Thickness(0, 1, 0, 0) };
             DockPanel.SetDock(statusBar, Dock.Bottom);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(statusBar, 4);
             root.Children.Add(transport);
             root.Children.Add(problems);
             root.Children.Add(statusBar);
@@ -265,6 +266,18 @@ namespace ReBuzz.Studio.Shell
             body.Children.Add(inspector);
             body.Children.Add(centre);
             root.Children.Add(body);
+            // Fork (ux-overhaul.md P4a): Tab reads the window as it is seen, not in the order the panels were docked.
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(transport, 1);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(problems, 2);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(body, 3);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(browser, 0);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(centre, 1);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(inspector, 2);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(switcher, 0);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(tabs, 1);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(viewHost, 0);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(detail, 1);
+            if (menu != null) Avalonia.Input.KeyboardNavigation.SetTabIndex(menu, 0);
             detail.Changed += ApplyDetailLayout;
             browser.Changed += FitPanels;
             inspector.Changed += FitPanels;

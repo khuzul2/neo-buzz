@@ -113,7 +113,7 @@ namespace ReBuzz.Agent.App
             foreach (var key in new[] { "range", "from", "to", "section", "tail_seconds" })
                 if (c.Arguments[key] != null) args[key] = c.Arguments[key]!.DeepClone();
             if (stemMachines.Count > 0) args["probes"] = new JsonArray(stemMachines.Select(m => (JsonNode)m).ToArray());
-            var rendered = await render.Handler(new ToolContext("render", args, c.Cancellation, (d, t, m) => c.Progress(d, t, m)));
+            var rendered = await render.Handler(new ToolContext("render", args, c.Cancellation, (d, t, m) => c.Progress(d, t, m)) { Background = c.Background });
             var r = rendered.Structured ?? throw new ToolError("The render gave no result.");
             var probes = (r["probes"] as JsonArray)?.ToDictionary(p => p!["machine"]!.GetValue<string>(), p => p!["file"]!.GetValue<string>(), StringComparer.OrdinalIgnoreCase)
                          ?? new Dictionary<string, string>();

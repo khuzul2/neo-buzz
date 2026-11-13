@@ -110,7 +110,7 @@ namespace ReBuzz.Studio.Views.Device
 
         static Button Tab(string text, string tip)
         {
-            var b = new Button { Content = text, FontSize = StudioTokens.FontBody, Padding = new Thickness(10, 3), MinHeight = 24, Focusable = false, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4) };
+            var b = StudioButtons.KeepFocus(new Button { Content = text, BorderThickness = new Thickness(1) });
             ToolTip.SetTip(b, tip);
             AutomationProperties.SetName(b, text);
             return b;

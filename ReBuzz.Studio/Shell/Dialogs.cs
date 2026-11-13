@@ -39,12 +39,9 @@ namespace ReBuzz.Studio.Shell
         public static async Task<UserAnswer> Ask(string message, string caption, UserButtons buttons, DialogChoices choices)
         {
             if (Responder?.Invoke(message, caption, buttons) is UserAnswer answered) return answered;
-            var owner = Owner;
             var closed = new TaskCompletionSource<UserAnswer>();
             var window = Build(message, caption, buttons, choices, OperatingSystem.IsMacOS(), a => closed.TrySetResult(a));
-            window.WindowStartupLocation = owner != null ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen;
-            if (owner != null) await window.ShowDialog(owner);
-            else window.Show();
+            _ = StudioDialog.Run(window);
             return await closed.Task;
         }
 
@@ -87,33 +84,24 @@ namespace ReBuzz.Studio.Shell
             var safe = choices?.Safe is UserAnswer s0 && answers.Contains(s0) ? s0
                 : answers.Contains(UserAnswer.Cancel) ? UserAnswer.Cancel : answers.Contains(UserAnswer.No) ? UserAnswer.No : answers.Last();
             var @default = choices?.Default is UserAnswer d0 && answers.Contains(d0) ? d0 : answers[0];
-            var window = new Window
-            {
-                Title = caption,
-                SizeToContent = SizeToContent.WidthAndHeight,
-                CanResize = false,
-                ShowInTaskbar = false,
-            };
+            var window = StudioDialog.Create(caption);
             var answer = safe;
-            var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8 };
+            var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = StudioDialog.ButtonSpacing };
             foreach (var choice in Order(answers, @default, safe, mac))
             {
                 string label = choices?.Labels != null && choices.Labels.TryGetValue(choice, out var l) ? l : choice.ToString();
-                var b = new Button { Content = label, MinWidth = 72, IsDefault = choice == @default, IsCancel = choice == safe, Tag = choice };
+                var b = choice == @default ? StudioDialog.Primary(label) : StudioDialog.Secondary(label, cancel: choice == safe);
+                b.IsCancel = choice == safe;
+                b.Tag = choice;
                 // Fork (ux-overhaul.md P1, mac-321): the default answer accented (Return gives it; both buttons were the same grey,
                 // 1.66:1), an answer that can't be taken back in the record red.
-                if (choice == @default) b.Classes.Add("accent");
                 if (choices?.Destructive == choice) b.Foreground = Design.StudioTokens.RecordBrush;
                 b.Click += (s, e) => { answer = choice; window.Close(); };
                 row.Children.Add(b);
             }
-            window.Content = new StackPanel
-            {
-                Margin = new Thickness(20),
-                Spacing = 16,
-                MaxWidth = 520,
-                Children = { new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap }, row },
-            };
+            var body = StudioDialog.Body(new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap }, row);
+            body.MaxWidth = 520;
+            window.Content = body;
             window.Closed += (s, e) => answered(answer);
             return window;
         }
@@ -127,17 +115,9 @@ namespace ReBuzz.Studio.Shell
         public static async Task Error(string message, string caption, string details)
         {
             if (Responder?.Invoke(message, caption, UserButtons.Ok) is UserAnswer) return;
-            var owner = Owner;
-            var window = new Window
-            {
-                Title = caption,
-                SizeToContent = SizeToContent.WidthAndHeight,
-                CanResize = false,
-                WindowStartupLocation = owner != null ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen,
-                ShowInTaskbar = false,
-            };
-            var ok = new Button { Content = "OK", MinWidth = 72, IsDefault = true, IsCancel = true };
-            ok.Classes.Add("accent");
+            var window = StudioDialog.Create(caption);
+            var ok = StudioDialog.Primary();
+            ok.IsCancel = true;
             ok.Click += (s, e) => window.Close();
             var box = new TextBox
             {
@@ -150,26 +130,10 @@ namespace ReBuzz.Studio.Shell
                 Tag = "details",
             };
             var expander = new Expander { Header = "Details", Content = box, IsExpanded = false, HorizontalAlignment = HorizontalAlignment.Stretch };
-            window.Content = new StackPanel
-            {
-                Margin = new Thickness(20),
-                Spacing = 12,
-                Width = 480,
-                Children =
-                {
-                    new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, Tag = "message" },
-                    expander,
-                    new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { ok } },
-                },
-            };
-            if (owner != null) await window.ShowDialog(owner);
-            else
-            {
-                var closed = new TaskCompletionSource();
-                window.Closed += (s, e) => closed.TrySetResult();
-                window.Show();
-                await closed.Task;
-            }
+            var body = StudioDialog.Body(new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, Tag = "message" }, expander, StudioDialog.Buttons(ok));
+            body.Width = 480 + 2 * StudioDialog.Margin;
+            window.Content = body;
+            await StudioDialog.Run(window);
         }
 
         /// <summary>Tests answer text questions here: (title, current) → the text, or null for cancel.</summary>
@@ -179,37 +143,16 @@ namespace ReBuzz.Studio.Shell
         public static async Task<string> AskText(string title, string current)
         {
             if (TextResponder != null) return TextResponder(title, current);
-            var owner = Owner;
             var box = new TextBox { Text = current ?? "", MinWidth = 260 };
             string result = null;
-            var window = new Window
-            {
-                Title = title,
-                SizeToContent = SizeToContent.WidthAndHeight,
-                CanResize = false,
-                WindowStartupLocation = owner != null ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen,
-                ShowInTaskbar = false,
-            };
-            var ok = new Button { Content = "OK", MinWidth = 72, IsDefault = true };
-            var cancel = new Button { Content = "Cancel", MinWidth = 72, IsCancel = true };
-            ok.Classes.Add("accent");
+            var window = StudioDialog.Create(title);
+            var ok = StudioDialog.Primary();
+            var cancel = StudioDialog.Secondary();
             ok.Click += (s, e) => { result = box.Text; window.Close(); };
             cancel.Click += (s, e) => window.Close();
-            window.Content = new StackPanel
-            {
-                Margin = new Thickness(20),
-                Spacing = 12,
-                Children = { box, ButtonRow(ok, cancel) },
-            };
+            window.Content = StudioDialog.Body(box, StudioDialog.Buttons(ok, cancel));
             window.Opened += (s, e) => { box.Focus(); box.SelectAll(); };
-            if (owner != null) await window.ShowDialog(owner);
-            else
-            {
-                var closed = new TaskCompletionSource();
-                window.Closed += (s, e) => closed.TrySetResult();
-                window.Show();
-                await closed.Task;
-            }
+            await StudioDialog.Run(window);
             return result;
         }
 
@@ -226,21 +169,12 @@ namespace ReBuzz.Studio.Shell
                 string answer = TextResponder(title, current);
                 return answer != null && validate(answer) == null ? answer : null;
             }
-            var owner = Owner;
             var box = new TextBox { Text = current ?? "", MinWidth = 260 };
             var error = new TextBlock { Foreground = StudioTokens.ErrorTextBrush, TextWrapping = TextWrapping.Wrap, MaxWidth = 320, IsVisible = false, Tag = "error" };
             string result = null;
-            var window = new Window
-            {
-                Title = title,
-                SizeToContent = SizeToContent.WidthAndHeight,
-                CanResize = false,
-                WindowStartupLocation = owner != null ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen,
-                ShowInTaskbar = false,
-            };
-            var ok = new Button { Content = "OK", MinWidth = 72, IsDefault = true };
-            var cancel = new Button { Content = "Cancel", MinWidth = 72, IsCancel = true };
-            ok.Classes.Add("accent");
+            var window = StudioDialog.Create(title);
+            var ok = StudioDialog.Primary();
+            var cancel = StudioDialog.Secondary();
             void Check()
             {
                 string problem = validate(box.Text);
@@ -257,34 +191,16 @@ namespace ReBuzz.Studio.Shell
                 window.Close();
             };
             cancel.Click += (s, e) => window.Close();
-            var panel = new StackPanel { Margin = new Thickness(20), Spacing = 8 };
+            var panel = StudioDialog.Body();
             if (!string.IsNullOrEmpty(prompt)) panel.Children.Add(new TextBlock { Text = prompt, TextWrapping = TextWrapping.Wrap, MaxWidth = 320 });
             panel.Children.Add(box);
             panel.Children.Add(error);
-            var buttons = ButtonRow(ok, cancel);
-            buttons.Margin = new Thickness(0, 4, 0, 0);
-            panel.Children.Add(buttons);
+            panel.Children.Add(StudioDialog.Buttons(ok, cancel));
             window.Content = panel;
             Check();
             window.Opened += (s, e) => { box.Focus(); box.SelectAll(); };
-            if (owner != null) await window.ShowDialog(owner);
-            else
-            {
-                var closed = new TaskCompletionSource();
-                window.Closed += (s, e) => closed.TrySetResult();
-                window.Show();
-                await closed.Task;
-            }
+            await StudioDialog.Run(window);
             return result;
-        }
-
-        /// <summary>OK and Cancel in the platform's order: Cancel then OK on a Mac (the default on the right), OK then Cancel elsewhere.</summary>
-        static StackPanel ButtonRow(Button ok, Button cancel)
-        {
-            var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8 };
-            if (OperatingSystem.IsMacOS()) { row.Children.Add(cancel); row.Children.Add(ok); }
-            else { row.Children.Add(ok); row.Children.Add(cancel); }
-            return row;
         }
 
         /// <summary>Runs a dialog to its end on the UI thread, for callers that can't await.</summary>

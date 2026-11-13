@@ -349,9 +349,7 @@ namespace ReBuzz.Studio.Views.Browser
 
         static Button IconButton(string glyph, string tip, string name, Action run)
         {
-            var b = new Button { Content = glyph, FontSize = 15, Padding = new Thickness(6, 0, 6, 2), MinWidth = 24, MinHeight = 24, Focusable = false, Background = Brushes.Transparent };
-            ToolTip.SetTip(b, tip);
-            AutomationProperties.SetName(b, name);
+            var b = StudioButtons.KeepFocus(StudioButtons.Icon(new Button { Content = glyph }, name, tip));
             b.Click += (s, e) => run();
             return b;
         }

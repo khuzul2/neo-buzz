@@ -114,6 +114,17 @@ One per category of the machine browser (P3d); `Tokens.Identity(category)`. Each
 | Labels | Never rotated; two lines instead of "…" when a label is wider than its control |
 | Contrast floor | Text 4.5:1 (3:1 at 18 pt or 14 pt bold), icons and UI parts 3:1, against the surface they sit on, measured from pixels |
 
+### 3.2.1 Buttons, menus, dialogs and motion (P4a)
+
+| | Rule (`Shell/Design/StudioStyles.cs`, `StudioDialog.cs`) |
+|---|---|
+| Button | One style for `Button` and `ToggleButton`: 13 pt, padding 10,3, radius 4, 24 pt high. Four sizes only: standard 24, `icon` (24 square, padding 6,0,6,2, glyphs 15 pt), `large` 32 (transport: padding 14,5), `ghost` (no border, transparent until hovered). A control sets no size, font or padding of its own; it takes a class |
+| Menu | `MenuItem` and `ContextMenu` 13 pt, rows 24 pt (22 on a Mac), radius 6, panel colours; the menu bar and every context menu alike |
+| Dialog | `StudioDialog`: title, body (margin 20, spacing 12), a right-aligned button row (reversed on a Mac), the primary button `dialog accent` and default (Enter), the secondary `dialog` and cancel (Esc), every dialog button 88 pt wide at least; centred over its owner |
+| Motion | Transitions 150 ms at most (`Motion.Max`; 100 ms for hover and focus), none on the audio path: the transport's buttons carry the `instant` class (no transitions at all) |
+| Names | Every icon-only control has an `AutomationProperties.Name` (and a tip); `StudioButtons.Icon` sets class, name and tip together |
+| Focus | Buttons take the pointer without keeping the focus (the focus goes back to what had it: `StudioButtons.KeepFocus`), and every control is a tab stop; Tab reads a window as it is seen: menu, transport, browser, view switcher and view, detail, inspector |
+
 ### 3.3 Themes
 
 Dark (default); Light (P4); Classic Buzz, the beige machine canvas and brown arrangement, as an option. Chosen in Preferences ▸ Appearance (P2b), not a top-level menu. A theme is a token table; views never hard-code colours (P2 removes the 133 literal colours the studio has today, outside the code-drawn views' theme hooks).
@@ -409,6 +420,11 @@ What WPF has that the studio needs before it replaces it on Windows: native (Win
 97. **P3h fixes (P3j).** (a) The gallery's 034, 044 and 046 delete the starter's first pattern first, so each shows its named state (the starter comes with a pattern on its track, decision 89). (b) Shots 342 and 343 were looked at: 342's meter, scale and clip light are as decision 84 says (the +5.1 dB is the shot's own test signal); 343's arrowheads swelled with the line (fixed, decision 92) and its last row was cut off by the foot of the view (the shot zooms out two steps). (c) `UxP3aTests.TheSelectionTabShowsTheExplainCardOfAMachineWhoseEditorHasOne` depended on two things outside itself: the inspector's saved "open" flag (the registry is the whole run's; the Explain card is refreshed by a timer that does nothing while the panel is closed, so a closed inspector left by an earlier test made it fail only after other tests) and a fixed 400 ms wait for a 250 ms timer (late on a busy runner). It now puts the saved state back before its window opens and waits for the card, up to 10 s. No static state in the product leaks: `ExplainBoard` is keyed by machine object, and `EmptyStates` holds only the window's hook. The full Studio suite (458 tests) ran twice in a row with every test passing but `RestartAudioOpensTheDeviceForReal`, which needs a sound device (this Linux box has none).
 98. **Windows audio in the studio preview (the user's choice, 2026-11-13).** In this order, which is also the default rule (the engine opens the first device when none is saved or the saved one is gone): ASIO drivers (default when installed); WASAPI shared with low latency (default otherwise); WASAPI shared; WASAPI exclusive, only while the switch `audio.WasapiExclusive` is on (Preferences ▸ Audio: "Exclusive (other apps go silent)"; the device list then offers it in place of the shared ones); WDM-KS only with `audio.ShowAdvancedDevices`. DirectSound and MME are dropped. The mode is part of the device's name, so one setting (`audio.Device`) holds the choice and `audio_set` can pick any listed one; the two switches are settings of the audio section (`settings_get`/`settings_set`), as Preferences writes them. A device or mode that fails to start, or produces no audio, is replaced by the one that played, and the page says why: Preferences uses `AudioSwitch` (`ReBuzz.Agent/App`), the code `audio_set` runs (K3's automatic way back: no audio within 10 s, or a spike of dropouts). The Audio page shows the buffer latency the driver reports for the chosen mode. Tests: `WindowsPreviewTests` (the default rule, the exclusive switch), `AudioSwitchTests` (the way back). Limits: WASAPI plays through the system's default output (no endpoint choice yet); ASIO takes its buffer and rate from its control panel.
 
+98. **The export runs off the UI thread (P4a; P3j left it on it).** `EngineQueue.Run(..., background: true)` starts a dedicated thread (below-normal priority, "background render") that holds the same gate as every engine call, so agent calls queue behind the export as before; `ToolContext.Background` carries the flag to the render tool. The sheet posts its progress to the UI thread (input priority) and the window keeps drawing and answers Cancel. **Edits are blocked, not a snapshot:** the render sets the live song's loop, mutes and position and plays through its machines, so a snapshot would need a copy of ReBuzzCore; instead the sheet disables every other window while it renders, the autosave and the snapshots timer skip, and closing the sheet cancels. The bytes are those of `export_audio` (same code path).
+99. **Neo Poly, Neo FM6 and Neo Wave render the same each time (P4a).** What a second render in one process inherited: the voice allocator and ages, oscillator and LFO phases, drift, random streams, global LFOs, filter memory, queued notes and the transport's edge flags. The render tool now calls `ResetForRender` on each managed machine that has it (the Neo synths: a new engine, the notes and transport cleared; Neo Wave keeps its user table). A first render in a fresh process is unchanged: `tools/null-test.py` is bit-identical for all 24 poly, wave, fm6 and delay-dotted-throw cases. `UxP4aTests.TwoRendersOfTheSameSongInOneProcessAreTheSameBytes` renders twice and compares the bytes for Neo Poly, FM6, Wave and Drums.
+100. **One button, menu and dialog style (P4a).** See 3.2.1. Every local override of a button's height, font, padding or width (the pattern editor's small toggles, the inspector, the browser, the parameter window, the session and arrangement views, the kit dialogs) was replaced by the class; the dialogs (`Dialogs`, the export sheet, the arrangement and session prompts, the parameter dialogs, the kit dialogs) are built by `StudioDialog`. `UxP4aTests` walks every main view, the device page, every Preferences page, About, the export sheet, the dialog kinds and a parameter window and fails for a button off the four sizes, a dialog not built the same way, a menu row off the style, a transition over 150 ms or on the audio path, an unnamed icon, and a control Tab cannot reach.
+101. **Tab and focus (P4a).** A real Tab key walk (headless input) of each surface: every interactive control is a tab stop or has one inside it (a number box's text); the walk starts at the window's first control and each panel's children are visited in reading order. Side panels dock first and are visited before the main area (the inspector comes before the view; a dock panel's order is top, left, right, then the fill). `KeyboardNavigation.TabIndex` fixes the cases where the children were added in dock order (the pattern editor's Help toggle, the export sheet's Choose…, Preferences' footer, the detail bar). **Known limit:** the tracker keeps Tab for itself (the next column, Buzz's convention), so the Pattern view's tracker is not walked and the Song Notes text box takes tabs; the way out is the view switcher or F6/clicking. Knobs and graphs are not focusable (they have the keyboard through the parameter window and the machine's menu).
+
 ## 11. Progress
 
 ### P1: quick wins (`ux/overhaul-1-quick-wins`)
@@ -555,3 +571,22 @@ Frame times in the Mac gallery job (`Frame times, meters on and off`, run 434007
 ### P3j Export Audio (`ux/overhaul-3j`), with the P3h fixes
 
 Built: decisions 91-97; **P3j is done, and with it P3.** Tests: `UxP3jTests` (8 tests), `ExportAudioResamplesAndNormalisesTheMasterAndItsStemsTogether` (AgentTests). Gallery: mac-347 (the sheet), mac-348 (it rendering); mac-018, 019, 029 redrawn (the starters clear of the Master), mac-034, 044 and 046 now show the states their names say (the starter's pattern is deleted first), mac-343 redrawn (thin arrowheads, brighter wires).
+
+### P4a Polish, and the two P3j issues (`ux/overhaul-4a`)
+
+Built: decisions 98-101; P4a is done but the Light theme (P4b). Tests: `UxP4aTests` (12), with the P3j tests unchanged.
+
+| Figure | Before | After |
+|---|---|---|
+| Button heights in the shell (pt) | 18 to 32 (the P3 gallery review), set per control | 24, or 32 (`large`), nothing else |
+| Button font sizes | 11 to 15, 31 local `FontSize` settings on buttons and fields | 13 (glyphs 15) |
+| Dialog button widths (pt) | 60 to 88 | 88 or more, one row layout |
+| Dialogs built by hand (own margins, button row) | each built its own margins and button row | 0 (all by `StudioDialog`) |
+| Menu row heights | by default per control | 24 (22 on a Mac), one style |
+| Transitions over 150 ms; on the transport | not checked | none; none (`instant`) |
+| Icon-only controls without a name | found by the test and fixed (13 names or `StudioButtons.Icon` calls added) | 0 |
+| Controls Tab cannot reach (walked surfaces) | found by the test; the pattern editor, export sheet and preferences orders fixed | 0 (tracker and notes keep Tab: a stated limit) |
+| Export render | on the UI thread, the window froze | on a worker thread; the window stays live; Cancel answers |
+| Neo Poly, FM6 and Wave, two renders in one process | differ from sample 56 of the data | identical bytes |
+
+Gallery: the review's findings on sizes, dialogs and names are covered by the checks above rather than by eye; the Mac gallery run of this branch is the visual check.

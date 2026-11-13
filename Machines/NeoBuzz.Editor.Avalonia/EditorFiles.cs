@@ -85,8 +85,11 @@ namespace NeoBuzz.Editor
         public static void Show(string text, string caption = "", MessageBoxButton button = MessageBoxButton.OK, MessageBoxImage icon = MessageBoxImage.None) =>
             Dispatcher.UIThread.Post(() =>
             {
-                var ok = new Button { Content = "OK", Width = 70, IsDefault = true, IsCancel = true, HorizontalAlignment = HorizontalAlignment.Right };
-                var message = new TextBlock { Text = text ?? "", Foreground = Theme.Text, TextWrapping = Avalonia.Media.TextWrapping.Wrap, MaxWidth = 420, Margin = new Thickness(0, 0, 0, 12) };
+                // The studio's dialog (ReBuzz.Studio's StudioDialog; the kit doesn't reference it): the same classes, margin and rhythm.
+                var ok = new Button { Content = "OK", IsDefault = true, IsCancel = true, HorizontalAlignment = HorizontalAlignment.Right };
+                ok.Classes.Add("dialog");
+                ok.Classes.Add("accent");
+                var message = new TextBlock { Text = text ?? "", Foreground = Theme.Text, TextWrapping = Avalonia.Media.TextWrapping.Wrap, MaxWidth = 420 };
                 var window = new Window
                 {
                     Title = string.IsNullOrEmpty(caption) ? "NeoBuzz Live" : caption,     // the app's name (ReBuzz.Product.Name; machines don't reference it)
@@ -94,7 +97,8 @@ namespace NeoBuzz.Editor
                     CanResize = false,
                     WindowStartupLocation = WindowStartupLocation.CenterOwner,
                     Background = Theme.Panel,
-                    Content = new StackPanel { Margin = new Thickness(16), Children = { message, ok } },
+                    ShowInTaskbar = false,
+                    Content = new StackPanel { Margin = new Thickness(20), Spacing = 12, Children = { message, ok } },
                 };
                 ok.Click += (s, e) => window.Close();
                 var owner = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Windows.FirstOrDefault(w => w.IsActive);

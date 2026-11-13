@@ -146,7 +146,7 @@ namespace ReBuzz.Agent
         /// messages ReBuzz raised so far (and can turn them into its error). Changing calls
         /// (<paramref name="changes"/>) are one undo group; a ToolError it throws carries the messages.
         /// </summary>
-        public Task<T> Engine<T>(string what, bool changes, Func<IReadOnlyList<string>, T> work, CancellationToken ct) =>
+        public Task<T> Engine<T>(string what, bool changes, Func<IReadOnlyList<string>, T> work, CancellationToken ct, bool background = false) =>
             Queue.Run(what, () =>
             {
                 using var messages = NonModal.Capture();
@@ -200,7 +200,7 @@ namespace ReBuzz.Agent
                         }
                     }
                 }
-            }, ct);
+            }, ct, background);
 
         /// <summary>Serves stdio until it closes.</summary>
         public Task RunStdio(Stream input, Stream output, CancellationToken ct = default) =>

@@ -30,6 +30,24 @@ namespace NeoBuzz.Machine
         /// <summary>ReBuzz: stop (release everything at the next block; silence everything if already stopped).</summary>
         public void Stop() => stopRequested = true;
 
+        /// <summary>
+        /// ReBuzz's offline render (and nothing else) calls this under the audio lock before it runs any audio: everything the sound has
+        /// built up (voice allocation and age, oscillator and LFO phases, the analog drift and the random streams, filter memory, queued
+        /// notes) goes back to what a machine made a moment ago has, so two renders of one song are the same samples in one process,
+        /// as they are in two (docs/specs/ux-overhaul.md P4a). The parameters, the machine's own data (a bank, a user table) stay.
+        /// </summary>
+        public void ResetForRender()
+        {
+            stopRequested = false;
+            Notes.Clear();
+            ResetTransport();
+            Restart();
+        }
+
+        /// <summary>A new engine for the same parameters, and the sample rate asked for again at the next block (the machines that drift or
+        /// keep a random stream override it; the others start every render the same already).</summary>
+        internal virtual void Restart() { }
+
         /// <summary>At the start of each block: transport stop, then the queued notes and controllers.</summary>
         internal void BeginBlock(INoteSink sink)
         {

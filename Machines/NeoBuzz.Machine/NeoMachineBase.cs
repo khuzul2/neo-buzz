@@ -85,6 +85,13 @@ namespace NeoBuzz.Machine
 
         long stoppedAt = long.MinValue / 2;
 
+        /// <summary>The transport as a new machine has it (see NeoSynthBase.ResetForRender).</summary>
+        protected void ResetTransport()
+        {
+            wasPlaying = false;
+            stoppedAt = long.MinValue / 2;
+        }
+
         /// <summary>The transport has been stopped for a while (as of the last <see cref="TransportStopped"/> poll).</summary>
         protected bool StoppedForAWhile => !wasPlaying && Environment.TickCount64 - stoppedAt > 400;
 

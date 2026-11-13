@@ -26,12 +26,12 @@ namespace ReBuzz.Studio.Shell
         sealed class Group : StackPanel { }
 
         readonly StudioHost host;
-        readonly Button start = new Button { Content = "⏮", MinWidth = 40 };
-        readonly Button play = new Button { Content = "▶", MinWidth = 40 };
-        readonly Button stop = new Button { Content = "■", MinWidth = 40 };
-        readonly ToggleButton record = new ToggleButton { Content = "●", MinWidth = 40 };
+        readonly Button start = new Button { Content = "⏮" };
+        readonly Button play = new Button { Content = "▶" };
+        readonly Button stop = new Button { Content = "■" };
+        readonly ToggleButton record = new ToggleButton { Content = "●" };
         readonly ToggleButton loop = new ToggleButton { Content = "Loop" };
-        readonly ToggleButton metronome = new ToggleButton { Content = "♩", MinWidth = 40 };
+        readonly ToggleButton metronome = new ToggleButton { Content = "♩" };
         readonly TempoField bpm = new TempoField { VerticalAlignment = VerticalAlignment.Center };
         readonly Button tap = new Button { Content = "Tap", MinWidth = 48 };
         readonly ComboBox signature = new ComboBox { Width = 76, VerticalAlignment = VerticalAlignment.Center };
@@ -48,6 +48,14 @@ namespace ReBuzz.Studio.Shell
             for (int i = 1; i <= 12; i++) signature.Items.Add($"{i}/4");
             Avalonia.Automation.AutomationProperties.SetName(signature, "Time signature");
             Avalonia.Automation.AutomationProperties.SetName(tap, "Tap tempo");
+            // Fork (ux-overhaul.md P4a): the transport's buttons are the one "large" size, answer at once (no transition: they are the
+            // audio path's), and the glyph ones are named for a screen reader.
+            foreach (var (b, name) in new (Button, string)[] { (start, "Go to start"), (play, "Play"), (stop, "Stop"), (record, "Record"), (loop, "Loop"), (metronome, "Metronome"), (tap, "Tap tempo") })
+            {
+                b.Classes.Add("large");
+                b.Classes.Add("instant");
+                Avalonia.Automation.AutomationProperties.SetName(b, name);
+            }
             Avalonia.Automation.AutomationProperties.SetName(minutes, "Minutes and seconds");
             ToolTip.SetTip(signature, "Time signature: beats in a bar (the bar lines of the Session View's grid and the transport's clock; the Tracker counts ticks per beat).");
             ToolTip.SetTip(tap, "Tap tempo: tap the beat; from the third tap the tempo follows the last four. (Right-click it in the Session View's ⚙ menu to MIDI-learn it.)");
