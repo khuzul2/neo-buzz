@@ -1,0 +1,129 @@
+# Neo Learn Phase Distortion factory presets. Output is set last so each chord sounds at the same level (loudest 50 ms RMS -22 dB). Times are in seconds.
+# Rebuild: python3 tools/gen-machine-presets.py Machines/NeoLearnPhaseDistortion
+machine "Neo Learn Phase Distortion"
+
+preset "Lead — Bent Saw"
+Phase Bend = 70
+Resonance = 15
+PD Wave = Sawtooth
+Bend Decay = 0.5
+Ring Mod = 0
+Chorus = 30
+Attack = 0.003
+Decay = 0.6
+Sustain = 70
+Release = 0.25
+Unison / Spread = 0
+Output = -10.6
+
+preset "Lead — Square Pinch"
+Phase Bend = 85
+Resonance = 10
+PD Wave = Square
+Bend Decay = 0.3
+Ring Mod = 0
+Chorus = 20
+Attack = 0.002
+Decay = 0.4
+Sustain = 65
+Release = 0.2
+Unison / Spread = 0
+Output = -11.1
+
+preset "Bass — Reso Sweep"
+Phase Bend = 55
+Resonance = 80
+PD Wave = Sawtooth
+Bend Decay = 0.6
+Ring Mod = 0
+Chorus = 0
+Attack = 0.001
+Decay = 0.5
+Sustain = 55
+Release = 0.15
+Unison / Spread = 0
+Output = -7.8
+
+preset "Pluck — Narrow Ping"
+Phase Bend = 90
+Resonance = 25
+PD Wave = Narrow Pulse
+Bend Decay = 0.2
+Ring Mod = 0
+Chorus = 25
+Attack = 0.001
+Decay = 0.5
+Sustain = 0
+Release = 0.3
+Unison / Spread = 0
+Output = -10.9
+
+preset "Bell — Ring Glass"
+Phase Bend = 30
+Resonance = 10
+PD Wave = Double Sine
+Bend Decay = 1.5
+Ring Mod = 70
+Chorus = 40
+Attack = 0.001
+Decay = 1.8
+Sustain = 0
+Release = 1.2
+Unison / Spread = 0
+Output = -4.0
+
+preset "Pad — Slow Bend"
+Phase Bend = 45
+Resonance = 20
+PD Wave = Saw Pulse
+Bend Decay = 3
+Ring Mod = 0
+Chorus = 60
+Attack = 0.6
+Decay = 1.5
+Sustain = 80
+Release = 1.5
+Unison / Spread = 35
+Output = -4.3
+
+preset "Keys — Trapezoid Tine"
+Phase Bend = 60
+Resonance = 30
+PD Wave = Trapezoid
+Bend Decay = 0.8
+Ring Mod = 0
+Chorus = 40
+Attack = 0.002
+Decay = 1.2
+Sustain = 30
+Release = 0.5
+Unison / Spread = 0
+Output = -10.6
+
+preset "Texture — Metal Ring"
+Phase Bend = 95
+Resonance = 60
+PD Wave = Double Sine
+Bend Decay = 2
+Ring Mod = 100
+Chorus = 50
+Attack = 0.01
+Decay = 2
+Sustain = 40
+Release = 1.5
+Unison / Spread = 20
+Output = -10.3
+
+preset "Lead — Sync Wail"
+Phase Bend = 20
+Resonance = 100
+PD Wave = Square
+Bend Decay = 1.2
+Ring Mod = 0
+Chorus = 20
+Attack = 0.02
+Decay = 0.8
+Sustain = 80
+Release = 0.5
+Unison / Spread = 0
+Output = -9.1

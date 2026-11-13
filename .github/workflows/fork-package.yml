@@ -289,7 +289,7 @@ jobs:
     # macOS jobs below render the same cases with rebuzz-headless and compare, sample by sample.
     - name: Null test references
       if: (success() || failure()) && steps.build.outcome == 'success'
-      timeout-minutes: 15
+      timeout-minutes: 25
       shell: pwsh
       run: |
         $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1

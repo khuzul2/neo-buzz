@@ -280,6 +280,32 @@ namespace NeoBuzz.MachineTests
         static float[] PhysNote(Action<ParamValues> tweak, int note, int frames, float velocity = 0.9f) =>
             PhysNote(new PhysicalMap(NeoBuzz.LearnPhys.Params.Table), tweak, note, frames, velocity);
 
+        [TestCase(0)]
+        [TestCase(100)]
+        [TestCase(1000)]
+        public void ASoftOrHardMalletIsNeverHotOnAnyNote(int force)
+        {
+            // A mallet whose pulse has a null at the lowest modes was levelled up by up to 20 dB (peak +1.5 dBFS at Strike 0 on A4):
+            // the morph's levelling now floors the energy it divides by. Every note, full velocity, Init otherwise.
+            double worst = -200; int at = 0;
+            for (int note = 24; note <= 108; note++)
+            {
+                var l = PhysNote(x => { x.Set(PP.ExciterType, 0); x.Set(PP.ExciterForce, force); }, note, Rate / 2, 1f);
+                double pk = Measure.Db(l.Max(Math.Abs));
+                if (pk > worst) { worst = pk; at = note; }
+            }
+            Measure.Report($"Neo Learn Physical, mallet at Strike {force / 10} %: loudest peak over notes 24-108 {worst:F1} dBFS (note {at})");
+            Assert.That(worst, Is.LessThan(-3.0), $"note {at}");
+        }
+
+        [Test]
+        public void PhysicalInitFollowsThePitchYouPlay()
+        {
+            // The default Geometry is the string (whole multiples), so the note is the pitch heard (a bar's spacing is not harmonic).
+            var v = new ParamValues(NeoBuzz.LearnPhys.Params.Table);
+            Assert.That(v[PP.ResonatorShape], Is.EqualTo(0), "Init is a string");
+        }
+
         static double DiffDb(float[] a, float[] b)
         {
             double d = 0, e = 1e-30;

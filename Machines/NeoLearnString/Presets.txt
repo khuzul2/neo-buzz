@@ -1,0 +1,115 @@
+# Neo Learn String factory presets. Output is set last so each chord sounds at the same level (loudest 50 ms RMS -22 dB). Times are in seconds.
+# Rebuild: python3 tools/gen-machine-presets.py Machines/NeoLearnString
+machine "Neo Learn String"
+
+preset "Pluck — Nylon Guitar"
+Pick Position = 25
+String Damping = 35
+Pick Hardness = 40
+Decay Time = 2.5
+Stiffness = 5
+Sympathetic = 15
+Attack = 0.001
+Decay = 1.0
+Sustain = 100
+Release = 0.3
+Unison / Spread = 0
+Output = -0.4
+
+preset "Pluck — Steel Harp"
+Pick Position = 40
+String Damping = 20
+Pick Hardness = 75
+Decay Time = 6
+Stiffness = 10
+Sympathetic = 45
+Attack = 0.001
+Decay = 1.5
+Sustain = 100
+Release = 0.5
+Unison / Spread = 0
+Output = -0.7
+
+preset "Keys — Harpsichord"
+Pick Position = 15
+String Damping = 30
+Pick Hardness = 95
+Decay Time = 1.5
+Stiffness = 20
+Sympathetic = 30
+Attack = 0.001
+Decay = 0.8
+Sustain = 100
+Release = 0.1
+Unison / Spread = 0
+Output = 2.7
+
+preset "Keys — Upright Piano"
+Pick Position = 12
+String Damping = 45
+Pick Hardness = 60
+Decay Time = 4
+Stiffness = 40
+Sympathetic = 35
+Attack = 0.001
+Decay = 1.5
+Sustain = 100
+Release = 0.25
+Unison / Spread = 0
+Output = 1.9
+
+preset "Bell — Stiff Chime"
+Pick Position = 50
+String Damping = 10
+Pick Hardness = 85
+Decay Time = 8
+Stiffness = 85
+Sympathetic = 20
+Attack = 0.001
+Decay = 2.0
+Sustain = 100
+Release = 0.6
+Unison / Spread = 0
+Output = 0.8
+
+preset "Bass — Muted Pluck"
+Pick Position = 20
+String Damping = 80
+Pick Hardness = 30
+Decay Time = 0.8
+Stiffness = 5
+Sympathetic = 0
+Attack = 0.001
+Decay = 0.5
+Sustain = 100
+Release = 0.12
+Unison / Spread = 0
+Output = 2.2
+
+preset "Pad — Sitar Drone"
+Pick Position = 8
+String Damping = 15
+Pick Hardness = 55
+Decay Time = 15
+Stiffness = 25
+Sympathetic = 85
+Attack = 0.01
+Decay = 3.0
+Sustain = 100
+Release = 1.5
+Unison / Spread = 20
+Output = -10.5
+
+preset "Texture — Resonant Wash"
+Pick Position = 35
+String Damping = 5
+Pick Hardness = 20
+Decay Time = 18
+Stiffness = 0
+Sympathetic = 100
+Attack = 0.02
+Decay = 4.0
+Sustain = 100
+Release = 2.0
+Unison / Spread = 35
+Output = -20.6

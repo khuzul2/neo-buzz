@@ -1,0 +1,183 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Pad — Choir Loop">
+    <Preset Machine="Neo Learn Sampler">
+      <Parameters>
+        <Parameter Name="Start Offset" Group="1" Index="0" Track="0" Value="100" />
+        <Parameter Name="Tone" Group="1" Index="1" Track="0" Value="550" />
+        <Parameter Name="Source" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Loop" Group="1" Index="3" Track="0" Value="600" />
+        <Parameter Name="Vintage Grit" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Room Acoustic" Group="1" Index="5" Track="0" Value="400" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="726" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="718" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="900" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="750" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="300" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="583" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pad — String Drone">
+    <Preset Machine="Neo Learn Sampler">
+      <Parameters>
+        <Parameter Name="Start Offset" Group="1" Index="0" Track="0" Value="200" />
+        <Parameter Name="Tone" Group="1" Index="1" Track="0" Value="400" />
+        <Parameter Name="Source" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Loop" Group="1" Index="3" Track="0" Value="800" />
+        <Parameter Name="Vintage Grit" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Room Acoustic" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="825" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="812" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="950" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="818" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="400" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="683" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bell — Bronze Strike">
+    <Preset Machine="Neo Learn Sampler">
+      <Parameters>
+        <Parameter Name="Start Offset" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Tone" Group="1" Index="1" Track="0" Value="600" />
+        <Parameter Name="Source" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Loop" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Vintage Grit" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Room Acoustic" Group="1" Index="5" Track="0" Value="300" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="75" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="812" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="750" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="673" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pluck — Lo-fi Keys">
+    <Preset Machine="Neo Learn Sampler">
+      <Parameters>
+        <Parameter Name="Start Offset" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Tone" Group="1" Index="1" Track="0" Value="350" />
+        <Parameter Name="Source" Group="1" Index="2" Track="0" Value="3" />
+        <Parameter Name="Loop" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Vintage Grit" Group="1" Index="4" Track="0" Value="700" />
+        <Parameter Name="Room Acoustic" Group="1" Index="5" Track="0" Value="250" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="75" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="688" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="200" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="577" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="692" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Texture — Tape Memory">
+    <Preset Machine="Neo Learn Sampler">
+      <Parameters>
+        <Parameter Name="Start Offset" Group="1" Index="0" Track="0" Value="250" />
+        <Parameter Name="Tone" Group="1" Index="1" Track="0" Value="450" />
+        <Parameter Name="Source" Group="1" Index="2" Track="0" Value="4" />
+        <Parameter Name="Loop" Group="1" Index="3" Track="0" Value="400" />
+        <Parameter Name="Vintage Grit" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Room Acoustic" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="695" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="773" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="800" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="721" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="765" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Keys — Bright Pluck">
+    <Preset Machine="Neo Learn Sampler">
+      <Parameters>
+        <Parameter Name="Start Offset" Group="1" Index="0" Track="0" Value="50" />
+        <Parameter Name="Tone" Group="1" Index="1" Track="0" Value="800" />
+        <Parameter Name="Source" Group="1" Index="2" Track="0" Value="3" />
+        <Parameter Name="Loop" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Vintage Grit" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Room Acoustic" Group="1" Index="5" Track="0" Value="200" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="75" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="670" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="300" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="577" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="788" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Lead — Choir Vowel">
+    <Preset Machine="Neo Learn Sampler">
+      <Parameters>
+        <Parameter Name="Start Offset" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Tone" Group="1" Index="1" Track="0" Value="700" />
+        <Parameter Name="Source" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Loop" Group="1" Index="3" Track="0" Value="300" />
+        <Parameter Name="Vintage Grit" Group="1" Index="4" Track="0" Value="200" />
+        <Parameter Name="Room Acoustic" Group="1" Index="5" Track="0" Value="150" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="325" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="649" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="800" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="539" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="656" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drone — Dark Loop">
+    <Preset Machine="Neo Learn Sampler">
+      <Parameters>
+        <Parameter Name="Start Offset" Group="1" Index="0" Track="0" Value="400" />
+        <Parameter Name="Tone" Group="1" Index="1" Track="0" Value="150" />
+        <Parameter Name="Source" Group="1" Index="2" Track="0" Value="4" />
+        <Parameter Name="Loop" Group="1" Index="3" Track="0" Value="1000" />
+        <Parameter Name="Vintage Grit" Group="1" Index="4" Track="0" Value="300" />
+        <Parameter Name="Room Acoustic" Group="1" Index="5" Track="0" Value="700" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="869" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="867" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="900" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="842" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="812" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bell — Tape Chime">
+    <Preset Machine="Neo Learn Sampler">
+      <Parameters>
+        <Parameter Name="Start Offset" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Tone" Group="1" Index="1" Track="0" Value="500" />
+        <Parameter Name="Source" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Loop" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Vintage Grit" Group="1" Index="4" Track="0" Value="500" />
+        <Parameter Name="Room Acoustic" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="75" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="842" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="774" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="638" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>
