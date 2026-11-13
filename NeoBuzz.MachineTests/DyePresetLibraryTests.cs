@@ -189,6 +189,7 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void NoTwoPresetsAreAlike()
         {
+            if (OperatingSystem.IsMacOS()) Assert.Ignore("renders the whole library; the same bits on Linux and Windows (PortableMath), and the Mac job is near its time limit");
             var all = Library.Value;
             const double MinDistance = 1.0, MinSpectrumDb = 1.5;
             var close = new List<(Entry A, Entry B, double D)>();
@@ -248,6 +249,7 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void GeneratedPresetsAreLevelledToMinus22AndDoNotClip()
         {
+            if (OperatingSystem.IsMacOS()) Assert.Ignore("renders the whole library; the same bits on Linux and Windows (PortableMath), and the Mac job is near its time limit");
             var bad = new List<string>();
             int n = 0;
             foreach (var e in Library.Value.Where(e => e.Generated))
@@ -270,6 +272,7 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void PitchedPresetsAreInTune()
         {
+            if (OperatingSystem.IsMacOS()) Assert.Ignore("renders the whole library; the same bits on Linux and Windows (PortableMath), and the Mac job is near its time limit");
             var skip = new HashSet<string> { "Arp", "Seq", "Drum", "Texture", "FX", "Init", "MPE" };
             var bad = new List<string>();
             int tested = 0;
