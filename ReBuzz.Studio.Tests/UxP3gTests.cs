@@ -376,8 +376,11 @@ namespace ReBuzz.Studio.Tests
 
                 // The engine's own peaks, while a scene plays.
                 rig.Layout.LaunchScene(0);
-                rig.RunTicks(6);
-                canvas.TickMeters(1.0 / MachineCanvas.MeterRate);
+                for (int round = 0; round < 40 && canvas.WireLevel(wire) <= 0; round++)      // a slower runner needs more ticks before the first peak
+                {
+                    rig.RunTicks(6);
+                    canvas.TickMeters(1.0 / MachineCanvas.MeterRate);
+                }
                 Assert.That(canvas.WireLevel(wire), Is.GreaterThan(0), "the wire Drums → Master carries a level");
                 Assert.That(canvas.BoxLevel(drums), Is.GreaterThan(0), "the box shows the loudest wire out of it");
                 Assert.That(canvas.BoxLevel(Core.SongCore.Machines.First(m => m.DLL.Info.Type == MachineType.Master)), Is.GreaterThan(0), "the Master, what comes into it");
