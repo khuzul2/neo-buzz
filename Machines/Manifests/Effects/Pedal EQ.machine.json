@@ -666,7 +666,9 @@
    "max": 1,
    "default": 0,
    "kind": "switch",
-   "description": "Skips all EQ processing (A/B)."
+   "description": "Skips all EQ processing (A/B).",
+   "how": "Skips all the EQ processing.",
+   "sound": "Lets you compare the EQ against the untouched signal."
   },
   {
    "index": 1,
@@ -679,7 +681,9 @@
    "max": 1,
    "default": 0,
    "kind": "switch",
-   "description": "Hear the low shelf alone."
+   "description": "Hear the low shelf alone.",
+   "how": "Plays only the low shelf's filter on its own.",
+   "sound": "Lets you hear exactly which part of the sound that band touches."
   },
   {
    "index": 2,
@@ -692,7 +696,9 @@
    "max": 1,
    "default": 0,
    "kind": "switch",
-   "description": "Hear the low-mid bell alone."
+   "description": "Hear the low-mid bell alone.",
+   "how": "Plays only the low-mid bell's filter on its own.",
+   "sound": "Lets you hear exactly which part of the sound that band touches."
   },
   {
    "index": 3,
@@ -705,7 +711,9 @@
    "max": 1,
    "default": 0,
    "kind": "switch",
-   "description": "Hear the high-mid bell alone."
+   "description": "Hear the high-mid bell alone.",
+   "how": "Plays only the high-mid bell's filter on its own.",
+   "sound": "Lets you hear exactly which part of the sound that band touches."
   },
   {
    "index": 4,
@@ -718,7 +726,9 @@
    "max": 1,
    "default": 0,
    "kind": "switch",
-   "description": "Hear the high shelf alone."
+   "description": "Hear the high shelf alone.",
+   "how": "Plays only the high shelf's filter on its own.",
+   "sound": "Lets you hear exactly which part of the sound that band touches."
   },
   {
    "index": 5,
@@ -794,7 +804,9 @@
      500.0
     ]
    ],
-   "description": "Corner, 20–500 Hz in steps."
+   "description": "Corner, 20–500 Hz in steps.",
+   "how": "Sets the low shelf's corner in steps from 20 to 500 Hz.",
+   "sound": "Moves where the bass lift or cut starts."
   },
   {
    "index": 6,
@@ -810,7 +822,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "±24 dB in 0.5 dB steps."
+   "description": "±24 dB in 0.5 dB steps.",
+   "how": "Raises or lowers everything below the low shelf's corner, by up to 24 dB in 0.5 dB steps.",
+   "sound": "Boosts add weight; cuts thin the bottom end."
   },
   {
    "index": 7,
@@ -898,7 +912,9 @@
      5000.0
     ]
    ],
-   "description": "Bell centre, 100 Hz – 5 kHz in steps."
+   "description": "Bell centre, 100 Hz – 5 kHz in steps.",
+   "how": "Sets the low-mid bell's centre in steps from 100 Hz to 5 kHz.",
+   "sound": "Moves the boost or cut between the body and the upper mids."
   },
   {
    "index": 8,
@@ -914,7 +930,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "±24 dB in 0.5 dB steps."
+   "description": "±24 dB in 0.5 dB steps.",
+   "how": "Raises or lowers the low-mid bell by up to 24 dB in 0.5 dB steps.",
+   "sound": "Boosts add body or boxiness; cuts clear mud."
   },
   {
    "index": 9,
@@ -997,7 +1015,9 @@
      10.0
     ]
    ],
-   "description": "Bandwidth: 0.3 broad to 10 narrow."
+   "description": "Bandwidth: 0.3 broad to 10 narrow.",
+   "how": "Sets the low-mid bell's width in steps from 0.3 (broad) to 10 (narrow).",
+   "sound": "Broad bells change the tone; narrow ones pick out single frequencies."
   },
   {
    "index": 10,
@@ -1077,7 +1097,9 @@
      16000.0
     ]
    ],
-   "description": "Bell centre, 500 Hz – 16 kHz in steps."
+   "description": "Bell centre, 500 Hz – 16 kHz in steps.",
+   "how": "Sets the high-mid bell's centre in steps from 500 Hz to 16 kHz.",
+   "sound": "Moves the boost or cut between the presence and the air."
   },
   {
    "index": 11,
@@ -1093,7 +1115,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "±24 dB in 0.5 dB steps."
+   "description": "±24 dB in 0.5 dB steps.",
+   "how": "Raises or lowers the high-mid bell by up to 24 dB in 0.5 dB steps.",
+   "sound": "Boosts add presence or harshness; cuts soften."
   },
   {
    "index": 12,
@@ -1176,7 +1200,9 @@
      10.0
     ]
    ],
-   "description": "Bandwidth: 0.3 broad to 10 narrow."
+   "description": "Bandwidth: 0.3 broad to 10 narrow.",
+   "how": "Sets the high-mid bell's width in steps from 0.3 (broad) to 10 (narrow).",
+   "sound": "Broad bells change the tone; narrow ones pick out single frequencies."
   },
   {
    "index": 13,
@@ -1248,7 +1274,9 @@
      20000.0
     ]
    ],
-   "description": "Corner, 1–20 kHz in steps."
+   "description": "Corner, 1–20 kHz in steps.",
+   "how": "Sets the high shelf's corner in steps from 1 to 20 kHz.",
+   "sound": "Moves where the treble lift or cut starts."
   },
   {
    "index": 14,
@@ -1264,7 +1292,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "±24 dB in 0.5 dB steps."
+   "description": "±24 dB in 0.5 dB steps.",
+   "how": "Raises or lowers everything above the high shelf's corner, by up to 24 dB in 0.5 dB steps.",
+   "sound": "Boosts add air and brightness; cuts darken."
   },
   {
    "index": 15,
@@ -1280,7 +1310,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Trim after the EQ, ±24 dB, ramped against clicks."
+   "description": "Trim after the EQ, ±24 dB, ramped against clicks.",
+   "how": "Trims the level after the EQ by up to 24 dB either way.",
+   "sound": "Matches the loudness to the untouched signal so the comparison is fair."
   }
  ],
  "track_parameters": []

@@ -34327,7 +34327,7 @@
    "gear": "Pedal Chord",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.04,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Generators/Pedal Chord.NET.dll",
     "managed": true,
@@ -34342,9 +34342,9 @@
    "inferred": 12,
    "from_description": 1,
    "type": "control",
-   "seconds": 0.2,
+   "seconds": 0.1,
    "platform": "linux",
-   "date": "2026-11-06",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -34358,7 +34358,7 @@
   "Pedal Chorus": {
    "gear": "Pedal Chorus",
    "kind": "effect",
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Effects/Pedal Chorus.NET.dll",
     "managed": true,
@@ -34375,6 +34375,7 @@
     "latency_samples": 0,
     "latency_ms": 0.0,
     "tail_seconds": 0.01,
+    "tail_hz": 6959.2,
     "echoes": 0,
     "output_correlation": 0.928,
     "spectrum_spread_db": 16.8,
@@ -34709,7 +34710,7 @@
     },
     "thd_percent": 5.44
    },
-   "cpu_ms_per_s": 2.2,
+   "cpu_ms_per_s": 0.2,
    "type": "modulation",
    "level_test": {
     "defaults": {
@@ -34830,26 +34831,26 @@
     "renders": 43
    },
    "denormal": {
-    "playing_ms_per_s": 6.728,
-    "silent_ms_per_s": 0.43,
-    "silent_worst_ms_per_s": 1.119,
+    "playing_ms_per_s": 5.415,
+    "silent_ms_per_s": 0.242,
+    "silent_worst_ms_per_s": 0.4,
     "windows_ms_per_s": [
-     6.728,
-     0.759,
-     0.403,
-     0.318,
-     0.321,
-     0.333,
-     0.462,
-     0.418,
-     0.434,
-     1.119,
-     0.43
+     5.415,
+     0.4,
+     0.243,
+     0.228,
+     0.226,
+     0.248,
+     0.242,
+     0.228,
+     0.241,
+     0.227,
+     0.262
     ]
    },
-   "seconds": 11.4,
+   "seconds": 11.0,
    "platform": "linux",
-   "date": "2026-11-05",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -35210,7 +35211,7 @@
     },
     "thd_percent": 2.39
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 0.7,
    "type": "dynamics",
    "level_test": {
     "defaults": {
@@ -35386,26 +35387,26 @@
     "renders": 31
    },
    "denormal": {
-    "playing_ms_per_s": 2.025,
-    "silent_ms_per_s": 1.225,
-    "silent_worst_ms_per_s": 1.274,
+    "playing_ms_per_s": 1.587,
+    "silent_ms_per_s": 0.899,
+    "silent_worst_ms_per_s": 1.004,
     "windows_ms_per_s": [
-     2.025,
-     1.274,
-     1.123,
-     1.215,
-     1.183,
-     1.219,
-     1.225,
-     1.272,
-     1.233,
-     1.171,
-     1.227
+     1.587,
+     0.876,
+     0.95,
+     1.004,
+     0.86,
+     0.923,
+     0.927,
+     0.796,
+     0.899,
+     0.844,
+     0.842
     ]
    },
-   "seconds": 15.2,
+   "seconds": 15.6,
    "platform": "linux",
-   "date": "2026-11-05",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -35416,7 +35417,7 @@
   "Pedal Drum Matrix": {
    "gear": "Pedal Drum Matrix",
    "kind": "effect",
-   "load_seconds": 0.03,
+   "load_seconds": 0.04,
    "gear_info": {
     "file": "Effects/Pedal Drum Matrix.NET.dll",
     "managed": true,
@@ -35766,7 +35767,7 @@
     },
     "thd_percent": 2.57
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 1.4,
    "type": "utility",
    "level_test": {
     "defaults": {
@@ -36408,26 +36409,26 @@
     "renders": 164
    },
    "denormal": {
-    "playing_ms_per_s": 3.232,
-    "silent_ms_per_s": 2.822,
-    "silent_worst_ms_per_s": 3.172,
+    "playing_ms_per_s": 4.6,
+    "silent_ms_per_s": 4.699,
+    "silent_worst_ms_per_s": 4.913,
     "windows_ms_per_s": [
-     3.232,
-     2.845,
-     3.172,
-     3.112,
-     2.767,
-     2.78,
-     2.765,
-     2.776,
-     2.862,
-     2.784,
-     2.822
+     4.6,
+     4.913,
+     4.881,
+     3.838,
+     4.577,
+     4.641,
+     4.705,
+     4.48,
+     4.694,
+     4.733,
+     4.699
     ]
    },
-   "seconds": 115.6,
+   "seconds": 71.7,
    "platform": "linux",
-   "date": "2026-11-04",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -36788,7 +36789,7 @@
     },
     "thd_percent": 2.38
    },
-   "cpu_ms_per_s": 2.3,
+   "cpu_ms_per_s": 0.0,
    "type": "EQ",
    "level_test": {
     "defaults": {
@@ -37071,26 +37072,26 @@
     "renders": 68
    },
    "denormal": {
-    "playing_ms_per_s": 0.372,
-    "silent_ms_per_s": 0.328,
-    "silent_worst_ms_per_s": 0.356,
+    "playing_ms_per_s": 0.301,
+    "silent_ms_per_s": 0.251,
+    "silent_worst_ms_per_s": 0.41,
     "windows_ms_per_s": [
-     0.372,
-     0.32,
-     0.324,
-     0.329,
-     0.334,
-     0.334,
-     0.328,
-     0.314,
-     0.296,
-     0.356,
-     0.326
+     0.301,
+     0.255,
+     0.41,
+     0.251,
+     0.246,
+     0.25,
+     0.247,
+     0.26,
+     0.245,
+     0.253,
+     0.249
     ]
    },
-   "seconds": 23.0,
+   "seconds": 18.8,
    "platform": "linux",
-   "date": "2026-11-05",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -37458,7 +37459,7 @@
     },
     "thd_percent": 1.11
    },
-   "cpu_ms_per_s": 1.7,
+   "cpu_ms_per_s": 0.0,
    "type": "filter or EQ",
    "level_test": {
     "defaults": {
@@ -37473,8 +37474,8 @@
       "verdict": "ok"
      },
      "max": {
-      "peak_dbfs": 15.54,
-      "growth_db": 0.44,
+      "peak_dbfs": 15.28,
+      "growth_db": 0.42,
       "verdict": "hot"
      }
     },
@@ -37658,30 +37659,30 @@
     "renders": 50
    },
    "denormal": {
-    "playing_ms_per_s": 4.124,
-    "silent_ms_per_s": 0.344,
-    "silent_worst_ms_per_s": 0.617,
+    "playing_ms_per_s": 3.207,
+    "silent_ms_per_s": 0.24,
+    "silent_worst_ms_per_s": 0.46,
     "windows_ms_per_s": [
-     4.124,
-     0.617,
-     0.344,
-     0.331,
-     0.396,
-     0.363,
-     0.348,
-     0.32,
-     0.324,
-     0.341,
-     0.337
+     3.207,
+     0.46,
+     0.235,
+     0.24,
+     0.247,
+     0.28,
+     0.293,
+     0.24,
+     0.233,
+     0.236,
+     0.237
     ]
    },
-   "seconds": 15.6,
+   "seconds": 11.4,
    "platform": "linux",
-   "date": "2026-11-05",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [
-    "hot with every parameter at its maximum at once (+15.5 dBFS peak), but with no parameter alone"
+    "hot with every parameter at its maximum at once (+15.3 dBFS peak), but with no parameter alone"
    ],
    "notes_profiler": [],
    "generated": false,
@@ -37690,7 +37691,7 @@
   "Pedal FM": {
    "gear": "Pedal FM",
    "kind": "generator",
-   "load_seconds": 0.04,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Generators/Pedal FM.NET.dll",
     "managed": true,
@@ -38343,26 +38344,26 @@
     "renders": 121
    },
    "denormal": {
-    "playing_ms_per_s": 2.138,
-    "silent_ms_per_s": 1.244,
-    "silent_worst_ms_per_s": 1.857,
+    "playing_ms_per_s": 1.54,
+    "silent_ms_per_s": 1.066,
+    "silent_worst_ms_per_s": 1.436,
     "windows_ms_per_s": [
-     2.138,
-     1.833,
-     1.857,
-     1.856,
-     1.61,
-     1.244,
-     0.91,
-     0.377,
-     0.402,
-     0.378,
-     0.392
+     1.54,
+     1.424,
+     1.436,
+     1.407,
+     1.212,
+     1.066,
+     0.773,
+     0.285,
+     0.304,
+     0.282,
+     0.296
     ]
    },
-   "seconds": 25.1,
+   "seconds": 20.2,
    "platform": "linux",
-   "date": "2026-11-06",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -38776,11 +38777,11 @@
       "evidence": "silent at one end, the level -120 → +6 dB",
       "min": {
        "raw": 0,
-       "text": "0"
+       "text": "0%"
       },
       "max": {
        "raw": 200,
-       "text": "200"
+       "text": "200%"
       }
      },
      "Mute": {
@@ -38800,37 +38801,37 @@
       "evidence": "no measurable change between its ends with the others at their defaults",
       "min": {
        "raw": 0,
-       "text": "0"
+       "text": "0 ms"
       },
       "max": {
        "raw": 500,
-       "text": "500"
+       "text": "500 ms"
       }
      }
     },
     "renders": 10
    },
    "denormal": {
-    "playing_ms_per_s": 0.363,
-    "silent_ms_per_s": 0.332,
-    "silent_worst_ms_per_s": 0.38,
+    "playing_ms_per_s": 0.256,
+    "silent_ms_per_s": 0.24,
+    "silent_worst_ms_per_s": 0.348,
     "windows_ms_per_s": [
-     0.363,
-     0.38,
-     0.332,
-     0.306,
-     0.332,
-     0.319,
-     0.337,
-     0.341,
-     0.288,
-     0.279,
-     0.348
+     0.256,
+     0.242,
+     0.243,
+     0.234,
+     0.348,
+     0.24,
+     0.239,
+     0.235,
+     0.234,
+     0.28,
+     0.239
     ]
    },
-   "seconds": 6.6,
+   "seconds": 4.3,
    "platform": "linux",
-   "date": "2026-11-04",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -38841,7 +38842,7 @@
   "Pedal Gain Multi": {
    "gear": "Pedal Gain Multi",
    "kind": "effect",
-   "load_seconds": 0.01,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Effects/Pedal Gain Multi.NET.dll",
     "managed": true,
@@ -39277,7 +39278,7 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "Inertia": {
@@ -39301,7 +39302,7 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "track Mute": {
@@ -39313,7 +39314,7 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "track Volume": {
@@ -39349,33 +39350,33 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      }
     },
     "renders": 21
    },
    "denormal": {
-    "playing_ms_per_s": 0.908,
-    "silent_ms_per_s": 0.932,
-    "silent_worst_ms_per_s": 1.488,
+    "playing_ms_per_s": 0.726,
+    "silent_ms_per_s": 0.667,
+    "silent_worst_ms_per_s": 0.677,
     "windows_ms_per_s": [
-     0.908,
-     0.861,
-     0.84,
-     0.873,
-     0.833,
-     1.488,
-     1.372,
-     1.257,
-     0.932,
-     0.916,
-     1.051
+     0.726,
+     0.661,
+     0.676,
+     0.671,
+     0.661,
+     0.677,
+     0.663,
+     0.658,
+     0.675,
+     0.658,
+     0.667
     ]
    },
-   "seconds": 10.6,
+   "seconds": 6.7,
    "platform": "linux",
-   "date": "2026-11-04",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -39895,26 +39896,26 @@
     "renders": 29
    },
    "denormal": {
-    "playing_ms_per_s": 0.944,
-    "silent_ms_per_s": 0.735,
-    "silent_worst_ms_per_s": 0.895,
+    "playing_ms_per_s": 0.662,
+    "silent_ms_per_s": 0.467,
+    "silent_worst_ms_per_s": 0.476,
     "windows_ms_per_s": [
-     0.944,
-     0.895,
-     0.723,
-     0.745,
-     0.696,
-     0.742,
-     0.723,
-     0.721,
-     0.735,
-     0.738,
-     0.715
+     0.662,
+     0.467,
+     0.468,
+     0.455,
+     0.461,
+     0.455,
+     0.466,
+     0.476,
+     0.467,
+     0.456,
+     0.469
     ]
    },
-   "seconds": 21.3,
+   "seconds": 11.2,
    "platform": "linux",
-   "date": "2026-11-05",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -39979,8 +39980,8 @@
       "verdict": "silent"
      },
      "max": {
-      "peak_dbfs": -5.46,
-      "growth_db": -1.27,
+      "peak_dbfs": -5.52,
+      "growth_db": -0.37,
       "verdict": "ok"
      }
     }
@@ -40152,7 +40153,7 @@
      },
      "DCO Noise": {
       "suggested_role": "filter.cutoff",
-      "evidence": "the brightness (centroid) 1.59 kHz → 4.83 kHz",
+      "evidence": "the brightness (centroid) 1.59 kHz → 4.82 kHz",
       "min": {
        "raw": 0,
        "text": "0"
@@ -40334,26 +40335,26 @@
     "renders": 63
    },
    "denormal": {
-    "playing_ms_per_s": 2.655,
-    "silent_ms_per_s": 0.921,
-    "silent_worst_ms_per_s": 1.237,
+    "playing_ms_per_s": 3.663,
+    "silent_ms_per_s": 1.009,
+    "silent_worst_ms_per_s": 1.496,
     "windows_ms_per_s": [
-     2.655,
-     1.237,
-     0.912,
-     0.911,
-     0.913,
-     0.945,
-     0.926,
-     0.913,
-     0.935,
-     0.912,
-     0.921
+     3.663,
+     1.496,
+     1.016,
+     0.96,
+     1.009,
+     1.025,
+     0.989,
+     0.995,
+     0.961,
+     1.018,
+     0.991
     ]
    },
-   "seconds": 5.8,
+   "seconds": 4.1,
    "platform": "linux",
-   "date": "2026-11-06",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -40381,7 +40382,7 @@
    "type": "control",
    "seconds": 0.0,
    "platform": "linux",
-   "date": "2026-11-06",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -41150,26 +41151,26 @@
     "renders": 115
    },
    "denormal": {
-    "playing_ms_per_s": 8.064,
-    "silent_ms_per_s": 0.869,
-    "silent_worst_ms_per_s": 2.88,
+    "playing_ms_per_s": 5.648,
+    "silent_ms_per_s": 1.137,
+    "silent_worst_ms_per_s": 1.226,
     "windows_ms_per_s": [
-     8.064,
-     0.897,
-     0.865,
-     2.88,
-     0.869,
-     0.926,
-     0.863,
-     0.831,
-     0.823,
-     1.652,
-     0.843
+     5.648,
+     1.226,
+     1.142,
+     1.137,
+     1.173,
+     1.136,
+     1.149,
+     1.131,
+     0.908,
+     1.012,
+     1.011
     ]
    },
-   "seconds": 9.9,
+   "seconds": 8.3,
    "platform": "linux",
-   "date": "2026-11-06",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -41182,7 +41183,7 @@
   "Pedal MComp": {
    "gear": "Pedal MComp",
    "kind": "effect",
-   "load_seconds": 0.01,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Effects/Pedal MComp.NET.dll",
     "managed": true,
@@ -41532,7 +41533,7 @@
     },
     "thd_percent": 2.39
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 1.0,
    "type": "dynamics",
    "level_test": {
     "defaults": {
@@ -42046,26 +42047,26 @@
     "renders": 161
    },
    "denormal": {
-    "playing_ms_per_s": 8.685,
-    "silent_ms_per_s": 4.208,
-    "silent_worst_ms_per_s": 5.071,
+    "playing_ms_per_s": 6.179,
+    "silent_ms_per_s": 3.253,
+    "silent_worst_ms_per_s": 3.999,
     "windows_ms_per_s": [
-     8.685,
-     4.208,
-     4.102,
-     3.894,
-     4.031,
-     4.141,
-     4.294,
-     5.071,
-     4.552,
-     5.022,
-     4.035
+     6.179,
+     3.253,
+     3.288,
+     3.227,
+     3.186,
+     3.874,
+     3.145,
+     3.151,
+     3.153,
+     3.408,
+     3.999
     ]
    },
-   "seconds": 73.6,
+   "seconds": 61.9,
    "platform": "linux",
-   "date": "2026-11-05",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -42080,7 +42081,7 @@
   "Pedal Peer Control": {
    "gear": "Pedal Peer Control",
    "kind": "generator",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Generators/Pedal Peer Control.NET.dll",
     "managed": true,
@@ -42114,9 +42115,9 @@
      }
     }
    },
-   "seconds": 0.8,
+   "seconds": 0.5,
    "platform": "linux",
-   "date": "2026-11-06",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [
     "no sound from a MIDI note at its defaults (it has no Note track parameter)"
@@ -42499,7 +42500,7 @@
     },
     "thd_percent": 2.73
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 2.0,
    "type": "reverb",
    "level_test": {
     "defaults": {
@@ -42668,26 +42669,26 @@
     "renders": 39
    },
    "denormal": {
-    "playing_ms_per_s": 2.138,
-    "silent_ms_per_s": 0.315,
-    "silent_worst_ms_per_s": 2.116,
+    "playing_ms_per_s": 1.836,
+    "silent_ms_per_s": 0.237,
+    "silent_worst_ms_per_s": 1.844,
     "windows_ms_per_s": [
-     2.138,
-     2.081,
-     2.116,
-     2.045,
-     2.03,
-     0.291,
-     0.293,
-     0.299,
-     0.301,
-     0.315,
-     0.286
+     1.836,
+     1.756,
+     1.825,
+     1.844,
+     1.769,
+     0.237,
+     0.225,
+     0.221,
+     0.227,
+     0.217,
+     0.234
     ]
    },
-   "seconds": 10.5,
+   "seconds": 9.1,
    "platform": "linux",
-   "date": "2026-11-05",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -42700,7 +42701,7 @@
   "Pedal SH101": {
    "gear": "Pedal SH101",
    "kind": "generator",
-   "load_seconds": 0.02,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Generators/Pedal SH101.NET.dll",
     "managed": true,
@@ -43124,26 +43125,26 @@
     "renders": 66
    },
    "denormal": {
-    "playing_ms_per_s": 1.854,
-    "silent_ms_per_s": 0.29,
-    "silent_worst_ms_per_s": 0.918,
+    "playing_ms_per_s": 3.604,
+    "silent_ms_per_s": 0.3,
+    "silent_worst_ms_per_s": 1.109,
     "windows_ms_per_s": [
-     1.854,
-     0.918,
-     0.283,
-     0.29,
-     0.312,
-     0.289,
-     0.29,
-     0.282,
-     0.279,
+     3.604,
+     1.109,
+     0.299,
+     0.299,
+     0.32,
+     0.313,
+     0.286,
+     0.309,
      0.291,
-     0.273
+     0.288,
+     0.3
     ]
    },
-   "seconds": 10.6,
+   "seconds": 8.5,
    "platform": "linux",
-   "date": "2026-11-06",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -43508,7 +43509,7 @@
     },
     "thd_percent": 2.82
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 0.4,
    "type": "utility",
    "level_test": {
     "defaults": {
@@ -43678,26 +43679,26 @@
     "renders": 40
    },
    "denormal": {
-    "playing_ms_per_s": 3.808,
-    "silent_ms_per_s": 1.941,
-    "silent_worst_ms_per_s": 2.201,
+    "playing_ms_per_s": 2.144,
+    "silent_ms_per_s": 1.284,
+    "silent_worst_ms_per_s": 1.484,
     "windows_ms_per_s": [
-     3.808,
-     1.273,
-     1.473,
-     1.819,
-     1.947,
-     1.969,
-     2.054,
-     1.737,
-     1.941,
-     2.201,
-     1.503
+     2.144,
+     1.236,
+     1.173,
+     1.171,
+     0.952,
+     0.958,
+     1.342,
+     1.284,
+     1.484,
+     1.329,
+     1.426
     ]
    },
-   "seconds": 10.8,
+   "seconds": 9.5,
    "platform": "linux",
-   "date": "2026-11-05",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -43710,7 +43711,7 @@
   "Pedal Tracker": {
    "gear": "Pedal Tracker",
    "kind": "generator",
-   "load_seconds": 0.05,
+   "load_seconds": 0.07,
    "gear_info": {
     "file": "Generators/Pedal Tracker.NET.dll",
     "managed": true,
@@ -43842,11 +43843,11 @@
       "evidence": "no measurable change between its ends with the others at their defaults",
       "min": {
        "raw": 0,
-       "text": "0.0 ms"
+       "text": "0 ms"
       },
       "max": {
        "raw": 500,
-       "text": "1.0 ms"
+       "text": "500 ms"
       }
      },
      "Mute Track 1": {
@@ -44129,26 +44130,26 @@
     "renders": 31
    },
    "denormal": {
-    "playing_ms_per_s": 2.107,
-    "silent_ms_per_s": 3.748,
-    "silent_worst_ms_per_s": 11.842,
+    "playing_ms_per_s": 2.661,
+    "silent_ms_per_s": 2.271,
+    "silent_worst_ms_per_s": 2.384,
     "windows_ms_per_s": [
-     2.107,
-     1.752,
-     1.741,
-     1.781,
-     1.738,
-     3.78,
-     3.788,
-     1.718,
-     11.842,
-     3.748,
-     9.815
+     2.661,
+     2.146,
+     2.221,
+     2.271,
+     2.229,
+     2.212,
+     2.355,
+     2.384,
+     2.255,
+     2.294,
+     2.362
     ]
    },
-   "seconds": 4.7,
+   "seconds": 3.4,
    "platform": "linux",
-   "date": "2026-11-06",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [],

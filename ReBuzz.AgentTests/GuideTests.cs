@@ -215,6 +215,19 @@ namespace ReBuzz.AgentTests
         };
 
         /// <summary>Every text an agent reads: the guides, the curated pages, the built manuals and the prompts (with arguments).</summary>
+        /// <summary>
+        /// The presets some Pedal machines ship themselves (ExternalMachines/source/thepedal/*/*.prs.xml: Buzz's preset dictionaries,
+        /// one Item per preset), which their pages (K2) may name.
+        /// </summary>
+        static IEnumerable<string> OwnPresets()
+        {
+            string dir = Path.Combine(RepoRoot(), "ExternalMachines", "source", "thepedal");
+            if (!Directory.Exists(dir)) yield break;
+            foreach (var file in Directory.GetFiles(dir, "*.prs.xml", SearchOption.AllDirectories))
+                foreach (Match m in Regex.Matches(File.ReadAllText(file), "<Item Key=\"([^\"]+)\""))
+                    yield return System.Net.WebUtility.HtmlDecode(m.Groups[1].Value);
+        }
+
         static IEnumerable<(string Where, string Text, string? Gear)> Texts()
         {
             foreach (var t in Topics) yield return ($"guide {t}", GuideLibrary.Get(t)!, null);
@@ -269,9 +282,13 @@ namespace ReBuzz.AgentTests
         [Test]
         public void EveryNeoMachineHasACuratedPageAndAManual()
         {
-            Assert.That(MachineManual.CuratedGear, Is.EquivalentTo(NeoGear));
+            // K2: and every machine of a finished family (KnowledgeFamilies: the Pedal machines), which has a curated manifest too.
+            var family = CuratedManifestTests.Curated().Keys.Where(KnowledgeFamilies.Covers).ToArray();
+            Assert.That(family.Length, Is.GreaterThanOrEqualTo(19));
+            var pages = NeoGear.Concat(family).ToArray();
+            Assert.That(MachineManual.CuratedGear, Is.EquivalentTo(pages));
             Assert.That(Manifests().Keys, Is.EquivalentTo(NeoGear));
-            foreach (var gear in NeoGear)
+            foreach (var gear in pages)
             {
                 string? curated = MachineManual.Curated(gear);
                 Assert.That(curated, Does.StartWith("## How it sounds"), gear);
@@ -564,7 +581,7 @@ namespace ReBuzz.AgentTests
         [Test]
         public void EveryPresetTheGuidesNameExists()
         {
-            var all = Presets().Values.SelectMany(p => p).ToHashSet();
+            var all = Presets().Values.SelectMany(p => p).Concat(OwnPresets()).ToHashSet();
             var problems = new List<string>();
             foreach (var (where, text, _) in Texts())
             {
@@ -666,7 +683,7 @@ namespace ReBuzz.AgentTests
             var both = TestTools.CallTool(server, "guide", new JsonObject { ["machine"] = "Neo Verb", ["topic"] = "mixing" });
             Assert.That(both.Error, Is.True);
             var list = TestTools.CallTool(server, "guide", new JsonObject());
-            Assert.That(list.Data["manuals"]!.AsArray().Count, Is.EqualTo(NeoGear.Length));
+            Assert.That(list.Data["manuals"]!.AsArray().Count, Is.EqualTo(NeoGear.Length + CuratedManifestTests.Curated().Keys.Count(KnowledgeFamilies.Covers)), "a page per Neo machine and per machine of a finished family");
             Assert.That(TestTools.CallTool(server, "guide", new JsonObject { ["topic"] = "mastering" }).Data["markdown"]!.GetValue<string>(), Does.StartWith("# Mastering"));
 
             // With the ReBuzz side's provider, the full manual (manifest and presets) is served.
