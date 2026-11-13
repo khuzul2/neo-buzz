@@ -94,8 +94,8 @@ namespace ReBuzz.Studio.Tests
             Assert.That(StateOf(rig, 1, line), Is.EqualTo(ClipState.Playing));
             Assert.That(ReBuzz.Studio.Shell.TransportBar.PositionOf(rig.Core), Does.StartWith("1.2."), "the session clock, in the top bar: bar.beat.tick");
             // Fork (ux-overhaul.md §3.1): a clip keeps its fill while it plays; the play green is its ▶ on a dark chip and its outline.
-            Assert.That(view.SlotAt(0, 0).Background, Is.SameAs(SessionPalette.Clip).Or.SameAs(SessionPalette.Lighten(SessionPalette.Clip, 0.1)),
-                "an uncoloured clip keeps its colour while it plays (it turned green, a colour a user can pick)");
+            Assert.That(view.SlotAt(0, 0).Background, Is.SameAs(Identity).Or.SameAs(SessionPalette.Lighten(Identity, 0.1)),
+                "an uncoloured clip keeps its colour, its machine's identity colour (Neo Poly: Synth), while it plays (it turned green, a colour a user can pick)");
             Assert.That(LitAsPlaying(view.SlotAt(0, 0)), Is.True, "its ▶ in the play colour");
             Assert.That(LitAsPlaying(view.SlotAt(1, 0)) && ReferenceEquals(view.SlotAt(1, 0).Outline, SessionPalette.Playing), Is.True, "an unselected one's outline too");
             Assert.That(view.SlotAt(0, 0).ChipColour, Is.SameAs(SessionPalette.StateChip));
@@ -119,6 +119,9 @@ namespace ReBuzz.Studio.Tests
         }
 
         // Its ▶ in the play colour on the dark chip (the outline too, unless the slot is selected: then it has the selection's).
+        /// <summary>An uncoloured clip of a Neo Poly track (P3h): the Synth identity colour.</summary>
+        static readonly Avalonia.Media.IBrush Identity = SessionPalette.BrushOf(ReBuzz.Studio.Shell.Design.StudioTokens.Identity(NeoBuzz.Editor.MachineCategory.Synth));
+
         static bool LitAsPlaying(SessionView.SlotCell cell) =>
             cell.ShownState == "playing" && ReferenceEquals(cell.GlyphColour, SessionPalette.Playing) && ReferenceEquals(cell.ChipColour, SessionPalette.StateChip);
 

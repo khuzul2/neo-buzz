@@ -468,8 +468,9 @@ namespace ReBuzz.Studio.Views
         void UpdateEmpty()
         {
             // The same for both views of a pattern: nothing to show until a machine has a pattern chosen.
-            bool none = rollMode ? pattern == null : editorHost.Content == null;
+            bool none = pattern == null || (!rollMode && editorHost.Content == null);
             rollView.IsVisible = rollMode && pattern != null;
+            editorHost.IsVisible = !rollMode && pattern != null;       // an editor left from another machine stays out of sight while none is chosen
             string what = rollMode ? "piano roll" : "Tracker";
             if (machine == null || machine.DLL?.Info?.Type == MachineType.Master)
             {

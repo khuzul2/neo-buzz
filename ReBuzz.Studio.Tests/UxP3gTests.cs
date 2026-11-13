@@ -403,14 +403,14 @@ namespace ReBuzz.Studio.Tests
                     foreach (var v in window.GetVisualDescendants()) v.InvalidateVisual();
                     Settle();
                     var shape = canvas.WireOf(wire);
-                    var middle = canvas.TranslatePoint(new Point((shape.Start.X + shape.End.X) / 2 * canvas.Zoom - canvas.Offset.X, (shape.Start.Y + shape.End.Y) / 2 * canvas.Zoom - canvas.Offset.Y), window)!.Value;
+                    var spot = canvas.TranslatePoint(new Point((shape.Start.X * 3 + shape.End.X) / 4 * canvas.Zoom - canvas.Offset.X, (shape.Start.Y * 3 + shape.End.Y) / 4 * canvas.Zoom - canvas.Offset.Y), window)!.Value;
                     var bitmap = window.CaptureRenderedFrame();
                     Assert.That(bitmap, Is.Not.Null);
                     using var fb = bitmap!.Lock();
                     bool rgba = fb.Format == Avalonia.Platform.PixelFormat.Rgba8888;
                     int best = 0;
-                    for (int y = (int)middle.Y - 3; y <= (int)middle.Y + 3; y++)
-                        for (int x = (int)middle.X - 3; x <= (int)middle.X + 3; x++)
+                    for (int y = (int)spot.Y - 2; y <= (int)spot.Y + 2; y++)
+                        for (int x = (int)spot.X - 2; x <= (int)spot.X + 2; x++)
                         {
                             int p = System.Runtime.InteropServices.Marshal.ReadInt32(fb.Address + y * fb.RowBytes + x * 4);
                             int r = rgba ? p & 0xFF : (p >> 16) & 0xFF, g = (p >> 8) & 0xFF, bl = rgba ? (p >> 16) & 0xFF : p & 0xFF;

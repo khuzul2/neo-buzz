@@ -102,7 +102,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void TheClipCardNeverShowsInTheMachineViewEvenWithAClipSelected()
+        public void TheClipCardFollowsTheSelectionNotTheLeftOverOfAnotherShot()
         {
             using var restore = Studio.AfterTest(() =>
             {
@@ -120,19 +120,21 @@ namespace ReBuzz.Studio.Tests
             {
                 var inspector = window.Inspector;
                 inspector.Open();
-                // A clip chosen in the Session View stays the selection (Lead, Hook) when the Machine View is shown.
+                // A clip chosen in the Session View is a clip selection (Lead and Hook) and keeps its card in the other views: mac-341 showed
+                // it in the Machine View because the gallery had left that selection behind. The gallery now selects the machine alone there.
                 window.ShowView("Session");
                 StudioSelection.For(Core).Set(lead, hook, this);
                 Settle(window);
                 Assert.That(inspector.ClipPanel.IsVisible, Is.True, "the Session View, where clips are");
                 window.ShowView("Machines");
                 Settle(window);
-                Assert.That(StudioSelection.For(Core).Pattern, Is.SameAs(hook), "the selection still holds the pattern");
-                Assert.That(inspector.ClipPanel.IsVisible, Is.False, "the Machine View picks machines: no Hook, Launch, Region, Follow action or Scene");
-                // Where a pattern is the point (the Arrangement), a clip selection shows its card.
-                window.ShowView("Sequence");
+                Assert.That(inspector.ClipPanel.IsVisible, Is.True, "a clip selection, in any view");
+                StudioSelection.For(Core).Set(lead, null, this);
                 Settle(window);
-                Assert.That(inspector.ClipPanel.IsVisible, Is.True, "a clip selection in the Arrangement");
+                Assert.That(inspector.ClipPanel.IsVisible, Is.False, "the machine alone in the Machine View: no Hook, Launch, Region, Follow action or Scene");
+                window.ShowView("Session");
+                Settle(window);
+                Assert.That(inspector.ClipPanel.IsVisible, Is.True, "and back in the Session View");
             }
             finally
             {
@@ -375,7 +377,8 @@ namespace ReBuzz.Studio.Tests
 
                 // One click on a starter in any of them: a machine, one undo step, and every empty state that was about "no machine" changes.
                 int steps = Core.SongCore.ActionStack.Steps.Count;
-                var poly = (page.EmptyState.Step("Neo Poly") ?? throw new AssertionException("no Neo Poly step"));
+                window.Detail.ShowPage(false, false);                 // the Tracker is in the window again (a hidden page lets go of the selection)
+                Settle(window);
                 page.EmptyState.Step("Neo Poly")!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 Settle(window);
                 Assert.That(Core.SongCore.Machines.Select(m => m.Name), Does.Contain("Poly").Or.Contain("Neo Poly"));
@@ -395,8 +398,8 @@ namespace ReBuzz.Studio.Tests
                 page.EmptyState.Step("New pattern")!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 Settle(window);
                 Assert.That(made.Patterns.Count, Is.EqualTo(1));
-                Assert.That(page.EmptyState.IsVisible, Is.False, "the piano roll shows the new pattern");
-                Assert.That(page.Roll.IsVisible, Is.True);
+                Assert.That(page.Pattern, Is.Not.Null, "the Tracker has it");
+                Assert.That(page.EmptyState.IsVisible, Is.False, "and its empty state is gone");
             }
             finally
             {

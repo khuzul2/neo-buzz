@@ -338,7 +338,7 @@ namespace ReBuzz.Studio.Views.Machines
         /// <summary>The meter's colour at a level: green, yellow from -6 dB.</summary>
         static Color MeterColour(double level) => level > 0.9 ? MeterYellow : MeterGreen;
 
-        static readonly Dictionary<long, (IPen Pen, IBrush Fill)> litWires = new Dictionary<long, (IPen, IBrush)>();
+        static readonly Dictionary<(int, uint, uint), (IPen Pen, IBrush Fill)> litWires = new Dictionary<(int, uint, uint), (IPen, IBrush)>();
 
         /// <summary>
         /// How lit a level looks (0 to 1): the level is already on a dB scale (-60 to 0 dB is 0 to 1); the look is the square of it, so a path
@@ -346,16 +346,19 @@ namespace ReBuzz.Studio.Views.Machines
         /// </summary>
         internal static double Glow(double level) => level * level;
 
-        static (IPen Pen, IBrush Fill) LitWire(double level, Color track)
+        /// <summary>The pen of a wire carrying a level, and the fill of its arrow: the line's colour and the arrow's, each towards the meter's colour.</summary>
+        static (IPen Pen, IBrush Fill) LitWire(double level, Color track, Color arrow)
         {
             int step = Math.Clamp((int)Math.Round(Glow(level) * 16), 1, 16);
-            long key = step | ((long)track.ToUInt32() << 8);
+            var key = (step, track.ToUInt32(), arrow.ToUInt32());
             if (!litWires.TryGetValue(key, out var lit))
             {
                 double g = step / 16.0;
-                var colour = Mix(track, MeterColour(Math.Sqrt(g)), 0.12 + 0.88 * g);
-                var brush = new SolidColorBrush(colour).ToImmutable();
-                lit = (new Pen(brush, 1 + 2 * g), brush);
+                var meter = MeterColour(Math.Sqrt(g));
+                double t = 0.12 + 0.88 * g;
+                var brush = new SolidColorBrush(Mix(track, meter, t)).ToImmutable();
+                var fill = new SolidColorBrush(Mix(arrow, meter, t)).ToImmutable();
+                lit = (new Pen(brush, 1 + 2 * g), fill);
                 if (litWires.Count > 512) litWires.Clear();
                 litWires[key] = lit;
             }
@@ -652,7 +655,7 @@ namespace ReBuzz.Studio.Views.Machines
             if (level > 0.01)
             {
                 // The level lights the wire: its line colour towards the meter's colour, and a little thicker (sixteen steps, drawn with cached pens).
-                var (pen, fill) = LitWire(level, track);
+                var (pen, fill) = LitWire(level, track, colours.Colour("MV Arrow"));
                 ctx.DrawLine(pen, w.Start, w.End);
                 if (!arrow) return;
                 var tri = new StreamGeometry();

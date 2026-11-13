@@ -121,7 +121,7 @@ namespace ReBuzz.Studio.Shell
             _ = new TransportKeys(this, () => tabs.ItemCount > 0 ? host.Core : null, () => detail?.IsOpen == true && InDetail(FocusManager?.GetFocusedElement()));
 
             Opened += (s, e) => open.Add(this);
-            Closed += (s, e) => open.Remove(this);
+            Closed += (s, e) => { open.Remove(this); if (EmptyStates.AddMachine == (Action)AddMachine) EmptyStates.AddMachine = null; };
 
             refresh.Tick += (s, e) => Refresh();
             if (host.Core != null) OnStarted();
@@ -235,7 +235,6 @@ namespace ReBuzz.Studio.Shell
             inspector = new Views.Inspector.InspectorPanel(host.Core, host.Registry, ShowView, sessionView, notes);
             inspector.SessionShown = () => (tabs.SelectedItem as TabItem)?.Header as string == "Session";
             EmptyStates.AddMachine = AddMachine;          // the empty states' "Add machine…" (P3i)
-            inspector.MachinesShown = () => (tabs.SelectedItem as TabItem)?.Header as string == "Machines";
             tabs.SelectionChanged += (s, e) => { if (e.Source == tabs) inspector?.Refresh(); };
             browser = new Views.Browser.BrowserPanel(host.Core, host.Registry, p => PatternView.Edit(p));
             detail = new Views.Detail.DetailPanel(host.Registry, tracker ?? new TextBlock { Text = "The Tracker failed to start.", Foreground = StudioTokens.ErrorTextBrush, Margin = new Thickness(12) },

@@ -674,6 +674,9 @@ namespace ReBuzz.Studio.Tests
                 }));
                 Try("341-machines-meters-playing", () =>
                 {
+                    // A machine alone is selected here (a clip chosen in the Session View stays selected with its machine across views, and
+                    // that selection has the inspector's clip card: mac-341 showed it on Lead).
+                    ReBuzz.Studio.Views.StudioSelection.For(Core).Set(demo.Lead, null, window);
                     window.ShowView("Machines");
                     var canvas = Tab<MachineView>(window, "Machines").Canvas;
                     for (int i = 0; i < 4; i++)

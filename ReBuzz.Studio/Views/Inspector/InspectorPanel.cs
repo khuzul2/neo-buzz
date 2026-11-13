@@ -207,9 +207,6 @@ namespace ReBuzz.Studio.Views.Inspector
         /// <summary>Whether the window shows the Session View now (its clips are the point there; set by the window).</summary>
         public Func<bool> SessionShown { get; set; }
 
-        /// <summary>Whether the window shows the Machine View now (a machine is picked there, not a clip: a pattern the selection still holds is not its business; set by the window).</summary>
-        public Func<bool> MachinesShown { get; set; }
-
         /// <summary>The tab shown: <see cref="SelectionTab"/> or <see cref="SongTab"/>.</summary>
         public string CurrentTab => tab;
 
@@ -423,8 +420,7 @@ namespace ReBuzz.Studio.Views.Inspector
             {
                 bool hasTrack = TrackOf(machine) != null;
                 // Only the cards the selection needs: a machine alone, in a view that isn't the Session's, has no clip to show.
-                bool inSession = SessionShown?.Invoke() == true;
-                bool wanted = hasTrack && (inSession || pattern != null && MachinesShown?.Invoke() != true);
+                bool wanted = hasTrack && (pattern != null || SessionShown?.Invoke() == true);
                 clip.IsVisible = wanted;
                 if (hasTrack) clip.Follow(ClipSlot());
             }
