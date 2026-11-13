@@ -58,7 +58,7 @@
    "unit": "%",
    "description": "Controls the bandwidth (sharpness) of the four resonant vocal tract filter peaks.",
    "how": "Controls the bandwidth (sharpness) of the four resonant vocal tract filter peaks.",
-   "sound": "Lower values sound like warm, natural choir pads; high values sound intensely nasal, robotic, and \"talking.\""
+   "sound": "Lower values sound like warm, natural choir pads; high values sound intensely nasal and robotic, like a talking machine."
   },
   {
    "index": 3,

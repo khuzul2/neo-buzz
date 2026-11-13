@@ -19,7 +19,7 @@ TractScale       "Tract Size" 0 1000 500 bip
 FormantQ         "Formant Q" 0 1000 350 pct
     id formant_resonance
     how Controls the bandwidth (sharpness) of the four resonant vocal tract filter peaks.
-    sound Lower values sound like warm, natural choir pads; high values sound intensely nasal, robotic, and "talking."
+    sound Lower values sound like warm, natural choir pads; high values sound intensely nasal and robotic, like a talking machine.
 GlottalEdge      "Glottal / Bass" 0 1000 400 pct
     id glottal_edge
     how Shapes the excitation pulse sharpness and adds sub-glottal harmonic distortion before the formant bank.
