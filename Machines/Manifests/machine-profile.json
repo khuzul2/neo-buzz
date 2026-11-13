@@ -24964,6 +24964,41 @@
    "generated": true,
    "health": "warn"
   },
+  "Neo Envelope": {
+   "gear": "Neo Envelope",
+   "kind": "generator",
+   "no_output": true,
+   "load_seconds": 0.32,
+   "gear_info": {
+    "file": "Generators/Neo Envelope.NET.dll",
+    "managed": true,
+    "min_tracks": 0,
+    "max_tracks": 0,
+    "control": true,
+    "takes_midi": false
+   },
+   "parameters": 9,
+   "track_parameters": 0,
+   "inferred": 9,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 9,
+    "of": 9
+   },
+   "type": "control",
+   "seconds": 0.4,
+   "platform": "linux",
+   "date": "2026-11-13",
+   "problems": [],
+   "warnings": [],
+   "hot": [],
+   "notes_profiler": [
+    "has no audio output",
+    "a control machine (moves other machines' parameters): no audio test"
+   ],
+   "generated": true,
+   "health": "ok"
+  },
   "Neo EQ": {
    "gear": "Neo EQ",
    "kind": "effect",
@@ -28788,6 +28823,41 @@
    "generated": true,
    "health": "warn"
   },
+  "Neo LFO": {
+   "gear": "Neo LFO",
+   "kind": "generator",
+   "no_output": true,
+   "load_seconds": 0.3,
+   "gear_info": {
+    "file": "Generators/Neo LFO.NET.dll",
+    "managed": true,
+    "min_tracks": 0,
+    "max_tracks": 0,
+    "control": true,
+    "takes_midi": false
+   },
+   "parameters": 8,
+   "track_parameters": 0,
+   "inferred": 8,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 8,
+    "of": 8
+   },
+   "type": "control",
+   "seconds": 0.4,
+   "platform": "linux",
+   "date": "2026-11-13",
+   "problems": [],
+   "warnings": [],
+   "hot": [],
+   "notes_profiler": [
+    "has no audio output",
+    "a control machine (moves other machines' parameters): no audio test"
+   ],
+   "generated": true,
+   "health": "ok"
+  },
   "Neo Limiter": {
    "gear": "Neo Limiter",
    "kind": "effect",
@@ -29624,6 +29694,41 @@
    "notes_profiler": [],
    "generated": true,
    "health": "warn"
+  },
+  "Neo Macro": {
+   "gear": "Neo Macro",
+   "kind": "generator",
+   "no_output": true,
+   "load_seconds": 0.26,
+   "gear_info": {
+    "file": "Generators/Neo Macro.NET.dll",
+    "managed": true,
+    "min_tracks": 0,
+    "max_tracks": 0,
+    "control": true,
+    "takes_midi": false
+   },
+   "parameters": 2,
+   "track_parameters": 0,
+   "inferred": 2,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 2,
+    "of": 2
+   },
+   "type": "control",
+   "seconds": 0.3,
+   "platform": "linux",
+   "date": "2026-11-13",
+   "problems": [],
+   "warnings": [],
+   "hot": [],
+   "notes_profiler": [
+    "has no audio output",
+    "a control machine (moves other machines' parameters): no audio test"
+   ],
+   "generated": true,
+   "health": "ok"
   },
   "Neo Multiband": {
    "gear": "Neo Multiband",
@@ -30749,6 +30854,41 @@
    "warnings": [],
    "hot": [],
    "notes_profiler": [],
+   "generated": true,
+   "health": "ok"
+  },
+  "Neo Step": {
+   "gear": "Neo Step",
+   "kind": "generator",
+   "no_output": true,
+   "load_seconds": 0.26,
+   "gear_info": {
+    "file": "Generators/Neo Step.NET.dll",
+    "managed": true,
+    "min_tracks": 0,
+    "max_tracks": 0,
+    "control": true,
+    "takes_midi": false
+   },
+   "parameters": 38,
+   "track_parameters": 0,
+   "inferred": 38,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 38,
+    "of": 38
+   },
+   "type": "control",
+   "seconds": 0.8,
+   "platform": "linux",
+   "date": "2026-11-13",
+   "problems": [],
+   "warnings": [],
+   "hot": [],
+   "notes_profiler": [
+    "has no audio output",
+    "a control machine (moves other machines' parameters): no audio test"
+   ],
    "generated": true,
    "health": "ok"
   },

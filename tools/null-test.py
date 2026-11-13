@@ -123,6 +123,14 @@ def fx(name, gear, preset, params=(), tail=1.0, extra=(), source=SOURCE, beats=4
             "auto": list(auto)}
 
 
+def mods(case, *modulators):
+    """Canvas modulators (docs/specs/neo-patch.md §3) on a case: each (gear, name, params, targets, listen) is added after the
+    chain; targets: [(machine, param, depth, polarity)] through the modulate tool, listen: the machine its notes or level it listens to.
+    The base values are the ones the case set; the modulation is written by the modulator's Work as the render runs."""
+    case["mods"] = list(modulators)
+    return case
+
+
 CASES = [
     # Neo Poly: oscillators (blep saw, pulse, sync, FM, ring), ladder and SVF filters, unison, drift, noise.
     gen("poly-default", "Neo Poly", None, [], CHORDS),                     # drift on: per-voice random
@@ -503,6 +511,18 @@ CASES = [
     gen("long-sampler", "Neo Sampler", "Pad — Vox Aah (Looped)", [("Z2 wave", 221), ("Z2 tune", 12)], LONG, beats=32),
     fx("long-filter", "Neo Filter", "LFO — Stereo Sweep (1/2, 90°)", [("LFO retrig", "Free"), ("LFO sync", "Free"), ("LFO rate", "0.23 Hz"), ("LFO shape", "Smooth random")],
        tail=1.0, beats=32, source=("Neo FM6", "Keys — Tine Piano", [], [n(p, b, 0.5, 100) for b in range(0, 32, 2) for p in ("C4", "E4", "G4")])),
+    # The canvas modulators (neo-patch.md §3): a Neo LFO, Neo Step and Neo Macro writing a Neo Filter's parameters, and a follower envelope
+    # moving a filter by the level of the source. The song position drives them, so every render is the same.
+    mods(fx("mod-lfo-filter", "Neo Filter", None, [("Type", "SVF LP"), ("Cutoff", "900 Hz"), ("Resonance", "40%")]),
+         ("Neo LFO", "Mod", [("Shape", "Triangle"), ("Sync", "1/4"), ("Write glide", "50 ms")], [("Fx1", "Cutoff", 50, "bi")], None)),
+    mods(fx("mod-step-filter", "Neo Filter", None, [("Type", "SVF LP"), ("Cutoff", "600 Hz"), ("Resonance", "30%")]),
+         ("Neo Step", "Mod", [("Steps", 4), ("Rate", "1/8"), ("Step 1", "100%"), ("Step 2", "20%"), ("Step 3", "70%"), ("Step 4", "0%"), ("Write glide", "40 ms")],
+          [("Fx1", "Cutoff", 60, "uni")], None)),
+    mods(fx("mod-macro-filter", "Neo Filter", None, [("Type", "SVF LP"), ("Cutoff", "500 Hz")]),
+         ("Neo Macro", "Mod", [("Value", "65%"), ("Write glide", "30 ms")], [("Fx1", "Cutoff", 70, "uni"), ("Fx1", "Resonance", 40, "uni")], None)),
+    mods(fx("mod-follower-filter", "Neo Filter", None, [("Type", "SVF LP"), ("Cutoff", "400 Hz")]),
+         ("Neo Envelope", "Mod", [("Mode", "Follower"), ("Threshold", "-40 dB"), ("Attack", "5 ms"), ("Release", "120 ms"), ("Write glide", "40 ms")],
+          [("Fx1", "Cutoff", 70, "uni")], "Src")),
 ]
 
 
@@ -625,6 +645,13 @@ def render_case(exe, case, out_dir, work):
                            points=[{"at": at, "value": v} for at, v in points])
                 c.call("arrangement_place", machine=name, pattern="A", at=[0])
             last = name
+        for mgear, mname, mparams, targets, listen in case.get("mods", []):
+            c.call("machine_add", gear=mgear, name=mname, connect_to="none")
+            set_params(c, mname, mparams)
+            if listen:
+                c.call("modulate", source=mname, listen_machine=listen)
+            for target, param, depth, polarity in targets:
+                c.call("modulate", source=mname, target_machine=target, param=param, depth=depth, polarity=polarity)
         r = c.call("render", **{"from": 0, "to": case["beats"], "tail_seconds": case["tail"], "name": case["name"]})
         os.makedirs(out_dir, exist_ok=True)
         shutil.copyfile(r["file"], os.path.join(out_dir, case["name"] + ".wav"))

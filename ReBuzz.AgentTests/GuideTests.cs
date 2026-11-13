@@ -18,7 +18,7 @@ namespace ReBuzz.AgentTests
     public class GuideTests
     {
         internal static readonly string[] Topics = { "workflow", "concepts", "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain", "dye-essence-in-depth", "dye-essence-effects", "neo-eq-in-depth", "app-control", "troubleshooting" };
-        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Clipper", "Neo Comp", "Neo De-esser", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Gate", "Neo Imager", "Neo Limiter", "Neo Low End", "Neo Multiband", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Strip", "Neo Tape", "Neo Transient", "Neo Utility", "Neo Verb", "Neo Wave", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler" };
+        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Clipper", "Neo Comp", "Neo De-esser", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo Envelope", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Gate", "Neo Imager", "Neo Limiter", "Neo LFO", "Neo Low End", "Neo Macro", "Neo Multiband", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Step", "Neo Strip", "Neo Tape", "Neo Transient", "Neo Utility", "Neo Verb", "Neo Wave", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler" };
 
         /// <summary>Neo gear being built in parallel (phase A4): parameter names aren't final, so guides give them moves in units and say to read the names with machine_describe.</summary>
         static readonly string[] PendingGear = System.Array.Empty<string>();
@@ -63,6 +63,10 @@ namespace ReBuzz.AgentTests
             ["machine_describe"] = new[] { "machine", "group", "value_table", "table_points" },
             ["param_set"] = new[] { "machine", "changes", "allow_unsafe" },
             ["param_get"] = new[] { "machine", "params", "track" },
+            // neo-patch.md §3 (ReBuzz/Agent/ModulationTools.cs): the canvas modulators.
+            ["modulate"] = new[] { "source", "target_machine", "param", "depth", "polarity", "range", "curve", "track", "slot", "listen_machine", "listen_track" },
+            ["modulation_list"] = new[] { "machine" },
+            ["modulation_remove"] = new[] { "source", "slot", "target_machine", "param", "all" },
             ["pattern_list"] = new[] { "machine" },
             ["pattern_create"] = new[] { "machine", "name", "length_beats" },
             ["pattern_delete"] = new[] { "machine", "pattern" },
@@ -312,7 +316,8 @@ namespace ReBuzz.AgentTests
                 if (!text.StartsWith($"# {m.Gear} manual\n")) problems.Add($"{m.Gear}: title");
                 if (!text.Contains(m.Summary)) problems.Add($"{m.Gear}: summary");
                 if (!text.Contains("## How it sounds")) problems.Add($"{m.Gear}: curated page");
-                if (names.Count == 0) problems.Add($"{m.Gear}: no presets found");
+                // The canvas modulators (neo-patch.md §3) have no presets: their setup is the targets, which a song holds.
+                if (names.Count == 0 && !m.Gear.StartsWith("Neo LFO") && m.Gear is not ("Neo Envelope" or "Neo Step" or "Neo Macro")) problems.Add($"{m.Gear}: no presets found");
                 foreach (var p in names)
                     if (!text.Contains("\n- " + p + "\n")) problems.Add($"{m.Gear}: preset {p} not listed");
                 // Every group appears, as its own section or inside a family heading ("Operator 1 … Operator 6").

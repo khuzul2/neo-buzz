@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo LFO, portable (docs/specs/mac-engine.md M2): see ../NeoPortable.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoLfo</NeoFolder>
+    <NeoName>Neo LFO</NeoName>
+    <NeoKind>Generators</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoPortable.targets" />
+</Project>

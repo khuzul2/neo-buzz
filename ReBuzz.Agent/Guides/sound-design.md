@@ -254,6 +254,16 @@ Sixteenth-note gated sweep on a pad (synced, the same on every pass):
 - A pitched drone from nothing: Resonance at its top makes the filter sing at its cutoff (bounded, about −8 dBFS on the SVF); set `Cutoff` to the note's frequency (A3: 220 Hz).
 - Measure a sweep: `render(probes=["Filter"])` and a spectrogram (`plot(kind="spectrogram", …)`); `LFO retrig` Song makes each render the same.
 
+## Movement from the canvas modulators
+
+Neo LFO, Neo Envelope, Neo Step and Neo Macro are machines with no audio: each moves up to 8 parameters of any machines (effects included) while the song plays. Add one with `machine_add(gear="Neo LFO", name="Wobble")`, point it with `modulate`, and shape it with `param_set` on its own parameters (Rate, Shape, Attack…).
+
+- `modulate(source="Wobble", target_machine="Bass", param="F1 cutoff", depth=30)`: the parameter keeps the value you set (its base) and the modulator adds its output on top, smoothed, never past the parameter's range or its safe range. The master volume is never pushed past 0 dB, and tempo parameters are refused. `depth` is −100 … +100 % of the range (30 is a slow sweep, 80 a wide one); `polarity` "bi" swings around the base (default for an LFO), "uni" only adds (default for the rest); `range={"min": "300 Hz", "max": "4 kHz"}` keeps the swing inside part of the range.
+- Which one: Neo LFO for cyclic movement (tempo-synced Sync, or free Rate in Hz); Neo Envelope in Note mode for a filter or volume that opens on each note of `listen_machine` (its Attack, Decay, Sustain and Release), in Follower mode to follow a machine's output level (ducking, pumping); Neo Step for a 1 to 32 step pattern (a rhythmic gate or cutoff); Neo Macro for one knob that moves several parameters together (set its Value and automate that).
+- Moving the base afterwards is fine: `param_set` on the target moves where the modulation sits. `modulation_list` shows every target with where it reaches; `machine_describe` on a target lists its incoming modulations. `modulation_remove` puts the base back. Modulation writes make no undo steps; the `modulate` call that adds or removes a target is one.
+- Limits: a Note envelope hears notes written by patterns and `midi_play`, not notes played from a MIDI keyboard. A follower reacts one block late.
+- Check it: `render(probes=[…])` over a few bars and `plot(kind="spectrogram", …)` show the sweep; a modulator with no target does nothing.
+
 ## Checklist
 
 - [ ] The sound matches the description on all four axes, each with a number: `analyze(source=…, metrics=["spectrum", "dynamics", "stereo"])` on a solo render.
