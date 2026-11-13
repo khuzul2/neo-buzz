@@ -6,6 +6,12 @@
  "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "control",
  "summary": "A Buzz control machine with a single placeholder parameter; it makes no sound. How it is used was not measured and is unverified here.",
+ "category": "Control",
+ "tags": [
+  "sequencer",
+  "notes"
+ ],
+ "use_for": "Edit notes on a grid in its own window.",
  "quirks": [
   "It makes no sound; its one parameter is a placeholder (its own name is Dummy).",
   "Its own work happens in its window, which was not exercised by the profile: unverified.",
@@ -15,12 +21,6 @@
   "its parameter descriptions and value texts (machine_describe, as profiled)",
   "profile (tools/machine-profiler.py, windows 2026-11-13) — a control machine, silent, one dummy parameter"
  ],
- "category": "Control",
- "tags": [
-  "sequencer",
-  "notes"
- ],
- "use_for": "Edit notes on a grid in its own window.",
  "tracks": 0,
  "health": {
   "status": "ok",

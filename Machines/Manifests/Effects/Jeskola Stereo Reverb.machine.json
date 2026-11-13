@@ -6,6 +6,12 @@
  "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "reverb",
  "summary": "A Buzz stereo reverb: dry, reverb and early-reflection levels, reverb time up to 6.4 s, pre-delay and a high cut. For quick ambience; Neo Verb is the better reverb.",
+ "category": "Delay & Reverb",
+ "tags": [
+  "reverb",
+  "stereo-width"
+ ],
+ "use_for": "Stereo reverb with pre-delay and a high cutoff for a wider space.",
  "quirks": [
   "Same controls as Jeskola Reverb, but stereo out (the profile measured a correlation of 0.98); the mono one sums its input.",
   "Rev Out or ER Out at 0 dB peak above full scale on a hot input (+2.6 and +0.9 dBFS in the profile).",
@@ -16,12 +22,6 @@
   "its parameter descriptions and value texts (machine_describe, as profiled)",
   "profile (tools/machine-profiler.py, windows 2026-11-13) — tail 0.6 s at the defaults, +6.1 dB, correlation 0.98, reverb time 0.5 s to 3.7 s"
  ],
- "category": "Delay & Reverb",
- "tags": [
-  "reverb",
-  "stereo-width"
- ],
- "use_for": "Stereo reverb with pre-delay and a high cutoff for a wider space.",
  "tracks": 0,
  "health": {
   "status": "warn",

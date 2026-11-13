@@ -6,6 +6,11 @@
  "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "modulation",
  "summary": "Classic Buzz chorus: one delayed copy swept by an LFO, with rate, depth, feedback, minimum delay and dry and wet levels from -100 to +100 percent. For thickening a source; Neo Ensemble is the modern chorus.",
+ "category": "Modulation",
+ "tags": [
+  "chorus"
+ ],
+ "use_for": "Basic chorus for thickening a mono or stereo source.",
  "quirks": [
   "Mono out, and about 6 dB louder than its input at unity settings: NeoBuzz Live feeds a mono native effect left + right summed (ReBuzz/NativeMachine/NativeMessage.cs). Profile: +8.8 dB at the defaults.",
   "Hot at its defaults: +1.8 dBFS peak on the profile's test signal; feedback at the ends adds a lot more (+16 to +19 dBFS).",
@@ -18,11 +23,6 @@
   "ReBuzz/NativeMachine/NativeMessage.cs — a mono native effect gets left + right summed",
   "profile (tools/machine-profiler.py, windows 2026-11-13) — chorus traits, +8.8 dB at the defaults, hot at the defaults and at feedback's ends"
  ],
- "category": "Modulation",
- "tags": [
-  "chorus"
- ],
- "use_for": "Basic chorus for thickening a mono or stereo source.",
  "tracks": 0,
  "health": {
   "status": "warn",

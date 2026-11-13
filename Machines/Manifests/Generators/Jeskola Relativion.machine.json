@@ -6,6 +6,12 @@
  "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "control",
  "summary": "A Buzz control machine that reads a range of notes against a root note and moves a controlled value by a range around its own root; it makes no sound. Its behaviour was not measured and is unverified here.",
+ "category": "Control",
+ "tags": [
+  "notes",
+  "midi"
+ ],
+ "use_for": "Shift and spread notes across a key range relative to a root note.",
  "quirks": [
   "It makes no sound; it is a control machine.",
   "Its roles are read from the parameter names and texts only: unverified by measurement.",
@@ -17,12 +23,6 @@
   "its parameter descriptions and value texts (machine_describe, as profiled)",
   "profile (tools/machine-profiler.py, windows 2026-11-13) — a control machine, silent, six parameters"
  ],
- "category": "Control",
- "tags": [
-  "notes",
-  "midi"
- ],
- "use_for": "Shift and spread notes across a key range relative to a root note.",
  "tracks": 0,
  "health": {
   "status": "ok",

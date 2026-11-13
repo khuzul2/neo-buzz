@@ -6,6 +6,12 @@
  "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "monosynth",
  "summary": "A drawbar-style Buzz organ: six drawbar levels from 16 foot to 2 foot with an attack and a release. For organ pads and stabs; Neo Poly is the modern synth.",
+ "category": "Synths",
+ "tags": [
+  "organ",
+  "keys"
+ ],
+ "use_for": "Drawbar-style organ tones from a set of footage-labelled harmonics.",
  "quirks": [
   "Monophonic: one note at a time; notes play as written.",
   "Hot at its defaults: 0 dBFS peak for a note; pull the drawbars down before stacking it.",
@@ -17,12 +23,6 @@
   "its parameter descriptions and value texts (machine_describe, as profiled)",
   "profile (tools/machine-profiler.py, windows 2026-11-13) — -7 LUFS for a note, 0 dBFS peak at the defaults, attack 15 ms to 875 ms"
  ],
- "category": "Synths",
- "tags": [
-  "organ",
-  "keys"
- ],
- "use_for": "Drawbar-style organ tones from a set of footage-labelled harmonics.",
  "tracks": 8,
  "notes": {
   "input": "tracks",

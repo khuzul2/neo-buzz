@@ -6,6 +6,11 @@
  "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "modulation",
  "summary": "Classic Buzz flanger: a very short delayed copy swept by an LFO, with rate, depth, feedback, minimum delay in tenths of a millisecond and dry and wet levels. For jet sweeps; Neo Ensemble has a flanger mode.",
+ "category": "Modulation",
+ "tags": [
+  "flanger"
+ ],
+ "use_for": "Classic swept flanger with feedback.",
  "quirks": [
   "Mono out, and about 6 dB louder than its input at unity settings: NeoBuzz Live feeds a mono native effect left + right summed (ReBuzz/NativeMachine/NativeMessage.cs). Profile: +8.8 dB at the defaults.",
   "Feedback at +100 percent diverges (the engine's guard caught it): the safe range is -100 to +98.4 percent.",
@@ -18,11 +23,6 @@
   "ReBuzz/NativeMachine/NativeMessage.cs — a mono native effect gets left + right summed",
   "profile (tools/machine-profiler.py, windows 2026-11-13) — modulation traits, +8.8 dB at the defaults, feedback diverges at +100 percent"
  ],
- "category": "Modulation",
- "tags": [
-  "flanger"
- ],
- "use_for": "Classic swept flanger with feedback.",
  "tracks": 0,
  "health": {
   "status": "unhealthy",

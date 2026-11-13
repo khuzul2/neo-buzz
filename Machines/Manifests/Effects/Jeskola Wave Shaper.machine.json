@@ -6,6 +6,12 @@
  "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "distortion",
  "summary": "A Buzz waveshaper effect with an input gain of plus or minus 24 dB and a choice of four shapes, per track. Distortion; Neo Drive is the modern one.",
+ "category": "Distortion",
+ "tags": [
+  "distortion",
+  "saturation"
+ ],
+ "use_for": "Waveshaping distortion with a shape control per track.",
  "quirks": [
   "Both controls are track parameters (up to 8 tracks), none global.",
   "The profile found sound from silence (-52 dBFS peak: noise, hum or DC), and a long ring (3.5 s): check it on silence before using it.",
@@ -17,12 +23,6 @@
   "its parameter descriptions and value texts (machine_describe, as profiled)",
   "profile (tools/machine-profiler.py, windows 2026-11-13) — sound from silence (-51.9 dBFS), +13.3 dB at the defaults"
  ],
- "category": "Distortion",
- "tags": [
-  "distortion",
-  "saturation"
- ],
- "use_for": "Waveshaping distortion with a shape control per track.",
  "tracks": 8,
  "health": {
   "status": "warn",

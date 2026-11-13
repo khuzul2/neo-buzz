@@ -6,6 +6,13 @@
  "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "monosynth",
  "summary": "A Buzz bass synth, one voice per track: sine, saw, pulse, triangle or noise into a resonant filter with an envelope. For basses in old Buzz songs; Neo Poly is the modern one.",
+ "category": "Synths",
+ "tags": [
+  "bass",
+  "subtractive",
+  "monophonic"
+ ],
+ "use_for": "Monophonic bass with a resonant filter, envelope modulation and decay per track.",
  "quirks": [
   "Each track is its own monophonic voice (8 at most); notes play as written.",
   "All five controls are track parameters, on 0 to 100 percent (Waveform is a choice).",
@@ -17,13 +24,6 @@
   "its parameter descriptions and value texts (machine_describe, as profiled)",
   "profile (tools/machine-profiler.py, windows 2026-11-13) — -10 LUFS for a note, monophonic, filter and envelope controls measured"
  ],
- "category": "Synths",
- "tags": [
-  "bass",
-  "subtractive",
-  "monophonic"
- ],
- "use_for": "Monophonic bass with a resonant filter, envelope modulation and decay per track.",
  "tracks": 8,
  "notes": {
   "input": "tracks",

@@ -6,6 +6,11 @@
  "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "generator",
  "summary": "A Buzz tracker machine with up to 16 tracks and a Subdiv parameter for row timing. The profile heard nothing from a note at its defaults, so what it plays is unverified here.",
+ "category": "Samplers",
+ "tags": [
+  "sampler"
+ ],
+ "use_for": "Play waves from the song's wavetable as in the classic tracker workflow.",
  "quirks": [
   "No sound from a note at its defaults, as MIDI or in its tracks, even with a wave in slot 1.",
   "Up to 16 tracks; Subdiv defaults to 6 ticks per row part.",
@@ -16,11 +21,6 @@
   "its parameter descriptions and value texts (machine_describe, as profiled)",
   "profile (tools/machine-profiler.py, windows 2026-11-13) — no sound from a note at its defaults, even with a wave in slot 1"
  ],
- "category": "Samplers",
- "tags": [
-  "sampler"
- ],
- "use_for": "Play waves from the song's wavetable as in the classic tracker workflow.",
  "tracks": 16,
  "notes": {
   "input": "none"

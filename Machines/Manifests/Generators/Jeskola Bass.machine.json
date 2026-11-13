@@ -6,6 +6,13 @@
  "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "polysynth",
  "summary": "An early Buzz bass synth: four voices of saw, pulse or triangle into a resonant filter, with slides between notes. For simple basses in old Buzz songs; Neo Poly is the modern one.",
+ "category": "Synths",
+ "tags": [
+  "bass",
+  "subtractive",
+  "polyphonic"
+ ],
+ "use_for": "Simple four-voice analog-style bass with a resonant filter and note slides.",
  "quirks": [
   "Four voices (the profile's note count), notes as written (no pitch offset).",
   "Resonance near its top is very hot: +16 dBFS peak in the profile.",
@@ -17,13 +24,6 @@
   "its parameter descriptions and value texts (machine_describe, as profiled)",
   "profile (tools/machine-profiler.py, windows 2026-11-13) — four voices, -9 LUFS for a note, hot with Resonance at its top"
  ],
- "category": "Synths",
- "tags": [
-  "bass",
-  "subtractive",
-  "polyphonic"
- ],
- "use_for": "Simple four-voice analog-style bass with a resonant filter and note slides.",
  "tracks": 4,
  "notes": {
   "input": "tracks",

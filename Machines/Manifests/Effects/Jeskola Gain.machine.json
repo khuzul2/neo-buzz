@@ -6,6 +6,11 @@
  "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "utility",
  "summary": "A plain gain stage with a bypass: level from silence through 0 dB (at 80) to +12 dB. For trims and level automation; Neo Utility adds pan, width and polarity.",
+ "category": "Utility",
+ "tags": [
+  "gain"
+ ],
+ "use_for": "Plain gain trim between machines.",
  "quirks": [
   "Gain is a table, not a formula: 0 is silence, 80 is 0 dB and 127 is +12 dB, about 0.3 dB per step near unity.",
   "It has one track parameter, ATrackParam, that no measurement found any effect from.",
@@ -16,11 +21,6 @@
   "its parameter descriptions and value texts (machine_describe, as profiled)",
   "profile (tools/machine-profiler.py, windows 2026-11-13) — +0.0 dB at the defaults, silent at Gain 0, +12 dB at 127"
  ],
- "category": "Utility",
- "tags": [
-  "gain"
- ],
- "use_for": "Plain gain trim between machines.",
  "tracks": 8,
  "health": {
   "status": "warn",

@@ -6,6 +6,11 @@
  "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "control",
  "summary": "A Buzz control machine with one parameter, Bar (1 to 128, 16 by default); it makes no sound. What it controls was not measured and is unverified here.",
+ "category": "Control",
+ "tags": [
+  "sequencer"
+ ],
+ "use_for": "Older performance helper steered by a Bar control; the Session View is the current way to launch patterns.",
  "quirks": [
   "It makes no sound; it is a control machine.",
   "Its one parameter has no description and nothing was measured beyond its range, so its role is unverified.",
@@ -15,11 +20,6 @@
   "its parameter descriptions and value texts (machine_describe, as profiled)",
   "profile (tools/machine-profiler.py, windows 2026-11-13) — a control machine, silent, one parameter"
  ],
- "category": "Control",
- "tags": [
-  "sequencer"
- ],
- "use_for": "Older performance helper steered by a Bar control; the Session View is the current way to launch patterns.",
  "tracks": 0,
  "health": {
   "status": "ok",

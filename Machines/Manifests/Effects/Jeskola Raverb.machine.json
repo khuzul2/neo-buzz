@@ -6,6 +6,11 @@
  "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "reverb",
  "summary": "A small Buzz reverb with a reverb time, high-frequency damping and separate reverb and dry levels in decibels. For quick ambience; Neo Verb is the better reverb.",
+ "category": "Delay & Reverb",
+ "tags": [
+  "reverb"
+ ],
+ "use_for": "Simple reverb with a time and high-frequency damping.",
  "quirks": [
   "Rev Time is a bare 0 to 127 scale: measured, the tail grows from about 0.4 s to about 4 s (T60), 100 by default.",
   "Rev Out and Dry Out run from -60 to 0 dB; the defaults are about -22.6 dB reverb and 0 dB dry.",
@@ -17,11 +22,6 @@
   "its parameter descriptions and value texts (machine_describe, as profiled)",
   "profile (tools/machine-profiler.py, windows 2026-11-13) — tail 3.5 s and T60 about 8.5 s at the defaults, +6.1 dB, Rev Time 0.4 s to 4 s"
  ],
- "category": "Delay & Reverb",
- "tags": [
-  "reverb"
- ],
- "use_for": "Simple reverb with a time and high-frequency damping.",
  "tracks": 0,
  "health": {
   "status": "ok",

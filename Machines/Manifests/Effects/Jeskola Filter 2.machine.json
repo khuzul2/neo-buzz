@@ -6,6 +6,11 @@
  "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "filter",
  "summary": "A second Buzz resonant filter: low-pass, high-pass or band-pass with cutoff and resonance on 0 to 128 scales and no bandwidth. For sweeps in old Buzz songs; Neo Filter has real units.",
+ "category": "EQ & Filter",
+ "tags": [
+  "filter"
+ ],
+ "use_for": "Compact resonant filter with a selectable type.",
  "quirks": [
   "Mono out, and about 6 dB louder than its input at unity settings: NeoBuzz Live feeds a mono native effect left + right summed (ReBuzz/NativeMachine/NativeMessage.cs). Profile: +6.0 dB at the defaults.",
   "Type is a bare number (0 low-pass, 1 high-pass, 2 band-pass): its texts say 0, 1 and 2, and its description gives the names.",
@@ -18,11 +23,6 @@
   "ReBuzz/NativeMachine/NativeMessage.cs — a mono native effect gets left + right summed",
   "profile (tools/machine-profiler.py, windows 2026-11-13) — +6.0 dB at the defaults; hot with Resonance at its top"
  ],
- "category": "EQ & Filter",
- "tags": [
-  "filter"
- ],
- "use_for": "Compact resonant filter with a selectable type.",
  "tracks": 0,
  "health": {
   "status": "warn",
