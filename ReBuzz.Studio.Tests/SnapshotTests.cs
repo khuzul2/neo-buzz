@@ -392,6 +392,25 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Directory.GetDirectories(folder).Length, Is.GreaterThan(0));
         }
 
+        [AvaloniaTest]
+        public void AParameterChangeShowsInTheDiffWithTheMachinesOwnWords()
+        {
+            using var untitled = Untitled(out _);
+            using var rig = Song("Pad");
+            var core = rig.Core;
+            core.Snapshots.Bind(null);
+            var a = core.Snapshots.Capture("a");
+            var volume = rig.Machine("Pad").ParameterGroupsList[1].ParametersList.First(p => p.Name == "Volume");
+            int was = volume.GetValue(0);
+            ReBuzz.Agent.AgentActions.SetParameter(core, rig.Machine("Pad"), volume, 0, Math.Max(volume.MinValue, was - 100));
+            var b = core.Snapshots.Capture("b");
+            core.Snapshots.Flush();
+            var changes = core.Snapshots.Diff(a, b);
+            TestContext.Out.WriteLine(string.Join("; ", changes.Select(c => $"{c.Area}/{c.Subject}: {c.Text}")));
+            Assert.That(changes.Any(c => c.Area == "parameters" && c.Subject == "Pad" && c.Text.StartsWith("Volume")), "the parameter, as the machine shows it");
+            Assert.That(core.Snapshots.Diff(b, null), Is.Empty);
+        }
+
         // ------------------------------------------------------------------ the pause
 
         [AvaloniaTest]

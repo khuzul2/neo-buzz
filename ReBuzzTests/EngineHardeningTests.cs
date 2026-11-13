@@ -916,6 +916,15 @@ namespace ReBuzzTests
                 WarmUp(reader, "snapshot live test");
                 snapshots.Capture("warm up");                           // the capture's own first run (JIT, type loads)
                 snapshots.Flush();
+                // The storing thread's allocations make the runtime collect now and then, and the first time a collection stops the reading
+                // thread the runtime binds its own poll method there (a few hundred bytes that are the runtime's, not the audio path's):
+                // let that happen here, with captures running beside the reads, before anything is measured.
+                for (int round = 0; round < 8; round++)
+                {
+                    snapshots.Capture("warm up " + round);
+                    for (int i = 0; i < 60; i++) { reader.Read(256); if (i % 20 == 0) GC.Collect(0); }
+                }
+                snapshots.Flush();
                 for (int i = 0; i < 20; i++) reader.Read(256);
 
                 double[] Read(int count, Action? between)
@@ -961,7 +970,7 @@ namespace ReBuzzTests
                 pauses.Sort();
                 TestContext.Out.WriteLine($"[notice] snapshot live test: {pauses.Count} captures of the {machines}-machine song; UI-thread pause median {pauses[pauses.Count / 2]:F1} ms, max {pauses.Max():F1} ms; " +
                     $"per 256-frame buffer (budget {budgetMs:F2} ms): baseline median {baseMedian:F3} ms, with snapshots median {editedMedian:F3} ms, max {editedWorst:F3} ms; allocated {bytes} bytes");
-                Assert.That(snapshots.List().Count, Is.EqualTo(pauses.Count + 1), "every capture was stored");
+                Assert.That(snapshots.List().Count(s => s.Name.StartsWith("live ")), Is.EqualTo(pauses.Count), "every capture was stored");
 
                 Assert.That(bytes, Is.EqualTo(0), "snapshots must not allocate on the audio thread:\n" + string.Join("\n", log) + (bytes > 0 ? window.Describe() : ""));
                 Assert.That(editedMedian, Is.LessThan(baseMedian * 1.5 + 0.05), "capturing and storing must not make the audio thread slower");
