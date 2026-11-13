@@ -17,7 +17,6 @@ namespace ReBuzz.AgentTests
             "Neo Tape",
             "Neo Verb",
             "Neo Wave",
-            "Dye Essence",
         };
     }
 }
