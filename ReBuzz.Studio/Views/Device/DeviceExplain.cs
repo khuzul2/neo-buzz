@@ -7,9 +7,9 @@ namespace ReBuzz.Studio.Views.Device
 {
     internal static class DeviceExplain
     {
-        public static string How(ManifestParameter p) => ""  /* TODO(wave 8): p?.How */;
+        public static string How(ManifestParameter p) => p?.How ?? "";
 
-        public static string Sound(ManifestParameter p) => ""  /* TODO(wave 8): p?.Sound */;
+        public static string Sound(ManifestParameter p) => p?.Sound ?? "";
 
         /// <summary>The unit a manifest entry's numbers are in ("" for a count, a choice or a unit the machine's own text carries).</summary>
         public static string Unit(ManifestParameter p) => p == null ? "" : p.Mapping.Kind switch

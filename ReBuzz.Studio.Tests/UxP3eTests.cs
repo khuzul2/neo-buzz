@@ -681,6 +681,31 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        [AvaloniaTest]
+        public void NeoLearnsHowAndSoundShowUnderTheFocusedParameter()
+        {
+            var m = Add("Neo Learn Subtractive", "P3e Learn");
+            var (window, page, view) = Stage(m);
+            try
+            {
+                var explained = view.Layout.All.Where(p => p.HasExplain).ToList();
+                Assert.That(explained.Count, Is.GreaterThanOrEqualTo(10), "the manifest's How and Sound for the controls");
+                var p = explained.First(x => x.FullName.Contains("utoff", StringComparison.OrdinalIgnoreCase));
+                Click(window, Centre(window, view, p, 0.5));
+                Assert.That(view.List.Focused, Is.SameAs(p));
+                Assert.That(view.ExplainHow, Is.EqualTo("How: " + p.How));
+                Assert.That(view.ExplainSound, Is.EqualTo("Sound: " + p.Sound));
+                Assert.That(p.How, Is.Not.Empty);
+                Assert.That(p.Sound, Is.Not.Empty);
+                Studio.Screenshot(window, "device-neo-learn-explain");
+            }
+            finally
+            {
+                window.Close();
+                Remove(m);
+            }
+        }
+
         // ------------------------------------------------------------------ colours
 
         [Test]
