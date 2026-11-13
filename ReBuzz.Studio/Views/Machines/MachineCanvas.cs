@@ -121,7 +121,7 @@ namespace ReBuzz.Studio.Views.Machines
             return null;
         }
 
-        IEnumerable<IMachine> Machines => song?.Machines ?? (IEnumerable<IMachine>)Array.Empty<IMachine>();
+        internal IEnumerable<IMachine> Machines => song?.Machines ?? (IEnumerable<IMachine>)Array.Empty<IMachine>();
 
         static KeyModifiers CommandKey => OperatingSystem.IsMacOS() ? KeyModifiers.Meta : KeyModifiers.Control;
 
@@ -338,7 +338,7 @@ namespace ReBuzz.Studio.Views.Machines
         /// <summary>The meter's colour at a level: green, yellow from -6 dB.</summary>
         static Color MeterColour(double level) => level > 0.9 ? MeterYellow : MeterGreen;
 
-        static readonly Dictionary<(int, uint, uint), (IPen Pen, IBrush Fill)> litWires = new Dictionary<(int, uint, uint), (IPen, IBrush)>();
+        static readonly Dictionary<(int, uint, uint), (IPen Pen, IBrush Fill, IPen Edge)> litWires = new Dictionary<(int, uint, uint), (IPen, IBrush, IPen)>();
 
         /// <summary>
         /// How lit a level looks (0 to 1): the level is already on a dB scale (-60 to 0 dB is 0 to 1); the look is the square of it, so a path
@@ -346,19 +346,24 @@ namespace ReBuzz.Studio.Views.Machines
         /// </summary>
         internal static double Glow(double level) => level * level;
 
+        /// <summary>How far towards white the lit colour of a wire goes at a full level.</summary>
+        internal const double LitLift = 0.30;
+
         /// <summary>The pen of a wire carrying a level, and the fill of its arrow: the line's colour and the arrow's, each towards the meter's colour.</summary>
-        static (IPen Pen, IBrush Fill) LitWire(double level, Color track, Color arrow)
+        static (IPen Pen, IBrush Fill, IPen Edge) LitWire(double level, Color track, Color arrow)
         {
             int step = Math.Clamp((int)Math.Round(Glow(level) * 16), 1, 16);
             var key = (step, track.ToUInt32(), arrow.ToUInt32());
             if (!litWires.TryGetValue(key, out var lit))
             {
                 double g = step / 16.0;
-                var meter = MeterColour(Math.Sqrt(g));
+                // P3j: the lit colour is the meter's colour lifted towards white as the level rises, so a loud wire is about 1.8 times as
+                // bright (relative luminance) as a silent one, not only another hue (UxP3jTests).
+                var meter = Mix(MeterColour(Math.Sqrt(g)), Colors.White, LitLift * g);
                 double t = 0.12 + 0.88 * g;
                 var brush = new SolidColorBrush(Mix(track, meter, t)).ToImmutable();
                 var fill = new SolidColorBrush(Mix(arrow, meter, t)).ToImmutable();
-                lit = (new Pen(brush, 1 + 2 * g), fill);
+                lit = (new Pen(brush, 1 + 2 * g), fill, new Pen(brush, 1));
                 if (litWires.Count > 512) litWires.Clear();
                 litWires[key] = lit;
             }
@@ -373,7 +378,10 @@ namespace ReBuzz.Studio.Views.Machines
             return brush;
         }
 
-        static readonly IBrush[] Veils = Enumerable.Range(0, 17).Select(i => (IBrush)new SolidColorBrush(Color.FromArgb((byte)(90 * i / 16), 255, 255, 255)).ToImmutable()).ToArray();
+        /// <summary>The white veil over a box at a full level, as an alpha out of 255 (the machine's name stays 4.5:1 on it: UxP3jTests).</summary>
+        internal const int VeilAlpha = 34;
+
+        static readonly IBrush[] Veils = Enumerable.Range(0, 17).Select(i => (IBrush)new SolidColorBrush(Color.FromArgb((byte)(VeilAlpha * i / 16), 255, 255, 255)).ToImmutable()).ToArray();
         static readonly IBrush StripGreen = new SolidColorBrush(MeterGreen).ToImmutable();
         static readonly IBrush StripYellow = new SolidColorBrush(MeterYellow).ToImmutable();
 
@@ -655,7 +663,7 @@ namespace ReBuzz.Studio.Views.Machines
             if (level > 0.01)
             {
                 // The level lights the wire: its line colour towards the meter's colour, and a little thicker (sixteen steps, drawn with cached pens).
-                var (pen, fill) = LitWire(level, track, colours.Colour("MV Arrow"));
+                var (pen, fill, edge) = LitWire(level, track, colours.Colour("MV Arrow"));
                 ctx.DrawLine(pen, w.Start, w.End);
                 if (!arrow) return;
                 var tri = new StreamGeometry();
@@ -666,7 +674,7 @@ namespace ReBuzz.Studio.Views.Machines
                     gc.LineTo(w.Right);
                     gc.EndFigure(true);
                 }
-                ctx.DrawGeometry(fill, pen, tri);
+                ctx.DrawGeometry(fill, edge, tri);
                 return;
             }
             ctx.DrawLine(line, w.Start, w.End);

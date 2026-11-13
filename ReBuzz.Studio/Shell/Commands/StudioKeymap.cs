@@ -78,6 +78,7 @@ namespace ReBuzz.Studio.Shell.Commands
             C("file.close", "File", "_Close Window", "Cmd+W", help: "Closes the window in front; on the main window, closes the song (it asks to save first)"),
             C("file.save", "File", "_Save", "Cmd+S"),
             C("file.saveas", "File", "Save _As…", "Shift+Cmd+S"),
+            C("file.export", "File", "_Export Audio…", "Shift+Cmd+R", help: "Renders the song, or its loop, to a WAV file (16, 24 or 32 bit float, dither, sample rate, stems), on the same path as the agent's export_audio"),
             C("file.revert", "File", "Re_vert to Saved", help: "Opens the saved song again, after asking: the changes since are lost"),
             C("file.exit", "File", "E_xit", "Cmd+Q"),
 

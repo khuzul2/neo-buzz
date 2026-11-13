@@ -15,7 +15,7 @@ using static ReBuzz.Agent.Mcp.Schema;
 
 namespace ReBuzz.Agent.App
 {
-    internal static class ExportTools
+    public static class ExportTools
     {
         public static void Register(ToolRegistry tools, IAppServices app)
         {
@@ -24,7 +24,7 @@ namespace ReBuzz.Agent.App
                 Name = "export_audio",
                 Title = "Export audio",
                 Description =
-                    "Writes the song as a stereo WAV file at path: the whole song, range=\"loop\", from/to in beats or \"bar.beat\", or a marker's section. bits is 16, 24 (default) or 32 " +
+                    "Writes the song as a stereo WAV file at path (Export Audio, ⇧⌘R, runs this same tool): the whole song, range=\"loop\", from/to in beats or \"bar.beat\", or a marker's section. bits is 16, 24 (default) or 32 " +
                     "(float); 16 and 24 are rounded with dither (tpdf default, off, light or psychoacoustic). stems=\"generators\" or \"all\" (or machines=[…]) also writes each machine's own output " +
                     "(after its connection gain) beside it as <name>-<machine>.wav. tail_seconds lets reverbs ring out (default 2). Renders as `render` does: faster than real time, " +
                     "the song unchanged, playback stopped. Never overwrites unless overwrite=true. Returns each file with its size and the master's loudness and peaks. " +
@@ -40,6 +40,8 @@ namespace ReBuzz.Agent.App
                     Opt("dither", String("With 16 or 24 bits: tpdf (default), off, light or psychoacoustic", "off", "tpdf", "light", "psychoacoustic")),
                     Opt("stems", String("Also each machine's output: none (default), generators or all (every machine but Master)", "none", "generators", "all")),
                     Opt("machines", Array(String("A machine"), "Stems of exactly these machines (instead of stems)")),
+                    Opt("sample_rate", Integer("Sample rate of the files (default: the engine's); other rates are resampled (windowed sinc) before the rounding", Resample.MinRate, Resample.MaxRate)),
+                    Opt("normalize_db", Number("Scale the master (and the stems with it, so the balance stays) so its highest sample is at this level in dBFS; off by default", -60, 0)),
                     Opt("overwrite", Boolean("Replace files that exist (default false: the call fails and writes nothing)"))),
                 Output = Object(null,
                     Req("files", Array(Object(null,
@@ -49,6 +51,7 @@ namespace ReBuzz.Agent.App
                         Req("bytes", Integer("Its size"))), "The files written, the master first")),
                     Req("bits", Integer("Bit depth written")),
                     Opt("dither", String("Dither used (16 and 24 bit)")),
+                    Opt("normalised_db", Number("The gain applied by normalize_db, in dB")),
                     Req("sample_rate", Integer("Samples per second")),
                     Req("seconds", Number("Length, with the tail")),
                     Req("measure", new JsonObject { ["type"] = "object", ["description"] = "The master as written: loudness and peaks, as analyze reports them (silent, seconds, loudness, peaks, reads)" }),
@@ -70,6 +73,10 @@ namespace ReBuzz.Agent.App
             if (dither != null && bits == 32) throw new ToolError("dither goes with 16 or 24 bits; 32-bit float is written as is.");
             if (bits != 32) Requantize.Validate(dither);
             bool overwrite = c.Bool("overwrite") == true;
+            int? sampleRate = c.Int("sample_rate");
+            if (sampleRate is int sr && (sr < Resample.MinRate || sr > Resample.MaxRate)) throw new ToolError($"sample_rate: {Resample.MinRate} to {Resample.MaxRate} Hz.");
+            double? normalise = c.Number("normalize_db");
+            if (normalise is > 0 or < -60) throw new ToolError("normalize_db: a peak level from -60 to 0 dBFS.");
             string stems = c.String("stems") ?? "none";
             var explicitMachines = c.List("machines")?.Select(m => m?.GetValue<string>() ?? "").Where(m => m.Length > 0).ToList();
 
@@ -91,7 +98,7 @@ namespace ReBuzz.Agent.App
             string folder = Path.GetDirectoryName(path)!;
             string stem = Path.GetFileNameWithoutExtension(path);
             var targets = new List<(string Role, string? Machine, string File)> { ("master", null, path) };
-            foreach (var m in stemMachines) targets.Add(("stem", m, Path.Combine(folder, $"{stem}-{SafeName(m)}.wav")));
+            foreach (var m in stemMachines) targets.Add(("stem", m, StemFile(path, m)));
             if (targets.Select(t => t.File).Distinct(StringComparer.OrdinalIgnoreCase).Count() != targets.Count)
                 throw new ToolError("Two stems would get the same file name (machine names that differ only in punctuation). Export them one by one, or rename a machine.");
             if (!overwrite)
@@ -116,23 +123,48 @@ namespace ReBuzz.Agent.App
             JsonObject? measure = null;
             int rate = 0;
             double seconds = 0;
+            double? appliedGain = null;
             var warnings = new JsonArray();
-            foreach (var t in targets)
+            var written = new List<string>();
+            c.Progress(1, 1, "writing the files");
+            try
             {
-                string source = t.Role == "master" ? r["file"]!.GetValue<string>()
-                    : probes.TryGetValue(t.Machine!, out var pf) ? pf : throw new ToolError($"The render has no output for {t.Machine}.");
-                var audio = Wav.Read(source);
-                if (bits != 32) audio = Requantize.To(audio, bits, dither);
-                Write(t.File, audio, bits);
-                if (t.Role == "master")
+                // The files are made off the calling thread (the studio's sheet keeps drawing and its Cancel button working).
+                await Task.Run(() =>
                 {
-                    measure = AudioReport.Measure(audio, new[] { "loudness", "peaks" });
-                    rate = audio.Rate;
-                    seconds = Math.Round(audio.Seconds, 3);
-                }
-                var o = new JsonObject { ["role"] = t.Role, ["path"] = t.File, ["bytes"] = new FileInfo(t.File).Length };
-                if (t.Machine != null) o["machine"] = t.Machine;
-                files.Add(o);
+                    double gain = 1;
+                    foreach (var t in targets)
+                    {
+                        c.Cancellation.ThrowIfCancellationRequested();
+                        string source = t.Role == "master" ? r["file"]!.GetValue<string>()
+                            : probes.TryGetValue(t.Machine!, out var pf) ? pf : throw new ToolError($"The render has no output for {t.Machine}.");
+                        var audio = Wav.Read(source);
+                        if (sampleRate is int want) audio = Resample.To(audio, want);
+                        if (t.Role == "master" && normalise is double peakDb)
+                        {
+                            gain = Resample.NormaliseGain(audio, peakDb);
+                            appliedGain = Math.Round(20 * Math.Log10(gain), 3);
+                        }
+                        if (normalise != null) audio = Resample.Scale(audio, gain);
+                        if (bits != 32) audio = Requantize.To(audio, bits, dither);
+                        written.Add(t.File);
+                        Write(t.File, audio, bits);
+                        if (t.Role == "master")
+                        {
+                            measure = AudioReport.Measure(audio, new[] { "loudness", "peaks" });
+                            rate = audio.Rate;
+                            seconds = Math.Round(audio.Seconds, 3);
+                        }
+                        var o = new JsonObject { ["role"] = t.Role, ["path"] = t.File, ["bytes"] = new FileInfo(t.File).Length };
+                        if (t.Machine != null) o["machine"] = t.Machine;
+                        files.Add(o);
+                    }
+                }, c.Cancellation).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                foreach (var f in written) { try { File.Delete(f); } catch (IOException) { } }      // a cancelled export leaves nothing behind
+                throw;
             }
             if (r["warnings"] is JsonArray rw) foreach (var w in rw) warnings.Add(w!.DeepClone());
             if (r["diverged"] is JsonArray d && d.Count > 0)
@@ -148,12 +180,17 @@ namespace ReBuzz.Agent.App
                 ["warnings"] = warnings,
             };
             if (bits != 32) result["dither"] = dither ?? "tpdf";
+            if (appliedGain != null) result["normalised_db"] = appliedGain;
             string line = measure != null ? AudioReport.Line(measure) : "";
             return ToolResult.Ok($"Exported {seconds} s at {bits}{(bits == 32 ? "-bit float" : "-bit" + $", {dither ?? "tpdf"} dither")} to {path}" +
                                  (stemMachines.Count > 0 ? $" with {stemMachines.Count} stem{(stemMachines.Count == 1 ? "" : "s")} ({string.Join(", ", stemMachines.Take(6))}{(stemMachines.Count > 6 ? ", …" : "")})" : "") +
                                  $". {line}." + (warnings.Count > 0 ? " " + string.Join(" ", warnings.Select(w => w!.GetValue<string>())) : ""), result)
                 .WithLink(new Uri(path).AbsoluteUri, Path.GetFileName(path), "audio/wav", "The exported master");
         }
+
+        /// <summary>The file a machine's stem goes to beside <paramref name="path"/>: &lt;name&gt;-&lt;machine&gt;.wav.</summary>
+        public static string StemFile(string path, string machine) =>
+            Path.Combine(Path.GetDirectoryName(path)!, $"{Path.GetFileNameWithoutExtension(path)}-{SafeName(machine)}.wav");
 
         static string SafeName(string name)
         {
