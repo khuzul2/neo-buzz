@@ -27,6 +27,10 @@ on:
         description: 'Machine profiler --only patterns, comma-separated (empty = every machine)'
         type: string
         default: ''
+      diag:
+        description: 'Natives diagnosis (fix/ci-flakes-4): Infector repeated, work time of Jeskola Delay and NiNjA builds (full builds only)'
+        type: boolean
+        default: false
   push:
     tags: [ 'fork-v*' ]
 
@@ -252,6 +256,23 @@ jobs:
           --variant R64=build/ExternalMachines/natives/x64/Gear --variant R86=build/ExternalMachines/natives/x86/Gear `
           --zeroed Z64=build/ExternalMachines/natives-zeroed/x64/Gear
         exit $LASTEXITCODE
+
+    - name: Natives, diagnosis (fix/ci-flakes-4)
+      if: (success() || failure()) && steps.build.outcome == 'success' && inputs.quick != true && inputs.diag == true
+      timeout-minutes: 40
+      shell: pwsh
+      run: |
+        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
+        ./tools/build-natives.ps1 -OutDir build/ExternalMachines/natives-o2 -Flags '/O2' -Platforms x64 -Only 'Jeskola Delay','Jeskola NiNjA dElaY'
+        ./tools/build-natives.ps1 -OutDir build/ExternalMachines/natives-o2fast -Flags '/O2 /fp:fast' -Platforms x64 -Only 'Jeskola Delay','Jeskola NiNjA dElaY'
+        python tools/native-cpu.py $exe.FullName native-cpu --only 'Jeskola Delay,Jeskola NiNjA dElaY' --reps 5 `
+          --variant O2=build/ExternalMachines/natives-o2/x64/Gear --variant O2fast=build/ExternalMachines/natives-o2fast/x64/Gear
+        python tools/native-compare.py $exe.FullName native-compare-diag --only 'Jeskola Delay,Jeskola NiNjA dElaY' `
+          --variant O2=build/ExternalMachines/natives-o2/x64/Gear --variant O2fast=build/ExternalMachines/natives-o2fast/x64/Gear
+        python tools/native-compare.py $exe.FullName native-compare-infector --only 'FSM Infector' --repeat 8 `
+          --variant R64=build/ExternalMachines/natives/x64/Gear --variant R86=build/ExternalMachines/natives/x86/Gear
+        exit 0
 
     # §12.14: songs saved with upstream's binaries of the natives the package ships rebuilt (three songs built with them here,
     # and the classic Buzz songs in ExternalMachines/source that use them) open with the rebuilt ones, Jeskola's x64 builds

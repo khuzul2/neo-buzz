@@ -40,6 +40,16 @@
 #   start         rebuild is upstream's code, and the fix is the start a fresh allocation gives and nothing else.
 # Which of upstream's instances as they come the fixed build matches is reported, not judged.
 #
+# A machine whose entry says "upstreamReads" (FSM Infector: when a note is played on a track whose last note still rings, the
+# channel it was on keeps playing without a track, and DoWorkChannel then reads the vibrato of Tracks[MAX_TRACKS+1], one
+# past the end of the array: the low halves of heap pointers it reads as floats) is not an upstream that plays the same
+# twice, though it has no unset state our fix could start at 0: each instance of upstream's binary reads its own process's
+# pointers, which are harmless in most (the vibrato depth a float of 1e-20 or less rounds away) and, in about one process in
+# twenty, a vibrato of -87 dBFS in a case that retriggers a ringing track. The fixed build reads a track of its own of
+# zeros (Infector.h), the same in every process. It is held to upstream's binary as that one is: some instance of four must
+# match it within the tolerance in each case (a real difference is in all four; the heap's draw is not), where the first
+# instance alone made the gate fail one run in a few dozen (run 43378393300).
+#
 # --pitch (§12.6's "Done when"): every pitched generator among them (its manifest's notes.pitched) plays the written
 # pitch through notes_write, its manifest's pitch offset applied as an agent's call applies it: A3, A4 and A5, each its own
 # render, heard by analyze's pitch (YIN) or, where that hears none (a 303's squelch), the profiler's harmonic sieve
@@ -73,6 +83,7 @@ TEMPO = 120
 BEATS = 4
 TAIL = 2.0
 UPSTREAM_INSTANCES = 4
+REPEAT = 1                     # --repeat N: every case N times (a diagnosis: each line shows how the builds differ)
 SOURCE_NOTES = nt.SOURCE[3]
 
 
@@ -330,6 +341,14 @@ def fmt(x):
 OURS = ("package (rebuilt)", "rebuilt")
 
 
+def best_upstream(ds):
+    """A build against several instances of upstream's binary, each [the same bits, max difference dBFS, first differing s]:
+    the closest one's [the same bits, max difference dBFS, first differing s], or None without any."""
+    if not ds:
+        return None
+    return min(ds, key=lambda d: (not d[0], float("-inf") if d[0] else d[1]))
+
+
 def where(d):
     """' (X dBFS, from Y s)' for a difference [the same bits, max difference dBFS, first differing s]."""
     if not d:
@@ -392,6 +411,7 @@ def judge_fixed(cases, roles):
 
 
 def main(argv):
+    global REPEAT
     try:
         sys.stdout.reconfigure(encoding="utf-8")
     except AttributeError:
@@ -421,6 +441,9 @@ def main(argv):
         elif a == "--pitch":
             do_pitch = True
             i += 1
+        elif a == "--repeat":
+            REPEAT = int(argv[i + 1])
+            i += 2
         elif a == "--no-compare":
             do_compare = False
             i += 1
@@ -450,7 +473,7 @@ def main(argv):
                     pkg = os.path.join(folder, cand)
                     break
             if os.path.exists(ship):
-                for k in range(1, UPSTREAM_INSTANCES + 1 if s.get("fix") else 2):
+                for k in range(1, UPSTREAM_INSTANCES + 1 if s.get("fix") or s.get("upstreamReads") else 2):
                     label = "shipped" + ("" if k == 1 else f" {k}")
                     dst = os.path.join(folder, s["gear"] + " " + label + (".x64.dll" if x64 else ".dll"))
                     shutil.copyfile(ship, dst)
@@ -519,10 +542,11 @@ def main(argv):
             man = manifest_of(os.path.join(gear_root, s["gearFolder"]), s["gear"])
             kind = "generator" if s["gearFolder"] == "Generators" else "effect"
             fixed = bool(s.get("fix"))
+            reads = bool(s.get("upstreamReads")) and not fixed
             ref_label = builds[0][0]
             res = {label: {"cases": {}} for label, _ in builds}
             upstream = [lb for lb, _ in builds if rl[lb] == "upstream"]
-            for case in case_list(kind, s["gear"]):
+            for case in [c for c in case_list(kind, s["gear"]) for _ in range(REPEAT)]:
                 t = time.time()
                 try:
                     files = render_case(run, s, builds, case, man)
@@ -559,6 +583,13 @@ def main(argv):
                     if f:
                         entry["peak_dbfs"] = peak_db(f)
                         entry["sha1"] = sha[label]
+                    if reads and f and rl[label] != "upstream":
+                        # An upstream that reads memory past an array: the closest of its instances is the reference.
+                        ds = [compare(u, label) for u in upstream if files.get(u, (0, None))[1]]
+                        best = best_upstream(ds)
+                        if best:
+                            entry.update(identical=best[0], max_diff_dbfs=best[1], first_diff_s=best[2])
+                            entry["instances_within"] = sum(1 for d in ds if d[0] or d[1] <= TOLERANCE_DBFS)
                     if fixed and f and rl[label] != "upstream":
                         # A fixed machine: which of upstream's instances as they come it matches, and every other build.
                         ds = {u: compare(u, label) for u in upstream if files.get(u, (0, None))[1]}
