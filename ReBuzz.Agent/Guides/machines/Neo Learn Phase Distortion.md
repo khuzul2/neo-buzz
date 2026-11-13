@@ -29,7 +29,7 @@ A teaching phase-distortion synth: one Dye Essence patch driven by 12 controls, 
 
 ## Gotchas
 
-- It runs at 4x oversampling (High quality), so it uses more CPU than the other Neo Learn synths without it.
+- It runs at 2x oversampling (Standard quality); the sharpest bends on the highest notes can alias about 40 dB under the note.
 - The bend's loudness does not rise with `Phase Bend`: it brightens more than it loudens.
 - `Bend Decay` works on the start of each note: a held note keeps a quarter of the bend and `Resonance`'s sweep.
 - `PD Wave`, 0 to 5, steps between geometries; automate `Phase Bend` instead for a smooth sweep.

@@ -104,6 +104,26 @@ namespace NeoBuzz.MachineTests
             return 10 * Math.Log10(Math.Max(1e-30, e));
         }
 
+        [TestCase(33)]
+        [TestCase(57)]
+        [TestCase(81)]
+        [TestCase(93)]
+        public void PhaseDistortionReportsItsAliasFloorForEveryGeometryAtStandard(int note)
+        {
+            // The bend is an edged warp (the read turns a corner): at Standard (2x) the worst geometry at full bend, Resonance and Ring off, is reported and held under -40 dB
+            // (Double Sine, whose read runs two cycles, is the worst: -42.5 dB at note 93; the others are under -58 dB).
+            double worst = -200;
+            var lines = new List<string>();
+            for (int shape = 0; shape < Warps.PdShapes; shape++)
+            {
+                double floor = Alias(Pd, note, x => { x.Set(YP.PhaseBend, 1000); x.Set(YP.PdWaveShape, shape); x.Set(YP.Resonance, 0); x.Set(YP.BendDecay, 0); x.Set(YP.Chorus, 0); x.Set(YP.EnvSustain, 1000); x.Set(YP.EnvAttack, 0); });
+                lines.Add($"{shape}: {floor:F1}");
+                worst = Math.Max(worst, floor);
+            }
+            Measure.Report($"Neo Learn Phase Distortion, Standard (2x), full bend, note {note} ({DspMath.NoteToHz(note):F0} Hz): alias floor by geometry {string.Join(", ", lines)} dB");
+            Assert.That(worst, Is.LessThan(-40.0));
+        }
+
         [Test]
         public void TheBendRelaxesAfterTheNoteStartsByBendDecay()
         {

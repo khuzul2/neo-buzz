@@ -42,7 +42,7 @@ Decay = 0.6
 Sustain = 80
 Release = 0.25
 Unison / Spread = 0
-Output = -7.7
+Output = -9.5
 
 preset "Lead — Glass Fold"
 Wavefold = 35
@@ -98,7 +98,7 @@ Decay = 2.0
 Sustain = 90
 Release = 1.0
 Unison / Spread = 35
-Output = -8.1
+Output = -8.4
 
 preset "Percussion — Metal Zap"
 Wavefold = 90
@@ -112,4 +112,4 @@ Decay = 0.25
 Sustain = 0
 Release = 0.1
 Unison / Spread = 0
-Output = -4.5
+Output = -7.0

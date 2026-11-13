@@ -27784,7 +27784,7 @@
   "Neo Learn Phase Distortion": {
    "gear": "Neo Learn Phase Distortion",
    "kind": "generator",
-   "load_seconds": 1.11,
+   "load_seconds": 1.34,
    "gear_info": {
     "file": "Generators/Neo Learn Phase Distortion.NET.dll",
     "managed": true,
@@ -27835,12 +27835,12 @@
     },
     "all_at_once": {
      "min": {
-      "peak_dbfs": -51.48,
+      "peak_dbfs": -51.47,
       "verdict": "ok"
      },
      "max": {
       "peak_dbfs": 6.99,
-      "growth_db": 1.23,
+      "growth_db": 1.24,
       "over_seconds": 30,
       "verdict": "hot"
      }
@@ -27852,9 +27852,9 @@
    },
    "sweeps": {},
    "envelope": {
-    "peak_db": -26.65,
+    "peak_db": -26.64,
     "attack_s": 0.005,
-    "final_db": -1.99,
+    "final_db": -2.0,
     "length_s": null,
     "release_s": 0.105,
     "release_past_window": false,
@@ -27870,31 +27870,31 @@
     "db_per_doubling": 2.42,
     "curve": "gentle (less than linear)",
     "levels_db": {
-     "16": -33.55,
-     "32": -31.86,
-     "64": -29.58,
-     "127": -26.27
+     "16": -33.54,
+     "32": -31.85,
+     "64": -29.57,
+     "127": -26.26
     }
    },
    "denormal": {
-    "playing_ms_per_s": 32.772,
-    "silent_ms_per_s": 2.633,
-    "silent_worst_ms_per_s": 7.241,
+    "playing_ms_per_s": 21.867,
+    "silent_ms_per_s": 4.023,
+    "silent_worst_ms_per_s": 7.21,
     "windows_ms_per_s": [
-     32.772,
-     7.241,
-     2.633,
-     2.674,
-     2.661,
-     2.504,
-     2.448,
-     2.415,
-     2.519,
-     2.503,
-     3.023
+     21.867,
+     7.21,
+     2.386,
+     2.057,
+     1.96,
+     4.301,
+     4.023,
+     1.98,
+     5.972,
+     2.042,
+     5.794
     ]
    },
-   "seconds": 17.4,
+   "seconds": 13.9,
    "platform": "linux",
    "date": "2026-11-13",
    "problems": [],
@@ -28539,7 +28539,7 @@
   "Neo Learn Wavefolder": {
    "gear": "Neo Learn Wavefolder",
    "kind": "generator",
-   "load_seconds": 1.16,
+   "load_seconds": 1.18,
    "gear_info": {
     "file": "Generators/Neo Learn Wavefolder.NET.dll",
     "managed": true,
@@ -28570,32 +28570,32 @@
     "polyphony_levels": {
      "1": -29.4,
      "2": -26.5,
-     "4": -23.7,
-     "8": -20.6
+     "4": -23.3,
+     "8": -20.1
     }
    },
    "level": {
     "note": "A4 at velocity 100, 1.5 beats",
     "integrated_lufs": -29.7,
-    "sample_peak_dbfs": -22.79,
-    "true_peak_dbtp": -22.79
+    "sample_peak_dbfs": -22.95,
+    "true_peak_dbtp": -22.81
    },
    "cpu_ms_per_s": 0.0,
    "type": "polysynth",
    "level_test": {
     "defaults": {
-     "peak_dbfs": -22.78,
+     "peak_dbfs": -22.94,
      "growth_db": 0.0,
      "verdict": "ok"
     },
     "all_at_once": {
      "min": {
-      "peak_dbfs": -59.4,
+      "peak_dbfs": -59.41,
       "verdict": "ok"
      },
      "max": {
-      "peak_dbfs": 6.81,
-      "growth_db": -0.07,
+      "peak_dbfs": 8.58,
+      "growth_db": -0.05,
       "over_seconds": 30,
       "verdict": "hot"
      }
@@ -28607,56 +28607,56 @@
    },
    "sweeps": {},
    "envelope": {
-    "peak_db": -26.88,
+    "peak_db": -26.87,
     "attack_s": 0.005,
-    "final_db": -4.88,
+    "final_db": -4.9,
     "half_s": 0.04,
     "length_s": null,
     "release_s": 0.105,
     "release_past_window": false,
-    "bright_mid_hz": 1430.3,
-    "bright_early_hz": 2664.5,
-    "bright_late_hz": 1183.3,
+    "bright_mid_hz": 1437.5,
+    "bright_early_hz": 2684.7,
+    "bright_late_hz": 1188.1,
     "level_wobble_db": 0.0,
     "bright_wobble": 0.0,
     "note": "A4 at velocity 100, held 2 s"
    },
    "velocity": {
-    "range_db": 8.21,
+    "range_db": 8.22,
     "db_per_doubling": 2.75,
     "curve": "gentle (less than linear)",
     "levels_db": {
-     "16": -34.2,
+     "16": -34.21,
      "32": -32.43,
      "64": -29.69,
      "127": -25.99
     }
    },
    "denormal": {
-    "playing_ms_per_s": 44.089,
-    "silent_ms_per_s": 2.774,
-    "silent_worst_ms_per_s": 6.853,
+    "playing_ms_per_s": 34.463,
+    "silent_ms_per_s": 3.244,
+    "silent_worst_ms_per_s": 5.798,
     "windows_ms_per_s": [
-     44.089,
-     6.674,
-     2.774,
-     2.732,
-     2.584,
-     4.614,
-     2.543,
-     2.714,
-     6.853,
-     2.414,
-     2.884
+     34.463,
+     5.798,
+     2.059,
+     2.313,
+     2.088,
+     2.316,
+     4.846,
+     3.184,
+     3.296,
+     3.294,
+     3.244
     ]
    },
-   "seconds": 21.3,
+   "seconds": 13.7,
    "platform": "linux",
    "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [
-    "hot with every parameter at its maximum at once (+6.8 dBFS peak over 30 s), but with no parameter alone"
+    "hot with every parameter at its maximum at once (+8.6 dBFS peak over 30 s), but with no parameter alone"
    ],
    "notes_profiler": [],
    "generated": true,

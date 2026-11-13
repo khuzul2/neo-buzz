@@ -82,7 +82,7 @@ Loud but steady: above 0 dBFS, under +60 dBFS, not growing, at the setting named
 | Neo Learn Phase Distortion | linux | hot with every parameter at its maximum at once (+7.0 dBFS peak over 30 s), but with no parameter alone |  |
 | Neo Learn Physical | linux | hot (loud but steady) with Output at its maximum (+12.0 dB): +0.1 dBFS peak |  |
 | Neo Learn Sampler | linux | hot with every parameter at its maximum at once (+11.1 dBFS peak over 30 s), but with no parameter alone |  |
-| Neo Learn Wavefolder | linux | hot with every parameter at its maximum at once (+6.8 dBFS peak over 30 s), but with no parameter alone |  |
+| Neo Learn Wavefolder | linux | hot with every parameter at its maximum at once (+8.6 dBFS peak over 30 s), but with no parameter alone |  |
 | Neo Learn Wavetable | linux | hot with every parameter at its maximum at once (+8.9 dBFS peak over 30 s), but with no parameter alone |  |
 | Neo Poly | windows | hot with every parameter at its maximum at once (+17.9 dBFS peak over 30 s, never decays), but with no parameter alone |  |
 | Neo Wave | windows | hot with every parameter at its maximum at once (+20.9 dBFS peak over 30 s), but with no parameter alone |  |
@@ -331,13 +331,13 @@ Drafts:
 | Neo Learn FM | polysynth | midi | +0 | 8 | -28.4 | 2.43 | 5 ms / 175 ms / — | 0.0 | 2.581 | hot |
 | Neo Learn Formant | unpitched | midi |  | 4 | -24 | 2.38 | 5 ms / 170 ms / — | 5.5 | 2.465 | hot |
 | Neo Learn Granular | polysynth | midi | +0 | 8 | -26.6 | 3.24 | 565 ms / 405 ms / — | 0.0 | 4.079 | ok |
-| Neo Learn Phase Distortion | polysynth | midi | +0 | 8 | -28.9 | 2.42 | 5 ms / 105 ms / — | 0.0 | 2.633 | hot |
+| Neo Learn Phase Distortion | polysynth | midi | +0 | 8 | -28.9 | 2.42 | 5 ms / 105 ms / — | 0.0 | 4.023 | hot |
 | Neo Learn Physical | polysynth | midi | +0 (sieve) | 2 | -36.1 | -0.36 | 0 ms / — / 110 ms | 0.0 | 2.327 | hot |
 | Neo Learn Sampler | polysynth | midi | +0 | 8 | -24.9 | 2.75 | 220 ms / — / 1.26 s | 0.0 | 8.012 | hot |
 | Neo Learn String | polysynth | midi | +0 (+2 ct) | 8 | -35.5 | 5.18 | 0 ms / 240 ms / 2.00 s | 0.0 | 2.1 | ok |
 | Neo Learn Subtractive | polysynth | midi | +0 | 8 | -28.6 | 2.81 | 5 ms / 170 ms / — | 0.0 | 2.035 | ok |
 | Neo Learn Vector | polysynth | midi | +0 | 4 | -30.8 | 3.0 | 65 ms / 325 ms / — | 0.0 | 8.443 | ok |
-| Neo Learn Wavefolder | polysynth | midi | +0 | 8 | -29.7 | 2.75 | 5 ms / 105 ms / — | 0.0 | 2.774 | hot |
+| Neo Learn Wavefolder | polysynth | midi | +0 | 8 | -29.7 | 2.75 | 5 ms / 105 ms / — | 0.0 | 3.244 | hot |
 | Neo Learn Wavetable | polysynth | midi | +0 | 8 | -27.4 | 2.79 | 5 ms / 175 ms / — | 0.0 | 2.142 | hot |
 | Neo Poly | polysynth | midi | +0 | 8 | -20.8 | 2.79 | 0 ms / 45 ms / — | 0.0 | 0.851 | hot |
 | Neo Sampler | polysynth | midi | +0 | 8 | -18.1 | 8.43 | 0 ms / 5 ms / — | 0.0 | 0.743 | ok |

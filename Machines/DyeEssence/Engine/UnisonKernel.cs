@@ -24,8 +24,6 @@ namespace NeoBuzz.DyeEssence
         public readonly float[] FrameMix;
         /// <summary>Each lane's last output, for PM self-feedback (Neo Learn's FM).</summary>
         public readonly float[] Fb;
-        /// <summary>Each lane's wavefolder stages' last input and its antiderivative (six rows of <see cref="Total"/>; Neo Learn's anti-aliased fold).</summary>
-        public readonly float[] FoldU, FoldF;
         /// <summary>Each lane's fold stage gain after the bandwidth limit (<see cref="Warps.FoldLimit"/>).</summary>
         public readonly float[] FoldGain;
         public readonly int[] OffsetA, OffsetB;
@@ -42,8 +40,6 @@ namespace NeoBuzz.DyeEssence
             ModSlot = new uint[total];
             FrameMix = new float[total];
             Fb = new float[total];
-            FoldU = new float[6 * total];
-            FoldF = new float[6 * total];
             FoldGain = new float[total];
             OffsetA = new int[total];
             OffsetB = new int[total];
@@ -306,7 +302,7 @@ namespace NeoBuzz.DyeEssence
                     y = Warps.Amplitude<TL, TF, TU>(w.W1, y, p, k10, k11, m);
                     y = Warps.Amplitude<TL, TF, TU>(w.W2, y, p, k20, k21, m);
                 }
-                if (foldN > 0) y = Warps.FoldAdaa<TL, TF, TU>(y, foldN, foldG, foldB, s.FoldU, s.FoldF, at, total);
+                if (foldN > 0) y = Warps.Fold<TL, TF, TU>(y, foldN, foldG, foldB);
                 if (store != null) TL.Store(y, store, storeAt + t * modStride);
                 if (feedback) yPrev = y;
                 int o = t * AccStride;

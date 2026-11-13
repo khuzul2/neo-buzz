@@ -230,51 +230,12 @@ namespace NeoBuzz.DyeEssence
         }
 
         /// <summary>
-        /// The same fold with first-order antiderivative anti-aliasing at every stage (Neo Learn L2b): a stage does not read its input at one instant, it
-        /// returns the average of the fold over the step the input just made (F(u) − F(u₀)) / (u − u₀), with F the fold's antiderivative (period 4:
-        /// u²/2 inside ±1, 1 − (u − 2)²/2 from 1 to 3). A wave that folds many times in one sample therefore averages out instead of aliasing, and
-        /// each stage hands the next a band-limited stream. <paramref name="prevU"/> and <paramref name="prevF"/> hold each stage's last input and F of it
-        /// (stage s of the lanes at <paramref name="at"/> in rows s × <paramref name="total"/>). A step under 2e-3 uses the fold at the new input (the
-        /// quotient would lose its digits; the two differ by under 1e-3). Inside ±1 a stage is the mean of two neighbouring inputs: half a sample of delay per stage, and a roll-off
-        /// of under 1 dB at 10 kHz at 4x for six stages. Still bounded by [−1, 1] and finite.
+        /// Fold bandwidth: the folds' total gain times the lane's frequency (as a fraction of the oversampled rate) up to which the spectrum a fold makes fits
+        /// under the oversampled Nyquist with room for its decay. Measured on the Wavefolder machine (notes 30 to 96, 1 to 6 stages, FM 0 and 100 %): 0.022 leaves
+        /// the alias under -40 dB against the loudest harmonic in all but 3 of 1206 settings (worst -31 dB). The fold's corners make the alias floor jagged in the
+        /// gain, so a higher bandwidth is not simply a little worse: 0.028 has 15 settings above -40 dB, the worst at -12 dB.
         /// </summary>
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        public static TF FoldAdaa<TL, TF, TU>(TF y, int stages, TF g, TF bias, float[] prevU, float[] prevF, int at, int total)
-            where TL : struct, ILanes<TF, TU> where TF : struct where TU : struct
-        {
-            TF zero = TL.Splat(0f), quarter = TL.Splat(0.25f), half = TL.Splat(0.5f), three = TL.Splat(3f), four = TL.Splat(4f), one = TL.Splat(1f);
-            TF lim = TL.Splat(64f), nlim = TL.Splat(-64f), eps = TL.Splat(4e-6f);   // (2e-3)²
-            y = TL.Add(y, bias);
-            y = TL.Select(TL.Greater(TL.Splat(1e8f), TL.Mul(y, y)), y, zero);
-            y = TL.Select(TL.Greater(y, lim), lim, TL.Select(TL.Greater(nlim, y), nlim, y));
-            for (int s = 0; s < stages; s++)
-            {
-                TF u = TL.Mul(y, g);
-                TF u0 = TL.Load(prevU, s * total + at), f0 = TL.Load(prevF, s * total + at);
-                // p = the input's place in the fold's period of 4 (0 … 1); lower = the rising leg (the fold is a), else the falling leg (-a)
-                TF p = Wrap<TL, TF, TU>(TL.Mul(TL.Add(u, one), quarter));
-                TF lower = TL.Greater(half, p);
-                TF a = TL.Sub(TL.Mul(four, p), TL.Select(lower, one, three));
-                TF a2 = TL.Mul(half, TL.Mul(a, a));
-                TF f1 = TL.Select(lower, a2, TL.Sub(one, a2));
-                TF du = TL.Sub(u, u0);
-                TF small = TL.Greater(eps, TL.Mul(du, du));
-                TF quot = TL.Div(TL.Sub(f1, f0), TL.Select(small, one, du));
-                TL.Store(u, prevU, s * total + at);
-                TL.Store(f1, prevF, s * total + at);
-                // a step too small for the quotient's digits takes the fold at the new input (within 1e-3 of the average)
-                y = TL.Select(small, TL.Select(lower, a, TL.Sub(zero, a)), quot);
-            }
-            // rounding in the quotient can pass 1 by a hair
-            y = TL.Select(TL.Greater(y, one), one, TL.Select(TL.Greater(TL.Splat(-1f), y), TL.Splat(-1f), y));
-            return y;
-        }
-
-        /// <summary>
-        /// Fold bandwidth: the folds' total gain times the lane's frequency (as a fraction of the oversampled rate) at which the spectrum a fold makes still
-        /// fits under the oversampled Nyquist with room for its decay (measured: alias under −40 dB against the loudest harmonic).
-        /// </summary>
-        public const double FoldBandwidth = 0.12;
+        public const double FoldBandwidth = 0.022;
 
         /// <summary>
         /// The stage gain <paramref name="g"/> of a fold of <paramref name="stages"/> stages, lowered (all stages alike) where g^stages × the pitch

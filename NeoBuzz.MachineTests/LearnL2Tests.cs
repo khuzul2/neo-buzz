@@ -209,13 +209,33 @@ namespace NeoBuzz.MachineTests
         [TestCase(57, 1000, 5, 600, 1000)]
         [TestCase(81, 1000, 5, 600, 1000)]
         [TestCase(45, 1000, 5, -500, 0)]
-        public void WavefolderAliasesUnderMinus40dBAtFullSettings(int note, int drive, int stages, int sym, int fm)
+        public void WavefolderAliasesUnderMinus50dBAtFullSettings(int note, int drive, int stages, int sym, int fm)
         {
-            // Every fold stage is antiderivative-anti-aliased (Warps.FoldAdaa), and the stage gain is held where the fold's total gain times the pitch fits
-            // the 4x rate (Warps.FoldLimit): a learner at full Wavefold with six stages hears folds, not noise. (Before: +7 dB at note 57, i.e. louder than the tone.)
+            // The stage gain is held where the fold's total gain times the pitch fits the 4x rate (Warps.FoldLimit): a learner at full Wavefold with six stages
+            // hears folds, not noise. (Before the limit: +7 dB at note 57, i.e. louder than the tone.)
             double floor = Alias(Fold, note, x => { x.Set(XP.FoldDrive, drive); x.Set(XP.FoldStages, stages); x.Set(XP.FoldSymmetry, 500 + sym / 2); x.Set(XP.TimbreFm, fm); x.Set(XP.LpgMode, 0); x.Set(XP.EnvSustain, 1000); x.Set(XP.EnvAttack, 0); });
             Measure.Report($"Neo Learn Wavefolder, High (4x), Wavefold {drive / 10} %, {stages + 1} stages, symmetry {sym / 10} %, Timbre FM {fm / 10} %, note {note} ({DspMath.NoteToHz(note):F0} Hz): alias floor {floor:F1} dB");
-            Assert.That(floor, Is.LessThan(-40.0));
+            Assert.That(floor, Is.LessThan(-50.0));
+        }
+
+        [Test]
+        public void WavefolderAliasStaysUnderMinus25dBAcrossEveryNoteAndStageCount()
+        {
+            // The fold's corners make the alias floor jagged in the gain: a coarse scan of the whole range (a dense one, notes 30 to 96 one by one with
+            // 1 to 6 stages, FM 0 and 100 %, found 3 of 1206 settings above -40 dB, the worst at -31 dB). The bar here is the scan's, with room.
+            int above40 = 0, n = 0;
+            double worst = -999;
+            string at = "";
+            for (int note = 30; note <= 96; note += 6)
+                foreach (int stages in new[] { 0, 2, 4, 5 })
+                {
+                    double floor = Alias(Fold, note, x => { x.Set(XP.FoldDrive, 1000); x.Set(XP.FoldStages, stages); x.Set(XP.TimbreFm, 0); x.Set(XP.LpgMode, 0); x.Set(XP.EnvSustain, 1000); x.Set(XP.EnvAttack, 0); });
+                    n++;
+                    if (floor > -40) above40++;
+                    if (floor > worst) { worst = floor; at = $"note {note}, {stages + 1} stages"; }
+                }
+            Measure.Report($"Neo Learn Wavefolder, Wavefold 100 %, High (4x), notes 30 to 96 by 6 and 1, 3, 5, 6 stages: worst alias floor {worst:F1} dB ({at}); {above40} of {n} above -40 dB");
+            Assert.That(worst, Is.LessThan(-25.0));
         }
 
         [Test]
@@ -230,8 +250,8 @@ namespace NeoBuzz.MachineTests
                 if (!float.IsNaN(last)) { Assert.That(g, Is.LessThanOrEqualTo(last + 1e-6f)); Assert.That(last - g, Is.LessThan(0.02f), $"inc {inc}"); }
                 last = g;
             }
-            Assert.That(Warps.FoldLimit(3.2f, 6, 8.0 / 176400 * 4294967296.0), Is.EqualTo(3.2f));
-            Assert.That(Warps.FoldLimit(3.2f, 1, 4000.0 / 176400 * 4294967296.0), Is.EqualTo(3.2f).Within(1e-6), "one stage of 3.2 at 4 kHz is inside the budget");
+            Assert.That(Warps.FoldLimit(2.0f, 6, 8.0 / 176400 * 4294967296.0), Is.EqualTo(2.0f), "64 times the gain at 8 Hz is inside the budget");
+            Assert.That(Warps.FoldLimit(3.2f, 1, 1000.0 / 176400 * 4294967296.0), Is.EqualTo(3.2f).Within(1e-6), "one stage of 3.2 at 1 kHz is inside the budget");
         }
 
         [TestCase(33)]

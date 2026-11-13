@@ -46,7 +46,7 @@ namespace NeoBuzz.Learn
             dye.Set(DyeP.VoiceMode, 0);
             dye.Set(DyeP.Polyphony, 16);
             dye.Set(DyeP.GlideMode, 0);
-            dye.Set(DyeP.Quality, 1);                              // High (4x): the bend and the window sync are edged
+            dye.Set(DyeP.Quality, 0);                              // Standard (2x)
             dye.Set(DyeP.Volume, 0);
             for (int s = 0; s < 3; s++)
             {

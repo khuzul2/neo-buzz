@@ -30,7 +30,7 @@ A teaching wavefolder: one Dye Essence patch driven by 12 controls, so every con
 ## Gotchas
 
 - The folds run at 4x oversampling (High quality) so it uses more CPU than the other Neo Learn synths.
-- On very high notes the total fold gain is held back so the folds stay below the audible alias floor (at least 40 dB under the note); low and middle notes fold in full.
+- On very high notes the total fold gain is held back so the folds stay below the audible alias floor (as far as the cap allows, about 30 dB or more under the note); low and middle notes fold in full.
 - The output of a fold does not rise with `Wavefold`: it folds back, so turning up the drive brightens more than it loudens.
 - A closed gate (`Low-Pass Gate` high, `Gate Strike` 0 %) can be nearly silent; add `Gate Strike`.
 - Unison 0 to anything above it jumps from 1 voice to 5.
