@@ -17,7 +17,7 @@ namespace ReBuzz.AgentTests
     [TestFixture]
     public class GuideTests
     {
-        internal static readonly string[] Topics = { "workflow", "concepts", "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain", "dye-essence-in-depth", "dye-essence-effects", "neo-eq-in-depth", "troubleshooting" };
+        internal static readonly string[] Topics = { "workflow", "concepts", "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain", "dye-essence-in-depth", "dye-essence-effects", "neo-eq-in-depth", "app-control", "troubleshooting" };
         static readonly string[] NeoGear = { "Neo Analyzer", "Neo Clipper", "Neo Comp", "Neo De-esser", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Gate", "Neo Imager", "Neo Limiter", "Neo Low End", "Neo Multiband", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Strip", "Neo Tape", "Neo Transient", "Neo Utility", "Neo Verb", "Neo Wave", "Dye Essence", "Neo Learn Subtractive" };
 
         /// <summary>Neo gear being built in parallel (phase A4): parameter names aren't final, so guides give them moves in units and say to read the names with machine_describe.</summary>
@@ -111,6 +111,26 @@ namespace ReBuzz.AgentTests
             // M1 (mastering-tools.md §6: ReBuzz/Agent/MasteringTools.cs)
             ["target_build"] = new[] { "name", "sources", "file" },
             ["eq_fit"] = new[] { "source", "target", "curve", "bands", "max_gain_db", "limit_db", "machine" },
+            // K3 (agent-knowledge.md §5: ReBuzz.Agent/App/*Tools.cs)
+            ["settings_get"] = new[] { "key", "section", "search", "changed_only", "limit" },
+            ["settings_set"] = new[] { "key", "value" },
+            ["settings_reset"] = new[] { "key", "section", "all" },
+            ["settings_history"] = new[] { "key", "limit" },
+            ["midi_bindings_list"] = new[] { "machine" },
+            ["midi_bind"] = new[] { "machine", "parameter", "channel", "controller", "track" },
+            ["midi_unbind"] = new[] { "machine", "parameter", "track", "all" },
+            ["midi_learn"] = new[] { "machine", "parameter", "track", "timeout_seconds" },
+            ["audio_status"] = new string[0],
+            ["audio_devices"] = new string[0],
+            ["audio_set"] = new[] { "device", "buffer_frames", "sample_rate" },
+            ["view_show"] = new[] { "view", "machine", "pattern", "editor" },
+            ["machine_open_editor"] = new[] { "machine", "window" },
+            ["select"] = new[] { "machine", "pattern", "scene", "clear" },
+            ["panel_set"] = new[] { "panel", "open", "size", "tab", "maximised" },
+            ["window_layout"] = new[] { "width", "height", "maximised" },
+            ["export_audio"] = new[] { "path", "range", "from", "to", "section", "tail_seconds", "bits", "dither", "stems", "machines", "overwrite" },
+            ["app_status"] = new string[0],
+            ["song_recent"] = new[] { "limit" },
         };
 
         /// <summary>analyze's metrics (AudioReport.Metrics on agent/a2-analysis).</summary>
@@ -121,7 +141,7 @@ namespace ReBuzz.AgentTests
         static readonly string[] TransformOps = { "transpose", "quantize", "humanize", "velocity", "shift", "stretch", "reverse", "invert", "legato", "staccato" };
 
         /// <summary>Tool areas: a backticked snake_case word starting with one of these must be a tool.</summary>
-        static readonly string[] Areas = { "studio", "song", "gear", "machine", "connection", "param", "preset", "snapshot", "pattern", "notes", "automation", "arrangement", "session", "wave", "theory", "render", "analyze", "guide", "target", "eq" };
+        static readonly string[] Areas = { "studio", "song", "gear", "machine", "connection", "param", "preset", "snapshot", "pattern", "notes", "automation", "arrangement", "session", "wave", "theory", "render", "analyze", "guide", "target", "eq", "settings", "midi", "audio", "export", "view", "panel", "window" };
 
         // ---- the repository -------------------------------------------------------------------
 

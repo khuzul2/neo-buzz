@@ -445,6 +445,18 @@ namespace ReBuzz.Studio.Tests
                 names = window.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name == "FxKnob" && c.IsEffectivelyVisible).Select(c => (string)Get(c, "Label")).ToArray();
                 Assert.That(names[0], Is.EqualTo("Time"));
                 Assert.That(names[9], Is.EqualTo("Cross-feed"));
+                // 11 is the convolution, 12 the vocoder.
+                Global(m, "FX1 type").SetValue(0, 11);
+                Run(0.1);
+                Pump();
+                names = window.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name == "FxKnob" && c.IsEffectivelyVisible).Select(c => (string)Get(c, "Label")).ToArray();
+                Assert.That(names, Is.EqualTo(new[] { "IR", "Size", "Pre-delay", "Decay", "Damping", "Low cut", "High cut", "Width", "Reverse", "Output" }));
+                Global(m, "FX1 type").SetValue(0, 12);
+                Run(0.1);
+                Pump();
+                names = window.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name == "FxKnob" && c.IsEffectivelyVisible).Select(c => (string)Get(c, "Label")).ToArray();
+                Assert.That(names, Is.EqualTo(new[] { "Modulator", "Bands", "Formant", "Low", "High", "Attack", "Release", "Sibilance", "Speed", "Output" }));
+                Assert.That(window.GetVisualDescendants().OfType<Control>().Any(c => c.GetType().Name == "ActionButton" && c.IsEffectivelyVisible && (string)Get(c, "Text") == "Load IR…"), "the Effects page has the import buttons");
                 Global(m, "FX1 type").SetValue(0, 4);
                 Run(0.1);
                 Pump();
@@ -472,6 +484,62 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 Remove(m);
+            }
+        }
+
+        static void WriteWav(string path, int rate, short[] samples)
+        {
+            using var w = new BinaryWriter(File.Create(path));
+            w.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));
+            w.Write(36 + samples.Length * 2);
+            w.Write(System.Text.Encoding.ASCII.GetBytes("WAVEfmt "));
+            w.Write(16); w.Write((short)1); w.Write((short)1); w.Write(rate); w.Write(rate * 2); w.Write((short)2); w.Write((short)16);
+            w.Write(System.Text.Encoding.ASCII.GetBytes("data"));
+            w.Write(samples.Length * 2);
+            foreach (var x in samples) w.Write(x);
+        }
+
+        [AvaloniaTest]
+        public void AnImpulseResponseAndAModulatorImportIntoTheStateAndSetTheirSlots()
+        {
+            var m = Add("Import Dye");
+            string dir = Path.Combine(Path.GetTempPath(), "dye-import-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            try
+            {
+                var wav = Path.Combine(dir, "my room.wav");
+                var ir = new short[24000];
+                ir[100] = 20000;
+                for (int i = 200; i < ir.Length; i++) ir[i] = (short)(3000 * Math.Exp(-i / 6000.0) * (i % 7 - 3) / 3);
+                WriteWav(wav, 44100, ir);
+                var talk = Path.Combine(dir, "talk.wav");
+                var voice = new short[44100];
+                for (int i = 0; i < voice.Length; i++) voice[i] = (short)(8000 * Math.Sin(i * 0.05) * (i / 4000 % 2));
+                WriteWav(talk, 44100, voice);
+                void Set(int index, int value) => m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters[index].SetValue(0, value);
+                var set = new Action<int, int>(Set);
+                string said = (string)Call(m.ManagedMachine, "ImportData", "ir", wav, 2, set);
+                Assert.That(said, Does.Contain("my room").And.Contain("FX3"));
+                Assert.That(Get(m.ManagedMachine, "UserIrName"), Is.EqualTo("my room"));
+                Assert.That(Global(m, "FX3 type").GetValue(0), Is.EqualTo(11), "the slot takes the Convolution type");
+                Assert.That(Global(m, "FX3 p1").GetValue(0), Is.EqualTo(1000), "and its IR is User");
+                said = (string)Call(m.ManagedMachine, "ImportData", "modulator", talk, 6, set);
+                Assert.That(said, Does.Contain("talk").And.Contain("FX7"));
+                Assert.That(Global(m, "FX7 type").GetValue(0), Is.EqualTo(12), "the slot takes the Vocoder type");
+                Assert.That(Global(m, "FX7 p1").GetValue(0), Is.EqualTo(1000), "and its modulator is Sample");
+                // Kept in the song's machine data.
+                byte[] data = m.Data;
+                Call(m.ManagedMachine, "ImportData", "ir", wav, 2, set);
+                Assert.That(Get(m.ManagedMachine, "UserIrName"), Is.EqualTo("my room"));
+                m.Data = data;
+                Assert.That(Get(m.ManagedMachine, "UserIrName"), Is.EqualTo("my room"), "the response is in the data");
+                Assert.That(Get(m.ManagedMachine, "UserModulatorName"), Is.EqualTo("talk"), "and so is the modulator");
+                Assert.That(() => Call(m.ManagedMachine, "ImportData", "ir", wav, 12, set), Throws.Exception, "a slot that does not exist");
+            }
+            finally
+            {
+                Remove(m);
+                try { Directory.Delete(dir, true); } catch (IOException) { }
             }
         }
     }
