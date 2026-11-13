@@ -189,6 +189,124 @@ namespace NeoBuzz.Editor
             g.Text("exciter", box.Left + 4, box.Top + 1, 9, Palette.DimText);
         }
 
+
+        /// <summary>
+        /// A plucked string (Neo Learn String): the string across the top with its starting shape (a triangle, peaked at <paramref name="pluckAt"/> of the way from
+        /// the bridge, at the left), the decay (<paramref name="decay"/> 0 … 1 of the way down the picture's 60 dB, drawn as the curve of its fall) in a box at the top
+        /// right, and the first partials as bars (level 0 … 1 at its place in the log of the ratio, so a stiff string's stretch shows).
+        /// </summary>
+        public static void StringAndPartials(INeoCanvas g, NeoRect r, double pluckAt, double[] level, double[] ratio, int count, double maxRatio, double t60, NeoColor accent)
+        {
+            var plot = new NeoRect(r.Left + 8, r.Top + r.Height * 0.46, r.Width - 16, r.Height * 0.46);
+            double lg = Math.Log(Math.Max(2, maxRatio));
+            for (double f = 1; f <= maxRatio; f *= 2)
+            {
+                double x = plot.Left + plot.Width * Math.Log(f) / lg;
+                g.Line(x, plot.Top, x, plot.Bottom, new NeoStroke(Palette.Grid, 1, false));
+                g.Text(f == 1 ? "f0" : f + "x", x + 3, plot.Bottom - 13, 9, Palette.DimText);
+            }
+            for (int k = 0; k < count; k++)
+            {
+                double v = Math.Clamp(level[k], 0, 1);
+                if (v <= 0.01 || ratio[k] < 1 || ratio[k] > maxRatio) continue;
+                double x = plot.Left + plot.Width * Math.Log(ratio[k]) / lg;
+                g.Rect(new NeoRect(x - 1.5, plot.Bottom - plot.Height * v, 3, plot.Height * v), accent.WithAlpha(0xD0), NeoStroke.None);
+            }
+            // The string, bridge at the left, the pluck a triangle.
+            double sx0 = r.Left + 14, sx1 = r.Left + r.Width * 0.62, sy = r.Top + r.Height * 0.26, hgt = r.Height * 0.16;
+            g.Line(sx0, sy, sx1, sy, new NeoStroke(Palette.DimText, 1, false));
+            double px = sx0 + (sx1 - sx0) * Math.Clamp(pluckAt, 0.02, 0.98);
+            var path = new NeoPath();
+            path.MoveTo(sx0, sy);
+            path.LineTo(px, sy - hgt);
+            path.LineTo(sx1, sy);
+            g.Path(path, NeoFill.None, new NeoStroke(accent, 2));
+            g.Ellipse(new NeoPoint(px, sy - hgt), 4, 4, accent, new NeoStroke(Palette.Text, 1));
+            g.Text("bridge", sx0, sy + 4, 9, Palette.DimText);
+            // The decay: the level falls 60 dB over the time.
+            var box = new NeoRect(r.Right - r.Width * 0.30 - 8, r.Top + 6, r.Width * 0.30, r.Height * 0.36);
+            g.Rect(box, Palette.Panel.WithAlpha(0xB0), new NeoStroke(Palette.Grid, 1), 3);
+            var fall = new NeoPath();
+            for (int i = 0; i <= 24; i++)
+            {
+                double u = i / 24.0;
+                double x = box.Left + 4 + (box.Width - 8) * u, y = box.Top + 14 + (box.Height - 20) * u;   // -60 dB at the right: straight in dB
+                if (i == 0) fall.MoveTo(x, y); else fall.LineTo(x, y);
+            }
+            g.Path(fall, NeoFill.None, new NeoStroke(accent, 1.5));
+            g.Text("T60 " + (t60 < 1 ? (t60 * 1000).ToString("F0") + " ms" : t60.ToString("F1") + " s"), box.Left + 4, box.Top + 1, 9, Palette.DimText);
+        }
+
+        /// <summary>
+        /// The vowel filter's response (Neo Learn Formant): 0 … -60 dB against the log of frequency from <paramref name="lowHz"/> to <paramref name="highHz"/>,
+        /// the four formants marked and numbered. <paramref name="response"/> is the linear magnitude at <paramref name="points"/> log-spaced frequencies.
+        /// </summary>
+        public static void FormantResponse(INeoCanvas g, NeoRect r, double[] response, int points, double lowHz, double highHz, double[] hz, int bands, NeoColor accent)
+        {
+            var plot = new NeoRect(r.Left + 8, r.Top + 26, r.Width - 16, r.Height - 44);
+            double lg = Math.Log(highHz / lowHz);
+            foreach (double f in new[] { 100.0, 300.0, 1000.0, 3000.0 })
+            {
+                if (f <= lowHz || f >= highHz) continue;
+                double x = plot.Left + plot.Width * Math.Log(f / lowHz) / lg;
+                g.Line(x, plot.Top, x, plot.Bottom, new NeoStroke(Palette.Grid, 1, false));
+                g.Text(f >= 1000 ? f / 1000 + " kHz" : f + " Hz", x + 3, plot.Bottom - 13, 9, Palette.DimText);
+            }
+            double peak = 1e-9;
+            for (int i = 0; i < points; i++) peak = Math.Max(peak, response[i]);
+            var line = new NeoPath();
+            var fill = new NeoPath();
+            fill.MoveTo(plot.Left, plot.Bottom);
+            for (int i = 0; i < points; i++)
+            {
+                double db = Math.Clamp(20 * Math.Log10(Math.Max(response[i] / peak, 1e-6)), -60, 0);
+                double x = plot.Left + plot.Width * i / (points - 1), y = plot.Top + plot.Height * (-db / 60.0);
+                if (i == 0) line.MoveTo(x, y); else line.LineTo(x, y);
+                fill.LineTo(x, y);
+            }
+            fill.LineTo(plot.Right, plot.Bottom);
+            g.Path(fill, accent.WithAlpha(0x30), NeoStroke.None);
+            g.Path(line, NeoFill.None, new NeoStroke(accent, 2));
+            for (int b = 0; b < bands; b++)
+            {
+                if (hz[b] <= lowHz || hz[b] >= highHz) continue;
+                double x = plot.Left + plot.Width * Math.Log(hz[b] / lowHz) / lg;
+                g.Line(x, plot.Top, x, plot.Bottom, new NeoStroke(accent.WithAlpha(0x70), 1, true));
+                g.Text("F" + (b + 1), x - 5, plot.Top - 14, 10, Palette.Text);
+            }
+        }
+
+        /// <summary>
+        /// The wavefolder (Neo Learn Wavefolder): the transfer curve y = f(x) in a box on the left (<paramref name="curve"/>: f at <paramref name="n"/> points of x from -1 to 1,
+        /// the identity dotted) and the folded sine on the right (<paramref name="wave"/>, two cycles), the output's scope faint behind it.
+        /// </summary>
+        public static void FoldTransferAndWave(INeoCanvas g, NeoRect r, double[] curve, int n, double[] wave, int waveCount, NeoColor accent)
+        {
+            var box = new NeoRect(r.Left + 10, r.Top + 26, Math.Min(r.Height - 40, r.Width * 0.38), r.Height - 40);
+            g.Rect(box, Palette.Panel.WithAlpha(0xB0), new NeoStroke(Palette.Grid, 1), 3);
+            g.Line(box.Left, box.Top + box.Height / 2, box.Right, box.Top + box.Height / 2, new NeoStroke(Palette.Grid, 1, false));
+            g.Line(box.Left + box.Width / 2, box.Top, box.Left + box.Width / 2, box.Bottom, new NeoStroke(Palette.Grid, 1, false));
+            g.Line(box.Left, box.Bottom, box.Right, box.Top, new NeoStroke(Palette.DimText.WithAlpha(0x60), 1, true));
+            var path = new NeoPath();
+            for (int i = 0; i < n; i++)
+            {
+                double x = box.Left + box.Width * i / (n - 1), y = box.Top + box.Height * (0.5 - 0.5 * Math.Clamp(curve[i], -1, 1));
+                if (i == 0) path.MoveTo(x, y); else path.LineTo(x, y);
+            }
+            g.Path(path, NeoFill.None, new NeoStroke(accent, 2));
+            g.Text("in", box.Right - 14, box.Top + box.Height / 2 + 2, 9, Palette.DimText);
+            g.Text("out", box.Left + box.Width / 2 + 3, box.Top + 1, 9, Palette.DimText);
+            var wr = new NeoRect(box.Right + 14, r.Top + 26, r.Right - box.Right - 24, r.Height - 40);
+            g.Line(wr.Left, wr.Top + wr.Height / 2, wr.Right, wr.Top + wr.Height / 2, new NeoStroke(Palette.Grid, 1, false));
+            var folded = new NeoPath();
+            for (int i = 0; i < waveCount; i++)
+            {
+                double x = wr.Left + wr.Width * i / (waveCount - 1), y = wr.Top + wr.Height * (0.5 - 0.5 * Math.Clamp(wave[i], -1, 1));
+                if (i == 0) folded.MoveTo(x, y); else folded.LineTo(x, y);
+            }
+            g.Path(folded, NeoFill.None, new NeoStroke(accent, 1.5));
+            g.Text("folded sine", wr.Left, wr.Top - 14, 9, Palette.DimText);
+        }
         /// <summary>The pad's handle at (<paramref name="handle"/>.X, .Y) over <paramref name="r"/> (y up), with guide lines, and the caption naming what the pad moves.</summary>
         public static void Handle(INeoCanvas g, NeoRect r, NeoPoint? handle, bool dragging, NeoColor accent, string caption)
         {

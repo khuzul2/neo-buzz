@@ -21,7 +21,20 @@ namespace NeoBuzz.Learn
     }
 
     /// <summary>The shared engine's Neo Learn additions, per slot (OscSettings: all off at 0).</summary>
-    internal enum SlotExt { ExactRatio, Feedback, Comb, CombPeriod, Shimmer, Inharm, GrainMorph, GrainOctave, ExciterMorph, GeomBlend, GeomTo }
+    internal enum SlotExt
+    {
+        ExactRatio, Feedback, Comb, CombPeriod, Shimmer, Inharm, GrainMorph, GrainOctave, ExciterMorph, GeomBlend, GeomTo,
+        // L2a: a slot's type (SlotType.String), the String engine, the wavefolder.
+        TypeExt, StrPick, StrDamp, StrHard, StrDecay, StrStiff, StrSymp, FoldStages, FoldDrive, FoldSym,
+        // L2a: a filter's kind (slots 3 and 4 are filters 1 and 2): 1 vowel, 2 low-pass gate; the vowel filter's and the gate's controls.
+        FKind, FMorph, FTract, FQ, FEnvMod, FMode, FStrike,
+    }
+
+    /// <summary>The slots <see cref="IDyeSink.Ext"/> addresses: the three oscillators, then the two filters.</summary>
+    internal static class ExtSlot
+    {
+        public const int Filter1 = 3, Filter2 = 4, Count = 5;
+    }
 
     internal abstract class MacroMap
     {
@@ -32,6 +45,9 @@ namespace NeoBuzz.Learn
 
         /// <summary>The machine's 12 controls, in order.</summary>
         public abstract ParamDef[] Controls { get; }
+
+        /// <summary>A map that plays String slots needs their delay lines made (off the audio thread): the voice rate's oversampling, else 0.</summary>
+        public virtual int StringOversample => 0;
 
         /// <summary>The fixed base patch, written once before the first block (a map may also write these controls again).</summary>
         public abstract void Base(IDyeSink dye);

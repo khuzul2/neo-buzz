@@ -64,6 +64,7 @@ namespace NeoBuzz.Learn
         {
             rate = sr;
             Engine.SetSampleRate(sr);
+            if (map.StringOversample > 0) Engine.Bank.PrepareStrings(sr * map.StringOversample);
             meter.SetSampleRate(sr);
         }
 
@@ -160,8 +161,8 @@ namespace NeoBuzz.Learn
         {
             readonly ParamValues values;
             // The engine's additions a map writes (OscSettings; a map that never writes one leaves it off), pushed to the engine after each Map.
-            readonly float[] ext = new float[3 * ExtCount];
-            const int ExtCount = 11;
+            readonly float[] ext = new float[ExtSlot.Count * ExtCount];
+            static readonly int ExtCount = Enum.GetValues(typeof(SlotExt)).Length;
             bool extUsed;
 
             public Sink(ParamValues values)
@@ -202,6 +203,28 @@ namespace NeoBuzz.Learn
                     os.ExciterMorph = ext[b + (int)SlotExt.ExciterMorph];
                     os.GeomBlend = ext[b + (int)SlotExt.GeomBlend];
                     os.GeomTo = (int)ext[b + (int)SlotExt.GeomTo];
+                    os.TypeExt = (int)ext[b + (int)SlotExt.TypeExt];
+                    os.StrPick = ext[b + (int)SlotExt.StrPick];
+                    os.StrDamp = ext[b + (int)SlotExt.StrDamp];
+                    os.StrHard = ext[b + (int)SlotExt.StrHard];
+                    os.StrDecay = ext[b + (int)SlotExt.StrDecay];
+                    os.StrStiff = ext[b + (int)SlotExt.StrStiff];
+                    os.StrSymp = ext[b + (int)SlotExt.StrSymp];
+                    os.FoldStages = (int)ext[b + (int)SlotExt.FoldStages];
+                    os.FoldDrive = ext[b + (int)SlotExt.FoldDrive];
+                    os.FoldSym = ext[b + (int)SlotExt.FoldSym];
+                }
+                for (int f = 0; f < 2; f++)
+                {
+                    var fs = engine.Bank.S.Filter[f];
+                    int b = (ExtSlot.Filter1 + f) * ExtCount;
+                    fs.Kind = (int)ext[b + (int)SlotExt.FKind];
+                    fs.Morph = ext[b + (int)SlotExt.FMorph];
+                    fs.Tract = ext[b + (int)SlotExt.FTract];
+                    fs.Q = ext[b + (int)SlotExt.FQ];
+                    fs.EnvMod = ext[b + (int)SlotExt.FEnvMod];
+                    fs.Mode = ext[b + (int)SlotExt.FMode];
+                    fs.Strike = ext[b + (int)SlotExt.FStrike];
                 }
             }
         }

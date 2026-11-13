@@ -748,6 +748,17 @@
    ],
    "use_for": "A teaching FM synth: electric-piano tines, glass bells and growling basses from an exact modulator ratio, depth and feedback."
   },
+  "Neo Learn Formant": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "vocal",
+    "polyphonic",
+    "pad",
+    "bass"
+   ],
+   "use_for": "A teaching vowel synth: choirs, talking basses and whispers from four formant filters that move across A, E, I, O and U, with tract size, Q and a talking envelope."
+  },
   "Neo Learn Granular": {
    "category": "Synths",
    "tags": [
@@ -770,6 +781,17 @@
    ],
    "use_for": "A teaching physical-modelling synth: marimbas, plucked strings, glass bowls and bowed or breathy tones from a material, a mallet-pick-bow exciter morph and a string-tube-bar-plate geometry."
   },
+  "Neo Learn String": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "physical-model",
+    "polyphonic",
+    "pluck",
+    "keys"
+   ],
+   "use_for": "A teaching plucked-string synth (Karplus-Strong): harps, guitars, harpsichords and bells from a pick position, damping, a decay time that holds at any note, stiffness and sympathetic strings."
+  },
   "Neo Learn Subtractive": {
    "category": "Synths",
    "tags": [
@@ -781,6 +803,17 @@
     "pad"
    ],
    "use_for": "Learn subtractive synthesis: one oscillator, a sub and a resonant filter, every control explained."
+  },
+  "Neo Learn Wavefolder": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "gritty",
+    "polyphonic",
+    "bass",
+    "pluck"
+   ],
+   "use_for": "A teaching wavefolder: metallic basses, bongo-like plucks and sizzling leads from one to six folding stages, a symmetry offset, timbre FM and a low-pass gate."
   },
   "Neo Learn Wavetable": {
    "category": "Synths",

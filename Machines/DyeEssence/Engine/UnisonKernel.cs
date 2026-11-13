@@ -62,6 +62,9 @@ namespace NeoBuzz.DyeEssence
         public int ModKind;
         /// <summary>PM self-feedback in cycles (0: none): each lane's previous output moves its own phase.</summary>
         public float Feedback;
+        /// <summary>Neo Learn's wavefolder after the warps: stages (0: none), each stage's gain and the DC offset before the first.</summary>
+        public int FoldStages;
+        public float FoldG, FoldBias;
     }
 
     internal static class UnisonKernel
@@ -235,6 +238,8 @@ namespace NeoBuzz.DyeEssence
             TF mirror = TL.Splat(w.MirrorMix);
             bool feedback = w.Feedback != 0f;
             TF fbk = TL.Splat(w.Feedback), yPrev = feedback ? TL.Load(s.Fb, at) : zero;
+            int foldN = w.FoldStages;
+            TF foldG = TL.Splat(w.FoldG), foldB = TL.Splat(w.FoldBias);
             for (int t = 0; t < count; t++)
             {
                 TF m = zero;
@@ -289,6 +294,7 @@ namespace NeoBuzz.DyeEssence
                     y = Warps.Amplitude<TL, TF, TU>(w.W1, y, p, k10, k11, m);
                     y = Warps.Amplitude<TL, TF, TU>(w.W2, y, p, k20, k21, m);
                 }
+                if (foldN > 0) y = Warps.Fold<TL, TF, TU>(y, foldN, foldG, foldB);
                 if (store != null) TL.Store(y, store, storeAt + t * modStride);
                 if (feedback) yPrev = y;
                 int o = t * AccStride;

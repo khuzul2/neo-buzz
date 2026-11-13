@@ -135,6 +135,40 @@ namespace NeoBuzz.DyeEssence
         }
 
         /// <summary>
+        /// Neo Learn's wavefolder (L2a): <paramref name="stages"/> triangle folds in series, each of gain <paramref name="g"/> (1: the wave passes untouched
+        /// while it stays inside ±1), the first after a DC offset <paramref name="bias"/> (the symmetry). One stage is y = 4 |frac(u/4 + 3/4) − 1/2| − 1 of
+        /// u = g y: the identity inside ±1, then reflected at ±1, ±3, … So a wave that grows past the edge folds back instead of clipping, and every stage
+        /// leaves the output in [−1, 1]. An input that is not finite becomes 0.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static TF Fold<TL, TF, TU>(TF y, int stages, TF g, TF bias)
+            where TL : struct, ILanes<TF, TU> where TF : struct where TU : struct
+        {
+            TF zero = TL.Splat(0f), quarter = TL.Splat(0.25f), threeQuarter = TL.Splat(0.75f), half = TL.Splat(0.5f), four = TL.Splat(4f), one = TL.Splat(1f);
+            TF lim = TL.Splat(64f), nlim = TL.Splat(-64f);
+            y = TL.Add(y, bias);
+            // NaN and infinities fail the comparison and become 0; the rest is kept in range for the truncation
+            y = TL.Select(TL.Greater(TL.Splat(1e8f), TL.Mul(y, y)), y, zero);
+            y = TL.Select(TL.Greater(y, lim), lim, TL.Select(TL.Greater(nlim, y), nlim, y));
+            for (int s = 0; s < stages; s++)
+            {
+                TF v = Wrap<TL, TF, TU>(TL.Add(TL.Mul(TL.Mul(y, g), quarter), threeQuarter));
+                TF d = TL.Sub(v, half);
+                d = TL.Select(TL.Greater(zero, d), TL.Sub(zero, d), d);
+                y = TL.Sub(TL.Mul(four, d), one);
+            }
+            return y;
+        }
+
+        /// <summary>How much faster than the plain wave a fold of <paramref name="stages"/> at stage gain <paramref name="g"/> reads through its table (the bandwidth it adds), for the mip level.</summary>
+        public static float FoldSpeed(int stages, float g)
+        {
+            double total = 1.0;
+            for (int s = 0; s < stages; s++) total *= Math.Max(1f, g);
+            return (float)Math.Min(1.0 + 2.0 * (total - 1.0), 48.0);
+        }
+
+        /// <summary>
         /// sin(π x) for x ∈ [−1, 1]: the parabola 4x(1 − |x|) refined once (within 0.001): a shape,
         /// from basic operations only.
         /// </summary>
