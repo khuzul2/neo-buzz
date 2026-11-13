@@ -92,7 +92,7 @@ namespace ReBuzz.Core.SongHistory
                 foreach (var o in m.Outputs.Where(o => !((MachineCore)o.Destination).Hidden))
                     s.Wires.Add($"{m.Name}>{o.Destination.Name} {o.Amp} {o.Pan}");
             }
-            int n = 0;
+            var trackOf = new Dictionary<string, int>();   // numbered within the machine, so a rebuilt machine's track moving in the list is not a change
             foreach (var seq in song.SequencesList)
             {
                 string hash = Hash(h =>
@@ -103,7 +103,10 @@ namespace ReBuzz.Core.SongHistory
                         h.AppendData(System.Text.Encoding.UTF8.GetBytes(kv.Value.Pattern?.Name ?? ""));
                     }
                 });
-                s.Sequences.Add($"{seq.Machine?.Name}#{n++}: {seq.Events.Count} events {hash}");
+                string mname = seq.Machine?.Name ?? "";
+                trackOf.TryGetValue(mname, out int n);
+                trackOf[mname] = n + 1;
+                s.Sequences.Add($"{mname}#{n}: {seq.Events.Count} events {hash}");
             }
             foreach (var w in song.WavetableCore.WavesList.Where(w => w != null))
                 s.Waves.Add($"{w.Index}: {w.Name} ({string.Join("+", w.Layers.Select(l => l.SampleCount.ToString(CultureInfo.InvariantCulture)))} samples)");

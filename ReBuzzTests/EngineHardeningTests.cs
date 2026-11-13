@@ -1040,7 +1040,9 @@ namespace ReBuzzTests
                         long t0 = Stopwatch.GetTimestamp();
                         reader.Read(256);
                         times[i] = (Stopwatch.GetTimestamp() - t0) * 1000.0 / Stopwatch.Frequency;
-                        allocated += window.End();
+                        long got = window.End();
+                        allocated += got;
+                        if (got != 0) TestContext.Out.WriteLine($"[notice] restore live test: buffer {i} allocated {got} bytes");
                         var b = reader.Buffer;
                         for (int k = 0; k < 256; k++)
                         {
@@ -1082,9 +1084,9 @@ namespace ReBuzzTests
                     $"baseline median {Median(baseline):F3} ms max {baseline.Max():F3} ms; restoring median {Median(during):F3} ms max {during.Max():F3} ms; allocated {bytes} bytes (baseline {baseBytes}); " +
                     $"largest sample-to-sample step: baseline {baseStep:G4}, across the restore {restoreStep:G4} (level {levelNow:G4})");
 
+                Assert.That(bytes, Is.EqualTo(0), "a restore must not allocate on the audio thread");
                 Assert.That(snapshots.Diff(snap, null), Is.Empty, "the song is what the snapshot holds");
                 Assert.That(rig.Core.SongCore.Machines.Count(m => m.DLL.Info.Type != BuzzGUI.Interfaces.MachineType.Master), Is.EqualTo(machines));
-                Assert.That(bytes, Is.EqualTo(0), "a restore must not allocate on the audio thread");
                 Assert.That(Median(during), Is.LessThan(Median(baseline) * 1.5 + 0.05), "restoring must not make the audio thread slower");
                 Assert.That(during.Max(), Is.LessThan(budgetMs), "no buffer misses its real-time budget");
                 Assert.That(restoreStep, Is.LessThanOrEqualTo(baseStep + Math.Max(1e-3 * levelNow, 1e-6)), "no click: the swap's fade-out and fade-in add up to the level that was playing");
