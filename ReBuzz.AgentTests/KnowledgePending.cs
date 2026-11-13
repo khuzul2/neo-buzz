@@ -8,7 +8,6 @@ namespace ReBuzz.AgentTests
     {
         public static readonly HashSet<string> Gear = new(StringComparer.OrdinalIgnoreCase)
         {
-            "Dye Essence",
         };
     }
 }

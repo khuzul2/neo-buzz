@@ -151,9 +151,9 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 
 | Tool | Guides | Calls | Example |
 |---|---|---|---|
-| analyze | 43 | 91 | yes |
+| analyze | 44 | 92 | yes |
 | analyze_mix | 6 | 7 | yes |
-| app_status | 1 | 0 | yes |
+| app_status | 2 | 0 | yes |
 | arrangement_clear | 1 | 1 | yes |
 | arrangement_get | 7 | 1 | yes |
 | arrangement_markers | 4 | 5 | yes |
@@ -170,7 +170,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | eq_fit | 4 | 5 | yes |
 | export_audio | 1 | 1 | yes |
 | gear_list | 2 | 4 | yes |
-| guide | 25 | 35 | yes |
+| guide | 25 | 33 | yes |
 | history_jump | 1 | 1 | yes |
 | history_list | 1 | 1 | yes |
 | machine_add | 12 | 24 | yes |
@@ -193,7 +193,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | notes_transform | 4 | 5 | no |
 | notes_write | 14 | 5 | yes |
 | panel_set | 1 | 3 | yes |
-| param_get | 10 | 15 | yes |
+| param_get | 11 | 16 | yes |
 | param_set | 33 | 24 | yes |
 | pattern_create | 4 | 4 | yes |
 | pattern_delete | 0 | 0 | yes |
@@ -202,7 +202,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | pattern_rename | 0 | 0 | yes |
 | plot | 14 | 15 | yes |
 | preset_list | 6 | 6 | yes |
-| preset_load | 16 | 15 | yes |
+| preset_load | 17 | 16 | yes |
 | preset_save | 2 | 3 | yes |
 | redo | 0 | 0 | yes |
 | render | 32 | 54 | yes |
