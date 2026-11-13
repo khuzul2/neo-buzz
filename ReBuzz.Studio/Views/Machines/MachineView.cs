@@ -66,8 +66,10 @@ namespace ReBuzz.Studio.Views.Machines
             Canvas.BrowseRequested += OnBrowse;
             Canvas.PointerPressed += (s, e) => popup.Hide();
             Canvas.MachinesChanged += UpdateStarters;
-            Canvas.ViewChanged += PlaceStarters;
-            Canvas.PropertyChanged += (s, e) => { if (e.Property == BoundsProperty) PlaceStarters(); };
+            Canvas.ViewChanged += SchedulePlacing;
+            // The canvas's size is taken (its map made and its offset set) in its own layout, after Bounds has changed: place again once
+            // the layout pass is done (a placement made inside it measured with the old map, and one made in a layout handler loops).
+            Canvas.PropertyChanged += (s, e) => { if (e.Property == BoundsProperty) SchedulePlacing(); };
             popup.Added += m => { Canvas.Select(new[] { m }); Canvas.Focus(); };
             popup.Closed += () => { UpdateStarters(); Canvas.Focus(); };
             AddHandler(KeyDownEvent, (s, e) => { if (e.Key == Key.Escape && popup.IsOpen) { popup.Hide(); e.Handled = true; } }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
@@ -169,6 +171,15 @@ namespace ReBuzz.Studio.Views.Machines
         /// is free, else the nearest free place; when the view is too small for the whole of it the hint line goes, and when
         /// even the buttons don't fit it stays hidden (the popup and the buttons in the panels still add a machine).
         /// </summary>
+        bool placing;
+
+        void SchedulePlacing()
+        {
+            if (placing) return;
+            placing = true;
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => { placing = false; PlaceStarters(); }, Avalonia.Threading.DispatcherPriority.Loaded);
+        }
+
         internal void PlaceStarters()
         {
             if (!starters.IsVisible) return;
@@ -182,8 +193,10 @@ namespace ReBuzz.Studio.Views.Machines
                 boxes.Add(new Rect(tl.X - StartersGap, tl.Y - StartersGap, b.Width * Canvas.Zoom + 2 * StartersGap, b.Height * Canvas.Zoom + 2 * StartersGap));
             }
             startersHint.IsVisible = true;
+            starters.Margin = default;                  // measured as it is, not with the margin of the last placement
             for (int attempt = 0; attempt < 2; attempt++)
             {
+                starters.InvalidateMeasure();           // the hint's visibility changed what it needs
                 starters.Measure(new Size(w, h));
                 var size = starters.DesiredSize;
                 if (size.Width <= w && size.Height <= h)
@@ -193,13 +206,14 @@ namespace ReBuzz.Studio.Views.Machines
                     {
                         starters.Margin = new Thickness(best.Value.X, best.Value.Y, 0, 0);
                         starters.Opacity = 1;
+                        starters.IsHitTestVisible = true;
                         return;
                     }
                 }
                 startersHint.IsVisible = false;
             }
             starters.Opacity = 0;       // no room: hidden, and not clickable
-            starters.Margin = new Thickness(-10000, 0, 0, 0);
+            starters.IsHitTestVisible = false;
         }
 
         /// <summary>The free place for a block of this size nearest the middle of the view, or null.</summary>
@@ -256,6 +270,7 @@ namespace ReBuzz.Studio.Views.Machines
             }
             starters.IsVisible = Model.SongIsEmpty && !popup.IsOpen;
             PlaceStarters();
+            SchedulePlacing();
         }
 
         /// <summary>One click: the starter machine near the middle of the view (one undo step; it is selected).</summary>

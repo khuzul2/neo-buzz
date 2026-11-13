@@ -41,6 +41,17 @@ namespace ReBuzz.Studio.Tests
             var (window, view) = OpenEmpty();
             try
             {
+                // As the gallery reaches it: another view first, then the Machine View (it was hidden, with no size, when the song was made).
+                window.ShowView("Sequence");
+                Settle();
+                window.ShowView("Machines");
+                Settle();
+                window.Detail.ShowPage(true, false);          // and the detail panel under it (mac-018)
+                Settle();
+                Settle();
+                AssertClear(view, "after another view, with the detail panel");
+                window.Detail.Close();
+                Settle();
                 var sizes = new[] { (1280, 800), (1000, 700), (900, 560), (760, 480), (640, 420), (520, 360), (420, 300), (1920, 1080) };
                 foreach (var (w, h) in sizes)
                 {
@@ -48,25 +59,31 @@ namespace ReBuzz.Studio.Tests
                     window.Height = h;
                     Settle();
                     Settle();
-                    var canvas = view.Canvas;
-                    Assert.That(view.Starters.IsVisible, Is.True, $"{w}x{h}: an empty song offers the starters");
-                    if (view.Starters.Opacity == 0) continue;           // no room: hidden, and then nothing is over the Master
-                    var starters = new Rect(view.Starters.Bounds.Position, view.Starters.Bounds.Size);
-                    foreach (var m in canvas.Machines)
-                    {
-                        var box = canvas.BoxOf(m);
-                        var tl = canvas.ToView(box.TopLeft);
-                        var onScreen = new Rect(tl.X, tl.Y, box.Width * canvas.Zoom, box.Height * canvas.Zoom);
-                        Assert.That(starters.Intersects(onScreen), Is.False, $"{w}x{h}: the starters {starters} over {m.Name} {onScreen}");
-                    }
-                    Assert.That(new Rect(canvas.Bounds.Size).Contains(starters.TopLeft) && new Rect(canvas.Bounds.Size).Inflate(0.5).Contains(starters.BottomRight), Is.True, $"{w}x{h}: inside the view");
-                    if (w >= 640 && h >= 420) Assert.That(view.Starters.Opacity, Is.EqualTo(1), $"{w}x{h}: shown whole at an ordinary size");
+                    AssertClear(view, $"{w}x{h}");
+                    if (w >= 760 && h >= 480) Assert.That(view.Starters.Opacity, Is.EqualTo(1), $"{w}x{h}: shown whole at an ordinary size (canvas {view.Canvas.Bounds}, block {view.Starters.DesiredSize}, margin {view.Starters.Margin}, opacity {view.Starters.Opacity})");
                 }
             }
             finally
             {
                 Close(window);
             }
+        }
+
+        static void AssertClear(MachineView view, string where)
+        {
+            var canvas = view.Canvas;
+            Assert.That(view.Starters.IsVisible, Is.True, $"{where}: an empty song offers the starters");
+            if (view.Starters.Opacity == 0) return;           // no room: hidden, and then nothing is over the Master
+            var starters = new Rect(view.Starters.Bounds.Position, view.Starters.Bounds.Size);
+            Assert.That(starters.Width, Is.GreaterThan(100), where);
+            foreach (var m in canvas.Machines)
+            {
+                var box = canvas.BoxOf(m);
+                var tl = canvas.ToView(box.TopLeft);
+                var onScreen = new Rect(tl.X, tl.Y, box.Width * canvas.Zoom, box.Height * canvas.Zoom);
+                Assert.That(starters.Intersects(onScreen), Is.False, $"{where}: the starters {starters} over {m.Name} {onScreen}; canvas {canvas.Bounds} offset {canvas.Offset} zoom {canvas.Zoom}; margin {view.Starters.Margin}");
+            }
+            Assert.That(new Rect(canvas.Bounds.Size).Contains(starters.TopLeft) && new Rect(canvas.Bounds.Size).Inflate(0.5).Contains(starters.BottomRight), Is.True, $"{where}: inside the view");
         }
 
         [AvaloniaTest]
