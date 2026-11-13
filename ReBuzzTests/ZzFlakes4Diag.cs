@@ -26,7 +26,7 @@ namespace ReBuzzTests
                 for (int i = 0; i < 8; i++)
                     foreach (var (label, changes) in cases)
                     {
-                        EffectSong(client, "FSM WahMan", changes, noise: true);
+                        EffectSong(client, "FSM WahMan", changes.DeepClone().AsArray(), noise: true);
                         var w = Within(Replace(client, $"diag p{process} #{i} {label}"));
                         total++;
                         if (w != true) misses++;

@@ -275,7 +275,7 @@ namespace ReBuzzTests
                         // in every instance of it.
                         within = GuardPolicy.Retry(() =>
                         {
-                            EffectSong(client, filter, changes, noise: true);
+                            EffectSong(client, filter, changes?.DeepClone().AsArray(), noise: true);   // a JSON node has one parent
                             return Within(Replace(client, label));
                         }, w => w == true, out var attempts);
                         if (attempts.Count > 1) TestContext.Out.WriteLine($"[notice] {label}: {attempts.Count} instances played ({string.Join(", ", attempts.Select(w => w?.ToString() ?? "-"))})");
