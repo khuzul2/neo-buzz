@@ -280,7 +280,8 @@ CURATE = {
     "Jeskola Stereo Reverb": {
         "type": "reverb",
         "summary": "A Buzz stereo reverb: dry, reverb and early-reflection levels, reverb time up to 6.4 s, pre-delay and a high cut. For quick ambience; Neo Verb is the better reverb.",
-        "params": {"Dry Out": ("Dry level", "mix.dry"), "Rev Out": ("Reverb level", "mix.wet"), "ER Out": ("Early reflections level", "reverb.early"),
+        "params": {"Dry Out": ("Dry level", "mix.dry", {"like": ("Jeskola Reverb", "Dry Out")}), "Rev Out": ("Reverb level", "mix.wet", {"like": ("Jeskola Reverb", "Rev Out")}),
+                   "ER Out": ("Early reflections level", "reverb.early", {"like": ("Jeskola Reverb", "ER Out")}),
                    "Rev Time": ("Reverb time", "reverb.decay"), "Pre-Delay": ("Pre-delay", "reverb.predelay"), "High Cutoff": ("High cut", "reverb.damping")},
         "quirks": [
             "Same controls as Jeskola Reverb, but stereo out (the profile measured a correlation of 0.98); the mono one sums its input.",
@@ -496,7 +497,15 @@ def curate(m):
                 raise SystemExit(f"{m['gear']}: no curation for {group[:-1]} {e['name']!r}")
             plain, role, *over = c["params"][e["name"]]
             if over:
-                e.update(over[0])
+                o = dict(over[0])
+                like = o.pop("like", None)
+                if like:   # the same control of another Jeskola machine, whose exact mapping this one shares
+                    with open(path_of(like[0]), encoding="utf-8-sig") as f:
+                        src = next(q for q in json.load(f)["parameters"] if q["name"] == like[1])
+                    for k in ("a", "b", "points", "unit", "kind", "choices"):
+                        e.pop(k, None)
+                    o = {**{k: src[k] for k in ("kind", "unit", "points") if k in src}, "description": src["description"], **o}
+                e.update(o)
             new = {}
             for k, v in e.items():
                 if k in ("confidence", "suggested_role", "role_evidence"):
