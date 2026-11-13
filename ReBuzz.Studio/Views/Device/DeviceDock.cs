@@ -85,7 +85,7 @@ namespace ReBuzz.Studio.Views.Device
             }
             if (floating.TryGetValue(m, out var w) && w.IsVisible)
             {
-                var b = new Button { Content = "Dock", FontSize = StudioTokens.FontBody, Padding = new Thickness(10, 3), MinHeight = 24 };
+                var b = new Button { Content = "Dock" };
                 b.Click += (s, e) => Dock(m);
                 Child = new StackPanel { Margin = new Thickness(16), Spacing = 8, HorizontalAlignment = HorizontalAlignment.Left, Children = { new TextBlock { Text = m.Name + " is floating in its own window.", FontSize = StudioTokens.FontBody, Foreground = StudioTokens.TextSecondaryBrush }, b } };
                 return;

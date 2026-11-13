@@ -56,19 +56,19 @@ namespace ReBuzz.Studio.Views.Detail
             ClipToBounds = true;
             AutomationProperties.SetName(this, "Detail");
 
-            trackerButton = new Button { Content = TrackerTab, FontSize = 12, Padding = new Thickness(10, 3), MinHeight = 22, Focusable = false, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4) };
+            trackerButton = StudioButtons.KeepFocus(new Button { Content = TrackerTab, BorderThickness = new Thickness(1) });
             AutomationProperties.SetName(trackerButton, TrackerTab);
             ToolTip.SetTip(trackerButton, Shell.Commands.StudioKeymap.Tip("view.pattern"));
             trackerButton.Click += (s, e) => Choose(false);
 
             // Fork (ux-overhaul.md P3b): Tracker | Piano roll, two views of the one pattern the page's choosers name.
-            rollButton = new Button { Content = RollTab, FontSize = 12, Padding = new Thickness(10, 3), MinHeight = 22, Focusable = false, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4) };
+            rollButton = StudioButtons.KeepFocus(new Button { Content = RollTab, BorderThickness = new Thickness(1) });
             AutomationProperties.SetName(rollButton, RollTab);
             ToolTip.SetTip(rollButton, Shell.Commands.StudioKeymap.Tip("view.pianoroll"));
             rollButton.Click += (s, e) => Choose(true);
 
             // Fork (ux-overhaul.md P3e): Tracker | Piano roll | Device; the Device page follows the selected machine.
-            deviceButton = new Button { Content = DeviceTab, FontSize = 12, Padding = new Thickness(10, 3), MinHeight = 22, Focusable = false, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), IsVisible = device != null };
+            deviceButton = StudioButtons.KeepFocus(new Button { Content = DeviceTab, BorderThickness = new Thickness(1), IsVisible = device != null });
             AutomationProperties.SetName(deviceButton, DeviceTab);
             ToolTip.SetTip(deviceButton, Shell.Commands.StudioKeymap.Tip("view.device"));
             deviceButton.Click += (s, e) => ChooseDevice();
@@ -79,7 +79,10 @@ namespace ReBuzz.Studio.Views.Detail
             var bar = new DockPanel { Height = BarHeight, Margin = new Thickness(8, 0, 6, 0), LastChildFill = true };
             DockPanel.SetDock(buttons, Dock.Right);
             bar.Children.Add(buttons);
-            bar.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Children = { trackerButton, rollButton, deviceButton } });
+            var tabsRow = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Children = { trackerButton, rollButton, deviceButton } };
+            bar.Children.Add(tabsRow);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(tabsRow, 0);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(buttons, 1);
             DockPanel.SetDock(bar, Dock.Top);
 
             content = new Panel { Children = { page } };
@@ -283,9 +286,7 @@ namespace ReBuzz.Studio.Views.Detail
 
         static Button Glyph(string glyph, string tip, string name, Action run)
         {
-            var b = new Button { Content = glyph, FontSize = 15, Padding = new Thickness(6, 0, 6, 2), MinWidth = 24, MinHeight = 24, Focusable = false, Background = Brushes.Transparent, VerticalAlignment = VerticalAlignment.Center };
-            ToolTip.SetTip(b, tip);
-            AutomationProperties.SetName(b, name);
+            var b = StudioButtons.KeepFocus(StudioButtons.Icon(new Button { Content = glyph, VerticalAlignment = VerticalAlignment.Center }, name, tip));
             b.Click += (s, e) => run();
             return b;
         }

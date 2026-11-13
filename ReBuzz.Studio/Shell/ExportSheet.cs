@@ -50,8 +50,8 @@ namespace ReBuzz.Studio.Shell
         internal readonly ComboBox Stems = new ComboBox { MinWidth = 220 };
         internal readonly TextBox PathBox = new TextBox { MinWidth = 300 };
         internal readonly Button Choose = new Button { Content = "Choose…" };
-        internal readonly Button Export = new Button { Content = "Export", MinWidth = 88, IsDefault = true };
-        internal readonly Button CancelButton = new Button { Content = "Cancel", MinWidth = 88, IsCancel = true };
+        internal readonly Button Export = StudioDialog.Primary("Export");
+        internal readonly Button CancelButton = StudioDialog.Secondary();
         internal readonly ProgressBar Bar = new ProgressBar { Minimum = 0, Maximum = 1, Height = 8, IsVisible = false };
         internal readonly TextBlock Status = new TextBlock { TextWrapping = Avalonia.Media.TextWrapping.Wrap, FontSize = StudioTokens.FontBody, Foreground = StudioTokens.TextSecondaryBrush, MinHeight = 18 };
 
@@ -99,7 +99,6 @@ namespace ReBuzz.Studio.Shell
             Avalonia.Automation.AutomationProperties.SetName(Stems, "Stems");
             Avalonia.Automation.AutomationProperties.SetName(PathBox, "File");
             Avalonia.Automation.AutomationProperties.SetName(Bar, "Export progress");
-            Export.Classes.Add("accent");
 
             Choose.Click += async (s, e) => await ChooseFile();
             Export.Click += async (s, e) => await Run();
@@ -124,6 +123,8 @@ namespace ReBuzz.Studio.Shell
             Choose.Margin = new Thickness(8, 0, 0, 0);
             file.Children.Add(Choose);
             file.Children.Add(PathBox);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(PathBox, 0);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(Choose, 1);
             Row("Range", Range);
             Row("Bit depth", Bits);
             Row("", Dither);
@@ -131,9 +132,9 @@ namespace ReBuzz.Studio.Shell
             Row("", Normalise);
             Row("Stems", Stems);
             Row("File", file);
-            var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right, Children = { CancelButton, Export } };
-            if (OperatingSystem.IsMacOS()) { buttons.Children.Clear(); buttons.Children.Add(CancelButton); buttons.Children.Add(Export); }
-            Content = new StackPanel { Margin = new Thickness(20), Spacing = 12, MinWidth = 480, Children = { grid, Bar, Status, buttons } };
+            var body = StudioDialog.Body(grid, Bar, Status, StudioDialog.Buttons(Export, CancelButton));
+            body.MinWidth = 480 + 2 * StudioDialog.Margin;
+            Content = body;
         }
 
         /// <summary>The window's own close button while rendering is a Cancel: the render must end (and put the song back) first.</summary>

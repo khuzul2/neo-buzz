@@ -48,12 +48,12 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         readonly Control[] mappingControls;
 
         // Fork (ux-overhaul.md P3c): the empty automation columns' control, the value base, centred scrolling.
-        readonly Button automationButton = new Button { Content = "+ Automation", FontSize = 11, Padding = new Thickness(8, 1), Margin = new Thickness(8, 4, 0, 4), Focusable = false, VerticalAlignment = VerticalAlignment.Center };
+        readonly Button automationButton = KeepFocus(new Button { Content = "+ Automation", Margin = new Thickness(8, 4, 0, 4), VerticalAlignment = VerticalAlignment.Center });
         readonly ToggleButton hexToggle = SmallToggle("Hex", "Show and type values in hex, as Buzz does (Preferences > General > Pattern values)");
         readonly ToggleButton centreToggle = SmallToggle("Centre", "Keep the cursor row in the middle of the view (the play row while it plays)");
-        readonly TextBox automationFilter = new TextBox { Watermark = "Filter parameters", Width = 240, FontSize = 12 };
+        readonly TextBox automationFilter = new TextBox { Watermark = "Filter parameters", Width = 240 };
         readonly ListBox automationList = new ListBox { Width = 240, MaxHeight = 320 };
-        readonly Button automationAll = new Button { Content = "Show all", FontSize = 11, Padding = new Thickness(8, 1), Margin = new Thickness(0, 4, 0, 0), HorizontalAlignment = HorizontalAlignment.Right };
+        readonly Button automationAll = new Button { Content = "Show all", Margin = new Thickness(0, 4, 0, 0), HorizontalAlignment = HorizontalAlignment.Right };
         readonly TextBlock emptyHint = new TextBlock
         {
             Text = "No columns to show yet.\nUse + Automation above to pick the parameters this pattern should show.",
@@ -103,9 +103,10 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             var bar = new DockPanel { Background = PatternTheme.ToolbarBackground };
             DockPanel.SetDock(helpToggle, Dock.Right);
             helpToggle.Margin = new Thickness(8, 4);
-            helpToggle.Width = 40;
             bar.Children.Add(helpToggle);
             bar.Children.Add(toolbar);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(toolbar, 0);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(helpToggle, 1);
 
             var statusBar = new DockPanel { Height = 20, Background = PatternTheme.ToolbarBackground, LastChildFill = true };
             var s1 = new Border { Child = status1, BorderBrush = PatternTheme.ElementBorder, BorderThickness = new Thickness(0, 0, 1, 0) };
@@ -481,16 +482,43 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             return n;
         }
 
+        /// <summary>A tip's words before its key: "Create Pattern (Ctrl+Return)" is named "Create Pattern" (a glyph button's name for a screen reader).</summary>
+        static string NameOf(string tip)
+        {
+            int at = tip.IndexOf(" (", StringComparison.Ordinal);
+            return at > 0 ? tip.Substring(0, at) : tip;
+        }
+
+        /// <summary>
+        /// A click with the pointer leaves the keyboard where it was (the grid's), as these buttons did when they took no focus at all;
+        /// Tab reaches them now, and Enter or Space presses one and keeps the focus (the studio's StudioButtons.KeepFocus; this library
+        /// can't reference the studio).
+        /// </summary>
+        static T KeepFocus<T>(T button) where T : Button
+        {
+            Avalonia.Input.IInputElement before = null;
+            button.AddHandler(PointerPressedEvent, (s, e) => before = TopLevel.GetTopLevel(button)?.FocusManager?.GetFocusedElement(), Avalonia.Interactivity.RoutingStrategies.Tunnel);
+            button.Click += (s, e) =>
+            {
+                var back = before;
+                before = null;
+                if (back is Control c && c != button && c.IsEffectivelyVisible && c.Focusable) c.Focus();
+            };
+            return button;
+        }
+
         static ToggleButton SmallToggle(string text, string tip)
         {
-            var b = new ToggleButton { Content = text, FontSize = 11, Padding = new Thickness(6, 1), Margin = new Thickness(6, 4, 0, 4), Focusable = false, VerticalAlignment = VerticalAlignment.Center };
+            var b = KeepFocus(new ToggleButton { Content = text, Margin = new Thickness(6, 4, 0, 4), VerticalAlignment = VerticalAlignment.Center });
             ToolTip.SetTip(b, tip);
+            Avalonia.Automation.AutomationProperties.SetName(b, NameOf(tip));
             return b;
         }
 
         static Button SmallButton(string text, string tip, System.Windows.Input.ICommand command)
         {
-            var b = new Button { Content = text, FontSize = 11, Padding = new Thickness(6, 1), Margin = new Thickness(4, 4, 0, 4), Focusable = false, VerticalAlignment = VerticalAlignment.Center };
+            var b = KeepFocus(new Button { Content = text, Margin = new Thickness(4, 4, 0, 4), VerticalAlignment = VerticalAlignment.Center });
+            Avalonia.Automation.AutomationProperties.SetName(b, NameOf(tip));
             b.Click += (s, e) =>
             {
                 if (command.CanExecute(null)) command.Execute(null);

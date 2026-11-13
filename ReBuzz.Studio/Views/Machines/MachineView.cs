@@ -141,7 +141,8 @@ namespace ReBuzz.Studio.Views.Machines
             var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Center };
             foreach (var name in Views.Browser.MachineBrowserModel.StarterNames)
             {
-                var b = new Button { Content = name, FontSize = 13, Padding = new Thickness(14, 6), Tag = name };
+                var b = new Button { Content = name, Tag = name };
+                b.Classes.Add("large");
                 Avalonia.Automation.AutomationProperties.SetName(b, "Start with " + name);
                 b.Click += (s, e) => AddStarter(name);
                 row.Children.Add(b);

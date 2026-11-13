@@ -79,7 +79,7 @@ namespace ReBuzz.Studio.Views.Inspector
 
         Button Small(string text, string tip, Action click)
         {
-            var b = new Button { Content = text, FontSize = 11, Padding = new Thickness(8, 2, 8, 2), MinHeight = 22, Margin = new Thickness(0, 0, 4, 2), Focusable = true };
+            var b = new Button { Content = text, Margin = new Thickness(0, 0, 4, 2) };
             ToolTip.SetTip(b, tip);
             AutomationProperties.SetName(b, text);
             b.Click += (s, e) => click();

@@ -814,7 +814,8 @@ namespace ReBuzz.Studio.Views.Session
 
             Button Tool(string label, string tip, Action action)
             {
-                var b = new Button { Content = label, Padding = new Thickness(8, 2, 8, 2), Margin = new Thickness(0, 0, 6, 0), FontSize = 12 };
+                var b = new Button { Content = label, Margin = new Thickness(0, 0, 6, 0) };
+                Avalonia.Automation.AutomationProperties.SetName(b, label == "−" ? "Zoom out" : label == "+" ? "Zoom in" : label);
                 ToolTip.SetTip(b, tip);
                 b.Click += (s, e) => { action(); roll.Focus(); };
                 return b;

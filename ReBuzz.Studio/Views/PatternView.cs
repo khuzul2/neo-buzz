@@ -55,7 +55,7 @@ namespace ReBuzz.Studio.Views
         readonly ReBuzzCore core;
         readonly ComboBox machineBox = new ComboBox { Width = 180, Margin = new Thickness(4, 4, 12, 4) };
         readonly ComboBox patternBox = new ComboBox { Width = 120, Margin = new Thickness(4) };
-        readonly Button newPattern = new Button { Content = "New pattern", Margin = new Thickness(4), Padding = new Thickness(8, 2) };
+        readonly Button newPattern = new Button { Content = "New pattern", Margin = new Thickness(4) };
         readonly ContentControl editorHost = new ContentControl();
         readonly Detail.TrackerRoll rollView;
         readonly Shell.EmptyState empty;

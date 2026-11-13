@@ -44,6 +44,7 @@ namespace ReBuzz.Studio
             {
                 Setters = { new Avalonia.Styling.Setter(Avalonia.Controls.Primitives.TemplatedControl.BackgroundProperty, Shell.Design.StudioTokens.SurfaceBaseBrush) },
             });
+            Shell.Design.StudioStyles.Install(Styles);      // fork (ux-overhaul.md P4a): one button, one menu, one dialog
             Name = Product.Name;     // the macOS app menu: About, Hide and Quit NeoBuzz Live
             // Fork (ui-gallery.md): the app menu here, before Avalonia's exporter starts (it starts after Initialize and
             // makes its own "About Avalonia" menu when the application has none; a menu set later never reached it).

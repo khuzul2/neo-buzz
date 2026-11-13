@@ -379,41 +379,19 @@ namespace ReBuzz.Studio.Views.Session
         static async Task<string> Prompt(string title, string label, string initial)
         {
             if (Dialogs.TextResponder != null) return Dialogs.TextResponder(title, initial);
-            var owner = Dialogs.Owner;
             var box = new TextBox { Text = initial ?? "", MinWidth = 280 };
             string result = null;
-            var window = new Window
-            {
-                Title = title,
-                SizeToContent = SizeToContent.WidthAndHeight,
-                CanResize = false,
-                WindowStartupLocation = owner != null ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen,
-                ShowInTaskbar = false,
-            };
-            var ok = new Button { Content = "OK", MinWidth = 72, IsDefault = true };
-            var cancel = new Button { Content = "Cancel", MinWidth = 72, IsCancel = true };
+            var window = ReBuzz.Studio.Shell.Design.StudioDialog.Create(title);
+            var ok = ReBuzz.Studio.Shell.Design.StudioDialog.Primary();
+            var cancel = ReBuzz.Studio.Shell.Design.StudioDialog.Secondary();
             ok.Click += (s, e) => { result = box.Text; window.Close(); };
             cancel.Click += (s, e) => window.Close();
-            window.Content = new StackPanel
-            {
-                Margin = new Thickness(20),
-                Spacing = 10,
-                Children =
-                {
-                    new TextBlock { Text = label, TextWrapping = TextWrapping.Wrap, MaxWidth = 420 },
-                    box,
-                    new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Children = { ok, cancel } },
-                },
-            };
+            window.Content = ReBuzz.Studio.Shell.Design.StudioDialog.Body(
+                new TextBlock { Text = label, TextWrapping = TextWrapping.Wrap, MaxWidth = 420 },
+                box,
+                ReBuzz.Studio.Shell.Design.StudioDialog.Buttons(ok, cancel));
             window.Opened += (s, e) => { box.Focus(); box.SelectAll(); };
-            if (owner != null) await window.ShowDialog(owner);
-            else
-            {
-                var closed = new TaskCompletionSource();
-                window.Closed += (s, e) => closed.TrySetResult();
-                window.Show();
-                await closed.Task;
-            }
+            await ReBuzz.Studio.Shell.Design.StudioDialog.Run(window);
             return result;
         }
 

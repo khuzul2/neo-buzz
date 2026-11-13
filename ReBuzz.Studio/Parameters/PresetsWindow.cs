@@ -25,20 +25,22 @@ namespace ReBuzz.Studio.Parameters
         readonly ListBox list = new ListBox { Margin = new Thickness(8, 8, 4, 4) };
         readonly TextBox comment = new TextBox { Margin = new Thickness(0, 8, 8, 4), AcceptsReturn = true, TextWrapping = Avalonia.Media.TextWrapping.Wrap };
         readonly TextBox nameBox = new TextBox { Margin = new Thickness(8, 0, 4, 8) };
-        readonly Button add = new Button { Width = 70, IsDefault = true, HorizontalContentAlignment = HorizontalAlignment.Center };
-        readonly Button delete = new Button { Width = 70, Content = "Delete", Margin = new Thickness(6, 0, 0, 0), HorizontalContentAlignment = HorizontalAlignment.Center };
-        readonly Button import = new Button { Width = 80, Content = "Import…", Margin = new Thickness(6, 0, 0, 0), HorizontalContentAlignment = HorizontalAlignment.Center };
+        readonly Button add = new Button { IsDefault = true };
+        readonly Button delete = new Button { Content = "Delete", Margin = new Thickness(8, 0, 0, 0) };
+        readonly Button import = new Button { Content = "Import…", Margin = new Thickness(8, 0, 0, 0) };
 
         public PresetsWindow(IMachine machine)
         {
             this.machine = machine;
             Title = "Presets";
-            Width = 420;
-            Height = 300;
+            Width = 560;
+            Height = 320;
+            foreach (var b in new[] { add, delete, import }) b.Classes.Add("dialog");
+            add.Classes.Add("accent");
             ShowInTaskbar = false;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
-            var grid = new Grid { RowDefinitions = new RowDefinitions("*,40"), ColumnDefinitions = new ColumnDefinitions("2*,3*") };
+            var grid = new Grid { RowDefinitions = new RowDefinitions("*,44"), ColumnDefinitions = new ColumnDefinitions("2*,3*") };
             void Place(Control c, int row, int col)
             {
                 Grid.SetRow(c, row);
