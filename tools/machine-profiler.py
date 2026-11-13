@@ -339,6 +339,8 @@ class Profile:
 def params_by_kind(describe):
     globals_, tracks = [], []
     for p in describe.get("parameters", []):
+        if "min_raw" in p:   # a machine with Explain text gives min and max in its unit; the raw range is min_raw and max_raw
+            p = dict(p, min=p["min_raw"], max=p["max_raw"])
         (tracks if p.get("per_track") else globals_).append(p)
     return globals_, tracks
 
