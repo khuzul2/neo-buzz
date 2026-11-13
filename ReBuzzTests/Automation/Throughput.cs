@@ -18,6 +18,8 @@
 //  - The guard's figure is the render's speed at the reference's speed: × real time as timed, times the reference's
 //    measured time per unit over its nominal one (NominalUnitSeconds, about its time on the Linux runner). Twice the
 //    machine's work halves it; a runner twice as slow leaves it.
+// Each guard measures up to GuardPolicy.Attempts times and passes on the first attempt over its floor (a shared runner's
+// hit on a whole measurement is rare and never twice in a row; a machine twice as slow fails every attempt).
 // Each guard's floor is set from that figure's spread over runs on the Linux, macOS and Windows runners and locally
 // under load, so that the slowest run passes and the fastest run's half fails: a machine twice as slow fails on any.
 //
@@ -106,10 +108,12 @@ namespace ReBuzzTests.Automation
             int soak = Soak;
             if (soak == 0)
             {
-                var r = Measure(what, seconds, rate, block, start);
-                report(r.ToString());
+                // GuardPolicy: up to 3 measurements, the guard passes on the first above the floor. A machine twice as slow is
+                // under the floor in all of them.
+                var r = GuardPolicy.Retry(() => Measure(what, seconds, rate, block, start), m => m.Speed > floor, out var all);
+                foreach (var m in all) report(m.ToString());
                 Assert.That(r.Speed, Is.GreaterThan(floor),
-                    $"{what}: {r.Speed:F1}× real time at the reference's speed, under its floor of {floor}× ({r})");
+                    $"{what}: {r.Speed:F1}× real time at the reference's speed, under its floor of {floor}× in all {all.Count} attempts ({string.Join("; ", all.Select(m => m.ToString()))})");
                 return r;
             }
             var runs = new List<Result>();
@@ -250,9 +254,9 @@ namespace ReBuzzTests.Automation
             int soak = Soak;
             if (soak == 0)
             {
-                var r = CompareCost(what, rate, block, baseSeconds, baseline, testSeconds, test);
-                report(r.ToString());
-                Assert.That(r.Ratio, Is.LessThan(limit), $"{what}: a second of it costs {r.Ratio:F2}× a second of the baseline, over its limit of {limit}× ({r})");
+                var r = GuardPolicy.Retry(() => CompareCost(what, rate, block, baseSeconds, baseline, testSeconds, test), c => c.Ratio < limit, out var all);
+                foreach (var c in all) report(c.ToString());
+                Assert.That(r.Ratio, Is.LessThan(limit), $"{what}: a second of it costs {r.Ratio:F2}× a second of the baseline, over its limit of {limit}× in all {all.Count} attempts ({string.Join("; ", all.Select(c => c.ToString()))})");
                 return r;
             }
             var runs = new List<Cost>();

@@ -1,4 +1,5 @@
-﻿using BuzzGUI.Interfaces;
+﻿using BuzzGUI.Common;
+using BuzzGUI.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -20,36 +21,37 @@ namespace WDE.AudioBlock
         public float Volume { get; internal set; }
         public string Path { get; internal set; }
     }
+    /// <summary>
+    /// Fork (docs/specs/history-snapshots.md HS1): an AudioBlock wave's edits are steps of the song's one undo history
+    /// (the machine graph's action stack), not a level of their own: as many as the history's memory cap keeps, in step with
+    /// every other edit. <see cref="SaveData"/> is called before an edit, as before; the wave's data then is the step's
+    /// "before", and the "after" is taken when the step is first undone.
+    /// </summary>
     public class WaveUndo
     {
-        private List<WaveData> undoData;
-        private List<WaveData> redoData;
-        private int maxSize = 1;
         private AudioBlock audioBlock;
 
         public bool Working { get; private set; }
 
+        /// <param name="maxSize">Not used: the song's history keeps as many steps as its memory cap allows.</param>
         public WaveUndo(int maxSize, AudioBlock ab)
         {
-            this.maxSize = maxSize;
             this.audioBlock = ab;
-            undoData = new List<WaveData>();
-            redoData = new List<WaveData>();
         }
+
+        IMachineGraph Graph => audioBlock.host.Machine.Graph;
 
         public void SaveData(int waveIndex)
         {
-            if (undoData.Count >= maxSize)
-            {
-                undoData.RemoveAt(0); // Move oldest
-            }
+            IWavetable wt = Graph.Buzz.Song.Wavetable;
+            if (wt.Waves[waveIndex] == null || wt.Waves[waveIndex].Layers.Count == 0)
+                return;
 
-            IWavetable wt = audioBlock.host.Machine.Graph.Buzz.Song.Wavetable;
-            if (wt.Waves[waveIndex] != null)
-            {
-                WaveData waveData = GetWaveData(waveIndex);
-                undoData.Add(waveData);
-            }
+            WaveData waveData = GetWaveData(waveIndex);
+            if (waveData.SampleDataLeft == null)
+                return;
+
+            Graph.Do(new WaveEditAction(this, waveData));
         }
 
         public WaveData GetWaveData(int waveIndex)
@@ -89,121 +91,96 @@ namespace WDE.AudioBlock
             return waveData;
         }
 
+        /// <summary>Undoes the song's newest step (a wave edit, or whatever was done last).</summary>
         public void Undo()
         {
-            //lock (syncLock)
-            {
-                if (undoData.Count == 0 || Working)
-                    return;
-
-                //bool playing = Global.Buzz.Playing;
-                //Global.Buzz.Playing = false;
-
-                Working = true;
-
-                if (redoData.Count >= maxSize)
-                {
-                    redoData.RemoveAt(0); // Move last added
-                }
-
-                WaveData waveData = undoData.Last();
-                undoData.Remove(waveData);
-
-                redoData.Add(GetWaveData(waveData.WaveIndex));
-
-                IWavetable wt = audioBlock.host.Machine.Graph.Buzz.Song.Wavetable;
-
-                if (waveData.ChannelCount == 1)
-                {
-                    wt.AllocateWave(waveData.WaveIndex, waveData.Path, waveData.Name, waveData.SampleCount, WaveFormat.Float32, false, waveData.RootNote, false, true);
-                    var targetLayer = wt.Waves[waveData.WaveIndex].Layers.Last();
-
-                    targetLayer.LoopStart = waveData.LoopStart;
-                    targetLayer.LoopEnd = waveData.LoopEnd;
-                    targetLayer.SampleRate = waveData.SampleRate;
-                    wt.Waves[waveData.WaveIndex].Volume = waveData.Volume;
-
-                    targetLayer.SetDataAsFloat(waveData.SampleDataLeft, 0, 1, 0, 0, waveData.SampleCount); // Mono          
-                    targetLayer.InvalidateData();
-                }
-                else
-                {
-                    wt.AllocateWave(waveData.WaveIndex, waveData.Path, waveData.Name, waveData.SampleCount, WaveFormat.Float32, true, waveData.RootNote, false, true);
-                    var targetLayer = wt.Waves[waveData.WaveIndex].Layers.Last();
-
-                    targetLayer.LoopStart = waveData.LoopStart;
-                    targetLayer.LoopEnd = waveData.LoopEnd;
-                    targetLayer.SampleRate = waveData.SampleRate;
-                    wt.Waves[waveData.WaveIndex].Volume = waveData.Volume;
-
-                    targetLayer.SetDataAsFloat(waveData.SampleDataLeft, 0, 1, 0, 0, waveData.SampleCount); // Left              
-                    targetLayer.SetDataAsFloat(waveData.SampleDataRight, 0, 1, 1, 0, waveData.SampleCount); // Right    
-                    targetLayer.InvalidateData();
-                }
-
-                audioBlock.ReCreateEnvPoints();
-
-                //Global.Buzz.Playing = playing;
-                Working = false;
-            }
+            if (Working || !Graph.CanUndo)
+                return;
+            Graph.Undo();
         }
 
         public void Redo()
         {
-            //lock (AudioBlock.syncLock)
+            if (Working || !Graph.CanRedo)
+                return;
+            Graph.Redo();
+        }
+
+        /// <summary>Puts a wave's data back (the step's undo and redo).</summary>
+        internal void Apply(WaveData waveData)
+        {
+            if (Working || waveData?.SampleDataLeft == null)
+                return;
+
+            Working = true;
+            try
             {
-                if (redoData.Count == 0 || Working)
-                    return;
+                IWavetable wt = Graph.Buzz.Song.Wavetable;
+                bool stereo = waveData.ChannelCount != 1;
 
-                //bool playing = Global.Buzz.Playing;
-                //Global.Buzz.Playing = false;
+                wt.AllocateWave(waveData.WaveIndex, waveData.Path, waveData.Name, waveData.SampleCount, WaveFormat.Float32, stereo, waveData.RootNote, false, true);
+                var targetLayer = wt.Waves[waveData.WaveIndex].Layers.Last();
 
-                Working = true;
+                targetLayer.LoopStart = waveData.LoopStart;
+                targetLayer.LoopEnd = waveData.LoopEnd;
+                targetLayer.SampleRate = waveData.SampleRate;
+                wt.Waves[waveData.WaveIndex].Volume = waveData.Volume;
 
-                if (undoData.Count >= maxSize)
-                {
-                    undoData.RemoveAt(0); // Move last added
-                }
+                targetLayer.SetDataAsFloat(waveData.SampleDataLeft, 0, 1, 0, 0, waveData.SampleCount); // Mono or left
+                if (stereo && waveData.SampleDataRight != null)
+                    targetLayer.SetDataAsFloat(waveData.SampleDataRight, 0, 1, 1, 0, waveData.SampleCount); // Right
+                targetLayer.InvalidateData();
 
-                WaveData waveData = redoData.Last();
-                redoData.Remove(waveData);
-
-                undoData.Add(GetWaveData(waveData.WaveIndex));
-
-                IWavetable wt = audioBlock.host.Machine.Graph.Buzz.Song.Wavetable;
-
-                if (waveData.ChannelCount == 1)
-                {
-                    wt.AllocateWave(waveData.WaveIndex, waveData.Path, waveData.Name, waveData.SampleCount, WaveFormat.Float32, false, waveData.RootNote, false, true);
-                    var targetLayer = wt.Waves[waveData.WaveIndex].Layers.Last();
-
-                    targetLayer.LoopStart = waveData.LoopStart;
-                    targetLayer.LoopEnd = waveData.LoopEnd;
-                    targetLayer.SampleRate = waveData.SampleRate;
-                    wt.Waves[waveData.WaveIndex].Volume = waveData.Volume;
-
-                    targetLayer.SetDataAsFloat(waveData.SampleDataLeft, 0, 1, 0, 0, waveData.SampleCount); // Mono          
-                    targetLayer.InvalidateData();
-                }
-                else
-                {
-                    wt.AllocateWave(waveData.WaveIndex, waveData.Path, waveData.Name, waveData.SampleCount, WaveFormat.Float32, true, waveData.RootNote, false, true);
-                    var targetLayer = wt.Waves[waveData.WaveIndex].Layers.Last();
-
-                    targetLayer.LoopStart = waveData.LoopStart;
-                    targetLayer.LoopEnd = waveData.LoopEnd;
-                    targetLayer.SampleRate = waveData.SampleRate;
-                    wt.Waves[waveData.WaveIndex].Volume = waveData.Volume;
-
-                    targetLayer.SetDataAsFloat(waveData.SampleDataLeft, 0, 1, 0, 0, waveData.SampleCount); // Left              
-                    targetLayer.SetDataAsFloat(waveData.SampleDataRight, 0, 1, 1, 0, waveData.SampleCount); // Right      
-                    targetLayer.InvalidateData();
-                }
-                
                 audioBlock.ReCreateEnvPoints();
-
-                //Global.Buzz.Playing = playing;
+            }
+            finally
+            {
                 Working = false;
+            }
+        }
+
+        /// <summary>
+        /// One wave edit as a step. The wave is already edited when SaveData is called, so the first Do does nothing; the
+        /// edited data is read the first time the step is undone (everything made after it has been undone by then).
+        /// </summary>
+        sealed class WaveEditAction : IAction, IHistoryAction
+        {
+            readonly WaveUndo owner;
+            readonly WaveData before;
+            WaveData after;
+            bool skipDo = true;
+
+            public WaveEditAction(WaveUndo owner, WaveData before)
+            {
+                this.owner = owner;
+                this.before = before;
+            }
+
+            string IHistoryAction.HistoryName => "Edit wave " + (before.WaveIndex + 1);
+
+            long IHistoryAction.HistoryBytes => 0;
+
+            // Counted twice: the "after" taken on the first undo is about as big.
+            IEnumerable<KeyValuePair<object, long>> IHistoryAction.HistoryBlobs
+            {
+                get
+                {
+                    yield return new KeyValuePair<object, long>(before.SampleDataLeft, 8L * before.SampleDataLeft.Length);
+                    if (before.SampleDataRight != null)
+                        yield return new KeyValuePair<object, long>(before.SampleDataRight, 8L * before.SampleDataRight.Length);
+                }
+            }
+
+            public void Do()
+            {
+                if (skipDo) { skipDo = false; return; }
+                if (after != null) owner.Apply(after);
+            }
+
+            public void Undo()
+            {
+                after ??= owner.GetWaveData(before.WaveIndex);
+                owner.Apply(before);
             }
         }
     }

@@ -26,6 +26,7 @@ namespace ReBuzz.Studio.Views.Inspector
     {
         public const string SelectionTab = "Selection";
         public const string SongTab = "Song";
+        public const string HistoryTabName = "History";
 
         // The settings (section "Studio"): whether it is open and its width. The tab is not kept: it opens on the selection.
         internal const string RegistrySection = "Studio";
@@ -46,14 +47,19 @@ namespace ReBuzz.Studio.Views.Inspector
         readonly SongNotesView notes;
 
         readonly Border grip;
-        readonly Button selectionButton, songButton, collapseButton, railButton, patternButton, notesButton;
+        readonly Button selectionButton, songButton, historyButton, collapseButton, railButton, patternButton, notesButton;
         readonly Grid frame;
         readonly DockPanel full;
         readonly Avalonia.Controls.Control rail;
         readonly DockPanel selectionPage;
         readonly Avalonia.Controls.Control songPage;
+        readonly HistoryTab historyPage;
         readonly TextBlock heading, subtitle, hint;
         readonly Grid facts;
+        // Explain (neo-learn.md §5.3): the focused control of a machine whose editor has Explain text.
+        readonly Border explain;
+        readonly TextBlock explainTitle, explainBadge, explainHow, explainSound;
+        string lastExplain;
 
         bool open;
         double width;
@@ -83,9 +89,10 @@ namespace ReBuzz.Studio.Views.Inspector
             // The header: the two tabs and the collapse button.
             selectionButton = TabButton(SelectionTab);
             songButton = TabButton(SongTab);
+            historyButton = TabButton(HistoryTabName);
             collapseButton = IconButton("›", "Hide the inspector", "Hide inspector", Close);
             DockPanel.SetDock(collapseButton, Dock.Right);
-            var tabs = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { selectionButton, songButton } };
+            var tabs = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { selectionButton, songButton, historyButton } };
             var header = new DockPanel { Margin = new Thickness(8, 8, 8, 8), LastChildFill = true, Children = { collapseButton, tabs } };
             DockPanel.SetDock(header, Dock.Top);
 
@@ -96,10 +103,25 @@ namespace ReBuzz.Studio.Views.Inspector
             hint = new TextBlock { FontSize = 12, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
             patternButton = ActionButton("Open in Tracker", "Edit this pattern in the Tracker", () => showView("Pattern"));
             notesButton = ActionButton("Song notes", "Write about the song: the Song tab", () => ShowTab(SongTab, focus: true));
+            explainTitle = new TextBlock { FontSize = 12, FontWeight = FontWeight.SemiBold, Foreground = StudioTokens.TextPrimaryBrush, TextWrapping = TextWrapping.Wrap };
+            explainBadge = new TextBlock { FontSize = 11, Foreground = StudioTokens.AccentBrush, Margin = new Thickness(0, 2, 0, 0) };
+            explainHow = new TextBlock { FontSize = 12, Foreground = StudioTokens.TextPrimaryBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) };
+            explainSound = new TextBlock { FontSize = 12, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0) };
+            explain = new Border
+            {
+                Margin = new Thickness(0, 10, 0, 0),
+                Padding = new Thickness(8),
+                BorderBrush = StudioTokens.SurfaceBorderBrush,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+                IsVisible = false,
+                Child = new StackPanel { Children = { explainTitle, explainBadge, explainHow, explainSound } },
+            };
+            AutomationProperties.SetName(explain, "Explain");
             var top = new StackPanel
             {
                 Margin = new Thickness(12, 0, 12, 8),
-                Children = { heading, subtitle, facts, hint, patternButton, notesButton },
+                Children = { heading, subtitle, facts, explain, hint, patternButton, notesButton },
             };
             DockPanel.SetDock(top, Dock.Top);
             selectionPage = new DockPanel { LastChildFill = true };
@@ -116,7 +138,10 @@ namespace ReBuzz.Studio.Views.Inspector
             songPage = notes;
             if (songPage != null) songPage.IsVisible = false;
 
+            historyPage = new HistoryTab(core) { IsVisible = false };
+
             var pages = new Panel();
+            pages.Children.Add(historyPage);
             pages.Children.Add(selectionPage);
             if (songPage != null) pages.Children.Add(songPage);
 
@@ -202,6 +227,8 @@ namespace ReBuzz.Studio.Views.Inspector
         // For tests: the controls, as a user would use them.
         internal Button SelectionTabButton => selectionButton;
         internal Button SongTabButton => songButton;
+        internal Button HistoryTabButton => historyButton;
+        internal HistoryTab History => historyPage;
         internal Button CollapseButton => collapseButton;
         internal Button RailButton => railButton;
         internal Button PatternButton => patternButton;
@@ -232,7 +259,7 @@ namespace ReBuzz.Studio.Views.Inspector
         /// <summary>Opens the inspector on a tab (the Song tab with the editor focused: Song Notes).</summary>
         public void ShowTab(string name, bool focus = false)
         {
-            tab = name == SongTab ? SongTab : SelectionTab;
+            tab = name == SongTab ? SongTab : name == HistoryTabName ? HistoryTabName : SelectionTab;
             SetOpen(true);
             ApplyTab(focus);
         }
@@ -260,10 +287,13 @@ namespace ReBuzz.Studio.Views.Inspector
         void ApplyTab(bool focus)
         {
             bool song = tab == SongTab && songPage != null;
-            selectionPage.IsVisible = !song;
+            bool history = tab == HistoryTabName;
+            selectionPage.IsVisible = !song && !history;
             if (songPage != null) songPage.IsVisible = song;
-            Mark(selectionButton, !song);
+            historyPage.IsVisible = history;
+            Mark(selectionButton, !song && !history);
             Mark(songButton, song);
+            Mark(historyButton, history);
             if (song && focus) Dispatcher.UIThread.Post(() => notes.Editor.Focus(), DispatcherPriority.Input);
         }
 
@@ -381,6 +411,8 @@ namespace ReBuzz.Studio.Views.Inspector
                 notesButton.IsVisible = machine == null;
             }
 
+            RefreshExplain(machine);
+
             if (clip != null)
             {
                 bool hasTrack = TrackOf(machine) != null;
@@ -388,6 +420,47 @@ namespace ReBuzz.Studio.Views.Inspector
                 if (hasTrack) clip.Follow(ClipSlot());
             }
         }
+
+        // The editor's strip changes with the pointer, not with the selection: the card follows it (4 times a second, while the panel is shown).
+        DispatcherTimer explainTimer;
+
+        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnAttachedToVisualTree(e);
+            explainTimer ??= new DispatcherTimer(TimeSpan.FromMilliseconds(250), DispatcherPriority.Background, (_, _) =>
+            {
+                if (open && !disposed) RefreshExplain(selection.Machine);
+            });
+            explainTimer.Start();
+        }
+
+        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            explainTimer?.Stop();
+            base.OnDetachedFromVisualTree(e);
+        }
+
+        /// <summary>The Explain card: the control last focused in the machine's editor, as its strip shows it.</summary>
+        void RefreshExplain(IMachine machine)
+        {
+            bool has = machine != null && ExplainBoard.IsRegistered(machine);
+            var card = has ? ExplainBoard.Get(machine) : null;
+            string signature = has ? (card == null ? "-" : $"{card.Name}|{card.Value}|{card.Source}|{card.How}|{card.Sound}") : null;
+            if (signature == lastExplain) return;
+            lastExplain = signature;
+            explain.IsVisible = has;
+            if (!has) return;
+            explainTitle.Text = card == null ? "Explain" : $"{card.Name} · {card.Value}";
+            explainBadge.Text = card == null ? "" : card.Source;
+            explainBadge.IsVisible = card != null;
+            explainHow.Text = card == null ? "Touch a control in the machine's window to see what it does." : "How  " + card.How;
+            explainSound.Text = card == null ? "" : "Sound  " + card.Sound;
+            explainSound.IsVisible = card != null;
+        }
+
+        /// <summary>The Explain card's lines (for tests): null when it is hidden.</summary>
+        internal (string Title, string Badge, string How, string Sound)? ExplainCardText =>
+            explain.IsVisible ? (explainTitle.Text, explainBadge.Text, explainHow.Text, explainSound.Text) : null;
 
         // ------------------------------------------------------------------ resizing
 
@@ -464,6 +537,7 @@ namespace ReBuzz.Studio.Views.Inspector
             if (disposed) return;
             disposed = true;
             selection.Changed -= OnSelectionChanged;
+            historyPage.Dispose();
             if (core.SessionLayout != null) core.SessionLayout.Changed -= OnLayoutChanged;
         }
     }

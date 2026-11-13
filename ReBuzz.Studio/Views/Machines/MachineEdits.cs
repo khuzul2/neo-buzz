@@ -124,6 +124,19 @@ namespace ReBuzz.Studio.Views.Machines
             return true;
         }
 
+        /// <summary>Why Buzz's rules refuse a wire from src to dst, in plain words, or null if they allow it (P3d: shown when a drag is refused).</summary>
+        public static string WhyNotConnect(ReBuzzCore core, IMachine src, IMachine dst)
+        {
+            if (src == null || dst == null || core.SongCore.CanConnectMachines(src, dst)) return null;
+            if (src == dst) return "A machine can't connect to itself";
+            if (src.DLL.Info.Type == MachineType.Master) return "The Master has no output";
+            if (src.IsControlMachine || dst.IsControlMachine) return "Control machines work through parameters, not audio wires";
+            if (dst.DLL.Info.Type == MachineType.Generator) return dst.Name + " is an instrument: it has no input";
+            if (src.Outputs.Any(o => o.Destination == dst)) return "Already connected";
+            if (dst.Outputs.Any(o => o.Destination == src)) return dst.Name + " already feeds " + src.Name + ": that would make a loop";
+            return "That would make a loop";
+        }
+
         public static void Disconnect(ReBuzzCore core, IMachineConnection c) => core.SongCore.DisconnectMachines(c);
 
         /// <summary>

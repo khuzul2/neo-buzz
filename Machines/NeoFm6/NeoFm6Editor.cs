@@ -242,9 +242,13 @@ namespace NeoBuzz.Fm6
                 {
                     try
                     {
-                        machine.LoadBank(file);
-                        Show();
-                        if (machine.Bank.Count == 1) Apply(ctx, machine.Bank[0]);
+                        // One history step: the bank, and the voice's parameters when it holds a single voice.
+                        StateEdit.Run(ctx, "Load bank", machine, m => m.MachineState, (m, s) => m.MachineState = s, () =>
+                        {
+                            machine.LoadBank(file);
+                            Show();
+                            if (machine.Bank.Count == 1) Apply(ctx, machine.Bank[0]);
+                        });
                     }
                     catch (Exception e)
                     {

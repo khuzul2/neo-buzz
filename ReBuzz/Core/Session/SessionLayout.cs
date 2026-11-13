@@ -44,10 +44,11 @@ namespace ReBuzz.Core.Session
         /// <summary>Structure or contents changed (tracks, scenes, slots, settings).</summary>
         public event Action Changed;
 
-        /// <summary>Undo history of grid edits; starts empty with each song.</summary>
-        public ManagedActionStack UndoStack { get; private set; } = NewUndoStack();
-
-        static ManagedActionStack NewUndoStack() => new ManagedActionStack(500);
+        /// <summary>
+        /// The song's one undo history (history-snapshots.md HS1): grid edits, clip edits and every other view's edits are
+        /// steps on it, in the order they were made. A new song has a new stack.
+        /// </summary>
+        public ManagedActionStack UndoStack => song.ActionStack;
 
         internal SessionLayout(ReBuzzCore buzz, SongCore song, IUiDispatcher dispatcher)
         {
@@ -57,6 +58,7 @@ namespace ReBuzz.Core.Session
 
             buzz.SaveSong += OnSaveSong;
             buzz.OpenSong += OnOpenSong;
+            song.HistoryApplied += OnHistoryApplied;
 
             song.SequenceAdded += OnSequenceAdded;
             song.SequenceRemoved += OnSequenceRemoved;
@@ -134,7 +136,6 @@ namespace ReBuzz.Core.Session
             document = null;
             ResetIdentity();
             dirty = false;
-            UndoStack = NewUndoStack();
             ResetTakes();                                                   // 0.7
             ResetAudio();                                                   // 1.0
             Session.BeatsPerBar = buzz.SongMeter.SessionBeatsPerBar(buzz.TPB);   // daw-modes.md S1 (4 for Buzz's default bars)
@@ -381,18 +382,26 @@ namespace ReBuzz.Core.Session
             RaiseChanged();
         }
 
+        /// <summary>Undoes the song's newest step, whichever view made it (the one history).</summary>
         public void Undo()
         {
             if (!UndoStack.CanUndo) return;
             UndoStack.Undo();
-            ContentChanged();
-            ReshapeLaunched();
         }
 
         public void Redo()
         {
             if (!UndoStack.CanRedo) return;
             UndoStack.Redo();
+        }
+
+        /// <summary>
+        /// After any undo or redo of the song's history, from any view: the grid follows and clips that play or wait take
+        /// their markers as they now are.
+        /// </summary>
+        void OnHistoryApplied(HistoryChange change)
+        {
+            if (change.Kind == HistoryChangeKind.Do) return;
             ContentChanged();
             ReshapeLaunched();
         }
@@ -426,7 +435,7 @@ namespace ReBuzz.Core.Session
             var bytes = doc.ToBytes();
             change(doc);
             if (bytes.AsSpan().SequenceEqual(doc.ToBytes())) return false;
-            UndoStack.Do(new LayoutEditAction(this, before, doc.CloneLayout()));
+            UndoStack.Do(new LayoutEditAction(this, before, doc.CloneLayout(), 2L * bytes.Length));
             ContentChanged();
             return true;
         }
@@ -1041,7 +1050,6 @@ namespace ReBuzz.Core.Session
             crossfaderFromDocument = true;
             ResetIdentity();
             dirty = false;
-            UndoStack = NewUndoStack();
             ResetTakes();                                                   // 0.7
             ResetAudio();                                                   // 1.0
             if (document != null)

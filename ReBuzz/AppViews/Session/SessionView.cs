@@ -237,8 +237,8 @@ namespace ReBuzz.AppViews.Session
             bar.Children.Add(left);
 
             var right = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 4, 6, 4), VerticalAlignment = VerticalAlignment.Top };
-            undoButton = new FlatButton("↶", () => layout.Undo(), "Undo grid edit (Ctrl+Z)") { Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(0, 0, 2, 0) };
-            redoButton = new FlatButton("↷", () => layout.Redo(), "Redo grid edit (Ctrl+Y)") { Padding = new Thickness(8, 3, 8, 3) };
+            undoButton = new FlatButton("↶", () => layout.Undo(), "Undo the last edit (Ctrl+Z)") { Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(0, 0, 2, 0) };
+            redoButton = new FlatButton("↷", () => layout.Redo(), "Redo the last edit (Ctrl+Y)") { Padding = new Thickness(8, 3, 8, 3) };
             right.Children.Add(undoButton);
             right.Children.Add(redoButton);
             right.Children.Add(new FlatButton("+ Scene", () => layout.InsertScene(layout.SceneCount), "Add a scene row at the bottom (Ctrl+I inserts one below the selection)"));

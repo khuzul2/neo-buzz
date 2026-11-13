@@ -65,11 +65,14 @@ namespace NeoBuzz.Wave
                 {
                     try
                     {
-                        machine.LoadUserTable(file);
-                        userName.Text = UserLabel(machine);
-                        // Play it right away: put osc A on "User" unless an oscillator already is.
-                        int user = Tables.Names.Length;
-                        if (ctx.Raw(P.ATable) != user && ctx.Raw(P.BTable) != user) ctx.Set(P.ATable, user);
+                        StateEdit.Run(ctx, "Load wavetable", machine, m => m.MachineState, (m, s) => m.MachineState = s, () =>
+                        {
+                            machine.LoadUserTable(file);
+                            userName.Text = UserLabel(machine);
+                            // Play it right away: put osc A on "User" unless an oscillator already is.
+                            int user = Tables.Names.Length;
+                            if (ctx.Raw(P.ATable) != user && ctx.Raw(P.BTable) != user) ctx.Set(P.ATable, user);
+                        });
                         ctx.RaiseChanged();
                     }
                     catch (Exception e)

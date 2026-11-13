@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BuzzGUI.Common;
+using ReBuzz.Agent.App;
 using ReBuzz.Agent.Guides;
 using ReBuzz.Agent.Mcp;
 using ReBuzz.Core;
@@ -66,6 +67,8 @@ namespace ReBuzz.Agent
             CompositionTools.Register(tools, this);
             WaveTools.Register(tools, this);
             LiveTools.Register(tools, this);
+            AppControl = new AppBackend(this, () => tools.All.Count);   // K3 (agent-knowledge.md §5): settings, MIDI, audio, view, export, app
+            AppTools.Register(tools, AppControl);
             // Named after the app (Product: neobuzz-live, "NeoBuzz Live"), with the instructions an agent reads first.
             Server = new McpServer(GuideLibrary.AppServer(Version), tools, GuideLibrary.Prompts(), GuideLibrary.Resources().Concat(Manuals(core))
                 .Concat(new[] { MachineCatalog.Resource(() => Described(core).Select(x => x.Manifest).ToList()), ToolReference.Resource(tools) }));
@@ -104,6 +107,9 @@ namespace ReBuzz.Agent
         public AgentLog Log { get; }
         public McpServer Server { get; }
 
+        /// <summary>The app-control tools' side of the host (K3): the studio adds its settings and its view control here.</summary>
+        internal AppBackend AppControl { get; }
+
         /// <summary>The last changing agent call ("Agent: song_set") and the undo stack's size right after it.</summary>
         internal string LastAgentUndo { get; private set; }
 
@@ -141,8 +147,11 @@ namespace ReBuzz.Agent
                 int steps = 0;
                 void Count(IEnumerable<BuzzGUI.Interfaces.IAction> actions, bool done) { if (done) steps++; }
                 bool failed = false;
+                IDisposable source = null;
                 if (changes)
                 {
+                    // history-snapshots.md HS1: the step is the agent's, named for the call.
+                    source = stack.BeginSource(BuzzGUI.Common.HistorySource.Agent, "Agent: " + what);
                     stack.BeginActionGroup();
                     stack.PostDoOrUndoGroup += Count;
                 }
@@ -166,6 +175,7 @@ namespace ReBuzz.Agent
                     {
                         stack.PostDoOrUndoGroup -= Count;
                         stack.EndActionGroup();
+                        source?.Dispose();
                         // A call that fails changes nothing: take back the steps it made before failing.
                         if (failed && steps > 0)
                         {

@@ -40,7 +40,7 @@ namespace NeoBuzz.Dsp
     {
         public ParamDef(int index, string id, string name, int min, int max, int def, MapKind kind,
             double a = 0, double b = 1, double exponent = 1, string unit = "", int digits = -1,
-            string[] names = null, bool flag = false, string group = "", string description = "")
+            string[] names = null, bool flag = false, string group = "", string description = "", string how = "", string sound = "")
         {
             Index = index;
             Id = id;
@@ -58,6 +58,8 @@ namespace NeoBuzz.Dsp
             Flag = flag;
             Group = group ?? "";
             Description = description ?? name;
+            How = how ?? "";
+            Sound = sound ?? "";
         }
 
         public int Index { get; }
@@ -77,6 +79,21 @@ namespace NeoBuzz.Dsp
         public bool Flag { get; }
         public string Group { get; }
         public string Description { get; }
+        /// <summary>Explain (neo-learn.md §5.3): how the control changes the sound (one sentence); empty when the machine has no Explain text.</summary>
+        public string How { get; }
+        /// <summary>Explain: what you will hear (one sentence).</summary>
+        public string Sound { get; }
+        /// <summary>Whether the control has Explain text (How or Sound).</summary>
+        public bool HasExplain => How.Length > 0 || Sound.Length > 0;
+
+        /// <summary>How the control spreads its range: "linear", "logarithmic" (Exp, Time, Freq, Ratio), "bipolar" or "power".</summary>
+        public string Curve => Kind switch
+        {
+            MapKind.Exp or MapKind.Time or MapKind.Freq or MapKind.Ratio => "logarithmic",
+            MapKind.Bipolar => "bipolar",
+            MapKind.Power => "power",
+            _ => "linear",
+        };
 
         /// <summary>Position of a raw value in its range, 0 … 1.</summary>
         public double Normalized(int raw) => Max == Min ? 0 : Math.Clamp((raw - Min) / (double)(Max - Min), 0.0, 1.0);

@@ -1505,6 +1505,12 @@ namespace ReBuzz.Core
             return true;
         }
 
+        /// <summary>Fork (agent-knowledge.md K3): the preferences store the audio and safety settings are in; the agent's settings tools read it.</summary>
+        internal IRegistryEx SettingsRegistry => registryEx;
+
+        /// <summary>Fork (agent-knowledge.md K3): the recently opened songs, newest first (song_recent).</summary>
+        internal List<string> RecentFilesList() => registryEx.ReadNumberedList<string>("File", "Recent File List").ToList();
+
         private void UpdateRecentFilesList(string fileName)
         {
             var files = registryEx.ReadNumberedList<string>("File", "Recent File List").ToList();
@@ -2607,7 +2613,7 @@ namespace ReBuzz.Core
             SongCore.MoveMachines(moveList);
             songCore.SongName = null;
 
-            SongCore.ActionStack = new ManagedActionStack();
+            SongCore.ActionStack = HistorySettings.NewStack();
             SongCore.PlayPosition = 0;
             SongCore.LoopStart = 0;
             SongCore.LoopEnd = 16;

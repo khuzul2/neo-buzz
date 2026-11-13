@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Learn Subtractive, studio flavour (docs/specs/studio-mvp.md S1): see ../NeoStudio.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoLearnSubtractive</NeoFolder>
+    <NeoName>Neo Learn Subtractive</NeoName>
+    <NeoKind>Generators</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoStudio.targets" />
+  <ItemGroup>
+    <!-- Dye Essence's engine, hosted by LearnHost, with what its Analog engine reads (Neo Wave's table recipes, Neo Sampler's sample layer). -->
+    <Compile Include="$(M)DyeEssence\Engine\**\*.cs" Link="Shared\DyeEssence\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- Dye Essence's effects rack (Engine/FxTypes.cs) hosts these Neo engines: compile them beside the shared engine. -->
+    <Compile Include="$(M)NeoBuzz.Analysis\Loudness.cs;$(M)NeoBuzz.Analysis\GainMatch.cs" Link="Shared\Analysis\%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoEq\Engine\*.cs" Link="Shared\Eq\%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoFilter\Engine\*.cs" Link="Shared\Filter\%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoComp\Engine\*.cs" Link="Shared\Comp\%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoClipper\Engine\*.cs" Link="Shared\Clipper\%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoDelay\Engine\*.cs" Link="Shared\Delay\%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoVerb\Engine\*.cs" Link="Shared\Verb\%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoLearn\**\*.cs" Exclude="$(M)NeoLearn\**\*Editor.cs;$(M)NeoLearn\obj\**;$(M)NeoLearn\bin\**" Link="Shared\Learn\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- The Neo Learn editor template (shared by every Neo Learn machine). -->
+    <Compile Include="$(M)NeoLearn\*Editor.cs" Link="Shared\Learn\%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoWave\Engine\Tables.cs;$(M)NeoWave\Engine\WavReader.cs" Link="Shared\NeoWave\%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoSampler\Engine\Interpolation.cs;$(M)NeoSampler\Engine\SampleData.cs" Link="Shared\NeoSampler\%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

@@ -788,6 +788,7 @@ namespace ReBuzz.Core.Session
     /// A pattern's length (an audio clip's following its tempo), as a session undo step that
     /// holds the pattern itself, not its name: renames and undone deletions don't lose it.
     /// </summary>
+    [HistoryName("Set clip length")]
     internal sealed class SessionPatternLengthAction : IAction
     {
         readonly SessionLayout layout;

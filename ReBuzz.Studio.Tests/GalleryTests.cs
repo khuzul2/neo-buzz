@@ -480,6 +480,7 @@ namespace ReBuzz.Studio.Tests
                 Try("012-start-session-empty", () => { window.ShowView("Session"); Shot(window, "012-start-session-empty", "The Session tab on a new song: an empty launch grid with its toolbar and mixer.", "Ctrl+Tab, or the Session tab.", song: "none (new song)"); });
                 Try("013-start-pattern-empty", () => { window.ShowView("Pattern"); Shot(window, "013-start-pattern-empty", "The Tracker docked in the detail panel on a new song: no machine with patterns yet (P3a).", "Cmd+4, Alt+Cmd+D, or the Tracker button under the view.", song: "none (new song)"); });
                 Try("015-start-tracker-maximised", () => { window.Detail.Show(true); Shot(window, "015-start-tracker-maximised", "The Tracker maximised over the window (P3a).", "F2, Shift+Cmd+F, or the button in the detail bar.", song: "none (new song)"); });
+                Try("017-start-machine-starters", () => { window.ShowView("Machines"); Shot(window, "017-start-machine-starters", "The Machine View on a new song (P3d): the starters Neo Poly, Neo Drums and Neo Wave one click each, and the hint to double-click or type to search.", "Open a new song.", song: "none (new song)"); });
                 Try("016-start-browser", () => { window.Detail.Close(); window.ShowView("Machines"); window.Browser.Open(); Shot(window, "016-start-browser", "The browser on the left (P3a): a search box over the installed machines, the patterns of the selection first.", "Alt+Cmd+B, or the rail's button.", song: "none (new song)"); window.Browser.Close(); });
                 Try("014-start-notes-empty", () => { window.ShowView("Song Notes"); Shot(window, "014-start-notes-empty", "The Song Notes tab on a new song: the empty notes editor and its toolbar.", "F10, or the Song Notes tab.", song: "none (new song)"); });
             }
@@ -510,6 +511,24 @@ namespace ReBuzz.Studio.Tests
                     Wait(1200);
                     Shot(window, "022-machines-hover", "Machines with the pointer resting on Delay: its hover state and tooltip.", "Point at a machine.");
                     ToolTip.SetServiceEnabled(window, false);
+                });
+                Try("025-machines-port-dots", () =>
+                {
+                    var port = machines.Canvas.OutPortOf(demo.Lead);
+                    window.MouseMove(machines.FromCanvas(port, window));
+                    Settle();
+                    Shot(window, "025-machines-port-dots", "Machines with the pointer on Lead's output dot (P3d): its output and input dots shown, the dot enlarged, the tooltip names the port.", "Point at a machine's edge.");
+                    window.MouseMove(new Point(20, 860));
+                    Settle();
+                });
+                Try("026-machines-browser-popup", () =>
+                {
+                    MachineViewTests.DoubleClick(window, machines.PointOf(0.55, 0.75, window));
+                    machines.Popup.Search.Text = "warm";
+                    Settle();
+                    Shot(window, "026-machines-browser-popup", "The machine browser on the canvas (P3d): opened by a double click on empty canvas, searching \"warm\": results with brand and tags, use_for, a star for favourites, the category filter.", "Double-click the canvas, or start typing on it.");
+                    machines.Popup.Hide();
+                    Settle();
                 });
                 Try("023-machines-amp", () =>
                 {
@@ -1114,10 +1133,12 @@ namespace ReBuzz.Studio.Tests
                 }
 
                 // Every Neo machine's editor, as a double click opens it.
-                var neo = Core.MachineDLLs.Values.Where(d => d?.Info != null && d.Name.StartsWith("Neo ") && d.Info.Type != MachineType.Master)
+                var neo = Core.MachineDLLs.Values.Where(d => d?.Info != null && d.Name.StartsWith("Neo ") && d.Name != "Neo Learn Subtractive" && d.Info.Type != MachineType.Master)
                     .Select(d => d.Name).OrderBy(x => x, System.StringComparer.Ordinal).ToList();
                 // Dye Essence, a Neo-family machine with its own name (docs/specs/dye-essence.md), after them (the others keep their numbers).
                 if (Core.MachineDLLs.ContainsKey("Dye Essence")) neo.Add("Dye Essence");
+                // Neo Learn Subtractive (docs/specs/neo-learn.md), after Dye Essence for the same reason.
+                if (Core.MachineDLLs.ContainsKey("Neo Learn Subtractive")) neo.Add("Neo Learn Subtractive");
                 int i = 0;
                 foreach (var gear in neo)
                 {

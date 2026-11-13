@@ -14,15 +14,25 @@ using ReBuzz.Core.Session;
 namespace ReBuzz.Agent
 {
     /// <summary>An undo step from two delegates.</summary>
-    internal sealed class DelegateAction : IAction
+    internal sealed class DelegateAction : IAction, BuzzGUI.Common.IHistoryAction
     {
         readonly Action doIt, undoIt;
+        readonly string name;
+        readonly long bytes;
 
-        public DelegateAction(Action doIt, Action undoIt)
+        /// <param name="name">What the step is called in the history (null: the agent call's name labels the group).</param>
+        /// <param name="bytes">Memory the delegates hold (a machine's data before and after), counted against the history's cap.</param>
+        public DelegateAction(Action doIt, Action undoIt, string name = null, long bytes = 0)
         {
             this.doIt = doIt;
             this.undoIt = undoIt;
+            this.name = name;
+            this.bytes = bytes;
         }
+
+        string BuzzGUI.Common.IHistoryAction.HistoryName => name;
+        long BuzzGUI.Common.IHistoryAction.HistoryBytes => bytes;
+        IEnumerable<KeyValuePair<object, long>> BuzzGUI.Common.IHistoryAction.HistoryBlobs => null;
 
         public void Do() => doIt();
         public void Undo() => undoIt();
@@ -41,15 +51,18 @@ namespace ReBuzz.Agent
         {
             int old = p.GetValue(track), group = p.Group.Type == ParameterGroupType.Track ? 2 : 1, index = p.IndexInGroup;
             string name = m.Name;
-            void Set(int v)
+            void Set(int v, bool byAgent)
             {
                 var machine = Find(core, name);
                 if (machine == null || group >= machine.ParameterGroups.Count) return;
                 var ps = machine.ParameterGroups[group].Parameters;
                 // Not recorded into patterns or session automation while the user records.
-                if (index < ps.Count) ps[index].SetValue(track | (1 << 16), v);
+                if (index >= ps.Count) return;
+                // Explain (neo-learn.md §5.3): the editor shows an agent's write with the Agent badge.
+                if (byAgent) ParamSource.MarkAgent(ps[index], track);
+                ps[index].SetValue(track | (1 << 16), v);
             }
-            Do(core, new DelegateAction(() => Set(value), () => Set(old)));
+            Do(core, new DelegateAction(() => Set(value, true), () => Set(old, false)));
         }
 
         /// <summary>Sets a connection's amp and pan (Buzz values).</summary>

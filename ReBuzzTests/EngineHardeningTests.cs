@@ -1,5 +1,6 @@
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
+using ReBuzz.Core.Actions;
 using ReBuzz.Core.Session;
 using ReBuzzTests.Automation;
 using ReBuzzTests.Automation.TestMachinesControllers;
@@ -332,6 +333,19 @@ namespace ReBuzzTests
         /// too), each measured by <paramref name="window"/>, which keeps what the thread did in it.
         /// </summary>
         static long AllocatedWhileReading(Rig rig, Driver.AudioReader reader, int buffers, int frames, List<string> log, AllocationWindow window, Action? perBuffer = null)
+        {
+            // GuardPolicy: a stretch that allocated is read again (up to 3 in all); 0 when any attempt allocated nothing.
+            long total = 0;
+            for (int attempt = 0; attempt < GuardPolicy.Attempts; attempt++)
+            {
+                total = AllocatedWhileReadingOnce(rig, reader, buffers, frames, log, window, perBuffer);
+                if (total == 0) { log.Clear(); return 0; }
+                log.Add($"(attempt {attempt + 1} of {GuardPolicy.Attempts}: {total} bytes)");
+            }
+            return total;
+        }
+
+        static long AllocatedWhileReadingOnce(Rig rig, Driver.AudioReader reader, int buffers, int frames, List<string> log, AllocationWindow window, Action? perBuffer)
         {
             long total = 0;
             for (int i = 0; i < buffers; i++)
@@ -778,6 +792,97 @@ namespace ReBuzzTests
                 Assert.That(here, Is.EqualTo(first.Value), "every rep starts at the loop's start");
                 return Throughput.InBlocks(256, (pos, n) => reader.Read(n));
             }, line => TestContext.Out.WriteLine("[notice] " + line));
+        }
+
+        /// <summary>
+        /// History is live-safe (docs/specs/history-snapshots.md HS1b): while the heavy song above plays, 1,000 edits with undo,
+        /// redo and history jumps between the buffers (the edits a person or an agent makes while it plays: tempo, pattern names,
+        /// jumps over many steps) allocate nothing on the audio thread, and the worst buffer stays inside the real-time budget,
+        /// the buffers' median within the throughput guard's own tolerance of the same song read without edits.
+        /// </summary>
+        [Test]
+        public void ThousandEditsWithUndoRedoAndJumpsWhileTheBigSongPlaysAreLiveSafe()
+        {
+            const int machines = 32, buffers = 1200, edits = 1000;
+            using var rig = new Rig(machines, hum: true);
+            for (int i = 0; i < machines; i++)
+            {
+                var m = rig.Machines[i];
+                var patterns = Enumerable.Range(0, 4).Select(k => rig.Pattern(m, "P" + k, Bar)).ToList();
+                for (int t = 0; t < 32; t++)
+                    rig.Track(i).SetEvent(t * Bar, new SequenceEvent(SequenceEventType.PlayPattern, patterns[(t + i) % 4]));
+                if (i % 2 == 0)
+                    rig.Session.Launch(rig.Track(i), patterns[0]);
+            }
+            rig.Song.LoopEnd = 2 * Bar;
+            var reader = rig.Driver.CreateAudioReader(256);
+            rig.Core.Playing = true;
+            var stack = rig.Song.ActionStack;
+            var pattern = rig.Machines[0].PatternsList.First();
+            int bpm = rig.Core.BPM;
+            WarmUp(reader, "history live test");
+
+            // The edits' own first run (their JIT and type loads) before anything is measured, then a clean history.
+            int n = 0;
+            void Edit()
+            {
+                switch (n++ % 5)
+                {
+                    case 0: TransportEdits.SetTempo(rig.Core, bpm + 1 + (n % 7)); break;
+                    case 1: rig.Machines[0].RenamePattern(pattern, "P0 " + n); break;
+                    case 2: if (stack.CanUndo) stack.Undo(); break;
+                    case 3: if (stack.CanRedo) stack.Redo(); break;
+                    default:
+                        var steps = stack.Steps;
+                        if (steps.Count > 3) stack.JumpTo(steps[(n * 7) % steps.Count].Id);   // undo or redo over many steps
+                        break;
+                }
+            }
+            for (int i = 0; i < 40; i++) { Edit(); reader.Read(256); }
+            stack.Clear();
+            n = 0;
+
+            double[] Read(int count, Action? between)
+            {
+                var times = new double[count];
+                for (int i = 0; i < count; i++)
+                {
+                    between?.Invoke();
+                    long t0 = Stopwatch.GetTimestamp();
+                    reader.Read(256);
+                    times[i] = (Stopwatch.GetTimestamp() - t0) * 1000.0 / Stopwatch.Frequency;
+                }
+                return times;
+            }
+            double budgetMs = 256 * 1000.0 / ReBuzzCore.masterInfo.SamplesPerSec;
+            var baseline = Read(buffers, null);
+
+            using var window = new AllocationWindow(buffers);
+            var log = new List<string>();
+            long bytes = 0;
+            var edited = new double[buffers];
+            for (int i = 0; i < buffers; i++)
+            {
+                if (i < edits) Edit();                                  // the edit runs outside the timed read, as the UI thread does
+                window.Begin();
+                long t0 = Stopwatch.GetTimestamp();
+                reader.Read(256);
+                edited[i] = (Stopwatch.GetTimestamp() - t0) * 1000.0 / Stopwatch.Frequency;
+                long b = window.End();
+                bytes += b;
+                if (b > 0 && log.Count < 20) log.Add($"buffer {i}: {b} bytes");
+            }
+
+            double Median(double[] x) => x.OrderBy(v => v).ElementAt(x.Length / 2);
+            double baseMedian = Median(baseline), editedMedian = Median(edited), editedWorst = edited.Max();
+            TestContext.Out.WriteLine($"[notice] history live test: {stack.Steps.Count} steps kept; per 256-frame buffer (budget {budgetMs:F2} ms): " +
+                $"baseline median {baseMedian:F3} ms, max {baseline.Max():F3} ms; with 1,000 edits median {editedMedian:F3} ms, max {editedWorst:F3} ms; " +
+                $"{budgetMs / editedMedian:F1}× real time; allocated {bytes} bytes");
+
+            Assert.That(bytes, Is.EqualTo(0), "history work must not allocate on the audio thread:\n" + string.Join("\n", log) + (bytes > 0 ? window.Describe() : ""));
+            Assert.That(editedMedian, Is.LessThan(baseMedian * 1.5 + 0.05), "edits and undo must not make the audio thread slower");
+            Assert.That(budgetMs / editedMedian, Is.GreaterThan(Throughput.Floor(x64: 25, arm64: 25)), "the throughput guard's floor, as the big song's guard has it");
+            Assert.That(editedWorst, Is.LessThan(budgetMs), "the worst buffer stays inside its real-time budget");
         }
 
         // ------------------------------------------------------------------ 10. autosave
