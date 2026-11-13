@@ -282,6 +282,9 @@ namespace ReBuzz.Studio.Views.Device
             if (list.Focused != null) Dispatcher.UIThread.Post(() => list.Reveal(p), DispatcherPriority.Loaded);
         }
 
+        /// <summary>Opens the strip now instead of after the pause (tests).</summary>
+        internal void ExplainExpandedNow() => ExpandNow(null, EventArgs.Empty);
+
         /// <summary>The strip is open to its full height (a parameter is chosen and the pause has passed).</summary>
         public bool ExplainExpanded => expanded;
 

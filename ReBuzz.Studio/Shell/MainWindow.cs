@@ -233,6 +233,8 @@ namespace ReBuzz.Studio.Shell
                 host.Log($"The Song Notes view failed: {e}");
             }
             inspector = new Views.Inspector.InspectorPanel(host.Core, host.Registry, ShowView, sessionView, notes);
+            inspector.SessionShown = () => (tabs.SelectedItem as TabItem)?.Header as string == "Session";
+            tabs.SelectionChanged += (s, e) => { if (e.Source == tabs) inspector?.Refresh(); };
             browser = new Views.Browser.BrowserPanel(host.Core, host.Registry, p => PatternView.Edit(p));
             detail = new Views.Detail.DetailPanel(host.Registry, tracker ?? new TextBlock { Text = "The Tracker failed to start.", Foreground = StudioTokens.ErrorTextBrush, Margin = new Thickness(12) },
                 host.Core != null ? new Views.Device.DeviceDock(host.Core) : null);

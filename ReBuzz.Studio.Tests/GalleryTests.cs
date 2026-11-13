@@ -1044,6 +1044,26 @@ namespace ReBuzz.Studio.Tests
                         "Preferences ▸ Safety: untick Safety limiter.", notes: Devices);
                     Settle();
                 });
+                Try("322-prefs-restart-note", () =>
+                {
+                    // An agent sets the render threads (a restart-required setting): the open window shows it at once, with the line under the pages.
+                    prefs.ShowPage("Audio");
+                    var threads = prefs.Model.Entry("audio.AudioThreads");
+                    string was = ReBuzz.Agent.App.SettingsService.Get(threads);
+                    ReBuzz.Agent.App.SettingsService.Apply(prefs.Model.App, threads, was == "2" ? "3" : "2", ReBuzz.Agent.App.SettingsService.AgentSource);
+                    Settle();
+                    Shot(prefs, "322-prefs-restart-note", "Preferences ▸ Audio after an agent changed the render threads (P3f): the page shows the new value at once, and a line under the pages says that the change waits for a restart. The change is in settings_history as Agent.",
+                        "Ask the agent to change a setting (settings_set) while Preferences is open.", notes: Devices);
+                    ReBuzz.Agent.App.SettingsService.Apply(prefs.Model.App, threads, was, ReBuzz.Agent.App.SettingsService.AgentSource);
+                    Settle();
+                });
+                Try("323-prefs-restore-question", () =>
+                {
+                    prefs.ShowPage("Advanced");
+                    DialogOnOpen(prefs, () => _ = prefs.RestoreDefaults(), "323-prefs-restore-question", "Restore Defaults on the Advanced page (P3f): it asks first, since the engine flags change how audio is made; Cancel on Return and Escape.",
+                        "Preferences ▸ Advanced ▸ Restore Defaults.");
+                    Settle();
+                });
                 prefs.Close();
                 Settle();
 

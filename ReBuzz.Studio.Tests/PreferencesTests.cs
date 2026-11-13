@@ -234,6 +234,7 @@ namespace ReBuzz.Studio.Tests
                 page.Show();
                 Settle(window);
                 Assert.That(page.Inputs.Select(r => (r.Name, r.Connected, r.Box.IsChecked)), Is.EqualTo(new[] { ("Keys", true, (bool?)false), ("Pads", false, (bool?)true) }));
+                Assert.That(page.GetVisualDescendants().OfType<TextBlock>().Select(b => b.Text), Does.Contain("State").And.Contain("Device (check to use)"), "the devices are a table with a header");
                 Assert.That(page.Outputs.Select(r => r.Name), Is.EqualTo(new[] { "Synth" }));
 
                 page.Inputs[0].Box.IsChecked = true;

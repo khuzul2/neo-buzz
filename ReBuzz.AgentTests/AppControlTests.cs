@@ -329,6 +329,53 @@ namespace ReBuzz.AgentTests
         }
 
         [Test]
+        public void AToolCallIsLoggedAsAgentAndAWindowChangeAsManualAndBothAreAnnounced()
+        {
+            // P3f: Preferences changes settings through SettingsService, on the same entries and keys as the tools.
+            var (s, app) = Make();
+            var seen = new List<SettingChange>();
+            void On(SettingChange c) => seen.Add(c);
+            SettingsService.Changed += On;
+            try
+            {
+                Call(s, "settings_set", Args(("key", "general.PatternLength"), ("value", 32)));
+                var entry = app.Settings().Single(e => e.Key == "general.PatternLength");
+                Assert.That(SettingsService.Apply(app, entry, SettingsService.Normalize(entry, "48")), Is.EqualTo("48"));
+                Assert.That(SettingsService.Apply(app, entry, "48"), Is.EqualTo("48"), "no change, nothing logged");
+                var restart = app.Settings().Single(e => e.Key == "advanced.AudioBufferFillThread");
+                SettingsService.Apply(app, restart, "True");
+
+                var h = Call(s, "settings_history").Data["entries"]!.AsArray();
+                Assert.That(h.Count, Is.EqualTo(3));
+                Assert.That(h[0]!["source"]!.GetValue<string>(), Is.EqualTo("Manual"));
+                Assert.That(h[0]!["key"]!.GetValue<string>(), Is.EqualTo("advanced.AudioBufferFillThread"));
+                Assert.That(h[1]!["source"]!.GetValue<string>(), Is.EqualTo("Manual"));
+                Assert.That(h[1]!["from"]!.GetValue<string>(), Is.EqualTo("32"));
+                Assert.That(h[2]!["source"]!.GetValue<string>(), Is.EqualTo("Agent"));
+                Assert.That(seen.Select(c => (c.Key, c.Source, c.RestartRequired)), Is.EqualTo(new[]
+                {
+                    ("general.PatternLength", "Agent", false), ("general.PatternLength", "Manual", false), ("advanced.AudioBufferFillThread", "Manual", true),
+                }));
+
+                // The window's checks are the tools': a value out of range is refused with what the setting takes.
+                var ex = Assert.Throws<ToolError>(() => SettingsService.Normalize(entry, "9999"))!;
+                Assert.That(ex.Message, Does.Contain("1 to 512"));
+                Assert.Throws<ToolError>(() => SettingsService.Normalize(entry, "many"));
+
+                // Restore Defaults is settings_reset: a section, logged as Manual, leaving the agent connection's keys.
+                var reset = SettingsService.Reset(app, null, "general");
+                Assert.That(reset, Is.EqualTo(new[] { "general.PatternLength" }));
+                Assert.That(app.Values["general.PatternLength"], Is.EqualTo("16"));
+                Assert.That(SettingsService.Reset(app, null, "agent"), Is.Empty, "the switch and the port are left alone");
+                Assert.That(Call(s, "settings_history", Args(("limit", 1))).Data["entries"]![0]!["source"]!.GetValue<string>(), Is.EqualTo("Manual"));
+            }
+            finally
+            {
+                SettingsService.Changed -= On;
+            }
+        }
+
+        [Test]
         public void SettingsResetPutsBackOneKeyASectionOrEverythingExceptTheConnection()
         {
             var (s, app) = Make();
