@@ -514,7 +514,6 @@ namespace NeoBuzz.MachineTests
         {
             var kind = Avx2Lanes.Supported ? LaneKind.Avx2 : LaneKind.Pair;
             string info = $"{kind}, {RuntimeInfo()}";
-            Console.WriteLine($"load {File.ReadAllText("/proc/loadavg").Trim()}");
             foreach (bool big in new[] { false, true })
             {
                 string name = big ? "20 nodes" : "8 nodes";
