@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Experiment (experiments/plugin-gc): Neo Poly and Neo Drive as one NativeAOT shared library with a C ABI, plus a
+       managed load generator that stands in for a plugin editor. Not part of ReBuzz.sln or the package. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <AssemblyName>neoplugin</AssemblyName>
+    <RootNamespace>NeoPluginGc</RootNamespace>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+    <PublishAot>true</PublishAot>
+    <NativeLib>Shared</NativeLib>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <TieredCompilation>false</TieredCompilation>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <NoWarn>CS1591;CS8981;IL2026;IL3050;CS0649;CS0169;CS0414</NoWarn>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="*.cs" />
+    <Compile Include="..\..\..\Machines\NeoBuzz.Dsp\**\*.cs" Link="Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\..\Machines\NeoPoly\Engine\**\*.cs" Link="Poly\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\..\Machines\NeoDrive\Engine\**\*.cs" Link="Drive\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

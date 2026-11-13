@@ -1,0 +1,5 @@
+_build/
+_plugin/
+_bench/
+plugin/bin/
+plugin/obj/

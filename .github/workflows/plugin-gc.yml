@@ -1,0 +1,108 @@
+name: Plugin GC measurement
+
+# experiments/plugin-gc: does garbage collection stall the audio thread when our C# machines run as NativeAOT
+# plugins inside a native host? One NativeAOT library (Neo Poly + Neo Drive + a managed load generator) is driven by
+# a native harness (no .NET) on a real-time-priority audio thread; a native control plugin measures the runner.
+# Results are printed to the job log (RESULT lines and a table); the report is written from the logs.
+# macOS minutes cost about 10x Linux: set macos=false for a Windows-only run.
+on:
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: Recorded seconds per configuration (300 = 5 minutes)
+        default: '300'
+      macos:
+        description: Include the macOS (arm64) runner
+        type: boolean
+        default: true
+      windows:
+        description: Include the Windows (x64) runner
+        type: boolean
+        default: true
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+    - id: m
+      env:
+        MAC: ${{ inputs.macos }}
+        WIN: ${{ inputs.windows }}
+      run: |
+        python3 - <<'PY' >> "$GITHUB_OUTPUT"
+        import json, os
+        inc = []
+        for os_name, flag, rid in (('windows-latest', 'WIN', 'win-x64'), ('macos-15', 'MAC', 'osx-arm64')):
+            if os.environ[flag] != 'false':
+                for s in ('default', 'nonconcurrent', 'sustained', 'gen0size'):
+                    inc.append({'os': os_name, 'rid': rid, 'setting': s})
+        print('matrix=' + json.dumps({'include': inc}))
+        PY
+
+  measure:
+    needs: plan
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
+    env:
+      SECONDS_PER_RUN: ${{ inputs.seconds }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Machine
+      run: |
+        echo "setting=${{ matrix.setting }} os=${{ matrix.os }} seconds=$SECONDS_PER_RUN"
+        if [ "$RUNNER_OS" = macOS ]; then sysctl -n machdep.cpu.brand_string hw.ncpu hw.memsize; uname -a; pmset -g batt | head -2 || true
+        else echo "cpus=$NUMBER_OF_PROCESSORS"; wmic cpu get name 2>/dev/null | head -3 || true; fi
+        dotnet --version
+
+    - name: Build the native harness and control plugin
+      working-directory: experiments/plugin-gc
+      run: |
+        cmake -S . -B _build -DCMAKE_BUILD_TYPE=Release
+        cmake --build _build --config Release
+        find _build -maxdepth 2 \( -name 'harness*' -o -name 'libcontrol*' -o -name 'control*' \) -type f | grep -v '\.dir\|\.obj\|\.pdb\|\.ilk\|\.exp\|\.lib' || true
+
+    - name: Publish the NativeAOT plugin library
+      working-directory: experiments/plugin-gc/plugin
+      run: |
+        dotnet publish -c Release -r ${{ matrix.rid }} -o ../_plugin 2>&1 | grep -E "error|warning IL|Generating|neoplugin" | sort -u | head -20
+        ls -la ../_plugin | head -20
+
+    - name: Measure
+      working-directory: experiments/plugin-gc
+      run: |
+        set -u
+        if [ "$RUNNER_OS" = Windows ]; then H=_build/Release/harness.exe; PLUG=_plugin/neoplugin.dll; CTL=_build/Release/control.dll
+        else H=_build/harness; PLUG=_plugin/neoplugin.dylib; CTL=_build/libcontrol.dylib; fi
+        ls -la "$H" "$PLUG" "$CTL"
+        S=${{ matrix.setting }}
+        LAT=0
+        case "$S" in
+          nonconcurrent) export DOTNET_gcConcurrent=0 ;;
+          sustained) LAT=1 ;;
+          gen0size) export DOTNET_GCgen0size=4000000 ;;   # hex: 64 MiB
+        esac
+        OUT=results-${{ matrix.os }}-$S.txt
+        : > "$OUT"
+        # Control: native plugin, no GC, same harness. Run first and last so drift on the runner shows.
+        run() { "$H" "$@" 2>&1 | tee -a "$OUT"; }
+        run --plugin "$CTL" --block 64 --seconds "$SECONDS_PER_RUN" --load 0 --label "ctl-L0-b64-$S"
+        run --plugin "$CTL" --block 64 --seconds "$SECONDS_PER_RUN" --load 3 --label "ctl-L3-b64-$S"
+        run --plugin "$CTL" --block 128 --seconds "$SECONDS_PER_RUN" --load 3 --label "ctl-L3-b128-$S"
+        for B in 64 128; do
+          for L in 0 1 2 3; do
+            run --plugin "$PLUG" --block $B --seconds "$SECONDS_PER_RUN" --load $L --latency $LAT --label "$S-L$L-b$B"
+          done
+        done
+        python3 summarize.py "$OUT" | tee -a "${GITHUB_STEP_SUMMARY:-/dev/null}"
