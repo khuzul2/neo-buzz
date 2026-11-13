@@ -126,7 +126,7 @@ static const char* makeRealtime(int64_t periodNs)
     mach_timebase_info_data_t t; mach_timebase_info(&t);
     auto toAbs = [&](int64_t ns) { return (uint32_t)(ns * t.denom / t.numer); };
     thread_time_constraint_policy_data_t p;
-    p.period = toAbs(periodNs); p.computation = toAbs(periodNs / 2); p.constraint = toAbs(periodNs * 9 / 10); p.preemptible = 1;
+    p.period = toAbs(periodNs); p.computation = toAbs(periodNs * 8 / 10); p.constraint = toAbs(periodNs); p.preemptible = 1;
     kern_return_t kr = thread_policy_set(mach_thread_self(), THREAD_TIME_CONSTRAINT_POLICY, (thread_policy_t)&p, THREAD_TIME_CONSTRAINT_POLICY_COUNT);
     snprintf(msg, sizeof msg, "time_constraint_policy=%s", kr == KERN_SUCCESS ? "ok" : "failed");
     return msg;
@@ -228,7 +228,7 @@ int main(int argc, char** argv)
             for (int i = 0; i < N; i++) {
                 const bool poly = i < N / 2;
                 api.param(h[i], poly ? POLY_F1CUTOFF : DRIVE_DRIVE, poly ? 400 + tri * 2 : 150 + tri * 3);
-                api.param(h[i], poly ? POLY_UNIDETUNE : DRIVE_TONE, 200 + ((tri * 5) & 511));
+                api.param(h[i], poly ? POLY_UNIDETUNE : DRIVE_TONE, 300 + tri * 2);
                 api.process(h[i], &in[off], &in[off + 17], outL.data(), outR.data(), c.block);
                 peak += outL[0];
             }
