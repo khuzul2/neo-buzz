@@ -74,6 +74,8 @@ namespace ReBuzz.Studio.Shell
         {
             if (IsVisible != show) IsVisible = show;
             if (!show) { shownKey = null; return; }
+            var list = next?.ToList() ?? new List<(string Label, Action Do)>();
+            key += "|" + list.Count;
             if (key == shownKey) return;
             shownKey = key;
             title.Text = titleText;
@@ -86,7 +88,7 @@ namespace ReBuzz.Studio.Shell
                     string starter = name;
                     Add(starter, () => EmptyStates.AddStarter(core, starter), "Start with " + starter);
                 }
-            foreach (var (label, act) in next ?? Enumerable.Empty<(string, Action)>()) Add(label, act, label);
+            foreach (var (label, act) in list) Add(label, act, label);
         }
 
         void Add(string label, Action act, string automationName)

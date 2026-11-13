@@ -363,7 +363,7 @@ namespace ReBuzz.Studio.Tests
                 var history = window.Inspector.History;
                 history.Rebuild();
                 Assert.That(history.EmptyState.IsVisible, Is.True, "no steps");
-                Assert.That(Labels(history.EmptyState), Is.EqualTo(starters.Concat(new[] { "Add machine…" }).ToList()));
+                Assert.That(Labels(history.EmptyState).ToList(), Is.EqualTo(starters.Concat(new[] { "Add machine…" }).ToList()));
 
                 // Browser: the starters are its first rows, and an empty search says what to do.
                 window.Browser.Open();
@@ -385,16 +385,21 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(Core.SongCore.ActionStack.Steps.Count, Is.EqualTo(steps + 1), "one undo step");
                 var made = StudioSelection.For(Core).Machine;
                 Assert.That(made, Is.Not.Null, "the new machine is selected");
-                Assert.That(page.EmptyState.Title, Is.EqualTo($"{made!.Name} has no patterns"), "the Tracker now says to make a pattern");
-                Assert.That(Labels(page.EmptyState), Is.EqualTo(new[] { "New pattern" }));
+                Assert.That(made!.Patterns.Count, Is.EqualTo(1), "a starter comes with its first pattern");
+                Assert.That(page.EmptyState.IsVisible, Is.False, "so the Tracker opens on it");
                 seq.RefreshEmpty();
-                Assert.That(seq.EmptyState.Title, Is.EqualTo("Nothing is arranged yet"), "the Arrangement has its track and asks for a pattern");
-                Assert.That(Labels(seq.EmptyState), Is.EqualTo(new[] { "New pattern here" }));
+                Assert.That(seq.EmptyState.IsVisible, Is.False, "the Arrangement has its track, and the starter's pattern is on it");
                 history.Rebuild();
                 Assert.That(history.EmptyState.IsVisible, Is.False, "the History has its first step");
+                window.ShowView("Machines");
+                Settle(window);
                 Assert.That(machines.Starters.IsVisible, Is.False);
 
-                // "New pattern" makes one (undoable) and the Tracker's empty state goes.
+                // Without its pattern the Tracker says to make one; "New pattern" makes it (undoable) and the empty state goes.
+                made.DeletePattern(made.Patterns[0]);
+                Settle(window);
+                Assert.That(page.EmptyState.Title, Is.EqualTo($"{made.Name} has no patterns"));
+                Assert.That(Labels(page.EmptyState), Is.EqualTo(new[] { "New pattern" }));
                 page.EmptyState.Step("New pattern")!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 Settle(window);
                 Assert.That(made.Patterns.Count, Is.EqualTo(1));
