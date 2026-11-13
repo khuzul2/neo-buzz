@@ -25,6 +25,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import machine_catalog as mc  # noqa: E402  (category, tags and use_for for every manifest)
+import pedal_knowledge as pk  # noqa: E402  (K2: the nine Pedal manifests curated from their source, and every Pedal parameter's Explain text)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PEDAL = "ExternalMachines/source/thepedal/"
@@ -647,6 +648,8 @@ def generate(spec, existing):
                 e["safe_range"] = old["safe_range"]
             entries.append(e)
         m[group] = entries
+    pk.curate(m)     # K2 batch a: the Pedal machines promoted from generated to curated (plain names, roles, quirks, evidence)
+    pk.explain(m)
     return mc.apply(m)
 
 

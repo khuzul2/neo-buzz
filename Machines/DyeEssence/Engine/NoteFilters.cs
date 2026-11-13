@@ -14,7 +14,7 @@ using NeoBuzz.Dsp;
 namespace NeoBuzz.DyeEssence
 {
     /// <summary>The filter types, in the parameters' order (append only).</summary>
-    internal enum FilterType { Off, Ladder24, Ladder12, Lp12, Lp24, Bp12, Bp24, Hp12, Hp24, Notch, Peak, CombPlus, CombMinus }
+    internal enum FilterType { Off, Ladder24, Ladder12, Lp12, Lp24, Bp12, Bp24, Hp12, Hp24, Notch, Peak, CombPlus, CombMinus, Vowel, Lpg }
 
     internal static class NoteFilters
     {

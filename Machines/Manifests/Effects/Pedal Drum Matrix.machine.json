@@ -1048,7 +1048,9 @@
     "AutoWah",
     "Exciter"
    ],
-   "description": "Effect in slot 1 (slots run 1 → 6 in series): None, Bitcrush, Drive, Lowpass, RingMod, Comb, Stutter, Delay, Reverb, Gate, Resonator, Highpass, Transient, Wavefolder and more."
+   "description": "Effect in slot 1 (slots run 1 → 6 in series): None, Bitcrush, Drive, Lowpass, RingMod, Comb, Stutter, Delay, Reverb, Gate, Resonator, Highpass, Transient, Wavefolder and more.",
+   "how": "Chooses the effect in slot 1 out of 21 (bitcrush, drive, filters, ring modulation, comb, stutter, delay, reverb and more); the slots run 1 to 6 in series.",
+   "sound": "None passes the sound unchanged; every other choice gives it its own kind of damage or space."
   },
   {
    "index": 1,
@@ -1064,7 +1066,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Intensity / wet of the slot's effect (0: clean)."
+   "description": "Intensity / wet of the slot's effect (0: clean).",
+   "how": "Sets how much of slot 1's effect is applied, from 0 to 100 percent.",
+   "sound": "At 0 the slot is clean; raising it brings its character in."
   },
   {
    "index": 2,
@@ -1101,7 +1105,9 @@
     "AutoWah",
     "Exciter"
    ],
-   "description": "Effect in slot 2 (slots run 1 → 6 in series): None, Bitcrush, Drive, Lowpass, RingMod, Comb, Stutter, Delay, Reverb, Gate, Resonator, Highpass, Transient, Wavefolder and more."
+   "description": "Effect in slot 2 (slots run 1 → 6 in series): None, Bitcrush, Drive, Lowpass, RingMod, Comb, Stutter, Delay, Reverb, Gate, Resonator, Highpass, Transient, Wavefolder and more.",
+   "how": "Chooses the effect in slot 2 out of 21 (bitcrush, drive, filters, ring modulation, comb, stutter, delay, reverb and more); the slots run 1 to 6 in series.",
+   "sound": "None passes the sound unchanged; every other choice gives it its own kind of damage or space."
   },
   {
    "index": 3,
@@ -1117,7 +1123,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Intensity / wet of the slot's effect (0: clean)."
+   "description": "Intensity / wet of the slot's effect (0: clean).",
+   "how": "Sets how much of slot 2's effect is applied, from 0 to 100 percent.",
+   "sound": "At 0 the slot is clean; raising it brings its character in."
   },
   {
    "index": 4,
@@ -1154,7 +1162,9 @@
     "AutoWah",
     "Exciter"
    ],
-   "description": "Effect in slot 3 (slots run 1 → 6 in series): None, Bitcrush, Drive, Lowpass, RingMod, Comb, Stutter, Delay, Reverb, Gate, Resonator, Highpass, Transient, Wavefolder and more."
+   "description": "Effect in slot 3 (slots run 1 → 6 in series): None, Bitcrush, Drive, Lowpass, RingMod, Comb, Stutter, Delay, Reverb, Gate, Resonator, Highpass, Transient, Wavefolder and more.",
+   "how": "Chooses the effect in slot 3 out of 21 (bitcrush, drive, filters, ring modulation, comb, stutter, delay, reverb and more); the slots run 1 to 6 in series.",
+   "sound": "None passes the sound unchanged; every other choice gives it its own kind of damage or space."
   },
   {
    "index": 5,
@@ -1170,7 +1180,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Intensity / wet of the slot's effect (0: clean)."
+   "description": "Intensity / wet of the slot's effect (0: clean).",
+   "how": "Sets how much of slot 3's effect is applied, from 0 to 100 percent.",
+   "sound": "At 0 the slot is clean; raising it brings its character in."
   },
   {
    "index": 6,
@@ -1207,7 +1219,9 @@
     "AutoWah",
     "Exciter"
    ],
-   "description": "Effect in slot 4 (slots run 1 → 6 in series): None, Bitcrush, Drive, Lowpass, RingMod, Comb, Stutter, Delay, Reverb, Gate, Resonator, Highpass, Transient, Wavefolder and more."
+   "description": "Effect in slot 4 (slots run 1 → 6 in series): None, Bitcrush, Drive, Lowpass, RingMod, Comb, Stutter, Delay, Reverb, Gate, Resonator, Highpass, Transient, Wavefolder and more.",
+   "how": "Chooses the effect in slot 4 out of 21 (bitcrush, drive, filters, ring modulation, comb, stutter, delay, reverb and more); the slots run 1 to 6 in series.",
+   "sound": "None passes the sound unchanged; every other choice gives it its own kind of damage or space."
   },
   {
    "index": 7,
@@ -1223,7 +1237,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Intensity / wet of the slot's effect (0: clean)."
+   "description": "Intensity / wet of the slot's effect (0: clean).",
+   "how": "Sets how much of slot 4's effect is applied, from 0 to 100 percent.",
+   "sound": "At 0 the slot is clean; raising it brings its character in."
   },
   {
    "index": 8,
@@ -1260,7 +1276,9 @@
     "AutoWah",
     "Exciter"
    ],
-   "description": "Effect in slot 5 (slots run 1 → 6 in series): None, Bitcrush, Drive, Lowpass, RingMod, Comb, Stutter, Delay, Reverb, Gate, Resonator, Highpass, Transient, Wavefolder and more."
+   "description": "Effect in slot 5 (slots run 1 → 6 in series): None, Bitcrush, Drive, Lowpass, RingMod, Comb, Stutter, Delay, Reverb, Gate, Resonator, Highpass, Transient, Wavefolder and more.",
+   "how": "Chooses the effect in slot 5 out of 21 (bitcrush, drive, filters, ring modulation, comb, stutter, delay, reverb and more); the slots run 1 to 6 in series.",
+   "sound": "None passes the sound unchanged; every other choice gives it its own kind of damage or space."
   },
   {
    "index": 9,
@@ -1276,7 +1294,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Intensity / wet of the slot's effect (0: clean)."
+   "description": "Intensity / wet of the slot's effect (0: clean).",
+   "how": "Sets how much of slot 5's effect is applied, from 0 to 100 percent.",
+   "sound": "At 0 the slot is clean; raising it brings its character in."
   },
   {
    "index": 10,
@@ -1313,7 +1333,9 @@
     "AutoWah",
     "Exciter"
    ],
-   "description": "Effect in slot 6 (slots run 1 → 6 in series): None, Bitcrush, Drive, Lowpass, RingMod, Comb, Stutter, Delay, Reverb, Gate, Resonator, Highpass, Transient, Wavefolder and more."
+   "description": "Effect in slot 6 (slots run 1 → 6 in series): None, Bitcrush, Drive, Lowpass, RingMod, Comb, Stutter, Delay, Reverb, Gate, Resonator, Highpass, Transient, Wavefolder and more.",
+   "how": "Chooses the effect in slot 6 out of 21 (bitcrush, drive, filters, ring modulation, comb, stutter, delay, reverb and more); the slots run 1 to 6 in series.",
+   "sound": "None passes the sound unchanged; every other choice gives it its own kind of damage or space."
   },
   {
    "index": 11,
@@ -1329,7 +1351,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Intensity / wet of the slot's effect (0: clean)."
+   "description": "Intensity / wet of the slot's effect (0: clean).",
+   "how": "Sets how much of slot 6's effect is applied, from 0 to 100 percent.",
+   "sound": "At 0 the slot is clean; raising it brings its character in."
   },
   {
    "index": 12,
@@ -1343,7 +1367,9 @@
    "default": 64,
    "kind": "int",
    "a": 0,
-   "description": "Effect-specific character (cutoff for a filter, time in ticks for Delay, scale degree for Resonator…): the machine's own text says what it is for the loaded effect."
+   "description": "Effect-specific character (cutoff for a filter, time in ticks for Delay, scale degree for Resonator…): the machine's own text says what it is for the loaded effect.",
+   "how": "Sets slot 1's main control, whose meaning follows the effect loaded: the cutoff of a filter, the time of a delay, the degree of a resonator.",
+   "sound": "What changes depends on the effect; the value's text names it."
   },
   {
    "index": 13,
@@ -1357,7 +1383,9 @@
    "default": 0,
    "kind": "int",
    "a": 0,
-   "description": "Effect-specific switch (Q for a filter, hard or soft clip for Drive…); the text names it."
+   "description": "Effect-specific switch (Q for a filter, hard or soft clip for Drive…); the text names it.",
+   "how": "Sets slot 1's two-way option, such as the Q of a filter or hard against soft clipping in a drive.",
+   "sound": "Switches between two flavours of the same effect."
   },
   {
    "index": 14,
@@ -1371,7 +1399,9 @@
    "default": 64,
    "kind": "int",
    "a": 0,
-   "description": "Effect-specific character (cutoff for a filter, time in ticks for Delay, scale degree for Resonator…): the machine's own text says what it is for the loaded effect."
+   "description": "Effect-specific character (cutoff for a filter, time in ticks for Delay, scale degree for Resonator…): the machine's own text says what it is for the loaded effect.",
+   "how": "Sets slot 2's main control, whose meaning follows the effect loaded: the cutoff of a filter, the time of a delay, the degree of a resonator.",
+   "sound": "What changes depends on the effect; the value's text names it."
   },
   {
    "index": 15,
@@ -1385,7 +1415,9 @@
    "default": 0,
    "kind": "int",
    "a": 0,
-   "description": "Effect-specific switch (Q for a filter, hard or soft clip for Drive…); the text names it."
+   "description": "Effect-specific switch (Q for a filter, hard or soft clip for Drive…); the text names it.",
+   "how": "Sets slot 2's two-way option, such as the Q of a filter or hard against soft clipping in a drive.",
+   "sound": "Switches between two flavours of the same effect."
   },
   {
    "index": 16,
@@ -1399,7 +1431,9 @@
    "default": 64,
    "kind": "int",
    "a": 0,
-   "description": "Effect-specific character (cutoff for a filter, time in ticks for Delay, scale degree for Resonator…): the machine's own text says what it is for the loaded effect."
+   "description": "Effect-specific character (cutoff for a filter, time in ticks for Delay, scale degree for Resonator…): the machine's own text says what it is for the loaded effect.",
+   "how": "Sets slot 3's main control, whose meaning follows the effect loaded: the cutoff of a filter, the time of a delay, the degree of a resonator.",
+   "sound": "What changes depends on the effect; the value's text names it."
   },
   {
    "index": 17,
@@ -1413,7 +1447,9 @@
    "default": 0,
    "kind": "int",
    "a": 0,
-   "description": "Effect-specific switch (Q for a filter, hard or soft clip for Drive…); the text names it."
+   "description": "Effect-specific switch (Q for a filter, hard or soft clip for Drive…); the text names it.",
+   "how": "Sets slot 3's two-way option, such as the Q of a filter or hard against soft clipping in a drive.",
+   "sound": "Switches between two flavours of the same effect."
   },
   {
    "index": 18,
@@ -1427,7 +1463,9 @@
    "default": 64,
    "kind": "int",
    "a": 0,
-   "description": "Effect-specific character (cutoff for a filter, time in ticks for Delay, scale degree for Resonator…): the machine's own text says what it is for the loaded effect."
+   "description": "Effect-specific character (cutoff for a filter, time in ticks for Delay, scale degree for Resonator…): the machine's own text says what it is for the loaded effect.",
+   "how": "Sets slot 4's main control, whose meaning follows the effect loaded: the cutoff of a filter, the time of a delay, the degree of a resonator.",
+   "sound": "What changes depends on the effect; the value's text names it."
   },
   {
    "index": 19,
@@ -1441,7 +1479,9 @@
    "default": 0,
    "kind": "int",
    "a": 0,
-   "description": "Effect-specific switch (Q for a filter, hard or soft clip for Drive…); the text names it."
+   "description": "Effect-specific switch (Q for a filter, hard or soft clip for Drive…); the text names it.",
+   "how": "Sets slot 4's two-way option, such as the Q of a filter or hard against soft clipping in a drive.",
+   "sound": "Switches between two flavours of the same effect."
   },
   {
    "index": 20,
@@ -1455,7 +1495,9 @@
    "default": 64,
    "kind": "int",
    "a": 0,
-   "description": "Effect-specific character (cutoff for a filter, time in ticks for Delay, scale degree for Resonator…): the machine's own text says what it is for the loaded effect."
+   "description": "Effect-specific character (cutoff for a filter, time in ticks for Delay, scale degree for Resonator…): the machine's own text says what it is for the loaded effect.",
+   "how": "Sets slot 5's main control, whose meaning follows the effect loaded: the cutoff of a filter, the time of a delay, the degree of a resonator.",
+   "sound": "What changes depends on the effect; the value's text names it."
   },
   {
    "index": 21,
@@ -1469,7 +1511,9 @@
    "default": 0,
    "kind": "int",
    "a": 0,
-   "description": "Effect-specific switch (Q for a filter, hard or soft clip for Drive…); the text names it."
+   "description": "Effect-specific switch (Q for a filter, hard or soft clip for Drive…); the text names it.",
+   "how": "Sets slot 5's two-way option, such as the Q of a filter or hard against soft clipping in a drive.",
+   "sound": "Switches between two flavours of the same effect."
   },
   {
    "index": 22,
@@ -1483,7 +1527,9 @@
    "default": 64,
    "kind": "int",
    "a": 0,
-   "description": "Effect-specific character (cutoff for a filter, time in ticks for Delay, scale degree for Resonator…): the machine's own text says what it is for the loaded effect."
+   "description": "Effect-specific character (cutoff for a filter, time in ticks for Delay, scale degree for Resonator…): the machine's own text says what it is for the loaded effect.",
+   "how": "Sets slot 6's main control, whose meaning follows the effect loaded: the cutoff of a filter, the time of a delay, the degree of a resonator.",
+   "sound": "What changes depends on the effect; the value's text names it."
   },
   {
    "index": 23,
@@ -1497,7 +1543,9 @@
    "default": 0,
    "kind": "int",
    "a": 0,
-   "description": "Effect-specific switch (Q for a filter, hard or soft clip for Drive…); the text names it."
+   "description": "Effect-specific switch (Q for a filter, hard or soft clip for Drive…); the text names it.",
+   "how": "Sets slot 6's two-way option, such as the Q of a filter or hard against soft clipping in a drive.",
+   "sound": "Switches between two flavours of the same effect."
   },
   {
    "index": 24,
@@ -1510,7 +1558,9 @@
    "max": 1,
    "default": 1,
    "kind": "switch",
-   "description": "Limiter on the rack's output (on by default)."
+   "description": "Limiter on the rack's output (on by default).",
+   "how": "Limits the rack's output; it is on by default.",
+   "sound": "Keeps loud, resonant or fed-back settings from overloading what follows."
   },
   {
    "index": 25,
@@ -1523,7 +1573,9 @@
    "max": 1,
    "default": 0,
    "kind": "switch",
-   "description": "Levels the output automatically."
+   "description": "Levels the output automatically.",
+   "how": "Levels the output automatically after the slots.",
+   "sound": "Changing slots or amounts does not change the loudness much."
   },
   {
    "index": 26,
@@ -1539,7 +1591,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Output back into the rack's input."
+   "description": "Output back into the rack's input.",
+   "how": "Sends the rack's output back to its input, from 0 to 100 percent.",
+   "sound": "Builds echoes and howls; higher settings run away until the limiter catches them."
   },
   {
    "index": 27,
@@ -1555,7 +1609,9 @@
    "a": 0.001,
    "b": 0.5,
    "unit": "s",
-   "description": "Delay in the feedback path, 1–500 ms exponential."
+   "description": "Delay in the feedback path, 1–500 ms exponential.",
+   "how": "Sets the delay in the feedback path, from 1 to 500 ms on an exponential scale.",
+   "sound": "Short times give metallic ringing; long ones give distinct echoes."
   },
   {
    "index": 28,
@@ -1571,7 +1627,9 @@
    "a": 200.0,
    "b": 12000.0,
    "unit": "Hz",
-   "description": "Low-pass in the feedback path, 200 Hz – 12 kHz exponential."
+   "description": "Low-pass in the feedback path, 200 Hz – 12 kHz exponential.",
+   "how": "Low-passes the feedback path, from 200 Hz to 12 kHz.",
+   "sound": "Lower settings make the repeats darker and softer."
   },
   {
    "index": 29,
@@ -1587,7 +1645,9 @@
    "a": 0.02,
    "b": 2.0,
    "unit": "s",
-   "description": "Release of the input envelope follower, 20 ms – 2 s exponential."
+   "description": "Release of the input envelope follower, 20 ms – 2 s exponential.",
+   "how": "Sets how slowly the input's loudness follower lets go, from 20 ms to 2 s.",
+   "sound": "Short releases follow each hit; long ones follow the overall loudness."
   },
   {
    "index": 30,
@@ -1603,7 +1663,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "How much the input's envelope raises the feedback."
+   "description": "How much the input's envelope raises the feedback.",
+   "how": "Lets the input's loudness raise the feedback, from 0 to 100 percent.",
+   "sound": "Loud hits ring and howl more, quiet parts stay clean."
   },
   {
    "index": 31,
@@ -1619,7 +1681,9 @@
    "a": -100.0,
    "b": 98.4375,
    "unit": "%",
-   "description": "Envelope follower to the slot's character, bipolar (0% at raw 64)."
+   "description": "Envelope follower to the slot's character, bipolar (0% at raw 64).",
+   "how": "Lets the input's loudness move slot 1's main control, from -100 to +98 percent with 0 in the middle.",
+   "sound": "Hits push the effect harder; a negative depth pulls it the other way as they get louder."
   },
   {
    "index": 32,
@@ -1635,7 +1699,9 @@
    "a": -100.0,
    "b": 98.4375,
    "unit": "%",
-   "description": "Envelope follower to the slot's character, bipolar (0% at raw 64)."
+   "description": "Envelope follower to the slot's character, bipolar (0% at raw 64).",
+   "how": "Lets the input's loudness move slot 2's main control, from -100 to +98 percent with 0 in the middle.",
+   "sound": "Hits push the effect harder; a negative depth pulls it the other way as they get louder."
   },
   {
    "index": 33,
@@ -1651,7 +1717,9 @@
    "a": -100.0,
    "b": 98.4375,
    "unit": "%",
-   "description": "Envelope follower to the slot's character, bipolar (0% at raw 64)."
+   "description": "Envelope follower to the slot's character, bipolar (0% at raw 64).",
+   "how": "Lets the input's loudness move slot 3's main control, from -100 to +98 percent with 0 in the middle.",
+   "sound": "Hits push the effect harder; a negative depth pulls it the other way as they get louder."
   },
   {
    "index": 34,
@@ -1667,7 +1735,9 @@
    "a": -100.0,
    "b": 98.4375,
    "unit": "%",
-   "description": "Envelope follower to the slot's character, bipolar (0% at raw 64)."
+   "description": "Envelope follower to the slot's character, bipolar (0% at raw 64).",
+   "how": "Lets the input's loudness move slot 4's main control, from -100 to +98 percent with 0 in the middle.",
+   "sound": "Hits push the effect harder; a negative depth pulls it the other way as they get louder."
   },
   {
    "index": 35,
@@ -1683,7 +1753,9 @@
    "a": -100.0,
    "b": 98.4375,
    "unit": "%",
-   "description": "Envelope follower to the slot's character, bipolar (0% at raw 64)."
+   "description": "Envelope follower to the slot's character, bipolar (0% at raw 64).",
+   "how": "Lets the input's loudness move slot 5's main control, from -100 to +98 percent with 0 in the middle.",
+   "sound": "Hits push the effect harder; a negative depth pulls it the other way as they get louder."
   },
   {
    "index": 36,
@@ -1699,7 +1771,9 @@
    "a": -100.0,
    "b": 98.4375,
    "unit": "%",
-   "description": "Envelope follower to the slot's character, bipolar (0% at raw 64)."
+   "description": "Envelope follower to the slot's character, bipolar (0% at raw 64).",
+   "how": "Lets the input's loudness move slot 6's main control, from -100 to +98 percent with 0 in the middle.",
+   "sound": "Hits push the effect harder; a negative depth pulls it the other way as they get louder."
   },
   {
    "index": 37,
@@ -1764,7 +1838,9 @@
     ]
    ],
    "own_texts": false,
-   "description": "Tempo-synced LFO cycle length in ticks: 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48 or 64."
+   "description": "Tempo-synced LFO cycle length in ticks: 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48 or 64.",
+   "how": "Sets the rack LFO's cycle in ticks, from 1 to 64, locked to the song's tempo.",
+   "sound": "Short cycles flutter; long ones sweep slowly in time."
   },
   {
    "index": 38,
@@ -1785,7 +1861,9 @@
     "Steps",
     "Random"
    ],
-   "description": "Sine, triangle, saw, square, steps (an 8-step pattern) or random."
+   "description": "Sine, triangle, saw, square, steps (an 8-step pattern) or random.",
+   "how": "Chooses the rack LFO's shape: sine, triangle, saw, square, steps or random.",
+   "sound": "Smooth shapes sweep; steps and random jump."
   },
   {
    "index": 39,
@@ -1801,7 +1879,9 @@
    "a": -100.0,
    "b": 98.4375,
    "unit": "%",
-   "description": "LFO to the slot's character, bipolar (0% at raw 64)."
+   "description": "LFO to the slot's character, bipolar (0% at raw 64).",
+   "how": "Lets the rack's LFO move slot 1's main control, from -100 to +98 percent with 0 in the middle.",
+   "sound": "The effect sweeps in time with the song."
   },
   {
    "index": 40,
@@ -1817,7 +1897,9 @@
    "a": -100.0,
    "b": 98.4375,
    "unit": "%",
-   "description": "LFO to the slot's character, bipolar (0% at raw 64)."
+   "description": "LFO to the slot's character, bipolar (0% at raw 64).",
+   "how": "Lets the rack's LFO move slot 2's main control, from -100 to +98 percent with 0 in the middle.",
+   "sound": "The effect sweeps in time with the song."
   },
   {
    "index": 41,
@@ -1833,7 +1915,9 @@
    "a": -100.0,
    "b": 98.4375,
    "unit": "%",
-   "description": "LFO to the slot's character, bipolar (0% at raw 64)."
+   "description": "LFO to the slot's character, bipolar (0% at raw 64).",
+   "how": "Lets the rack's LFO move slot 3's main control, from -100 to +98 percent with 0 in the middle.",
+   "sound": "The effect sweeps in time with the song."
   },
   {
    "index": 42,
@@ -1849,7 +1933,9 @@
    "a": -100.0,
    "b": 98.4375,
    "unit": "%",
-   "description": "LFO to the slot's character, bipolar (0% at raw 64)."
+   "description": "LFO to the slot's character, bipolar (0% at raw 64).",
+   "how": "Lets the rack's LFO move slot 4's main control, from -100 to +98 percent with 0 in the middle.",
+   "sound": "The effect sweeps in time with the song."
   },
   {
    "index": 43,
@@ -1865,7 +1951,9 @@
    "a": -100.0,
    "b": 98.4375,
    "unit": "%",
-   "description": "LFO to the slot's character, bipolar (0% at raw 64)."
+   "description": "LFO to the slot's character, bipolar (0% at raw 64).",
+   "how": "Lets the rack's LFO move slot 5's main control, from -100 to +98 percent with 0 in the middle.",
+   "sound": "The effect sweeps in time with the song."
   },
   {
    "index": 44,
@@ -1881,7 +1969,9 @@
    "a": -100.0,
    "b": 98.4375,
    "unit": "%",
-   "description": "LFO to the slot's character, bipolar (0% at raw 64)."
+   "description": "LFO to the slot's character, bipolar (0% at raw 64).",
+   "how": "Lets the rack's LFO move slot 6's main control, from -100 to +98 percent with 0 in the middle.",
+   "sound": "The effect sweeps in time with the song."
   },
   {
    "index": 45,
@@ -1908,7 +1998,9 @@
     "A#",
     "B"
    ],
-   "description": "Root note for Resonator slots."
+   "description": "Root note for Resonator slots.",
+   "how": "Sets the root note that Resonator slots tune to.",
+   "sound": "Resonator slots ring at pitches of this key."
   },
   {
    "index": 46,
@@ -1931,7 +2023,9 @@
     "Blues",
     "Whole Tone"
    ],
-   "description": "Scale for Resonator slots: their character picks a degree of it."
+   "description": "Scale for Resonator slots: their character picks a degree of it.",
+   "how": "Chooses the scale that Resonator slots pick their degree from.",
+   "sound": "The tuned ringing follows major, minor, pentatonic or another scale."
   },
   {
    "index": 47,
@@ -1947,7 +2041,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Blends the live settings toward the stored target (Store)."
+   "description": "Blends the live settings toward the stored target (Store).",
+   "how": "Blends the live settings toward the stored target, from 0 to 100 percent.",
+   "sound": "Moves the whole rack between two scenes in one control."
   },
   {
    "index": 48,
@@ -1964,7 +2060,9 @@
     "...",
     "Store"
    ],
-   "description": "Off → Store captures the current settings as the morph target."
+   "description": "Off → Store captures the current settings as the morph target.",
+   "how": "Switch from off to Store to capture the current settings as the morph target.",
+   "sound": "Saves the scene that Morph will move toward."
   }
  ],
  "track_parameters": []

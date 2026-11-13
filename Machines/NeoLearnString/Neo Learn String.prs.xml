@@ -1,0 +1,163 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Pluck — Nylon Guitar">
+    <Preset Machine="Neo Learn String">
+      <Parameters>
+        <Parameter Name="Pick Position" Group="1" Index="0" Track="0" Value="250" />
+        <Parameter Name="String Damping" Group="1" Index="1" Track="0" Value="350" />
+        <Parameter Name="Pick Hardness" Group="1" Index="2" Track="0" Value="400" />
+        <Parameter Name="Decay Time" Group="1" Index="3" Track="0" Value="653" />
+        <Parameter Name="Stiffness" Group="1" Index="4" Track="0" Value="50" />
+        <Parameter Name="Sympathetic" Group="1" Index="5" Track="0" Value="150" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="75" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="718" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="539" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="742" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pluck — Steel Harp">
+    <Preset Machine="Neo Learn String">
+      <Parameters>
+        <Parameter Name="Pick Position" Group="1" Index="0" Track="0" Value="400" />
+        <Parameter Name="String Damping" Group="1" Index="1" Track="0" Value="200" />
+        <Parameter Name="Pick Hardness" Group="1" Index="2" Track="0" Value="750" />
+        <Parameter Name="Decay Time" Group="1" Index="3" Track="0" Value="799" />
+        <Parameter Name="Stiffness" Group="1" Index="4" Track="0" Value="100" />
+        <Parameter Name="Sympathetic" Group="1" Index="5" Track="0" Value="450" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="75" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="773" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="606" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="735" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Keys — Harpsichord">
+    <Preset Machine="Neo Learn String">
+      <Parameters>
+        <Parameter Name="Pick Position" Group="1" Index="0" Track="0" Value="150" />
+        <Parameter Name="String Damping" Group="1" Index="1" Track="0" Value="300" />
+        <Parameter Name="Pick Hardness" Group="1" Index="2" Track="0" Value="950" />
+        <Parameter Name="Decay Time" Group="1" Index="3" Track="0" Value="568" />
+        <Parameter Name="Stiffness" Group="1" Index="4" Track="0" Value="200" />
+        <Parameter Name="Sympathetic" Group="1" Index="5" Track="0" Value="300" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="75" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="688" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="394" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="806" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Keys — Upright Piano">
+    <Preset Machine="Neo Learn String">
+      <Parameters>
+        <Parameter Name="Pick Position" Group="1" Index="0" Track="0" Value="120" />
+        <Parameter Name="String Damping" Group="1" Index="1" Track="0" Value="450" />
+        <Parameter Name="Pick Hardness" Group="1" Index="2" Track="0" Value="600" />
+        <Parameter Name="Decay Time" Group="1" Index="3" Track="0" Value="731" />
+        <Parameter Name="Stiffness" Group="1" Index="4" Track="0" Value="400" />
+        <Parameter Name="Sympathetic" Group="1" Index="5" Track="0" Value="350" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="75" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="773" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="515" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="790" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bell — Stiff Chime">
+    <Preset Machine="Neo Learn String">
+      <Parameters>
+        <Parameter Name="Pick Position" Group="1" Index="0" Track="0" Value="500" />
+        <Parameter Name="String Damping" Group="1" Index="1" Track="0" Value="100" />
+        <Parameter Name="Pick Hardness" Group="1" Index="2" Track="0" Value="850" />
+        <Parameter Name="Decay Time" Group="1" Index="3" Track="0" Value="847" />
+        <Parameter Name="Stiffness" Group="1" Index="4" Track="0" Value="850" />
+        <Parameter Name="Sympathetic" Group="1" Index="5" Track="0" Value="200" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="75" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="812" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="630" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="767" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Muted Pluck">
+    <Preset Machine="Neo Learn String">
+      <Parameters>
+        <Parameter Name="Pick Position" Group="1" Index="0" Track="0" Value="200" />
+        <Parameter Name="String Damping" Group="1" Index="1" Track="0" Value="800" />
+        <Parameter Name="Pick Hardness" Group="1" Index="2" Track="0" Value="300" />
+        <Parameter Name="Decay Time" Group="1" Index="3" Track="0" Value="463" />
+        <Parameter Name="Stiffness" Group="1" Index="4" Track="0" Value="50" />
+        <Parameter Name="Sympathetic" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="75" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="624" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="418" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="796" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pad — Sitar Drone">
+    <Preset Machine="Neo Learn String">
+      <Parameters>
+        <Parameter Name="Pick Position" Group="1" Index="0" Track="0" Value="80" />
+        <Parameter Name="String Damping" Group="1" Index="1" Track="0" Value="150" />
+        <Parameter Name="Pick Hardness" Group="1" Index="2" Track="0" Value="550" />
+        <Parameter Name="Decay Time" Group="1" Index="3" Track="0" Value="952" />
+        <Parameter Name="Stiffness" Group="1" Index="4" Track="0" Value="250" />
+        <Parameter Name="Sympathetic" Group="1" Index="5" Track="0" Value="850" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="325" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="867" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="750" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="200" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="531" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Texture — Resonant Wash">
+    <Preset Machine="Neo Learn String">
+      <Parameters>
+        <Parameter Name="Pick Position" Group="1" Index="0" Track="0" Value="350" />
+        <Parameter Name="String Damping" Group="1" Index="1" Track="0" Value="50" />
+        <Parameter Name="Pick Hardness" Group="1" Index="2" Track="0" Value="200" />
+        <Parameter Name="Decay Time" Group="1" Index="3" Track="0" Value="982" />
+        <Parameter Name="Stiffness" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Sympathetic" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="401" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="906" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="788" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="350" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="321" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>
