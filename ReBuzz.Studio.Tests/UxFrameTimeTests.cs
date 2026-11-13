@@ -147,18 +147,22 @@ namespace ReBuzz.Studio.Tests
                     return ms;
                 }
                 var wireList = canvas.Wires.ToList();
-                canvas.MetersShown = false;
-                Frame("meters off");
-                canvas.MetersShown = true;
-                canvas.PeakSource = c => (0, 0);
-                canvas.TickMeters(1);
-                Frame("meters on, silent");
                 int n = 0;
                 var level = new Dictionary<IMachineConnection, float>();
                 foreach (var c in wireList) level[c] = 32768f * (float)System.Math.Pow(10, -(n++ % 12) * 4.0 / 20);   // 0 to -44 dB across the wires
-                canvas.PeakSource = c => (level[c], level[c] * 0.8f);
-                canvas.TickMeters(1);
-                Frame("meters on, a level on every wire");
+                // Alternated, twice, so a drifting load or a warm-up doesn't fall on one of them.
+                for (int round = 1; round <= 2; round++)
+                {
+                    canvas.MetersShown = false;
+                    Frame($"meters off (round {round})");
+                    canvas.MetersShown = true;
+                    canvas.PeakSource = c => (0, 0);
+                    canvas.TickMeters(1);
+                    Frame($"meters on, silent (round {round})");
+                    canvas.PeakSource = c => (level[c], level[c] * 0.8f);
+                    canvas.TickMeters(1);
+                    Frame($"meters on, a level on every wire (round {round})");
+                }
                 lines.Add($"taking the peaks (30 a second): {Median(300, () => canvas.TickMeters(1.0 / 30)):0.000} ms");
             }
             finally

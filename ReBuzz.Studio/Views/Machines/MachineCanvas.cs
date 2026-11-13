@@ -338,6 +338,28 @@ namespace ReBuzz.Studio.Views.Machines
         /// <summary>The meter's colour at a level: green, yellow from -6 dB.</summary>
         static Color MeterColour(double level) => level > 0.9 ? MeterYellow : MeterGreen;
 
+        static readonly Dictionary<long, (IPen Pen, IBrush Fill)> litWires = new Dictionary<long, (IPen, IBrush)>();
+
+        static (IPen Pen, IBrush Fill) LitWire(double level, Color track)
+        {
+            int step = Math.Clamp((int)Math.Round(level * 16), 1, 16);
+            long key = step | ((long)track.ToUInt32() << 8);
+            if (!litWires.TryGetValue(key, out var lit))
+            {
+                double l = step / 16.0;
+                var colour = Mix(track, MeterColour(l), 0.35 + 0.65 * l);
+                var brush = new SolidColorBrush(colour).ToImmutable();
+                lit = (new Pen(brush, 1 + 1.5 * l), brush);
+                if (litWires.Count > 512) litWires.Clear();
+                litWires[key] = lit;
+            }
+            return lit;
+        }
+
+        static readonly IBrush[] Veils = Enumerable.Range(0, 17).Select(i => (IBrush)new SolidColorBrush(Color.FromArgb((byte)(70 * i / 16), 255, 255, 255)).ToImmutable()).ToArray();
+        static readonly IBrush StripGreen = new SolidColorBrush(MeterGreen).ToImmutable();
+        static readonly IBrush StripYellow = new SolidColorBrush(MeterYellow).ToImmutable();
+
         static Color Mix(Color a, Color b, double t)
         {
             t = Math.Clamp(t, 0, 1);
@@ -615,10 +637,9 @@ namespace ReBuzz.Studio.Views.Machines
             if (!w.Visible) return;
             if (level > 0.01)
             {
-                // The level lights the wire: its line colour towards the meter's colour, and a little thicker.
-                var lit = Mix(track, MeterColour(level), 0.35 + 0.65 * level);
-                line = new Pen(new SolidColorBrush(lit), 1 + 1.5 * level);
-                ctx.DrawLine(line, w.Start, w.End);
+                // The level lights the wire: its line colour towards the meter's colour, and a little thicker (sixteen steps, drawn with cached pens).
+                var (pen, fill) = LitWire(level, track);
+                ctx.DrawLine(pen, w.Start, w.End);
                 if (!arrow) return;
                 var tri = new StreamGeometry();
                 using (var gc = tri.Open())
@@ -628,7 +649,7 @@ namespace ReBuzz.Studio.Views.Machines
                     gc.LineTo(w.Right);
                     gc.EndFigure(true);
                 }
-                ctx.DrawGeometry(new SolidColorBrush(lit), line, tri);
+                ctx.DrawGeometry(fill, pen, tri);
                 return;
             }
             ctx.DrawLine(line, w.Start, w.End);
@@ -659,9 +680,9 @@ namespace ReBuzz.Studio.Views.Machines
             double level = MetersShown ? BoxLevel(m) : 0;
             if (level > 0.01)
             {
-                ctx.FillRectangle(new SolidColorBrush(Color.FromArgb((byte)(70 * level), 255, 255, 255)), box);
+                ctx.FillRectangle(Veils[(int)Math.Round(level * 16)], box);
                 var strip = new Rect(box.X + 2, box.Bottom - 6, (box.Width - 4) * level, 4);
-                ctx.FillRectangle(new SolidColorBrush(MeterColour(level)), strip);
+                ctx.FillRectangle(level > 0.9 ? StripYellow : StripGreen, strip);
             }
 
             // Mode: .NET / 32, the MIDI channel, oversampling (ModeText), Arial 8 at 13,2.

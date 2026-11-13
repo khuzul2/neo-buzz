@@ -43,7 +43,7 @@ namespace ReBuzz.Studio.Shell
         public TransportBar(StudioHost host)
         {
             this.host = host;
-            meter = new MasterMeter(() => host.Core) { Margin = new Thickness(8, 2, 0, 2), VerticalAlignment = VerticalAlignment.Center };
+            meter = new MasterMeter(() => host.Core) { Margin = new Thickness(0, 2, 0, 2), VerticalAlignment = VerticalAlignment.Center };
             Padding = new Thickness(8, 4);
             for (int i = 1; i <= 12; i++) signature.Items.Add($"{i}/4");
             Avalonia.Automation.AutomationProperties.SetName(signature, "Time signature");
@@ -81,7 +81,7 @@ namespace ReBuzz.Studio.Shell
             {
                 if (!updating && Core != null && value != Core.BPM) TransportEdits.SetTempo(Core, value);
             };
-            // The groups wrap whole when the window is narrow; the meter keeps the right.
+            // The groups, the meter last, wrap whole when the window is narrow.
             Group Pack(Thickness margin, params Avalonia.Controls.Control[] items)
             {
                 var g = new Group { Orientation = Orientation.Horizontal, Spacing = 6, Margin = margin, VerticalAlignment = VerticalAlignment.Center };
@@ -93,11 +93,8 @@ namespace ReBuzz.Studio.Shell
             left.Children.Add(Pack(new Thickness(0, 2, 16, 2), metronome, signature, bpm,
                 new TextBlock { Text = "BPM", VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush }, tap));
             left.Children.Add(Pack(new Thickness(0, 2, 16, 2), position, minutes));
-            var dock = new DockPanel { LastChildFill = true };
-            DockPanel.SetDock(meter, Dock.Right);
-            dock.Children.Add(meter);
-            dock.Children.Add(left);
-            Child = dock;
+            left.Children.Add(meter);
+            Child = left;
         }
 
         /// <summary>
