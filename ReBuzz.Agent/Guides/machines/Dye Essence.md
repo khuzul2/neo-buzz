@@ -23,62 +23,27 @@ The signal flow (every engine, the filters, modulation, arpeggiator and sequence
 - Samples are built in the background like tables; renders wait for them. A Sample slot with `A loop` Off ends silent after the sample ends, whatever the amp envelope does.
 - Samples are normalised to a peak of 0.9 and decaying ones (Bell, Pluck) are quiet by RMS: turn `Volume` up or layer a second slot.
 
-## Preset map
+## Starting points per category
 
-The `Rack — …` presets (the effects rack's types) are listed in `guide(topic="dye-essence-effects")`.
+There are about 340 factory presets, named `Category — Name`; `preset_list(machine, category="Bass")` pages one category (`search` filters by words, `limit` and `offset` page), and the generated manual lists every name under its category. The `Rack — …` presets (the effects rack's types) are listed in `guide(topic="dye-essence-effects")`. Each category below starts well from the preset named; the second is a different engine.
 
-| Preset | What | Tweak first |
-|---|---|---|
-| "Init — Basic" | a saw through the ladder | everything |
-| "Lead — Wide Unison" | 7 + 5 detuned saws, an octave apart | `A detune`, `F1 cutoff` |
-| "Lead — Sub PM" | a triangle phase-modulated by the sub | `A warp 1 amt` |
-| "Pad — Glass Choir" | Formants in unison over Harmonics, slow | `A position` |
-| "Pad — Two Filters" | Grit to filter 1, Resonant to a band-pass in parallel | `F2 cutoff` |
-| "Bass — FM Growl" | a sine FM'd by a silent saw, mono, glide | `A warp 1 amt` |
-| "Bass — Window Sync" | a window-synced saw with a sub | `A warp 1 amt` |
-| "Bass — Detuned Stack" | three detuned saws and one an octave down | `F1 env` |
-| "Bass — Analog Saw" | an analog saw over a 30 % pulse an octave down, mono | `F1 cutoff`, `B pulse width` |
-| "Pad — Analog Strings" | six drifting analog saws and a narrow pulse an octave up | `A drift`, `A detune` |
-| "Pluck — Mirror Bell" | Harmonics mirrored, a fast filter envelope | `A warp 1 amt` |
-| "Keys — Bent Organ" | Organ with Bend+, an octave layer | `A warp 1 amt` |
-| "Texture — Comb Noise" | noise through a tuned comb | `F1 reso` |
-| "Pad — Position Sweep" | Formants swept by a slow free LFO, a mod envelope opening the filter | `R1 amount`, `LFO1 rate` |
-| "Lead — Delayed Vibrato" | vibrato fading in over 0.7 s; the wheel opens the filter | `LFO1 fade`, `R1 amount` |
-| "FX — Squeeze Sweep" | Digital squeezed and warped, High 4× | `A warp 1 amt` |
-| "Pad — Sample Choir" | a looped sung vowel, three voices | `A loop fade`, `F1 cutoff` |
-| "Pad — Eight Strings" | a looped bowed-string sample in eight voices | `A detune`, `F1 cutoff` |
-| "Keys — Struck Bell" | the bell sample played once, two voices | `A detune`, `Amp release` |
-| "Pluck — Double String" | the plucked sample in two slots a few cents apart | `B fine` |
-| "FX — Reverse Pluck" | the pluck backwards | `A reverse`, `Amp release` |
-| "Texture — Frozen Cloud" | grains of a noise texture, the centre frozen | `A position`, `A grain size` |
-| "Pad — Scanning Strings" | a cloud scanning slowly through the strings | `A scan`, `A spray` |
-| "Pad — Choir Cloud" | a cloud of the choir, scanning at half speed | `A grain rate`, `A spray` |
-| "FX — Bell Rain" | sparse percussive grains of the bell, pitch scattered up to 600 ct, some reversed | `A grain pitch`, `A grain reverse` |
-| "Pad — Additive Strings" | the Strings set morphing to Brass, four unison voices | `A position`, `A tilt` |
-| "Keys — Drawbar Organ" | the Organ set with a decaying upper end, a second slot an octave up | `A damp`, `B level` |
-| "Lead — Reed Morph" | the Reed set; the mod wheel morphs it to Brass, vibrato from LFO 1 | `A position`, `R1 amount` |
-| "Pad — Vowel Choir" | Vowel A to Vowel O, a slow LFO morphing three voices | `R1 amount`, `LFO1 rate` |
-| "Bell — Stretched Glass" | stretched, quickly damped partials | `A stretch`, `A damp` |
-| "Pluck — Damped Wire" | 96 partials of a saw that die from the top | `A damp`, `Amp decay` |
-| "Bass — Hollow Pipe" | Reed, odd partials only, an octave down through a Ladder 24 | `A odd even`, `F1 cutoff` |
-| "Texture — Random Partials" | a random set drifting to Comb, five wide voices | `A stretch`, `R1 amount` |
-| "Keys — Glass Marimba" | a struck bar, a short ring | `A force`, `A ring time` |
-| "Bell — Struck Bronze" | a bell body, a hard strike, seven seconds | `A material`, `A body size` |
-| "Pluck — Nylon String" | a plucked string, two voices, upper modes dying fast | `A hf damp`, `A force` |
-| "Pad — Bowed Glass" | a bowed string of a hard material, three voices, a slow LFO on the place | `A material`, `R1 amount` |
-| "Lead — Breath Pipe" | a breath through a tube, vibrato from LFO 1, the mod wheel moving the place | `A position`, `R1 amount` |
-| "Bass — Skin Drum" | a struck membrane an octave down, a large body | `A body size`, `A ring time` |
-| "Keys — Steel Plate" | a hard struck plate, 48 modes, a long ring | `A material`, `A modes` |
-| "Pad — Bowed Bell and Pipe" | a bowed bell and an octave-up bowed tube, slowly moving | `B level`, `A position` |
-| "Keys — Glass Bell" | the bell sample with a Formants table an octave up | `B level` |
-| "Arp — Glass Pluck Up" | a plucked string up two octaves in sixteenths | `Arp octaves`, `Arp gate` |
-| "Arp — Saw Up Down" | detuned saws up and down in swung eighths, a resonant filter envelope | `Arp swing`, `F1 reso` |
-| "Arp — Triplet Chord Stabs" | the whole chord in triplet eighths, short | `Arp gate`, `Flt decay` |
-| "Arp — Random Bells" | struck bells in a seeded random order over three octaves | `Arp seed`, `Arp gate` |
-| "Arp — Dotted Organ Down" | the organ set down in dotted eighths | `Arp feel`, `A tilt` |
-| "Arp — Latched Played Pad" | a pad arpeggiated in played order, latched | `Arp latch`, `Arp rate` |
-| "Seq — Acid Line" | a 16-step legato line with ties, rests and accents on the key held | `Seq mode`, `R1 amount` |
-| "Seq — Pulse Bass" | an 8-step swung pulse bass | `Seq swing`, `A pulse width` |
-| "Seq — Filter Steps" | the sequencer as modulation: stepped, slewed filter and position under held chords | `Seq slew`, `R1 amount` |
-| "Seq — Probability Pluck" | a plucked 16-step pattern with probabilities of 50–100 % | `Arp seed`, `A force` |
-| "MPE — Expressive Lead" | pressure opens the filter and the level, slide moves the position, per-note bend | `MPE bend range`, `R1 amount` |
+| Category | Start with | Or | Tweak first |
+|---|---|---|---|
+| Init | "Init — Basic" | | everything |
+| Bass | "Bass — Analog Saw" | "Bass — FM Growl" | `F1 cutoff`, `A warp 1 amt` |
+| Lead | "Lead — Wide Unison" | "Lead — Reed Morph" | `A detune`, `A position` |
+| Pad | "Pad — Analog Strings" | "Pad — Glass Choir" | `A position`, `F1 cutoff` |
+| Keys | "Keys — Drawbar Organ" | "Keys — Glass Marimba" | `A damp`, `A force` |
+| Pluck | "Pluck — Double String" | "Pluck — Nylon String" | `B fine`, `A hf damp` |
+| Bell | "Bell — Struck Bronze" | "Bell — Stretched Glass" | `A material`, `A stretch` |
+| Arp | "Arp — Glass Pluck Up" | "Arp — Random Bells" | `Arp octaves`, `Arp gate` |
+| Seq | "Seq — Acid Line" | "Seq — Filter Steps" | `Seq mode`, `R1 amount` |
+| Texture | "Texture — Frozen Cloud" | "Texture — Comb Noise" | `A position`, `F1 reso` |
+| FX | "FX — Bell Rain" | "FX — Reverse Pluck" | `A grain pitch`, `A reverse` |
+| Drum | "Drum — Sine Kick" | "Drum — Noise Snare" | `Amp decay`, `A level` |
+| Vocal | "Vocal — Sung Choir" | "Vocal — Formant Voice" | `A position`, `R1 amount` |
+| Cinematic | "Cinematic — Rising Swell" | "Cinematic — Stone Impact" | `Amp attack`, `F1 cutoff` |
+| Lo-Fi | "Lo-Fi — Dusty Keys" | "Lo-Fi — Tape Pad" | the Bitcrusher and Delay slots |
+| MPE | "MPE — Expressive Lead" | | the MPE route amounts |
+
+Generated presets carry a one-line comment saying what is in them (`preset_list` returns it). Most name the effect in the rack that shapes them ("in a Hall", "Crushed", "Chorused"): the slot's `FXn type` and its ten parameters are the thing to turn.

@@ -160,7 +160,7 @@ namespace NeoBuzz.MachineTests
         }
 
         /// <summary>The Dye Essence preset being rendered: its machine state (null: none).</summary>
-        static XElement dyeState;
+        internal static XElement dyeState;
 
         /// <summary>
         /// A preset's machine data as ReBuzz stores it (MachineManager.GetMachineData: a version byte, the size, then the
@@ -178,6 +178,24 @@ namespace NeoBuzz.MachineTests
             return XDocument.Parse(System.Text.Encoding.UTF8.GetString(bytes, 5, size)).Root;
         }
 
+        /// <summary>The notes RenderSynth plays instead of the chord (the library test's single note); null: the chord.</summary>
+        internal static int[] NotesOverride;
+
+        /// <summary>One Dye Essence preset of a preset file, rendered as EveryPresetSoundsSensible does: the chord, one second.</summary>
+        internal static float[] RenderDyePreset(string file, string name, Dictionary<int, int> values, int[] notes = null)
+        {
+            var (table, render) = Machines["Dye Essence"];
+            dyeState = PresetState(file, name);
+            NotesOverride = notes;
+            try
+            {
+                var v = new ParamValues(table);
+                foreach (var kv in values) if (kv.Key >= 0) v.Set(kv.Key, kv.Value);
+                return render(v, new float[Measure.Rate]);
+            }
+            finally { NotesOverride = null; dyeState = null; }
+        }
+
         /// <summary>A chord (C3 E3 G3 B3) held for two thirds of the length, then released.</summary>
         static float[] RenderSynth(INoteSink engine, Func<INoteSink, float[], float[], int, bool> process, int length)
         {
@@ -185,7 +203,7 @@ namespace NeoBuzz.MachineTests
             var y = new float[length];
             var l = new float[256];
             var r = new float[256];
-            int[] chord = { 48, 52, 55, 59 };
+            int[] chord = NotesOverride ?? new[] { 48, 52, 55, 59 };
             for (int k = 0; k < chord.Length; k++) engine.NoteOn(k, chord[k], 0.8f);
             for (int pos = 0; pos < length; pos += 256)
             {
