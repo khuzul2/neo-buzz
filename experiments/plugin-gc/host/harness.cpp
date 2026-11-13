@@ -140,7 +140,7 @@ static const char* makeRealtime(int64_t periodNs)
 }
 
 // ---------------------------------------------------------------- the run
-struct Config { std::string plugin, label = "run"; int block = 64; double seconds = 300, warmup = 10; int load = 0, latency = 0, instances = 16, driveQuality = 0; };
+struct Config { std::string plugin, label = "run"; int block = 64; double seconds = 300, warmup = 10; int load = 0, latency = 0, instances = 16, driveQuality = 0, driveAutogain = 0; };
 
 int main(int argc, char** argv)
 {
@@ -150,7 +150,7 @@ int main(int argc, char** argv)
         auto val = [&] { return i + 1 < argc ? argv[++i] : (char*)""; };
         if (a == "--plugin") c.plugin = val(); else if (a == "--block") c.block = atoi(val()); else if (a == "--seconds") c.seconds = atof(val());
         else if (a == "--warmup") c.warmup = atof(val()); else if (a == "--load") c.load = atoi(val()); else if (a == "--latency") c.latency = atoi(val());
-        else if (a == "--label") c.label = val(); else if (a == "--instances") c.instances = atoi(val()); else if (a == "--drive-quality") c.driveQuality = atoi(val());
+        else if (a == "--label") c.label = val(); else if (a == "--instances") c.instances = atoi(val()); else if (a == "--drive-quality") c.driveQuality = atoi(val()); else if (a == "--drive-autogain") c.driveAutogain = atoi(val());
     }
     if (c.plugin.empty() || c.block < 1 || c.block > 256) { fprintf(stderr, "usage: harness --plugin lib --block 64 --seconds 300 --load 0..3\n"); return 2; }
 #ifdef _WIN32
@@ -167,7 +167,11 @@ int main(int argc, char** argv)
     const int N = c.instances;
     std::vector<int> h(N);
     for (int i = 0; i < N; i++) h[i] = api.create(i < N / 2 ? 0 : 1, (float)kRate);   // first half Poly, second half Drive
-    for (int i = N / 2; i < N; i++) api.param(h[i], DRIVE_QUALITY, c.driveQuality);   // 0 = 2x, 1 = 4x, 2 = 8x oversampling
+    for (int i = N / 2; i < N; i++) api.param(h[i], DRIVE_QUALITY, c.driveQuality);
+    // Drive re-runs a 4096-sample auto-gain probe on every parameter change; with automation every block that costs more than
+    // the rest of the machine, so it is off by default here (it is a CPU finding, not a GC one; see the report).
+    for (int i = N / 2; i < N; i++) api.param(h[i], DRIVE_AUTOGAIN, c.driveAutogain);
+    // 0 = 2x, 1 = 4x, 2 = 8x oversampling
     if (api.setLatency) api.setLatency(c.latency);
     if (api.loadStart) api.loadStart(c.load);
 
@@ -186,6 +190,7 @@ int main(int argc, char** argv)
     std::vector<uint32_t> dur(recBlocks), late(recBlocks);
     std::vector<uint8_t> gcFlag(recBlocks);
     std::atomic<bool> done{false};
+    int64_t resyncCount = 0;
     std::string rtMsg;
     int gc0Start = 0, gc1Start = 0, gc2Start = 0; int64_t pauseStart = 0, allocStart = 0, allocEnd = 0, startedNs = 0;
     int gcEnd0 = 0, gcEnd1 = 0, gcEnd2 = 0; int64_t pauseEnd = 0, maxPause = 0;
@@ -196,10 +201,12 @@ int main(int argc, char** argv)
         const int chords[4][4] = { { 48, 55, 58, 63 }, { 46, 53, 58, 62 }, { 44, 51, 56, 60 }, { 43, 50, 55, 59 } };
         const int blocksPerSec = (int)(kRate / c.block);
         int64_t t0 = now_ns() + 20000000;
+        int64_t resyncs = 0;
         float peak = 0;
         for (int64_t k = -warmBlocks; k < recBlocks; k++) {
             int64_t sched = t0 + (k + warmBlocks) * period;
             wait_until(sched);
+            if (now_ns() - sched > 50 * period) { t0 += now_ns() - sched; sched = now_ns(); resyncs++; }   // hopelessly behind (a host would have dropped out): restart the schedule
             if (k == 0) {                                    // recording starts: baseline the counters
                 gc0Start = gcCount(); gc1Start = api.gcCountGen ? api.gcCountGen(1) : 0; gc2Start = api.gcCountGen ? api.gcCountGen(2) : 0;
                 pauseStart = api.gcPause ? api.gcPause() : 0; allocStart = api.allocBytes ? api.allocBytes() : 0;
@@ -232,6 +239,7 @@ int main(int argc, char** argv)
         gcEnd0 = gcCount(); gcEnd1 = api.gcCountGen ? api.gcCountGen(1) : 0; gcEnd2 = api.gcCountGen ? api.gcCountGen(2) : 0;
         pauseEnd = api.gcPause ? api.gcPause() : 0; allocEnd = api.allocBytes ? api.allocBytes() : 0;
         maxPause = api.gcMaxPause ? api.gcMaxPause() : 0;
+        resyncCount = resyncs;
         if (peak == 12345.678f) printf("?\n");               // keep the work observable
         done = true;
     });
@@ -256,10 +264,10 @@ int main(int argc, char** argv)
     printf("RT label=%s %s\n", c.label.c_str(), rtMsg.c_str());
     printf("RESULT label=%s block=%d period_us=%.1f load=%d latency=%d seconds=%.1f callbacks=%lld mean_us=%.1f median_us=%.1f p99_us=%.1f p999_us=%.1f p9999_us=%.1f worst_us=%.1f "
            "misses=%lld misses_gc=%lld gc_callbacks=%lld stalls500_all=%lld stalls500_gc=%lld worst_gc_cb_us=%.1f worst_nongc_cb_us=%.1f late_p999_us=%.1f late_max_us=%.1f "
-           "gc_count=%d gc_gen1=%d gc_gen2=%d pause_total_ms=%.2f pause_max_ms=%.3f alloc_mb=%.1f\n",
+           "gc_count=%d gc_gen1=%d gc_gen2=%d pause_total_ms=%.2f pause_max_ms=%.3f alloc_mb=%.1f resyncs=%lld\n",
            c.label.c_str(), c.block, us((double)period), c.load, c.latency, wall, (long long)recBlocks, us(sum / recBlocks), us(median), us(pct(sorted, 99)), us(pct(sorted, 99.9)), us(pct(sorted, 99.99)), us(sorted.back()),
            (long long)misses, (long long)missesGc, (long long)gcCbs, (long long)stalls500All, (long long)stalls500, us(worstGc), us(worstNoGc), us(pct(sortedLate, 99.9)), us(sortedLate.back()),
-           gcEnd0 - gc0Start, gcEnd1 - gc1Start, gcEnd2 - gc2Start, (pauseEnd - pauseStart) / 1e6, maxPause / 1e6, (allocEnd - allocStart) / 1048576.0);
+           gcEnd0 - gc0Start, gcEnd1 - gc1Start, gcEnd2 - gc2Start, (pauseEnd - pauseStart) / 1e6, maxPause / 1e6, (allocEnd - allocStart) / 1048576.0, (long long)resyncCount);
     // The ten worst callbacks, to see what they coincide with.
     std::vector<int64_t> idx(recBlocks); for (int64_t i = 0; i < recBlocks; i++) idx[i] = i;
     std::partial_sort(idx.begin(), idx.begin() + std::min<int64_t>(10, recBlocks), idx.end(), [&](int64_t a, int64_t b) { return dur[a] > dur[b]; });

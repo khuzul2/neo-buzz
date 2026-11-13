@@ -23,7 +23,7 @@ typedef void (*np_set_latency_t)(int sustained);
 typedef int (*np_gc_config_t)(char* buf, int cap);
 
 // Parameter indices the host automates every block.
-enum { POLY_UNIDETUNE = 3, POLY_F1CUTOFF = 34, DRIVE_DRIVE = 1, DRIVE_TONE = 5, DRIVE_QUALITY = 10 };
+enum { POLY_UNIDETUNE = 3, POLY_F1CUTOFF = 34, DRIVE_DRIVE = 1, DRIVE_TONE = 5, DRIVE_AUTOGAIN = 8, DRIVE_QUALITY = 10 };
 #ifdef __cplusplus
 }
 #endif
