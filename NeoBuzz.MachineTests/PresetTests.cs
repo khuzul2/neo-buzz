@@ -159,6 +159,7 @@ namespace NeoBuzz.MachineTests
         {
             for (int i = 0; i < NeoBuzz.DyeEssence.TableBank.Count; i++) NeoBuzz.DyeEssence.TableBank.GetNow(i);
             for (int i = 0; i < NeoBuzz.DyeEssence.SampleSources.Count; i++) NeoBuzz.DyeEssence.SampleSources.GetNow(i);
+            for (int i = 0; i < NeoBuzz.DyeEssence.SpectralSources.Count; i++) NeoBuzz.DyeEssence.SpectralSources.GetNow(i);
             var e = new NeoBuzz.DyeEssence.DyeEngine(v);
             // The preset's drawn LFOs, from its machine data (dye-essence.md §4.6), as the machine takes them.
             for (int l = 0; l < 4; l++)
