@@ -2,10 +2,22 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Jeskola Filter 2",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
- "type": "utility",
- "summary": "Utility (profiled draft): traits: utility; tail 0.0 s; latency 1 samples; gain +6.0 dB at the defaults.",
+ "status": "curated",
+ "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
+ "type": "filter",
+ "summary": "A second Buzz resonant filter: low-pass, high-pass or band-pass with cutoff and resonance on 0 to 128 scales and no bandwidth. For sweeps in old Buzz songs; Neo Filter has real units.",
+ "quirks": [
+  "Mono out, and about 6 dB louder than its input at unity settings: NeoBuzz Live feeds a mono native effect left + right summed (ReBuzz/NativeMachine/NativeMessage.cs). Profile: +6.0 dB at the defaults.",
+  "Type is a bare number (0 low-pass, 1 high-pass, 2 band-pass): its texts say 0, 1 and 2, and its description gives the names.",
+  "Resonance near its top self-oscillates very loudly (+52 dBFS peak on noise in the profile): keep it below 118.",
+  "Cutoff and Resonance are bare 0 to 128 scales (its description says 0 to 80, in hex).",
+  "Closed source: names come from its own descriptions and measurements, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "ReBuzz/NativeMachine/NativeMessage.cs — a mono native effect gets left + right summed",
+  "profile (tools/machine-profiler.py, windows 2026-11-13) — +6.0 dB at the defaults; hot with Resonance at its top"
+ ],
  "category": "EQ & Filter",
  "tags": [
   "filter"
@@ -510,6 +522,8 @@
    "index": 0,
    "id": "Type",
    "name": "Type",
+   "plain_name": "Filter type",
+   "role": "filter.type",
    "group": "",
    "min": 0,
    "max": 2,
@@ -518,14 +532,15 @@
    "a": 0.0,
    "b": 2.0,
    "description": "Type: 0=lowpass (def), 1=highpass, 2=bandpass",
-   "confidence": "values",
-   "suggested_role": "filter.type",
-   "role_evidence": "its settings change the response's shape (up to 40 dB) and corners, 23.1 Hz–16.7 kHz → 11.8 kHz–16.7 kHz"
+   "how": "Chooses low-pass, high-pass or band-pass.",
+   "sound": "Low-pass darkens, high-pass thins, band-pass leaves a narrow band."
   },
   {
    "index": 1,
    "id": "Cutoff",
    "name": "Cutoff",
+   "plain_name": "Cutoff",
+   "role": "filter.cutoff",
    "group": "",
    "min": 0,
    "max": 128,
@@ -534,14 +549,15 @@
    "a": 0.0,
    "b": 128.0,
    "description": "Cutoff Frequency (0-80)",
-   "confidence": "values",
-   "suggested_role": "filter.cutoff",
-   "role_evidence": "the response's upper corner moves 92.5 Hz → 16.7 kHz"
+   "how": "Sets the filter's corner on a 0 to 128 scale; 128 is fully open for the low-pass.",
+   "sound": "Lower values close a low-pass and darken the sound; sweep it for classic filter movement."
   },
   {
    "index": 2,
    "id": "Resonance",
    "name": "Resonance",
+   "plain_name": "Resonance",
+   "role": "filter.resonance",
    "group": "",
    "min": 0,
    "max": 128,
@@ -550,7 +566,6 @@
    "a": 0.0,
    "b": 128.0,
    "description": "Resonance (0-80)",
-   "confidence": "values",
    "safe_range": {
     "min": 0,
     "max": 118,
@@ -558,8 +573,8 @@
     "max_text": "118",
     "reason": "rings at its maximum (128: +52.0 dBFS peak over 30 s, 55 dB over its level at the default; the edge is where it passes 24 dB over it)"
    },
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 8.37 kHz: its prominence +0 → +8 dB over the response"
+   "how": "Sets the emphasis at the corner on a 0 to 128 scale.",
+   "sound": "Higher values add a whistling peak at the cutoff; near the top it rings very loudly, so keep it below 118."
   }
  ],
  "track_parameters": []

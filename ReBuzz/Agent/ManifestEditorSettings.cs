@@ -1,7 +1,7 @@
 // Fork (docs/specs/mcp-server.md §12.3, §12.11, U4): the per-machine setting for the manifest editor.
 // When it is on, opening a machine that has no GUI of its own (a double click) shows its manifest
 // editor instead of the plain parameter list; the list stays on the machine's menu (Parameters...).
-// On by default for gear with a curated manifest, off for drafts; kept per gear in the settings
+// On by default for gear with a curated manifest and no GUI of its own, off for drafts and for machines with a GUI; kept per gear in the settings
 // (RegistryEx: the Windows registry, or the studio's and rebuzz-headless's JSON settings), never in
 // songs. Engine side, so MachineCore's double click (ReBuzz.exe) and the studio read the same.
 
@@ -19,8 +19,27 @@ namespace ReBuzz.Agent
         public static bool Available(IMachineDLL dll) =>
             dll?.Info != null && dll.Info.Type != MachineType.Master && SongModel.Manifest(dll) != null;
 
-        /// <summary>On for a curated manifest, off for a draft or a generated one (the Neo machines have their own editors).</summary>
-        public static bool Default(IMachineDLL dll) => SongModel.Manifest(dll)?.IsCurated == true;
+        /// <summary>Whether the machine brings a GUI of its own (a GUI factory: Pedal LFO's target picker, Pedal Chord's and
+        /// Pedal Tracker's editors, the Neo editors). A native machine's own double click dialog is handled before this.</summary>
+        public static bool HasOwnGui(IMachineDLL dll)
+        {
+            try
+            {
+                return dll?.GUIFactory != null;
+            }
+            catch (System.Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>The default as a rule: the curated manifest editor wins a double click only for a machine with no GUI of
+        /// its own; a machine with one keeps opening it (the editor stays on its menu).</summary>
+        public static bool DefaultFor(bool curated, bool hasOwnGui) => curated && !hasOwnGui;
+
+        /// <summary>On for a curated manifest of a machine with no GUI of its own, off for a draft, a generated one or a
+        /// machine whose GUI holds its own editors (the Neo machines, Pedal LFO, Chord, Peer Control, Tracker...).</summary>
+        public static bool Default(IMachineDLL dll) => DefaultFor(SongModel.Manifest(dll)?.IsCurated == true, HasOwnGui(dll));
 
         /// <summary>Whether opening the machine (a double click) shows its manifest editor rather than its parameter list.</summary>
         public static bool OpensEditor(IMachineDLL dll)

@@ -2,10 +2,21 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Jeskola Relativion",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "control",
- "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "summary": "A Buzz control machine that reads a range of notes against a root note and moves a controlled value by a range around its own root; it makes no sound. Its behaviour was not measured and is unverified here.",
+ "quirks": [
+  "It makes no sound; it is a control machine.",
+  "Its roles are read from the parameter names and texts only: unverified by measurement.",
+  "A seventh parameter exists in the machine that has no mapping and is not in the manifest.",
+  "Notes are named C-0 up to G-10 (0 to 127); Root Note and Lowest Note default to C-5 (60), Highest Note to C-10 (120).",
+  "Closed source: names come from its own descriptions and measurements, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-13) — a control machine, silent, six parameters"
+ ],
  "category": "Control",
  "tags": [
   "notes",
@@ -23,6 +34,7 @@
    "index": 0,
    "id": "Root Note",
    "name": "Root Note",
+   "plain_name": "Root note",
    "group": "",
    "min": 0,
    "max": 127,
@@ -158,13 +170,15 @@
     "F#10",
     "G-10"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "A note, C-0 to G-10; default C-5.",
+   "how": "Chooses the note, from C-0 up, that the machine treats as the centre of the notes it reads.",
+   "sound": "Sets which played note counts as the unshifted one; the machine makes no sound itself."
   },
   {
    "index": 1,
    "id": "Lowest Note",
    "name": "Lowest Note",
+   "plain_name": "Lowest note",
    "group": "",
    "min": 0,
    "max": 127,
@@ -300,13 +314,15 @@
     "F#10",
     "G-10"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "A note, C-0 to G-10; default C-5.",
+   "how": "Chooses the lowest note the machine reacts to.",
+   "sound": "Notes below it are ignored; the machine makes no sound itself."
   },
   {
    "index": 2,
    "id": "Highest Note",
    "name": "Highest Note",
+   "plain_name": "Highest note",
    "group": "",
    "min": 0,
    "max": 127,
@@ -442,13 +458,15 @@
     "F#10",
     "G-10"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "A note, C-0 to G-10; default C-10.",
+   "how": "Chooses the highest note the machine reacts to.",
+   "sound": "Notes above it are ignored; the machine makes no sound itself."
   },
   {
    "index": 3,
    "id": "Ctrl. Root",
    "name": "Ctrl. Root",
+   "plain_name": "Controller root",
    "group": "",
    "min": 0,
    "max": 127,
@@ -584,13 +602,15 @@
     "F#10",
     "G-10"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "A note, C-0 to G-10; default C-5.",
+   "how": "Chooses the note, from C-0 up, that stands for the middle of the controlled parameter's movement.",
+   "sound": "Sets the neutral point the controlled value moves around; the machine makes no sound itself."
   },
   {
    "index": 4,
    "id": "Ctrl. Range",
    "name": "Ctrl. Range",
+   "plain_name": "Controller range",
    "group": "",
    "min": 0,
    "max": 48,
@@ -598,13 +618,15 @@
    "kind": "linear",
    "a": 0.0,
    "b": 48.0,
-   "description": "",
-   "confidence": "values"
+   "description": "0 to 48 steps; default 24.",
+   "how": "Sets how far, in steps from 0 to 48, the controlled value moves from its middle.",
+   "sound": "A larger range makes the controlled parameter swing further per note; the machine makes no sound itself."
   },
   {
    "index": 6,
    "id": "Volume",
    "name": "Volume",
+   "plain_name": "Volume note",
    "group": "",
    "min": 0,
    "max": 127,
@@ -740,8 +762,9 @@
     "F#10",
     "G-10"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "A note value, C-0 to G-10; default C-0.",
+   "how": "Chooses a note value, C-0 up, for the machine's volume column; its default is the lowest.",
+   "sound": "Unverified: the machine makes no sound itself."
   }
  ],
  "track_parameters": []

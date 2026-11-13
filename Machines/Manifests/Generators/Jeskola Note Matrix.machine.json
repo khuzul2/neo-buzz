@@ -2,10 +2,19 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Jeskola Note Matrix",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "control",
- "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "summary": "A Buzz control machine with a single placeholder parameter; it makes no sound. How it is used was not measured and is unverified here.",
+ "quirks": [
+  "It makes no sound; its one parameter is a placeholder (its own name is Dummy).",
+  "Its own work happens in its window, which was not exercised by the profile: unverified.",
+  "Closed source: names come from its own descriptions and measurements, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-13) — a control machine, silent, one dummy parameter"
+ ],
  "category": "Control",
  "tags": [
   "sequencer",
@@ -23,6 +32,7 @@
    "index": 0,
    "id": "Dummy",
    "name": "Dummy",
+   "plain_name": "Placeholder",
    "group": "",
    "min": 0,
    "max": 127,
@@ -30,8 +40,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "description": "A placeholder (the machine calls it Dummy), 0 to 127.",
+   "how": "A placeholder parameter from 0 to 127 that the machine's own name calls a dummy.",
+   "sound": "No audible effect: the machine makes no sound."
   }
  ],
  "track_parameters": []

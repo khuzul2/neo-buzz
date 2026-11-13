@@ -2,10 +2,20 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Jeskola Stereo Reverb",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "reverb",
- "summary": "Reverb (profiled draft): traits: reverb; tail 0.6 s; latency 0 samples; gain +6.1 dB at the defaults.",
+ "summary": "A Buzz stereo reverb: dry, reverb and early-reflection levels, reverb time up to 6.4 s, pre-delay and a high cut. For quick ambience; Neo Verb is the better reverb.",
+ "quirks": [
+  "Same controls as Jeskola Reverb, but stereo out (the profile measured a correlation of 0.98); the mono one sums its input.",
+  "Rev Out or ER Out at 0 dB peak above full scale on a hot input (+2.6 and +0.9 dBFS in the profile).",
+  "Its descriptions give shorter ranges (0 to 40, 0 to 64) than its values reach: Rev Time to 6.4 s, Pre-Delay to 100 ms.",
+  "Closed source: names come from its own descriptions and measurements, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-13) — tail 0.6 s at the defaults, +6.1 dB, correlation 0.98, reverb time 0.5 s to 3.7 s"
+ ],
  "category": "Delay & Reverb",
  "tags": [
   "reverb",
@@ -534,6 +544,8 @@
    "index": 0,
    "id": "Dry Out",
    "name": "Dry Out",
+   "plain_name": "Dry level",
+   "role": "mix.dry",
    "group": "",
    "min": 0,
    "max": 4096,
@@ -1003,14 +1015,15 @@
     ]
    ],
    "description": "Dry Out (0-1000)",
-   "confidence": "values",
-   "suggested_role": "mix.dry",
-   "role_evidence": "the direct sound -120 → +4 dB while the tail stays (-14 → -14 dB)"
+   "how": "Sets the unprocessed signal's level, from silence up to 0 dB.",
+   "sound": "Lower it to push the sound back into the reverb; at silence only the reverb remains."
   },
   {
    "index": 1,
    "id": "Rev Out",
    "name": "Rev Out",
+   "plain_name": "Reverb level",
+   "role": "mix.wet",
    "group": "",
    "min": 0,
    "max": 4096,
@@ -1480,14 +1493,15 @@
     ]
    ],
    "description": "Reverb Out (0-1000)",
-   "confidence": "values",
-   "suggested_role": "mix.wet",
-   "role_evidence": "at its minimum the effect passes the signal unchanged; at the other end echoes from 40 ms; half way less of the same"
+   "how": "Sets the reverb tail's level, from silence up to 0 dB.",
+   "sound": "Raises or lowers how much of the tail is heard behind the dry sound."
   },
   {
    "index": 2,
    "id": "ER Out",
    "name": "ER Out",
+   "plain_name": "Early reflections level",
+   "role": "reverb.early",
    "group": "",
    "min": 0,
    "max": 4096,
@@ -1957,14 +1971,15 @@
     ]
    ],
    "description": "Early Out (0-1000)",
-   "confidence": "values",
-   "suggested_role": "reverb.early",
-   "role_evidence": "reflections from 20 ms come in ahead of the reverb's own at 40 ms, the early sound +2 → +3 dB"
+   "how": "Sets the early reflections' level, from silence up to 0 dB; it is off by default.",
+   "sound": "Adds the first few close echoes ahead of the tail; measured, they arrive about 20 ms in."
   },
   {
    "index": 3,
    "id": "Rev Time",
    "name": "Rev Time",
+   "plain_name": "Reverb time",
+   "role": "reverb.decay",
    "group": "",
    "min": 1,
    "max": 64,
@@ -1974,14 +1989,15 @@
    "b": 6.4,
    "unit": "s",
    "description": "Reverb Time in tenths of second (1-40)",
-   "confidence": "values",
-   "suggested_role": "reverb.decay",
-   "role_evidence": "the tail 492 ms → 3.71 s (T60)"
+   "how": "Sets the tail length from 0.1 to 6.4 s.",
+   "sound": "Short values sound like a small room, long ones like a hall that keeps ringing."
   },
   {
    "index": 4,
    "id": "Pre-Delay",
    "name": "Pre-Delay",
+   "plain_name": "Pre-delay",
+   "role": "reverb.predelay",
    "group": "",
    "min": 0,
    "max": 100,
@@ -1991,12 +2007,15 @@
    "b": 0.1,
    "unit": "s",
    "description": "Reverb Pre-Delay in ms (0-64)",
-   "confidence": "values"
+   "how": "Sets the gap before the reverb starts, from 0 to 100 ms; no measurement isolated its effect.",
+   "sound": "A longer gap keeps the dry sound clear before the reverb blooms behind it."
   },
   {
    "index": 5,
    "id": "High Cutoff",
    "name": "High Cutoff",
+   "plain_name": "High cut",
+   "role": "reverb.damping",
    "group": "",
    "min": 100,
    "max": 16384,
@@ -2006,9 +2025,8 @@
    "b": 16384.0,
    "unit": "Hz",
    "description": "High frequency cutoff in Hz (0064-4000)",
-   "confidence": "values",
-   "suggested_role": "mix.wet",
-   "role_evidence": "the late sound -29 → -9 dB, the direct sound unchanged"
+   "how": "Sets a low-pass on the reverb, from 100 Hz to 16.4 kHz.",
+   "sound": "Lower values make the tail darker and softer; higher values keep it bright."
   }
  ],
  "track_parameters": []

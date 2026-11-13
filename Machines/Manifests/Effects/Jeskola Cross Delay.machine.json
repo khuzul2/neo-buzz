@@ -617,7 +617,9 @@
     "On"
    ],
    "own_texts": false,
-   "description": "Passes the input through as well (on by default)."
+   "description": "Passes the input through as well (on by default).",
+   "how": "Switches the unprocessed input on or off in the output beside the echoes.",
+   "sound": "On keeps the original sound with the echoes behind it; off leaves only the echoes."
   }
  ],
  "track_parameters": [
@@ -634,7 +636,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 32768.0,
-   "description": "Left delay line, in Length unit (ticks by default)."
+   "description": "Left delay line, in Length unit (ticks by default).",
+   "how": "Sets the left delay line's length, 1 to 32768 in the Length unit.",
+   "sound": "Different left and right lengths make the echoes bounce between the speakers in an uneven pattern."
   },
   {
    "index": 1,
@@ -649,7 +653,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 32768.0,
-   "description": "Right delay line, in Length unit."
+   "description": "Right delay line, in Length unit.",
+   "how": "Sets the right delay line's length, 1 to 32768 in the Length unit.",
+   "sound": "Equal lengths give a plain echo down the middle; unequal ones give the ping-pong."
   },
   {
    "index": 2,
@@ -668,7 +674,9 @@
     "sample",
     "tick/256"
    ],
-   "description": "What the length counts: ticks (the default: it follows the tempo), ms, samples or 1/256 ticks."
+   "description": "What the length counts: ticks (the default: it follows the tempo), ms, samples or 1/256 ticks.",
+   "how": "Chooses what both lengths count: ticks, milliseconds, samples or 1/256 of a tick.",
+   "sound": "Ticks keep the echoes in time with the tempo; milliseconds and samples give fixed times."
   },
   {
    "index": 3,
@@ -684,7 +692,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Echoes fed back, −100% to +100% (0% at raw 64; negative inverts each repeat)."
+   "description": "Echoes fed back, −100% to +100% (0% at raw 64; negative inverts each repeat).",
+   "how": "Sets how much of each echo is fed to the other line, from -100 to +100 percent (64 is none).",
+   "sound": "Higher values give more repeats that cross from side to side; negative values flip each repeat. Near the ends the echoes hardly die away."
   },
   {
    "index": 4,
@@ -700,7 +710,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Level of this track's echoes, 0–100%."
+   "description": "Level of this track's echoes, 0–100%.",
+   "how": "Sets this track's echo level, from 0 to 100 percent.",
+   "sound": "Raises or lowers how loud the echoes are against the dry signal."
   }
  ]
 }

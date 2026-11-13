@@ -87,9 +87,28 @@ namespace ReBuzzTests
                         Assert.That(typed["applied"]!.GetValue<bool>(), Is.True, Say("a typed value applied"));
                         Assert.That(typed["raw"]!.GetValue<int>(), Is.EqualTo(typed["param_set_raw"]!.GetValue<int>()), Say("where param_set puts it"));
                     }
-                    // A machine without a GUI of its own opens its editor on a double click (on by default: curated).
-                    if (!r["own_double_click"]!.GetValue<bool>() && r["double_click_opened"] == null)
-                        Assert.That(r["opened_by"]!.GetValue<string>(), Is.EqualTo("double click"), Say("a double click opens it"));
+                    // A machine without a GUI of its own opens its editor on a double click (on by default: curated); one with a
+                    // GUI keeps opening it (its window holds the target pickers and editors), the editor staying on its menu.
+                    bool ownGui = r["has_own_gui"]!.GetValue<bool>();
+                    Assert.That(r["opens_editor"]!.GetValue<bool>(), Is.EqualTo(!ownGui), Say("the editor wins a double click only where there is no GUI of its own"));
+                    if (!ownGui && !r["own_double_click"]!.GetValue<bool>())
+                        Assert.That(r["opened_by"]!.GetValue<string>(), Is.EqualTo("double click"), Say("a double click opens the manifest editor"));
+                    if (ownGui)
+                        Assert.That(r["double_click_opened"]?.GetValue<string>(), Is.AnyOf("its own GUI", "its parameter window"),
+                            Say("a double click opens the machine's own GUI (in its window), not the manifest editor"));
+                }
+                // Pedal LFO's GUI holds its target picker: a double click opens it. A GUI-less curated machine opens the editor.
+                if (results.TryGetValue("Pedal LFO", out var lfo))
+                {
+                    Assert.That(lfo["has_own_gui"]!.GetValue<bool>(), Is.True, "Pedal LFO has its own GUI");
+                    Assert.That(lfo["opens_editor"]!.GetValue<bool>(), Is.False, "Pedal LFO: a double click does not open the manifest editor");
+                    Assert.That(lfo["opened_by"]!.GetValue<string>(), Is.EqualTo("Editor..."), "Pedal LFO: the editor is on its menu");
+                    Assert.That(lfo["double_click_opened"]?.GetValue<string>(), Is.AnyOf("its own GUI", "its parameter window"), "Pedal LFO: its own GUI opens");
+                }
+                if (results.TryGetValue("Jeskola Distortion", out var distortion) && !distortion["own_double_click"]!.GetValue<bool>())
+                {
+                    Assert.That(distortion["has_own_gui"]!.GetValue<bool>(), Is.False, "Jeskola Distortion has no GUI");
+                    Assert.That(distortion["opened_by"]!.GetValue<string>(), Is.EqualTo("double click"), "a GUI-less curated machine opens the manifest editor");
                 }
                 if (results.TryGetValue("Jeskola Delay", out var delay))
                     Assert.That(delay["safe_ranges"]!.AsArray().Select(s => s!["marked"]!.GetValue<bool>()), Is.EqualTo(new[] { true }),

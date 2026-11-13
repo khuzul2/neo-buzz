@@ -87,6 +87,7 @@ namespace ReBuzz.AppViews
             // A double click, as people open it: the manifest editor, where the machine has no GUI of its own. A native
             // machine that handles double clicks itself (its own dialog) would wait for someone here: "Editor..." instead.
             r["opens_editor"] = ManifestEditorSettings.OpensEditor(m.DLL);
+            r["has_own_gui"] = ManifestEditorSettings.HasOwnGui(m.DLL);
             bool ownDoubleClick = !m.DLL.IsManaged && m.CMachineEventType.Any(e => e.Type == BEventType.DoubleClickMachine && e.Event_Handler != IntPtr.Zero);
             r["own_double_click"] = ownDoubleClick;
             if (!ownDoubleClick) m.DoubleClick();
