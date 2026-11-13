@@ -245,7 +245,7 @@ namespace ReBuzz.AgentTests
         [Test]
         public void GuidesAreServedAsToolAndResources()
         {
-            Assert.That(GuideLibrary.TopicNames, Is.EquivalentTo(new[] { "workflow", "concepts", "composition", "sound-design", "mixing", "mastering", "troubleshooting" }));
+            Assert.That(GuideLibrary.TopicNames, Is.EquivalentTo(GuideTests.Topics));
             foreach (var topic in GuideLibrary.TopicNames)
                 Assert.That(GuideLibrary.Get(topic), Does.StartWith("# "), topic + " is embedded");
             Assert.That(GuideLibrary.Get("nonsense"), Is.Null);
@@ -261,7 +261,7 @@ namespace ReBuzz.AgentTests
             Assert.That(bad.Error, Is.True, "unknown topics fail schema validation");
             Assert.That(bad.Text, Does.Contain("workflow"));
             var list = TestTools.CallTool(server, "guide", new JsonObject());
-            Assert.That(list.Data["topics"]!.AsArray().Count, Is.EqualTo(7));
+            Assert.That(list.Data["topics"]!.AsArray().Count, Is.EqualTo(GuideTests.Topics.Length));
         }
     }
 }

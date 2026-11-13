@@ -44,7 +44,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Analyzer", "NeoAnalyzerEditor", "neo-analyzer-editor", 1118, 398),
             ("Neo Ensemble", "NeoEnsembleEditor", "neo-ensemble-editor", 978, 338),
             ("Neo Delay", "NeoDelayEditor", "neo-delay-editor", 994, 343),
-            ("Neo Multiband", "NeoMultibandEditor", "neo-multiband-editor", 1042, 578),
+            ("Neo Multiband", "NeoMultibandEditor", "neo-multiband-editor", 1170, 578),
             ("Neo Sampler", "NeoSamplerEditor", "neo-sampler-editor", 1144, 778),
             ("Neo Scope", "NeoScopeEditor", "neo-scope-editor", 1098, 458),
             ("Neo Drums", "NeoDrumsEditor", "neo-drums-editor", 1232, 738),

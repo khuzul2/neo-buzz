@@ -55,6 +55,7 @@ import threading
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import machine_catalog  # noqa: E402  (category, tags and use_for for every manifest)
 import machine_infer as mi  # noqa: E402
 import machine_roles as mr  # noqa: E402
 
@@ -2075,7 +2076,7 @@ def checked_draft(m):
                 health["problems"].append(note)
             if health.get("status") == "ok":
                 health["status"] = "warn"
-    return m
+    return machine_catalog.apply(m)
 
 
 def subfolder(e):
@@ -2339,6 +2340,7 @@ def merge_into_repo(root, summary, out_dir):
                     existing = json.load(f)
             if existing and existing.get("status") in ("curated", "generated"):
                 draft, warnings = mi.recurate(existing, draft)
+                machine_catalog.apply(draft)
                 for w in warnings:
                     print(f"  {existing['status']} {e['gear']}: {w}", flush=True)
             write_json(dst, draft)

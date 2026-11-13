@@ -312,7 +312,7 @@ def generate(spec, existing):
                 e["safe_range"] = old["safe_range"]
             out.append(e)
         m[group] = out
-    return m, sub
+    return sm.mc.apply(m), sub
 
 
 def target(spec, sub):

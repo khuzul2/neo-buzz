@@ -6,6 +6,13 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed",
  "type": "dynamics",
  "summary": "Feed-forward compressor with soft knee, lookahead, peak or RMS detection, auto makeup and a wet/dry mix (parallel compression). For taming peaks and gluing tracks or buses.",
+ "category": "Dynamics",
+ "tags": [
+  "compressor",
+  "clean",
+  "glue"
+ ],
+ "use_for": "Feed-forward compressor with soft knee, lookahead and parallel mix for drums and buses.",
  "quirks": [
   "Its own value texts for Attack, Release, Lookahead and Makeup Gain are wrong (NeoBuzz Live's ms and dB descriptors scale the raw value, which the machine uses directly as ms and dB): the manifest gives the real values, from its source.",
   "Lookahead delays the output by the lookahead time.",

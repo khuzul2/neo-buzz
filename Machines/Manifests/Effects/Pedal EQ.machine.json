@@ -6,6 +6,13 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed",
  "type": "EQ",
  "summary": "4-band parametric EQ (low shelf, two bells, high shelf) with ±24 dB gains, per-band solo and an output trim. For corrective and tonal EQ in fixed, labelled steps.",
+ "category": "EQ & Filter",
+ "tags": [
+  "eq",
+  "clean",
+  "mix-bus"
+ ],
+ "use_for": "Four-band parametric EQ with shelves, bells and per-band solo.",
  "quirks": [
   "Frequencies and Q move in fixed steps (ISO-style frequencies; Q 0.3–10): param_set lands on the nearest step.",
   "A band at 0 dB does nothing; all flat with Output at 0 dB, the signal passes untouched.",

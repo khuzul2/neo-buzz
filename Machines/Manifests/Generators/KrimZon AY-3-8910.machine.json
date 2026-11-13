@@ -6,6 +6,12 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "polysynth",
  "summary": "Polysynth (profiled draft): pitched, plays 13 semitones high (corrected by its pitch offset); 3 voices; takes notes in its tracks; one note at the defaults -22 LUFS.",
+ "category": "Synths",
+ "tags": [
+  "chiptune",
+  "polyphonic"
+ ],
+ "use_for": "Raw three-voice retro sound-chip tones, with arpeggio-style sub-notes per track.",
  "tracks": 3,
  "notes": {
   "input": "tracks",

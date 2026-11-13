@@ -45,6 +45,9 @@ import re
 import shlex
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import machine_catalog as mc  # noqa: E402  (category, tags and use_for for every manifest)
+
 KINDS = {
     'lin': 'Linear', 'exp': 'Exp', 'pow': 'Power', 'db': 'Db', 'time': 'Time', 'freq': 'Freq',
     'pct': 'Percent', 'bip': 'Bipolar', 'int': 'Int', 'enum': 'Enum', 'switch': 'Switch', 'ratio': 'Ratio',
@@ -300,6 +303,7 @@ def write_manifest(folder, spec, rel):
     }
     if spec['imports']:
         doc['imports'] = spec['imports']
+    mc.apply(doc)
     out = os.path.join(folder, gear + '.machine.json')
     with open(out, 'w', encoding='utf-8', newline='\n') as f:
         json.dump(doc, f, ensure_ascii=False, indent=1)

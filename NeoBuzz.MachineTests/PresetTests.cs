@@ -172,6 +172,10 @@ namespace NeoBuzz.MachineTests
                 Assert.That(NeoBuzz.DyeEssence.SeqPattern.TryParse(steps, out var pattern, out string error), Is.True, $"the sequence: {error}");
                 e.SetPattern(pattern);
             }
+            // And its effects rack's chains (§4.10), the effects built now rather than in the background.
+            string chains = (string)dyeState?.Element("FxRouting");
+            if (!string.IsNullOrEmpty(chains)) e.Fx.SetRouting(NeoBuzz.DyeEssence.FxRouting.Parse(chains));
+            e.Fx.BuildNow();
             return e;
         }
 

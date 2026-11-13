@@ -123,7 +123,7 @@ namespace ReBuzz.Studio.Tests
 
                 var pages = Pages(window);
                 var names = ((IReadOnlyList<string>)Get(pages, "Names")).ToArray();
-                Assert.That(names, Is.EqualTo(new[] { "Oscillators", "Mix & filters", "Modulation", "Arp & Seq" }));
+                Assert.That(names, Is.EqualTo(new[] { "Oscillators", "Mix & filters", "Modulation", "Arp & Seq", "Effects" }));
                 var pageSize = (Size)Get(pages, "PageSize");
                 Assert.Multiple(() =>
                 {
@@ -391,6 +391,68 @@ namespace ReBuzz.Studio.Tests
                 Pump();
                 Assert.That(Steps(), Does.StartWith("0,110,50,0,100 0,70,50,0,100 12,100,50,0,100 0,0,"), "the preset's steps");
                 Assert.That(Global(m, "Seq mode").GetValue(0), Is.EqualTo(1), "Notes");
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+
+        [AvaloniaTest]
+        public void TheEffectsPageNamesItsKnobsFromTheTypeAndMovesSlotsWithUndo()
+        {
+            var m = Add("Effects Dye");
+            try
+            {
+                var window = Open(m);
+                var pages = Pages(window);
+                pages.GetType().GetProperty("Selected")!.SetValue(pages, 4);
+                Pump();
+                window.UpdateLayout();
+                string Chains() => Get(m.ManagedMachine, "FxChains").ToString()!;
+                Control Button(string text) => window.GetVisualDescendants().OfType<Control>()
+                    .First(c => c.GetType().Name == "ActionButton" && c.IsEffectivelyVisible && (string)Get(c, "Text") == text);
+                void Click(Control c)
+                {
+                    var p = At(c, window, c.Bounds.Width / 2, c.Bounds.Height / 2);
+                    window.MouseDown(p, MouseButton.Left);
+                    window.MouseUp(p, MouseButton.Left);
+                    Pump();
+                }
+                Assert.That(Chains(), Is.EqualTo("1 2 3 4 | 5 6 7 | 8 9 10"));
+
+                // The knobs take the type's names: slot 1 is an EQ, then a clipper.
+                Global(m, "FX1 type").SetValue(0, 1);
+                Run(0.1);
+                Pump();
+                var names = window.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name == "FxKnob" && c.IsEffectivelyVisible).Select(c => (string)Get(c, "Label")).ToArray();
+                Assert.That(names, Is.EqualTo(new[] { "Low freq", "Low gain", "Mid 1 freq", "Mid 1 gain", "Mid 1 Q", "Mid 2 freq", "Mid 2 gain", "Mid 2 Q", "High freq", "High gain" }));
+                Global(m, "FX1 type").SetValue(0, 4);
+                Run(0.1);
+                Pump();
+                names = window.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name == "FxKnob" && c.IsEffectivelyVisible).Select(c => (string)Get(c, "Label")).ToArray();
+                Assert.That(names[0], Is.EqualTo("Drive"));
+                Assert.That(names[9], Is.EqualTo("Output"));
+                Studio.Screenshot(window, "dye-essence-editor-effects");
+
+                // Slot 1 to the main chain, one undo step; the chains are in the saved data.
+                var stack = Core.SongCore.ActionStack;
+                int steps = stack.Actions.Count();
+                Click(Button("Main"));
+                Assert.That(Chains(), Is.EqualTo("2 3 4 | 5 6 7 | 8 9 10 1"));
+                Assert.That(stack.Actions.Count(), Is.EqualTo(steps + 1), "one undo step");
+                byte[] data = m.Data;
+                Core.SongCore.Undo();
+                Pump();
+                Assert.That(Chains(), Is.EqualTo("1 2 3 4 | 5 6 7 | 8 9 10"), "undo puts it back");
+                m.Data = data;
+                Assert.That(Chains(), Is.EqualTo("2 3 4 | 5 6 7 | 8 9 10 1"), "the data round trip");
+
+                // Earlier and Later move it within its chain.
+                Click(Button("Earlier"));
+                Assert.That(Chains(), Is.EqualTo("2 3 4 | 5 6 7 | 8 9 1 10"));
+                Click(Button("Later"));
+                Assert.That(Chains(), Is.EqualTo("2 3 4 | 5 6 7 | 8 9 10 1"));
             }
             finally
             {

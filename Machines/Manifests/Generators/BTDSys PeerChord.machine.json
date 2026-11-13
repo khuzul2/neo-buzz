@@ -6,6 +6,12 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "control",
  "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "category": "Control",
+ "tags": [
+  "chords",
+  "arpeggio"
+ ],
+ "use_for": "Turn single notes into chords and arpeggios played on other machines.",
  "tracks": 16,
  "health": {
   "status": "ok",

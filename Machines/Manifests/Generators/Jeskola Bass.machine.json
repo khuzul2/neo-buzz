@@ -6,6 +6,13 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "polysynth",
  "summary": "Polysynth (profiled draft): pitched, plays A4 at 440 Hz as written; 4 voices; takes notes in its tracks; one note at the defaults -9 LUFS.",
+ "category": "Synths",
+ "tags": [
+  "bass",
+  "subtractive",
+  "polyphonic"
+ ],
+ "use_for": "Simple four-voice analog-style bass with a resonant filter and note slides.",
  "tracks": 4,
  "notes": {
   "input": "tracks",

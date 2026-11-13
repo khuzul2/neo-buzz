@@ -47,6 +47,8 @@ namespace ReBuzz.Studio.Tests
         /// <summary>A Neo Poly with an empty 4-beat pattern, shown in the Pattern tab with the keyboard on its grid.</summary>
         static Setup Open(string name)
         {
+            // Keyboard entry of values is checked in hex, Buzz's (the decimal entry is UxP3cTests'); the studio's default is decimal.
+            ValueDisplay.Base = ValueBase.Hex;
             var core = Studio.Host.Core;
             core.SongCore.CreateMachine("Neo Poly", null, name, null, null, null, -1, 0.3f, 0.3f);
             var machine = core.SongCore.MachinesList.First(m => m.Name == name);
@@ -72,6 +74,7 @@ namespace ReBuzz.Studio.Tests
 
         static void Close(Setup s)
         {
+            ValueDisplay.Base = ValueDisplay.Default;
             Studio.Host.Core.Modified = false;      // else closing asks to save, and the window stays open
             s.Window.Close();
             Pump();
@@ -105,6 +108,12 @@ namespace ReBuzz.Studio.Tests
             return null;
         }
 
+        /// <summary>
+        /// Puts the cursor on a column by its name, at its first row and first digit, showing it first when + Automation hides it
+        /// (the nth column of that name, tracks and globals in the order shown).
+        /// </summary>
+        static void GoTo(Setup s, string label, int nth = 0) => EditorNav.GoTo(s.EditorView, label, Pump, nth);
+
         static dynamic Grid(Setup s) => ((dynamic)s.EditorView).TrackerGrid;
 
         static Control Body(Setup s) => (Control)Grid(s).Body;
@@ -112,7 +121,7 @@ namespace ReBuzz.Studio.Tests
         /// <summary>Types C, E, G and a note off on track 0's Note column, from row 0.</summary>
         static void TypeChord(Setup s)
         {
-            Key(s, PhysicalKey.Tab);
+            // The cursor starts on track 0's Note column: the notes' columns come first (ux-overhaul.md P3c).
             Keys(s, PhysicalKey.Z, PhysicalKey.C, PhysicalKey.B, PhysicalKey.Digit1);
         }
 
@@ -131,16 +140,15 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(notes, Is.EqualTo(new[] { (0, BuzzNote.Parse("C-4")), (Row, BuzzNote.Parse("E-4")), (2 * Row, BuzzNote.Parse("G-4")), (3 * Row, BuzzNote.Off) }),
                     "notes at the base octave (4), then 1 for a note off, a row each");
 
-                // Shift+Tab back to the globals' first column (Voice mode): row 4, the low digit, 2.
-                Key(s, PhysicalKey.Tab, RawInputModifiers.Shift);
-                Key(s, PhysicalKey.Home);
+                // The globals' first column (Voice mode, hidden while it is empty): row 4, the low digit, 2.
+                GoTo(s, "Voice mode");
                 Keys(s, PhysicalKey.ArrowDown, PhysicalKey.ArrowDown, PhysicalKey.ArrowDown, PhysicalKey.ArrowDown, PhysicalKey.ArrowRight, PhysicalKey.Digit2);
                 Assert.That(Events(s.Pattern, "Voice mode"), Is.EqualTo(new[] { (4 * Row, 2) }), "automation of a global parameter");
 
                 // A word: Uni detune (the fourth column), its second digit: 3 → 0300. (Home keeps the
                 // digit, as in WPF: from Voice mode's second digit, six to the right.)
-                Key(s, PhysicalKey.Home);
-                Keys(s, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight);
+                GoTo(s, "Uni detune");
+                Key(s, PhysicalKey.ArrowRight);
                 Key(s, PhysicalKey.Digit3);
                 Assert.That(Events(s.Pattern, "Uni detune"), Is.EqualTo(new[] { (0, 0x300) }), "a word's second digit");
                 Studio.Screenshot(s.Window, "pattern-editor-typed");
@@ -151,8 +159,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(data[0], Is.EqualTo(255), "the Modern Pattern Editor's own format, as on Windows");
 
                 // Period clears a value; Delete deletes the row (the rows below move up).
-                Key(s, PhysicalKey.Tab);
-                Key(s, PhysicalKey.PageUp);
+                GoTo(s, "Note");
                 Key(s, PhysicalKey.Period);
                 Assert.That(Events(s.Pattern, "Note").Select(e => e.Time), Is.EqualTo(new[] { Row, 2 * Row, 3 * Row }), "period clears C-4");
                 Key(s, PhysicalKey.ArrowUp);
@@ -245,10 +252,7 @@ namespace ReBuzz.Studio.Tests
                     Is.EqualTo(new[] { (0, "C#5"), (Row, "F-5"), (2 * Row, "G#5"), (3 * Row, "off"), (8 * Row, "C#5"), (9 * Row, "F-5"), (10 * Row, "G#5") }), "pasted at row 8");
 
                 // Interpolate: Uni detune 0000 at row 0 and 0300 at row 8, select them, Ctrl+I.
-                Key(s, PhysicalKey.Tab, RawInputModifiers.Shift);
-                Key(s, PhysicalKey.Home);
-                Keys(s, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight);
-                Key(s, PhysicalKey.PageUp);
+                GoTo(s, "Uni detune");
                 Key(s, PhysicalKey.Digit0);
                 for (int i = 0; i < 7; i++) Key(s, PhysicalKey.ArrowDown);
                 Key(s, PhysicalKey.ArrowRight);
@@ -295,8 +299,7 @@ namespace ReBuzz.Studio.Tests
             try
             {
                 TypeChord(s);
-                Key(s, PhysicalKey.Tab, RawInputModifiers.Shift);
-                Key(s, PhysicalKey.Home);
+                GoTo(s, "Voice mode");
                 Keys(s, PhysicalKey.ArrowDown, PhysicalKey.ArrowDown, PhysicalKey.ArrowRight, PhysicalKey.Digit1);
                 Assert.That(Events(s.Pattern, "Voice mode"), Is.EqualTo(new[] { (2 * Row, 1) }));
                 var voiceMode = s.Machine.ParameterGroups[1].Parameters.First(p => p.Name == "Voice mode");
@@ -443,6 +446,8 @@ namespace ReBuzz.Studio.Tests
             try
             {
                 var grid = Grid(s);
+                // Every parameter's column shown (the empty ones wait behind + Automation), as a set wider than the view needs.
+                ((dynamic)s.EditorView).ShowAllAutomation();
                 Pump();
                 double view = (double)grid.HeaderWidth;
                 int wide = -1;
@@ -462,7 +467,8 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(label.Right, Is.LessThanOrEqualTo(view), "and ends in view");
                 Assert.That(label.Center.X, Is.EqualTo(view / 2).Within(view / 4), "centred over the part in view");
 
-                // A column half scrolled out at the left: its name moves into the part in view.
+                // A column half scrolled out at the left: a column is as wide as its two-line name now (ux-overhaul.md P3c), so the
+                // name can't leave its column; it stays whole inside it, and is two lines of 11 pt at most.
                 int column = 3;
                 double cw = (double)grid.ColumnWidth(wide, column);
                 double contentX = (double)grid.ColumnX(wide, column) + (double)grid.SidewaysOffset;
@@ -471,8 +477,9 @@ namespace ReBuzz.Studio.Tests
                 double cx = (double)grid.ColumnX(wide, column);
                 Assert.That(cx, Is.LessThan(0), "the column starts out of view");
                 var name = (Rect)grid.ColumnLabelBounds(wide, column);
-                Assert.That(name.Left, Is.GreaterThanOrEqualTo(0), "its name is in view");
-                Assert.That(name.Right, Is.LessThanOrEqualTo(cx + cw + 0.01), "inside its column");
+                Assert.That(name.Left, Is.GreaterThanOrEqualTo(cx - 0.01), "its name starts inside its column");
+                Assert.That(name.Right, Is.LessThanOrEqualTo(cx + cw + 0.01), "and ends inside it");
+                Assert.That(name.Height, Is.LessThanOrEqualTo(2 * 11 * 1.5), "on two lines of 11 pt at most");
                 Studio.Screenshot(s.Window, "pattern-editor-headers-scrolled");
             }
             finally
@@ -489,8 +496,8 @@ namespace ReBuzz.Studio.Tests
             {
                 var grid = Grid(s);
                 var body = Body(s);
-                // Track 0's Note column is the second column set's first column: row 5.
-                Point at = grid.FieldCenter(1, 0, 1, 1);
+                // Track 0's Note column is the first column set's first column (the notes come first): row 5.
+                Point at = grid.FieldCenter(0, 0, 1, 1);
                 grid.MakeVisible(new Rect(at.X - 200, at.Y, 400, 1));      // well inside the view, clear of the scroll bar
                 Pump();
                 var p = body.TranslatePoint(at, s.Window).Value;
@@ -498,10 +505,11 @@ namespace ReBuzz.Studio.Tests
                 s.Window.MouseUp(p, MouseButton.Left);
                 Pump();
                 dynamic cursor = grid.Cursor;
-                Assert.That(((int)cursor.ColumnSet, (int)cursor.Column, (int)cursor.Beat, (int)cursor.RowInBeat), Is.EqualTo((1, 0, 1, 1)), "a click puts the cursor there");
+                Assert.That(((int)cursor.ColumnSet, (int)cursor.Column, (int)cursor.Beat, (int)cursor.RowInBeat), Is.EqualTo((0, 0, 1, 1)), "a click puts the cursor there");
 
-                // Drag down three rows: a selection.
-                Point qAt = grid.FieldCenter(1, 1, 2, 0);
+                // Drag down three rows: a selection. (The click centred its row, so the points are worked out again.)
+                p = body.TranslatePoint(at, s.Window).Value;
+                Point qAt = grid.FieldCenter(0, 1, 2, 0);
                 var q = body.TranslatePoint(qAt, s.Window).Value;
                 s.Window.MouseDown(p, MouseButton.Left);
                 s.Window.MouseMove(q);
@@ -534,7 +542,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(s.Pattern.Name, Is.EqualTo("verse"), "renamed");
                 Assert.That(s.Pattern.Length, Is.EqualTo(32), "8 beats");
                 // Notes typed in the MIDI Note lane, at 8 rows a beat.
-                Key(s, PhysicalKey.Tab);
+                GoTo(s, "MIDI Note");
                 Keys(s, PhysicalKey.Z, PhysicalKey.X);
                 var events = s.Pattern.PatternEditorMachineEvents.First(c => c.Parameter.Name == "MIDI Note").Events.Select(e => (e.Time, e.Value)).ToArray();
                 Assert.That(events, Is.EqualTo(new[] { (0, BuzzNote.Parse("C-4")), (PatternEvent.TimeBase / 2, BuzzNote.Parse("D-4")) }), "half a tick a row");

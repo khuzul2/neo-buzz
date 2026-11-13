@@ -6,6 +6,13 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "monosynth",
  "summary": "Monosynth (profiled draft): pitched, plays A4 at 440 Hz as written; monophonic; takes notes in its tracks; one note at the defaults -10 LUFS.",
+ "category": "Synths",
+ "tags": [
+  "bass",
+  "subtractive",
+  "monophonic"
+ ],
+ "use_for": "Monophonic bass with a resonant filter, envelope modulation and decay per track.",
  "tracks": 8,
  "notes": {
   "input": "tracks",

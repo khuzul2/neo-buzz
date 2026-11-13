@@ -6,6 +6,15 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
  "type": "polysynth",
  "summary": "Classic Buzz subtractive polysynth: two PWM oscillators (SuperSaw and more) plus a sub, a 6-pole multimode filter with its own envelope, an amp envelope and two LFOs. For supersaw leads, pads and basses.",
+ "category": "Synths",
+ "tags": [
+  "subtractive",
+  "polyphonic",
+  "lead",
+  "pad",
+  "bright"
+ ],
+ "use_for": "Thick detuned-saw leads, stacks and pads from a polyphonic synth with a multimode filter.",
  "quirks": [
   "Plays an octave low: notes_write adds 12 semitones so the written pitch plays (profile).",
   "Several parameters share a name (\" - Decay\" for the filter and the amp; \" - PWM Rate\" for both oscillators): use the plain name (\"Decay\", \"Filter envelope decay\") or #index.",

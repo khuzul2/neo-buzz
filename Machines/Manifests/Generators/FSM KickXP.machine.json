@@ -6,6 +6,13 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
  "type": "drums",
  "summary": "Classic Buzz kick drum synth: a sine whose pitch sweeps from Start to End, plus buzz, click and punch layers and an amplitude envelope. For 808- and 909-style kicks.",
+ "category": "Drums",
+ "tags": [
+  "kick",
+  "drums",
+  "punchy"
+ ],
+ "use_for": "Tunable synthesised kick drums, from short thumps to long sub sweeps.",
  "quirks": [
   "A note triggers it, and its pitch is the lowest the sweep falls to (Pitch limit): A1 or below for deep kicks. The profile heard A4 at 440 Hz from an A4.",
   "Each track is its own kick with its own settings (8 tracks).",

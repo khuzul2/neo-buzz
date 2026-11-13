@@ -6,6 +6,11 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "reverb",
  "summary": "Reverb (profiled draft): traits: reverb; tail 3.48 s; latency 0 samples; gain +6.1 dB at the defaults.",
+ "category": "Delay & Reverb",
+ "tags": [
+  "reverb"
+ ],
+ "use_for": "Simple reverb with a time and high-frequency damping.",
  "tracks": 0,
  "health": {
   "status": "ok",

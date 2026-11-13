@@ -32,7 +32,7 @@ namespace ReBuzz.Studio.Tests
     {
         const int TB = PatternEvent.TimeBase;           // a tick; a row at four rows a beat
 
-        sealed class Rig : IDisposable
+        internal sealed class Rig : IDisposable
         {
             public SessionRig Song { get; }
             public MainWindow Window { get; }
@@ -103,7 +103,7 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        static void Pump()
+        internal static void Pump()
         {
             for (int i = 0; i < 3; i++)
             {
@@ -125,10 +125,10 @@ namespace ReBuzz.Studio.Tests
             return null;
         }
 
-        static int Buzz(int midi) => BuzzNote.FromMIDINote(midi);
+        internal static int Buzz(int midi) => BuzzNote.FromMIDINote(midi);
 
         /// <summary>A point of the roll's grid for a time and a note, in the window (the roll scrolled to show it).</summary>
-        static Point At(Rig r, int time, int note)
+        internal static Point At(Rig r, int time, int note)
         {
             var roll = r.Notes;
             var p = roll.PointOf(time, note);
@@ -140,7 +140,7 @@ namespace ReBuzz.Studio.Tests
             return q!.Value;
         }
 
-        static void Drag(Rig r, Point from, Point to, RawInputModifiers mods = RawInputModifiers.None)
+        internal static void Drag(Rig r, Point from, Point to, RawInputModifiers mods = RawInputModifiers.None)
         {
             r.Window.MouseMove(from, mods);
             r.Window.MouseDown(from, MouseButton.Left, mods);
@@ -342,7 +342,6 @@ namespace ReBuzz.Studio.Tests
             ((Control)view.TrackerGrid.Body).Focus();
             Pump();
             void Type(PhysicalKey k) { r.Window.KeyPressQwerty(k, RawInputModifiers.None); r.Window.KeyReleaseQwerty(k, RawInputModifiers.None); Pump(); }
-            Type(PhysicalKey.Tab);
             foreach (var k in new[] { PhysicalKey.Z, PhysicalKey.C, PhysicalKey.B, PhysicalKey.Digit1 }) Type(k);
             var typed = r.Column();
             Assert.That(typed.Length, Is.EqualTo(4), "three notes and an off");

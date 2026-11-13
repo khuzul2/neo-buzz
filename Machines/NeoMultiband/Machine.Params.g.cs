@@ -19,7 +19,7 @@ namespace NeoBuzz.Multiband
         [ParameterDecl(Name = "Crossover 3", Description = "Between bands 3 and 4 with four bands (never below Crossover 2)", MinValue = 0, MaxValue = 10000, DefValue = 8257)]
         public int Xo3 { get => Values[P.Xo3]; set => Values.Set(P.Xo3, value); }
 
-        [ParameterDecl(Name = "Phase", Description = "Linear: the bands sum back to the input exactly, no phase shift, about 96 ms of latency (reported to NeoBuzz Live). Minimum: zero latency, the same band shapes, the crossovers' phase shift (as an analog crossover's)", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        [ParameterDecl(Name = "Phase", Description = "Linear: the bands sum back to the input exactly, no phase shift, about 96 ms of latency (reported to NeoBuzz Live). Minimum: zero latency, the same band shapes, the crossovers' phase shift (as an analog crossover's). Dynamic: zero latency and no static phase shift: the output is the input plus each band's gain change times the band, so a band at 0 dB change leaves the input exactly as it was (the crossovers' phase shift shows only where a band is changing)", MinValue = 0, MaxValue = 2, DefValue = 0)]
         public int Phase { get => Values[P.Phase]; set => Values.Set(P.Phase, value); }
 
         [ParameterDecl(Name = "Stereo", Description = "What each band's detector and gain work on: left and right, or mid and side", MinValue = 0, MaxValue = 1, DefValue = 0)]
@@ -141,5 +141,35 @@ namespace NeoBuzz.Multiband
 
         [ParameterDecl(Name = "Output", Description = "Output gain, −24 … +24 dB in 0.1 dB steps", MinValue = 0, MaxValue = 480, DefValue = 240)]
         public int Output { get => Values[P.Output]; set => Values.Set(P.Output, value); }
+
+        [ParameterDecl(Name = "Detector", Description = "What every band's detector reads: the peak, or the RMS (3 ms mean square, on the peak scale: a sine reads the same as with Peak)", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int Detector { get => Values[P.Detector]; set => Values.Set(P.Detector, value); }
+
+        [ParameterDecl(Name = "Lookahead", Description = "Delays the bands (and the dry) so each detector sees what is coming; adds this much latency to the phase's own, reported to NeoBuzz Live. A change fades the sound out and in over 10 ms each", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int Lookahead { get => Values[P.Lookahead]; set => Values.Set(P.Lookahead, value); }
+
+        [ParameterDecl(Name = "B1 upward ratio", Description = "Band 1: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int B1UpRatio { get => Values[P.B1UpRatio]; set => Values.Set(P.B1UpRatio, value); }
+
+        [ParameterDecl(Name = "B1 sidechain", Description = "Band 1: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int B1Key { get => Values[P.B1Key]; set => Values.Set(P.B1Key, value); }
+
+        [ParameterDecl(Name = "B2 upward ratio", Description = "Band 2: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int B2UpRatio { get => Values[P.B2UpRatio]; set => Values.Set(P.B2UpRatio, value); }
+
+        [ParameterDecl(Name = "B2 sidechain", Description = "Band 2: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int B2Key { get => Values[P.B2Key]; set => Values.Set(P.B2Key, value); }
+
+        [ParameterDecl(Name = "B3 upward ratio", Description = "Band 3: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int B3UpRatio { get => Values[P.B3UpRatio]; set => Values.Set(P.B3UpRatio, value); }
+
+        [ParameterDecl(Name = "B3 sidechain", Description = "Band 3: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int B3Key { get => Values[P.B3Key]; set => Values.Set(P.B3Key, value); }
+
+        [ParameterDecl(Name = "B4 upward ratio", Description = "Band 4: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int B4UpRatio { get => Values[P.B4UpRatio]; set => Values.Set(P.B4UpRatio, value); }
+
+        [ParameterDecl(Name = "B4 sidechain", Description = "Band 4: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int B4Key { get => Values[P.B4Key]; set => Values.Set(P.B4Key, value); }
     }
 }

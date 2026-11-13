@@ -58,6 +58,10 @@
         [BuzzSetting(BuzzGUI.Common.NoteNames.Default, Description = "How notes are named on screen, by what middle C (MIDI note 60) is called: in the pattern editor (always three characters, as C-3), the piano roll, the keyboards under machine windows and MIDI mappings. Songs don't change.")]
         public NoteNaming NoteNames { get => BuzzGUI.Common.NoteNames.Naming; set => BuzzGUI.Common.NoteNames.Naming = value; }
 
+        // Fork (docs/specs/ux-overhaul.md P3c): the base the pattern editor writes parameter values in; ValueDisplay holds it.
+        [BuzzSetting(BuzzGUI.Common.ValueDisplay.Default, Description = "The base the studio's pattern editor writes byte and word values in, and takes typed digits in: decimal (zero padded, 064) or hex (40). Notes and songs don't change.")]
+        public ValueBase PatternValues { get => BuzzGUI.Common.ValueDisplay.Base; set => BuzzGUI.Common.ValueDisplay.Base = value; }
+
         [BuzzSetting(DpiScalingType.System, Description = "DPI scaling.")]
         public DpiScalingType DpiScaling { get; internal set; }
 
