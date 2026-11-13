@@ -146,6 +146,7 @@ namespace ReBuzz.Core.Session
     /// change by those notes only, so edits made in the Pattern View since stay (hardening).
     /// If the lanes can't take the change any more, neither side changes. Holds the clip.
     /// </summary>
+    [HistoryName("Move clip notes")]
     internal sealed class ClipNotesMoveAction : IAction
     {
         readonly SessionLayout layout;
@@ -194,6 +195,7 @@ namespace ReBuzz.Core.Session
     /// Replaces events of one of a clip's recording columns (0.7.1, piano roll edits): removes
     /// some, adds others; undo does the opposite. Holds the clip itself.
     /// </summary>
+    [HistoryName("Edit clip notes")]
     internal sealed class ClipEventsReplaceAction : IAction
     {
         readonly SessionLayout layout;

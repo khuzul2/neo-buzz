@@ -68,6 +68,7 @@
   "spectral": "Works on the frequency spectrum (FFT)",
   "tape": "Tape-style saturation and response",
   "dither": "Noise-shaped word-length reduction",
+  "learning": "Teaches one synthesis method with few controls, each explained",
   "lfo": "Slow oscillator movement",
   "vocal": "Suits voices and spoken material",
   "mix-bus": "Suits the group or whole mix",
@@ -87,8 +88,7 @@
   "chords": "Builds chords from single notes",
   "automation": "Moves other machines' parameters over time",
   "groove": "Timing feel: swing and shuffle",
-  "notes": "Holds notes or text for the song",
-  "learning": "Teaching machine: every control explains itself in the Explain strip"
+  "notes": "Holds notes or text for the song"
  },
  "machines": {
   "AudioBlock": {
@@ -773,14 +773,14 @@
   "Neo Learn Subtractive": {
    "category": "Synths",
    "tags": [
-    "learning",
     "subtractive",
     "polyphonic",
+    "learning",
     "bass",
     "lead",
     "pad"
    ],
-   "use_for": "A teaching subtractive synth: warm basses, pulse leads and slow pads from a morphing wave, a sub and a 24 dB ladder low-pass."
+   "use_for": "Learn subtractive synthesis: one oscillator, a sub and a resonant filter, every control explained."
   },
   "Neo Learn Wavetable": {
    "category": "Synths",

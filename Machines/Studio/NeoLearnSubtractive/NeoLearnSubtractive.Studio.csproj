@@ -9,7 +9,7 @@
   <ItemGroup>
     <!-- Dye Essence's engine, hosted by LearnHost, with what its Analog engine reads (Neo Wave's table recipes, Neo Sampler's sample layer). -->
     <Compile Include="$(M)DyeEssence\Engine\**\*.cs" Link="Shared\DyeEssence\%(RecursiveDir)%(Filename)%(Extension)" />
-    <!-- The effects rack (docs/specs/dye-essence.md §4.10) hosts these machines' engines, linked as source: the gain-match reading and each engine. -->
+    <!-- Dye Essence's effects rack (Engine/FxTypes.cs) hosts these Neo engines: compile them beside the shared engine. -->
     <Compile Include="$(M)NeoBuzz.Analysis\Loudness.cs;$(M)NeoBuzz.Analysis\GainMatch.cs" Link="Shared\Analysis\%(Filename)%(Extension)" />
     <Compile Include="$(M)NeoEq\Engine\*.cs" Link="Shared\Eq\%(Filename)%(Extension)" />
     <Compile Include="$(M)NeoFilter\Engine\*.cs" Link="Shared\Filter\%(Filename)%(Extension)" />

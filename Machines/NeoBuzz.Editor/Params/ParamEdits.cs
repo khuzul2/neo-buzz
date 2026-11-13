@@ -114,6 +114,7 @@ namespace NeoBuzz.Editor
         /// One step: the parameters' values before and after. It finds its machine when it runs: the
         /// same one while it is in the song, else one of its name (deleted and made again by undo).
         /// </summary>
+        [BuzzGUI.Common.HistoryName("Edit parameters")]
         sealed class ParamEditAction : IAction
         {
             readonly IMachine machine;

@@ -335,7 +335,8 @@ namespace ReBuzz.Agent
                             var x = core.SongCore.MachinesList.FirstOrDefault(y => y.Name == name);
                             if (x != null && d != null) x.Data = d;
                         }
-                        AgentActions.Do(core, new DelegateAction(() => { if (first) first = false; else SetData(after); }, () => SetData(before)));
+                        AgentActions.Do(core, new DelegateAction(() => { if (first) first = false; else SetData(after); }, () => SetData(before),
+                            "Import " + import.Kind, (before?.Length ?? 0) + (after?.Length ?? 0)));
                         var globals = m.ParameterGroups[1].Parameters;
                         foreach (var (index, value) in sets)
                             if (index >= 0 && index < globals.Count && globals[index].GetValue(0) != value)

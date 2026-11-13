@@ -6,7 +6,7 @@ The signal flow (every engine, the filters, modulation, arpeggiator and sequence
 
 ## Gotchas
 
-- The effects rack (ten slots `FX1`…`FX10`; Trio and Duo chains; EQ, Filter, Comp, Clipper, Delay, Verb) is in `guide(topic="dye-essence-effects")`. Its chains are machine data, so `param_set` cannot move a slot between chains.
+- The effects rack (ten slots `FX1`…`FX10`; Trio and Duo chains; EQ, Filter, Comp, Clipper, Delay, Verb) is in `guide(topic="dye-essence-effects")`, with its "Rack" presets. Its chains are machine data, so `param_set` cannot move a slot between chains.
 - Routes are parameters (source, destination, amount), so `param_set` and presets set them like any other; a route with source or dest Off, or amount 0 %, does nothing.
 - Free LFOs (retrig Off) don't take the LFO-rate destinations; per-note ones do.
 - The arpeggiator and the sequencer play only while there are held notes (the sequencer's Mod mode runs always); the sequencer's Notes mode takes over from the arpeggiator. A latched arpeggio ends with an All notes off or a transport stop. Changing `Arp mode` or `Seq mode` releases what they were sounding.
@@ -26,14 +26,6 @@ The signal flow (every engine, the filters, modulation, arpeggiator and sequence
 ## Preset map
 
 | Preset | What | Tweak first |
-| "Rack — Bell In A Hall" | the mirror bell into a reverb on bus A | `FX1 p4`, `FX return A` |
-| "Rack — Dotted Echo Keys" | the organ into a dotted echo on bus A | `FX1 p6`, `FX return A` |
-| "Rack — Saturated Bass" | the detuned bass through a Clipper in the main chain at 80 % | `FX8 p1`, `FX8 mix` |
-| "Rack — Sweeping Choir" | the glass choir through a Filter with a slow LFO in the main chain | `FX8 p10`, `FX8 p7` |
-| "Rack — Tilted And Squeezed Pluck" | an EQ then a compressor in the main chain (moved there by the routing) | `FX1 p2`, `FX2 p2` |
-| "Rack — Duo Plate Keys" | the Duo layout: an EQ insert and a reverb on the aux | `FX8 p4`, `FX return A` |
-| "Rack — Parallel Crush Bass" | a Clipper in bus A (parallel) and a small reverb in bus B | `FX return A`, `FX1 p1` |
-| "Rack — Delayed Choir" | an echo in bus B and a light reverb in the main chain | `FX5 p6`, `FX return B` |
 |---|---|---|
 | "Init — Basic" | a saw through the ladder | everything |
 | "Lead — Wide Unison" | 7 + 5 detuned saws, an octave apart | `A detune`, `F1 cutoff` |

@@ -41,6 +41,7 @@
          agent server measures with (docs/specs/mcp-server.md §7). Only this file, by name. -->
     <Compile Include="..\Machines\NeoBuzz.Analysis\Loudness.cs" Link="Analysis\Loudness.cs" />
     <!-- The zero-allocation tests measure each block with the engine tests' AllocationWindow (AllocationCheck.cs). -->
+    <Compile Include="..\ReBuzzTests\Automation\GuardPolicy.cs" Link="Automation\GuardPolicy.cs" />
     <!-- Explain (neo-learn.md §5.3): the cross-assembly parameter-source marks and the strip's board. -->
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Interfaces\ExplainBoard.cs" Link="Explain\ExplainBoard.cs" />
     <Compile Include="..\ReBuzzTests\Automation\AllocationWindow.cs" Link="Automation\AllocationWindow.cs" />

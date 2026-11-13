@@ -402,7 +402,7 @@ namespace ReBuzz.Midi
 
             if (track < parameterCore.Group.TrackCount)
             {
-                ContollerBinding contollerBind = new ContollerBinding(parameterCore, track, midiChannel, midiController, Global.MIDISettings.ParameterSoftTakeover);
+                ContollerBinding contollerBind = new ContollerBinding(parameterCore, track, midiChannel, midiController, Global.MIDISettings.ParameterSoftTakeover) { Moved = RecordMove };
                 ContollerBindings.Add(contollerBind);
                 parameterCore.SetMIDIBindingValues(track, midiChannel, midiController);
             }
@@ -421,6 +421,9 @@ namespace ReBuzz.Midi
         {
             internal ParameterCore Parameter { get; }
             internal int Track { get; }
+
+            /// <summary>Fork (history-snapshots.md HS1): told of each move (parameter, track, old value, new value).</summary>
+            internal Action<ParameterCore, int, int, int> Moved { get; set; }
             internal int MidiChannel { get; }
             internal int MidiController { get; }
 
@@ -481,7 +484,23 @@ namespace ReBuzz.Midi
                 }
 
                 Parameter.SetValue(Track, paramValue);
+                if (paramValue != paramCurrentValue) Moved?.Invoke(Parameter, Track, paramCurrentValue, paramValue);
             }
+        }
+
+        /// <summary>
+        /// A controller move as a step of the song's history, while the transport is stopped (history-snapshots.md HS1): moves of
+        /// one parameter within an idle gap are one step. While the song plays it is performance and isn't recorded. Runs on the
+        /// UI thread, where the engine delivers MIDI input to this class.
+        /// </summary>
+        void RecordMove(ParameterCore parameter, int track, int before, int after)
+        {
+            if (!(buzz is ReBuzzCore core) || buzz.Playing || core.PlayRequested) return;
+            var stack = core.SongCore?.ActionStack;
+            if (stack == null || stack.Applying) return;
+            using (stack.BeginSource(HistorySource.Midi))
+                stack.RecordCoalesced(new ReBuzz.Core.Actions.ControllerMoveAction(core, parameter, track, before, after),
+                    (parameter, track), ReBuzz.Core.Actions.ControllerMoveAction.Gap);
         }
     }
 }
