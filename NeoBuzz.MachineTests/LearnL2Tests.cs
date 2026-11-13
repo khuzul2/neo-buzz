@@ -191,5 +191,29 @@ namespace NeoBuzz.MachineTests
             Measure.Report($"Neo Learn Wavefolder, level of the first 50 ms with a slow attack: Strike 0 % {soft:F1} dB, 100 % {hard:F1} dB");
             Assert.That(hard, Is.GreaterThan(soft + 2));
         }
+
+        // ------------------------------------------------------------------ aliasing
+
+        [TestCase(33, 450, 2)]
+        [TestCase(57, 450, 2)]
+        [TestCase(57, 1000, 5)]
+        [TestCase(81, 1000, 5)]
+        public void WavefolderReportsItsAliasFloorAtHighQuality(int note, int drive, int stages)
+        {
+            double floor = Alias(Fold, note, x => { x.Set(XP.FoldDrive, drive); x.Set(XP.FoldStages, stages); x.Set(XP.LpgMode, 0); x.Set(XP.EnvSustain, 1000); x.Set(XP.EnvAttack, 0); });
+            Measure.Report($"Neo Learn Wavefolder, High (4x), Wavefold {drive / 10} %, {stages + 1} stages, note {note} ({DspMath.NoteToHz(note):F0} Hz): alias floor {floor:F1} dB");
+            // At the default depth the folds alias under -70 dB; at full depth with six stages the spectrum a fold makes has no end and four times is not enough (reported, not asserted).
+            if (drive <= 450) Assert.That(floor, Is.LessThan(-70.0));
+        }
+
+        [TestCase(33)]
+        [TestCase(57)]
+        [TestCase(81)]
+        public void StringAndFormantReportTheirNonHarmonicEnergyAtStandard(int note)
+        {
+            double s = Alias(Str, note, x => { x.Set(SP.PickHardness, 1000); x.Set(SP.StringDamping, 0); x.Set(SP.EnvSustain, 1000); });
+            double v = Alias(Vox, note, x => { x.Set(VP.GlottalEdge, 1000); x.Set(VP.BreathAir, 0); x.Set(VP.EnvAttack, 0); x.Set(VP.EnvSustain, 1000); });
+            Measure.Report($"Neo Learn String, note {note} ({DspMath.NoteToHz(note):F0} Hz), hardest pick: strongest non-harmonic bin {s:F1} dB re the fundamental (a plucked, decaying string is not a steady harmonic tone: not an alias figure); Neo Learn Formant, hardest glottal source: {v:F1} dB (the fundamental sits in a formant skirt: likewise)");
+        }
     }
 }

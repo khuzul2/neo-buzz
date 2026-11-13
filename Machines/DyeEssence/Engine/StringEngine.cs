@@ -70,6 +70,7 @@ namespace NeoBuzz.DyeEssence
         }
 
         /// <summary>A String slot's note starts: its strings start silent, to be plucked by the first control pass.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void StringInit(int note, int o, int no)
         {
             extFresh[no] = false;
@@ -98,6 +99,7 @@ namespace NeoBuzz.DyeEssence
         static double LowpassGain(double a, double w) => (1 - a) / Math.Sqrt(1 - 2 * a * PortableMath.Cos(w) + a * a);
 
         /// <summary>Makes a line's coefficients for a pitch: the damping, the dispersion, the loop gain from T60, and the delay with the loop's own delay taken out.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void StringCoefs(int line, double hz, double vr, float t60, float damp, float stiff)
         {
             if (sKeyHz[line] == hz && sKeyT[line] == t60 && sKeyD[line] == damp && sKeyS[line] == stiff && sKeyVr[line] == vr) return;
@@ -146,6 +148,7 @@ namespace NeoBuzz.DyeEssence
         }
 
         /// <summary>Writes the pluck over a line: a burst of noise (hardness: its length and brightness), a comb notch from the pick position, a fixed level.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void StringPluck(int line, uint seed, float pick, float hard, float vel)
         {
             int n = sD[line];

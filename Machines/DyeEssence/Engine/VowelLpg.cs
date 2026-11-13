@@ -51,6 +51,7 @@ namespace NeoBuzz.DyeEssence
         /// The four bands for a morph (0 … 1: a, e, i, o, u), tract (−1 … 1) and Q (0 … 1): centre (Hz), bandwidth (Hz) and linear level, levelled so that
         /// white noise through the sum has the same power for every vowel. <paramref name="maxHz"/> keeps a band under the filter's limit.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public static void At(double morph, double tract, double q, double maxHz, double[] hz, double[] bw, double[] amp)
         {
             double s = Math.Clamp(morph, 0, 1) * (Vowels - 1);
@@ -74,6 +75,7 @@ namespace NeoBuzz.DyeEssence
         }
 
         /// <summary>The magnitude (linear) of the four bands' sum at <paramref name="at"/> Hz (the picture's response curve): each a band-pass of unit gain at its centre.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public static double Response(double at, double[] hz, double[] bw, double[] amp)
         {
             double sum = 0;
@@ -99,6 +101,7 @@ namespace NeoBuzz.DyeEssence
         readonly float[] lgState = new float[8 * Notes];        // per note: [channel * 4 + (low-pass 1, low-pass 2, dc in, dc out)]
 
         /// <summary>This tick's vowel coefficients for a note (targets; they ramp across the tick).</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void VowelControl(int note, FilterSettings fs, float fe, float invCount, double vr)
         {
             if (snap[note]) Array.Clear(vwState, 16 * note, 16);
