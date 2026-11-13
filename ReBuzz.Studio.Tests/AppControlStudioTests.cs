@@ -194,6 +194,10 @@ namespace ReBuzz.Studio.Tests
             {
                 core.Recording = false;
                 Dialogs.Responder = null;
+                // The Inspector's open flag, tab and width and the Browser's width persist in the registry, and the next
+                // test's window (the Session view's clip panel lives in the Inspector) starts from them.
+                Call("panel_set", Args(("panel", "inspector"), ("open", true), ("tab", "Selection"), ("size", 288)));
+                Call("panel_set", Args(("panel", "browser"), ("open", false), ("size", 224)));
                 window.Close();
                 Studio.ResetPanels();
             });
