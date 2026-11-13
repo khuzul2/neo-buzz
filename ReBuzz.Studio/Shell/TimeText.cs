@@ -19,6 +19,18 @@ namespace ReBuzz.Studio.Shell
             return $"{beat / bpb + 1}.{beat % bpb + 1}.{t % tpb + 1}";
         }
 
+        /// <summary>
+        /// Where a tick is in minutes and seconds at a steady tempo ("1:05", "1:02:03" from an hour): the top bar's clock. A song with tempo
+        /// changes (scenes with their own) is a little off after them; it is a guide, as the arrangement's ruler is not.
+        /// </summary>
+        public static string Clock(int ticks, int ticksPerBeat, double bpm)
+        {
+            int tpb = Math.Max(1, ticksPerBeat);
+            double seconds = Math.Max(0, ticks) / (double)tpb * 60.0 / Math.Max(1, bpm);
+            long s = (long)seconds;
+            return s >= 3600 ? $"{s / 3600}:{s / 60 % 60:00}:{s % 60:00}" : $"{s / 60}:{s % 60:00}";
+        }
+
         /// <summary>A tick as bar.beat from 1, the ticks left out ("2.1").</summary>
         public static string BarBeat(int ticks, int ticksPerBeat, int beatsPerBar)
         {

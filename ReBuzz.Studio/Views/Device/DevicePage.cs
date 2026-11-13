@@ -162,13 +162,13 @@ namespace ReBuzz.Studio.Views.Device
 
         void OpenClassic() => (machine.Graph?.Buzz as ReBuzzCore)?.UiHost?.OpenParameterWindow(machine, null);
 
-        static T Read<T>(string key, T def)
+        internal static T Read<T>(string key, T def)
         {
             try { return StudioHost.Current?.Registry == null ? def : StudioHost.Current.Registry.Read(key, def, RegistrySection); }
             catch { return def; }
         }
 
-        static void Write<T>(string key, T value)
+        internal static void Write<T>(string key, T value)
         {
             try { StudioHost.Current?.Registry?.Write(key, value, RegistrySection); }
             catch { /* a setting that can't be saved is not worth a failed click */ }

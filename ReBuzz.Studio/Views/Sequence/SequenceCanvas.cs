@@ -655,12 +655,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 SequenceEventType.Thru => "<thru>",
                 _ => "<stop>",
             };
-            int ci = kind == 0 && e.Pattern != null ? state.ColourIndexOf(e.Pattern) : -1;
-            var palette = SequenceSongState.Palette;
-            var colour = ci >= 0 && ci < palette.Count
-                ? Color.FromUInt32(palette[ci].Argb)
-                : Look.BoxColours is { } own ? own[kind]
-                : Theme(kind switch { 1 => "SE Break Box", 2 => "SE Mute Box", 3 => "SE Off Box", _ => "SE Pattern Box" });
+            var colour = BlockColour(kind, e.Pattern);
             var box = BoxBrushes.Of(colour);
 
             // PatternVisual: border, fill, then the 3D highlight (top, left) and shadow (bottom, right).
@@ -687,6 +682,22 @@ namespace ReBuzz.Studio.Views.Sequence
                 using (ctx.PushTransform(Matrix.CreateRotation(-Math.PI / 2) * Matrix.CreateTranslation(2 + (16 - ft.Height) / 2, h - 4)))
                     ctx.DrawText(ft, new Point(0, 0));
             }
+        }
+
+        /// <summary>
+        /// A block's fill. A pattern keeps the colour the song gave it (§3.4); one with none wears its machine's identity colour (P3h, decision 86;
+        /// Classic Buzz keeps its own, one by the pattern's place); the other kinds have their fixed colours.
+        /// </summary>
+        internal Color BlockColour(int kind, IPattern pattern)
+        {
+            int ci = kind == 0 && pattern != null ? state.ColourIndexOf(pattern) : -1;
+            var palette = SequenceSongState.Palette;
+            bool hasOwn = kind == 0 && pattern != null && state.TryGet(pattern, out int saved) && saved >= 0;
+            if (kind == 0 && !hasOwn && !Look.IsClassic && pattern?.Machine != null && MachineIdentity.ColourOf(pattern.Machine) is { } identity) return identity;
+            return ci >= 0 && ci < palette.Count
+                ? Color.FromUInt32(palette[ci].Argb)
+                : Look.BoxColours is { } own ? own[kind]
+                : Theme(kind switch { 1 => "SE Break Box", 2 => "SE Mute Box", 3 => "SE Off Box", _ => "SE Pattern Box" });
         }
 
         /// <summary>The pattern's contents in the block, below the name (PatternElement's event hint canvas, DrawPatternEvents).</summary>
@@ -744,6 +755,9 @@ namespace ReBuzz.Studio.Views.Sequence
                 double y = geo.YOf(row);
                 var r = new Rect(0, y, area.Width, geo.TrackHeight);
                 if (row == cursorRow) ctx.FillRectangle(HeaderSelectedBrush, r);
+                // P3h: the track's machine's identity colour, a strip at the header's left edge.
+                if (!Look.IsClassic && MachineIdentity.ColourOf(seq.Machine) is { } identity)
+                    ctx.FillRectangle(ReBuzz.Studio.Views.Session.SessionPalette.BrushOf(identity), new Rect(0, Math.Floor(y) + 1, 4, Math.Max(1, geo.TrackHeight - 1)));
                 // The machine's name, centred above the buttons.
                 var name = new FormattedText(seq.Machine?.Name ?? "", Culture, FlowDirection.LeftToRight, Font, 12, Look.HeaderText)
                 { MaxTextWidth = area.Width - 8, MaxLineCount = 1, Trimming = TextTrimming.CharacterEllipsis };

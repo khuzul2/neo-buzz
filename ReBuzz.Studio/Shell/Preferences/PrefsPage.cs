@@ -13,6 +13,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
+using ReBuzz.Agent.App;
 
 namespace ReBuzz.Studio.Shell.Preferences
 {
@@ -28,8 +29,9 @@ namespace ReBuzz.Studio.Shell.Preferences
         readonly List<Action> relabels = new List<Action>();
         readonly Dictionary<string, Control> settingControls = new Dictionary<string, Control>();
 
-        protected PrefsPage()
+        protected PrefsPage(PrefsModel model = null)
         {
+            Model = model;
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
             AllowAutoHide = false;          // a bar that shows there's more (macOS's and Fluent's hide until scrolled)
@@ -122,7 +124,7 @@ namespace ReBuzz.Studio.Shell.Preferences
         }
 
         /// <summary>A labelled row; the hint goes under the control.</summary>
-        protected Grid Row(string label, Control control, string hint = null)
+        protected Grid Row(string label, Control control, string hint = null, Control extra = null)
         {
             var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("200,*"), Margin = new Thickness(0, 4) };
             var name = new TextBlock { Text = label, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 8, 12, 0), TextWrapping = TextWrapping.Wrap };
@@ -131,6 +133,7 @@ namespace ReBuzz.Studio.Shell.Preferences
             if (control is not TextBox || !double.IsNaN(control.Width)) control.HorizontalAlignment = HorizontalAlignment.Left;
             right.Children.Add(control);
             if (!string.IsNullOrEmpty(hint)) right.Children.Add(new TextBlock { Text = hint, TextWrapping = TextWrapping.Wrap, Foreground = Dim, FontSize = 12 });
+            if (extra != null) right.Children.Add(extra);
             Grid.SetColumn(right, 1);
             grid.Children.Add(right);
             Body.Children.Add(grid);
@@ -148,87 +151,132 @@ namespace ReBuzz.Studio.Shell.Preferences
             };
         }
 
-        // ------------------------------------------------------------------ [BuzzSetting]s
+        // ------------------------------------------------------------------ the settings (the agent's list)
+
+        /// <summary>The settings model this page shows (the K3 agent tools' list and keys); null when the agent host isn't there.</summary>
+        protected PrefsModel Model { get; }
+
+        readonly List<string> sections = new List<string>();
+
+        /// <summary>The settings sections the page shows (settings_get's "section"), what Restore Defaults puts back.</summary>
+        internal IReadOnlyList<string> Sections => sections;
+
+        /// <summary>Restore Defaults asks first (the engine flags and the safety settings).</summary>
+        public virtual bool ConfirmRestore => false;
+
+        public virtual string RestoreWarning => "";
+
+        /// <summary>The page's own part of Restore Defaults, besides its sections (a device's choice that isn't a setting key).</summary>
+        public virtual void RestoreOwn() { }
+
+        /// <summary>Shows what the settings hold now (the agent changed one while the window was open, or Restore Defaults did).</summary>
+        public void RefreshSettings()
+        {
+            Filling = true;
+            try
+            {
+                foreach (var refresh in settingRefreshes) refresh();
+            }
+            finally
+            {
+                Filling = false;
+            }
+            Refresh();
+        }
 
         /// <summary>
-        /// A settings class's [BuzzSetting]s, a row each, as ReBuzz.exe's Settings window lists them:
-        /// a choice of the setting's options (the default in bold), on/off as a check box, text in
-        /// a box. A change goes to the setting at once (the engine follows its PropertyChanged) and
-        /// is saved, as the Settings window saves them.
+        /// A section's settings, a row each, from the same entries and keys as settings_get: a choice of the setting's options (the default in
+        /// bold), on/off as a check box, a number or text in a box that takes only what settings_set would. A change goes through
+        /// <see cref="SettingsService"/>: it is saved and logged in settings_history with the source Manual. A setting that needs a restart says so.
         /// </summary>
-        protected void AddSettings(BuzzGUI.Common.Settings.Settings settings, params string[] hidden)
+        protected void AddSection(string section, params string[] hidden)
         {
-            foreach (var setting in settings.List.Where(s => !hidden.Contains(s.Name)))
+            sections.Add(section);
+            if (Model == null)
             {
-                var s = setting;
-                string key = settings.GetType().Name + "/" + s.Name;
-                void Set(string value)
-                {
-                    if (Filling || value == null || value == s.Value) return;
-                    try
-                    {
-                        s.Value = value;
-                        settings.Save();
-                    }
-                    catch (Exception e)
-                    {
-                        StudioHost.Current?.Log($"{key}: {e.Message}");
-                    }
-                }
+                Note("Settings aren't available here: the agent host didn't start.", Problem);
+                return;
+            }
+            foreach (var entry in Model.Section(section).Where(e => e.UseInstead == null && !hidden.Contains(e.Name)))
+                AddEntry(entry);
+        }
 
-                if (s.Presets == null && s.Options != null && s.Options.Length == 2 && s.Options.Contains("True") && s.Options.Contains("False"))
+        /// <summary>One setting's row (the key names its control for tests).</summary>
+        protected void AddEntry(SettingEntry entry)
+        {
+            string hint = entry.Description + (entry.RestartRequired && !entry.Description.Contains("restart", StringComparison.OrdinalIgnoreCase) ? " Restart required." : "");
+            var problem = new TextBlock { Foreground = Problem, FontSize = 12, TextWrapping = TextWrapping.Wrap, IsVisible = false };
+            void Set(string value)
+            {
+                if (Filling || value == null) return;
+                try
                 {
-                    var box = new CheckBox { Content = Pretty(s.Name) };
-                    box.IsCheckedChanged += (o, e) => Set(box.IsChecked == true ? "True" : "False");
-                    settingRefreshes.Add(() => box.IsChecked = s.Value == "True");
-                    Row("", box, s.Description);
-                    settingControls[key] = box;
+                    problem.IsVisible = false;
+                    Model.Apply(entry, value);
                 }
-                else if (s.Options != null)
+                catch (Exception e)
                 {
-                    var combo = Choices(240);
-                    var items = s.Options.Select(o => new ComboBoxItem { Content = OptionLabel(s, o), FontWeight = o == s.Default ? FontWeight.Bold : FontWeight.Normal }).ToList();
-                    combo.ItemsSource = items;
-                    relabels.Add(() =>
-                    {
-                        for (int i = 0; i < items.Count; i++) items[i].Content = OptionLabel(s, s.Options[i]);
-                    });
-                    OnPick(combo, i => Set(s.Options[i]));
-                    settingRefreshes.Add(() => combo.SelectedIndex = Array.IndexOf(s.Options, s.Value));
-                    Row(Pretty(s.Name), combo, s.Description);
-                    settingControls[key] = combo;
-                }
-                else
-                {
-                    var text = new TextBox { Width = 240 };
-                    text.LostFocus += (o, e) => Set(text.Text);
-                    text.KeyDown += (o, e) =>
-                    {
-                        if (e.Key == Key.Enter) Set(text.Text);
-                    };
-                    settingRefreshes.Add(() => text.Text = s.Value);
-                    Row(Pretty(s.Name), text, s.Description);
-                    settingControls[key] = text;
+                    problem.Text = e.Message;
+                    problem.IsVisible = true;
+                    StudioHost.Current?.Log($"{entry.Key}: {e.Message}");
+                    RefreshSettings();
                 }
             }
+            string name = Pretty(entry.Name);
+            Control control;
+            if (entry.Kind == SettingKind.Bool)
+            {
+                var box = new CheckBox { Content = name };
+                box.IsCheckedChanged += (o, e) => Set(box.IsChecked == true ? "True" : "False");
+                settingRefreshes.Add(() => box.IsChecked = SettingsService.Get(entry).Equals("True", StringComparison.OrdinalIgnoreCase));
+                Avalonia.Automation.AutomationProperties.SetName(box, name);
+                Row("", box, hint, problem);
+                control = box;
+            }
+            else if (entry.Options is { Length: > 0 } options)
+            {
+                var combo = Choices(240);
+                var items = options.Select((o, i) => new ComboBoxItem { Content = OptionLabel(entry, i), FontWeight = o == entry.Default ? FontWeight.Bold : FontWeight.Normal }).ToList();
+                combo.ItemsSource = items;
+                relabels.Add(() =>
+                {
+                    for (int i = 0; i < items.Count; i++) items[i].Content = OptionLabel(entry, i);
+                });
+                OnPick(combo, i => Set(options[i]));
+                settingRefreshes.Add(() => combo.SelectedIndex = Array.FindIndex(options, o => o.Equals(SettingsService.Get(entry), StringComparison.OrdinalIgnoreCase)));
+                Avalonia.Automation.AutomationProperties.SetName(combo, name);
+                Row(name, combo, hint, problem);
+                control = combo;
+            }
+            else
+            {
+                var text = new TextBox { Width = 240 };
+                text.LostFocus += (o, e) => Set(text.Text);
+                text.KeyDown += (o, e) =>
+                {
+                    if (e.Key == Key.Enter) Set(text.Text);
+                };
+                settingRefreshes.Add(() => text.Text = SettingsService.Get(entry));
+                Avalonia.Automation.AutomationProperties.SetName(text, name);
+                Row(name, text, hint, problem);
+                control = text;
+            }
+            settingControls[entry.Key] = control;
         }
 
         /// <summary>
-        /// An option as the list shows it: an enum value's [Description] (General ▸ Note names: "C3 = MIDI 60",
-        /// ux-overhaul.md §3.5), an octave as notes are named (the default base octave: Buzz's 4 is 2 when C3 is 60), else
-        /// its name with spaces for underscores.
+        /// An option as the list shows it: an enum value's [Description] (General ▸ Note names: "C3 = MIDI 60", ux-overhaul.md §3.5), an octave as
+        /// notes are named (the default base octave: Buzz's 4 is 2 when C3 is 60), else its name with spaces for underscores.
         /// </summary>
-        internal static string OptionLabel(BuzzGUI.Common.Settings.Setting s, string option)
+        internal static string OptionLabel(SettingEntry entry, int index)
         {
-            if (s.Name == nameof(BuzzGUI.Common.Settings.GeneralSettings.DefaultMachineBaseOctave) && int.TryParse(option, out int octave))
+            string option = entry.Options[index];
+            if (entry.Name == nameof(BuzzGUI.Common.Settings.GeneralSettings.DefaultMachineBaseOctave) && int.TryParse(option, out int octave))
                 return BuzzGUI.Common.NoteNames.Octave(octave).ToString(System.Globalization.CultureInfo.InvariantCulture);
-            if (s.ValueObject is Enum e && e.GetType().GetField(option) is { } field &&
-                Attribute.GetCustomAttribute(field, typeof(System.ComponentModel.DescriptionAttribute)) is System.ComponentModel.DescriptionAttribute d)
-                return d.Description;
-            return option.Replace('_', ' ');
+            return entry.OptionLabels != null && index < entry.OptionLabels.Length ? entry.OptionLabels[index] : option.Replace('_', ' ');
         }
 
-        /// <summary>A setting's control by "Class/Name" ("EngineSettings/AccurateBPM"), for tests.</summary>
+        /// <summary>A setting's control by its key as settings_get lists it ("advanced.AccurateBPM"), for tests.</summary>
         internal Control SettingControl(string key) => settingControls.TryGetValue(key, out var c) ? c : null;
 
         /// <summary>"LowLatencyGC" → "Low latency GC": words in sentence case, acronyms kept.</summary>

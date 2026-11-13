@@ -96,11 +96,10 @@ namespace ReBuzz.Studio.Views.Machines
             Bind(Key.U, cmd, Canvas.UnmuteAll);
             // Mute: M on the canvas in both apps (on a Mac ⌘M minimizes the window), and Ctrl+M as ReBuzz.exe has it off a
             // Mac; S solos, B bypasses.
-            // Fork (P3d, decision 58): with nothing selected the letters are typing, which seeds the browser's search; so M, S
-            // and B act only on a selection and leave the key alone otherwise.
-            Canvas.KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.M), Command = new Command(Canvas.ToggleMuteSelection, () => !Canvas.TypesToSearch) });
-            Canvas.KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.S), Command = new Command(Canvas.ToggleSoloSelection, () => !Canvas.TypesToSearch) });
-            Canvas.KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.B), Command = new Command(Canvas.ToggleBypassSelection, () => !Canvas.TypesToSearch) });
+            // Fork (decision 58): letters always keep their shortcuts; the browser opens by a double click on empty canvas or Add Machine….
+            Canvas.KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.M), Command = new Command(Canvas.ToggleMuteSelection) });
+            Canvas.KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.S), Command = new Command(Canvas.ToggleSoloSelection) });
+            Canvas.KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.B), Command = new Command(Canvas.ToggleBypassSelection) });
             if (!OperatingSystem.IsMacOS())
                 Bind(Key.M, cmd, Canvas.ToggleMuteSelection);
         }
@@ -112,7 +111,14 @@ namespace ReBuzz.Studio.Views.Machines
 
         public Views.Browser.MachineBrowserPopup Popup => popup;
 
-        /// <summary>A double click on empty canvas, or typing on it: the browser opens at that point (clamped into the view).</summary>
+        /// <summary>Add Machine… (the dedicated key): the browser opens in the middle of what is shown.</summary>
+        public void OpenBrowser()
+        {
+            var view = new Point(Math.Max(0, Canvas.Bounds.Width / 2 - Views.Browser.MachineBrowserPopup.PopupWidth / 2), Math.Max(0, Canvas.Bounds.Height / 3));
+            OnBrowse(Canvas.ToLogical(view), view, "");
+        }
+
+        /// <summary>A double click on empty canvas, or Add Machine…: the browser opens at that point (clamped into the view).</summary>
         void OnBrowse(Point logical, Point view, string seed)
         {
             var at = CanvasMap.Clamp(Canvas.Map.PositionAt(logical));
@@ -140,7 +146,7 @@ namespace ReBuzz.Studio.Views.Machines
             panel.Children.Add(row);
             panel.Children.Add(new TextBlock
             {
-                Text = "Or double-click the canvas, or just start typing, to search every machine: bass, reverb, compressor…",
+                Text = $"Or double-click the canvas, or press {Shell.Commands.StudioKeymap.Get("view.addmachine").KeyLabel()}, to search every machine: bass, reverb, compressor…",
                 FontSize = 12,
                 TextWrapping = Avalonia.Media.TextWrapping.Wrap,
                 TextAlignment = Avalonia.Media.TextAlignment.Center,
