@@ -26,7 +26,9 @@
    "a": 20.0,
    "b": 300.0,
    "unit": "Hz",
-   "description": "Where the low band ends (−6 dB here). Everything above it is left as it was"
+   "description": "Where the low band ends (−6 dB here). Everything above it is left as it was",
+   "how": "Sets the frequency, from 20 to 300 Hz, where the low band ends; everything above is left alone.",
+   "sound": "A higher crossover treats more of the bass body as the low end; a lower one focuses on the deep sub."
   },
   {
    "index": 1,
@@ -41,7 +43,9 @@
     "Minimum",
     "Linear"
    ],
-   "description": "Minimum: the Linkwitz–Riley split, its only latency the lookahead. Linear: a linear-phase split on FIRs of 8192 taps (latency 96 ms at 48 kHz, reported and compensated), the band's phase untouched. Set it before playing"
+   "description": "Minimum: the Linkwitz–Riley split, its only latency the lookahead. Linear: a linear-phase split on FIRs of 8192 taps (latency 96 ms at 48 kHz, reported and compensated), the band's phase untouched. Set it before playing",
+   "how": "Chooses a minimum-phase split with little latency or a linear-phase split with about 96 ms of latency.",
+   "sound": "Linear keeps the bass phase intact for a cleaner, more precise low end; minimum phase suits live playing."
   },
   {
    "index": 2,
@@ -55,7 +59,9 @@
    "a": -12.0,
    "b": 12.0,
    "unit": "dB",
-   "description": "Gain on the onsets of the low band (kick, bass attack), 0.1 dB steps"
+   "description": "Gain on the onsets of the low band (kick, bass attack), 0.1 dB steps",
+   "how": "Adds or removes up to 12 dB of gain on the onsets of the low band.",
+   "sound": "Positive values make kicks and bass attacks hit harder; negative values soften them."
   },
   {
    "index": 3,
@@ -69,7 +75,9 @@
    "a": -12.0,
    "b": 12.0,
    "unit": "dB",
-   "description": "Gain on the body and tail of the low band, 0.1 dB steps"
+   "description": "Gain on the body and tail of the low band, 0.1 dB steps",
+   "how": "Adds or removes up to 12 dB of gain on the body and tail of the low band.",
+   "sound": "Positive values make the bass longer and fuller; negative values tighten it."
   },
   {
    "index": 4,
@@ -85,7 +93,9 @@
     "Balanced",
     "Smooth"
    ],
-   "description": "The followers' time constants for Punch and Sustain. Smooth: for sustained bass"
+   "description": "The followers' time constants for Punch and Sustain. Smooth: for sustained bass",
+   "how": "Chooses how quickly the followers react: Punchy, Balanced or Smooth.",
+   "sound": "Punchy suits short kicks, Smooth suits sustained bass lines."
   },
   {
    "index": 5,
@@ -99,7 +109,9 @@
    "a": 0.0,
    "b": 10.0,
    "unit": "ms",
-   "description": "The shaping's gains are worked out this long before the audio they act on, so Punch is already up at a kick's first peak. Minimum phase: the audio is delayed this long (the latency, reported and compensated). Linear phase: free (the FIR's latency is far longer)"
+   "description": "The shaping's gains are worked out this long before the audio they act on, so Punch is already up at a kick's first peak. Minimum phase: the audio is delayed this long (the latency, reported and compensated). Linear phase: free (the FIR's latency is far longer)",
+   "how": "Works out the shaping up to 10 ms before the audio arrives.",
+   "sound": "Punch is already up on the first peak of a kick, so the hit is crisp."
   },
   {
    "index": 6,
@@ -111,7 +123,9 @@
    "default": 500,
    "kind": "bipolar",
    "unit": "%",
-   "description": "Gain from how far the low band is above or below its slow level (300 ms): +100 % keeps the strongest parts and pulls the rest (up to 12 dB), −100 % does the reverse, 0 leaves it. The band's energy is kept"
+   "description": "Gain from how far the low band is above or below its slow level (300 ms): +100 % keeps the strongest parts and pulls the rest (up to 12 dB), −100 % does the reverse, 0 leaves it. The band's energy is kept",
+   "how": "Makes strong low-end moments stronger and weak ones weaker with positive values, or the reverse with negative ones.",
+   "sound": "Positive values give a more dynamic, bouncy bass; negative values even it out."
   },
   {
    "index": 7,
@@ -125,7 +139,9 @@
    "a": -12.0,
    "b": 18.0,
    "unit": "dB",
-   "description": "The level of the low band over the mid band (the band above the crossover up to 2 kHz) Balance moves toward, measured over 1 s"
+   "description": "The level of the low band over the mid band (the band above the crossover up to 2 kHz) Balance moves toward, measured over 1 s",
+   "how": "Sets the level of the low band relative to the mid band that Balance steers towards, from -12 to +18 dB.",
+   "sound": "Higher targets give a fuller low end; lower ones a lighter, leaner one."
   },
   {
    "index": 8,
@@ -137,7 +153,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "How much of the distance to Target is corrected (at most ±9 dB on the low band, moving slowly); 0 leaves the low band's level alone"
+   "description": "How much of the distance to Target is corrected (at most ±9 dB on the low band, moving slowly); 0 leaves the low band's level alone",
+   "how": "Sets how much of the distance to Target is corrected, from 0 to 100 %.",
+   "sound": "More balance holds the bass steady against the rest of the mix as the music changes."
   },
   {
    "index": 9,
@@ -152,7 +170,9 @@
     "Off",
     "On"
    ],
-   "description": "A soft clipper (a 6 dB knee, antiderivative anti-aliased) on the low band only: its peaks stay under Peak level, the rest of the sound is untouched"
+   "description": "A soft clipper (a 6 dB knee, antiderivative anti-aliased) on the low band only: its peaks stay under Peak level, the rest of the sound is untouched",
+   "how": "Turns on a soft clipper that works only on the low band.",
+   "sound": "Occasional bass peaks are rounded off, so the mix can be louder with the rest of the sound untouched."
   },
   {
    "index": 10,
@@ -166,7 +186,9 @@
    "a": -24.0,
    "b": 0.0,
    "unit": "dB",
-   "description": "Where the low band's peaks are held, dBFS (0.1 dB steps)"
+   "description": "Where the low band's peaks are held, dBFS (0.1 dB steps)",
+   "how": "Sets the level, from -24 to 0 dBFS, at which the low band's peaks are held.",
+   "sound": "Lower values flatten bass peaks more, adding density and a little warmth."
   },
   {
    "index": 11,
@@ -181,7 +203,9 @@
     "Off",
     "On"
    ],
-   "description": "Makes the low band mono below Mono freq (the side signal is removed there)"
+   "description": "Makes the low band mono below Mono freq (the side signal is removed there)",
+   "how": "Makes the low band mono below Mono freq.",
+   "sound": "The bass becomes centred and solid, and translates better to small speakers and club systems."
   },
   {
    "index": 12,
@@ -195,7 +219,9 @@
    "a": 20.0,
    "b": 300.0,
    "unit": "Hz",
-   "description": "Below this the low band's side signal is removed (a 4th-order Linkwitz–Riley high-pass on it, −6 dB here)"
+   "description": "Below this the low band's side signal is removed (a 4th-order Linkwitz–Riley high-pass on it, −6 dB here)",
+   "how": "Sets the frequency, from 20 to 300 Hz, below which the sides of the low band are removed.",
+   "sound": "Higher values centre more of the bass, lower ones keep stereo width higher up."
   },
   {
    "index": 13,
@@ -209,7 +235,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Gain after the shaper, 0.1 dB steps (the editor's Match sets it from the gain-match reading)"
+   "description": "Gain after the shaper, 0.1 dB steps (the editor's Match sets it from the gain-match reading)",
+   "how": "Adds -24 to +24 dB of gain after the low-end shaping.",
+   "sound": "It matches the loudness to the untreated sound so you judge the low end fairly."
   },
   {
    "index": 14,
@@ -224,7 +252,9 @@
     "Off",
     "On"
    ],
-   "description": "Hear only what Low End changes: the output minus the input, delayed to match (gliding over 10 ms)"
+   "description": "Hear only what Low End changes: the output minus the input, delayed to match (gliding over 10 ms)",
+   "how": "Plays only the difference between the output and the input.",
+   "sound": "You hear only what Low End changes, which shows how much bass has been added or taken away."
   }
  ],
  "readings": [

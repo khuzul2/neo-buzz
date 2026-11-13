@@ -33,7 +33,9 @@
     "SVF Notch",
     "SVF Peak"
    ],
-   "description": "Ladder: Neo Poly's transistor ladder, low-pass 24 or 12 dB/oct (resonance thins the lows, as a ladder does); SVF: the state-variable filter's low-pass, band-pass, high-pass, notch or peak (unity on both sides, a peak of 2Q at the cutoff)"
+   "description": "Ladder: Neo Poly's transistor ladder, low-pass 24 or 12 dB/oct (resonance thins the lows, as a ladder does); SVF: the state-variable filter's low-pass, band-pass, high-pass, notch or peak (unity on both sides, a peak of 2Q at the cutoff)",
+   "how": "Chooses the filter: a 24 or 12 dB per octave ladder low-pass, or a state-variable low-pass, band-pass, high-pass, notch or peak.",
+   "sound": "The ladder sounds warm and thick, low-pass types remove highs, band-pass and high-pass thin the sound, notch and peak carve or boost one spot."
   },
   {
    "index": 1,
@@ -48,7 +50,9 @@
     "12 dB/oct",
     "24 dB/oct"
    ],
-   "description": "SVF low-pass, band-pass, high-pass and notch: one section (12 dB/oct) or two alike in series (24 dB/oct, the resonance's peak doubled in dB). The ladder and the peak ignore it"
+   "description": "SVF low-pass, band-pass, high-pass and notch: one section (12 dB/oct) or two alike in series (24 dB/oct, the resonance's peak doubled in dB). The ladder and the peak ignore it",
+   "how": "Chooses a 12 or 24 dB per octave slope for the state-variable low-pass, band-pass, high-pass and notch (the ladder and peak ignore it).",
+   "sound": "24 dB per octave cuts more sharply, so the filtered range disappears faster; 12 dB is gentler and more natural."
   },
   {
    "index": 2,
@@ -62,7 +66,9 @@
    "a": 20.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "Cutoff frequency (the ladder's stages, the SVF's centre): where the resonance peaks and the filter self-oscillates"
+   "description": "Cutoff frequency (the ladder's stages, the SVF's centre): where the resonance peaks and the filter self-oscillates",
+   "how": "Sets the filter's frequency, from 20 Hz to 20 kHz: the corner, or the centre for band-pass, notch and peak.",
+   "sound": "Sweeping it makes the sound darker or brighter, or moves the thin band you hear."
   },
   {
    "index": 3,
@@ -75,7 +81,9 @@
    "kind": "exp",
    "a": 0.5,
    "b": 100.0,
-   "description": "Resonance as the Q of the filter's resonant poles: 0.5 none, 0.71 flat (Butterworth), 2–5 a bump, 10 and up a whistle; at its top the filter self-oscillates, at a bounded level"
+   "description": "Resonance as the Q of the filter's resonant poles: 0.5 none, 0.71 flat (Butterworth), 2–5 a bump, 10 and up a whistle; at its top the filter self-oscillates, at a bounded level",
+   "how": "Boosts the region around the cutoff by raising Q from 0.5 to 100.",
+   "sound": "Low values sound plain, middle values add a bump, high values whistle and eventually ring on their own."
   },
   {
    "index": 4,
@@ -89,7 +97,9 @@
    "a": 0.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Soft saturation before the filter, oversampled: quiet signals pass as they are, louder ones bend from −Drive dBFS; 0 dB is clean"
+   "description": "Soft saturation before the filter, oversampled: quiet signals pass as they are, louder ones bend from −Drive dBFS; 0 dB is clean",
+   "how": "Adds up to 24 dB of soft saturation before the filter.",
+   "sound": "More drive thickens and warms the sound, and makes the resonance bite harder."
   },
   {
    "index": 5,
@@ -103,7 +113,9 @@
    "a": -6.0,
    "b": 6.0,
    "unit": "oct",
-   "description": "How far the input's envelope moves the cutoff, in octaves at full envelope (negative: down)"
+   "description": "How far the input's envelope moves the cutoff, in octaves at full envelope (negative: down)",
+   "how": "Sets how far the input's loudness moves the cutoff, from -6 to +6 octaves.",
+   "sound": "Positive values open the filter on loud notes for a wah or plucky sweep; negative values close it."
   },
   {
    "index": 6,
@@ -117,7 +129,9 @@
    "a": -12.0,
    "b": 36.0,
    "unit": "dB",
-   "description": "Gain on the detected level: the envelope is full when the input's peak reaches −Sensitivity dBFS"
+   "description": "Gain on the detected level: the envelope is full when the input's peak reaches −Sensitivity dBFS",
+   "how": "Sets how sensitive the envelope is, from -12 to +36 dB.",
+   "sound": "Higher values make even quiet input sweep the filter fully; lower values need louder playing."
   },
   {
    "index": 7,
@@ -131,7 +145,9 @@
    "a": 0.0001,
    "b": 0.5,
    "unit": "s",
-   "description": "Envelope follower attack: the time constant of its rise (63 % of a step)"
+   "description": "Envelope follower attack: the time constant of its rise (63 % of a step)",
+   "how": "Sets how fast the envelope rises when the input gets louder, from 0.1 ms to 0.5 s.",
+   "sound": "Fast attacks snap the filter open on every hit; slow ones make a gradual swell."
   },
   {
    "index": 8,
@@ -145,7 +161,9 @@
    "a": 0.001,
    "b": 5.0,
    "unit": "s",
-   "description": "Envelope follower release: the time constant of its fall (to 37 %)"
+   "description": "Envelope follower release: the time constant of its fall (to 37 %)",
+   "how": "Sets how fast the envelope falls when the input gets quieter, from 1 ms to 5 s.",
+   "sound": "Short releases give a quick, bouncy wah; long ones let the filter glide slowly closed."
   },
   {
    "index": 9,
@@ -159,7 +177,9 @@
    "a": 0.01,
    "b": 30.0,
    "unit": "Hz",
-   "description": "LFO speed when LFO sync is Free"
+   "description": "LFO speed when LFO sync is Free",
+   "how": "Sets the LFO's speed, from 0.01 to 30 Hz, when LFO sync is Free.",
+   "sound": "Slow rates make gentle sweeps over seconds, fast rates make wobbles and tremolo-like movement."
   },
   {
    "index": 10,
@@ -191,7 +211,9 @@
     "8 bars",
     "16 bars"
    ],
-   "description": "One LFO cycle per note value of the song's tempo (T triplet, D dotted); Free: LFO rate"
+   "description": "One LFO cycle per note value of the song's tempo (T triplet, D dotted); Free: LFO rate",
+   "how": "Locks one LFO cycle to a note value of the song's tempo, from 1/32 to 16 bars, or leaves it Free.",
+   "sound": "The movement stays in time with the music, so sweeps land on the beat."
   },
   {
    "index": 11,
@@ -211,7 +233,9 @@
     "S&H",
     "Smooth random"
    ],
-   "description": "LFO waveform (S&H: a random step per cycle; Smooth random: random points joined smoothly)"
+   "description": "LFO waveform (S&H: a random step per cycle; Smooth random: random points joined smoothly)",
+   "how": "Chooses the LFO's waveform: sine, triangle, saw up, saw down, square, stepped random or smooth random.",
+   "sound": "Sine and triangle sweep smoothly, saws ramp, square flips between two tones, random shapes wander."
   },
   {
    "index": 12,
@@ -225,7 +249,9 @@
    "a": 0.0,
    "b": 4.0,
    "unit": "oct",
-   "description": "How far the LFO moves the cutoff either way, in octaves"
+   "description": "How far the LFO moves the cutoff either way, in octaves",
+   "how": "Sets how far the LFO moves the cutoff either way, from 0 to 4 octaves.",
+   "sound": "Small depths add subtle movement; large ones sweep the whole sound open and shut."
   },
   {
    "index": 13,
@@ -239,7 +265,9 @@
    "a": 0.0,
    "b": 180.0,
    "unit": "°",
-   "description": "The right channel's LFO phase against the left's: 0° both alike, 90° in quadrature, 180° opposite"
+   "description": "The right channel's LFO phase against the left's: 0° both alike, 90° in quadrature, 180° opposite",
+   "how": "Offsets the right channel's LFO phase from the left's, from 0 to 180 degrees.",
+   "sound": "At 0 degrees both sides move together; wider offsets make the sweep travel across the stereo field."
   },
   {
    "index": 14,
@@ -255,7 +283,9 @@
     "Song",
     "Env"
    ],
-   "description": "Free: the LFO runs on; Song: its phase follows the song's position while it plays (the same sweep on every pass and render); Env: it restarts at LFO phase when the input's envelope rises past half"
+   "description": "Free: the LFO runs on; Song: its phase follows the song's position while it plays (the same sweep on every pass and render); Env: it restarts at LFO phase when the input's envelope rises past half",
+   "how": "Chooses when the LFO restarts: Free runs on, Song follows the song position, Env restarts on each rising input.",
+   "sound": "Song repeats the same sweep on every pass; Env restarts the sweep on every hit."
   },
   {
    "index": 15,
@@ -269,7 +299,9 @@
    "a": 0.0,
    "b": 360.0,
    "unit": "°",
-   "description": "The LFO's phase at the song's start (Song) or where it restarts (Env)"
+   "description": "The LFO's phase at the song's start (Song) or where it restarts (Env)",
+   "how": "Sets the LFO's starting phase, from 0 to 360 degrees, at the start of the song or at each restart.",
+   "sound": "It decides where in the sweep each pass begins, for example starting dark or starting bright."
   },
   {
    "index": 16,
@@ -281,7 +313,9 @@
    "default": 1000,
    "kind": "percent",
    "unit": "%",
-   "description": "Dry against filtered (a crossfade): 100 % only the filter"
+   "description": "Dry against filtered (a crossfade): 100 % only the filter",
+   "how": "Blends the dry signal with the filtered signal.",
+   "sound": "Lower values keep the original sound and add the filter as an accent; 100 % is only the filter."
   },
   {
    "index": 17,
@@ -295,7 +329,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Output gain, −24 … +24 dB in 0.1 dB steps"
+   "description": "Output gain, −24 … +24 dB in 0.1 dB steps",
+   "how": "Adds -24 to +24 dB of gain after the filter.",
+   "sound": "It restores the level lost to filtering, or keeps resonant peaks in check."
   }
  ]
 }

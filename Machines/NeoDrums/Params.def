@@ -22,93 +22,227 @@ track HitRC  "RC"  1 127 | Hits the ride at this velocity (1–127)
 
 group Kit
 Volume      "Volume"              0 720 600   db -60 12 inf               | Output level
+    how Sets the overall output level of the kit, from -60 to +12 dB, or off.
+    sound Use it to place the whole kit in the mix without changing the balance between drums.
 Accent      "Accent gain"         0 120 60    db 0 12                     | How much louder an accented hit plays (a hit on a row with Accent): a TR-909's accent
+    how Sets how much louder an accented hit plays, from 0 to 12 dB.
+    sound Accented steps jump out of the pattern and give it a human, driving push.
 VelLevel    "Vel → level"         0 1000 700   pct                         | How much velocity sets a hit's level: the gain is velocity^(2 × this) (100 %: velocity 64 is −12 dB; 0 %: every hit at full level)
+    how Sets how strongly velocity changes the level of a hit, from 0 to 100 %.
+    sound High values give a lively, dynamic kit, and 0 % makes every hit equally loud like a drum machine.
 VelTone     "Vel → tone"          0 1000 500   pct                         | How much velocity (and accent) opens a hit: the kick's click and sweep, the snare's snap and tone, the toms' attack, the hats' and cymbals' tone; a hit at velocity 100 sounds as its parameters say
+    how Sets how much velocity and accent open up the tone of a hit, from 0 to 100 %.
+    sound Harder hits get a sharper click, snap and brightness, and softer ones sound duller and rounder.
 
 group Kick
 KickTune    "Kick tune"           0 1000 365   freq 30 150                 | The body's pitch once its sweep has settled
+    how Sets the pitch the kick body settles on, from 30 to 150 Hz.
+    sound Low values give a deep sub thump, and higher ones a tighter, more tonal kick.
 KickSweep   "Kick sweep"          0 480 300   lin 0 48 st 1               | How far above its tune the body starts, falling to it
+    how Sets how far above its tune the kick starts, from 0 to 48 semitones.
+    sound More sweep gives a stronger pitch-drop zap at the start, and none gives a flat sine boom.
 KickSweepT  "Kick sweep time"     0 1000 548   time 0.002 0.2              | The sweep's time constant: the pitch is 63 % of the way down after this
+    how Sets how quickly the kick falls from its start pitch to its tune, from 2 to 200 ms.
+    sound Short sweeps sound clicky and tight, and long ones sound like a falling laser.
 KickDecay   "Kick decay"          0 1000 525   time 0.05 4                 | Time for the body to fall 60 dB
+    how Sets how long the kick body takes to die away, from 0.05 to 4 seconds.
+    sound Short decays make a tight kick, and long ones a booming, held bass note.
 KickClick   "Kick click"          0 1000 500   pct                         | Level of the attack's click (a short burst of high-passed noise)
+    how Sets the level of the noisy click at the start of the kick, from 0 to 100 %.
+    sound More click makes the beater attack audible and helps the kick cut through a mix.
 KickPunch   "Kick punch"          0 1000 500   pct                         | How much louder the body starts (up to +12 dB at 100 %), falling back with the sweep: a TR-909's attack
+    how Boosts the level of the kick's first moments by up to 12 dB, from 0 to 100 %.
+    sound More punch gives a harder, more percussive attack that then settles into the body.
 KickDrive   "Kick drive"          0 240 30    db 0 24                     | Saturation of the body, its level kept
+    how Adds saturation to the kick body, from 0 to 24 dB, keeping its level.
+    sound A little adds harmonics so the kick reads on small speakers, and a lot makes it gritty.
 KickLevel   "Kick level"          0 660 600   db -60 6 inf                | Level of the kick
+    how Sets the level of the kick, from -60 to +6 dB, or off.
+    sound Use it to balance the kick against the other drums.
 KickPan     "Kick pan"            0 200 100   lin -100 100 % 0            | Where the kick sits, from −100 % (left) to +100 % (right)
+    how Places the kick from 100 % left to 100 % right.
+    sound The centre is the usual place for a kick; moving it makes the kit feel off-balance.
 
 group Snare
 SnareTune   "Snare tune"          0 1000 424   freq 100 400                | The body's lower tone, once its short fall has settled (the upper sits an octave above)
+    how Sets the lower tone of the snare body, from 100 to 400 Hz.
+    sound Lower values sound fat and deep, and higher ones sound thin and tight.
 SnareTone   "Snare tone"          0 1000 702   freq 1000 16000             | Centre of the snappy noise's band (from about half of it to 1.3 times it): brighter up
+    how Sets the centre of the snappy noise band, from 1 to 16 kHz.
+    sound Higher values give a bright, crisp rattle, and lower ones a darker, rounder one.
 SnareSnap   "Snare snap"          0 1000 500   pct                         | The snappy noise against the body (0 %: the body alone)
+    how Sets the level of the snappy noise against the body, from 0 to 100 %.
+    sound Zero leaves only the drum body, while more snap adds the sizzle of the snare wires.
 SnareDecay  "Snare decay"         0 1000 486   time 0.05 2                 | Time for the snappy noise to fall 60 dB (the body takes about half)
+    how Sets how long the snare noise rings, from 0.05 to 2 seconds.
+    sound Short decays are dry and snappy, and long ones add a washy tail.
 SnareLevel  "Snare level"         0 660 600   db -60 6 inf                | Level of the snare
+    how Sets the level of the snare, from -60 to +6 dB, or off.
+    sound Use it to balance the snare against the other drums.
 SnarePan    "Snare pan"           0 200 100   lin -100 100 % 0            | Where the snare sits, from −100 % (left) to +100 % (right)
+    how Places the snare from 100 % left to 100 % right.
+    sound Centre is standard; a slight offset gives a more natural kit image.
 
 group Clap
 ClapTune    "Clap tune"           0 1000 301   freq 500 5000               | Centre of the clap's band-pass
+    how Sets the centre frequency of the clap, from 500 Hz to 5 kHz.
+    sound Lower values sound thick and woody, and higher ones sharp and papery.
 ClapSpread  "Clap spread"         0 1000 630   time 0.002 0.03             | Time between the clap's three bursts
+    how Sets the time between the clap's three bursts, from 2 to 30 ms.
+    sound Short spreads sound like one tight clap, and longer ones like several people clapping.
 ClapDecay   "Clap decay"          0 1000 674   time 0.05 2                 | Time for its tail to fall 60 dB
+    how Sets how long the clap tail rings, from 0.05 to 2 seconds.
+    sound Short decays are dry, and long ones add a roomy tail.
 ClapLevel   "Clap level"          0 660 600   db -60 6 inf                | Level of the clap
+    how Sets the level of the clap, from -60 to +6 dB, or off.
+    sound Use it to balance the clap against the other drums.
 ClapPan     "Clap pan"            0 200 100   lin -100 100 % 0            | Where the clap sits, from −100 % (left) to +100 % (right)
+    how Places the clap from 100 % left to 100 % right.
+    sound Off-centre claps help them sit beside the snare.
 
 group Rim
 RimTune     "Rim tune"            0 1000 398   freq 400 4000               | Pitch of the rim shot's highest ping (the others sit at half and 0.23 of it)
+    how Sets the pitch of the rim shot, from 400 Hz to 4 kHz.
+    sound Low values sound woody and dull, and high ones sound sharp and metallic.
 RimDecay    "Rim decay"           0 1000 635   time 0.01 0.5               | Time for its pings to fall 60 dB
+    how Sets how long the rim shot rings, from 10 to 500 ms.
+    sound Short decays are a dry click, and longer ones let the ping ring.
 RimLevel    "Rim level"           0 660 600   db -60 6 inf                | Level of the rim shot
+    how Sets the level of the rim shot, from -60 to +6 dB, or off.
+    sound Use it to balance the rim shot against the other drums.
 RimPan      "Rim pan"             0 200 100   lin -100 100 % 0            | Where the rim shot sits, from −100 % (left) to +100 % (right)
+    how Places the rim shot from 100 % left to 100 % right.
+    sound Moving it aside gives a sparse beat more width.
 
 group Closed hat
 ChTune      "Closed hat tune"     0 240 120   lin -12 12 st 1             | Pitch of the six metallic oscillators, in semitones from the TR-808's
+    how Shifts the pitch of the closed hat by up to 12 semitones either way.
+    sound Lower values sound heavier and darker, and higher ones thinner and brighter.
 ChTone      "Closed hat tone"     0 1000 636   freq 2000 16000             | Centre of the band the hats ring in (more above it, a little across the mids): brighter up
+    how Sets the centre of the band the closed hat rings in, from 2 to 16 kHz.
+    sound Higher values give a bright, sizzling hat, and lower ones a duller, softer one.
 ChDecay     "Closed hat decay"    0 1000 452   time 0.01 1                 | Time to fall 60 dB
+    how Sets how long the closed hat rings, from 10 ms to 1 second.
+    sound Short decays tick tightly, and longer ones sound looser and more open.
 ChLevel     "Closed hat level"    0 660 600   db -60 6 inf                | Level of the closed hat
+    how Sets the level of the closed hat, from -60 to +6 dB, or off.
+    sound Use it to balance the hat against the other drums.
 ChPan       "Closed hat pan"      0 200 100   lin -100 100 % 0            | Where the closed hat sits, from −100 % (left) to +100 % (right)
+    how Places the closed hat from 100 % left to 100 % right.
+    sound Moving the hats slightly off-centre widens the top of the kit.
 
 group Open hat
 OhTune      "Open hat tune"       0 240 120   lin -12 12 st 1             | Pitch of the six metallic oscillators, in semitones from the TR-808's
+    how Shifts the pitch of the open hat by up to 12 semitones either way.
+    sound Lower values sound heavier and darker, and higher ones thinner and brighter.
 OhTone      "Open hat tone"       0 1000 636   freq 2000 16000             | Centre of the band the hats ring in (more above it, a little across the mids): brighter up
+    how Sets the centre of the band the open hat rings in, from 2 to 16 kHz.
+    sound Higher values give a bright, sizzling hat, and lower ones a duller, softer one.
 OhDecay     "Open hat decay"      0 1000 567   time 0.05 4                 | Time to fall 60 dB (a closed hat cuts it in 5 ms)
+    how Sets how long the open hat rings, from 50 ms to 4 seconds; a closed hat cuts it off.
+    sound Short decays sound like a half-open hat, and long ones like a wide, splashing hat.
 OhLevel     "Open hat level"      0 660 600   db -60 6 inf                | Level of the open hat
+    how Sets the level of the open hat, from -60 to +6 dB, or off.
+    sound Use it to balance the hat against the other drums.
 OhPan       "Open hat pan"        0 200 100   lin -100 100 % 0            | Where the open hat sits, from −100 % (left) to +100 % (right)
+    how Places the open hat from 100 % left to 100 % right.
+    sound Moving the hats slightly off-centre widens the top of the kit.
 
 group Low tom
 LtTune      "Low tom tune"        0 1000 147   freq 40 500                 | The tom's pitch once its sweep has settled (it starts 1.2 octaves above, falls an octave in about 25 ms, then the rest over about a second)
+    how Sets the pitch the low tom settles on, from 40 to 500 Hz.
+    sound Lower values sound big and booming, and higher ones short and tuned.
 LtDecay     "Low tom decay"       0 1000 706   time 0.05 3                 | Time to fall 60 dB
+    how Sets how long the low tom rings, from 0.05 to 3 seconds.
+    sound Short decays are tight and dry, and long ones sing out like a floor tom.
 LtTone      "Low tom tone"        0 1000 300   pct                         | Level of the attack's noise
+    how Sets the level of the noisy attack of the low tom, from 0 to 100 %.
+    sound More tone adds a stick-on-skin click, and less leaves a smooth, round sound.
 LtLevel     "Low tom level"       0 660 600   db -60 6 inf                | Level of the low tom
+    how Sets the level of the low tom, from -60 to +6 dB, or off.
+    sound Use it to balance the tom against the other drums.
 LtPan       "Low tom pan"         0 200 100   lin -100 100 % 0            | Where the low tom sits, from −100 % (left) to +100 % (right)
+    how Places the low tom from 100 % left to 100 % right.
+    sound Spreading the three toms from left to right gives fills a natural sweep.
 
 group Mid tom
 MtTune      "Mid tom tune"        0 1000 238   freq 40 500                 | The tom's pitch once its sweep has settled (it starts 1.2 octaves above, falls an octave in about 25 ms, then the rest over about a second)
+    how Sets the pitch the mid tom settles on, from 40 to 500 Hz.
+    sound Lower values sound big and booming, and higher ones short and tuned.
 MtDecay     "Mid tom decay"       0 1000 626   time 0.05 3                 | Time to fall 60 dB
+    how Sets how long the mid tom rings, from 0.05 to 3 seconds.
+    sound Short decays are tight and dry, and long ones sing out like a floor tom.
 MtTone      "Mid tom tone"        0 1000 300   pct                         | Level of the attack's noise
+    how Sets the level of the noisy attack of the mid tom, from 0 to 100 %.
+    sound More tone adds a stick-on-skin click, and less leaves a smooth, round sound.
 MtLevel     "Mid tom level"       0 660 600   db -60 6 inf                | Level of the mid tom
+    how Sets the level of the mid tom, from -60 to +6 dB, or off.
+    sound Use it to balance the tom against the other drums.
 MtPan       "Mid tom pan"         0 200 100   lin -100 100 % 0            | Where the mid tom sits, from −100 % (left) to +100 % (right)
+    how Places the mid tom from 100 % left to 100 % right.
+    sound Spreading the three toms from left to right gives fills a natural sweep.
 
 group High tom
 HtTune      "High tom tune"       0 1000 294   freq 40 500                 | The tom's pitch once its sweep has settled (it starts 1.2 octaves above, falls an octave in about 25 ms, then the rest over about a second)
+    how Sets the pitch the high tom settles on, from 40 to 500 Hz.
+    sound Lower values sound big and booming, and higher ones short and tuned.
 HtDecay     "High tom decay"      0 1000 626   time 0.05 3                 | Time to fall 60 dB
+    how Sets how long the high tom rings, from 0.05 to 3 seconds.
+    sound Short decays are tight and dry, and long ones sing out like a floor tom.
 HtTone      "High tom tone"       0 1000 300   pct                         | Level of the attack's noise
+    how Sets the level of the noisy attack of the high tom, from 0 to 100 %.
+    sound More tone adds a stick-on-skin click, and less leaves a smooth, round sound.
 HtLevel     "High tom level"      0 660 600   db -60 6 inf                | Level of the high tom
+    how Sets the level of the high tom, from -60 to +6 dB, or off.
+    sound Use it to balance the tom against the other drums.
 HtPan       "High tom pan"        0 200 100   lin -100 100 % 0            | Where the high tom sits, from −100 % (left) to +100 % (right)
+    how Places the high tom from 100 % left to 100 % right.
+    sound Spreading the three toms from left to right gives fills a natural sweep.
 
 group Cowbell
 CbTune      "Cowbell tune"        0 1000 371   freq 300 1500               | Pitch of the lower of its two square waves (the upper sits 1.48 times above)
+    how Sets the pitch of the cowbell, from 300 Hz to 1.5 kHz.
+    sound Lower values clunk like a big bell, and higher ones ring like a small one.
 CbDecay     "Cowbell decay"       0 1000 651   time 0.02 2                 | Time for its tail to fall 60 dB (the attack falls faster)
+    how Sets how long the cowbell rings, from 20 ms to 2 seconds.
+    sound Short decays are a dry clack, and longer ones a ringing bell.
 CbLevel     "Cowbell level"       0 660 600   db -60 6 inf                | Level of the cowbell
+    how Sets the level of the cowbell, from -60 to +6 dB, or off.
+    sound Use it to balance the cowbell against the other drums.
 CbPan       "Cowbell pan"         0 200 100   lin -100 100 % 0            | Where the cowbell sits, from −100 % (left) to +100 % (right)
+    how Places the cowbell from 100 % left to 100 % right.
+    sound Moving it aside keeps it from crowding the centre.
 
 group Crash
 CcTune      "Crash tune"          0 240 120   lin -12 12 st 1             | Pitch of the six metallic oscillators, in semitones from where they sit
+    how Shifts the pitch of the crash by up to 12 semitones either way.
+    sound Lower values sound bigger and darker, and higher ones lighter and thinner.
 CcTone      "Crash tone"          0 1000 452   freq 1000 16000             | Centre of the wide band it rings in (more above it, a little across the mids): brighter up
+    how Sets the centre of the band the crash rings in, from 1 to 16 kHz.
+    sound Higher values give a brighter, harsher cymbal, and lower ones a softer, darker one.
 CcDecay     "Crash decay"         0 1000 546   time 0.2 8                  | Time to fall 60 dB
+    how Sets how long the crash rings, from 0.2 to 8 seconds.
+    sound Short decays are a quick accent, and long ones a washy cymbal that fills the space.
 CcLevel     "Crash level"         0 660 600   db -60 6 inf                | Level of the crash
+    how Sets the level of the crash, from -60 to +6 dB, or off.
+    sound Use it to balance the cymbal against the other drums.
 CcPan       "Crash pan"           0 200 100   lin -100 100 % 0            | Where the crash sits, from −100 % (left) to +100 % (right)
+    how Places the crash from 100 % left to 100 % right.
+    sound A slight offset gives the cymbal a place in the kit's stereo picture.
 
 group Ride
 RcTune      "Ride tune"           0 240 120   lin -12 12 st 1             | Pitch of the six metallic oscillators, in semitones from where they sit
+    how Shifts the pitch of the ride by up to 12 semitones either way.
+    sound Lower values sound bigger and darker, and higher ones lighter and thinner.
 RcTone      "Ride tone"           0 1000 615   freq 1000 16000             | Centre of the band it pings in (more above it, a little across the mids): brighter up
+    how Sets the centre of the band the ride rings in, from 1 to 16 kHz.
+    sound Higher values give a brighter, harsher cymbal, and lower ones a softer, darker one.
 RcDecay     "Ride decay"          0 1000 596   time 0.2 8                  | Time to fall 60 dB
+    how Sets how long the ride rings, from 0.2 to 8 seconds.
+    sound Short decays are a quick accent, and long ones a washy cymbal that fills the space.
 RcLevel     "Ride level"          0 660 600   db -60 6 inf                | Level of the ride
+    how Sets the level of the ride, from -60 to +6 dB, or off.
+    sound Use it to balance the cymbal against the other drums.
 RcPan       "Ride pan"            0 200 100   lin -100 100 % 0            | Where the ride sits, from −100 % (left) to +100 % (right)
+    how Places the ride from 100 % left to 100 % right.
+    sound A slight offset gives the cymbal a place in the kit's stereo picture.

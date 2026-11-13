@@ -29,7 +29,7 @@ namespace ReBuzz.Studio.Shell.Preferences
         readonly Button renew = new Button { Content = "New token" };
         readonly TextBlock log = new TextBlock { Foreground = Dim, FontSize = 12, TextWrapping = TextWrapping.Wrap };
 
-        public AgentPage(AgentServer agent)
+        public AgentPage(AgentServer agent, PrefsModel model) : base(model)
         {
             this.agent = agent;
             Heading("Agents");
@@ -48,7 +48,9 @@ namespace ReBuzz.Studio.Shell.Preferences
             allow.IsCheckedChanged += (s, e) =>
             {
                 if (Filling) return;
+                string before = agent.Allowed ? "True" : "False";
                 agent.Set(allow.IsChecked == true, port.Text);
+                Model?.Record("agent.AllowAgents", before, agent.Settings.AllowAgents ? "True" : "False");
                 Refresh();
             };
             port.LostFocus += (s, e) => CommitPort();
@@ -81,11 +83,16 @@ namespace ReBuzz.Studio.Shell.Preferences
         void CommitPort()
         {
             if (Filling || port.Text?.Trim() == agent.PortNumber.ToString()) return;
+            string before = agent.Settings.Port;
             agent.Set(agent.Allowed, port.Text);
+            Model?.Record("agent.Port", before, agent.Settings.Port);
             Refresh();
         }
 
         public override void Closed() => agent.Changed -= Refresh;
+
+        /// <summary>Restore Defaults leaves the switch and the port alone: changing them ends the connection the agent works through.</summary>
+        public override void RestoreOwn() { }
 
         public override void Refresh()
         {

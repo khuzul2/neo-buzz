@@ -414,7 +414,20 @@ namespace ReBuzz.Studio.Views.Device
             }
             else if (p.Kind == DeviceKind.Toggle && raw != p.Min)
                 ctx.DrawRectangle(StudioTokens.SelectionFillBrush, null, cell.Deflate(1), 2, 2);
-            if (editing != p) Draw(ctx, TextOf(p, raw), cell.X + 4, cell.Y, cell.Width - 8, cell.Height, StudioTokens.FontCaption, StudioTokens.TextPrimaryBrush, align: TextAlignment.Center);
+            if (editing != p)
+            {
+                // "50 · 0 st": in a narrow cell the machine's detail alone (the bar already says where in the range it is), and a backing
+                // under the text so the marker line never runs through it (it looked overprinted).
+                string text = TextOf(p, raw);
+                if (cell.Width < 90 && text.IndexOf(" · ", StringComparison.Ordinal) is int dot and > 0) text = text.Substring(dot + 3);
+                var ft = Text(text, StudioTokens.FontCaption, StudioTokens.TextPrimaryBrush, cell.Width - 8, align: TextAlignment.Center);
+                if (p.Kind == DeviceKind.Slider)
+                {
+                    double w = Math.Min(cell.Width - 4, ft.Width + 8);
+                    ctx.DrawRectangle(StudioTokens.SurfaceControlBrush, null, new Rect(cell.Center.X - w / 2, cell.Y + 3, w, cell.Height - 6), 3, 3);
+                }
+                ctx.DrawText(ft, new Point(cell.X + 4, cell.Y + (cell.Height - ft.Height) / 2));
+            }
         }
 
         void DrawMacros(DrawingContext ctx, MacroItem m, double width)
@@ -423,7 +436,7 @@ namespace ReBuzz.Studio.Views.Device
             {
                 var r = CellRect(m, i, width).Deflate(new Thickness(4, 4));
                 var p = m.Cells[i];
-                Draw(ctx, p.Name, r.X + 2, r.Y, r.Width - 4, 16, StudioTokens.FontCaption, StudioTokens.TextSecondaryBrush);
+                Draw(ctx, p.MacroLabel, r.X + 2, r.Y, r.Width - 4, 16, StudioTokens.FontCaption, StudioTokens.TextSecondaryBrush);
                 DrawCell(ctx, p, new Rect(r.X, r.Y + 20, r.Width, r.Height - 20));
             }
         }

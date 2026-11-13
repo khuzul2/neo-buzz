@@ -6,73 +6,183 @@ summary Multiband compressor and upward expander for mastering and buses: 3 or 4
 
 group Crossovers
 Bands     "Bands"        0 1     1     enum 3_bands 4_bands          | Three bands (Crossover 1 and 2) or four (all three crossovers)
+    how Chooses three or four bands for the dynamics.
+    sound Four bands give finer control over the top end; three keep things simpler.
 Xo1       "Crossover 1"  0 10000 2594  freq 20 20000                 | Between bands 1 and 2 (Linkwitz–Riley, 24 dB/oct, −6 dB here)
+    how Sets the frequency between bands 1 and 2, from 20 Hz to 20 kHz.
+    sound It decides how much of the low end belongs to the lowest band.
 Xo2       "Crossover 2"  0 10000 5663  freq 20 20000                 | Between bands 2 and 3 (never below Crossover 1)
+    how Sets the frequency between bands 2 and 3.
+    sound It moves the boundary between the lower and upper midrange.
 Xo3       "Crossover 3"  0 10000 8257  freq 20 20000                 | Between bands 3 and 4 with four bands (never below Crossover 2)
+    how Sets the frequency between bands 3 and 4 when four bands are used.
+    sound It decides where the top band begins.
 Phase     "Phase"        0 2     0     enum Linear Minimum Dynamic   | Linear: the bands sum back to the input exactly, no phase shift, about 96 ms of latency (reported to NeoBuzz Live). Minimum: zero latency, the same band shapes, the crossovers' phase shift (as an analog crossover's). Dynamic: zero latency and no static phase shift: the output is the input plus each band's gain change times the band, so a band at 0 dB change leaves the input exactly as it was (the crossovers' phase shift shows only where a band is changing)
+    how Chooses Linear (about 96 ms latency, no phase shift), Minimum (no latency, crossover phase shift) or Dynamic (no latency, phase shift only where a band changes).
+    sound Linear and Dynamic keep the untouched sound exactly as it was, which suits mastering; Minimum suits live use where latency matters.
 group Detector
 Stereo    "Stereo"       0 1     0     enum L/R M/S                  | What each band's detector and gain work on: left and right, or mid and side
+    how Chooses whether the bands work on left and right, or on mid and side.
+    sound Mid/side lets the centre and the width be compressed separately.
 Link      "Link"         0 1000  1000  pct                           | 100 %: both channels (or mid and side) get the same gain, from the louder; 0 %: each its own
+    how Sets how much both channels share the same gain, from 0 % to 100 %.
+    sound Linked keeps the stereo image steady; unlinked lets each side react on its own.
 group Band 1
 B1Threshold "B1 threshold" 0 600 400 lin -60 0 dB 1 | Band 1: level where the gain starts to change (the band's peak)
+    how Sets the level, from -60 to 0 dB, at which band 1's gain starts to change.
+    sound Lower values act on more of the band and make it denser and more even.
 B1Ratio "B1 ratio" 0 1200 400 ratio 0.5 32 inf | Band 1: above 1:1 compresses above the threshold (∞: limits); below 1:1 expands upward (0.5:1 doubles the level over the threshold); 1:1 does nothing
+    how Sets band 1's ratio: above 1:1 it compresses, below 1:1 it expands, and 1:1 does nothing.
+    sound Higher ratios squeeze the band harder; ratios under 1:1 make loud parts louder.
 B1Attack "B1 attack" 0 1000 722 time 0.00005 0.2 | Band 1: time to 63 % of a gain change
+    how Sets how fast band 1's gain reacts, from 0.05 ms to 200 ms.
+    sound Fast attacks tame the start of hits; slow ones let them through for more punch.
 B1Release "B1 release" 0 1000 612 time 0.005 3 | Band 1: time back to 37 % of a gain change
+    how Sets how fast band 1's gain returns, from 5 ms to 3 s.
+    sound Short releases sound lively and can pump; long ones sound smooth.
 B1Knee "B1 knee" 0 240 60 lin 0 24 dB 1 | Band 1: width of the soft knee around the threshold
+    how Sets how gradually band 1's dynamics start around the threshold, from 0 to 24 dB.
+    sound Wider knees are smoother and less noticeable.
 B1Range "B1 range" 0 240 240 lin 0 24 dB 1 | Band 1: the most the gain changes, either way
+    how Limits how far band 1's gain can change either way, from 0 to 24 dB.
+    sound A small range keeps the effect gentle; a large one allows strong action.
 B1Makeup "B1 makeup" 0 480 240 lin -24 24 dB 1 | Band 1: gain after the dynamics (negative cuts the band)
+    how Adds or removes up to 24 dB of gain on band 1 after the dynamics.
+    sound Positive values lift the band; negative values cut it, changing the tonal balance.
 B1Solo "B1 solo" 0 1 0 switch | Band 1: hear only the soloed bands (processed, Mix ignored)
+    how Plays only the soloed bands, processed, ignoring Mix.
+    sound You hear band 1 by itself, which helps you set its dynamics.
 B1Bypass "B1 bypass" 0 1 0 switch | Band 1: pass the band untouched (no dynamics, no makeup)
+    how Passes band 1 untouched, with no dynamics and no makeup.
+    sound Band 1 sounds as it came in, so you can compare with and without it.
 group Band 2
 B2Threshold "B2 threshold" 0 600 400 lin -60 0 dB 1 | Band 2: level where the gain starts to change (the band's peak)
+    how Sets the level, from -60 to 0 dB, at which band 2's gain starts to change.
+    sound Lower values act on more of the band and make it denser and more even.
 B2Ratio "B2 ratio" 0 1200 400 ratio 0.5 32 inf | Band 2: above 1:1 compresses above the threshold (∞: limits); below 1:1 expands upward (0.5:1 doubles the level over the threshold); 1:1 does nothing
+    how Sets band 2's ratio: above 1:1 it compresses, below 1:1 it expands, and 1:1 does nothing.
+    sound Higher ratios squeeze the band harder; ratios under 1:1 make loud parts louder.
 B2Attack "B2 attack" 0 1000 639 time 0.00005 0.2 | Band 2: time to 63 % of a gain change
+    how Sets how fast band 2's gain reacts, from 0.05 ms to 200 ms.
+    sound Fast attacks tame the start of hits; slow ones let them through for more punch.
 B2Release "B2 release" 0 1000 532 time 0.005 3 | Band 2: time back to 37 % of a gain change
+    how Sets how fast band 2's gain returns, from 5 ms to 3 s.
+    sound Short releases sound lively and can pump; long ones sound smooth.
 B2Knee "B2 knee" 0 240 60 lin 0 24 dB 1 | Band 2: width of the soft knee around the threshold
+    how Sets how gradually band 2's dynamics start around the threshold, from 0 to 24 dB.
+    sound Wider knees are smoother and less noticeable.
 B2Range "B2 range" 0 240 240 lin 0 24 dB 1 | Band 2: the most the gain changes, either way
+    how Limits how far band 2's gain can change either way, from 0 to 24 dB.
+    sound A small range keeps the effect gentle; a large one allows strong action.
 B2Makeup "B2 makeup" 0 480 240 lin -24 24 dB 1 | Band 2: gain after the dynamics (negative cuts the band)
+    how Adds or removes up to 24 dB of gain on band 2 after the dynamics.
+    sound Positive values lift the band; negative values cut it, changing the tonal balance.
 B2Solo "B2 solo" 0 1 0 switch | Band 2: hear only the soloed bands (processed, Mix ignored)
+    how Plays only the soloed bands, processed, ignoring Mix.
+    sound You hear band 2 by itself, which helps you set its dynamics.
 B2Bypass "B2 bypass" 0 1 0 switch | Band 2: pass the band untouched (no dynamics, no makeup)
+    how Passes band 2 untouched, with no dynamics and no makeup.
+    sound Band 2 sounds as it came in, so you can compare with and without it.
 group Band 3
 B3Threshold "B3 threshold" 0 600 400 lin -60 0 dB 1 | Band 3: level where the gain starts to change (the band's peak)
+    how Sets the level, from -60 to 0 dB, at which band 3's gain starts to change.
+    sound Lower values act on more of the band and make it denser and more even.
 B3Ratio "B3 ratio" 0 1200 400 ratio 0.5 32 inf | Band 3: above 1:1 compresses above the threshold (∞: limits); below 1:1 expands upward (0.5:1 doubles the level over the threshold); 1:1 does nothing
+    how Sets band 3's ratio: above 1:1 it compresses, below 1:1 it expands, and 1:1 does nothing.
+    sound Higher ratios squeeze the band harder; ratios under 1:1 make loud parts louder.
 B3Attack "B3 attack" 0 1000 555 time 0.00005 0.2 | Band 3: time to 63 % of a gain change
+    how Sets how fast band 3's gain reacts, from 0.05 ms to 200 ms.
+    sound Fast attacks tame the start of hits; slow ones let them through for more punch.
 B3Release "B3 release" 0 1000 468 time 0.005 3 | Band 3: time back to 37 % of a gain change
+    how Sets how fast band 3's gain returns, from 5 ms to 3 s.
+    sound Short releases sound lively and can pump; long ones sound smooth.
 B3Knee "B3 knee" 0 240 60 lin 0 24 dB 1 | Band 3: width of the soft knee around the threshold
+    how Sets how gradually band 3's dynamics start around the threshold, from 0 to 24 dB.
+    sound Wider knees are smoother and less noticeable.
 B3Range "B3 range" 0 240 240 lin 0 24 dB 1 | Band 3: the most the gain changes, either way
+    how Limits how far band 3's gain can change either way, from 0 to 24 dB.
+    sound A small range keeps the effect gentle; a large one allows strong action.
 B3Makeup "B3 makeup" 0 480 240 lin -24 24 dB 1 | Band 3: gain after the dynamics (negative cuts the band)
+    how Adds or removes up to 24 dB of gain on band 3 after the dynamics.
+    sound Positive values lift the band; negative values cut it, changing the tonal balance.
 B3Solo "B3 solo" 0 1 0 switch | Band 3: hear only the soloed bands (processed, Mix ignored)
+    how Plays only the soloed bands, processed, ignoring Mix.
+    sound You hear band 3 by itself, which helps you set its dynamics.
 B3Bypass "B3 bypass" 0 1 0 switch | Band 3: pass the band untouched (no dynamics, no makeup)
+    how Passes band 3 untouched, with no dynamics and no makeup.
+    sound Band 3 sounds as it came in, so you can compare with and without it.
 group Band 4
 B4Threshold "B4 threshold" 0 600 400 lin -60 0 dB 1 | Band 4: level where the gain starts to change (the band's peak)
+    how Sets the level, from -60 to 0 dB, at which band 4's gain starts to change.
+    sound Lower values act on more of the band and make it denser and more even.
 B4Ratio "B4 ratio" 0 1200 400 ratio 0.5 32 inf | Band 4: above 1:1 compresses above the threshold (∞: limits); below 1:1 expands upward (0.5:1 doubles the level over the threshold); 1:1 does nothing
+    how Sets band 4's ratio: above 1:1 it compresses, below 1:1 it expands, and 1:1 does nothing.
+    sound Higher ratios squeeze the band harder; ratios under 1:1 make loud parts louder.
 B4Attack "B4 attack" 0 1000 494 time 0.00005 0.2 | Band 4: time to 63 % of a gain change
+    how Sets how fast band 4's gain reacts, from 0.05 ms to 200 ms.
+    sound Fast attacks tame the start of hits; slow ones let them through for more punch.
 B4Release "B4 release" 0 1000 433 time 0.005 3 | Band 4: time back to 37 % of a gain change
+    how Sets how fast band 4's gain returns, from 5 ms to 3 s.
+    sound Short releases sound lively and can pump; long ones sound smooth.
 B4Knee "B4 knee" 0 240 60 lin 0 24 dB 1 | Band 4: width of the soft knee around the threshold
+    how Sets how gradually band 4's dynamics start around the threshold, from 0 to 24 dB.
+    sound Wider knees are smoother and less noticeable.
 B4Range "B4 range" 0 240 240 lin 0 24 dB 1 | Band 4: the most the gain changes, either way
+    how Limits how far band 4's gain can change either way, from 0 to 24 dB.
+    sound A small range keeps the effect gentle; a large one allows strong action.
 B4Makeup "B4 makeup" 0 480 240 lin -24 24 dB 1 | Band 4: gain after the dynamics (negative cuts the band)
+    how Adds or removes up to 24 dB of gain on band 4 after the dynamics.
+    sound Positive values lift the band; negative values cut it, changing the tonal balance.
 B4Solo "B4 solo" 0 1 0 switch | Band 4: hear only the soloed bands (processed, Mix ignored)
+    how Plays only the soloed bands, processed, ignoring Mix.
+    sound You hear band 4 by itself, which helps you set its dynamics.
 B4Bypass "B4 bypass" 0 1 0 switch | Band 4: pass the band untouched (no dynamics, no makeup)
+    how Passes band 4 untouched, with no dynamics and no makeup.
+    sound Band 4 sounds as it came in, so you can compare with and without it.
 group Output
 Mix       "Mix"          0 1000  1000  pct                           | Dry against the processed bands (the dry is latency-aligned, so parallel compression never combs)
+    how Blends the dry signal with the processed bands.
+    sound Lower values add the dynamics as a parallel layer, keeping punch and detail.
 Output    "Output"       0 480   240   db -24 24                     | Output gain, −24 … +24 dB in 0.1 dB steps
+    how Sets the output gain, from -24 to +24 dB.
+    sound It makes the whole sound louder or quieter without changing the tone.
 
 # Added in M6b (docs/specs/mastering-tools.md §5.14): appended, so songs and presets keep their values; at the defaults the renders are unchanged.
 group Detector and lookahead
 Detector  "Detector"     0 1     0     enum Peak RMS                 | What every band's detector reads: the peak, or the RMS (3 ms mean square, on the peak scale: a sine reads the same as with Peak)
+    how Chooses whether every band's detector reads the peak or the RMS level.
+    sound Peak reacts quickly to hits; RMS is smoother and follows loudness more closely.
 Lookahead "Lookahead"    0 1000  0     lin 0 10 ms 2                 | Delays the bands (and the dry) so each detector sees what is coming; adds this much latency to the phase's own, reported to NeoBuzz Live. A change fades the sound out and in over 10 ms each
+    how Delays the bands by up to 10 ms so each detector sees what is coming.
+    sound Fast peaks are caught cleanly, at the cost of extra latency.
 group Band 1 upward and sidechain
 B1UpRatio "B1 upward ratio" 0 1000 0 ratio 1 8              | Band 1: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)
+    how Raises band 1 when it falls below its threshold, up to 8:1 (1:1 is off).
+    sound Quiet detail and tails in the band come up, giving a fuller, more even sound.
 B1Key   "B1 sidechain" 0 1   0     enum Internal External          | Band 1: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)
+    how Chooses whether band 1's detector hears its own signal or the machine on the second input.
+    sound External lets another sound, such as a kick, duck or lift this band.
 group Band 2 upward and sidechain
 B2UpRatio "B2 upward ratio" 0 1000 0 ratio 1 8              | Band 2: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)
+    how Raises band 2 when it falls below its threshold, up to 8:1 (1:1 is off).
+    sound Quiet detail and tails in the band come up, giving a fuller, more even sound.
 B2Key   "B2 sidechain" 0 1   0     enum Internal External          | Band 2: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)
+    how Chooses whether band 2's detector hears its own signal or the machine on the second input.
+    sound External lets another sound, such as a kick, duck or lift this band.
 group Band 3 upward and sidechain
 B3UpRatio "B3 upward ratio" 0 1000 0 ratio 1 8              | Band 3: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)
+    how Raises band 3 when it falls below its threshold, up to 8:1 (1:1 is off).
+    sound Quiet detail and tails in the band come up, giving a fuller, more even sound.
 B3Key   "B3 sidechain" 0 1   0     enum Internal External          | Band 3: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)
+    how Chooses whether band 3's detector hears its own signal or the machine on the second input.
+    sound External lets another sound, such as a kick, duck or lift this band.
 group Band 4 upward and sidechain
 B4UpRatio "B4 upward ratio" 0 1000 0 ratio 1 8              | Band 4: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)
+    how Raises band 4 when it falls below its threshold, up to 8:1 (1:1 is off).
+    sound Quiet detail and tails in the band come up, giving a fuller, more even sound.
 B4Key   "B4 sidechain" 0 1   0     enum Internal External          | Band 4: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)
+    how Chooses whether band 4's detector hears its own signal or the machine on the second input.
+    sound External lets another sound, such as a kick, duck or lift this band.
 
 # What the bands do (NeoMultibandMachine.Readings, machine_readings). Band 4's only with four bands.
 reading b1_gr_db dB | Band 1's gain change now, as its meter shows it: positive cuts, negative boosts (upward expansion)

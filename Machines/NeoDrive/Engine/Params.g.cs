@@ -29,17 +29,17 @@ namespace NeoBuzz.Drive
 
         public static readonly ParamDef[] Table =
         {
-            new ParamDef(P.Mode, "Mode", "Mode", 0, 4, 0, MapKind.Enum, names: new[] { "Tape", "Tube", "Transistor", "Diode", "Fold" }, group: "Drive", description: "Saturation model"),
-            new ParamDef(P.Drive, "Drive", "Drive", 0, 1000, 250, MapKind.Linear, a: 0, b: 36, unit: "dB", digits: 1, group: "Drive", description: "Gain into the saturation"),
-            new ParamDef(P.Bias, "Bias", "Bias", 0, 1000, 500, MapKind.Bipolar, group: "Drive", description: "Shifts the curve off centre: even harmonics"),
-            new ParamDef(P.Character, "Character", "Character", 0, 1000, 500, MapKind.Percent, group: "Drive", description: "Tape: emphasis. Tube: sag. Transistor: hardness. Diode: asymmetry. Fold: folds"),
-            new ParamDef(P.LowCut, "LowCut", "Low cut", 0, 1000, 0, MapKind.Freq, a: 10, b: 1000, group: "Tone", description: "High-pass before the saturation"),
-            new ParamDef(P.Tone, "Tone", "Tone", 0, 1000, 500, MapKind.Bipolar, group: "Tone", description: "Tilt after the saturation: darker or brighter"),
-            new ParamDef(P.HighCut, "HighCut", "High cut", 0, 1000, 1000, MapKind.Freq, a: 1000, b: 22000, group: "Tone", description: "Low-pass after the saturation"),
-            new ParamDef(P.Output, "Output", "Output", 0, 1000, 500, MapKind.Db, a: -24, b: 24, group: "Output", description: "Output level"),
-            new ParamDef(P.AutoGain, "AutoGain", "Auto gain", 0, 1, 1, MapKind.Switch, group: "Output", description: "Holds the level steady as the drive changes"),
-            new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry/wet (the dry signal is delayed to match)"),
-            new ParamDef(P.Quality, "Quality", "Quality", 0, 2, 1, MapKind.Enum, names: new[] { "2×", "4×", "8×" }, group: "Output", description: "Oversampling"),
+            new ParamDef(P.Mode, "Mode", "Mode", 0, 4, 0, MapKind.Enum, names: new[] { "Tape", "Tube", "Transistor", "Diode", "Fold" }, group: "Drive", description: "Saturation model", how: "Chooses the saturation model: Tape, Tube, Transistor, Diode or Fold.", sound: "Tape is soft and warm, Tube is rich and full, Transistor is firmer, Diode is edgy and Fold is bright and metallic."),
+            new ParamDef(P.Drive, "Drive", "Drive", 0, 1000, 250, MapKind.Linear, a: 0, b: 36, unit: "dB", digits: 1, group: "Drive", description: "Gain into the saturation", how: "Raises the level going into the saturation by 0 to 36 dB.", sound: "More drive adds harmonics, going from a subtle warmth to heavy distortion."),
+            new ParamDef(P.Bias, "Bias", "Bias", 0, 1000, 500, MapKind.Bipolar, group: "Drive", description: "Shifts the curve off centre: even harmonics", how: "Shifts the signal off centre before the saturation.", sound: "Pushing it away from the middle adds even harmonics, which sound fuller and more asymmetric."),
+            new ParamDef(P.Character, "Character", "Character", 0, 1000, 500, MapKind.Percent, group: "Drive", description: "Tape: emphasis. Tube: sag. Transistor: hardness. Diode: asymmetry. Fold: folds", how: "Sets the model's special trait: tape emphasis, tube sag, transistor hardness, diode asymmetry or fold amount.", sound: "Higher values make each model more pronounced and more obviously coloured."),
+            new ParamDef(P.LowCut, "LowCut", "Low cut", 0, 1000, 0, MapKind.Freq, a: 10, b: 1000, group: "Tone", description: "High-pass before the saturation", how: "Filters the low frequencies, from 10 Hz to 1 kHz, out of the signal before it is saturated.", sound: "Bass stops overloading the saturation, so the result is tighter and less muddy."),
+            new ParamDef(P.Tone, "Tone", "Tone", 0, 1000, 500, MapKind.Bipolar, group: "Tone", description: "Tilt after the saturation: darker or brighter", how: "Tilts the tone after the saturation, darker towards the left and brighter towards the right.", sound: "Turn it down to soften harsh distortion; turn it up for more sparkle."),
+            new ParamDef(P.HighCut, "HighCut", "High cut", 0, 1000, 1000, MapKind.Freq, a: 1000, b: 22000, group: "Tone", description: "Low-pass after the saturation", how: "Removes frequencies above 1 to 22 kHz after the saturation.", sound: "Lower values tame fizz and harshness, making the drive darker and smoother."),
+            new ParamDef(P.Output, "Output", "Output", 0, 1000, 500, MapKind.Db, a: -24, b: 24, group: "Output", description: "Output level", how: "Sets the final level in dB, from -24 to +24.", sound: "It makes the sound louder or quieter without changing the amount of distortion."),
+            new ParamDef(P.AutoGain, "AutoGain", "Auto gain", 0, 1, 1, MapKind.Switch, group: "Output", description: "Holds the level steady as the drive changes", how: "Keeps the output level steady as Drive changes.", sound: "You hear the character change rather than a simple volume increase."),
+            new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry/wet (the dry signal is delayed to match)", how: "Blends the saturated signal with the dry signal, delayed to match.", sound: "Lower values keep the original punch and add the saturation as a subtle layer."),
+            new ParamDef(P.Quality, "Quality", "Quality", 0, 2, 1, MapKind.Enum, names: new[] { "2×", "4×", "8×" }, group: "Output", description: "Oversampling", how: "Chooses the oversampling: 2x, 4x or 8x.", sound: "Higher settings keep high-frequency distortion clean and free of aliasing, but use more processing power."),
         };
     }
 }

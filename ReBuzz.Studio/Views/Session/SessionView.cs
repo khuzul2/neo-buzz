@@ -99,37 +99,28 @@ namespace ReBuzz.Studio.Views.Session
         {
             if (inspectorLink == null) clipPanel.Follow(selected, force);
         }
-        readonly TextBlock clockText;
-        readonly TextBlock hintText;
+        readonly Shell.EmptyState hintText;
         readonly TextBlock statusText;
         readonly Border statusBar;
         readonly FlatButton stopAllButton;
         readonly FlatButton backButton;
-        readonly FlatButton recordButton;
         readonly FlatButton overdubButton;       // 0.7: Session Record
         readonly FlatButton captureButton;
-        readonly FlatButton clickButton;         // 0.7: metronome
-        readonly FlatButton dropoutButton;
-        long shownDropouts = -1;
         readonly FlatButton undoButton;
         readonly FlatButton redoButton;
         readonly FlatButton undoLaunchButton;
         readonly FlatButton followButton;
-        readonly FlatButton tapButton;
         readonly FlatButton nudgeDownButton;
         readonly FlatButton nudgeUpButton;
         readonly FlatButton addSceneButton;
         readonly FlatButton addTrackButton;
         readonly FlatButton settingsButton;
-        readonly TextBlock tempoText;
         readonly TextBlock syncText;          // 0.8: Link, MIDI clock
         string shownSync, shownSyncTip;
         readonly List<Border> ringBoxes = new List<Border>();     // 0.8: controllers' session rings
         string shownRings;
         string shownLastLaunch = "";
-        int shownTempo = -1;
         readonly ComboBox quantizeBox;
-        readonly ComboBox beatsBox;
         readonly DispatcherTimer timer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(50) };
 
         readonly List<SlotCell> slots = new List<SlotCell>();
@@ -180,11 +171,6 @@ namespace ReBuzz.Studio.Views.Session
             var left = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 4, 6, 4) };
             stopAllButton = new FlatButton("■  Stop all", () => session.StopAll(), "Stop every clip at the next launch point");
             left.Children.Add(stopAllButton);
-            recordButton = new FlatButton("●  Rec", () => buzz.Recording = !buzz.Recording,
-                "Record into the arrangement (" + Product.Name + "'s Record, F7): every launch and stop is written into the sequences\n" +
-                "at the song position where it happens. With looping off, the song grows while you record.\n" +
-                "Undo removes a whole recording pass (↶ here).");
-            left.Children.Add(recordButton);
             overdubButton = new FlatButton("◉  Overdub", ToggleSessionRecord,
                 "Session record: tracks armed with ● in their header record what you play into their clips.\n" +
                 "A track playing a clip overdubs it; a track playing none records a new take into its first empty slot\n" +
@@ -196,10 +182,6 @@ namespace ReBuzz.Studio.Views.Session
                 "in their first empty slot from the selected scene, from the bar line before the first note\n" +
                 "(1, 2, 4 or 8 bars), and plays on at once in phase.");
             left.Children.Add(captureButton);
-            clickButton = new FlatButton("♩", () => layout.SetMetronome(!(layout.Document?.Metronome ?? false)),
-                "Metronome: a click on every beat while the session plays (heard, never recorded).\n" +
-                "Record length and count-in: ⚙.");
-            left.Children.Add(clickButton);
             backButton = new FlatButton("Back to arrangement", () => session.BackToArrangement(), "Lit while the session has taken over tracks: gives every track back to the arrangement");
             left.Children.Add(backButton);
             undoLaunchButton = new FlatButton("↶ Launch", UndoLaunch, "");
@@ -228,28 +210,9 @@ namespace ReBuzz.Studio.Views.Session
             };
             OnRightClick(quantizeBox, () => ShowMidiOnlyMenu(quantizeBox, SessionTarget.Quantization, 0, 0, "launch quantization"));
             left.Children.Add(Labelled("Launch", quantizeBox));      // a label wraps with its box
-            beatsBox = new ComboBox { Width = 64, Margin = new Thickness(0, 0, 14, 0), VerticalAlignment = VerticalAlignment.Center, FontSize = 12 };
-            for (int i = 1; i <= 12; i++) beatsBox.Items.Add(i.ToString());
-            beatsBox.SelectionChanged += (s, e) =>
-            {
-                if (!syncingSettings && beatsBox.SelectedIndex >= 0)
-                    layout.SetBeatsPerBar(beatsBox.SelectedIndex + 1);
-            };
-            left.Children.Add(Labelled("Beats/bar", beatsBox));
-
-            // Tempo (0.6): tap, and nudge while held (Live's), each MIDI-learnable.
-            tempoText = new TextBlock
-            {
-                FontFamily = Mono,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 6, 0),
-                MinWidth = 56,
-            };
-            ToolTip.SetTip(tempoText, "Tempo (the song's BPM)");
+            // Tempo (0.6): nudge while held (Live's), MIDI-learnable. The tempo itself and Tap are the top bar's (P3g, decision 80).
             nudgeDownButton = HoldButton("◀", -1, SessionTarget.NudgeDown, "Nudge down");
             nudgeUpButton = HoldButton("▶", 1, SessionTarget.NudgeUp, "Nudge up");
-            tapButton = new FlatButton("Tap", () => layout.TapTempo(), "") { Margin = new Thickness(4, 0, 14, 0) };
-            OnRightClick(tapButton, () => ShowMidiOnlyMenu(tapButton, SessionTarget.TapTempo, 0, 0, "Tap tempo"));
             // Sync (0.8): Link or MIDI clock, when on; the tooltip says how far off the clock the session is.
             syncText = new TextBlock
             {
@@ -262,26 +225,10 @@ namespace ReBuzz.Studio.Views.Session
             left.Children.Add(new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Children = { tempoText, nudgeDownButton, nudgeUpButton, tapButton, syncText }
+                Children = { nudgeDownButton, nudgeUpButton, syncText }
             });
             UpdateBarTips();
 
-            clockText = new TextBlock
-            {
-                FontFamily = Mono,
-                FontSize = 15,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(4, 0, 0, 0),
-                MinWidth = 90,
-            };
-            ToolTip.SetTip(clockText, "Session clock: bar.beat.tick");
-            left.Children.Add(clockText);
-            dropoutButton = new FlatButton("", () => { buzz.ResetAudioDropoutCounters(); shownDropouts = -1; RefreshState(); }, "")
-            {
-                Margin = new Thickness(10, 0, 0, 0),
-                Padding = new Thickness(8, 3, 8, 3)
-            };
-            left.Children.Add(dropoutButton);
             bar.Children.Add(left);
 
             var right = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 4, 6, 4), VerticalAlignment = VerticalAlignment.Top };
@@ -335,15 +282,7 @@ namespace ReBuzz.Studio.Views.Session
             statusBar = new Border { Background = SessionPalette.Learn, Child = statusText, IsVisible = false };
 
             // ---- grid
-            hintText = new TextBlock
-            {
-                Foreground = SessionPalette.DimText,
-                Margin = new Thickness(16),
-                TextWrapping = TextWrapping.Wrap,
-                Text = "No tracks yet. Every sequence of the song is a track: add one with \"+ Track\", " +
-                       "or create machines in the Machine View.",
-                IsVisible = false
-            };
+            hintText = new Shell.EmptyState(buzz) { VerticalAlignment = VerticalAlignment.Top, HorizontalAlignment = HorizontalAlignment.Left };
             scroll = new ScrollViewer
             {
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
@@ -515,7 +454,6 @@ namespace ReBuzz.Studio.Views.Session
         {
             ToolTip.SetTip(followButton, Tip("Follow actions on or off for the whole song: clips and scenes\n" +
                                              "launch the next one at their follow time when lit. Set them in the clip panel.", SessionTarget.FollowActions, 0, 0));
-            ToolTip.SetTip(tapButton, Tip("Tap tempo: tap the beat; from the third tap the tempo follows the last four.", SessionTarget.TapTempo, 0, 0));
             ToolTip.SetTip(nudgeDownButton, Tip("Nudge down: plays 4% slower while held, to bring the session back in step with\n" +
                                                 "another source; the tempo stays as it is.", SessionTarget.NudgeDown, 0, 0));
             ToolTip.SetTip(nudgeUpButton, Tip("Nudge up: plays 4% faster while held; the tempo stays as it is.", SessionTarget.NudgeUp, 0, 0));
@@ -575,7 +513,19 @@ namespace ReBuzz.Studio.Views.Session
 
             trackCount = doc.Tracks.Count;
             sceneCount = doc.Scenes.Count;
-            hintText.IsVisible = trackCount == 0;
+            // P3i: no tracks: the starters; tracks and not one clip: how to make one.
+            bool anyClip = Enumerable.Range(0, sceneCount).Any(s => doc.SceneSlots(s).Any());
+            if (trackCount == 0)
+            {
+                bool bare = Shell.EmptyState.SongIsEmpty(buzz);
+                hintText.Update(true, bare ? "tracks:bare" : "tracks:gear", "No tracks yet",
+                    bare ? "A track plays one machine. Start with a sound, or search every machine." : "Every sequence of the song is a track, and the song has no generator. Add one to get a track.",
+                    Shell.EmptyState.AddMachineStep(), bare);
+            }
+            else
+                hintText.Update(!anyClip, "clips", "No clips yet",
+                    "Double-click a slot to create a clip, then launch it with its ▶. Or arm a track with ● and play a take.",
+                    new (string, Action)[] { ("Create a clip", () => CreateClip(0, 0)) }, false);
             PlanColumns(doc);
             int stopRow = sceneCount + 2;     // under the spare rows (row sceneCount + 1)
 
@@ -590,7 +540,7 @@ namespace ReBuzz.Studio.Views.Session
                 g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(spareRows * (RowHeight + Gap)) });
                 g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(RowHeight + 8) });
             }
-            if (trackCount == 0)
+            if (trackCount == 0 || !anyClip)
             {
                 // The hint takes a column of its own (the scene column is beside the grid).
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3 * ColumnWidth) });
@@ -782,7 +732,6 @@ namespace ReBuzz.Studio.Views.Session
             {
                 int q = Array.FindIndex(QuantizeChoices, c => c.Value == session.LaunchQuantization);
                 quantizeBox.SelectedIndex = q;
-                beatsBox.SelectedIndex = Math.Clamp(session.BeatsPerBar, 1, 12) - 1;
             }
             finally
             {
@@ -834,40 +783,11 @@ namespace ReBuzz.Studio.Views.Session
                 }
             }
 
-            long clock = session.Clock;
-            if (clock < 0)
-            {
-                clockText.Text = "–.–.–";
-                clockText.Foreground = SessionPalette.DimText;
-            }
-            else
-            {
-                int tpb = Math.Max(1, buzz.TPB);
-                int bpb = Math.Max(1, session.BeatsPerBar);
-                // Bars count on from where a scene last changed the time signature (0.5).
-                long origin = 0, originBar = 0;
-                if (session is SessionCore core)
-                {
-                    origin = core.GridOrigin;
-                    originBar = core.GridOriginBar;
-                }
-                long rel = clock - origin;
-                if (rel < 0) { rel = clock; originBar = 0; }
-                long barNumber = originBar + rel / (tpb * bpb) + 1;
-                long beat = rel / tpb % bpb + 1;
-                long tick = rel % tpb + 1;
-                clockText.Text = $"{barNumber}.{beat}.{tick}";
-                clockText.Foreground = SessionPalette.Text;
-            }
-
             bool overridden = session.IsAnyArrangementOverridden;
             backButton.IsEnabled = overridden;
             backButton.SetLit(overridden ? SessionPalette.Override : null);
-            recordButton.SetLit(buzz.Recording ? SessionPalette.Record : null);
             layout.PollTakes();                                       // 0.7: takes whose first pass is over finish
             overdubButton.SetLit(layout.IsSessionRecording ? SessionPalette.Record : null);
-            clickButton.SetLit(layout.Document?.Metronome == true ? SessionPalette.Fader : null);
-            RefreshDropouts();
             undoButton.IsEnabled = layout.UndoStack.CanUndo;
             redoButton.IsEnabled = layout.UndoStack.CanRedo;
             RefreshPerformance(learn, blinkOn);
@@ -888,14 +808,6 @@ namespace ReBuzz.Studio.Views.Session
                     : $"Undo the last launch ({ModName}+Alt+Z): {last}.\nA launch still waiting is cancelled; one that has started gives the track(s)\n" +
                       "back what they played before, in step, as if it had never happened.", SessionTarget.UndoLaunch, 0, 0));
             }
-            int bpm = buzz.BPM;
-            if (bpm != shownTempo)
-            {
-                shownTempo = bpm;
-                tempoText.Text = $"{bpm} BPM";
-            }
-            bool nudging = buzz.TempoNudge != 1f;
-            tempoText.Foreground = nudging ? SessionPalette.Learn : SessionPalette.Text;
             string sync = buzz.SessionSync?.Status ?? "";
             if (sync != shownSync)
             {
@@ -915,30 +827,9 @@ namespace ReBuzz.Studio.Views.Session
                 ToolTip.SetTip(syncText, tip);
             }
             foreach (var (button, target) in new[] {
-                (undoLaunchButton, SessionTarget.UndoLaunch), (followButton, SessionTarget.FollowActions), (tapButton, SessionTarget.TapTempo),
+                (undoLaunchButton, SessionTarget.UndoLaunch), (followButton, SessionTarget.FollowActions),
                 (nudgeDownButton, SessionTarget.NudgeDown), (nudgeUpButton, SessionTarget.NudgeUp) })
                 button.BorderBrush = learn is { } l && l.Target == target && blinkOn ? SessionPalette.Learn : SessionPalette.Transparent;
-        }
-
-        /// <summary>
-        /// Dropouts since ReBuzz started or the last reset (click): audio callbacks that took
-        /// longer than the buffer they filled, plus driver resets. Red while there are any.
-        /// </summary>
-        void RefreshDropouts()
-        {
-            long count = buzz.DeadlineMissCount + buzz.DriverResetCount;
-            if (count == shownDropouts) return;
-            shownDropouts = count;
-            dropoutButton.Text = count == 0 ? "No dropouts" : count == 1 ? "1 dropout" : $"{count} dropouts";
-            dropoutButton.SetLit(count > 0 ? SessionPalette.Record : null);
-            double latency = session is SessionCore core ? core.CompensatedLatencyMs : 0;
-            ToolTip.SetTip(dropoutButton,
-                "Audio dropouts since " + Product.Name + " started or since you last clicked here:\n" +
-                $"  late buffers (the engine took longer than the buffer lasts): {buzz.DeadlineMissCount}\n" +
-                $"  driver resets: {buzz.DriverResetCount}\n" +
-                $"  worst overrun: {buzz.DeadlineWorstOverrunMicros / 1000.0:F1} ms\n" +
-                (latency > 0 ? $"Launches are timed to what you hear, {latency:F0} ms behind the engine (⚙ to turn off).\n" : "") +
-                "Click to reset.");
         }
 
         static string Describe(SessionTarget target, int track, int scene) => target switch
@@ -967,10 +858,12 @@ namespace ReBuzz.Studio.Views.Session
         internal IReadOnlyList<SlotCell> Slots => slots;
         internal IReadOnlyList<SceneCell> Scenes => scenes;
         internal IReadOnlyList<TrackHeader> Headers => headers;
+
+        /// <summary>The empty state: no tracks (the starters), or tracks and no clip (P3i).</summary>
+        internal Shell.EmptyState EmptyState => hintText;
         internal (int Track, int Scene)? Selected => selected;
         internal SlotCell SlotAt(int track, int scene) => CellAt(track, scene);
         internal FlatButton StopAllButton => stopAllButton;
-        internal FlatButton RecordButton => recordButton;
         internal FlatButton OverdubButton => overdubButton;
         internal FlatButton BackButton => backButton;
         internal FlatButton UndoButton => undoButton;
@@ -978,16 +871,12 @@ namespace ReBuzz.Studio.Views.Session
         internal FlatButton MixerButton => mixerButton;
         internal FlatButton ClipButton => clipButton;
         internal FlatButton FollowButton => followButton;
-        internal FlatButton TapButton => tapButton;
         internal FlatButton UndoLaunchButton => undoLaunchButton;
         internal FlatButton AddSceneButton => addSceneButton;
         internal FlatButton AddTrackButton => addTrackButton;
         internal FlatButton SettingsButton => settingsButton;
         internal FlatButton NudgeUpButton => nudgeUpButton;
         internal ComboBox QuantizeBox => quantizeBox;
-        internal ComboBox BeatsBox => beatsBox;
-        internal string ClockText => clockText.Text;
-        internal string TempoText => tempoText.Text;
         internal ScrollViewer GridScroll => scroll;
         internal ScrollViewer SceneScroll => sceneScroll;
         internal bool ScenesFrozen => body.ScenesFrozen;

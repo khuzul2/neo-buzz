@@ -208,10 +208,10 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "Sub octave", Description = "Octaves from the note", MinValue = 0, MaxValue = 2, DefValue = 1)]
         public int SubOct { get => Values[P.SubOct]; set => Values.Set(P.SubOct, value); }
 
-        [ParameterDecl(Name = "Sub level", Description = "Sub level", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        [ParameterDecl(Name = "Sub level", Description = "Sets the level of the sub oscillator, from 0 to 100 %.", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int SubLevel { get => Values[P.SubLevel]; set => Values.Set(P.SubLevel, value); }
 
-        [ParameterDecl(Name = "Sub pan", Description = "Sub pan", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "Sub pan", Description = "Places the sub oscillator in the stereo field, from left to right.", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int SubPan { get => Values[P.SubPan]; set => Values.Set(P.SubPan, value); }
 
         [ParameterDecl(Name = "Sub → filter 2", Description = "Balance between filter 1 (0 %) and filter 2 (100 %)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
@@ -220,10 +220,10 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "Noise color", Description = "0 %: dark (lowpassed from 100 Hz); 100 %: white", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
         public int NoiseColor { get => Values[P.NoiseColor]; set => Values.Set(P.NoiseColor, value); }
 
-        [ParameterDecl(Name = "Noise level", Description = "Noise level", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        [ParameterDecl(Name = "Noise level", Description = "Sets the level of the noise source, from 0 to 100 %.", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int NoiseLevel { get => Values[P.NoiseLevel]; set => Values.Set(P.NoiseLevel, value); }
 
-        [ParameterDecl(Name = "Noise pan", Description = "Noise pan", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "Noise pan", Description = "Places the noise in the stereo field, from left to right.", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int NoisePan { get => Values[P.NoisePan]; set => Values.Set(P.NoisePan, value); }
 
         [ParameterDecl(Name = "Noise → filter 2", Description = "Balance between filter 1 (0 %) and filter 2 (100 %)", MinValue = 0, MaxValue = 1000, DefValue = 0)]

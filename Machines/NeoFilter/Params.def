@@ -6,23 +6,59 @@ summary Stereo resonant filter effect with Neo Poly's filters: the ladder (low-p
 
 group Filter
 Type      "Type"            0 6     0     enum Ladder_24 Ladder_12 SVF_LP SVF_BP SVF_HP SVF_Notch SVF_Peak | Ladder: Neo Poly's transistor ladder, low-pass 24 or 12 dB/oct (resonance thins the lows, as a ladder does); SVF: the state-variable filter's low-pass, band-pass, high-pass, notch or peak (unity on both sides, a peak of 2Q at the cutoff)
+    how Chooses the filter: a 24 or 12 dB per octave ladder low-pass, or a state-variable low-pass, band-pass, high-pass, notch or peak.
+    sound The ladder sounds warm and thick, low-pass types remove highs, band-pass and high-pass thin the sound, notch and peak carve or boost one spot.
 Slope     "Slope"           0 1     0     enum 12_dB/oct 24_dB/oct      | SVF low-pass, band-pass, high-pass and notch: one section (12 dB/oct) or two alike in series (24 dB/oct, the resonance's peak doubled in dB). The ladder and the peak ignore it
+    how Chooses a 12 or 24 dB per octave slope for the state-variable low-pass, band-pass, high-pass and notch (the ladder and peak ignore it).
+    sound 24 dB per octave cuts more sharply, so the filtered range disappears faster; 12 dB is gentler and more natural.
 Cutoff    "Cutoff"          0 10000 6667  freq 20 20000                 | Cutoff frequency (the ladder's stages, the SVF's centre): where the resonance peaks and the filter self-oscillates
+    how Sets the filter's frequency, from 20 Hz to 20 kHz: the corner, or the centre for band-pass, notch and peak.
+    sound Sweeping it makes the sound darker or brighter, or moves the thin band you hear.
 Resonance "Resonance"       0 1000  66    exp 0.5 100 2                 | Resonance as the Q of the filter's resonant poles: 0.5 none, 0.71 flat (Butterworth), 2–5 a bump, 10 and up a whistle; at its top the filter self-oscillates, at a bounded level
+    how Boosts the region around the cutoff by raising Q from 0.5 to 100.
+    sound Low values sound plain, middle values add a bump, high values whistle and eventually ring on their own.
 Drive     "Drive"           0 240   0     lin 0 24 dB 1                 | Soft saturation before the filter, oversampled: quiet signals pass as they are, louder ones bend from −Drive dBFS; 0 dB is clean
+    how Adds up to 24 dB of soft saturation before the filter.
+    sound More drive thickens and warms the sound, and makes the resonance bite harder.
 group Envelope
 EnvAmount "Env amount"      0 1200  600   lin -6 6 oct 2                | How far the input's envelope moves the cutoff, in octaves at full envelope (negative: down)
+    how Sets how far the input's loudness moves the cutoff, from -6 to +6 octaves.
+    sound Positive values open the filter on loud notes for a wah or plucky sweep; negative values close it.
 EnvSens   "Env sensitivity" 0 480   120   lin -12 36 dB 1               | Gain on the detected level: the envelope is full when the input's peak reaches −Sensitivity dBFS
+    how Sets how sensitive the envelope is, from -12 to +36 dB.
+    sound Higher values make even quiet input sweep the filter fully; lower values need louder playing.
 EnvAttack "Env attack"      0 1000  459   time 0.0001 0.5               | Envelope follower attack: the time constant of its rise (63 % of a step)
+    how Sets how fast the envelope rises when the input gets louder, from 0.1 ms to 0.5 s.
+    sound Fast attacks snap the filter open on every hit; slow ones make a gradual swell.
 EnvRelease "Env release"    0 1000  588   time 0.001 5                  | Envelope follower release: the time constant of its fall (to 37 %)
+    how Sets how fast the envelope falls when the input gets quieter, from 1 ms to 5 s.
+    sound Short releases give a quick, bouncy wah; long ones let the filter glide slowly closed.
 group LFO
 LfoRate   "LFO rate"        0 1000  489   freq 0.01 30                  | LFO speed when LFO sync is Free
+    how Sets the LFO's speed, from 0.01 to 30 Hz, when LFO sync is Free.
+    sound Slow rates make gentle sweeps over seconds, fast rates make wobbles and tremolo-like movement.
 LfoSync   "LFO sync"        0 18    0     enum Free 1/32 1/16T 1/16 1/16D 1/8T 1/8 1/8D 1/4T 1/4 1/4D 1/2T 1/2 1/2D 1_bar 2_bars 4_bars 8_bars 16_bars | One LFO cycle per note value of the song's tempo (T triplet, D dotted); Free: LFO rate
+    how Locks one LFO cycle to a note value of the song's tempo, from 1/32 to 16 bars, or leaves it Free.
+    sound The movement stays in time with the music, so sweeps land on the beat.
 LfoShape  "LFO shape"       0 6     0     enum Sine Triangle Saw_up Saw_down Square S&H Smooth_random | LFO waveform (S&H: a random step per cycle; Smooth random: random points joined smoothly)
+    how Chooses the LFO's waveform: sine, triangle, saw up, saw down, square, stepped random or smooth random.
+    sound Sine and triangle sweep smoothly, saws ramp, square flips between two tones, random shapes wander.
 LfoDepth  "LFO depth"       0 400   0     lin 0 4 oct 2                 | How far the LFO moves the cutoff either way, in octaves
+    how Sets how far the LFO moves the cutoff either way, from 0 to 4 octaves.
+    sound Small depths add subtle movement; large ones sweep the whole sound open and shut.
 LfoSpread "LFO spread"      0 180   0     lin 0 180 ° 0                 | The right channel's LFO phase against the left's: 0° both alike, 90° in quadrature, 180° opposite
+    how Offsets the right channel's LFO phase from the left's, from 0 to 180 degrees.
+    sound At 0 degrees both sides move together; wider offsets make the sweep travel across the stereo field.
 LfoRetrig "LFO retrig"      0 2     1     enum Free Song Env            | Free: the LFO runs on; Song: its phase follows the song's position while it plays (the same sweep on every pass and render); Env: it restarts at LFO phase when the input's envelope rises past half
+    how Chooses when the LFO restarts: Free runs on, Song follows the song position, Env restarts on each rising input.
+    sound Song repeats the same sweep on every pass; Env restarts the sweep on every hit.
 LfoPhase  "LFO phase"       0 360   0     lin 0 360 ° 0                 | The LFO's phase at the song's start (Song) or where it restarts (Env)
+    how Sets the LFO's starting phase, from 0 to 360 degrees, at the start of the song or at each restart.
+    sound It decides where in the sweep each pass begins, for example starting dark or starting bright.
 group Output
 Mix       "Mix"             0 1000  1000  pct                           | Dry against filtered (a crossfade): 100 % only the filter
+    how Blends the dry signal with the filtered signal.
+    sound Lower values keep the original sound and add the filter as an accent; 100 % is only the filter.
 Output    "Output"          0 480   240   db -24 24                     | Output gain, −24 … +24 dB in 0.1 dB steps
+    how Adds -24 to +24 dB of gain after the filter.
+    sound It restores the level lost to filtering, or keeps resonant peaks in check.

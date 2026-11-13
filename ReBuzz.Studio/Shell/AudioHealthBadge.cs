@@ -1,6 +1,8 @@
 // Fork (docs/specs/ux-overhaul.md P1, UX review mac-real-010): the audio's health at the start of the status line, in
 // one look: green while it plays cleanly ("48 kHz · 5.3 ms"), amber when it dropped out lately (with the count), red
 // when no output is open. A click opens Preferences ▸ Audio, where it is fixed. Dropouts were grey status text.
+// Fork (P3g polish): its menu (right click, or Ctrl-click) has "Reset dropout counter", which the Session View's own button did before the
+// one status line took the counter over.
 
 using System;
 using Avalonia;
@@ -42,6 +44,11 @@ namespace ReBuzz.Studio.Shell
             Cursor = new Cursor(StandardCursorType.Hand);
             Background = Brushes.Transparent;
             Child = new StackPanel { Orientation = Orientation.Horizontal, Children = { dot, text } };
+            var settings = new MenuItem { Header = "Audio settings…" };
+            settings.Click += (s, e) => openAudioSettings();
+            var reset = new MenuItem { Header = "Reset dropout counter" };
+            reset.Click += (s, e) => ResetDropouts();
+            ContextMenu = new ContextMenu { ItemsSource = new[] { settings, reset } };
             PointerPressed += (s, e) =>
             {
                 if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
@@ -51,6 +58,18 @@ namespace ReBuzz.Studio.Shell
         }
 
         public State Shown { get; private set; } = State.NoOutput;
+
+        /// <summary>The badge's menu (tests).</summary>
+        internal ContextMenu Menu => ContextMenu;
+
+        /// <summary>Counts dropouts again from zero (the badge's menu).</summary>
+        public void ResetDropouts()
+        {
+            core()?.ResetAudioDropoutCounters();
+            seenDropouts = -1;
+            lastDropout = DateTime.MinValue;
+            Refresh();
+        }
 
         public string Text => text.Text;
 
@@ -85,7 +104,7 @@ namespace ReBuzz.Studio.Shell
                 if (text.Text.Length == 0) text.Text = "Audio on";
                 tip = recent
                     ? $"The audio dropped out lately ({dropouts} since the start): the computer couldn't fill the buffer in time.\n" +
-                      "A larger buffer gives it more time (more latency). Click: Preferences ▸ Audio."
+                      "A larger buffer gives it more time (more latency). Click: Preferences ▸ Audio. Right click: reset the count."
                     : $"Playing through {device.Name}, {rateText}, {frames} frames ({latency}).\nClick: Preferences ▸ Audio.";
             }
             text.Foreground = StudioTokens.TextPrimaryBrush;

@@ -18,7 +18,7 @@ namespace ReBuzz.Agent.App
 {
     internal static class SettingsTools
     {
-        public static readonly string[] Sections = { "general", "audio", "midi", "appearance", "agent", "safety", "advanced" };
+        public static readonly string[] Sections = { "general", "audio", "midi", "sync", "appearance", "agent", "safety", "advanced" };
 
         public static void Register(ToolRegistry tools, IAppServices app)
         {
@@ -27,7 +27,7 @@ namespace ReBuzz.Agent.App
                 Name = "settings_get",
                 Title = "Read settings",
                 Description =
-                    "Reads the app's preferences: general, audio, midi, appearance, agent, safety (the safety limiter, the machine guard) and advanced (the engine's flags). " +
+                    "Reads the app's preferences: general, audio, midi, sync (Ableton Link and MIDI clock), appearance, agent, safety (the safety limiter, the machine guard) and advanced (the engine's flags). " +
                     "Each has its key (\"section.Name\"), value, default, type, choices or range, what it does and whether it needs a restart. " +
                     "class engine and class safety are the ones to be careful with. Pass key for one, section, search or changed_only to narrow. Example: settings_get(section=\"audio\").",
                 Input = Object(null,
@@ -129,7 +129,7 @@ namespace ReBuzz.Agent.App
                 Name = "settings_history",
                 Title = "Settings audit log",
                 Description =
-                    "Reads the audit log of settings changes agents made (newest first): when, which key, the value it had and the value it got. " +
+                    "Reads the audit log of settings changes (newest first): when, which key, the value it had and the value it got, and the source (Agent for tool calls, Manual for the person in Preferences). " +
                     "Use it to see what changed, and put a value back with settings_set(key, value=from). Example: settings_history(limit=10).",
                 Input = Object(null,
                     Opt("key", String("Only this setting")),
@@ -138,7 +138,8 @@ namespace ReBuzz.Agent.App
                     Req("count", Integer("Entries listed")),
                     Req("entries", Array(Object(null,
                         Req("time", String("When (ISO 8601)")), Req("key", String("The setting")), Req("from", String("The value it replaced")),
-                        Req("to", String("The value it got")), Req("restart_required", Boolean("It needs a restart")), Req("class", String("normal, engine or safety"))), "Newest first"))),
+                        Req("to", String("The value it got")), Req("restart_required", Boolean("It needs a restart")), Req("class", String("normal, engine or safety")),
+                        Opt("source", String("Agent (a tool call) or Manual (the person, in Preferences); older entries have none"))), "Newest first"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = c =>
                 {
@@ -220,6 +221,8 @@ namespace ReBuzz.Agent.App
             return o;
         }
 
+        internal static bool IsDefault(SettingEntry e, string value) => Same(e, value, e.Default);
+
         static bool Same(SettingEntry e, string a, string b) =>
             e.Kind == SettingKind.Number && double.TryParse(a, NumberStyles.Float, CultureInfo.InvariantCulture, out double x) && double.TryParse(b, NumberStyles.Float, CultureInfo.InvariantCulture, out double y)
                 ? x == y : string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
@@ -282,7 +285,7 @@ namespace ReBuzz.Agent.App
 
         // ------------------------------------------------------------------ set, reset
 
-        static JsonObject Set(IAppServices app, string key, JsonNode? value)
+        internal static JsonObject Set(IAppServices app, string key, JsonNode? value, string source = SettingsService.AgentSource)
         {
             var e = Find(app.Settings(), key);
             if (e.UseInstead != null) throw new ToolError($"{e.Key} is changed with another tool: {e.UseInstead}");
@@ -294,7 +297,7 @@ namespace ReBuzz.Agent.App
             catch (ToolError) { throw; }
             catch (Exception ex) { throw new ToolError($"{e.Key} couldn't be set to {text}: {ex.Message}"); }
             string after = SafeGet(e);
-            Log(app, e, before, after);
+            Log(app, e, before, after, source);
             return Result(e, before, after, true);
         }
 
@@ -320,7 +323,7 @@ namespace ReBuzz.Agent.App
             (o["restart_required"]!.GetValue<bool>() ? " Takes effect after a restart." : "") +
             (o["note"] is JsonNode n && !o["restart_required"]!.GetValue<bool>() ? " " + n : "");
 
-        static JsonObject Reset(IAppServices app, string? key, string? section)
+        internal static JsonObject Reset(IAppServices app, string? key, string? section, string source = SettingsService.AgentSource)
         {
             var all = app.Settings();
             List<SettingEntry> list;
@@ -344,7 +347,7 @@ namespace ReBuzz.Agent.App
                 try { e.Set(e.Default); }
                 catch (Exception ex) { throw new ToolError($"{e.Key} couldn't be reset: {ex.Message}"); }
                 string after = SafeGet(e);
-                Log(app, e, before, after);
+                Log(app, e, before, after, source);
                 reset.Add(new JsonObject { ["key"] = e.Key, ["from"] = before, ["to"] = after });
                 if (e.RestartRequired) restart.Add(e.Key);
             }
@@ -357,7 +360,7 @@ namespace ReBuzz.Agent.App
 
         static readonly object gate = new();
 
-        static void Log(IAppServices app, SettingEntry e, string from, string to)
+        internal static void Log(IAppServices app, SettingEntry e, string from, string to, string source)
         {
             var entry = new JsonObject
             {
@@ -367,6 +370,7 @@ namespace ReBuzz.Agent.App
                 ["to"] = to,
                 ["restart_required"] = e.RestartRequired,
                 ["class"] = e.Class,
+                ["source"] = source,
             };
             lock (gate)
             {
@@ -378,6 +382,7 @@ namespace ReBuzz.Agent.App
                 catch (IOException) { }
                 catch (UnauthorizedAccessException) { }
             }
+            SettingsService.Raise(new SettingChange(e.Key, from, to, source, e.RestartRequired));
         }
 
         internal static List<JsonObject> ReadHistory(string file, string? key, int limit)
@@ -402,5 +407,62 @@ namespace ReBuzz.Agent.App
             }
             return list;
         }
+    }
+}
+
+namespace ReBuzz.Agent.App
+{
+    /// <summary>A preference changed (by the agent's tools or by the person in Preferences).</summary>
+    public sealed record SettingChange(string Key, string From, string To, string Source, bool RestartRequired);
+
+    /// <summary>
+    /// The one way a setting is changed and logged (docs/specs/ux-overhaul.md P3f): the agent's settings_set and settings_reset and the studio's
+    /// Preferences window both go through here, on the same <see cref="SettingEntry"/> list and keys, and both write the audit log
+    /// (settings_history) with their source. <see cref="Changed"/> tells an open window about the agent's changes.
+    /// </summary>
+    public static class SettingsService
+    {
+        public const string AgentSource = "Agent", ManualSource = "Manual";
+
+        /// <summary>Raised after a change is logged, on the thread that made it.</summary>
+        public static event Action<SettingChange>? Changed;
+
+        internal static void Raise(SettingChange c) => Changed?.Invoke(c);
+
+        /// <summary>Sets a setting as the person chose it (already checked by the control); logged as Manual. Returns the value it holds now.</summary>
+        public static string Apply(IAppServices app, SettingEntry e, string text, string source = ManualSource)
+        {
+            string before = Get(e);
+            if (string.Equals(before, text, StringComparison.OrdinalIgnoreCase)) return before;
+            e.Set(text);
+            string after = Get(e);
+            SettingsTools.Log(app, e, before, after, source);
+            return after;
+        }
+
+        /// <summary>Logs a change a page made itself (the audio device, an agent switch with its own rules).</summary>
+        public static void Record(IAppServices app, SettingEntry e, string from, string to, string source = ManualSource)
+        {
+            if (!string.Equals(from, to, StringComparison.OrdinalIgnoreCase)) SettingsTools.Log(app, e, from, to, source);
+        }
+
+        /// <summary>Puts one setting, a section or every setting back to its default; the keys that changed.</summary>
+        public static IReadOnlyList<string> Reset(IAppServices app, string? key, string? section, string source = ManualSource)
+        {
+            var o = SettingsTools.Reset(app, key, section, source);
+            return o["reset"]!.AsArray().Select(x => x!["key"]!.GetValue<string>()).ToList();
+        }
+
+        /// <summary>The text as the setting stores it, or a ToolError saying what it takes (the type, the choices, the range).</summary>
+        public static string Normalize(SettingEntry e, string text) => SettingsTools.Normalize(e, JsonValue.Create(text));
+
+        public static string Get(SettingEntry e)
+        {
+            try { return e.Get(); }
+            catch (Exception) { return ""; }
+        }
+
+        /// <summary>True when the value equals the default (numbers compared as numbers).</summary>
+        public static bool IsDefault(SettingEntry e) => SettingsTools.IsDefault(e, Get(e));
     }
 }

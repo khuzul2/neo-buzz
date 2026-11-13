@@ -91,7 +91,7 @@ namespace NeoBuzz.Wave
         [ParameterDecl(Name = "Sub octave", Description = "Octaves below the note", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int SubOct { get => Values[P.SubOct]; set => Values.Set(P.SubOct, value); }
 
-        [ParameterDecl(Name = "Sub level", Description = "Sub level", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        [ParameterDecl(Name = "Sub level", Description = "Sets the level of the sub oscillator, from 0 to 100 %.", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int SubLevel { get => Values[P.SubLevel]; set => Values.Set(P.SubLevel, value); }
 
         [ParameterDecl(Name = "Noise", Description = "Noise level", MinValue = 0, MaxValue = 1000, DefValue = 0)]
@@ -100,7 +100,7 @@ namespace NeoBuzz.Wave
         [ParameterDecl(Name = "Filter type", Description = "Filter model", MinValue = 0, MaxValue = 6, DefValue = 0)]
         public int FType { get => Values[P.FType]; set => Values.Set(P.FType, value); }
 
-        [ParameterDecl(Name = "Cutoff", Description = "Cutoff", MinValue = 0, MaxValue = 1000, DefValue = 750)]
+        [ParameterDecl(Name = "Cutoff", Description = "Sets the filter cutoff frequency, from 20 Hz to 20 kHz.", MinValue = 0, MaxValue = 1000, DefValue = 750)]
         public int FCutoff { get => Values[P.FCutoff]; set => Values.Set(P.FCutoff, value); }
 
         [ParameterDecl(Name = "Reso", Description = "Resonance", MinValue = 0, MaxValue = 1000, DefValue = 150)]
