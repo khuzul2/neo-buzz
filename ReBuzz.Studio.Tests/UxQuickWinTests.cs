@@ -300,6 +300,7 @@ namespace ReBuzz.Studio.Tests
             try
             {
                 view.Canvas.Focus();
+                view.Canvas.Select(Core.SongCore.Machines.Take(1));       // P3d: with nothing selected the canvas's letters search the browser
                 Settle();
                 window.KeyPressQwerty(PhysicalKey.C, RawInputModifiers.None);
                 Assert.That(Core.Looping, Is.EqualTo(!looping), "C: loop, in the Machine View");

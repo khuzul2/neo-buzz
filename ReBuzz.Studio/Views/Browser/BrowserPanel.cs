@@ -1,7 +1,9 @@
 // Fork (docs/specs/ux-overhaul.md P3a, decisions 31-34): the browser, the main window's panel on the left. A search box over the
-// installed machines (Instruments, Effects, Control) that a double-click adds to the song, and the patterns of the selected
-// machine (first: a long list of machines is below them) (a click selects one in every view, a double-click opens it in the Tracker). It collapses to a rail, and its open
-// state and width are remembered in the settings. Presets and Samples come with the machine browser (P3d).
+// installed machines that a double-click adds to the song, and the patterns of the selected machine (first: a long list of
+// machines is below them) (a click selects one in every view, a double-click opens it in the Tracker). It collapses to a rail, and
+// its open state and width are remembered in the settings.
+// Fork (P3d, decisions 56-57): the machines are the machine browser's: by category (the manifest catalogue's ten), with tags,
+// use_for and brand, recents, favourites and starters, from the one MachineBrowserModel the Machine View's popup uses too.
 
 using System;
 using System.Collections.Generic;
@@ -41,7 +43,9 @@ namespace ReBuzz.Studio.Views.Browser
         readonly Grid frame;
         readonly DockPanel full;
         readonly Avalonia.Controls.Control rail;
-        IReadOnlyList<(string Kind, IReadOnlyList<GearItem> Items)> gear;
+        readonly MachineBrowserModel model;
+        readonly FilterBar filter = new FilterBar { Margin = new Thickness(8, 0, 8, 6) };
+        string lastStamp;
 
         bool open, updating, disposed;
         double width;
@@ -53,6 +57,7 @@ namespace ReBuzz.Studio.Views.Browser
             this.registry = registry;
             this.openPattern = openPattern;
             selection = StudioSelection.For(core);
+            model = MachineBrowserModel.For(core, registry);
             open = Read(OpenKey, false);
             width = Math.Clamp(Read(WidthKey, DefaultWidth), MinPanelWidth, MaxPanelWidth);
 
@@ -77,6 +82,9 @@ namespace ReBuzz.Studio.Views.Browser
                 else if (e.Key == Key.Down && list.ItemCount > 0) { list.Focus(); e.Handled = true; }
             };
             DockPanel.SetDock(search, Dock.Top);
+            DockPanel.SetDock(filter, Dock.Top);
+            filter.Changed += () => Rebuild(force: false);
+            model.Changed += OnModelChanged;
 
             list = new ListBox { Background = Brushes.Transparent, BorderThickness = new Thickness(0), Margin = new Thickness(0, 0, 0, 4) };
             AutomationProperties.SetName(list, "Browser list");
@@ -90,6 +98,7 @@ namespace ReBuzz.Studio.Views.Browser
             full = new DockPanel { LastChildFill = true };
             full.Children.Add(header);
             full.Children.Add(search);
+            full.Children.Add(filter);
             full.Children.Add(list);
 
             railButton = IconButton("›", "Show the browser (" + Shell.Commands.StudioKeymap.Get("view.browser").KeyLabel() + ")", "Show browser", Open);
@@ -156,6 +165,8 @@ namespace ReBuzz.Studio.Views.Browser
 
         internal TextBox Search => search;
         internal ListBox List => list;
+        internal FilterBar Filter => filter;
+        internal MachineBrowserModel Model => model;
         internal Button CollapseButton => collapseButton;
         internal Button RailButton => railButton;
         internal Avalonia.Controls.Control Grip => grip;
@@ -220,43 +231,52 @@ namespace ReBuzz.Studio.Views.Browser
 
         static bool Matches(string text, string query) => query.Length == 0 || text.Contains(query, StringComparison.OrdinalIgnoreCase);
 
+        void OnModelChanged()
+        {
+            lastStamp = null;
+            Refresh();
+        }
+
         void Rebuild(bool force)
         {
             if (!open || disposed) return;
-            gear ??= MachineEdits.GearByKind(core);
             string query = (search.Text ?? "").Trim();
             var machine = selection.Machine;
             var pattern = selection.Pattern;
             var patterns = machine == null ? new List<IPattern>() : machine.Patterns.Where(p => Matches(p.Name, query) || Matches(machine.Name, query)).ToList();
 
-            var rows = new List<(string Tag, string Text, object Payload, bool Header)>();
+            var rows = new List<MachineBrowserModel.Row>();
+            var objects = new Dictionary<string, IPattern>();
             if (machine != null)
             {
-                rows.Add(("#Patterns of " + machine.Name, "Patterns of " + machine.Name, null, true));
-                if (patterns.Count == 0 && query.Length == 0) rows.Add(("none:", "No patterns yet", null, true));
-                foreach (var p in patterns) rows.Add(("pattern:" + p.Name, $"{p.Name}   {p.Length}", p, false));
+                rows.Add(new MachineBrowserModel.Row("#Patterns of " + machine.Name, "Patterns of " + machine.Name, null, true));
+                if (patterns.Count == 0 && query.Length == 0) rows.Add(new MachineBrowserModel.Row("none:", "No patterns yet", null, true));
+                foreach (var p in patterns)
+                {
+                    rows.Add(new MachineBrowserModel.Row("pattern:" + p.Name, $"{p.Name}   {p.Length}", null, false));
+                    objects["pattern:" + p.Name] = p;
+                }
             }
-            foreach (var (kind, items) in gear)
-            {
-                var shown = items.Where(g => Matches(g.DisplayName, query)).ToList();
-                if (shown.Count == 0) continue;
-                rows.Add(("#" + KindTitle(kind), KindTitle(kind), null, true));
-                foreach (var g in shown) rows.Add(("gear:" + g.DisplayName, g.DisplayName, g, false));
-            }
-            if (rows.Count == 0) rows.Add(("none:", query.Length > 0 ? "Nothing matches “" + query + "”" : "No machines installed", null, true));
+            rows.AddRange(model.Rows(query, filter.Category, filter.FavouritesOnly));
+            if (rows.Count == 0 || rows.All(r => r.Tag.StartsWith("none:")))
+                rows.Add(new MachineBrowserModel.Row("none:", query.Length > 0 || filter.Category != null || filter.FavouritesOnly ? "Nothing matches" + (query.Length > 0 ? " “" + query + "”" : "") : "No machines installed", null, true));
 
             string tags = string.Join("\n", rows.Select(r => r.Tag));
             string shownPattern = pattern?.Name ?? "";
-            if (tags == lastRows && shownPattern == lastPattern && !force) return;
-            bool sameRows = tags == lastRows;
+            string stamp = tags + "\n" + string.Join(",", model.Favourites);
+            if (stamp == lastStamp && shownPattern == lastPattern && !force) return;
+            bool sameRows = stamp == lastStamp;
             lastRows = tags;
+            lastStamp = stamp;
             lastPattern = shownPattern;
             updating = true;
             try
             {
                 if (!sameRows)
                 {
-                    list.ItemsSource = rows.Select(r => Row(r.Tag, r.Text, r.Payload, r.Header)).ToList();
+                    list.ItemsSource = rows.Select(r =>
+                        r.Entry != null || r.Header ? BrowserRows.Item(r, model, detail: query.Length > 0)
+                                                    : PatternRow(r, objects[r.Tag])).ToList();
                 }
                 var current = pattern == null ? null : list.Items.OfType<ListBoxItem>().FirstOrDefault(i => i.Tag as string == "pattern:" + pattern.Name);
                 if (current != null) list.SelectedItem = current;
@@ -268,29 +288,17 @@ namespace ReBuzz.Studio.Views.Browser
             }
         }
 
-        static string KindTitle(string kind) => kind == "Generators" ? "Instruments" : kind;
-
-        static ListBoxItem Row(string tag, string text, object payload, bool header)
+        static ListBoxItem PatternRow(MachineBrowserModel.Row r, IPattern p)
         {
-            var label = new TextBlock
-            {
-                Text = text,
-                FontSize = header ? 11 : 12,
-                FontWeight = header ? FontWeight.SemiBold : FontWeight.Normal,
-                Foreground = header ? StudioTokens.TextSecondaryBrush : StudioTokens.TextPrimaryBrush,
-                TextTrimming = TextTrimming.CharacterEllipsis,
-            };
             var item = new ListBoxItem
             {
-                Content = label,
-                Tag = tag,
-                DataContext = payload,
-                MinHeight = header ? 22 : 24,
-                Padding = new Thickness(header ? 12 : 20, header ? 6 : 2, 8, 2),
-                Focusable = !header,
-                IsHitTestVisible = !header,
+                Content = new TextBlock { Text = r.Text, FontSize = 12, Foreground = StudioTokens.TextPrimaryBrush, TextTrimming = TextTrimming.CharacterEllipsis },
+                Tag = r.Tag,
+                DataContext = p,
+                MinHeight = 24,
+                Padding = new Thickness(20, 2, 8, 2),
             };
-            AutomationProperties.SetName(item, text);
+            AutomationProperties.SetName(item, r.Text);
             return item;
         }
 
@@ -306,8 +314,8 @@ namespace ReBuzz.Studio.Views.Browser
             if (list.SelectedItem is not ListBoxItem item) return;
             switch (item.DataContext)
             {
-                case GearItem g:
-                    var made = MachineEdits.Create(core, g.Instrument, 0, 0);
+                case MachineEntry entry:
+                    var made = model.Add(entry, 0, 0);
                     if (made != null) selection.Set(made, null, this);
                     break;
                 case IPattern p:
@@ -353,6 +361,7 @@ namespace ReBuzz.Studio.Views.Browser
             if (disposed) return;
             disposed = true;
             selection.Changed -= OnSelectionChanged;
+            model.Changed -= OnModelChanged;
         }
     }
 }
