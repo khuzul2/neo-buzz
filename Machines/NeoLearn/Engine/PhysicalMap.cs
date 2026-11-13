@@ -77,13 +77,13 @@ namespace NeoBuzz.Learn
             double f = s - i;
             stiffness = KnotStiffness[i] + f * (KnotStiffness[i + 1] - KnotStiffness[i]);
             loss = KnotLoss[i] + f * (KnotLoss[i + 1] - KnotLoss[i]);
-            ring = KnotRing[i] * Math.Pow(KnotRing[i + 1] / KnotRing[i], f);
+            ring = KnotRing[i] * PortableMath.Pow(KnotRing[i + 1] / KnotRing[i], f);
         }
 
         /// <summary>The ring time (s) and loss with Damping <paramref name="d"/> (0 … 1) applied to a material's.</summary>
         public static void Damped(double ring, double loss, double d, out double ringS, out double lossD)
         {
-            ringS = Math.Clamp(ring * RingAtNoDamping * Math.Pow(RingAtFullDamping / RingAtNoDamping, d), 0.05, 20);
+            ringS = Math.Clamp(ring * RingAtNoDamping * PortableMath.Pow(RingAtFullDamping / RingAtNoDamping, d), 0.05, 20);
             lossD = Math.Clamp(loss + 0.5 * d, 0, 1);
         }
 
@@ -123,18 +123,18 @@ namespace NeoBuzz.Learn
         {
             MaterialAt(material, out _, out double ring, out double loss);
             Damped(ring, loss, damping, out double ringS, out double lossD);
-            double fc = 2000.0 * Math.Pow(2, -4.0 * (size - 0.5));
-            double ringSeconds = ringS * Math.Pow(2, 1.5 * (size - 0.5));
+            double fc = 2000.0 * PortableMath.Pow(2, -4.0 * (size - 0.5));
+            double ringSeconds = ringS * PortableMath.Pow(2, 1.5 * (size - 0.5));
             double h = 24.0 * lossD * (1.0 - 0.8 * material);
             double peak = 0;
             for (int j = 0; j < bars.Length; j++)
             {
                 if (j >= count) { bars[j] = 0; continue; }
                 double hz = noteHz * ratios[j];
-                double wgt = Math.Abs(Math.Cos((j + 1) * (0.02 + 0.48 * StrikePlace) * Math.PI)) / Math.Sqrt(1 + (hz / fc) * (hz / fc));
+                double wgt = Math.Abs(PortableMath.Cos((j + 1) * (0.02 + 0.48 * StrikePlace) * Math.PI)) / Math.Sqrt(1 + (hz / fc) * (hz / fc));
                 // The level some time into the ring (a tenth of a second): the upper modes have fallen faster.
                 double sigma = 6.9078 / ringSeconds * (1.0 + h * (hz * 0.001) * (hz * 0.001));
-                bars[j] = wgt / ratios[j] * Math.Exp(-sigma * 0.1);
+                bars[j] = wgt / ratios[j] * PortableMath.Exp(-sigma * 0.1);
                 peak = Math.Max(peak, bars[j]);
             }
             if (peak > 0) for (int j = 0; j < bars.Length; j++) bars[j] /= peak;
@@ -159,12 +159,12 @@ namespace NeoBuzz.Learn
         {
             morph = Math.Clamp(morph, 0, 1);
             double tt = morph < 0.5 ? 2 * morph : 2 * morph - 1;
-            double a = Math.Cos(tt * Math.PI / 2), b = Math.Sin(tt * Math.PI / 2);
+            double a = PortableMath.Cos(tt * Math.PI / 2), b = PortableMath.Sin(tt * Math.PI / 2);
             double wM = morph < 0.5 ? a : 0, wP = morph < 0.5 ? b : a, wB = morph < 0.5 ? 0 : b;
             double width = 0.10 + 0.5 * (1 - force) * (1 - force);                         // the mallet's contact, a share of the picture
-            double mallet = t < width ? Math.Sin(Math.PI * t / width) : 0;
-            double spike = Math.Exp(-t * (6 + 40 * force)) * (t < 0.01 ? t / 0.01 : 1);    // the pluck: sharp, then it lets go
-            double bow = 0.45 + 0.55 * Math.Sin(t * 90) * Math.Sin(t * 37 + 1);           // friction: a steady push with a grain
+            double mallet = t < width ? PortableMath.Sin(Math.PI * t / width) : 0;
+            double spike = PortableMath.Exp(-t * (6 + 40 * force)) * (t < 0.01 ? t / 0.01 : 1);    // the pluck: sharp, then it lets go
+            double bow = 0.45 + 0.55 * PortableMath.Sin(t * 90) * PortableMath.Sin(t * 37 + 1);           // friction: a steady push with a grain
             return wM * mallet + wP * spike + wB * bow * (0.3 + 0.7 * force);
         }
     }
