@@ -65,13 +65,13 @@ namespace NeoBuzz.LearnSpectral
         {
             var machine = ctx.Machine?.ManagedMachine as NeoLearnSpectralMachine;
             var host = machine?.Host;
-            int source = (int)Math.Clamp(Math.Round(ctx.Value(P.SpectralSource)), 0, SampleSources.Count);
+            int source = (int)Math.Clamp(Math.Round(ctx.Value(P.Source)), 0, SampleSources.Count);
             SpectralModel model = null;
             if (machine != null) model = source >= SampleSources.Count && machine.UserSampleName.Length > 0 ? host.Engine.UserModel(0) : SpectralSources.Get(source >= SampleSources.Count ? 0 : source);
             double freeze = ctx.Value(P.SpectralFreeze);
             SpectralMap.Reading(freeze, out double position, out _);
             LearnPictureParts.Scope(g, r, scope, scopeCount, Palette.DimText.WithAlpha(0x40), 0.5, 0.3);
-            Grid(model, SpectralMap.Partials(ctx.Value(P.BinGate)));
+            Grid(model, SpectralMap.Partials(ctx.Value(P.PartialGate)));
             LearnPictureParts.Spectrogram(g, r, kept, dropped, Cols, Rows, model != null && freeze > 0 ? position : -1, freeze >= 0.995, accent);
             if (model == null)
             {

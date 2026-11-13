@@ -8,9 +8,9 @@
  "tags": [
   "learning",
   "polyphonic",
-  "ethereal"
+  "spectral"
  ],
- "use_for": "A teaching spectral synth: frozen pads, bell-like stretches, ghostly textures and slowed-down sounds from one sample (five built in, or your own WAV) analysed into partials and noise, with a stretch, a time smear, a freeze, a partial gate and a tone/noise balance.",
+ "use_for": "A teaching spectral synth: frozen pads, bell-like stretches and ghostly textures from one sample (built in or your WAV), analysed into partials and noise.",
  "tracks": 16,
  "track_parameters": [
   "Note",
