@@ -1286,7 +1286,7 @@ namespace ReBuzz.Studio.Tests
                 // Dye Essence, a Neo-family machine with its own name (docs/specs/dye-essence.md), after them (the others keep their numbers).
                 if (Core.MachineDLLs.ContainsKey("Dye Essence")) neo.Add("Dye Essence");
                 // Neo Learn Subtractive (docs/specs/neo-learn.md), after Dye Essence for the same reason.
-                foreach (var learn in new[] { "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical" })
+                foreach (var learn in new[] { "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler" })
                     if (Core.MachineDLLs.ContainsKey(learn)) neo.Add(learn);
                 int i = 0;
                 foreach (var gear in neo)

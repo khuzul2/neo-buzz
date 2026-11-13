@@ -1,0 +1,369 @@
+{
+  "Version": 1,
+  "Id": "20261113153733839-13",
+  "Name": "Auto: before replacing Bass",
+  "Time": "2026-11-13T15:37:33.8396175Z",
+  "Trigger": "auto",
+  "Reason": "before replacing Bass",
+  "Song": "/tmp/claude-0/-home-claude/b18d67b6-dcfb-5893-8c6e-23e254f49871/scratchpad/k2a/ExternalMachines/source/buzztrax-buzzmachines/Elak/SVF/Elak_SVF.bmx",
+  "Bytes": 3666,
+  "Machines": 4,
+  "Sections": [
+    {
+      "Magic": 1380275778,
+      "Chunks": [
+        {
+          "Hash": "17504f7bea3644dec4862af1f2c96f0262ad6a948ad8f4e9c8adedc87fdae46a",
+          "Length": 46
+        }
+      ]
+    },
+    {
+      "Magic": 1095909712,
+      "Chunks": [
+        {
+          "Hash": "fe51042920fea6df636f9b1542ef0b6d0077915924bf2a1d2c676722575776f1",
+          "Length": 749
+        }
+      ]
+    },
+    {
+      "Magic": 1414938967,
+      "Chunks": [
+        {
+          "Hash": "96a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc7",
+          "Length": 2
+        }
+      ]
+    },
+    {
+      "Magic": 1230325570,
+      "Chunks": [
+        {
+          "Hash": "ac9ec0eed73656fc6a7ae0f9d0f956c2fb5caf22caf46de2f4178a7dd86f21ae",
+          "Length": 226
+        }
+      ]
+    },
+    {
+      "Magic": 1212367181,
+      "Chunks": [
+        {
+          "Hash": "9d7de80d488260f163a725efeb5cd785547413a82c7d4c7a95862af5df58e5d5",
+          "Length": 1155
+        }
+      ]
+    },
+    {
+      "Magic": 1313754947,
+      "Chunks": [
+        {
+          "Hash": "61162969542f25eec3feaa3a1958a52d0af4e0371d50879b10ab208b78c54cf6",
+          "Length": 34
+        }
+      ]
+    },
+    {
+      "Magic": 1481527107,
+      "Chunks": [
+        {
+          "Hash": "e5e95250df6677835c5a9c01a88f9b40c1559dd76f89a0130574e7349746b069",
+          "Length": 34
+        }
+      ]
+    },
+    {
+      "Magic": 2054845763,
+      "Chunks": [
+        {
+          "Hash": "001793e4d22695bc24b1a652770c6bbccd9ae345c42eb27cfe1b4ad8a952dde9",
+          "Length": 70
+        }
+      ]
+    },
+    {
+      "Magic": 1414807888,
+      "Chunks": [
+        {
+          "Hash": "5e62f73f930edd21834ef7e82bf67ee7cb42a59172f86f14bc06b0a0eb85c7e1",
+          "Length": 568
+        }
+      ]
+    },
+    {
+      "Magic": 1481916752,
+      "Chunks": [
+        {
+          "Hash": "34429e8bac0a6b91116d547886b7f021b7245cb337aab716973f3e25a6fa25b7",
+          "Length": 21
+        }
+      ]
+    },
+    {
+      "Magic": 1431389523,
+      "Chunks": [
+        {
+          "Hash": "caf77446dbac2aaaa70008a3fff92695c5f810944d77c9b48bc5fdafd8fc4d42",
+          "Length": 42
+        }
+      ]
+    },
+    {
+      "Magic": 1480802637,
+      "Chunks": [
+        {
+          "Hash": "ed9e56852348d9cd5760e3c898ebcf8e4ffdce84132b68e0d83ed03f0ae11a2c",
+          "Length": 549
+        }
+      ]
+    },
+    {
+      "Magic": 1163280727,
+      "Chunks": [
+        {
+          "Hash": "96a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc7",
+          "Length": 2
+        }
+      ]
+    },
+    {
+      "Magic": 1212238914,
+      "Chunks": [
+        {
+          "Hash": "b93cee65021a2c938a844ff2a26e83fd59c1014b6f4b21b9edc892a6fcb42423",
+          "Length": 50
+        }
+      ]
+    },
+    {
+      "Magic": 1380078407,
+      "Chunks": [
+        {
+          "Hash": "1620ef38f4ef132c61ed760876cc102454c2e7ef5786c306048e9d2fb4c07062",
+          "Length": 18
+        }
+      ]
+    },
+    {
+      "Magic": 844382544,
+      "Chunks": [
+        {
+          "Hash": "61b54462fb10e18e4cbabc465237559aea260370bd1efe98bf002714d8708590",
+          "Length": 49
+        }
+      ]
+    },
+    {
+      "Magic": 1196180560,
+      "Chunks": [
+        {
+          "Hash": "47dc540c94ceb704a23875c11273e16bb0b8a87aed84de911f2133568115f254",
+          "Length": 2
+        }
+      ]
+    },
+    {
+      "Magic": 1481721171,
+      "Chunks": [
+        {
+          "Hash": "5557f84a4efaa7ca72fa6db576d6d1237660b36bb39708ff693722a258c7e996",
+          "Length": 44
+        }
+      ]
+    },
+    {
+      "Magic": 1347569485,
+      "Chunks": [
+        {
+          "Hash": "957b88b12730e646e0f33d3618b77dfa579e8231e3c59c7104be7165611c8027",
+          "Length": 5
+        }
+      ]
+    }
+  ],
+  "Summary": {
+    "Bpm": 126,
+    "Tpb": 4,
+    "Machines": [
+      {
+        "Name": "Master",
+        "Gear": "Master",
+        "Muted": false,
+        "Bypassed": false,
+        "Params": [
+          {
+            "G": 1,
+            "I": 0,
+            "T": 0,
+            "N": "Volume",
+            "V": 2048
+          },
+          {
+            "G": 1,
+            "I": 1,
+            "T": 0,
+            "N": "BPM",
+            "V": 126
+          },
+          {
+            "G": 1,
+            "I": 2,
+            "T": 0,
+            "N": "TPB",
+            "V": 4
+          }
+        ],
+        "Patterns": [
+          {
+            "Name": "maxsvf",
+            "Length": 16,
+            "Hash": "da39a3ee5e6b4b0d"
+          },
+          {
+            "Name": "no SVF",
+            "Length": 16,
+            "Hash": "da39a3ee5e6b4b0d"
+          }
+        ]
+      },
+      {
+        "Name": "Reverb",
+        "Gear": "Jeskola Reverb",
+        "Muted": false,
+        "Bypassed": false,
+        "Params": [
+          {
+            "G": 1,
+            "I": 0,
+            "T": 0,
+            "N": "Dry Out",
+            "V": 4096
+          },
+          {
+            "G": 1,
+            "I": 1,
+            "T": 0,
+            "N": "Rev Out",
+            "V": 294
+          },
+          {
+            "G": 1,
+            "I": 2,
+            "T": 0,
+            "N": "ER Out",
+            "V": 23
+          },
+          {
+            "G": 1,
+            "I": 3,
+            "T": 0,
+            "N": "Rev Time",
+            "V": 8
+          },
+          {
+            "G": 1,
+            "I": 4,
+            "T": 0,
+            "N": "Pre-Delay",
+            "V": 0
+          },
+          {
+            "G": 1,
+            "I": 5,
+            "T": 0,
+            "N": "High Cutoff",
+            "V": 11976
+          }
+        ],
+        "Patterns": []
+      },
+      {
+        "Name": "Bass",
+        "Gear": "Jeskola Bass",
+        "Muted": false,
+        "Bypassed": false,
+        "Params": [
+          {
+            "G": 1,
+            "I": 0,
+            "T": 0,
+            "N": "Cutoff",
+            "V": 10
+          },
+          {
+            "G": 1,
+            "I": 1,
+            "T": 0,
+            "N": "Resonance",
+            "V": 0
+          },
+          {
+            "G": 2,
+            "I": 0,
+            "T": 0,
+            "N": "Waveform",
+            "V": 1
+          },
+          {
+            "G": 2,
+            "I": 2,
+            "T": 0,
+            "N": "Volume",
+            "V": 128
+          },
+          {
+            "G": 2,
+            "I": 4,
+            "T": 0,
+            "N": "Slide lenght",
+            "V": 2
+          }
+        ],
+        "Patterns": [
+          {
+            "Name": "00",
+            "Length": 16,
+            "Hash": "da39a3ee5e6b4b0d"
+          },
+          {
+            "Name": "01",
+            "Length": 16,
+            "Hash": "da39a3ee5e6b4b0d"
+          }
+        ]
+      },
+      {
+        "Name": "SVF",
+        "Gear": "Elak SVF",
+        "Muted": false,
+        "Bypassed": false,
+        "Params": [
+          {
+            "G": 1,
+            "I": 0,
+            "T": 0,
+            "N": "cf",
+            "V": 855
+          },
+          {
+            "G": 1,
+            "I": 1,
+            "T": 0,
+            "N": "Resonance",
+            "V": 63808
+          }
+        ],
+        "Patterns": []
+      }
+    ],
+    "Wires": [
+      "Bass\u003ESVF 14530 16384",
+      "SVF\u003EMaster 16384 16384"
+    ],
+    "Sequences": [
+      "Bass#0: 2 events cd72fb90e31b7282",
+      "Master#1: 1 events 1e801ff8c7514c5b"
+    ],
+    "Waves": []
+  }
+}

@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Fork addition (neo-buzz, docs/specs/neo-learn.md): Neo Learn Wavefolder, a Neo-family machine hosting Dye Essence's engine. Shared DSP, Buzz glue and editor kit are linked as source. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>Neo Learn Wavefolder.NET</AssemblyName>
+    <RootNamespace>NeoBuzz.LearnFold</RootNamespace>
+    <Optimize Condition="'$(Configuration)' == 'Release'">true</Optimize>
+	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	<OutputPath>$(SolutionDir)bin\$(Configuration)\$(Platform)\$(TargetFramework)\Gear\Generators</OutputPath>
+	<IntermediateOutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\NeoLearnWavefolder\obj</IntermediateOutputPath>
+	<Platforms>AnyCPU;x64</Platforms>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>MSB3277;CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\NeoBuzz.Dsp\**\*.cs" Link="Shared\Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\NeoBuzz.Machine\**\*.cs" Link="Shared\Machine\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\NeoBuzz.Editor\**\*.cs" Link="Shared\Editor\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- Neo Wave's table recipes and WAV reader (the built-in tables and user tables). -->
+    <Compile Include="..\NeoWave\Engine\Tables.cs;..\NeoWave\Engine\WavReader.cs" Link="Shared\NeoWave\%(Filename)%(Extension)" />
+    <!-- Neo Sampler's sample layer (octave-down copies) and band-limited read: what the Sample and Granular engines play. -->
+    <Compile Include="..\NeoSampler\Engine\Interpolation.cs;..\NeoSampler\Engine\SampleData.cs" Link="Shared\NeoSampler\%(Filename)%(Extension)" />
+    <!-- Dye Essence's engine, hosted by LearnHost (the shared Neo Learn code: NeoLearn/). -->
+    <Compile Include="..\DyeEssence\Engine\**\*.cs" Link="Shared\DyeEssence\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- The effects rack (docs/specs/dye-essence.md §4.10) hosts these machines' engines, linked as source: the gain-match reading and each engine. -->
+    <Compile Include="..\NeoBuzz.Analysis\Loudness.cs;..\NeoBuzz.Analysis\GainMatch.cs" Link="Shared\Analysis\%(Filename)%(Extension)" />
+    <Compile Include="..\NeoEq\Engine\*.cs" Link="Shared\Eq\%(Filename)%(Extension)" />
+    <Compile Include="..\NeoFilter\Engine\*.cs" Link="Shared\Filter\%(Filename)%(Extension)" />
+    <Compile Include="..\NeoComp\Engine\*.cs" Link="Shared\Comp\%(Filename)%(Extension)" />
+    <Compile Include="..\NeoClipper\Engine\*.cs" Link="Shared\Clipper\%(Filename)%(Extension)" />
+    <Compile Include="..\NeoDelay\Engine\*.cs" Link="Shared\Delay\%(Filename)%(Extension)" />
+    <Compile Include="..\NeoVerb\Engine\*.cs" Link="Shared\Verb\%(Filename)%(Extension)" />
+    <Compile Include="..\NeoLearn\**\*.cs" Link="Shared\Learn\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="Params.def" />
+    <None Include="Neo Learn Wavefolder.prs.xml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Neo Learn Wavefolder.machine.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+	  <ProjectReference Include="..\..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" />
+	  <ProjectReference Include="..\..\ReBuzzGUI\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj" />
+  </ItemGroup>
+
+  <Target Name="ForcePerformRestore" AfterTargets="BeforeBuild">
+	  <Exec Command="IF NOT EXIST  &quot;$(IntermediateOutputPath)project.assets.json&quot;  echo restore to $(IntermediateOutputPath)project.assets.json &amp;&amp;  dotnet restore &quot;$(ProjectName).csproj&quot;  --no-dependencies &amp;&amp; move &quot;build\$(ProjectName)\obj\*&quot; &quot;$(IntermediateOutputPath)&quot; &amp;&amp; rmdir /Q /S build	 " />
+  </Target>
+
+  <Target Name="RemoveEmptyObj" AfterTargets="AfterBuild">
+	  <Exec Command="IF EXIST obj rmdir obj" />
+  </Target>
+
+</Project>
