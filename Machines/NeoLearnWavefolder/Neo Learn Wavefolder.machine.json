@@ -9,10 +9,9 @@
   "learning",
   "gritty",
   "polyphonic",
-  "bass",
   "pluck"
  ],
- "use_for": "A teaching wavefolder: metallic basses, bongo-like plucks and sizzling leads from one to six folding stages, a symmetry offset, timbre FM and a low-pass gate.",
+ "use_for": "A teaching wavefolder: metallic low tones, bongo-like plucks and sizzling leads from one to six folding stages, a symmetry offset, timbre FM and a low-pass gate.",
  "tracks": 16,
  "track_parameters": [
   "Note",

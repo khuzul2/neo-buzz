@@ -754,10 +754,9 @@
     "learning",
     "vocal",
     "polyphonic",
-    "pad",
-    "bass"
+    "pad"
    ],
-   "use_for": "A teaching vowel synth: choirs, talking basses and whispers from four formant filters that move across A, E, I, O and U, with tract size, Q and a talking envelope."
+   "use_for": "A teaching vowel synth: choirs, talking low voices and whispers from four formant filters that move across A, E, I, O and U, with tract size, Q and a talking envelope."
   },
   "Neo Learn Granular": {
    "category": "Synths",
@@ -810,10 +809,9 @@
     "learning",
     "gritty",
     "polyphonic",
-    "bass",
     "pluck"
    ],
-   "use_for": "A teaching wavefolder: metallic basses, bongo-like plucks and sizzling leads from one to six folding stages, a symmetry offset, timbre FM and a low-pass gate."
+   "use_for": "A teaching wavefolder: metallic low tones, bongo-like plucks and sizzling leads from one to six folding stages, a symmetry offset, timbre FM and a low-pass gate."
   },
   "Neo Learn Wavetable": {
    "category": "Synths",

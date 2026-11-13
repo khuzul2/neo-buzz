@@ -9,10 +9,9 @@
   "learning",
   "vocal",
   "polyphonic",
-  "pad",
-  "bass"
+  "pad"
  ],
- "use_for": "A teaching vowel synth: choirs, talking basses and whispers from four formant filters that move across A, E, I, O and U, with tract size, Q and a talking envelope.",
+ "use_for": "A teaching vowel synth: choirs, talking low voices and whispers from four formant filters that move across A, E, I, O and U, with tract size, Q and a talking envelope.",
  "tracks": 16,
  "track_parameters": [
   "Note",
