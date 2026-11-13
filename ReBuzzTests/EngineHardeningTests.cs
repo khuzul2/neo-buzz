@@ -1074,6 +1074,7 @@ namespace ReBuzzTests
                 {
                     if (!started) { started = true; holder.Result = snapshots.Restore(snap, ReBuzz.Core.SongHistory.RestoreQuantize.Beat); }
                     snapshots.Pump();
+                    Thread.Sleep(1);                         // the finish waits 100 ms of wall time for the fades; the reads alone run faster than real time
                 }, out double restoreStep, out long bytes);
                 Assert.That(holder.Result!.Mode, Is.EqualTo("live"), holder.Result.Reason);
                 Assert.That(snapshots.LiveActive, Is.False, "it applied and finished within the stretch");

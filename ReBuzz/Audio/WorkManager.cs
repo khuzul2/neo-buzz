@@ -77,7 +77,7 @@ namespace ReBuzz.Audio
             this.workEngine = workEngine;
             this.algorithm = algorithm;
             engineSettings = settings;
-            buzzCore.PrebuildWorkOrder = PrebuildOrder;
+            buzzCore.PrebuildWorkOrder += PrebuildOrder;       // every work manager the song has had builds its own order
 
             workOneList = WorkOneList;
             workOneGroups = WorkOneGroups;
