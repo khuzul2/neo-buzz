@@ -8,7 +8,7 @@ name: Plugin GC measurement
 #
 # workflow_dispatch needs the workflow file on the default branch, so on this experiment branch a push drives it:
 # a plain push runs Windows with 20 s per configuration (smoke test); "[mac]" in the commit message adds macOS;
-# "[full]" runs both with 300 s per configuration (5 minutes, the measurement).
+# "[full]" in the commit message runs both with 300 s per configuration (5 minutes: the measurement).
 on:
   push:
     branches: [ experiments/plugin-gc ]
