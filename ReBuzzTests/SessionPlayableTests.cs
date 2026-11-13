@@ -127,6 +127,7 @@ namespace ReBuzzTests
             var layout = rig.Core.SessionLayout;
             var doc = layout.Ensure();
             int scenes = doc.Scenes.Count;
+            rig.Core.SongCore.ActionStack.Clear();                // the history is the song's: the rig's own steps aren't this test's
 
             layout.MoveSlot(0, 0, 3, copy: false);
             layout.DuplicateScene(3);

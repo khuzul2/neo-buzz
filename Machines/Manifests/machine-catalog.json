@@ -68,6 +68,7 @@
   "spectral": "Works on the frequency spectrum (FFT)",
   "tape": "Tape-style saturation and response",
   "dither": "Noise-shaped word-length reduction",
+  "learning": "Teaches one synthesis method with few controls, each explained",
   "lfo": "Slow oscillator movement",
   "vocal": "Suits voices and spoken material",
   "mix-bus": "Suits the group or whole mix",
@@ -723,6 +724,18 @@
     "mix-bus"
    ],
    "use_for": "Widen or narrow the stereo image per band while keeping the mix mono-compatible."
+  },
+  "Neo Learn Subtractive": {
+   "category": "Synths",
+   "tags": [
+    "subtractive",
+    "polyphonic",
+    "learning",
+    "bass",
+    "lead",
+    "pad"
+   ],
+   "use_for": "Learn subtractive synthesis: one oscillator, a sub and a resonant filter, every control explained."
   },
   "Neo Limiter": {
    "category": "Dynamics",

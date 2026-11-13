@@ -23,7 +23,7 @@
 # the songs built here play notes that never take that path, native-compare.py's CHORD, and judge it).
 #
 # --candidate DIR: the x64 rebuilds (build-natives.ps1's x64 Gear) of the natives the package keeps upstream's 32-bit
-# binaries of (Jeskola Delay, Cross Delay, NiNjA dElaY): in phase B in place of upstream's, reported, never judged, so
+# binary of (Cross Delay, since 2026-11-12: Jeskola Delay and NiNjA dElaY ship rebuilt): in phase B in place of upstream's, reported, never judged, so
 # what shipping one would do to songs is measured before it ships.
 # --profile FILE: the package run's machine profile (machine-profile.json): every machine shipped rebuilt profiled from
 # the package's file, with no crash or hang; its problems against the committed profile's are reported.

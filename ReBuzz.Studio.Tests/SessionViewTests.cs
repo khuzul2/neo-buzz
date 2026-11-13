@@ -605,15 +605,16 @@ namespace ReBuzz.Studio.Tests
                 rig.Settle();
                 var view = (SessionView)tab.Content;
                 window.UpdateLayout();
-                int songSteps = rig.Core.SongCore.ActionStack.Actions.Count();
+                var history = rig.Core.SongCore.ActionStack;
 
                 rig.Click(view.SlotAt(1, 0), fx: 0.6);                   // selects (not ▶)
                 Assert.That(view.Selected, Is.EqualTo((1, 0)));
                 rig.Key(PhysicalKey.D, RawInputModifiers.Control, window);
                 Assert.That(layout.PatternAt(1, 1)?.Name, Is.EqualTo("Line 2"), "Ctrl+D duplicates into the slot below");
+                int applied = history.Steps.Count(s => s.Done);
                 rig.Key(PhysicalKey.Z, RawInputModifiers.Control, window);
                 Assert.That(layout.PatternAt(1, 1), Is.Null, "Ctrl+Z in the view: the session's undo");
-                Assert.That(rig.Core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(songSteps), "not the song's (the main window's Edit › Undo)");
+                Assert.That(history.Steps.Count(s => s.Done), Is.EqualTo(applied - 1), "one step of the song's one history");
                 rig.Key(PhysicalKey.Y, RawInputModifiers.Control, window);
                 Assert.That(layout.PatternAt(1, 1)?.Name, Is.EqualTo("Line 2"), "Ctrl+Y redoes");
 

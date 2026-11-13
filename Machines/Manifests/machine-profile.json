@@ -426,7 +426,7 @@
   "Dye Essence": {
    "gear": "Dye Essence",
    "kind": "generator",
-   "load_seconds": 1.68,
+   "load_seconds": 1.61,
    "gear_info": {
     "file": "Generators/Dye Essence.NET.dll",
     "managed": true,
@@ -503,24 +503,24 @@
     }
    },
    "denormal": {
-    "playing_ms_per_s": 13.839,
-    "silent_ms_per_s": 3.178,
-    "silent_worst_ms_per_s": 4.001,
+    "playing_ms_per_s": 13.507,
+    "silent_ms_per_s": 2.86,
+    "silent_worst_ms_per_s": 3.686,
     "windows_ms_per_s": [
-     13.839,
-     4.001,
-     3.124,
-     3.729,
-     3.001,
-     3.178,
-     3.227,
-     3.044,
-     2.97,
-     3.063,
-     3.66
+     13.507,
+     3.507,
+     2.909,
+     2.875,
+     2.853,
+     2.795,
+     2.822,
+     3.686,
+     2.86,
+     2.769,
+     2.819
     ]
    },
-   "seconds": 3.2,
+   "seconds": 3.6,
    "platform": "linux",
    "date": "2026-11-12",
    "problems": [],
@@ -7945,7 +7945,7 @@
    "kind": "effect",
    "load_seconds": 0.02,
    "gear_info": {
-    "file": "Effects/Jeskola Delay.dll",
+    "file": "Effects/Jeskola Delay.x64.dll",
     "managed": false,
     "min_tracks": 1,
     "max_tracks": 8
@@ -8385,7 +8385,7 @@
     },
     "thd_percent": 2.6
    },
-   "cpu_ms_per_s": 7.2,
+   "cpu_ms_per_s": 19.7,
    "type": "delay",
    "level_test": {
     "defaults": {
@@ -8447,7 +8447,7 @@
        ],
        [
         12,
-        "-81.3%",
+        "-81.2%",
         0.65,
         "hot"
        ],
@@ -8618,21 +8618,21 @@
     "renders": 17
    },
    "denormal": {
-    "playing_ms_per_s": 7.043,
-    "silent_ms_per_s": 7.217,
-    "silent_worst_ms_per_s": 7.382,
+    "playing_ms_per_s": 7.169,
+    "silent_ms_per_s": 7.354,
+    "silent_worst_ms_per_s": 11.056,
     "windows_ms_per_s": [
-     7.043,
-     7.382,
-     7.164,
-     7.268,
-     7.243,
-     7.195,
-     7.18,
-     7.194,
-     7.264,
-     7.217,
-     7.052
+     7.169,
+     7.354,
+     6.973,
+     7.318,
+     7.214,
+     7.107,
+     7.284,
+     11.056,
+     10.066,
+     8.762,
+     9.76
     ]
    },
    "safe_ranges": {
@@ -8644,9 +8644,9 @@
      "reason": "never decays at its minimum (-100.0%: +30.4 dBFS peak over 30 s, never decays) and rings at its maximum (100.0%: +31.3 dBFS peak, 31 dB over its level at the default; the edge is where it passes 24 dB over it)"
     }
    },
-   "seconds": 12.0,
+   "seconds": 14.8,
    "platform": "windows",
-   "date": "2026-11-05",
+   "date": "2026-11-12",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -11842,7 +11842,7 @@
    "kind": "effect",
    "load_seconds": 0.02,
    "gear_info": {
-    "file": "Effects/Jeskola NiNjA dElaY.dll",
+    "file": "Effects/Jeskola NiNjA dElaY.x64.dll",
     "managed": false,
     "min_tracks": 1,
     "max_tracks": 8
@@ -12282,7 +12282,7 @@
     },
     "thd_percent": 2.7
    },
-   "cpu_ms_per_s": 17.6,
+   "cpu_ms_per_s": 30.9,
    "type": "delay",
    "level_test": {
     "defaults": {
@@ -12386,7 +12386,7 @@
        ],
        [
         28,
-        "-56.3%",
+        "-56.2%",
         2.02,
         "hot"
        ],
@@ -12615,21 +12615,21 @@
     "renders": 29
    },
    "denormal": {
-    "playing_ms_per_s": 9.206,
-    "silent_ms_per_s": 8.619,
-    "silent_worst_ms_per_s": 8.722,
+    "playing_ms_per_s": 8.089,
+    "silent_ms_per_s": 7.966,
+    "silent_worst_ms_per_s": 9.711,
     "windows_ms_per_s": [
-     9.206,
-     8.722,
-     8.491,
-     8.714,
-     8.612,
-     8.593,
-     8.636,
-     8.434,
-     8.619,
-     8.714,
-     8.588
+     8.089,
+     7.966,
+     7.822,
+     7.772,
+     7.943,
+     8.021,
+     7.614,
+     9.165,
+     9.711,
+     8.074,
+     7.793
     ]
    },
    "safe_ranges": {
@@ -12641,9 +12641,9 @@
      "reason": "rings at its minimum (-100.0%: +38.7 dBFS peak over 30 s, 35 dB over its level at the default; the edge is where it passes 24 dB over it) and rings at its maximum (100.0%: +39.2 dBFS peak, 36 dB over its level at the default; the edge is where it passes 24 dB over it)"
     }
    },
-   "seconds": 16.9,
+   "seconds": 17.0,
    "platform": "windows",
-   "date": "2026-11-05",
+   "date": "2026-11-12",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -27254,6 +27254,123 @@
    "notes_profiler": [],
    "generated": true,
    "health": "warn"
+  },
+  "Neo Learn Subtractive": {
+   "gear": "Neo Learn Subtractive",
+   "kind": "generator",
+   "load_seconds": 0.77,
+   "gear_info": {
+    "file": "Generators/Neo Learn Subtractive.NET.dll",
+    "managed": true,
+    "min_tracks": 1,
+    "max_tracks": 16,
+    "note_parameter": "Note",
+    "takes_midi": true
+   },
+   "parameters": 12,
+   "track_parameters": 0,
+   "inferred": 12,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 12,
+    "of": 12
+   },
+   "notes": {
+    "input": "midi",
+    "pitched": true,
+    "pitch_offset": 0,
+    "cents": 0.1,
+    "heard": {
+     "A4": 69.0,
+     "A3": 57.0,
+     "A5": 81.0
+    },
+    "polyphony": 8,
+    "polyphony_levels": {
+     "1": -28.8,
+     "2": -25.8,
+     "4": -22.6,
+     "8": -19.7
+    }
+   },
+   "level": {
+    "note": "A4 at velocity 100, 1.5 beats",
+    "integrated_lufs": -28.6,
+    "sample_peak_dbfs": -21.7,
+    "true_peak_dbtp": -21.62
+   },
+   "cpu_ms_per_s": 0.0,
+   "type": "polysynth",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -21.71,
+     "growth_db": 0.0,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "error": "param_set: changes[4]: Env to Filter: raw -100 is outside 0…1000.",
+      "verdict": "error"
+     },
+     "max": {
+      "error": "param_set: changes[0]: Cutoff: raw 20000 is outside 0…1000.",
+      "verdict": "error"
+     }
+    }
+   },
+   "envelope": {
+    "peak_db": -27.05,
+    "attack_s": 0.005,
+    "final_db": -3.55,
+    "half_s": 0.035,
+    "length_s": null,
+    "release_s": 0.17,
+    "release_past_window": false,
+    "bright_mid_hz": 1008.6,
+    "bright_early_hz": 1115.7,
+    "bright_late_hz": 1001.2,
+    "level_wobble_db": 0.163,
+    "bright_wobble": 0.016,
+    "note": "A4 at velocity 100, held 2 s"
+   },
+   "velocity": {
+    "range_db": 8.52,
+    "db_per_doubling": 2.81,
+    "curve": "gentle (less than linear)",
+    "levels_db": {
+     "16": -34.78,
+     "32": -32.69,
+     "64": -30.22,
+     "127": -26.26
+    }
+   },
+   "denormal": {
+    "playing_ms_per_s": 14.809,
+    "silent_ms_per_s": 2.516,
+    "silent_worst_ms_per_s": 5.088,
+    "windows_ms_per_s": [
+     14.809,
+     5.088,
+     2.747,
+     2.542,
+     2.512,
+     2.514,
+     2.473,
+     2.526,
+     2.513,
+     2.502,
+     2.516
+    ]
+   },
+   "seconds": 32.9,
+   "platform": "linux",
+   "date": "2026-11-12",
+   "problems": [],
+   "warnings": [],
+   "hot": [],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "ok"
   },
   "Neo Limiter": {
    "gear": "Neo Limiter",

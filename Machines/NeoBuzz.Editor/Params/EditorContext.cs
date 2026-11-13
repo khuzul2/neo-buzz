@@ -33,6 +33,44 @@ namespace NeoBuzz.Editor
             Accent = accent;
             Slots = slots;
             globals = machine?.ParameterGroups?.FirstOrDefault(g => g.Type == ParameterGroupType.Global);
+            manualAt = new long[table.Length];
+            // Explain (neo-learn.md §5.3): a machine whose table has How and Sound text gets the strip's state.
+            if (table.Any(d => d.HasExplain))
+            {
+                Explain = new ExplainState(table, Raw);
+                Explain.Changed += PublishExplain;
+                ExplainBoard.Register(machine);
+            }
+        }
+
+        /// <summary>What the Explain strip shows and why (null: no control has Explain text).</summary>
+        public ExplainState Explain { get; }
+
+        readonly long[] manualAt;
+
+        /// <summary>How long after a hand edit its value's arrival counts as the same hand edit.</summary>
+        const long ManualEchoMs = 800;
+
+        void PublishExplain()
+        {
+            var line = Explain.Current;
+            ExplainBoard.Publish(Machine, line == null ? null : new ExplainCard(line.Name, line.Value, line.Badge, line.How, line.Sound));
+        }
+
+        /// <summary>The editor wrote a control's value (a knob, a click, the picture, a preset): a hand edit.</summary>
+        internal void NoteManual(int index)
+        {
+            if (index < 0 || index >= manualAt.Length) return;
+            manualAt[index] = Environment.TickCount64;
+            Explain?.Written(index, ExplainSource.Manual);
+        }
+
+        /// <summary>A bound parameter's value arrived (an event of the parameter): says who wrote it.</summary>
+        internal void ValueArrived(int index, IParameter parameter, int track)
+        {
+            if (Explain == null || index < 0 || index >= manualAt.Length) return;
+            if (Environment.TickCount64 - manualAt[index] < ManualEchoMs) return;
+            Explain.Written(index, ParamSource.TakeAgent(parameter, track) ? ExplainSource.Agent : ExplainSource.Automation);
         }
 
         /// <summary>Where each table entry is; null for the Neo editors (global parameters by index).</summary>
@@ -104,6 +142,7 @@ namespace NeoBuzz.Editor
             var p = Parameter(index);
             if (p == null) return;
             Edits?.Touch(index);
+            NoteManual(index);
             p.SetValue(TrackOf(index), Math.Clamp(raw, Table[index].Min, Table[index].Max));
         }
 
@@ -138,7 +177,11 @@ namespace NeoBuzz.Editor
             this.onValue = onValue;
             this.owner = owner;
             this.index = index;
-            handler = (p, t) => onValue(Value);
+            handler = (p, t) =>
+            {
+                onValue(Value);
+                if (index >= 0) owner?.ValueArrived(index, Parameter, Track);
+            };
             Parameter?.SubscribeEvents(track, handler, null);
         }
 
@@ -167,6 +210,7 @@ namespace NeoBuzz.Editor
             raw = Math.Clamp(raw, Def.Min, Def.Max);
             if (Parameter == null || raw == Value) return;
             if (index >= 0) owner?.Edits?.Touch(index);
+            if (index >= 0) owner?.NoteManual(index);
             Parameter.SetValue(Track, raw);
             onValue(raw);
         }

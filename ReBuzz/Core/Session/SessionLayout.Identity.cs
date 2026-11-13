@@ -348,6 +348,7 @@ namespace ReBuzz.Core.Session
     /// redo makes it again (under another name if its own was taken meanwhile), putting its
     /// slots back.
     /// </summary>
+    [BuzzGUI.Common.HistoryName("New clip")]
     internal sealed class SessionCreatePatternAction : IAction
     {
         readonly SessionLayout layout;
@@ -417,6 +418,7 @@ namespace ReBuzz.Core.Session
     /// Deletes a pattern; undo makes it again with its contents (under another name if its own
     /// was taken meanwhile) and puts its slots and settings back. Holds the object, not its name.
     /// </summary>
+    [BuzzGUI.Common.HistoryName("Delete clip")]
     internal sealed class SessionDeletePatternAction : IAction
     {
         readonly SessionLayout layout;

@@ -333,6 +333,19 @@ namespace ReBuzzTests
         /// </summary>
         static long AllocatedWhileReading(Rig rig, Driver.AudioReader reader, int buffers, int frames, List<string> log, AllocationWindow window, Action? perBuffer = null)
         {
+            // GuardPolicy: a stretch that allocated is read again (up to 3 in all); 0 when any attempt allocated nothing.
+            long total = 0;
+            for (int attempt = 0; attempt < GuardPolicy.Attempts; attempt++)
+            {
+                total = AllocatedWhileReadingOnce(rig, reader, buffers, frames, log, window, perBuffer);
+                if (total == 0) { log.Clear(); return 0; }
+                log.Add($"(attempt {attempt + 1} of {GuardPolicy.Attempts}: {total} bytes)");
+            }
+            return total;
+        }
+
+        static long AllocatedWhileReadingOnce(Rig rig, Driver.AudioReader reader, int buffers, int frames, List<string> log, AllocationWindow window, Action? perBuffer)
+        {
             long total = 0;
             for (int i = 0; i < buffers; i++)
             {

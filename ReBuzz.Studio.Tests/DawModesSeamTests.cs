@@ -315,7 +315,7 @@ namespace ReBuzz.Studio.Tests
 
             Assert.That(source.Edit(null, new[] { new ClipNote(2 * TB, TB, 67, 90) }), Is.Null);
             Assert.That(source.Notes().Select(n => n.Note), Is.EqualTo(new[] { 60, 67 }));
-            Assert.That(rig.Layout.UndoStack.Actions.Count(), Is.EqualTo(sessionUndo), "not on the session's history");
+            Assert.That(rig.Layout.UndoStack.Actions.Count(), Is.EqualTo(sessionUndo + 1), "one step on the song's history, which is the session's too");
             source.Undo();
             Assert.That(source.Notes().Select(n => n.Note), Is.EqualTo(new[] { 60 }), "the song's undo takes it back");
             source.Redo();
@@ -336,7 +336,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(source.Notes(), Is.EqualTo(rig.Layout.NotesOf(p)));
             int songUndo = rig.Core.SongCore.ActionStack.Actions.Count();
             Assert.That(source.Edit(null, new[] { new ClipNote(TB, TB, 62, 80) }), Is.Null);
-            Assert.That(rig.Core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(songUndo), "the session's own history");
+            Assert.That(rig.Core.SongCore.ActionStack.Actions.Count(), Is.GreaterThan(songUndo), "a step of the one history, the song's and the session's");
             source.Undo();
             Assert.That(source.Notes().Count, Is.EqualTo(1));
             var roll = new Views.Session.PianoRoll(rig.Core, rig.Layout, Track(rig, "Lead"), p);
