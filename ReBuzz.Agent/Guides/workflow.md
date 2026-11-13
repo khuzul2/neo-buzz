@@ -22,7 +22,7 @@ Build, listen, measure, adjust. Never claim a result you haven't rendered and me
 - `analyze_mix(section="Drop")` renders with a probe on every track feeding Master: per-track loudness, peaks and bands, which pairs mask each other, the headroom, and the worst problems first.
 - `compare(a="r2", b="r3")`: two renders, probes or WAV files (before and after, or your mix against a reference), with the bands level-matched.
 - `plot(kind="spectrum", sources=["r3:Bass", "r3:Kick"])` draws an image you can look at: spectrum, spectrogram, waveform, loudness over time, goniometer, bands.
-- Compare versions: `snapshot_save(name=…)` before a change, `snapshot_diff(a=…)` after, `snapshot_restore(name=…)` or `undo` when it measured worse.
+- Compare versions: `snapshot_save(name=…)` before a change (the whole song, kept in a history folder beside it), `snapshot_diff(a=…)` after (machines, wires, parameters, patterns), `snapshot_restore(name=…)` or `undo` when it measured worse. `kind="parameters"` is the light session-only version.
 
 ## Live, with the user (studio mode)
 `studio_status` says the mode. In studio mode the user listens through NeoBuzz Live's audio output, and these tools play with them; live mode is the same with no window (rebuzz-headless playing through a device). Headless, they answer with the way to hear instead, so use render there.
@@ -58,6 +58,8 @@ Machine manuals: `guide(machine="Neo Poly")` (every parameter, how to use it, pr
 
 ## Undo
 Each changing call is one undo step: `undo` reverts your last call whole. In studio mode the user's own edits share the same history, so check `studio_status`'s `next_undo` before undoing. `history_list(limit=10)` shows the steps (name, source, time); `history_jump(step=…)` goes back or forward to one: it can undo several steps, the user's too, so list first.
+
+`snapshot_list` shows full snapshots of the whole song: yours, the user's and auto ones (taken on save, every few minutes, and before `machine_replace`, a big `history_jump` or a restore). `snapshot_restore` replaces the song as it is (only while stopped; the undo history starts again; an auto snapshot of the song as it was is the way back); `snapshot_delete` removes one.
 
 ## Errors
 Errors say what to do next ("Did you mean …", the valid range, the call that lists the names). Read them and adjust the call; don't retry the same arguments.

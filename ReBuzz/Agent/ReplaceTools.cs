@@ -48,6 +48,7 @@ namespace ReBuzz.Agent
                     bool dry = c.Bool("dry_run") == true;
                     var r = await host.Engine("machine_replace", !dry, _ =>
                     {
+                        if (!dry) host.AutoSnapshot("before replacing " + c.String("machine"));      // history-snapshots.md HS2
                         var old = SongModel.Machine(core, c.RequiredString("machine"));
                         int? from = null, to = null;
                         if (c.String("section") is string section) (from, to) = CompositionTools.Section(core, section);

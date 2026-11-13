@@ -120,6 +120,12 @@ namespace ReBuzz.Agent
         internal bool FailedCallOnRedo { get; set; }
         internal int UndosSinceFailedCall { get; set; }
 
+        /// <summary>
+        /// An automatic full snapshot before a big operation (UI thread, inside an Engine call), labelled auto
+        /// (history-snapshots.md HS2). Never throws: a failed snapshot is logged and the operation goes on.
+        /// </summary>
+        internal void AutoSnapshot(string reason) => Core.Snapshots?.Auto(reason);
+
         /// <summary>This session's snapshots by name.</summary>
         internal ConcurrentDictionary<string, Snapshot> Snapshots { get; } = new();
         /// <summary>Phrases midi_play plays (A7).</summary>

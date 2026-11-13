@@ -725,6 +725,51 @@
    ],
    "use_for": "Widen or narrow the stereo image per band while keeping the mix mono-compatible."
   },
+  "Neo Learn Additive": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "polyphonic",
+    "pad",
+    "organ",
+    "keys"
+   ],
+   "use_for": "A teaching additive synth: build organs, hollow reeds, choirs and bells from sine partials with tilt, odd/even, comb and shimmer."
+  },
+  "Neo Learn FM": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "fm",
+    "polyphonic",
+    "keys",
+    "bass",
+    "pluck"
+   ],
+   "use_for": "A teaching FM synth: electric-piano tines, glass bells and growling basses from an exact modulator ratio, depth and feedback."
+  },
+  "Neo Learn Granular": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "granular",
+    "polyphonic",
+    "pad",
+    "lush"
+   ],
+   "use_for": "A teaching granular synth: ambient clouds, frozen textures and glitchy stutters from grain size, density, spray, octave shimmer and a trapezoid-to-Gaussian contour."
+  },
+  "Neo Learn Physical": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "physical-model",
+    "polyphonic",
+    "pluck",
+    "keys"
+   ],
+   "use_for": "A teaching physical-modelling synth: marimbas, plucked strings, glass bowls and bowed or breathy tones from a material, a mallet-pick-bow exciter morph and a string-tube-bar-plate geometry."
+  },
   "Neo Learn Subtractive": {
    "category": "Synths",
    "tags": [
@@ -736,6 +781,18 @@
     "pad"
    ],
    "use_for": "Learn subtractive synthesis: one oscillator, a sub and a resonant filter, every control explained."
+  },
+  "Neo Learn Wavetable": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "wavetable",
+    "polyphonic",
+    "pad",
+    "lead",
+    "bass"
+   ],
+   "use_for": "A teaching wavetable synth: scan a table, bend the phase and let a slow motion sweep it for evolving pads and sync leads."
   },
   "Neo Limiter": {
    "category": "Dynamics",

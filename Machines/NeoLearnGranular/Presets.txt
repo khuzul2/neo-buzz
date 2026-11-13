@@ -1,0 +1,129 @@
+# Neo Learn Granular factory presets. Output is set last so each chord sounds at the same level (loudest 50 ms RMS -22 dB). Times are in seconds.
+# Rebuild: python3 tools/gen-machine-presets.py Machines/NeoLearnGranular
+machine "Neo Learn Granular"
+
+preset "Pad — Frozen Choir"
+Scan Position = 30
+Grain Size = 0.25
+Density = 24
+Time Spray = 15
+Pitch Shimmer = 0
+Grain Contour = 90
+Attack = 0.4
+Decay = 0.8
+Sustain = 100
+Release = 1.2
+Unison / Spread = 40
+Output = -7.8
+
+preset "Pad — Octave Glow"
+Scan Position = 40
+Grain Size = 0.3
+Density = 30
+Time Spray = 20
+Pitch Shimmer = 70
+Grain Contour = 100
+Attack = 0.6
+Decay = 0.8
+Sustain = 100
+Release = 1.5
+Unison / Spread = 30
+Output = -7.1
+
+preset "Cloud — Wide Mist"
+Scan Position = 50
+Grain Size = 0.15
+Density = 40
+Time Spray = 80
+Pitch Shimmer = 15
+Grain Contour = 80
+Attack = 0.8
+Decay = 0.8
+Sustain = 100
+Release = 2.0
+Unison / Spread = 80
+Output = -6.0
+
+preset "Drone — Slow Bloom"
+Scan Position = 25
+Grain Size = 0.4
+Density = 12
+Time Spray = 40
+Pitch Shimmer = 30
+Grain Contour = 100
+Attack = 2.5
+Decay = 1.0
+Sustain = 100
+Release = 3.0
+Unison / Spread = 50
+Output = 1.5
+
+preset "Glitch — Stutter Drops"
+Scan Position = 35
+Grain Size = 0.018
+Density = 4
+Time Spray = 5
+Pitch Shimmer = 0
+Grain Contour = 0
+Attack = 0.001
+Decay = 0.12
+Sustain = 0
+Release = 0.08
+Unison / Spread = 0
+Output = 5.6
+
+preset "Buzz — Robot Grains"
+Scan Position = 30
+Grain Size = 0.008
+Density = 48
+Time Spray = 0
+Pitch Shimmer = 0
+Grain Contour = 20
+Attack = 0.005
+Decay = 0.5
+Sustain = 100
+Release = 0.15
+Unison / Spread = 0
+Output = 0.5
+
+preset "Pluck — Scattered Droplets"
+Scan Position = 55
+Grain Size = 0.04
+Density = 10
+Time Spray = 30
+Pitch Shimmer = 10
+Grain Contour = 50
+Attack = 0.001
+Decay = 0.3
+Sustain = 0
+Release = 0.3
+Unison / Spread = 20
+Output = 2.3
+
+preset "Scrub — Tape Slice"
+Scan Position = 60
+Grain Size = 0.08
+Density = 32
+Time Spray = 2
+Pitch Shimmer = 0
+Grain Contour = 60
+Attack = 0.01
+Decay = 0.5
+Sustain = 100
+Release = 0.4
+Unison / Spread = 0
+Output = -7.2
+
+preset "Shimmer — Crystal Rain"
+Scan Position = 70
+Grain Size = 0.06
+Density = 45
+Time Spray = 60
+Pitch Shimmer = 100
+Grain Contour = 90
+Attack = 0.05
+Decay = 0.8
+Sustain = 100
+Release = 0.9
+Unison / Spread = 60
+Output = -8.1

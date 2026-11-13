@@ -89,7 +89,8 @@ namespace ReBuzz.FileOps
             XQES = 0x58514553, // Sequence properties
             MGRP = 0x5052474D,  // Machine groups
             YNOC = 0x7A7A7543,
-            MID2 = 0x3244494D   // Fork: MIDI bindings with 16-bit track and parameter indices (CreateMIDI)
+            MID2 = 0x3244494D,  // Fork: MIDI bindings with 16-bit track and parameter indices (CreateMIDI)
+            HIST = 0x54534948   // Fork (history-snapshots.md HS2): the song's snapshots, embedded on save; other Buzz versions ignore it
         }
 
         public BMXFile(ReBuzzCore buzz, string buzzPath, IUiDispatcher dispatcher, IKeyboard keyboard, EngineSettings engineSettings)
@@ -136,6 +137,8 @@ namespace ReBuzz.FileOps
                 LoadXQES();
                 LoadMGRP(x, y, import);
                 LoadMIDI();
+                if (!import)
+                    LoadHistory();
 
                 foreach (var machine in machines)
                 {
@@ -1731,10 +1734,14 @@ namespace ReBuzz.FileOps
             }
         }
 
-        public void Save(string path)
+        /// <summary>
+        /// Fork (history-snapshots.md HS2): the song's sections as a snapshot or a save holds them, in file order.
+        /// UI thread; no file is touched. <paramref name="includeHistory"/> adds the embedded history (a save, when the
+        /// option is on). Call <see cref="SetSubSections"/> first.
+        /// </summary>
+        internal List<(uint Magic, byte[] Data)> BuildSections(bool includeHistory)
         {
             sections = new Dictionary<SectionType, Section>();
-            Open(path, FileMode.Create);
             machines = new List<MachineCore>();
 
             CreateFileInfoSection();
@@ -1757,6 +1764,51 @@ namespace ReBuzz.FileOps
             CreateXQESSection();
             CreateMGRPSection();
             CreateMIDI();
+            if (includeHistory)
+            {
+                var hist = buzz.Snapshots?.BuildEmbedded();
+                if (hist != null)
+                    AddSection(hist, SectionType.HIST);
+            }
+            machines = new List<MachineCore>();
+            return sections.Values.Select(s => (s.Magic, s.Data)).ToList();
+        }
+
+        /// <summary>A song file's bytes from its sections (the layout <see cref="Save"/> writes).</summary>
+        internal static byte[] Assemble(IReadOnlyList<(uint Magic, byte[] Data)> parts)
+        {
+            var ms = new MemoryStream();
+            WriteUInt(ms, (uint)SectionType.Buzz);
+            WriteUInt(ms, (uint)parts.Count);
+            uint offset = 4 + 4 + (uint)parts.Count * 12;
+            foreach (var p in parts)
+            {
+                WriteUInt(ms, p.Magic);
+                WriteUInt(ms, offset);
+                WriteUInt(ms, (uint)p.Data.Length);
+                offset += (uint)p.Data.Length;
+            }
+            foreach (var p in parts)
+                ms.Write(p.Data, 0, p.Data.Length);
+            return ms.ToArray();
+        }
+
+        /// <summary>The embedded history section, if the song has one: handed to the snapshots (which keep the folder's own if it has any).</summary>
+        void LoadHistory()
+        {
+            if (sections.TryGetValue(SectionType.HIST, out var section))
+            {
+                fs.Position = section.Offset;
+                var data = ReadBytes(fs, (int)section.Size);
+                buzz.Snapshots?.ImportEmbedded(data);
+            }
+        }
+
+        public void Save(string path)
+        {
+            Open(path, FileMode.Create);
+            BuildSections(true);
+            machines = new List<MachineCore>();
 
             uint offset = 4;                                // Buzz magic
             offset += 4;                                    // Number of sections

@@ -40,6 +40,13 @@
         [BuzzSetting(256, Description = "Memory the song's undo history may use, in MB (per song). The oldest steps drop first.")]
         public int HistoryMemoryMB { get; set; }
 
+        // Fork (docs/specs/history-snapshots.md HS2): full-song snapshots in a history folder beside the song.
+        [BuzzSetting(5, Description = "Minutes of editing between automatic song snapshots (0: off). Snapshots are also taken on save and before big operations.")]
+        public int SnapshotIntervalMinutes { get; set; }
+
+        [BuzzSetting(false, Description = "On save, also write the song's snapshots into the song file (a section other Buzz versions ignore).")]
+        public bool EmbedHistoryInSong { get; set; }
+
         [BuzzSetting(PriorityProfileType.NormalAppPriority, Description = "Priority setting for threads and processes (restart).")]
         public PriorityProfileType PriorityProfile { get; set; }
 

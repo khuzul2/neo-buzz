@@ -1678,6 +1678,42 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        // Neo Learn L1a: FM, Wavetable and Additive on the same template, each with its own picture.
+        [AvaloniaTest]
+        [TestCase("Neo Learn FM", "NeoLearnFMEditor", "neo-learn-fm-editor", "Mod Ratio")]
+        [TestCase("Neo Learn Wavetable", "NeoLearnWavetableEditor", "neo-learn-wavetable-editor", "Frame Pos")]
+        [TestCase("Neo Learn Additive", "NeoLearnAdditiveEditor", "neo-learn-additive-editor", "Odd / Even")]
+        [TestCase("Neo Learn Granular", "NeoLearnGranularEditor", "neo-learn-granular-editor", "Scan Position")]
+        [TestCase("Neo Learn Physical", "NeoLearnPhysicalEditor", "neo-learn-physical-editor", "Exciter Mode")]
+        public void NeoLearnL1EditorsHaveTheTemplatesZonesFitAndExplainTheirKnobs(string gear, string editor, string shot, string knobName)
+        {
+            var m = Add(gear, "Learn L1");
+            try
+            {
+                var window = OpenEditor(m);
+                Assert.That(StudioMachineUiHost.ContentOf(window)?.GetType().Name, Is.EqualTo(editor));
+                Studio.Screenshot(window, shot);
+                Assert.That(Controls(window, "TextBlock").Select(t => ((TextBlock)t).Text ?? ""), Has.None.StartsWith("Editor error"));
+                Assert.That(Controls(window, "ParamKnob").Count(), Is.EqualTo(12), "the deck: six core and six global controls");
+                Assert.That(Controls(window, "InteractiveGraph").Count(), Is.EqualTo(1), "the picture");
+                Assert.That(Controls(window, "ExplainStrip").Count(), Is.EqualTo(1), "the Explain strip");
+                Assert.That(Controls(window, "PresetBar").Count(), Is.EqualTo(1), "the header's presets");
+                var size = StudioMachineUiHost.ContentOf(window)!.Bounds.Size;
+                double extra = NeoBuzz.Editor.MachineKeyboardFrame.ExtraHeightOf(window.Content);
+                Assert.That(size.Width, Is.LessThanOrEqualTo(1280), "fits 1280 wide");
+                Assert.That(size.Height + extra, Is.LessThanOrEqualTo(720), $"fits 720 high with the keyboard ({size.Height:0} + {extra:0})");
+
+                var knob = Find(window, "ParamKnob", knobName);
+                window.MouseMove(Centre(knob, window));
+                Assert.That(Strip(window).Name, Is.EqualTo(knobName));
+                Assert.That(Strip(window).How, Is.Not.Empty, "the How line");
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+
         [AvaloniaTest]
         public void NeoLearnsExplainStripFollowsTheHoveredKnobAndShowsWhoWroteIt()
         {

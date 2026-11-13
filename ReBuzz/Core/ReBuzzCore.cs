@@ -823,6 +823,7 @@ namespace ReBuzz.Core
                     return;
 
                 modified = value;
+                if (value) Snapshots?.NoteChanged();
                 dispatcher.BeginInvoke(() =>
                   PropertyChanged.Raise(this, "Modified"));
             }
@@ -984,6 +985,7 @@ namespace ReBuzz.Core
             currentDomain.AssemblyResolve += MyResolveEventHandler;
 
             Autosave = new SongAutosave(this);   // fork (0.4.1)
+            Snapshots = new SongHistory.SongSnapshots(this);   // fork (history-snapshots.md HS2)
 
             timerAutomaticBackups = new Timer();
             timerAutomaticBackups.Interval = 10000;
@@ -1574,7 +1576,42 @@ namespace ReBuzz.Core
         /// Fork (0.6.1): true when the song was loaded (crash recovery keeps the autosave
         /// otherwise). While it loads, <see cref="SongLoading"/> is set.
         /// </summary>
-        internal bool TryOpenSongFile(string filename)
+        internal bool TryOpenSongFile(string filename) => TryOpenSongFile(filename, null, false);
+
+        /// <summary>Fork (history-snapshots.md HS2): the song file's bytes (a snapshot's) replace the song, which keeps its name and its history folder, and is marked modified. UI thread, transport stopped.</summary>
+        internal bool RestoreSongBytes(byte[] bmx, string songName)
+        {
+            string temp = Path.Combine(Path.GetTempPath(), "NeoBuzz-restore-" + Guid.NewGuid().ToString("N") + ".bmx");
+            File.WriteAllBytes(temp, bmx);
+            try
+            {
+                restoringSnapshot = true;
+                return TryOpenSongFile(temp, songName ?? "", true);
+            }
+            finally
+            {
+                restoringSnapshot = false;
+                try { File.Delete(temp); } catch (IOException) { }
+            }
+        }
+
+        volatile bool restoringSnapshot;
+
+        /// <summary>Fork (history-snapshots.md HS2): the song as its file sections are, for a snapshot. UI thread; touches no file.</summary>
+        internal List<(uint Magic, byte[] Data)> CaptureSongSections()
+        {
+            var file = new BMXFile(this, buzzPath, dispatcher, keyboard, engineSettings);
+            SaveSongCore ss = new SaveSongCore();
+            ss.Song = songCore;
+            SaveSong?.Invoke(ss);
+            file.SetSubSections(ss);
+            return file.BuildSections(false);
+        }
+
+        /// <summary>Fork (history-snapshots.md HS2): the song's snapshots (a history folder beside the song).</summary>
+        internal SongHistory.SongSnapshots Snapshots { get; private set; }
+
+        internal bool TryOpenSongFile(string filename, string restoreAs, bool restore)
         {
             if (!File.Exists(filename))
                 return false;
@@ -1582,7 +1619,7 @@ namespace ReBuzz.Core
             SongLoading = true;
             try
             {
-                return OpenSongFileCore(filename);
+                return OpenSongFileCore(filename, restoreAs, restore);
             }
             finally
             {
@@ -1596,9 +1633,9 @@ namespace ReBuzz.Core
         /// </summary>
         internal volatile bool SongLoading;
 
-        bool OpenSongFileCore(string filename)
+        bool OpenSongFileCore(string filename, string restoreAs = null, bool restore = false)
         {
-            if (CheckSaveSong())
+            if (restore || CheckSaveSong())
             {
                 masterLoading = true;
 
@@ -1631,8 +1668,12 @@ namespace ReBuzz.Core
                     return false;
                 }
 
-                SongCore.SongName = filename;
-                UpdateRecentFilesList(filename);
+                SongCore.SongName = restore ? (restoreAs.Length == 0 ? null : restoreAs) : filename;
+                if (!restore)
+                {
+                    UpdateRecentFilesList(filename);
+                    Snapshots?.Bind(filename);          // fork (history-snapshots.md HS2)
+                }
                 if (OpenSong != null)
                 {
                     OpenSongCore os = new OpenSongCore();
@@ -1650,7 +1691,7 @@ namespace ReBuzz.Core
                 dispatcher.BeginInvoke(() =>
                 {
                     masterLoading = false;
-                    Modified = false;
+                    Modified = restore;     // a restored song differs from its file
                 });
                 return true;
             }
@@ -1678,6 +1719,7 @@ namespace ReBuzz.Core
             if (chosen.HasValue)
             {
                 var filename = chosen.Value();
+                Snapshots?.Auto("before importing " + Path.GetFileName(filename));     // fork (history-snapshots.md HS2)
                 IReBuzzFile rebuzzFile = GetReBuzzFile(filename);
 
                 var impotAction = new ImportSongAction(this, rebuzzFile, filename, x, y, this.dispatcher, engineSettings);
@@ -1723,6 +1765,14 @@ namespace ReBuzz.Core
                 {
                     return;
                 }
+            }
+
+            // Fork (history-snapshots.md HS2): the snapshot of a save, kept beside the song (and in it when "embed history" is on).
+            if (Snapshots != null)
+            {
+                Snapshots.Relocate(filename);
+                Snapshots.Capture("Saved " + DateTime.Now.ToString("HH:mm:ss"), "auto", "save");
+                if (Snapshots.Embed) Snapshots.Flush();
             }
 
             // Do save
@@ -2523,6 +2573,7 @@ namespace ReBuzz.Core
         {
             lock (reportedCrashes) reportedCrashes.Clear();     // fork: a new song's machines are new
             Autosave?.Discard();   // fork (0.4.1)
+            if (!restoringSnapshot) Snapshots?.Bind(null);      // fork (history-snapshots.md HS2): an untitled song has its own history
             MachineGuard.Enabled = true;        // fork (machine-safety.md §3.2): off only for a song's session
             Playing = false;
             SessionLayout?.Reset();             // fork (0.6.1): no launches from the old song's map while it closes
