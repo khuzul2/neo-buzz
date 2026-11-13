@@ -7945,7 +7945,7 @@
    "kind": "effect",
    "load_seconds": 0.02,
    "gear_info": {
-    "file": "Effects/Jeskola Delay.dll",
+    "file": "Effects/Jeskola Delay.x64.dll",
     "managed": false,
     "min_tracks": 1,
     "max_tracks": 8
@@ -8385,7 +8385,7 @@
     },
     "thd_percent": 2.6
    },
-   "cpu_ms_per_s": 7.2,
+   "cpu_ms_per_s": 19.7,
    "type": "delay",
    "level_test": {
     "defaults": {
@@ -8447,7 +8447,7 @@
        ],
        [
         12,
-        "-81.3%",
+        "-81.2%",
         0.65,
         "hot"
        ],
@@ -8618,21 +8618,21 @@
     "renders": 17
    },
    "denormal": {
-    "playing_ms_per_s": 7.043,
-    "silent_ms_per_s": 7.217,
-    "silent_worst_ms_per_s": 7.382,
+    "playing_ms_per_s": 7.169,
+    "silent_ms_per_s": 7.354,
+    "silent_worst_ms_per_s": 11.056,
     "windows_ms_per_s": [
-     7.043,
-     7.382,
-     7.164,
-     7.268,
-     7.243,
-     7.195,
-     7.18,
-     7.194,
-     7.264,
-     7.217,
-     7.052
+     7.169,
+     7.354,
+     6.973,
+     7.318,
+     7.214,
+     7.107,
+     7.284,
+     11.056,
+     10.066,
+     8.762,
+     9.76
     ]
    },
    "safe_ranges": {
@@ -8644,9 +8644,9 @@
      "reason": "never decays at its minimum (-100.0%: +30.4 dBFS peak over 30 s, never decays) and rings at its maximum (100.0%: +31.3 dBFS peak, 31 dB over its level at the default; the edge is where it passes 24 dB over it)"
     }
    },
-   "seconds": 12.0,
+   "seconds": 14.8,
    "platform": "windows",
-   "date": "2026-11-05",
+   "date": "2026-11-12",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -11842,7 +11842,7 @@
    "kind": "effect",
    "load_seconds": 0.02,
    "gear_info": {
-    "file": "Effects/Jeskola NiNjA dElaY.dll",
+    "file": "Effects/Jeskola NiNjA dElaY.x64.dll",
     "managed": false,
     "min_tracks": 1,
     "max_tracks": 8
@@ -12282,7 +12282,7 @@
     },
     "thd_percent": 2.7
    },
-   "cpu_ms_per_s": 17.6,
+   "cpu_ms_per_s": 30.9,
    "type": "delay",
    "level_test": {
     "defaults": {
@@ -12386,7 +12386,7 @@
        ],
        [
         28,
-        "-56.3%",
+        "-56.2%",
         2.02,
         "hot"
        ],
@@ -12615,21 +12615,21 @@
     "renders": 29
    },
    "denormal": {
-    "playing_ms_per_s": 9.206,
-    "silent_ms_per_s": 8.619,
-    "silent_worst_ms_per_s": 8.722,
+    "playing_ms_per_s": 8.089,
+    "silent_ms_per_s": 7.966,
+    "silent_worst_ms_per_s": 9.711,
     "windows_ms_per_s": [
-     9.206,
-     8.722,
-     8.491,
-     8.714,
-     8.612,
-     8.593,
-     8.636,
-     8.434,
-     8.619,
-     8.714,
-     8.588
+     8.089,
+     7.966,
+     7.822,
+     7.772,
+     7.943,
+     8.021,
+     7.614,
+     9.165,
+     9.711,
+     8.074,
+     7.793
     ]
    },
    "safe_ranges": {
@@ -12641,9 +12641,9 @@
      "reason": "rings at its minimum (-100.0%: +38.7 dBFS peak over 30 s, 35 dB over its level at the default; the edge is where it passes 24 dB over it) and rings at its maximum (100.0%: +39.2 dBFS peak, 36 dB over its level at the default; the edge is where it passes 24 dB over it)"
     }
    },
-   "seconds": 16.9,
+   "seconds": 17.0,
    "platform": "windows",
-   "date": "2026-11-05",
+   "date": "2026-11-12",
    "problems": [],
    "warnings": [],
    "hot": [
