@@ -595,6 +595,11 @@ def main(argv):
                         ds = {u: compare(u, label) for u in upstream if files.get(u, (0, None))[1]}
                         entry["as_upstream"] = [u for u, d in ds.items() if d[0] or d[1] <= TOLERANCE_DBFS]
                         entry["vs"] = {o: compare(o, label) for o, _ in builds if o != label and rl[o] != "upstream" and files.get(o, (0, None))[1]}
+                    before = res[label]["cases"].get(case[0])
+                    if before and REPEAT > 1 and "max_diff_dbfs" in before and "max_diff_dbfs" in entry:
+                        # --repeat: a case's verdict is its worst render (the gate fails on any one that misses)
+                        entry["max_diff_dbfs"] = max(before["max_diff_dbfs"], entry["max_diff_dbfs"])
+                        entry["identical"] = bool(before.get("identical") and entry.get("identical"))
                     res[label]["cases"][case[0]] = entry
                 groups = {}
                 for label, _ in builds:
