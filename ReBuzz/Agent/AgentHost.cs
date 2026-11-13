@@ -59,6 +59,7 @@ namespace ReBuzz.Agent
             MachineTools.Register(tools, this);
             ReplaceTools.Register(tools, this);     // U5 (mcp-server.md §12.5): machine_replace
             ParamTools.Register(tools, this);
+            ModulationTools.Register(tools, this);
             PatternTools.Register(tools, this);
             RenderTools.Register(tools, this);
             AnalysisTools.Register(tools, this);

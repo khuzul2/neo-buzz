@@ -71,7 +71,7 @@ namespace NeoBuzz.Machine
 
         public void Put(int raw)
         {
-            parameter.SetValue(track, raw);
+            parameter.SetValue(track | (1 << 16), raw);   // bit 16: not recorded into patterns while the user records (ParameterCore.SetValue)
             machine.SendControlChanges();
         }
     }

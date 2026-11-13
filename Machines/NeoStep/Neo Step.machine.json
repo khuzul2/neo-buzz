@@ -25,7 +25,6 @@
    "default": 8,
    "kind": "int",
    "a": 0.0,
-   "unit": "steps",
    "description": "How many steps the pattern has (1 … 32)",
    "how": "Sets how many steps the pattern runs before it repeats, from 1 to 32.",
    "sound": "Different step counts against the song's bars make the pattern shift against the beat."

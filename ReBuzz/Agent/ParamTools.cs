@@ -49,6 +49,8 @@ namespace ReBuzz.Agent
                     Opt("summary", String("What the gear is")),
                     Opt("manifest", String("generated, curated or draft (profiled, not yet curated: units approximate where marked)")),
                     Req("exact_units", Boolean("Values in units land exactly")),
+                    Opt("modulations", Array(Object("A modulator driving one of its parameters", Req("source", String("The modulator")), Req("param", String("The parameter")), Req("depth", Integer("Percent")), Opt("reaches", String("Where the modulation reaches")), Opt("base", String("The value you set"))), "Incoming modulations (Neo LFO, Envelope, Step, Macro)")),
+                    Opt("modulator", Object("For a Neo LFO, Envelope, Step or Macro: its targets", Req("kind", String("LFO, Envelope, Step or Macro")), Req("targets", Array(Object("A target", Req("target_machine", String("Machine")), Req("param", String("Parameter"))), "Its targets")))),
                     Opt("gear_info", Object("The gear: its file, track range, how it takes notes", Req("file", String("Its DLL, under Gear")))),
                     Opt("quirks", Array(String("A quirk"), "Curated: what to know before using it (track 0 only, needs a wave…)")),
                     Opt("successors", Array(Object("A Neo successor", Req("gear", String("Its gear")), Req("how", String("The call that moves the song onto it"))), "machine_replace moves the machine onto these")),
@@ -110,6 +112,8 @@ namespace ReBuzz.Agent
                             o["health"] = h;
                         }
                         o["gear_info"] = GearInfo(m);
+                        if (ModulationTools.Incoming(core, m) is JsonArray incoming) o["modulations"] = incoming;
+                        if (ModulationTools.Own(core, m) is JsonObject own) o["modulator"] = own;
                         if (manifest?.Quirks.Count > 0) o["quirks"] = new JsonArray(manifest.Quirks.Select(x => (JsonNode)x).ToArray());
                         // U5 (mcp-server.md §12.5): its Neo successors, which machine_replace moves the song onto.
                         if (MachineReplace.SuccessorsJson(core, m.DLL) is JsonArray successors) o["successors"] = successors;
