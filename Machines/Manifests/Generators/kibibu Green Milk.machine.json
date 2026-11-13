@@ -6,6 +6,14 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "monosynth",
  "summary": "Monosynth (profiled draft): pitched, plays 12 semitones low (corrected by its pitch offset); monophonic; takes notes in its tracks; one note at the defaults -9 LUFS.",
+ "category": "Synths",
+ "tags": [
+  "subtractive",
+  "lead",
+  "pad",
+  "bright"
+ ],
+ "use_for": "Unison saw stacks and chord-shaped leads and pads with an envelope-driven filter.",
  "tracks": 16,
  "notes": {
   "input": "tracks",

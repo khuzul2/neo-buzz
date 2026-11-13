@@ -23,6 +23,9 @@ import os
 import re
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import machine_catalog as mc  # noqa: E402  (category, tags and use_for for every manifest)
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PEDAL = "ExternalMachines/source/thepedal/"
 FORMAT = "rebuzz-machine-manifest/1"
@@ -644,7 +647,7 @@ def generate(spec, existing):
                 e["safe_range"] = old["safe_range"]
             entries.append(e)
         m[group] = entries
-    return m
+    return mc.apply(m)
 
 
 def target(spec):

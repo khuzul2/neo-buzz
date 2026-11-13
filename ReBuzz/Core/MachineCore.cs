@@ -511,9 +511,13 @@ namespace ReBuzz.Core
         readonly Sample[] dryDelayed = new Sample[256];
         float bypassAmount;           // 0: the machine's output, 1: the delayed dry
 
-        /// <summary>A bypass here can keep the latency: a stereo effect (not multi-I/O).</summary>
+        /// <summary>
+        /// A bypass here can keep the latency: a stereo effect, or a managed multi-I/O effect with one output (a sidechain
+        /// input, Neo Multiband's): its input 0 is the dry.
+        /// </summary>
         internal bool BypassKeepsLatency =>
-            DLL != null && DLL.Info.Type == MachineType.Effect && (DLL.Info.Flags & MachineInfoFlags.MULTI_IO) == 0;
+            DLL != null && DLL.Info.Type == MachineType.Effect &&
+            ((DLL.Info.Flags & MachineInfoFlags.MULTI_IO) == 0 || (managedMachine != null && OutputChannelCount == 1));
 
         /// <summary>UI thread, audio lock held: room for the dry input's delay (the compensation's plan calls it).</summary>
         internal void EnsureBypassRing(int samples)

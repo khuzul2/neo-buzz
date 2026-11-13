@@ -6,6 +6,13 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
  "type": "dynamics",
  "summary": "Three-band limiter for the master: input gain, a threshold and decay per band, two crossovers, a soft-to-hard knee and lookahead. For loudness and control on a mix.",
+ "category": "Dynamics",
+ "tags": [
+  "limiter",
+  "multiband",
+  "master"
+ ],
+ "use_for": "Three-band limiter for the master, with input gain and per-band thresholds.",
  "quirks": [
   "Latency: 176 samples (4 ms) from its lookahead (profile).",
   "Envelope times assume 44.1 kHz (its README); the crossover frequencies are its own estimate and move with the sample rate.",

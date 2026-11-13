@@ -54,6 +54,7 @@ namespace ReBuzz.Agent
             StudioTools.Register(tools, this);
             NotesTools.Register(tools, this);       // fork (machine-safety.md §3.5): Song Notes
             GuideLibrary.Register(tools, gear => Manual(core, gear), () => Described(core).Select(x => x.Dll.Name).ToList());
+            MachineCatalog.Register(tools, () => Described(core).Select(x => x.Manifest).ToList());   // K0 (agent-knowledge.md): machine_find
             MachineTools.Register(tools, this);
             ReplaceTools.Register(tools, this);     // U5 (mcp-server.md §12.5): machine_replace
             ParamTools.Register(tools, this);
@@ -66,7 +67,8 @@ namespace ReBuzz.Agent
             WaveTools.Register(tools, this);
             LiveTools.Register(tools, this);
             // Named after the app (Product: neobuzz-live, "NeoBuzz Live"), with the instructions an agent reads first.
-            Server = new McpServer(GuideLibrary.AppServer(Version), tools, GuideLibrary.Prompts(), GuideLibrary.Resources().Concat(Manuals(core)));
+            Server = new McpServer(GuideLibrary.AppServer(Version), tools, GuideLibrary.Prompts(), GuideLibrary.Resources().Concat(Manuals(core))
+                .Concat(new[] { MachineCatalog.Resource(() => Described(core).Select(x => x.Manifest).ToList()), ToolReference.Resource(tools) }));
             Server.ToolCalled += Log.Write;
         }
 

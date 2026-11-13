@@ -6,6 +6,14 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "monosynth",
  "summary": "Monosynth (profiled draft): pitched, plays A4 at 440 Hz as written; monophonic; takes notes in its tracks; one note at the defaults -28 LUFS.",
+ "category": "Synths",
+ "tags": [
+  "physical-model",
+  "pluck",
+  "percussion",
+  "monophonic"
+ ],
+ "use_for": "Wooden, mallet-like plucks and tuned percussion from a resonator struck by a noise or pulse burst.",
  "tracks": 16,
  "notes": {
   "input": "tracks",

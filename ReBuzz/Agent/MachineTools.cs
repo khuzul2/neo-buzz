@@ -47,6 +47,8 @@ namespace ReBuzz.Agent
                         Opt("author", String("Author")),
                         Opt("type", String("What it is: synth, drums, filter, reverb… (from its manifest)")),
                         Opt("summary", String("What it is and when to use it")),
+                        Opt("category", String("Its browser category (Synths, Drums, Samplers, Dynamics, EQ & Filter, Delay & Reverb, Modulation, Distortion, Utility, Control), from its manifest")),
+                        Opt("use_for", String("One line on what to use it for; machine_find ranks machines for an intent")),
                         Req("exact_units", Boolean("Has a generated or curated manifest: values in units land exactly")),
                         Opt("manifest", String("generated, curated or draft (profiled, not yet curated)")),
                         Opt("presets", Integer("Factory presets")),
@@ -86,6 +88,8 @@ namespace ReBuzz.Agent
                             if (!string.IsNullOrEmpty(info.Author)) row["author"] = info.Author;
                             if (type.Length > 0) row["type"] = type;
                             if (summary.Length > 0) row["summary"] = summary;
+                            if (manifest?.Category.Length > 0) row["category"] = manifest.Category;
+                            if (manifest?.UseFor.Length > 0) row["use_for"] = manifest.UseFor;
                             bool exact = manifest is { IsDraft: false };
                             row["exact_units"] = exact;
                             if (manifest != null) row["manifest"] = manifest.Quality;

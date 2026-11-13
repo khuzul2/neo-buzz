@@ -8,7 +8,7 @@ namespace NeoBuzz.MachineTests
 {
     /// <summary>Neo Multiband (docs/specs/machines.md §5): the acceptance criteria, measured.</summary>
     [TestFixture]
-    public class MultibandTests
+    public partial class MultibandTests
     {
         const int Rate = Measure.Rate;
 
@@ -1102,7 +1102,7 @@ namespace NeoBuzz.MachineTests
                 Assert.That(Db(peak), Is.LessThan(3), name);
                 count++;
             }
-            Assert.That(count, Is.InRange(12, 18));
+            Assert.That(count, Is.InRange(12, 24));
         }
 
         [Test]

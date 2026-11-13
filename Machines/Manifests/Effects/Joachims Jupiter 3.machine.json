@@ -6,6 +6,13 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "effect (silent at defaults)",
  "summary": "Effect (silent at defaults) (profiled draft): silent at its defaults.",
+ "category": "Dynamics",
+ "tags": [
+  "multiband",
+  "compressor",
+  "master"
+ ],
+ "use_for": "Three-band compressor with stereo width and a beefing control, for mastering and bus work.",
  "tracks": 0,
  "health": {
   "status": "warn",

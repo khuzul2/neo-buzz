@@ -6,6 +6,12 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "utility",
  "summary": "Utility (profiled draft): traits: utility; tail 0.0 s; latency 0 samples; gain +0.0 dB at the defaults.",
+ "category": "EQ & Filter",
+ "tags": [
+  "eq",
+  "clean"
+ ],
+ "use_for": "Graphic EQ with a band for every third of an octave, for fine tonal correction.",
  "tracks": 0,
  "health": {
   "status": "warn",

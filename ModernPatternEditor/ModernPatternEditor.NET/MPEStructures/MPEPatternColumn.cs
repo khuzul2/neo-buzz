@@ -51,6 +51,12 @@ namespace WDE.ModernPatternEditor.MPEStructures
         List<PatternEvent> patternEventsList = new List<PatternEvent>(0);
         PatternEvent[] emptyPatternEventList = Array.Empty<PatternEvent>();
         Lock patternEventsLock = new Lock();
+        /// <summary>Fork (ux-overhaul.md P3c): whether the column holds any event (the editor hides columns that hold none).</summary>
+        internal bool HasEvents
+        {
+            get { lock (patternEventsLock) return eventList.Count > 0; }
+        }
+
         public IEnumerable<PatternEvent> GetEvents(int start, int end)
         {
             if (eventList.Count == 0)

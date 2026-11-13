@@ -6,6 +6,12 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
  "type": "exciter",
  "summary": "Harmonic exciter: high-passes the input, drives it through a soft shaper, high-passes again and adds it back to the dry signal. For brightness and presence on drums, vocals and the mix.",
+ "category": "Distortion",
+ "tags": [
+  "exciter",
+  "bright"
+ ],
+ "use_for": "Add presence and sparkle by blending high-passed, shaped harmonics back in.",
  "quirks": [
   "Adds to the dry signal, so it gets louder as Amount rises (+7.2 dB on noise at the defaults).",
   "Its filter corners are one-pole coefficients; the texts (and these Hz) are its own estimate at 44.1 kHz and move with the sample rate.",

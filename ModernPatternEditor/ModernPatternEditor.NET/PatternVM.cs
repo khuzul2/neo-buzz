@@ -103,10 +103,18 @@ namespace WDE.ModernPatternEditor
             //    return;
 
             var parameterSets = Editor.MPEPatternsDB.GetMPEPattern(pattern).GetParameterSets();
+#if !WINDOWS
+            // Fork (ux-overhaul.md P3c): the sets with notes first, the empty automation columns hidden.
+            BeginPlan();
+            parameterSets = ColumnPlan.OrderSets(parameterSets);
+#endif
             foreach (var pSet in parameterSets)
             {
                 CreateColumnSet(pSet);
             }
+#if !WINDOWS
+            EndPlan();
+#endif
 
             PropertyChanged.Raise(this, "ColumnSets");
 
@@ -123,6 +131,10 @@ namespace WDE.ModernPatternEditor
             if (parameters.Count == 0) return;
 
             var mpePattern = Editor.MPEPatternsDB.GetMPEPattern(pattern);
+#if !WINDOWS
+            parameters = PlanSet(pSet, mpePattern);
+            if (parameters.Count == 0) return;
+#endif
 
             var cl = new List<IPatternColumn>();
 
@@ -178,10 +190,115 @@ namespace WDE.ModernPatternEditor
 
         void ReleaseColumnSets()
         {
+#if !WINDOWS
+            ReleaseHidden();
+#endif
             if (columnSets == null) return;
             foreach (var cs in columnSets) cs.Release();
             columnSets = null;
         }
+
+#if !WINDOWS
+        // ------------------------------------------------------------------ Fork (ux-overhaul.md P3c): the columns shown
+
+        /// <summary>Parameters the user asked for with + Automation (kept while the editor lives); a column that is shown for its data joins them.</summary>
+        internal readonly HashSet<IParameter> RevealedParameters = new HashSet<IParameter>();
+
+        HashSet<IParameter> withData = new HashSet<IParameter>();
+        readonly List<HiddenColumn> hiddenColumns = new List<HiddenColumn>();
+        readonly HashSet<IParameter> hiddenSeen = new HashSet<IParameter>();
+        readonly List<(MPEPatternColumn Column, Action<IEnumerable<PatternEvent>, bool> Handler)> hiddenWatches = new List<(MPEPatternColumn, Action<IEnumerable<PatternEvent>, bool>)>();
+        bool rebuildPending;
+
+        /// <summary>The parameters whose columns are hidden because they hold nothing (what + Automation offers).</summary>
+        public IReadOnlyList<HiddenColumn> HiddenColumns => hiddenColumns;
+
+        void BeginPlan()
+        {
+            hiddenColumns.Clear();
+            hiddenSeen.Clear();
+            withData = new HashSet<IParameter>();
+            if (pattern == null) return;
+            foreach (var c in Editor.MPEPatternsDB.GetMPEPattern(pattern).MPEPatternColumns)
+                if (c.Parameter != null && c.HasEvents) withData.Add(c.Parameter);
+        }
+
+        /// <summary>A set's parameters, in the order shown, without the empty automation the user hasn't asked for.</summary>
+        IList<IParameter> PlanSet(MPEParameterSet pSet, MPEPattern mpePattern)
+        {
+            var shown = new List<IParameter>();
+            foreach (var (p, always) in ColumnPlan.Arrange(pSet.parameters))
+            {
+                if (always || RevealedParameters.Contains(p)) { shown.Add(p); continue; }
+                if (withData.Contains(p))
+                {
+                    RevealedParameters.Add(p);
+                    shown.Add(p);
+                    continue;
+                }
+                if (hiddenSeen.Add(p))
+                    hiddenColumns.Add(new HiddenColumn { Parameter = p, Name = p.Name, Group = pSet.groupType == ParameterGroupType.Global ? "Global" : "Track" });
+                foreach (var c in mpePattern.MPEPatternColumns.Where(c => c.Parameter == p && c.ParamTrack == pSet.track && c.Machine == pSet.machine))
+                {
+                    Action<IEnumerable<PatternEvent>, bool> h = OnHiddenEvents;
+                    c.EventsChanged += h;
+                    hiddenWatches.Add((c, h));
+                }
+            }
+            return shown;
+        }
+
+        void EndPlan() { }
+
+        void ReleaseHidden()
+        {
+            foreach (var (c, h) in hiddenWatches) c.EventsChanged -= h;
+            hiddenWatches.Clear();
+        }
+
+        /// <summary>Something wrote into a hidden column (the agent, a paste, an undo): it has data now, so it shows.</summary>
+        void OnHiddenEvents(IEnumerable<PatternEvent> events, bool setOrClear)
+        {
+            if (!setOrClear || rebuildPending || events == null || !events.Any()) return;
+            rebuildPending = true;
+            Editor.Dispatcher.BeginInvoke(() =>
+            {
+                rebuildPending = false;
+                if (pattern != null) RebuildColumns();
+            });
+        }
+
+        /// <summary>Shows the columns of these parameters (+ Automation); the cursor stays on its column.</summary>
+        public void RevealColumns(IEnumerable<IParameter> parameters)
+        {
+            bool any = false;
+            foreach (var p in parameters) any |= RevealedParameters.Add(p);
+            if (any && pattern != null) RebuildColumns();
+        }
+
+        /// <summary>The columns made again (more or fewer shown), the cursor kept on its column when it is still there.</summary>
+        internal void RebuildColumns()
+        {
+            IParameter parameter = null;
+            int track = 0;
+            var at = columnSets != null && cursorPosition.ColumnSet < columnSets.Count ? columnSets[cursorPosition.ColumnSet] : null;
+            if (at != null && cursorPosition.Column < at.Columns.Count && at.Columns[cursorPosition.Column] is ParameterColumn pc)
+            {
+                parameter = pc.PatternColumn.Parameter;
+                track = pc.PatternColumn.Track;
+            }
+            var old = cursorPosition;
+            CreateColumnSets();
+            if (parameter == null || columnSets == null) return;
+            for (int s = 0; s < columnSets.Count; s++)
+                for (int c = 0; c < columnSets[s].Columns.Count; c++)
+                    if (columnSets[s].Columns[c] is ParameterColumn q && q.PatternColumn.Parameter == parameter && q.PatternColumn.Track == track)
+                    {
+                        CursorPosition = new Digit(this, s, c, old.Beat, old.RowInBeat, old.Index).Constrained;
+                        return;
+                    }
+        }
+#endif
 
         public int BeatCount
         {

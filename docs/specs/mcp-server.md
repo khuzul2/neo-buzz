@@ -231,7 +231,8 @@ Phases (§9) are marked A1 … A7.
 
 | Tool | Phase | Purpose |
 |---|---|---|
-| `gear_list` | A1, U1, U2 | Available machines: name, generator/effect, type and a one-line description (from the manifest), manifest quality (generated, curated, profiled draft), health, preset count. Filter by kind or text. U2 (machine-safety.md §3.1): health says diverging (`diverging: true`), hot (a warning naming the setting) or `needs_window` ("works in ReBuzz on Windows with its window"); each parameter's `safe_ranges`. Order: exact units, drafts, the rest, machines that need a window, unhealthy last |
+| `machine_find` | K0 | Ranks the installed machines for an intent ("warm bass synth", "tame harsh vocals", "glue the mix", "tempo-synced delay"), a category, a tag or a parameter role, each with the reason (matching tags, category, name, a role it has); read-only. Curated machines with a page rank first among equals |
+| `gear_list` | A1, U1, U2 | Available machines: name, generator/effect, type, category and a one-line description (from the manifest), manifest quality (generated, curated, profiled draft), health, preset count. Filter by kind or text. U2 (machine-safety.md §3.1): health says diverging (`diverging: true`), hot (a warning naming the setting) or `needs_window` ("works in ReBuzz on Windows with its window"); each parameter's `safe_ranges`. Order: exact units, drafts, the rest, machines that need a window, unhealthy last |
 | `machine_list` | A1 | The song's machines: gear, inputs and outputs with gain dB and pan, mute/solo/bypass, tracks, latency; `diverged`, `diverged_at` and `diverged_reason` when the guard tripped (machine-safety.md §3.2) |
 | `machine_add` | A1, U2 | Adds a machine from the gear list; optional name, track count, preset, and where to connect it (`"Master"`, or between two machines). Returns its name and its parameter summary. U2: a warning only for diverging gear, naming its safe ranges (not for hot machines, nor for other problems in a profile); gear that needs a window says so when it can't be built |
 | `machine_remove` | A1 | Deletes machines; reconnects the chain around effects when asked |
@@ -286,7 +287,6 @@ Phases (§9) are marked A1 … A7.
 | `analyze_mix` | A2 | One render with a probe on every machine feeding the mix:<br>• per track: loudness, peak, spectrum bands, crest<br>• a masking table: which pairs fight in which bands, how much<br>• headroom and the master's measures<br>• a short list of the biggest problems |
 | `compare` | A2 | Two sources (two renders, a render and a reference file, before/after snapshots): differences per band, loudness, dynamics and stereo |
 | `plot` | A2 | An image the agent looks at: spectrum, spectrogram, waveform, loudness over time, stereo field (goniometer), or per-track bands. Returned as image content |
-| `notes_heard` | A5 | Transcribes a monophonic render (pitch and onsets) so the agent can check that what plays is what it wrote |
 | `target_build` | M1 | Averages the user's own reference recordings (1–20 WAVs or renders) into a style target: the tonal curve, loudness, loudness range, PLR, side/mid and LDR in four bands, each with the references' spread. Saved as `targets/<name>.target.json` beside the agent's log (or a file given), so every song can use it |
 | `eq_fit` | M1 | A tonal difference (a source against a target, level-matched, smoothed to 1/3 octave, clipped to ±3 dB) or a curve given, fitted with up to 6 Neo EQ bands on its own response; returns the bands, the residual and their `param_set` changes, and with `machine` writes them into a Neo EQ's B2–B7 as one undo step (mastering-tools.md §8, M1) |
 
@@ -301,7 +301,7 @@ Phases (§9) are marked A1 … A7.
 
 The craft goes to the agent three ways, with one source:
 
-- **Resources** `rebuzz://guides/<topic>` (markdown) and `rebuzz://machines/<gear>/manual`.
+- **Resources** `rebuzz://guides/<topic>` (markdown), `rebuzz://machines/<gear>/manual`, `rebuzz://catalog` (every installed machine by category, with what to use it for and how far its manifest is trusted) and `rebuzz://reference/tools` (every tool by area with its inputs, units and annotations, generated from the registered tool definitions). The catalog's companion tool is `machine_find` (agent-knowledge.md K0).
 - **Prompts** (slash commands in Claude Code), with arguments:
   - `/compose` (genre, mood, tempo, length)
   - `/design-sound` (machine, description)
@@ -320,6 +320,7 @@ The craft goes to the agent three ways, with one source:
 | `mixing` | Gain staging targets (track peaks around −10 to −6 dBFS, master headroom ≥ 6 dB before mastering). Balance by reference. Frequency slotting with per-instrument starting ranges. EQ and compression starting points by source, with numbers. Sidechain. Space (sends, pre-delay vs tempo). Stereo (mono lows below ~120 Hz). The checks to run with `analyze_mix` |
 | `mastering` | Targets: streaming −14 LUFS integrated and true peak ≤ −1 dBTP; club and loud genres −9 to −7 LUFS. The chain (corrective EQ → glue compression → saturation → limiter). Measure after every change. What not to do |
 | `troubleshooting` | Silence, clipping, phase, latency, CPU, missing machines |
+| K0 splits | Each guide is held to 4,000 tokens (agent-knowledge.md §7), so the craft guides above come in parts, with every fact kept: `genres` (forms by genre, moods, templates; from composition), `synth-recipes` (Neo Poly and Neo Wave) and `fm-recipes` (Neo FM6; both from sound-design), `mixing-dynamics` (compression and sidechain; from mixing), `mastering-chain` (the chain stage by stage; from mastering), and the machine deep dives `dye-essence-in-depth` and `neo-eq-in-depth`. The `guide` tool and `rebuzz://guides/<topic>` list them all |
 | Machine manuals | Generated from each machine's manifest: the Neo machines' Params.def (every parameter with unit, range and meaning) plus a curated "how it sounds" section and its presets; since U3 every other machine's curated or draft manifest too (plain names, roles, quirks, how it takes notes, health and safe ranges, §12.9) |
 
 Guide numbers are starting points the agent verifies with measurements, never rules it applies blindly. Every guide ends with a checklist.
@@ -393,6 +394,8 @@ Every Neo machine already declares its parameters once (Params.def) with units, 
 
 With it, `param_set("Bass", [{"F1 cutoff": "800 Hz"}])` lands on the exact raw value. `machine_describe` speaks in units, and the manual is generated.
 
+Every manifest also carries three catalogue fields (agent-knowledge.md K0): `category` (one of the studio browser's ten: Synths, Drums, Samplers, Dynamics, EQ & Filter, Delay & Reverb, Modulation, Distortion, Utility, Control), `tags` (a handful from a controlled vocabulary of about 75 words, listed in `Machines/Manifests/machine-catalog.json` and in `rebuzz://catalog`) and `use_for` (one line, in our own words, of what to use it for). The catalogue file is the one source for all 126 machines; every manifest generator writes the three fields (`tools/machine_catalog.py` is the shared helper), so they survive regeneration, and `CatalogTests` checks them on every manifest.
+
 The same sidecar format describes **every other machine** too, profiled and curated rather than compiled (§12). The server never needs a machine's code to understand it.
 
 ## 9. Phases
@@ -404,7 +407,7 @@ The same sidecar format describes **every other machine** too, profiled and cura
 | **A2 Real ears** | The analysis library (§7); `analyze` with every metric; `analyze_mix`, `compare`, `plot`, probes; snapshots; presets; waves | Analysis passes its reference tests; `analyze_mix` finds a planted kick/bass masking problem and a planted phase problem |
 | **A3 Full composition** | Automation, note transforms, markers, session grid, `theory`, machine data imports, `wave_from_render`; the composition and sound-design guides | Scripted: a verse/chorus song with automation and a session view; `theory` checked against a chord dictionary |
 | **A4 Mix and master machines** | Neo EQ, Neo Limiter, Neo Utility, Neo Analyzer (each to the machines spec's standard: measured tests, editor, presets); the mixing and mastering guides | A master hits −14 LUFS ±0.5 and ≤ −1 dBTP from a scripted mix; the analyzer's readings match the library's |
-| **A5 Guides complete** | Every guide and manual written and checked, prompts, `notes_heard`, critique flow | Every guide's checklist maps to tools that exist |
+| **A5 Guides complete** | Every guide and manual written and checked, prompts, critique flow | Every guide's checklist maps to tools that exist |
 | **A6 Evaluation** | The task suite (§10) in CI with a scripted MCP client against headless ReBuzz, plus periodic runs with a real agent | Scores tracked per change; regressions block |
 | **A7 Live** | Transport, live meters (subscriptions), session launching, MIDI, recording takes | An agent can jam: launch scenes in time and react to live levels |
 
@@ -558,7 +561,7 @@ render(range={bars:[1,17]}) … compare(r1, r2)
 
 ## 12. Upgrading the existing machines
 
-The package ships 101 machines: 82 from upstream ReBuzz (prebuilt DLLs in `RunTime/Gear`, plus ReBuzz's own) and 19 Pedal machines built from source. By code, 46 are managed (C#) and 55 native (C++). An agent can drive all of them through `IParameter` today, but most are hard to use well:
+When this section was written the package shipped 101 machines: 82 from upstream ReBuzz (prebuilt DLLs in `RunTime/Gear`, plus ReBuzz's own) and 19 Pedal machines built from source; 46 managed (C#) and 55 native (C++). Today's counts are generated: `docs/machine-health.md` (the profile) and `docs/agent-coverage.md` (manifests, pages, presets, tools). An agent can drive all of them through `IParameter` today, but most are hard to use well:
 
 - Values are raw integers whose meaning lives in a description string.
 - Note pitch conventions differ between machines (some play `A-4` at 440 Hz, others `A-5`).

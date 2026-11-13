@@ -1,0 +1,1177 @@
+{
+ "format": "rebuzz-machine-catalog/1",
+ "categories": [
+  "Synths",
+  "Drums",
+  "Samplers",
+  "Dynamics",
+  "EQ & Filter",
+  "Delay & Reverb",
+  "Modulation",
+  "Distortion",
+  "Utility",
+  "Control"
+ ],
+ "tags": {
+  "warm": "Rounded, smooth, low-mid weighted; easy on the ears",
+  "bright": "Strong highs, glassy or sparkling",
+  "clean": "Transparent: adds little colour of its own",
+  "gritty": "Rough, harmonically busy, dirty",
+  "lush": "Wide, thick, enveloping",
+  "punchy": "Strong attack and impact",
+  "vintage": "Older-style character, imperfections kept",
+  "rhythmic": "Works in time with the song (stutter, chop, steps)",
+  "bass": "Low-end instrument sounds",
+  "lead": "Foreground melody sounds",
+  "pad": "Sustained, slowly evolving background sounds",
+  "pluck": "Short plucked or struck notes",
+  "keys": "Piano, electric piano, organ-like keyboard sounds",
+  "organ": "Drawbar-style organ tones",
+  "drums": "Drum and percussion kits or voices",
+  "kick": "Bass drum sounds",
+  "percussion": "Tuned or untuned hits that are not a full kit",
+  "noise": "Noise as the main material",
+  "chiptune": "Raw retro sound-chip tones",
+  "acid": "Squelchy resonant bass lines with slides",
+  "fm": "Frequency-modulation synthesis",
+  "wavetable": "Scans through stored single-cycle waves",
+  "subtractive": "Oscillators into a filter and envelopes",
+  "sampler": "Plays back recorded waves",
+  "granular": "Plays a wave as many tiny overlapping grains",
+  "physical-model": "Models a struck or plucked resonating body",
+  "polyphonic": "Plays chords: several voices at once",
+  "monophonic": "One voice at a time",
+  "eq": "Shapes the tonal balance by frequency band",
+  "filter": "Passes or removes a range of frequencies, often with resonance",
+  "compressor": "Evens out level by turning loud parts down",
+  "limiter": "Hard ceiling on the peak level",
+  "gate": "Silences or lowers a signal below a threshold",
+  "de-esser": "Reduces harsh sibilance",
+  "transient": "Shapes the attack and sustain of hits",
+  "glue": "Bonds parts of a mix together with gentle compression",
+  "sidechain": "Can be keyed by another signal (ducking)",
+  "multiband": "Works on separate frequency bands",
+  "saturation": "Soft harmonic warmth and gentle overdrive",
+  "distortion": "Hard clipping, folding or other strong distortion",
+  "bitcrush": "Reduces bit depth or sample rate for lo-fi grit",
+  "exciter": "Adds harmonics for air and presence",
+  "wah": "Swept resonant filter",
+  "chorus": "Thickens by mixing in detuned, delayed copies",
+  "flanger": "Swept short delay with feedback: jet-like comb sweep",
+  "phaser": "Swept all-pass notches",
+  "reverb": "Simulated room, hall or plate space",
+  "delay": "Repeating echoes",
+  "echo": "Echo-style repeats with feedback",
+  "tempo-sync": "Time or rate can lock to the song tempo",
+  "stereo-width": "Changes stereo width or image",
+  "pitch-shift": "Moves pitch without changing speed",
+  "spectral": "Works on the frequency spectrum (FFT)",
+  "tape": "Tape-style saturation and response",
+  "dither": "Noise-shaped word-length reduction",
+  "lfo": "Slow oscillator movement",
+  "vocal": "Suits voices and spoken material",
+  "mix-bus": "Suits the group or whole mix",
+  "master": "Suits the final master chain",
+  "drum-bus": "Suits drums and drum groups",
+  "gain": "Level, trim or pan",
+  "mixing": "Mixes several signals together",
+  "metering": "Shows what the signal does; does not change it",
+  "routing": "Moves signals between machines or in and out of the app",
+  "audio-io": "Connects to the audio device",
+  "recording": "Captures audio into the song",
+  "looper": "Loops recorded or placed audio",
+  "plugin-host": "Hosts a plugin in the graph",
+  "midi": "Sends or receives MIDI",
+  "sequencer": "Plays or edits note and pattern data",
+  "arpeggio": "Plays the notes of a chord one after another",
+  "chords": "Builds chords from single notes",
+  "automation": "Moves other machines' parameters over time",
+  "groove": "Timing feel: swing and shuffle",
+  "notes": "Holds notes or text for the song"
+ },
+ "machines": {
+  "AudioBlock": {
+   "category": "Samplers",
+   "tags": [
+    "sampler",
+    "looper"
+   ],
+   "use_for": "Lay recorded audio clips on a timeline inside the song, such as vocals or loops."
+  },
+  "Bigyo Wood One": {
+   "category": "Synths",
+   "tags": [
+    "physical-model",
+    "pluck",
+    "percussion",
+    "monophonic"
+   ],
+   "use_for": "Wooden, mallet-like plucks and tuned percussion from a resonator struck by a noise or pulse burst."
+  },
+  "BTDSys PeerChord": {
+   "category": "Control",
+   "tags": [
+    "chords",
+    "arpeggio"
+   ],
+   "use_for": "Turn single notes into chords and arpeggios played on other machines."
+  },
+  "Connection Mixer Console": {
+   "category": "Utility",
+   "tags": [
+    "mixing",
+    "gain",
+    "routing"
+   ],
+   "use_for": "Balance the levels and pans of many machine connections from one console."
+  },
+  "DAWControl": {
+   "category": "Control",
+   "tags": [
+    "automation"
+   ],
+   "use_for": "A control-only helper with a single bypass switch; it makes no sound of its own."
+  },
+  "Dye Essence": {
+   "category": "Synths",
+   "tags": [
+    "wavetable",
+    "polyphonic",
+    "lush",
+    "pad",
+    "lead",
+    "bass"
+   ],
+   "use_for": "Evolving pads, leads and basses from morphing wavetable or analog engines with unison and a built-in effects rack."
+  },
+  "EasyRec": {
+   "category": "Utility",
+   "tags": [
+    "recording"
+   ],
+   "use_for": "Record the audio passing through it into a wave slot, to resample a part or capture a take."
+  },
+  "EnvelopeBlock": {
+   "category": "Control",
+   "tags": [
+    "automation"
+   ],
+   "use_for": "Draw parameter envelopes over patterns and play them into the machines they target."
+  },
+  "FSM Chorus2": {
+   "category": "Modulation",
+   "tags": [
+    "chorus",
+    "lush",
+    "stereo-width"
+   ],
+   "use_for": "Stereo chorus with one to six taps for widening guitars, pads and synths."
+  },
+  "FSM Infector": {
+   "category": "Synths",
+   "tags": [
+    "subtractive",
+    "polyphonic",
+    "lead",
+    "pad",
+    "bright"
+   ],
+   "use_for": "Thick detuned-saw leads, stacks and pads from a polyphonic synth with a multimode filter."
+  },
+  "FSM KickXP": {
+   "category": "Drums",
+   "tags": [
+    "kick",
+    "drums",
+    "punchy"
+   ],
+   "use_for": "Tunable synthesised kick drums, from short thumps to long sub sweeps."
+  },
+  "FSM PanzerDelay": {
+   "category": "Delay & Reverb",
+   "tags": [
+    "delay",
+    "echo",
+    "stereo-width"
+   ],
+   "use_for": "Stereo multi-tap delay with per-tap pans and optional ping-pong for rhythmic echoes."
+  },
+  "FSM PhatMan": {
+   "category": "Modulation",
+   "tags": [
+    "chorus",
+    "flanger",
+    "lush"
+   ],
+   "use_for": "Chorus and flanger with up to eight delay lines for wide, thick or jet-like modulation."
+  },
+  "FSM Philthy": {
+   "category": "EQ & Filter",
+   "tags": [
+    "filter",
+    "lfo"
+   ],
+   "use_for": "Resonant filter with its own LFO for sweeps and rhythmic filter movement."
+  },
+  "FSM WahMan": {
+   "category": "Modulation",
+   "tags": [
+    "wah",
+    "filter",
+    "lfo"
+   ],
+   "use_for": "Auto-wah: a resonant low-pass swept by an LFO, for funky, talking filter movement."
+  },
+  "FSM WahManPro": {
+   "category": "Modulation",
+   "tags": [
+    "wah",
+    "filter",
+    "lfo"
+   ],
+   "use_for": "Auto-wah with a choice of filter types and LFO shapes for more varied sweeps."
+  },
+  "FSM WahPro2": {
+   "category": "Modulation",
+   "tags": [
+    "wah",
+    "filter",
+    "lfo"
+   ],
+   "use_for": "Auto-wah with eight filters, including vowel-like ones, and many LFO shapes."
+  },
+  "GuitarChordBox": {
+   "category": "Control",
+   "tags": [
+    "chords",
+    "midi"
+   ],
+   "use_for": "Strum guitar-style chords from single notes, with per-string delays and humanising."
+  },
+  "Info": {
+   "category": "Control",
+   "tags": [
+    "notes"
+   ],
+   "use_for": "Holds free text about the song in its own window; it does nothing to the sound."
+  },
+  "Intoxicat ACloud15": {
+   "category": "Samplers",
+   "tags": [
+    "granular",
+    "sampler",
+    "noise"
+   ],
+   "use_for": "Turn a wave into clouds of tiny grains for textures, drones and glitchy washes."
+  },
+  "Jeskola Bass": {
+   "category": "Synths",
+   "tags": [
+    "bass",
+    "subtractive",
+    "polyphonic"
+   ],
+   "use_for": "Simple four-voice analog-style bass with a resonant filter and note slides."
+  },
+  "Jeskola Bass 2": {
+   "category": "Synths",
+   "tags": [
+    "bass",
+    "subtractive",
+    "monophonic"
+   ],
+   "use_for": "Monophonic bass with a resonant filter, envelope modulation and decay per track."
+  },
+  "Jeskola Bass 3": {
+   "category": "Synths",
+   "tags": [
+    "bass",
+    "acid",
+    "subtractive",
+    "monophonic"
+   ],
+   "use_for": "Squelchy acid and rolling bass lines with accent and slide."
+  },
+  "Jeskola Chorus": {
+   "category": "Modulation",
+   "tags": [
+    "chorus"
+   ],
+   "use_for": "Basic chorus for thickening a mono or stereo source."
+  },
+  "Jeskola Cross Delay": {
+   "category": "Delay & Reverb",
+   "tags": [
+    "delay",
+    "echo",
+    "stereo-width"
+   ],
+   "use_for": "Stereo echoes whose feedback crosses between the left and right lines."
+  },
+  "Jeskola Delay": {
+   "category": "Delay & Reverb",
+   "tags": [
+    "delay",
+    "echo"
+   ],
+   "use_for": "Simple mono delay with up to eight taps, one per track."
+  },
+  "Jeskola Distortion": {
+   "category": "Distortion",
+   "tags": [
+    "distortion",
+    "gritty"
+   ],
+   "use_for": "Hard, buzzy threshold-and-clamp distortion for aggressive tones."
+  },
+  "Jeskola EQ-3": {
+   "category": "EQ & Filter",
+   "tags": [
+    "eq",
+    "clean"
+   ],
+   "use_for": "Broad three-band tone shaping with two crossover points."
+  },
+  "Jeskola Filter": {
+   "category": "EQ & Filter",
+   "tags": [
+    "filter"
+   ],
+   "use_for": "Resonant low-, high- or band-pass for sweeps and tone shaping."
+  },
+  "Jeskola Filter 2": {
+   "category": "EQ & Filter",
+   "tags": [
+    "filter"
+   ],
+   "use_for": "Compact resonant filter with a selectable type."
+  },
+  "Jeskola Flanger": {
+   "category": "Modulation",
+   "tags": [
+    "flanger"
+   ],
+   "use_for": "Classic swept flanger with feedback."
+  },
+  "Jeskola Gain": {
+   "category": "Utility",
+   "tags": [
+    "gain"
+   ],
+   "use_for": "Plain gain trim between machines."
+  },
+  "Jeskola Live": {
+   "category": "Control",
+   "tags": [
+    "sequencer"
+   ],
+   "use_for": "Older performance helper steered by a Bar control; the Session View is the current way to launch patterns."
+  },
+  "Jeskola Loop Recorder": {
+   "category": "Utility",
+   "tags": [
+    "recording",
+    "looper"
+   ],
+   "use_for": "Older helper for capturing loops of the audio passing through it."
+  },
+  "Jeskola NiNjA dElaY": {
+   "category": "Delay & Reverb",
+   "tags": [
+    "delay",
+    "echo",
+    "filter",
+    "tempo-sync"
+   ],
+   "use_for": "Multi-tap delay with a filter in the feedback loop, with tap lengths in ticks, ms or samples."
+  },
+  "Jeskola Noise Generator": {
+   "category": "Synths",
+   "tags": [
+    "noise"
+   ],
+   "use_for": "Noise bursts with an envelope and a colour from dark to white, for hats, risers and textures."
+  },
+  "Jeskola Note Matrix": {
+   "category": "Control",
+   "tags": [
+    "sequencer",
+    "notes"
+   ],
+   "use_for": "Edit notes on a grid in its own window."
+  },
+  "Jeskola Organ": {
+   "category": "Synths",
+   "tags": [
+    "organ",
+    "keys"
+   ],
+   "use_for": "Drawbar-style organ tones from a set of footage-labelled harmonics."
+  },
+  "Jeskola Raverb": {
+   "category": "Delay & Reverb",
+   "tags": [
+    "reverb"
+   ],
+   "use_for": "Simple reverb with a time and high-frequency damping."
+  },
+  "Jeskola Relativion": {
+   "category": "Control",
+   "tags": [
+    "notes",
+    "midi"
+   ],
+   "use_for": "Shift and spread notes across a key range relative to a root note."
+  },
+  "Jeskola Reverb": {
+   "category": "Delay & Reverb",
+   "tags": [
+    "reverb"
+   ],
+   "use_for": "Mono reverb with early reflections and long tails up to about six seconds."
+  },
+  "Jeskola Stereo Reverb": {
+   "category": "Delay & Reverb",
+   "tags": [
+    "reverb",
+    "stereo-width"
+   ],
+   "use_for": "Stereo reverb with pre-delay and a high cutoff for a wider space."
+  },
+  "Jeskola Tracker": {
+   "category": "Samplers",
+   "tags": [
+    "sampler"
+   ],
+   "use_for": "Play waves from the song's wavetable as in the classic tracker workflow."
+  },
+  "Jeskola Trilok": {
+   "category": "Drums",
+   "tags": [
+    "kick",
+    "drums"
+   ],
+   "use_for": "Synthesised kick drum fired by a trigger, with tone, decay and volume."
+  },
+  "Jeskola Wave Shaper": {
+   "category": "Distortion",
+   "tags": [
+    "distortion",
+    "saturation"
+   ],
+   "use_for": "Waveshaping distortion with a shape control per track."
+  },
+  "Joachims Chopper 2": {
+   "category": "Modulation",
+   "tags": [
+    "filter",
+    "rhythmic"
+   ],
+   "use_for": "Triggered band-pass sweeps for stuttering, chopped filter moves."
+  },
+  "Joachims Enceladus Tube EQ v1": {
+   "category": "EQ & Filter",
+   "tags": [
+    "eq",
+    "saturation",
+    "warm",
+    "vintage"
+   ],
+   "use_for": "Band boosts with tube-style drive for warm, coloured tone shaping."
+  },
+  "Joachims Hyperion": {
+   "category": "EQ & Filter",
+   "tags": [
+    "eq",
+    "clean"
+   ],
+   "use_for": "Graphic EQ with a band for every third of an octave, for fine tonal correction."
+  },
+  "Joachims Jupiter 3": {
+   "category": "Dynamics",
+   "tags": [
+    "multiband",
+    "compressor",
+    "master"
+   ],
+   "use_for": "Three-band compressor with stereo width and a beefing control, for mastering and bus work."
+  },
+  "Joachims Mars filter 2": {
+   "category": "Distortion",
+   "tags": [
+    "distortion",
+    "saturation",
+    "warm",
+    "gritty"
+   ],
+   "use_for": "Thirteen distortion characters, from soft and round to tube-like and harsh."
+  },
+  "Joachims Neptune 1.2": {
+   "category": "Modulation",
+   "tags": [
+    "spectral",
+    "pitch-shift"
+   ],
+   "use_for": "Spectral effects through an FFT: pitch shifting, bin scrambling and spectral boosting (adds latency)."
+  },
+  "Joachims Saturn 1.4": {
+   "category": "Distortion",
+   "tags": [
+    "bitcrush",
+    "saturation",
+    "gritty",
+    "vintage"
+   ],
+   "use_for": "Lo-fi character in one: noise, bit and sample-rate reduction, detune, ring modulation and tube drive."
+  },
+  "JumpLoop": {
+   "category": "Control",
+   "tags": [
+    "sequencer"
+   ],
+   "use_for": "Jump or loop the song position from a pattern, for live arrangement tricks."
+  },
+  "kibibu Green Milk": {
+   "category": "Synths",
+   "tags": [
+    "subtractive",
+    "lead",
+    "pad",
+    "bright"
+   ],
+   "use_for": "Unison saw stacks and chord-shaped leads and pads with an envelope-driven filter."
+  },
+  "KrimZon AY-3-8910": {
+   "category": "Synths",
+   "tags": [
+    "chiptune",
+    "polyphonic"
+   ],
+   "use_for": "Raw three-voice retro sound-chip tones, with arpeggio-style sub-notes per track."
+  },
+  "ManagedMultiIOEffect": {
+   "category": "Utility",
+   "tags": [
+    "routing"
+   ],
+   "use_for": "A developer example of an effect with several inputs and outputs; not meant for music."
+  },
+  "Matilde Tracker2": {
+   "category": "Samplers",
+   "tags": [
+    "sampler"
+   ],
+   "use_for": "Tracker-style sample playback with tuning and quantised offsets."
+  },
+  "mixIO": {
+   "category": "Utility",
+   "tags": [
+    "mixing",
+    "gain",
+    "stereo-width"
+   ],
+   "use_for": "Per-track gain, width, mute and solo for balancing several inputs."
+  },
+  "Modern Sequence Editor": {
+   "category": "Control",
+   "tags": [
+    "sequencer"
+   ],
+   "use_for": "Edit the song's sequence in its own window."
+  },
+  "Neo Analyzer": {
+   "category": "Utility",
+   "tags": [
+    "metering"
+   ],
+   "use_for": "Watch the spectrum of any signal, with peak hold, without changing it."
+  },
+  "Neo Clipper": {
+   "category": "Distortion",
+   "tags": [
+    "distortion",
+    "drum-bus",
+    "master",
+    "punchy"
+   ],
+   "use_for": "Shave peaks off drums, buses or the master with a hard, soft or knee clip."
+  },
+  "Neo Comp": {
+   "category": "Dynamics",
+   "tags": [
+    "compressor",
+    "glue",
+    "sidechain",
+    "mix-bus",
+    "vocal",
+    "punchy"
+   ],
+   "use_for": "Level control and bus glue with four characters, sidechain and parallel mix."
+  },
+  "Neo De-esser": {
+   "category": "Dynamics",
+   "tags": [
+    "de-esser",
+    "vocal"
+   ],
+   "use_for": "Tame harsh s and t sounds in vocals and bright sources."
+  },
+  "Neo Delay": {
+   "category": "Delay & Reverb",
+   "tags": [
+    "delay",
+    "echo",
+    "tempo-sync",
+    "stereo-width"
+   ],
+   "use_for": "Tempo-synced or free stereo delay: ping-pong, dub and tape-style echoes."
+  },
+  "Neo Dither": {
+   "category": "Utility",
+   "tags": [
+    "dither",
+    "master"
+   ],
+   "use_for": "Reduce bit depth at the very end of a master without audible quantisation noise."
+  },
+  "Neo Drive": {
+   "category": "Distortion",
+   "tags": [
+    "saturation",
+    "warm",
+    "gritty",
+    "tape"
+   ],
+   "use_for": "Add warmth, grit or fold-back harmonics with tape, tube, transistor, diode and folder models."
+  },
+  "Neo Drums": {
+   "category": "Drums",
+   "tags": [
+    "drums",
+    "kick",
+    "percussion",
+    "punchy"
+   ],
+   "use_for": "A complete synthesised drum kit: kick, snare, clap, rim and hats with a pattern-friendly keymap."
+  },
+  "Neo Ensemble": {
+   "category": "Modulation",
+   "tags": [
+    "chorus",
+    "flanger",
+    "phaser",
+    "lush",
+    "stereo-width"
+   ],
+   "use_for": "Chorus, flanger and phaser in one for width, movement and ensemble thickness."
+  },
+  "Neo EQ": {
+   "category": "EQ & Filter",
+   "tags": [
+    "eq",
+    "clean",
+    "mix-bus",
+    "vocal",
+    "master"
+   ],
+   "use_for": "Eight-band parametric EQ for corrective cuts and broad tone shaping, minimum or linear phase."
+  },
+  "Neo Exciter": {
+   "category": "Distortion",
+   "tags": [
+    "exciter",
+    "bright",
+    "master"
+   ],
+   "use_for": "Add air and presence per band with harmonics only, leaving the original signal untouched."
+  },
+  "Neo Filter": {
+   "category": "EQ & Filter",
+   "tags": [
+    "filter",
+    "lfo",
+    "wah",
+    "tempo-sync"
+   ],
+   "use_for": "Resonant ladder or state-variable filter with drive, envelope follower and tempo-synced LFO."
+  },
+  "Neo FM6": {
+   "category": "Synths",
+   "tags": [
+    "fm",
+    "polyphonic",
+    "keys",
+    "bright",
+    "pluck"
+   ],
+   "use_for": "Bells, electric pianos, FM basses and metallic percussion from six operators and many algorithms."
+  },
+  "Neo Gate": {
+   "category": "Dynamics",
+   "tags": [
+    "gate",
+    "drum-bus",
+    "sidechain"
+   ],
+   "use_for": "Clean up noise, bleed and tails with a gate or downward expander, optionally keyed from a sidechain."
+  },
+  "Neo Imager": {
+   "category": "Utility",
+   "tags": [
+    "stereo-width",
+    "master",
+    "mix-bus"
+   ],
+   "use_for": "Widen or narrow the stereo image per band while keeping the mix mono-compatible."
+  },
+  "Neo Limiter": {
+   "category": "Dynamics",
+   "tags": [
+    "limiter",
+    "master",
+    "mix-bus"
+   ],
+   "use_for": "True-peak limiting for loudness and safe peaks on the master or a bus."
+  },
+  "Neo Low End": {
+   "category": "Utility",
+   "tags": [
+    "bass",
+    "mix-bus",
+    "master"
+   ],
+   "use_for": "Tighten, focus or mono-ise the bass and kick of a mix or master."
+  },
+  "Neo Multiband": {
+   "category": "Dynamics",
+   "tags": [
+    "multiband",
+    "compressor",
+    "glue",
+    "master",
+    "mix-bus"
+   ],
+   "use_for": "Control one frequency band at a time on buses and masters, compressing or expanding upwards."
+  },
+  "Neo Poly": {
+   "category": "Synths",
+   "tags": [
+    "subtractive",
+    "polyphonic",
+    "warm",
+    "bass",
+    "lead",
+    "pad",
+    "vintage"
+   ],
+   "use_for": "Warm analog-style polysynth for pads, basses, leads, plucks and chords."
+  },
+  "Neo Sampler": {
+   "category": "Samplers",
+   "tags": [
+    "sampler",
+    "polyphonic",
+    "keys"
+   ],
+   "use_for": "Play the song's waves across the keyboard with key zones, loops and filters."
+  },
+  "Neo Scope": {
+   "category": "Utility",
+   "tags": [
+    "metering"
+   ],
+   "use_for": "Watch the waveform or stereo image of any signal without changing it."
+  },
+  "Neo Strip": {
+   "category": "Dynamics",
+   "tags": [
+    "compressor",
+    "eq",
+    "gate",
+    "saturation",
+    "limiter",
+    "vocal",
+    "mixing"
+   ],
+   "use_for": "A full channel strip in one machine: gate, EQ, compression, drive and limiting."
+  },
+  "Neo Tape": {
+   "category": "Distortion",
+   "tags": [
+    "tape",
+    "saturation",
+    "warm",
+    "vintage",
+    "glue"
+   ],
+   "use_for": "Tape character: soft saturation, bias and playback response to warm and glue a source or bus."
+  },
+  "Neo Transient": {
+   "category": "Dynamics",
+   "tags": [
+    "transient",
+    "drum-bus",
+    "punchy"
+   ],
+   "use_for": "Add or remove attack and sustain on drums, buses and masters."
+  },
+  "Neo Utility": {
+   "category": "Utility",
+   "tags": [
+    "gain",
+    "stereo-width",
+    "routing"
+   ],
+   "use_for": "Gain staging and stereo fixes: trim, balance, width, bass mono, polarity and mid/side conversion."
+  },
+  "Neo Verb": {
+   "category": "Delay & Reverb",
+   "tags": [
+    "reverb",
+    "lush",
+    "vocal"
+   ],
+   "use_for": "Algorithmic reverb with hall, room, chamber and plate spaces, freeze and a sidechain."
+  },
+  "Neo Wave": {
+   "category": "Synths",
+   "tags": [
+    "wavetable",
+    "polyphonic",
+    "bright",
+    "pad",
+    "lead",
+    "bass"
+   ],
+   "use_for": "Wavetable pads, sweeps, wobble basses and vowel-like leads from two warped table oscillators."
+  },
+  "Oomek Aggressor 303": {
+   "category": "Synths",
+   "tags": [
+    "acid",
+    "bass",
+    "monophonic",
+    "subtractive"
+   ],
+   "use_for": "Acid bass lines: a resonant low-pass with envelope, accent and slide."
+  },
+  "Oomek Exciter": {
+   "category": "Distortion",
+   "tags": [
+    "exciter",
+    "bright"
+   ],
+   "use_for": "Add presence and sparkle by blending high-passed, shaped harmonics back in."
+  },
+  "Oomek Masterizer": {
+   "category": "Dynamics",
+   "tags": [
+    "limiter",
+    "multiband",
+    "master"
+   ],
+   "use_for": "Three-band limiter for the master, with input gain and per-band thresholds."
+  },
+  "Pedal Chord": {
+   "category": "Control",
+   "tags": [
+    "chords",
+    "arpeggio"
+   ],
+   "use_for": "Turn each note in a track into a chord or arpeggio on a target machine, with many voicings."
+  },
+  "Pedal Chorus": {
+   "category": "Modulation",
+   "tags": [
+    "chorus",
+    "lush",
+    "stereo-width"
+   ],
+   "use_for": "Four-voice stereo chorus that widens without much pitch wobble."
+  },
+  "Pedal Comp": {
+   "category": "Dynamics",
+   "tags": [
+    "compressor",
+    "clean",
+    "glue"
+   ],
+   "use_for": "Feed-forward compressor with soft knee, lookahead and parallel mix for drums and buses."
+  },
+  "Pedal Drum Matrix": {
+   "category": "Distortion",
+   "tags": [
+    "bitcrush",
+    "filter",
+    "drum-bus",
+    "gritty"
+   ],
+   "use_for": "A six-slot rack of drum effects (bit crush, drive, filters, comb, ring mod and more) to mangle drums."
+  },
+  "Pedal EQ": {
+   "category": "EQ & Filter",
+   "tags": [
+    "eq",
+    "clean",
+    "mix-bus"
+   ],
+   "use_for": "Four-band parametric EQ with shelves, bells and per-band solo."
+  },
+  "Pedal Filter": {
+   "category": "EQ & Filter",
+   "tags": [
+    "filter",
+    "clean"
+   ],
+   "use_for": "Stereo multimode filter with several slopes, drive and a comb mode."
+  },
+  "Pedal FM": {
+   "category": "Synths",
+   "tags": [
+    "fm",
+    "polyphonic",
+    "keys",
+    "bright"
+   ],
+   "use_for": "Four-operator FM keys, bells and basses with eight algorithms."
+  },
+  "Pedal Gain": {
+   "category": "Utility",
+   "tags": [
+    "gain"
+   ],
+   "use_for": "Stereo gain in percent with a smooth mute."
+  },
+  "Pedal Gain Multi": {
+   "category": "Utility",
+   "tags": [
+    "mixing",
+    "gain"
+   ],
+   "use_for": "A small mixer of up to 24 inputs, each with fader, pan and mono."
+  },
+  "Pedal Gate": {
+   "category": "Dynamics",
+   "tags": [
+    "gate",
+    "drum-bus"
+   ],
+   "use_for": "Noise gate with hysteresis, hold and peak or RMS detection."
+  },
+  "Pedal Juno106": {
+   "category": "Synths",
+   "tags": [
+    "subtractive",
+    "polyphonic",
+    "warm",
+    "pad",
+    "vintage"
+   ],
+   "use_for": "Warm six-voice analog-style pads, stabs and basses with a resonant low-pass."
+  },
+  "Pedal LFO": {
+   "category": "Control",
+   "tags": [
+    "lfo",
+    "automation"
+   ],
+   "use_for": "Move another machine's parameter with a low-frequency wave."
+  },
+  "Pedal M1": {
+   "category": "Samplers",
+   "tags": [
+    "sampler",
+    "keys",
+    "pad",
+    "polyphonic"
+   ],
+   "use_for": "Two-oscillator sample synth for sampled keys, pads and layered textures."
+  },
+  "Pedal MComp": {
+   "category": "Dynamics",
+   "tags": [
+    "multiband",
+    "compressor",
+    "glue",
+    "master"
+   ],
+   "use_for": "Four-band compressor for gluing and balancing a bus or master."
+  },
+  "Pedal Peer Control": {
+   "category": "Control",
+   "tags": [
+    "automation"
+   ],
+   "use_for": "Drive parameters of other machines from track values through mapping curves."
+  },
+  "Pedal Plate": {
+   "category": "Delay & Reverb",
+   "tags": [
+    "reverb",
+    "lush",
+    "vocal"
+   ],
+   "use_for": "Smooth plate reverb for vocals and snares, with pre-delay and a low cut."
+  },
+  "Pedal SH101": {
+   "category": "Synths",
+   "tags": [
+    "subtractive",
+    "monophonic",
+    "bass",
+    "lead",
+    "vintage"
+   ],
+   "use_for": "Monophonic basses and leads with sub oscillator, glide and a resonant ladder filter."
+  },
+  "Pedal Shaper": {
+   "category": "Distortion",
+   "tags": [
+    "distortion",
+    "saturation"
+   ],
+   "use_for": "Waveshaping distortion with several curves and a tilt EQ before the shaper."
+  },
+  "Pedal Tracker": {
+   "category": "Samplers",
+   "tags": [
+    "sampler"
+   ],
+   "use_for": "A sixteen-track tracker that plays waves from the song's wavetable."
+  },
+  "Polac Audio In": {
+   "category": "Utility",
+   "tags": [
+    "audio-io"
+   ],
+   "use_for": "Bring an audio input into the song as a source (older routing machine)."
+  },
+  "Polac Audio Out": {
+   "category": "Utility",
+   "tags": [
+    "audio-io"
+   ],
+   "use_for": "Send audio to an output of the audio device (older routing machine)."
+  },
+  "Polac MIDI Bus II": {
+   "category": "Control",
+   "tags": [
+    "midi",
+    "routing"
+   ],
+   "use_for": "Route MIDI between machines (older routing machine)."
+  },
+  "Polac MIDI In": {
+   "category": "Control",
+   "tags": [
+    "midi"
+   ],
+   "use_for": "Receive MIDI from a device into the song (older routing machine)."
+  },
+  "Polac Out": {
+   "category": "Utility",
+   "tags": [
+    "audio-io",
+    "gain"
+   ],
+   "use_for": "Output stage with volume and panning to the audio device (older routing machine)."
+  },
+  "Polac Out II": {
+   "category": "Utility",
+   "tags": [
+    "audio-io",
+    "gain"
+   ],
+   "use_for": "Output stage with a volume control to the audio device (older routing machine)."
+  },
+  "Polac VST 1.1": {
+   "category": "Utility",
+   "tags": [
+    "plugin-host"
+   ],
+   "use_for": "Host a 32-bit effect plugin in the graph (older host; Windows only)."
+  },
+  "Polac VSTi 1.1": {
+   "category": "Utility",
+   "tags": [
+    "plugin-host"
+   ],
+   "use_for": "Host a 32-bit instrument plugin in the graph (older host; Windows only)."
+  },
+  "QuickNote": {
+   "category": "Control",
+   "tags": [
+    "notes"
+   ],
+   "use_for": "A notes window for the song; it does nothing to the sound."
+  },
+  "ReBuzz Audio In": {
+   "category": "Utility",
+   "tags": [
+    "audio-io"
+   ],
+   "use_for": "Bring the audio device's input into the song."
+  },
+  "ReBuzz Audio Out": {
+   "category": "Utility",
+   "tags": [
+    "audio-io"
+   ],
+   "use_for": "Send what is connected to it to other outputs of the audio device."
+  },
+  "ReBuzz Groove": {
+   "category": "Control",
+   "tags": [
+    "groove"
+   ],
+   "use_for": "Swing for the whole song: up to eight steps that stretch or squeeze each tick."
+  },
+  "ReBuzz Midi Output": {
+   "category": "Control",
+   "tags": [
+    "midi"
+   ],
+   "use_for": "Send notes and controller changes from its tracks to a MIDI output device."
+  },
+  "Rout 909": {
+   "category": "Drums",
+   "tags": [
+    "drums",
+    "kick",
+    "percussion",
+    "punchy"
+   ],
+   "use_for": "Complete synthesised drum machine with kick, snare, toms, rim, clap, hats, crash and ride."
+  },
+  "Session Clip Player": {
+   "category": "Samplers",
+   "tags": [
+    "sampler",
+    "looper",
+    "recording"
+   ],
+   "use_for": "An audio track for the Session View: play audio clips and record takes into them."
+  },
+  "SpectrumBlock": {
+   "category": "Utility",
+   "tags": [
+    "metering"
+   ],
+   "use_for": "A spectrum and level display with its own window."
+  },
+  "TrackScript": {
+   "category": "Control",
+   "tags": [
+    "automation"
+   ],
+   "use_for": "A scripting helper that drives other machines from code in its own window; it makes no sound."
+  },
+  "Yitten Mongoose": {
+   "category": "Control",
+   "tags": [
+    "sequencer"
+   ],
+   "use_for": "An older control machine steered by a Bar control; it makes no sound of its own."
+  }
+ }
+}

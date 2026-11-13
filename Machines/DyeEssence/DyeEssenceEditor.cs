@@ -34,7 +34,7 @@ namespace NeoBuzz.DyeEssence
         const double ModPageWidth = 592, MacrosWidth = 164, RoutesWidth = 400, LfoViewWidth = ModPageWidth + MacrosWidth - 250;
 
         /// <summary>The pages, in order.</summary>
-        internal static readonly string[] PageNames = { "Oscillators", "Mix & filters", "Modulation", "Arp & Seq" };
+        internal static readonly string[] PageNames = { "Oscillators", "Mix & filters", "Modulation", "Arp & Seq", "Effects" };
 
         protected override string Title => "Dye Essence";
         protected override NeoColor Accent => AccentColor;
@@ -294,6 +294,7 @@ namespace NeoBuzz.DyeEssence
                     S("LFOs", lfos)),
                 S("Routes", new RouteList(ctx, RoutesWidth))));
             pages.Add(PageNames[3], ArpPage(ctx, machine, Knobs, S));
+            pages.Add(PageNames[4], new FxPage(ctx, machine, S).Build());
             return pages;
         }
 

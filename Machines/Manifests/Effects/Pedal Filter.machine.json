@@ -6,6 +6,12 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed",
  "type": "filter",
  "summary": "Stereo multimode filter (low-, high-, band-pass, notch, comb) with 12 or 24 dB/oct slopes, pre-filter drive, an LFO (free or tempo-synced) and stereo phase offset. For sweeps, wah and auto-filter, and comb resonance.",
+ "category": "EQ & Filter",
+ "tags": [
+  "filter",
+  "clean"
+ ],
+ "use_for": "Stereo multimode filter with several slopes, drive and a comb mode.",
  "quirks": [
   "At the defaults it is a 2 kHz low-pass: it cuts the highs (−9.5 dB on noise in the profile).",
   "In Comb mode Cutoff is the comb's fundamental and Resonance its feedback; Slope then picks FIR (flanging) or IIR (resonator).",

@@ -351,7 +351,7 @@ namespace ReBuzz.Studio.Tests
                 var boxes = page.GetLogicalDescendants().OfType<ComboBox>().ToList();
                 ComboBox machineBox = boxes[0], patternBox = boxes[1];
 
-                // Click the grid's first field on row 0, Tab to track 0's Note column, type.
+                // Click the grid's first field on row 0 (track 0's Note column: the notes come first), type.
                 void TypeNotes(params PhysicalKey[] keys)
                 {
                     Settle();
@@ -359,7 +359,6 @@ namespace ReBuzz.Studio.Tests
                     var body = (Control)grid.Body;
                     Point field = grid.FieldCenter(0, 0, 0, 0);
                     Click(window, body.TranslatePoint(field, window)!.Value);
-                    Key(window, PhysicalKey.Tab);
                     Keys(window, keys);
                 }
                 (int, int)[] Notes(IPattern p) => p.PatternEditorMachineEvents.First(c => c.Parameter.Name == "Note").Events.Select(e => (e.Time, e.Value)).OrderBy(e => e.Time).ToArray();
