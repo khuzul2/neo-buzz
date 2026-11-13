@@ -18,7 +18,7 @@ namespace ReBuzz.Agent.App
 {
     internal static class SettingsTools
     {
-        public static readonly string[] Sections = { "general", "audio", "midi", "appearance", "agent", "safety", "advanced" };
+        public static readonly string[] Sections = { "general", "audio", "midi", "sync", "appearance", "agent", "safety", "advanced" };
 
         public static void Register(ToolRegistry tools, IAppServices app)
         {
@@ -27,7 +27,7 @@ namespace ReBuzz.Agent.App
                 Name = "settings_get",
                 Title = "Read settings",
                 Description =
-                    "Reads the app's preferences: general, audio, midi, appearance, agent, safety (the safety limiter, the machine guard) and advanced (the engine's flags). " +
+                    "Reads the app's preferences: general, audio, midi, sync (Ableton Link and MIDI clock), appearance, agent, safety (the safety limiter, the machine guard) and advanced (the engine's flags). " +
                     "Each has its key (\"section.Name\"), value, default, type, choices or range, what it does and whether it needs a restart. " +
                     "class engine and class safety are the ones to be careful with. Pass key for one, section, search or changed_only to narrow. Example: settings_get(section=\"audio\").",
                 Input = Object(null,

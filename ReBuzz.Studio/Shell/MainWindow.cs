@@ -479,6 +479,7 @@ namespace ReBuzz.Studio.Shell
                 () => inspector is { IsOpen: true, CurrentTab: Views.Inspector.InspectorPanel.SongTab });
             yield return MenuEntry.Separator;
             yield return Command("view.browser", mac, () => browser?.Toggle(), () => browser != null, () => browser?.IsOpen == true);
+            yield return Command("view.addmachine", mac, AddMachine, () => host.Core != null);
             yield return Command("view.inspector", mac, () => inspector?.Toggle(), () => inspector != null, () => inspector?.IsOpen == true);
             yield return Command("view.detail", mac, () => detail?.Toggle(), () => detail != null, () => detail?.IsOpen == true);
             yield return Command("view.pianoroll", mac, ShowPianoRoll, () => detail != null, () => detail?.IsOpen == true && detail.IsPianoRoll);
@@ -702,6 +703,7 @@ namespace ReBuzz.Studio.Shell
             Bind("view.pianoroll", ShowPianoRoll);
             Bind("view.maximise", () => ToggleTrackerMaximised(), k => k.Key == Key.F);
             Bind("view.browser", () => browser?.Toggle());
+            Bind("view.addmachine", AddMachine);
             Bind("view.inspector", () => inspector?.Toggle());
             Bind("view.detail", () => detail?.Toggle());
             Bind("view.device", ShowDevice);
@@ -722,8 +724,6 @@ namespace ReBuzz.Studio.Shell
         void OnSingleKey(object sender, KeyEventArgs e)
         {
             if (e.Handled || tabs.ItemCount == 0 || e.KeyModifiers != KeyModifiers.None || !SingleKeysWork || TransportKeys.KeepsSpace(e.Source)) return;
-            // P3d (decision 58): on the Machine View's canvas with nothing selected a letter is typing, which seeds the browser's search.
-            if (e.Key >= Key.A && e.Key <= Key.Z && FocusManager?.GetFocusedElement() is Views.Machines.MachineCanvas { TypesToSearch: true }) return;
             foreach (var (id, run) in singleKeys)
             {
                 if (StudioKeymap.Get(id).Gestures().Any(g => g.Key == e.Key && g.KeyModifiers == KeyModifiers.None))
@@ -892,6 +892,13 @@ namespace ReBuzz.Studio.Shell
             problems.Show(ProblemBar.Find(core, ShowMachines, m => Views.Machines.MachineEdits.OpenParameters(m),
                 m => Views.Machines.MachineEdits.Mute(core, new[] { m }, false),
                 on => { core.SafeMaster.LimiterOn = on; core.SafeMaster.Save(host.Registry); }));
+        }
+
+        /// <summary>Add Machine… (decision 58): the Machine View, with the machine browser open on it, as a double click on empty canvas does.</summary>
+        internal void AddMachine()
+        {
+            ShowView("Machines");
+            tabs.Items.OfType<TabItem>().Select(t => t.Content).OfType<Views.Machines.MachineView>().FirstOrDefault()?.OpenBrowser();
         }
 
         /// <summary>The Machine View, with these machines selected.</summary>

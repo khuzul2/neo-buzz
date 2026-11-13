@@ -47,7 +47,7 @@ namespace ReBuzz.Studio.Shell.Preferences
             pages.Add(new GeneralPage(model));
             pages.Add(new AudioPage(core, host.Registry, model));
             pages.Add(new MidiPage(core.MidiInOutEngine, host.Registry, model));
-            if (core.SessionSync != null) pages.Add(new SyncPage(core.SessionSync));
+            if (core.SessionSync != null) pages.Add(new SyncPage(core.SessionSync, model));
             pages.Add(new AppearancePage(model));
             if (host.Agent != null) pages.Add(new AgentPage(host.Agent, model));
             pages.Add(new SafetyPage(core, model));

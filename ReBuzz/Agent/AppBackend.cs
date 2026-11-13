@@ -17,6 +17,7 @@ using ReBuzz.Agent.Mcp;
 using ReBuzz.Audio;
 using ReBuzz.Audio.Engine;
 using ReBuzz.Core;
+using ReBuzz.Core.Session;
 
 namespace ReBuzz.Agent
 {
@@ -69,6 +70,7 @@ namespace ReBuzz.Agent
             list.AddRange(Reflect("general", Global.GeneralSettings, SettingClass.Normal));
             list.AddRange(AudioEntries());
             list.AddRange(Reflect("midi", Global.MIDISettings, SettingClass.Normal));
+            list.AddRange(SyncEntries());
             list.AddRange(SafetyEntries());
             list.AddRange(Reflect("advanced", Global.EngineSettings, SettingClass.Engine));
             lock (extra)
@@ -124,6 +126,42 @@ namespace ReBuzz.Agent
                     },
                 };
             }
+        }
+
+        /// <summary>
+        /// Sync (docs/specs/ux-overhaul.md decision 79): Link and MIDI clock are SessionSync's, kept in the settings, not the song; the
+        /// entries put them in the one list, so settings_get, settings_set, settings_reset and settings_history cover them as the window does.
+        /// </summary>
+        IEnumerable<SettingEntry> SyncEntries()
+        {
+            SessionSync Sync() => core.SessionSync ?? throw new InvalidOperationException("Sync isn't available here.");
+            string Flag(bool b) => b ? "True" : "False";
+            yield return new SettingEntry { Key = "sync.Link", Section = "sync", Name = "Link", Kind = SettingKind.Bool, Default = "False",
+                Description = "Ableton Link: tempo and bar phase shared with other Link apps on the network (runs in the ReBuzzLink helper program). Turns MIDI clock in off.",
+                Get = () => Flag(core.SessionSync?.LinkEnabled == true),
+                Set = v =>
+                {
+                    var sync = Sync();
+                    bool on = v == "True";
+                    sync.SetLink(on);
+                    if (sync.LinkEnabled != on) throw new InvalidOperationException(sync.Problem ?? "Link didn't start.");
+                } };
+            yield return new SettingEntry { Key = "sync.LinkStartStop", Section = "sync", Name = "LinkStartStop", Kind = SettingKind.Bool, Default = "False",
+                Description = "Play and stop are shared with Link peers that have start/stop sync on. Needs Link.",
+                Get = () => Flag(core.SessionSync?.LinkStartStop == true), Set = v => Sync().SetLinkStartStop(v == "True") };
+            yield return new SettingEntry { Key = "sync.MidiClockIn", Section = "sync", Name = "MidiClockIn", Kind = SettingKind.Bool, Default = "False",
+                Description = "Follow the MIDI clock coming in (any open MIDI input): tempo and beat, and Start, Continue and Stop. Turns Link off.",
+                Get = () => Flag(core.SessionSync?.FollowMidiClock == true), Set = v => Sync().SetFollowMidiClock(v == "True") };
+            yield return new SettingEntry { Key = "sync.MidiClockOut", Section = "sync", Name = "MidiClockOut", Kind = SettingKind.Text, Default = "",
+                Description = "MIDI outputs that get the MIDI clock while the transport plays, as names separated by \"|\" (the names midi_devices lists); empty for none.",
+                Get = () => string.Join("|", core.SessionSync?.ClockOutNames ?? Array.Empty<string>()),
+                Set = v =>
+                {
+                    var sync = Sync();
+                    var want = v.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct().ToList();
+                    foreach (var name in sync.ClockOutNames.Where(n => !want.Contains(n)).ToList()) sync.SetClockOut(name, false);
+                    foreach (var name in want.Where(n => !sync.ClockOutNames.Contains(n)).ToList()) sync.SetClockOut(name, true);
+                } };
         }
 
         const string AudioDriverUse = "Use audio_set: it opens the device and puts the old one back if no audio flows.";

@@ -14,7 +14,9 @@ using Avalonia.Threading;
 using NUnit.Framework;
 using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
+using ReBuzz.Studio.Views.Machines;
 using ReBuzz.Studio.Views.Session;
+using BuzzGUI.Interfaces;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -88,6 +90,79 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 Core.Playing = false;
+                Core.Modified = false;
+                Dialogs.Responder = null;
+                window.Close();
+            }
+            foreach (var l in lines) TestContext.Out.WriteLine("[ux-measure] " + l);
+        }
+
+        /// <summary>
+        /// P3g (decision 82): the Machine View on the 36-machine song (every Neo and Pedal machine, gallery 510), drawn whole with the meters off
+        /// (what it cost before), on and silent, and on with a level through every wire; and what taking the peaks costs (it runs thirty times a second).
+        /// </summary>
+        [AvaloniaTest]
+        public void ManyMachinesFrameTimes()
+        {
+            Dialogs.Responder = (m, c, b) => UserAnswer.No;
+            Core.Modified = false;
+            Core.ExecuteCommand(BuzzGUI.Interfaces.BuzzCommand.NewFile);
+            Settle();
+            var gear = Core.MachineDLLs.Values.Where(d => d?.Info != null && d.Info.Type != MachineType.Master && (d.Name.StartsWith("Neo ") || d.Name == "Dye Essence" || d.Name.StartsWith("Pedal ")))
+                .Select(d => d.Name).OrderBy(x => x).ToList();
+            int cols = 6;
+            for (int k = 0; k < gear.Count; k++)
+            {
+                float x = -0.9f + 1.6f * (k % cols) / (cols - 1), y = -0.85f + 1.6f * (k / cols) / System.Math.Max(1, (gear.Count - 1) / cols);
+                var instrument = Core.Instruments.First(i => i.MachineDLL?.Name == gear[k]);
+                MachineEdits.Create(Core, instrument, x, y);
+            }
+            // Every machine into the Master, so there is a wire to draw for each (the song a big project has).
+            var master = Core.SongCore.Machines.First(m => m.DLL.Info.Type == MachineType.Master);
+            foreach (var m in Core.SongCore.Machines.ToList())
+                if (m != master) MachineEdits.Connect(Core, m, master);
+            Core.Modified = false;
+            var window = new MainWindow(Studio.Host) { Width = 1440, Height = 900 };
+            window.Show();
+            Settle();
+            var lines = new List<string>();
+            try
+            {
+                window.ShowView("Machines");
+                Settle();
+                var canvas = window.Tabs.Items.OfType<Avalonia.Controls.TabItem>().Select(t => t.Content).OfType<MachineView>().First().Canvas;
+                int wires = canvas.Wires.Count();
+                lines.Add($"machines {Core.SongCore.Machines.Count}, wires {wires}");
+                using var target = new RenderTargetBitmap(new PixelSize(1440, 900));
+                double Frame(string what)
+                {
+                    Settle();
+                    double ms = Median(40, () =>
+                    {
+                        canvas.InvalidateVisual();
+                        window.UpdateLayout();
+                        target.Render(window);
+                    });
+                    lines.Add($"draw Machines, {what}: {ms:0.00} ms  (load {System.IO.File.ReadAllText("/proc/loadavg").Split(' ')[0]})");
+                    return ms;
+                }
+                var wireList = canvas.Wires.ToList();
+                canvas.MetersShown = false;
+                Frame("meters off");
+                canvas.MetersShown = true;
+                canvas.PeakSource = c => (0, 0);
+                canvas.TickMeters(1);
+                Frame("meters on, silent");
+                int n = 0;
+                var level = new Dictionary<IMachineConnection, float>();
+                foreach (var c in wireList) level[c] = 32768f * (float)System.Math.Pow(10, -(n++ % 12) * 4.0 / 20);   // 0 to -44 dB across the wires
+                canvas.PeakSource = c => (level[c], level[c] * 0.8f);
+                canvas.TickMeters(1);
+                Frame("meters on, a level on every wire");
+                lines.Add($"taking the peaks (30 a second): {Median(300, () => canvas.TickMeters(1.0 / 30)):0.000} ms");
+            }
+            finally
+            {
                 Core.Modified = false;
                 Dialogs.Responder = null;
                 window.Close();

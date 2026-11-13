@@ -137,7 +137,7 @@ namespace ReBuzz.AgentTests
             public string Folder = Path.Combine(Path.GetTempPath(), "app-control-" + Guid.NewGuid().ToString("N"));
             public Dictionary<string, string> Values = new() { ["general.PatternLength"] = "16", ["general.AutomaticBackups"] = "True", ["general.SequenceView"] = "ModernVertical",
                 ["advanced.Multithreading"] = "True", ["advanced.AudioBufferFillThread"] = "False", ["agent.AllowAgents"] = "True", ["agent.Port"] = "7481",
-                ["safety.SafetyLimiter"] = "True", ["audio.BufferSize"] = "256" };
+                ["safety.SafetyLimiter"] = "True", ["audio.BufferSize"] = "256", ["sync.Link"] = "False", ["sync.MidiClockOut"] = "" };
             public List<(string What, bool Changes)> Calls = new();
             public FakeMidi MidiFake = new();
             public FakeAudio? AudioFake = new();
@@ -176,6 +176,8 @@ namespace ReBuzz.AgentTests
                 E("agent.Port", SettingKind.Int, "7481", "The agent port.", min: 1, max: 65535, ends: true),
                 E("safety.SafetyLimiter", SettingKind.Bool, "True", "The safety limiter.", cls: SettingClass.Safety),
                 E("audio.BufferSize", SettingKind.Int, "256", "Frames per buffer.", use: "Use audio_set."),
+                E("sync.Link", SettingKind.Bool, "False", "Ableton Link.", set: v => { if (v == "True") throw new InvalidOperationException("The Link helper is missing."); }),
+                E("sync.MidiClockOut", SettingKind.Text, "", "Outputs that get the MIDI clock, names separated by |."),
             };
 
             public string SettingsHistoryFile => Path.Combine(Folder, "settings-history.jsonl");
@@ -264,7 +266,7 @@ namespace ReBuzz.AgentTests
         {
             var (s, _) = Make();
             var all = Call(s, "settings_get");
-            Assert.That(all.Data["total"]!.GetValue<int>(), Is.EqualTo(9));
+            Assert.That(all.Data["total"]!.GetValue<int>(), Is.EqualTo(11));
             var one = Call(s, "settings_get", Args(("key", "general.PatternLength")));
             var row = one.Data["settings"]![0]!;
             Assert.That(row["value"]!.GetValue<string>(), Is.EqualTo("16"));
@@ -278,6 +280,29 @@ namespace ReBuzz.AgentTests
             var err = Call(s, "settings_get", Args(("key", "general.PatternLenght")));
             Assert.That(err.Error, Is.True);
             Assert.That(err.Text, Does.Contain("Did you mean \"general.PatternLength\""));
+        }
+
+        [Test]
+        public void SyncIsASectionLikeTheOthers()
+        {
+            var (s, app) = Make();
+            Assert.That(Call(s, "settings_get", Args(("section", "sync"))).Data["settings"]!.AsArray().Select(x => x!["key"]!.GetValue<string>()), Is.EqualTo(new[] { "sync.Link", "sync.MidiClockOut" }));
+            var set = Call(s, "settings_set", Args(("key", "sync.MidiClockOut"), ("value", "Port A|Port B")));
+            Assert.That(set.Data["changed"]!.GetValue<bool>(), Is.True);
+            Assert.That(app.Values["sync.MidiClockOut"], Is.EqualTo("Port A|Port B"));
+            var entry = Call(s, "settings_history", Args(("key", "sync.MidiClockOut"))).Data["entries"]![0]!;
+            Assert.That((entry["source"]!.GetValue<string>(), entry["from"]!.GetValue<string>()), Is.EqualTo(("Agent", "")));
+
+            // A Link that doesn't start is the tool's error with the reason, and nothing is logged.
+            var refused = Call(s, "settings_set", Args(("key", "sync.Link"), ("value", true)));
+            Assert.That(refused.Error, Is.True);
+            Assert.That(refused.Text, Does.Contain("The Link helper is missing."));
+            Assert.That(Call(s, "settings_history", Args(("key", "sync.Link"))).Data["count"]!.GetValue<int>(), Is.EqualTo(0));
+
+            // The section resets as any other.
+            var reset = Call(s, "settings_reset", Args(("section", "sync")));
+            Assert.That(reset.Data["reset"]!.AsArray().Select(x => x!["key"]!.GetValue<string>()), Is.EqualTo(new[] { "sync.MidiClockOut" }));
+            Assert.That(app.Values["sync.MidiClockOut"], Is.EqualTo(""));
         }
 
         [Test]

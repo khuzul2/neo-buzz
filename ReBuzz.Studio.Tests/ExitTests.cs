@@ -425,8 +425,8 @@ namespace ReBuzz.Studio.Tests
                 Assert.That((song.LoopStart, song.LoopEnd, song.SongEnd), Is.EqualTo((16, 32, 32)), "the loop's end, then the song's (Ctrl+E twice)");
 
                 // The tempo, typed into the transport's BPM box; looping on with its button.
-                var bpmBox = window.Transport.GetVisualDescendants().OfType<TextBox>().First();
-                Click(window, CentreOf(bpmBox, window));
+                var bpmBox = window.Transport.Tempo.Box;
+                MachineViewTests.DoubleClick(window, CentreOf(bpmBox, window));           // a double click on the tempo types it (a drag changes it)
                 bpmBox.SelectAll();
                 Type("132");
                 Key(window, PhysicalKey.Enter);

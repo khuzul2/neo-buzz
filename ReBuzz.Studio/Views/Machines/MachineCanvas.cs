@@ -16,6 +16,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
+using ReBuzz.Core.Session;
 
 namespace ReBuzz.Studio.Views.Machines
 {
@@ -134,6 +135,7 @@ namespace ReBuzz.Studio.Views.Machines
         protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
         {
             base.OnAttachedToVisualTree(e);
+            StartMeters();
             Watch(core.SongCore);
             core.PropertyChanged += OnCoreChanged;
             StudioSelection.For(core).Changed += FollowSelection;
@@ -142,6 +144,7 @@ namespace ReBuzz.Studio.Views.Machines
 
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
+            StopMeters();
             core.PropertyChanged -= OnCoreChanged;
             StudioSelection.For(core).Changed -= FollowSelection;
             Watch(null);
@@ -235,6 +238,111 @@ namespace ReBuzz.Studio.Views.Machines
         {
             if (Dispatcher.UIThread.CheckAccess()) InvalidateVisual();
             else Dispatcher.UIThread.Post(InvalidateVisual);
+        }
+
+        #endregion
+
+        #region Meters (P3g, decision 82)
+
+        // The boxes and the wires brighten with the level that goes through them, from the engine's own post-fader peak of each connection
+        // (SessionMixer.PeakOf: the audio thread measures it only while a view asks, one pass over each block it already has; nothing
+        // else on it), taken here thirty times a second on the UI thread. A box shows the loudest of the wires it sends out (the Master:
+        // of those that come in); a silent song looks as it always did.
+
+        /// <summary>Where a connection's peak comes from (sample units, 32768 is 0 dBFS); the engine's, unless a test or a measurement gives its own.</summary>
+        internal Func<IMachineConnection, (float Left, float Right)> PeakSource { get; set; } = SessionMixer.PeakOf;
+
+        /// <summary>Meters on the boxes and wires (on unless a measurement turns them off).</summary>
+        internal bool MetersShown { get; set; } = true;
+
+        /// <summary>How many times a second the levels are taken.</summary>
+        public const int MeterRate = 30;
+
+        /// <summary>A level falls this much of its -60 to 0 dB scale in a second.</summary>
+        const double MeterFall = 1.0;
+
+        readonly DispatcherTimer meterTimer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(1000.0 / MeterRate) };
+        readonly Dictionary<IMachineConnection, double> wireLevels = new Dictionary<IMachineConnection, double>();
+        readonly Dictionary<IMachine, double> boxLevels = new Dictionary<IMachine, double>();
+        bool metersRunning;
+
+        void StartMeters()
+        {
+            if (metersRunning) return;
+            metersRunning = true;
+            SessionMixer.UseMeters(true);
+            meterTimer.Tick -= OnMeterTick;
+            meterTimer.Tick += OnMeterTick;
+            meterTimer.Start();
+        }
+
+        void StopMeters()
+        {
+            if (!metersRunning) return;
+            metersRunning = false;
+            meterTimer.Stop();
+            meterTimer.Tick -= OnMeterTick;
+            SessionMixer.UseMeters(false);
+            wireLevels.Clear();
+            boxLevels.Clear();
+        }
+
+        void OnMeterTick(object sender, EventArgs e) => TickMeters(1.0 / MeterRate);
+
+        /// <summary>The level of a peak on the meter's scale, 0 (-60 dB and below) to 1 (0 dB).</summary>
+        public static double LevelOf(float peak) => peak <= 0 ? 0 : Math.Clamp((20 * Math.Log10(peak / 32768.0) + 60) / 60, 0, 1);
+
+        /// <summary>Takes the peaks and lets the levels fall by <paramref name="seconds"/>; draws again when a level moved visibly (tests drive it).</summary>
+        internal void TickMeters(double seconds)
+        {
+            if (!MetersShown) return;
+            bool changed = false;
+            boxLevels.Clear();
+            var wires = Wires.ToList();
+            foreach (var c in wires)
+            {
+                var (l, r) = PeakSource(c);
+                double now = LevelOf(Math.Max(l, r));
+                wireLevels.TryGetValue(c, out double before);
+                double level = Math.Max(now, before - MeterFall * seconds);
+                if (level < 0.003) level = 0;
+                if (Math.Abs(level - before) > 0.004 || (level == 0) != (before == 0)) changed = true;
+                wireLevels[c] = level;
+                Raise(c.Source, level);
+                if (c.Destination?.DLL?.Info?.Type == MachineType.Master) Raise(c.Destination, level);
+            }
+            if (wireLevels.Count > wires.Count)
+            {
+                var live = new HashSet<IMachineConnection>(wires);
+                foreach (var gone in wireLevels.Keys.Where(k => !live.Contains(k)).ToList()) wireLevels.Remove(gone);
+            }
+            if (changed) InvalidateVisual();
+
+            void Raise(IMachine m, double level)
+            {
+                if (m == null) return;
+                boxLevels.TryGetValue(m, out double v);
+                if (level > v) boxLevels[m] = level;
+            }
+        }
+
+        /// <summary>A wire's level now, 0 to 1 (tests).</summary>
+        internal double WireLevel(IMachineConnection c) => wireLevels.TryGetValue(c, out double v) ? v : 0;
+
+        /// <summary>A box's level now, 0 to 1 (tests).</summary>
+        internal double BoxLevel(IMachine m) => boxLevels.TryGetValue(m, out double v) ? v : 0;
+
+        static readonly Color MeterGreen = Shell.Design.StudioTokens.Of(NeoBuzz.Editor.Tokens.MeterNormal);
+        static readonly Color MeterYellow = Shell.Design.StudioTokens.Of(NeoBuzz.Editor.Tokens.MeterHot);
+
+        /// <summary>The meter's colour at a level: green, yellow from -6 dB.</summary>
+        static Color MeterColour(double level) => level > 0.9 ? MeterYellow : MeterGreen;
+
+        static Color Mix(Color a, Color b, double t)
+        {
+            t = Math.Clamp(t, 0, 1);
+            byte M(byte x, byte y) => (byte)Math.Round(x + (y - x) * t);
+            return Color.FromRgb(M(a.R, b.R), M(a.G, b.G), M(a.B, b.B));
         }
 
         #endregion
@@ -442,7 +550,7 @@ namespace ReBuzz.Studio.Views.Machines
             {
                 var line = new Pen(colours["MV Line"], 1);
                 foreach (var c in Wires)
-                    DrawWire(ctx, WireOf(c), colours, line);
+                    DrawWire(ctx, WireOf(c), colours, line, level: MetersShown ? WireLevel(c) : 0, track: colours.Colour("MV Line"));
 
                 if (drag == Drag.Connect && connectFrom != null)
                 {
@@ -502,9 +610,27 @@ namespace ReBuzz.Studio.Views.Machines
             }
         }
 
-        static void DrawWire(DrawingContext ctx, WireShape w, Palette colours, IPen line, bool arrow = true)
+        static void DrawWire(DrawingContext ctx, WireShape w, Palette colours, IPen line, bool arrow = true, double level = 0, Color track = default)
         {
             if (!w.Visible) return;
+            if (level > 0.01)
+            {
+                // The level lights the wire: its line colour towards the meter's colour, and a little thicker.
+                var lit = Mix(track, MeterColour(level), 0.35 + 0.65 * level);
+                line = new Pen(new SolidColorBrush(lit), 1 + 1.5 * level);
+                ctx.DrawLine(line, w.Start, w.End);
+                if (!arrow) return;
+                var tri = new StreamGeometry();
+                using (var gc = tri.Open())
+                {
+                    gc.BeginFigure(w.Apex, true);
+                    gc.LineTo(w.Left);
+                    gc.LineTo(w.Right);
+                    gc.EndFigure(true);
+                }
+                ctx.DrawGeometry(new SolidColorBrush(lit), line, tri);
+                return;
+            }
             ctx.DrawLine(line, w.Start, w.End);
             if (!arrow) return;
             var g = new StreamGeometry();
@@ -528,6 +654,15 @@ namespace ReBuzz.Studio.Views.Machines
             // Shadow and body (MachineBackgroundColor = IMachine.GetThemeColor), border (MV Machine Border).
             ctx.DrawRectangle(new SolidColorBrush(BackgroundOf(m, colours)), null, box, 0, 0, Shadow);
             ctx.DrawRectangle(null, new Pen(colours["MV Machine Border"], 1), box.Deflate(0.5));
+
+            // P3g: the level through it brightens the box and fills a strip along its foot, green, yellow from -6 dB.
+            double level = MetersShown ? BoxLevel(m) : 0;
+            if (level > 0.01)
+            {
+                ctx.FillRectangle(new SolidColorBrush(Color.FromArgb((byte)(70 * level), 255, 255, 255)), box);
+                var strip = new Rect(box.X + 2, box.Bottom - 6, (box.Width - 4) * level, 4);
+                ctx.FillRectangle(new SolidColorBrush(MeterColour(level)), strip);
+            }
 
             // Mode: .NET / 32, the MIDI channel, oversampling (ModeText), Arial 8 at 13,2.
             string mode = ModeText(m);
@@ -810,21 +945,10 @@ namespace ReBuzz.Studio.Views.Machines
             else BeginSelect(p, add: mods.HasFlag(CommandKey), e);
         }
 
-        /// <summary>P3d: the machine browser is wanted at a canvas point (logical pixels), a view point, with the text typed so far.</summary>
+        /// <summary>P3d: the machine browser is wanted at a canvas point (logical pixels), and a view point.</summary>
         public event Action<Point, Point, string> BrowseRequested;
 
-        /// <summary>P3d: typing on the canvas with nothing selected seeds the browser's search (with machines selected, M, S and B act on them).</summary>
-        public bool TypesToSearch => selected.Count == 0;
-
-        Point lastView = new Point(80, 80), lastLogical;
-
-        protected override void OnTextInput(TextInputEventArgs e)
-        {
-            base.OnTextInput(e);
-            if (e.Handled || drag != Drag.None || string.IsNullOrEmpty(e.Text) || !char.IsLetterOrDigit(e.Text[0])) return;
-            BrowseRequested?.Invoke(ToLogical(lastView), lastView, e.Text);
-            e.Handled = true;
-        }
+        Point lastLogical;
 
         Point TranslateToAmp(Point view) => Amp?.Parent is Visual parent ? this.TranslatePoint(view, parent) ?? view : view;
 
@@ -849,7 +973,6 @@ namespace ReBuzz.Studio.Views.Machines
                     ScrollTo(panStart - (view - dragLast));
                     break;
                 default:
-                    lastView = view;
                     var port = OutPortAt(p) ?? InPortAt(p);
                     var m = port ?? MachineAt(p);
                     bool overDelete = port == null && m != null && MachineGeometry.DeleteButton(BoxOf(m)).Contains(p);

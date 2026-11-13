@@ -79,7 +79,7 @@ namespace ReBuzz.Studio.Tests
             layout.SetSceneTempo(2, 140);
 
             var view = rig.Show();
-            Assert.That(view.ClockText, Is.EqualTo("–.–.–"), "stopped");
+            Assert.That(rig.Core.SessionCore.Clock, Is.LessThan(0), "stopped");
             rig.Screenshot("session-grid");
 
             rig.Click(view.Scenes[0]);                                 // the scene's button
@@ -92,7 +92,7 @@ namespace ReBuzz.Studio.Tests
             view.RefreshState();
             Assert.That(StateOf(rig, 0, beat), Is.EqualTo(ClipState.Playing));
             Assert.That(StateOf(rig, 1, line), Is.EqualTo(ClipState.Playing));
-            Assert.That(view.ClockText, Does.StartWith("1.2."), "the session clock: bar.beat.tick");
+            Assert.That(ReBuzz.Studio.Shell.TransportBar.PositionOf(rig.Core), Does.StartWith("1.2."), "the session clock, in the top bar: bar.beat.tick");
             // Fork (ux-overhaul.md §3.1): a clip keeps its fill while it plays; the play green is its ▶ on a dark chip and its outline.
             Assert.That(view.SlotAt(0, 0).Background, Is.SameAs(SessionPalette.Clip).Or.SameAs(SessionPalette.Lighten(SessionPalette.Clip, 0.1)),
                 "an uncoloured clip keeps its colour while it plays (it turned green, a colour a user can pick)");
@@ -808,12 +808,15 @@ namespace ReBuzz.Studio.Tests
             var view = rig.Show();
             var panel = view.ClipPanelView;
 
-            // Launch quantization and beats per bar from the top bar.
+            // Launch quantization from the top bar.
             rig.Choose(view.QuantizeBox, 3);                           // 1 beat
             Assert.That(rig.Session.LaunchQuantization, Is.EqualTo(LaunchQuantization.Beat));
-            rig.Choose(view.BeatsBox, 2);                              // 3
+            // (The time signature is the top bar's, P3g: it sets the same beats per bar.)
+            layout.SetBeatsPerBar(3);
             Assert.That(rig.Session.BeatsPerBar, Is.EqualTo(3));
-            rig.Choose(view.BeatsBox, 3);
+            layout.SetBeatsPerBar(4);
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+            view.RefreshState();
 
             // A follows on to B at its end (Next, linked).
             rig.Click(view.SlotAt(0, 0), fx: 0.6);
@@ -851,7 +854,6 @@ namespace ReBuzz.Studio.Tests
             top.MouseUp(p, MouseButton.Left);
             Assert.That(rig.Core.TempoNudge, Is.EqualTo(1f));
             view.RefreshState();
-            Assert.That(view.TempoText, Is.EqualTo($"{rig.Core.BPM} BPM"));
             rig.Screenshot("session-performance");
         }
 

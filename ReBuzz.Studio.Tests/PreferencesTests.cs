@@ -337,7 +337,7 @@ namespace ReBuzz.Studio.Tests
 
                 // Link: on (with the helper beside the tests) or the reason why not; MIDI clock in goes off.
                 page.LinkBox.IsChecked = true;
-                Assert.That(sync.LinkEnabled || page.ProblemText.Length > 0, Is.True, "Link is on, or the page says why not");
+                Assert.That(sync.LinkEnabled || page.LinkBox.IsChecked == false, Is.True, "Link is on, or the box went back (the row says why not)");
                 Assert.That(sync.FollowMidiClock, Is.False, "one or the other");
                 page.LinkBox.IsChecked = false;
                 Assert.That(sync.LinkEnabled, Is.False);

@@ -257,7 +257,7 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        static JsonObject AgentTool(string tool, JsonObject args)
+        internal static JsonObject AgentTool(string tool, JsonObject args)
         {
             var message = new JsonObject
             {

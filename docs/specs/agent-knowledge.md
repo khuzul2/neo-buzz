@@ -76,7 +76,7 @@ Agents may do everything a person can do in the app. Guardrails make mistakes re
 | Area | Tools | Guardrails |
 |---|---|---|
 | MIDI bindings | `midi_bindings_list`, `midi_bind`, `midi_unbind`, `midi_learn` | One undo step each |
-| Settings | `settings_get` and `settings_set` for every preference: General, Audio, MIDI, Appearance, Agent, Safety, Advanced engine flags | Changes go to an audit log (`settings_history`). Restart-required settings say so. Engine flags and safety settings are annotated destructive, so clients can ask the person. `settings_reset` restores one key or the defaults. |
+| Settings | `settings_get` and `settings_set` for every preference: General, Audio, MIDI, Sync (Link and MIDI clock), Appearance, Agent, Safety, Advanced engine flags | Changes go to an audit log (`settings_history`). Restart-required settings say so. Engine flags and safety settings are annotated destructive, so clients can ask the person. `settings_reset` restores one key or the defaults. |
 | Audio device | `audio_status` (device, buffer, rate, latency, xruns); `audio_devices` lists them; `audio_set` changes device, buffer and rate | Auto-revert: if no audio flows within 10 s, or xruns spike, the previous device comes back and the agent is told why |
 | View and UI (studio) | `view_show` (Arrangement, Session, Machines; Tracker or piano roll on a pattern), `machine_open_editor`, `select`, `panel_set` (browser, inspector, detail), `window_layout` | Never steals focus during recording. Every call is visible to the person watching. |
 | Export | `export_audio` (song, loop, stems or per-track) to a WAV path at a chosen bit depth and dither; `export_midi` if cheap | Writes only to a path the agent names. It never overwrites unless asked. |
