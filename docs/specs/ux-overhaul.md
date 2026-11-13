@@ -533,4 +533,4 @@ Frame times (`UxFrameTimeTests.ManyMachinesFrameTimes`, Linux headless, 49 machi
 ### P3h Colour per machine and P3i Empty states (`ux/overhaul-3h`), with the P3g polish
 
 Built: decisions 84-90; **P3h and P3i are done**. Tests: `UxP3hTests` (10 tests). Gallery: mac-018, 019, 029, 034, 044, 046 (empty states), mac-345, 346 (machine colours on the Session View and the Arrangement), mac-341 to 343 redrawn (identity boxes, dB curve); mac-028 searches "feedback" now.
-Frame times in the Mac gallery job (`Frame times, meters on and off`, run {GALLERY}): {FRAMES}
+Frame times in the Mac gallery job (`Frame times, meters on and off`, run 43400724636): Machine View draw, 10 machines, meters off 9.87 ms then 7.11 ms (rounds 1, 2), meters on and silent 7.31 / 7.47 ms, a level on every wire 14.01 / 8.36 ms; Machines 4.22 ms, Sequence 6.44 ms, Session with a scene launched 8.34 ms (load not reported).
