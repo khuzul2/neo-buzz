@@ -112,6 +112,8 @@ namespace ReBuzz.Studio.Shell.Commands
             C("view.browser", "View", "_Browser", "Ctrl+Alt+B", "Alt+Cmd+B", help: "Shows or hides the panel on the left: the machines to add, and the patterns of the selection"),
             C("view.detail", "View", "_Detail", "Ctrl+Alt+D", "Alt+Cmd+D", help: "Shows or hides the panel under the view: the Tracker and the piano roll"),
             C("view.pianoroll", "View", "_Piano Roll", "Ctrl+Alt+4", "Alt+Cmd+4", help: "The detail panel's piano roll: the Tracker's notes as a grid, edited in the same pattern"),
+            C("view.device", "View", "D_evice", "Ctrl+Alt+5", "Alt+Cmd+5", help: "The detail panel's Device page: the selected machine's parameters, grouped and searchable, its editor, and the piano keyboard under it"),
+            C("device.find", "View", "_Find Parameter", "Cmd+F", help: "Searches the parameters of the Device page"),
             C("view.mixer", "View", "Session Mi_xer", "Ctrl+Alt+M", "Alt+Cmd+M", help: "Shows or hides the mixer under the Session View's grid"),
 
             C("window.minimize", "Window", "_Minimize", null, "Cmd+M"),
