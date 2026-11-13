@@ -6,6 +6,7 @@
 // text and the tests are the other types') and the hosts that give a kernel its parameters at every block.
 
 using System;
+using System.Linq;
 using NeoBuzz.Dsp;
 
 namespace NeoBuzz.DyeEssence
@@ -98,6 +99,47 @@ namespace NeoBuzz.DyeEssence
                 Hz(LowCut, "LowCut", "Low cut", 20, 1000, 80),
                 Bip(Spread, "Spread", "Spread"),
                 Pct(Cross, "Cross", "Cross-feed", 0.3),
+            };
+        }
+
+        public static class Conv
+        {
+            public const int Ir = 0, Size = 1, PreDelay = 2, Decay = 3, Damping = 4, LowCut = 5, HighCut = 6, Width = 7, Reverse = 8, Output = 9;
+            /// <summary>The choices of IR: the built-in responses (ImpulseResponses.Names), then the one imported by the user.</summary>
+            public static readonly string[] IrNames = ImpulseResponses.Names.Concat(new[] { "User" }).ToArray();
+            public static int UserChoice => IrNames.Length - 1;
+            /// <summary>The parameters that change the response (all but Output): a change builds a new convolver in the background.</summary>
+            public const int Designed = 9;
+            public static readonly ParamDef[] Table =
+            {
+                Choice(Ir, "IR", "IR", 4, IrNames),
+                D(Size, "Size", "Size", 0, 1000, 1.0, MapKind.Linear, 0.25, 1.5, "x", 2),
+                Sec(PreDelay, "PreDelay", "Pre-delay", 0.001, 0.25, 0.01),
+                Bip(Decay, "Decay", "Decay"),
+                Bip(Damping, "Damping", "Damping"),
+                Hz(LowCut, "LowCut", "Low cut", 20, 1000, 40),
+                Hz(HighCut, "HighCut", "High cut", 1000, 20000, 16000),
+                D(Width, "Width", "Width", 0, 1000, 1.0, MapKind.Linear, 0, 2, "x", 2),
+                D(Reverse, "Reverse", "Reverse", 0, 1, 0, MapKind.Switch),
+                Db(Output, "Output", "Output", -24, 12, 0),
+            };
+        }
+
+        public static class Voc
+        {
+            public const int Source = 0, Bands = 1, Formant = 2, Low = 3, High = 4, Attack = 5, Release = 6, Sibilance = 7, Speed = 8, Output = 9;
+            public static readonly ParamDef[] Table =
+            {
+                Choice(Source, "Source", "Modulator", 0, "Internal", "Sample"),
+                D(Bands, "Bands", "Bands", 0, 24, 16, MapKind.Int, 8, 1, "bands"),
+                D(Formant, "Formant", "Formant", 0, 24, 0, MapKind.Int, -12, 1, "st", flag: true),
+                Hz(Low, "Low", "Low", 80, 400, 120),
+                Hz(High, "High", "High", 3000, 16000, 10000),
+                Sec(Attack, "Attack", "Attack", 0.0005, 0.02, 0.002),
+                Sec(Release, "Release", "Release", 0.005, 0.5, 0.06),
+                Pct(Sibilance, "Sibilance", "Sibilance", 0.35),
+                D(Speed, "Speed", "Speed", 0, 1000, 1.0, MapKind.Linear, 0.25, 4, "x", 2),
+                Db(Output, "Output", "Output", -24, 12, 0),
             };
         }
     }

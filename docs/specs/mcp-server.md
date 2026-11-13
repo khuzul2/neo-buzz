@@ -213,6 +213,8 @@ Phases (§9) are marked A1 … A7.
 | `studio_status` | A1 | Song name and path, tempo, beats per bar, length, loop, sample rate, mode (studio/headless), transport, counts, unsaved changes, what undo would undo. The first call of every session. `safety` ([machine-safety.md](machine-safety.md) §3.6): whether the machine guard is on, the diverged machines (reason, time, song position), the safety limiter (on, ceiling, whether it acted since the clip indicator was cleared) and the clip indicator (threshold, latched over) |
 | `guide` | A1 | Returns a guide by topic (`workflow`, `concepts`, `composition`, `sound-design/neo-poly`, `mixing`, `mastering`, …). Same content as the resources and prompts (§6), for clients that only use tools |
 | `undo`, `redo` | A1 | One agent call at a time; returns what was undone or redone |
+| `history_list` | HS1b | The shared undo history, newest first: id, name, source (manual, agent, midi), time, done or on the redo side, and the current step. `limit` (default 20). Read-only |
+| `history_jump` | HS1b | Undoes or redoes to the state right after a step (`step`, an id from `history_list`; 0: before the oldest kept). Destructive: it can undo many steps, the person's too. Refuses a dropped or unknown id |
 
 ### 5.2 Song and transport
 
