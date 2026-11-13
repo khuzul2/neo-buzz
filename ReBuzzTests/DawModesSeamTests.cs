@@ -110,10 +110,7 @@ namespace ReBuzzTests
 
         static long AllocatedReading(Driver.AudioReader reader, int buffers)
         {
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            for (int i = 0; i < buffers; i++)
-                reader.Read(256);
-            return GC.GetAllocatedBytesForCurrentThread() - before;
+            return GuardPolicy.Allocated(() => { for (int i = 0; i < buffers; i++) reader.Read(256); }, warm: false);   // GuardPolicy: 0 unless every attempt allocates
         }
 
         /// <summary>

@@ -139,10 +139,9 @@ namespace NeoBuzz.PedalTests
             run.Run(l, r, 0, Rate, 256, ol, or);                    // warm up: first-block set-up, the JIT
             // Each block measured on its own (AllocationCheck: a failure says which blocks allocated, and what the thread
             // did in them).
-            long calls = Stub.Calls;
-            var (bytes, why) = AllocationCheck.Run(2 * Rate / 256, b => run.Run(l, r, Rate + 256 * b, 256, 256, ol, or));
-            // What the test's stand-in for ReBuzz's IBuzz allocated, answering (Pedal Comp asks it for the rate).
-            long allocated = bytes - (Stub.Calls - calls) * StubCallBytes();
+            // What the test's stand-in for ReBuzz's IBuzz allocates, answering (Pedal Comp asks it for the rate), is taken off.
+            long perCall = StubCallBytes();
+            var (allocated, why) = AllocationCheck.Run(2 * Rate / 256, b => run.Run(l, r, Rate + 256 * b, 256, 256, ol, or), () => Stub.Calls * perCall);
             PedalReport.Report($"{e.Name}: {allocated} bytes allocated over 2 s of blocks of 256");
             Assert.That(allocated, Is.EqualTo(0), why);
         }

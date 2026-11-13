@@ -149,9 +149,7 @@ namespace ReBuzzTests
             public long AllocatedWhilePlaying(double seconds)
             {
                 int blocks = (int)(seconds * Rate / 256);
-                long before = GC.GetAllocatedBytesForCurrentThread();
-                for (int i = 0; i < blocks; i++) reader.Read(256);
-                return GC.GetAllocatedBytesForCurrentThread() - before;
+                return GuardPolicy.Allocated(() => { for (int i = 0; i < blocks; i++) reader.Read(256); }, warm: false);   // GuardPolicy: 0 unless every attempt allocates
             }
 
             /// <summary>Plays in short blocks until the session clock reaches a tick.</summary>
