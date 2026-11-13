@@ -126,6 +126,12 @@ class Run:
 def describe(c, machine):
     """The machine's global and track parameters with their raw ranges."""
     d = c.call("machine_describe", machine=machine, value_table=True, table_points=2)
+    # A machine with Explain text (K2: the Pedal and Jeskola machines) gives min and max in the parameter's unit, or not at all for a
+    # choice, and the raw ends as min_raw and max_raw: this works in raw values.
+    for p in d.get("parameters") or []:
+        for end in ("min", "max"):
+            if end + "_raw" in p:
+                p[end] = p[end + "_raw"]
     ps = [p for p in d.get("parameters") or [] if p.get("min") is not None]
     return d, [p for p in ps if not p.get("per_track")], [p for p in ps if p.get("per_track")]
 
