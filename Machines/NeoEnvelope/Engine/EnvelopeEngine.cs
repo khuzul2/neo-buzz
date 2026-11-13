@@ -6,7 +6,7 @@ using System;
 using System.Runtime.CompilerServices;
 using NeoBuzz.Dsp;
 
-namespace NeoBuzz.Envelope
+namespace NeoBuzz.EnvelopeMachine
 {
     internal sealed class EnvelopeEngine
     {

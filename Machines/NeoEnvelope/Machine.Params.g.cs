@@ -3,7 +3,7 @@
 
 using Buzz.MachineInterface;
 
-namespace NeoBuzz.Envelope
+namespace NeoBuzz.EnvelopeMachine
 {
     public partial class NeoEnvelopeMachine
     {

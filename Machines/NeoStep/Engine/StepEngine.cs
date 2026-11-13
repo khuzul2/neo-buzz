@@ -5,7 +5,7 @@
 using System;
 using NeoBuzz.Dsp;
 
-namespace NeoBuzz.Step
+namespace NeoBuzz.StepMachine
 {
     internal sealed class StepEngine
     {

@@ -3,7 +3,7 @@
 
 using Buzz.MachineInterface;
 
-namespace NeoBuzz.Macro
+namespace NeoBuzz.MacroMachine
 {
     public partial class NeoMacroMachine
     {

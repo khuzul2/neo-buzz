@@ -9,7 +9,7 @@ using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
 using NeoBuzz.Machine;
 
-namespace NeoBuzz.Macro
+namespace NeoBuzz.MacroMachine
 {
     [MachineDecl(Name = "Neo Macro", ShortName = "Macro", Author = "neo-buzz", MaxTracks = 0, InputCount = 0, OutputCount = 0)]
     public partial class NeoMacroMachine : NeoModulatorBase, IBuzzMachine

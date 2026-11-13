@@ -1,6 +1,6 @@
 # Neo Step parameters (docs/specs/neo-patch.md §3). The order is permanent: songs and presets store values by position.
 # Regenerate: python3 tools/gen-machine-params.py Machines/NeoStep
-namespace NeoBuzz.Step
+namespace NeoBuzz.StepMachine
 class NeoStepMachine
 summary A step sequencer for values: 1 to 32 steps, each a level from 0 to 100 %, played at a synced rate with swing, a glide between steps and a random amount. It moves up to 8 parameters of other machines, each with its own depth, polarity, range and curve. Use it for stepped filter patterns, rhythmic gain and pan moves, and melodic control of any value, effects included.
 

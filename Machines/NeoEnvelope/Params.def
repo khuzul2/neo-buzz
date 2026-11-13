@@ -1,6 +1,6 @@
 # Neo Envelope parameters (docs/specs/neo-patch.md §3). The order is permanent: songs and presets store values by position.
 # Regenerate: python3 tools/gen-machine-params.py Machines/NeoEnvelope
-namespace NeoBuzz.Envelope
+namespace NeoBuzz.EnvelopeMachine
 class NeoEnvelopeMachine
 summary An envelope that moves other machines' parameters, up to 8 targets each with its own depth, polarity, range and curve. Note mode: an ADSR started by the notes of a chosen machine (and track) or by its Gate switch. Follower mode: follows the level of a chosen machine's output, with attack and release and a threshold (ducking, envelope-driven filters). Use it for a filter that opens on every note, a pad that ducks under the kick, an effect that opens with the drums.
 

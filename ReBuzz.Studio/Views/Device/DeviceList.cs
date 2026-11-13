@@ -369,6 +369,41 @@ namespace ReBuzz.Studio.Views.Device
             }
         }
 
+        // Modulation (neo-patch.md §3, phase NM): the modulations that drive this machine's parameters, looked at a few times a second.
+        ModulationInfo[] incoming = Array.Empty<ModulationInfo>();
+        long incomingAt;
+
+        ModulationInfo ModulatedBy(DeviceParam p)
+        {
+            long now = System.Diagnostics.Stopwatch.GetTimestamp();
+            if (now - incomingAt > System.Diagnostics.Stopwatch.Frequency / 10)
+            {
+                incomingAt = now;
+                incoming = ModulationBoard.Incoming(machine).ToArray();
+            }
+            foreach (var i in incoming)
+                if (i.Param == p.Parameter.Name && i.IsTrack == p.IsTrack && (!i.IsTrack || i.Track == p.Track)) return i;
+            return null;
+        }
+
+        /// <summary>The live range ring: where the modulation reaches (an outline in the Control identity colour), the value you set (a tick) and the value now (a dot).</summary>
+        void DrawModulationRing(DrawingContext ctx, DeviceParam p, Rect rail)
+        {
+            var m = ModulatedBy(p);
+            if (m == null) return;
+            var colour = StudioTokens.Identity(NeoBuzz.Editor.MachineCategory.Control);
+            double lo = rail.X + p.Fraction(m.Low) * rail.Width, hi = rail.X + p.Fraction(m.High) * rail.Width;
+            var ring = new Rect(lo - 2, rail.Y - 3, Math.Max(6, hi - lo + 4), rail.Height + 6);
+            ctx.DrawRectangle(new SolidColorBrush(colour, 0.18), new Pen(new SolidColorBrush(colour), 1.5), ring, 5, 5);
+            double bx = rail.X + p.Fraction(m.Base) * rail.Width;
+            ctx.FillRectangle(new SolidColorBrush(colour), new Rect(bx - 0.5, rail.Y - 5, 1, rail.Height + 10));
+            double cx = rail.X + p.Fraction(m.Current) * rail.Width;
+            ctx.DrawEllipse(new SolidColorBrush(colour), new Pen(StudioTokens.SurfaceBaseBrush, 1), new Point(cx, rail.Center.Y), 4, 4);
+        }
+
+        /// <summary>Whether a parameter in view is being modulated (tests).</summary>
+        internal bool IsModulated(DeviceParam p) => ModulatedBy(p) != null;
+
         void DrawSlider(DrawingContext ctx, DeviceParam p, int raw, Rect area)
         {
             const double bar = 6;
@@ -379,6 +414,7 @@ namespace ReBuzz.Studio.Views.Device
             if (x1 - x0 >= 1) ctx.DrawRectangle(StudioTokens.AccentBrush, null, new Rect(x0, rail.Y, x1 - x0, bar), 3, 3);
             double tx = rail.X + b * rail.Width;
             ctx.FillRectangle(StudioTokens.TextPrimaryBrush, new Rect(Math.Clamp(tx - 1, rail.X, rail.Right - 2), area.Y + 1, 2, Math.Max(2, area.Height - 2)));
+            DrawModulationRing(ctx, p, rail);
         }
 
         void DrawTable(DrawingContext ctx, TableItem t, double y, double width)

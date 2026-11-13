@@ -9,7 +9,7 @@ using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
 using NeoBuzz.Machine;
 
-namespace NeoBuzz.Step
+namespace NeoBuzz.StepMachine
 {
     [MachineDecl(Name = "Neo Step", ShortName = "Step", Author = "neo-buzz", MaxTracks = 0, InputCount = 0, OutputCount = 0)]
     public partial class NeoStepMachine : NeoModulatorBase, IBuzzMachine

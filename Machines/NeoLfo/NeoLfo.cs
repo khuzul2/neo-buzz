@@ -9,7 +9,7 @@ using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
 using NeoBuzz.Machine;
 
-namespace NeoBuzz.Lfo
+namespace NeoBuzz.LfoMachine
 {
     [MachineDecl(Name = "Neo LFO", ShortName = "LFO", Author = "neo-buzz", MaxTracks = 0, InputCount = 0, OutputCount = 0)]
     public partial class NeoLfoMachine : NeoModulatorBase, IBuzzMachine

@@ -7,7 +7,7 @@ using System;
 using System.Runtime.CompilerServices;
 using NeoBuzz.Dsp;
 
-namespace NeoBuzz.Lfo
+namespace NeoBuzz.LfoMachine
 {
     internal sealed class LfoEngine
     {

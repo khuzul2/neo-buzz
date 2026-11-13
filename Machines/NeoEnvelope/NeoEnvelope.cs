@@ -9,7 +9,7 @@ using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
 using NeoBuzz.Machine;
 
-namespace NeoBuzz.Envelope
+namespace NeoBuzz.EnvelopeMachine
 {
     [MachineDecl(Name = "Neo Envelope", ShortName = "Env", Author = "neo-buzz", MaxTracks = 0, InputCount = 0, OutputCount = 0)]
     public partial class NeoEnvelopeMachine : NeoModulatorBase, IBuzzMachine

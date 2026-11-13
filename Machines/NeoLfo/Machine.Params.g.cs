@@ -3,7 +3,7 @@
 
 using Buzz.MachineInterface;
 
-namespace NeoBuzz.Lfo
+namespace NeoBuzz.LfoMachine
 {
     public partial class NeoLfoMachine
     {

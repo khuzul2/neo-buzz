@@ -7,7 +7,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <AssemblyName>Neo Step.NET</AssemblyName>
-    <RootNamespace>NeoBuzz.Step</RootNamespace>
+    <RootNamespace>NeoBuzz.StepMachine</RootNamespace>
     <Optimize Condition="'$(Configuration)' == 'Release'">true</Optimize>
 	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	<OutputPath>$(SolutionDir)bin\$(Configuration)\$(Platform)\$(TargetFramework)\Gear\Generators</OutputPath>

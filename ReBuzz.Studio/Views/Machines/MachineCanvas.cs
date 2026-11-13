@@ -135,6 +135,8 @@ namespace ReBuzz.Studio.Views.Machines
         protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
         {
             base.OnAttachedToVisualTree(e);
+            ModulationBoard.Changed += OnModulationChanged;
+            modsDirty = true;
             StartMeters();
             Watch(core.SongCore);
             core.PropertyChanged += OnCoreChanged;
@@ -144,6 +146,7 @@ namespace ReBuzz.Studio.Views.Machines
 
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
+            ModulationBoard.Changed -= OnModulationChanged;
             StopMeters();
             core.PropertyChanged -= OnCoreChanged;
             StudioSelection.For(core).Changed -= FollowSelection;
@@ -579,6 +582,94 @@ namespace ReBuzz.Studio.Views.Machines
         static readonly Typeface NameFace = new Typeface(new FontFamily("Arial"), FontStyle.Normal, FontWeight.Bold);
         static readonly Typeface PlainFace = new Typeface(new FontFamily("Arial"));
 
+        #region Modulation wires (neo-patch.md §3, phase NM)
+
+        /// <summary>One dashed wire: a modulator machine to a machine it moves (all the parameters it moves there).</summary>
+        internal sealed record ModLink(IMachine Source, IMachine Target, string Label);
+
+        List<ModLink> modLinks = new List<ModLink>();
+        bool modsDirty = true;
+        long modsAt;
+        ModLink hoverMod;
+
+        void OnModulationChanged()
+        {
+            modsDirty = true;
+            Redraw();
+        }
+
+        /// <summary>The modulation wires now: each modulator's active targets, one wire per (modulator, machine) pair.</summary>
+        internal IReadOnlyList<ModLink> ModLinks
+        {
+            get
+            {
+                long now = System.Diagnostics.Stopwatch.GetTimestamp();
+                // The targets change on their own (a machine renamed or deleted, a base moved): look again a few times a second.
+                if (modsDirty || now - modsAt > System.Diagnostics.Stopwatch.Frequency / 4)
+                {
+                    modsDirty = false;
+                    modsAt = now;
+                    var shown = new HashSet<IMachine>(Ordered());
+                    var found = new List<ModLink>();
+                    foreach (var mod in ModulationBoard.All())
+                    {
+                        var src = mod.Machine;
+                        if (src == null || !shown.Contains(src)) continue;
+                        IReadOnlyList<ModulationInfo> targets;
+                        try { targets = mod.Targets; } catch (Exception) { continue; }
+                        foreach (var group in targets.Where(t => t.State == ModulationState.Active)
+                                     .GroupBy(t => ModulationBoard.Resolve(mod, t)).Where(g => g.Key != null && shown.Contains(g.Key)))
+                            found.Add(new ModLink(src, group.Key, string.Join(", ", group.Select(t => $"{t.Param} {t.Depth:+0;-0;0} %"))));
+                    }
+                    if (hoverMod != null) hoverMod = found.FirstOrDefault(l => l.Source == hoverMod.Source && l.Target == hoverMod.Target);
+                    modLinks = found;
+                }
+                return modLinks;
+            }
+        }
+
+        static readonly DashStyle ModDash = new DashStyle(new double[] { 4, 3 }, 0);
+
+        void DrawModulation(DrawingContext ctx)
+        {
+            foreach (var link in ModLinks)
+            {
+                var w = MachineGeometry.Wire(BoxOf(link.Source), BoxOf(link.Target));
+                if (!w.Visible) continue;
+                var colour = MachineIdentity.ColourOf(link.Source) ?? Colors.YellowGreen;
+                bool hot = link == hoverMod;
+                var pen = new Pen(new SolidColorBrush(colour), hot ? 2.5 : 1.5, ModDash) { LineCap = PenLineCap.Round };
+                ctx.DrawLine(pen, w.Start, w.End);
+                // The end on the target: a dot, not an arrow (an arrow is a signal wire).
+                ctx.DrawEllipse(new SolidColorBrush(colour), null, w.End, hot ? 4 : 3, hot ? 4 : 3);
+                if (hot)
+                {
+                    var ft = new FormattedText(link.Source.Name + " → " + link.Label, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, PlainFace, 12, Brushes.White);
+                    var at = new Point(w.Mid.X + 6, w.Mid.Y - ft.Height - 4);
+                    ctx.DrawRectangle(new SolidColorBrush(Color.FromArgb(0xE0, 0x20, 0x20, 0x20)), new Pen(new SolidColorBrush(colour), 1), new Rect(at.X - 4, at.Y - 2, ft.Width + 8, ft.Height + 4), 3, 3);
+                    ctx.DrawText(ft, at);
+                }
+            }
+        }
+
+        /// <summary>The modulation wire under a logical point (within a few pixels of its line), or null.</summary>
+        internal ModLink ModAt(Point p)
+        {
+            foreach (var link in ModLinks.Reverse())
+            {
+                var w = MachineGeometry.Wire(BoxOf(link.Source), BoxOf(link.Target));
+                if (!w.Visible) continue;
+                var d = w.End - w.Start;
+                double len2 = d.X * d.X + d.Y * d.Y;
+                double t = len2 <= 0 ? 0 : Math.Clamp(((p.X - w.Start.X) * d.X + (p.Y - w.Start.Y) * d.Y) / len2, 0, 1);
+                double dx = p.X - (w.Start.X + t * d.X), dy = p.Y - (w.Start.Y + t * d.Y);
+                if (dx * dx + dy * dy <= 36) return link;
+            }
+            return null;
+        }
+
+        #endregion
+
         public override void Render(DrawingContext ctx)
         {
             var colours = new Palette(core);
@@ -590,6 +681,8 @@ namespace ReBuzz.Studio.Views.Machines
                 var line = new Pen(colours["MV Line"], 1);
                 foreach (var c in Wires)
                     DrawWire(ctx, WireOf(c), colours, line, level: MetersShown ? WireLevel(c) : 0, track: colours.Colour("MV Line"));
+
+                DrawModulation(ctx);
 
                 if (drag == Drag.Connect && connectFrom != null)
                 {
@@ -1021,8 +1114,10 @@ namespace ReBuzz.Studio.Views.Machines
                     var port = OutPortAt(p) ?? InPortAt(p);
                     var m = port ?? MachineAt(p);
                     bool overDelete = port == null && m != null && MachineGeometry.DeleteButton(BoxOf(m)).Contains(p);
-                    if (m != hover || overDelete != hoverDelete || port != hoverPort)
+                    var mod = m == null ? ModAt(p) : null;
+                    if (m != hover || overDelete != hoverDelete || port != hoverPort || mod != hoverMod)
                     {
+                        hoverMod = mod;
                         hover = m;
                         hoverDelete = overDelete;
                         hoverPort = port;
@@ -1044,6 +1139,8 @@ namespace ReBuzz.Studio.Views.Machines
             ? (HasOutput(hoverPort) && MachineGeometry.Near(MachineGeometry.OutPort(BoxOf(hoverPort)), lastLogical)
                 ? "Output of " + hoverPort.Name + ": drag to another machine's input to connect (Shift-drag from the box does the same)"
                 : "Input of " + hoverPort.Name + ": drop a wire from another machine's output here")
+            : hoverMod != null
+            ? $"{hoverMod.Source.Name} moves {hoverMod.Target.Name}: {hoverMod.Label} (dashed wire: a modulation, not a signal)"
             : hover is MachineCore mc && mc.IsDiverged
             ? $"Muted to protect your ears: it {Shell.PlainWords.Diverged(mc)} at beat {mc.DivergedPosition / (double)Math.Max(1, core.TPB):0.##}, " +
               "so the guard silenced and stopped it. Reset and Unmute is on its menu and in the bar above."

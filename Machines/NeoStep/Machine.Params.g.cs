@@ -3,7 +3,7 @@
 
 using Buzz.MachineInterface;
 
-namespace NeoBuzz.Step
+namespace NeoBuzz.StepMachine
 {
     public partial class NeoStepMachine
     {

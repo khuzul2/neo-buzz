@@ -1,6 +1,6 @@
 # Neo LFO parameters (docs/specs/neo-patch.md §3). The order is permanent: songs and presets store values by position.
 # Regenerate: python3 tools/gen-machine-params.py Machines/NeoLfo
-namespace NeoBuzz.Lfo
+namespace NeoBuzz.LfoMachine
 class NeoLfoMachine
 summary A low-frequency oscillator that moves other machines' parameters: up to 8 targets (any parameter of any machine), each with its own depth, polarity, range and curve, written smoothly and never as an undo step. Seven shapes, a free rate in Hz or a tempo-synced one from 8 bars to 1/64 (straight, dotted or triplet), a phase offset, retrigger on the beat, the bar or a note of a machine, and smoothing. Use it for wobble, filter sweeps, tremolo, vibrato and slow movement on any machine, effects included.
 

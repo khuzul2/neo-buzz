@@ -7,7 +7,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <AssemblyName>Neo Macro.NET</AssemblyName>
-    <RootNamespace>NeoBuzz.Macro</RootNamespace>
+    <RootNamespace>NeoBuzz.MacroMachine</RootNamespace>
     <Optimize Condition="'$(Configuration)' == 'Release'">true</Optimize>
 	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	<OutputPath>$(SolutionDir)bin\$(Configuration)\$(Platform)\$(TargetFramework)\Gear\Generators</OutputPath>

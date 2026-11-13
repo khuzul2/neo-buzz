@@ -1,6 +1,6 @@
 # Neo Macro parameters (docs/specs/neo-patch.md §3). The order is permanent: songs and presets store values by position.
 # Regenerate: python3 tools/gen-machine-params.py Machines/NeoMacro
-namespace NeoBuzz.Macro
+namespace NeoBuzz.MacroMachine
 class NeoMacroMachine
 summary One knob that moves up to 8 parameters of other machines at once, each with its own depth, polarity, range and curve. The Value is a parameter, so a pattern can automate it, the agent can set it and a MIDI controller can be bound to it. Use it for one-knob performance moves: a "tension" control that opens a filter, raises a delay's feedback and a drive at once.
 

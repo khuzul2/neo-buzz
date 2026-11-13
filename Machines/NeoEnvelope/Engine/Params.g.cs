@@ -3,7 +3,7 @@
 
 using NeoBuzz.Dsp;
 
-namespace NeoBuzz.Envelope
+namespace NeoBuzz.EnvelopeMachine
 {
     /// <summary>Parameter indices, in declaration order (the order ReBuzz shows and saves them in).</summary>
     internal static class P

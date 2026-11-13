@@ -9,7 +9,7 @@ using NeoBuzz.Dsp;
 using NeoBuzz.Editor;
 using NeoBuzz.Modulator;
 
-namespace NeoBuzz.Step
+namespace NeoBuzz.StepMachine
 {
     internal sealed class NeoStepEditor : ModulatorEditor
     {

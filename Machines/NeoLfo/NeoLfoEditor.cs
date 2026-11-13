@@ -9,7 +9,7 @@ using NeoBuzz.Dsp;
 using NeoBuzz.Editor;
 using NeoBuzz.Modulator;
 
-namespace NeoBuzz.Lfo
+namespace NeoBuzz.LfoMachine
 {
     internal sealed class NeoLfoEditor : ModulatorEditor
     {

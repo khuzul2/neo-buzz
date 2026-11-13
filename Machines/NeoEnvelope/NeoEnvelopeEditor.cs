@@ -9,7 +9,7 @@ using NeoBuzz.Dsp;
 using NeoBuzz.Editor;
 using NeoBuzz.Modulator;
 
-namespace NeoBuzz.Envelope
+namespace NeoBuzz.EnvelopeMachine
 {
     internal sealed class NeoEnvelopeEditor : ModulatorEditor
     {

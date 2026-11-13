@@ -205,7 +205,7 @@ namespace ReBuzz.Agent
                             var m2 = core.SongCore.MachinesList.FirstOrDefault(x => x.Name == tmName);
                             var p2 = m2 == null ? null : ModulationTools.FindParam(m2, isTrack, pName);
                             if (m2 == null || p2 == null) return;
-                            string refusal = mod.SetTarget(at, m2, p2, track0, what, out _);
+                            string refusal = mod.SetTarget(at, m2, p2, track0, what, out int _placed);
                             if (refusal != null) throw new ToolError(refusal);
                         }
                         // The call's own check, so a refusal is the agent's error, not an undo step.
@@ -333,7 +333,7 @@ namespace ReBuzz.Agent
                                 {
                                     var m2 = core.SongCore.MachinesList.FirstOrDefault(x => x.Name == tm);
                                     var p2 = m2 == null ? null : FindParam(m2, before.IsTrack, before.Param);
-                                    if (m2 != null && p2 != null) mod.SetTarget(at, m2, p2, before.Track, before, out _);
+                                    if (m2 != null && p2 != null) mod.SetTarget(at, m2, p2, before.Track, before, out int _placed2);
                                 }));
                             removed.Add(new JsonObject { ["slot"] = t.Slot, ["target_machine"] = t.Machine, ["param"] = t.Param });
                         }

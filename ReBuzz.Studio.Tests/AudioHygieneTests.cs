@@ -59,15 +59,15 @@ namespace ReBuzz.Studio.Tests
     public class AudioHygieneTests
     {
         const int TB = PatternEvent.TimeBase;
-        const int Frames = 256;
+        internal const int Frames = 256;
 
-        static ReBuzzCore Core => Studio.Host.Core;
+        internal static ReBuzzCore Core => Studio.Host.Core;
 
         // Looping isn't part of the song (a new song keeps it): the tests after these start as they would have. NewSong
         // puts it back, in every test's finally, not a TearDown: Avalonia.Headless.NUnit (12.1.4) skips a failed test's
         // TearDown, and a first play that failed here left Looping on for ExitTests' song from scratch (CI runs
         // 41866682998, 41926371493, 41937966540, 41938676130, 41953730788: its Loop click turned looping off).
-        static bool looping;
+        internal static bool looping;
 
         [SetUp]
         public void KeepLooping() => looping = Core.Looping;
@@ -76,7 +76,7 @@ namespace ReBuzz.Studio.Tests
         const int DeviceAlgorithm = 1;
 
         /// <summary>What a stretch of buffers cost the audio thread and the render threads.</summary>
-        sealed class Cost
+        internal sealed class Cost
         {
             public long Bytes;
             public long Methods;
@@ -88,7 +88,7 @@ namespace ReBuzz.Studio.Tests
         /// algorithm, the render threads it uses, Multithreading as set, on a thread of its own that
         /// lives as long as this (a device's thread does: its first reads pay its one-time costs).
         /// </summary>
-        sealed class AudioThread : IDisposable
+        internal sealed class AudioThread : IDisposable
         {
             readonly WorkManager work;
             readonly WorkThreadEngine engine;
@@ -204,7 +204,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>Reads past one-time costs (the first loop of the song, first notes), then measures.</summary>
-        static Cost Steady(AudioThread audio, int buffers = 400, Action perBuffer = null)
+        internal static Cost Steady(AudioThread audio, int buffers = 400, Action perBuffer = null)
         {
             audio.Read(800, perBuffer);
             return Measured(() => audio.Read(buffers, perBuffer));
@@ -263,13 +263,13 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        static void AssertNoAllocation(Cost cost, string what)
+        internal static void AssertNoAllocation(Cost cost, string what)
         {
             TestContext.Out.WriteLine($"[notice] {what}: {cost.Bytes} bytes");
             Assert.That(cost.Bytes, Is.EqualTo(0), what + " allocates on the audio thread or the render threads (a GC pause is a dropout):\n" + string.Join("\n", cost.Log));
         }
 
-        static void NewSong()
+        internal static void NewSong()
         {
             lock (ReBuzzCore.AudioLock) Core.Playing = false;
             Core.ExecuteCommand(BuzzCommand.Stop);
@@ -279,7 +279,7 @@ namespace ReBuzz.Studio.Tests
             Pump();
         }
 
-        static void Pump()
+        internal static void Pump()
         {
             for (int i = 0; i < 3; i++)
             {
@@ -295,7 +295,7 @@ namespace ReBuzz.Studio.Tests
             Pump();
         }
 
-        static MachineCore AddPoly(string name)
+        internal static MachineCore AddPoly(string name)
         {
             var song = Core.SongCore;
             song.CreateMachine("Neo Poly", null, name, null, null, null, -1, 0.3f, 0.3f);
@@ -409,7 +409,7 @@ namespace ReBuzz.Studio.Tests
         /// Neo Filter after a machine (mcp-server.md §12.5): the ladder driven, its LFO following the song (synced to a quarter),
         /// the envelope moving the cutoff, so every segment computes new coefficients on the audio thread.
         /// </summary>
-        static MachineCore InsertFilter(MachineCore source, string name)
+        internal static MachineCore InsertFilter(MachineCore source, string name)
         {
             var song = Core.SongCore;
             var master = song.MachinesList[0];
@@ -428,7 +428,7 @@ namespace ReBuzz.Studio.Tests
             return fx;
         }
 
-        static void Arrange(MachineCore m, IPattern p)
+        internal static void Arrange(MachineCore m, IPattern p)
         {
             var song = Core.SongCore;
             song.AddSequence(m, song.Sequences.Count);
