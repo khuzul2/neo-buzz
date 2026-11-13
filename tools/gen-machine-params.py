@@ -21,6 +21,9 @@ Params.def lines:
   group Shape                      group shown in the editor for the following parameters
   reading key unit | what           optional: a value the machine measures (its public Readings, machine_readings)
   Id  "Name"  min max def  kind args...  | description
+    id snake_case_id                 optional, indented, after a parameter: the id the agent and the manifest use (default: Id)
+    how One sentence: how the control changes the sound      Explain text (neo-learn.md §5.3); the description defaults to it
+    sound One sentence: what you hear
 
 Kinds and their arguments:
   lin A B [unit] [digits]          A + t(B-A)
@@ -69,6 +72,12 @@ def parse(path):
         for lineno, line in enumerate(f, 1):
             line = line.rstrip('\n')
             if not line.strip() or line.lstrip().startswith('#'):
+                continue
+            if line[0] in ' \t' and line.split(None, 1)[0] in ('id', 'how', 'sound'):
+                if not spec['params']:
+                    sys.exit(f'{path}:{lineno}: {line.split(None, 1)[0]} needs a parameter before it')
+                key, _, rest = line.strip().partition(' ')
+                spec['params'][-1]['pubid' if key == 'id' else key] = rest.strip()
                 continue
             if line.lstrip().startswith('summary '):
                 spec['summary'] = line.strip()[len('summary '):].strip()
@@ -126,7 +135,10 @@ def parse(path):
         sys.exit(f'{path}: namespace and class are required')
     if spec['track_params'] and spec['tracks'] <= 0:
         sys.exit(f'{path}: track parameters need tracks')
-    ids = [p['id'] for p in spec['params']]
+    for p in spec['params']:
+        if p.get('how') and p['desc'] == p['name']:
+            p['desc'] = p['how']
+    ids = [p.get('pubid', p['id']) for p in spec['params']]
     names = [p['name'] for p in spec['params']]
     for seq, what in ((ids, 'id'), (names, 'name')):
         dup = {x for x in seq if seq.count(x) > 1}
@@ -197,7 +209,11 @@ def table_entry(p):
     if p['group']:
         named.append(f"group: {cs_string(p['group'])}")
     named.append(f"description: {cs_string(p['desc'])}")
-    args = [f"P.{p['id']}", cs_string(p['id']), cs_string(p['name']), str(p['min']), str(p['max']), str(p['def']),
+    if p.get('how'):
+        named.append(f"how: {cs_string(p['how'])}")
+    if p.get('sound'):
+        named.append(f"sound: {cs_string(p['sound'])}")
+    args = [f"P.{p['id']}", cs_string(p.get('pubid', p['id'])), cs_string(p['name']), str(p['min']), str(p['max']), str(p['def']),
             f"MapKind.{KINDS[kind]}"]
     if pos:
         args += [f'a: {pos[0]}', f'b: {pos[1]}']
@@ -215,7 +231,7 @@ UNITS = {'db': 'dB', 'time': 's', 'freq': 'Hz', 'pct': '%', 'bip': '%', 'ratio':
 def manifest_param(index, p):
     """One parameter of the manifest: the same mapping as table_entry, as JSON."""
     kind, a = p['kind'], p['args']
-    m = {'index': index, 'id': p['id'], 'name': p['name'], 'group': p['group'], 'min': p['min'], 'max': p['max'],
+    m = {'index': index, 'id': p.get('pubid', p['id']), 'name': p['name'], 'group': p['group'], 'min': p['min'], 'max': p['max'],
          'default': p['def'], 'kind': MANIFEST_KINDS[kind]}
     unit = UNITS.get(kind, '')
     num_or_digits = lambda t: t.lstrip('-').isdigit()
@@ -245,6 +261,10 @@ def manifest_param(index, p):
     if unit:
         m['unit'] = unit
     m['description'] = p['desc']
+    if p.get('how'):
+        m['how'] = p['how']
+    if p.get('sound'):
+        m['sound'] = p['sound']
     return m
 
 

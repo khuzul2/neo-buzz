@@ -160,6 +160,10 @@ namespace NeoBuzz.MachineTests
             (FxType.Clipper, new[] { 900, 500 }),
             (FxType.Delay, new[] { 500, 0, 500, 300 }),
             (FxType.Verb, new[] { 500, 500, 500, 700 }),
+            (FxType.Dimension, new[] { 500, 500, 800 }),
+            (FxType.Bitcrusher, new[] { 250, 350, 1000 }),
+            (FxType.Shifter, new[] { 800, 500, 0 }),
+            (FxType.PitchDelay, new[] { 500, 500, 500, 700 }),
         };
 
         [TestCaseSource(nameof(TypeValues))]
@@ -227,6 +231,34 @@ namespace NeoBuzz.MachineTests
             Assert.That(L(Slot(7, FxType.Delay)), Is.EqualTo(0));
             Assert.That(L(All(Slot(0, FxType.Eq), Slot(1, FxType.Filter), Slot(2, FxType.Comp), Slot(3, FxType.Verb))), Is.EqualTo(0));
             Assert.That(FxTypes.Latency(FxType.Clipper, 192000), Is.LessThan(2048), "within a slot's pad at the highest rate");
+        }
+
+        [Test]
+        public void TheBitcrushersFixedDelayIsReportedAndSums()
+        {
+            int c = Bitcrusher.LatencySamples(Rate), k = NeoBuzz.Clipper.ClipperEngine.LatencyAt(Rate);
+            Assert.That(c, Is.EqualTo(96));
+            int L(Action<ParamValues> set) => new Rig(set, build: false).E.Fx.Latency;
+            Assert.That(L(Slot(0, FxType.Bitcrusher)), Is.EqualTo(c));
+            Assert.That(L(All(Slot(0, FxType.Bitcrusher), Slot(1, FxType.Clipper), Slot(2, FxType.Dimension))), Is.EqualTo(c + k), "in one bus they add");
+            Assert.That(L(All(Slot(0, FxType.Bitcrusher), Slot(4, FxType.Bitcrusher))), Is.EqualTo(c), "two buses are parallel");
+            foreach (var t in new[] { FxType.Dimension, FxType.Shifter, FxType.PitchDelay }) Assert.That(L(Slot(7, t)), Is.EqualTo(0), t.ToString());
+            Assert.That(FxTypes.Latency(FxType.Bitcrusher, 192000), Is.LessThan(2048), "within a slot's pad at the highest rate");
+            // With the wobble off the wet is the fixed delay (the tone filter adds its few samples); with it on the delay swings around that centre.
+                        foreach (int wobble in new[] { 500 })
+            {
+                var g = new Rig(Slot(7, FxType.Bitcrusher, 1000, 1000, 1000, 500, 500, 500, 500, 0, 1000, wobble));
+                var f = g.E.Fx;
+                var l = new float[256];
+                var r = new float[256];
+                l[0] = r[0] = 0.5f;
+                for (int i = 0; i < 5; i++) f.Process(new float[256], new float[256], 256);
+                f.Process(l, r, 256);
+                int peak = 0;
+                for (int i = 1; i < 256; i++) if (Math.Abs(l[i]) > Math.Abs(l[peak])) peak = i;
+                Assert.That(Math.Abs(peak - c), Is.LessThanOrEqualTo(6), $"the impulse comes out at the reported latency");
+            }
+
         }
 
         [Test]
@@ -330,6 +362,125 @@ namespace NeoBuzz.MachineTests
             Assert.That(rests, "and the machine rests when it has died away");
         }
 
+        // ---- the new kernels, measured ---------------------------------------------------------------------------
+
+        static float[] RunKernel(Action<float[], float[], int> process, float[] x, int block = 256)
+        {
+            var y = new float[x.Length];
+            var l = new float[block];
+            var r = new float[block];
+            for (int done = 0, n; done < x.Length; done += n)
+            {
+                n = Math.Min(block, x.Length - done);
+                Array.Copy(x, done, l, 0, n);
+                Array.Copy(x, done, r, 0, n);
+                process(l, r, n);
+                Array.Copy(l, 0, y, done, n);
+            }
+            return y;
+        }
+
+        [Test]
+        public void TheBitcrushersAliasFloorsWithAndWithoutAntiAliasing()
+        {
+            const int Warm = 8192, N = Measure.N;
+            double Floor(bool aa, int bin, bool inBand)
+            {
+                var c = new Bitcrusher(Rate) { Bits = 16, RateHz = 12000, AntiAlias = aa, ToneHz = 22000 };
+                var x = Measure.Sine(Measure.BinFrequency(bin), N + Warm, 0.5);
+                var y = RunKernel(c.Process, x);
+                var mag = Measure.Spectrum(y, Warm + 512 * 0, N);
+                // Back 96 samples of the wobble delay do not matter: the spectrum is of a steady state.
+                if (inBand) return Measure.AliasFloorDb(mag, bin, 20, 23900);
+                double worst = 0;
+                for (int k = 1; k < mag.Length; k++) worst = Math.Max(worst, mag[k]);
+                return 20 * Math.Log10(Math.Max(1e-12, worst) / 0.5);
+            }
+            int inBandBin = 1365, outBin = 12743;   // 999.8 Hz, and 9.33 kHz above the new rate's half (6 kHz)
+            double offIn = Floor(false, inBandBin, true), onIn = Floor(true, inBandBin, true);
+            double offOut = Floor(false, outBin, false), onOut = Floor(true, outBin, false);
+            Measure.Report($"Bitcrusher at 12 kHz (48 kHz host, 16 bits): a 1 kHz sine's strongest spurious line (the hold's images) is {offIn:F1} dB without anti-aliasing and {onIn:F1} dB with it; a 9.33 kHz sine (above the new rate's half) leaves its alias at {offOut:F1} dB without and {onOut:F1} dB with, against the input");
+            Assert.That(onIn, Is.LessThan(offIn - 20), "the post filter removes the images");
+            Assert.That(onOut, Is.LessThan(offOut - 20), "the pre filter removes what would fold");
+            Assert.That(onIn, Is.LessThan(-50));
+        }
+
+        [Test]
+        public void TheFrequencyShifterMovesEverythingByTheShiftAndRejectsItsImage()
+        {
+            const int Warm = 16384, N = Measure.N;
+            int m = 341;   // 249.7 Hz: on a bin
+            var lines = new List<string>();
+            double worst = 0;
+            foreach (int k in new[] { 700, 1365, 6827, 20480 })   // 512 Hz, 1 kHz, 5 kHz, 15 kHz
+            {
+                foreach (int sign in new[] { 1, -1 })
+                {
+                    var s = new FrequencyShifter(Rate) { ShiftHz = sign * Measure.BinFrequency(m), GlideSeconds = 0 };
+                    var x = Measure.Sine(Measure.BinFrequency(k), N + Warm, 0.5);
+                    var y = RunKernel(s.Process, x);
+                    var mag = Measure.Spectrum(y, Warm, N);
+                    double wanted = mag[k + sign * m], image = mag[k - sign * m];
+                    double rej = 20 * Math.Log10(wanted / Math.Max(1e-12, image));
+                    Assert.That(wanted, Is.EqualTo(0.5).Within(0.01), $"{k} {sign}: the sine moves by the shift at full level");
+                    Assert.That(Measure.Db(mag[k] / 0.5), Is.LessThan(-50), "and nothing stays");
+                    lines.Add($"{Measure.BinFrequency(k):F0} Hz {(sign > 0 ? "up" : "down")}: {rej:F1} dB");
+                    worst = worst == 0 ? rej : Math.Min(worst, rej);
+                }
+            }
+            Measure.Report("Frequency shifter, image rejection (a sine shifted by 250 Hz; the wanted line against the opposite sideband): " + string.Join(", ", lines));
+            Assert.That(worst, Is.GreaterThan(50), "the allpass pair's 90 degrees hold to a fraction of a degree");
+        }
+
+        [Test]
+        public void ThePitchShiftDelayEchoesAtTheTimeAndAShiftedPitch()
+        {
+            var d = new PitchShiftDelay(Rate) { TimeMs = 250, Semitones = 12, GrainMs = 60, Feedback = 0, Cross = 0, ToneHz = 20000, LowCutHz = 20 };
+            var x = Measure.Sine(1000, Rate, 0.5);
+            for (int i = Rate / 4; i < Rate; i++) x[i] = 0;
+            var y = RunKernel(d.Process, x);
+            // The echo of the sine, shifted an octave: its spectrum in 0.30 .. 0.45 s peaks at 2 kHz.
+            double f = Measure.PeakFrequency(y, (int)(0.30 * Rate), 4096);
+            Measure.Report($"Pitch-shift delay at +12 st: a 1 kHz tone's echo peaks at {f:F0} Hz");
+            Assert.That(f, Is.EqualTo(2000).Within(40));
+            Assert.That(Energy(y[..(int)(0.2 * Rate)]), Is.LessThan(1e-4), "nothing before the first echo");
+            d.Reset();
+            d.Semitones = -12; d.Feedback = 0.6f;
+            var y2 = RunKernel(d.Process, x);
+            double e1 = Measure.Rms(y2, (int)(0.30 * Rate), 4096), e2 = Measure.Rms(y2, (int)(0.55 * Rate), 4096);
+            Assert.That(e2, Is.GreaterThan(0).And.LessThan(e1), "the repeats fall with the feedback");
+        }
+
+        [Test]
+        public void TheDimensionWidensAMonoSourceAndStaysQuietOnSilence()
+        {
+            var c = new DimensionChorus(Rate);
+            var x = Measure.PinkNoise(Rate, 0.2);
+            var l = new float[Rate];
+            var r = new float[Rate];
+            var bl = new float[256];
+            var br = new float[256];
+            for (int done = 0; done < Rate; done += 256)
+            {
+                int n = Math.Min(256, Rate - done);
+                Array.Copy(x, done, bl, 0, n);
+                Array.Copy(x, done, br, 0, n);
+                c.Process(bl, br, n);
+                Array.Copy(bl, 0, l, done, n);
+                Array.Copy(br, 0, r, done, n);
+            }
+            double corr = 0, el = 0, er = 0;
+            for (int i = 8000; i < Rate; i++) { corr += l[i] * (double)r[i]; el += l[i] * (double)l[i]; er += r[i] * (double)r[i]; }
+            corr /= Math.Sqrt(el * er);
+            Measure.Report($"Dimension (3 voices, 0.6 Hz, 50 %): the wet's left-right correlation for a mono noise is {corr:F2}");
+            Assert.That(corr, Is.LessThan(0.9));
+            Assert.That(Energy(l), Is.GreaterThan(0.01));
+            var z = new float[256];
+            var zr = new float[256];
+            for (int i = 0; i < 50; i++) { Array.Clear(z); Array.Clear(zr); c.Process(z, zr, 256); }
+            Assert.That(z.All(v => Math.Abs(v) < 1e-6f));
+        }
+
         // ---- CPU --------------------------------------------------------------------------------------------------
 
         [Test]
@@ -362,10 +513,24 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void NothingIsAllocatedOnTheAudioThread()
         {
-            var g = new Rig(All(
+            Allocation(All(
                 Slot(0, FxType.Eq, 800), Slot(1, FxType.Filter, 900), Slot(2, FxType.Comp, 1000), Slot(3, FxType.Clipper, 700),
                 Slot(4, FxType.Delay, 600), Slot(5, FxType.Verb, 500), Slot(6, FxType.Clipper, 1000), Slot(7, FxType.Delay, 300),
-                Slot(8, FxType.Verb, 400), Slot(9, FxType.Filter, 1000)));
+                Slot(8, FxType.Verb, 400), Slot(9, FxType.Filter, 1000)), "all six first types");
+        }
+
+        [Test]
+        public void NothingIsAllocatedByTheNewTypes()
+        {
+            Allocation(All(
+                Slot(0, FxType.Dimension, 800), Slot(1, FxType.Bitcrusher, 900), Slot(2, FxType.Shifter, 1000), Slot(3, FxType.PitchDelay, 700),
+                Slot(4, FxType.Shifter, 600), Slot(5, FxType.Dimension, 500), Slot(6, FxType.PitchDelay, 1000), Slot(7, FxType.Bitcrusher, 300),
+                Slot(8, FxType.PitchDelay, 400), Slot(9, FxType.Bitcrusher, 1000)), "the four new types");
+        }
+
+        static void Allocation(Action<ParamValues> set, string what)
+        {
+            var g = new Rig(set);
             g.Chord();
             g.E.Fx.BuildNow();
             var l = new float[256];
@@ -388,7 +553,7 @@ namespace NeoBuzz.MachineTests
             }
             for (int i = 0; i < 300; i++) Block(i);
             var (bytes, why) = AllocationCheck.Run(2000, Block);
-            Measure.Report($"Dye Essence effects rack: {bytes} bytes allocated over 2000 blocks with ten slots of all six types, every parameter, the layouts, the routing, sends and tempo moving");
+            Measure.Report($"Dye Essence effects rack: {bytes} bytes allocated over 2000 blocks with ten slots of {what}, every parameter, the layouts, the routing, sends and tempo moving");
             Assert.That(bytes, Is.EqualTo(0), why);
         }
     }

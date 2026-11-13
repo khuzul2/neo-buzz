@@ -1,0 +1,65 @@
+# Neo Learn Subtractive parameters (docs/specs/neo-learn.md, neo-learn-controls.md A1 and A2.1). The order is permanent: songs and
+# presets store values by position. The 12 controls are the six core ones, then the six global ones (Attack, Decay, Sustain, Release,
+# Unison / Spread, Output). Each has a snake_case id, and the Explain text (How, Sound; the description is the How line).
+# Regenerate: python3 tools/gen-machine-params.py Machines/NeoLearnSubtractive
+namespace NeoBuzz.LearnSub
+class NeoLearnSubtractiveMachine
+tracks 16
+summary Teaching subtractive synth: one Dye Essence patch driven by 12 controls. A wave that morphs from sine through triangle and saw to pulse, a sub oscillator one octave down, a 24 dB/oct low-pass with resonance, drive and a filter envelope, an ADSR, unison and an output gain. Every control says what it does and what you will hear. Use it for basses, leads, pads and plucks, or to learn how subtractive synthesis works.
+
+group Core
+FilterCutoff     "Cutoff" 0 1000 666 freq 20 20000
+    id filter_cutoff
+    how Sets the corner frequency of the 24 dB/octave low-pass filter above which upper harmonics are attenuated.
+    sound Lowering it makes the sound dark, muted, and warm; raising it lets bright, buzzy harmonics through.
+FilterResonance  "Resonance" 0 1000 150 pct
+    id filter_resonance
+    how Feeds a narrow band of frequencies at the cutoff point back into the filter input to create a resonant peak.
+    sound Adds a sharp, vocal, or whistling edge to filter sweeps and emphasizes the cutoff frequency.
+WaveMorph        "Wave Shape" 0 1000 667 pct
+    id wave_morph
+    how Continuously crossfades the primary oscillator through Sine (0%), Triangle (33%), Sawtooth (66%), and Pulse (100%).
+    sound Transitions the raw tone from pure and flute-like to bright and brassy, then hollow and nasal.
+SubMix           "Sub Osc" 0 1000 0 pct
+    id sub_mix
+    how Blends in a phase-locked square wave oscillator pitched one octave below the played note.
+    sound Adds deep low-end weight and foundation for basslines and massive leads.
+FilterEnvAmt     "Env to Filter" 0 1000 650 bip
+    id filter_env_amt
+    how Scales how strongly the main ADSR envelope sweeps the filter cutoff frequency on each note.
+    sound Positive values create punchy, brassy, or plucked filter transients that mellow out as the note decays.
+AnalogDrive      "Drive" 0 1000 100 pct
+    id analog_drive
+    how Applies soft hyperbolic tangent (`tanh`) saturation before the filter and subtle per-voice pitch drift.
+    sound Compresses peaks, adds warm harmonic grit, and mimics vintage analog hardware instability.
+
+group Global
+EnvAttack        "Attack" 0 1000 250 time 0.0005 5
+    id env_attack
+    how Sets the time required for the note's amplitude (and routed envelope modulation) to ramp from silence to full peak after a note-on trigger.
+    sound Low values create immediate, percussive plucks; high values produce slow, swelling pads.
+EnvDecay         "Decay" 0 1000 594 time 0.005 8
+    id env_decay
+    how Controls how long it takes for the signal to drop from peak level down to the sustain level while a key remains held.
+    sound Short decay makes notes snappy and tight; longer decay gives a gradual piano- or bell-like fade.
+EnvSustain       "Sustain" 0 1000 700 pct
+    id env_sustain
+    how Defines the steady-state volume level maintained for as long as a note is held after the Attack and Decay stages complete.
+    sound At 0% the synth behaves like a plucked or struck instrument; at 100% it holds full organ-like volume.
+EnvRelease       "Release" 0 1000 515 time 0.005 10
+    id env_release
+    how Sets the time required for the sound to fade from its current level to complete silence after the note is released.
+    sound Short release stops notes abruptly; long release leaves an ambient tail that blends chords together.
+UnisonDetune     "Unison / Spread" 0 1000 0 pct
+    id unison_detune
+    how 0% plays one voice per note; above 0% each note plays 5 detuned, stereo-spread voices (3 in Additive, Granular and Spectral), with detune (up to ±50 cents) and width growing with the value.
+    sound Thickens thin waveforms into wide, chorus-like stereo leads and pads.
+OutputGain       "Output" 0 1000 635 db -36 12
+    id output_gain
+    how Sets the level after synthesis. There is no limiter (NeoBuzz mixes in floating point); a clip light shows when the output passes 0 dBFS.
+    sound Controls overall loudness; keep the clip light dark when the next machine expects levels at or below 0 dBFS.
+
+# What the machine measures (NeoLearnSubtractiveMachine.Readings, machine_readings): the output after Output, in dBFS.
+reading rms_db dB | The output's RMS over about half a second (-inf: silence)
+reading peak_db dB | The output's peak, falling 20 dB a second (-inf: silence)
+reading active_voices notes | Notes sounding now (unison voices belong to their note)

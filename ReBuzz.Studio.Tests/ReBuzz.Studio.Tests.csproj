@@ -47,6 +47,7 @@
 
   <!-- The audio hygiene tests describe a buffer that allocated as the engine's and the machines' tests do (AllocationWindow). -->
   <ItemGroup>
+    <Compile Include="..\ReBuzzTests\Automation\GuardPolicy.cs" Link="Automation\GuardPolicy.cs" />
     <Compile Include="..\ReBuzzTests\Automation\AllocationWindow.cs" Link="Automation\AllocationWindow.cs" />
   </ItemGroup>
 

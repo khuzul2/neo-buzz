@@ -156,6 +156,11 @@ CASES = [
     gen("dye-comb-noise", "Dye Essence", "Texture — Comb Noise", [], KEYS),
     gen("dye-mirror-bell", "Dye Essence", "Pluck — Mirror Bell", [], BELLS),
     gen("dye-squeeze-high", "Dye Essence", "FX — Squeeze Sweep", [], [n("A2", 0, 3.5)]),
+    # Neo Learn L0: the Subtractive pilot (one Dye Essence patch behind 12 controls), four presets and the init.
+    gen("learn-sub-init", "Neo Learn Subtractive", None, [], CHORDS),
+    gen("learn-sub-pluck-bass", "Neo Learn Subtractive", "Bass — Sub Pluck", [], BASS),
+    gen("learn-sub-wide-pad", "Neo Learn Subtractive", "Pad — Unison Wash", [], CHORDS),
+    gen("learn-sub-morph-lead", "Neo Learn Subtractive", "Lead — Pulse Morph", [], LEAD),
     # Dye Essence P2: the Sample engine (looped, eight-voice unison, one-shot, reversed, two slots) and the
     # Granular engine (frozen, scanning, a spray of pitched grains with reversed ones); the grain clouds and
     # the sample recipes are built from the portable maths, so every platform renders the same.
@@ -207,6 +212,12 @@ CASES = [
     gen("dye-fx-duo", "Dye Essence", "Rack — Duo Plate Keys", [], KEYS, tail=3.0),
     gen("dye-fx-parallel", "Dye Essence", "Rack — Parallel Crush Bass", [], BASS, tail=2.0),
     gen("dye-fx-choir", "Dye Essence", "Rack — Delayed Choir", [], CHORDS, tail=3.0),
+    gen("dye-fx-dimension", "Dye Essence", "Rack — Dimension Pad", [], CHORDS, tail=2.0),
+    gen("dye-fx-crush", "Dye Essence", "Rack — Lo-Fi Crunch Keys", [], KEYS, tail=3.0),
+    gen("dye-fx-tape", "Dye Essence", "Rack — Worn Tape Bits", [], KEYS, tail=2.0),
+    gen("dye-fx-barber", "Dye Essence", "Rack — Barber Shift Pad", [], CHORDS, tail=2.0),
+    gen("dye-fx-shimmer", "Dye Essence", "Rack — Shimmer Echoes", [], KEYS, tail=3.0),
+    gen("dye-fx-falling", "Dye Essence", "Rack — Falling Octave Echoes", [], KEYS, tail=3.0),
     # Neo FM6: algorithms, feedback, the Clean 2x and Raw 1x engines, envelopes, LFO.
     gen("fm6-tine-piano", "Neo FM6", "Keys — Tine Piano", [], KEYS),
     gen("fm6-glass-bell", "Neo FM6", "Bell — Glass Bell", [], BELLS, tail=2.0),

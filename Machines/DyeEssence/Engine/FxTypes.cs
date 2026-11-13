@@ -11,7 +11,7 @@ using NeoBuzz.Dsp;
 namespace NeoBuzz.DyeEssence
 {
     /// <summary>What a slot can host. Values are saved in songs and presets and never move; new types go at the end.</summary>
-    internal enum FxType { Off = 0, Eq = 1, Filter = 2, Comp = 3, Clipper = 4, Delay = 5, Verb = 6 }
+    internal enum FxType { Off = 0, Eq = 1, Filter = 2, Comp = 3, Clipper = 4, Delay = 5, Verb = 6, Dimension = 7, Bitcrusher = 8, Shifter = 9, PitchDelay = 10 }
 
     /// <summary>One of a type's ten generic parameters: the engine parameter it drives, the engine value 50 % stands for (-1: the engine's default) and the label the type gives it.</summary>
     internal readonly struct FxParam
@@ -51,7 +51,7 @@ namespace NeoBuzz.DyeEssence
 
     internal static class FxTypes
     {
-        public const int Count = 7;
+        public const int Count = 11;
         public const int PerType = 10;
 
         static readonly FxTypeInfo[] infos = Build();
@@ -72,9 +72,13 @@ namespace NeoBuzz.DyeEssence
             return Math.Clamp((int)Math.Round(u), d.Min, d.Max);
         }
 
-        /// <summary>The latency of a type at a sample rate, in samples: the same whatever its parameters (only the clipper has one).</summary>
-        public static int Latency(FxType t, double sampleRate) =>
-            t == FxType.Clipper ? NeoBuzz.Clipper.ClipperEngine.LatencyAt(sampleRate) : 0;
+        /// <summary>The latency of a type at a sample rate, in samples: the same whatever its parameters (the clipper's, the bitcrusher's 2 ms wobble delay).</summary>
+        public static int Latency(FxType t, double sampleRate) => t switch
+        {
+            FxType.Clipper => NeoBuzz.Clipper.ClipperEngine.LatencyAt(sampleRate),
+            FxType.Bitcrusher => Bitcrusher.LatencySamples(sampleRate),
+            _ => 0,
+        };
 
         static FxParam F(int index, string label, int def = -1) => new FxParam(index, def, label);
 
@@ -127,6 +131,30 @@ namespace NeoBuzz.DyeEssence
                 F(NeoBuzz.Verb.P.Shimmer, "Shimmer"), F(NeoBuzz.Verb.P.Width, "Width"), F(NeoBuzz.Verb.P.LowCut, "Low cut"),
                 F(NeoBuzz.Verb.P.HighCut, "High cut"),
             });
+            list[(int)FxType.Dimension] = new FxTypeInfo(FxType.Dimension, "Dimension", FxNew.Dim.Table, new[]
+            {
+                F(FxNew.Dim.Voices, "Voices"), F(FxNew.Dim.Rate, "Rate"), F(FxNew.Dim.Depth, "Depth"), F(FxNew.Dim.Delay, "Delay"),
+                F(FxNew.Dim.Width, "Width"), F(FxNew.Dim.Shape, "Shape"), F(FxNew.Dim.Tone, "Tone"), F(FxNew.Dim.LowCut, "Low cut"),
+                F(FxNew.Dim.Drift, "Drift"), F(FxNew.Dim.Feedback, "Feedback"),
+            });
+            list[(int)FxType.Bitcrusher] = new FxTypeInfo(FxType.Bitcrusher, "Bitcrusher", FxNew.Crush.Table, new[]
+            {
+                F(FxNew.Crush.Bits, "Bits"), F(FxNew.Crush.Rate, "Rate"), F(FxNew.Crush.AntiAlias, "Anti-alias"), F(FxNew.Crush.Drive, "Drive"),
+                F(FxNew.Crush.Quantizer, "Quantizer"), F(FxNew.Crush.Bias, "Bias"), F(FxNew.Crush.Dither, "Dither"), F(FxNew.Crush.Tone, "Tone"),
+                F(FxNew.Crush.Wobble, "Wobble"), F(FxNew.Crush.Output, "Output"),
+            });
+            list[(int)FxType.Shifter] = new FxTypeInfo(FxType.Shifter, "Freq shift", FxNew.Shift.Table, new[]
+            {
+                F(FxNew.Shift.Amount, "Shift"), F(FxNew.Shift.Range, "Range"), F(FxNew.Shift.Mode, "Mode"), F(FxNew.Shift.Feedback, "Feedback"),
+                F(FxNew.Shift.FbTone, "Feedback tone"), F(FxNew.Shift.Stereo, "Stereo"), F(FxNew.Shift.LfoRate, "LFO rate"),
+                F(FxNew.Shift.LfoDepth, "LFO depth"), F(FxNew.Shift.Glide, "Glide"), F(FxNew.Shift.Output, "Output"),
+            });
+            list[(int)FxType.PitchDelay] = new FxTypeInfo(FxType.PitchDelay, "Pitch delay", FxNew.PitchDelay.Table, new[]
+            {
+                F(FxNew.PitchDelay.Time, "Time"), F(FxNew.PitchDelay.Pitch, "Pitch"), F(FxNew.PitchDelay.Fine, "Fine"), F(FxNew.PitchDelay.Feedback, "Feedback"),
+                F(FxNew.PitchDelay.Grain, "Grain"), F(FxNew.PitchDelay.Mode, "Mode"), F(FxNew.PitchDelay.Tone, "Tone"),
+                F(FxNew.PitchDelay.LowCut, "Low cut"), F(FxNew.PitchDelay.Spread, "Spread"), F(FxNew.PitchDelay.Cross, "Cross-feed"),
+            });
             return list;
         }
     }
@@ -162,6 +190,10 @@ namespace NeoBuzz.DyeEssence
             FxType.Clipper => new ClipperHost(rate),
             FxType.Delay => new DelayHost(rate),
             FxType.Verb => new VerbHost(rate),
+            FxType.Dimension => new DimensionHost(rate),
+            FxType.Bitcrusher => new BitcrusherHost(rate),
+            FxType.Shifter => new ShifterHost(rate),
+            FxType.PitchDelay => new PitchDelayHost(rate),
             _ => null,
         };
 

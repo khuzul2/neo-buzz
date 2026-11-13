@@ -36,6 +36,10 @@ namespace ReBuzz.Agent.Model
         public int Default { get; init; }
         public required ParamMapping Mapping { get; init; }
         public string Description { get; init; } = "";
+        /// <summary>Explain (neo-learn.md §5.3): how the control changes the sound; empty: the machine has no Explain text.</summary>
+        public string How { get; init; } = "";
+        /// <summary>Explain: what you will hear.</summary>
+        public string Sound { get; init; } = "";
         /// <summary>
         /// Drafts: where the mapping came from. "values": fitted to the machine's value texts (exact to
         /// their precision); "description": read from its description ("1 ms – 4 s exponential"), approximate.
@@ -430,6 +434,8 @@ namespace ReBuzz.Agent.Model
                 Max = max,
                 Default = (int?)p["default"] ?? 0,
                 Description = (string)p["description"] ?? "",
+                How = (string)p["how"] ?? "",
+                Sound = (string)p["sound"] ?? "",
                 Confidence = (string)p["confidence"] ?? "",
                 SafeRange = SafeRange.Parse(p["safe_range"] as JsonObject, min, max),
                 PlainName = (string)p["plain_name"] ?? "",
