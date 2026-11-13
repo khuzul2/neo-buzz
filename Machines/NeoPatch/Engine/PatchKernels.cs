@@ -91,24 +91,29 @@ namespace NeoBuzz.Patch
 
         // ------------------------------------------------------------ notes
 
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public static void Keys(KeysJob j, PatchContext c)
         {
+            float[] po = j.Pitch?.Data, go = j.Gate?.Data, vo = j.Vel?.Data, ro = j.Press?.Data, so = j.Slide?.Data;
             for (int v = 0; v < V; v++)
             {
                 if (!c.Active[v]) continue;
-                float p = c.Pitch0[v], dp = (c.Pitch1[v] - p) * (1f / B);
-                float pr = c.Press0[v], dpr = (c.Press1[v] - pr) * (1f / B);
-                float sl = c.Slide0[v], dsl = (c.Slide1[v] - sl) * (1f / B);
-                float gate = c.Gate[v], vel = c.Vel[v];
-                for (int i = 0; i < B; i++)
+                if (po != null)
                 {
-                    p += dp; pr += dpr; sl += dsl;
-                    int o = i * V + v;
-                    if (j.Pitch != null) j.Pitch.Data[o] = p;
-                    if (j.Gate != null) j.Gate.Data[o] = gate;
-                    if (j.Vel != null) j.Vel.Data[o] = vel;
-                    if (j.Press != null) j.Press.Data[o] = pr;
-                    if (j.Slide != null) j.Slide.Data[o] = sl;
+                    float p = c.Pitch0[v], dp = (c.Pitch1[v] - p) * (1f / B);
+                    for (int i = 0, o = v; i < B; i++, o += V) { p += dp; po[o] = p; }
+                }
+                if (go != null) { float x = c.Gate[v]; for (int i = 0, o = v; i < B; i++, o += V) go[o] = x; }
+                if (vo != null) { float x = c.Vel[v]; for (int i = 0, o = v; i < B; i++, o += V) vo[o] = x; }
+                if (ro != null)
+                {
+                    float x = c.Press0[v], dx = (c.Press1[v] - x) * (1f / B);
+                    for (int i = 0, o = v; i < B; i++, o += V) { x += dx; ro[o] = x; }
+                }
+                if (so != null)
+                {
+                    float x = c.Slide0[v], dx = (c.Slide1[v] - x) * (1f / B);
+                    for (int i = 0, o = v; i < B; i++, o += V) { x += dx; so[o] = x; }
                 }
             }
         }

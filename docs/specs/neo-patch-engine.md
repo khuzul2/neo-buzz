@@ -1,4 +1,92 @@
-# Neo Patch NP0: the runtime gate (as built)
+# Neo Patch engine: NP1 (as built) and NP0 (the runtime gate)
+
+Contract: `docs/specs/neo-patch.md` (§2, §4, §5). Code: `Machines/NeoPatch/` (the engine in `Engine/`, portable net10.0; the machine `NeoPatch.cs`; three csproj flavours; `ReBuzz.sln`; the package). Tests: `NeoBuzz.MachineTests/NeoPatchTests.cs` (`dotnet test NeoBuzz.MachineTests --filter NeoPatchTests`), the presets in `PresetTests`, the guide and Explain checks in `ReBuzz.AgentTests`. Part 1 is NP1; part 2 is the NP0 record it grew from.
+
+# Part 1: NP1, the engine and the machine (as built)
+
+## 1.1 What it is
+
+A modular synth in one machine, with no inner canvas yet (NP2 draws it): the device view shows the generic parameters (Volume, Voices, Glide, Audio-rate mod, Macro 1 to 16, each with Explain How and Sound), and a patch is built from code (`PatchGraph`, the factory patches in `PatchPresets.cs`), from a text file (`machine_data_import` kind `patch`) or from a preset. The patch is the machine's state (`NeoPatchState.Patch`: one line of text, `PatchText`), with the user's own sample (kind `sample`, 24-bit PCM as in Dye Essence). 16 tracks of Note and Velocity, MIDI and MPE (per-channel bend by 48 semitones, channel pressure and CC 74 reach the Keys node's Pressure and Slide outputs).
+
+| Part | File | What it does |
+|---|---|---|
+| Graph and text | `PatchGraph.cs`, `PatchText.cs` | 22 node kinds, 128 nodes at most (`Add` returns null at the cap), wires with an amount, `Connect` refuses a cycle that does not pass through Feedback, macro mappings (macro, node, control, low, high). The text is `neopatch 1;name …;n id Kind global x y controls…;w from port to port amount;m macro node control low high`: no newline, no quote; unreadable parts are skipped, never thrown. |
+| Compiler | `PatchCompiler.cs` | Orders the graph (sources first, Feedback read before write), drops what does not reach an Out, resolves each node's scope, builds fused inputs (`Inp`: wires with amounts summed by the consumer, no mix jobs), allocates the buffers, and takes the state of nodes of the patch before (matched by node id and half) so an edit does not retrigger anything (`CompiledPatch.Adopted`). |
+| Jobs and kernels | `PatchJobs.cs`, `PatchKernels.cs`, `PatchControlJobs.cs` | 64-sample blocks, sample-major `[sample][16 voices]` buffers, kernels generic over Dye's `ILanes` (AVX2, two Vector128, plain floats: the same bits). Oscillators, Envelope, Filter, VCA, Mixer, Math, Crossfade, Shaper, Sum and Out are lane kernels; Keys, LFO, Random, Slew, S&H, Macro, Noise, Sample and Delay are scalar jobs over the sounding voices. |
+| Runtime | `PatchRuntime.cs` | 16 voices through `VoiceAllocator`, per-block voice state (pitch with bend, glide, pressure, slide, gate, velocity, gain ramps for steals), jobs in order (a global job runs in a one-voice view), macro smoothing (20 ms), DC blocker, soft safety limiter and NaN guard on the output, hand-over of a new compiled patch at a block start (the first block removes the step against the last block's trend). |
+| Engine glue | `PatchEngine.cs` | The machine's engine: parameters to the runtime, `SetPatch`/`SetGraph`, readings, `Busy` (tables and samples still building). |
+| Presets | `PatchPresets.cs`, `Presets.txt` | Eight patches built in code; each is stored as text (`state Patch = …`) with its macros and a Volume that puts the chord at -22 dB. |
+| Test patches | `PatchTemplates.cs`, `PatchHost.cs` | The two NP0 patches and the headless host (`Render(events, frames)`). |
+
+## 1.2 Decisions taken (the lead's, and mine where marked)
+
+1. **Signals.** Every wire is mono. Audio inputs (Osc FM, PM and Sync; Filter In; VCA In; Shaper In; Delay In; Mixer and Out inputs) run at the audio rate. Control inputs (pitch, cutoff, resonance, level, rate, drive, position, pulse width) are read once per control interval (16 samples) and interpolated across it; the parameter **Audio-rate mod** reads them for every sample (filter FM). A pitch input is read at the interval's end.
+2. **Stereo** only at Out: four inputs, each with its own pan (equal power) and a Spread that gives every voice a fixed place (a golden-ratio sequence, so the first voices lie far apart). Everything before Out is mono.
+3. **Oscillator.** Saw, square (PWM: two band-limited saws, one phase-shifted by the pulse width), triangle: Dye's mip tables (`TableArena`, eleven levels, level chosen per voice and control interval from the largest increment including FM) with cubic reading; sine: an odd polynomial (error 6e-8). Wavetable Osc: Dye's ten built-in tables (`TableBank`), frame mix by Position. Aliasing and cost: §1.4. A Sync input restarts the phase on a rising zero crossing (not band-limited: it is a sync, it sounds hard).
+4. **Filter.** Neo's SVF (low-pass 12, band-pass, high-pass, notch) and a 24 or 12 dB ladder (tanh stages in the lanes). Coefficients are made per voice at the control interval and ramped across it; the exact `tan` is a sine-over-cosine from `PatchMath` (no libm).
+5. **Global variants.** Any node can be switched to global (it runs once, in a one-voice view, even when no note sounds); a node whose inputs are all global is global by itself; **Voice sum** turns the per-voice signal into the global one (the fused sum is done by whoever reads it). Global Keys follows the held keys (last note priority with a held-key stack). Global LFO, Random and Macro run the same code on one lane.
+6. **State across swaps.** A node of the new patch with the same id and kind takes the old node's state (phases, envelope stage, filter memory, delay lines, smoothers, LFO phase). Edits that change nothing audible leave the sound sample for sample (to 2e-3 in the test, from the ramp's trend removal).
+7. **Feedback is one block (64 samples) of delay.** *One-sample feedback was not built.* The 20-node patch's loop (Filter, Feedback, VCA) is 12.8 % of its time in block mode (`PatchRuntime.Profile`); a sample-by-sample variant needs a second set of kernels with per-sample dispatch and per-sample coefficient work, which I estimate at 2 to 3 times those jobs, so about 1.3 to 1.5 times the patch: inside the lead's 2× rule, **so the spec keeps it** and it is NP2 or later work, not dropped. This is an estimate, not a measurement; it needs the lead's call. The Delay node's own feedback is sample accurate, which covers echoes and Karplus-style loops.
+8. **Mix jobs are fused** into their consumers (Filter In, VCA In, Out, Mixer, Osc FM and the like): no job and no buffer for a sum.
+9. **Idle detection** (mine): a released voice ends after two quiet blocks or 20 s of release; an Envelope's end does not mark the voice by itself (a patch with no envelope stops by level).
+10. **Node cap 128** is a hard limit (`PatchGraph.Add` returns null; the text loader drops the rest).
+11. **Presets** (mine): eight patches only (no parameter states beyond Volume and the two macros each uses), Volume chosen so the chord C3 E3 G3 B3 held for two thirds of a second has its loudest 50 ms at -22 dB RMS (±0.1); levels are therefore -13 to -5 dB on Volume, i.e. the patches are hot at 0 dB: Out levels stay at 1 so a patch built by hand is as loud as the node graph says.
+12. **Machine without an editor** (mine): the Studio flavour is the portable build plus the studio kit with nothing to draw; the Windows gallery test lists Neo Patch after the Learn machines (its numbers do not move the others').
+
+## 1.3 CPU
+
+x64 Linux (the box's AVX2 core), load 1.1 to 2.2, `WhereTheTimeGoes` (ten of one node in a chain on 8 voices against the same patch without them; ms of CPU per node per second of audio, so 0.01 = 1 % of one core at 8 voices) and `ThePatchesAgainstTheirFloors` (Dye's reference-corrected figure, the 8-voice chord held):
+
+| Node | ms per node per second | Node | ms per node per second |
+|---|---|---|---|
+| Osc (saw) | 1.08 | LFO | 0.56 |
+| Wavetable Osc | 1.26 | Random | 0.38 |
+| Sample | 7.29 | Slew | 0.47 |
+| Noise | 1.46 | Sample and hold | 0.43 |
+| Envelope | 0.27 | Shaper | 0.33 |
+| Filter | 0.47 | Delay | 2.77 |
+| VCA | 0.07 | Mixer | 0.09 |
+| Math | 0.09 | Crossfade | 0.30 |
+
+| Patch | x real time (8 voices) | Floors in the test (x64, arm64) |
+|---|---|---|
+| 8 nodes (Core8) | 142 | 65, 45 |
+| 20 nodes (Big20, with the feedback loop) | 75 | 35, 25 |
+
+NP0's 20-node figure was about 130 times (two-point band limiting and exact coefficients per interval were not in it): the band-limited oscillators, the ramped coefficients and the scopes cost about 40 % more than the spike did. The arm64 floors are set from the NP0 ratio of the two runners, not measured here; CI's figures for them are in the report. The Sample node is the expensive one (a scalar cubic read per voice and sample, with loop handling and a layer choice per control interval): worth lane kernels later.
+
+## 1.4 Alias floor
+
+`OscillatorsAreBandLimited`: a note held long enough for 65536 samples after the attack; the loudest bin more than 40 bins (29 Hz) from any harmonic of the fundamental, relative to the fundamental (dB):
+
+| Shape and pitch | floor |
+|---|---|
+| saw 1250 Hz | -87.6 |
+| square 1250 Hz | -89.0 |
+| triangle 1250 Hz | -106.9 |
+| saw 4400 Hz | -105.2 |
+| square 4400 Hz | -105.2 |
+| saw 9000 Hz | -137.2 |
+| saw 14000 Hz | -106.8 |
+| square 11000 Hz | -106.9 |
+
+The target was -90 dB; two cases at 1250 Hz miss it by 1 to 2.4 dB, the test's limit is -85. The worst bin is one tone at 12000 Hz (a multiple of the block rate 750 Hz and of the default control interval's 3000 Hz; it does not move when the interval is 8, 32 or 64 samples); I did not find its cause, and it is the same level for the saw and the square at that pitch. Everything else is under -100 dB. To be looked at in NP2 with a spectrogram.
+
+## 1.5 What it checks
+
+`NeoPatchTests`: the compiler (cycles, order, dead nodes, cap, text round trip), each node kind's behaviour (oscillator levels and pitch, FM, PM, sync, pulse, wavetable tables, noise colours, every sample source, LFO frequency and depth, Random range, Slew, Macro, S&H, Shaper modes, Delay time, Mixer, Math, Crossfade, Out pan and spread), the audio-rate switch, global and per-voice LFO, the Voice sum and Global Keys, state across an edit, a swap's step, macros and MPE, determinism (two renders, every lane kind the same bits, the host's block size), 0 bytes allocated, NaN and runaway guards, the alias floors, and the throughput guards. The 20-node render's checksum is pinned (`PinnedBig20`) so Linux, Windows and Mac must agree.
+
+## 1.6 Doubts
+
+- The alias floor at 1250 Hz (§1.4), and the 12 kHz tone.
+- One-sample feedback (decision 7) is an estimate.
+- The arm64 floors are derived, not measured; the Throughput guard on the Mac runner will say.
+- The Delay node's memory is 6 MB per per-voice node at 48 kHz (8 voices of 2 s); a patch with several per-voice Delay nodes is memory-heavy: make them global when they can be.
+- Presets are patch-only and sit at -22 dB; the Out nodes' pan law (equal power) means a mono patch loses 3 dB per side: that is why the Volumes are around -13 to -5 dB.
+
+---
+
+# Part 2: NP0, the runtime gate (as built)
 
 Status: spike, measured. The contract is `docs/specs/neo-patch.md` (§2 decisions 1–6, §4.3, §4.4, §5). This file records what NP0 built, what it measured, and what NP1 changes. Code: `Machines/NeoPatch/` (Engine, portable net10.0; not in `ReBuzz.sln`, not in the package), tests: `NeoBuzz.MachineTests/NeoPatchTests.cs`.
 

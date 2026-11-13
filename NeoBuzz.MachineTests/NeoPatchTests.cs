@@ -794,7 +794,7 @@ namespace NeoBuzz.MachineTests
 
 
 
-        const ulong PinnedBig20 = 0UL;
+        const ulong PinnedBig20 = 0x1B938B9A41C46578UL;
 
         [Test]
         public void TwoRendersAreIdenticalAndEveryLaneImplementationGivesTheSameBits()
@@ -998,8 +998,8 @@ namespace NeoBuzz.MachineTests
         {
             foreach (var (name, make, x64, arm64) in new (string, Func<PatchGraph>, double, double)[]
             {
-                ("8-node patch", PatchTemplates.Core8, 40, 25),
-                ("20-node patch", PatchTemplates.Big20, 25, 15),
+                ("8-node patch", PatchTemplates.Core8, 65, 45),
+                ("20-node patch", PatchTemplates.Big20, 35, 25),
             })
             {
                 Throughput.Guard($"Neo Patch CPU: {name}, 8 voices", Throughput.Floor(x64, arm64), 2, Rate, PatchRuntime.Block, () =>
