@@ -403,3 +403,8 @@ FodyWeavers.xsd
 /dist/
 /build/ExternalMachines/
 /build/LinkHelper/
+
+# Song history folders (SongSnapshots: <song file>.history beside the song); tests and tools that open songs in the tree create them
+*.bmx.history/
+*.bmw.history/
+*.bmxml.history/
