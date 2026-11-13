@@ -452,7 +452,9 @@
     "8'",
     "4'"
    ],
-   "description": "16' an octave down, 8' as written, 4' an octave up."
+   "description": "16' an octave down, 8' as written, 4' an octave up.",
+   "how": "Chooses 16', 8' or 4' for the oscillator's register.",
+   "sound": "Sounds an octave down, as written, or an octave up."
   },
   {
    "index": 1,
@@ -468,7 +470,9 @@
    "a": 0.0,
    "b": 12.0,
    "unit": "st",
-   "description": "LFO to pitch, up to ±12 semitones."
+   "description": "LFO to pitch, up to ±12 semitones.",
+   "how": "Sends the LFO to pitch, up to 12 semitones.",
+   "sound": "Gives vibrato, or at the top wild pitch sweeps."
   },
   {
    "index": 2,
@@ -486,7 +490,9 @@
     "LFO",
     "Env"
    ],
-   "description": "Manual (PWM sets the width), the LFO or the envelope."
+   "description": "Manual (PWM sets the width), the LFO or the envelope.",
+   "how": "Chooses what moves the pulse width: manual, the LFO or the envelope.",
+   "sound": "A manual width is static; the others make it move."
   },
   {
    "index": 3,
@@ -502,7 +508,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Manual: 0% square to 100% narrow (10% duty). LFO or Env: how far they move the width."
+   "description": "Manual: 0% square to 100% narrow (10% duty). LFO or Env: how far they move the width.",
+   "how": "Sets the pulse width, from a square to a narrow 10 percent pulse, or the depth of the moving source.",
+   "sound": "A square sounds hollow; narrow pulses sound thin and reedy."
   },
   {
    "index": 4,
@@ -518,7 +526,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Pulse wave in the mixer."
+   "description": "Pulse wave in the mixer.",
+   "how": "Sets the pulse wave's level in the mixer, from 0 to 100 percent.",
+   "sound": "Adds a hollow, reedy tone."
   },
   {
    "index": 5,
@@ -534,7 +544,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Sawtooth in the mixer."
+   "description": "Sawtooth in the mixer.",
+   "how": "Sets the sawtooth's level in the mixer, from 0 to 100 percent.",
+   "sound": "Adds a bright, buzzy tone."
   },
   {
    "index": 6,
@@ -550,7 +562,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Sub-oscillator in the mixer."
+   "description": "Sub-oscillator in the mixer.",
+   "how": "Sets the sub-oscillator's level, from 0 to 100 percent.",
+   "sound": "Adds deep weight; at the top it can overload the output."
   },
   {
    "index": 7,
@@ -566,7 +580,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "White noise in the mixer."
+   "description": "White noise in the mixer.",
+   "how": "Sets the noise level in the mixer, from 0 to 100 percent.",
+   "sound": "Adds breath, hiss and percussion."
   },
   {
    "index": 8,
@@ -584,7 +600,9 @@
     "Sq -2oct",
     "Pulse -2oct"
    ],
-   "description": "Square one octave down, square two octaves down, or a narrow pulse two octaves down."
+   "description": "Square one octave down, square two octaves down, or a narrow pulse two octaves down.",
+   "how": "Chooses the sub-oscillator's wave: a square one octave down, a square two octaves down, or a narrow pulse two octaves down.",
+   "sound": "Changes the depth and thickness of the bass."
   },
   {
    "index": 9,
@@ -600,7 +618,9 @@
    "a": 20.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "Ladder low-pass cutoff, 20 Hz – 20 kHz exponential."
+   "description": "Ladder low-pass cutoff, 20 Hz – 20 kHz exponential.",
+   "how": "Sets the ladder low-pass cutoff from 20 Hz to 20 kHz.",
+   "sound": "Low cutoffs sound dark and muffled; high ones open up."
   },
   {
    "index": 10,
@@ -616,7 +636,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Self-oscillates near the top."
+   "description": "Self-oscillates near the top.",
+   "how": "Adds feedback at the cutoff, from 0 to 100 percent; the top self-oscillates.",
+   "sound": "Low values are smooth; higher values squelch and whistle."
   },
   {
    "index": 11,
@@ -632,7 +654,9 @@
    "a": -5.0,
    "b": 5.0,
    "unit": "oct",
-   "description": "Envelope to cutoff, −5 to +5 octaves (negative closes it)."
+   "description": "Envelope to cutoff, −5 to +5 octaves (negative closes it).",
+   "how": "Sends the envelope to the cutoff from -5 to +5 octaves; negative values close the filter.",
+   "sound": "Positive values give the classic acid zap; negative ones give a reversed sweep."
   },
   {
    "index": 12,
@@ -648,7 +672,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "LFO to cutoff, up to 4 octaves at 100%."
+   "description": "LFO to cutoff, up to 4 octaves at 100%.",
+   "how": "Sends the LFO to the cutoff, up to 4 octaves at 100 percent.",
+   "sound": "Gives a wah-like sweep."
   },
   {
    "index": 13,
@@ -666,7 +692,9 @@
     "1/2",
     "Full"
    ],
-   "description": "Cutoff follows the note: Off, half (an octave per two) or full, around C4."
+   "description": "Cutoff follows the note: Off, half (an octave per two) or full, around C4.",
+   "how": "Makes the cutoff follow the note: off, half or full.",
+   "sound": "Without it, high notes sound duller than low ones."
   },
   {
    "index": 14,
@@ -683,7 +711,9 @@
     "Gate",
     "Env"
    ],
-   "description": "Gate: full level while held; Env: the envelope shapes the level."
+   "description": "Gate: full level while held; Env: the envelope shapes the level.",
+   "how": "Chooses whether the note holds at full level (Gate) or the envelope shapes it (Env).",
+   "sound": "Gate sounds like an organ; Env gives plucks and swells."
   },
   {
    "index": 15,
@@ -699,7 +729,9 @@
    "a": 0.002,
    "b": 8.0,
    "unit": "s",
-   "description": "Envelope attack, 2 ms – 8 s exponential."
+   "description": "Envelope attack, 2 ms – 8 s exponential.",
+   "how": "Sets the envelope's attack from 2 ms to 8 s.",
+   "sound": "Short attacks are percussive; long ones swell in."
   },
   {
    "index": 16,
@@ -715,7 +747,9 @@
    "a": 0.002,
    "b": 15.0,
    "unit": "s",
-   "description": "Envelope decay, 2 ms – 15 s exponential."
+   "description": "Envelope decay, 2 ms – 15 s exponential.",
+   "how": "Sets how long the envelope takes to fall to the sustain level, from 2 ms to 15 s.",
+   "sound": "Short decays pluck; long ones keep the note open."
   },
   {
    "index": 17,
@@ -731,7 +765,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Level held while the note is down."
+   "description": "Level held while the note is down.",
+   "how": "Sets the level held while the key is down, from 0 to 100 percent.",
+   "sound": "Low sustain gives plucks; high sustain holds the note."
   },
   {
    "index": 18,
@@ -747,7 +783,9 @@
    "a": 0.002,
    "b": 15.0,
    "unit": "s",
-   "description": "Envelope release, 2 ms – 15 s exponential."
+   "description": "Envelope release, 2 ms – 15 s exponential.",
+   "how": "Sets how long the envelope takes to fall after the key is let go, from 2 ms to 15 s.",
+   "sound": "Short releases cut off; long ones leave a tail."
   },
   {
    "index": 19,
@@ -763,7 +801,9 @@
    "a": 0.1,
    "b": 30.0,
    "unit": "Hz",
-   "description": "0.1–30 Hz exponential."
+   "description": "0.1–30 Hz exponential.",
+   "how": "Sets the LFO speed from 0.1 to 30 Hz.",
+   "sound": "Slow rates drift; fast ones wobble."
   },
   {
    "index": 20,
@@ -782,7 +822,9 @@
     "S&H",
     "Noise"
    ],
-   "description": "Triangle, square, sample and hold, or noise."
+   "description": "Triangle, square, sample and hold, or noise.",
+   "how": "Chooses the LFO shape: triangle, square, sample and hold, or noise.",
+   "sound": "Smooth shapes sway; square and random jump."
   },
   {
    "index": 21,
@@ -798,7 +840,9 @@
    "a": 0.0,
    "b": 2.0,
    "unit": "s",
-   "description": "Time after a note before the LFO starts, 0–2 s."
+   "description": "Time after a note before the LFO starts, 0–2 s.",
+   "how": "Waits 0 to 2 s after a note starts before the LFO begins.",
+   "sound": "The note starts steady and the movement arrives later."
   },
   {
    "index": 22,
@@ -1326,7 +1370,9 @@
      2.0
     ]
    ],
-   "description": "Portamento between overlapping notes: off at 0, then 1 ms – 2 s exponential."
+   "description": "Portamento between overlapping notes: off at 0, then 1 ms – 2 s exponential.",
+   "how": "Sets the portamento time between overlapping notes, from off to 2 s.",
+   "sound": "Notes slide into each other, bass-line style."
   },
   {
    "index": 23,
@@ -1342,7 +1388,9 @@
    "a": -50.0,
    "b": 50.0,
    "unit": "ct",
-   "description": "Master fine tune, ±50 cents."
+   "description": "Master fine tune, ±50 cents.",
+   "how": "Fine-tunes the whole synth by up to 50 cents either way.",
+   "sound": "Matches it to another instrument or detunes it for warmth."
   },
   {
    "index": 24,
@@ -1358,7 +1406,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Output gain."
+   "description": "Output gain.",
+   "how": "Sets the output level from 0 to 100 percent.",
+   "sound": "Turns the synth up or down; keep it down when the sub is high."
   }
  ],
  "track_parameters": []

@@ -26,7 +26,7 @@
  "health": {
   "status": "warn",
   "problems": [
-   "hot with every parameter at its maximum at once (+15.5 dBFS peak), but with no parameter alone"
+   "hot with every parameter at its maximum at once (+15.3 dBFS peak), but with no parameter alone"
   ],
   "hot": true
  },
@@ -385,8 +385,8 @@
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": 15.54,
-     "growth_db": 0.44,
+     "peak_dbfs": 15.28,
+     "growth_db": 0.42,
      "verdict": "hot"
     }
    },
@@ -592,7 +592,9 @@
     "Band Reject",
     "Comb"
    ],
-   "description": "Low pass, high pass, band pass, band reject (notch) or comb."
+   "description": "Low pass, high pass, band pass, band reject (notch) or comb.",
+   "how": "Chooses low pass, high pass, band pass, band reject or comb.",
+   "sound": "Each removes or keeps a different part of the spectrum; comb adds a ringing, pitched resonance."
   },
   {
    "index": 1,
@@ -609,7 +611,9 @@
     "12 dB / FIR",
     "24 dB / IIR"
    ],
-   "description": "12 dB/oct (2-pole) or 24 dB/oct (4-pole); for Comb, FIR or IIR."
+   "description": "12 dB/oct (2-pole) or 24 dB/oct (4-pole); for Comb, FIR or IIR.",
+   "how": "Chooses 12 or 24 dB per octave; in comb mode it chooses FIR (flanging) or IIR (resonator).",
+   "sound": "The steeper slope cuts more sharply; in comb mode the choice changes the colour of the ringing."
   },
   {
    "index": 2,
@@ -626,7 +630,9 @@
    "b": 18000.0,
    "unit": "Hz",
    "own_texts": false,
-   "description": "Cutoff (or comb fundamental), 20 Hz – 18 kHz."
+   "description": "Cutoff (or comb fundamental), 20 Hz – 18 kHz.",
+   "how": "Sets the cutoff, or the comb's base pitch, from 20 Hz to 18 kHz.",
+   "sound": "Moves the part of the spectrum that is cut or kept; sweeping it makes a classic filter sweep."
   },
   {
    "index": 3,
@@ -643,7 +649,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "0% wide to 100% near self-oscillation; comb feedback in Comb mode."
+   "description": "0% wide to 100% near self-oscillation; comb feedback in Comb mode.",
+   "how": "Boosts the region at the cutoff from 0 to 100 percent; in comb mode it is the feedback.",
+   "sound": "Low values are smooth; high values whistle and nearly self-oscillate."
   },
   {
    "index": 4,
@@ -660,7 +668,9 @@
    "b": 10.0,
    "unit": "×",
    "own_texts": false,
-   "description": "Gain into a tanh saturator before the filter, 1× (clean) to 10×."
+   "description": "Gain into a tanh saturator before the filter, 1× (clean) to 10×.",
+   "how": "Pushes the signal 1 to 10 times harder into a soft saturator before the filter.",
+   "sound": "Adds warm to gritty harmonics that the filter then shapes."
   },
   {
    "index": 5,
@@ -681,7 +691,9 @@
     "Saw Down",
     "S & H"
    ],
-   "description": "Sine, triangle, square, saw up, saw down or sample and hold."
+   "description": "Sine, triangle, square, saw up, saw down or sample and hold.",
+   "how": "Chooses the LFO shape: sine, triangle, square, saw up, saw down or sample and hold.",
+   "sound": "Smooth shapes sweep; square and sample and hold jump."
   },
   {
    "index": 6,
@@ -698,7 +710,9 @@
    "b": 20.0,
    "unit": "Hz",
    "own_texts": false,
-   "description": "Free-running rate, 0–20 Hz (0 stops it)."
+   "description": "Free-running rate, 0–20 Hz (0 stops it).",
+   "how": "Sets the free-running LFO speed from 0 to 20 Hz; 0 stops it.",
+   "sound": "Slow rates breathe; faster ones wobble."
   },
   {
    "index": 7,
@@ -711,7 +725,9 @@
    "max": 1,
    "default": 0,
    "kind": "switch",
-   "description": "Locks the LFO to the song tempo, at LFO Div."
+   "description": "Locks the LFO to the song tempo, at LFO Div.",
+   "how": "Locks the LFO to the song's tempo, at the division set by LFO Div.",
+   "sound": "The sweep stays in time with the beat."
   },
   {
    "index": 8,
@@ -740,7 +756,9 @@
     "1/8 Trip",
     "1/16 Trip"
    ],
-   "description": "LFO cycle with Tempo Sync on: 4 bars down to 1/16 triplets."
+   "description": "LFO cycle with Tempo Sync on: 4 bars down to 1/16 triplets.",
+   "how": "Chooses the length of one LFO cycle in bars, notes, dotted notes or triplets when Tempo Sync is on.",
+   "sound": "Longer divisions give slow builds; short ones give rhythmic chopping."
   },
   {
    "index": 9,
@@ -757,7 +775,9 @@
    "b": 4.0,
    "unit": "oct",
    "own_texts": false,
-   "description": "Sweep around the cutoff, up to ±4 octaves."
+   "description": "Sweep around the cutoff, up to ±4 octaves.",
+   "how": "Sets how far the LFO swings the cutoff, up to 4 octaves either way.",
+   "sound": "A little adds movement; a lot makes a wah or auto-filter."
   },
   {
    "index": 10,
@@ -772,7 +792,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 180.0,
-   "description": "LFO phase difference between left and right in degrees: 0 mono, 90 quadrature, 180 opposed."
+   "description": "LFO phase difference between left and right in degrees: 0 mono, 90 quadrature, 180 opposed.",
+   "how": "Offsets the right channel's LFO from the left by 0 to 180 degrees.",
+   "sound": "At 0 both sides move together; at 180 they sweep in opposite directions and the sound moves in the stereo field."
   },
   {
    "index": 11,
@@ -789,7 +811,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Filtered against dry: 100% fully filtered."
+   "description": "Filtered against dry: 100% fully filtered.",
+   "how": "Blends the filtered signal with the dry one, from 0 to 100 percent.",
+   "sound": "Below 100 percent keeps some of the original body under the sweep."
   }
  ],
  "track_parameters": []

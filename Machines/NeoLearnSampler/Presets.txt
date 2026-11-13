@@ -1,0 +1,129 @@
+# Neo Learn Sampler factory presets. Output is set last so each chord sounds at the same level (loudest 50 ms RMS -22 dB). Times are in seconds.
+# Rebuild: python3 tools/gen-machine-presets.py Machines/NeoLearnSampler
+machine "Neo Learn Sampler"
+
+preset "Pad — Choir Loop"
+Source = Choir
+Start Offset = 10
+Tone = 10
+Loop = 60
+Vintage Grit = 0
+Room Acoustic = 40
+Attack = 0.4
+Decay = 1
+Sustain = 90
+Release = 1.5
+Unison / Spread = 30
+Output = -8.0
+
+preset "Pad — String Drone"
+Source = Strings
+Start Offset = 20
+Tone = -20
+Loop = 80
+Vintage Grit = 0
+Room Acoustic = 60
+Attack = 1
+Decay = 2
+Sustain = 95
+Release = 2.5
+Unison / Spread = 40
+Output = -3.2
+
+preset "Bell — Bronze Strike"
+Source = Bell
+Start Offset = 0
+Tone = 20
+Loop = 0
+Vintage Grit = 0
+Room Acoustic = 30
+Attack = 0.001
+Decay = 2
+Sustain = 0
+Release = 1.5
+Unison / Spread = 0
+Output = -3.7
+
+preset "Pluck — Lo-fi Keys"
+Source = Pluck
+Start Offset = 0
+Tone = -30
+Loop = 0
+Vintage Grit = 70
+Room Acoustic = 25
+Attack = 0.001
+Decay = 0.8
+Sustain = 20
+Release = 0.4
+Unison / Spread = 0
+Output = -2.8
+
+preset "Texture — Tape Memory"
+Source = Texture
+Start Offset = 25
+Tone = -10
+Loop = 40
+Vintage Grit = 60
+Room Acoustic = 50
+Attack = 0.3
+Decay = 1.5
+Sustain = 80
+Release = 1.2
+Unison / Spread = 0
+Output = 0.7
+
+preset "Keys — Bright Pluck"
+Source = Pluck
+Start Offset = 5
+Tone = 60
+Loop = 0
+Vintage Grit = 0
+Room Acoustic = 20
+Attack = 0.001
+Decay = 0.7
+Sustain = 30
+Release = 0.4
+Unison / Spread = 0
+Output = 1.8
+
+preset "Lead — Choir Vowel"
+Source = Choir
+Start Offset = 0
+Tone = 40
+Loop = 30
+Vintage Grit = 20
+Room Acoustic = 15
+Attack = 0.01
+Decay = 0.6
+Sustain = 80
+Release = 0.3
+Unison / Spread = 0
+Output = -4.5
+
+preset "Drone — Dark Loop"
+Source = Texture
+Start Offset = 40
+Tone = -70
+Loop = 100
+Vintage Grit = 30
+Room Acoustic = 70
+Attack = 1.5
+Decay = 3
+Sustain = 90
+Release = 3
+Unison / Spread = 50
+Output = 3.0
+
+preset "Bell — Tape Chime"
+Source = Bell
+Start Offset = 0
+Tone = 0
+Loop = 0
+Vintage Grit = 50
+Room Acoustic = 60
+Attack = 0.001
+Decay = 2.5
+Sustain = 0
+Release = 1.8
+Unison / Spread = 0
+Output = -5.4

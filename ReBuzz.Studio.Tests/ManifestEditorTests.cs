@@ -31,11 +31,12 @@ namespace ReBuzz.Studio.Tests
 
     public class ManifestEditorTests
     {
-        /// <summary>The curated manifests (mcp-server.md §12.9) of machines the studio has: the ten Pedal ones.</summary>
+        /// <summary>The curated manifests (mcp-server.md §12.9) of machines the studio has: the ten Pedal ones, and since K2 batch a the other nine.</summary>
         public static readonly string[] CuratedPortable =
         {
             "Pedal Chorus", "Pedal Comp", "Pedal Drum Matrix", "Pedal EQ", "Pedal Filter", "Pedal Plate",
             "Pedal FM", "Pedal Juno106", "Pedal M1", "Pedal SH101",
+            "Pedal Gate", "Pedal Gain", "Pedal Gain Multi", "Pedal Shaper", "Pedal MComp", "Pedal Tracker", "Pedal Chord", "Pedal LFO", "Pedal Peer Control",
         };
 
         static ReBuzzCore Core => Studio.Host.Core;
@@ -171,15 +172,15 @@ namespace ReBuzz.Studio.Tests
         public void ADraftOpensItsListUntilTheSettingIsTurnedOn()
         {
             var (window, view) = OpenEmpty();
-            // U6 (mcp-server.md §12.13, §12.15): every Pedal machine's manifest is curated or generated from its source
-            // now, so Pedal Tracker's is made a draft (its manifest as read, marked a draft) for this test.
+            // U6 (mcp-server.md §12.13, §12.15), K2 batch a: every Pedal machine's manifest is curated now,
+            // so Pedal Tracker's is made a draft (its manifest as read, marked a draft) for this test.
             var gain = (MachineCore)Add("Pedal Tracker", "Trim", 0, 0);
             var cache = (ConcurrentDictionary<string, MachineManifest>)typeof(SongModel)
                 .GetField("manifests", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
             var real = SongModel.Manifest(gain.DLL)!;
             string text = File.ReadAllText(MachineManifest.PathFor(gain.DLL.Path, gain.DLL.Name));
-            Assert.That(text, Does.Contain("\"status\": \"generated\""));
-            cache[gain.DLL.Path] = MachineManifest.Parse(text.Replace("\"status\": \"generated\"", "\"status\": \"draft\""));
+            Assert.That(text, Does.Contain("\"status\": \"curated\""));
+            cache[gain.DLL.Path] = MachineManifest.Parse(text.Replace("\"status\": \"curated\"", "\"status\": \"draft\""));
             try
             {
                 Settle();
@@ -211,8 +212,8 @@ namespace ReBuzz.Studio.Tests
             }
             finally
             {
-                ManifestEditorSettings.Set(gain.DLL, false);
                 cache[gain.DLL.Path] = real;
+                ManifestEditorSettings.Set(gain.DLL, true); // the curated default, so later tests see the gear as it ships
                 Close(window);
             }
         }

@@ -573,7 +573,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Wet against dry: 0% dry only, 100% wet only."
+   "description": "Wet against dry: 0% dry only, 100% wet only.",
+   "how": "Blends dry and reverb from 0 percent (dry only) to 100 percent (reverb only).",
+   "sound": "Low mixes add a little space; on a send, 100 percent gives only the reverb."
   },
   {
    "index": 1,
@@ -590,7 +592,9 @@
    "b": 0.5,
    "unit": "s",
    "own_texts": false,
-   "description": "Gap before the reverb, 0–500 ms."
+   "description": "Gap before the reverb, 0–500 ms.",
+   "how": "Delays the start of the reverb by 0 to 500 ms.",
+   "sound": "A gap keeps the dry sound clear before the space arrives."
   },
   {
    "index": 2,
@@ -607,7 +611,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Tail length, 0% short to 100% long."
+   "description": "Tail length, 0% short to 100% long.",
+   "how": "Sets the tail length from 0 percent (short) to 100 percent (long).",
+   "sound": "Short decays sound like a small plate; long ones ring on and on."
   },
   {
    "index": 3,
@@ -624,7 +630,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "High-frequency loss in the tank, 0% bright to 100% dark."
+   "description": "High-frequency loss in the tank, 0% bright to 100% dark.",
+   "how": "Removes high frequencies from the tail, from 0 percent (bright) to 100 percent (dark).",
+   "sound": "The tail goes from shiny to dull and distant."
   },
   {
    "index": 4,
@@ -641,7 +649,9 @@
    "b": 200.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Scales the delay lengths: 10% tiny, 100% normal, 200% huge."
+   "description": "Scales the delay lengths: 10% tiny, 100% normal, 200% huge.",
+   "how": "Scales the internal delay lengths from 10 to 200 percent.",
+   "sound": "Small sizes sound tight and metallic; large sizes sound big and slow to build."
   },
   {
    "index": 5,
@@ -658,7 +668,9 @@
    "b": 5.0,
    "unit": "Hz",
    "own_texts": false,
-   "description": "Tank modulation speed, 0–5 Hz."
+   "description": "Tank modulation speed, 0–5 Hz.",
+   "how": "Sets the speed of the tank's modulation, from 0 to 5 Hz.",
+   "sound": "Slow modulation keeps the tail from ringing on one pitch."
   },
   {
    "index": 6,
@@ -675,7 +687,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Tank modulation depth (100%: 16 samples)."
+   "description": "Tank modulation depth (100%: 16 samples).",
+   "how": "Sets how far the tank's modulation swings, from 0 to 100 percent.",
+   "sound": "More depth smooths the tail and adds a gentle chorus-like shimmer."
   },
   {
    "index": 7,
@@ -692,7 +706,9 @@
    "b": 800.0,
    "unit": "Hz",
    "own_texts": false,
-   "description": "High-pass on the input, 20–800 Hz exponential (20 Hz: effectively off)."
+   "description": "High-pass on the input, 20–800 Hz exponential (20 Hz: effectively off).",
+   "how": "High-passes the signal going into the reverb, from 20 to 800 Hz.",
+   "sound": "Keeps bass out of the tail so it stays clear."
   },
   {
    "index": 8,
@@ -709,7 +725,9 @@
    "b": 95.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Output back into the tank, 0–95% (capped inside for stability)."
+   "description": "Output back into the tank, 0–95% (capped inside for stability).",
+   "how": "Sends the reverb's output back into its tank, from 0 to 95 percent; it is capped inside for stability.",
+   "sound": "Stretches the tail and makes it build; high values sound like a big, ringing hall."
   }
  ],
  "track_parameters": []

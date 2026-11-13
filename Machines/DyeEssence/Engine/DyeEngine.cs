@@ -182,7 +182,7 @@ namespace NeoBuzz.DyeEssence
             {
                 var os = s.Osc[o];
                 int b = OscBase[o];
-                os.Type = (SlotType)values.Choice(b);
+                os.Type = os.TypeExt > 0 ? (SlotType)os.TypeExt : (SlotType)values.Choice(b);   // Neo Learn: a type Dye Essence's controls cannot choose
                 int choice = values.Choice(b + (P.ATable - P.AType));
                 var table = choice >= TableBank.Count ? userTable[o] ?? TableBank.Get(0) : TableBank.Get(choice);
                 // Keep playing the previous table until a newly chosen one is built.
@@ -197,7 +197,7 @@ namespace NeoBuzz.DyeEssence
                 os.Spread = values.F(b + (P.ASpread - P.AType));
                 os.Phase = values.F(b + (P.APhase - P.AType)) / 360f;
                 os.Random = values.F(b + (P.ARandom - P.AType));
-                os.Warp1 = (Warp)values.Choice(b + (P.AWarp1 - P.AType));
+                os.Warp1 = os.PdOn ? Warps.Pd : (Warp)values.Choice(b + (P.AWarp1 - P.AType));   // Neo Learn: the phase distortion is not one of Dye Essence's warps
                 os.Amount1 = values.F(b + (P.AWarp1Amt - P.AType));
                 os.Warp2 = (Warp)values.Choice(b + (P.AWarp2 - P.AType));
                 os.Amount2 = values.F(b + (P.AWarp2Amt - P.AType));
@@ -265,7 +265,7 @@ namespace NeoBuzz.DyeEssence
             {
                 var fs = s.Filter[f];
                 int b = FilterBase[f];
-                fs.Type = (FilterType)values.Choice(b);
+                fs.Type = fs.Kind > 0 ? FilterType.Vowel + (fs.Kind - 1) : (FilterType)values.Choice(b);   // Neo Learn: the vowel filter and the low-pass gate
                 fs.Cutoff = values.F(b + (P.F1Cutoff - P.F1Type));
                 fs.Reso = values.F(b + (P.F1Reso - P.F1Type));
                 fs.Drive = (float)DspMath.DbToGain(values.Value(b + (P.F1Drive - P.F1Type)));
