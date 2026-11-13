@@ -1,8 +1,10 @@
 #nullable disable
-// Neo Patch NP0 (docs/specs/neo-patch.md §4.4): the compiler. It orders the graph into block jobs, allocates every buffer and
-// every voice's state, and drops what can't be heard (nodes that don't lead to an Out). A cycle is refused unless it goes
-// through a Feedback node, which is two jobs: Read (first: it outputs the last block's input) and Write (after its source).
-// The result is immutable apart from controls and state; the audio thread only runs it.
+// Neo Patch NP1 (docs/specs/neo-patch.md §4.4): the compiler. It orders the graph into block jobs, decides every node's scope
+// (per voice or global), allocates every buffer and every voice's state, and drops what can't be heard (nodes that don't lead to an
+// Out). A cycle is refused unless it goes through a Feedback node, which is two jobs: Read (first: it outputs the last block's input)
+// and Write (after its source). A node that was in the patch being replaced (the same id and kind) takes over its state, so an edit
+// while playing doesn't restart envelopes, phases, filters or delay lines. The result is immutable apart from controls and state;
+// the audio thread only runs it.
 
 using System;
 using System.Collections.Generic;
@@ -11,13 +13,27 @@ using NeoBuzz.DyeEssence;
 
 namespace NeoBuzz.Patch
 {
+    /// <summary>One macro's mapping resolved to the node it drives.</summary>
+    internal readonly struct ResolvedMacro
+    {
+        public readonly int Macro, Control;
+        public readonly Node Node;
+        public readonly float Min, Max;
+        public ResolvedMacro(int macro, Node node, int control, float min, float max) { Macro = macro; Node = node; Control = control; Min = min; Max = max; }
+    }
+
     internal sealed class CompiledPatch
     {
         public Job[] Jobs;
         public int Nodes, Buffers;
-        /// <summary>Set until the patch's first block has run: its voices start fresh (a swap restarts the sounding notes' state).</summary>
-        public bool First = true;
         public string Order;
+        /// <summary>Whether any node runs in the global view (it runs even when no voice sounds).</summary>
+        public bool HasGlobal;
+        public ResolvedMacro[] MacroMaps;
+        /// <summary>Jobs by node and half (id × 4 + role), for the next patch to take state from.</summary>
+        public Dictionary<int, Job> ByKey;
+        /// <summary>How many nodes took over their state from the patch before.</summary>
+        public int Adopted;
     }
 
     internal readonly struct CompileResult
@@ -110,29 +126,74 @@ namespace NeoBuzz.Patch
             return live;
         }
 
-        public static CompileResult Compile(PatchGraph g, PatchContext ctx)
+        public static CompileResult Compile(PatchGraph g, PatchContext ctx, CompiledPatch old = null)
         {
             if (!TryOrder(g, out var order, out var error)) return new CompileResult(null, error);
             var jobs = new List<Job>();
+            var byKey = new Dictionary<int, Job>();
             var outBuf = new Dictionary<(int, int), PortBuffer>();       // (node, output port) → its buffer
-            var fb = new Dictionary<int, FeedbackState>();
-            int buffers = 0;
-            PortBuffer NewBuf(bool perVoice) { buffers++; return new PortBuffer(perVoice); }
+            var scope = new Dictionary<int, bool>();                     // node → global
+            var sums = new Dictionary<PortBuffer, PortBuffer>();         // per-voice buffer → its voice sum
+            var fb = new Dictionary<int, FeedbackReadJob>();
+            int buffers = 0, adopted = 0;
+            bool hasGlobal = false;
+            PortBuffer NewBuf(bool global) { buffers++; return new PortBuffer(!global); }
 
-            // A node's input: nothing, the source's own buffer (one wire, amount 1, same scope), or a mix job's.
-            PortBuffer Input(Node n, int port)
+            Job Add(Job j, Node n, bool global, int role = 0)
             {
-                var wires = g.Wires.Where(w => w.ToNode == n.Id && w.ToPort == port && outBuf.ContainsKey((w.FromNode, w.FromPort))).ToList();
-                if (wires.Count == 0) return null;
-                bool perVoice = n.PerVoice;
-                if (wires.Count == 1 && wires[0].Amount == 1f)
+                j.NodeId = n.Id;
+                j.Global = global;
+                if (global) hasGlobal = true;
+                int key = n.Id * 4 + role;
+                if (old != null && old.ByKey != null && old.ByKey.TryGetValue(key, out var oj) && oj.GetType() == j.GetType() && j.Adopt(oj)) { j.Started = true; adopted++; }
+                byKey[key] = j;
+                jobs.Add(j);
+                return j;
+            }
+
+            // Where a node runs: its own setting, else global when everything wired into it is.
+            bool ScopeOf(Node n, Role role)
+            {
+                if (n.Kind == NodeKind.Feedback) return n.GlobalSetting;
+                if (n.GlobalSetting) return true;
+                if (n.Info.ForcedPerVoice) return false;
+                bool any = false, allGlobal = true;
+                foreach (var w in g.Wires)
                 {
-                    var src = outBuf[(wires[0].FromNode, wires[0].FromPort)];
-                    if (src.PerVoice == perVoice) return src;
+                    if (w.ToNode != n.Id || !scope.TryGetValue(w.FromNode, out bool gl)) continue;
+                    any = true;
+                    if (!gl) allGlobal = false;
                 }
-                var dest = NewBuf(perVoice);
-                jobs.Add(new MixJob { NodeId = n.Id, Dest = dest, Inputs = wires.Select(w => new MixInput(outBuf[(w.FromNode, w.FromPort)], w.Amount)).ToArray() });
+                return any && allGlobal;
+            }
+
+            // A per-voice signal that reaches a global node is summed over the voices, once for each source.
+            PortBuffer GlobalOf(PortBuffer src)
+            {
+                if (!src.PerVoice) return src;
+                if (!sums.TryGetValue(src, out var dest))
+                {
+                    dest = NewBuf(true);
+                    sums[src] = dest;
+                    var sj = new SumJob { Src = src, Dest = dest, NodeId = -1 };
+                    jobs.Add(sj);
+                }
                 return dest;
+            }
+
+            IEnumerable<Wire> WiresTo(Node n, int port) =>
+                g.Wires.Where(w => w.ToNode == n.Id && w.ToPort == port && outBuf.ContainsKey((w.FromNode, w.FromPort))).OrderBy(w => w.FromNode).ThenBy(w => w.FromPort);
+
+            // A node's input: nothing, or the wires' sum read where the node uses it.
+            Inp Input(Node n, int port, bool global)
+            {
+                var list = new List<(PortBuffer, float)>();
+                foreach (var w in WiresTo(n, port))
+                {
+                    var src = outBuf[(w.FromNode, w.FromPort)];
+                    list.Add((global ? GlobalOf(src) : src, w.Amount));
+                }
+                return list.Count == 0 ? null : new Inp(list, !global);
             }
 
             bool Wired(Node n, int port) => g.Wires.Any(w => w.FromNode == n.Id && w.FromPort == port);
@@ -140,69 +201,228 @@ namespace NeoBuzz.Patch
             foreach (var (n, roleInt) in order)
             {
                 var role = (Role)roleInt;
+                bool global = n.Kind == NodeKind.Out ? false : ScopeOf(n, role);
+                if (n.Kind != NodeKind.Out) scope[n.Id] = global;
+                float[] ctl = n.Controls;
                 switch (n.Kind)
                 {
                     case NodeKind.Keys:
                     {
-                        var j = new KeysJob { NodeId = n.Id };
+                        var j = new KeysJob();
+                        if (Wired(n, 0)) outBuf[(n.Id, 0)] = j.Pitch = NewBuf(false);
+                        if (Wired(n, 1)) outBuf[(n.Id, 1)] = j.Gate = NewBuf(false);
+                        if (Wired(n, 2)) outBuf[(n.Id, 2)] = j.Vel = NewBuf(false);
+                        if (Wired(n, 3)) outBuf[(n.Id, 3)] = j.Press = NewBuf(false);
+                        if (Wired(n, 4)) outBuf[(n.Id, 4)] = j.Slide = NewBuf(false);
+                        Add(j, n, false);
+                        break;
+                    }
+                    case NodeKind.GlobalKeys:
+                    {
+                        var j = new GlobalKeysJob();
                         if (Wired(n, 0)) outBuf[(n.Id, 0)] = j.Pitch = NewBuf(true);
                         if (Wired(n, 1)) outBuf[(n.Id, 1)] = j.Gate = NewBuf(true);
                         if (Wired(n, 2)) outBuf[(n.Id, 2)] = j.Vel = NewBuf(true);
-                        jobs.Add(j);
+                        Add(j, n, true);
                         break;
                     }
                     case NodeKind.Osc:
+                    case NodeKind.WavetableOsc:
                     {
-                        var j = new OscJob { NodeId = n.Id, Ctl = n.Controls, Pitch = Input(n, NodeInfo.OscInPitch), Fm = Input(n, NodeInfo.OscInFm) };
-                        for (int v = 0; v < PatchContext.MaxVoices; v++) j.LastNote[v] = float.NaN;
-                        outBuf[(n.Id, 0)] = j.Out = NewBuf(true);
-                        jobs.Add(j);
+                        var j = new OscJob
+                        {
+                            Ctl = ctl, Wt = n.Kind == NodeKind.WavetableOsc,
+                            Pitch = Input(n, NodeInfo.OscInPitch, global), Fm = Input(n, NodeInfo.OscInFm, global), Pm = Input(n, NodeInfo.OscInPm, global),
+                            Sync = Input(n, NodeInfo.OscInSync, global), Aux = Input(n, NodeInfo.OscInPulse, global),
+                        };
+                        outBuf[(n.Id, 0)] = j.Out = NewBuf(global);
+                        // The chosen table is built here, off the audio thread, so the first block can read it.
+                        if (j.Wt) TableBank.GetNow(Math.Clamp((int)(ctl[NodeInfo.WtTable] + 0.5f), 0, TableBank.Count - 1));
+                        Add(j, n, global);
+                        break;
+                    }
+                    case NodeKind.Noise:
+                    {
+                        var j = new NoiseJob { Ctl = ctl };
+                        outBuf[(n.Id, 0)] = j.Out = NewBuf(global);
+                        Add(j, n, global);
+                        break;
+                    }
+                    case NodeKind.Sample:
+                    {
+                        var j = new SampleJob { Ctl = ctl, Pitch = Input(n, NodeInfo.SampleInPitch, global), Gate = Input(n, NodeInfo.SampleInGate, global) };
+                        outBuf[(n.Id, 0)] = j.Out = NewBuf(global);
+                        int src = (int)(ctl[NodeInfo.SampleSource] + 0.5f);
+                        if (src < SampleSources.Count) SampleSources.GetNow(src);
+                        Add(j, n, global);
                         break;
                     }
                     case NodeKind.Envelope:
                     {
-                        var j = new EnvJob { NodeId = n.Id, Ctl = n.Controls, Gate = Input(n, NodeInfo.EnvInGate) };
-                        outBuf[(n.Id, 0)] = j.Out = NewBuf(true);
-                        jobs.Add(j);
+                        var j = new EnvJob { Ctl = ctl, Gate = Input(n, NodeInfo.EnvInGate, global) };
+                        outBuf[(n.Id, 0)] = j.Out = NewBuf(global);
+                        Add(j, n, global);
+                        break;
+                    }
+                    case NodeKind.Lfo:
+                    {
+                        var j = new LfoJob { Ctl = ctl, Rate = Input(n, NodeInfo.LfoInRate, global), Reset = Input(n, NodeInfo.LfoInReset, global) };
+                        outBuf[(n.Id, 0)] = j.Out = NewBuf(global);
+                        Add(j, n, global);
+                        break;
+                    }
+                    case NodeKind.Random:
+                    {
+                        var j = new RandomJob { Ctl = ctl, Trigger = Input(n, 0, global) };
+                        outBuf[(n.Id, 0)] = j.Out = NewBuf(global);
+                        Add(j, n, global);
+                        break;
+                    }
+                    case NodeKind.Slew:
+                    {
+                        var j = new SlewJob { Ctl = ctl, In = Input(n, 0, global) };
+                        outBuf[(n.Id, 0)] = j.Out = NewBuf(global);
+                        Add(j, n, global);
+                        break;
+                    }
+                    case NodeKind.SampleHold:
+                    {
+                        var j = new SampleHoldJob { Ctl = ctl, In = Input(n, 0, global), Trigger = Input(n, 1, global) };
+                        outBuf[(n.Id, 0)] = j.Out = NewBuf(global);
+                        Add(j, n, global);
+                        break;
+                    }
+                    case NodeKind.Macro:
+                    {
+                        var j = new MacroJob { Ctl = ctl };
+                        outBuf[(n.Id, 0)] = j.Out = NewBuf(global);
+                        Add(j, n, global);
                         break;
                     }
                     case NodeKind.Filter:
                     {
-                        var j = new FilterJob { NodeId = n.Id, Ctl = n.Controls, In = Input(n, NodeInfo.FilterInAudio), Cutoff = Input(n, NodeInfo.FilterInCutoff) };
-                        outBuf[(n.Id, 0)] = j.Out = NewBuf(true);
-                        jobs.Add(j);
+                        var j = new FilterJob { Ctl = ctl, In = Input(n, NodeInfo.FilterInAudio, global), Cutoff = Input(n, NodeInfo.FilterInCutoff, global), Reso = Input(n, NodeInfo.FilterInReso, global) };
+                        outBuf[(n.Id, 0)] = j.Out = NewBuf(global);
+                        Add(j, n, global);
+                        break;
+                    }
+                    case NodeKind.Shaper:
+                    {
+                        var j = new ShaperJob { Ctl = ctl, In = Input(n, NodeInfo.ShaperInAudio, global), Drive = Input(n, NodeInfo.ShaperInDrive, global), Pitch = Input(n, NodeInfo.ShaperInPitch, global) };
+                        outBuf[(n.Id, 0)] = j.Out = NewBuf(global);
+                        Add(j, n, global);
+                        break;
+                    }
+                    case NodeKind.Delay:
+                    {
+                        var j = DelayJob.Make(ctx.SampleRate, global ? 1 : ctx.VoiceSlots);
+                        j.Ctl = ctl; j.In = Input(n, NodeInfo.DelayInAudio, global); j.Time = Input(n, NodeInfo.DelayInTime, global);
+                        outBuf[(n.Id, 0)] = j.Out = NewBuf(global);
+                        Add(j, n, global);
                         break;
                     }
                     case NodeKind.Vca:
                     {
-                        var j = new VcaJob { NodeId = n.Id, Ctl = n.Controls, In = Input(n, NodeInfo.VcaInAudio), Cv = Input(n, NodeInfo.VcaInCv) };
+                        var j = new VcaJob { Ctl = ctl, In = Input(n, NodeInfo.VcaInAudio, global), Cv = Input(n, NodeInfo.VcaInCv, global) };
+                        outBuf[(n.Id, 0)] = j.Out = NewBuf(global);
+                        Add(j, n, global);
+                        break;
+                    }
+                    case NodeKind.Mixer:
+                    {
+                        var j = new MixerJob { Ctl = ctl };
+                        for (int k = 0; k < 4; k++) j.In[k] = Input(n, k, global);
+                        outBuf[(n.Id, 0)] = j.Out = NewBuf(global);
+                        Add(j, n, global);
+                        break;
+                    }
+                    case NodeKind.Math:
+                    {
+                        var j = new MathJob { Ctl = ctl, A = Input(n, NodeInfo.MathInA, global), B = Input(n, NodeInfo.MathInB, global) };
+                        outBuf[(n.Id, 0)] = j.Out = NewBuf(global);
+                        Add(j, n, global);
+                        break;
+                    }
+                    case NodeKind.Crossfade:
+                    {
+                        var j = new CrossfadeJob { Ctl = ctl, A = Input(n, NodeInfo.XfadeInA, global), B = Input(n, NodeInfo.XfadeInB, global), Mix = Input(n, NodeInfo.XfadeInMix, global) };
+                        outBuf[(n.Id, 0)] = j.Out = NewBuf(global);
+                        Add(j, n, global);
+                        break;
+                    }
+                    case NodeKind.VoiceSum:
+                    {
+                        var j = new PassJob { In = Input(n, 0, true) };
                         outBuf[(n.Id, 0)] = j.Out = NewBuf(true);
-                        jobs.Add(j);
+                        Add(j, n, true);
                         break;
                     }
                     case NodeKind.Out:
-                        jobs.Add(new OutJob { NodeId = n.Id, Ctl = n.Controls, In = Input(n, 0) });
+                    {
+                        var j = new OutJob { Ctl = ctl };
+                        for (int k = 0; k < 4; k++)
+                        {
+                            var v = new List<(PortBuffer, float)>();
+                            var gl = new List<(PortBuffer, float)>();
+                            foreach (var w in WiresTo(n, k))
+                            {
+                                var src = outBuf[(w.FromNode, w.FromPort)];
+                                (src.PerVoice ? v : gl).Add((src, w.Amount));
+                            }
+                            j.InV[k] = v.Count == 0 ? null : new Inp(v, true);
+                            j.InG[k] = gl.Count == 0 ? null : new Inp(gl, false);
+                        }
+                        Add(j, n, false);
                         break;
+                    }
                     case NodeKind.Feedback:
                         if (role == Role.FbRead)
                         {
-                            var st = fb[n.Id] = new FeedbackState(n.PerVoice);
+                            var j = new FeedbackReadJob { State = new FeedbackState(!global) };
+                            outBuf[(n.Id, 0)] = j.Out = NewBuf(global);
                             buffers++;
-                            var o = NewBuf(n.PerVoice);
-                            outBuf[(n.Id, 0)] = o;
-                            jobs.Add(new FeedbackReadJob { NodeId = n.Id, State = st, Out = o });
+                            Add(j, n, global, 1);
+                            fb[n.Id] = j;
                         }
-                        else jobs.Add(new FeedbackWriteJob { NodeId = n.Id, Ctl = n.Controls, State = fb[n.Id], In = Input(n, 0) });
+                        else
+                        {
+                            var rd = fb[n.Id];
+                            // The Write half shares the Read half's state (which has taken over the old patch's, if it did).
+                            Add(new FeedbackWriteJob { Ctl = ctl, State = rd.State, In = Input(n, 0, global) }, n, global, 2);
+                        }
                         break;
                 }
+            }
+
+            var maps = new List<ResolvedMacro>();
+            foreach (var m in g.Macros)
+            {
+                var node = g.Find(m.NodeId);
+                if (node != null && m.Control >= 0 && m.Control < node.Controls.Length) maps.Add(new ResolvedMacro(m.Macro, node, m.Control, m.Min, m.Max));
             }
             return new CompileResult(new CompiledPatch
             {
                 Jobs = jobs.ToArray(),
                 Nodes = order.Select(o => o.Node.Id).Distinct().Count(),
                 Buffers = buffers,
+                HasGlobal = hasGlobal,
+                MacroMaps = maps.ToArray(),
+                ByKey = byKey,
+                Adopted = adopted,
                 Order = string.Join(" ", order.Select(o => o.Node.Kind + "#" + o.Node.Id + (o.Role == 1 ? ".read" : o.Role == 2 ? ".write" : ""))),
             }, null);
+        }
+    }
+
+    /// <summary>Voice sum node: its input's wires (already voice-summed where they were per-voice) into a global buffer.</summary>
+    internal sealed class PassJob : Job
+    {
+        public Inp In;
+        public PortBuffer Out;
+        public override void Run(PatchContext c)
+        {
+            var o = Out.Data;
+            for (int i = 0; i < PatchContext.Block; i++) o[i * PatchContext.MaxVoices] = In != null ? In.At(i, 0) : 0f;
         }
     }
 }

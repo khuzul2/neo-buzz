@@ -1,13 +1,17 @@
 #nullable disable
-// Neo Patch NP0 (docs/specs/neo-patch.md §4.4): the block jobs. A compiled patch is an ordered list of jobs; each job runs one
-// node (or one input's mix) for one 64-sample block across all voices. Per-voice buffers are [sample][16 voices] (sample-major),
-// so eight voices are one vector: the kernels are Dye Essence's lane kernels' way (Lanes.cs: Avx2, two Vector128, or plain
-// floats, same bits). Everything a job touches is allocated when the patch is compiled; Run allocates nothing.
+// Neo Patch NP1 (docs/specs/neo-patch.md §4.4): the block jobs. A compiled patch is an ordered list of jobs; each job runs one node
+// for one 64-sample block across all voices. Every buffer is [sample][16 voices] (sample-major), so eight voices are one vector: the
+// kernels are Dye Essence's lane kernels' way (Lanes.cs: Avx2, two Vector128, or plain floats, same bits). A global node's buffers
+// use voice slot 0 only and its job runs in a view of the context with just that voice on, so one set of kernels serves both
+// scopes. A node's inputs are read where they're used (<see cref="Inp"/>: the wires' sum), not mixed into a buffer first. Everything
+// a job touches is allocated when the patch is compiled; Run allocates nothing.
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using NeoBuzz.Dsp;
 using NeoBuzz.DyeEssence;
+using NeoBuzz.Sampler;
 
 namespace NeoBuzz.Patch
 {
@@ -18,116 +22,387 @@ namespace NeoBuzz.Patch
 
         public LaneKind Kind;
         public float SampleRate = 48000;
-        /// <summary>Control interval, samples: pitches, cutoffs and envelope levels are read and updated here (spec §2.3 allows a CV at audio rate; this is the cost knob).</summary>
+        /// <summary>Control interval, samples: pitches, cutoffs and envelope levels are read and updated here, with their values interpolated across it.</summary>
         public int Tick = 16;
+        /// <summary>The patch's "audio-rate modulation" switch: control ports are read for every sample (cost: docs/specs/neo-patch-engine.md).</summary>
+        public bool AudioMod;
+        /// <summary>Voices a per-voice delay line is allocated for (the machine's Voices setting when the patch was compiled).</summary>
+        public int VoiceSlots = MaxVoices;
+        /// <summary>The control interval in effect: 1 with audio-rate modulation.</summary>
+        public int CtlTick => AudioMod ? 1 : Tick;
 
-        public readonly bool[] GroupOn = new bool[Groups];
-        public readonly bool[] Active = new bool[MaxVoices];
-        public readonly bool[] Fresh = new bool[MaxVoices];
+        // The view jobs read: the voices' (default), or the one slot of a global node.
+        public bool[] GroupOn, Active, Fresh;
+        public readonly bool[] VGroupOn = new bool[Groups], VActive = new bool[MaxVoices], VFresh = new bool[MaxVoices];
+        readonly bool[] gGroupOn = { true, false }, gActive = new bool[MaxVoices], gFresh = new bool[MaxVoices];
+
         public readonly float[] Pitch0 = new float[MaxVoices], Pitch1 = new float[MaxVoices], Vel = new float[MaxVoices], Gate = new float[MaxVoices];
+        public readonly float[] Press0 = new float[MaxVoices], Press1 = new float[MaxVoices], Slide0 = new float[MaxVoices], Slide1 = new float[MaxVoices];
         public readonly float[] Gain0 = new float[MaxVoices], Gain1 = new float[MaxVoices];
         public readonly float[] Peak = new float[MaxVoices];
+        /// <summary>Global Keys: the last note and whether any key is held.</summary>
+        public float GPitch0, GPitch1, GGate, GVel;
+        /// <summary>The 16 macros, 0 … 1, smoothed.</summary>
+        public readonly float[] Macros = new float[16];
+        /// <summary>The user's own sample (the Sample node's source 5), or null.</summary>
+        public volatile SampleLayer UserSample;
         public readonly float[] OutL = new float[Block], OutR = new float[Block];
+
+        public PatchContext()
+        {
+            gActive[0] = true;
+            LeaveGlobal();
+        }
+
+        public void EnterGlobal(bool fresh)
+        {
+            gFresh[0] = fresh;
+            GroupOn = gGroupOn; Active = gActive; Fresh = gFresh;
+        }
+
+        public void LeaveGlobal()
+        {
+            GroupOn = VGroupOn; Active = VActive; Fresh = VFresh;
+        }
     }
 
     internal sealed class PortBuffer
     {
         public readonly float[] Data;
+        /// <summary>One value for each voice; false: global (slot 0 only).</summary>
         public readonly bool PerVoice;
-        public PortBuffer(bool perVoice) { PerVoice = perVoice; Data = new float[perVoice ? Block * PatchContext.MaxVoices : Block]; }
-        const int Block = PatchContext.Block;
+        public PortBuffer(bool perVoice) { PerVoice = perVoice; Data = new float[PatchContext.Block * PatchContext.MaxVoices]; }
+    }
+
+    /// <summary>A node's input: the sum of its wires (each source scaled by the wire's amount), read where the node uses it.</summary>
+    internal sealed class Inp
+    {
+        const int V = PatchContext.MaxVoices;
+        public readonly float[][] Data;
+        public readonly float[] Amt;
+        /// <summary>A global source into a per-voice node: every voice reads slot 0.</summary>
+        public readonly bool[] Bcast;
+        public readonly int N;
+        /// <summary>One source, amount 1, same scope: read it as it is.</summary>
+        public readonly bool Direct;
+        public readonly float[] D0;
+
+        public Inp(List<(PortBuffer Src, float Amount)> sources, bool consumerPerVoice)
+        {
+            N = sources.Count;
+            Data = new float[N][]; Amt = new float[N]; Bcast = new bool[N];
+            for (int k = 0; k < N; k++)
+            {
+                Data[k] = sources[k].Src.Data; Amt[k] = sources[k].Amount;
+                Bcast[k] = consumerPerVoice && !sources[k].Src.PerVoice;
+            }
+            Direct = N == 1 && Amt[0] == 1f && !Bcast[0];
+            D0 = N > 0 ? Data[0] : null;
+        }
+
+        /// <summary>The sum at one sample for one voice (control reads).</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public float At(int i, int v)
+        {
+            if (Direct) return D0[i * V + v];
+            float s = 0f;
+            for (int k = 0; k < N; k++) s += Amt[k] * Data[k][i * V + (Bcast[k] ? 0 : v)];
+            return s;
+        }
+
+        /// <summary>The sum at one sample for the eight voices from <paramref name="vb"/>.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TF Load<TL, TF, TU>(int i, int vb) where TL : struct, ILanes<TF, TU> where TF : struct where TU : struct
+        {
+            if (Direct) return TL.Load(D0, i * V + vb);
+            TF acc = TL.Splat(0f);
+            for (int k = 0; k < N; k++)
+            {
+                TF s = Bcast[k] ? TL.Splat(Data[k][i * V]) : TL.Load(Data[k], i * V + vb);
+                acc = Amt[k] == 1f ? TL.Add(acc, s) : TL.Add(acc, TL.Mul(s, TL.Splat(Amt[k])));
+            }
+            return acc;
+        }
     }
 
     internal abstract class Job
     {
         public int NodeId;
+        /// <summary>Runs in the global view (one voice slot).</summary>
+        public bool Global;
+        /// <summary>Its state has run before (a node that survived an edit, or a block already run): voices start fresh only on their own note-on.</summary>
+        public bool Started;
         public abstract void Run(PatchContext c);
+
+        /// <summary>Takes over a job of the same node from the patch being replaced: its state (phases, filters, envelopes, delay lines) carries on.</summary>
+        public virtual bool Adopt(Job old) => false;
     }
 
-    internal readonly struct MixInput
+    internal static class JobScope
     {
-        public readonly PortBuffer Source;
-        public readonly float Amount;
-        public MixInput(PortBuffer s, float a) { Source = s; Amount = a; }
+        public static bool SameScope(Job a, Job b) => a.Global == b.Global;
     }
 
-    // ---------------------------------------------------------------- jobs
+    // ---------------------------------------------------------------- jobs (state; the kernels are in PatchKernels.cs)
 
     internal sealed class KeysJob : Job
     {
-        public PortBuffer Pitch, Gate, Vel;
-        public override void Run(PatchContext c) => Kernels.Dispatch(this, c);
+        public PortBuffer Pitch, Gate, Vel, Press, Slide;
+        public override void Run(PatchContext c) => Kernels.Keys(this, c);
     }
 
+    internal sealed class GlobalKeysJob : Job
+    {
+        public PortBuffer Pitch, Gate, Vel;
+        public override void Run(PatchContext c) => Kernels.GlobalKeys(this, c);
+    }
+
+    /// <summary>An Osc or a Wavetable Osc: the same kernel (the table read, the phase, the FM, PM and sync), told apart by <see cref="Wt"/>.</summary>
     internal sealed class OscJob : Job
     {
+        const int V = PatchContext.MaxVoices;
         public float[] Ctl;
-        public PortBuffer Pitch, Fm, Out;
-        public readonly float[] Phase = new float[PatchContext.MaxVoices], Inc = new float[PatchContext.MaxVoices], LastNote = new float[PatchContext.MaxVoices];
-        public override void Run(PatchContext c) => Kernels.Dispatch(this, c);
+        public bool Wt;
+        public Inp Pitch, Fm, Pm, Sync, Aux;
+        public PortBuffer Out;
+        public float[] Phase = new float[V], Inc = new float[V], Drift = new float[V], LastSync = new float[V];
+        public uint[] DriftRng = new uint[V];
+        // Per tick, per voice (set by the scalar half, read by the lanes).
+        public readonly float[] IncStart = new float[V], IncStep = new float[V], Len = new float[V], Pw = new float[V], PwGain = new float[V], FrameMix = new float[V];
+        public readonly uint[] Off = new uint[V], OffB = new uint[V];
+        public Smooth SmTune, SmLevel, SmPulse;
+        public OscJob() { for (int v = 0; v < V; v++) { Inc[v] = float.NaN; DriftRng[v] = 0x9E3779B9u * (uint)(v + 1); } }
+
+        public override void Run(PatchContext c)
+        {
+            switch (c.Kind)
+            {
+                case LaneKind.Avx2: Kernels.Osc<Avx2Lanes, System.Runtime.Intrinsics.Vector256<float>, System.Runtime.Intrinsics.Vector256<uint>>(this, c); break;
+                case LaneKind.Scalar: Kernels.Osc<ScalarLanes, Eight<float>, Eight<uint>>(this, c); break;
+                default: Kernels.Osc<PairLanes, Pair<float>, Pair<uint>>(this, c); break;
+            }
+        }
+
+        public override bool Adopt(Job old)
+        {
+            if (!(old is OscJob o) || o.Wt != Wt || o.Global != Global) return false;
+            Phase = o.Phase; Inc = o.Inc; Drift = o.Drift; LastSync = o.LastSync; DriftRng = o.DriftRng;
+            SmTune.Adopt(o.SmTune); SmLevel.Adopt(o.SmLevel); SmPulse.Adopt(o.SmPulse);
+            return true;
+        }
     }
 
     internal sealed class EnvJob : Job
     {
+        const int V = PatchContext.MaxVoices;
         public float[] Ctl;
-        public PortBuffer Gate, Out;
-        public EnvSettings Settings = new EnvSettings();
-        public readonly int[] Stage = new int[PatchContext.MaxVoices];
-        public readonly float[] Level = new float[PatchContext.MaxVoices], Start = new float[PatchContext.MaxVoices], Step = new float[PatchContext.MaxVoices];
-        public override void Run(PatchContext c) => Kernels.Dispatch(this, c);
+        public Inp Gate;
+        public PortBuffer Out;
+        public readonly EnvSettings Settings = new EnvSettings();
+        public int[] Stage = new int[V], Wait = new int[V];
+        public float[] Level = new float[V];
+        /// <summary>Per voice: 0 normal, 1 waiting out the delay, 2 holding at the top.</summary>
+        public int[] Mode = new int[V];
+        public float[] Left = new float[V], LastOut = new float[V];
+        public readonly float[] Start = new float[V], Step = new float[V];
+        public override void Run(PatchContext c)
+        {
+            switch (c.Kind)
+            {
+                case LaneKind.Avx2: Kernels.Env<Avx2Lanes, System.Runtime.Intrinsics.Vector256<float>, System.Runtime.Intrinsics.Vector256<uint>>(this, c); break;
+                case LaneKind.Scalar: Kernels.Env<ScalarLanes, Eight<float>, Eight<uint>>(this, c); break;
+                default: Kernels.Env<PairLanes, Pair<float>, Pair<uint>>(this, c); break;
+            }
+        }
+
+        public override bool Adopt(Job old)
+        {
+            if (!(old is EnvJob o) || o.Global != Global) return false;
+            Stage = o.Stage; Level = o.Level; Mode = o.Mode; Left = o.Left; Wait = o.Wait; LastOut = o.LastOut;
+            return true;
+        }
     }
 
     internal sealed class FilterJob : Job
     {
+        const int V = PatchContext.MaxVoices;
+        public const int Rows = 9;
         public float[] Ctl;
-        public PortBuffer In, Cutoff, Out;
-        public readonly float[] Ic1 = new float[PatchContext.MaxVoices], Ic2 = new float[PatchContext.MaxVoices];
-        public readonly float[] A1 = new float[PatchContext.MaxVoices], A2 = new float[PatchContext.MaxVoices], A3 = new float[PatchContext.MaxVoices], K = new float[PatchContext.MaxVoices];
-        public override void Run(PatchContext c) => Kernels.Dispatch(this, c);
+        public Inp In, Cutoff, Reso;
+        public PortBuffer Out;
+        public float[] S1 = new float[V], S2 = new float[V], S3 = new float[V], S4 = new float[V];
+        /// <summary>The coefficients now and their change per sample over the tick (SVF: a1, a2, a3, damping; ladder: see the kernel).</summary>
+        public float[][] Cur = NewRows(), Step = NewRows(), Targ = NewRows();
+        public bool[] Primed = new bool[V];
+        public int LastMode = -1;
+        public Smooth SmCut, SmReso;
+
+        static float[][] NewRows() { var r = new float[Rows][]; for (int i = 0; i < Rows; i++) r[i] = new float[V]; return r; }
+
+        public override void Run(PatchContext c)
+        {
+            switch (c.Kind)
+            {
+                case LaneKind.Avx2: Kernels.Filter<Avx2Lanes, System.Runtime.Intrinsics.Vector256<float>, System.Runtime.Intrinsics.Vector256<uint>>(this, c); break;
+                case LaneKind.Scalar: Kernels.Filter<ScalarLanes, Eight<float>, Eight<uint>>(this, c); break;
+                default: Kernels.Filter<PairLanes, Pair<float>, Pair<uint>>(this, c); break;
+            }
+        }
+
+        public override bool Adopt(Job old)
+        {
+            if (!(old is FilterJob o) || o.Global != Global) return false;
+            S1 = o.S1; S2 = o.S2; S3 = o.S3; S4 = o.S4; Cur = o.Cur; Primed = o.Primed; LastMode = o.LastMode;
+            SmCut.Adopt(o.SmCut); SmReso.Adopt(o.SmReso);
+            return true;
+        }
     }
 
     internal sealed class VcaJob : Job
     {
         public float[] Ctl;
-        public PortBuffer In, Cv, Out;
-        public override void Run(PatchContext c) => Kernels.Dispatch(this, c);
+        public Inp In, Cv;
+        public PortBuffer Out;
+        public Smooth SmGain;
+        public override void Run(PatchContext c)
+        {
+            switch (c.Kind)
+            {
+                case LaneKind.Avx2: Kernels.Vca<Avx2Lanes, System.Runtime.Intrinsics.Vector256<float>, System.Runtime.Intrinsics.Vector256<uint>>(this, c); break;
+                case LaneKind.Scalar: Kernels.Vca<ScalarLanes, Eight<float>, Eight<uint>>(this, c); break;
+                default: Kernels.Vca<PairLanes, Pair<float>, Pair<uint>>(this, c); break;
+            }
+        }
+
+        public override bool Adopt(Job old) { if (!(old is VcaJob o)) return false; SmGain.Adopt(o.SmGain); return true; }
+    }
+
+    internal sealed class MixerJob : Job
+    {
+        public float[] Ctl;
+        public Inp[] In = new Inp[4];
+        public PortBuffer Out;
+        public Smooth[] Sm = new Smooth[4];
+        public override void Run(PatchContext c)
+        {
+            switch (c.Kind)
+            {
+                case LaneKind.Avx2: Kernels.Mixer<Avx2Lanes, System.Runtime.Intrinsics.Vector256<float>, System.Runtime.Intrinsics.Vector256<uint>>(this, c); break;
+                case LaneKind.Scalar: Kernels.Mixer<ScalarLanes, Eight<float>, Eight<uint>>(this, c); break;
+                default: Kernels.Mixer<PairLanes, Pair<float>, Pair<uint>>(this, c); break;
+            }
+        }
+
+        public override bool Adopt(Job old) { if (!(old is MixerJob o)) return false; Sm = o.Sm; return true; }
+    }
+
+    internal sealed class MathJob : Job
+    {
+        public float[] Ctl;
+        public Inp A, B;
+        public PortBuffer Out;
+        public Smooth SmScale, SmOffset;
+        public override void Run(PatchContext c)
+        {
+            switch (c.Kind)
+            {
+                case LaneKind.Avx2: Kernels.MathOp<Avx2Lanes, System.Runtime.Intrinsics.Vector256<float>, System.Runtime.Intrinsics.Vector256<uint>>(this, c); break;
+                case LaneKind.Scalar: Kernels.MathOp<ScalarLanes, Eight<float>, Eight<uint>>(this, c); break;
+                default: Kernels.MathOp<PairLanes, Pair<float>, Pair<uint>>(this, c); break;
+            }
+        }
+
+        public override bool Adopt(Job old) { if (!(old is MathJob o)) return false; SmScale.Adopt(o.SmScale); SmOffset.Adopt(o.SmOffset); return true; }
+    }
+
+    internal sealed class CrossfadeJob : Job
+    {
+        public float[] Ctl;
+        public Inp A, B, Mix;
+        public PortBuffer Out;
+        public Smooth SmMix;
+        public override void Run(PatchContext c)
+        {
+            switch (c.Kind)
+            {
+                case LaneKind.Avx2: Kernels.Crossfade<Avx2Lanes, System.Runtime.Intrinsics.Vector256<float>, System.Runtime.Intrinsics.Vector256<uint>>(this, c); break;
+                case LaneKind.Scalar: Kernels.Crossfade<ScalarLanes, Eight<float>, Eight<uint>>(this, c); break;
+                default: Kernels.Crossfade<PairLanes, Pair<float>, Pair<uint>>(this, c); break;
+            }
+        }
+
+        public override bool Adopt(Job old) { if (!(old is CrossfadeJob o)) return false; SmMix.Adopt(o.SmMix); return true; }
+    }
+
+    internal sealed class ShaperJob : Job
+    {
+        const int V = PatchContext.MaxVoices;
+        public float[] Ctl;
+        public Inp In, Drive, Pitch;
+        public PortBuffer Out;
+        public Smooth SmDrive, SmBias, SmLevel;
+        public readonly float[] G0 = new float[V], Gs = new float[V];
+        public float[] GEnd = new float[V];
+        public bool[] GInit = new bool[V];
+        public override void Run(PatchContext c)
+        {
+            switch (c.Kind)
+            {
+                case LaneKind.Avx2: Kernels.Shaper<Avx2Lanes, System.Runtime.Intrinsics.Vector256<float>, System.Runtime.Intrinsics.Vector256<uint>>(this, c); break;
+                case LaneKind.Scalar: Kernels.Shaper<ScalarLanes, Eight<float>, Eight<uint>>(this, c); break;
+                default: Kernels.Shaper<PairLanes, Pair<float>, Pair<uint>>(this, c); break;
+            }
+        }
+
+        public override bool Adopt(Job old) { if (!(old is ShaperJob o)) return false; GEnd = o.GEnd; GInit = o.GInit; SmDrive.Adopt(o.SmDrive); SmBias.Adopt(o.SmBias); SmLevel.Adopt(o.SmLevel); return true; }
     }
 
     /// <summary>
-    /// Builds an input from its wires: per-voice into per-voice (scaled sum; a global source reaches every voice), and per-voice into
-    /// global (the voice sum: each voice's gain ramp, NaN guard and peak, summed in one fixed order).
+    /// The voice sum: each voice's gain ramp (steal fades, and 0 for a voice that is not sounding), the guard and the peak, summed in
+    /// one fixed order into a global buffer. The compiler puts one wherever a per-voice signal reaches a global node.
     /// </summary>
-    internal sealed class MixJob : Job
+    internal sealed class SumJob : Job
     {
-        public MixInput[] Inputs;
-        public PortBuffer Dest;
-        public override void Run(PatchContext c) => Kernels.Dispatch(this, c);
-    }
-
-    internal sealed class OutJob : Job
-    {
-        public float[] Ctl;
-        public PortBuffer In;
+        public PortBuffer Src, Dest;
         public override void Run(PatchContext c)
         {
-            if (In == null) return;
-            float lvl = Ctl[NodeInfo.OutLevel], pan = Ctl[NodeInfo.OutPan];
-            float gl = lvl * MathF.Sqrt(0.5f * (1f - pan)), gr = lvl * MathF.Sqrt(0.5f * (1f + pan));
-            var x = In.Data;
-            for (int i = 0; i < PatchContext.Block; i++)
+            switch (c.Kind)
             {
-                c.OutL[i] += x[i] * gl;
-                c.OutR[i] += x[i] * gr;
+                case LaneKind.Avx2: Kernels.Sum<Avx2Lanes, System.Runtime.Intrinsics.Vector256<float>, System.Runtime.Intrinsics.Vector256<uint>>(this, c); break;
+                case LaneKind.Scalar: Kernels.Sum<ScalarLanes, Eight<float>, Eight<uint>>(this, c); break;
+                default: Kernels.Sum<PairLanes, Pair<float>, Pair<uint>>(this, c); break;
             }
         }
+    }
+
+    /// <summary>Out: up to four inputs, each with its own pan, a per-voice spread, and the level. Per-voice inputs are summed here (the voice sum, fused).</summary>
+    internal sealed class OutJob : Job
+    {
+        const int V = PatchContext.MaxVoices;
+        public float[] Ctl;
+        /// <summary>Each input's per-voice wires and its global wires, summed apart (the voice sum is fused in here).</summary>
+        public Inp[] InV = new Inp[4], InG = new Inp[4];
+        public Smooth SmLevel;
+        public readonly float[] PanL = new float[4 * V], PanR = new float[4 * V], GlobL = new float[4], GlobR = new float[4];
+        public override void Run(PatchContext c)
+        {
+            switch (c.Kind)
+            {
+                case LaneKind.Avx2: Kernels.Out<Avx2Lanes, System.Runtime.Intrinsics.Vector256<float>, System.Runtime.Intrinsics.Vector256<uint>>(this, c); break;
+                case LaneKind.Scalar: Kernels.Out<ScalarLanes, Eight<float>, Eight<uint>>(this, c); break;
+                default: Kernels.Out<PairLanes, Pair<float>, Pair<uint>>(this, c); break;
+            }
+        }
+
+        public override bool Adopt(Job old) { if (!(old is OutJob o)) return false; SmLevel.Adopt(o.SmLevel); return true; }
     }
 
     /// <summary>The Feedback node's two halves: Read (the previous block, first in the order) and Write (this block's input, after its source).</summary>
     internal sealed class FeedbackState
     {
-        public readonly float[] Data;
+        public readonly float[] Data = new float[PatchContext.Block * PatchContext.MaxVoices];
         public readonly bool PerVoice;
-        public FeedbackState(bool perVoice) { PerVoice = perVoice; Data = new float[perVoice ? PatchContext.Block * PatchContext.MaxVoices : PatchContext.Block]; }
+        public FeedbackState(bool perVoice) { PerVoice = perVoice; }
     }
 
     internal sealed class FeedbackReadJob : Job
@@ -144,374 +419,27 @@ namespace NeoBuzz.Patch
                     if (c.Fresh[v]) for (int i = 0; i < PatchContext.Block; i++) Out.Data[i * PatchContext.MaxVoices + v] = 0f;
             }
         }
+
+        public override bool Adopt(Job old)
+        {
+            if (!(old is FeedbackReadJob o) || o.State.PerVoice != State.PerVoice) return false;
+            State = o.State;
+            return true;
+        }
     }
 
     internal sealed class FeedbackWriteJob : Job
     {
         public float[] Ctl;
         public FeedbackState State;
-        public PortBuffer In;
-        public override void Run(PatchContext c) => Kernels.Dispatch(this, c);
-    }
-
-    // ---------------------------------------------------------------- kernels
-
-    internal static class Kernels
-    {
-        const int B = PatchContext.Block, V = PatchContext.MaxVoices, W = PatchContext.Width;
-
-        public static void Dispatch(KeysJob j, PatchContext c) { switch (c.Kind) { case LaneKind.Avx2: Keys<Avx2Lanes, System.Runtime.Intrinsics.Vector256<float>, System.Runtime.Intrinsics.Vector256<uint>>(j, c); break; case LaneKind.Scalar: Keys<ScalarLanes, Eight<float>, Eight<uint>>(j, c); break; default: Keys<PairLanes, Pair<float>, Pair<uint>>(j, c); break; } }
-        public static void Dispatch(OscJob j, PatchContext c) { switch (c.Kind) { case LaneKind.Avx2: Osc<Avx2Lanes, System.Runtime.Intrinsics.Vector256<float>, System.Runtime.Intrinsics.Vector256<uint>>(j, c); break; case LaneKind.Scalar: Osc<ScalarLanes, Eight<float>, Eight<uint>>(j, c); break; default: Osc<PairLanes, Pair<float>, Pair<uint>>(j, c); break; } }
-        public static void Dispatch(EnvJob j, PatchContext c) { switch (c.Kind) { case LaneKind.Avx2: Env<Avx2Lanes, System.Runtime.Intrinsics.Vector256<float>, System.Runtime.Intrinsics.Vector256<uint>>(j, c); break; case LaneKind.Scalar: Env<ScalarLanes, Eight<float>, Eight<uint>>(j, c); break; default: Env<PairLanes, Pair<float>, Pair<uint>>(j, c); break; } }
-        public static void Dispatch(FilterJob j, PatchContext c) { switch (c.Kind) { case LaneKind.Avx2: Filter<Avx2Lanes, System.Runtime.Intrinsics.Vector256<float>, System.Runtime.Intrinsics.Vector256<uint>>(j, c); break; case LaneKind.Scalar: Filter<ScalarLanes, Eight<float>, Eight<uint>>(j, c); break; default: Filter<PairLanes, Pair<float>, Pair<uint>>(j, c); break; } }
-        public static void Dispatch(VcaJob j, PatchContext c) { switch (c.Kind) { case LaneKind.Avx2: Vca<Avx2Lanes, System.Runtime.Intrinsics.Vector256<float>, System.Runtime.Intrinsics.Vector256<uint>>(j, c); break; case LaneKind.Scalar: Vca<ScalarLanes, Eight<float>, Eight<uint>>(j, c); break; default: Vca<PairLanes, Pair<float>, Pair<uint>>(j, c); break; } }
-        public static void Dispatch(MixJob j, PatchContext c) { switch (c.Kind) { case LaneKind.Avx2: Mix<Avx2Lanes, System.Runtime.Intrinsics.Vector256<float>, System.Runtime.Intrinsics.Vector256<uint>>(j, c); break; case LaneKind.Scalar: Mix<ScalarLanes, Eight<float>, Eight<uint>>(j, c); break; default: Mix<PairLanes, Pair<float>, Pair<uint>>(j, c); break; } }
-        public static void Dispatch(FeedbackWriteJob j, PatchContext c) { switch (c.Kind) { case LaneKind.Avx2: FbWrite<Avx2Lanes, System.Runtime.Intrinsics.Vector256<float>, System.Runtime.Intrinsics.Vector256<uint>>(j, c); break; case LaneKind.Scalar: FbWrite<ScalarLanes, Eight<float>, Eight<uint>>(j, c); break; default: FbWrite<PairLanes, Pair<float>, Pair<uint>>(j, c); break; } }
-
-        /// <summary>A value that is finite and under 1e9 in size stays; anything else (NaN, infinities, runaways) becomes 0. Per voice, no branches.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static TF Clean<TL, TF, TU>(TF x) where TL : struct, ILanes<TF, TU> where TF : struct where TU : struct
+        public Inp In;
+        public override void Run(PatchContext c)
         {
-            TF a = TL.Select(TL.Greater(x, TL.Splat(0f)), x, TL.Sub(TL.Splat(0f), x));
-            return TL.Select(TL.Greater(TL.Splat(1e9f), a), x, TL.Splat(0f));
-        }
-
-        /// <summary>The scalar version of <see cref="Clean"/> for state: also flushes denormals.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float CleanState(float x)
-        {
-            float a = Math.Abs(x);
-            return a < 1e-18f || !(a < 1e9f) ? 0f : x;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        static void Keys<TL, TF, TU>(KeysJob j, PatchContext c) where TL : struct, ILanes<TF, TU> where TF : struct where TU : struct
-        {
-            for (int g = 0; g < PatchContext.Groups; g++)
+            switch (c.Kind)
             {
-                if (!c.GroupOn[g]) continue;
-                int vb = W * g;
-                TF p = TL.Load(c.Pitch0, vb);
-                TF dp = TL.Mul(TL.Sub(TL.Load(c.Pitch1, vb), p), TL.Splat(1f / B));
-                TF gate = TL.Load(c.Gate, vb), vel = TL.Load(c.Vel, vb);
-                for (int i = 0; i < B; i++)
-                {
-                    p = TL.Add(p, dp);
-                    int o = i * V + vb;
-                    if (j.Pitch != null) TL.Store(p, j.Pitch.Data, o);
-                    if (j.Gate != null) TL.Store(gate, j.Gate.Data, o);
-                    if (j.Vel != null) TL.Store(vel, j.Vel.Data, o);
-                }
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static TF Blep<TL, TF, TU>(TF t, TF dt, TF rdt) where TL : struct, ILanes<TF, TU> where TF : struct where TU : struct
-        {
-            // Polynomial band-limited step at the cycle's start: 2x − x² − 1 just after the wrap, x² + 2x + 1 just before.
-            TF x1 = TL.Mul(t, rdt);
-            TF r1 = TL.Sub(TL.Sub(TL.Add(x1, x1), TL.Mul(x1, x1)), TL.Splat(1f));
-            TF x2 = TL.Mul(TL.Sub(t, TL.Splat(1f)), rdt);
-            TF r2 = TL.Add(TL.Add(TL.Mul(x2, x2), TL.Add(x2, x2)), TL.Splat(1f));
-            TF r = TL.Select(TL.Greater(dt, t), r1, TL.Select(TL.Greater(t, TL.Sub(TL.Splat(1f), dt)), r2, TL.Splat(0f)));
-            return r;
-        }
-
-        /// <summary>
-        /// The four-point version: the cubic B-spline's step response (a band-limiting kernel four samples wide), as four polynomial
-        /// pieces, two before the wrap and two after. Aliasing falls 24 dB an octave where the parabola's falls 12.
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static TF Blep4<TL, TF, TU>(TF t, TF dt, TF rdt) where TL : struct, ILanes<TF, TU> where TF : struct where TU : struct
-        {
-            TF zero = TL.Splat(0f), one = TL.Splat(1f), two = TL.Splat(2f);
-            // After the wrap: u = t / dt in [0, 2).
-            TF u = TL.Mul(t, rdt);
-            TF u2 = TL.Mul(u, u), u3 = TL.Mul(u2, u), u4 = TL.Mul(u2, u2);
-            TF a0 = TL.Add(TL.Sub(TL.Sub(TL.Splat(-0.5f), TL.Mul(u3, TL.Splat(1f / 3f))), zero), TL.Add(TL.Mul(u, TL.Splat(2f / 3f)), TL.Mul(u4, TL.Splat(0.125f))));
-            TF w = TL.Sub(two, u), w2 = TL.Mul(w, w);
-            TF a1 = TL.Mul(TL.Mul(w2, w2), TL.Splat(-1f / 24f));
-            TF after = TL.Select(TL.Greater(one, u), a0, TL.Select(TL.Greater(two, u), a1, zero));
-            // Before it: v = (t − 1) / dt in (−2, 0].
-            TF v = TL.Mul(TL.Sub(t, one), rdt);
-            TF v2 = TL.Mul(v, v), v3 = TL.Mul(v2, v), v4 = TL.Mul(v2, v2);
-            TF b0 = TL.Sub(TL.Add(TL.Splat(0.5f), TL.Sub(TL.Mul(v, TL.Splat(2f / 3f)), TL.Mul(v3, TL.Splat(1f / 3f)))), TL.Mul(v4, TL.Splat(0.125f)));
-            TF x = TL.Add(v, two), x2 = TL.Mul(x, x);
-            TF b1 = TL.Mul(TL.Mul(x2, x2), TL.Splat(1f / 24f));
-            TF before = TL.Select(TL.Greater(v, TL.Splat(-1f)), b0, TL.Select(TL.Greater(v, TL.Splat(-2f)), b1, zero));
-            TF r = TL.Select(TL.Greater(two, u), after, before);     // u < 2 only just after a wrap (t small); otherwise the "before" side
-            return TL.Add(r, r);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        static void Osc<TL, TF, TU>(OscJob j, PatchContext c) where TL : struct, ILanes<TF, TU> where TF : struct where TU : struct
-        {
-            var ctl = j.Ctl;
-            int shape = (int)(ctl[NodeInfo.OscShape] + 0.5f);
-            float tune = ctl[NodeInfo.OscTune] + 0.01f * ctl[NodeInfo.OscFine], fmAmt = ctl[NodeInfo.OscFm];
-            float[] pitchIn = j.Pitch?.Data, fmIn = j.Fm?.Data, o = j.Out.Data;
-            int tick = c.Tick;
-            float sr = c.SampleRate;
-            for (int v = 0; v < V; v++) if (c.Fresh[v]) { j.Phase[v] = 0f; j.LastNote[v] = float.NaN; }
-            TF one = TL.Splat(1f), zero = TL.Splat(0f), top = TL.Splat(0.99999994f), tiny = TL.Splat(1e-6f), maxInc = TL.Splat(0.45f);
-            bool hq = ctl[NodeInfo.OscQuality] > 0.5f;
-            TF pw = TL.Splat(ctl[NodeInfo.OscPulse]), lvl = TL.Splat(ctl[NodeInfo.OscLevel]), fm = TL.Splat(fmAmt), half = TL.Splat(0.5f), two = TL.Splat(2f);
-            for (int g = 0; g < PatchContext.Groups; g++)
-            {
-                if (!c.GroupOn[g]) continue;
-                int vb = W * g;
-                TF ph = TL.Load(j.Phase, vb);
-                for (int t = 0; t < B; t += tick)
-                {
-                    for (int l = 0; l < W; l++)
-                    {
-                        int v = vb + l;
-                        if (!c.Active[v]) continue;
-                        float note = (pitchIn != null ? pitchIn[t * V + v] : 69f) + tune;
-                        if (note != j.LastNote[v])
-                        {
-                            j.LastNote[v] = note;
-                            double hz = 440.0 * PortableMath.Exp2((note - 69.0) / 12.0);
-                            float inc = (float)(hz / sr);
-                            j.Inc[v] = inc > 0.45f ? 0.45f : inc;
-                        }
-                    }
-                    TF inc0 = TL.Select(TL.Greater(TL.Load(j.Inc, vb), tiny), TL.Load(j.Inc, vb), tiny);
-                    TF rinc0 = TL.Div(one, inc0);
-                    for (int i = t; i < t + tick; i++)
-                    {
-                        TF inc = inc0, rdt = rinc0;
-                        if (fmIn != null)
-                        {
-                            inc = TL.Mul(inc0, TL.Add(one, TL.Mul(fm, TL.Load(fmIn, i * V + vb))));
-                            inc = TL.Select(TL.Greater(inc, tiny), inc, tiny);
-                            inc = TL.Select(TL.Greater(inc, maxInc), maxInc, inc);
-                            rdt = TL.Div(one, inc);
-                        }
-                        ph = TL.Add(ph, inc);
-                        ph = TL.Select(TL.Greater(ph, top), TL.Sub(ph, one), ph);
-                        TF y;
-                        if (shape == 0)
-                        {
-                            y = TL.Sub(TL.Sub(TL.Mul(two, ph), one), hq ? Blep4<TL, TF, TU>(ph, inc, rdt) : Blep<TL, TF, TU>(ph, inc, rdt));
-                        }
-                        else if (shape == 1)
-                        {
-                            TF lo = TL.Greater(pw, ph);
-                            TF ph2 = TL.Select(lo, TL.Sub(TL.Add(ph, one), pw), TL.Sub(ph, pw));
-                            y = TL.Select(lo, one, TL.Splat(-1f));
-                            y = TL.Add(y, hq ? Blep4<TL, TF, TU>(ph, inc, rdt) : Blep<TL, TF, TU>(ph, inc, rdt));
-                            y = TL.Sub(y, hq ? Blep4<TL, TF, TU>(ph2, inc, rdt) : Blep<TL, TF, TU>(ph2, inc, rdt));
-                        }
-                        else
-                        {
-                            // sin(2π·ph) = sin(π·y), y = 2q on q = ph folded into [−¼, ¼]; the Taylor series to y¹¹ (error 6e-8 at |y| = ½).
-                            TF q = TL.Select(TL.Greater(ph, half), TL.Sub(ph, one), ph);
-                            q = TL.Select(TL.Greater(q, TL.Splat(0.25f)), TL.Sub(half, q), q);
-                            q = TL.Select(TL.Greater(TL.Splat(-0.25f), q), TL.Sub(TL.Splat(-0.5f), q), q);
-                            TF yy = TL.Mul(two, q), y2 = TL.Mul(yy, yy);
-                            TF s = TL.Add(TL.Splat(-0.0073704309f), zero);
-                            s = TL.Add(TL.Splat(0.082145886f), TL.Mul(y2, s));
-                            s = TL.Add(TL.Splat(-0.59926453f), TL.Mul(y2, s));
-                            s = TL.Add(TL.Splat(2.5501640f), TL.Mul(y2, s));
-                            s = TL.Add(TL.Splat(-5.1677128f), TL.Mul(y2, s));
-                            s = TL.Add(TL.Splat(3.14159265f), TL.Mul(y2, s));
-                            y = TL.Mul(yy, s);
-                        }
-                        TL.Store(TL.Mul(y, lvl), o, i * V + vb);
-                    }
-                }
-                TL.Store(ph, j.Phase, vb);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        static void Env<TL, TF, TU>(EnvJob j, PatchContext c) where TL : struct, ILanes<TF, TU> where TF : struct where TU : struct
-        {
-            var ctl = j.Ctl;
-            var es = j.Settings;
-            es.A = ctl[NodeInfo.EnvA]; es.D = ctl[NodeInfo.EnvD]; es.S = ctl[NodeInfo.EnvS]; es.R = ctl[NodeInfo.EnvR];
-            int tick = c.Tick;
-            double dt = tick / (double)c.SampleRate;
-            NoteEnvelope.Factors(es, dt, out double ka, out double kd, out double kr);
-            float[] gateIn = j.Gate?.Data, o = j.Out.Data;
-            for (int v = 0; v < V; v++) if (c.Fresh[v]) { j.Stage[v] = NoteEnvelope.Idle; j.Level[v] = 0f; }
-            float inv = 1f / tick;
-            for (int t = 0; t < B; t += tick)
-            {
-                for (int v = 0; v < V; v++)
-                {
-                    if (!c.Active[v]) { j.Start[v] = 0; j.Step[v] = 0; continue; }
-                    bool gate = gateIn != null && gateIn[t * V + v] > 0.5f;
-                    if (gate && (j.Stage[v] == NoteEnvelope.Idle || j.Stage[v] == NoteEnvelope.Release)) j.Stage[v] = NoteEnvelope.Attack;
-                    float before = j.Level[v];
-                    float after = NoteEnvelope.Advance(ref j.Stage[v], ref j.Level[v], gate, es, dt, ka, kd, kr);
-                    j.Start[v] = before;
-                    j.Step[v] = (after - before) * inv;
-                }
-                for (int g = 0; g < PatchContext.Groups; g++)
-                {
-                    if (!c.GroupOn[g]) continue;
-                    int vb = W * g;
-                    TF a = TL.Load(j.Start, vb), d = TL.Load(j.Step, vb);
-                    for (int i = t; i < t + tick; i++)
-                    {
-                        a = TL.Add(a, d);
-                        TL.Store(a, o, i * V + vb);
-                    }
-                }
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        static void Filter<TL, TF, TU>(FilterJob j, PatchContext c) where TL : struct, ILanes<TF, TU> where TF : struct where TU : struct
-        {
-            var ctl = j.Ctl;
-            int mode = (int)(ctl[NodeInfo.FilterMode] + 0.5f);
-            float cutoff = ctl[NodeInfo.FilterCutoff], depth = ctl[NodeInfo.FilterMod];
-            float kd = 1f / Math.Max(0.5f, ctl[NodeInfo.FilterReso]);
-            float[] inp = j.In?.Data, cv = j.Cutoff?.Data, o = j.Out.Data;
-            int tick = c.Tick;
-            float sr = c.SampleRate;
-            for (int v = 0; v < V; v++) if (c.Fresh[v]) { j.Ic1[v] = 0f; j.Ic2[v] = 0f; }
-            TF two = TL.Splat(2f), kV = TL.Splat(kd), zero = TL.Splat(0f);
-            for (int g = 0; g < PatchContext.Groups; g++)
-            {
-                if (!c.GroupOn[g]) continue;
-                int vb = W * g;
-                TF ic1 = TL.Load(j.Ic1, vb), ic2 = TL.Load(j.Ic2, vb);
-                for (int t = 0; t < B; t += tick)
-                {
-                    if (cv != null || t == 0)
-                    {
-                        for (int l = 0; l < W; l++)
-                        {
-                            int v = vb + l;
-                            if (!c.Active[v]) continue;
-                            float hz = cv != null ? cutoff * (float)PortableMath.Exp2(depth * cv[t * V + v]) : cutoff;
-                            float gg = Svf.Prewarp(hz, sr);
-                            float a1 = 1f / (1f + gg * (gg + kd));
-                            j.A1[v] = a1; j.A2[v] = gg * a1; j.A3[v] = gg * gg * a1;
-                        }
-                    }
-                    TF A1 = TL.Load(j.A1, vb), A2 = TL.Load(j.A2, vb), A3 = TL.Load(j.A3, vb);
-                    for (int i = t; i < t + tick; i++)
-                    {
-                        int o2 = i * V + vb;
-                        TF v0 = inp != null ? TL.Load(inp, o2) : zero;
-                        TF v3 = TL.Sub(v0, ic2);
-                        TF v1 = TL.Add(TL.Mul(A1, ic1), TL.Mul(A2, v3));
-                        TF v2 = TL.Add(TL.Add(ic2, TL.Mul(A2, ic1)), TL.Mul(A3, v3));
-                        ic1 = TL.Sub(TL.Mul(two, v1), ic1);
-                        ic2 = TL.Sub(TL.Mul(two, v2), ic2);
-                        TF y = mode == 0 ? v2 : mode == 1 ? TL.Mul(kV, v1) : TL.Sub(TL.Sub(v0, TL.Mul(kV, v1)), v2);
-                        TL.Store(y, o, o2);
-                    }
-                }
-                TL.Store(ic1, j.Ic1, vb);
-                TL.Store(ic2, j.Ic2, vb);
-                // Denormals and anything that blew up: flushed or zeroed here, once per block.
-                for (int l = 0; l < W; l++) { j.Ic1[vb + l] = CleanState(j.Ic1[vb + l]); j.Ic2[vb + l] = CleanState(j.Ic2[vb + l]); }
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        static void Vca<TL, TF, TU>(VcaJob j, PatchContext c) where TL : struct, ILanes<TF, TU> where TF : struct where TU : struct
-        {
-            float[] inp = j.In?.Data, cv = j.Cv?.Data, o = j.Out.Data;
-            TF gain = TL.Splat(j.Ctl[NodeInfo.VcaGain]), zero = TL.Splat(0f);
-            for (int g = 0; g < PatchContext.Groups; g++)
-            {
-                if (!c.GroupOn[g]) continue;
-                int vb = W * g;
-                for (int i = 0; i < B; i++)
-                {
-                    int p = i * V + vb;
-                    TF x = inp != null ? TL.Load(inp, p) : zero;
-                    x = TL.Mul(x, gain);
-                    if (cv != null) x = TL.Mul(x, TL.Load(cv, p));
-                    TL.Store(x, o, p);
-                }
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        static void Mix<TL, TF, TU>(MixJob j, PatchContext c) where TL : struct, ILanes<TF, TU> where TF : struct where TU : struct
-        {
-            var dest = j.Dest.Data;
-            var inputs = j.Inputs;
-            if (j.Dest.PerVoice)
-            {
-                for (int g = 0; g < PatchContext.Groups; g++)
-                {
-                    if (!c.GroupOn[g]) continue;
-                    int vb = W * g;
-                    for (int i = 0; i < B; i++)
-                    {
-                        TF acc = TL.Splat(0f);
-                        for (int w = 0; w < inputs.Length; w++)
-                        {
-                            var s = inputs[w];
-                            TF x = s.Source.PerVoice ? TL.Load(s.Source.Data, i * V + vb) : TL.Splat(s.Source.Data[i]);
-                            acc = TL.Add(acc, s.Amount == 1f ? x : TL.Mul(x, TL.Splat(s.Amount)));
-                        }
-                        TL.Store(acc, dest, i * V + vb);
-                    }
-                }
-                return;
-            }
-            // The voice sum: gains ramped across the block (steal fades, and 0 for a voice that is not sounding), guarded, summed 0…7 then 8…15.
-            TF peak0 = TL.Splat(0f), peak1 = TL.Splat(0f);
-            TF g0a = TL.Load(c.Gain0, 0), g1a = TL.Load(c.Gain1, 0), g0b = TL.Load(c.Gain0, W), g1b = TL.Load(c.Gain1, W);
-            TF stepA = TL.Mul(TL.Sub(g1a, g0a), TL.Splat(1f / B)), stepB = TL.Mul(TL.Sub(g1b, g0b), TL.Splat(1f / B));
-            bool second = c.GroupOn[1];
-            for (int i = 0; i < B; i++)
-            {
-                g0a = TL.Add(g0a, stepA);
-                g0b = TL.Add(g0b, stepB);
-                float total = 0f;
-                for (int w = 0; w < inputs.Length; w++)
-                {
-                    var s = inputs[w];
-                    if (!s.Source.PerVoice) { total += s.Source.Data[i] * s.Amount; continue; }
-                    TF xa = Clean<TL, TF, TU>(TL.Load(s.Source.Data, i * V));
-                    TF absA = TL.Select(TL.Greater(xa, TL.Splat(0f)), xa, TL.Sub(TL.Splat(0f), xa));
-                    peak0 = TL.Select(TL.Greater(absA, peak0), absA, peak0);
-                    float sum = TL.Sum(TL.Mul(xa, g0a));
-                    if (second)
-                    {
-                        TF xb = Clean<TL, TF, TU>(TL.Load(s.Source.Data, i * V + W));
-                        TF absB = TL.Select(TL.Greater(xb, TL.Splat(0f)), xb, TL.Sub(TL.Splat(0f), xb));
-                        peak1 = TL.Select(TL.Greater(absB, peak1), absB, peak1);
-                        sum += TL.Sum(TL.Mul(xb, g0b));
-                    }
-                    total += sum * s.Amount;
-                }
-                dest[i] = total;
-            }
-            // Loudness for the allocator and the voices' tails (the largest over the voice sums that feed the patch).
-            for (int l = 0; l < W; l++)
-            {
-                c.Peak[l] = Math.Max(c.Peak[l], TL.Lane(peak0, l));
-                c.Peak[W + l] = Math.Max(c.Peak[W + l], TL.Lane(peak1, l));
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        static void FbWrite<TL, TF, TU>(FeedbackWriteJob j, PatchContext c) where TL : struct, ILanes<TF, TU> where TF : struct where TU : struct
-        {
-            var st = j.State.Data;
-            TF gain = TL.Splat(j.Ctl[NodeInfo.FeedbackGain]), lim = TL.Splat(16f), nlim = TL.Splat(-16f), tiny = TL.Splat(1e-18f), ntiny = TL.Splat(-1e-18f), zero = TL.Splat(0f);
-            var inp = j.In?.Data;
-            for (int i = 0; i < st.Length; i += W)
-            {
-                if (inp == null) { TL.Store(zero, st, i); continue; }
-                TF x = Clean<TL, TF, TU>(TL.Mul(TL.Load(inp, i), gain));
-                x = TL.Select(TL.Greater(x, lim), lim, x);
-                x = TL.Select(TL.Greater(nlim, x), nlim, x);
-                // A denormal flushes to zero (no Abs: both sides).
-                x = TL.Select(TL.Greater(tiny, x), TL.Select(TL.Greater(x, ntiny), zero, x), x);
-                TL.Store(x, st, i);
+                case LaneKind.Avx2: Kernels.FbWrite<Avx2Lanes, System.Runtime.Intrinsics.Vector256<float>, System.Runtime.Intrinsics.Vector256<uint>>(this, c); break;
+                case LaneKind.Scalar: Kernels.FbWrite<ScalarLanes, Eight<float>, Eight<uint>>(this, c); break;
+                default: Kernels.FbWrite<PairLanes, Pair<float>, Pair<uint>>(this, c); break;
             }
         }
     }

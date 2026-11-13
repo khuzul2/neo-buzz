@@ -59,6 +59,17 @@ namespace ReBuzz.AgentTests
         }
 
         [Test]
+        public void NeoPatchCarriesTwentyControlsWithIdsHowAndSound()
+        {
+            // docs/specs/neo-patch.md §4.1: Volume, Voices, Glide, the audio-rate switch and macros 1 to 16.
+            var m = MachineManifest.Load(Path.Combine(RepoRoot(), "Machines", "NeoPatch", "Neo Patch" + MachineManifest.Suffix))!;
+            Assert.That(m.Parameters.Count, Is.EqualTo(20));
+            Assert.That(m.Parameters.Select(p => p.Id).Take(4), Is.EqualTo(new[] { "volume", "voices", "glide", "audio_mod" }));
+            Assert.That(m.Parameters.Skip(4).Select(p => p.Id), Is.EqualTo(Enumerable.Range(1, 16).Select(i => "macro_" + i)));
+            Assert.That(m.Parameters, Has.All.Matches<ManifestParameter>(p => p.How.Length > 0 && p.Sound.Length > 0));
+        }
+
+        [Test]
         public void DescribeAddsIdUnitRangeDefaultCurveHowAndSound()
         {
             var m = Learn();

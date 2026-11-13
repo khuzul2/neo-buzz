@@ -1,0 +1,99 @@
+# Neo Patch parameters (docs/specs/neo-patch.md §4.1, docs/specs/neo-patch-engine.md). The order is permanent: songs and presets store
+# values by position. The patch itself (its nodes, wires, settings and macro mappings) is the machine's state, not a parameter.
+# Regenerate: python3 tools/gen-machine-params.py Machines/NeoPatch
+namespace NeoBuzz.Patch
+class NeoPatchMachine
+tracks 16
+summary Modular synth you build inside one machine: nodes (oscillators, wavetable and sample sources, noise, envelopes, LFOs, filters, shapers, delays, mixers, math) wired together, up to 128 per patch, with 16 voices of polyphony that each run their own copy of the patch and global nodes that run once. Notes come from patterns, MIDI and MPE; sixteen macros move any node setting. Use it for sounds the fixed-architecture synths cannot make: your own FM routings, filter feedback, per-note modulation, a global delay after the voice sum.
+import patch .txt | A patch as one line of text (what the machine saves with the song): "neopatch 1;n 1 Keys ...;w ...". It replaces the machine's patch; the parameters stay as they are.
+import sample .wav | A WAV sample (mono or stereo, up to 20 s, kept in the machine state). Sample nodes whose Source is "user" play it.
+
+group Machine
+Volume      "Volume"        0 1000 739  db -40 6 inf                   | Output level
+    id volume
+    how Sets the machine's output level, from -40 dB up to +6 dB or silence, after the patch's Out node.
+    sound It scales the whole sound; a safety limiter after it keeps the peaks under full scale, so loud settings saturate softly instead of clipping.
+Voices      "Voices"        1 16   8    int 0                          | Notes that sound at once
+    id voices
+    how Sets how many notes can sound at once, from 1 to 16; each runs its own copy of every per-voice node in the patch.
+    sound More voices allow bigger chords and long tails but cost more CPU; too few cut off held notes.
+Glide       "Glide"         0 1000 0    pow 0 2 3 s 3                  | Glide time
+    id glide
+    how Sets how long the pitch takes to slide from one note to the next, from 0 to 2 seconds.
+    sound Short glides sound smooth, long ones swoop like a sliding synth lead; 0 plays each note at its own pitch at once.
+AudioMod    "Audio-rate mod" 0 1  0    switch Off On                   | Control inputs at audio rate
+    id audio_mod
+    how Switch on to read the control inputs (cutoff, level and similar) for every sample instead of every 16 samples with smoothing.
+    sound Off is cheap and smooth; On lets an oscillator frequency-modulate a filter's cutoff, giving metallic filter FM, at a higher CPU cost.
+
+group Macros
+Macro1      "Macro 1"      0 1000 500  pct                             | Macro 1, moves every node setting mapped to it
+    id macro_1
+    how Moves every node setting that the patch maps to macro 1, each between its own low and high value.
+    sound What it does depends on the patch; the preset's mappings are named in its description.
+Macro2      "Macro 2"      0 1000 500  pct                             | Macro 2, moves every node setting mapped to it
+    id macro_2
+    how Moves every node setting that the patch maps to macro 2, each between its own low and high value.
+    sound What it does depends on the patch; the preset's mappings are named in its description.
+Macro3      "Macro 3"      0 1000 500  pct                             | Macro 3, moves every node setting mapped to it
+    id macro_3
+    how Moves every node setting that the patch maps to macro 3, each between its own low and high value.
+    sound What it does depends on the patch; the preset's mappings are named in its description.
+Macro4      "Macro 4"      0 1000 500  pct                             | Macro 4, moves every node setting mapped to it
+    id macro_4
+    how Moves every node setting that the patch maps to macro 4, each between its own low and high value.
+    sound What it does depends on the patch; the preset's mappings are named in its description.
+Macro5      "Macro 5"      0 1000 500  pct                             | Macro 5, moves every node setting mapped to it
+    id macro_5
+    how Moves every node setting that the patch maps to macro 5, each between its own low and high value.
+    sound What it does depends on the patch; the preset's mappings are named in its description.
+Macro6      "Macro 6"      0 1000 500  pct                             | Macro 6, moves every node setting mapped to it
+    id macro_6
+    how Moves every node setting that the patch maps to macro 6, each between its own low and high value.
+    sound What it does depends on the patch; the preset's mappings are named in its description.
+Macro7      "Macro 7"      0 1000 500  pct                             | Macro 7, moves every node setting mapped to it
+    id macro_7
+    how Moves every node setting that the patch maps to macro 7, each between its own low and high value.
+    sound What it does depends on the patch; the preset's mappings are named in its description.
+Macro8      "Macro 8"      0 1000 500  pct                             | Macro 8, moves every node setting mapped to it
+    id macro_8
+    how Moves every node setting that the patch maps to macro 8, each between its own low and high value.
+    sound What it does depends on the patch; the preset's mappings are named in its description.
+Macro9      "Macro 9"      0 1000 500  pct                             | Macro 9, moves every node setting mapped to it
+    id macro_9
+    how Moves every node setting that the patch maps to macro 9, each between its own low and high value.
+    sound What it does depends on the patch; the preset's mappings are named in its description.
+Macro10      "Macro 10"      0 1000 500  pct                             | Macro 10, moves every node setting mapped to it
+    id macro_10
+    how Moves every node setting that the patch maps to macro 10, each between its own low and high value.
+    sound What it does depends on the patch; the preset's mappings are named in its description.
+Macro11      "Macro 11"      0 1000 500  pct                             | Macro 11, moves every node setting mapped to it
+    id macro_11
+    how Moves every node setting that the patch maps to macro 11, each between its own low and high value.
+    sound What it does depends on the patch; the preset's mappings are named in its description.
+Macro12      "Macro 12"      0 1000 500  pct                             | Macro 12, moves every node setting mapped to it
+    id macro_12
+    how Moves every node setting that the patch maps to macro 12, each between its own low and high value.
+    sound What it does depends on the patch; the preset's mappings are named in its description.
+Macro13      "Macro 13"      0 1000 500  pct                             | Macro 13, moves every node setting mapped to it
+    id macro_13
+    how Moves every node setting that the patch maps to macro 13, each between its own low and high value.
+    sound What it does depends on the patch; the preset's mappings are named in its description.
+Macro14      "Macro 14"      0 1000 500  pct                             | Macro 14, moves every node setting mapped to it
+    id macro_14
+    how Moves every node setting that the patch maps to macro 14, each between its own low and high value.
+    sound What it does depends on the patch; the preset's mappings are named in its description.
+Macro15      "Macro 15"      0 1000 500  pct                             | Macro 15, moves every node setting mapped to it
+    id macro_15
+    how Moves every node setting that the patch maps to macro 15, each between its own low and high value.
+    sound What it does depends on the patch; the preset's mappings are named in its description.
+Macro16      "Macro 16"      0 1000 500  pct                             | Macro 16, moves every node setting mapped to it
+    id macro_16
+    how Moves every node setting that the patch maps to macro 16, each between its own low and high value.
+    sound What it does depends on the patch; the preset's mappings are named in its description.
+
+# What the machine measures (NeoPatchMachine.Readings, machine_readings): the output after Volume, in dBFS.
+reading rms_db dB | The output's RMS over about half a second (-inf: silence)
+reading peak_db dB | The output's peak, falling 20 dB a second (-inf: silence)
+reading active_voices notes | Notes sounding now
+reading nodes nodes | Nodes in the compiled patch (nodes that lead to no Out are not counted)

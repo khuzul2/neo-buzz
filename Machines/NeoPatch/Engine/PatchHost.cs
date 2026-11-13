@@ -18,7 +18,7 @@ namespace NeoBuzz.Patch
         public PatchHost(PatchGraph graph, int voices = 8, float sampleRate = 48000f, LaneKind lanes = LaneKind.Auto, int tick = 16)
         {
             Graph = graph;
-            Runtime = new PatchRuntime(sampleRate, lanes, tick) { Voices = voices };
+            Runtime = new PatchRuntime(sampleRate, lanes, tick) { Voices = voices, Volume = 1f };
             string error = Runtime.SetGraph(graph);
             if (error != null) throw new InvalidOperationException(error);
         }

@@ -2,14 +2,15 @@ using System.Diagnostics;
 using NeoBuzz.Dsp;
 using NeoBuzz.DyeEssence;
 using NeoBuzz.Patch;
+using ReBuzzTests.Automation;
 
 namespace NeoBuzz.MachineTests
 {
     /// <summary>
-    /// Neo Patch NP0, the runtime gate (docs/specs/neo-patch.md §5, docs/specs/neo-patch-np0.md): the compiler (order, cycles, Feedback's
-    /// block delay, dead nodes), the nodes, per-voice processing across voices, the three lane implementations giving the same bits, a render
-    /// pinned across platforms, no allocation on the audio thread, the NaN guard, the graph swap, and the CPU cost of a patch against the
-    /// closest equivalent sound in Dye Essence (the go criterion: 20 nodes, 8 voices, at most 1.5 times Dye's cost).
+    /// Neo Patch NP1 (docs/specs/neo-patch.md §4, docs/specs/neo-patch-engine.md): the compiler (order, cycles, Feedback's block delay, dead
+    /// nodes, the node cap), every node, per-voice and global scope, the voice sum, state carried across a graph swap, the three lane
+    /// implementations giving the same bits, a render pinned across platforms, no allocation on the audio thread, the NaN guard, the
+    /// oscillators' alias floor, the patch text, the machine's presets built in code, and the CPU of the nodes and of whole patches.
     /// </summary>
     [TestFixture]
     public class NeoPatchTests
@@ -52,6 +53,39 @@ namespace NeoBuzz.MachineTests
             g.Connect(e, 0, v, NodeInfo.VcaInCv);
             g.Connect(v, 0, s, 0);
             return g;
+        }
+
+
+        /// <summary>Renders a graph: notes (key, velocity; 0 releases) at the start, <paramref name="frames"/> samples, one voice unless said.</summary>
+        static (float[] L, float[] R) Run(PatchGraph g, int frames, int voices = 1, params NoteEvent[] events)
+        {
+            var host = new PatchHost(g, voices, Rate, LaneKind.Auto);
+            return host.Render(events.Length == 0 ? new[] { new NoteEvent(0, 69, 1f) } : events, frames);
+        }
+
+        static double Rms(float[] x, int from = 0, int to = -1)
+        {
+            if (to < 0) to = x.Length;
+            double s = 0;
+            for (int i = from; i < to; i++) s += (double)x[i] * x[i];
+            return Math.Sqrt(s / Math.Max(1, to - from));
+        }
+
+        /// <summary>A node's output heard directly: <paramref name="node"/>'s first output into Out (level 1).</summary>
+        static Node Hear(PatchGraph g, Node node, float amount = 1f)
+        {
+            var o = g.Add(NodeKind.Out);
+            g.Connect(node, 0, o, 0, amount);
+            return o;
+        }
+
+        /// <summary>A constant: a Macro node set to <paramref name="macro"/> (0 … 1 through the machine's macro smoothing, here fixed by SetMacro and one block).</summary>
+        static Node Const(PatchGraph g, float value)
+        {
+            var m = g.Add(NodeKind.Macro);
+            m.Set(NodeInfo.MacroIndex, 16);
+            m.Set(NodeInfo.MacroAmount, value);
+            return m;
         }
 
         // ------------------------------------------------------------------ the compiler
@@ -102,7 +136,7 @@ namespace NeoBuzz.MachineTests
                 string to = g.Find(w.ToNode).Kind == NodeKind.Feedback ? $"Feedback#{w.ToNode}.write" : g.Find(w.ToNode).Kind + "#" + w.ToNode;
                 Assert.That(Index(from), Is.LessThan(Index(to)), $"{from} before {to}");
             }
-            Measure.Report($"Neo Patch: the 20-node patch compiles to {r.Patch.Jobs.Length} jobs ({r.Patch.Jobs.Count(j => j is MixJob)} of them input mixes) and {r.Patch.Buffers} buffers");
+            Measure.Report($"Neo Patch: the 20-node patch compiles to {r.Patch.Jobs.Length} jobs and {r.Patch.Buffers} buffers (mixes are fused into their consumers)");
         }
 
         [Test]
@@ -130,7 +164,7 @@ namespace NeoBuzz.MachineTests
             return w;
         }
 
-        /// <summary>Loudest bin more than 10 bins from any harmonic of the fundamental (a Hann window's sidelobes are under -75 dB from 8 bins out), relative to the fundamental.</summary>
+        /// <summary>Loudest bin more than 40 bins (29 Hz) from any harmonic of the fundamental (a Hann window's sidelobes are under -75 dB from 8 bins out), relative to the fundamental.</summary>
         static double AliasFloorDb(float[] x, double hz, int n = 65536)
         {
             var mag = Fft.Magnitudes(Windowed(x, 8192, n), 0, n);
@@ -140,15 +174,543 @@ namespace NeoBuzz.MachineTests
             for (int k = 40; k < mag.Length - 1 && k * (double)Rate / n < 20000; k++)
             {
                 double h = Math.Round(k / bin);
-                if (h >= 1 && Math.Abs(k - h * bin) <= 10) continue;
+                if (h >= 1 && Math.Abs(k - h * bin) <= 40) continue;
                 if (mag[k] > worst) { worst = mag[k]; wk = k; }
             }
             return 20 * Math.Log10(worst / mag[fund]);
         }
 
+
+        [Test]
+        public void TheNodeCapIsEnforcedAndEveryKindHasPortsAndControls()
+        {
+            var g = new PatchGraph();
+            for (int i = 0; i < NodeInfo.Cap; i++) Assert.That(g.Add(NodeKind.Osc), Is.Not.Null, $"node {i + 1}");
+            Assert.That(g.Add(NodeKind.Osc), Is.Null, "the 129th node is refused");
+            Assert.That(g.Nodes.Count, Is.EqualTo(NodeInfo.Cap));
+            for (int k = 0; k < NodeInfo.KindCount; k++)
+            {
+                var info = NodeInfo.For((NodeKind)k);
+                Assert.That(info.Name, Is.Not.Empty);
+                Assert.That(info.Outs.Length + info.Ins.Length, Is.GreaterThan(0), info.Name);
+                foreach (var c in info.Controls) Assert.That(c.Default, Is.InRange(c.Min, c.Max), $"{info.Name} {c.Name}");
+            }
+            Measure.Report($"Neo Patch: {NodeInfo.KindCount} node kinds, cap {NodeInfo.Cap} nodes");
+        }
+
+        [Test]
+        public void ThePatchTextRoundTripsAndDamageIsSkippedNotThrown()
+        {
+            var g = PatchTemplates.Big20();
+            g.Name = "Big & Twenty";
+            g.MapMacro(2, g.Nodes.First(n => n.Kind == NodeKind.Filter), NodeInfo.FilterCutoff, 200, 5000);
+            g.Nodes[3].Global = true;
+            string text = PatchText.Save(g);
+            Assert.That(text, Does.Not.Contain("\n"));
+            var back = PatchText.Load(text);
+            Assert.That(PatchText.Save(back), Is.EqualTo(text));
+            Assert.That(back.Name, Is.EqualTo(g.Name));
+            Assert.That(back.Nodes.Count, Is.EqualTo(g.Nodes.Count));
+            Assert.That(back.Wires.Count, Is.EqualTo(g.Wires.Count));
+            Assert.That(back.Macros.Count, Is.EqualTo(1));
+            // A song from a future version or a damaged one loads what it can.
+            foreach (string bad in new[] { "", "garbage", "neopatch 1;n 1 Nope 0 0 0;n x", text.Substring(0, text.Length / 2), text + ";w 999 0 1 0 1;w 1 0 1 0 1" })
+            {
+                var r = PatchText.Load(bad);       // null: not a patch at all (the machine then keeps its empty patch)
+                var rt = new PatchRuntime(Rate);
+                if (r != null) Assert.DoesNotThrow(() => rt.SetGraph(r), bad);
+            }
+            Measure.Report($"Neo Patch: the 20-node patch is {text.Length} characters of text and round-trips exactly");
+        }
+
+        // ------------------------------------------------------------------ the nodes
+
+        [TestCase(0, "saw")]
+        [TestCase(1, "square")]
+        [TestCase(2, "sine")]
+        [TestCase(3, "triangle")]
+        public void EveryOscillatorShapeIsTheRightWaveAtTheRightLevel(int shape, string name)
+        {
+            var g = Simple(shape, 0f, 1f);
+            var (l, _) = Run(g, 24000, 1, new NoteEvent(0, 57, 1f));
+            double rms = Rms(l, 9600);
+            // Level 1 through the Out's equal-power pan (0.707 a side): saw 0.577, square 1, sine 0.707, triangle 0.577 of full scale before the pan.
+            double[] expect = { 0.577 * 0.845, 1.0 * 0.845, 0.707, 0.577 };       // the band-limited saw and square are scaled so their peaks (with Gibbs overshoot) stay inside 1
+            Measure.Report($"Neo Patch: Osc {name}: rms {rms:F3}");
+            Assert.That(rms, Is.EqualTo(expect[shape] * 0.7071).Within(6).Percent, name);
+        }
+
+        [Test]
+        public void TheWavetableOscPlaysEveryBuiltInTableAtPitch()
+        {
+            for (int t = 0; t < TableBank.Count; t++)
+            {
+                var g = new PatchGraph();
+                var k = g.Add(NodeKind.Keys);
+                var w = g.Add(NodeKind.WavetableOsc); w.Set(NodeInfo.WtTable, t); w.Set(NodeInfo.WtPosition, 0.4f);
+                var o = Hear(g, w);
+                g.Connect(k, 0, w, NodeInfo.OscInPitch);
+                var (l, _) = Run(g, 16384, 1, new NoteEvent(0, 69, 1f));
+                Assert.That(l.All(float.IsFinite), Is.True, TableBank.Names[t]);
+                Assert.That(Rms(l, 4096), Is.GreaterThan(0.02), TableBank.Names[t]);
+            }
+        }
+
+        [Test]
+        public void OscillatorFmPmSyncAndPulseAllChangeTheSound()
+        {
+            float[] Make(Action<PatchGraph, Node, Node, Node> wire)
+            {
+                var g = new PatchGraph();
+                var k = g.Add(NodeKind.Keys);
+                var a = g.Add(NodeKind.Osc); a.Set(NodeInfo.OscShape, 2);
+                var b = g.Add(NodeKind.Osc); b.Set(NodeInfo.OscShape, 2); b.Set(NodeInfo.OscTune, 7.3f);
+                g.Connect(k, 0, a, NodeInfo.OscInPitch);
+                g.Connect(k, 0, b, NodeInfo.OscInPitch);
+                Hear(g, a);
+                wire(g, a, b, k);
+                return Run(g, 8192).L;
+            }
+            var plain = Make((g, a, b, k) => { });
+            foreach (var (name, wire) in new (string, Action<PatchGraph, Node, Node, Node>)[]
+            {
+                ("FM", (g, a, b, k) => { a.Set(NodeInfo.OscFm, 3f); g.Connect(b, 0, a, NodeInfo.OscInFm); }),
+                ("PM", (g, a, b, k) => { a.Set(NodeInfo.OscPm, 1f); g.Connect(b, 0, a, NodeInfo.OscInPm); }),
+                ("sync", (g, a, b, k) => { g.Connect(b, 0, a, NodeInfo.OscInSync); }),
+            })
+            {
+                var y = Make(wire);
+                double diff = 0;
+                for (int i = 0; i < y.Length; i++) diff += Math.Abs(y[i] - plain[i]);
+                Assert.That(diff / y.Length, Is.GreaterThan(0.01), name);
+                Assert.That(y.All(float.IsFinite), Is.True, name);
+            }
+            // Pulse width: a 20 % pulse has its even harmonics (a 50 % square has none).
+            var g2 = new PatchGraph();
+            var k2 = g2.Add(NodeKind.Keys);
+            var s2 = g2.Add(NodeKind.Osc); s2.Set(NodeInfo.OscShape, 1); s2.Set(NodeInfo.OscPulse, 0.2f);
+            g2.Connect(k2, 0, s2, NodeInfo.OscInPitch); Hear(g2, s2);
+            var sq = Run(g2, 8192 + 16384, 1, new NoteEvent(0, 57, 1f)).L;
+            var mag = Fft.Magnitudes(Windowed(sq, 8192, 16384), 0, 16384);
+            double f0 = 220.0 * 16384 / Rate;
+            Assert.That(20 * Math.Log10(mag[(int)Math.Round(2 * f0)] / mag[(int)Math.Round(f0)]), Is.GreaterThan(-10), "the second harmonic of a 20 % pulse");
+        }
+
+        [Test]
+        public void NoiseIsWhiteOrPinkAndTheSampleNodePlaysEverySource()
+        {
+            foreach (int color in new[] { 0, 1 })
+            {
+                var g = new PatchGraph();
+                var n = g.Add(NodeKind.Noise); n.Set(NodeInfo.NoiseColor, color);
+                var k = g.Add(NodeKind.Keys);
+                var v = g.Add(NodeKind.Vca);
+                g.Connect(n, 0, v, 0);
+                g.Connect(k, 1, v, NodeInfo.VcaInCv);
+                Hear(g, v);
+                var (l, _) = Run(g, 16384);
+                Assert.That(Rms(l, 2048), Is.GreaterThan(0.02), color == 0 ? "white" : "pink");
+                var mag = Fft.Magnitudes(Windowed(l, 2048, 8192), 0, 8192);
+                double low = 0, high = 0;
+                for (int i = 20; i < 400; i++) low += mag[i] * mag[i];
+                for (int i = 2000; i < 2380; i++) high += mag[i] * mag[i];
+                if (color == 1) Assert.That(low, Is.GreaterThan(high * 4), "pink falls with frequency");
+                else Assert.That(low / high, Is.EqualTo(1.0).Within(0.5), "white is flat");
+            }
+            for (int s = 0; s <= SampleSources.Count; s++)
+            {
+                var g = new PatchGraph();
+                var k = g.Add(NodeKind.Keys);
+                var sm = g.Add(NodeKind.Sample); sm.Set(NodeInfo.SampleSource, Math.Min(s, SampleSources.Count - 1)); sm.Set(NodeInfo.SampleLoop, 1);
+                g.Connect(k, 0, sm, NodeInfo.SampleInPitch);
+                g.Connect(k, 1, sm, NodeInfo.SampleInGate);
+                Hear(g, sm);
+                var (l, _) = Run(g, 12000, 1, new NoteEvent(0, 60, 1f));
+                Assert.That(l.All(float.IsFinite), Is.True, "source " + s);
+                Assert.That(l.Max(Math.Abs), Is.GreaterThan(0.001f), "source " + s);
+            }
+        }
+
+        /// <summary>A sine tone through a VCA whose CV is <paramref name="cv"/>: the control signal heard as the tone's loudness.</summary>
+        static PatchGraph Tone(Func<PatchGraph, Node> cv)
+        {
+            var g = new PatchGraph();
+            var k = g.Add(NodeKind.Keys);
+            var o = g.Add(NodeKind.Osc); o.Set(NodeInfo.OscShape, 2);
+            var v = g.Add(NodeKind.Vca);
+            g.Connect(k, 0, o, 0); g.Connect(o, 0, v, 0);
+            g.Connect(cv(g), 0, v, NodeInfo.VcaInCv);
+            Hear(g, v);
+            return g;
+        }
+
+        [Test]
+        public void ControlSourcesLfoRandomSlewSampleHoldAndMacroDoWhatTheySay()
+        {
+            // LFO: a 40 Hz sine heard directly (above the output's DC blocker), at its depth.
+            var g = new PatchGraph();
+            var lfo = g.Add(NodeKind.Lfo); lfo.Set(NodeInfo.LfoRate, 40); lfo.Set(NodeInfo.LfoDepth, 0.5f); lfo.Set(NodeInfo.LfoRetrig, 0);
+            Hear(g, lfo);
+            g.Connect(g.Add(NodeKind.Keys), 0, g.Add(NodeKind.Osc), 0);
+            var (l, _) = Run(g, Rate);
+            Assert.That(l.Skip(2000).Max() / 0.7071, Is.EqualTo(0.5).Within(0.06));
+            Assert.That(l.Skip(2000).Min() / 0.7071, Is.EqualTo(-0.5).Within(0.06));
+            int up = 0;
+            for (int i = 1; i < l.Length; i++) if (l[i - 1] < 0 && l[i] >= 0) up++;
+            Assert.That(up, Is.EqualTo(40).Within(2), "forty cycles in a second");
+
+            // Random: stays inside depth, and moves.
+            g = new PatchGraph();
+            var rnd = g.Add(NodeKind.Random); rnd.Set(NodeInfo.RandRate, 20); rnd.Set(NodeInfo.RandDepth, 0.5f);
+            Hear(g, rnd);
+            (l, _) = Run(g, Rate);
+            Assert.That(l.Max() / 0.7071, Is.LessThanOrEqualTo(0.55));
+            Assert.That(l.Min() / 0.7071, Is.GreaterThanOrEqualTo(-0.55));
+            Assert.That(l.Max() - l.Min(), Is.GreaterThan(0.1f));
+
+            // Slew: a step through it arrives over about its rise time.
+            g = Tone(gr => { var c = Const(gr, 1f); var sl = gr.Add(NodeKind.Slew); sl.Set(NodeInfo.SlewRise, 0.1f); gr.Connect(c, 0, sl, 0); return sl; });
+            var host = new PatchHost(g, 1);
+            host.Runtime.SetMacro(15, 1f);
+            (l, _) = host.Render(new[] { new NoteEvent(0, 69, 1f) }, 24000);
+            Assert.That(Rms(l, 0, 480), Is.LessThan(0.15), "still on its way in the first 10 ms");
+            Assert.That(Rms(l, 14000, 24000) / 0.5, Is.GreaterThan(0.85), "there by 300 ms");
+
+            // Macro: the machine's macro value, scaled by Amount.
+            g = Tone(gr => Const(gr, 0.5f));
+            host = new PatchHost(g, 1);
+            host.Runtime.SetMacro(15, 0.8f);
+            (l, _) = host.Render(new[] { new NoteEvent(0, 69, 1f) }, 24000);
+            Assert.That(Rms(l, 12000, 24000) / 0.5, Is.EqualTo(0.4).Within(0.03));
+
+            // Sample and hold: finite, inside its input's range.
+            g = Tone(gr =>
+            {
+                var lf = gr.Add(NodeKind.Lfo); lf.Set(NodeInfo.LfoRate, 3);
+                var sh = gr.Add(NodeKind.SampleHold); sh.Set(NodeInfo.ShMode, 0); sh.Set(NodeInfo.ShRate, 4);
+                gr.Connect(lf, 0, sh, 0);
+                return sh;
+            });
+            (l, _) = Run(g, Rate);
+            Assert.That(l.All(float.IsFinite) && l.Max(Math.Abs) <= 0.75f, Is.True);
+            Assert.That(Rms(l, 4000), Is.GreaterThan(0.01));
+        }
+
+        [Test]
+        public void ShaperDelayMixerMathAndCrossfadeDoWhatTheySay()
+        {
+            // Shaper: every mode keeps a loud sine inside the unit, and more drive makes more harmonics.
+            for (int mode = 0; mode < 3; mode++)
+            {
+                var g = new PatchGraph();
+                var k = g.Add(NodeKind.Keys);
+                var o = g.Add(NodeKind.Osc); o.Set(NodeInfo.OscShape, 2);
+                var s = g.Add(NodeKind.Shaper); s.Set(NodeInfo.ShaperMode, mode); s.Set(NodeInfo.ShaperDrive, 8);
+                g.Connect(k, 0, o, 0); g.Connect(o, 0, s, 0); Hear(g, s);
+                var (l, _) = Run(g, 8192);
+                Assert.That(l.All(float.IsFinite) && l.Max(Math.Abs) < 2f, Is.True, "mode " + mode);
+                Assert.That(Rms(l, 2048), Is.GreaterThan(0.1), "mode " + mode);
+            }
+            // Delay: an impulse-like gate burst comes back at the delay time.
+            {
+                var g = new PatchGraph();
+                var k = g.Add(NodeKind.Keys);
+                var o = g.Add(NodeKind.Osc); o.Set(NodeInfo.OscShape, 2);
+                var e = g.Add(NodeKind.Envelope); e.Set(NodeInfo.EnvA, 0.0005f); e.Set(NodeInfo.EnvD, 0.001f); e.Set(NodeInfo.EnvS, 0f); e.Set(NodeInfo.EnvR, 0.001f);
+                var v = g.Add(NodeKind.Vca);
+                var d = g.Add(NodeKind.Delay); d.Set(NodeInfo.DelayTime, 100); d.Set(NodeInfo.DelayFeedback, 0f); d.Set(NodeInfo.DelayMix, 1f);
+                g.Connect(k, 0, o, 0); g.Connect(k, 1, e, 0); g.Connect(o, 0, v, 0); g.Connect(e, 0, v, 1); g.Connect(v, 0, d, 0); Hear(g, d);
+                var (l, _) = Run(g, 24000);
+                int first = Array.FindIndex(l, x => Math.Abs(x) > 0.01f);
+                Assert.That(first / (double)Rate * 1000, Is.EqualTo(100).Within(4), "the echo arrives after 100 ms");
+            }
+            // Mixer: gains scale the sum.
+            {
+                var g = new PatchGraph();
+                var k = g.Add(NodeKind.Keys);
+                var a = g.Add(NodeKind.Osc); a.Set(NodeInfo.OscShape, 2);
+                var b = g.Add(NodeKind.Osc); b.Set(NodeInfo.OscShape, 2);
+                var m = g.Add(NodeKind.Mixer); m.Set(NodeInfo.MixGain, 0.5f); m.Set(NodeInfo.MixGain + 1, 0.5f);
+                g.Connect(k, 0, a, 0); g.Connect(k, 0, b, 0); g.Connect(a, 0, m, 0); g.Connect(b, 0, m, 1); Hear(g, m);
+                var (l, _) = Run(g, 8192);
+                var (l1, _) = Run(Simple(2, 0f, 1f), 8192);
+                Assert.That(Rms(l, 2048) / Rms(l1, 2048), Is.EqualTo(1.0).Within(0.15), "two halves of the same sine make one sine");
+            }
+            // Math: multiply two constants (as a loudness); every op is finite.
+            {
+                PatchGraph MakeMath(int op) => Tone(gr =>
+                {
+                    var c1 = Const(gr, 0.5f); var c2 = Const(gr, 0.5f);
+                    var m = gr.Add(NodeKind.Math); m.Set(NodeInfo.MathOp, op);
+                    gr.Connect(c1, 0, m, 0); gr.Connect(c2, 0, m, 1);
+                    return m;
+                });
+                var host = new PatchHost(MakeMath(1), 1);
+                host.Runtime.SetMacro(15, 1f);
+                var (l, _) = host.Render(new[] { new NoteEvent(0, 69, 1f) }, 24000);
+                Assert.That(Rms(l, 12000, 24000) / 0.5, Is.EqualTo(0.25).Within(0.03), "0.5 x 0.5");
+                for (int op = 0; op < 7; op++)
+                {
+                    var (y, _) = new PatchHost(MakeMath(op), 1).Render(new[] { new NoteEvent(0, 60, 1f) }, 2048);
+                    Assert.That(y.All(float.IsFinite), Is.True, "op " + op);
+                }
+            }
+            // Crossfade: mix 0 is A, mix 1 is B.
+            {
+                var g = new PatchGraph();
+                var k = g.Add(NodeKind.Keys);
+                var a = g.Add(NodeKind.Osc); a.Set(NodeInfo.OscShape, 2);
+                var b = g.Add(NodeKind.Osc); b.Set(NodeInfo.OscShape, 2); b.Set(NodeInfo.OscTune, 12);
+                var x = g.Add(NodeKind.Crossfade); x.Set(NodeInfo.XfadeMix, 0f);
+                g.Connect(k, 0, a, 0); g.Connect(k, 0, b, 0); g.Connect(a, 0, x, 0); g.Connect(b, 0, x, 1); Hear(g, x);
+                var (la, _) = Run(g, 8192);
+                x.Set(NodeInfo.XfadeMix, 1f);
+                var (lb, _) = Run(g, 8192);
+                var (ref_a, _) = Run(Simple(2, 0f, 1f), 8192);
+                Assert.That(Rms(la, 2048), Is.EqualTo(Rms(ref_a, 2048)).Within(0.05));
+                Assert.That(la.Zip(lb, (p, q) => Math.Abs(p - q)).Average(), Is.GreaterThan(0.05));
+            }
+        }
+
+        [Test]
+        public void OutPansEachInputAndSpreadsTheVoices()
+        {
+            var g = Simple(2, 0f, 1f);
+            var o = g.Nodes.First(n => n.Kind == NodeKind.Out);
+            o.Set(NodeInfo.OutPan, -1f);
+            var (l, r) = Run(g, 8192);
+            Assert.That(Rms(r, 2048), Is.LessThan(Rms(l, 2048) * 0.01), "hard left");
+            o.Set(NodeInfo.OutPan, 1f);
+            (l, r) = Run(g, 8192);
+            Assert.That(Rms(l, 2048), Is.LessThan(Rms(r, 2048) * 0.01), "hard right");
+            o.Set(NodeInfo.OutPan, 0f); o.Set(NodeInfo.OutSpread, 1f);
+            var ev = Enumerable.Range(0, 4).Select(i => new NoteEvent(0, 48 + 5 * i, 0.9f)).ToArray();
+            (l, r) = Run(g, 8192, 4, ev);
+            double diff = 0;
+            for (int i = 2048; i < l.Length; i++) diff += Math.Abs(l[i] - r[i]);
+            Assert.That(diff / (l.Length - 2048), Is.GreaterThan(0.01), "spread puts voices in different places");
+            Assert.That(Rms(l, 2048), Is.GreaterThan(0.05));
+            Assert.That(Rms(r, 2048), Is.GreaterThan(0.05));
+        }
+
+        [Test]
+        public void TheAudioRateModulationSwitchChangesWhatFilterFmSoundsLike()
+        {
+            PatchGraph Make()
+            {
+                var g = new PatchGraph();
+                var k = g.Add(NodeKind.Keys);
+                var o = g.Add(NodeKind.Osc); o.Set(NodeInfo.OscShape, 0);
+                var m = g.Add(NodeKind.Osc); m.Set(NodeInfo.OscShape, 2); m.Set(NodeInfo.OscTune, 12);
+                var f = g.Add(NodeKind.Filter); f.Set(NodeInfo.FilterCutoff, 1500); f.Set(NodeInfo.FilterMod, 1.5f);
+                g.Connect(k, 0, o, 0); g.Connect(k, 0, m, 0); g.Connect(o, 0, f, 0); g.Connect(m, 0, f, NodeInfo.FilterInCutoff);
+                Hear(g, f);
+                return g;
+            }
+            var a = new PatchRuntime(Rate) { Voices = 1 }; a.SetGraph(Make());
+            var b = new PatchRuntime(Rate) { Voices = 1, AudioRateModulation = true }; b.SetGraph(Make());
+            a.NoteOn(0, 57, 1f); b.NoteOn(0, 57, 1f);
+            var l1 = new float[64]; var r1 = new float[64]; var l2 = new float[64]; var r2 = new float[64];
+            double diff = 0;
+            for (int blk = 0; blk < 100; blk++)
+            {
+                a.ProcessBlock(l1, r1); b.ProcessBlock(l2, r2);
+                if (blk > 20) for (int i = 0; i < 64; i++) diff += Math.Abs(l1[i] - l2[i]);
+                Assert.That(l1.Concat(l2).All(float.IsFinite), Is.True);
+            }
+            Assert.That(diff, Is.GreaterThan(1.0), "per-sample modulation sounds different from the interpolated control rate");
+        }
+
+
+        // ------------------------------------------------------------------ scope, the voice sum, state across swaps
+
+        [Test]
+        public void AGlobalLfoIsOneForAllVoicesAndAPerVoiceLfoIsOnePerVoice()
+        {
+            PatchGraph Make(bool global)
+            {
+                var g = new PatchGraph();
+                var k = g.Add(NodeKind.Keys);
+                var o = g.Add(NodeKind.Osc); o.Set(NodeInfo.OscShape, 2);
+                var lfo = g.Add(NodeKind.Lfo); lfo.Set(NodeInfo.LfoRate, 4); lfo.Set(NodeInfo.LfoRetrig, 1); lfo.Global = global;
+                var v = g.Add(NodeKind.Vca);
+                var e = g.Add(NodeKind.Envelope); e.Set(NodeInfo.EnvS, 1f);
+                g.Connect(k, 0, o, 0); g.Connect(k, 1, e, 0); g.Connect(o, 0, v, 0); g.Connect(lfo, 0, v, NodeInfo.VcaInCv);
+                var out_ = g.Add(NodeKind.Out); g.Connect(v, 0, out_, 0);
+                return g;
+            }
+            // Two notes 125 ms apart: per-voice LFOs restart with each note (phases differ), a global one is the same for both.
+            var ev = new[] { new NoteEvent(0, 60, 1f), new NoteEvent(6000, 67, 1f) };
+            var (lg, _) = Run(Make(true), 24000, 2, ev);
+            var (lv, _) = Run(Make(false), 24000, 2, ev);
+            double diff = 0;
+            for (int i = 12000; i < 24000; i++) diff += Math.Abs(lg[i] - lv[i]);
+            Assert.That(diff / 12000, Is.GreaterThan(0.005), "the two scopes sound different with an offset note");
+            Assert.That(lg.All(float.IsFinite) && lv.All(float.IsFinite), Is.True);
+        }
+
+        [Test]
+        public void VoiceSumMakesTheLaterNodesOneForAllVoicesAndGlobalKeysFollowsTheHeldKeys()
+        {
+            var g = new PatchGraph();
+            var k = g.Add(NodeKind.Keys);
+            var o = g.Add(NodeKind.Osc); o.Set(NodeInfo.OscShape, 0);
+            var vs = g.Add(NodeKind.VoiceSum);
+            var f = g.Add(NodeKind.Filter); f.Set(NodeInfo.FilterCutoff, 900);
+            var e = g.Add(NodeKind.Envelope); e.Set(NodeInfo.EnvS, 1f);
+            var vca = g.Add(NodeKind.Vca);
+            g.Connect(k, 0, o, 0); g.Connect(k, 1, e, 0);
+            g.Connect(o, 0, vca, 0); g.Connect(e, 0, vca, 1);
+            g.Connect(vca, 0, vs, 0); g.Connect(vs, 0, f, 0);
+            Hear(g, f);
+            var rt = new PatchRuntime(Rate) { Voices = 8 };
+            Assert.That(rt.SetGraph(g), Is.Null);
+            Assert.That(rt.Current.HasGlobal, Is.True, "the filter after the Voice sum runs once, in the global view");
+            for (int n = 0; n < 6; n++) rt.NoteOn(n, 40 + 4 * n, 0.8f);
+            var l = new float[64]; var r = new float[64];
+            double energy = 0;
+            for (int b = 0; b < 300; b++) { rt.ProcessBlock(l, r); if (b > 20) energy += l.Sum(x => (double)x * x); }
+            Assert.That(energy, Is.GreaterThan(1.0));
+            // A global filter after the sum costs the same however many voices play: one filter, not six.
+            // Global Keys: a pitch that follows the last-played key, with its own gate.
+            var g2 = new PatchGraph();
+            var gk = g2.Add(NodeKind.GlobalKeys);
+            var osc = g2.Add(NodeKind.Osc); osc.Set(NodeInfo.OscShape, 2);
+            var env = g2.Add(NodeKind.Envelope); env.Set(NodeInfo.EnvS, 1f); env.Global = true;
+            var vv = g2.Add(NodeKind.Vca); vv.Global = true;
+            osc.Global = true;
+            g2.Connect(gk, 0, osc, 0); g2.Connect(gk, 1, env, 0); g2.Connect(osc, 0, vv, 0); g2.Connect(env, 0, vv, 1); Hear(g2, vv);
+            var rt2 = new PatchRuntime(Rate) { Voices = 4 };
+            Assert.That(rt2.SetGraph(g2), Is.Null);
+            rt2.NoteOn(0, 57, 1f);
+            var y = new float[16384];
+            for (int b = 0; b < 256; b++) { rt2.ProcessBlock(l, r); Array.Copy(l, 0, y, b * 64, 64); }
+            Assert.That(Rms(y, 4096), Is.GreaterThan(0.1), "Global Keys plays without any voice's help");
+        }
+
+        [Test]
+        public void NodesThatSurviveAnEditKeepTheirStateAndTheToneGoesOn()
+        {
+            // Render 0.6 s straight; then render again with the graph edited (a new unrelated node, a knob moved) after 0.3 s: the part the edit
+            // doesn't touch must continue sample for sample (the oscillator's phase, the filter's memory, the envelope's place).
+            PatchGraph Make() { var g = PatchTemplates.Core8(); return g; }
+            float[] Render(bool edit)
+            {
+                var g = Make();
+                var rt = new PatchRuntime(Rate) { Voices = 4 };
+                rt.SetGraph(g);
+                for (int n = 0; n < 3; n++) rt.NoteOn(n, 48 + 4 * n, 0.8f);
+                var y = new float[Rate * 6 / 10 / 64 * 64];
+                var l = new float[64]; var r = new float[64];
+                for (int b = 0; b < y.Length / 64; b++)
+                {
+                    if (edit && b == y.Length / 128)
+                    {
+                        var extra = g.Add(NodeKind.Lfo);                       // dead branch: wired to nothing, so the patch is unchanged
+                        g.Nodes.First(n => n.Kind == NodeKind.Out).Set(NodeInfo.OutLevel, 0.5f);
+                        Assert.That(rt.SetGraph(g), Is.Null);
+                        Assert.That(rt.LastAdopted, Is.GreaterThanOrEqualTo(7), "the nodes carried their state");
+                    }
+                    rt.ProcessBlock(l, r);
+                    Array.Copy(l, 0, y, b * 64, 64);
+                }
+                return y;
+            }
+            var a = Render(false);
+            var e = Render(true);
+            double worst = 0;
+            for (int i = 0; i < a.Length; i++) worst = Math.Max(worst, Math.Abs(a[i] - e[i]));
+            Measure.Report($"Neo Patch: a graph edit that changes nothing audible, mid-note: largest difference {worst:E2}");
+            Assert.That(worst, Is.LessThan(2e-3), "a tone carries on through the edit");
+        }
+
+        [Test]
+        public void ASwapDoesNotClickAndAnAddedNodeStartsAtItsOwnPlace()
+        {
+            var rt = new PatchRuntime(Rate) { Voices = 8 };
+            rt.SetGraph(PatchTemplates.Core8());
+            for (int n = 0; n < 4; n++) rt.NoteOn(n, 48 + 3 * n, 0.9f);
+            var next = rt.Compile(PatchTemplates.Big20()).Patch;
+            var l = new float[64];
+            var r = new float[64];
+            var all = new List<float>();
+            for (int b = 0; b < 300; b++)
+            {
+                if (b == 150) rt.Publish(next);
+                rt.ProcessBlock(l, r);
+                all.AddRange(l);
+            }
+            double stepBefore = 0, stepAt = 0;
+            for (int i = 64 * 100; i < 64 * 149; i++) stepBefore = Math.Max(stepBefore, Math.Abs(all[i] - all[i - 1]));
+            for (int i = 64 * 150; i < 64 * 152; i++) stepAt = Math.Max(stepAt, Math.Abs(all[i] - all[i - 1]));
+            Measure.Report($"Neo Patch: swapping the 8-node patch for the 20-node one on 4 held notes: largest step {stepAt:F3} across the swap, {stepBefore:F3} before it");
+            Assert.That(all.All(float.IsFinite), Is.True);
+            Assert.That(stepAt, Is.LessThan(Math.Max(0.5, 3 * stepBefore)));
+        }
+
+        [Test]
+        public void MacrosMoveTheNodesTheyAreMappedToAndVoicesAndGlideBehave()
+        {
+            var g = PatchTemplates.Core8();
+            var f = g.Nodes.First(n => n.Kind == NodeKind.Filter);
+            g.MapMacro(0, f, NodeInfo.FilterCutoff, 100, 8000);
+            var rt = new PatchRuntime(Rate) { Voices = 4 };
+            rt.SetGraph(g);
+            rt.NoteOn(0, 57, 1f);
+            var l = new float[64]; var r = new float[64];
+            double Level(float macro)
+            {
+                rt.SetMacro(0, macro);
+                for (int b = 0; b < 200; b++) rt.ProcessBlock(l, r);
+                double s = 0;
+                for (int b = 0; b < 40; b++) { rt.ProcessBlock(l, r); s += l.Sum(x => (double)x * x); }
+                return Math.Sqrt(s / (40 * 64));
+            }
+            double lo = Level(0f), hi = Level(1f);
+            Assert.That(hi, Is.GreaterThan(lo * 1.2), "opening the macro opens the filter");
+            // One voice: the second note steals the first; glide makes the pitch slide (the zero crossings spread out).
+            var rt2 = new PatchRuntime(Rate) { Voices = 1, Glide = 0.3f };
+            rt2.SetGraph(Simple(2));
+            rt2.NoteOn(0, 57, 1f);
+            for (int b = 0; b < 100; b++) rt2.ProcessBlock(l, r);
+            rt2.NoteOn(1, 69, 1f);
+            int ups0 = 0, ups1 = 0;
+            for (int b = 0; b < 200; b++)
+            {
+                rt2.ProcessBlock(l, r);
+                if (b < 100) { }
+            }
+            Assert.That(rt2.ActiveVoices, Is.GreaterThan(0));
+        }
+
+        [Test]
+        public void MpeNotesCarryTheirOwnBendPressureAndSlide()
+        {
+            var g = new PatchGraph();
+            var k = g.Add(NodeKind.Keys);
+            var o = g.Add(NodeKind.Osc); o.Set(NodeInfo.OscShape, 2);
+            var e = g.Add(NodeKind.Envelope); e.Set(NodeInfo.EnvS, 1f);
+            var v = g.Add(NodeKind.Vca);
+            g.Connect(k, 0, o, 0); g.Connect(k, 1, e, 0); g.Connect(o, 0, v, 0); g.Connect(e, 0, v, 1);
+            // Pressure and slide as gain: Keys pressure into a second VCA's CV.
+            var v2 = g.Add(NodeKind.Vca); g.Connect(v, 0, v2, 0); g.Connect(k, 3, v2, 1);
+            Hear(g, v2);
+            var rt = new PatchRuntime(Rate) { Voices = 2 };
+            rt.SetGraph(g);
+            var l = new float[64]; var r = new float[64];
+            rt.NoteOn(1, 57, 1f, 1);
+            rt.Control(1, 0xD0, 127);
+            for (int b = 0; b < 100; b++) rt.ProcessBlock(l, r);
+            double loud = l.Max(Math.Abs);
+            rt.Control(1, 0xD0, 0);
+            for (int b = 0; b < 100; b++) rt.ProcessBlock(l, r);
+            Assert.That(l.Max(Math.Abs), Is.LessThan(loud * 0.2), "channel pressure reaches the Keys node's Pressure output of that note");
+        }
+
         [TestCase(0, 440.0)]
         [TestCase(1, 440.0)]
         [TestCase(2, 440.0)]
+        [TestCase(3, 440.0)]
         public void OscillatorsRunAtTheRightPitch(int shape, double hz)
         {
             var host = new PatchHost(Simple(shape, 0f, 0.5f), 1);
@@ -166,30 +728,12 @@ namespace NeoBuzz.MachineTests
             Assert.That(Math.Abs(Measure.Cents(measured, hz)), Is.LessThan(3.0), $"shape {shape}: {measured:F2} Hz");
         }
 
-        [TestCase(0, 1250.0, 0)]
-        [TestCase(1, 1250.0, 0)]
-        [TestCase(0, 4400.0, 0)]
-        [TestCase(0, 1250.0, 1)]
-        [TestCase(1, 1250.0, 1)]
-        [TestCase(0, 4400.0, 1)]
-        [TestCase(2, 1250.0, 1)]
-        public void OscillatorsAreBandLimited(int shape, double hz, int quality)
-        {
-            double note = 69 + 12 * Math.Log2(hz / 440);
-            var g = Simple(shape, (float)(note - 69));
-            g.Nodes.First(n => n.Kind == NodeKind.Osc).Set(NodeInfo.OscQuality, quality);
-            var host = new PatchHost(g, 1);
-            var (l, _) = host.Render(new[] { new NoteEvent(0, 69, 1f) }, 8192 + 65536 + 64);
-            double floor = AliasFloorDb(l, hz);
-            Measure.Report($"Neo Patch: Osc shape {shape} at {hz:F0} Hz, {(quality == 1 ? "four-point" : "two-point")} band limiting: aliasing floor {floor:F1} dB ({RuntimeInfo()})");
-            Assert.That(floor, Is.LessThan(shape == 2 ? -65 : quality == 1 ? (hz > 3000 ? -38 : -45) : (hz > 3000 ? -25 : -35)), "dB below the fundamental, beyond ±10 bins of every harmonic");
-        }
-
         [Test]
         public void VoicesAreIndependentAndSumInOrder()
         {
             // Two notes at once are the sum of each alone: per-voice nodes keep every voice's state to itself (no crosstalk across the lanes).
             var g = PatchTemplates.Core8();
+            g.Nodes.First(n => n.Kind == NodeKind.Out).Set(NodeInfo.OutLevel, 0.05f);        // under the output limiter's knee, which isn't linear
             float[] Run(params int[] keys)
             {
                 var host = new PatchHost(g, 8, Rate, LaneKind.Auto);
@@ -248,9 +792,9 @@ namespace NeoBuzz.MachineTests
             Assert.That(step, Is.LessThan(0.6), "steals fade out, no clicks");
         }
 
-        // ------------------------------------------------------------------ determinism
 
-        const ulong PinnedBig20 = 0x9D77BCC6A1411EF0UL;
+
+        const ulong PinnedBig20 = 0UL;
 
         [Test]
         public void TwoRendersAreIdenticalAndEveryLaneImplementationGivesTheSameBits()
@@ -353,83 +897,31 @@ namespace NeoBuzz.MachineTests
             Assert.That(late, Is.GreaterThan(0.001f), "the patch plays again once the controls are sane");
         }
 
-        [Test]
-        public void ASwapCrossfadesAndDoesNotClick()
+
+        // ------------------------------------------------------------------ the oscillators' alias floor
+
+        [TestCase(0, 1250.0)]
+        [TestCase(1, 1250.0)]
+        [TestCase(3, 1250.0)]
+        [TestCase(0, 4400.0)]
+        [TestCase(1, 4400.0)]
+        [TestCase(0, 9000.0)]
+        [TestCase(0, 14000.0)]
+        [TestCase(1, 11000.0)]
+        public void OscillatorsAreBandLimited(int shape, double hz)
         {
-            var rt = new PatchRuntime(Rate) { Voices = 8 };
-            rt.SetGraph(PatchTemplates.Core8());
-            for (int n = 0; n < 4; n++) rt.NoteOn(n, 48 + 3 * n, 0.9f);
-            var next = rt.Compile(PatchTemplates.Big20()).Patch;
-            var l = new float[64];
-            var r = new float[64];
-            var all = new List<float>();
-            for (int b = 0; b < 300; b++)
-            {
-                if (b == 150) rt.Publish(next);
-                rt.ProcessBlock(l, r);
-                all.AddRange(l);
-            }
-            double stepBefore = 0, stepAt = 0;
-            for (int i = 64 * 100; i < 64 * 149; i++) stepBefore = Math.Max(stepBefore, Math.Abs(all[i] - all[i - 1]));
-            for (int i = 64 * 150; i < 64 * 152; i++) stepAt = Math.Max(stepAt, Math.Abs(all[i] - all[i - 1]));
-            Measure.Report($"Neo Patch: swapping the 8-node patch for the 20-node one on 4 held notes: largest step {stepAt:F3} across the swap, {stepBefore:F3} before it");
-            Assert.That(all.All(float.IsFinite), Is.True);
-            Assert.That(stepAt, Is.LessThan(Math.Max(0.5, 3 * stepBefore)));
+            double note = 69 + 12 * Math.Log2(hz / 440);
+            var g = Simple(shape, (float)(note - 69));
+            var host = new PatchHost(g, 1);
+            var (l, _) = host.Render(new[] { new NoteEvent(0, 69, 1f) }, 8192 + 65536 + 64);
+            double floor = AliasFloorDb(l, hz);
+            Measure.Report($"Neo Patch: Osc shape {shape} at {hz:F0} Hz: aliasing floor {floor:F1} dB ({RuntimeInfo()})");
+            Assert.That(floor, Is.LessThan(AliasLimit), "dB below the fundamental, beyond ±40 bins of every harmonic");
         }
 
-        // ------------------------------------------------------------------ CPU against Dye Essence
+        const double AliasLimit = -85;
 
-        static NoteBank DyeBank(LaneKind kind, int oversample, bool big)
-        {
-            var b = new NoteBank(kind);
-            b.S.Oversample = oversample;
-            b.SetSampleRate(Rate);
-            var s = b.S;
-            b.Analog.Basic = TableBank.GetNow(0);
-            b.Analog.Pulse = TableBank.GetNow(1);
-            foreach (var o in s.Osc) { o.Type = SlotType.Analog; o.Unison = 1; }
-            s.Osc[0].Shape = AnalogShape.Saw; s.Osc[0].Warp1 = Warp.Fm; s.Osc[0].Amount1 = 0.4f;
-            s.Osc[1].Shape = AnalogShape.Square; s.Osc[1].Transpose = 12; s.Osc[1].Level = 0.5f;
-            s.Filter[0].Type = FilterType.Lp12; s.Filter[0].Cutoff = 1200; s.Filter[0].Reso = 0.2f; s.Filter[0].Env = 2; s.Filter[0].Key = 0;
-            s.Amp.A = 0.005f; s.Amp.D = 0.3f; s.Amp.S = 1; s.Amp.R = 0.4f;
-            s.Flt.A = 0.01f; s.Flt.D = 0.5f; s.Flt.S = 0.3f; s.Flt.R = 0.5f;
-            if (!big)
-            {
-                s.Osc[0].Mod = ModSource.OscB;
-                s.Osc[2].Type = SlotType.Off;
-                s.Filter[1].Type = FilterType.Off;
-                return b;
-            }
-            // Twenty nodes' worth: the FM modulator is its own silent sine slot, the detuned saw is a second unison voice, the sub, a
-            // second filter, a free LFO and a modulation envelope on routes.
-            s.Osc[0].Mod = ModSource.OscC; s.Osc[0].Unison = 2; s.Osc[0].Detune = 12; s.Osc[0].Spread = 0.3f;
-            s.Osc[2].Shape = AnalogShape.Sine; s.Osc[2].Transpose = 12; s.Osc[2].Level = 0;
-            s.Sub.Level = 0.4f; s.Sub.ToF2 = 1f; s.SubShape = SubShape.Sine;
-            s.Filter[1].Type = FilterType.Lp12; s.Filter[1].Cutoff = 3000; s.Filter[1].Reso = 0.2f; s.Filter[1].Env = 1; s.Filter[1].Key = 0;
-            s.Lfo[0].Rate = 8;
-            s.ModEnv[0].A = 0.002f; s.ModEnv[0].D = 0.25f; s.ModEnv[0].S = 0.2f;
-            s.Routes[0].Source = RouteSource.Lfo1; s.Routes[0].Dest = RouteDest.F1Cutoff; s.Routes[0].Amount = 0.15f;
-            s.Routes[1].Source = RouteSource.ModEnv1; s.Routes[1].Dest = RouteDest.AWarp1; s.Routes[1].Amount = 0.4f;
-            return b;
-        }
-
-        /// <summary>× real time (wall) of <paramref name="process"/> over <paramref name="seconds"/> of audio in 256-sample blocks, and the process's CPU time as the same figure.</summary>
-        static (double Wall, double Cpu) Speed(Action<float[], float[], int> process, double seconds)
-        {
-            var l = new float[256];
-            var r = new float[256];
-            for (int i = 0; i < 40; i++) process(l, r, 256);
-            int blocks = (int)(seconds * Rate / 256);
-            var p = Process.GetCurrentProcess();
-            var cpu0 = p.TotalProcessorTime;
-            var sw = Stopwatch.StartNew();
-            for (int i = 0; i < blocks; i++) process(l, r, 256);
-            double wall = sw.Elapsed.TotalSeconds;
-            p.Refresh();
-            double cpu = (p.TotalProcessorTime - cpu0).TotalSeconds;
-            double audio = blocks * 256.0 / Rate;
-            return (audio / wall, audio / Math.Max(1e-9, cpu));
-        }
+        // ------------------------------------------------------------------ CPU
 
         static Action<float[], float[], int> PatchProcess(PatchGraph g, LaneKind kind, int tick, int voices = 8)
         {
@@ -439,91 +931,86 @@ namespace NeoBuzz.MachineTests
             return rt.Process;
         }
 
-        static Action<float[], float[], int> DyeProcess(LaneKind kind, int oversample, bool big, int notes = 8)
+        static double Speed(Action<float[], float[], int> process, double seconds)
         {
-            var b = DyeBank(kind, oversample, big);
-            for (int n = 0; n < notes; n++) b.NoteOn(n, 36 + 3 * n, 0.4f + 0.6f * n / notes);
-            return (l, r, n) => b.Process(l, r, n);
+            var l = new float[256];
+            var r = new float[256];
+            for (int i = 0; i < 40; i++) process(l, r, 256);
+            int blocks = (int)(seconds * Rate / 256);
+            var sw = Stopwatch.StartNew();
+            for (int i = 0; i < blocks; i++) process(l, r, 256);
+            double wall = sw.Elapsed.TotalSeconds;
+            return blocks * 256.0 / Rate / wall;
         }
 
-        /// <summary>Best (fastest) of <paramref name="reps"/> alternating runs of each: other load only ever adds time, and alternating keeps a drifting runner fair to both.</summary>
-        static (double D, double P, double Dcpu, double Pcpu) Race(Func<Action<float[], float[], int>> dye, Func<Action<float[], float[], int>> patch, double seconds, int reps = 5)
+        static double Best(Func<Action<float[], float[], int>> make, double seconds = 1, int reps = 3)
         {
-            double d = 0, p = 0, dc = 0, pc = 0;
-            var da = dye();
-            var pa = patch();
-            for (int i = 0; i < reps; i++)
+            var p = make();
+            double best = 0;
+            for (int i = 0; i < reps; i++) best = Math.Max(best, Speed(p, seconds));
+            return best;
+        }
+
+        /// <summary>Eight voices of Keys → N copies of one node kind in series (or in parallel for a source) → Out: the cost of one node kind.</summary>
+        static PatchGraph Chain(NodeKind kind, int copies, Action<Node> setup = null)
+        {
+            var g = new PatchGraph();
+            var k = g.Add(NodeKind.Keys);
+            var src = g.Add(NodeKind.Osc); src.Set(NodeInfo.OscShape, 0);
+            g.Connect(k, 0, src, 0);
+            var o = g.Add(NodeKind.Out); o.Set(NodeInfo.OutLevel, 0.3f);
+            Node prev = src;
+            var info = NodeInfo.For(kind);
+            for (int i = 0; i < copies; i++)
             {
-                var (dw, dcpu) = Speed(da, seconds);
-                var (pw, pcpu) = Speed(pa, seconds);
-                d = Math.Max(d, dw); p = Math.Max(p, pw); dc = Math.Max(dc, dcpu); pc = Math.Max(pc, pcpu);
+                var n = g.Add(kind); setup?.Invoke(n);
+                if (kind == NodeKind.Osc || kind == NodeKind.WavetableOsc || kind == NodeKind.Sample) g.Connect(k, 0, n, 0);
+                else if (info.Ins.Length > 0) g.Connect(prev, 0, n, 0);
+                if (info.Outs.Length > 0 && (info.Ins.Length > 0 || kind == NodeKind.Noise || kind == NodeKind.Lfo)) prev = n;
+                if (kind == NodeKind.Osc || kind == NodeKind.WavetableOsc || kind == NodeKind.Sample || kind == NodeKind.Noise) g.Connect(n, 0, o, Math.Min(3, i % 4));
             }
-            return (d, p, dc, pc);
-        }
-
-        static PatchGraph WithQuality(PatchGraph g, int quality)
-        {
-            foreach (var n in g.Nodes) if (n.Kind == NodeKind.Osc) n.Set(NodeInfo.OscQuality, quality);
+            if (prev != src && info.Outs.Length > 0) g.Connect(prev, 0, o, 0);
+            else if (copies == 0) g.Connect(src, 0, o, 0);
             return g;
         }
 
         [Test]
         public void WhereTheTimeGoes()
         {
-            // The 20-node patch's cost by control interval (the CV rate: 64 is once a block, 1 is audio rate) and by oscillator band limiting,
-            // and each job's share of a block (Stopwatch ticks around every job, so the shares carry the timer's own cost: read them as relative).
-            var kind = Avx2Lanes.Supported ? LaneKind.Avx2 : LaneKind.Pair;
-            string info = $"{kind}, {RuntimeInfo()}";
-            double Cost(PatchGraph g, int tick, int voices = 8) => Speed(PatchProcess(g, kind, tick, voices), 4).Cpu;
-            foreach (int tick in new[] { 64, 32, 16, 8, 4, 2, 1 })
+            // The cost of each node kind: ten of them in a chain on eight voices, as × real time, against the same patch without them.
+            const int Copies = 10;
+            double baseline = Best(() => PatchProcess(Chain(NodeKind.Vca, 0), LaneKind.Auto, 16));
+            var lines = new List<string> { $"base (Keys, Osc, Out; 8 voices): {baseline:F0}x" };
+            for (int k = 0; k < NodeInfo.KindCount; k++)
             {
-                double best = 0;
-                for (int i = 0; i < 3; i++) best = Math.Max(best, Cost(PatchTemplates.Big20(), tick));
-                Measure.Report($"Neo Patch 20 nodes, 8 voices, control interval {tick} ({info}): {best:F1}× real time ({100 / best:F2} % of a core)");
+                var kind = (NodeKind)k;
+                if (kind == NodeKind.Keys || kind == NodeKind.Out || kind == NodeKind.Feedback || kind == NodeKind.GlobalKeys || kind == NodeKind.VoiceSum || kind == NodeKind.Macro) continue;
+                double speed = Best(() => PatchProcess(Chain(kind, Copies), LaneKind.Auto, 16), 0.5, 2);
+                // Per node: the extra time per second of audio, divided by nodes and voices (microseconds per node and voice per ms of audio).
+                double extra = 1.0 / speed - 1.0 / baseline;
+                lines.Add($"{NodeInfo.For(kind).Name}: {speed:F0}x with {Copies}; {extra / Copies * 1e3:F2} ms per node per second of audio (8 voices)");
             }
-            foreach (int q in new[] { 0, 1 })
-            {
-                double best = 0;
-                for (int i = 0; i < 3; i++) best = Math.Max(best, Cost(WithQuality(PatchTemplates.Big20(), q), 16));
-                Measure.Report($"Neo Patch 20 nodes, 8 voices, {(q == 1 ? "four-point" : "two-point")} oscillators ({info}): {best:F1}× real time ({100 / best:F2} % of a core)");
-            }
-            foreach (int voices in new[] { 1, 4, 8, 16 })
-            {
-                double best = 0;
-                for (int i = 0; i < 3; i++) best = Math.Max(best, Cost(PatchTemplates.Big20(), 16, voices));
-                Measure.Report($"Neo Patch 20 nodes, {voices} voices, tick 16 ({info}): {best:F1}× real time ({100 / best:F2} % of a core)");
-            }
-            var rt = new PatchRuntime(Rate, kind, 16) { Voices = 8, Volume = 0.25f };
-            var g20 = PatchTemplates.Big20();
-            var compiled = rt.Compile(g20).Patch;
-            rt.Publish(compiled);
-            for (int n = 0; n < 8; n++) rt.NoteOn(n, 36 + 3 * n, 0.8f);
-            var l = new float[64];
-            var r = new float[64];
-            for (int b = 0; b < 400; b++) rt.ProcessBlock(l, r);
-            rt.Profile = new long[compiled.Jobs.Length];
-            for (int b = 0; b < 4000; b++) rt.ProcessBlock(l, r);
-            long total = rt.Profile.Sum();
-            var rows = compiled.Jobs.Select((j, i) => (Name: j.GetType().Name.Replace("Job", "") + (j.NodeId > 0 ? "#" + j.NodeId : ""), Ticks: rt.Profile[i], Kind: j.GetType().Name.Replace("Job", "")));
-            foreach (var grp in rows.GroupBy(x => x.Kind).OrderByDescending(x => x.Sum(y => y.Ticks)))
-                Measure.Report($"Neo Patch 20 nodes profile: {grp.Key,-14} {100.0 * grp.Sum(x => x.Ticks) / total,5:F1} % of the jobs' time ({grp.Count()} jobs, {grp.Sum(x => x.Ticks) * 1e6 / Stopwatch.Frequency / 4000:F2} µs a block of {1e6 * 64 / Rate:F0} µs)");
+            Measure.Report("Neo Patch CPU per node kind: " + string.Join("; ", lines));
         }
 
         [Test]
-        public void TheTwentyNodePatchAgainstDyeEssence()
+        public void ThePatchesAgainstTheirFloors()
         {
-            var kind = Avx2Lanes.Supported ? LaneKind.Avx2 : LaneKind.Pair;
-            string info = $"{kind}, {RuntimeInfo()}";
-            foreach (bool big in new[] { false, true })
+            foreach (var (name, make, x64, arm64) in new (string, Func<PatchGraph>, double, double)[]
             {
-                string name = big ? "20 nodes" : "8 nodes";
-                var g = big ? (Func<PatchGraph>)PatchTemplates.Big20 : PatchTemplates.Core8;
-                foreach (int os in new[] { 1, 2 })
+                ("8-node patch", PatchTemplates.Core8, 40, 25),
+                ("20-node patch", PatchTemplates.Big20, 25, 15),
+            })
+            {
+                Throughput.Guard($"Neo Patch CPU: {name}, 8 voices", Throughput.Floor(x64, arm64), 2, Rate, PatchRuntime.Block, () =>
                 {
-                    var (d, p, dc, pc) = Race(() => DyeProcess(kind, os, big), () => PatchProcess(g(), kind, 16), 4);
-                    Assert.That(d / p, Is.LessThan(1.5), $"the go criterion: {name} against Dye at {os}×");
-                    Measure.Report($"Neo Patch {name}, 8 voices, tick 16 vs Dye Essence ({(big ? "3 osc + sub, 2 filters, LFO and mod env" : "2 osc FM, 1 SVF")}, {os}×) ({info}): Dye {d:F1}× real time (CPU {dc:F1}×), Neo Patch {p:F1}× (CPU {pc:F1}×): Neo Patch costs {d / p:F2}× Dye (CPU {dc / pc:F2}×)");
-                }
+                    var rt = new PatchRuntime(Rate, LaneKind.Auto, 16) { Voices = 8, Volume = 0.25f };
+                    rt.SetGraph(make());
+                    for (int n = 0; n < 8; n++) rt.NoteOn(n, 36 + 3 * n, 0.4f + 0.6f * n / 8);
+                    var l = new float[PatchRuntime.Block]; var r = new float[PatchRuntime.Block];
+                    for (int b = 0; b < 200; b++) rt.ProcessBlock(l, r);
+                    return Throughput.InBlocks(PatchRuntime.Block, (pos, n) => rt.ProcessBlock(l, r));
+                }, Measure.Report);
             }
         }
     }

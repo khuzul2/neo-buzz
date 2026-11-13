@@ -187,6 +187,14 @@ CASES = [
     gen("learn-vector-diamond-steps", "Neo Learn Vector", "Seq — Diamond Steps", [], BASS),
     gen("learn-sampler-choir-loop", "Neo Learn Sampler", "Pad — Choir Loop", [], CHORDS),
     gen("learn-sampler-lofi-keys", "Neo Learn Sampler", "Pluck — Lo-fi Keys", [], KEYS),
+    # Neo Patch NP1: the modular synth's patches (docs/specs/neo-patch-engine.md): band-limited oscillators, ladder and state-variable filters, FM between
+    # oscillators, the wavetable oscillator, per-voice envelopes, and a global delay and filter after the Voice sum.
+    gen("patch-init-saw", "Neo Patch", "Init — Saw", [], CHORDS),
+    gen("patch-sub-square", "Neo Patch", "Bass — Sub Square", [], BASS),
+    gen("patch-fm-bell", "Neo Patch", "Lead — FM Bell", [], BELLS),
+    gen("patch-wavetable-drift", "Neo Patch", "Pad — Wavetable Drift", [], CHORDS),
+    gen("patch-pluck-ladder", "Neo Patch", "Pluck — Ladder", [], KEYS),
+    gen("patch-echo-after-sum", "Neo Patch", "FX — Echo After the Sum", [], LEAD),
     # Dye Essence P2: the Sample engine (looped, eight-voice unison, one-shot, reversed, two slots) and the
     # Granular engine (frozen, scanning, a spray of pitched grains with reversed ones); the grain clouds and
     # the sample recipes are built from the portable maths, so every platform renders the same.
