@@ -204,7 +204,8 @@ namespace ReBuzz.Studio.Tests
                 Settle();
                 var rows = view.List.Items.OfType<ParamItem>().Select(i => i.Param).ToList();
                 Assert.That(rows, Is.Not.Empty);
-                Assert.That(rows.All(p => p.Name.Contains("cutoff", StringComparison.OrdinalIgnoreCase) || p.Description.Contains("cutoff", StringComparison.OrdinalIgnoreCase)), Is.True, "only what matches");
+                Assert.That(rows.All(p => p.Name.Contains("cutoff", StringComparison.OrdinalIgnoreCase) || p.Description.Contains("cutoff", StringComparison.OrdinalIgnoreCase)
+                    || p.How.Contains("cutoff", StringComparison.OrdinalIgnoreCase) || p.Sound.Contains("cutoff", StringComparison.OrdinalIgnoreCase)), Is.True, "only what matches (name, description or Explain text)");
                 Assert.That(rows.Count, Is.LessThan(all / 4));
                 Assert.That(view.List.Items.OfType<HeaderItem>().Select(h => h.Section.Name), Does.Contain("Filter 1"), "with the headers of the groups that have one");
                 Assert.That(view.List.Items.OfType<HeaderItem>().Count(), Is.LessThan(view.Layout.Sections.Count));
