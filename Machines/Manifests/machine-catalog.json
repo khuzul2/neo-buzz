@@ -748,6 +748,29 @@
    ],
    "use_for": "A teaching FM synth: electric-piano tines, glass bells and growling basses from an exact modulator ratio, depth and feedback."
   },
+  "Neo Learn Granular": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "granular",
+    "polyphonic",
+    "pad",
+    "texture"
+   ],
+   "use_for": "A teaching granular synth: ambient clouds, frozen textures and glitchy stutters from grain size, density, spray, octave shimmer and a trapezoid-to-Gaussian contour."
+  },
+  "Neo Learn Physical": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "physical-modelling",
+    "polyphonic",
+    "pluck",
+    "mallet",
+    "keys"
+   ],
+   "use_for": "A teaching physical-modelling synth: marimbas, plucked strings, glass bowls and bowed or breathy tones from a material, a mallet-pick-bow exciter morph and a string-tube-bar-plate geometry."
+  },
   "Neo Learn Subtractive": {
    "category": "Synths",
    "tags": [

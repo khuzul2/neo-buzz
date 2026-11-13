@@ -87,6 +87,108 @@ namespace NeoBuzz.Editor
             g.Path(p, NeoFill.None, new NeoStroke(colour, stroke));
         }
 
+        /// <summary>A recording's overview (a minimum and a maximum per column, interleaved, as Neo Sampler's layer keeps it) as a filled band, scaled to its peak, centred in <paramref name="r"/>.</summary>
+        public static void Overview(INeoCanvas g, NeoRect r, float[] overview, NeoColor colour, int columns = 128)
+        {
+            if (overview == null || overview.Length < 4) return;
+            int src = overview.Length / 2;
+            columns = Math.Min(columns, src);
+            float peak = 1e-4f;
+            for (int i = 0; i < overview.Length; i++) peak = Math.Max(peak, Math.Abs(overview[i]));
+            double mid = r.Top + r.Height * 0.5, h = r.Height * 0.40;
+            var path = new NeoPath();
+            var lows = new double[columns];
+            for (int c = 0; c < columns; c++)
+            {
+                int a = c * src / columns, b = Math.Max(a + 1, (c + 1) * src / columns);
+                float lo = 0, hi = 0;
+                for (int k = a; k < b && k < src; k++)
+                {
+                    lo = Math.Min(lo, overview[2 * k]);
+                    hi = Math.Max(hi, overview[2 * k + 1]);
+                }
+                double x = r.Left + r.Width * (c + 0.5) / columns;
+                lows[c] = mid - lo / peak * h;
+                double yHigh = mid - hi / peak * h;
+                if (c == 0) path.MoveTo(x, yHigh); else path.LineTo(x, yHigh);
+            }
+            for (int c = columns - 1; c >= 0; c--) path.LineTo(r.Left + r.Width * (c + 0.5) / columns, lows[c]);
+            path.Close();
+            g.Path(path, colour.WithAlpha(0x50), new NeoStroke(colour.WithAlpha(0x90), 1));
+        }
+
+        /// <summary>
+        /// Grains over a waveform: the scan position (a line) with the spray's reach (a band either side), and each live grain as its own window
+        /// drawn where it starts in the recording (x), as long as it is (width, of the recording), at its place in the stereo field (y: left high …
+        /// right low), fading as it ages (0 new … 1 gone); grains an octave up are drawn bright. <paramref name="window"/> is the window's shape (0 … 1) sampled across a grain.
+        /// </summary>
+        public static void Grains(INeoCanvas g, NeoRect r, double scan, double spray, double[] window, int count, double[] pos, double[] length, double[] pan, double[] age, bool[] up, NeoColor accent)
+        {
+            double sx = r.Left + r.Width * Math.Clamp(scan, 0, 1);
+            double reach = r.Width * Math.Clamp(spray, 0, 1) * 0.5;
+            double x0 = Math.Max(r.Left, sx - reach), x1 = Math.Min(r.Right, sx + reach);
+            if (x1 > x0) g.Rect(new NeoRect(x0, r.Top + 2, x1 - x0, r.Height - 4), accent.WithAlpha(0x22), NeoStroke.None);
+            g.Line(sx, r.Top, sx, r.Bottom, new NeoStroke(accent.WithAlpha(0xA0), 1.5));
+            if (window == null || window.Length < 2) return;
+            double bump = Math.Min(30, r.Height * 0.16);
+            for (int i = 0; i < count; i++)
+            {
+                double a = Math.Clamp(1 - age[i], 0, 1);
+                if (a <= 0.02) continue;
+                double w = Math.Max(3, length[i] * r.Width);
+                double cx = r.Left + r.Width * Math.Clamp(pos[i], 0, 1);
+                double baseY = r.Top + r.Height * (0.18 + 0.64 * (0.5 - 0.5 * Math.Clamp(pan[i], -1, 1)));
+                var path = new NeoPath();
+                for (int k = 0; k < window.Length; k++)
+                {
+                    double x = cx - w / 2 + w * k / (window.Length - 1);
+                    double y = baseY - bump * window[k];
+                    if (k == 0) path.MoveTo(x, y); else path.LineTo(x, y);
+                }
+                path.Close();
+                var colour = up[i] ? Palette.Text : accent;
+                g.Path(path, colour.WithAlpha((byte)(0x80 * a)), new NeoStroke(colour.WithAlpha((byte)(0xE0 * a)), 1));
+            }
+        }
+
+        /// <summary>
+        /// Modal mode bars: one bar for each mode at its frequency (x, logarithmic from the fundamental to <paramref name="maxRatio"/> times it) as high as its
+        /// level (0 … 1), and the exciter's force over its first milliseconds (<paramref name="impulse"/>, 0 … 1) in a box at the top right.
+        /// </summary>
+        public static void ModesAndImpulse(INeoCanvas g, NeoRect r, double[] ratios, double[] levels, int count, double maxRatio, double[] impulse, NeoColor accent)
+        {
+            double lg = Math.Log(Math.Max(2, maxRatio));
+            var plot = new NeoRect(r.Left + 8, r.Top + 26, r.Width - 16, r.Height - 44);
+            for (double f = 1; f <= maxRatio; f *= 2)
+            {
+                double x = plot.Left + plot.Width * Math.Log(f) / lg;
+                g.Line(x, plot.Top, x, plot.Bottom, new NeoStroke(Palette.Grid, 1, false));
+                g.Text(f == 1 ? "f0" : f + "x", x + 3, plot.Bottom - 13, 9, Palette.DimText);
+            }
+            for (int j = 0; j < count; j++)
+            {
+                double v = Math.Clamp(levels[j], 0, 1);
+                if (v <= 0.01 || ratios[j] < 1 || ratios[j] > maxRatio) continue;
+                double x = plot.Left + plot.Width * Math.Log(ratios[j]) / lg;
+                double h = plot.Height * v;
+                g.Rect(new NeoRect(x - 1.5, plot.Bottom - h, 3, h), accent.WithAlpha(0xD0), NeoStroke.None);
+            }
+            if (impulse == null || impulse.Length < 2) return;
+            var box = new NeoRect(r.Right - r.Width * 0.30 - 8, r.Top + 6, r.Width * 0.30, r.Height * 0.36);
+            g.Rect(box, Palette.Panel.WithAlpha(0xB0), new NeoStroke(Palette.Grid, 1), 3);
+            var path = new NeoPath();
+            double peak = 1e-3;
+            for (int k = 0; k < impulse.Length; k++) peak = Math.Max(peak, Math.Abs(impulse[k]));
+            for (int k = 0; k < impulse.Length; k++)
+            {
+                double x = box.Left + 4 + (box.Width - 8) * k / (impulse.Length - 1);
+                double y = box.Bottom - 4 - (box.Height - 16) * Math.Clamp(impulse[k] / Math.Max(peak, 1.0), 0, 1);
+                if (k == 0) path.MoveTo(x, y); else path.LineTo(x, y);
+            }
+            g.Path(path, NeoFill.None, new NeoStroke(accent, 1.5));
+            g.Text("exciter", box.Left + 4, box.Top + 1, 9, Palette.DimText);
+        }
+
         /// <summary>The pad's handle at (<paramref name="handle"/>.X, .Y) over <paramref name="r"/> (y up), with guide lines, and the caption naming what the pad moves.</summary>
         public static void Handle(INeoCanvas g, NeoRect r, NeoPoint? handle, bool dragging, NeoColor accent, string caption)
         {

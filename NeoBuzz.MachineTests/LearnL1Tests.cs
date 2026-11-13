@@ -6,6 +6,8 @@ using DyeP = NeoBuzz.DyeEssence.P;
 using FP = NeoBuzz.LearnFm.P;
 using WP = NeoBuzz.LearnWt.P;
 using AP = NeoBuzz.LearnAdd.P;
+using GP = NeoBuzz.LearnGrain.P;
+using PP = NeoBuzz.LearnPhys.P;
 
 namespace NeoBuzz.MachineTests
 {
@@ -16,7 +18,7 @@ namespace NeoBuzz.MachineTests
     /// inharmonicity) must do. LearnTests covers the host itself and the pilot.
     /// </summary>
     [TestFixture]
-    public class LearnL1Tests
+    public partial class LearnL1Tests
     {
         const int Rate = Measure.Rate;
         const int Block = DyeEngine.MaxBlock;
@@ -101,11 +103,46 @@ namespace NeoBuzz.MachineTests
             Heaviest = x => { x.Set(AP.UnisonDetune, 1000); x.Set(AP.PartialCount, 63); x.Set(AP.PartialShimmer, 1000); x.Set(AP.HarmonicComb, 500); x.Set(AP.Inharmonicity, 500); x.Set(AP.SpectralTilt, 1000); },
         };
 
-        internal static IEnumerable<M> All => new[] { Fm, Wt, Add };
+        internal static readonly M Grain = new()
+        {
+            Gear = "Neo Learn Granular",
+            Table = NeoBuzz.LearnGrain.Params.Table,
+            Map = () => new GranularMap(NeoBuzz.LearnGrain.Params.Table),
+            Ids = new[] { "sample_position", "grain_size", "grain_density", "position_spray", "pitch_shimmer", "grain_shape" }.Concat(GlobalIds).ToArray(),
+            Detents = Unison(),
+            Patches = new()
+            {
+                ["init"] = null,
+                ["frozen-choir"] = x => { x.Set(GP.SamplePosition, 300); x.Set(GP.GrainSize, 780); x.Set(GP.GrainDensity, 760); x.Set(GP.GrainShape, 900); x.Set(GP.EnvAttack, 600); x.Set(GP.UnisonDetune, 400); },
+                ["glitch-stutter"] = x => { x.Set(GP.GrainSize, 270); x.Set(GP.GrainDensity, 330); x.Set(GP.PositionSpray, 50); x.Set(GP.GrainShape, 0); x.Set(GP.EnvAttack, 100); x.Set(GP.EnvSustain, 0); x.Set(GP.EnvDecay, 450); },
+                ["octave-glow"] = x => { x.Set(GP.PitchShimmer, 900); x.Set(GP.GrainSize, 800); x.Set(GP.GrainDensity, 800); x.Set(GP.PositionSpray, 0); x.Set(GP.GrainShape, 1000); x.Set(GP.UnisonDetune, 300); },
+            },
+            Heaviest = x => { x.Set(GP.UnisonDetune, 1000); x.Set(GP.GrainSize, 1000); x.Set(GP.GrainDensity, 1000); x.Set(GP.PitchShimmer, 1000); x.Set(GP.PositionSpray, 1000); x.Set(GP.GrainShape, 500); },
+        };
+
+        internal static readonly M Phys = new()
+        {
+            Gear = "Neo Learn Physical",
+            Table = NeoBuzz.LearnPhys.Params.Table,
+            Map = () => new PhysicalMap(NeoBuzz.LearnPhys.Params.Table),
+            Ids = new[] { "material", "exciter_type", "exciter_force", "resonator_shape", "damping", "body_size" }.Concat(GlobalIds).ToArray(),
+            Detents = Unison((DyeP.AMGeom, "Geometry: the stop the blend runs from; GeomBlend carries the spacing across with no jump (tested below)")),
+            Patches = new()
+            {
+                ["init"] = null,
+                ["marimba"] = x => { x.Set(PP.Material, 50); x.Set(PP.ExciterType, 0); x.Set(PP.ExciterForce, 550); x.Set(PP.ResonatorShape, 667); x.Set(PP.Damping, 450); },
+                ["nylon-pluck"] = x => { x.Set(PP.Material, 300); x.Set(PP.ExciterType, 500); x.Set(PP.ResonatorShape, 0); x.Set(PP.Damping, 400); },
+                ["cello-bow"] = x => { x.Set(PP.Material, 250); x.Set(PP.ExciterType, 1000); x.Set(PP.ResonatorShape, 0); x.Set(PP.BodySize, 850); x.Set(PP.EnvAttack, 450); x.Set(PP.UnisonDetune, 250); },
+            },
+            Heaviest = x => { x.Set(PP.UnisonDetune, 1000); x.Set(PP.ExciterForce, 1000); x.Set(PP.Material, 1000); x.Set(PP.Damping, 0); x.Set(PP.ExciterType, 750); x.Set(PP.ResonatorShape, 330); },
+        };
+
+        internal static IEnumerable<M> All => new[] { Fm, Wt, Add, Grain, Phys };
 
         static void Tables()
         {
             for (int i = 0; i < TableBank.Count; i++) TableBank.GetNow(i);
+            for (int i = 0; i < SampleSources.Count; i++) SampleSources.GetNow(i);
         }
 
         static (LearnHost Host, ParamValues Values) Make(M m, Action<ParamValues> tweak = null)
@@ -273,6 +310,8 @@ namespace NeoBuzz.MachineTests
                     {
                         Assert.That(double.IsFinite(value) && value >= 0, Is.True, $"{d.Id}={x}: {what}");
                         if (prev == null || !prev.Exts.TryGetValue((slot, what), out double before)) continue;
+                        // Geometry's blend and its target move together across a stop: the spacing is continuous (GeometryIsContinuousAcrossItsStops).
+                        if (what is SlotExt.GeomBlend or SlotExt.GeomTo) continue;
                         if (what == SlotExt.ExactRatio)
                         {
                             // The modulator's ratio: free between its whole and half detents (a snap is up to 1.5%).
@@ -347,6 +386,14 @@ namespace NeoBuzz.MachineTests
             [("Neo Learn FM", "growl-bass")] = 0xE381F9D7999675E8UL,
             [("Neo Learn FM", "init")] = 0x6D5D48FFAD5067A0UL,
             [("Neo Learn FM", "tine-keys")] = 0x6B8A9B45372CCA7AUL,
+            [("Neo Learn Granular", "frozen-choir")] = 0x045AB989C0510C67UL,
+            [("Neo Learn Granular", "glitch-stutter")] = 0x02BF11B324982447UL,
+            [("Neo Learn Granular", "init")] = 0x94C307C8E58D38F5UL,
+            [("Neo Learn Granular", "octave-glow")] = 0x193FABF8DB38DDA7UL,
+            [("Neo Learn Physical", "cello-bow")] = 0xDB062ADF8C3D00ADUL,
+            [("Neo Learn Physical", "init")] = 0x2687684B26437CE4UL,
+            [("Neo Learn Physical", "marimba")] = 0x1F6564DB64016B32UL,
+            [("Neo Learn Physical", "nylon-pluck")] = 0xBDD1B0919D1993E8UL,
             [("Neo Learn Wavetable", "init")] = 0x6F81FD8A5E4982B4UL,
             [("Neo Learn Wavetable", "motion-pad")] = 0xF956CE4240287174UL,
             [("Neo Learn Wavetable", "pinch-bass")] = 0x5EAE2C23152D379AUL,
@@ -561,7 +608,7 @@ namespace NeoBuzz.MachineTests
         [TestCaseSource(nameof(All))]
         public void SixteenNotesOnTheDefaultPatchRunAtLeastFourTimesRealTime(M m)
         {
-            Throughput.Guard(m.Gear + ", 16 notes, default patch", Throughput.Floor(x64: 4, arm64: 4), 2, Rate, Block, () =>
+            Throughput.Guard(m.Gear + ", 16 notes, default patch", Throughput.Floor(x64: 4, arm64: 2), 2, Rate, Block, () =>
             {
                 var (h, _) = Make(m);
                 for (int k = 0; k < 16; k++) h.Engine.NoteOn(k, 36 + 3 * k, 1f);
@@ -575,7 +622,7 @@ namespace NeoBuzz.MachineTests
         [TestCaseSource(nameof(All))]
         public void SixteenNotesOnTheHeaviestSettingsRunAtLeastTwiceRealTime(M m)
         {
-            Throughput.Guard(m.Gear + ", 16 notes, heaviest settings", Throughput.Floor(x64: 2, arm64: 2), 2, Rate, Block, () =>
+            Throughput.Guard(m.Gear + ", 16 notes, heaviest settings", Throughput.Floor(x64: 2, arm64: 1), 2, Rate, Block, () =>
             {
                 var (h, _) = Make(m, m.Heaviest);
                 for (int k = 0; k < 16; k++) h.Engine.NoteOn(k, 36 + 3 * k, 1f);

@@ -226,7 +226,7 @@ namespace ReBuzz.Studio.Tests
             rig.Browser.Open();
             Settle();
             int before = rig.Song.Core.Song.Machines.Count;
-            rig.Row("gear:Neo EQ").BringIntoView();   // the list grows with every machine: scroll the row to the pointer
+            rig.Browser.Search.Text = "Neo EQ";   // the list grows with every machine: narrow it so the row sits at the top, whatever its length
             Settle();
             DoubleClick(rig.Window, rig.CentreOf(rig.Row("gear:Neo EQ")));
             Settle();

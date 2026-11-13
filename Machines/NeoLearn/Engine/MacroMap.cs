@@ -21,7 +21,7 @@ namespace NeoBuzz.Learn
     }
 
     /// <summary>The shared engine's Neo Learn additions, per slot (OscSettings: all off at 0).</summary>
-    internal enum SlotExt { ExactRatio, Feedback, Comb, CombPeriod, Shimmer, Inharm }
+    internal enum SlotExt { ExactRatio, Feedback, Comb, CombPeriod, Shimmer, Inharm, GrainMorph, GrainOctave, ExciterMorph, GeomBlend, GeomTo }
 
     internal abstract class MacroMap
     {

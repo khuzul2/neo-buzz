@@ -1680,6 +1680,8 @@ namespace ReBuzz.Studio.Tests
         [TestCase("Neo Learn FM", "NeoLearnFMEditor", "neo-learn-fm-editor", "Mod Ratio")]
         [TestCase("Neo Learn Wavetable", "NeoLearnWavetableEditor", "neo-learn-wavetable-editor", "Frame Pos")]
         [TestCase("Neo Learn Additive", "NeoLearnAdditiveEditor", "neo-learn-additive-editor", "Odd / Even")]
+        [TestCase("Neo Learn Granular", "NeoLearnGranularEditor", "neo-learn-granular-editor", "Scan Position")]
+        [TestCase("Neo Learn Physical", "NeoLearnPhysicalEditor", "neo-learn-physical-editor", "Exciter Mode")]
         public void NeoLearnL1EditorsHaveTheTemplatesZonesFitAndExplainTheirKnobs(string gear, string editor, string shot, string knobName)
         {
             var m = Add(gear, "Learn L1");

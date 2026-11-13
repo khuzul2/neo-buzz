@@ -112,6 +112,9 @@ namespace ReBuzzTests
         internal static readonly NeoInfo LearnFm = new("Neo Learn FM", "Learn FM", true);
         internal static readonly NeoInfo LearnWt = new("Neo Learn Wavetable", "Learn WT", true);
         internal static readonly NeoInfo LearnAdd = new("Neo Learn Additive", "Learn Add", true);
+        // L1b: Granular and Physical.
+        internal static readonly NeoInfo LearnGrain = new("Neo Learn Granular", "Learn Grain", true);
+        internal static readonly NeoInfo LearnPhys = new("Neo Learn Physical", "Learn Phys", true);
         // The clipper (docs/specs/mastering-tools.md §5.1): oversampled curves into a ceiling no sample passes.
         internal static readonly NeoInfo Clipper = new("Neo Clipper", "Clipper", false);
         // The transient shaper and the low-end shaper (docs/specs/mastering-tools.md §5.4, §5.5).
@@ -1809,7 +1812,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, LearnSub, LearnFm, LearnWt, LearnAdd, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip, Tape, DeEsser, Gate })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, LearnSub, LearnFm, LearnWt, LearnAdd, LearnGrain, LearnPhys, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip, Tape, DeEsser, Gate })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");

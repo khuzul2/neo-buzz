@@ -19,7 +19,7 @@ using NeoBuzz.Dsp;
 namespace NeoBuzz.DyeEssence
 {
     /// <summary>How a Modal slot is excited (append only).</summary>
-    internal enum ModalExciter { Struck, Plucked, Continuous }
+    internal enum ModalExciter { Struck, Plucked, Continuous, Morph }
 
     /// <summary>The bodies a Modal slot can be (append only).</summary>
     internal enum ModalGeometry { String, Tube, Bar, Membrane, Plate, Bell }
@@ -129,13 +129,14 @@ namespace NeoBuzz.DyeEssence
 
         // Per voice (note · MaxLanes + slot · MaxUnison + voice) and mode: the resonator state, its rotation and its input gain.
         readonly float[] mX = new float[Notes * MaxLanes * MaxModes], mY = new float[Notes * MaxLanes * MaxModes],
-            mRC = new float[Notes * MaxLanes * MaxModes], mRS = new float[Notes * MaxLanes * MaxModes], mR = new float[Notes * MaxLanes * MaxModes], mCu = new float[Notes * MaxLanes * MaxModes], mSu = new float[Notes * MaxLanes * MaxModes], mTh = new float[Notes * MaxLanes * MaxModes], mG = new float[Notes * MaxLanes * MaxModes];
+            mRC = new float[Notes * MaxLanes * MaxModes], mRS = new float[Notes * MaxLanes * MaxModes], mR = new float[Notes * MaxLanes * MaxModes], mCu = new float[Notes * MaxLanes * MaxModes], mSu = new float[Notes * MaxLanes * MaxModes], mTh = new float[Notes * MaxLanes * MaxModes], mG = new float[Notes * MaxLanes * MaxModes], mGB = new float[Notes * MaxLanes * MaxModes];
         readonly int[] mBlocks = new int[Notes * MaxLanes], mActG = new int[Notes * MaxLanes], mVer = new int[Notes * MaxLanes];
         readonly double[] mInc = new double[Notes * MaxLanes], mGInc = new double[Notes * MaxLanes];
         readonly bool[] mQuiet = new bool[Notes * MaxLanes];
         // Per slot: the spacing its settings give the modes (with the body's stiffness), the settings it was made for, a version of them.
         readonly float[] mRatio = new float[Oscillators * MaxModes];
-        readonly float[] mKey = new float[Oscillators * 8];
+        readonly float[] mKey = new float[Oscillators * KeySize];
+        const int KeySize = 10;
         readonly int[] mCount = new int[Oscillators], mVersion = new int[Oscillators];
         readonly double[] mKeyVr = new double[Oscillators];
         // Per note and slot: the exciter's clock, pulse length, bow level and noise, and the settings of the last tick.
@@ -146,7 +147,10 @@ namespace NeoBuzz.DyeEssence
         readonly Rng[] mRng = new Rng[Notes * Oscillators];
         // A voice's weights while its gains are made.
         readonly float[] mU = new float[MaxModes], mT = new float[MaxModes], mF = new float[MaxModes];
-        readonly float[] mExc = new float[MaxTick];
+        readonly float[] mExc = new float[MaxTick], mExcB = new float[MaxTick];
+        // Neo Learn's exciter morph (docs/specs/neo-learn.md §3): per note and slot the shares of mallet, pluck and bow this tick, and per mode the pluck's and bow's weights.
+        readonly float[] mWM = new float[Notes * Oscillators], mWP = new float[Notes * Oscillators], mWB = new float[Notes * Oscillators];
+        readonly float[] mP = new float[MaxModes], mB = new float[MaxModes], mFB = new float[MaxModes];
         readonly Vector128<float>[] mAcc = new Vector128<float>[MaxTick];
 
         /// <summary>A slot's mode spacing for its settings (once, then when they change).</summary>
@@ -156,20 +160,27 @@ namespace NeoBuzz.DyeEssence
             int g = Math.Clamp(os.Geometry, 0, ModalBodies.Names.Length - 1);
             int n = Math.Clamp(os.Modes, 1, MaxModes);
             float mat = Math.Clamp(os.Material, 0f, 1f), ring = Math.Clamp(os.Ring, 0.05f, 20f), hf = Math.Clamp(os.HfDamp, 0f, 1f), size = Math.Clamp(os.BodySize, 0f, 1f);
-            int kb = o * 8;
+            int kb = o * KeySize;
+            // Neo Learn: the body may blend toward another (GeomBlend > 0), the exciters may morph (ExciterMorph >= 0).
+            float blend = Math.Clamp(os.GeomBlend, 0f, 1f), morph = os.ExciterMorph < 0f ? -1f : Math.Min(os.ExciterMorph, 1f);
+            int to = Math.Clamp(os.GeomTo, 0, ModalBodies.Names.Length - 1);
             if (mKey[kb] == g && mKey[kb + 1] == n && mKey[kb + 2] == mat && mKey[kb + 3] == ring && mKey[kb + 4] == hf && mKey[kb + 5] == size
-                && mKey[kb + 6] == (float)os.Exciter && mKeyVr[o] == vr) return;
+                && mKey[kb + 6] == (float)os.Exciter && mKey[kb + 7] == morph && mKey[kb + 8] == blend && mKey[kb + 9] == to && mKeyVr[o] == vr) return;
             mKey[kb] = g; mKey[kb + 1] = n; mKey[kb + 2] = mat; mKey[kb + 3] = ring; mKey[kb + 4] = hf; mKey[kb + 5] = size; mKey[kb + 6] = (float)os.Exciter;
+            mKey[kb + 7] = morph; mKey[kb + 8] = blend; mKey[kb + 9] = to;
             mKeyVr[o] = vr;
             mVersion[o]++;
             mCount[o] = Math.Min(n, ModalBodies.Count[g]);
+            if (blend > 0f) mCount[o] = Math.Min(mCount[o], ModalBodies.Count[to]);
             // Stiffness stretches the spacing: mode j sounds at ratio · √(1 + B · (j + 1)²), B growing with the hardness squared.
             float b = 0.003f * mat * mat;
             var ratios = ModalBodies.Ratios[g];
+            var ratiosTo = ModalBodies.Ratios[to];
             for (int j = 0; j < MaxModes; j++)
             {
                 float jj = j + 1;
-                mRatio[o * MaxModes + j] = j < mCount[o] ? ratios[j] * MathF.Sqrt(1f + b * jj * jj) : 1e6f;
+                float rj = blend > 0f ? ratios[j] + blend * (ratiosTo[j] - ratios[j]) : ratios[j];
+                mRatio[o * MaxModes + j] = j < mCount[o] ? rj * MathF.Sqrt(1f + b * jj * jj) : 1e6f;
             }
         }
 
@@ -195,6 +206,7 @@ namespace NeoBuzz.DyeEssence
             Array.Clear(mRC, pb, MaxModes);
             Array.Clear(mRS, pb, MaxModes);
             Array.Clear(mG, pb, MaxModes);
+            Array.Clear(mGB, pb, MaxModes);
             Array.Clear(mR, pb, MaxModes);
             Array.Clear(mCu, pb, MaxModes);
             Array.Clear(mSu, pb, MaxModes);
@@ -213,7 +225,21 @@ namespace NeoBuzz.DyeEssence
         {
             ModalShape(o, os, vr);
             int sb = o * MaxModes;
-            int exc = Math.Clamp((int)os.Exciter, 0, 2);
+            bool morph = os.ExciterMorph >= 0f;
+            int exc = morph ? (int)ModalExciter.Morph : Math.Clamp((int)os.Exciter, 0, 2);
+            // The morph's shares: an equal-power crossfade, mallet to pluck over the first half, pluck to bow over the second.
+            float wM = 0f, wP = 0f, wB = 0f;
+            if (morph)
+            {
+                float mm = Math.Min(os.ExciterMorph, 1f);
+                float tt = mm < 0.5f ? 2f * mm : 2f * mm - 1f;
+                SinCosTurns(0.25f * tt, out float ws, out float wc);
+                if (mm < 0.5f) { wM = wc; wP = ws; } else { wP = wc; wB = ws; }
+                if (wM < 1e-3f) wM = 0f;
+                if (wP < 1e-3f) wP = 0f;
+                if (wB < 1e-3f) wB = 0f;
+            }
+            mWM[no] = wM; mWP[no] = wP; mWB[no] = wB;
             int per = Math.Min(mCount[o], Math.Max(ModalFloor, ModalBudget / u));
             per = Math.Min((per + 3) & ~3, MaxModes);
             float pos = Math.Clamp(OscPosition(o) + Md(note, RouteDest.APosition + o), 0f, 1f);
@@ -277,8 +303,9 @@ namespace NeoBuzz.DyeEssence
                         mGInc[k] = inc;
                         mActG[k] = active;
                         mVer[k] = mVersion[o];
-                        bool needG = fresh || exc == (int)ModalExciter.Continuous || exc == (int)ModalExciter.Struck && mAge[no] < mLen[no];
-                        double e2 = 0;
+                        bool needG = fresh || exc == (int)ModalExciter.Continuous || exc == (int)ModalExciter.Struck && mAge[no] < mLen[no]
+                            || exc == (int)ModalExciter.Morph && (wB > 0f || wM > 0f && mAge[no] < mLen[no]);
+                        double e2 = 0, e2m = 0, e2p = 0, e2b = 0;
                         for (int j = 0; j < lim; j++)
                         {
                             float turns = (float)(inc * mRatio[sb + j]);
@@ -300,6 +327,37 @@ namespace NeoBuzz.DyeEssence
                             float fade = on ? Math.Clamp((hi - turns) / fadeWidth, 0f, 1f) : 0f;
                             mF[j] = fade;
                             mU[j] = wgt;
+                            if (exc == (int)ModalExciter.Morph)
+                            {
+                                // Each exciter's weights as its own mode would have them (below), crossfaded by the shares after the loop.
+                                if (wM > 0f && needG)
+                                {
+                                    double x = turns * (mLen[no] - 1);
+                                    double den = 1.0 - 4.0 * x * x;
+                                    SinCosTurns((float)(x * 0.5), out _, out float cx);
+                                    float mag = Math.Abs(den) < 1e-3 ? 0.7854f : MathF.Abs(cx) / (float)Math.Abs(den);
+                                    SinCosTurns(turns * 0.5f, out float sh, out _);
+                                    float dsin = Math.Max(2f * MathF.Abs(sh), 1e-4f);
+                                    float inv = 1f / mRatio[sb + j];
+                                    mT[j] = wgt * mag * inv;
+                                    mU[j] = wgt * inv / dsin;
+                                    e2m += (double)mT[j] * mT[j];
+                                }
+                                if (wP > 0f && fresh)
+                                {
+                                    double pexp = 2.0 - 1.4 * force;
+                                    mP[j] = wgt / (float)PortableMath.Exp(pexp * PortableMath.Log(j + 1.0));
+                                    e2p += (double)mP[j] * mP[j];
+                                }
+                                if (wB > 0f)
+                                {
+                                    float shape = 1f / MathF.Sqrt(1f + (float)(hz / bowCorner) * (float)(hz / bowCorner));
+                                    mB[j] = wgt * shape;
+                                    mFB[j] = fade * (float)Math.Sqrt(4.0 * sigma / vr) * 1.7320508f;
+                                    e2b += (double)mB[j] * mB[j];
+                                }
+                                continue;
+                            }
                             if (exc == (int)ModalExciter.Struck)
                             {
                                 // The half-sine mallet's spectrum at this mode: |cos(πx) / (1 − 4x²)| with x = frequency · contact time.
@@ -329,7 +387,21 @@ namespace NeoBuzz.DyeEssence
                             }
                             e2 += (double)mT[j] * mT[j];
                         }
-                        if (needG)
+                        if (needG && exc == (int)ModalExciter.Morph)
+                        {
+                            // Each exciter is levelled as it is alone (the mallet and the pluck 0.99; the bow lower than Dye's own bow, so the crossfade keeps one loudness), then shared out.
+                            float normM = e2m > 1e-18 ? 0.99f / MathF.Sqrt((float)e2m) : 0f;
+                            float normP = e2p > 1e-18 ? 0.99f / MathF.Sqrt((float)e2p) : 0f;
+                            float normB = e2b > 1e-18 ? BowLevel / MathF.Sqrt((float)e2b) : 0f;
+                            for (int j = 0; j < lim; j++)
+                            {
+                                mG[pb + j] = wM > 0f ? wM * mU[j] * mF[j] * normM : 0f;
+                                mGB[pb + j] = wB > 0f ? wB * mB[j] * normB * mFB[j] : 0f;
+                            }
+                            if (fresh && wP > 0f)
+                                for (int j = 0; j < lim; j++) { mY[pb + j] = wP * mP[j] * normP * mF[j]; mX[pb + j] = 0f; }
+                        }
+                        else if (needG)
                         {
                             // Loudness: the sum of the modes' squared amplitudes is the same whatever the body, count or force (0.7 rms for a voice).
                             if (exc == (int)ModalExciter.Continuous)
@@ -413,6 +485,57 @@ namespace NeoBuzz.DyeEssence
                 mAge[no] = age + count;
                 return true;
             }
+            if (exc == (int)ModalExciter.Morph)
+            {
+                // Both drives, each zero when it has nothing to say: the mallet's pulse (while it lasts) and the bow's noise (while the key is held or it dies away).
+                bool any = false;
+                if (mWM[no] > 0f && mAge[no] < mLen[no])
+                {
+                    int age = mAge[no], len = mLen[no], pulse = len - 1;
+                    SinCosTurns(0.25f / pulse, out float scale, out _);
+                    float prev = mPrev[no];
+                    for (int i = 0; i < count; i++)
+                    {
+                        int n = age + i;
+                        float p = 0f;
+                        if (n < pulse)
+                        {
+                            SinCosTurns((n + 0.5f) / (2f * pulse), out float s, out _);
+                            p = s * scale;
+                        }
+                        mExc[i] = p - prev;
+                        prev = p;
+                    }
+                    mPrev[no] = prev;
+                    mAge[no] = age + count;
+                    any = true;
+                }
+                else
+                {
+                    Array.Clear(mExc, 0, count);
+                    if (mAge[no] < mLen[no]) mAge[no] += count;
+                }
+                bool bow = false;
+                if (mWB[no] > 0f)
+                {
+                    float lvl = mEnv[no], up = mEnvUp[no], down = mEnvDown[no];
+                    bool held = mHeld[no];
+                    if (held || lvl != 0f)
+                    {
+                        var rng = mRng[no];
+                        for (int i = 0; i < count; i++)
+                        {
+                            lvl = held ? Math.Min(1f, lvl + up) : Math.Max(0f, lvl - down);
+                            mExcB[i] = lvl * rng.NextBipolar();
+                        }
+                        mRng[no] = rng;
+                        mEnv[no] = lvl;
+                        bow = true;
+                    }
+                }
+                if (!bow) Array.Clear(mExcB, 0, count);
+                return any || bow;
+            }
             if (exc == (int)ModalExciter.Continuous)
             {
                 float lvl = mEnv[no], up = mEnvUp[no], down = mEnvDown[no];
@@ -444,6 +567,52 @@ namespace NeoBuzz.DyeEssence
             return !Vector128.EqualsAll(x, zero) || !Vector128.EqualsAll(y, zero);
         }
 
+        /// <summary>The morph's bow level (Dye's own bow is 0.7 rms; the morph's stands lower so its loudest 50 ms matches the mallet's and the pluck's).</summary>
+        const float BowLevel = 0.45f;
+
+        /// <summary>The morph's voice: the modes' sum into the accumulators with two drives (the mallet's pulse through <see cref="mG"/>, the bow's noise through <see cref="mGB"/>). Whether anything still rings.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        bool MorphBlocks(int pb, int blocks, int count, bool excited)
+        {
+            var acc = mAcc;
+            var zero = Vector128<float>.Zero;
+            var floor = Vector128.Create(1e-18f);
+            var ceil = Vector128.Create(1e6f);
+            bool alive = false;
+            for (int bb = 0; bb < blocks; bb++)
+            {
+                int at = pb + 4 * bb;
+                var x = Vector128.LoadUnsafe(ref mX[at]);
+                var y = Vector128.LoadUnsafe(ref mY[at]);
+                var rc = Vector128.LoadUnsafe(ref mRC[at]);
+                var rs = Vector128.LoadUnsafe(ref mRS[at]);
+                if (excited)
+                {
+                    var g = Vector128.LoadUnsafe(ref mG[at]);
+                    var gb = Vector128.LoadUnsafe(ref mGB[at]);
+                    for (int i = 0; i < count; i++)
+                    {
+                        acc[i] += y;
+                        var nx = rc * x - rs * y + g * Vector128.Create(mExc[i]) + gb * Vector128.Create(mExcB[i]);
+                        y = rs * x + rc * y;
+                        x = nx;
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < count; i++)
+                    {
+                        acc[i] += y;
+                        var nx = rc * x - rs * y;
+                        y = rs * x + rc * y;
+                        x = nx;
+                    }
+                }
+                alive |= Flush(ref x, ref y, mX, mY, at, floor, ceil, zero);
+            }
+            return alive;
+        }
+
         /// <summary>A note's Modal slot over <paramref name="count"/> samples into the engine buffers (voice by voice, four modes at a time).</summary>
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void ModalVoices(int note, int o, int no, int count)
@@ -451,6 +620,7 @@ namespace NeoBuzz.DyeEssence
             int vb = note * MaxLanes + o * MaxUnison;
             var acc = mAcc;
             bool excited = ModalExcite(no, count);
+            bool morph = mExcKind[no] == (int)ModalExciter.Morph;
             var zero = Vector128<float>.Zero;
             var floor = Vector128.Create(1e-18f);
             var ceil = Vector128.Create(1e6f);
@@ -458,10 +628,12 @@ namespace NeoBuzz.DyeEssence
             {
                 int k = vb + v;
                 if (!svOn[k] || mQuiet[k] && !excited) continue;
-                int blocks = mBlocks[k], pb = k * MaxModes;
+                // Neo Learn's morph runs its own loops (two drives); the others' loops below then see no blocks.
+                int blocks = morph ? 0 : mBlocks[k], pb = k * MaxModes;
                 Array.Clear(acc, 0, count);
                 bool alive = false;
                 int bb = 0;
+                if (morph) alive = MorphBlocks(pb, mBlocks[k], count, excited);
                 // Two blocks (eight modes) at a time keep the sample's sum in registers: (first four + second four), then added to the sum.
                 for (; bb + 1 < blocks; bb += 2)
                 {

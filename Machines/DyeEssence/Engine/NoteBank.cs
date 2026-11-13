@@ -73,6 +73,14 @@ namespace NeoBuzz.DyeEssence
         /// coefficient B (partial k at k · √(1 + B k²)). Dye Essence's own parameters do not reach them: the Neo Learn host writes them.
         /// </summary>
         public float ExactRatio, Feedback, Comb, CombPeriod = 8, Shimmer, Inharm;
+        /// <summary>
+        /// Neo Learn L1b's additions (append only, off by default). Granular: GrainMorph (0 … 1, off below 0) blends every grain's window from a
+        /// trapezoid (0) to a Gaussian (1) in place of GrainShape; GrainOctave (0 … 1) is the share (at most half, at 1) of grains that sound an
+        /// octave up, with no new grain, so the cap holds. Modal: ExciterMorph (0 … 1, off below 0) crossfades the exciters, mallet (0) to pluck
+        /// (0.5) to bow (1), in place of Exciter; GeomBlend (0 … 1) moves the mode spacing from the body Geometry toward the body GeomTo.
+        /// </summary>
+        public float GrainMorph = -1f, GrainOctave, ExciterMorph = -1f, GeomBlend;
+        public int GeomTo;
     }
 
     internal sealed class SourceSettings

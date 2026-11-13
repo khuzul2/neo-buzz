@@ -55,6 +55,9 @@ namespace NeoBuzz.MachineTests
             ["Neo Learn FM"] = (NeoBuzz.LearnFm.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.FmMap(NeoBuzz.LearnFm.Params.Table), v, x.Length)),
             ["Neo Learn Wavetable"] = (NeoBuzz.LearnWt.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.WavetableMap(NeoBuzz.LearnWt.Params.Table), v, x.Length)),
             ["Neo Learn Additive"] = (NeoBuzz.LearnAdd.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.AdditiveMap(NeoBuzz.LearnAdd.Params.Table), v, x.Length)),
+            // docs/specs/neo-learn.md L1b: Neo Learn Granular and Physical.
+            ["Neo Learn Granular"] = (NeoBuzz.LearnGrain.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.GranularMap(NeoBuzz.LearnGrain.Params.Table), v, x.Length)),
+            ["Neo Learn Physical"] = (NeoBuzz.LearnPhys.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.PhysicalMap(NeoBuzz.LearnPhys.Params.Table), v, x.Length)),
             // mastering-tools.md §5.1: the clipper.
             ["Neo Clipper"] = (NeoBuzz.Clipper.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Clipper.ClipperEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             // mastering-tools.md §5.4, §5.5: the transient shaper and the low-end shaper.
@@ -95,7 +98,7 @@ namespace NeoBuzz.MachineTests
             return (T)e;
         }
 
-        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive" };
+        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical" };
 
         /// <summary>
         /// Neo Sampler: the song's slots 1–16 hold the built-in drums and the sine (the presets that
