@@ -1,89 +1,55 @@
 ## How it sounds
 
-Three modulation effects on one LFO:
+Three modulation effects on one LFO: a multi-voice chorus, a flanger and a phaser. All of them are zero latency, and the feedback is bounded to +-99 %, so a sweep rings and levels off but never runs away.
 
 | Mode | What moves | Sound | Use it for |
 |---|---|---|---|
-| Chorus | 1–4 delayed voices, swept an octave either side of `Delay` at 100 % `Depth` | thicker, wider, a gentle pitch wobble (the default: about 10 cents) | pads, keys, guitars, strings, backing vocals |
-| Flanger | one short delay with feedback, swept two octaves either side | a comb of notches sweeping up and down; with feedback, ringing peaks: the "jet" | drums, hats, leads, risers |
-| Phaser | 2–12 allpass stages, their frequency swept three octaves either side of `Centre` | `Stages` ÷ 2 soft notches moving through the spectrum; with feedback, vocal peaks | keys, pads, guitars, synth stabs |
+| Chorus | 1-4 delayed voices around `Delay` | thicker, wider, a gentle pitch wobble | pads, keys, guitars, strings, backing vocals |
+| Flanger | one short delay with feedback | a comb of notches sweeping up and down; with feedback, the jet | drums, hats, leads, risers |
+| Phaser | 2-12 allpass stages around `Centre` | `Stages` / 2 soft notches moving through the spectrum | keys, pads, guitars, stabs |
 
-Measured: the phaser's notches sit where theory puts them (within 0.0001 %), the flanger's within 0.5 % of (k + ½)/`Delay` (the lowest a few hertz higher), and the chorus's pitch wobble within 3 % of its formula.
+The LFO runs at `Rate` in Hz or follows the tempo with `Sync`; `Spread` offsets the right channel's LFO (0 degrees moves both alike, 180 opposite). Every control has a How and a Sound sentence in `machine_describe`; `param_set` takes the name or the id.
 
-`Feedback` reaches ±99 % and can't run away: what goes round saturates softly above full scale (it never passes +6 dBFS) and the loop's gain is below 0.99 at every frequency, so at full feedback the sound rings and levels off, and dies away when the input stops.
+## Use it for
 
-## Signal flow
+- Thickening and widening a pad or guitar (chorus), jet sweeps on drums (flanger), swirl on keys (phaser), and vibrato at `Mix` 100 %.
 
-Input → (Chorus, Flanger) a delay line read by `Voices` voices at delays swept around `Delay`, or (Phaser) `Stages` allpass stages swept around `Centre` → `Tone` (a one-pole high cut; open at its top) → back through the saturator and `Feedback` → `Mix` against the dry signal → `Output`. The LFO: `Rate` in Hz, or `Sync` to the song's tempo (`1/4` is one cycle per beat); `Shape` sine or triangle; `Spread` offsets the right channel's LFO (0° mono movement, 180° opposite). Zero latency; at `Mix` 0 % the input passes bit for bit.
-
-## How to use it
-
-- As an insert right after the sound: `machine_add(gear="Neo Ensemble", name="Chorus", insert_after="Pad")`, then a preset (`preset_load(machine="Chorus", preset="Chorus — Classic")`) or a recipe below.
-- `Mix` 50 % is the classic sound (dry and wet equal: the deepest comb or notches). 100 % is vibrato (only the moving copy).
-- Depth and rate trade off: the pitch wobble grows with both. For a chorus that stays in tune, keep `Rate` × `Depth` small (0.5 Hz at 30 %); for vibrato, `Mix` 100 % and 5–6 Hz.
-- Tempo-synced sweeps: `Sync` 1 bar, 2 bars or 4 bars for flangers and phasers that move with the song.
-- Wider: `Spread` 90–180°. Check the mix in mono afterwards (`analyze(metrics=["stereo"])`): a wide chorus on a bass loses its low end in mono.
-
-Lush chorus on a pad:
+## Key controls
 
 | Parameter | Value | Why |
 |---|---|---|
-| Mode | Chorus | |
-| Voices | 3 | |
-| Rate | 0.7 Hz | |
-| Depth | 35% | |
-| Delay | 9.0 ms | |
-| Spread | 120° | |
-| Tone | 9.0 kHz | darker, as an analog chorus |
-| Mix | 55% | |
+| Mode | Chorus | Flanger and Phaser use the same controls |
+| Rate | 0.6 Hz | slow for a chorus; 5-6 Hz with `Mix` 100 % for vibrato |
+| Depth | 35% | the sweep: pitch wobble grows with rate and depth |
+| Delay | 9 ms | Chorus and Flanger; 1-2 ms for a jet flanger |
+| Spread | 120° | 90-180 degrees for width |
+| Feedback | 50% | Flanger and Phaser; negative is hollower |
+| Mix | 50% | the deepest comb or notches; 100 % is only the wet |
 
-Jet flanger on drums:
+## Starting points
 
-| Parameter | Value | Why |
-|---|---|---|
-| Mode | Flanger | |
-| Sync | 2 bars | one sweep every two bars |
-| Depth | 80% | |
-| Delay | 1.6 ms | the comb's first notch sweeps about 100 Hz – 950 Hz |
-| Feedback | 70.0% | the ringing peaks; negative gives a hollower sound |
-| Mix | 50% | |
+- "Chorus — Classic", "Chorus — Wide Stereo", "Chorus — Subtle Doubling", "Ensemble — Strings", "Ensemble — Thick (3 Voices)".
+- "Flanger — Slow Jet", "Flanger — Metallic", "Phaser — 4-Stage Classic", "Phaser — 8-Stage Deep", "Phaser — Slow Sweep (4 Bars)".
+- "Vibrato — Pitch Wobble" (wet only, 5.5 Hz). Lush pad chorus by hand: 3 `Voices`, `Rate` 0.7 Hz, `Depth` 35 %, `Delay` 9 ms, `Tone` 9 kHz, `Mix` 55 %.
 
-Phaser on keys:
+## Pitfalls
 
-| Parameter | Value | Why |
-|---|---|---|
-| Mode | Phaser | |
-| Stages | 8 | four notches |
-| Rate | 0.3 Hz | |
-| Depth | 60% | |
-| Centre | 800 Hz | |
-| Feedback | 50.0% | |
-| Mix | 50% | |
+- `Delay` and `Voices` apply to Chorus and Flanger; `Centre` and `Stages` to Phaser; `Rate` is ignored while `Sync` is not Free.
+- High positive `Feedback` with a long `Delay` rings like a short echo: lower `Tone` (4-8 kHz) to darken it.
+- `Mix` is a straight crossfade: 50 % on bright material sits about 3 dB under the input. Four chorus voices lift the wet's lows by about 6 dB: trim `Output`.
+- A wide chorus on a bass loses its low end in mono: check with `analyze`.
 
-## Gotchas
+## Pairs well with
 
-- `Delay` and `Voices` apply to Chorus and Flanger; `Centre` and `Stages` to Phaser.
-- High positive `Feedback` with a long `Delay` rings like a short echo: lower `Tone` (4–8 kHz) to darken it.
-- With `Feedback` near ±99 % a loud input reaches the saturator: the peaks round off. Lower `Output` or the input if it's too hot.
-- `Mix` is a straight crossfade: at 50 % on bright material the dry and the moving wet add in power, about 3 dB under the input; the lows (where they agree) stay level. Raise `Output` if it matters.
-- More voices add up in the lows (four voices lift the wet's lows about 6 dB): trim `Output`.
-- `Rate` is ignored while `Sync` is not Free.
+- Neo Poly, Neo Wave or Neo Sampler pads before it; Neo Verb after it; Neo Delay for echoes of the swept sound; Neo EQ to keep the lows out of the wet.
 
-## Preset map
+## Successor
 
-| Preset | What |
-|---|---|
-| "Chorus — Classic" | 2 voices, 0.6 Hz, 7 ms |
-| "Chorus — Wide Stereo" | 2 voices, right channel opposite |
-| "Chorus — Subtle Doubling" | 1 voice at 22 ms, barely moving |
-| "Chorus — Poly Synth I" | triangle LFO, short delay, deep: an 80s polysynth chorus |
-| "Ensemble — Strings" | 4 voices, dark, for string machines and pads |
-| "Ensemble — Thick (3 Voices)" | 3 voices, faster |
-| "Flanger — Slow Jet" | 0.08 Hz, feedback 70 % |
-| "Flanger — Tape Style (Negative)" | the delay sweeping close to zero, negative feedback |
-| "Flanger — Metallic" | feedback 92 %, ringing |
-| "Phaser — 4-Stage Classic" | 2 notches, gentle |
-| "Phaser — 8-Stage Deep" | 4 notches, feedback 55 % |
-| "Phaser — Slow Sweep (4 Bars)" | synced to the tempo |
-| "Rotary — Leslie-like Fast" | 6.7 Hz, opposite channels |
-| "Vibrato — Pitch Wobble" | wet only, 5.5 Hz |
+Neo Ensemble replaces Jeskola Chorus, Jeskola Flanger, FSM Chorus2 and Pedal Chorus: `machine_replace(machine="Chorus")` carries the settings over in their units.
+
+## Checklist
+
+- [ ] `machine_add(gear="Neo Ensemble", name="Chorus", insert_after="Pad")`, then `preset_load(machine="Chorus", preset="Chorus — Classic")`.
+- [ ] `analyze(source="Chorus", metrics=["stereo"])`: the correlation falls as `Spread` rises, and stays positive in the lows.
+- [ ] `machine_readings(machine="Chorus")` gives `rms_db` and `peak_db`: level about matches the dry sound; trim `Output` if not.
+- [ ] `compare` a bypassed render with the processed one at the same loudness.

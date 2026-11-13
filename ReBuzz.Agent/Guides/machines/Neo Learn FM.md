@@ -1,35 +1,47 @@
 ## How it sounds
 
-A teaching FM synth: one Dye Essence patch driven by 12 controls, so every control does something you can hear and the Explain strip says what. A sine carrier is phase-modulated by a second oscillator at an exact frequency ratio; the ratio, the depth, how fast the depth fades, a self-feedback loop and a metallic third oscillator are the whole sound. Electric-piano tines, glass bells, plucked and growling basses, bright leads, metal hits. Band-limited oscillators keep the top clean.
+A teaching FM synth: one Dye Essence patch driven by 12 controls, so every control does something you can hear and the Explain strip says what. A sine carrier is phase-modulated by a second oscillator at an exact frequency ratio; the ratio, the depth, how fast the depth fades, a self-feedback loop and a metallic third oscillator are the whole sound. Band-limited oscillators keep the top clean.
 
-## Signal flow
+- `Mod Ratio` is the modulator's frequency as an exact multiple of the note, with detents at whole and half ratios: whole ratios give harmonic sidebands (pitched, musical), half ratios fold sidebands between the harmonics (hollow, bell-like), anything else is inharmonic (clangorous).
+- `FM Depth` is the modulation index: more depth, more and louder sidebands. `Mod Decay` is how long that depth takes to fade: short is a struck attack that settles to a pure tone.
+- `Feedback` runs from sine toward saw-like buzz and then noise. `Metallic Edge` adds a third oscillator at 7x the note on a quick envelope: the clang of a bell or tine. `Velocity to FM` makes harder notes brighter.
+- Each control has a How and a Sound sentence: `machine_describe` returns them with the id, and `param_set` takes the name or the id. 16 notes; no limiter.
 
-- `Mod Ratio` sets the modulator's frequency as an exact multiple of the note (a ratio, not a transpose). It has detents at whole and half ratios: whole ratios give harmonic sidebands (a pitched, musical sound), half ratios fold sidebands between the harmonics (hollow, bell-like), and anything else is inharmonic (clangorous).
-- `FM Depth` is the modulation index: more depth, more and louder sidebands, a brighter sound.
-- `Mod Decay` is how long that depth takes to fade after the note starts: short is a struck attack that settles to a pure tone, long keeps the brightness.
-- `Feedback` feeds the modulator back into itself: from sine toward saw-like buzz and then noise.
-- `Metallic Edge` adds a third oscillator at a fixed high ratio (7x the note) on a quick envelope: the attack clang of a bell or a tine.
-- `Velocity to FM` makes harder notes brighter (depth scaled by velocity).
-- `Attack`, `Decay`, `Sustain`, `Release` shape the level. `Unison / Spread`: 0 % is one voice per note; above it each note plays 5 detuned, spread voices (a step, not a ramp).
-- `Output` is the level after synthesis (presets sit near -22 dB RMS). There is no limiter; the clip light shows over 0 dBFS. 16 notes.
+## Use it for
 
-## How to use it
+- Learning FM: raise `FM Depth` from 0 and hear sidebands appear. Then electric-piano tines, glass bells, plucked and growling basses, bright leads and metal hits. Neo FM6 is the full six-operator version.
 
-- Electric piano: `Mod Ratio` 1, `FM Depth` 25-40 %, `Mod Decay` about 0.5 s, `Metallic Edge` 30-50 %, `Velocity to FM` 60 %.
-- Bell: `Mod Ratio` 3.5 or 5.5 (the half-ratio detents), `Mod Decay` long, `Sustain` 0, long `Decay`.
-- Bass: `Mod Ratio` 0.5 or 1, `FM Depth` 40-60 %, short `Mod Decay`, `Feedback` 20-50 % for growl.
-- Clean test tone: `FM Depth` 0, then raise it and listen as sidebands appear.
+## Key controls
+
+| Parameter | Value | Why |
+|---|---|---|
+| Mod Ratio | 1 | whole ratios are pitched; 3.5 or 5.5 give bells |
+| FM Depth | 30% | brightness; 0 % is a pure sine |
+| Mod Decay | 500 ms | short is a struck attack, long keeps the brightness |
+| Feedback | 0% | 20-50 % for growl; high values turn to noise |
+| Metallic Edge | 40% | the attack clang of a tine or bell |
+| Velocity to FM | 60% | hard notes brighter |
+| Output | -6 dB | lower it if `peak_db` passes 0 dBFS |
+
+## Starting points
+
+- "Keys — Tine Piano", "Keys — Glass Bell", "Bass — FM Pluck", "Bass — Growl", "Lead — Bright Glass", "Pad — Slow Bells", "Percussion — Metal Hit", "Lead — Clean Sine".
+- Bell: `Mod Ratio` 3.5, long `Mod Decay`, `Sustain` 0 %, long `Decay`. Bass: `Mod Ratio` 0.5 or 1, `FM Depth` 40-60 %, short `Mod Decay`.
+
+## Pitfalls
+
+- Unison 0 to anything above it jumps from 1 voice to 5 (the level stays even; the sound gets wider).
+- High `FM Depth` with high `Feedback` is noise: lower `Output` and watch `peak_db`.
+- Ratios between the detents are inharmonic and can sound out of tune with other parts.
+- Only these 12 controls exist: the other Dye Essence controls are fixed and cannot be set here.
+
+## Pairs well with
+
+- Neo Ensemble for chorus, Neo Verb for bells, Neo Comp on basses, Neo EQ; Neo FM6 when you want six operators and 32 algorithms.
 
 ## Checklist
 
-- Read each control's id, range and how/sound with `machine_describe` (the ids are snake_case and are also taken by `param_set`).
-- Set `Mod Ratio` and `FM Depth` with `param_set`, play a pattern (`notes_write`), then `render` with probes and check `machine_readings` (rms_db, peak_db, active_voices).
-- Compare two settings with `render` then `compare`, and `analyze` for spectral balance.
-- Keep `peak_db` under 0 with `Output`; writes via `param_set` show on the Explain strip with the Agent badge.
-
-## Gotchas
-
-- Unison 0 to anything above it jumps from 1 voice to 5 (level stays even; the sound gets wider).
-- High `FM Depth` with high `Feedback` is noise: lower `Output` and watch `peak_db`.
-- Ratios between the detents are inharmonic and can sound out of tune with other parts; snap to a detent for pitched sounds.
-- A machine of 12 controls: the other Dye Essence controls are fixed and cannot be set here.
+- [ ] `machine_describe(machine="Learn")` shows the id, range, How and Sound of each control.
+- [ ] `param_set(machine="Learn", changes=[{"param": "FM Depth", "value": "30%"}])`, then `notes_write` a chord and `render(probes=["Learn"])`.
+- [ ] `machine_readings(machine="Learn")` gives `rms_db` near -22 dB and `peak_db` under 0 dBFS.
+- [ ] `plot` the spectrum of the render and `compare` two depths: more depth, more upper partials.

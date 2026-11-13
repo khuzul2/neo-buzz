@@ -29,7 +29,9 @@
    "default": 0,
    "kind": "int",
    "a": 1.0,
-   "description": "Which operators modulate which (the 32 DX7 algorithms)"
+   "description": "Which operators modulate which (the 32 DX7 algorithms)",
+   "how": "Chooses which of the 32 wiring layouts decides how the six operators modulate each other and which reach the output.",
+   "sound": "Different algorithms give different families of sounds, from stacked bell and organ layers to deep modulation chains for brass and basses."
   },
   {
    "index": 1,
@@ -41,7 +43,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Self-modulation of the feedback operator (7: near saw)"
+   "description": "Self-modulation of the feedback operator (7: near saw)",
+   "how": "Sets how strongly the feedback operator modulates itself, from 0 to 7.",
+   "sound": "Low values add a little brightness and edge, and high values turn the tone towards a buzzy saw and then noise."
   },
   {
    "index": 2,
@@ -56,7 +60,9 @@
     "Off",
     "On"
    ],
-   "description": "Operators restart their phase with each note"
+   "description": "Operators restart their phase with each note",
+   "how": "Makes the operators restart their phase with each new note.",
+   "sound": "On gives the same attack every time, and off lets the phase float for a looser, more varied start."
   },
   {
    "index": 3,
@@ -70,7 +76,9 @@
    "a": -24.0,
    "flag": true,
    "unit": "st",
-   "description": "Transposes the whole voice"
+   "description": "Transposes the whole voice",
+   "how": "Transposes the whole voice by up to 24 semitones either way.",
+   "sound": "Use it to move a patch to the register where it sounds best."
   },
   {
    "index": 4,
@@ -82,7 +90,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Pitch envelope rate 1 (99: fastest)"
+   "description": "Pitch envelope rate 1 (99: fastest)",
+   "how": "Sets how fast the pitch envelope moves through stage 1, from 0 to 99.",
+   "sound": "Fast rates make the pitch change instantly and slow rates make it glide."
   },
   {
    "index": 5,
@@ -94,7 +104,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Pitch envelope rate 2 (99: fastest)"
+   "description": "Pitch envelope rate 2 (99: fastest)",
+   "how": "Sets how fast the pitch envelope moves through stage 2, from 0 to 99.",
+   "sound": "Fast rates make the pitch change instantly and slow rates make it glide."
   },
   {
    "index": 6,
@@ -106,7 +118,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Pitch envelope rate 3 (99: fastest)"
+   "description": "Pitch envelope rate 3 (99: fastest)",
+   "how": "Sets how fast the pitch envelope moves through stage 3, from 0 to 99.",
+   "sound": "Fast rates make the pitch change instantly and slow rates make it glide."
   },
   {
    "index": 7,
@@ -118,7 +132,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Pitch envelope rate 4 (99: fastest)"
+   "description": "Pitch envelope rate 4 (99: fastest)",
+   "how": "Sets how fast the pitch envelope moves through stage 4, from 0 to 99.",
+   "sound": "Fast rates make the pitch change instantly and slow rates make it glide."
   },
   {
    "index": 8,
@@ -130,7 +146,9 @@
    "default": 50,
    "kind": "int",
    "a": 0.0,
-   "description": "Pitch envelope level 1 (50: no shift; 0/99: about −4/+4 octaves)"
+   "description": "Pitch envelope level 1 (50: no shift; 0/99: about −4/+4 octaves)",
+   "how": "Sets the pitch the envelope reaches at stage 1, where 50 is no shift and the ends are about four octaves down or up.",
+   "sound": "Moving the levels away from 50 adds pitch swoops, such as a short rise at the start of a note."
   },
   {
    "index": 9,
@@ -142,7 +160,9 @@
    "default": 50,
    "kind": "int",
    "a": 0.0,
-   "description": "Pitch envelope level 2 (50: no shift; 0/99: about −4/+4 octaves)"
+   "description": "Pitch envelope level 2 (50: no shift; 0/99: about −4/+4 octaves)",
+   "how": "Sets the pitch the envelope reaches at stage 2, where 50 is no shift and the ends are about four octaves down or up.",
+   "sound": "Moving the levels away from 50 adds pitch swoops, such as a short rise at the start of a note."
   },
   {
    "index": 10,
@@ -154,7 +174,9 @@
    "default": 50,
    "kind": "int",
    "a": 0.0,
-   "description": "Pitch envelope level 3 (50: no shift; 0/99: about −4/+4 octaves)"
+   "description": "Pitch envelope level 3 (50: no shift; 0/99: about −4/+4 octaves)",
+   "how": "Sets the pitch the envelope reaches at stage 3, where 50 is no shift and the ends are about four octaves down or up.",
+   "sound": "Moving the levels away from 50 adds pitch swoops, such as a short rise at the start of a note."
   },
   {
    "index": 11,
@@ -166,7 +188,9 @@
    "default": 50,
    "kind": "int",
    "a": 0.0,
-   "description": "Pitch envelope level 4 (50: no shift; 0/99: about −4/+4 octaves)"
+   "description": "Pitch envelope level 4 (50: no shift; 0/99: about −4/+4 octaves)",
+   "how": "Sets the pitch the envelope reaches at stage 4, where 50 is no shift and the ends are about four octaves down or up.",
+   "sound": "Moving the levels away from 50 adds pitch swoops, such as a short rise at the start of a note."
   },
   {
    "index": 12,
@@ -185,7 +209,9 @@
     "Sine",
     "S&H"
    ],
-   "description": "LFO waveform"
+   "description": "LFO waveform",
+   "how": "Chooses the LFO waveform: triangle, falling or rising saw, square, sine or random steps.",
+   "sound": "Smooth shapes make vibrato, square makes trills, and random steps make stepped, unpredictable movement."
   },
   {
    "index": 13,
@@ -197,7 +223,9 @@
    "default": 35,
    "kind": "int",
    "a": 0.0,
-   "description": "LFO rate (0: 0.06 Hz, 35: about 6 Hz, 99: about 24 Hz)"
+   "description": "LFO rate (0: 0.06 Hz, 35: about 6 Hz, 99: about 24 Hz)",
+   "how": "Sets the LFO speed from 0 to 99, about 0.06 Hz to 24 Hz.",
+   "sound": "Low values are slow drifts and high values a fast flutter."
   },
   {
    "index": 14,
@@ -209,7 +237,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Time before the LFO fades in after a note"
+   "description": "Time before the LFO fades in after a note",
+   "how": "Sets how long after a note the LFO takes to fade in, from 0 to 99.",
+   "sound": "A delay lets the note start steady and add vibrato later, as a singer would."
   },
   {
    "index": 15,
@@ -221,7 +251,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Pitch modulation depth (scaled by Pitch sens)"
+   "description": "Pitch modulation depth (scaled by Pitch sens)",
+   "how": "Sets how deeply the LFO modulates pitch, from 0 to 99.",
+   "sound": "More depth gives a stronger vibrato."
   },
   {
    "index": 16,
@@ -233,7 +265,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Amplitude modulation depth (scaled by each operator's Amp sens)"
+   "description": "Amplitude modulation depth (scaled by each operator's Amp sens)",
+   "how": "Sets how deeply the LFO modulates amplitude, from 0 to 99.",
+   "sound": "More depth gives a stronger tremolo on the operators that respond to it."
   },
   {
    "index": 17,
@@ -248,7 +282,9 @@
     "Off",
     "On"
    ],
-   "description": "The LFO restarts with each note"
+   "description": "The LFO restarts with each note",
+   "how": "Makes the LFO restart with each note.",
+   "sound": "On gives every note the same vibrato start, and off lets the LFO run freely."
   },
   {
    "index": 18,
@@ -260,7 +296,9 @@
    "default": 3,
    "kind": "int",
    "a": 0.0,
-   "description": "How far LFO, mod wheel and aftertouch move the pitch"
+   "description": "How far LFO, mod wheel and aftertouch move the pitch",
+   "how": "Sets how far the LFO, mod wheel and aftertouch can move the pitch, from 0 to 7.",
+   "sound": "Low values keep vibrato subtle and high values make it wide."
   },
   {
    "index": 19,
@@ -276,7 +314,9 @@
     "Mono",
     "Legato"
    ],
-   "description": "Poly; Mono retriggers; Legato glides without retriggering"
+   "description": "Poly; Mono retriggers; Legato glides without retriggering",
+   "how": "Chooses how notes share voices: Poly plays chords, Mono retriggers on each note, Legato glides between overlapping notes.",
+   "sound": "Poly suits keys and pads, Mono gives a punchy lead or bass, and Legato gives smooth, connected lines."
   },
   {
    "index": 20,
@@ -288,7 +328,9 @@
    "default": 8,
    "kind": "int",
    "a": 0.0,
-   "description": "Notes that sound at once"
+   "description": "Notes that sound at once",
+   "how": "Sets how many notes can sound at once, from 1 to 16.",
+   "sound": "More voices let chords and long releases overlap, and fewer save processing power."
   },
   {
    "index": 21,
@@ -300,7 +342,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Voices per note"
+   "description": "Voices per note",
+   "how": "Sets the number of stacked voices per note, from 1 to 4.",
+   "sound": "More voices make the note thicker and wider, and one voice is a single clean tone."
   },
   {
    "index": 22,
@@ -312,7 +356,9 @@
    "default": 150,
    "kind": "percent",
    "unit": "%",
-   "description": "Detune between unison voices (up to ±25 cents)"
+   "description": "Detune between unison voices (up to ±25 cents)",
+   "how": "Sets how far apart the unison voices are tuned, up to 25 cents.",
+   "sound": "Small amounts give a warm thickness and large ones a wide chorus-like swarm."
   },
   {
    "index": 23,
@@ -324,7 +370,9 @@
    "default": 600,
    "kind": "percent",
    "unit": "%",
-   "description": "Stereo spread of unison voices"
+   "description": "Stereo spread of unison voices",
+   "how": "Sets how widely the unison voices are spread across the stereo field, from 0 to 100 %.",
+   "sound": "More spread makes the note wider, and zero keeps it centred."
   },
   {
    "index": 24,
@@ -340,7 +388,9 @@
     "Always",
     "Legato"
    ],
-   "description": "When notes glide"
+   "description": "When notes glide",
+   "how": "Chooses when notes slide into each other: never, always, or only on overlapping notes.",
+   "sound": "Gliding adds a singing slur between notes."
   },
   {
    "index": 25,
@@ -355,7 +405,9 @@
    "b": 2.0,
    "exponent": 3.0,
    "unit": "s",
-   "description": "Glide time"
+   "description": "Glide time",
+   "how": "Sets how long the slide takes, up to 2 seconds.",
+   "sound": "Short glides are subtle and long ones sweep slowly between pitches."
   },
   {
    "index": 26,
@@ -368,7 +420,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "st",
-   "description": "Pitch bend range"
+   "description": "Pitch bend range",
+   "how": "Sets how far the pitch bend wheel moves the pitch, from 0 to 12 semitones.",
+   "sound": "A small range gives expressive nudges and a large one gives big sweeps."
   },
   {
    "index": 27,
@@ -380,7 +434,9 @@
    "default": 50,
    "kind": "int",
    "a": 0.0,
-   "description": "Mod wheel → pitch modulation (vibrato from the LFO)"
+   "description": "Mod wheel → pitch modulation (vibrato from the LFO)",
+   "how": "Sets how much the mod wheel adds LFO vibrato, from 0 to 99.",
+   "sound": "Pushing the wheel up brings in vibrato, which makes held notes feel more expressive."
   },
   {
    "index": 28,
@@ -392,7 +448,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Mod wheel → amplitude modulation"
+   "description": "Mod wheel → amplitude modulation",
+   "how": "Sets how much the mod wheel adds LFO tremolo, from 0 to 99.",
+   "sound": "Pushing the wheel up brings in a pulsing volume change."
   },
   {
    "index": 29,
@@ -404,7 +462,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Aftertouch → pitch modulation"
+   "description": "Aftertouch → pitch modulation",
+   "how": "Sets how much key pressure after the note starts adds LFO vibrato, from 0 to 99.",
+   "sound": "Pressing harder on a held key adds vibrato."
   },
   {
    "index": 30,
@@ -416,7 +476,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Aftertouch → amplitude modulation"
+   "description": "Aftertouch → amplitude modulation",
+   "how": "Sets how much key pressure after the note starts adds LFO tremolo, from 0 to 99.",
+   "sound": "Pressing harder on a held key adds a pulsing volume change."
   },
   {
    "index": 31,
@@ -430,7 +492,9 @@
    "a": 1000.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "Gentle low-pass on the output (20 kHz: open)"
+   "description": "Gentle low-pass on the output (20 kHz: open)",
+   "how": "Applies a gentle low-pass filter to the output, from 1 to 20 kHz.",
+   "sound": "Lowering it takes the edge off the top, and fully open it leaves the sound unfiltered."
   },
   {
    "index": 32,
@@ -445,7 +509,9 @@
     "Clean 2×",
     "Raw 1×"
    ],
-   "description": "Clean: 2× oversampled; Raw: the original's aliasing grit"
+   "description": "Clean: 2× oversampled; Raw: the original's aliasing grit",
+   "how": "Chooses Clean (oversampled twice) or Raw (no oversampling).",
+   "sound": "Clean is smooth and quiet at the top, and Raw keeps the gritty aliasing of the classic hardware sound."
   },
   {
    "index": 33,
@@ -460,7 +526,9 @@
    "b": 6.0,
    "flag": true,
    "unit": "dB",
-   "description": "Output level"
+   "description": "Output level",
+   "how": "Sets the output level of the synth, from -40 to +6 dB, or off.",
+   "sound": "Use it to place the instrument in the mix without changing its tone."
   },
   {
    "index": 34,
@@ -475,7 +543,9 @@
     "Off",
     "On"
    ],
-   "description": "Operator 1 sounds (off: silent, as on the DX7)"
+   "description": "Operator 1 sounds (off: silent, as on the DX7)",
+   "how": "Turns operator 1 on or off.",
+   "sound": "Muting one operator shows what it adds to the sound."
   },
   {
    "index": 35,
@@ -487,7 +557,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Output level (carriers: loudness; modulators: brightness)"
+   "description": "Output level (carriers: loudness; modulators: brightness)",
+   "how": "Sets the output level of operator 1, from 0 to 99.",
+   "sound": "For a carrier this is loudness, and for a modulator it is brightness: more level makes a harsher, richer tone."
   },
   {
    "index": 36,
@@ -502,7 +574,9 @@
     "Ratio",
     "Fixed"
    ],
-   "description": "Ratio: follows the note; Fixed: a fixed frequency"
+   "description": "Ratio: follows the note; Fixed: a fixed frequency",
+   "how": "Chooses whether operator 1 follows the note pitch or runs at a fixed frequency.",
+   "sound": "Ratio mode plays in tune across the keyboard, and Fixed mode gives a constant tone for noise-like or percussive effects."
   },
   {
    "index": 37,
@@ -514,7 +588,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Ratio 0.5, 1 … 31 (Fixed: 1, 10, 100, 1000 Hz)"
+   "description": "Ratio 0.5, 1 … 31 (Fixed: 1, 10, 100, 1000 Hz)",
+   "how": "Sets the frequency ratio of operator 1 in whole steps, from 0.5 to 31.",
+   "sound": "Whole-number ratios give harmonic tones and others give bells and metallic sounds."
   },
   {
    "index": 38,
@@ -526,7 +602,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Ratio +0 … +99% (Fixed: ×1 … ×9.77)"
+   "description": "Ratio +0 … +99% (Fixed: ×1 … ×9.77)",
+   "how": "Adds a fine amount to the frequency ratio of operator 1, from 0 to 99 %.",
+   "sound": "Small offsets detune the operator for a slow beating, and larger ones give inharmonic colour."
   },
   {
    "index": 39,
@@ -539,7 +617,9 @@
    "kind": "int",
    "a": -7.0,
    "flag": true,
-   "description": "Detune, −7 … +7 (about 1 cent a step at A4)"
+   "description": "Detune, −7 … +7 (about 1 cent a step at A4)",
+   "how": "Detunes operator 1 by about 7 cents either way.",
+   "sound": "A little detune adds a gentle movement against the other operators."
   },
   {
    "index": 40,
@@ -556,7 +636,9 @@
     "Abs sine",
     "Pulse sine"
    ],
-   "description": "Operator waveform (Sine: DX7)"
+   "description": "Operator waveform (Sine: DX7)",
+   "how": "Chooses the waveform of operator 1: sine, half sine, absolute sine or pulse sine.",
+   "sound": "Sine is the classic tone, and the other shapes add more harmonics and a harsher edge."
   },
   {
    "index": 41,
@@ -568,7 +650,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 1 (99: fastest)"
+   "description": "Envelope rate 1 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 1 moves through stage 1, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 42,
@@ -580,7 +664,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 2 (99: fastest)"
+   "description": "Envelope rate 2 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 1 moves through stage 2, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 43,
@@ -592,7 +678,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 3 (99: fastest)"
+   "description": "Envelope rate 3 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 1 moves through stage 3, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 44,
@@ -604,7 +692,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 4 (99: fastest)"
+   "description": "Envelope rate 4 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 1 moves through stage 4, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 45,
@@ -616,7 +706,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 1"
+   "description": "Envelope level 1",
+   "how": "Sets the level of the envelope of operator 1 at stage 1, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 46,
@@ -628,7 +720,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 2"
+   "description": "Envelope level 2",
+   "how": "Sets the level of the envelope of operator 1 at stage 2, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 47,
@@ -640,7 +734,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 3"
+   "description": "Envelope level 3",
+   "how": "Sets the level of the envelope of operator 1 at stage 3, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 48,
@@ -652,7 +748,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 4"
+   "description": "Envelope level 4",
+   "how": "Sets the level of the envelope of operator 1 at stage 4, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 49,
@@ -664,7 +762,9 @@
    "default": 39,
    "kind": "int",
    "a": 0.0,
-   "description": "Keyboard scaling break point (39: C4)"
+   "description": "Keyboard scaling break point (39: C4)",
+   "how": "Sets the key at which level scaling for operator 1 changes sides, from 0 to 99, where 39 is middle C.",
+   "sound": "Notes either side of the break point are scaled by the depth settings."
   },
   {
    "index": 50,
@@ -676,7 +776,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Level scaling below the break point"
+   "description": "Level scaling below the break point",
+   "how": "Sets how much the level of operator 1 changes for keys below the break point, from 0 to 99.",
+   "sound": "It lets low notes sound brighter or softer than the middle of the keyboard."
   },
   {
    "index": 51,
@@ -688,7 +790,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Level scaling above the break point"
+   "description": "Level scaling above the break point",
+   "how": "Sets how much the level of operator 1 changes for keys above the break point, from 0 to 99.",
+   "sound": "It lets high notes sound brighter or softer than the middle of the keyboard."
   },
   {
    "index": 52,
@@ -705,7 +809,9 @@
     "+Exp",
     "+Lin"
    ],
-   "description": "Scaling curve below the break point"
+   "description": "Scaling curve below the break point",
+   "how": "Chooses the shape of the level scaling below the break point: linear or exponential, falling or rising.",
+   "sound": "Exponential curves change faster near the extremes, linear curves change evenly."
   },
   {
    "index": 53,
@@ -722,7 +828,9 @@
     "+Exp",
     "+Lin"
    ],
-   "description": "Scaling curve above the break point"
+   "description": "Scaling curve above the break point",
+   "how": "Chooses the shape of the level scaling above the break point: linear or exponential, falling or rising.",
+   "sound": "Exponential curves change faster near the extremes, linear curves change evenly."
   },
   {
    "index": 54,
@@ -734,7 +842,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelopes run faster for higher notes"
+   "description": "Envelopes run faster for higher notes",
+   "how": "Makes the envelope of operator 1 run faster for higher notes, from 0 to 7.",
+   "sound": "Higher notes decay sooner, as they do on a plucked or struck instrument."
   },
   {
    "index": 55,
@@ -746,7 +856,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "How much LFO / wheel / aftertouch amplitude modulation applies"
+   "description": "How much LFO / wheel / aftertouch amplitude modulation applies",
+   "how": "Sets how much LFO, wheel and aftertouch amplitude modulation reaches operator 1, from 0 to 3.",
+   "sound": "Higher values let tremolo shape this operator, and zero leaves it steady."
   },
   {
    "index": 56,
@@ -758,7 +870,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "How much velocity changes the level"
+   "description": "How much velocity changes the level",
+   "how": "Sets how much note velocity changes the level of operator 1, from 0 to 7.",
+   "sound": "Higher values make hard playing brighter or louder, depending on whether it is a modulator or a carrier."
   },
   {
    "index": 57,
@@ -773,7 +887,9 @@
     "Off",
     "On"
    ],
-   "description": "Operator 2 sounds (off: silent, as on the DX7)"
+   "description": "Operator 2 sounds (off: silent, as on the DX7)",
+   "how": "Turns operator 2 on or off.",
+   "sound": "Muting one operator shows what it adds to the sound."
   },
   {
    "index": 58,
@@ -785,7 +901,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Output level (carriers: loudness; modulators: brightness)"
+   "description": "Output level (carriers: loudness; modulators: brightness)",
+   "how": "Sets the output level of operator 2, from 0 to 99.",
+   "sound": "For a carrier this is loudness, and for a modulator it is brightness: more level makes a harsher, richer tone."
   },
   {
    "index": 59,
@@ -800,7 +918,9 @@
     "Ratio",
     "Fixed"
    ],
-   "description": "Ratio: follows the note; Fixed: a fixed frequency"
+   "description": "Ratio: follows the note; Fixed: a fixed frequency",
+   "how": "Chooses whether operator 2 follows the note pitch or runs at a fixed frequency.",
+   "sound": "Ratio mode plays in tune across the keyboard, and Fixed mode gives a constant tone for noise-like or percussive effects."
   },
   {
    "index": 60,
@@ -812,7 +932,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Ratio 0.5, 1 … 31 (Fixed: 1, 10, 100, 1000 Hz)"
+   "description": "Ratio 0.5, 1 … 31 (Fixed: 1, 10, 100, 1000 Hz)",
+   "how": "Sets the frequency ratio of operator 2 in whole steps, from 0.5 to 31.",
+   "sound": "Whole-number ratios give harmonic tones and others give bells and metallic sounds."
   },
   {
    "index": 61,
@@ -824,7 +946,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Ratio +0 … +99% (Fixed: ×1 … ×9.77)"
+   "description": "Ratio +0 … +99% (Fixed: ×1 … ×9.77)",
+   "how": "Adds a fine amount to the frequency ratio of operator 2, from 0 to 99 %.",
+   "sound": "Small offsets detune the operator for a slow beating, and larger ones give inharmonic colour."
   },
   {
    "index": 62,
@@ -837,7 +961,9 @@
    "kind": "int",
    "a": -7.0,
    "flag": true,
-   "description": "Detune, −7 … +7 (about 1 cent a step at A4)"
+   "description": "Detune, −7 … +7 (about 1 cent a step at A4)",
+   "how": "Detunes operator 2 by about 7 cents either way.",
+   "sound": "A little detune adds a gentle movement against the other operators."
   },
   {
    "index": 63,
@@ -854,7 +980,9 @@
     "Abs sine",
     "Pulse sine"
    ],
-   "description": "Operator waveform (Sine: DX7)"
+   "description": "Operator waveform (Sine: DX7)",
+   "how": "Chooses the waveform of operator 2: sine, half sine, absolute sine or pulse sine.",
+   "sound": "Sine is the classic tone, and the other shapes add more harmonics and a harsher edge."
   },
   {
    "index": 64,
@@ -866,7 +994,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 1 (99: fastest)"
+   "description": "Envelope rate 1 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 2 moves through stage 1, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 65,
@@ -878,7 +1008,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 2 (99: fastest)"
+   "description": "Envelope rate 2 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 2 moves through stage 2, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 66,
@@ -890,7 +1022,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 3 (99: fastest)"
+   "description": "Envelope rate 3 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 2 moves through stage 3, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 67,
@@ -902,7 +1036,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 4 (99: fastest)"
+   "description": "Envelope rate 4 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 2 moves through stage 4, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 68,
@@ -914,7 +1050,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 1"
+   "description": "Envelope level 1",
+   "how": "Sets the level of the envelope of operator 2 at stage 1, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 69,
@@ -926,7 +1064,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 2"
+   "description": "Envelope level 2",
+   "how": "Sets the level of the envelope of operator 2 at stage 2, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 70,
@@ -938,7 +1078,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 3"
+   "description": "Envelope level 3",
+   "how": "Sets the level of the envelope of operator 2 at stage 3, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 71,
@@ -950,7 +1092,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 4"
+   "description": "Envelope level 4",
+   "how": "Sets the level of the envelope of operator 2 at stage 4, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 72,
@@ -962,7 +1106,9 @@
    "default": 39,
    "kind": "int",
    "a": 0.0,
-   "description": "Keyboard scaling break point (39: C4)"
+   "description": "Keyboard scaling break point (39: C4)",
+   "how": "Sets the key at which level scaling for operator 2 changes sides, from 0 to 99, where 39 is middle C.",
+   "sound": "Notes either side of the break point are scaled by the depth settings."
   },
   {
    "index": 73,
@@ -974,7 +1120,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Level scaling below the break point"
+   "description": "Level scaling below the break point",
+   "how": "Sets how much the level of operator 2 changes for keys below the break point, from 0 to 99.",
+   "sound": "It lets low notes sound brighter or softer than the middle of the keyboard."
   },
   {
    "index": 74,
@@ -986,7 +1134,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Level scaling above the break point"
+   "description": "Level scaling above the break point",
+   "how": "Sets how much the level of operator 2 changes for keys above the break point, from 0 to 99.",
+   "sound": "It lets high notes sound brighter or softer than the middle of the keyboard."
   },
   {
    "index": 75,
@@ -1003,7 +1153,9 @@
     "+Exp",
     "+Lin"
    ],
-   "description": "Scaling curve below the break point"
+   "description": "Scaling curve below the break point",
+   "how": "Chooses the shape of the level scaling below the break point: linear or exponential, falling or rising.",
+   "sound": "Exponential curves change faster near the extremes, linear curves change evenly."
   },
   {
    "index": 76,
@@ -1020,7 +1172,9 @@
     "+Exp",
     "+Lin"
    ],
-   "description": "Scaling curve above the break point"
+   "description": "Scaling curve above the break point",
+   "how": "Chooses the shape of the level scaling above the break point: linear or exponential, falling or rising.",
+   "sound": "Exponential curves change faster near the extremes, linear curves change evenly."
   },
   {
    "index": 77,
@@ -1032,7 +1186,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelopes run faster for higher notes"
+   "description": "Envelopes run faster for higher notes",
+   "how": "Makes the envelope of operator 2 run faster for higher notes, from 0 to 7.",
+   "sound": "Higher notes decay sooner, as they do on a plucked or struck instrument."
   },
   {
    "index": 78,
@@ -1044,7 +1200,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "How much LFO / wheel / aftertouch amplitude modulation applies"
+   "description": "How much LFO / wheel / aftertouch amplitude modulation applies",
+   "how": "Sets how much LFO, wheel and aftertouch amplitude modulation reaches operator 2, from 0 to 3.",
+   "sound": "Higher values let tremolo shape this operator, and zero leaves it steady."
   },
   {
    "index": 79,
@@ -1056,7 +1214,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "How much velocity changes the level"
+   "description": "How much velocity changes the level",
+   "how": "Sets how much note velocity changes the level of operator 2, from 0 to 7.",
+   "sound": "Higher values make hard playing brighter or louder, depending on whether it is a modulator or a carrier."
   },
   {
    "index": 80,
@@ -1071,7 +1231,9 @@
     "Off",
     "On"
    ],
-   "description": "Operator 3 sounds (off: silent, as on the DX7)"
+   "description": "Operator 3 sounds (off: silent, as on the DX7)",
+   "how": "Turns operator 3 on or off.",
+   "sound": "Muting one operator shows what it adds to the sound."
   },
   {
    "index": 81,
@@ -1083,7 +1245,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Output level (carriers: loudness; modulators: brightness)"
+   "description": "Output level (carriers: loudness; modulators: brightness)",
+   "how": "Sets the output level of operator 3, from 0 to 99.",
+   "sound": "For a carrier this is loudness, and for a modulator it is brightness: more level makes a harsher, richer tone."
   },
   {
    "index": 82,
@@ -1098,7 +1262,9 @@
     "Ratio",
     "Fixed"
    ],
-   "description": "Ratio: follows the note; Fixed: a fixed frequency"
+   "description": "Ratio: follows the note; Fixed: a fixed frequency",
+   "how": "Chooses whether operator 3 follows the note pitch or runs at a fixed frequency.",
+   "sound": "Ratio mode plays in tune across the keyboard, and Fixed mode gives a constant tone for noise-like or percussive effects."
   },
   {
    "index": 83,
@@ -1110,7 +1276,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Ratio 0.5, 1 … 31 (Fixed: 1, 10, 100, 1000 Hz)"
+   "description": "Ratio 0.5, 1 … 31 (Fixed: 1, 10, 100, 1000 Hz)",
+   "how": "Sets the frequency ratio of operator 3 in whole steps, from 0.5 to 31.",
+   "sound": "Whole-number ratios give harmonic tones and others give bells and metallic sounds."
   },
   {
    "index": 84,
@@ -1122,7 +1290,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Ratio +0 … +99% (Fixed: ×1 … ×9.77)"
+   "description": "Ratio +0 … +99% (Fixed: ×1 … ×9.77)",
+   "how": "Adds a fine amount to the frequency ratio of operator 3, from 0 to 99 %.",
+   "sound": "Small offsets detune the operator for a slow beating, and larger ones give inharmonic colour."
   },
   {
    "index": 85,
@@ -1135,7 +1305,9 @@
    "kind": "int",
    "a": -7.0,
    "flag": true,
-   "description": "Detune, −7 … +7 (about 1 cent a step at A4)"
+   "description": "Detune, −7 … +7 (about 1 cent a step at A4)",
+   "how": "Detunes operator 3 by about 7 cents either way.",
+   "sound": "A little detune adds a gentle movement against the other operators."
   },
   {
    "index": 86,
@@ -1152,7 +1324,9 @@
     "Abs sine",
     "Pulse sine"
    ],
-   "description": "Operator waveform (Sine: DX7)"
+   "description": "Operator waveform (Sine: DX7)",
+   "how": "Chooses the waveform of operator 3: sine, half sine, absolute sine or pulse sine.",
+   "sound": "Sine is the classic tone, and the other shapes add more harmonics and a harsher edge."
   },
   {
    "index": 87,
@@ -1164,7 +1338,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 1 (99: fastest)"
+   "description": "Envelope rate 1 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 3 moves through stage 1, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 88,
@@ -1176,7 +1352,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 2 (99: fastest)"
+   "description": "Envelope rate 2 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 3 moves through stage 2, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 89,
@@ -1188,7 +1366,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 3 (99: fastest)"
+   "description": "Envelope rate 3 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 3 moves through stage 3, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 90,
@@ -1200,7 +1380,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 4 (99: fastest)"
+   "description": "Envelope rate 4 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 3 moves through stage 4, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 91,
@@ -1212,7 +1394,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 1"
+   "description": "Envelope level 1",
+   "how": "Sets the level of the envelope of operator 3 at stage 1, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 92,
@@ -1224,7 +1408,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 2"
+   "description": "Envelope level 2",
+   "how": "Sets the level of the envelope of operator 3 at stage 2, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 93,
@@ -1236,7 +1422,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 3"
+   "description": "Envelope level 3",
+   "how": "Sets the level of the envelope of operator 3 at stage 3, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 94,
@@ -1248,7 +1436,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 4"
+   "description": "Envelope level 4",
+   "how": "Sets the level of the envelope of operator 3 at stage 4, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 95,
@@ -1260,7 +1450,9 @@
    "default": 39,
    "kind": "int",
    "a": 0.0,
-   "description": "Keyboard scaling break point (39: C4)"
+   "description": "Keyboard scaling break point (39: C4)",
+   "how": "Sets the key at which level scaling for operator 3 changes sides, from 0 to 99, where 39 is middle C.",
+   "sound": "Notes either side of the break point are scaled by the depth settings."
   },
   {
    "index": 96,
@@ -1272,7 +1464,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Level scaling below the break point"
+   "description": "Level scaling below the break point",
+   "how": "Sets how much the level of operator 3 changes for keys below the break point, from 0 to 99.",
+   "sound": "It lets low notes sound brighter or softer than the middle of the keyboard."
   },
   {
    "index": 97,
@@ -1284,7 +1478,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Level scaling above the break point"
+   "description": "Level scaling above the break point",
+   "how": "Sets how much the level of operator 3 changes for keys above the break point, from 0 to 99.",
+   "sound": "It lets high notes sound brighter or softer than the middle of the keyboard."
   },
   {
    "index": 98,
@@ -1301,7 +1497,9 @@
     "+Exp",
     "+Lin"
    ],
-   "description": "Scaling curve below the break point"
+   "description": "Scaling curve below the break point",
+   "how": "Chooses the shape of the level scaling below the break point: linear or exponential, falling or rising.",
+   "sound": "Exponential curves change faster near the extremes, linear curves change evenly."
   },
   {
    "index": 99,
@@ -1318,7 +1516,9 @@
     "+Exp",
     "+Lin"
    ],
-   "description": "Scaling curve above the break point"
+   "description": "Scaling curve above the break point",
+   "how": "Chooses the shape of the level scaling above the break point: linear or exponential, falling or rising.",
+   "sound": "Exponential curves change faster near the extremes, linear curves change evenly."
   },
   {
    "index": 100,
@@ -1330,7 +1530,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelopes run faster for higher notes"
+   "description": "Envelopes run faster for higher notes",
+   "how": "Makes the envelope of operator 3 run faster for higher notes, from 0 to 7.",
+   "sound": "Higher notes decay sooner, as they do on a plucked or struck instrument."
   },
   {
    "index": 101,
@@ -1342,7 +1544,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "How much LFO / wheel / aftertouch amplitude modulation applies"
+   "description": "How much LFO / wheel / aftertouch amplitude modulation applies",
+   "how": "Sets how much LFO, wheel and aftertouch amplitude modulation reaches operator 3, from 0 to 3.",
+   "sound": "Higher values let tremolo shape this operator, and zero leaves it steady."
   },
   {
    "index": 102,
@@ -1354,7 +1558,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "How much velocity changes the level"
+   "description": "How much velocity changes the level",
+   "how": "Sets how much note velocity changes the level of operator 3, from 0 to 7.",
+   "sound": "Higher values make hard playing brighter or louder, depending on whether it is a modulator or a carrier."
   },
   {
    "index": 103,
@@ -1369,7 +1575,9 @@
     "Off",
     "On"
    ],
-   "description": "Operator 4 sounds (off: silent, as on the DX7)"
+   "description": "Operator 4 sounds (off: silent, as on the DX7)",
+   "how": "Turns operator 4 on or off.",
+   "sound": "Muting one operator shows what it adds to the sound."
   },
   {
    "index": 104,
@@ -1381,7 +1589,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Output level (carriers: loudness; modulators: brightness)"
+   "description": "Output level (carriers: loudness; modulators: brightness)",
+   "how": "Sets the output level of operator 4, from 0 to 99.",
+   "sound": "For a carrier this is loudness, and for a modulator it is brightness: more level makes a harsher, richer tone."
   },
   {
    "index": 105,
@@ -1396,7 +1606,9 @@
     "Ratio",
     "Fixed"
    ],
-   "description": "Ratio: follows the note; Fixed: a fixed frequency"
+   "description": "Ratio: follows the note; Fixed: a fixed frequency",
+   "how": "Chooses whether operator 4 follows the note pitch or runs at a fixed frequency.",
+   "sound": "Ratio mode plays in tune across the keyboard, and Fixed mode gives a constant tone for noise-like or percussive effects."
   },
   {
    "index": 106,
@@ -1408,7 +1620,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Ratio 0.5, 1 … 31 (Fixed: 1, 10, 100, 1000 Hz)"
+   "description": "Ratio 0.5, 1 … 31 (Fixed: 1, 10, 100, 1000 Hz)",
+   "how": "Sets the frequency ratio of operator 4 in whole steps, from 0.5 to 31.",
+   "sound": "Whole-number ratios give harmonic tones and others give bells and metallic sounds."
   },
   {
    "index": 107,
@@ -1420,7 +1634,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Ratio +0 … +99% (Fixed: ×1 … ×9.77)"
+   "description": "Ratio +0 … +99% (Fixed: ×1 … ×9.77)",
+   "how": "Adds a fine amount to the frequency ratio of operator 4, from 0 to 99 %.",
+   "sound": "Small offsets detune the operator for a slow beating, and larger ones give inharmonic colour."
   },
   {
    "index": 108,
@@ -1433,7 +1649,9 @@
    "kind": "int",
    "a": -7.0,
    "flag": true,
-   "description": "Detune, −7 … +7 (about 1 cent a step at A4)"
+   "description": "Detune, −7 … +7 (about 1 cent a step at A4)",
+   "how": "Detunes operator 4 by about 7 cents either way.",
+   "sound": "A little detune adds a gentle movement against the other operators."
   },
   {
    "index": 109,
@@ -1450,7 +1668,9 @@
     "Abs sine",
     "Pulse sine"
    ],
-   "description": "Operator waveform (Sine: DX7)"
+   "description": "Operator waveform (Sine: DX7)",
+   "how": "Chooses the waveform of operator 4: sine, half sine, absolute sine or pulse sine.",
+   "sound": "Sine is the classic tone, and the other shapes add more harmonics and a harsher edge."
   },
   {
    "index": 110,
@@ -1462,7 +1682,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 1 (99: fastest)"
+   "description": "Envelope rate 1 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 4 moves through stage 1, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 111,
@@ -1474,7 +1696,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 2 (99: fastest)"
+   "description": "Envelope rate 2 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 4 moves through stage 2, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 112,
@@ -1486,7 +1710,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 3 (99: fastest)"
+   "description": "Envelope rate 3 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 4 moves through stage 3, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 113,
@@ -1498,7 +1724,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 4 (99: fastest)"
+   "description": "Envelope rate 4 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 4 moves through stage 4, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 114,
@@ -1510,7 +1738,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 1"
+   "description": "Envelope level 1",
+   "how": "Sets the level of the envelope of operator 4 at stage 1, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 115,
@@ -1522,7 +1752,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 2"
+   "description": "Envelope level 2",
+   "how": "Sets the level of the envelope of operator 4 at stage 2, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 116,
@@ -1534,7 +1766,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 3"
+   "description": "Envelope level 3",
+   "how": "Sets the level of the envelope of operator 4 at stage 3, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 117,
@@ -1546,7 +1780,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 4"
+   "description": "Envelope level 4",
+   "how": "Sets the level of the envelope of operator 4 at stage 4, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 118,
@@ -1558,7 +1794,9 @@
    "default": 39,
    "kind": "int",
    "a": 0.0,
-   "description": "Keyboard scaling break point (39: C4)"
+   "description": "Keyboard scaling break point (39: C4)",
+   "how": "Sets the key at which level scaling for operator 4 changes sides, from 0 to 99, where 39 is middle C.",
+   "sound": "Notes either side of the break point are scaled by the depth settings."
   },
   {
    "index": 119,
@@ -1570,7 +1808,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Level scaling below the break point"
+   "description": "Level scaling below the break point",
+   "how": "Sets how much the level of operator 4 changes for keys below the break point, from 0 to 99.",
+   "sound": "It lets low notes sound brighter or softer than the middle of the keyboard."
   },
   {
    "index": 120,
@@ -1582,7 +1822,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Level scaling above the break point"
+   "description": "Level scaling above the break point",
+   "how": "Sets how much the level of operator 4 changes for keys above the break point, from 0 to 99.",
+   "sound": "It lets high notes sound brighter or softer than the middle of the keyboard."
   },
   {
    "index": 121,
@@ -1599,7 +1841,9 @@
     "+Exp",
     "+Lin"
    ],
-   "description": "Scaling curve below the break point"
+   "description": "Scaling curve below the break point",
+   "how": "Chooses the shape of the level scaling below the break point: linear or exponential, falling or rising.",
+   "sound": "Exponential curves change faster near the extremes, linear curves change evenly."
   },
   {
    "index": 122,
@@ -1616,7 +1860,9 @@
     "+Exp",
     "+Lin"
    ],
-   "description": "Scaling curve above the break point"
+   "description": "Scaling curve above the break point",
+   "how": "Chooses the shape of the level scaling above the break point: linear or exponential, falling or rising.",
+   "sound": "Exponential curves change faster near the extremes, linear curves change evenly."
   },
   {
    "index": 123,
@@ -1628,7 +1874,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelopes run faster for higher notes"
+   "description": "Envelopes run faster for higher notes",
+   "how": "Makes the envelope of operator 4 run faster for higher notes, from 0 to 7.",
+   "sound": "Higher notes decay sooner, as they do on a plucked or struck instrument."
   },
   {
    "index": 124,
@@ -1640,7 +1888,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "How much LFO / wheel / aftertouch amplitude modulation applies"
+   "description": "How much LFO / wheel / aftertouch amplitude modulation applies",
+   "how": "Sets how much LFO, wheel and aftertouch amplitude modulation reaches operator 4, from 0 to 3.",
+   "sound": "Higher values let tremolo shape this operator, and zero leaves it steady."
   },
   {
    "index": 125,
@@ -1652,7 +1902,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "How much velocity changes the level"
+   "description": "How much velocity changes the level",
+   "how": "Sets how much note velocity changes the level of operator 4, from 0 to 7.",
+   "sound": "Higher values make hard playing brighter or louder, depending on whether it is a modulator or a carrier."
   },
   {
    "index": 126,
@@ -1667,7 +1919,9 @@
     "Off",
     "On"
    ],
-   "description": "Operator 5 sounds (off: silent, as on the DX7)"
+   "description": "Operator 5 sounds (off: silent, as on the DX7)",
+   "how": "Turns operator 5 on or off.",
+   "sound": "Muting one operator shows what it adds to the sound."
   },
   {
    "index": 127,
@@ -1679,7 +1933,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Output level (carriers: loudness; modulators: brightness)"
+   "description": "Output level (carriers: loudness; modulators: brightness)",
+   "how": "Sets the output level of operator 5, from 0 to 99.",
+   "sound": "For a carrier this is loudness, and for a modulator it is brightness: more level makes a harsher, richer tone."
   },
   {
    "index": 128,
@@ -1694,7 +1950,9 @@
     "Ratio",
     "Fixed"
    ],
-   "description": "Ratio: follows the note; Fixed: a fixed frequency"
+   "description": "Ratio: follows the note; Fixed: a fixed frequency",
+   "how": "Chooses whether operator 5 follows the note pitch or runs at a fixed frequency.",
+   "sound": "Ratio mode plays in tune across the keyboard, and Fixed mode gives a constant tone for noise-like or percussive effects."
   },
   {
    "index": 129,
@@ -1706,7 +1964,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Ratio 0.5, 1 … 31 (Fixed: 1, 10, 100, 1000 Hz)"
+   "description": "Ratio 0.5, 1 … 31 (Fixed: 1, 10, 100, 1000 Hz)",
+   "how": "Sets the frequency ratio of operator 5 in whole steps, from 0.5 to 31.",
+   "sound": "Whole-number ratios give harmonic tones and others give bells and metallic sounds."
   },
   {
    "index": 130,
@@ -1718,7 +1978,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Ratio +0 … +99% (Fixed: ×1 … ×9.77)"
+   "description": "Ratio +0 … +99% (Fixed: ×1 … ×9.77)",
+   "how": "Adds a fine amount to the frequency ratio of operator 5, from 0 to 99 %.",
+   "sound": "Small offsets detune the operator for a slow beating, and larger ones give inharmonic colour."
   },
   {
    "index": 131,
@@ -1731,7 +1993,9 @@
    "kind": "int",
    "a": -7.0,
    "flag": true,
-   "description": "Detune, −7 … +7 (about 1 cent a step at A4)"
+   "description": "Detune, −7 … +7 (about 1 cent a step at A4)",
+   "how": "Detunes operator 5 by about 7 cents either way.",
+   "sound": "A little detune adds a gentle movement against the other operators."
   },
   {
    "index": 132,
@@ -1748,7 +2012,9 @@
     "Abs sine",
     "Pulse sine"
    ],
-   "description": "Operator waveform (Sine: DX7)"
+   "description": "Operator waveform (Sine: DX7)",
+   "how": "Chooses the waveform of operator 5: sine, half sine, absolute sine or pulse sine.",
+   "sound": "Sine is the classic tone, and the other shapes add more harmonics and a harsher edge."
   },
   {
    "index": 133,
@@ -1760,7 +2026,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 1 (99: fastest)"
+   "description": "Envelope rate 1 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 5 moves through stage 1, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 134,
@@ -1772,7 +2040,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 2 (99: fastest)"
+   "description": "Envelope rate 2 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 5 moves through stage 2, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 135,
@@ -1784,7 +2054,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 3 (99: fastest)"
+   "description": "Envelope rate 3 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 5 moves through stage 3, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 136,
@@ -1796,7 +2068,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 4 (99: fastest)"
+   "description": "Envelope rate 4 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 5 moves through stage 4, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 137,
@@ -1808,7 +2082,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 1"
+   "description": "Envelope level 1",
+   "how": "Sets the level of the envelope of operator 5 at stage 1, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 138,
@@ -1820,7 +2096,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 2"
+   "description": "Envelope level 2",
+   "how": "Sets the level of the envelope of operator 5 at stage 2, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 139,
@@ -1832,7 +2110,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 3"
+   "description": "Envelope level 3",
+   "how": "Sets the level of the envelope of operator 5 at stage 3, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 140,
@@ -1844,7 +2124,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 4"
+   "description": "Envelope level 4",
+   "how": "Sets the level of the envelope of operator 5 at stage 4, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 141,
@@ -1856,7 +2138,9 @@
    "default": 39,
    "kind": "int",
    "a": 0.0,
-   "description": "Keyboard scaling break point (39: C4)"
+   "description": "Keyboard scaling break point (39: C4)",
+   "how": "Sets the key at which level scaling for operator 5 changes sides, from 0 to 99, where 39 is middle C.",
+   "sound": "Notes either side of the break point are scaled by the depth settings."
   },
   {
    "index": 142,
@@ -1868,7 +2152,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Level scaling below the break point"
+   "description": "Level scaling below the break point",
+   "how": "Sets how much the level of operator 5 changes for keys below the break point, from 0 to 99.",
+   "sound": "It lets low notes sound brighter or softer than the middle of the keyboard."
   },
   {
    "index": 143,
@@ -1880,7 +2166,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Level scaling above the break point"
+   "description": "Level scaling above the break point",
+   "how": "Sets how much the level of operator 5 changes for keys above the break point, from 0 to 99.",
+   "sound": "It lets high notes sound brighter or softer than the middle of the keyboard."
   },
   {
    "index": 144,
@@ -1897,7 +2185,9 @@
     "+Exp",
     "+Lin"
    ],
-   "description": "Scaling curve below the break point"
+   "description": "Scaling curve below the break point",
+   "how": "Chooses the shape of the level scaling below the break point: linear or exponential, falling or rising.",
+   "sound": "Exponential curves change faster near the extremes, linear curves change evenly."
   },
   {
    "index": 145,
@@ -1914,7 +2204,9 @@
     "+Exp",
     "+Lin"
    ],
-   "description": "Scaling curve above the break point"
+   "description": "Scaling curve above the break point",
+   "how": "Chooses the shape of the level scaling above the break point: linear or exponential, falling or rising.",
+   "sound": "Exponential curves change faster near the extremes, linear curves change evenly."
   },
   {
    "index": 146,
@@ -1926,7 +2218,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelopes run faster for higher notes"
+   "description": "Envelopes run faster for higher notes",
+   "how": "Makes the envelope of operator 5 run faster for higher notes, from 0 to 7.",
+   "sound": "Higher notes decay sooner, as they do on a plucked or struck instrument."
   },
   {
    "index": 147,
@@ -1938,7 +2232,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "How much LFO / wheel / aftertouch amplitude modulation applies"
+   "description": "How much LFO / wheel / aftertouch amplitude modulation applies",
+   "how": "Sets how much LFO, wheel and aftertouch amplitude modulation reaches operator 5, from 0 to 3.",
+   "sound": "Higher values let tremolo shape this operator, and zero leaves it steady."
   },
   {
    "index": 148,
@@ -1950,7 +2246,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "How much velocity changes the level"
+   "description": "How much velocity changes the level",
+   "how": "Sets how much note velocity changes the level of operator 5, from 0 to 7.",
+   "sound": "Higher values make hard playing brighter or louder, depending on whether it is a modulator or a carrier."
   },
   {
    "index": 149,
@@ -1965,7 +2263,9 @@
     "Off",
     "On"
    ],
-   "description": "Operator 6 sounds (off: silent, as on the DX7)"
+   "description": "Operator 6 sounds (off: silent, as on the DX7)",
+   "how": "Turns operator 6 on or off.",
+   "sound": "Muting one operator shows what it adds to the sound."
   },
   {
    "index": 150,
@@ -1977,7 +2277,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Output level (carriers: loudness; modulators: brightness)"
+   "description": "Output level (carriers: loudness; modulators: brightness)",
+   "how": "Sets the output level of operator 6, from 0 to 99.",
+   "sound": "For a carrier this is loudness, and for a modulator it is brightness: more level makes a harsher, richer tone."
   },
   {
    "index": 151,
@@ -1992,7 +2294,9 @@
     "Ratio",
     "Fixed"
    ],
-   "description": "Ratio: follows the note; Fixed: a fixed frequency"
+   "description": "Ratio: follows the note; Fixed: a fixed frequency",
+   "how": "Chooses whether operator 6 follows the note pitch or runs at a fixed frequency.",
+   "sound": "Ratio mode plays in tune across the keyboard, and Fixed mode gives a constant tone for noise-like or percussive effects."
   },
   {
    "index": 152,
@@ -2004,7 +2308,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Ratio 0.5, 1 … 31 (Fixed: 1, 10, 100, 1000 Hz)"
+   "description": "Ratio 0.5, 1 … 31 (Fixed: 1, 10, 100, 1000 Hz)",
+   "how": "Sets the frequency ratio of operator 6 in whole steps, from 0.5 to 31.",
+   "sound": "Whole-number ratios give harmonic tones and others give bells and metallic sounds."
   },
   {
    "index": 153,
@@ -2016,7 +2322,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Ratio +0 … +99% (Fixed: ×1 … ×9.77)"
+   "description": "Ratio +0 … +99% (Fixed: ×1 … ×9.77)",
+   "how": "Adds a fine amount to the frequency ratio of operator 6, from 0 to 99 %.",
+   "sound": "Small offsets detune the operator for a slow beating, and larger ones give inharmonic colour."
   },
   {
    "index": 154,
@@ -2029,7 +2337,9 @@
    "kind": "int",
    "a": -7.0,
    "flag": true,
-   "description": "Detune, −7 … +7 (about 1 cent a step at A4)"
+   "description": "Detune, −7 … +7 (about 1 cent a step at A4)",
+   "how": "Detunes operator 6 by about 7 cents either way.",
+   "sound": "A little detune adds a gentle movement against the other operators."
   },
   {
    "index": 155,
@@ -2046,7 +2356,9 @@
     "Abs sine",
     "Pulse sine"
    ],
-   "description": "Operator waveform (Sine: DX7)"
+   "description": "Operator waveform (Sine: DX7)",
+   "how": "Chooses the waveform of operator 6: sine, half sine, absolute sine or pulse sine.",
+   "sound": "Sine is the classic tone, and the other shapes add more harmonics and a harsher edge."
   },
   {
    "index": 156,
@@ -2058,7 +2370,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 1 (99: fastest)"
+   "description": "Envelope rate 1 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 6 moves through stage 1, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 157,
@@ -2070,7 +2384,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 2 (99: fastest)"
+   "description": "Envelope rate 2 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 6 moves through stage 2, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 158,
@@ -2082,7 +2398,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 3 (99: fastest)"
+   "description": "Envelope rate 3 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 6 moves through stage 3, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 159,
@@ -2094,7 +2412,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope rate 4 (99: fastest)"
+   "description": "Envelope rate 4 (99: fastest)",
+   "how": "Sets how fast the envelope of operator 6 moves through stage 4, from 0 to 99.",
+   "sound": "Fast rates make instant changes, and slow rates make the level glide over time."
   },
   {
    "index": 160,
@@ -2106,7 +2426,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 1"
+   "description": "Envelope level 1",
+   "how": "Sets the level of the envelope of operator 6 at stage 1, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 161,
@@ -2118,7 +2440,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 2"
+   "description": "Envelope level 2",
+   "how": "Sets the level of the envelope of operator 6 at stage 2, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 162,
@@ -2130,7 +2454,9 @@
    "default": 99,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 3"
+   "description": "Envelope level 3",
+   "how": "Sets the level of the envelope of operator 6 at stage 3, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 163,
@@ -2142,7 +2468,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelope level 4"
+   "description": "Envelope level 4",
+   "how": "Sets the level of the envelope of operator 6 at stage 4, from 0 to 99.",
+   "sound": "Together the four levels shape how the operator swells, decays and fades away."
   },
   {
    "index": 164,
@@ -2154,7 +2482,9 @@
    "default": 39,
    "kind": "int",
    "a": 0.0,
-   "description": "Keyboard scaling break point (39: C4)"
+   "description": "Keyboard scaling break point (39: C4)",
+   "how": "Sets the key at which level scaling for operator 6 changes sides, from 0 to 99, where 39 is middle C.",
+   "sound": "Notes either side of the break point are scaled by the depth settings."
   },
   {
    "index": 165,
@@ -2166,7 +2496,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Level scaling below the break point"
+   "description": "Level scaling below the break point",
+   "how": "Sets how much the level of operator 6 changes for keys below the break point, from 0 to 99.",
+   "sound": "It lets low notes sound brighter or softer than the middle of the keyboard."
   },
   {
    "index": 166,
@@ -2178,7 +2510,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Level scaling above the break point"
+   "description": "Level scaling above the break point",
+   "how": "Sets how much the level of operator 6 changes for keys above the break point, from 0 to 99.",
+   "sound": "It lets high notes sound brighter or softer than the middle of the keyboard."
   },
   {
    "index": 167,
@@ -2195,7 +2529,9 @@
     "+Exp",
     "+Lin"
    ],
-   "description": "Scaling curve below the break point"
+   "description": "Scaling curve below the break point",
+   "how": "Chooses the shape of the level scaling below the break point: linear or exponential, falling or rising.",
+   "sound": "Exponential curves change faster near the extremes, linear curves change evenly."
   },
   {
    "index": 168,
@@ -2212,7 +2548,9 @@
     "+Exp",
     "+Lin"
    ],
-   "description": "Scaling curve above the break point"
+   "description": "Scaling curve above the break point",
+   "how": "Chooses the shape of the level scaling above the break point: linear or exponential, falling or rising.",
+   "sound": "Exponential curves change faster near the extremes, linear curves change evenly."
   },
   {
    "index": 169,
@@ -2224,7 +2562,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Envelopes run faster for higher notes"
+   "description": "Envelopes run faster for higher notes",
+   "how": "Makes the envelope of operator 6 run faster for higher notes, from 0 to 7.",
+   "sound": "Higher notes decay sooner, as they do on a plucked or struck instrument."
   },
   {
    "index": 170,
@@ -2236,7 +2576,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "How much LFO / wheel / aftertouch amplitude modulation applies"
+   "description": "How much LFO / wheel / aftertouch amplitude modulation applies",
+   "how": "Sets how much LFO, wheel and aftertouch amplitude modulation reaches operator 6, from 0 to 3.",
+   "sound": "Higher values let tremolo shape this operator, and zero leaves it steady."
   },
   {
    "index": 171,
@@ -2248,7 +2590,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "How much velocity changes the level"
+   "description": "How much velocity changes the level",
+   "how": "Sets how much note velocity changes the level of operator 6, from 0 to 7.",
+   "sound": "Higher values make hard playing brighter or louder, depending on whether it is a modulator or a carrier."
   }
  ],
  "imports": [
