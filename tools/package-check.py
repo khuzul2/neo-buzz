@@ -14,6 +14,7 @@
 import json
 import os
 import queue
+import re
 import shutil
 import subprocess
 import sys
@@ -91,6 +92,34 @@ check(read("BUILD-INFO.txt").startswith("NeoBuzz Live build "), "BUILD-INFO.txt 
 licence = read(os.path.join("Licenses", "ReBuzz-LICENSE.txt"))
 check("MIT License" in licence and "Copyright (c) 2026 wasteddesign" in licence, "ReBuzz's MIT licence ships intact (Licenses\\ReBuzz-LICENSE.txt)")
 check("NeoBuzz Live and ReBuzz (wasteddesign/ReBuzz)" in read(os.path.join("Licenses", "NOTICE.txt")), "Licenses\\NOTICE.txt names both")
+
+# NeoBuzz Live Studio (preview), Studio\ (docs/specs/ux-overhaul.md P6): the studio beside the app, with its own binaries and Gear,
+# PortAudio built from source (no ASIO) with its licence, the native machine hosts and libraries it shares, and the licences and
+# notes that say so. (Started by tools/studio-windows-smoke.py.)
+studio = os.path.join(app, "Studio")
+sfiles = set(os.listdir(studio)) if os.path.isdir(studio) else set()
+check(bool(sfiles), "Studio\\ is in the package (NeoBuzz Live Studio, preview)")
+if sfiles:
+    check("NeoBuzzLiveStudio.exe" in sfiles and "ReBuzz.Studio.exe" not in sfiles, "the studio's executable is NeoBuzzLiveStudio.exe")
+    check({"ReBuzz.Studio.dll", "ReBuzz.Studio.runtimeconfig.json", "ReBuzz.Studio.deps.json", "ReBuzz.Engine.dll", "ReBuzz.Host.dll", "Avalonia.Base.dll"} <= sfiles,
+          "Studio\\ has the studio, its engine and host, and Avalonia")
+    check("ReBuzz.dll" not in sfiles and "NeoBuzzLive.exe" not in sfiles, "Studio\\ doesn't hold the WPF app's files (the two can't share a folder)")
+    check("portaudio.dll" in sfiles and "libsndfile-1.dll" in sfiles, "Studio\\ has portaudio.dll and libsndfile-1.dll")
+    sread = lambda n: open(os.path.join(studio, n), encoding="utf-8-sig", errors="replace").read() if os.path.isfile(os.path.join(studio, n)) else ""
+    pa_build = sread("PortAudio-BUILD.txt")
+    check("MME, DirectSound, WASAPI, WDM-KS" in pa_build and "No ASIO" in pa_build, "PortAudio is built with MME, DirectSound, WASAPI and WDM-KS, and no ASIO")
+    check("PortAudio" in sread("PortAudio-LICENSE.txt") and "Permission is hereby granted" in sread("PortAudio-LICENSE.txt"), "PortAudio's licence text ships (Studio\\PortAudio-LICENSE.txt)")
+    check("PortAudio" in read(os.path.join("Licenses", "PortAudio-LICENSE.txt")), "and in Licenses\\PortAudio-LICENSE.txt")
+    check("PortAudio" in read(os.path.join("Licenses", "NOTICE.txt")), "Licenses\\NOTICE.txt names PortAudio")
+    cfg = sread("ReBuzz.Studio.runtimeconfig.json")
+    check(re.search(r'"System.Runtime.TieredCompilation.QuickJitForLoops":\s*false', cfg) is not None, "the studio's runtimeconfig has the audio thread's JIT setting")
+    check(os.path.isfile(os.path.join(studio, "bin64", "ReBuzzEngine64.exe")) and os.path.isfile(os.path.join(studio, "bin32", "ReBuzzEngine32.exe")),
+          "the native machine hosts are beside the studio (Studio\\bin32, Studio\\bin64)")
+    sgear = os.path.join(studio, "Gear")
+    neo = [n for n in os.listdir(os.path.join(sgear, "Generators"))] if os.path.isdir(os.path.join(sgear, "Generators")) else []
+    check(any(n.startswith("Neo Poly") and n.endswith(".dll") for n in neo), "Studio\\Gear has the Neo machines (their Avalonia builds)")
+    check(os.path.isdir(os.path.join(app, "Gear", "Generators")), "the app's Gear is still there")
+    check("NeoBuzz Live Studio (preview)" in readme and "%APPDATA%\\NeoBuzz Live" in readme, "README-FIRST.txt explains the preview and where it keeps its settings")
 
 # The app itself, from the package: MCP on stdio.
 exe = os.path.join(app, "NeoBuzzLive.exe")

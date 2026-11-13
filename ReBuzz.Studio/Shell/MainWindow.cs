@@ -57,7 +57,7 @@ namespace ReBuzz.Studio.Shell
         public MainWindow(StudioHost host)
         {
             this.host = host;
-            Title = Product.Name;
+            Title = StudioHost.AppTitle;
             Width = 1280;
             Height = 820;
             MinWidth = 640;
@@ -872,7 +872,7 @@ namespace ReBuzz.Studio.Shell
             undo.Refresh();
             redo.Refresh();
             string name = core.SongCore.SongName == null ? "Untitled" : Path.GetFileName(core.SongCore.SongName);
-            Title = $"{name}{(core.Modified ? " •" : "")} — {Product.Name}";
+            Title = $"{name}{(core.Modified ? " •" : "")} — {StudioHost.AppTitle}";
             var device = core.AudioEngine?.SelectedOutDevice;
             if (ticks++ % 10 == 0) MeasureCpu(core);
             // Without an output the audio-health badge before it says so (it was said twice, ux-overhaul.md P1).

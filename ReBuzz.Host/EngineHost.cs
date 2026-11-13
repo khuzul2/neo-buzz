@@ -39,6 +39,12 @@ namespace ReBuzz.Host
         public IFileNameChoice OpenFile { get; init; } = new NoFileChoice();
         public IFileNameChoice SaveFile { get; init; } = new NoFileChoice();
         public IKeyboard Keyboard { get; init; } = new NoKeyboard();
+
+        /// <summary>
+        /// Windows' native machine hosts (bin32, bin64) take a window of the app as their parent (step 2); the studio gives its
+        /// main window's handle once the window exists. Null or zero: none, as in a headless host.
+        /// </summary>
+        public Func<IntPtr> ParentWindow { get; set; }
     }
 
     internal sealed class NoFileChoice : IFileNameChoice
@@ -92,6 +98,8 @@ namespace ReBuzz.Host
             NativeLibraries.Register(typeof(Global).Assembly);  // BuzzGUI.Common: libsndfile
             if (CoreMidi.Available)
                 ReBuzzCore.DefaultMidiBackend = core => new CoreMidiBackend(core.SendMIDIInput, log);
+            else if (WinMmMidiBackend.Available)
+                ReBuzzCore.DefaultMidiBackend = core => new WinMmMidiBackend(core.SendMIDIInput, log);     // Windows: WinMM (ux-overhaul.md P6)
             Serilog.Log.Logger = new Serilog.LoggerConfiguration().MinimumLevel.Warning().WriteTo.Sink(new LogSink(log)).CreateLogger();
         }
 
@@ -176,7 +184,7 @@ namespace ReBuzz.Host
             step("engine step 1");
             init.StartReBuzzEngineStep1((s, e) => { });
             step("engine step 2");
-            init.StartReBuzzEngineStep2(IntPtr.Zero);       // no HWND: native machines have no parent for their GUIs
+            init.StartReBuzzEngineStep2(services.ParentWindow?.Invoke() ?? IntPtr.Zero);       // no HWND off Windows: native machines have no parent for their GUIs
             step("engine step 3 (gear scan)");
             init.StartReBuzzEngineStep3(engineSettings, new Observer());
             var machineDb = new MachineDatabase(core, buzzPath, services.Dispatcher, engineSettings);
@@ -276,7 +284,7 @@ namespace ReBuzz.Host
             int exit = 0;
             if (!PortAudio.Available)
             {
-                errors.WriteLine("PortAudio isn't installed (macOS: brew install portaudio; Linux: the libportaudio2 package).");
+                errors.WriteLine("PortAudio isn't installed (macOS: brew install portaudio; Linux: the libportaudio2 package; Windows: portaudio.dll beside the app).");
                 exit = 1;
             }
             else
@@ -296,6 +304,14 @@ namespace ReBuzz.Host
                 {
                     PortAudio.Release();
                 }
+            }
+            if (WinMmMidiBackend.Available)
+            {
+                var midi = new WinMmMidiBackend(_ => { }, m => errors.WriteLine(m));
+                output.WriteLine("MIDI inputs (--midi-in):");
+                for (int i = 0; i < midi.InputCount; i++) output.WriteLine("  " + midi.InputName(i));
+                output.WriteLine("MIDI outputs (--midi-out, --clock-out):");
+                for (int i = 0; i < midi.OutputCount; i++) output.WriteLine("  " + midi.OutputName(i));
             }
             if (CoreMidi.Available)
             {

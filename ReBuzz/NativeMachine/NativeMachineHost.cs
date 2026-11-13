@@ -20,7 +20,16 @@ namespace ReBuzz.NativeMachine
         /// Fork (plugin-host.md §8.3): REBUZZ_NATIVE_MACHINES=off runs a Windows engine without them, as
         /// elsewhere (rebuzz-headless, which has no ReBuzzEngine32/64.exe beside it).
         /// </summary>
-        internal static bool Supported => OperatingSystem.IsWindows() && Environment.GetEnvironmentVariable("REBUZZ_NATIVE_MACHINES") != "off";
+        /// <remarks>
+        /// Fork (ux-overhaul.md P6, the studio's Windows preview): and only where the host processes are beside the app
+        /// (bin32 or bin64, as the Windows package ships them): the studio's test runs and a studio folder without them
+        /// start no hosts, rather than failing the machine scan.
+        /// </remarks>
+        internal static bool Supported => OperatingSystem.IsWindows() && Environment.GetEnvironmentVariable("REBUZZ_NATIVE_MACHINES") != "off" && HostsInstalled;
+
+        static bool HostsInstalled =>
+            System.IO.File.Exists(System.IO.Path.Combine(Global.BuzzPath, "bin64", "ReBuzzEngine64.exe")) ||
+            System.IO.File.Exists(System.IO.Path.Combine(Global.BuzzPath, "bin32", "ReBuzzEngine32.exe"));
 
         private readonly string sharedId;
         internal Process childProcess;

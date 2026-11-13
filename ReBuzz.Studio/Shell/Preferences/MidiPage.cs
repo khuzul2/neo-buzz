@@ -45,7 +45,7 @@ namespace ReBuzz.Studio.Shell.Preferences
             if (OperatingSystem.IsMacOS())
                 Note($"Other apps also reach {Product.Name} through its virtual \"{CoreMidiBackend.VirtualName}\" ports while it runs.");
             else if (midi.Backend is NoMidiBackend)
-                Note($"This system has no MIDI devices for {Product.Name} (it uses CoreMIDI on macOS).");
+                Note($"This system has no MIDI devices for {Product.Name} (it uses CoreMIDI on macOS and WinMM on Windows).");
 
             Heading("Options");
             AddSection("midi");

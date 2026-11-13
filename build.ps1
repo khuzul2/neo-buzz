@@ -59,6 +59,7 @@ param(
     [switch]$SkipManagedMachines,
     [switch]$SkipNativeMachines,
     [switch]$SkipBinaries,
+    [switch]$SkipStudio,
     [switch]$StrictMachines,
     [switch]$NoZip,
     [string]$DistDir
@@ -294,6 +295,17 @@ if (-not $SkipCore) {
     } else {
         Write-Warning 'LinkHelper\link (Ableton Link) is missing: run "git submodule update --init --recursive". The Session View works without Link.'
     }
+}
+
+# ---------------------------------------------------------------- 3c. NeoBuzz Live Studio (preview, fork)
+
+# The studio (ReBuzz.Studio, Avalonia; docs/specs/ux-overhaul.md P6) published for win-x64 with PortAudio built from source
+# (tools\build-portaudio.ps1), into build\Studio. Packaging puts it in the package as Studio\, beside the WPF app, and adds what
+# the two share (section 6a). Framework-dependent like the WPF app. -SkipStudio leaves it out.
+$StudioStage = [IO.Path]::Combine($Root, 'build', 'Studio')
+if ((-not $SkipCore) -and (-not $SkipStudio)) {
+    Write-Step 'Publishing NeoBuzz Live Studio (preview)'
+    & ([IO.Path]::Combine($Root, 'tools', 'publish-studio-windows.ps1')) -Out $StudioStage -Configuration $Configuration
 }
 
 # Remove what a previous run added, so Gear holds only upstream files again.
@@ -670,6 +682,65 @@ if ($env:GITHUB_ACTIONS -eq 'true') {
     }
 }
 
+# ---------------------------------------------------------------- 6a. NeoBuzz Live Studio (preview)
+
+# Studio\ in the package: NeoBuzzLiveStudio.exe with its own binaries (they can't share the app's folder: the studio runs on the
+# portable builds of BuzzGUI.Interfaces and BuzzGUI.Common, the WPF app on the Windows builds, under the same names) and its own
+# Gear: the Neo machines and the pattern editor built with their Avalonia editors, and the Pedal machines. What the two apps share
+# is copied from the app's Gear and folders, not rebuilt: the native machine hosts (bin32, bin64), the native machines (x86 and
+# x64 DLLs, which run out of process in those hosts) and their support files and manifests, and the native libraries. Managed
+# machines built for WPF stay out: the studio can't load them, so a song with one shows it as not installed.
+function Test-ManagedDll([string]$Path) {
+    $stream = $null
+    try {
+        $stream = [IO.File]::OpenRead($Path)
+        $pe = [System.Reflection.PortableExecutable.PEReader]::new($stream)
+        return [bool]$pe.PEHeaders.CorHeader
+    } catch {
+        return $null
+    } finally {
+        if ($stream) { $stream.Dispose() }
+    }
+}
+
+$studioDir = [IO.Path]::Combine($pkgDir, 'Studio')
+$studioSummary = 'not built (-SkipStudio)'
+if (Test-Path -LiteralPath ([IO.Path]::Combine($StudioStage, 'NeoBuzzLiveStudio.exe'))) {
+    Write-Step 'Adding NeoBuzz Live Studio (preview) to the package'
+    New-Dir $studioDir
+    Copy-Item -Path ([IO.Path]::Combine($StudioStage, '*')) -Destination $studioDir -Recurse -Force
+    Get-ChildItem -LiteralPath $studioDir -Recurse -File | Where-Object { $name = $_.Name; @($exclude | Where-Object { $name -like $_ }).Count -gt 0 } | Remove-Item -Force
+    foreach ($bin in 'bin32', 'bin64') {
+        $from = [IO.Path]::Combine($pkgDir, $bin)
+        if (Test-Path -LiteralPath $from) { Copy-Item -LiteralPath $from -Destination ([IO.Path]::Combine($studioDir, $bin)) -Recurse -Force }
+    }
+    foreach ($lib in (Get-ChildItem -LiteralPath $pkgDir -File -Filter 'r8bsrc*.dll')) {
+        Copy-Item -LiteralPath $lib.FullName -Destination $studioDir -Force
+    }
+    $rootGear = [IO.Path]::Combine($pkgDir, 'Gear')
+    $studioGear = [IO.Path]::Combine($studioDir, 'Gear')
+    $sharedNative = 0; $sharedOther = 0; $leftOut = 0
+    foreach ($f in Get-ChildItem -LiteralPath $rootGear -Recurse -File) {
+        $rel = $f.FullName.Substring($rootGear.Length).TrimStart('\')
+        $dest = [IO.Path]::Combine($studioGear, $rel)
+        if (Test-Path -LiteralPath $dest) { continue }                  # the studio's own build of it
+        if ($f.Extension -eq '.dll') {
+            $managed = if ($canReadDlls) { Test-ManagedDll $f.FullName } else { $null }
+            if ($managed -ne $false) { $leftOut++; continue }           # a managed machine or library (WPF), or not readable
+            $sharedNative++
+        } else {
+            $sharedOther++
+        }
+        New-Dir ([IO.Path]::GetDirectoryName($dest))
+        Copy-Item -LiteralPath $f.FullName -Destination $dest
+    }
+    $studioBytes = (Get-ChildItem -LiteralPath $studioDir -Recurse -File | Measure-Object Length -Sum).Sum
+    $studioSummary = "Studio\ $([math]::Round($studioBytes / 1MB, 1)) MB: $sharedNative native DLLs and $sharedOther other files shared from Gear, $leftOut managed (WPF) DLLs left out"
+    Write-Host $studioSummary
+} elseif (-not $SkipStudio) {
+    Write-Warning "NeoBuzz Live Studio (preview) not found in $StudioStage: the package has no Studio\ folder"
+}
+
 $toolsetText = if ($PlatformToolset) { $PlatformToolset } else { 'project default (v145)' }
 $shaText = if ($sha) { $sha } else { 'unknown' }
 $info = @(
@@ -679,6 +750,7 @@ $info = @(
     "Config:      $Configuration|x64",
     "C++ toolset: $toolsetText",
     "VC++ 2010 x64 runtime (bin64\msvcr100.dll) bundled: $(if ($crtBundled) { 'yes' } else { 'NO - install the VC++ 2010 SP1 x64 redistributable' })",
+    "NeoBuzz Live Studio (preview): $studioSummary",
     "Machine build failures: $($Failures.Count)"
 )
 $info += @($Failures | ForEach-Object { "  - $_" })
@@ -765,6 +837,7 @@ $components = @(
     [pscustomobject]@{ Name = 'Serilog (serilog.dll, from 3rdParty\serilog\serilog)'; Licence = 'Apache-2.0'; Text = '3rdParty\serilog\serilog\LICENSE'; As = 'Serilog-LICENSE.txt'; File = 'serilog.dll' },
     [pscustomobject]@{ Name = 'Serilog.Sinks.RichTextBox.Wpf (from 3rdParty\serilog\serilog-sinks-richtextbox)'; Licence = 'Apache-2.0'; Text = '3rdParty\serilog\serilog-sinks-richtextbox\LICENSE'; As = 'Serilog.Sinks.RichTextBox.Wpf-LICENSE.txt'; File = 'Serilog.Sinks.RichTextBox.Wpf.dll' },
     [pscustomobject]@{ Name = 'r8brain-free-src (r8bsrc64.dll, from 3rdParty\r8b\r8brain-free-src)'; Licence = 'MIT'; Text = '3rdParty\r8b\r8brain-free-src\LICENSE'; As = 'r8brain-free-src-LICENSE.txt'; File = 'r8bsrc64.dll' },
+    [pscustomobject]@{ Name = 'PortAudio (Studio\portaudio.dll, built from source with CMake: MME, DirectSound, WASAPI and WDM-KS, no ASIO; see Studio\PortAudio-BUILD.txt)'; Licence = 'MIT'; Text = ([IO.Path]::Combine($StudioStage, 'PortAudio-LICENSE.txt')); As = 'PortAudio-LICENSE.txt'; File = 'Studio\portaudio.dll' },
     [pscustomobject]@{ Name = 'Concentus 2.2.2 (Concentus.dll, the Opus preview; NuGet, from 3rdParty\concentus)'; Licence = 'BSD-3-Clause'; Text = '3rdParty\concentus\LICENSE'; As = 'Concentus-LICENSE.txt'; File = 'Concentus.dll' }
 )
 $notice.Add('')
@@ -779,6 +852,9 @@ foreach ($c in $components) {
         $notice.Add("  $($c.Name): $($c.Licence) (its text, $($c.Text), wasn't in this checkout)")
         Write-Warning "Licence text $($c.Text) not found (submodules not initialised?): $($c.Name) ships without it"
     }
+}
+if (Test-Path -LiteralPath ([IO.Path]::Combine($pkgDir, 'Studio', 'portaudio.dll'))) {
+    $notice.Add('  NeoBuzz Live Studio (preview), Studio\: Avalonia, SkiaSharp and HarfBuzzSharp (MIT), the Inter typeface (SIL OFL 1.1), from their NuGet packages')
 }
 if (Test-Path -LiteralPath ([IO.Path]::Combine($pkgDir, 'LinkHelper', 'Link-LICENSE.md'))) {
     $notice.Add('  ReBuzzLink.exe (Ableton Link): GPL-2.0-or-later; text and source: LinkHelper\ (Link-LICENSE.md, Link-GNU-GPL-v2.0.md, main.cpp)')
@@ -807,6 +883,21 @@ Start: unzip anywhere and run NeoBuzzLive.exe. The first start scans all machine
 a while. Songs (.bmx, .bmxml), settings and machines from ReBuzz carry over as they are: the settings stay
 where ReBuzz keeps them (%APPDATA%\ReBuzz, %LOCALAPPDATA%\ReBuzz, Documents\ReBuzz and the registry's
 Software\ReBuzz).
+
+NeoBuzz Live Studio (preview): Studio\NeoBuzzLiveStudio.exe is the new interface (the studio: browser,
+device view, Preferences, Session View, History), in a folder of its own beside the app above. It is a
+preview of the studio that is to replace the app above. It shares the machines in Gear\ (native Buzz machines,
+x86 and x64, run in its own copy of bin32 and bin64) and the songs, but not the settings: it keeps its own in
+%APPDATA%\NeoBuzz Live. What is not in the preview yet:
+  - Native machines show no window of their own: use their parameter window and the device view.
+  - Managed machines built for the app above (WPF) aren't loaded; a song with one shows it as not
+    installed. The Neo machines, the Pattern Editor and the Pedal machines are there with their new editors.
+  - Audio: Preferences > Audio lists the MME, DirectSound, WASAPI and WDM-KS devices (PortAudio). No ASIO.
+  - MIDI: WinMM inputs, outputs and clock; no Windows MIDI Services endpoint, no virtual ports.
+  - No installer, no file associations, no vertical sequence editor, wavetable, Latency and Signal Analysis
+    windows, CPU monitor or Hard Disk Recorder yet (docs/specs/ux-overhaul.md section 9).
+  Agents: Preferences > Agent, then the line shown there (the studio's server listens on a port; the app
+  above's "--agent" runs headless on stdio).
 
 AI agents: with the window open, Settings > Agent > Allow agents, then Ctrl+Shift+A shows the line to
 connect Claude Code (the server is neobuzz-live). Headless, on stdio:
