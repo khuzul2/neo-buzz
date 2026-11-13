@@ -6,6 +6,14 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
  "type": "monosynth",
  "summary": "Classic Buzz bass synth (TB-303 flavoured): one oscillator (sine, saw, pulse, triangle, noise or a 303 saw) into a resonant filter with an envelope, per track. For basses and acid lines in Buzz songs.",
+ "category": "Synths",
+ "tags": [
+  "bass",
+  "acid",
+  "subtractive",
+  "monophonic"
+ ],
+ "use_for": "Squelchy acid and rolling bass lines with accent and slide.",
  "quirks": [
   "Each track is its own monophonic voice with its own filter settings (8 at most).",
   "It plays notes as written (no offset): its default patch dies in about 100 ms, too fast for analyze's pitch metric, but the profiler's harmonic sieve hears A2, A3 and A4 within 3 cents (U2 in depth, mcp-server.md §12.12).",

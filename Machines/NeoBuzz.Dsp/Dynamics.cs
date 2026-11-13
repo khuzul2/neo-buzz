@@ -20,6 +20,19 @@ namespace NeoBuzz.Dsp
         public double Threshold, Knee, SlopeFf, SlopeFb;
         public bool Feedback;
 
+        /// <summary>Neo Multiband's upward compression: 1 - 1/ratio of the distance under the threshold is raised (0: off).</summary>
+        public double SlopeUp;
+
+        /// <summary>
+        /// Upward compression raises nothing under this level (dBFS) and ramps in to the full curve over <see cref="UpFloorRamp"/>: silence and
+        /// noise floors stay as they are. Judged on a held level (<see cref="UpHoldDbPerSecond"/>), not the sample's: a sine's zero crossings
+        /// are not silence.
+        /// </summary>
+        public const double UpFloor = -80, UpFloorRamp = 20, UpHoldDbPerSecond = 100;
+
+        /// <summary>The fraction of the upward curve that applies for a held level (dBFS): 0 under <see cref="UpFloor"/>, 1 from <see cref="UpFloor"/> + <see cref="UpFloorRamp"/>.</summary>
+        public static double UpFloorGain(double heldDb) => heldDb >= UpFloor + UpFloorRamp ? 1 : heldDb <= UpFloor ? 0 : (heldDb - UpFloor) / UpFloorRamp;
+
         /// <param name="ratio">n:1 (∞ for limiting; below 1 expands)</param>
         /// <param name="feedback">The detector hears the output (Neo Comp's FET)</param>
         public static GainComputer Make(double threshold, double ratio, double knee, bool feedback = false) => new GainComputer
@@ -43,6 +56,25 @@ namespace NeoBuzz.Dsp
             }
             else if (over <= 0) return 0;
             return SlopeFf * over;
+        }
+
+        /// <summary>
+        /// Upward compression: the boost (dB, ≥ 0) for a detector level under the threshold, on the same soft knee
+        /// (mirrored about the threshold): (threshold - level)(1 - 1/ratio); the caller scales it by <see cref="UpFloorGain"/>.
+        /// 0 with <see cref="SlopeUp"/> off.
+        /// </summary>
+        public double Up(double x)
+        {
+            if (SlopeUp <= 0) return 0;
+            double under = Threshold - x, boost;
+            if (Knee > 1e-6)
+            {
+                if (2 * under < -Knee) return 0;
+                boost = 2 * under <= Knee ? SlopeUp * (under + Knee / 2) * (under + Knee / 2) / (2 * Knee) : SlopeUp * under;
+            }
+            else if (under <= 0) return 0;
+            else boost = SlopeUp * under;
+            return boost;
         }
 
         /// <summary>Feedback: reduction for an output level, and its derivative.</summary>

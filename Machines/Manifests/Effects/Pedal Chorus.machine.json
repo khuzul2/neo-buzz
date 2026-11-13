@@ -6,6 +6,13 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed",
  "type": "modulation",
  "summary": "4-voice stereo chorus with the voices' LFOs in quadrature, so pitch wobble mostly cancels and width remains. Made for drums; also for thickening anything.",
+ "category": "Modulation",
+ "tags": [
+  "chorus",
+  "lush",
+  "stereo-width"
+ ],
+ "use_for": "Four-voice stereo chorus that widens without much pitch wobble.",
  "quirks": [
   "Stereo out from mono or stereo in; Spread at 0% is mono.",
   "Tone darkens only the wet path."

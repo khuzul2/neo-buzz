@@ -782,6 +782,39 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void NeoMultibandsLookaheadJoinsItsLatencyInEveryPhaseAndTheParallelPathFollows()
+        {
+            // docs/specs/mastering-tools.md §5.14: a 3 ms lookahead is latency on top of the phase's own (4607 samples in linear phase,
+            // none in minimum and Dynamic phase), reported to ReBuzz, which delays the inverted parallel path by it: every band at 1:1
+            // passes the sine, delayed by exactly that, so the two cancel. The second input is the sidechain (its channel names).
+            using var rig = new Rig(Multiband, Utility);
+            for (int b = 1; b <= 4; b++) rig.Param($"B{b} ratio").SetValue(0, 200);   // 1:1
+            rig.Param("Lookahead").SetValue(0, 300);                                    // 3 ms
+            var utility = rig.Parallel.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters;
+            utility.Single(p => p.Name == "Invert L").SetValue(0, 1);
+            utility.Single(p => p.Name == "Invert R").SetValue(0, 1);
+            var lines = new System.Collections.Generic.List<string>();
+            foreach (var (phase, name, baseLatency) in new[] { (0, "linear", 4607), (1, "minimum", 0), (2, "Dynamic", 0) })
+            {
+                rig.Param("Phase").SetValue(0, phase);
+                rig.Play(0.6);
+                int added = rig.Effect.Latency - baseLatency;
+                Assert.That(added, Is.InRange(132, 144), $"{name}: the lookahead (3 ms is 132 samples at 44.1 kHz, 144 at 48 kHz) on top of the phase's latency");
+                rig.Play(0.3);
+                double residual = Rms(rig.Play(0.5));
+                lines.Add($"{name} +{added} samples, residual {Db(residual):F1} dBFS");
+                // Minimum phase sums its bands to an all-pass: lined up, not nulled.
+                if (phase == 1) Assert.That(residual, Is.LessThan(0.5), $"{name}: compensated, they line up");
+                else Assert.That(residual, Is.LessThan(1e-7), $"{name}: compensated, they cancel");
+            }
+            Assert.That(rig.Param("Detector").DescribeValue(1), Is.EqualTo("RMS"));
+            Assert.That(rig.Param("B1 sidechain").DescribeValue(1), Is.EqualTo("External"));
+            Assert.That(rig.Param("B2 upward ratio").DescribeValue(0), Is.EqualTo("1.0:1"));
+            Assert.That(rig.Param("Phase").DescribeValue(2), Is.EqualTo("Dynamic"));
+            TestContext.Out.WriteLine($"[notice] Neo Multiband with a 3 ms lookahead in ReBuzz: {string.Join("; ", lines)}");
+        }
+
+        [Test]
         public void ABypassedLatentMachineKeepsItsLatencyAndALookaheadChangeMovesTheOtherPathSmoothly()
         {
             // Machine delay compensation (docs/specs/mastering-tools.md §4.1): on by default; a bypassed Neo Multiband keeps its

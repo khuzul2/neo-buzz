@@ -6,6 +6,14 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "EQ",
  "summary": "Eq (profiled draft): traits: utility; tail 0.0 s; latency 0 samples; gain +0.0 dB at the defaults.",
+ "category": "EQ & Filter",
+ "tags": [
+  "eq",
+  "saturation",
+  "warm",
+  "vintage"
+ ],
+ "use_for": "Band boosts with tube-style drive for warm, coloured tone shaping.",
  "tracks": 0,
  "health": {
   "status": "warn",

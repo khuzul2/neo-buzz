@@ -53,8 +53,12 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         }
 
         /// <summary>BeatVisual.GetColumnWidth: the column's digits (one less when tied to the next) plus one.</summary>
-        public int ColumnWidth(IColumn column) =>
-            (int)Math.Ceiling(Font.Width(column.TiedToNext ? column.DigitCount - 1 : column.DigitCount));
+        public int ColumnWidth(IColumn column)
+        {
+            int digits = (int)Math.Ceiling(Font.Width(column.TiedToNext ? column.DigitCount - 1 : column.DigitCount));
+            // Fork (ux-overhaul.md P3c): wide enough for its two-line name, which is horizontal.
+            return PatternEditor.Settings.ColumnLabels ? Math.Max(digits, (int)Math.Ceiling(HeaderText.Split(column.Label).Width + HeaderText.Pad)) : digits;
+        }
 
         public double SetX(int set) => setX[set];
         public double SetWidth(int set) => setWidth[set];
@@ -163,6 +167,63 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         {
             var d = GetDigitAtPoint(new Point(0, y));
             return Pattern.CursorPosition.SetBeat(d.Beat).SetRowInBeat(d.RowInBeat).Constrained;
+        }
+    }
+    /// <summary>
+    /// Fork (ux-overhaul.md P3c, §3.2): a column's name, horizontal, 11 pt, on at most two lines (split at the space that
+    /// makes them most even); a column is as wide as its longer line (at most <see cref="MaxWidth"/>, past which the line
+    /// ends in an ellipsis). Measured once per name.
+    /// </summary>
+    internal static class HeaderText
+    {
+        public const double Size = 11;
+        public const double MaxWidth = 72;
+        public const double Pad = 4;
+        public static readonly Avalonia.Media.Typeface Face = new Avalonia.Media.Typeface(Avalonia.Media.FontFamily.Default);
+
+        static readonly Dictionary<string, (string Text, double Width)> cache = new();
+
+        /// <summary>The name with a line break in it where it splits, and the width of its longer line.</summary>
+        public static (string Text, double Width) Split(string label)
+        {
+            label = (label ?? "").Trim();
+            if (label.Length == 0) return ("", 0);
+            lock (cache)
+            {
+                if (cache.TryGetValue(label, out var found)) return found;
+                var words = label.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                string text = label;
+                if (words.Length > 1)
+                {
+                    int best = 1;
+                    double bestWidth = double.MaxValue;
+                    for (int k = 1; k < words.Length; k++)
+                    {
+                        double w = Math.Max(Measure(string.Join(' ', words.Take(k))), Measure(string.Join(' ', words.Skip(k))));
+                        if (w < bestWidth) { bestWidth = w; best = k; }
+                    }
+                    text = string.Join(' ', words.Take(best)) + "\n" + string.Join(' ', words.Skip(best));
+                }
+                double width = Math.Min(MaxWidth, text.Split('\n').Max(Measure));
+                if (cache.Count > 5000) cache.Clear();
+                return cache[label] = (text, Math.Ceiling(width));
+            }
+        }
+
+        static double Measure(string line) =>
+            new Avalonia.Media.FormattedText(line, System.Globalization.CultureInfo.CurrentCulture, Avalonia.Media.FlowDirection.LeftToRight, Face, Size, Avalonia.Media.Brushes.Black).WidthIncludingTrailingWhitespace;
+
+        /// <summary>The name made for drawing in a column <paramref name="width"/> wide.</summary>
+        public static Avalonia.Media.FormattedText Make(string label, double width, Avalonia.Media.IBrush brush)
+        {
+            var text = new Avalonia.Media.FormattedText(Split(label).Text, System.Globalization.CultureInfo.CurrentCulture, Avalonia.Media.FlowDirection.LeftToRight, Face, Size, brush)
+            {
+                MaxTextWidth = Math.Max(1, width),
+                MaxLineCount = 2,
+                Trimming = Avalonia.Media.TextTrimming.CharacterEllipsis,
+                TextAlignment = Avalonia.Media.TextAlignment.Center,
+            };
+            return text;
         }
     }
 }

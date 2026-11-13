@@ -6,6 +6,15 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed Updated by hand (2026-11-06, mcp-server.md §12.15, U6 for the Pedal synths) for MIDI input, and (§12.15, the follow-ups) for VCF Reso's new default and the voices' tuning.",
  "type": "polysynth",
  "summary": "Juno-106-style 6-voice polysynth: saw, pulse, sub and noise into a resonant 4-pole low-pass, one ADSR for filter and amp, an LFO and the BBD chorus. For pads, brass, keys, plucks and basses.",
+ "category": "Synths",
+ "tags": [
+  "subtractive",
+  "polyphonic",
+  "warm",
+  "pad",
+  "vintage"
+ ],
+ "use_for": "Warm six-voice analog-style pads, stabs and basses with a resonant low-pass.",
  "quirks": [
   "MIDI notes (notes_write's default) take any of its 6 voices, a free one first, else the one released longest ago; velocity sets each note's level (velocity / 127), pitch bend moves every voice ±2 semitones, the mod wheel brings in the DCO LFO's vibrato (as DCO LFO, up to its maximum) and the sustain pedal holds released notes.",
   "Its Note track (notes_write with input \"tracks\") still plays as before, for old songs: one voice per track, 6 at most, a chord spread over tracks, at full level (Pattern track = voice, README).",

@@ -242,13 +242,14 @@ namespace ReBuzz.Studio.Views
         /// <summary>The shown editor's undo stack and clipboard commands, or null.</summary>
         public IEditContext EditContext => EditorControl?.GetType().GetProperty("EditContext")?.GetValue(EditorControl) as IEditContext;
 
-        public bool CanUndo => EditContext?.ActionStack.CanUndo == true;
-        public bool CanRedo => EditContext?.ActionStack.CanRedo == true;
+        public bool CanUndo => EditContext?.ActionStack.CanUndo == true || (rollMode && rollView.CanUndoLoop);
+        public bool CanRedo => EditContext?.ActionStack.CanRedo == true || (rollMode && rollView.CanRedoLoop);
 
         /// <summary>Undoes the editor's last edit; false when it has none (the song's undo can have it).</summary>
         public bool Undo()
         {
             if (!CanUndo) return false;
+            if (rollMode && rollView.UndoLoop()) return true;          // a loop drag, the song's step, comes first when it was the last
             EditContext.ActionStack.Undo();
             if (rollMode) rollView.Poll();
             return true;
@@ -257,6 +258,7 @@ namespace ReBuzz.Studio.Views
         public bool Redo()
         {
             if (!CanRedo) return false;
+            if (rollMode && rollView.RedoLoop()) return true;
             EditContext.ActionStack.Redo();
             if (rollMode) rollView.Poll();
             return true;
@@ -267,9 +269,9 @@ namespace ReBuzz.Studio.Views
         public bool SelectAll() => rollMode && rollView.SelectAll();
         public bool DeselectAll() => rollMode && rollView.DeselectAll();
         public bool Duplicate() => rollMode && rollView.Duplicate();
-        public bool Cut() => !rollMode && Run(EditContext?.CutCommand);
-        public bool Copy() => !rollMode && Run(EditContext?.CopyCommand);
-        public bool Paste() => !rollMode && Run(EditContext?.PasteCommand);
+        public bool Cut() => rollMode ? rollView.Cut() : Run(EditContext?.CutCommand);
+        public bool Copy() => rollMode ? rollView.Copy() : Run(EditContext?.CopyCommand);
+        public bool Paste() => rollMode ? rollView.Paste() : Run(EditContext?.PasteCommand);
 
         static bool Run(System.Windows.Input.ICommand command)
         {
@@ -317,7 +319,18 @@ namespace ReBuzz.Studio.Views
             if (c != null && c.Parent is ContentControl other && other != editorHost)
                 other.Content = null;           // another page had it (a window that isn't closed yet)
             editorHost.Content = c;
+            HookBars(c);
             UpdateEmpty();
+        }
+
+        /// <summary>
+        /// The Tracker's bar rules follow the song's time signature where the pattern lies (ux-overhaul.md P3c, decision 55). The
+        /// studio doesn't reference the editor, so its grid is found by name (as EditContext is).
+        /// </summary>
+        void HookBars(Control editor)
+        {
+            var grid = editor?.GetType().GetProperty("TrackerGrid")?.GetValue(editor);
+            grid?.GetType().GetProperty("BarTicksSource")?.SetValue(grid, (Func<int>)(() => Detail.TrackerRoll.BarLengthOf(core, pattern)));
         }
 
         void OnPatternChanged(IPattern p)

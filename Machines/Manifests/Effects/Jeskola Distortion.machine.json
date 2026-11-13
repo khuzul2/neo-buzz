@@ -6,6 +6,12 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
  "type": "distortion",
  "summary": "Classic Buzz threshold-and-clamp distortion: where the input crosses a threshold it is replaced by a fixed clamp level, blended by Amount. Harsh, square-edged fuzz.",
+ "category": "Distortion",
+ "tags": [
+  "distortion",
+  "gritty"
+ ],
+ "use_for": "Hard, buzzy threshold-and-clamp distortion for aggressive tones.",
  "quirks": [
   "Hot at its defaults: +clamp is 200% of full scale (+6 dBFS), so clipped parts come out at +6 dBFS (profile: +6.0 dBFS peak, +19.6 dB on noise). Set +clamp and −clamp to 100% or less to stay at or under 0 dBFS.",
   "Levels are in percent of full scale: 100% is 0 dBFS, 25% is −12 dBFS.",

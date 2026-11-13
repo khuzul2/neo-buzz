@@ -352,7 +352,8 @@ namespace WDE.ModernPatternEditor
                     }
                     else if (col.Type == ColumnRenderer.ColumnType.HexValue)
                     {
-                        int i = Array.IndexOf(HexKeys, key);
+                        // Fork (ux-overhaul.md P3c): a decimal column takes the digits 0-9 only.
+                        int i = Array.IndexOf(pc.IsDecimal ? DecKeys : HexKeys, key);
                         if (i >= 0)
                         {
                             action = pc.EditDigit(pattern.CursorPosition, i);
@@ -906,7 +907,11 @@ namespace WDE.ModernPatternEditor
             {
                 var v = pattern.GetValue(p);
                 var vs = pattern.GetValueString(p);
-                Editor.StatusBarItem2 = vs + " (" + v.ToString() + ") " + p.ParameterColumn.PatternColumn.Parameter.DescribeValue(v);
+                // Fork (ux-overhaul.md P3c): the value in the other base too, and a drum machine's name for a note.
+                var pcol = p.ParameterColumn;
+                string other = pcol.Type == ColumnRenderer.ColumnType.Note ? v.ToString() : pcol.IsDecimal ? "0x" + v.ToString("X") : v.ToString();
+                string full = pcol.Type == ColumnRenderer.ColumnType.Note && v != BuzzNote.Off ? pcol.NoteFullName(v) : null;
+                Editor.StatusBarItem2 = vs + " (" + other + ") " + (full ?? pcol.PatternColumn.Parameter.DescribeValue(v));
             }
             else
             {

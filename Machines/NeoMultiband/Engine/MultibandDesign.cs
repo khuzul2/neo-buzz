@@ -19,7 +19,7 @@ using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Multiband
 {
-    internal enum PhaseMode { Linear, Minimum }
+    internal enum PhaseMode { Linear, Minimum, Dynamic }
 
     internal enum StereoMode { LeftRight, MidSide }
 

@@ -6,6 +6,11 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "control",
  "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "category": "Control",
+ "tags": [
+  "sequencer"
+ ],
+ "use_for": "Jump or loop the song position from a pattern, for live arrangement tricks.",
  "tracks": 0,
  "health": {
   "status": "ok",

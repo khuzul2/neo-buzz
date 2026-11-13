@@ -28095,7 +28095,7 @@
   "Neo Multiband": {
    "gear": "Neo Multiband",
    "kind": "effect",
-   "load_seconds": 0.13,
+   "load_seconds": 0.32,
    "gear_info": {
     "file": "Effects/Neo Multiband.NET.dll",
     "managed": true,
@@ -28103,19 +28103,20 @@
     "max_tracks": 0,
     "takes_midi": false
    },
-   "parameters": 45,
+   "parameters": 55,
    "track_parameters": 0,
-   "inferred": 45,
+   "inferred": 55,
    "from_description": 0,
    "inference_check": {
-    "agree": 45,
-    "of": 45
+    "agree": 55,
+    "of": 55
    },
    "effect": {
     "gain_db": -1.85,
     "latency_samples": 4607,
     "latency_ms": 104.47,
     "tail_seconds": 0.1,
+    "tail_hz": 8077.0,
     "echoes": 2,
     "first_echo_seconds": 0.1,
     "gap_before_echo_db": -60.0,
@@ -28452,7 +28453,7 @@
     },
     "thd_percent": 2.45
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 8.5,
    "type": "delay",
    "level_test": {
     "defaults": {
@@ -28475,7 +28476,7 @@
     "swept_because": [
      "every parameter at its maximum at once: hot"
     ],
-    "renders": 76
+    "renders": 86
    },
    "sweeps": {
     "B2 makeup": {
@@ -28513,33 +28514,51 @@
       "raw": 480,
       "text": "+24.0 dB"
      }
+    },
+    "B3 upward ratio": {
+     "max": {
+      "peak_dbfs": 2.74,
+      "growth_db": -0.28,
+      "verdict": "hot",
+      "raw": 1000,
+      "text": "8.0:1"
+     }
+    },
+    "B4 upward ratio": {
+     "max": {
+      "peak_dbfs": 5.99,
+      "growth_db": 0.55,
+      "verdict": "hot",
+      "raw": 1000,
+      "text": "8.0:1"
+     }
     }
    },
    "denormal": {
-    "playing_ms_per_s": 11.089,
-    "silent_ms_per_s": 0.38,
-    "silent_worst_ms_per_s": 5.04,
+    "playing_ms_per_s": 15.434,
+    "silent_ms_per_s": 2.249,
+    "silent_worst_ms_per_s": 8.002,
     "windows_ms_per_s": [
-     11.089,
-     5.04,
-     0.378,
-     0.384,
-     0.376,
-     0.367,
-     0.38,
-     0.397,
-     0.369,
-     0.369,
-     0.384
+     15.434,
+     8.002,
+     2.25,
+     2.249,
+     2.272,
+     2.219,
+     2.262,
+     2.203,
+     2.241,
+     2.231,
+     2.231
     ]
    },
-   "seconds": 11.8,
-   "platform": "windows",
-   "date": "2026-11-04",
+   "seconds": 27.7,
+   "platform": "linux",
+   "date": "2026-11-12",
    "problems": [],
    "warnings": [],
    "hot": [
-    "hot (loud but steady) with B2 makeup at its maximum (24.0 dB): +4.8 dBFS peak; B3 makeup at its maximum (24.0 dB): +10.3 dBFS peak; B4 makeup at its maximum (24.0 dB): +12.0 dBFS peak; Output at its maximum (+24.0 dB): +13.8 dBFS peak"
+    "hot (loud but steady) with B2 makeup at its maximum (24.0 dB): +4.8 dBFS peak; B3 makeup at its maximum (24.0 dB): +10.3 dBFS peak; B4 makeup at its maximum (24.0 dB): +12.0 dBFS peak; Output at its maximum (+24.0 dB): +13.8 dBFS peak; B3 upward ratio at its maximum (8.0:1): +2.7 dBFS peak; B4 upward ratio at its maximum (8.0:1): +6.0 dBFS peak"
    ],
    "notes_profiler": [],
    "generated": true,
