@@ -91,7 +91,7 @@ namespace ReBuzz.Studio.Views.Inspector
             var source = new TextBlock { Text = SourceLabel(step.Source), FontSize = 11, Foreground = small, Margin = new Thickness(0, 0, 8, 0) };
             var time = new TextBlock { Text = step.Time.ToString("HH:mm:ss"), FontSize = 11, Foreground = small };
             var detail = new StackPanel { Orientation = Orientation.Horizontal, Children = { source, time } };
-            var marker = new TextBlock { Text = current ? "▶" : "", Width = 14, FontSize = 10, Foreground = StudioTokens.TextPrimaryBrush, VerticalAlignment = VerticalAlignment.Center };
+            var marker = new TextBlock { Text = current ? "▶" : "", Width = 14, FontSize = 11, Foreground = StudioTokens.TextPrimaryBrush, VerticalAlignment = VerticalAlignment.Center };
             var body = new StackPanel { Children = { name, detail } };
             var grid = new DockPanel { LastChildFill = true };
             DockPanel.SetDock(marker, Dock.Left);

@@ -19,7 +19,7 @@ namespace ReBuzz.Agent.Guides
         /// <summary>The areas, in reading order, each with the tools it holds (by exact name or prefix ending in "_" or "*").</summary>
         static readonly (string Area, string[] Names)[] Areas =
         {
-            ("Session and help", new[] { "studio_status", "guide", "undo", "redo", "song_*" }),
+            ("Session and help", new[] { "studio_status", "guide", "undo", "redo", "history_*", "song_*" }),
             ("Machines and wiring", new[] { "gear_list", "machine_find", "machine_list", "machine_add", "machine_remove", "machine_replace", "machine_set", "machine_describe", "machine_data_import", "connect", "disconnect", "connection_set" }),
             ("Parameters, presets and snapshots", new[] { "param_*", "preset_*", "snapshot_*" }),
             ("Patterns and notes", new[] { "pattern_*", "notes_*", "theory" }),
