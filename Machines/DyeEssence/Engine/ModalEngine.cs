@@ -305,7 +305,7 @@ namespace NeoBuzz.DyeEssence
                         mVer[k] = mVersion[o];
                         bool needG = fresh || exc == (int)ModalExciter.Continuous || exc == (int)ModalExciter.Struck && mAge[no] < mLen[no]
                             || exc == (int)ModalExciter.Morph && (wB > 0f || wM > 0f && mAge[no] < mLen[no]);
-                        double e2 = 0, e2m = 0, e2p = 0, e2b = 0;
+                        double e2 = 0, e2m = 0, e2me = 0, e2p = 0, e2b = 0;
                         for (int j = 0; j < lim; j++)
                         {
                             float turns = (float)(inc * mRatio[sb + j]);
@@ -342,6 +342,9 @@ namespace NeoBuzz.DyeEssence
                                     mT[j] = wgt * mag * inv;
                                     mU[j] = wgt * inv / dsin;
                                     e2m += (double)mT[j] * mT[j];
+                                    // The pulse's envelope (no nulls): the decay of a ringing mode fills a null in, so a sum that fell into nulls would be levelled up too far.
+                                    double env = (Math.Abs(den) < 1e-3 ? 0.7854 : 1.0 / Math.Abs(den)) * wgt * inv;
+                                    e2me += env * env;
                                 }
                                 if (wP > 0f && fresh)
                                 {
@@ -390,7 +393,8 @@ namespace NeoBuzz.DyeEssence
                         if (needG && exc == (int)ModalExciter.Morph)
                         {
                             // Each exciter is levelled as it is alone (the mallet and the pluck 0.99; the bow lower than Dye's own bow, so the crossfade keeps one loudness), then shared out.
-                            float normM = e2m > 1e-18 ? 0.99f / MathF.Sqrt((float)e2m) : 0f;
+                            // (A mallet whose pulse has a null at the lowest modes would be levelled up by 20 dB: the floor is a share of the no-null energy.)
+                            float normM = e2m > 1e-18 ? 0.99f / MathF.Sqrt((float)Math.Max(e2m, MalletNullFloor * e2me)) : 0f;
                             float normP = e2p > 1e-18 ? 0.99f / MathF.Sqrt((float)e2p) : 0f;
                             float normB = e2b > 1e-18 ? BowLevel / MathF.Sqrt((float)e2b) : 0f;
                             for (int j = 0; j < lim; j++)
@@ -569,6 +573,8 @@ namespace NeoBuzz.DyeEssence
 
         /// <summary>The morph's bow level (Dye's own bow is 0.7 rms; the morph's stands lower so its loudest 50 ms matches the mallet's and the pluck's).</summary>
         const float BowLevel = 0.45f;
+        /// <summary>The share of the no-null pulse energy the morph's mallet levelling never goes below (a quarter in amplitude is 1/16, an eighth in energy is what a few nulls cost).</summary>
+        const double MalletNullFloor = 0.12;
 
         /// <summary>The morph's voice: the modes' sum into the accumulators with two drives (the mallet's pulse through <see cref="mG"/>, the bow's noise through <see cref="mGB"/>). Whether anything still rings.</summary>
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]

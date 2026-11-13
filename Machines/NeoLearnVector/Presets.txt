@@ -1,0 +1,129 @@
+# Neo Learn Vector factory presets. Output is set last so each chord sounds at the same level (loudest 50 ms RMS -22 dB). Times are in seconds.
+# Rebuild: python3 tools/gen-machine-presets.py Machines/NeoLearnVector
+machine "Neo Learn Vector"
+
+preset "Pad — Poly Drift"
+Vector X (W-E) = 0
+Vector Y (S-N) = 0
+Corner Palette = Poly Classic
+Orbit Rate = 0.3
+Orbit Depth = 40
+Orbit Path = Circle
+Attack = 0.5
+Decay = 1
+Sustain = 85
+Release = 1.2
+Unison / Spread = 40
+Output = -7.1
+
+preset "Pad — Cinema Horizon"
+Vector X (W-E) = 0
+Vector Y (S-N) = 0
+Corner Palette = Cinema Horizon
+Orbit Rate = 0.15
+Orbit Depth = 60
+Orbit Path = Figure 8
+Attack = 1.2
+Decay = 2
+Sustain = 90
+Release = 2.5
+Unison / Spread = 30
+Output = 3.4
+
+preset "Lead — Cyber Pulse"
+Vector X (W-E) = 40
+Vector Y (S-N) = 20
+Corner Palette = Cyber Pulse
+Orbit Rate = 2
+Orbit Depth = 30
+Orbit Path = Circle
+Attack = 0.002
+Decay = 0.4
+Sustain = 70
+Release = 0.2
+Unison / Spread = 0
+Output = -5.2
+
+preset "Keys — Organic Bell"
+Vector X (W-E) = 30
+Vector Y (S-N) = -20
+Corner Palette = Organic Hybrid
+Orbit Rate = 0.5
+Orbit Depth = 35
+Orbit Path = Figure 8
+Attack = 0.005
+Decay = 1.2
+Sustain = 40
+Release = 0.8
+Unison / Spread = 0
+Output = 2.4
+
+preset "Texture — Random Walk"
+Vector X (W-E) = 0
+Vector Y (S-N) = 0
+Corner Palette = Cinema Horizon
+Orbit Rate = 0.8
+Orbit Depth = 80
+Orbit Path = Random Drift
+Attack = 0.8
+Decay = 2
+Sustain = 80
+Release = 2
+Unison / Spread = 0
+Output = 4.0
+
+preset "Seq — Diamond Steps"
+Vector X (W-E) = 0
+Vector Y (S-N) = 0
+Corner Palette = Cyber Pulse
+Orbit Rate = 3
+Orbit Depth = 100
+Orbit Path = Diamond Step
+Attack = 0.003
+Decay = 0.5
+Sustain = 60
+Release = 0.3
+Unison / Spread = 0
+Output = -8.0
+
+preset "Bass — West Sub"
+Vector X (W-E) = -90
+Vector Y (S-N) = -30
+Corner Palette = Poly Classic
+Orbit Rate = 0.1
+Orbit Depth = 0
+Orbit Path = Circle
+Attack = 0.001
+Decay = 0.4
+Sustain = 80
+Release = 0.15
+Unison / Spread = 0
+Output = -5.0
+
+preset "Pad — Corner Swell"
+Vector X (W-E) = 0
+Vector Y (S-N) = 60
+Corner Palette = Organic Hybrid
+Orbit Rate = 0.1
+Orbit Depth = 70
+Orbit Path = Circle
+Attack = 1.5
+Decay = 2
+Sustain = 90
+Release = 2
+Unison / Spread = 0
+Output = 5.5
+
+preset "Keys — Analog Stir"
+Vector X (W-E) = 20
+Vector Y (S-N) = 20
+Corner Palette = Poly Classic
+Orbit Rate = 1.2
+Orbit Depth = 20
+Orbit Path = Figure 8
+Attack = 0.01
+Decay = 0.8
+Sustain = 60
+Release = 0.5
+Unison / Spread = 20
+Output = -3.9

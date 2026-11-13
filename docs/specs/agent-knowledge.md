@@ -61,7 +61,7 @@ The full parameter table stays generated beneath the page.
 
 **Rules the template test checks** (`KnowledgeBudgetTests`):
 - The headings are exactly these level-2 titles, in this order. *Successor* is optional (a machine with no Neo successor leaves it out); the others are required.
-- *Key controls* lists 5 to 8 controls (bullets or table rows), each with its real unit and a safe starting value.
+- *Key controls* lists 5 to 8 controls (bullets or table rows), each with its real unit and a safe starting value. A machine with fewer than five controls (Pedal Gain, Pedal Peer Control) lists all of them.
 - *Checklist* has `- [ ]` items, each naming the tool that checks it.
 - A page is at most 2,500 tokens (§7). Detail that doesn't fit moves to a deep-dive guide (`guide(topic="<machine>-in-depth")`, as Dye Essence and Neo EQ have) or to the generated manual.
 - Every tool, parameter, preset, unit and range the page names is already checked by `GuideTests`.

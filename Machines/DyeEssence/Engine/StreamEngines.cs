@@ -151,7 +151,7 @@ namespace NeoBuzz.DyeEssence
 
         // Per note × slot (note · Oscillators + slot).
         readonly SampleLayer[] extLayer = new SampleLayer[Notes * Oscillators];
-        readonly int[] extKind = new int[Notes * Oscillators];            // 0 none, 1 sample, 2 granular, 3 harmonic, 4 modal, 5 spectral
+        readonly int[] extKind = new int[Notes * Oscillators];            // 0 none, 1 sample, 2 granular, 3 harmonic, 4 modal, 5 spectral, 6 string
         readonly bool[] extActive = new bool[Notes * Oscillators], extFresh = new bool[Notes * Oscillators];
         readonly float[] extLvl = new float[Notes * Oscillators], extLvlStep = new float[Notes * Oscillators];
         readonly float[] extTo2 = new float[Notes * Oscillators], extTo2Step = new float[Notes * Oscillators];
@@ -216,9 +216,9 @@ namespace NeoBuzz.DyeEssence
             {
                 var os = s.Osc[o];
                 int no = note * Oscillators + o;
-                bool sample = os.Type == SlotType.Sample, grain = os.Type == SlotType.Granular, harm = os.Type == SlotType.Harmonic, modal = os.Type == SlotType.Modal, spec = os.Type == SlotType.Spectral;
-                var layer = harm || modal || spec ? null : os.Source;
-                bool play = harm || modal || spec && os.Spectrum != null || (sample || grain) && layer != null && layer.Length >= 8;
+                bool sample = os.Type == SlotType.Sample, grain = os.Type == SlotType.Granular, harm = os.Type == SlotType.Harmonic, modal = os.Type == SlotType.Modal, spec = os.Type == SlotType.Spectral, str = os.Type == SlotType.String;
+                var layer = harm || modal || spec || str ? null : os.Source;
+                bool play = harm || modal || str || spec && os.Spectrum != null || (sample || grain) && layer != null && layer.Length >= 8;
                 if (!play && extLvl[no] == 0f)
                 {
                     extActive[no] = false;
@@ -228,7 +228,7 @@ namespace NeoBuzz.DyeEssence
                 float lvlTarget = play ? Level(note, o) : 0f, to2Target = play ? OscToF2(o) : 0f;
                 if (play)
                 {
-                    int kind = sample ? 1 : grain ? 2 : harm ? 3 : spec ? 5 : 4;
+                    int kind = sample ? 1 : grain ? 2 : harm ? 3 : spec ? 5 : str ? 6 : 4;
                     if (extFresh[no] || extKind[no] != kind || !ReferenceEquals(extLayer[no], layer) || spec && !ReferenceEquals(spModel[no], os.Spectrum)) ExtInit(note, o, no, kind, layer);
                     int u = Math.Clamp(os.Unison, 1, MaxUnison);
                     Shape(o, u, os);
@@ -246,6 +246,12 @@ namespace NeoBuzz.DyeEssence
                         double inc0 = noteHz * oscRatio[o] / vr;
                         if (pitchMod != 0) inc0 *= PortableMath.Exp2(pitchMod);
                         ModalControl(note, o, no, os, u, inc0, vr, invCount);
+                    }
+                    else if (str)
+                    {
+                        double inc0 = noteHz * oscRatio[o] / vr;
+                        if (pitchMod != 0) inc0 *= PortableMath.Exp2(pitchMod);
+                        StringControl(note, o, no, os, u, inc0, vr, invCount);
                     }
                     else
                     {
@@ -293,6 +299,7 @@ namespace NeoBuzz.DyeEssence
             else if (kind == 3) HarmInit(note, o, no);
             else if (kind == 4) ModalInit(note, o, no);
             else if (kind == 5) SpecInit(note, o, no);
+            else if (kind == 6) StringInit(note, o, no);
             else
             {
                 int gb = no * MaxGrains;
@@ -405,6 +412,7 @@ namespace NeoBuzz.DyeEssence
                 else if (extKind[no] == 2) Grains(no, count);
                 else if (extKind[no] == 3) HarmVoices(note, o, no, count);
                 else if (extKind[no] == 5) SpecVoices(note, o, no, count);
+                else if (extKind[no] == 6) StringVoicesRender(note, o, no, count);
                 else ModalVoices(note, o, no, count);
                 float lv = extLvl[no], ls = extLvlStep[no], t2 = extTo2[no], ts = extTo2Step[no];
                 bool f2 = extToF2[note];

@@ -33,6 +33,7 @@
    "latency_samples": 0,
    "latency_ms": 0.0,
    "tail_seconds": 0.01,
+   "tail_hz": 6959.2,
    "echoes": 0,
    "output_correlation": 0.928,
    "spectrum_spread_db": 16.8,
@@ -505,7 +506,9 @@
    "b": 5.0,
    "unit": "Hz",
    "own_texts": false,
-   "description": "LFO speed, 0.1–5 Hz."
+   "description": "LFO speed, 0.1–5 Hz.",
+   "how": "Sets the speed of the voices' sweep, from 0.1 to 5 Hz.",
+   "sound": "Slow rates shimmer; fast ones begin to wobble."
   },
   {
    "index": 1,
@@ -522,7 +525,9 @@
    "b": 0.008,
    "unit": "s",
    "own_texts": false,
-   "description": "Delay modulation, 0 to ±8 ms."
+   "description": "Delay modulation, 0 to ±8 ms.",
+   "how": "Sets how far each voice's delay swings, from 0 to 8 ms either way.",
+   "sound": "More depth thickens the sound and then detunes it audibly."
   },
   {
    "index": 2,
@@ -539,7 +544,9 @@
    "b": 0.025,
    "unit": "s",
    "own_texts": false,
-   "description": "Each voice's delay before modulation, 5–25 ms."
+   "description": "Each voice's delay before modulation, 5–25 ms.",
+   "how": "Sets each voice's starting delay, from 5 to 25 ms.",
+   "sound": "Short delays sound tight and doubled; long ones sound looser and more distant."
   },
   {
    "index": 3,
@@ -556,7 +563,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "How wide the four voices are panned: 0% mono, 100% wide."
+   "description": "How wide the four voices are panned: 0% mono, 100% wide.",
+   "how": "Pans the four voices from the centre (0 percent) to wide apart (100 percent).",
+   "sound": "At 0 the output is mono; at 100 it opens into a wide, soft stereo image."
   },
   {
    "index": 4,
@@ -573,7 +582,9 @@
    "b": 2000.0,
    "unit": "Hz",
    "own_texts": false,
-   "description": "Low-pass on the wet path, from 22 kHz (0%, bright) down to 2 kHz (100%, dark)."
+   "description": "Low-pass on the wet path, from 22 kHz (0%, bright) down to 2 kHz (100%, dark).",
+   "how": "Darkens only the wet signal with a low-pass from 22 kHz (0 percent) down to 2 kHz (100 percent).",
+   "sound": "The copies sit back behind the dry sound as the tone falls."
   },
   {
    "index": 5,
@@ -590,7 +601,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Wet against dry."
+   "description": "Wet against dry.",
+   "how": "Blends dry and chorused sound from 0 to 100 percent.",
+   "sound": "Low mixes add width; high mixes sound lush and detuned."
   }
  ],
  "track_parameters": []

@@ -60,6 +60,28 @@ namespace ReBuzz.AgentTests
         }
 
         [Test]
+        public void EveryParameterOfAFinishedFamilyHasHowAndSound()
+        {
+            // K2: the machines of the families in KnowledgeFamilies (the Pedal machines), global and track parameters alike.
+            var problems = new List<string>();
+            int machines = 0;
+            foreach (var m in CuratedManifestTests.Profiled().Values.Where(m => KnowledgeFamilies.Covers(m.Gear)))
+            {
+                machines++;
+                foreach (var p in m.Parameters.Concat(m.TrackParameters))
+                    foreach (var (what, text) in new[] { ("how", p.How), ("sound", p.Sound) })
+                    {
+                        string t = text.Trim();
+                        if (t.Length < 12) problems.Add($"{m.Gear}/{p.Id} {what}: missing or too short");
+                        else if (t.Length > 260) problems.Add($"{m.Gear}/{p.Id} {what}: {t.Length} characters (one sentence)");
+                        else if (!(t.EndsWith('.') || t.EndsWith(')'))) problems.Add($"{m.Gear}/{p.Id} {what}: does not end in a full stop");
+                    }
+            }
+            Assert.That(machines, Is.GreaterThanOrEqualTo(19));
+            Assert.That(problems, Is.Empty, string.Join("\n", problems.Take(30)));
+        }
+
+        [Test]
         public void TheMissingCheckFindsAGap()
         {
             var json = System.Text.Json.Nodes.JsonNode.Parse("{\"format\":\"rebuzz-machine-manifest/1\",\"gear\":\"Neo X\",\"kind\":\"effect\",\"parameters\":[{\"index\":0,\"id\":\"a\",\"name\":\"A\",\"min\":0,\"max\":1,\"default\":0,\"kind\":\"linear\",\"how\":\"Does a thing.\",\"sound\":\"\"}]}")!.ToJsonString();

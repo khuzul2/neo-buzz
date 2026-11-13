@@ -1,0 +1,183 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Lead — Bent Saw">
+    <Preset Machine="Neo Learn Phase Distortion">
+      <Parameters>
+        <Parameter Name="Phase Bend" Group="1" Index="0" Track="0" Value="700" />
+        <Parameter Name="Resonance" Group="1" Index="1" Track="0" Value="150" />
+        <Parameter Name="PD Wave" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Bend Decay" Group="1" Index="3" Track="0" Value="653" />
+        <Parameter Name="Ring Mod" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Chorus" Group="1" Index="5" Track="0" Value="300" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="195" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="649" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="700" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="515" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="529" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Lead — Square Pinch">
+    <Preset Machine="Neo Learn Phase Distortion">
+      <Parameters>
+        <Parameter Name="Phase Bend" Group="1" Index="0" Track="0" Value="850" />
+        <Parameter Name="Resonance" Group="1" Index="1" Track="0" Value="100" />
+        <Parameter Name="PD Wave" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Bend Decay" Group="1" Index="3" Track="0" Value="568" />
+        <Parameter Name="Ring Mod" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Chorus" Group="1" Index="5" Track="0" Value="200" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="151" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="594" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="650" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="485" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="519" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Reso Sweep">
+    <Preset Machine="Neo Learn Phase Distortion">
+      <Parameters>
+        <Parameter Name="Phase Bend" Group="1" Index="0" Track="0" Value="550" />
+        <Parameter Name="Resonance" Group="1" Index="1" Track="0" Value="800" />
+        <Parameter Name="PD Wave" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Bend Decay" Group="1" Index="3" Track="0" Value="683" />
+        <Parameter Name="Ring Mod" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Chorus" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="75" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="624" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="550" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="447" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="588" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pluck — Narrow Ping">
+    <Preset Machine="Neo Learn Phase Distortion">
+      <Parameters>
+        <Parameter Name="Phase Bend" Group="1" Index="0" Track="0" Value="900" />
+        <Parameter Name="Resonance" Group="1" Index="1" Track="0" Value="250" />
+        <Parameter Name="PD Wave" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Bend Decay" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="Ring Mod" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Chorus" Group="1" Index="5" Track="0" Value="250" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="75" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="624" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="539" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="523" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bell — Ring Glass">
+    <Preset Machine="Neo Learn Phase Distortion">
+      <Parameters>
+        <Parameter Name="Phase Bend" Group="1" Index="0" Track="0" Value="300" />
+        <Parameter Name="Resonance" Group="1" Index="1" Track="0" Value="100" />
+        <Parameter Name="PD Wave" Group="1" Index="2" Track="0" Value="3" />
+        <Parameter Name="Bend Decay" Group="1" Index="3" Track="0" Value="836" />
+        <Parameter Name="Ring Mod" Group="1" Index="4" Track="0" Value="700" />
+        <Parameter Name="Chorus" Group="1" Index="5" Track="0" Value="400" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="75" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="798" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="721" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="667" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pad — Slow Bend">
+    <Preset Machine="Neo Learn Phase Distortion">
+      <Parameters>
+        <Parameter Name="Phase Bend" Group="1" Index="0" Track="0" Value="450" />
+        <Parameter Name="Resonance" Group="1" Index="1" Track="0" Value="200" />
+        <Parameter Name="PD Wave" Group="1" Index="2" Track="0" Value="4" />
+        <Parameter Name="Bend Decay" Group="1" Index="3" Track="0" Value="952" />
+        <Parameter Name="Ring Mod" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Chorus" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="770" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="773" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="800" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="750" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="350" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="660" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Keys — Trapezoid Tine">
+    <Preset Machine="Neo Learn Phase Distortion">
+      <Parameters>
+        <Parameter Name="Phase Bend" Group="1" Index="0" Track="0" Value="600" />
+        <Parameter Name="Resonance" Group="1" Index="1" Track="0" Value="300" />
+        <Parameter Name="PD Wave" Group="1" Index="2" Track="0" Value="5" />
+        <Parameter Name="Bend Decay" Group="1" Index="3" Track="0" Value="731" />
+        <Parameter Name="Ring Mod" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Chorus" Group="1" Index="5" Track="0" Value="400" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="151" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="743" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="300" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="606" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="529" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Texture — Metal Ring">
+    <Preset Machine="Neo Learn Phase Distortion">
+      <Parameters>
+        <Parameter Name="Phase Bend" Group="1" Index="0" Track="0" Value="950" />
+        <Parameter Name="Resonance" Group="1" Index="1" Track="0" Value="600" />
+        <Parameter Name="PD Wave" Group="1" Index="2" Track="0" Value="3" />
+        <Parameter Name="Bend Decay" Group="1" Index="3" Track="0" Value="884" />
+        <Parameter Name="Ring Mod" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Chorus" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="325" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="812" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="400" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="750" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="200" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="535" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Lead — Sync Wail">
+    <Preset Machine="Neo Learn Phase Distortion">
+      <Parameters>
+        <Parameter Name="Phase Bend" Group="1" Index="0" Track="0" Value="200" />
+        <Parameter Name="Resonance" Group="1" Index="1" Track="0" Value="1000" />
+        <Parameter Name="PD Wave" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Bend Decay" Group="1" Index="3" Track="0" Value="799" />
+        <Parameter Name="Ring Mod" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Chorus" Group="1" Index="5" Track="0" Value="200" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="401" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="688" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="800" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="606" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="560" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

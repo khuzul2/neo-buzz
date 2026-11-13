@@ -5,111 +5,111 @@ machine "Neo Learn FM"
 preset "Keys — Tine Piano"
 Mod Ratio = 1
 FM Depth = 32
-Mod Decay = 450
+Mod Decay = 0.45
 Feedback = 0
 Metallic Edge = 45
 Velocity to FM = 60
-Attack = 1
-Decay = 900
+Attack = 0.001
+Decay = 0.9
 Sustain = 15
-Release = 250
+Release = 0.25
 Unison / Spread = 0
-Output = -5.9
+Output = -8.5
 
 preset "Keys — Glass Bell"
 Mod Ratio = 3.5
 FM Depth = 45
-Mod Decay = 1200
+Mod Decay = 1.2
 Feedback = 0
 Metallic Edge = 25
 Velocity to FM = 40
-Attack = 1
-Decay = 2500
+Attack = 0.001
+Decay = 2.5
 Sustain = 0
-Release = 1200
+Release = 1.2
 Unison / Spread = 0
-Output = -7.5
+Output = -9.8
 
 preset "Bass — FM Pluck"
 Mod Ratio = 1
 FM Depth = 55
-Mod Decay = 120
+Mod Decay = 0.12
 Feedback = 20
 Metallic Edge = 0
 Velocity to FM = 50
-Attack = 1
-Decay = 300
+Attack = 0.001
+Decay = 0.3
 Sustain = 40
-Release = 90
+Release = 0.09
 Unison / Spread = 0
-Output = -2.4
+Output = -5.8
 
 preset "Bass — Growl"
 Mod Ratio = 2
 FM Depth = 70
-Mod Decay = 400
+Mod Decay = 0.4
 Feedback = 55
 Metallic Edge = 0
 Velocity to FM = 40
-Attack = 1
-Decay = 400
+Attack = 0.001
+Decay = 0.4
 Sustain = 70
-Release = 120
+Release = 0.12
 Unison / Spread = 0
-Output = -5.6
+Output = -7.9
 
 preset "Lead — Bright Glass"
 Mod Ratio = 3
 FM Depth = 50
-Mod Decay = 600
+Mod Decay = 0.6
 Feedback = 30
 Metallic Edge = 30
 Velocity to FM = 50
-Attack = 2
-Decay = 500
+Attack = 0.002
+Decay = 0.5
 Sustain = 75
-Release = 300
+Release = 0.3
 Unison / Spread = 25
-Output = -3.5
+Output = -14.7
 
 preset "Pad — Slow Bells"
 Mod Ratio = 2.5
 FM Depth = 25
-Mod Decay = 1500
+Mod Decay = 1.5
 Feedback = 0
 Metallic Edge = 10
 Velocity to FM = 30
-Attack = 400
-Decay = 2000
+Attack = 0.4
+Decay = 2
 Sustain = 60
-Release = 2500
+Release = 2.5
 Unison / Spread = 40
-Output = 2.9
+Output = -8.2
 
 preset "Percussion — Metal Hit"
 Mod Ratio = 5.5
 FM Depth = 80
-Mod Decay = 60
+Mod Decay = 0.06
 Feedback = 40
 Metallic Edge = 70
 Velocity to FM = 50
-Attack = 0.5
-Decay = 200
+Attack = 0.0005
+Decay = 0.2
 Sustain = 0
-Release = 120
+Release = 0.12
 Unison / Spread = 0
-Output = -10.0
+Output = -2.6
 
 preset "Lead — Clean Sine"
 Mod Ratio = 1
 FM Depth = 8
-Mod Decay = 800
+Mod Decay = 0.8
 Feedback = 0
 Metallic Edge = 0
 Velocity to FM = 30
-Attack = 8
-Decay = 600
+Attack = 0.008
+Decay = 0.6
 Sustain = 80
-Release = 200
+Release = 0.2
 Unison / Spread = 15
-Output = 7.7
+Output = -16.4
