@@ -92,7 +92,18 @@ namespace ReBuzz.Studio.Views.Device
             }
             page = new DevicePage(m, floating: false);
             page.FloatToggled += () => Float(m);
-            Child = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(m, page, scroll: false);
+            Child = Framed(m, page);
+        }
+
+        /// <summary>The settings key of the device view's keyboard (hidden unless the person opened it; one choice for the docked page and the windows).</summary>
+        public const string KeyboardKey = "DeviceKeyboard";
+
+        /// <summary>The page with the machine's keyboard under it, collapsed at first and remembering its state apart from the machine windows'.</summary>
+        static Avalonia.Controls.Control Framed(IMachine m, DevicePage content)
+        {
+            var frame = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(m, content, scroll: false);
+            NeoBuzz.Editor.MachineKeyboardFrame.Of(frame)?.UseOwnState(DevicePage.Read(KeyboardKey, false), on => DevicePage.Write(KeyboardKey, on));
+            return (Avalonia.Controls.Control)frame;
         }
 
         void Clear()
@@ -112,7 +123,7 @@ namespace ReBuzz.Studio.Views.Device
                 w = new Window
                 {
                     Title = m.Name + " — device",
-                    Content = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(m, content, scroll: false),
+                    Content = Framed(m, content),
                     Width = 720,
                     Height = 620,
                     ShowInTaskbar = false,

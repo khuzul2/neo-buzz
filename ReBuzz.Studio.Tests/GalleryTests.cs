@@ -480,7 +480,7 @@ namespace ReBuzz.Studio.Tests
                 Try("012-start-session-empty", () => { window.ShowView("Session"); Shot(window, "012-start-session-empty", "The Session tab on a new song: an empty launch grid with its toolbar and mixer.", "Ctrl+Tab, or the Session tab.", song: "none (new song)"); });
                 Try("013-start-pattern-empty", () => { window.ShowView("Pattern"); Shot(window, "013-start-pattern-empty", "The Tracker docked in the detail panel on a new song: no machine with patterns yet (P3a).", "Cmd+4, Alt+Cmd+D, or the Tracker button under the view.", song: "none (new song)"); });
                 Try("015-start-tracker-maximised", () => { window.Detail.Show(true); Shot(window, "015-start-tracker-maximised", "The Tracker maximised over the window (P3a).", "F2, Shift+Cmd+F, or the button in the detail bar.", song: "none (new song)"); });
-                Try("017-start-machine-starters", () => { window.ShowView("Machines"); Shot(window, "017-start-machine-starters", "The Machine View on a new song (P3d): the starters Neo Poly, Neo Drums and Neo Wave one click each, and the hint to double-click or type to search.", "Open a new song.", song: "none (new song)"); });
+                Try("017-start-machine-starters", () => { window.ShowView("Machines"); Shot(window, "017-start-machine-starters", "The Machine View on a new song (P3d): the starters Neo Poly, Neo Drums and Neo Wave one click each, and the hint to double-click or press the Add Machine key to search.", "Open a new song.", song: "none (new song)"); });
                 Try("016-start-browser", () => { window.Detail.Close(); window.ShowView("Machines"); window.Browser.Open(); Shot(window, "016-start-browser", "The browser on the left (P3a): a search box over the installed machines, the patterns of the selection first.", "Alt+Cmd+B, or the rail's button.", song: "none (new song)"); window.Browser.Close(); });
                 Try("014-start-notes-empty", () => { window.ShowView("Song Notes"); Shot(window, "014-start-notes-empty", "The Song Notes tab on a new song: the empty notes editor and its toolbar.", "F10, or the Song Notes tab.", song: "none (new song)"); });
             }
@@ -526,7 +526,7 @@ namespace ReBuzz.Studio.Tests
                     MachineViewTests.DoubleClick(window, machines.PointOf(0.55, 0.75, window));
                     machines.Popup.Search.Text = "warm";
                     Settle();
-                    Shot(window, "026-machines-browser-popup", "The machine browser on the canvas (P3d): opened by a double click on empty canvas, searching \"warm\": results with brand and tags, use_for, a star for favourites, the category filter.", "Double-click the canvas, or start typing on it.");
+                    Shot(window, "026-machines-browser-popup", "The machine browser on the canvas (P3d): opened by a double click on empty canvas, searching \"warm\": results with brand and tags, use_for, a star for favourites, the category filter.", "Double-click the canvas, or Shift+Cmd+N.");
                     machines.Popup.Hide();
                     Settle();
                 });
@@ -598,6 +598,40 @@ namespace ReBuzz.Studio.Tests
                     session.RefreshState();
                     session.RefreshMeters();
                     Shot(window, "042-session-playing", "Session playing: the Drop scene's clips playing (each keeps its colour; its ▶ on a dark chip, its outline and progress bar in the play green), the clock running, meters moving.", "After a launch, at the bar line; the transport runs.");
+                });
+                Try("340-session-no-transport", () =>
+                    Shot(window, "340-session-no-transport", "Session (P3g): its toolbar has no transport of its own any more: Stop all, Overdub, Capture, Back to arrangement, Launch, Follow, the nudge and Scenes; the one transport is the top bar above (metronome, time signature, tempo, Tap, the clock).", "Ctrl+Tab, or the Session tab."));
+                Try("341-machines-meters-playing", () =>
+                {
+                    window.ShowView("Machines");
+                    var canvas = Tab<MachineView>(window, "Machines").Canvas;
+                    for (int i = 0; i < 4; i++)
+                    {
+                        RunTicks(4);
+                        canvas.TickMeters(1.0 / MachineCanvas.MeterRate);
+                    }
+                    Shot(window, "341-machines-meters-playing", "Machines while the Drop scene plays (P3g): each box and wire brightens with the level through it, from the engine's own peaks (a strip along the foot of a box, green and yellow from -6 dB; a wire turns green and thickens); the top bar's clock runs.", "Play a song with the Machine View open.", notes: Headless);
+                    window.ShowView("Session");
+                    Settle();
+                });
+                Try("342-top-bar-master-meter", () =>
+                {
+                    var meter = window.Transport.Meter;
+                    Core.ClearMasterOver();
+                    var loud = new float[1024];
+                    System.Array.Fill(loud, 1.8f);
+                    Core.SafeMaster.Process(loud, 2, 44100);
+                    meter.Refresh();
+                    System.Threading.Thread.Sleep(400);                 // the bars fall at 60 dB a second
+                    var soft = new float[1024];
+                    System.Array.Fill(soft, 0.3f);
+                    Core.SafeMaster.Process(soft, 2, 44100);
+                    meter.Refresh();
+                    window.RefreshNow();
+                    Shot(window, "342-top-bar-master-meter", "The top bar (P3g): metronome, time signature, the tempo (drag it, or double-click to type), Tap, the clock as bar.beat.tick and minutes and seconds, and the master meter: two bars on a -60 to 0 dB scale and the clip light, latched red with the highest over until it is clicked (the bars here at about -10 dB, a hot peak earlier).", "The bar above every view.");
+                    Core.ClearMasterOver();
+                    meter.Refresh();
+                    Core.SafeMaster.Reset();
                 });
                 Try("043-session-clip-panel", () =>
                 {
@@ -1038,10 +1072,30 @@ namespace ReBuzz.Studio.Tests
                 });
                 Try("321-prefs-safety-question", () =>
                 {
+                    prefs.ShowPage("Safety");
+                    var audio = prefs.Page<SafetyPage>();
+                    DialogOnOpen(prefs, () => audio.LimiterBox.IsChecked = false, "321-prefs-safety-question", "The safety question before the limiter goes off (Preferences ▸ Safety): Turn Off or Keep On, Keep On on Return and Escape.",
+                        "Preferences ▸ Safety: untick Safety limiter.", notes: Devices);
+                    Settle();
+                });
+                Try("322-prefs-restart-note", () =>
+                {
+                    // An agent sets the render threads (a restart-required setting): the open window shows it at once, with the line under the pages.
                     prefs.ShowPage("Audio");
-                    var audio = prefs.Page<AudioPage>();
-                    DialogOnOpen(prefs, () => audio.LimiterBox.IsChecked = false, "321-prefs-safety-question", "The safety question before the limiter goes off (Preferences ▸ Audio ▸ Safety): Turn Off or Keep On, Keep On on Return and Escape.",
-                        "Preferences ▸ Audio: untick Safety limiter.", notes: Devices);
+                    var threads = prefs.Model.Entry("audio.AudioThreads");
+                    string was = ReBuzz.Agent.App.SettingsService.Get(threads);
+                    ReBuzz.Agent.App.SettingsService.Apply(prefs.Model.App, threads, was == "2" ? "3" : "2", ReBuzz.Agent.App.SettingsService.AgentSource);
+                    Settle();
+                    Shot(prefs, "322-prefs-restart-note", "Preferences ▸ Audio after an agent changed the render threads (P3f): the page shows the new value at once, and a line under the pages says that the change waits for a restart. The change is in settings_history as Agent.",
+                        "Ask the agent to change a setting (settings_set) while Preferences is open.", notes: Devices);
+                    ReBuzz.Agent.App.SettingsService.Apply(prefs.Model.App, threads, was, ReBuzz.Agent.App.SettingsService.AgentSource);
+                    Settle();
+                });
+                Try("323-prefs-restore-question", () =>
+                {
+                    prefs.ShowPage("Advanced");
+                    DialogOnOpen(prefs, () => _ = prefs.RestoreDefaults(), "323-prefs-restore-question", "Restore Defaults on the Advanced page (P3f): it asks first, since the engine flags change how audio is made; Cancel on Return and Escape.",
+                        "Preferences ▸ Advanced ▸ Restore Defaults.");
                     Settle();
                 });
                 prefs.Close();
@@ -1350,6 +1404,24 @@ namespace ReBuzz.Studio.Tests
                     Settle();
                     window.ShowView("Machines");
                     Shot(window, "510-machines-many", $"Machines with many machines: every Neo and Pedal machine ({gear.Count}) in one song.", "Add machines (right-click ▸ New).", song: "a song of every Neo and Pedal machine");
+                });
+
+                Try("343-machines-many-meters", () =>
+                {
+                    var canvas = Tab<MachineView>(window, "Machines").Canvas;
+                    var master = Core.SongCore.Machines.First(m => m.DLL.Info.Type == MachineType.Master);
+                    foreach (var m in Core.SongCore.Machines.ToList())
+                        if (m != master) MachineEdits.Connect(Core, m, master);          // every machine into the Master, as a big project has them
+                    Settle();
+                    var wires = canvas.Wires.ToList();
+                    int n = 0;
+                    var level = new Dictionary<IMachineConnection, float>();
+                    foreach (var c in wires) level[c] = 32768f * (float)System.Math.Pow(10, -((n++ * 7) % 13) * 4.0 / 20);     // 0 to -48 dB across the wires
+                    canvas.PeakSource = c => level.TryGetValue(c, out float v) ? (v, v * 0.8f) : (0, 0);
+                    canvas.TickMeters(1);
+                    Shot(window, "343-machines-many-meters", $"The same song of every Neo and Pedal machine ({wires.Count} wires) with a level on every wire (P3g; the levels are set by the test: no sound is made here): the meters stay readable and the wires you can't see from far away show where the sound goes.", "Play a big song with the Machine View open.", song: "a song of every Neo and Pedal machine", notes: Headless);
+                    canvas.PeakSource = ReBuzz.Core.Session.SessionMixer.PeakOf;
+                    canvas.TickMeters(10);
                 });
 
                 // Safety: a machine that runs away, the guard's state.

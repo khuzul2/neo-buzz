@@ -1,5 +1,5 @@
 // Fork (docs/specs/ux-overhaul.md P3d, decisions 56-58): the machine browser on the Machine View's canvas. A double click on empty
-// canvas opens it there, and typing on the canvas (with nothing selected) opens it with the typed text as the search. Enter or a
+// canvas opens it there, and so does Add Machine… (a key; decision 58: typing on the canvas does not open it, letters keep their shortcuts). Enter or a
 // double click adds the machine where the click was (one undo step); Esc or a click elsewhere closes it. It lists what the left
 // panel lists, from the same MachineBrowserModel.
 
