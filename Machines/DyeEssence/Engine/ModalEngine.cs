@@ -136,7 +136,43 @@ namespace NeoBuzz.DyeEssence
         // Per slot: the spacing its settings give the modes (with the body's stiffness), the settings it was made for, a version of them.
         readonly float[] mRatio = new float[Oscillators * MaxModes];
         readonly float[] mKey = new float[Oscillators * KeySize];
-        const int KeySize = 10;
+        const int KeySize = 12;
+        // P5b: a slot's modes from a sample's analysis (an impulse response): the table, the model, start and length it was made from, a version, whether it is in use,
+        // and per mode (in the spacing's order, the strongest `modes` of them) its decay rate and gain (the strongest 1).
+        readonly ImportedModes[] mImp = MakeModeImports();
+        readonly SpectralModel[] mImpModel = new SpectralModel[Oscillators];
+        readonly float[] mImpStart = new float[Oscillators], mImpLen = new float[Oscillators];
+        readonly int[] mImpVer = new int[Oscillators];
+        readonly bool[] mImpOn = new bool[Oscillators];
+        readonly float[] mSigTab = new float[Oscillators * MaxModes], mGainTab = new float[Oscillators * MaxModes];
+
+        static ImportedModes[] MakeModeImports()
+        {
+            var a = new ImportedModes[Oscillators];
+            for (int i = 0; i < a.Length; i++) a[i] = new ImportedModes();
+            return a;
+        }
+
+        /// <summary>Slot <paramref name="o"/>'s imported modes for this tick's settings (made again only when its model, start or length moved); false when the slot uses its geometry.</summary>
+        bool ModeImpPrepare(int o, OscSettings os)
+        {
+            bool on = os.ModeOn && os.Spectrum != null;
+            if (on)
+            {
+                float start = Math.Clamp(os.ModeStart, 0f, 1f), len = Math.Clamp(os.ModeLen, 0.05f, 2f);
+                if (!ReferenceEquals(mImpModel[o], os.Spectrum) || mImpStart[o] != start || mImpLen[o] != len)
+                {
+                    mImp[o].Make(os.Spectrum, start, len);
+                    mImpModel[o] = os.Spectrum;
+                    mImpStart[o] = start;
+                    mImpLen[o] = len;
+                    mImpVer[o]++;
+                }
+                on = mImp[o].Count > 0;
+            }
+            mImpOn[o] = on;
+            return on;
+        }
         readonly int[] mCount = new int[Oscillators], mVersion = new int[Oscillators];
         readonly double[] mKeyVr = new double[Oscillators];
         // Per note and slot: the exciter's clock, pulse length, bow level and noise, and the settings of the last tick.
@@ -161,15 +197,36 @@ namespace NeoBuzz.DyeEssence
             int n = Math.Clamp(os.Modes, 1, MaxModes);
             float mat = Math.Clamp(os.Material, 0f, 1f), ring = Math.Clamp(os.Ring, 0.05f, 20f), hf = Math.Clamp(os.HfDamp, 0f, 1f), size = Math.Clamp(os.BodySize, 0f, 1f);
             int kb = o * KeySize;
+            bool imp = mImpOn[o];
+            float impVer = imp ? mImpVer[o] : -1f, impDecay = Math.Clamp(os.ModeDecay, 0.25f, 4f);
             // Neo Learn: the body may blend toward another (GeomBlend > 0), the exciters may morph (ExciterMorph >= 0).
             float blend = Math.Clamp(os.GeomBlend, 0f, 1f), morph = os.ExciterMorph < 0f ? -1f : Math.Min(os.ExciterMorph, 1f);
             int to = Math.Clamp(os.GeomTo, 0, ModalBodies.Names.Length - 1);
             if (mKey[kb] == g && mKey[kb + 1] == n && mKey[kb + 2] == mat && mKey[kb + 3] == ring && mKey[kb + 4] == hf && mKey[kb + 5] == size
-                && mKey[kb + 6] == (float)os.Exciter && mKey[kb + 7] == morph && mKey[kb + 8] == blend && mKey[kb + 9] == to && mKeyVr[o] == vr) return;
+                && mKey[kb + 6] == (float)os.Exciter && mKey[kb + 7] == morph && mKey[kb + 8] == blend && mKey[kb + 9] == to && mKey[kb + 10] == impVer && mKey[kb + 11] == impDecay && mKeyVr[o] == vr) return;
             mKey[kb] = g; mKey[kb + 1] = n; mKey[kb + 2] = mat; mKey[kb + 3] = ring; mKey[kb + 4] = hf; mKey[kb + 5] = size; mKey[kb + 6] = (float)os.Exciter;
-            mKey[kb + 7] = morph; mKey[kb + 8] = blend; mKey[kb + 9] = to;
+            mKey[kb + 7] = morph; mKey[kb + 8] = blend; mKey[kb + 9] = to; mKey[kb + 10] = impVer; mKey[kb + 11] = impDecay;
             mKeyVr[o] = vr;
             mVersion[o]++;
+            if (imp)
+            {
+                // P5b: the strongest n of the imported modes, in the order of their frequencies; each one's own decay (scaled) and gain (the strongest 1).
+                var tab = mImp[o];
+                int cnt = 0;
+                float top = 1e-30f;
+                for (int j = 0; j < tab.Count; j++) top = Math.Max(top, tab.Gain[j]);
+                for (int j = 0; j < tab.Count; j++)
+                {
+                    if (tab.Rank[j] >= n) continue;
+                    mRatio[o * MaxModes + cnt] = tab.Ratio[j];
+                    mSigTab[o * MaxModes + cnt] = tab.Sigma[j] / impDecay;
+                    mGainTab[o * MaxModes + cnt] = tab.Gain[j] / top;
+                    cnt++;
+                }
+                mCount[o] = cnt;
+                for (int j = cnt; j < MaxModes; j++) mRatio[o * MaxModes + j] = 1e6f;
+                return;
+            }
             mCount[o] = Math.Min(n, ModalBodies.Count[g]);
             if (blend > 0f) mCount[o] = Math.Min(mCount[o], ModalBodies.Count[to]);
             // Stiffness stretches the spacing: mode j sounds at ratio · √(1 + B · (j + 1)²), B growing with the hardness squared.
@@ -223,6 +280,7 @@ namespace NeoBuzz.DyeEssence
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void ModalControl(int note, int o, int no, OscSettings os, int u, double inc0, double vr, float invCount)
         {
+            bool imp = ModeImpPrepare(o, os);
             ModalShape(o, os, vr);
             int sb = o * MaxModes;
             bool morph = os.ExciterMorph >= 0f;
@@ -311,7 +369,7 @@ namespace NeoBuzz.DyeEssence
                             float turns = (float)(inc * mRatio[sb + j]);
                             bool on = j < active;
                             double hz = turns * vr;
-                            double sigma = sigma0 * (1.0 + h * (hz * 0.001) * (hz * 0.001));
+                            double sigma = imp ? mSigTab[sb + j] : sigma0 * (1.0 + h * (hz * 0.001) * (hz * 0.001));
                             float r = on ? (float)PortableMath.Exp(-sigma / vr) : 0f;
                             SinCosTurns(turns, out float rs, out float rc);
                             mR[pb + j] = r;
@@ -323,7 +381,7 @@ namespace NeoBuzz.DyeEssence
                             if (!needG) continue;
                             // The weight of mode j: where the body is excited (a comb), how well it radiates.
                             SinCosTurns((j + 1) * pp * 0.5f, out float pc, out _);
-                            float wgt = on ? MathF.Abs(pc) / MathF.Sqrt(1f + (float)(hz / fc) * (float)(hz / fc)) : 0f;
+                            float wgt = on ? (imp ? mGainTab[sb + j] : MathF.Abs(pc) / MathF.Sqrt(1f + (float)(hz / fc) * (float)(hz / fc))) : 0f;
                             float fade = on ? Math.Clamp((hi - turns) / fadeWidth, 0f, 1f) : 0f;
                             mF[j] = fade;
                             mU[j] = wgt;
@@ -338,7 +396,7 @@ namespace NeoBuzz.DyeEssence
                                     float mag = Math.Abs(den) < 1e-3 ? 0.7854f : MathF.Abs(cx) / (float)Math.Abs(den);
                                     SinCosTurns(turns * 0.5f, out float sh, out _);
                                     float dsin = Math.Max(2f * MathF.Abs(sh), 1e-4f);
-                                    float inv = 1f / mRatio[sb + j];
+                                    float inv = imp ? 1f : 1f / mRatio[sb + j];
                                     mT[j] = wgt * mag * inv;
                                     mU[j] = wgt * inv / dsin;
                                     e2m += (double)mT[j] * mT[j];
@@ -349,7 +407,7 @@ namespace NeoBuzz.DyeEssence
                                 if (wP > 0f && fresh)
                                 {
                                     double pexp = 2.0 - 1.4 * force;
-                                    mP[j] = wgt / (float)PortableMath.Exp(pexp * PortableMath.Log(j + 1.0));
+                                    mP[j] = imp ? wgt : wgt / (float)PortableMath.Exp(pexp * PortableMath.Log(j + 1.0));
                                     e2p += (double)mP[j] * mP[j];
                                 }
                                 if (wB > 0f)
@@ -371,7 +429,7 @@ namespace NeoBuzz.DyeEssence
                                 // The first difference scales mode j by 2 sin(π · turns); the displacement of a struck mode falls with its frequency.
                                 SinCosTurns(turns * 0.5f, out float sh, out _);
                                 float dsin = Math.Max(2f * MathF.Abs(sh), 1e-4f);
-                                float inv = 1f / mRatio[sb + j];
+                                float inv = imp ? 1f : 1f / mRatio[sb + j];
                                 mT[j] = wgt * mag * inv;
                                 mU[j] = wgt * inv / dsin;
                             }
@@ -379,7 +437,7 @@ namespace NeoBuzz.DyeEssence
                             {
                                 // A released displacement: the harder the pluck, the flatter the fall with the mode number.
                                 double pexp = 2.0 - 1.4 * force;
-                                mT[j] = wgt / (float)PortableMath.Exp(pexp * PortableMath.Log(j + 1.0));
+                                mT[j] = imp ? wgt : wgt / (float)PortableMath.Exp(pexp * PortableMath.Log(j + 1.0));
                             }
                             else
                             {

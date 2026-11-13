@@ -1,6 +1,6 @@
 # Neo Learn — Specification
 
-Status: Approved by the user 2026-11-12; L0 in progress. Source: the user's "NeoSimpleSynth" brief, sharpened for NeoBuzz.
+Status: Approved by the user 2026-11-12; L0 to L3 built (13 machines). Source: the user's "NeoSimpleSynth" brief, sharpened for NeoBuzz.
 Controls and Explain text for all 13 machines: [Appendix A](neo-learn-controls.md).
 
 ## 1. Summary
@@ -26,7 +26,7 @@ Controls and Explain text for all 13 machines: [Appendix A](neo-learn-controls.m
 | 4 | No limiter on each machine. Output is a gain, and a clip light shows anything above 0 dBFS. | NeoBuzz mixes in floating point. A "transparent" limiter either colours the sound or adds delay. |
 | 5 | Explain sources are **Manual**, **Agent** and **Automation** (patterns, peer machines, MIDI controllers). | NeoBuzz has more writers than "MCP". The agent tools are built in, so there is no external server. |
 | 6 | The Sampler is slim. It plays one sample (Dye's five built-ins, or your WAV) with Start, Tone, Loop, Grit and Room. There are no multisampled instruments and no formant lock. | Those need content we don't have, plus licences, hundreds of MB and research-grade DSP. |
-| 7 | Spectral waits for Dye Essence P5. Its sources are analysed offline, so a note starts within one hop and is not delayed by a 2048-point window. | A live 2048-point FFT adds about 46 ms at 44.1 kHz and smears attacks. |
+| 7 | Spectral waited for Dye Essence P5 (built). Its sources are analysed offline, so a note starts within one hop and is not delayed by a 2048-point window. | A live 2048-point FFT adds about 46 ms at 44.1 kHz and smears attacks. |
 | 8 | No trademarked names anywhere: no CZ/DCW, Buchla, Serge, Vactrol, Prophet, and so on. Appendix A is already clean. | House rule. |
 | 9 | The String machine's decay is a time (T60 in seconds) from 0.05 to 20 s, not a loop coefficient. | A coefficient makes decay depend on pitch. |
 | 10 | Every machine is grouped under one of four categories: **Classic, Sample, Shaping, Acoustic**. | It groups methods by how they work, which helps you learn them. |
@@ -49,7 +49,7 @@ Controls and Explain text for all 13 machines: [Appendix A](neo-learn-controls.m
 | Phase Distortion (Learn PD) | Shaping | A: cosine with Bend/Squeeze, then Window-sync warps (Standard quality); Ring warp from B; Env2 drives the bend | **Chorus** effect | L2 |
 | Vector (Learn Vector) | Shaping | Corners W = A, E = B, N = C, S = Sub (+ Noise); 4 corner palettes | orbit generator (in the machine) | L2 |
 | Sampler (Learn Sampler) | Sample | A: Sample (start, loop); F1 tilt | **Grit** effect (bits, rate, wow/flutter); **Room** effect (early reflections, from Neo Verb's code) | L2 |
-| Spectral (Learn Spectral) | Sample | Dye Essence P5's spectral engine | per P5 | L3 |
+| Spectral (Learn Spectral) | Sample | Dye Essence P5's spectral engine | nothing (as built, §9 L3) | L3 |
 
 ## 4. Architecture
 
@@ -131,7 +131,7 @@ Pictures are composed from shared Neo kit parts: scope, response curve, bars, wa
 | **L0** | Explain in the Neo kit (strip, inspector card, agent fields and readings); `LearnHost` and `MacroMap`; the editor template; the scope, curve and X/Y picture parts; **Neo Learn Subtractive** as the pilot | Green CI, and the lead reviews the gallery screenshots |
 | **L1** | FM, Wavetable, Additive, Granular and Physical (after Dye P3b), with their small engine additions. Two workers in parallel. | Green |
 | **L2** | The String engine, Vowel, Fold, LPG, Chorus, Grit and Room, then String, Formant, Wavefolder, Phase Distortion, Vector and Sampler | Green |
-| **L3** | Spectral, after Dye Essence P5 | Green |
+| **L3** (built) | Spectral, after Dye Essence P5 | Green |
 
 Each phase is merged in the next integration batch, like the other threads. L0 starts once batch 5 (the inspector) is on main.
 
@@ -212,3 +212,13 @@ Each phase is merged in the next integration batch, like the other threads. L0 s
 **Machines.** Neo Learn Phase Distortion ("Learn PD"): slot A is a sine read through `Warp.Pd` (Phase Bend is its amount, PD Wave picks the geometry), the second warp is Ring from a sine at 2.756 times the note, slot C a window-synced sine that Resonance fades in and sweeps with the bend; Env2 opens each note with the whole bend and settles to a quarter of it in Bend Decay; the chorus runs after the voices. Neo Learn Vector: four sources on a diamond, a cursor from Vector X and Y, four palettes, an orbit generator in the machine (circle, figure 8, diamond step, random drift) that moves the corner levels every 32 samples. Neo Learn Sampler: slot A in Sample mode over Dye's five built-in samples or the user's WAV (kept in the machine state as Dye keeps it), Start Offset (Position), Loop (a crossfaded region after the start), and Tone, Grit and Room after the voices. 12 explained controls each, MacroMap, Init and 9 presets at -22 dB RMS (+-1), pictures (the phase curve and bent sine, the diamond with its cursor trail, the source with its start and loop band), guide pages, null-test cases (`learn-pd-*`, `learn-vector-*`, `learn-sampler-*`), four pinned renders each, the catalogue entries (the `learning` tag).
 
 **Decisions to confirm.** Resonance is a window-synced sine mixed in (continuous at 0) and not a filter. The six PD geometries are the engine's own, not a published table. The Vector cursor is one for all notes and runs free. Tone is a post-engine stage, not Dye's filter. Grit's 12 bits, 55 % rate and wow are fixed ends of one knob.
+
+### L3 (Neo Learn Spectral)
+
+**Machine.** Neo Learn Spectral ("Learn Spectral", category Sample): slot A plays Dye Essence's Spectral engine (P5a, dye-essence.md §4.12) over one of Dye's five built-in samples or the user's WAV (kept in the machine state with its analysis; analysed in the background, the picture shows the progress). No change to Dye's engine: `SpectralMap` writes the base patch and the map. The picture is a spectrogram of the analysed model (partials over time, the kept ones bright and the gated ones dim, a mark at the reading position, a frozen band when Freeze is up), drawn by the new `Spectrogram` part of the shared kit; the pad is Stretch by Time Smear.
+
+**Controls (12, adapted from A2.12: Dye's model is a bank of tracked partials and a noise residual, not an FFT with phases).** Stretch (partials moved off their whole multiples, -100 % to +100 %, the pitch kept; the spec's Bin Shift), Time Smear (the analysis averaged over up to 300 ms), Freeze (the reading slows to a stop and jumps to 40 % into the sample), Source (Choir, Strings, Bell, Pluck, Texture, User; the spec's raw Saw exciter is dropped, the engine analyses samples), Partial Gate (the loudest 64 down to 1 partials kept; the spec's amplitude threshold on bins) and Tone / Noise (the analysed partials against the analysed noise; replaces Phase Scatter, which has no meaning in a model with no phases). Attack, Decay, Sustain, Release, Unison / Spread (3 voices) and Output are the global six.
+
+**Tests.** Init and 9 presets at -22 dB RMS (+-1), 4 pinned renders (`frozen-choir`, `bell-gated`, `texture-ghost`, `heaviest`), null-test cases `learn-spectral-*`, CPU floors (x64 4x default and 2x heaviest, arm64 2x and 1x), range and continuity of every control, the guide page, the catalogue entry (the `learning` tag). This completes the 13 machines.
+
+**Decisions to confirm.** Freeze holds the sample at 40 % of its length, not at the reading position of the moment (a model with no phases has no instant to hold but a frame). Partial Gate counts partials (the loudest first), not a level threshold. The User source plays the Choir until a WAV is loaded.

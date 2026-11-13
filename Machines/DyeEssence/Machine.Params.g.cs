@@ -1387,6 +1387,78 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "C spectral stretch", Description = "Spectral engine: spreads the partials from whole multiples of the fundamental: + stretches them apart (bells, glass), - bunches them", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int CSpStretch { get => Values[P.CSpStretch]; set => Values.Set(P.CSpStretch, value); }
 
+        [ParameterDecl(Name = "A import partials", Description = "Harmonic engine: take the partials from a sample (its frame or range of the Spectral engine's analysis: their levels and their spacing, as analysed) instead of the two sets", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int AHImp { get => Values[P.AHImp]; set => Values.Set(P.AHImp, value); }
+
+        [ParameterDecl(Name = "A import from", Description = "Harmonic engine: where in the sample the imported partials are taken from (0 % the start, 100 % the end)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int AHImpFrom { get => Values[P.AHImpFrom]; set => Values.Set(P.AHImpFrom, value); }
+
+        [ParameterDecl(Name = "A import span", Description = "Harmonic engine: how much of the sample after \"import from\" is averaged into the partials (0: the single frame)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int AHImpSpan { get => Values[P.AHImpSpan]; set => Values.Set(P.AHImpSpan, value); }
+
+        [ParameterDecl(Name = "A import ratios", Description = "Harmonic engine: how much of the imported partials' spacing is kept (100 %: as analysed, bell-like or reedy; 0: whole multiples of the pitch)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int AHImpRatio { get => Values[P.AHImpRatio]; set => Values.Set(P.AHImpRatio, value); }
+
+        [ParameterDecl(Name = "A mode table", Description = "Modal engine: where the modes come from: the chosen geometry, or the modes (frequency, decay, gain) found in a short sample treated as an impulse response", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int AMImp { get => Values[P.AMImp]; set => Values.Set(P.AMImp, value); }
+
+        [ParameterDecl(Name = "A ir start", Description = "Modal engine: where in the sample the impulse response starts, as a share of its length", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int AMImpStart { get => Values[P.AMImpStart]; set => Values.Set(P.AMImpStart, value); }
+
+        [ParameterDecl(Name = "A ir length", Description = "Modal engine: how long a stretch of the sample is analysed for modes", MinValue = 0, MaxValue = 1000, DefValue = 624)]
+        public int AMImpLen { get => Values[P.AMImpLen]; set => Values.Set(P.AMImpLen, value); }
+
+        [ParameterDecl(Name = "A ir decay", Description = "Modal engine: scales the decay of every imported mode (100 %: as measured)", MinValue = 0, MaxValue = 1000, DefValue = 200)]
+        public int AMImpDecay { get => Values[P.AMImpDecay]; set => Values.Set(P.AMImpDecay, value); }
+
+        [ParameterDecl(Name = "B import partials", Description = "Harmonic engine: take the partials from a sample (its frame or range of the Spectral engine's analysis: their levels and their spacing, as analysed) instead of the two sets", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int BHImp { get => Values[P.BHImp]; set => Values.Set(P.BHImp, value); }
+
+        [ParameterDecl(Name = "B import from", Description = "Harmonic engine: where in the sample the imported partials are taken from (0 % the start, 100 % the end)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int BHImpFrom { get => Values[P.BHImpFrom]; set => Values.Set(P.BHImpFrom, value); }
+
+        [ParameterDecl(Name = "B import span", Description = "Harmonic engine: how much of the sample after \"import from\" is averaged into the partials (0: the single frame)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int BHImpSpan { get => Values[P.BHImpSpan]; set => Values.Set(P.BHImpSpan, value); }
+
+        [ParameterDecl(Name = "B import ratios", Description = "Harmonic engine: how much of the imported partials' spacing is kept (100 %: as analysed, bell-like or reedy; 0: whole multiples of the pitch)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int BHImpRatio { get => Values[P.BHImpRatio]; set => Values.Set(P.BHImpRatio, value); }
+
+        [ParameterDecl(Name = "B mode table", Description = "Modal engine: where the modes come from: the chosen geometry, or the modes (frequency, decay, gain) found in a short sample treated as an impulse response", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int BMImp { get => Values[P.BMImp]; set => Values.Set(P.BMImp, value); }
+
+        [ParameterDecl(Name = "B ir start", Description = "Modal engine: where in the sample the impulse response starts, as a share of its length", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int BMImpStart { get => Values[P.BMImpStart]; set => Values.Set(P.BMImpStart, value); }
+
+        [ParameterDecl(Name = "B ir length", Description = "Modal engine: how long a stretch of the sample is analysed for modes", MinValue = 0, MaxValue = 1000, DefValue = 624)]
+        public int BMImpLen { get => Values[P.BMImpLen]; set => Values.Set(P.BMImpLen, value); }
+
+        [ParameterDecl(Name = "B ir decay", Description = "Modal engine: scales the decay of every imported mode (100 %: as measured)", MinValue = 0, MaxValue = 1000, DefValue = 200)]
+        public int BMImpDecay { get => Values[P.BMImpDecay]; set => Values.Set(P.BMImpDecay, value); }
+
+        [ParameterDecl(Name = "C import partials", Description = "Harmonic engine: take the partials from a sample (its frame or range of the Spectral engine's analysis: their levels and their spacing, as analysed) instead of the two sets", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int CHImp { get => Values[P.CHImp]; set => Values.Set(P.CHImp, value); }
+
+        [ParameterDecl(Name = "C import from", Description = "Harmonic engine: where in the sample the imported partials are taken from (0 % the start, 100 % the end)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int CHImpFrom { get => Values[P.CHImpFrom]; set => Values.Set(P.CHImpFrom, value); }
+
+        [ParameterDecl(Name = "C import span", Description = "Harmonic engine: how much of the sample after \"import from\" is averaged into the partials (0: the single frame)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int CHImpSpan { get => Values[P.CHImpSpan]; set => Values.Set(P.CHImpSpan, value); }
+
+        [ParameterDecl(Name = "C import ratios", Description = "Harmonic engine: how much of the imported partials' spacing is kept (100 %: as analysed, bell-like or reedy; 0: whole multiples of the pitch)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int CHImpRatio { get => Values[P.CHImpRatio]; set => Values.Set(P.CHImpRatio, value); }
+
+        [ParameterDecl(Name = "C mode table", Description = "Modal engine: where the modes come from: the chosen geometry, or the modes (frequency, decay, gain) found in a short sample treated as an impulse response", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int CMImp { get => Values[P.CMImp]; set => Values.Set(P.CMImp, value); }
+
+        [ParameterDecl(Name = "C ir start", Description = "Modal engine: where in the sample the impulse response starts, as a share of its length", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int CMImpStart { get => Values[P.CMImpStart]; set => Values.Set(P.CMImpStart, value); }
+
+        [ParameterDecl(Name = "C ir length", Description = "Modal engine: how long a stretch of the sample is analysed for modes", MinValue = 0, MaxValue = 1000, DefValue = 624)]
+        public int CMImpLen { get => Values[P.CMImpLen]; set => Values.Set(P.CMImpLen, value); }
+
+        [ParameterDecl(Name = "C ir decay", Description = "Modal engine: scales the decay of every imported mode (100 %: as measured)", MinValue = 0, MaxValue = 1000, DefValue = 200)]
+        public int CMImpDecay { get => Values[P.CMImpDecay]; set => Values.Set(P.CMImpDecay, value); }
+
         [ParameterDecl(Name = "Note", IsStateless = true, Description = "Note (off releases the track's note)")]
         public void SetNote(Note value, int track) => Notes.SetNote(track, value.Value);
 

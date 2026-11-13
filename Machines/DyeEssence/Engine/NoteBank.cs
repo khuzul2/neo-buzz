@@ -89,6 +89,12 @@ namespace NeoBuzz.DyeEssence
         public float SpSpeed = 1f, SpKey = 1f, SpFormant, SpSnap, SpBalance = 0.5f, SpBlur, SpTilt, SpStretch;
         public int SpPartials = 48;
         /// <summary>
+        /// P5b: the Harmonic engine's partials from the slot's sample (ImpOn; the frame or range ImpFrom, ImpSpan of the model in <see cref="Spectrum"/>, the spacing ImpRatio
+        /// of it kept) and the Modal engine's modes from it read as an impulse response (ModeOn; from ModeStart for ModeLen seconds, their decays scaled by ModeDecay).
+        /// </summary>
+        public bool ImpOn, ModeOn;
+        public float ImpFrom = 0.5f, ImpSpan, ImpRatio = 1f, ModeStart, ModeLen = 0.5f, ModeDecay = 1f;
+        /// <summary>
         /// Neo Learn L2a's additions (append only, off by default). TypeExt (> 0) makes the slot another type than the one Dye Essence's controls choose
         /// (SlotType.String). The String engine (StringEngine.cs): StrPick (0 bridge … 1 middle) places the comb the pluck gets, StrDamp (0 … 1) the loop's
         /// low-pass, StrHard (0 … 1) the pluck's length and brightness, StrDecay the time for the fundamental to fall 60 dB (s), StrStiff (0 … 1) the

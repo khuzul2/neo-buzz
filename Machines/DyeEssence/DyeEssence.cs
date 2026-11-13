@@ -202,6 +202,12 @@ namespace NeoBuzz.DyeEssence
 
         static readonly int[] SampleParam = { P.ASmpSrc, P.BSmpSrc, P.CSmpSrc };
         static readonly int[] TypeParam = { P.AType, P.BType, P.CType };
+        static readonly int[] ImpParam = { P.AHImp, P.BHImp, P.CHImp }, ModeParam = { P.AMImp, P.BMImp, P.CMImp };
+
+        /// <summary>Whether a slot on <paramref name="engine"/> keeps it when a sample is loaded for it: the engines that play or analyse a sample, and the Harmonic and Modal engines that take their partials or modes from it (P5b).</summary>
+        bool KeepsEngineForSample(int slot, int engine) =>
+            engine == (int)SlotType.Sample || engine == (int)SlotType.Granular || engine == (int)SlotType.Spectral
+            || engine == (int)SlotType.Harmonic && Values.Choice(ImpParam[slot]) == 1 || engine == (int)SlotType.Modal && Values.Choice(ModeParam[slot]) == 1;
 
         /// <summary>Slot <paramref name="slot"/>'s user sample's name ("" when none is loaded).</summary>
         internal string UserSampleName(int slot) => state.GetSample(slot).Name;
@@ -485,8 +491,9 @@ namespace NeoBuzz.DyeEssence
                 string note = LoadUserSample(item, path);
                 setParameter?.Invoke(SampleParam[item], UserSampleChoice);
                 int engine = Values.Choice(TypeParam[item]);
-                if (engine != (int)SlotType.Sample && engine != (int)SlotType.Granular && engine != (int)SlotType.Spectral) setParameter?.Invoke(TypeParam[item], (int)SlotType.Sample);
-                return $"Loaded the sample \"{UserSampleName(item)}\" as slot {SlotNames[item]}'s User sample, and set {SlotNames[item]} sample to User{(engine != (int)SlotType.Sample && engine != (int)SlotType.Granular && engine != (int)SlotType.Spectral ? $" and {SlotNames[item]} engine to Sample" : "")}.{note}";
+                bool keeps = KeepsEngineForSample(item, engine);
+                if (!keeps) setParameter?.Invoke(TypeParam[item], (int)SlotType.Sample);
+                return $"Loaded the sample \"{UserSampleName(item)}\" as slot {SlotNames[item]}'s User sample, and set {SlotNames[item]} sample to User{(!keeps ? $" and {SlotNames[item]} engine to Sample" : "")}.{note}";
             }
             if (kind != "wavetable") throw new ArgumentException($"Dye Essence doesn't import \"{kind}\"; it takes wavetable, sample, lfo_shape, sequence, fx_routing, ir and modulator.");
             if (item < 0 || item >= SlotNames.Length) throw new ArgumentException($"Dye Essence has {SlotNames.Length} slots; item {item} doesn't exist (0 A, 1 B, 2 C)");

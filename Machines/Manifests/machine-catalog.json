@@ -780,6 +780,15 @@
    ],
    "use_for": "A teaching physical-modelling synth: marimbas, plucked strings, glass bowls and bowed or breathy tones from a material, a mallet-pick-bow exciter morph and a string-tube-bar-plate geometry."
   },
+  "Neo Learn Spectral": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "polyphonic",
+    "ethereal"
+   ],
+   "use_for": "A teaching spectral synth: frozen pads, bell-like stretches, ghostly textures and slowed-down sounds from one sample (five built in, or your own WAV) analysed into partials and noise, with a stretch, a time smear, a freeze, a partial gate and a tone/noise balance."
+  },
   "Neo Learn String": {
    "category": "Synths",
    "tags": [

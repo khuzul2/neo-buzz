@@ -71,7 +71,13 @@ namespace NeoBuzz.DyeEssence
                 // The Spectral engine's parameters (appended in P5a, a block of their own per slot).
                 int sp = slot == 0 ? P.ASpSpeed : slot == 1 ? P.BSpSpeed : P.CSpSpeed;
                 int Sp(int aParam) => sp + (aParam - P.ASpSpeed);
-                bool Streams() => ctx.Raw(I(P.AType)) == (int)SlotType.Sample || ctx.Raw(I(P.AType)) == (int)SlotType.Granular || ctx.Raw(I(P.AType)) == (int)SlotType.Spectral;
+                // P5b: the Harmonic engine's partials and the Modal engine's modes may come from the slot's sample (their parameters follow the Spectral engine's).
+                int hi = slot == 0 ? P.AHImp : slot == 1 ? P.BHImp : P.CHImp;
+                int Hi(int aParam) => hi + (aParam - P.AHImp);
+                int mi = slot == 0 ? P.AMImp : slot == 1 ? P.BMImp : P.CMImp;
+                int Mi(int aParam) => mi + (aParam - P.AMImp);
+                bool Streams() => ctx.Raw(I(P.AType)) == (int)SlotType.Sample || ctx.Raw(I(P.AType)) == (int)SlotType.Granular || ctx.Raw(I(P.AType)) == (int)SlotType.Spectral
+                    || ctx.Raw(I(P.AType)) == (int)SlotType.Harmonic && ctx.Raw(hi) == 1 || ctx.Raw(I(P.AType)) == (int)SlotType.Modal && ctx.Raw(mi) == 1;
                 var userName = new TextBlock
                 {
                     Foreground = Theme.DimText,
@@ -151,6 +157,8 @@ namespace NeoBuzz.DyeEssence
                 var loadSample = SampleButton();
                 var loadSample2 = SampleButton();
                 var loadSample3 = SampleButton();
+                var loadSample4 = SampleButton();
+                var loadSample5 = SampleButton();
                 var wavetablePanel = Layout.Column(
                     Layout.Row(new ParamDropdown(ctx, I(P.AWarp1), width: 104), Layout.Gap(4), new ParamKnob(ctx, I(P.AWarp1Amt), "amount", 30),
                                Layout.Gap(10), new ParamDropdown(ctx, I(P.AWarp2), width: 104), Layout.Gap(4), new ParamKnob(ctx, I(P.AWarp2Amt), "amount", 30)),
@@ -168,15 +176,22 @@ namespace NeoBuzz.DyeEssence
                     Layout.Gap(1, 4),
                     Knobs(6, (K(P.AGrSize), "size"), (K(P.AGrRate), "rate"), (K(P.AGrSpray), "spray"), (K(P.AGrScan), "scan"),
                         (K(P.AGrJitter), "pitch"), (K(P.AGrRev), "back")));
-                var harmonicPanel = Layout.Column(
-                    Layout.Row(new ParamDropdown(ctx, H(P.AHSet), "from", 112), Layout.Gap(8), new ParamDropdown(ctx, H(P.AHSet2), "to", 112),
-                               Layout.Gap(8), Layout.Column(Layout.Gap(1, 16), load2)),
-                    Layout.Gap(1, 4),
-                    Knobs(5, (H(P.AHPartials), "partials"), (H(P.AHTilt), "tilt"), (H(P.AHOddEven), "odd/even"), (H(P.AHStretch), "stretch"), (H(P.AHDamp), "damp")));
-                var modalPanel = Layout.Column(
-                    Layout.Row(new ParamDropdown(ctx, M(P.AMExc), "exciter", 112), Layout.Gap(8), new ParamDropdown(ctx, M(P.AMGeom), "body", 112)),
-                    Layout.Gap(1, 4),
-                    Knobs(6, (M(P.AMForce), "force"), (M(P.AMModes), "modes"), (M(P.AMMat), "material"), (M(P.AMRing), "ring"), (M(P.AMHfDamp), "hf damp"), (M(P.AMSize), "size")));
+                // P5b: with "import" on, the sets' two drop-downs give way to the sample's and the import's knobs take the place of odd/even and damp (those two keep working).
+                var harmSets = Layout.Row(new ParamDropdown(ctx, H(P.AHSet), "from", 112), Layout.Gap(8), new ParamDropdown(ctx, H(P.AHSet2), "to", 112),
+                               Layout.Gap(8), Layout.Column(Layout.Gap(1, 16), load2), Layout.Gap(8), new ParamDropdown(ctx, Hi(P.AHImp), "import", 72));
+                var harmSample = Layout.Row(new ParamDropdown(ctx, K(P.ASmpSrc), "sample", 112), Layout.Gap(8), Layout.Column(Layout.Gap(1, 16), loadSample4),
+                               Layout.Gap(8), new ParamDropdown(ctx, Hi(P.AHImp), "import", 72));
+                var harmKnobs = Knobs(5, (H(P.AHPartials), "partials"), (H(P.AHTilt), "tilt"), (H(P.AHOddEven), "odd/even"), (H(P.AHStretch), "stretch"), (H(P.AHDamp), "damp"));
+                var harmImpKnobs = Knobs(6, (H(P.AHPartials), "partials"), (H(P.AHTilt), "tilt"), (H(P.AHStretch), "stretch"), (Hi(P.AHImpFrom), "from"), (Hi(P.AHImpSpan), "span"), (Hi(P.AHImpRatio), "ratios"));
+                var harmonicPanel = Layout.Column(harmSets, harmSample, Layout.Gap(1, 4), harmKnobs, harmImpKnobs);
+                // P5b: with "modes from" on Impulse response, the body's drop-down gives way to the sample's, and the ir knobs take the place of material, ring, hf damp and size (which do not apply to it).
+                var modalGeom = Layout.Row(new ParamDropdown(ctx, M(P.AMExc), "exciter", 112), Layout.Gap(8), new ParamDropdown(ctx, M(P.AMGeom), "body", 112),
+                               Layout.Gap(8), new ParamDropdown(ctx, Mi(P.AMImp), "modes from", 100));
+                var modalSample = Layout.Row(new ParamDropdown(ctx, M(P.AMExc), "exciter", 112), Layout.Gap(8), new ParamDropdown(ctx, K(P.ASmpSrc), "sample", 90), Layout.Gap(4),
+                               Layout.Column(Layout.Gap(1, 16), loadSample5), Layout.Gap(8), new ParamDropdown(ctx, Mi(P.AMImp), "modes from", 100));
+                var modalKnobs = Knobs(6, (M(P.AMForce), "force"), (M(P.AMModes), "modes"), (M(P.AMMat), "material"), (M(P.AMRing), "ring"), (M(P.AMHfDamp), "hf damp"), (M(P.AMSize), "size"));
+                var modalImpKnobs = Knobs(6, (M(P.AMForce), "force"), (M(P.AMModes), "modes"), (Mi(P.AMImpStart), "ir start"), (Mi(P.AMImpLen), "ir length"), (Mi(P.AMImpDecay), "ir decay"));
+                var modalPanel = Layout.Column(modalGeom, modalSample, Layout.Gap(1, 4), modalKnobs, modalImpKnobs);
                 // Spectral: the sample, the speed, key tracking and partials (reverse and the loop are parameters, not knobs here: the row has no room), then the shaping of what is resynthesised.
                 var spectralPanel = Layout.Column(
                     Layout.Row(new ParamDropdown(ctx, K(P.ASmpSrc), width: 90), Layout.Gap(4), loadSample3,
@@ -193,6 +208,11 @@ namespace NeoBuzz.DyeEssence
                     granularPanel.Visibility = type == (int)SlotType.Granular ? Visibility.Visible : Visibility.Collapsed;
                     harmonicPanel.Visibility = type == (int)SlotType.Harmonic ? Visibility.Visible : Visibility.Collapsed;
                     modalPanel.Visibility = type == (int)SlotType.Modal ? Visibility.Visible : Visibility.Collapsed;
+                    bool hImp = ctx.Raw(hi) == 1, mImp = ctx.Raw(mi) == 1;
+                    harmSets.Visibility = harmKnobs.Visibility = hImp ? Visibility.Collapsed : Visibility.Visible;
+                    harmSample.Visibility = harmImpKnobs.Visibility = hImp ? Visibility.Visible : Visibility.Collapsed;
+                    modalGeom.Visibility = modalKnobs.Visibility = mImp ? Visibility.Collapsed : Visibility.Visible;
+                    modalSample.Visibility = modalImpKnobs.Visibility = mImp ? Visibility.Visible : Visibility.Collapsed;
                     spectralPanel.Visibility = type == (int)SlotType.Spectral ? Visibility.Visible : Visibility.Collapsed;
                 }
                 ShowEngine();

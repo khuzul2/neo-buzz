@@ -1,0 +1,129 @@
+# Neo Learn Spectral factory presets. Output is set last so each chord sounds at the same level (loudest 50 ms RMS -22 dB). Times are in seconds.
+# Rebuild: python3 tools/gen-machine-presets.py Machines/NeoLearnSpectral
+machine "Neo Learn Spectral"
+
+preset "Pad — Frozen Choir"
+Source = Choir
+Stretch = 0
+Time Smear = 40
+Freeze = 100
+Partial Gate = 0
+Tone / Noise = 55
+Attack = 0.5
+Decay = 1
+Sustain = 100
+Release = 1.8
+Unison / Spread = 40
+Output = -7.2
+
+preset "Pad — Slowed Strings"
+Source = Strings
+Stretch = 0
+Time Smear = 30
+Freeze = 70
+Partial Gate = 0
+Tone / Noise = 50
+Attack = 0.6
+Decay = 1.2
+Sustain = 100
+Release = 2
+Unison / Spread = 35
+Output = -5.4
+
+preset "Bell — Stretched Pluck"
+Source = Pluck
+Stretch = 45
+Time Smear = 0
+Freeze = 0
+Partial Gate = 20
+Tone / Noise = 80
+Attack = 0.002
+Decay = 2
+Sustain = 0
+Release = 1.2
+Unison / Spread = 0
+Output = -0.9
+
+preset "Texture — Noise Ghost"
+Source = Texture
+Stretch = 0
+Time Smear = 50
+Freeze = 40
+Partial Gate = 0
+Tone / Noise = 15
+Attack = 0.8
+Decay = 1.5
+Sustain = 90
+Release = 2.5
+Unison / Spread = 40
+Output = 3.6
+
+preset "Keys — Gated Bell"
+Source = Bell
+Stretch = -10
+Time Smear = 0
+Freeze = 0
+Partial Gate = 70
+Tone / Noise = 85
+Attack = 0.002
+Decay = 1.5
+Sustain = 0
+Release = 0.8
+Unison / Spread = 0
+Output = -3.2
+
+preset "Lead — Sine Choir"
+Source = Choir
+Stretch = 0
+Time Smear = 0
+Freeze = 0
+Partial Gate = 90
+Tone / Noise = 100
+Attack = 0.03
+Decay = 0.4
+Sustain = 80
+Release = 0.4
+Unison / Spread = 20
+Output = -5.6
+
+preset "Drone — Dense Strings"
+Source = Strings
+Stretch = -60
+Time Smear = 60
+Freeze = 100
+Partial Gate = 10
+Tone / Noise = 50
+Attack = 1.2
+Decay = 2
+Sustain = 100
+Release = 3
+Unison / Spread = 60
+Output = -1.4
+
+preset "FX — Glass Cloud"
+Source = Bell
+Stretch = 80
+Time Smear = 80
+Freeze = 60
+Partial Gate = 0
+Tone / Noise = 60
+Attack = 1.0
+Decay = 2
+Sustain = 100
+Release = 3
+Unison / Spread = 70
+Output = 2.3
+
+preset "Vocal — Breath Choir"
+Source = Choir
+Stretch = 0
+Time Smear = 20
+Freeze = 0
+Partial Gate = 0
+Tone / Noise = 10
+Attack = 0.15
+Decay = 0.8
+Sustain = 90
+Release = 1
+Unison / Spread = 25
+Output = 7.8
