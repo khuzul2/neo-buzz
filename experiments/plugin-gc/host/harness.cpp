@@ -260,14 +260,23 @@ int main(int argc, char** argv)
         if (dur[i] > median + 500000) { stalls500All++; if (gcFlag[i]) stalls500++; }
         if (gcFlag[i]) worstGc = std::max(worstGc, dur[i]); else worstNoGc = std::max(worstNoGc, dur[i]);
     }
+    // Non-GC callbacks set the baseline (engine cost bursts and runner noise live there); a GC callback is an
+    // "attributable stall" when it exceeds that baseline's 99.9th percentile by more than 0.5 ms.
+    std::vector<uint32_t> nonGc; nonGc.reserve(recBlocks);
+    for (int64_t i = 0; i < recBlocks; i++) if (!gcFlag[i]) nonGc.push_back(dur[i]);
+    std::sort(nonGc.begin(), nonGc.end());
+    uint32_t base999 = nonGc.empty() ? 0 : pct(nonGc, 99.9), base9999 = nonGc.empty() ? 0 : pct(nonGc, 99.99);
+    int64_t attrib = 0; uint32_t maxGcCb = 0;
+    for (int64_t i = 0; i < recBlocks; i++) if (gcFlag[i]) { maxGcCb = std::max(maxGcCb, dur[i]); if (dur[i] > base999 + 500000u) attrib++; }
+    double gcExcess = maxGcCb > base999 ? (double)(maxGcCb - base999) : 0.0;
     auto us = [](double ns) { return ns / 1000.0; };
     printf("RT label=%s %s\n", c.label.c_str(), rtMsg.c_str());
     printf("RESULT label=%s block=%d period_us=%.1f load=%d latency=%d seconds=%.1f callbacks=%lld mean_us=%.1f median_us=%.1f p99_us=%.1f p999_us=%.1f p9999_us=%.1f worst_us=%.1f "
            "misses=%lld misses_gc=%lld gc_callbacks=%lld stalls500_all=%lld stalls500_gc=%lld worst_gc_cb_us=%.1f worst_nongc_cb_us=%.1f late_p999_us=%.1f late_max_us=%.1f "
-           "gc_count=%d gc_gen1=%d gc_gen2=%d pause_total_ms=%.2f pause_max_ms=%.3f alloc_mb=%.1f resyncs=%lld\n",
+           "gc_count=%d gc_gen1=%d gc_gen2=%d pause_total_ms=%.2f pause_max_ms=%.3f alloc_mb=%.1f resyncs=%lld nongc_p999_us=%.1f nongc_p9999_us=%.1f gc_attrib_stalls=%lld gc_max_excess_us=%.1f\n",
            c.label.c_str(), c.block, us((double)period), c.load, c.latency, wall, (long long)recBlocks, us(sum / recBlocks), us(median), us(pct(sorted, 99)), us(pct(sorted, 99.9)), us(pct(sorted, 99.99)), us(sorted.back()),
            (long long)misses, (long long)missesGc, (long long)gcCbs, (long long)stalls500All, (long long)stalls500, us(worstGc), us(worstNoGc), us(pct(sortedLate, 99.9)), us(sortedLate.back()),
-           gcEnd0 - gc0Start, gcEnd1 - gc1Start, gcEnd2 - gc2Start, (pauseEnd - pauseStart) / 1e6, maxPause / 1e6, (allocEnd - allocStart) / 1048576.0, (long long)resyncCount);
+           gcEnd0 - gc0Start, gcEnd1 - gc1Start, gcEnd2 - gc2Start, (pauseEnd - pauseStart) / 1e6, maxPause / 1e6, (allocEnd - allocStart) / 1048576.0, (long long)resyncCount, us(base999), us(base9999), (long long)attrib, us(gcExcess));
     // The ten worst callbacks, to see what they coincide with.
     std::vector<int64_t> idx(recBlocks); for (int64_t i = 0; i < recBlocks; i++) idx[i] = i;
     std::partial_sort(idx.begin(), idx.begin() + std::min<int64_t>(10, recBlocks), idx.end(), [&](int64_t a, int64_t b) { return dur[a] > dur[b]; });
