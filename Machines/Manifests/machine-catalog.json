@@ -755,7 +755,7 @@
     "granular",
     "polyphonic",
     "pad",
-    "texture"
+    "lush"
    ],
    "use_for": "A teaching granular synth: ambient clouds, frozen textures and glitchy stutters from grain size, density, spray, octave shimmer and a trapezoid-to-Gaussian contour."
   },
@@ -763,10 +763,9 @@
    "category": "Synths",
    "tags": [
     "learning",
-    "physical-modelling",
+    "physical-model",
     "polyphonic",
     "pluck",
-    "mallet",
     "keys"
    ],
    "use_for": "A teaching physical-modelling synth: marimbas, plucked strings, glass bowls and bowed or breathy tones from a material, a mallet-pick-bow exciter morph and a string-tube-bar-plate geometry."
