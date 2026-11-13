@@ -14,6 +14,7 @@ import os
 import shutil
 import statistics
 import sys
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -32,7 +33,13 @@ def natives():
     return next(m for m in d["machines"] if m["id"] == "buzztrax-buzzmachines")["natives"]
 
 
-def measure(c, builds):
+# Cases: the machine's defaults, and a short delay with feedback: its tail passes through the denormal range in about two
+# seconds (0.6^170 = 1e-38), where a build that slows down on denormals shows it in the windows after the input.
+CASES = [("defaults", []),
+         ("10 ms, +60 % feedback", [("Length", 10), ("Length unit", 1), ("Feedback", 102)])]
+
+
+def measure(c, builds, settings):
     """{label: (playing ms/s, median after, worst after)} for one render of the builds side by side."""
     c.call("song_new", discard_unsaved=True, tempo_bpm=TEMPO)
     c.call("song_set", song_end_beats=BEATS)
@@ -48,6 +55,8 @@ def measure(c, builds):
         m = f"B{i}"
         c.call("machine_add", gear=g, name=m)
         c.call("connect", **{"from": "Src", "to": m})
+        if settings:
+            c.call("param_set", machine=m, changes=[{"param": p, "value": f"raw:{v}", "track": 0} for p, v in settings])
         names[m] = label
     r = c.call("render", **{"from": 0, "to": BEATS, "tail_seconds": TAIL, "cpu": True, "cpu_window_seconds": 2.0})
     out = {}
@@ -61,6 +70,36 @@ def measure(c, builds):
     except (OSError, TypeError):
         pass
     return out
+
+
+def wall(c, gear, settings):
+    """Render time per second of audio, as tools/machine-profiler.py reads it (the faster of two 4 s renders), of the
+    input alone (gear None) or through one build: the machine's cost is the difference, in ms per second of audio."""
+    c.call("song_new", discard_unsaved=True, tempo_bpm=TEMPO)
+    c.call("song_set", song_end_beats=8)
+    g, preset, params, notes = nt.SOURCE
+    c.call("machine_add", gear=g, name="Src", connect_to="none" if gear else "Master")
+    c.call("preset_load", machine="Src", preset=preset)
+    nt.set_params(c, "Src", params)
+    c.call("pattern_create", machine="Src", name="A", length_beats=8)
+    c.call("notes_write", machine="Src", pattern="A", notes=notes)
+    c.call("arrangement_place", machine="Src", pattern="A", at=[0])
+    if gear:
+        c.call("machine_add", gear=gear, name="M", connect_to="Master")
+        c.call("connect", **{"from": "Src", "to": "M"})
+        if settings:
+            c.call("param_set", machine="M", changes=[{"param": p, "value": f"raw:{v}", "track": 0} for p, v in settings])
+    best = None
+    for _ in range(3):
+        t = time.time()
+        r = c.call("render", **{"from": 0, "to": 8, "tail_seconds": 0.0})
+        t = (time.time() - t) / 4.0
+        best = t if best is None else min(best, t)
+        try:
+            os.remove(r.get("file"))
+        except (OSError, TypeError):
+            pass
+    return best
 
 
 def main(argv):
@@ -117,15 +156,24 @@ def main(argv):
         c.initialize()
         try:
             for gear, builds in plan.items():
-                runs = {lb: [] for lb, _ in builds}
-                for _ in range(reps):
-                    for lb, v in measure(c, builds).items():
-                        runs[lb].append(v)
-                print(f"{gear}: work time, ms per second of audio (median of {reps} renders; after = the 20 s of silence)", flush=True)
-                for lb, vs in runs.items():
-                    if vs:
-                        print(f"  {lb:<14} playing {statistics.median(v[0] for v in vs):6.2f}   after (median window) {statistics.median(v[1] for v in vs):6.2f}"
-                              f"   after (worst window) {statistics.median(v[2] for v in vs):6.2f}", flush=True)
+                for case, settings in CASES:
+                    runs = {lb: [] for lb, _ in builds}
+                    for _ in range(reps):
+                        try:
+                            for lb, v in measure(c, builds, settings).items():
+                                runs[lb].append(v)
+                        except RuntimeError as e:
+                            print(f"  {gear} {case}: {str(e)[:300]}", flush=True)
+                            break
+                    base = [wall(c, None, None) for _ in range(reps)]
+                    for lb, g in builds:
+                        w = [wall(c, g, settings) for _ in range(reps)]
+                        print(f"  {lb:<14} render wall minus input alone (the profiler's reading): {1000 * (statistics.median(w) - statistics.median(base)):6.1f} ms/s", flush=True)
+                    print(f"{gear}, {case}: work time, ms per second of audio (median of {reps} renders; after = the 20 s of silence)", flush=True)
+                    for lb, vs in runs.items():
+                        if vs:
+                            print(f"  {lb:<14} playing {statistics.median(v[0] for v in vs):6.2f}   after (median window) {statistics.median(v[1] for v in vs):6.2f}"
+                                  f"   after (worst window) {statistics.median(v[2] for v in vs):6.2f}", flush=True)
         finally:
             c.close()
     finally:
