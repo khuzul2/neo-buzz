@@ -894,6 +894,19 @@
    ],
    "use_for": "Control one frequency band at a time on buses and masters, compressing or expanding upwards."
   },
+  "Neo Patch": {
+   "category": "Synths",
+   "tags": [
+    "polyphonic",
+    "subtractive",
+    "fm",
+    "wavetable",
+    "lead",
+    "bass",
+    "pad"
+   ],
+   "use_for": "Sounds the fixed synths cannot make: build your own routing from oscillators, envelopes, LFOs, filters, shapers and delays, with per-note and global modulation, MPE and sixteen macros."
+  },
   "Neo Poly": {
    "category": "Synths",
    "tags": [

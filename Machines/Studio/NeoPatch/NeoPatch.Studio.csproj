@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Patch, studio flavour (docs/specs/studio-mvp.md S1): see ../NeoStudio.targets. No editor yet (NP2): the studio shows the generic parameter view. -->
+  <PropertyGroup>
+    <NeoFolder>NeoPatch</NeoFolder>
+    <NeoName>Neo Patch</NeoName>
+    <NeoKind>Generators</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoStudio.targets" />
+  <ItemGroup>
+    <Compile Include="$(M)DyeEssence\Engine\Lanes.cs;$(M)DyeEssence\Engine\NoteEnvelope.cs;$(M)DyeEssence\Engine\TableArena.cs;$(M)DyeEssence\Engine\TableBank.cs;$(M)DyeEssence\Engine\SampleSources.cs" Link="Shared\DyeEssence\%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoWave\Engine\Tables.cs" Link="Shared\NeoWave\%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoSampler\Engine\Interpolation.cs;$(M)NeoSampler\Engine\SampleData.cs" Link="Shared\NeoSampler\%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

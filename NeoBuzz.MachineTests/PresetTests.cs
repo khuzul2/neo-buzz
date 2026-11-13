@@ -63,6 +63,14 @@ namespace NeoBuzz.MachineTests
             ["Neo Learn Formant"] = (NeoBuzz.LearnFormant.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.FormantMap(NeoBuzz.LearnFormant.Params.Table), v, x.Length)),
             ["Neo Learn Wavefolder"] = (NeoBuzz.LearnFold.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.WavefolderMap(NeoBuzz.LearnFold.Params.Table), v, x.Length)),
             // docs/specs/neo-learn.md L2b: Neo Learn Phase Distortion, Vector and Sampler.
+            // docs/specs/neo-patch.md NP1: a patch (the preset's machine state) played through the engine.
+            ["Neo Patch"] = (NeoBuzz.Patch.Params.Table, (v, x) =>
+            {
+                for (int t = 0; t < NeoBuzz.DyeEssence.TableBank.Count; t++) NeoBuzz.DyeEssence.TableBank.GetNow(t);
+                var e = new NeoBuzz.Patch.PatchEngine(v);
+                if (dyeState != null) e.SetPatch((string)dyeState.Element("Patch") ?? "");
+                return RenderSynth(e, (en, l, r, n) => ((NeoBuzz.Patch.PatchEngine)en).Process(l, r, n), x.Length);
+            }),
             ["Neo Learn Phase Distortion"] = (NeoBuzz.LearnPd.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.PhaseDistortionMap(NeoBuzz.LearnPd.Params.Table), v, x.Length)),
             ["Neo Learn Vector"] = (NeoBuzz.LearnVector.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.VectorMap(NeoBuzz.LearnVector.Params.Table), v, x.Length)),
             ["Neo Learn Sampler"] = (NeoBuzz.LearnSampler.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.SamplerMap(NeoBuzz.LearnSampler.Params.Table), v, x.Length)),
@@ -109,7 +117,7 @@ namespace NeoBuzz.MachineTests
             return (T)e;
         }
 
-        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral" };
+        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
 
         /// <summary>
         /// Neo Sampler: the song's slots 1–16 hold the built-in drums and the sine (the presets that
@@ -361,7 +369,7 @@ namespace NeoBuzz.MachineTests
             foreach (var (file, machine, name, values) in AllPresets())
             {
                 var (table, render) = Machines[machine];
-                dyeState = machine == "Dye Essence" ? PresetState(file, name) : null;
+                dyeState = machine == "Dye Essence" || machine == "Neo Patch" ? PresetState(file, name) : null;
                 var v = new ParamValues(table);
                 foreach (var kv in values) if (kv.Key >= 0) v.Set(kv.Key, kv.Value);
                 var y = render(v, x);

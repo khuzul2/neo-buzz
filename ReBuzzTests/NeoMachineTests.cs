@@ -124,6 +124,8 @@ namespace ReBuzzTests
         internal static readonly NeoInfo LearnVector = new("Neo Learn Vector", "Learn Vector", true);
         internal static readonly NeoInfo LearnSampler = new("Neo Learn Sampler", "Learn Sampler", true);
         internal static readonly NeoInfo LearnSpectral = new("Neo Learn Spectral", "Learn Spectral", true);
+        // Neo Patch NP1 (docs/specs/neo-patch.md): the modular synth; no editor until NP2.
+        internal static readonly NeoInfo Patch = new("Neo Patch", "Patch", true);
         // The clipper (docs/specs/mastering-tools.md §5.1): oversampled curves into a ceiling no sample passes.
         internal static readonly NeoInfo Clipper = new("Neo Clipper", "Clipper", false);
         // The transient shaper and the low-end shaper (docs/specs/mastering-tools.md §5.4, §5.5).
@@ -1821,7 +1823,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, LearnSub, LearnFm, LearnWt, LearnAdd, LearnGrain, LearnPhys, LearnString, LearnFormant, LearnFold, LearnPd, LearnVector, LearnSampler, LearnSpectral, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip, Tape, DeEsser, Gate })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, LearnSub, LearnFm, LearnWt, LearnAdd, LearnGrain, LearnPhys, LearnString, LearnFormant, LearnFold, LearnPd, LearnVector, LearnSampler, LearnSpectral, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip, Tape, DeEsser, Gate, Patch })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");
