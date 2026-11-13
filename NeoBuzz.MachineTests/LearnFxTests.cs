@@ -230,6 +230,46 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
+        public void ChorusAndRoomStopAfterLongSilenceAndResumeCleanly()
+        {
+            var chorus = new ChorusFx(Rate) { Amount = 0.6f };
+            var room = new RoomFx(Rate) { Amount = 0.6f };
+            var l = new float[Block]; var r = new float[Block];
+            for (int b = 0; b < 80; b++) { Sine(l, r, b * Block, 330, 0.3); chorus.Process(l, r, Block); Sine(l, r, b * Block, 330, 0.3); room.Process(l, r, Block); }
+            for (int b = 0; b < 48000 * 10 / Block; b++)
+            {
+                Array.Clear(l); Array.Clear(r); chorus.Process(l, r, Block);
+                Array.Clear(l); Array.Clear(r); room.Process(l, r, Block);
+                if (b * Block > Rate * 9) Assert.That(l.Max(Math.Abs), Is.EqualTo(0f), "silent once stopped");
+            }
+            double level = 0;
+            for (int b = 0; b < 200; b++)
+            {
+                Sine(l, r, b * Block, 330, 0.3); chorus.Process(l, r, Block);
+                Sine(l, r, b * Block, 330, 0.3); room.Process(l, r, Block);
+                foreach (float v in l) { Assert.That(float.IsFinite(v) && Math.Abs(v) < 3); }
+                if (b >= 100) level += Measure.Rms(l, 0, Block);
+            }
+            Assert.That(level / 100, Is.InRange(0.1, 0.7), "the sound is back at about its old level");
+        }
+
+        [Test]
+        public void TheChorusAddsNoNoiseWhenNothingPlays()
+        {
+            var chorus = new ChorusFx(Rate) { Amount = 1f };
+            var l = new float[Block]; var r = new float[Block];
+            for (int b = 0; b < 60; b++) { Sine(l, r, b * Block, 330, 0.3); chorus.Process(l, r, Block); }
+            float peak = 0;
+            for (int b = 0; b < 400; b++)
+            {
+                Array.Clear(l); Array.Clear(r);
+                chorus.Process(l, r, Block);
+                if (b >= 100) for (int i = 0; i < Block; i++) peak = Math.Max(peak, Math.Max(Math.Abs(l[i]), Math.Abs(r[i])));
+            }
+            Assert.That(peak, Is.LessThan(1e-7f), "after the signal and the delay have gone, the chorus is silent");
+        }
+
+        [Test]
         public void TheChorusWidensAndLeavesTheLevelAlone()
         {
             var chorus = new ChorusFx(Rate) { Amount = 1f };

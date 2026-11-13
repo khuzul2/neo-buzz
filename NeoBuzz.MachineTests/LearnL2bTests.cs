@@ -16,6 +16,20 @@ namespace NeoBuzz.MachineTests
     {
         static readonly Action<ParamValues> Sustained = x => { x.Set(YP.EnvAttack, 0); x.Set(YP.EnvSustain, 1000); x.Set(YP.EnvDecay, 800); };
 
+        [TestCaseSource(nameof(All))]
+        public void WithNoNoteEveryLearnMachineIsSilent(M m)
+        {
+            var (h, _) = Make(m);
+            var l = new float[Block]; var r = new float[Block];
+            float peak = 0;
+            for (int b = 0; b < 400; b++)
+            {
+                h.Process(l, r, Block);
+                for (int i = 0; i < Block; i++) peak = Math.Max(peak, Math.Max(Math.Abs(l[i]), Math.Abs(r[i])));
+            }
+            Assert.That(peak, Is.LessThan(1e-6f), m.Gear + ": sound with no note (the profiler calls it a drone)");
+        }
+
         // ------------------------------------------------------------------ Phase Distortion
 
         [Test]

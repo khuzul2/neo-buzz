@@ -249,7 +249,7 @@ namespace NeoBuzz.DyeEssence
             if (foldN > 0)
             {
                 // each lane's stage gain, held so that the folds' total gain times the lane's pitch stays inside what the oversampled rate can carry
-                for (int l = 0; l < 8; l++) s.FoldGain[at + l] = Warps.FoldLimit(w.FoldG, foldN, s.Inc[at + l] * (1.0 + Math.Abs(w.Fm)));
+                for (int l = 0; l < 8; l++) s.FoldGain[at + l] = Warps.FoldLimit(w.FoldG, foldN, s.Inc[at + l] * (1.0 + System.Math.Abs(w.Fm)));
             }
             TF foldG = foldN > 0 ? TL.Load(s.FoldGain, at) : zero, foldB = TL.Splat(w.FoldBias);
             for (int t = 0; t < count; t++)

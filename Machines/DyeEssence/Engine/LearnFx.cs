@@ -61,12 +61,21 @@ namespace NeoBuzz.DyeEssence
         /// <summary>Non-finite becomes 0 (an engine that went wrong must not reach a feedback path).</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Clean(float x) => float.IsFinite(x) ? x : 0f;
+
+        /// <summary>True when every sample of the block is exactly zero (a machine with no note sounding): a stage that has rung out can stop running.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        public static bool Silent(float[] l, float[] r, int n)
+        {
+            for (int i = 0; i < n; i++)
+                if (l[i] != 0f || r[i] != 0f) return false;
+            return true;
+        }
     }
 
     /// <summary>A warm stereo chorus on the output: dry plus a wet signal from the dimension chorus, softened and lightly noisy. One knob (Amount, 0 … 1).</summary>
     internal sealed class ChorusFx
     {
-        /// <summary>The noise under the wet signal (linear, about -66 dBFS) and the wet's top roll-off (Hz).</summary>
+        /// <summary>The noise under the wet signal (linear, about -66 dBFS, only while a signal plays: it follows the wet's level over 50 ms) and the wet's top roll-off (Hz).</summary>
         public const float NoiseLevel = 0.0005f;
         public const double ToneHz = 6500;
 
@@ -74,7 +83,10 @@ namespace NeoBuzz.DyeEssence
         readonly float[] wetL = new float[NoteBank.MaxBlock], wetR = new float[NoteBank.MaxBlock];
         readonly float smoothK;
         Rng rng = new Rng(0xC0A05E5u);
-        float noiseL, noiseR;
+        float noiseL, noiseR, follow;
+        readonly float followK;
+        readonly int idleAfter;
+        int quiet;
         float amount, mix;
 
         public ChorusFx(float sampleRate)
@@ -90,6 +102,8 @@ namespace NeoBuzz.DyeEssence
                 Feedback = 0f,
             };
             smoothK = LearnFxMath.Coefficient(0.02, sampleRate);
+            followK = (float)PortableMath.Exp(-1.0 / (0.05 * sampleRate));
+            idleAfter = (int)(0.3 * sampleRate);   // the wet has gone 0.3 s after the last sample
         }
 
         /// <summary>0 (off: the block passes untouched) … 1 (the wet at 0.8 of the dry, the rate and depth at their widest).</summary>
@@ -99,7 +113,7 @@ namespace NeoBuzz.DyeEssence
         {
             chorus.Reset();
             mix = 0;
-            noiseL = noiseR = 0;
+            noiseL = noiseR = follow = 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
@@ -110,6 +124,14 @@ namespace NeoBuzz.DyeEssence
                 mix = 0;
                 return;
             }
+            // nothing playing for long enough that the wet has gone: stop (once, clearing what is left) until a note sounds again
+            if (LearnFxMath.Silent(l, r, n))
+            {
+                if (quiet >= idleAfter) return;
+                quiet += n;
+                if (quiet >= idleAfter) { Reset(); quiet = idleAfter; }
+            }
+            else quiet = 0;
             chorus.RateHz = 0.35f + 0.55f * amount;
             chorus.Depth = 0.3f + 0.4f * amount;
             float target = 0.8f * amount;
@@ -123,18 +145,22 @@ namespace NeoBuzz.DyeEssence
             }
             chorus.Process(wetL, wetR, n);
             // the bucket-brigade's noise: white, low-passed, only under the wet signal
-            float nl = noiseL, nr = noiseR;
+            float nl = noiseL, nr = noiseR, fo = follow;
             float m = mix;
             for (int i = 0; i < n; i++)
             {
                 m += (target - m) * smoothK;
+                float peak = Math.Max(Math.Abs(wetL[i]), Math.Abs(wetR[i]));
+                fo = peak > fo ? peak : DspMath.Flush(fo * followK);
+                float ng = NoiseLevel * Math.Min(1f, 20f * fo);
                 nl += (rng.NextBipolar() - nl) * 0.25f;
                 nr += (rng.NextBipolar() - nr) * 0.25f;
-                l[i] += m * (wetL[i] + NoiseLevel * nl);
-                r[i] += m * (wetR[i] + NoiseLevel * nr);
+                l[i] += m * (wetL[i] + ng * nl);
+                r[i] += m * (wetR[i] + ng * nr);
             }
             noiseL = DspMath.Flush(nl);
             noiseR = DspMath.Flush(nr);
+            follow = fo;
             mix = DspMath.Flush(m);
         }
     }
@@ -230,6 +256,8 @@ namespace NeoBuzz.DyeEssence
         readonly float[] combDelay = new float[8], combG = new float[8];
         readonly float smoothK;
         float amount, mix, size = 1f, sizeApplied = -1f;
+        readonly int idleAfter;
+        int quiet;
 
         public RoomFx(float sampleRate)
         {
@@ -250,6 +278,7 @@ namespace NeoBuzz.DyeEssence
                 apR[k] = new AllpassDiffuser((int)(sampleRate * DiffuserMs[k] * 1.13 * 2 * 0.001) + 8);
             }
             smoothK = LearnFxMath.Coefficient(0.02, sampleRate);
+            idleAfter = (int)(8.0 * sampleRate);   // the tail (T60 up to 0.9 s) is 400 dB down
             Setup(1f);
         }
 
@@ -316,6 +345,13 @@ namespace NeoBuzz.DyeEssence
                 mix = 0;
                 return;
             }
+            if (LearnFxMath.Silent(l, r, n))
+            {
+                if (quiet >= idleAfter) return;
+                quiet += n;
+                if (quiet >= idleAfter) { Reset(); quiet = idleAfter; }
+            }
+            else quiet = 0;
             if (size != sizeApplied) Setup(size);
             float target = 0.7f * amount;
             float m = mix;
