@@ -534,12 +534,16 @@ namespace ReBuzz.Studio.Tests
                 Try("029-start-history-empty", () => { window.Detail.Close(); window.Inspector.Open(); window.Inspector.ShowTab(ReBuzz.Studio.Views.Inspector.InspectorPanel.HistoryTabName); Shot(window, "029-start-history-empty", "The inspector's History on a new song (P3i): nothing done yet, and the first step to make.", "Alt+Cmd+I, then History.", song: "none (new song)"); window.Inspector.ShowTab(ReBuzz.Studio.Views.Inspector.InspectorPanel.SelectionTab); });
                 Try("034-start-sequence-nothing-arranged", () =>
                 {
-                    ReBuzz.Studio.Shell.EmptyStates.AddStarter(Core, "Neo Poly");
+                    // A starter comes with its first pattern, placed on its track; this shot (and 044 and 046) show the states their names say, so
+                    // the pattern goes (undoable: it is the "nothing arranged", "no clips" and "no patterns" a person reaches by deleting it).
+                    var poly = ReBuzz.Studio.Shell.EmptyStates.AddStarter(Core, "Neo Poly");
+                    Settle();
+                    poly.DeletePattern(poly.Patterns[0]);
                     Settle();
                     window.ShowView("Sequence");
                     window.Tabs.Items.OfType<TabItem>().Select(t => t.Content).OfType<ReBuzz.Studio.Views.Sequence.SequenceView>().First().RefreshEmpty();
                     Settle();
-                    Shot(window, "034-start-sequence-nothing-arranged", "The Sequence tab after the Neo Poly starter (P3i): it has its track and nothing placed on it; the step is a new pattern on the track.", "Click the Neo Poly starter, then the Sequence tab.", song: "new song with Neo Poly");
+                    Shot(window, "034-start-sequence-nothing-arranged", "The Sequence tab after the Neo Poly starter and its pattern deleted (P3i): it has its track and nothing placed on it; the step is a new pattern on the track.", "Click the Neo Poly starter, then the Sequence tab.", song: "new song with Neo Poly");
                 });
                 Try("044-start-session-no-clips", () => { window.ShowView("Session"); Shot(window, "044-start-session-no-clips", "The Session tab after the Neo Poly starter (P3i): a track and no clip; the step is Create a clip, or a double click on a slot.", "Click the Neo Poly starter, then the Session tab.", song: "new song with Neo Poly"); });
                 Try("046-start-tracker-no-patterns", () => { window.Detail.ShowPage(false, false); Shot(window, "046-start-tracker-no-patterns", "The Tracker on a machine with no patterns (P3i): New pattern is the next step.", "Select a machine that has no pattern, then the Tracker.", song: "new song with Neo Poly"); });
@@ -661,6 +665,53 @@ namespace ReBuzz.Studio.Tests
                 });
                 Try("340-session-no-transport", () =>
                     Shot(window, "340-session-no-transport", "Session (P3g): its toolbar has no transport of its own any more: Stop all, Overdub, Capture, Back to arrangement, Launch, Follow, the nudge and Scenes; the one transport is the top bar above (metronome, time signature, tempo, Tap, the clock).", "Ctrl+Tab, or the Session tab."));
+                Try("347-export-audio-sheet", () =>
+                {
+                    var sheet = new ReBuzz.Studio.Shell.ExportSheet(Core);
+                    sheet.Show();
+                    Settle();
+                    sheet.PathBox.Text = "/Users/you/Music/Gallery demo.wav";
+                    sheet.Bits.SelectedIndex = 0;
+                    sheet.Rate.SelectedIndex = 2;
+                    sheet.Stems.SelectedIndex = 1;
+                    Settle();
+                    try
+                    {
+                        DialogShot(window, sheet, "347-export-audio-sheet", "Export Audio (P3j): the range (song or loop), the bit depth (16, 24, 32 float), dither (on for 16 bit; Neo Dither's), the sample rate, normalise (off), stems, and the file; Export and Cancel. It runs the agent's export_audio, so the file is the one the tool writes.", "File ▸ Export Audio… (Shift+Cmd+R).", notes: Headless);
+                    }
+                    finally
+                    {
+                        sheet.Close();
+                    }
+                });
+                Try("348-export-audio-progress", () =>
+                {
+                    string file = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "gallery-export-" + System.Environment.ProcessId + ".wav");
+                    var sheet = new ReBuzz.Studio.Shell.ExportSheet(Core);
+                    sheet.Show();
+                    Settle();
+                    sheet.PathBox.Text = file;
+                    bool shot = false;
+                    ReBuzz.Studio.Shell.ExportSheet.OnProgress = seconds =>
+                    {
+                        if (shot) return;
+                        shot = true;
+                        sheet.PathBox.Text = "/Users/you/Music/Gallery demo.wav";
+                        DialogShot(window, sheet, "348-export-audio-progress", "Export Audio while it renders (P3j): the sheet's settings locked, a progress bar and the seconds rendered; Cancel stops it and leaves no file.", "Export in the sheet.", notes: Headless);
+                        sheet.CancelButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                    };
+                    try
+                    {
+                        var run = sheet.Run();
+                        while (!run.IsCompleted) { Dispatcher.UIThread.RunJobs(); System.Threading.Thread.Sleep(2); }
+                    }
+                    finally
+                    {
+                        ReBuzz.Studio.Shell.ExportSheet.OnProgress = null;
+                        sheet.Close();
+                        if (System.IO.File.Exists(file)) System.IO.File.Delete(file);
+                    }
+                });
                 Try("345-session-machine-colours", () => WithMachineColours(() =>
                 {
                     window.ShowView("Session");
@@ -1493,7 +1544,10 @@ namespace ReBuzz.Studio.Tests
                     foreach (var c in wires) level[c] = 32768f * (float)System.Math.Pow(10, -((n++ * 7) % 13) * 4.0 / 20);     // 0 to -48 dB across the wires
                     canvas.PeakSource = c => level.TryGetValue(c, out float v) ? (v, v * 0.8f) : (0, 0);
                     canvas.TickMeters(1);
+                    canvas.SetZoom(-2);                  // the whole song in the view (P SH101 was cut off by the foot of it)
+                    Settle();
                     Shot(window, "343-machines-many-meters", $"The same song of every Neo and Pedal machine ({wires.Count} wires) with a level on every wire (P3g; the levels are set by the test: no sound is made here): the meters stay readable and the wires you can't see from far away show where the sound goes.", "Play a big song with the Machine View open.", song: "a song of every Neo and Pedal machine", notes: Headless);
+                    canvas.SetZoom(0);
                     canvas.PeakSource = ReBuzz.Core.Session.SessionMixer.PeakOf;
                     canvas.TickMeters(10);
                 });
