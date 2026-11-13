@@ -56,7 +56,7 @@ Read the one for the job with `guide(topic=…)` (or the resource rebuzz://guide
 Machine manuals: `guide(machine="Neo Poly")` (every parameter, how to use it, presets). The resource rebuzz://reference/tools lists every tool with its inputs and units, generated from the tools themselves, so it is always current. Prompts give a whole plan: compose, design-sound, mix, master, critique.
 
 ## Undo
-Each changing call is one undo step: `undo` reverts your last call whole. In studio mode the user's own edits share the same history, so check `studio_status`'s `next_undo` before undoing. `history_list` shows the steps (name, source, time); `history_jump(step=…)` goes back or forward to one: it can undo several steps, the user's too, so list first.
+Each changing call is one undo step: `undo` reverts your last call whole. In studio mode the user's own edits share the same history, so check `studio_status`'s `next_undo` before undoing. `history_list(limit=10)` shows the steps (name, source, time); `history_jump(step=…)` goes back or forward to one: it can undo several steps, the user's too, so list first.
 
 ## Errors
 Errors say what to do next ("Did you mean …", the valid range, the call that lists the names). Read them and adjust the call; don't retry the same arguments.
