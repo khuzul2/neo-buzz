@@ -161,6 +161,18 @@ CASES = [
     gen("learn-sub-pluck-bass", "Neo Learn Subtractive", "Bass — Sub Pluck", [], BASS),
     gen("learn-sub-wide-pad", "Neo Learn Subtractive", "Pad — Unison Wash", [], CHORDS),
     gen("learn-sub-morph-lead", "Neo Learn Subtractive", "Lead — Pulse Morph", [], LEAD),
+    # Neo Learn L1a: FM (exact ratio, feedback), Wavetable (frame scan, phase warp) and Additive (comb, shimmer).
+    gen("learn-fm-tine-keys", "Neo Learn FM", "Keys — Tine Piano", [], KEYS),
+    gen("learn-fm-growl-bass", "Neo Learn FM", "Bass — Growl", [], BASS),
+    gen("learn-wt-formant-pad", "Neo Learn Wavetable", "Pad — Formant Drift", [], CHORDS),
+    gen("learn-wt-sync-lead", "Neo Learn Wavetable", "Lead — Sync Sweep", [], LEAD),
+    gen("learn-add-shimmer-pad", "Neo Learn Additive", "Pad — Choir Shimmer", [], CHORDS),
+    gen("learn-add-glass-bell", "Neo Learn Additive", "Bell — Glass Chime", [], BELLS),
+    # Neo Learn L1b: Granular (window morph, octave grains) and Physical (exciter morph, geometry blend).
+    gen("learn-grain-frozen-choir", "Neo Learn Granular", "Pad — Frozen Choir", [], CHORDS),
+    gen("learn-grain-octave-glow", "Neo Learn Granular", "Pad — Octave Glow", [], CHORDS),
+    gen("learn-phys-rosewood", "Neo Learn Physical", "Marimba — Rosewood", [], KEYS),
+    gen("learn-phys-cello-bow", "Neo Learn Physical", "Bow — Cello Strings", [], BASS),
     # Dye Essence P2: the Sample engine (looped, eight-voice unison, one-shot, reversed, two slots) and the
     # Granular engine (frozen, scanning, a spray of pitched grains with reversed ones); the grain clouds and
     # the sample recipes are built from the portable maths, so every platform renders the same.

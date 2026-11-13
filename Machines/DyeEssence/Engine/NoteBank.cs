@@ -65,6 +65,22 @@ namespace NeoBuzz.DyeEssence
         /// <summary>The Modal engine (§4.8): exciter, force (0 … 1), body, modes sounding, material (0 soft … 1 hard), ring time (s), hf damping (0 … 1), body size (0 … 1).</summary>
         public int Exciter, Geometry, Modes = 24;
         public float Force = 0.5f, Material = 0.5f, Ring = 1.5f, HfDamp = 0.3f, BodySize = 0.5f;
+        /// <summary>
+        /// Neo Learn's additions to the shared engine (docs/specs/neo-learn.md §3; append only, all off at 0, so Dye Essence's output is unchanged):
+        /// ExactRatio (> 0) is the slot's pitch as an exact ratio to the note, in place of Transpose; Feedback is the slot's PM self-feedback in cycles
+        /// (the previous output moves the phase), which makes it a warped slot; Comb (0 … 1) and CombPeriod (partials) are the Harmonic engine's
+        /// sinusoidal notch mask; Shimmer (0 … 1) its independent slow level and micro-pitch drift of each upper partial; Inharm its stiffness
+        /// coefficient B (partial k at k · √(1 + B k²)). Dye Essence's own parameters do not reach them: the Neo Learn host writes them.
+        /// </summary>
+        public float ExactRatio, Feedback, Comb, CombPeriod = 8, Shimmer, Inharm;
+        /// <summary>
+        /// Neo Learn L1b's additions (append only, off by default). Granular: GrainMorph (0 … 1, off below 0) blends every grain's window from a
+        /// trapezoid (0) to a Gaussian (1) in place of GrainShape; GrainOctave (0 … 1) is the share (at most half, at 1) of grains that sound an
+        /// octave up, with no new grain, so the cap holds. Modal: ExciterMorph (0 … 1, off below 0) crossfades the exciters, mallet (0) to pluck
+        /// (0.5) to bow (1), in place of Exciter; GeomBlend (0 … 1) moves the mode spacing from the body Geometry toward the body GeomTo.
+        /// </summary>
+        public float GrainMorph = -1f, GrainOctave, ExciterMorph = -1f, GeomBlend;
+        public int GeomTo;
     }
 
     internal sealed class SourceSettings
@@ -203,6 +219,7 @@ namespace NeoBuzz.DyeEssence
         readonly float[] shapeDetune = new float[Oscillators], shapeSpread = new float[Oscillators], shapePan = new float[Oscillators];
         readonly double[] oscRatio = new double[Oscillators];
         readonly float[] oscTranspose = { float.NaN, float.NaN, float.NaN };
+        readonly float[] oscExact = new float[3];
         // Layout scratch (one note at a time).
         readonly int[] playU = new int[Oscillators], modOf = new int[Oscillators];
         readonly bool[] warped = new bool[Oscillators], placed = new bool[Oscillators], isMod = new bool[Oscillators];
@@ -891,7 +908,7 @@ namespace NeoBuzz.DyeEssence
                 var os = s.Osc[o];
                 int u = Plays(os) ? Math.Clamp(os.Unison, 1, MaxUnison) : 0;
                 playU[o] = u;
-                warped[o] = u > 0 && (os.Warp1 != Warp.None || os.Warp2 != Warp.None);
+                warped[o] = u > 0 && (os.Warp1 != Warp.None || os.Warp2 != Warp.None || os.Feedback > 0f);
                 if (u > 0) Shape(o, u, os);
             }
             for (int o = 0; o < Oscillators; o++)
@@ -993,6 +1010,7 @@ namespace NeoBuzz.DyeEssence
                     double modHz = m < 0 || m == Oscillators + 1 ? 0 : m == Oscillators ? noteHz * subRatio : noteHz * oscRatio[m] * topRatio[m];
                     float modRatio = (float)(modHz / Math.Max(1e-9, noteHz * oscRatio[o]));
                     double speed = Warps.Speed(os.Warp1, Amount(note, o, 0), modRatio) * Warps.Speed(os.Warp2, Amount(note, o, 1), modRatio);
+                    if (os.Feedback > 0f) speed *= 1.0 + 2.0 * Math.PI * os.Feedback;   // the feedback moves the phase like a PM at its own pitch
                     level = Wavetable.LevelFor(top * speed, limitWarp);
                     SetWarps(ref warpSet[note * Oscillators + o], os, Amount(note, o, 0), Amount(note, o, 1), m, TableArena.Log2(level));
                 }
@@ -1199,6 +1217,7 @@ namespace NeoBuzz.DyeEssence
             Warps.Constants(w1, amount1, out w.K10, out w.K11);
             Warps.Constants(w2, amount2, out w.K20, out w.K21);
             w.Fm = (w1 == Warp.Fm ? w.K10 : 0f) + (w2 == Warp.Fm ? w.K20 : 0f);
+            w.Feedback = os.Feedback;
             w.UsesMod = mod >= 0 && (Warps.UsesModulator(w1) || Warps.UsesModulator(w2));
             w.Wrap1 = w1 == Warp.Pm;
             w.Wrap2 = w2 == Warp.Pm;
@@ -1215,10 +1234,12 @@ namespace NeoBuzz.DyeEssence
         /// <summary>Each voice's detune ratio and pan gains for an oscillator, recomputed only when they change.</summary>
         void Shape(int o, int u, OscSettings os)
         {
-            if (os.Transpose != oscTranspose[o])
+            if (os.Transpose != oscTranspose[o] || os.ExactRatio != oscExact[o])
             {
                 oscTranspose[o] = os.Transpose;
-                oscRatio[o] = PortableMath.Pow(2.0, os.Transpose / 12.0);
+                oscExact[o] = os.ExactRatio;
+                // An exact ratio (Neo Learn's FM) is the ratio itself, not 2^(semitones / 12) rounded through a pitch.
+                oscRatio[o] = os.ExactRatio > 0f ? os.ExactRatio : PortableMath.Pow(2.0, os.Transpose / 12.0);
             }
             if (shapeUnison[o] == u && shapeDetune[o] == os.Detune && shapeSpread[o] == os.Spread && shapePan[o] == os.Pan) return;
             shapeUnison[o] = u;

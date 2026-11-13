@@ -1,0 +1,115 @@
+# Neo Learn Additive factory presets. Output is set last so each chord sounds at the same level (loudest 50 ms RMS -22 dB).
+# Rebuild: python3 tools/gen-machine-presets.py Machines/NeoLearnAdditive
+machine "Neo Learn Additive"
+
+preset "Organ — Warm Drawbars"
+Brightness Tilt = -12
+Odd / Even = 0
+Partials = 8
+Inharmonicity = 0
+Spectral Comb = 0
+Shimmer = 0
+Attack = 5
+Decay = 600
+Sustain = 90
+Release = 120
+Unison / Spread = 0
+Output = 6.0
+
+preset "Reed — Hollow Clarinet"
+Brightness Tilt = -6
+Odd / Even = -100
+Partials = 24
+Inharmonicity = 0
+Spectral Comb = 0
+Shimmer = 0
+Attack = 15
+Decay = 400
+Sustain = 80
+Release = 150
+Unison / Spread = 0
+Output = 6.0
+
+preset "Pad — Choir Shimmer"
+Brightness Tilt = -9
+Odd / Even = 0
+Partials = 40
+Inharmonicity = 0
+Spectral Comb = 0
+Shimmer = 70
+Attack = 500
+Decay = 1500
+Sustain = 80
+Release = 1800
+Unison / Spread = 40
+Output = 4.0
+
+preset "Keys — Stiff String"
+Brightness Tilt = -6
+Odd / Even = 0
+Partials = 48
+Inharmonicity = 25
+Spectral Comb = 0
+Shimmer = 0
+Attack = 1
+Decay = 1800
+Sustain = 0
+Release = 300
+Unison / Spread = 0
+Output = -5.9
+
+preset "Bell — Glass Chime"
+Brightness Tilt = 0
+Odd / Even = 0
+Partials = 24
+Inharmonicity = 70
+Spectral Comb = 0
+Shimmer = 10
+Attack = 1
+Decay = 3000
+Sustain = 0
+Release = 2500
+Unison / Spread = 0
+Output = -6.0
+
+preset "Texture — Vocal Comb"
+Brightness Tilt = -3
+Odd / Even = 0
+Partials = 64
+Inharmonicity = 0
+Spectral Comb = 80
+Shimmer = 30
+Attack = 200
+Decay = 1500
+Sustain = 80
+Release = 1200
+Unison / Spread = 30
+Output = 6.4
+
+preset "Lead — Bright Saw"
+Brightness Tilt = 0
+Odd / Even = 0
+Partials = 64
+Inharmonicity = 0
+Spectral Comb = 0
+Shimmer = 5
+Attack = 2
+Decay = 400
+Sustain = 80
+Release = 200
+Unison / Spread = 20
+Output = -1.3
+
+preset "Bass — Pure Sub"
+Brightness Tilt = -12
+Odd / Even = -100
+Partials = 3
+Inharmonicity = 0
+Spectral Comb = 0
+Shimmer = 0
+Attack = 2
+Decay = 300
+Sustain = 80
+Release = 100
+Unison / Spread = 0
+Output = -1.1

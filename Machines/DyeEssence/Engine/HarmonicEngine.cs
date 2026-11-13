@@ -101,6 +101,16 @@ namespace NeoBuzz.DyeEssence
         /// <summary>Partial <paramref name="k"/>'s pitch as a multiple of the note's, for a stretch of −1 … 1.</summary>
         public static float Ratio(int k, float stretch) => stretch == 0f ? k : (float)PortableMath.Pow(k, 1.0 + 0.5 * stretch);
 
+        /// <summary>Neo Learn's inharmonicity: partial <paramref name="k"/> at k · √(1 + B k²) (a stiff string's), on top of the stretch. Basic operations only (the square root is exact).</summary>
+        public static float RatioStiff(int k, float stretch, float b) => Ratio(k, stretch) * (float)Math.Sqrt(1.0 + (double)b * k * k);
+
+        /// <summary>Neo Learn's comb: a sinusoidal notch mask over the partials, 1 at the fundamental and at each period's start, 1 − depth at the notches half a period on.</summary>
+        public static float CombMask(int k, float depth, float period)
+        {
+            NoteBank.SinCosTurns((k - 1) / period, out _, out float c);
+            return 1f - depth * 0.5f * (1f - c);
+        }
+
         static double Formant(double k, double centre, double width, double gain)
         {
             double x = (k - centre) / width;
@@ -169,7 +179,11 @@ namespace NeoBuzz.DyeEssence
         readonly int[] hRotBlocks = new int[Notes * MaxLanes];
         // Per slot: the shape its settings give the partials (levels, spacing, decay per tick), and the key it was made for.
         readonly float[] hBase = new float[Oscillators * MaxPartials], hRatio = new float[Oscillators * MaxPartials], hStep = new float[Oscillators * MaxPartials];
-        readonly float[] hKey = new float[Oscillators * 6];
+        readonly float[] hKey = new float[Oscillators * 9];
+        readonly bool[] hShimOn = new bool[Notes * MaxLanes];
+        // Shimmer moves at 2 Hz at most, so each voice works its partials' sines out every fourth tick (staggered by voice) and holds them between.
+        readonly int[] hShimN = new int[Notes * MaxLanes];
+        readonly float[] hShimL = new float[Notes * MaxLanes * MaxPartials], hShimP = new float[Notes * MaxLanes * MaxPartials];
         readonly double[] hKeyDt = new double[Oscillators];
         // Per note and slot: how far each partial has decayed, and this tick's levels before the voices' own limits.
         readonly float[] hDecay = new float[Notes * Oscillators * MaxPartials];
@@ -203,18 +217,40 @@ namespace NeoBuzz.DyeEssence
         {
             int n = Math.Clamp(os.Partials, 1, MaxPartials);
             float tilt = Math.Clamp(os.Tilt, -24f, 24f), oddEven = Math.Clamp(os.OddEven, -1f, 1f), stretch = Math.Clamp(os.Stretch, -1f, 1f), damp = Math.Clamp(os.Damp, 0f, 1f);
-            int kb = o * 6;
-            if (hKey[kb] == n && hKey[kb + 1] == tilt && hKey[kb + 2] == oddEven && hKey[kb + 3] == stretch && hKey[kb + 4] == damp && hKeyDt[o] == tickDt) return;
+            float comb = Math.Clamp(os.Comb, 0f, 1f), period = Math.Max(2f, os.CombPeriod), inharm = Math.Max(0f, os.Inharm);
+            int kb = o * 9;
+            if (hKey[kb] == n && hKey[kb + 1] == tilt && hKey[kb + 2] == oddEven && hKey[kb + 3] == stretch && hKey[kb + 4] == damp
+                && hKey[kb + 5] == comb && hKey[kb + 6] == period && hKey[kb + 7] == inharm && hKeyDt[o] == tickDt) return;
             hKey[kb] = n; hKey[kb + 1] = tilt; hKey[kb + 2] = oddEven; hKey[kb + 3] = stretch; hKey[kb + 4] = damp;
+            hKey[kb + 5] = comb; hKey[kb + 6] = period; hKey[kb + 7] = inharm;
             hKeyDt[o] = tickDt;
             for (int j = 0; j < MaxPartials; j++)
             {
                 int k = j + 1, at = o * MaxPartials + j;
                 hBase[at] = HarmonicSets.Base(k, n, tilt, oddEven);
-                hRatio[at] = HarmonicSets.Ratio(k, stretch);
+                if (comb > 0f) hBase[at] *= HarmonicSets.CombMask(k, comb, period);
+                hRatio[at] = inharm > 0f ? HarmonicSets.RatioStiff(k, stretch, inharm) : HarmonicSets.Ratio(k, stretch);
                 // Upper partials die away: partial k's level falls by e^(−damp · (k − 1) / 2) a second.
                 hStep[at] = damp == 0f ? 1f : (float)PortableMath.Exp(-damp * 0.5 * j * tickDt);
             }
+        }
+
+        /// <summary>Shimmer's depth at 100 %: a partial's level moves by up to ±80 %, its pitch by up to ±0.4 % (about 7 cents), both weighted by how high the partial is.</summary>
+        const float ShimmerLevel = 0.8f, ShimmerPitch = 0.004f;
+
+        /// <summary>
+        /// Partial <paramref name="j"/>'s slow sine at time <paramref name="age"/> (−1 … 1, times the partial's weight j / (j + 3): none on the
+        /// fundamental): its own rate (0.4 … 2 Hz for the level, 0.3 … 1.5 Hz for the pitch, spread by the golden ratio) and a phase from the voice's seed.
+        /// </summary>
+        static float ShimmerSine(int j, double age, float voiceSeed, bool pitch)
+        {
+            double a = pitch ? 0.7548776662466927 : 0.6180339887498949;
+            double u = a * (j + 1);
+            double rate = pitch ? 0.3 + 1.2 * (u - Math.Floor(u)) : 0.4 + 1.6 * (u - Math.Floor(u));
+            double offset = 0.5698402909980532 * (j + 1) + voiceSeed + (pitch ? 0.37 : 0.0);
+            double turns = rate * age + offset;
+            SinCosTurns((float)(turns - Math.Floor(turns)), out float s, out _);
+            return s * j / (j + 3f);
         }
 
         void HarmInit(int note, int o, int no)
@@ -273,13 +309,28 @@ namespace NeoBuzz.DyeEssence
                     hActive[k] = active;
                     hBlocks[k] = blocks;
                     int lim = blocks * 4;
-                    if (inc != hInc[k] || hRotBlocks[k] < blocks)
+                    // Shimmer (Neo Learn): each upper partial drifts slowly in level and in pitch, on its own rates and phase; its rotation follows every tick.
+                    bool shim = os.Shimmer > 0f;
+                    double age = noteAge[note];
+                    float voiceSeed = ((seeds[note] * 2654435761u + (uint)(o * MaxUnison + l + 1) * 0x85EBCA6Bu) >> 8) * (1f / 16777216f);
+                    bool due = shim && (!hShimOn[k] || (hShimN[k] & 3) == 0 || blocks > hRotBlocks[k]);
+                    if (shim) hShimN[k]++;
+                    if (due)
+                        for (int j = 0; j < lim; j++)
+                        {
+                            hShimP[pb + j] = ShimmerSine(j, age, voiceSeed, true);
+                            hShimL[pb + j] = ShimmerSine(j, age, voiceSeed, false);
+                        }
+                    if (due || shim != hShimOn[k] || inc != hInc[k] || hRotBlocks[k] < blocks)
                     {
+                        hShimOn[k] = shim;
                         hInc[k] = inc;
                         hRotBlocks[k] = blocks;
                         for (int j = 0; j < lim; j++)
                         {
-                            SinCosTurns((float)(inc * hRatio[sb + j]), out float rs, out float rc);
+                            double turns = inc * hRatio[sb + j];
+                            if (shim) turns *= 1.0 + ShimmerPitch * os.Shimmer * hShimP[pb + j];
+                            SinCosTurns((float)turns, out float rs, out float rc);
                             hRS[pb + j] = rs;
                             hRC[pb + j] = rc;
                         }
@@ -289,6 +340,7 @@ namespace NeoBuzz.DyeEssence
                         float t = (float)(inc * hRatio[sb + j]);
                         float nyq = Math.Clamp((hi - t) / fadeWidth, 0f, 1f);
                         float target = j < active ? hGain[j] * norm * nyq * (damp ? hDecay[db + j] : 1f) : 0f;
+                        if (shim && target != 0f) target *= 1f + ShimmerLevel * os.Shimmer * hShimL[pb + j];
                         if (fresh) { hA[pb + j] = target; hDA[pb + j] = 0f; }
                         else hDA[pb + j] = (target - hA[pb + j]) * invCount;
                         // Keep the phasor on the unit circle (one Newton step each tick).
@@ -325,6 +377,8 @@ namespace NeoBuzz.DyeEssence
                 hA[pb + j] = hDA[pb + j] = 0f;
             }
             hInc[k] = double.NaN;
+            hShimN[k] = k;
+            hShimOn[k] = false;
             hRotBlocks[k] = 0;
             hActive[k] = 0;
             hBlocks[k] = 0;
