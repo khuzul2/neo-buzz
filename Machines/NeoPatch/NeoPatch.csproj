@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Neo Patch NP0 (docs/specs/neo-patch.md §5): the runtime spike. Portable net10.0, no editor and no machine class yet: the graph
+    model, the compiler, the voices and the block jobs in Engine/, with the shared DSP and the Dye Essence parts it reuses linked as
+    source (the lane kernels, the envelope). NeoBuzz.MachineTests compiles Engine/ too (its Neo*/Engine glob) and tests it there.
+    Not in ReBuzz.sln and not in the package: nothing ships until NP1.
+
+      dotnet build Machines/NeoPatch/NeoPatch.csproj
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>NeoBuzz.Patch</RootNamespace>
+    <Optimize>true</Optimize>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Engine\**\*.cs" />
+    <Compile Include="..\NeoBuzz.Dsp\PortableMath.cs;..\NeoBuzz.Dsp\DspMath.cs;..\NeoBuzz.Dsp\Filters.cs;..\NeoBuzz.Dsp\Voices.cs" Link="Shared\Dsp\%(Filename)%(Extension)" />
+    <Compile Include="..\DyeEssence\Engine\Lanes.cs;..\DyeEssence\Engine\NoteEnvelope.cs" Link="Shared\Dye\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>
