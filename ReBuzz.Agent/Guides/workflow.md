@@ -51,6 +51,7 @@ Read the one for the job with `guide(topic=…)` (or the resource rebuzz://guide
 | `mastering` | loudness targets, matching a reference, what not to do |
 | `mastering-chain` | the chain stage by stage with settings |
 | `dye-essence-in-depth`, `dye-essence-effects`, `neo-eq-in-depth` | the parts of those two machines that their pages leave out |
+| `app-control` | preferences, the audio device, MIDI bindings, the studio window, export to WAV |
 | `troubleshooting` | silence, clipping, phase, CPU, notes that hang or don't play |
 
 Machine manuals: `guide(machine="Neo Poly")` (every parameter, how to use it, presets). The resource rebuzz://reference/tools lists every tool with its inputs and units, generated from the tools themselves, so it is always current. Prompts give a whole plan: compose, design-sound, mix, master, critique.

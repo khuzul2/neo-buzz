@@ -46,6 +46,7 @@ namespace ReBuzz.Agent
             host = new AgentHost(core, dispatcher, "studio", logs);
             host.Queue.CurrentChanged += name => dispatcher.BeginInvoke(() => status(name == null ? listening : $"Agent: {name}…"));
             SettingsWindow.AddSettings("Agent", settings);
+            host.AppControl.AddSettings("agent", settings);     // K3: settings_get lists it
             settings.PropertyChanged += (s, e) =>
             {
                 if (e.PropertyName != nameof(AgentSettings.AllowAgents) && e.PropertyName != nameof(AgentSettings.Port)) return;
