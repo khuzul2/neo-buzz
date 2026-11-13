@@ -834,8 +834,10 @@ namespace ReBuzz.Audio
 
             // Fork (audio hygiene): a job for every dispatch this buffer can make (each machine
             // once, each input once), made once and reused (RenderJobs).
+            Mark("ReadWork: work flags");
             if (multiThreadingEnabled)
                 renderJobs.BeginBuffer(RenderCapacity());
+            Mark("ReadWork: render jobs");
 
             if (!multiThreadingEnabled)
             {
@@ -866,6 +868,7 @@ namespace ReBuzz.Audio
                     HandleWorkAlgorithm2(master, workSamplesCount);
             }
 
+            Mark("ReadWork: algorithm");
             // Mix all to single L + R signal
             Sample[] samples = master.GetStereoSamples(workSamplesCount);
             for (int i = 0; i < workSamplesCount; i++)
@@ -874,6 +877,7 @@ namespace ReBuzz.Audio
                 buffer[offset + i * 2 + 1] = samples[i].R * (float)buzzCore.MasterVolume;
             }
 
+            Mark("ReadWork: master mix");
             master.UpdateIsActive();
 
             return workSamplesCount;
