@@ -59,6 +59,13 @@ namespace ReBuzz.Agent
                         Req("name", String("Pass this to param_set")),
                         Opt("plain_name", String("Curated: what it is in plain English; param_set takes it too")),
                         Opt("role", String("Curated: what it does (filter.cutoff, env.release, mix.wet, drive…)")),
+                        Opt("id", String("Explain machines (Neo Learn): the snake_case id; param_set takes it too")),
+                        Opt("how", String("Explain machines: how the control changes the sound")),
+                        Opt("sound", String("Explain machines: what you will hear")),
+                        Opt("curve", String("Explain machines: linear, logarithmic, bipolar, power or choice")),
+                        Opt("min", Number("Explain machines: the lowest value, in unit")),
+                        Opt("max", Number("Explain machines: the highest value, in unit")),
+                        Opt("default_number", Number("Explain machines: the default, in unit")),
                         Opt("suggested_role", String("Draft: the role its profile suggests, from what moving it alone changes (no curated role)")),
                         Opt("role_evidence", String("Draft: what the profile measured behind suggested_role")),
                         Req("value", String("Current value as the machine shows it"))), "Parameters")),
@@ -130,8 +137,9 @@ namespace ReBuzz.Agent
                             var d = Describe(m, p);
                             if (table)
                             {
-                                d["min"] = p.Info.Min;
-                                d["max"] = p.Info.Max;
+                                // Explain machines (Neo Learn) give min and max in the parameter's unit; the raw ones are min_raw and max_raw.
+                                d[ExplainFields.Has(p.Manifest) ? "min_raw" : "min"] = p.Info.Min;
+                                d[ExplainFields.Has(p.Manifest) ? "max_raw" : "max"] = p.Info.Max;
                                 d["default_raw"] = p.Info.Default;
                                 d["table"] = ValueTable(p, points);
                             }
@@ -386,6 +394,8 @@ namespace ReBuzz.Agent
             }
             o["range"] = $"{p.Info.Describe(p.Info.Min)} … {p.Info.Describe(p.Info.Max)}";
             o["default"] = p.Info.Describe(p.Info.Default);
+            // Explain (neo-learn.md §5.3): id, unit, min, max, default_number, curve, how and sound, for machines with Explain text.
+            ExplainFields.Add(o, p.Manifest);
             if (p.Info.Mapping is { Kind: MappingKind.Enum or MappingKind.Switch })
                 o["choices"] = new JsonArray(ValueResolver.Choices(p.Info).Select(x => (JsonNode)x).ToArray());
             else if (p.Info.Mapping == null && p.Info.Max - p.Info.Min <= 12 && p.Info.Max > p.Info.Min)

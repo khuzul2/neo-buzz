@@ -1,0 +1,183 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Bass — Sub Pluck">
+    <Preset Machine="Neo Learn Subtractive">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="1" Index="0" Track="0" Value="441" />
+        <Parameter Name="Resonance" Group="1" Index="1" Track="0" Value="300" />
+        <Parameter Name="Wave Shape" Group="1" Index="2" Track="0" Value="660" />
+        <Parameter Name="Sub Osc" Group="1" Index="3" Track="0" Value="700" />
+        <Parameter Name="Env to Filter" Group="1" Index="4" Track="0" Value="850" />
+        <Parameter Name="Drive" Group="1" Index="5" Track="0" Value="350" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="825" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="100" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="621" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Fat Saw">
+    <Preset Machine="Neo Learn Subtractive">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="1" Index="0" Track="0" Value="515" />
+        <Parameter Name="Resonance" Group="1" Index="1" Track="0" Value="220" />
+        <Parameter Name="Wave Shape" Group="1" Index="2" Track="0" Value="660" />
+        <Parameter Name="Sub Osc" Group="1" Index="3" Track="0" Value="450" />
+        <Parameter Name="Env to Filter" Group="1" Index="4" Track="0" Value="675" />
+        <Parameter Name="Drive" Group="1" Index="5" Track="0" Value="550" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="901" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="600" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="250" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="790" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Lead — Pulse Morph">
+    <Preset Machine="Neo Learn Subtractive">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="1" Index="0" Track="0" Value="784" />
+        <Parameter Name="Resonance" Group="1" Index="1" Track="0" Value="250" />
+        <Parameter Name="Wave Shape" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Sub Osc" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Env to Filter" Group="1" Index="4" Track="0" Value="625" />
+        <Parameter Name="Drive" Group="1" Index="5" Track="0" Value="550" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="900" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="979" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Lead — Wide Saw">
+    <Preset Machine="Neo Learn Subtractive">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="1" Index="0" Track="0" Value="752" />
+        <Parameter Name="Resonance" Group="1" Index="1" Track="0" Value="180" />
+        <Parameter Name="Wave Shape" Group="1" Index="2" Track="0" Value="660" />
+        <Parameter Name="Sub Osc" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Env to Filter" Group="1" Index="4" Track="0" Value="650" />
+        <Parameter Name="Drive" Group="1" Index="5" Track="0" Value="250" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="750" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="879" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pad — Slow Triangle">
+    <Preset Machine="Neo Learn Subtractive">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="1" Index="0" Track="0" Value="634" />
+        <Parameter Name="Resonance" Group="1" Index="1" Track="0" Value="150" />
+        <Parameter Name="Wave Shape" Group="1" Index="2" Track="0" Value="330" />
+        <Parameter Name="Sub Osc" Group="1" Index="3" Track="0" Value="100" />
+        <Parameter Name="Env to Filter" Group="1" Index="4" Track="0" Value="725" />
+        <Parameter Name="Drive" Group="1" Index="5" Track="0" Value="50" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="800" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="350" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="885" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pad — Unison Wash">
+    <Preset Machine="Neo Learn Subtractive">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="1" Index="0" Track="0" Value="580" />
+        <Parameter Name="Resonance" Group="1" Index="1" Track="0" Value="250" />
+        <Parameter Name="Wave Shape" Group="1" Index="2" Track="0" Value="660" />
+        <Parameter Name="Sub Osc" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Env to Filter" Group="1" Index="4" Track="0" Value="775" />
+        <Parameter Name="Drive" Group="1" Index="5" Track="0" Value="150" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="850" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="900" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="879" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Keys — Soft Sine">
+    <Preset Machine="Neo Learn Subtractive">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="1" Index="0" Track="0" Value="805" />
+        <Parameter Name="Resonance" Group="1" Index="1" Track="0" Value="50" />
+        <Parameter Name="Wave Shape" Group="1" Index="2" Track="0" Value="100" />
+        <Parameter Name="Sub Osc" Group="1" Index="3" Track="0" Value="300" />
+        <Parameter Name="Env to Filter" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Drive" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="976" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="300" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="844" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pluck — Filter Snap">
+    <Preset Machine="Neo Learn Subtractive">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="1" Index="0" Track="0" Value="371" />
+        <Parameter Name="Resonance" Group="1" Index="1" Track="0" Value="500" />
+        <Parameter Name="Wave Shape" Group="1" Index="2" Track="0" Value="750" />
+        <Parameter Name="Sub Osc" Group="1" Index="3" Track="0" Value="150" />
+        <Parameter Name="Env to Filter" Group="1" Index="4" Track="0" Value="950" />
+        <Parameter Name="Drive" Group="1" Index="5" Track="0" Value="200" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="825" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="150" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="683" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="FX — Resonant Sweep">
+    <Preset Machine="Neo Learn Subtractive">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="1" Index="0" Track="0" Value="426" />
+        <Parameter Name="Resonance" Group="1" Index="1" Track="0" Value="800" />
+        <Parameter Name="Wave Shape" Group="1" Index="2" Track="0" Value="660" />
+        <Parameter Name="Sub Osc" Group="1" Index="3" Track="0" Value="250" />
+        <Parameter Name="Env to Filter" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Drive" Group="1" Index="5" Track="0" Value="450" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="200" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="400" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="925" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

@@ -1,0 +1,129 @@
+# Neo Learn Subtractive factory presets. Output is set last so each chord sounds at the same level (loudest 50 ms RMS -22 dB).
+# Rebuild: python3 tools/gen-machine-presets.py Machines/NeoLearnSubtractive
+machine "Neo Learn Subtractive"
+
+preset "Bass — Sub Pluck"
+Wave Shape = 66
+Sub Osc = 70
+Cutoff = 420
+Resonance = 30
+Env to Filter = 70
+Drive = 35
+Attack = 1
+Decay = 260
+Sustain = 10
+Release = 120
+Unison / Spread = 0
+Output = -6.2
+
+preset "Bass — Fat Saw"
+Wave Shape = 66
+Sub Osc = 45
+Cutoff = 700
+Resonance = 22
+Env to Filter = 35
+Drive = 55
+Attack = 2
+Decay = 500
+Sustain = 60
+Release = 160
+Unison / Spread = 25
+Output = 1.9
+
+preset "Lead — Pulse Morph"
+Wave Shape = 100
+Sub Osc = 0
+Cutoff = 4500
+Resonance = 25
+Env to Filter = 25
+Drive = 55
+Attack = 5
+Decay = 600
+Sustain = 90
+Release = 250
+Unison / Spread = 0
+Output = 11.0
+
+preset "Lead — Wide Saw"
+Wave Shape = 66
+Sub Osc = 20
+Cutoff = 3600
+Resonance = 18
+Env to Filter = 30
+Drive = 25
+Attack = 8
+Decay = 700
+Sustain = 75
+Release = 300
+Unison / Spread = 70
+Output = 6.2
+
+preset "Pad — Slow Triangle"
+Wave Shape = 33
+Sub Osc = 10
+Cutoff = 1600
+Resonance = 15
+Env to Filter = 45
+Drive = 5
+Attack = 900
+Decay = 2500
+Sustain = 80
+Release = 1800
+Unison / Spread = 35
+Output = 6.5
+
+preset "Pad — Unison Wash"
+Wave Shape = 66
+Sub Osc = 0
+Cutoff = 1100
+Resonance = 25
+Env to Filter = 55
+Drive = 15
+Attack = 1200
+Decay = 3000
+Sustain = 85
+Release = 2500
+Unison / Spread = 90
+Output = 6.2
+
+preset "Keys — Soft Sine"
+Wave Shape = 10
+Sub Osc = 30
+Cutoff = 5200
+Resonance = 5
+Env to Filter = 20
+Drive = 0
+Attack = 4
+Decay = 1500
+Sustain = 30
+Release = 400
+Unison / Spread = 0
+Output = 4.5
+
+preset "Pluck — Filter Snap"
+Wave Shape = 75
+Sub Osc = 15
+Cutoff = 260
+Resonance = 50
+Env to Filter = 90
+Drive = 20
+Attack = 1
+Decay = 180
+Sustain = 0
+Release = 150
+Unison / Spread = 15
+Output = -3.2
+
+preset "FX — Resonant Sweep"
+Wave Shape = 66
+Sub Osc = 25
+Cutoff = 380
+Resonance = 80
+Env to Filter = 100
+Drive = 45
+Attack = 600
+Decay = 4000
+Sustain = 20
+Release = 1200
+Unison / Spread = 40
+Output = 8.4
