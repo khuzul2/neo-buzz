@@ -267,6 +267,7 @@ namespace ReBuzz.Core.SongHistory
                 return o;
             }
             plan.Summary = Describe(plan, replace.Count, add.Count, remove.Count);
+            core.PrebuildWorkOrder?.Invoke();               // the new machines changed the topology: the audio thread meets its work order built
             return o;
         }
 
@@ -600,6 +601,7 @@ namespace ReBuzz.Core.SongHistory
                 Show(core, m);
             }
             foreach (var m in plan.Added) Show(core, m);
+            core.PrebuildWorkOrder?.Invoke();               // old machines gone: the order is rebuilt here, not on the audio thread
             core.Modified = true;
         }
 

@@ -77,6 +77,7 @@ namespace ReBuzz.Audio
             this.workEngine = workEngine;
             this.algorithm = algorithm;
             engineSettings = settings;
+            buzzCore.PrebuildWorkOrder = PrebuildOrder;
 
             workOneList = WorkOneList;
             workOneGroups = WorkOneGroups;
@@ -1179,6 +1180,13 @@ namespace ReBuzz.Audio
         // Runs on the audio thread under AudioLock (held for the whole buffer),
         // so the rebuild can never race a topology mutation. Rebuild is lazy:
         // at most one rebuild per buffer, and only when the topology changed.
+        /// <summary>UI thread: builds the cached order after a topology change (under AudioLock), so the audio thread's next buffer doesn't allocate it.</summary>
+        internal void PrebuildOrder()
+        {
+            if (!engineSettings.UseCachedWorkOrder) return;
+            lock (ReBuzzCore.AudioLock) GetOrBuildOrder();
+        }
+
         private CachedWorkOrder GetOrBuildOrder()
         {
             var song = buzzCore.SongCore;
