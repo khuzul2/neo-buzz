@@ -9,12 +9,12 @@ Cutoff = 420
 Resonance = 30
 Env to Filter = 70
 Drive = 35
-Attack = 1
-Decay = 260
+Attack = 0.001
+Decay = 0.26
 Sustain = 10
-Release = 120
+Release = 0.12
 Unison / Spread = 0
-Output = -6.2
+Output = -3.7
 
 preset "Bass — Fat Saw"
 Wave Shape = 66
@@ -23,12 +23,12 @@ Cutoff = 700
 Resonance = 22
 Env to Filter = 35
 Drive = 55
-Attack = 2
-Decay = 500
+Attack = 0.002
+Decay = 0.5
 Sustain = 60
-Release = 160
+Release = 0.16
 Unison / Spread = 25
-Output = 1.9
+Output = -4.5
 
 preset "Lead — Pulse Morph"
 Wave Shape = 100
@@ -37,12 +37,12 @@ Cutoff = 4500
 Resonance = 25
 Env to Filter = 25
 Drive = 55
-Attack = 5
-Decay = 600
+Attack = 0.005
+Decay = 0.6
 Sustain = 90
-Release = 250
+Release = 0.25
 Unison / Spread = 0
-Output = 11.0
+Output = -3.3
 
 preset "Lead — Wide Saw"
 Wave Shape = 66
@@ -51,12 +51,12 @@ Cutoff = 3600
 Resonance = 18
 Env to Filter = 30
 Drive = 25
-Attack = 8
-Decay = 700
+Attack = 0.008
+Decay = 0.7
 Sustain = 75
-Release = 300
+Release = 0.3
 Unison / Spread = 70
-Output = 6.2
+Output = -7.0
 
 preset "Pad — Slow Triangle"
 Wave Shape = 33
@@ -65,12 +65,12 @@ Cutoff = 1600
 Resonance = 15
 Env to Filter = 45
 Drive = 5
-Attack = 900
-Decay = 2500
+Attack = 0.9
+Decay = 2.5
 Sustain = 80
-Release = 1800
+Release = 1.8
 Unison / Spread = 35
-Output = 6.5
+Output = -5.8
 
 preset "Pad — Unison Wash"
 Wave Shape = 66
@@ -79,12 +79,12 @@ Cutoff = 1100
 Resonance = 25
 Env to Filter = 55
 Drive = 15
-Attack = 1200
-Decay = 3000
+Attack = 1.2
+Decay = 3
 Sustain = 85
-Release = 2500
+Release = 2.5
 Unison / Spread = 90
-Output = 6.2
+Output = -4.5
 
 preset "Keys — Soft Sine"
 Wave Shape = 10
@@ -93,12 +93,12 @@ Cutoff = 5200
 Resonance = 5
 Env to Filter = 20
 Drive = 0
-Attack = 4
-Decay = 1500
+Attack = 0.004
+Decay = 1.5
 Sustain = 30
-Release = 400
+Release = 0.4
 Unison / Spread = 0
-Output = 4.5
+Output = -6.5
 
 preset "Pluck — Filter Snap"
 Wave Shape = 75
@@ -107,12 +107,12 @@ Cutoff = 260
 Resonance = 50
 Env to Filter = 90
 Drive = 20
-Attack = 1
-Decay = 180
+Attack = 0.001
+Decay = 0.18
 Sustain = 0
-Release = 150
+Release = 0.15
 Unison / Spread = 15
-Output = -3.2
+Output = 2.7
 
 preset "FX — Resonant Sweep"
 Wave Shape = 66
@@ -121,9 +121,9 @@ Cutoff = 380
 Resonance = 80
 Env to Filter = 100
 Drive = 45
-Attack = 600
-Decay = 4000
+Attack = 0.6
+Decay = 4
 Sustain = 20
-Release = 1200
+Release = 1.2
 Unison / Spread = 40
-Output = 8.4
+Output = -5.5

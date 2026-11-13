@@ -42,7 +42,7 @@ Decay = 1.0
 Sustain = 100
 Release = 1.5
 Unison / Spread = 0
-Output = -12.4
+Output = -11.3
 
 preset "Glass — Crystal Bowl"
 Material = 70
@@ -56,7 +56,7 @@ Decay = 1.0
 Sustain = 100
 Release = 1.2
 Unison / Spread = 20
-Output = -19.2
+Output = -18.5
 
 preset "Bow — Cello Strings"
 Material = 25
@@ -98,7 +98,7 @@ Decay = 1.0
 Sustain = 100
 Release = 0.2
 Unison / Spread = 0
-Output = -6.2
+Output = -5.3
 
 preset "Harp — Soft Pick"
 Material = 45
@@ -126,4 +126,4 @@ Decay = 1.0
 Sustain = 100
 Release = 0.8
 Unison / Spread = 0
-Output = -12.9
+Output = -12.6
