@@ -8,6 +8,12 @@ using WP = NeoBuzz.LearnWt.P;
 using AP = NeoBuzz.LearnAdd.P;
 using GP = NeoBuzz.LearnGrain.P;
 using PP = NeoBuzz.LearnPhys.P;
+using SP = NeoBuzz.LearnString.P;
+using VP = NeoBuzz.LearnFormant.P;
+using XP = NeoBuzz.LearnFold.P;
+using YP = NeoBuzz.LearnPd.P;
+using ZP = NeoBuzz.LearnVector.P;
+using QP = NeoBuzz.LearnSampler.P;
 
 namespace NeoBuzz.MachineTests
 {
@@ -137,7 +143,116 @@ namespace NeoBuzz.MachineTests
             Heaviest = x => { x.Set(PP.UnisonDetune, 1000); x.Set(PP.ExciterForce, 1000); x.Set(PP.Material, 1000); x.Set(PP.Damping, 0); x.Set(PP.ExciterType, 750); x.Set(PP.ResonatorShape, 330); },
         };
 
-        internal static IEnumerable<M> All => new[] { Fm, Wt, Add, Grain, Phys };
+        internal static readonly M Str = new()
+        {
+            Gear = "Neo Learn String",
+            Table = NeoBuzz.LearnString.Params.Table,
+            Map = () => new StringMap(NeoBuzz.LearnString.Params.Table),
+            Ids = new[] { "pluck_position", "string_damping", "pick_hardness", "string_decay", "dispersion", "sympathetic_res" }.Concat(GlobalIds).ToArray(),
+            Detents = Unison(),
+            Patches = new()
+            {
+                ["init"] = null,
+                ["steel-harp"] = x => { x.Set(SP.PickPosition, 400); x.Set(SP.StringDamping, 200); x.Set(SP.PickHardness, 750); x.Set(SP.StringDecay, 800); x.Set(SP.SympatheticRes, 450); },
+                ["stiff-chime"] = x => { x.Set(SP.PickPosition, 500); x.Set(SP.StringDamping, 100); x.Set(SP.Dispersion, 850); x.Set(SP.StringDecay, 900); x.Set(SP.PickHardness, 850); },
+                ["sitar-drone"] = x => { x.Set(SP.PickPosition, 80); x.Set(SP.StringDecay, 980); x.Set(SP.SympatheticRes, 850); x.Set(SP.UnisonDetune, 200); x.Set(SP.EnvAttack, 300); },
+            },
+            Heaviest = x => { x.Set(SP.UnisonDetune, 1000); x.Set(SP.SympatheticRes, 1000); x.Set(SP.StringDecay, 1000); x.Set(SP.Dispersion, 1000); x.Set(SP.StringDamping, 0); },
+        };
+
+        internal static readonly M Vox = new()
+        {
+            Gear = "Neo Learn Formant",
+            Table = NeoBuzz.LearnFormant.Params.Table,
+            Map = () => new FormantMap(NeoBuzz.LearnFormant.Params.Table),
+            Ids = new[] { "vowel_morph", "vocal_tract_scale", "formant_resonance", "glottal_edge", "breath_air", "vowel_env_mod" }.Concat(GlobalIds).ToArray(),
+            Detents = Unison(),
+            Patches = new()
+            {
+                ["init"] = null,
+                ["ooh-swell"] = x => { x.Set(VP.VowelMorph, 1000); x.Set(VP.TractScale, 550); x.Set(VP.EnvAttack, 600); x.Set(VP.BreathAir, 150); },
+                ["wah-talker"] = x => { x.Set(VP.TractScale, 300); x.Set(VP.FormantQ, 600); x.Set(VP.GlottalEdge, 700); x.Set(VP.TalkingEnv, 800); x.Set(VP.BreathAir, 0); },
+                ["whisper"] = x => { x.Set(VP.VowelMorph, 500); x.Set(VP.BreathAir, 900); x.Set(VP.GlottalEdge, 50); x.Set(VP.FormantQ, 450); },
+            },
+            Heaviest = x => { x.Set(VP.UnisonDetune, 1000); x.Set(VP.FormantQ, 1000); x.Set(VP.GlottalEdge, 1000); x.Set(VP.BreathAir, 1000); x.Set(VP.TalkingEnv, 1000); x.Set(VP.TractScale, 1000); },
+        };
+
+        internal static readonly M Fold = new()
+        {
+            Gear = "Neo Learn Wavefolder",
+            Table = NeoBuzz.LearnFold.Params.Table,
+            Map = () => new WavefolderMap(NeoBuzz.LearnFold.Params.Table),
+            Ids = new[] { "fold_drive", "fold_symmetry", "fold_stages", "linear_fm", "lpg_mode", "lpg_ping" }.Concat(GlobalIds).ToArray(),
+            Detents = Unison(),
+            Patches = new()
+            {
+                ["init"] = null,
+                ["bongo-ping"] = x => { x.Set(XP.FoldDrive, 550); x.Set(XP.FoldStages, 2); x.Set(XP.LpgMode, 850); x.Set(XP.GateStrike, 850); x.Set(XP.EnvSustain, 0); x.Set(XP.EnvDecay, 450); },
+                ["sizzle-lead"] = x => { x.Set(XP.FoldDrive, 750); x.Set(XP.FoldStages, 3); x.Set(XP.FoldSymmetry, 600); x.Set(XP.TimbreFm, 350); x.Set(XP.LpgMode, 300); },
+                ["rust-pad"] = x => { x.Set(XP.FoldDrive, 550); x.Set(XP.FoldStages, 4); x.Set(XP.UnisonDetune, 350); x.Set(XP.EnvAttack, 600); x.Set(XP.LpgMode, 150); },
+            },
+            Heaviest = x => { x.Set(XP.UnisonDetune, 1000); x.Set(XP.FoldDrive, 1000); x.Set(XP.FoldStages, 5); x.Set(XP.TimbreFm, 1000); x.Set(XP.FoldSymmetry, 1000); x.Set(XP.GateStrike, 1000); },
+        };
+
+        internal static readonly M Pd = new()
+        {
+            Gear = "Neo Learn Phase Distortion",
+            Table = NeoBuzz.LearnPd.Params.Table,
+            Map = () => new PhaseDistortionMap(NeoBuzz.LearnPd.Params.Table),
+            Ids = new[] { "phase_bend", "resonance", "pd_wave_shape", "bend_decay", "ring_mod", "chorus" }.Concat(GlobalIds).ToArray(),
+            Detents = Unison(),
+            Patches = new()
+            {
+                ["init"] = null,
+                ["bend-lead"] = x => { x.Set(YP.PhaseBend, 800); x.Set(YP.PdWaveShape, 1); x.Set(YP.BendDecay, 400); x.Set(YP.Resonance, 100); },
+                ["ring-bell"] = x => { x.Set(YP.RingMod, 700); x.Set(YP.PdWaveShape, 3); x.Set(YP.Resonance, 100); x.Set(YP.EnvSustain, 0); x.Set(YP.EnvDecay, 650); },
+                ["resonant-saw"] = x => { x.Set(YP.PdWaveShape, 0); x.Set(YP.Resonance, 800); x.Set(YP.BendDecay, 700); x.Set(YP.Chorus, 600); x.Set(YP.UnisonDetune, 250); },
+            },
+            Heaviest = x => { x.Set(YP.UnisonDetune, 1000); x.Set(YP.PhaseBend, 1000); x.Set(YP.Resonance, 1000); x.Set(YP.RingMod, 1000); x.Set(YP.Chorus, 1000); x.Set(YP.PdWaveShape, 5); },
+        };
+
+        /// <summary>The Vector corners swap sources with the palette (a type, a shape, a table or a sample): a choice, not a sweep.</summary>
+        static Dictionary<int, string> VectorDetents() => Unison(
+            (DyeP.AType, "Corner palette: each palette sets what its corners are"), (DyeP.BType, "Corner palette"), (DyeP.CType, "Corner palette"),
+            (DyeP.AShape, "Corner palette"), (DyeP.BShape, "Corner palette"), (DyeP.CShape, "Corner palette"),
+            (DyeP.ATable, "Corner palette"), (DyeP.BTable, "Corner palette"), (DyeP.CTable, "Corner palette"),
+            (DyeP.ASmpSrc, "Corner palette"), (DyeP.BSmpSrc, "Corner palette"), (DyeP.CSmpSrc, "Corner palette"), (DyeP.SubShape, "Corner palette"));
+
+        internal static readonly M Vec = new()
+        {
+            Gear = "Neo Learn Vector",
+            Table = NeoBuzz.LearnVector.Params.Table,
+            Map = () => new VectorMap(NeoBuzz.LearnVector.Params.Table),
+            Ids = new[] { "vector_x", "vector_y", "corner_palette", "orbit_speed", "orbit_radius", "orbit_shape" }.Concat(GlobalIds).ToArray(),
+            Detents = VectorDetents(),
+            Patches = new()
+            {
+                ["init"] = null,
+                ["west-corner"] = x => { x.Set(ZP.VectorX, 0); x.Set(ZP.OrbitRadius, 0); },
+                ["orbit-circle"] = x => { x.Set(ZP.OrbitSpeed, 500); x.Set(ZP.OrbitRadius, 800); x.Set(ZP.OrbitShape, 0); x.Set(ZP.EnvSustain, 900); },
+                ["cyber-eight"] = x => { x.Set(ZP.CornerPalette, 2); x.Set(ZP.VectorX, 700); x.Set(ZP.OrbitShape, 1); x.Set(ZP.OrbitRadius, 500); x.Set(ZP.OrbitSpeed, 450); },
+            },
+            Heaviest = x => { x.Set(ZP.UnisonDetune, 1000); x.Set(ZP.OrbitRadius, 1000); x.Set(ZP.OrbitSpeed, 900); x.Set(ZP.CornerPalette, 3); x.Set(ZP.OrbitShape, 3); },
+        };
+
+        internal static readonly M Smp = new()
+        {
+            Gear = "Neo Learn Sampler",
+            Table = NeoBuzz.LearnSampler.Params.Table,
+            Map = () => new SamplerMap(NeoBuzz.LearnSampler.Params.Table),
+            Ids = new[] { "sample_offset", "timbre_tilt", "source", "loop", "vintage_dac", "room_space" }.Concat(GlobalIds).ToArray(),
+            Detents = Unison((DyeP.ASmpSrc, "Source: which sample; a choice"), (DyeP.ASmpLoop, "Loop: off or forward")),
+            Patches = new()
+            {
+                ["init"] = null,
+                ["strings-loop"] = x => { x.Set(QP.Source, 1); x.Set(QP.Loop, 500); x.Set(QP.EnvAttack, 500); },
+                ["bell-grit"] = x => { x.Set(QP.Source, 2); x.Set(QP.VintageDac, 800); x.Set(QP.TimbreTilt, 300); },
+                ["texture-room"] = x => { x.Set(QP.Source, 4); x.Set(QP.RoomSpace, 900); x.Set(QP.TimbreTilt, 800); x.Set(QP.SampleOffset, 300); },
+            },
+            Heaviest = x => { x.Set(QP.UnisonDetune, 1000); x.Set(QP.Loop, 1000); x.Set(QP.VintageDac, 1000); x.Set(QP.RoomSpace, 1000); x.Set(QP.Source, 4); },
+        };
+
+        internal static IEnumerable<M> All => new[] { Fm, Wt, Add, Grain, Phys, Str, Vox, Fold, Pd, Vec, Smp };
 
         static void Tables()
         {
@@ -198,7 +313,8 @@ namespace NeoBuzz.MachineTests
                 if (d.Kind is not (MapKind.Enum or MapKind.Int or MapKind.Switch))
                     Assert.That(d.Max - d.Min, Is.GreaterThanOrEqualTo(1000), d.Id + ": at least 1000 raw steps");
                 else
-                    Assert.That(d.Max - d.Min, Is.GreaterThanOrEqualTo(10), d.Id + ": a count or a choice");
+                    Assert.That(d.Max - d.Min, Is.GreaterThanOrEqualTo(d.Id switch { "fold_stages" or "pd_wave_shape" or "source" => 5, "corner_palette" or "orbit_shape" => 3, _ => 10 }),
+                        d.Id + ": a count or a choice (Fold Stages is 1 to 6, the PD Wave six geometries, Source six samples, Palette and Orbit Shape four: steps by nature)");
             }
             var t = m.Table;
             Assert.That(t[6].Value(t[6].Min), Is.EqualTo(0.0005).Within(1e-12));
@@ -308,10 +424,11 @@ namespace NeoBuzz.MachineTests
                     }
                     foreach (var ((slot, what), value) in rec.Exts)
                     {
-                        Assert.That(double.IsFinite(value) && value >= 0, Is.True, $"{d.Id}={x}: {what}");
+                        bool signed = what is SlotExt.FTract or SlotExt.FoldSym or SlotExt.FEnvMod;       // -1..+1: the tract scale and the fold's symmetry offset
+                        Assert.That(double.IsFinite(value) && (signed || value >= 0), Is.True, $"{d.Id}={x}: {what}");
                         if (prev == null || !prev.Exts.TryGetValue((slot, what), out double before)) continue;
                         // Geometry's blend and its target move together across a stop: the spacing is continuous (GeometryIsContinuousAcrossItsStops).
-                        if (what is SlotExt.GeomBlend or SlotExt.GeomTo) continue;
+                        if (what is SlotExt.GeomBlend or SlotExt.GeomTo or SlotExt.FoldStages or SlotExt.PdShape) continue;     // FoldStages: a count, 1 to 6; PdShape: a choice of six geometries
                         if (what == SlotExt.ExactRatio)
                         {
                             // The modulator's ratio: free between its whole and half detents (a snap is up to 1.5%).
@@ -319,7 +436,7 @@ namespace NeoBuzz.MachineTests
                         }
                         else
                         {
-                            double span = what switch { SlotExt.Feedback => FmMap.FeedbackCycles, SlotExt.Inharm => AdditiveMap.StiffnessAtFull, SlotExt.CombPeriod => 8, _ => 1 };
+                            double span = what switch { SlotExt.Feedback => FmMap.FeedbackCycles, SlotExt.Inharm => AdditiveMap.StiffnessAtFull, SlotExt.CombPeriod => 8, SlotExt.StrDecay => 20, SlotExt.FTract or SlotExt.FoldSym or SlotExt.FEnvMod => 2, _ => 1 };
                             Assert.That(Math.Abs(value - before) / span, Is.LessThanOrEqualTo(0.012), $"{d.Id} {x}: {what} {before} -> {value}");
                         }
                     }
@@ -390,10 +507,34 @@ namespace NeoBuzz.MachineTests
             [("Neo Learn Granular", "glitch-stutter")] = 0x02BF11B324982447UL,
             [("Neo Learn Granular", "init")] = 0x94C307C8E58D38F5UL,
             [("Neo Learn Granular", "octave-glow")] = 0x193FABF8DB38DDA7UL,
-            [("Neo Learn Physical", "cello-bow")] = 0xDB062ADF8C3D00ADUL,
-            [("Neo Learn Physical", "init")] = 0x2687684B26437CE4UL,
-            [("Neo Learn Physical", "marimba")] = 0x1F6564DB64016B32UL,
-            [("Neo Learn Physical", "nylon-pluck")] = 0xBDD1B0919D1993E8UL,
+            [("Neo Learn Physical", "cello-bow")] = 0x0647AEA1D95C424EUL,
+            [("Neo Learn Physical", "init")] = 0x7975571E5EAEDA74UL,
+            [("Neo Learn Physical", "marimba")] = 0x111EA98B4064725AUL,
+            [("Neo Learn Physical", "nylon-pluck")] = 0x2C8A96A392C8AEE8UL,
+            [("Neo Learn Formant", "init")] = 0xD61B3F0872032A34UL,
+            [("Neo Learn Formant", "ooh-swell")] = 0x0E4A2FB03BB6D0E8UL,
+            [("Neo Learn Formant", "wah-talker")] = 0x6ACA19DCC3AADEF2UL,
+            [("Neo Learn Formant", "whisper")] = 0xFF07786644BD77F4UL,
+            [("Neo Learn String", "init")] = 0x8C20D2B5956FC6BAUL,
+            [("Neo Learn String", "sitar-drone")] = 0x17794696305CBDD6UL,
+            [("Neo Learn String", "steel-harp")] = 0xD51222BA72D677C4UL,
+            [("Neo Learn String", "stiff-chime")] = 0x03D2A3C7F77C19F4UL,
+            [("Neo Learn Wavefolder", "bongo-ping")] = 0xC5DEB23B0761EFF2UL,
+            [("Neo Learn Wavefolder", "init")] = 0x0CA73907C9AF1CB4UL,
+            [("Neo Learn Wavefolder", "rust-pad")] = 0x0ED5832A3AC5CFF1UL,
+            [("Neo Learn Wavefolder", "sizzle-lead")] = 0xE7501CC043F322D0UL,
+            [("Neo Learn Phase Distortion", "bend-lead")] = 0x7EC7E23D722D02FDUL,
+            [("Neo Learn Phase Distortion", "init")] = 0x945FF1E37748AC5AUL,
+            [("Neo Learn Phase Distortion", "resonant-saw")] = 0xB5E35FDF5738F59FUL,
+            [("Neo Learn Phase Distortion", "ring-bell")] = 0x0EEC227988EEEE8BUL,
+            [("Neo Learn Sampler", "bell-grit")] = 0xDD2C4807E09969BDUL,
+            [("Neo Learn Sampler", "init")] = 0x51879498562C8087UL,
+            [("Neo Learn Sampler", "strings-loop")] = 0x9C0020512F1BDAC7UL,
+            [("Neo Learn Sampler", "texture-room")] = 0x3D3A137BF81903F2UL,
+            [("Neo Learn Vector", "cyber-eight")] = 0x0718A197A7BE4C84UL,
+            [("Neo Learn Vector", "init")] = 0xC25FE09F9A3F2F62UL,
+            [("Neo Learn Vector", "orbit-circle")] = 0x4A1D59F2DBF4FAB4UL,
+            [("Neo Learn Vector", "west-corner")] = 0x001222D104BFAF10UL,
             [("Neo Learn Wavetable", "init")] = 0x6F81FD8A5E4982B4UL,
             [("Neo Learn Wavetable", "motion-pad")] = 0xF956CE4240287174UL,
             [("Neo Learn Wavetable", "pinch-bass")] = 0x5EAE2C23152D379AUL,
