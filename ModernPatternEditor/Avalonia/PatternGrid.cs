@@ -26,7 +26,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
     public sealed class PatternGrid : Grid
     {
         internal const double SetLabelHeight = 34;
-        internal const double ColumnLabelHeight = 80;
+        internal const double ColumnLabelHeight = 32;        // two lines of 11 pt (ux-overhaul.md P3c)
 
         internal readonly PatternEditor Editor;
         internal readonly PatternControl Controller;
@@ -44,6 +44,20 @@ namespace WDE.ModernPatternEditor.AvaloniaView
 
         /// <summary>The pattern position the play cursor shows (pattern time; int.MinValue: none).</summary>
         internal int PlayPosition { get; private set; } = int.MinValue;
+
+        /// <summary>
+        /// Fork (ux-overhaul.md P3c): the pattern ticks in a bar of the song at this pattern's place, for the bar rules (the studio
+        /// sets it from the song's time signatures); null: four beats.
+        /// </summary>
+        public Func<int> BarTicksSource { get; set; }
+
+        internal int BarTicks => Math.Max(1, BarTicksSource?.Invoke() ?? 4 * PatternControl.BUZZ_TICKS_PER_BEAT);
+
+        /// <summary>
+        /// Fork (ux-overhaul.md P3c, decision 54): with Centered scrolling the beats have half the view of empty room above and
+        /// below, so the first and the last row can reach the middle; <see cref="Offset"/> leaves it out.
+        /// </summary>
+        double pad;
 
         public PatternGrid(PatternEditor editor)
         {
@@ -81,18 +95,29 @@ namespace WDE.ModernPatternEditor.AvaloniaView
 
             Scroller.ScrollChanged += (s, e) =>
             {
-                if (Controller.Pattern != null) Controller.Pattern.ScrollPosition = Scroller.Offset.Y;
+                UpdatePad();
+                if (Controller.Pattern != null) Controller.Pattern.ScrollPosition = Offset.Y;
                 Body.InvalidateVisual();
                 header.InvalidateVisual();
                 rowNumbers.InvalidateVisual();
             };
 
+            Scroller.SizeChanged += (s, e) => UpdatePad();
+            Scroller.PropertyChanged += (s, e) =>
+            {
+                if (e.Property != ScrollViewer.ViewportProperty) return;
+                UpdatePad();
+                // The view's size changed (first layout, a resize): the cursor row goes back to the middle.
+                if (Centered && Layout != null && Controller.Pattern != null && PlayPosition == int.MinValue && Scroller.Viewport.Height > 0)
+                    Dispatcher.UIThread.Post(() => CenterOn(Layout.GetFieldRect(Controller.Pattern.CursorPosition)));
+            };
             Controller.PatternShown += Relayout;
             Controller.CursorMoved += OnCursorMoved;
             Controller.SelectionChanged += overlay.InvalidateVisual;
             Controller.Invalidated += InvalidateAll;
             PatternEditor.Settings.PropertyChanged += Settings_PropertyChanged;
             BuzzGUI.Common.NoteNames.Changed += OnNoteNames;
+            BuzzGUI.Common.ValueDisplay.Changed += OnValueDisplay;
 
             timer.Tick += (s, e) => TimerUpdate();
             AttachedToVisualTree += (s, e) => timer.Start();
@@ -136,11 +161,15 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             Controller.Invalidated -= InvalidateAll;
             PatternEditor.Settings.PropertyChanged -= Settings_PropertyChanged;
             BuzzGUI.Common.NoteNames.Changed -= OnNoteNames;
+            BuzzGUI.Common.ValueDisplay.Changed -= OnValueDisplay;
             Unwatch();
         }
 
         /// <summary>Fork (ux-overhaul.md §3.5): Preferences name notes another way: draw them again.</summary>
         void OnNoteNames() => Dispatcher.UIThread.Post(InvalidateAll);
+
+        /// <summary>Fork (ux-overhaul.md P3c): the value base changed: the columns' widths (the digits) and the values again.</summary>
+        void OnValueDisplay() => Dispatcher.UIThread.Post(Relayout);
 
         void Unwatch()
         {
@@ -176,8 +205,41 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             PlayPosition = int.MinValue;
             InvalidateAll();
             if (pattern != null)
-                Dispatcher.UIThread.Post(() => Scroller.Offset = new Vector(Scroller.Offset.X, pattern.ScrollPosition));
+                Dispatcher.UIThread.Post(() =>
+                {
+                    UpdatePad();
+                    Scroller.UpdateLayout();
+                    if (Centered && Layout != null && PlayPosition == int.MinValue) CenterOn(Layout.GetFieldRect(pattern.CursorPosition));
+                    else ScrollTo(Scroller.Offset.X, pattern.ScrollPosition);
+                });
         }
+
+        /// <summary>Whether the cursor row is kept in the middle (the Centered scrolling setting).</summary>
+        internal static bool Centered => PatternEditor.Settings.CenteredScrolling;
+
+        /// <summary>The padding above and below the beats for the view's height now (none unless centred).</summary>
+        void UpdatePad()
+        {
+            double want = Centered ? Math.Floor((Scroller.Viewport.Height > 0 ? Scroller.Viewport.Height : Scroller.Bounds.Height) / 2) : 0;
+            if (Math.Abs(want - pad) < 0.5) return;
+            double shift = want - pad;
+            pad = want;
+            content.Margin = new Thickness(0, pad);
+            var o = Scroller.Offset;
+            Dispatcher.UIThread.Post(() =>
+            {
+                Scroller.UpdateLayout();        // the new padding is in the extent before the offset is set
+                // Centred: the cursor row goes to the middle (a pattern just opened, a window resized); else the beats stay where they were.
+                if (Centered && Layout != null && Controller.Pattern != null && PlayPosition == int.MinValue)
+                    CenterOn(Layout.GetFieldRect(Controller.Pattern.CursorPosition));
+                else
+                    Scroller.Offset = new Vector(o.X, Math.Max(0, o.Y + shift));
+                InvalidateAll();
+            });
+        }
+
+        /// <summary>Scrolls the beats so that their coordinate <paramref name="y"/> is at the view's top.</summary>
+        void ScrollTo(double x, double y) => Scroller.Offset = new Vector(Math.Max(0, x), Math.Max(0, y + pad));
 
         internal double HeaderHeight => SetLabelHeight + (PatternEditor.Settings.ColumnLabels ? ColumnLabelHeight : 0);
 
@@ -204,18 +266,53 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             Body.InvalidateVisual();        // the status of values under the cursor may change too
             if (Layout == null) return;
             var r = Layout.GetFieldRect(Controller.Pattern.CursorPosition);
-            if (PatternEditor.Settings.CursorScrollMode == CursorScrollMode.Standard)
+            UpdatePad();
+            if (Centered && PlayPosition == int.MinValue)
+                CenterOn(r);            // Fork (ux-overhaul.md P3c, decision 54): the cursor row in the middle; while it plays the view follows the play row
+            else if (Centered || PatternEditor.Settings.CursorScrollMode == CursorScrollMode.Standard)
                 MakeVisible(r);
             else
-                Scroller.Offset = new Vector(Scroller.Offset.X, Math.Max(0, r.Top - Math.Floor(Scroller.Viewport.Height / 2 + r.Height / 2)));
-            if (r.Left < Scroller.Offset.X || r.Right > Scroller.Offset.X + Scroller.Viewport.Width)
+                ScrollTo(Offset.X, r.Top - Math.Floor(Scroller.Viewport.Height / 2 + r.Height / 2));
+            if (r.Left < Offset.X || r.Right > Offset.X + Scroller.Viewport.Width)
                 MakeVisible(r);
         }
+
+        /// <summary>Scrolls so that the middle of a rectangle of the pattern is the middle of the view.</summary>
+        internal void CenterOn(Rect r) => ScrollTo(Offset.X, Math.Round(r.Center.Y - Scroller.Viewport.Height / 2));
+
+        /// <summary>The middle of the view as a y of the beats (what the centred row is).</summary>
+        public double CenterY => Offset.Y + Scroller.Viewport.Height / 2;
+
+        /// <summary>The pattern's tick at the middle of the view (for tests).</summary>
+        public double CenterRow => Layout == null ? 0 : CenterY / Layout.LineHeight;
+
+        /// <summary>The cursor's row, as its y in the beats (for tests).</summary>
+        public double CursorY => Layout == null ? 0 : Layout.GetFieldRect(Controller.Pattern.CursorPosition).Center.Y;
+
+        /// <summary>The top of the view as a y of the beats (for tests).</summary>
+        public double ScrollY => Offset.Y;
+
+        /// <summary>Scrolls to a y of the beats (for tests).</summary>
+        public void ScrollBeatsTo(double y) => ScrollTo(Offset.X, y);
+
+        /// <summary>The y of a beat's top in the beats' coordinates, and the beats in a bar (for tests).</summary>
+        public double BeatTop(int beat) => beat * Layout.BeatHeight;
+        public double BarBeats => BarTicks / (double)PatternControl.BUZZ_TICKS_PER_BEAT;
+
+        /// <summary>The header label, grid, beat rule and bar rule colours (for the contrast tests).</summary>
+        public static (Avalonia.Media.Color Label, Avalonia.Media.Color Background, Avalonia.Media.Color BeatRule, Avalonia.Media.Color BarRule) ThemeColours =>
+            (PatternTheme.ColumnLabel.Color, PatternTheme.ElementBackground.Color, PatternTheme.BeatRule.Color, PatternTheme.BarRule.Color);
+
+        public double Pad => pad;
+        public double RawY => Scroller.Offset.Y;
+
+        /// <summary>The view's height (for tests).</summary>
+        public double ViewHeight => Scroller.Viewport.Height;
 
         /// <summary>Scrolls so a rectangle of the pattern is in view (WPF: BringIntoView).</summary>
         public void MakeVisible(Rect r)
         {
-            var o = Scroller.Offset;
+            var o = Offset;
             var v = Scroller.Viewport;
             if (v.Width <= 0 || v.Height <= 0) return;
             double x = o.X, y = o.Y;
@@ -224,7 +321,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             if (r.Top < y) y = r.Top;
             else if (r.Bottom > y + v.Height) y = r.Bottom - v.Height;
             if (x != o.X || y != o.Y)
-                Scroller.Offset = new Vector(Math.Max(0, x), Math.Max(0, y));
+                ScrollTo(x, y);
         }
 
         /// <summary>The 20 ms timer (PatternEditor.SetTimer, PatternControl.TimerUpdate): the playing pattern and the play cursor.</summary>
@@ -238,17 +335,18 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             PlayPosition = p;
             overlay.InvalidateVisual();
             rowNumbers.InvalidateVisual();
-            if (p != int.MinValue && Layout != null && PatternEditor.Settings.FollowPlayPositioninPattern)
+            if (p != int.MinValue && Layout != null && (Centered || PatternEditor.Settings.FollowPlayPositioninPattern))
             {
                 double y = PlayY(p);
-                Scroller.Offset = new Vector(Scroller.Offset.X, Math.Max(0, y - Scroller.Viewport.Height / 2.0));
+                UpdatePad();
+                ScrollTo(Offset.X, Math.Round(y + (Centered ? Layout.LineHeight / 2 : 0) - Scroller.Viewport.Height / 2.0));
             }
         }
 
         /// <summary>Where a pattern time is drawn (y of the play cursor).</summary>
         internal double PlayY(int time) => time / (double)PatternEvent.TimeBase * Layout.RPB / PatternControl.BUZZ_TICKS_PER_BEAT * Font.LineHeight * PatternControl.Scale;
 
-        internal Vector Offset => Scroller.Offset;
+        internal Vector Offset => new Vector(Scroller.Offset.X, Scroller.Offset.Y - pad);
         internal Size Viewport => Scroller.Viewport;
 
         /// <summary>Gives the beats the keyboard (the editor's Activate).</summary>
@@ -286,6 +384,23 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         public TimeSpan LastRenderTime => Body.LastRenderTime;
 
         // ------------------------------------------------------------------ drawing a beat (BeatVisual)
+
+        /// <summary>
+        /// Fork (ux-overhaul.md P3c): the beat and bar rules over the beats <paramref name="first"/> to <paramref name="last"/>,
+        /// <paramref name="width"/> wide: a 1 px line at each beat's start, a 2 px brighter one at each bar's (the song's bar
+        /// at this pattern's place), both at least 3:1 against the grid behind them (a test measures it).
+        /// </summary>
+        internal void DrawRules(DrawingContext dc, double width, int first, int last)
+        {
+            if (Layout == null || width <= 0) return;
+            int h = Layout.BeatHeight;
+            for (int b = first; b <= last; b++)
+                dc.FillRectangle(PatternTheme.BeatRule, new Rect(0, b * h, width, 1));
+            double barBeats = BarTicks / (double)PatternControl.BUZZ_TICKS_PER_BEAT;
+            if (barBeats <= 0) return;
+            for (int k = (int)Math.Ceiling(first / barBeats); k * barBeats < last + 1; k++)
+                dc.FillRectangle(PatternTheme.BarRule, new Rect(0, Math.Round(k * barBeats * h), width, 2));
+        }
 
         /// <summary>
         /// BeatVisual.RenderVisual: a beat of a column set at (x, y), its background and each column's rows.
@@ -427,6 +542,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 for (int b = first; b <= last; b++)
                     grid.DrawBeat(dc, sets[s], widths, b, x, b * h, h, o.X, o.X + v.Width);
             }
+            grid.DrawRules(dc, Bounds.Width, first, last);
             LastRenderTime = clock.Elapsed;
         }
 
@@ -569,6 +685,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             {
                 for (int b = first; b <= last; b++)
                     grid.DrawBeat(dc, set, widths, b, 0, b * h, h);
+                grid.DrawRules(dc, Bounds.Width, first, last);
 
                 if (PatternEditor.Settings.CursorRowHighlight && grid.Controller.Pattern != null)
                 {
@@ -665,16 +782,11 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                             continue;
                         }
                         var col = new Rect(cx, PatternGrid.SetLabelHeight, cw, PatternGrid.ColumnLabelHeight);
-                        if (cx <= ox + Bounds.Width && cx + cw >= ox)
-                        {
-                            if (hover is Point hp && col.Contains(new Point(hp.X + ox, hp.Y)))
-                                dc.DrawRectangle(PatternTheme.LabelHover, null, col, 3, 3);
-                            var name = ColumnLabel(s, c);
-                            // Turned -90°, its start at the bottom.
-                            using (dc.PushClip(col))
-                            using (dc.PushTransform(Matrix.CreateRotation(-Math.PI / 2) * Matrix.CreateTranslation(name.Bounds.X, name.Bounds.Bottom)))
-                                dc.DrawText(name.Text, new Point(0, 0));
-                        }
+                        if (hover is Point hp && col.Contains(new Point(hp.X + ox, hp.Y)))
+                            dc.DrawRectangle(PatternTheme.LabelHover, null, col, 3, 3);
+                        var name = ColumnLabel(s, c);
+                        using (dc.PushClip(col))
+                            dc.DrawText(name.Text, name.Bounds.TopLeft);
                         cx += cw;
                     }
                 }
@@ -706,9 +818,8 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         }
 
         /// <summary>
-        /// A column's name, turned upright, and where it goes (the beats' coordinates, the box it
-        /// fills once turned): centred in the part of its column in view, so a column half
-        /// scrolled out keeps its name readable (gallery mac-051 cut "Closed hat tune" at the left).
+        /// A column's name and where it goes (the beats' coordinates): horizontal, 11 pt, on two lines at most, centred in its
+        /// column and in the header's height (ux-overhaul.md P3c).
         /// </summary>
         internal (FormattedText Text, Rect Bounds) ColumnLabel(int s, int c)
         {
@@ -717,12 +828,11 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             double cx = layout.SetX(s);
             for (int i = 0; i < c; i++) cx += layout.ColumnWidthAt(s, i);
             int cw = layout.ColumnWidthAt(s, c);
-            var name = new FormattedText(cs.Columns[c].Label ?? "", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, LabelFont, 10, PatternTheme.ColumnLabel)
-            { MaxTextWidth = PatternGrid.ColumnLabelHeight - 4, Trimming = TextTrimming.CharacterEllipsis, MaxLineCount = 1 };
-            double thickness = name.Height, length = Math.Min(name.WidthIncludingTrailingWhitespace, PatternGrid.ColumnLabelHeight - 4);
-            double left = Stick(cx, cw, thickness, 0);
-            double bottom = PatternGrid.SetLabelHeight + PatternGrid.ColumnLabelHeight - 2;
-            return (name, new Rect(left, bottom - length, thickness, length));
+            var label = cs.Columns[c].Label;
+            double width = Math.Ceiling(Math.Min(cw - 2, HeaderText.Make(label, cw - 2, PatternTheme.ColumnLabel).WidthIncludingTrailingWhitespace)) + 1;
+            var name = HeaderText.Make(label, width, PatternTheme.ColumnLabel);
+            double left = Stick(cx, cw, width, 1);      // a column half scrolled out keeps its name in view where it fits
+            return (name, new Rect(left, PatternGrid.SetLabelHeight + (PatternGrid.ColumnLabelHeight - name.Height) / 2, width, name.Height));
         }
 
         /// <summary>

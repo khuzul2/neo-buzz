@@ -475,13 +475,10 @@ namespace ReBuzz.Studio.Tests
             ((Control)view.TrackerGrid.Body).Focus();
             Pump();
 
-            Key(window, PhysicalKey.Tab);                       // track 0's Note column
+            // The cursor starts on track 0's Note column (the notes come first, ux-overhaul.md P3c).
             var keys = new[] { PhysicalKey.Z, PhysicalKey.C, PhysicalKey.B, PhysicalKey.N };
             for (int i = 0; i < 16; i++) Key(window, keys[i % 4]);
-            Key(window, PhysicalKey.Tab, RawInputModifiers.Shift);
-            Key(window, PhysicalKey.Home);
-            for (int i = 0; i < 6; i++) Key(window, PhysicalKey.ArrowRight);    // Uni detune, its high digit
-            Key(window, PhysicalKey.PageUp);
+            EditorNav.GoTo((object)view, "Uni detune", Pump);                   // its high digit, row 0
             Key(window, PhysicalKey.Digit0);
             for (int i = 0; i < 14; i++) Key(window, PhysicalKey.ArrowDown);
             Key(window, PhysicalKey.ArrowRight);

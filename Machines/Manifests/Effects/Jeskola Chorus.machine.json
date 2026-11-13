@@ -6,6 +6,11 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "modulation",
  "summary": "Modulation (profiled draft): traits: modulation, filter or EQ; tail 0.03 s; latency 0 samples; gain +8.8 dB at the defaults.",
+ "category": "Modulation",
+ "tags": [
+  "chorus"
+ ],
+ "use_for": "Basic chorus for thickening a mono or stereo source.",
  "tracks": 0,
  "health": {
   "status": "warn",

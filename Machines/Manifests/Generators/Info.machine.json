@@ -6,6 +6,11 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "control",
  "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "category": "Control",
+ "tags": [
+  "notes"
+ ],
+ "use_for": "Holds free text about the song in its own window; it does nothing to the sound.",
  "tracks": 0,
  "health": {
   "status": "ok",

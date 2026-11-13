@@ -219,8 +219,12 @@ namespace ReBuzz.Studio.Tests
                     times.Sort();
                     return times[3];
                 }
+                // Every column shown (the empty ones wait behind + Automation since P3c): the stress is the 704 of them.
+                ((dynamic)view!).ShowAllAutomation();
+                Pump();
                 double first = Draw();
-                // End: the globals' last column (Arp scale); a digit there is its automation.
+                // The globals' last column (Arp scale; the globals come after the tracks now), then End; a digit there is its automation.
+                EditorNav.GoTo(view!, "Arp scale", Pump);
                 var top = TopLevel.GetTopLevel(body)!;
                 top.KeyPressQwerty(PhysicalKey.End, RawInputModifiers.None);
                 top.KeyReleaseQwerty(PhysicalKey.End, RawInputModifiers.None);

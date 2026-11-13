@@ -6,6 +6,12 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "utility",
  "summary": "Utility (profiled draft): traits: utility; tail 0.0 s; latency 0 samples; gain +0.0 dB at the defaults.",
+ "category": "Utility",
+ "tags": [
+  "audio-io",
+  "gain"
+ ],
+ "use_for": "Output stage with a volume control to the audio device (older routing machine).",
  "tracks": 0,
  "health": {
   "status": "ok",

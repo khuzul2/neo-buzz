@@ -55,6 +55,19 @@ namespace NeoBuzz.Drums
         /// </summary>
         public IReadOnlyDictionary<int, string> KeyNames => keyNames;
 
+        static readonly IReadOnlyDictionary<int, string> keyShortNames = KeysByShortName();
+
+        static Dictionary<int, string> KeysByShortName()
+        {
+            var names = new Dictionary<int, string>();
+            for (int key = 0; key < 128; key++)
+                if (DrumsEngine.VoiceOfKey(key) is int voice and >= 0) names[key] = DrumsEngine.Short[voice];
+            return names;
+        }
+
+        /// <summary>Hosts (the pattern editor, ux-overhaul.md P3c): the same keys by their hit columns' names, "BD", which fit the tracker's three characters.</summary>
+        public IReadOnlyDictionary<int, string> KeyShortNames => keyShortNames;
+
         /// <summary>The editor's pads (any thread): a hit at the next block, as a MIDI note on the voice's key.</summary>
         internal void Audition(int voice, int velocity)
         {

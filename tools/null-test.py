@@ -198,6 +198,15 @@ CASES = [
     gen("dye-seq-bass", "Dye Essence", "Seq — Pulse Bass", [], BASS),
     gen("dye-seq-filter", "Dye Essence", "Seq — Filter Steps", [], CHORDS),
     gen("dye-seq-prob", "Dye Essence", "Seq — Probability Pluck", [], KEYS),
+    # The effects rack (docs/specs/dye-essence.md §4.10): each hosted type, the layouts, the chains' order.
+    gen("dye-fx-hall", "Dye Essence", "Rack — Bell In A Hall", [], KEYS, tail=3.0),
+    gen("dye-fx-echo", "Dye Essence", "Rack — Dotted Echo Keys", [], KEYS, tail=3.0),
+    gen("dye-fx-clip", "Dye Essence", "Rack — Saturated Bass", [], BASS),
+    gen("dye-fx-filter", "Dye Essence", "Rack — Sweeping Choir", [], CHORDS),
+    gen("dye-fx-eqcomp", "Dye Essence", "Rack — Tilted And Squeezed Pluck", [], KEYS),
+    gen("dye-fx-duo", "Dye Essence", "Rack — Duo Plate Keys", [], KEYS, tail=3.0),
+    gen("dye-fx-parallel", "Dye Essence", "Rack — Parallel Crush Bass", [], BASS, tail=2.0),
+    gen("dye-fx-choir", "Dye Essence", "Rack — Delayed Choir", [], CHORDS, tail=3.0),
     # Neo FM6: algorithms, feedback, the Clean 2x and Raw 1x engines, envelopes, LFO.
     gen("fm6-tine-piano", "Neo FM6", "Keys — Tine Piano", [], KEYS),
     gen("fm6-glass-bell", "Neo FM6", "Bell — Glass Bell", [], BELLS, tail=2.0),
@@ -362,6 +371,15 @@ CASES = [
     fx("multiband-minimum", "Neo Multiband", "Mastering — Zero-Latency Glue (Minimum Phase)", [("B4 ratio", "0.6:1"), ("B4 range", "6 dB")]),
     fx("multiband-moves", "Neo Multiband", "Bus — Drum Bus Punch (3 Bands)",
        auto=[("Crossover 1", [(0, "120 Hz"), (1, "300 Hz"), (2, "80 Hz")]), ("Bands", [(2, "4 bands")]), ("Phase", [(3, "Minimum")])]),
+    # Neo Multiband M6b (docs/specs/mastering-tools.md §5.14): a lookahead (the bands and the dry through delay rings, the latency
+    # reported), the Dynamic phase, the RMS detector with upward compression, an external band with nothing on input 2 (it hears
+    # silence) with a lookahead in minimum phase, and the lookahead and the phase switched while playing (the fades).
+    fx("multiband-lookahead", "Neo Multiband", "Mastering — Gentle Glue (4 Bands)", [("Lookahead", "3 ms")]),
+    fx("multiband-dynamic-phase", "Neo Multiband", "Mastering — Dynamic-Phase Glue (Zero Latency)", [("B2 ratio", "4:1"), ("B2 threshold", "-34 dB")]),
+    fx("multiband-upward-rms", "Neo Multiband", "Mastering — Quiet Detail Lift (Upward)", [("Detector", "RMS"), ("B1 ratio", "1.5:1")]),
+    fx("multiband-key-missing", "Neo Multiband", "Bus — Kick Duck on the Lows (Sidechain)", [("B2 upward ratio", "2:1"), ("B2 threshold", "-40 dB")]),
+    fx("multiband-lookahead-moves", "Neo Multiband", "Mastering — Gentle Glue (4 Bands)",
+       auto=[("Lookahead", [(1, "4 ms"), (2, "0 ms")]), ("Phase", [(3, "Dynamic")])]),
     # Neo Sampler: the built-in kit (choke groups, pans, tunings), the song's waves imported (a zone loop with its
     # crossfade, layers by root and round robin, reversed and ping-pong), velocity layers crossfading, the 32-tap
     # reader pitched far up (octave levels) and down, the ladder and the SVF with their envelope.

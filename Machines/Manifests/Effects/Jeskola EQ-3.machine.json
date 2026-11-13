@@ -6,6 +6,12 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
  "type": "EQ",
  "summary": "Classic Buzz 3-band EQ: low, mid and high gains of ±24 dB with two crossover frequencies. For broad tone shaping; Neo EQ is the precise one.",
+ "category": "EQ & Filter",
+ "tags": [
+  "eq",
+  "clean"
+ ],
+ "use_for": "Broad three-band tone shaping with two crossover points.",
  "quirks": [
   "Mono out (the profile measured an output correlation of 1.0), and about 6 dB louder than its input at unity settings: NeoBuzz Live feeds a mono native effect left + right summed (ReBuzz/NativeMachine/NativeMessage.cs). Profile: +6.0 dB at the defaults.",
   "The bands are split by Low Cutoff and High Cutoff: the mid band is everything between them.",

@@ -6,6 +6,11 @@
  "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "utility",
  "summary": "Utility (profiled draft): traits: utility; tail 0.0 s; latency 1 samples; gain +6.0 dB at the defaults.",
+ "category": "EQ & Filter",
+ "tags": [
+  "filter"
+ ],
+ "use_for": "Compact resonant filter with a selectable type.",
  "tracks": 0,
  "health": {
   "status": "warn",

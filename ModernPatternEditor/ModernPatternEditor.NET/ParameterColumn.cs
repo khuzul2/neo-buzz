@@ -71,6 +71,11 @@ namespace WDE.ModernPatternEditor
                 if (v == column.PatternColumn.Parameter.NoValue)
                     return new string('.', column.DigitCount);
 
+#if !WINDOWS
+                // Fork (ux-overhaul.md P3c): decimal, and a drum machine's names for its notes.
+                if (column.IsDecimal) return v.ToString(column.decimalFormat);
+                if (column.PatternColumn.Parameter.Type == ParameterType.Note && v != BuzzNote.Off && column.NoteName(v) is string name) return name;
+#endif
                 return column.PatternColumn.Parameter.GetHexValueString(v);
             }
 
@@ -201,10 +206,56 @@ namespace WDE.ModernPatternEditor
             }
         }
 
+#if !WINDOWS
+        // Fork (ux-overhaul.md P3c): byte, word and switch values in decimal when ValueDisplay says so: the digits of the
+        // parameter's largest value (0 for a column that stays hex: notes, ASCII, negative minimums).
+        int decimalDigits = -1;
+        string decimalFormat = "D1";
+
+        void SetUpDecimal()
+        {
+            var p = PatternColumn.Parameter;
+            int digits = 0;
+            if (p.Type != ParameterType.Note && !p.Flags.HasFlag(ParameterFlags.Ascii) && p.MinValue >= 0 && p.MaxValue > 0)
+                digits = ValueDisplay.DecimalDigits(p.MaxValue);
+            decimalDigits = digits;
+            decimalFormat = "D" + Math.Max(1, digits);
+        }
+
+        /// <summary>Whether the column shows its values in decimal now (and takes decimal digits).</summary>
+        internal bool IsDecimal
+        {
+            get
+            {
+                if (ValueDisplay.IsHex) return false;
+                if (decimalDigits < 0) SetUpDecimal();
+                return decimalDigits > 0;
+            }
+        }
+
+        /// <summary>A drum machine's short name of a Buzz note value, or null (the pitch).</summary>
+        internal string NoteName(int buzzNote)
+        {
+            if (!(buzzNote >= BuzzNote.Min && buzzNote <= BuzzNote.Max)) return null;
+            var names = MachineNoteNames.For(PatternColumn.Machine);
+            return names?.ShortName(BuzzNote.ToMIDINote(buzzNote));
+        }
+
+        /// <summary>The machine's full name for a note value ("Kick"), or null.</summary>
+        internal string NoteFullName(int buzzNote)
+        {
+            if (!(buzzNote >= BuzzNote.Min && buzzNote <= BuzzNote.Max)) return null;
+            return MachineNoteNames.For(PatternColumn.Machine)?.Name(BuzzNote.ToMIDINote(buzzNote));
+        }
+#endif
+
         public int DigitCount
         {
             get
             {
+#if !WINDOWS
+                if (IsDecimal) return decimalDigits;
+#endif
                 switch (PatternColumn.Parameter.Type)
                 {
                     case ParameterType.Note: return 3;
@@ -281,7 +332,7 @@ namespace WDE.ModernPatternEditor
             {
                 int value;
 
-                if (DigitCount == 3)
+                if (DigitCount == 3 && Type == ColumnRenderer.ColumnType.Note)
                 {
                     if (d.Index == 0)
                         value = newvalue;
@@ -295,6 +346,17 @@ namespace WDE.ModernPatternEditor
                     else
                         return null;
                 }
+#if !WINDOWS
+                else if (IsDecimal)
+                {
+                    // Fork (ux-overhaul.md P3c, decision 51): the digit at the cursor is replaced by the one typed, the others
+                    // kept (a column with no value counts as zeros); a value past the parameter's largest is the largest.
+                    var digits = (beat.HasValue(d.RowInBeat) ? beat.Rows[d.RowInBeat].Value : 0).ToString(decimalFormat).ToCharArray();
+                    if (d.Index < 0 || d.Index >= digits.Length) return null;
+                    digits[d.Index] = (char)('0' + newvalue);
+                    value = int.Parse(new string(digits), System.Globalization.CultureInfo.InvariantCulture);
+                }
+#endif
                 else if (DigitCount == 2)
                 {
                     if (beat.HasValue(d.RowInBeat))

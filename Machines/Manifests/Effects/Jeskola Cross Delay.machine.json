@@ -6,6 +6,13 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
  "type": "delay",
  "summary": "Classic Buzz stereo cross-feedback delay: mono in, a left and a right line whose feedback crosses over, per track. For ping-pong and wide echoes.",
+ "category": "Delay & Reverb",
+ "tags": [
+  "delay",
+  "echo",
+  "stereo-width"
+ ],
+ "use_for": "Stereo echoes whose feedback crosses between the left and right lines.",
  "quirks": [
   "Mono in, stereo out: the left line's echo feeds the right line and the other way round, so different lengths ping-pong.",
   "Each track is its own pair of lines with its own lengths, feedback and level (8 at most).",

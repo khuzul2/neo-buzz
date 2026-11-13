@@ -6,6 +6,14 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
  "type": "distortion",
  "summary": "Distortion with 13 characters, from soft and round (Red crust, Deimos) through tube simulations (Cratered, God of iron, Scarred) to ring-mod and FM mangling (Battle axe, Crunch, Shatter), with pre-gain and treble and bass attenuators.",
+ "category": "Distortion",
+ "tags": [
+  "distortion",
+  "saturation",
+  "warm",
+  "gritty"
+ ],
+ "use_for": "Thirteen distortion characters, from soft and round to tube-like and harsh.",
  "quirks": [
   "Mode 0 (bypass) does nothing: good for comparing.",
   "Amount means something slightly different per mode; in Steel pain PreGain and Amount do the same; in Cannon the bass control keeps the bass out of the distortion (its documentation).",

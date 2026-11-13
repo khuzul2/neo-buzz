@@ -6,6 +6,15 @@
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed Updated by hand (2026-11-06, mcp-server.md §12.15, U6 for the Pedal synths) for MIDI input.",
  "type": "monosynth",
  "summary": "SH-101-style monosynth: pulse, saw, sub and noise into a resonant 4-pole ladder low-pass, ADSR, LFO and glide. For acid and sub basses, leads, plucks and sweeps.",
+ "category": "Synths",
+ "tags": [
+  "subtractive",
+  "monophonic",
+  "bass",
+  "lead",
+  "vintage"
+ ],
+ "use_for": "Monophonic basses and leads with sub oscillator, glide and a resonant ladder filter.",
  "quirks": [
   "Monophonic: MIDI notes (notes_write's default) play the last key down, and going back to a key still held when it is released (a chord plays its last note); velocity sets the level (velocity / 127), pitch bend moves it ±2 semitones, the mod wheel brings in vibrato up to ±1 semitone (or VCO Mod's, if more) and the sustain pedal holds the note.",
   "Its Note track (notes_write with input \"tracks\") still plays as before, for old songs: one note at a time on its one track, at full level.",

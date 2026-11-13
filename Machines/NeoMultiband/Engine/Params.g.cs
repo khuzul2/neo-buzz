@@ -53,7 +53,17 @@ namespace NeoBuzz.Multiband
         public const int B4Bypass = 42;
         public const int Mix = 43;
         public const int Output = 44;
-        public const int Count = 45;
+        public const int Detector = 45;
+        public const int Lookahead = 46;
+        public const int B1UpRatio = 47;
+        public const int B1Key = 48;
+        public const int B2UpRatio = 49;
+        public const int B2Key = 50;
+        public const int B3UpRatio = 51;
+        public const int B3Key = 52;
+        public const int B4UpRatio = 53;
+        public const int B4Key = 54;
+        public const int Count = 55;
     }
 
     internal static class Params
@@ -67,7 +77,7 @@ namespace NeoBuzz.Multiband
             new ParamDef(P.Xo1, "Xo1", "Crossover 1", 0, 10000, 2594, MapKind.Freq, a: 20, b: 20000, group: "Crossovers", description: "Between bands 1 and 2 (Linkwitz–Riley, 24 dB/oct, −6 dB here)"),
             new ParamDef(P.Xo2, "Xo2", "Crossover 2", 0, 10000, 5663, MapKind.Freq, a: 20, b: 20000, group: "Crossovers", description: "Between bands 2 and 3 (never below Crossover 1)"),
             new ParamDef(P.Xo3, "Xo3", "Crossover 3", 0, 10000, 8257, MapKind.Freq, a: 20, b: 20000, group: "Crossovers", description: "Between bands 3 and 4 with four bands (never below Crossover 2)"),
-            new ParamDef(P.Phase, "Phase", "Phase", 0, 1, 0, MapKind.Enum, names: new[] { "Linear", "Minimum" }, group: "Crossovers", description: "Linear: the bands sum back to the input exactly, no phase shift, about 96 ms of latency (reported to NeoBuzz Live). Minimum: zero latency, the same band shapes, the crossovers' phase shift (as an analog crossover's)"),
+            new ParamDef(P.Phase, "Phase", "Phase", 0, 2, 0, MapKind.Enum, names: new[] { "Linear", "Minimum", "Dynamic" }, group: "Crossovers", description: "Linear: the bands sum back to the input exactly, no phase shift, about 96 ms of latency (reported to NeoBuzz Live). Minimum: zero latency, the same band shapes, the crossovers' phase shift (as an analog crossover's). Dynamic: zero latency and no static phase shift: the output is the input plus each band's gain change times the band, so a band at 0 dB change leaves the input exactly as it was (the crossovers' phase shift shows only where a band is changing)"),
             new ParamDef(P.Stereo, "Stereo", "Stereo", 0, 1, 0, MapKind.Enum, names: new[] { "L/R", "M/S" }, group: "Detector", description: "What each band's detector and gain work on: left and right, or mid and side"),
             new ParamDef(P.Link, "Link", "Link", 0, 1000, 1000, MapKind.Percent, group: "Detector", description: "100 %: both channels (or mid and side) get the same gain, from the louder; 0 %: each its own"),
             new ParamDef(P.B1Threshold, "B1Threshold", "B1 threshold", 0, 600, 400, MapKind.Linear, a: -60, b: 0, unit: "dB", digits: 1, group: "Band 1", description: "Band 1: level where the gain starts to change (the band's peak)"),
@@ -108,6 +118,16 @@ namespace NeoBuzz.Multiband
             new ParamDef(P.B4Bypass, "B4Bypass", "B4 bypass", 0, 1, 0, MapKind.Switch, group: "Band 4", description: "Band 4: pass the band untouched (no dynamics, no makeup)"),
             new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry against the processed bands (the dry is latency-aligned, so parallel compression never combs)"),
             new ParamDef(P.Output, "Output", "Output", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Output", description: "Output gain, −24 … +24 dB in 0.1 dB steps"),
+            new ParamDef(P.Detector, "Detector", "Detector", 0, 1, 0, MapKind.Enum, names: new[] { "Peak", "RMS" }, group: "Detector and lookahead", description: "What every band's detector reads: the peak, or the RMS (3 ms mean square, on the peak scale: a sine reads the same as with Peak)"),
+            new ParamDef(P.Lookahead, "Lookahead", "Lookahead", 0, 1000, 0, MapKind.Linear, a: 0, b: 10, unit: "ms", digits: 2, group: "Detector and lookahead", description: "Delays the bands (and the dry) so each detector sees what is coming; adds this much latency to the phase's own, reported to NeoBuzz Live. A change fades the sound out and in over 10 ms each"),
+            new ParamDef(P.B1UpRatio, "B1UpRatio", "B1 upward ratio", 0, 1000, 0, MapKind.Ratio, a: 1, b: 8, group: "Band 1 upward and sidechain", description: "Band 1: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)"),
+            new ParamDef(P.B1Key, "B1Key", "B1 sidechain", 0, 1, 0, MapKind.Enum, names: new[] { "Internal", "External" }, group: "Band 1 upward and sidechain", description: "Band 1: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)"),
+            new ParamDef(P.B2UpRatio, "B2UpRatio", "B2 upward ratio", 0, 1000, 0, MapKind.Ratio, a: 1, b: 8, group: "Band 2 upward and sidechain", description: "Band 2: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)"),
+            new ParamDef(P.B2Key, "B2Key", "B2 sidechain", 0, 1, 0, MapKind.Enum, names: new[] { "Internal", "External" }, group: "Band 2 upward and sidechain", description: "Band 2: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)"),
+            new ParamDef(P.B3UpRatio, "B3UpRatio", "B3 upward ratio", 0, 1000, 0, MapKind.Ratio, a: 1, b: 8, group: "Band 3 upward and sidechain", description: "Band 3: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)"),
+            new ParamDef(P.B3Key, "B3Key", "B3 sidechain", 0, 1, 0, MapKind.Enum, names: new[] { "Internal", "External" }, group: "Band 3 upward and sidechain", description: "Band 3: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)"),
+            new ParamDef(P.B4UpRatio, "B4UpRatio", "B4 upward ratio", 0, 1000, 0, MapKind.Ratio, a: 1, b: 8, group: "Band 4 upward and sidechain", description: "Band 4: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)"),
+            new ParamDef(P.B4Key, "B4Key", "B4 sidechain", 0, 1, 0, MapKind.Enum, names: new[] { "Internal", "External" }, group: "Band 4 upward and sidechain", description: "Band 4: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)"),
         };
     }
 }
