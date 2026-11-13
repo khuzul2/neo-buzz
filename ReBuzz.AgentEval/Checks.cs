@@ -554,7 +554,7 @@ namespace ReBuzz.AgentEval
             c.Ok("undo");
             int gridAfter = J.Objects(c.Ok("session_get")["tracks"]).Count();
             if (gridAfter != gridBefore) r.Note($"the session grid fills itself on its first edit ({gridBefore} → {gridAfter} tracks) and stays when that edit is undone");
-            c.Ok("snapshot_save", new JsonObject { ["name"] = "start" });
+            c.Ok("snapshot_save", new JsonObject { ["name"] = "start", ["kind"] = "parameters" });
             var s0 = State(c);
 
             // Every kind of change, one call each.
@@ -583,7 +583,7 @@ namespace ReBuzz.AgentEval
                 ("wave_import", new JsonObject { ["path"] = tone, ["name"] = "Tone", ["root_note"] = "E4" }),
                 ("arrangement_clear", new JsonObject { ["machine"] = "Bass", ["from"] = 8, ["to"] = 16 }),
                 ("pattern_delete", new JsonObject { ["machine"] = "Bass", ["pattern"] = "Fill" }),
-                ("snapshot_restore", new JsonObject { ["name"] = "start" }),
+                ("snapshot_restore", new JsonObject { ["name"] = "start", ["kind"] = "parameters" }),
             };
             int done = 0;
             foreach (var (tool, args) in steps)
