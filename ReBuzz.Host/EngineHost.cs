@@ -124,7 +124,8 @@ namespace ReBuzz.Host
         /// </summary>
         public static void UseAudio(JsonRegistry registry, AudioOptions audio)
         {
-            ReBuzzCore.DefaultAudioDriverFactory = new PortAudioDriverFactory();
+            // Windows: ASIO drivers (the WPF app's driver) beside PortAudio's WASAPI, WDM-KS, DirectSound and MME devices.
+            ReBuzzCore.DefaultAudioDriverFactory = OperatingSystem.IsWindows() ? new WindowsHostAudioDriverFactory() : new PortAudioDriverFactory();
             if (audio == null) return;
             registry.Write("AudioDriver", audio.Device ?? PortAudioDriverFactory.DefaultName, "Settings");
             registry.Write("Input", audio.Input ?? "", PortAudioDriver.Section);
@@ -304,6 +305,11 @@ namespace ReBuzz.Host
                 {
                     PortAudio.Release();
                 }
+            }
+            if (OperatingSystem.IsWindows())
+            {
+                var asio = new WindowsHostAudioDriverFactory();
+                output.WriteLine("ASIO drivers (installed): " + (asio.AsioSupported ? string.Join(", ", asio.AsioDriverNames().DefaultIfEmpty("none")) : "not supported here"));
             }
             if (WinMmMidiBackend.Available)
             {

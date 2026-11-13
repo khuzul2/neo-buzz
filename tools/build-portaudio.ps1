@@ -5,7 +5,7 @@
 .DESCRIPTION
     PortAudio (MIT licence) is the studio's audio on every OS (ReBuzz/Platform/PortAudio.cs). On Windows this builds
     it as portaudio.dll for x64 with the host APIs MME (WMME), DirectSound, WASAPI and WDM-KS, and NOT ASIO: the ASIO
-    SDK's licence doesn't allow redistributing a build that includes it. The CRT is linked statically, so the DLL needs
+    SDK's licence doesn't allow redistributing a build that includes it. ASIO in the studio is the WPF app's driver (NAudio.Asio). The CRT is linked statically, so the DLL needs
     no Visual C++ redistributable. The source is a pinned release tag, cloned shallow into build\portaudio\src.
 
     Out gets portaudio.dll, PortAudio-LICENSE.txt (PortAudio's own licence text, from its source) and

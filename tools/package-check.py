@@ -104,6 +104,7 @@ if sfiles:
     check({"ReBuzz.Studio.dll", "ReBuzz.Studio.runtimeconfig.json", "ReBuzz.Studio.deps.json", "ReBuzz.Engine.dll", "ReBuzz.Host.dll", "Avalonia.Base.dll"} <= sfiles,
           "Studio\\ has the studio, its engine and host, and Avalonia")
     check("ReBuzz.dll" not in sfiles and "NeoBuzzLive.exe" not in sfiles, "Studio\\ doesn't hold the WPF app's files (the two can't share a folder)")
+    check({"NAudio.Asio.dll", "NAudio.WinMM.dll", "NAudio.Midi.dll", "NAudio.Core.dll"} <= sfiles, "Studio\\ has NAudio (ASIO and WinMM MIDI)")
     check("portaudio.dll" in sfiles and "libsndfile-1.dll" in sfiles, "Studio\\ has portaudio.dll and libsndfile-1.dll")
     sread = lambda n: open(os.path.join(studio, n), encoding="utf-8-sig", errors="replace").read() if os.path.isfile(os.path.join(studio, n)) else ""
     pa_build = sread("PortAudio-BUILD.txt")

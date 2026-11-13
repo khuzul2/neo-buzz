@@ -81,6 +81,7 @@ result = subprocess.run([exe, "--list-devices"], capture_output=True, text=True,
 print(result.stdout)
 print(result.stderr)
 check(result.returncode == 0 and "PortAudio" in result.stdout, f"--list-devices loads PortAudio ({result.stdout.splitlines()[0] if result.stdout else 'no output'})")
+check("ASIO drivers (installed):" in result.stdout, "--list-devices lists the ASIO drivers (NAudio.Asio loads)")
 check("MIDI inputs" in result.stdout and "MIDI outputs" in result.stdout, "--list-devices lists the WinMM MIDI ports")
 apis = sorted({line.rsplit("(", 1)[-1].split(")")[0] for line in result.stdout.splitlines() if " out, " in line and "(" in line})
 print(f"     audio host APIs with devices here: {', '.join(apis) or 'none (a runner without a sound card)'}")

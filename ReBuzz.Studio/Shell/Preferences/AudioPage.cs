@@ -39,6 +39,7 @@ namespace ReBuzz.Studio.Shell.Preferences
         readonly ComboBox threads = Choices(120), algorithm = Choices(220);
         readonly TextBlock status = new TextBlock { TextWrapping = Avalonia.Media.TextWrapping.Wrap };
         readonly TextBlock missing;
+        Button asioPanel;
         List<string> listed = new List<string>(), outputs = new List<string>(), inputs = new List<string>();
 
         public AudioPage(ReBuzzCore core, IRegistryEx registry, PrefsModel model) : base(model)
@@ -48,13 +49,17 @@ namespace ReBuzz.Studio.Shell.Preferences
 
             Heading("Output");
             missing = Note("PortAudio isn't installed here (macOS: brew install portaudio; Linux: libportaudio2), so there are no devices.", Problem);
-            Row("Output device", output, "\"PortAudio: default\" follows the system's output device.");
+            Row("Output device", output, "\"PortAudio: default\" follows the system's output device. On Windows the installed ASIO drivers come first (they use their own buffer size and rate: their control panel), then WASAPI, WDM-KS, DirectSound and MME.");
             Row("Input", input, "What audio takes record from (the Session View); none plays without input.");
             Row("Sample rate", rate);
             Row("Buffer size", buffer, "Smaller: less latency, more CPU. Dropouts in the status line mean it's too small.");
             var restart = new Button { Content = "Restart audio" };
             restart.Click += (s, e) => Reopen();
-            Row("Now", new StackPanel { Spacing = 6, Children = { status, restart } });
+            // Windows, an ASIO driver: its own control panel (buffer size and rate are the driver's).
+            var panel = new Button { Content = "ASIO control panel…" };
+            panel.Click += (s, e) => core.AudioEngine?.ShowControlPanel();
+            Row("Now", new StackPanel { Spacing = 6, Children = { status, new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 8, Children = { restart, panel } } } });
+            asioPanel = panel;
 
             Heading("Rendering");
             Row("Render threads", threads, "With Multithreading on (Advanced ▸ Engine flags). Takes effect after a restart.");
@@ -141,6 +146,7 @@ namespace ReBuzz.Studio.Shell.Preferences
                 algorithm.SelectedIndex = Math.Clamp(registry.Read("WorkAlgorithm", DefaultAlgorithm, "Settings"), 0, Algorithms.Length - 1);
 
                 status.Text = DeviceStatus(core);
+                if (asioPanel != null) asioPanel.IsVisible = core.AudioEngine?.SelectedOutDevice?.Type == Audio.Engine.AudioEngine.AudioOutType.ASIO;
             }
             finally
             {
@@ -207,7 +213,7 @@ namespace ReBuzz.Studio.Shell.Preferences
         {
             try
             {
-                return core.AudioEngine?.AudioDevices().Where(d => d.Type == Audio.Engine.AudioEngine.AudioOutType.PortAudio).Select(d => d.Name).ToList()
+                return core.AudioEngine?.AudioDevices().Where(d => d.Type == Audio.Engine.AudioEngine.AudioOutType.PortAudio || d.Type == Audio.Engine.AudioEngine.AudioOutType.ASIO).Select(d => d.Name).ToList()
                        ?? new List<string>();
             }
             catch (Exception)
