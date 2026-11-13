@@ -29,7 +29,9 @@
     "Chamber",
     "Plate"
    ],
-   "description": "Algorithm: delay lengths, diffusion and early reflections"
+   "description": "Algorithm: delay lengths, diffusion and early reflections",
+   "how": "Chooses the reverb algorithm: Hall, Room, Chamber or Plate.",
+   "sound": "Hall is big and smooth, Room is small and natural, Chamber is dense and even, and Plate is bright and fast to build up."
   },
   {
    "index": 1,
@@ -43,7 +45,9 @@
    "a": 0.0,
    "b": 250.0,
    "unit": "ms",
-   "description": "Gap before the reverb starts"
+   "description": "Gap before the reverb starts",
+   "how": "Sets the gap before the reverb starts, from 0 to 250 ms.",
+   "sound": "A longer gap keeps the dry sound clear in front of the tail and adds a sense of distance."
   },
   {
    "index": 2,
@@ -55,7 +59,9 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Scales the space (delay lengths and reflections)"
+   "description": "Scales the space (delay lengths and reflections)",
+   "how": "Scales the size of the space from 0 to 100 %.",
+   "sound": "Small values sound like a tight room and large values like a vast hall."
   },
   {
    "index": 3,
@@ -69,7 +75,9 @@
    "a": 0.2,
    "b": 30.0,
    "unit": "s",
-   "description": "Reverb time (T60) in the mid band"
+   "description": "Reverb time (T60) in the mid band",
+   "how": "Sets how long the tail lasts, from 0.2 to 30 seconds.",
+   "sound": "Short decays add a touch of space and long ones wash the sound out into a wide atmosphere."
   },
   {
    "index": 4,
@@ -83,7 +91,9 @@
    "a": 0.25,
    "b": 4.0,
    "unit": "×",
-   "description": "Low-frequency decay time relative to the mid band"
+   "description": "Low-frequency decay time relative to the mid band",
+   "how": "Sets how long the low frequencies ring compared with the mids, from a quarter to four times.",
+   "sound": "Below 1x the lows die away fast and stay clean, and above 1x they linger and rumble."
   },
   {
    "index": 5,
@@ -97,7 +107,9 @@
    "a": 1000.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "Above this, the tail decays four times faster"
+   "description": "Above this, the tail decays four times faster",
+   "how": "Sets the frequency above which the tail dies out four times faster, from 1 to 20 kHz.",
+   "sound": "Lower values make a dark, soft tail and higher values a bright, airy one."
   },
   {
    "index": 6,
@@ -109,7 +121,9 @@
    "default": 700,
    "kind": "percent",
    "unit": "%",
-   "description": "Density of the build-up"
+   "description": "Density of the build-up",
+   "how": "Sets how densely the echoes build up, from 0 to 100 %.",
+   "sound": "High diffusion is smooth and creamy, and low diffusion lets the individual echoes be heard."
   },
   {
    "index": 7,
@@ -121,7 +135,9 @@
    "default": 300,
    "kind": "percent",
    "unit": "%",
-   "description": "Movement in the tail (breaks up metallic ringing)"
+   "description": "Movement in the tail (breaks up metallic ringing)",
+   "how": "Sets the amount of movement in the tail, from 0 to 100 %.",
+   "sound": "A little breaks up metallic ringing, and a lot gives a lush, chorused wash."
   },
   {
    "index": 8,
@@ -135,7 +151,9 @@
    "a": 0.05,
    "b": 5.0,
    "unit": "Hz",
-   "description": "Speed of the movement"
+   "description": "Speed of the movement",
+   "how": "Sets the speed of the tail movement, from 0.05 to 5 Hz.",
+   "sound": "Slow rates are barely noticeable, faster ones add a visible shimmer."
   },
   {
    "index": 9,
@@ -150,7 +168,9 @@
     "Off",
     "On"
    ],
-   "description": "Holds the tail forever and stops taking input"
+   "description": "Holds the tail forever and stops taking input",
+   "how": "Holds the current tail forever and stops taking in new sound.",
+   "sound": "It turns the reverb into a sustained pad that stays until you release it."
   },
   {
    "index": 10,
@@ -162,7 +182,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "Feeds the tail back an octave up"
+   "description": "Feeds the tail back an octave up",
+   "how": "Feeds the tail back an octave higher, from 0 to 100 %.",
+   "sound": "The tail climbs upwards in a bright, angelic glow."
   },
   {
    "index": 11,
@@ -177,7 +199,9 @@
    "b": 6.0,
    "flag": true,
    "unit": "dB",
-   "description": "Early reflections level"
+   "description": "Early reflections level",
+   "how": "Sets the level of the early reflections, from -40 to +6 dB, or off.",
+   "sound": "More early reflections place the sound in a definite room, fewer leave it more diffuse."
   },
   {
    "index": 12,
@@ -192,7 +216,9 @@
    "b": 6.0,
    "flag": true,
    "unit": "dB",
-   "description": "Tail level"
+   "description": "Tail level",
+   "how": "Sets the level of the late tail, from -40 to +6 dB, or off.",
+   "sound": "A higher tail sounds more spacious, and a lower one keeps the reverb tight."
   },
   {
    "index": 13,
@@ -206,7 +232,9 @@
    "a": 0.0,
    "b": 150.0,
    "unit": "%",
-   "description": "Stereo width of the reverb"
+   "description": "Stereo width of the reverb",
+   "how": "Sets the stereo width of the reverb, from 0 to 150 %.",
+   "sound": "A low width is focused in the middle, and a high width is wide and enveloping."
   },
   {
    "index": 14,
@@ -220,7 +248,9 @@
    "a": 10.0,
    "b": 1000.0,
    "unit": "Hz",
-   "description": "High-pass on the reverb"
+   "description": "High-pass on the reverb",
+   "how": "Removes low frequencies from the reverb, from 10 Hz to 1 kHz.",
+   "sound": "Raising it keeps the reverb from muddying the bass."
   },
   {
    "index": 15,
@@ -234,7 +264,9 @@
    "a": 1000.0,
    "b": 22000.0,
    "unit": "Hz",
-   "description": "Low-pass on the reverb"
+   "description": "Low-pass on the reverb",
+   "how": "Rolls off high frequencies of the reverb, from 1 to 22 kHz.",
+   "sound": "Lowering it softens the reverb so it sits behind the dry sound."
   },
   {
    "index": 16,
@@ -246,7 +278,9 @@
    "default": 300,
    "kind": "percent",
    "unit": "%",
-   "description": "Dry/wet (100 % for a send)"
+   "description": "Dry/wet (100 % for a send)",
+   "how": "Blends the dry sound with the reverb from 0 to 100 %.",
+   "sound": "Use a low value as an insert, or 100 % when the reverb sits on a send."
   }
  ]
 }

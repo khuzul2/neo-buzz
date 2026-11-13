@@ -30,7 +30,9 @@
     "15 ips",
     "30 ips"
    ],
-   "description": "The tape speed: moves the head bump (35, 70, 140 Hz) and the high-frequency loss (6, 9.5, 14 kHz corners) and sets the hiss (3 dB more at 7.5, 3 dB less at 30)"
+   "description": "The tape speed: moves the head bump (35, 70, 140 Hz) and the high-frequency loss (6, 9.5, 14 kHz corners) and sets the hiss (3 dB more at 7.5, 3 dB less at 30)",
+   "how": "Chooses the simulated tape speed: 7.5, 15 or 30 inches per second.",
+   "sound": "Slow speed is darker, bumpier and hissier, while fast speed is clearer with a tighter low end."
   },
   {
    "index": 1,
@@ -44,7 +46,9 @@
    "a": 0.0,
    "b": 30.0,
    "unit": "dB",
-   "description": "Gain into the tape curve (the small-signal level is unchanged): louder signals are rounded off earlier, 0.1 dB steps"
+   "description": "Gain into the tape curve (the small-signal level is unchanged): louder signals are rounded off earlier, 0.1 dB steps",
+   "how": "Sets the gain into the tape curve, from 0 to 30 dB.",
+   "sound": "A little rounds the peaks and adds warmth, and a lot compresses and distorts the sound."
   },
   {
    "index": 2,
@@ -56,7 +60,9 @@
    "default": 500,
    "kind": "bipolar",
    "unit": "%",
-   "description": "Moves the working point on the curve: positive and negative values make even harmonics (the DC they cause is removed)"
+   "description": "Moves the working point on the curve: positive and negative values make even harmonics (the DC they cause is removed)",
+   "how": "Shifts the working point of the tape curve, from minus 100 % to plus 100 %.",
+   "sound": "Moving it away from the middle adds even harmonics and a thicker, more lopsided colour."
   },
   {
    "index": 3,
@@ -70,7 +76,9 @@
    "a": 0.0,
    "b": 12.0,
    "unit": "dB",
-   "description": "Record pre-emphasis (a high shelf at 2.5 kHz) before the tape and the matching de-emphasis after it: the highs saturate earlier, the small-signal response stays flat"
+   "description": "Record pre-emphasis (a high shelf at 2.5 kHz) before the tape and the matching de-emphasis after it: the highs saturate earlier, the small-signal response stays flat",
+   "how": "Boosts the highs before the tape and cuts them after it by up to 12 dB.",
+   "sound": "The highs saturate earlier and sound airier and more compressed, while the overall balance stays flat."
   },
   {
    "index": 4,
@@ -84,7 +92,9 @@
    "a": 0.0,
    "b": 6.0,
    "unit": "dB",
-   "description": "The resonant low shelf of the playback head; its corner follows the speed"
+   "description": "The resonant low shelf of the playback head; its corner follows the speed",
+   "how": "Sets the low-frequency boost of the playback head, from 0 to 6 dB.",
+   "sound": "More bump gives a fuller, rounder low end that moves with the tape speed."
   },
   {
    "index": 5,
@@ -98,7 +108,9 @@
    "a": 0.0,
    "b": 12.0,
    "unit": "dB",
-   "description": "The high-frequency loss at the speed's corner (a high shelf cut)"
+   "description": "The high-frequency loss at the speed's corner (a high shelf cut)",
+   "how": "Sets the loss of high frequencies, from 0 to 12 dB.",
+   "sound": "More loss dulls the top end like worn or slow tape."
   },
   {
    "index": 6,
@@ -110,7 +122,9 @@
    "default": 200,
    "kind": "percent",
    "unit": "%",
-   "description": "An even-harmonic stage after the tape (second harmonic, with its DC removed)"
+   "description": "An even-harmonic stage after the tape (second harmonic, with its DC removed)",
+   "how": "Adds an even-harmonic stage after the tape, from 0 to 100 %.",
+   "sound": "It adds a smooth, warm sweetness on top of the tape's own colour."
   },
   {
    "index": 7,
@@ -125,7 +139,9 @@
    "b": -40.0,
    "flag": true,
    "unit": "dB",
-   "description": "Tape hiss in dBFS (shaped, per speed); off at its minimum"
+   "description": "Tape hiss in dBFS (shaped, per speed); off at its minimum",
+   "how": "Adds tape hiss from -80 to -40 dB, or turns it off at the minimum.",
+   "sound": "A little hiss gives a vintage feel, and too much simply covers quiet passages."
   },
   {
    "index": 8,
@@ -139,7 +155,9 @@
    "a": 0.0,
    "b": 25.0,
    "unit": "ct",
-   "description": "Slow pitch variation: peak deviation in cents (adds the 5.2 ms the modulated read needs as latency)"
+   "description": "Slow pitch variation: peak deviation in cents (adds the 5.2 ms the modulated read needs as latency)",
+   "how": "Sets a slow pitch wobble of up to 25 cents.",
+   "sound": "It gives a worn, unstable tape feel, with slow bending of long notes."
   },
   {
    "index": 9,
@@ -153,7 +171,9 @@
    "a": 0.0,
    "b": 12.0,
    "unit": "ct",
-   "description": "Fast pitch variation (8 and 14 Hz): peak deviation in cents"
+   "description": "Fast pitch variation (8 and 14 Hz): peak deviation in cents",
+   "how": "Sets a fast pitch wobble of up to 12 cents.",
+   "sound": "It adds a fine, nervous shimmer to the pitch, like a tired transport."
   },
   {
    "index": 10,
@@ -167,7 +187,9 @@
    "a": 0.5,
    "b": 2.0,
    "unit": "Hz",
-   "description": "The wow's rate"
+   "description": "The wow's rate",
+   "how": "Sets the speed of the slow pitch wobble, from 0.5 to 2 Hz.",
+   "sound": "Slower rates drift lazily and faster ones sound like a warble."
   },
   {
    "index": 11,
@@ -182,7 +204,9 @@
     "Live",
     "High"
    ],
-   "description": "High: 4× oversampling (latency, constant). With Live, no oversampling and no droop compensation, zero latency, a little more aliasing and a softer top"
+   "description": "High: 4× oversampling (latency, constant). With Live, no oversampling and no droop compensation, zero latency, a little more aliasing and a softer top",
+   "how": "Chooses Live (no delay) or High (oversampling, with a small constant delay).",
+   "sound": "High sounds cleaner at the top, while Live keeps the machine instant for playing."
   },
   {
    "index": 12,
@@ -194,7 +218,9 @@
    "default": 1000,
    "kind": "percent",
    "unit": "%",
-   "description": "Dry/wet (parallel tape)"
+   "description": "Dry/wet (parallel tape)",
+   "how": "Blends the dry sound with the taped sound from 0 to 100 %.",
+   "sound": "Lower values give parallel tape saturation that keeps the transients of the dry signal."
   },
   {
    "index": 13,
@@ -208,7 +234,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Gain after the tape, 0.1 dB steps (the editor's Match sets it from the gain-match reading)"
+   "description": "Gain after the tape, 0.1 dB steps (the editor's Match sets it from the gain-match reading)",
+   "how": "Sets the gain after the tape, from minus 24 to plus 24 dB.",
+   "sound": "Use it to match the level with the input so you judge the colour, not the loudness."
   },
   {
    "index": 14,
@@ -223,7 +251,9 @@
     "Off",
     "On"
    ],
-   "description": "Hear only what the tape adds: the output minus the input, delayed to match (glides over 10 ms)"
+   "description": "Hear only what the tape adds: the output minus the input, delayed to match (glides over 10 ms)",
+   "how": "Plays only what the tape adds to the signal.",
+   "sound": "It lets you hear the exact colour and distortion the tape is contributing."
   }
  ],
  "readings": [

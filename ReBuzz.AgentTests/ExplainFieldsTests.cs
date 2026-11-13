@@ -58,7 +58,8 @@ namespace ReBuzz.AgentTests
         [Test]
         public void ParametersWithoutExplainTextAreDescribedAsBefore()
         {
-            var poly = MachineManifest.Load(Path.Combine(RepoRoot(), "Machines", "NeoPoly", "Neo Poly" + MachineManifest.Suffix))!;
+            // A machine that still has no Explain text (K1c writes Dye Essence's: then this needs another, or a hand-made manifest).
+            var poly = MachineManifest.Load(Path.Combine(RepoRoot(), "Machines", "DyeEssence", "Dye Essence" + MachineManifest.Suffix))!;
             var o = new JsonObject();
             foreach (var p in poly.Parameters) ExplainFields.Add(o, p);
             Assert.That(o, Is.Empty, "no Explain text: no new fields");

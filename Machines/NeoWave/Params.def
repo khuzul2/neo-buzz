@@ -8,101 +8,267 @@ import wavetable .wav | A WAV wavetable: frames of 2048 samples (or a clm chunk 
 
 group Voice
 VoiceMode   "Voice mode"    0 2    0    enum Poly Mono Legato           | Poly; Mono retriggers; Legato glides without retriggering
+    how Chooses how notes share voices: Poly plays chords, Mono retriggers on each note, Legato glides between overlapping notes.
+    sound Poly suits pads and chords, Mono gives a punchy lead or bass line, and Legato gives smooth, connected phrases.
 Polyphony   "Polyphony"     1 16   8    int 0                           | Notes that sound at once
+    how Sets how many notes can sound at once, from 1 to 16.
+    sound More voices let chords and long releases overlap, while fewer save processing power and make notes cut each other off.
 Unison      "Unison"        1 8    1    int 0                           | Voices per note
+    how Sets the number of stacked voices per note, from 1 to 8.
+    sound More voices make the note thicker and wider, and one voice is a single clean oscillator.
 UniDetune   "Uni detune"    0 1000 200  pct                             | Detune between unison voices (up to ±50 cents)
+    how Sets how far apart the unison voices are tuned, up to 50 cents.
+    sound Small amounts give a warm thickness and large ones a wide, swarming supersaw sound.
 UniSpread   "Uni spread"    0 1000 600  pct                             | Stereo spread of unison voices
+    how Sets how widely the unison voices are spread across the stereo field, from 0 to 100 %.
+    sound More spread makes the note wider and more enveloping, and zero keeps it centred.
 GlideMode   "Glide mode"    0 2    0    enum Off Always Legato          | When notes glide
+    how Chooses when notes slide into each other: never, always, or only on overlapping notes.
+    sound Gliding adds a singing, synth-bass slur between notes.
 Glide       "Glide"         0 1000 200  pow 0 2 3 s 3                   | Glide time
+    how Sets how long the slide takes, up to 2 seconds.
+    sound Short glides are subtle and long ones sweep slowly between pitches.
 BendRange   "Bend range"    0 24   2    int 0 st                        | Pitch bend range
+    how Sets how far the pitch bend wheel moves the pitch, from 0 to 24 semitones.
+    sound A small range gives expressive nudges, and a large one gives dive-bomb sweeps.
 Volume      "Volume"        0 1000 739  db -40 6 inf                    | Output level
+    how Sets the output level of the synth, from -40 to +6 dB, or off.
+    sound Use it to place the instrument in the mix without changing its tone.
 VelAmp      "Vel → amp"     0 1000 700  pct                             | How much velocity changes loudness
+    how Sets how strongly note velocity changes the loudness, from 0 to 100 %.
+    sound High values make playing dynamics audible, and 0 % makes all notes equally loud.
 
 group Osc A
 ATable    "A table"     0 10   0 enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: the table loaded in the editor)
+    how Chooses the wavetable for oscillator A, from the built-in sets or the loaded User table.
+    sound Each table has its own family of tones, from basic shapes to vowels, sweeping sync and gritty digital sounds.
 APos      "A position"  0 1000 0 pct | Position in the table (frames morph smoothly)
+    how Moves through the frames of oscillator A's wavetable, from 0 to 100 %.
+    sound Moving the position morphs the tone smoothly from one timbre to the next, and modulating it makes evolving sounds.
 AWarp     "A warp"      0 7    0    enum None Bend+ Bend− Squeeze Mirror Asym Window_sync PM_from_B | How the cycle is read
+    how Chooses how the cycle of oscillator A is bent or read: bend, squeeze, mirror, asymmetry, window sync or phase modulation.
+    sound Each warp reshapes the waveform and adds harmonics, from subtle fattening to hard, metallic edges.
 AWarpAmt  "A warp amt"  0 1000 0    pct | Warp amount
+    how Sets how strongly the warp is applied to oscillator A, from 0 to 100 %.
+    sound Zero leaves the table untouched, and more warp makes the tone progressively more extreme.
 AOct      "A octave"    0 6    3    int -3 oct signed | Octave
+    how Transposes oscillator A up or down by up to three octaves.
+    sound Lower octaves give weight and higher ones brightness or a thin layer.
 ASemi     "A semi"      0 24   12   int -12 st signed | Semitones
+    how Transposes oscillator A by up to 12 semitones either way.
+    sound Use it to build intervals and chords from the two oscillators, such as a fifth.
 AFine     "A fine"      0 1000 500  lin -50 50 ct 0 | Fine tune
+    how Detunes oscillator A by up to 50 cents either way.
+    sound A few cents between the oscillators gives a slow, warm beating.
 ALevel    "A level"     0 1000 1000 pct | Level
+    how Sets the level of oscillator A into the filter, from 0 to 100 %.
+    sound Use it to balance the two oscillators against each other.
 group Osc B
 BTable    "B table"     0 10   3 enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: the table loaded in the editor)
+    how Chooses the wavetable for oscillator B, from the built-in sets or the loaded User table.
+    sound Each table has its own family of tones, from basic shapes to vowels, sweeping sync and gritty digital sounds.
 BPos      "B position"  0 1000 0 pct | Position in the table (frames morph smoothly)
+    how Moves through the frames of oscillator B's wavetable, from 0 to 100 %.
+    sound Moving the position morphs the tone smoothly from one timbre to the next, and modulating it makes evolving sounds.
 BWarp     "B warp"      0 7    0    enum None Bend+ Bend− Squeeze Mirror Asym Window_sync PM_from_B | How the cycle is read (PM from B acts on osc A only; here it reads plainly)
+    how Chooses how the cycle of oscillator B is bent or read: bend, squeeze, mirror, asymmetry, window sync or phase modulation.
+    sound Each warp reshapes the waveform and adds harmonics, from subtle fattening to hard, metallic edges.
 BWarpAmt  "B warp amt"  0 1000 0    pct | Warp amount
+    how Sets how strongly the warp is applied to oscillator B, from 0 to 100 %.
+    sound Zero leaves the table untouched, and more warp makes the tone progressively more extreme.
 BOct      "B octave"    0 6    3    int -3 oct signed | Octave
+    how Transposes oscillator B up or down by up to three octaves.
+    sound Lower octaves give weight and higher ones brightness or a thin layer.
 BSemi     "B semi"      0 24   12   int -12 st signed | Semitones
+    how Transposes oscillator B by up to 12 semitones either way.
+    sound Use it to build intervals and chords from the two oscillators, such as a fifth.
 BFine     "B fine"      0 1000 540  lin -50 50 ct 0 | Fine tune
+    how Detunes oscillator B by up to 50 cents either way.
+    sound A few cents between the oscillators gives a slow, warm beating.
 BLevel    "B level"     0 1000 0 pct | Level
+    how Sets the level of oscillator B into the filter, from 0 to 100 %.
+    sound Use it to balance the two oscillators against each other.
 
 group Sub · noise
 SubShape    "Sub shape"     0 1    0    enum Sine Square                | Sub oscillator wave
+    how Chooses a sine or a square wave for the sub oscillator.
+    sound Sine gives a smooth, deep foundation and square a more audible, buzzy bass.
 SubOct      "Sub octave"    0 1    0    enum -1 -2                      | Octaves below the note
+    how Chooses whether the sub oscillator sits one or two octaves below the note.
+    sound One octave down adds weight and two octaves down adds a rumble.
 SubLevel    "Sub level"     0 1000 0    pct                             | Sub level
+    how Sets the level of the sub oscillator, from 0 to 100 %.
+    sound Raise it for more low-end weight in bass and lead sounds.
 NoiseLevel  "Noise"         0 1000 0    pct                             | Noise level
+    how Sets the level of the noise source, from 0 to 100 %.
+    sound A little adds air and breath, and a lot makes the sound hissy and percussive.
 
 group Filter
 FType       "Filter type"   0 6    0    enum Ladder_24 Ladder_12 SVF_LP SVF_BP SVF_HP SVF_Notch Off | Filter model
+    how Chooses the filter model: 24 or 12 dB ladder, state-variable low-pass, band-pass, high-pass or notch, or off.
+    sound The ladder is warm and smooth, the state-variable types are cleaner and more flexible, and Off leaves the oscillators open.
 FCutoff     "Cutoff"        0 1000 750  freq 20 20000                   | Cutoff
+    how Sets the filter cutoff frequency, from 20 Hz to 20 kHz.
+    sound Low values make the sound dark and muffled, and high values open it up and brighten it.
 FReso       "Reso"          0 1000 150  pct                             | Resonance
+    how Sets the filter resonance, from 0 to 100 %.
+    sound More resonance puts a whistling peak at the cutoff, and a lot makes it ring.
 FDrive      "Drive"         0 1000 0    lin 0 24 dB 1                   | Drive into the filter
+    how Pushes the signal into the filter by up to 24 dB.
+    sound A little adds warmth and a lot makes the sound thick and distorted.
 FEnv        "Filter env"    0 1000 600  bip                             | Filter envelope amount (±6 octaves)
+    how Sets how much the filter envelope moves the cutoff, up to six octaves either way.
+    sound Positive amounts make each note open and close, and negative ones sweep the other way.
 FKey        "Key track"     0 1000 500  pct                             | Cutoff follows the keyboard
+    how Sets how much the cutoff follows the note pitch, from 0 to 100 %.
+    sound At 100 % the brightness stays the same over the keyboard, and lower values make high notes duller.
 FVel        "Filter vel"    0 1000 300  pct                             | Softer notes close the filter (up to 3 octaves)
+    how Sets how much soft notes close the filter, up to three octaves.
+    sound Harder playing sounds brighter, which makes the instrument feel more expressive.
 
 group Amp env
 AmpA        "Amp attack"    0 1000 100  time 0.0005 20                  | Attack time
+    how Sets how long the amp envelope takes to rise from nothing to full, from 0.5 ms to 20 seconds.
+    sound Short attacks hit instantly for plucks and basses, and long ones fade in slowly like a pad.
 AmpD        "Amp decay"     0 1000 500  time 0.0005 20                  | Decay time
+    how Sets how long the amp envelope takes to fall to its sustain level, from 0.5 ms to 20 seconds.
+    sound Short decays give a plucky, percussive note, and long ones let the note ring down slowly.
 AmpS        "Amp sustain"   0 1000 800  pct                             | Sustain level
+    how Sets the level the amp envelope holds while the key stays down, from 0 to 100 %.
+    sound A low sustain makes the note die away even when held, and a high one keeps it at full volume.
 AmpR        "Amp release"   0 1000 450  time 0.0005 20                  | Release time
+    how Sets how long the amp envelope takes to fall back after the key is released, from 0.5 ms to 20 seconds.
+    sound Short releases stop the note cleanly, and long ones let it fade out after you let go.
 group Filter env
 FltA        "Flt attack"    0 1000 100  time 0.0005 20                  | Attack time
+    how Sets how long the filter envelope takes to rise from nothing to full, from 0.5 ms to 20 seconds.
+    sound Short attacks open at once, and long ones make the effect swell in after the note starts.
 FltD        "Flt decay"     0 1000 520  time 0.0005 20                  | Decay time
+    how Sets how long the filter envelope takes to fall to its sustain level, from 0.5 ms to 20 seconds.
+    sound Short decays make a quick snap in the effect, and long ones a slow, gradual sweep down.
 FltS        "Flt sustain"   0 1000 300  pct                             | Sustain level
+    how Sets the level the filter envelope holds while the key stays down, from 0 to 100 %.
+    sound A high sustain keeps the effect on while the key is held, and a low one lets it fade back.
 FltR        "Flt release"   0 1000 450  time 0.0005 20                  | Release time
+    how Sets how long the filter envelope takes to fall back after the key is released, from 0.5 ms to 20 seconds.
+    sound Short releases end the effect at once, and long ones let it tail off after the note.
 group Mod env
 ModA        "Mod attack"    0 1000 300  time 0.0005 20                  | Attack time
+    how Sets how long the mod envelope takes to rise from nothing to full, from 0.5 ms to 20 seconds.
+    sound Short attacks open at once, and long ones make the effect swell in after the note starts.
 ModD        "Mod decay"     0 1000 600  time 0.0005 20                  | Decay time
+    how Sets how long the mod envelope takes to fall to its sustain level, from 0.5 ms to 20 seconds.
+    sound Short decays make a quick snap in the effect, and long ones a slow, gradual sweep down.
 ModS        "Mod sustain"   0 1000 0    pct                             | Sustain level
+    how Sets the level the mod envelope holds while the key stays down, from 0 to 100 %.
+    sound A high sustain keeps the effect on while the key is held, and a low one lets it fade back.
 ModR        "Mod release"   0 1000 500  time 0.0005 20                  | Release time
+    how Sets how long the mod envelope takes to fall back after the key is released, from 0.5 ms to 20 seconds.
+    sound Short releases end the effect at once, and long ones let it tail off after the note.
 
 group LFO 1
 L1Shape     "LFO1 shape"    0 6    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth | Waveform
+    how Chooses the waveform of LFO 1: sine, triangle, rising or falling saw, square, random steps or smooth random.
+    sound Smooth shapes give gentle sweeps, square gives on-off jumps, and random shapes give unpredictable movement.
 L1Rate      "LFO1 rate"     0 1000 500  freq 0.02 50                    | Rate (free)
+    how Sets the speed of LFO 1 from 0.02 to 50 Hz when its sync is Free.
+    sound Slow rates drift over seconds, and fast rates turn into vibrato and tremolo.
 L1Sync      "LFO1 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
+    how Locks LFO 1 to a note length of the song tempo instead of the Rate control.
+    sound Synced modulation moves in time with the track.
 L1Retrig    "LFO1 retrig"   0 1    1    switch                          | Restart with each note (per voice); off: one free LFO
+    how Chooses whether LFO 1 restarts with each note or runs freely.
+    sound Restarting gives every note the same movement, and free running makes each note slightly different.
 L1Fade      "LFO1 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
+    how Sets how long LFO 1 takes to fade in after a note starts, up to 5 seconds.
+    sound A fade delays vibrato or sweeps until the note has settled, as a player would add vibrato late.
 group LFO 2
 L2Shape     "LFO2 shape"    0 6    1    enum Sine Triangle Saw_up Saw_down Square S&H Smooth | Waveform
+    how Chooses the waveform of LFO 2: sine, triangle, rising or falling saw, square, random steps or smooth random.
+    sound Smooth shapes give gentle sweeps, square gives on-off jumps, and random shapes give unpredictable movement.
 L2Rate      "LFO2 rate"     0 1000 300  freq 0.02 50                    | Rate (free)
+    how Sets the speed of LFO 2 from 0.02 to 50 Hz when its sync is Free.
+    sound Slow rates drift over seconds, and fast rates turn into vibrato and tremolo.
 L2Sync      "LFO2 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
+    how Locks LFO 2 to a note length of the song tempo instead of the Rate control.
+    sound Synced modulation moves in time with the track.
 L2Retrig    "LFO2 retrig"   0 1    0    switch                          | Restart with each note (per voice); off: one free LFO
+    how Chooses whether LFO 2 restarts with each note or runs freely.
+    sound Restarting gives every note the same movement, and free running makes each note slightly different.
 L2Fade      "LFO2 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
+    how Sets how long LFO 2 takes to fade in after a note starts, up to 5 seconds.
+    sound A fade delays vibrato or sweeps until the note has settled, as a player would add vibrato late.
 
 group Matrix
 M1Src "M1 source" 0 11 1 enum Off LFO_1 LFO_2 Mod_env Filter_env Amp_env Velocity Key Mod_wheel Aftertouch Random Unison | Modulation source
+    how Chooses what drives matrix slot 1, such as an LFO, an envelope, velocity or the mod wheel.
+    sound The source decides how the destination moves: steadily, with the note, or with your playing.
 M1Dst "M1 dest"   0 17 0 enum Off Pitch A_pitch B_pitch A_position B_position A_warp B_warp A_level B_level Sub_level Noise_level Cutoff Reso Amp Pan LFO_1_rate LFO_2_rate | Modulation destination
+    how Chooses which control matrix slot 1 moves.
+    sound Pointing a source at pitch, filter, level or pan changes what the movement does to the sound.
 M1Amt "M1 amount" 0 1000 500 bip | Amount
+    how Sets how strongly slot 1 moves its destination, from minus 100 % to plus 100 %.
+    sound Positive values push the destination up, negative values push it down, and zero does nothing.
 M2Src "M2 source" 0 11 8 enum Off LFO_1 LFO_2 Mod_env Filter_env Amp_env Velocity Key Mod_wheel Aftertouch Random Unison | Modulation source
+    how Chooses what drives matrix slot 2, such as an LFO, an envelope, velocity or the mod wheel.
+    sound The source decides how the destination moves: steadily, with the note, or with your playing.
 M2Dst "M2 dest"   0 17 0 enum Off Pitch A_pitch B_pitch A_position B_position A_warp B_warp A_level B_level Sub_level Noise_level Cutoff Reso Amp Pan LFO_1_rate LFO_2_rate | Modulation destination
+    how Chooses which control matrix slot 2 moves.
+    sound Pointing a source at pitch, filter, level or pan changes what the movement does to the sound.
 M2Amt "M2 amount" 0 1000 500 bip | Amount
+    how Sets how strongly slot 2 moves its destination, from minus 100 % to plus 100 %.
+    sound Positive values push the destination up, negative values push it down, and zero does nothing.
 M3Src "M3 source" 0 11 3 enum Off LFO_1 LFO_2 Mod_env Filter_env Amp_env Velocity Key Mod_wheel Aftertouch Random Unison | Modulation source
+    how Chooses what drives matrix slot 3, such as an LFO, an envelope, velocity or the mod wheel.
+    sound The source decides how the destination moves: steadily, with the note, or with your playing.
 M3Dst "M3 dest"   0 17 0 enum Off Pitch A_pitch B_pitch A_position B_position A_warp B_warp A_level B_level Sub_level Noise_level Cutoff Reso Amp Pan LFO_1_rate LFO_2_rate | Modulation destination
+    how Chooses which control matrix slot 3 moves.
+    sound Pointing a source at pitch, filter, level or pan changes what the movement does to the sound.
 M3Amt "M3 amount" 0 1000 500 bip | Amount
+    how Sets how strongly slot 3 moves its destination, from minus 100 % to plus 100 %.
+    sound Positive values push the destination up, negative values push it down, and zero does nothing.
 M4Src "M4 source" 0 11 2 enum Off LFO_1 LFO_2 Mod_env Filter_env Amp_env Velocity Key Mod_wheel Aftertouch Random Unison | Modulation source
+    how Chooses what drives matrix slot 4, such as an LFO, an envelope, velocity or the mod wheel.
+    sound The source decides how the destination moves: steadily, with the note, or with your playing.
 M4Dst "M4 dest"   0 17 0 enum Off Pitch A_pitch B_pitch A_position B_position A_warp B_warp A_level B_level Sub_level Noise_level Cutoff Reso Amp Pan LFO_1_rate LFO_2_rate | Modulation destination
+    how Chooses which control matrix slot 4 moves.
+    sound Pointing a source at pitch, filter, level or pan changes what the movement does to the sound.
 M4Amt "M4 amount" 0 1000 500 bip | Amount
+    how Sets how strongly slot 4 moves its destination, from minus 100 % to plus 100 %.
+    sound Positive values push the destination up, negative values push it down, and zero does nothing.
 M5Src "M5 source" 0 11 0 enum Off LFO_1 LFO_2 Mod_env Filter_env Amp_env Velocity Key Mod_wheel Aftertouch Random Unison | Modulation source
+    how Chooses what drives matrix slot 5, such as an LFO, an envelope, velocity or the mod wheel.
+    sound The source decides how the destination moves: steadily, with the note, or with your playing.
 M5Dst "M5 dest"   0 17 0 enum Off Pitch A_pitch B_pitch A_position B_position A_warp B_warp A_level B_level Sub_level Noise_level Cutoff Reso Amp Pan LFO_1_rate LFO_2_rate | Modulation destination
+    how Chooses which control matrix slot 5 moves.
+    sound Pointing a source at pitch, filter, level or pan changes what the movement does to the sound.
 M5Amt "M5 amount" 0 1000 500 bip | Amount
+    how Sets how strongly slot 5 moves its destination, from minus 100 % to plus 100 %.
+    sound Positive values push the destination up, negative values push it down, and zero does nothing.
 M6Src "M6 source" 0 11 0 enum Off LFO_1 LFO_2 Mod_env Filter_env Amp_env Velocity Key Mod_wheel Aftertouch Random Unison | Modulation source
+    how Chooses what drives matrix slot 6, such as an LFO, an envelope, velocity or the mod wheel.
+    sound The source decides how the destination moves: steadily, with the note, or with your playing.
 M6Dst "M6 dest"   0 17 0 enum Off Pitch A_pitch B_pitch A_position B_position A_warp B_warp A_level B_level Sub_level Noise_level Cutoff Reso Amp Pan LFO_1_rate LFO_2_rate | Modulation destination
+    how Chooses which control matrix slot 6 moves.
+    sound Pointing a source at pitch, filter, level or pan changes what the movement does to the sound.
 M6Amt "M6 amount" 0 1000 500 bip | Amount
+    how Sets how strongly slot 6 moves its destination, from minus 100 % to plus 100 %.
+    sound Positive values push the destination up, negative values push it down, and zero does nothing.
 M7Src "M7 source" 0 11 0 enum Off LFO_1 LFO_2 Mod_env Filter_env Amp_env Velocity Key Mod_wheel Aftertouch Random Unison | Modulation source
+    how Chooses what drives matrix slot 7, such as an LFO, an envelope, velocity or the mod wheel.
+    sound The source decides how the destination moves: steadily, with the note, or with your playing.
 M7Dst "M7 dest"   0 17 0 enum Off Pitch A_pitch B_pitch A_position B_position A_warp B_warp A_level B_level Sub_level Noise_level Cutoff Reso Amp Pan LFO_1_rate LFO_2_rate | Modulation destination
+    how Chooses which control matrix slot 7 moves.
+    sound Pointing a source at pitch, filter, level or pan changes what the movement does to the sound.
 M7Amt "M7 amount" 0 1000 500 bip | Amount
+    how Sets how strongly slot 7 moves its destination, from minus 100 % to plus 100 %.
+    sound Positive values push the destination up, negative values push it down, and zero does nothing.
 M8Src "M8 source" 0 11 0 enum Off LFO_1 LFO_2 Mod_env Filter_env Amp_env Velocity Key Mod_wheel Aftertouch Random Unison | Modulation source
+    how Chooses what drives matrix slot 8, such as an LFO, an envelope, velocity or the mod wheel.
+    sound The source decides how the destination moves: steadily, with the note, or with your playing.
 M8Dst "M8 dest"   0 17 0 enum Off Pitch A_pitch B_pitch A_position B_position A_warp B_warp A_level B_level Sub_level Noise_level Cutoff Reso Amp Pan LFO_1_rate LFO_2_rate | Modulation destination
+    how Chooses which control matrix slot 8 moves.
+    sound Pointing a source at pitch, filter, level or pan changes what the movement does to the sound.
 M8Amt "M8 amount" 0 1000 500 bip | Amount
+    how Sets how strongly slot 8 moves its destination, from minus 100 % to plus 100 %.
+    sound Positive values push the destination up, negative values push it down, and zero does nothing.

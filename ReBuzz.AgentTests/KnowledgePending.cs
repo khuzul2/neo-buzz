@@ -8,15 +8,6 @@ namespace ReBuzz.AgentTests
     {
         public static readonly HashSet<string> Gear = new(StringComparer.OrdinalIgnoreCase)
         {
-            "Neo Delay",
-            "Neo Drums",
-            "Neo Ensemble",
-            "Neo FM6",
-            "Neo Poly",
-            "Neo Sampler",
-            "Neo Tape",
-            "Neo Verb",
-            "Neo Wave",
             "Dye Essence",
         };
     }

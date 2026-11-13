@@ -30,7 +30,9 @@
     "Instrument",
     "Kit"
    ],
-   "description": "Instrument: each zone plays the notes in its key and velocity ranges, tuned from its root; Kit: zone n plays key Kit base + n − 1 at its own pitch, one-shot (key and velocity ranges, root, loop and trigger aside)"
+   "description": "Instrument: each zone plays the notes in its key and velocity ranges, tuned from its root; Kit: zone n plays key Kit base + n − 1 at its own pitch, one-shot (key and velocity ranges, root, loop and trigger aside)",
+   "how": "Chooses Instrument (zones play by key and velocity range, tuned from their root) or Kit (each zone gets its own key, one-shot).",
+   "sound": "Instrument mode plays a sample as a melodic instrument, and Kit mode turns zones into a drum pad set."
   },
   {
    "index": 1,
@@ -43,7 +45,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "The key zone 1 plays in Kit mode (36 = C2, General MIDI's kick: zone 3 is D2 the snare, 7 F#2 the closed hat, 11 A#2 the open hat); the others follow a semitone apart"
+   "description": "The key zone 1 plays in Kit mode (36 = C2, General MIDI's kick: zone 3 is D2 the snare, 7 F#2 the closed hat, 11 A#2 the open hat); the others follow a semitone apart",
+   "how": "Sets the key that plays zone 1 in Kit mode, from 0 to 112; the other zones follow a semitone apart.",
+   "sound": "Move it to line the kit up with the keys or pads you play it from."
   },
   {
    "index": 2,
@@ -55,7 +59,9 @@
    "default": 32,
    "kind": "int",
    "a": 0.0,
-   "description": "Voices that sound at once (each zone a note plays takes one); past it a new voice takes the quietest released one, else the oldest, fading it out in 3 ms"
+   "description": "Voices that sound at once (each zone a note plays takes one); past it a new voice takes the quietest released one, else the oldest, fading it out in 3 ms",
+   "how": "Sets how many voices can sound at once, from 1 to 32.",
+   "sound": "More voices let long samples and chords overlap, and fewer make new notes cut off the quietest older ones."
   },
   {
    "index": 3,
@@ -68,7 +74,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "st",
-   "description": "Pitch bend range"
+   "description": "Pitch bend range",
+   "how": "Sets how far the pitch bend wheel moves the pitch, from 0 to 24 semitones.",
+   "sound": "A small range gives expressive nudges, and a large one gives big sweeps."
   },
   {
    "index": 4,
@@ -80,7 +88,9 @@
    "default": 700,
    "kind": "percent",
    "unit": "%",
-   "description": "How much velocity sets the level: the gain is velocity^(2 × this) (100 %: velocity 64 is −12 dB; 0 %: every note at full level)"
+   "description": "How much velocity sets the level: the gain is velocity^(2 × this) (100 %: velocity 64 is −12 dB; 0 %: every note at full level)",
+   "how": "Sets how strongly note velocity changes the loudness, from 0 to 100 %.",
+   "sound": "High values make dynamics audible, and 0 % makes all notes equally loud."
   },
   {
    "index": 5,
@@ -92,7 +102,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Zones whose velocity ranges meet crossfade (equal power) over this many velocity steps around the boundary instead of switching; 0 switches"
+   "description": "Zones whose velocity ranges meet crossfade (equal power) over this many velocity steps around the boundary instead of switching; 0 switches",
+   "how": "Sets how many velocity steps zones crossfade over where their velocity ranges meet, from 0 to 64.",
+   "sound": "Zero switches abruptly between layers, and higher values blend them smoothly as you play harder."
   },
   {
    "index": 6,
@@ -107,7 +119,9 @@
    "b": 12.0,
    "flag": true,
    "unit": "dB",
-   "description": "Output level"
+   "description": "Output level",
+   "how": "Sets the output level of the sampler, from -60 to +12 dB, or off.",
+   "sound": "Use it to place the instrument in the mix without changing its tone."
   },
   {
    "index": 7,
@@ -121,7 +135,9 @@
    "a": 0.0005,
    "b": 20.0,
    "unit": "s",
-   "description": "Attack time (the shortest, 0.5 ms, keeps a note starting mid-wave from clicking)"
+   "description": "Attack time (the shortest, 0.5 ms, keeps a note starting mid-wave from clicking)",
+   "how": "Sets how long the loudness envelope takes to rise at the start of a note, from 0.5 ms to 20 seconds.",
+   "sound": "Short attacks keep the sample's own start, and long ones fade it in slowly like a pad."
   },
   {
    "index": 8,
@@ -135,7 +151,9 @@
    "a": 0.0005,
    "b": 20.0,
    "unit": "s",
-   "description": "Decay time (to −60 dB of the way to sustain)"
+   "description": "Decay time (to −60 dB of the way to sustain)",
+   "how": "Sets how long the loudness envelope takes to fall to its sustain level, from 0.5 ms to 20 seconds.",
+   "sound": "Short decays make a plucky note, and long ones let it ring down slowly."
   },
   {
    "index": 9,
@@ -147,7 +165,9 @@
    "default": 1000,
    "kind": "percent",
    "unit": "%",
-   "description": "Sustain level"
+   "description": "Sustain level",
+   "how": "Sets the loudness the note holds while the key stays down, from 0 to 100 %.",
+   "sound": "A low sustain makes the note die away even when held, and 100 % keeps it at full volume."
   },
   {
    "index": 10,
@@ -161,7 +181,9 @@
    "a": 0.0005,
    "b": 20.0,
    "unit": "s",
-   "description": "Release time after the note ends (to −60 dB)"
+   "description": "Release time after the note ends (to −60 dB)",
+   "how": "Sets how long the note takes to fade out after the key is released, from 0.5 ms to 20 seconds.",
+   "sound": "Short releases stop the note cleanly, and long ones let it fade out after you let go."
   },
   {
    "index": 11,
@@ -179,7 +201,9 @@
     "BP",
     "HP"
    ],
-   "description": "Filter on every voice: off, ladder low-pass 24 or 12 dB/oct, state-variable band-pass or high-pass"
+   "description": "Filter on every voice: off, ladder low-pass 24 or 12 dB/oct, state-variable band-pass or high-pass",
+   "how": "Chooses the filter on every voice: off, a 24 or 12 dB low-pass, band-pass or high-pass.",
+   "sound": "The low-pass darkens the sample, the band-pass makes it thin and nasal, and the high-pass removes its body."
   },
   {
    "index": 12,
@@ -193,7 +217,9 @@
    "a": 20.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "Cutoff"
+   "description": "Sets the filter cutoff frequency, from 20 Hz to 20 kHz.",
+   "how": "Sets the filter cutoff frequency, from 20 Hz to 20 kHz.",
+   "sound": "Low values make the sound dark and muffled, and high values open it up."
   },
   {
    "index": 13,
@@ -205,7 +231,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "Resonance (the ladder self-oscillates at the top)"
+   "description": "Resonance (the ladder self-oscillates at the top)",
+   "how": "Sets the filter resonance, from 0 to 100 %.",
+   "sound": "More resonance puts a whistling peak at the cutoff, and the top turns it into a ringing tone."
   },
   {
    "index": 14,
@@ -217,7 +245,9 @@
    "default": 500,
    "kind": "bipolar",
    "unit": "%",
-   "description": "Filter envelope amount (±6 octaves)"
+   "description": "Filter envelope amount (±6 octaves)",
+   "how": "Sets how much the filter envelope moves the cutoff, up to six octaves either way.",
+   "sound": "Positive amounts make each note open and close, and negative ones sweep the other way."
   },
   {
    "index": 15,
@@ -229,7 +259,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "Cutoff follows the keyboard around C4 (100 %: an octave per octave)"
+   "description": "Cutoff follows the keyboard around C4 (100 %: an octave per octave)",
+   "how": "Sets how much the cutoff follows the note pitch, from 0 to 100 %.",
+   "sound": "At 100 % the brightness stays even over the keyboard, and lower values make high notes duller."
   },
   {
    "index": 16,
@@ -241,7 +273,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "Softer notes close the filter (up to 3 octaves at the lowest velocity)"
+   "description": "Softer notes close the filter (up to 3 octaves at the lowest velocity)",
+   "how": "Sets how much soft notes close the filter, up to three octaves.",
+   "sound": "Harder playing sounds brighter, which makes the instrument feel more expressive."
   },
   {
    "index": 17,
@@ -255,7 +289,9 @@
    "a": 0.0005,
    "b": 20.0,
    "unit": "s",
-   "description": "Attack time"
+   "description": "Attack time",
+   "how": "Sets how long the filter envelope takes to rise, from 0.5 ms to 20 seconds.",
+   "sound": "Short attacks open the filter at once, and long ones make the brightness swell in."
   },
   {
    "index": 18,
@@ -269,7 +305,9 @@
    "a": 0.0005,
    "b": 20.0,
    "unit": "s",
-   "description": "Decay time"
+   "description": "Decay time",
+   "how": "Sets how long the filter envelope takes to fall to its sustain level, from 0.5 ms to 20 seconds.",
+   "sound": "Short decays make a quick wah-like snap, and long ones a slow sweep down."
   },
   {
    "index": 19,
@@ -281,7 +319,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "Sustain level"
+   "description": "Sustain level",
+   "how": "Sets the level the filter envelope holds while the key stays down, from 0 to 100 %.",
+   "sound": "A high sustain keeps the filter open while a key is held, and a low one lets it close."
   },
   {
    "index": 20,
@@ -295,7 +335,9 @@
    "a": 0.0005,
    "b": 20.0,
    "unit": "s",
-   "description": "Release time"
+   "description": "Release time",
+   "how": "Sets how long the filter envelope takes to fall back after the key is released, from 0.5 ms to 20 seconds.",
+   "sound": "Short releases close the filter at once, and long ones let the tone fade out."
   },
   {
    "index": 21,
@@ -308,7 +350,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "wave",
-   "description": "Zone 1's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)"
+   "description": "Zone 1's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)",
+   "how": "Chooses the sound zone 1 plays: off, a wave slot of the song, or a built-in sample.",
+   "sound": "The wave is the raw material of the zone; each slot or sample has its own character."
   },
   {
    "index": 22,
@@ -321,7 +365,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 1: the lowest key it plays (Instrument mode)"
+   "description": "Zone 1: the lowest key it plays (Instrument mode)",
+   "how": "Sets the lowest key zone 1 plays in Instrument mode.",
+   "sound": "Together with the high key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 23,
@@ -334,7 +380,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 1: the highest key it plays (Instrument mode)"
+   "description": "Zone 1: the highest key it plays (Instrument mode)",
+   "how": "Sets the highest key zone 1 plays in Instrument mode.",
+   "sound": "Together with the low key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 24,
@@ -346,7 +394,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 1: the lowest velocity it plays (Instrument mode)"
+   "description": "Zone 1: the lowest velocity it plays (Instrument mode)",
+   "how": "Sets the lowest velocity zone 1 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 25,
@@ -358,7 +408,9 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 1: the highest velocity it plays (Instrument mode)"
+   "description": "Zone 1: the highest velocity it plays (Instrument mode)",
+   "how": "Sets the highest velocity zone 1 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 26,
@@ -371,7 +423,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 1: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)"
+   "description": "Zone 1: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)",
+   "how": "Sets the key at which zone 1 plays its sample at its original pitch, or lets the wave table decide.",
+   "sound": "The root tunes the sample to the keyboard; if it is wrong, every note sounds out of tune."
   },
   {
    "index": 27,
@@ -385,7 +439,9 @@
    "a": -48.0,
    "flag": true,
    "unit": "st",
-   "description": "Zone 1: transposition"
+   "description": "Zone 1: transposition",
+   "how": "Transposes zone 1 by up to 48 semitones either way.",
+   "sound": "Use it to move a sample up or down, or to layer an octave or a fifth."
   },
   {
    "index": 28,
@@ -399,7 +455,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "Zone 1: fine tune, in 0.1 cent steps"
+   "description": "Zone 1: fine tune, in 0.1 cent steps",
+   "how": "Detunes zone 1 by up to 100 cents in steps of 0.1 cent.",
+   "sound": "A few cents between layered zones give a slow, warm beating."
   },
   {
    "index": 29,
@@ -414,7 +472,9 @@
    "b": 12.0,
    "flag": true,
    "unit": "dB",
-   "description": "Zone 1: level"
+   "description": "Zone 1: level",
+   "how": "Sets the level of zone 1, from -48 to +12 dB, or off.",
+   "sound": "Use it to balance zones against each other."
   },
   {
    "index": 30,
@@ -428,7 +488,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 1: pan (a stereo wave: balance)"
+   "description": "Zone 1: pan (a stereo wave: balance)",
+   "how": "Places zone 1 from 100 % left to 100 % right; a stereo wave is balanced instead.",
+   "sound": "Panning zones apart widens layered sounds or spreads a drum kit."
   },
   {
    "index": 31,
@@ -442,7 +504,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 1: where it starts, in % of the wave (the end, reversed)"
+   "description": "Zone 1: where it starts, in % of the wave (the end, reversed)",
+   "how": "Sets where zone 1 starts playing in the wave, from 0 to 100 %.",
+   "sound": "Moving the start skips a quiet or unwanted beginning and tightens the attack."
   },
   {
    "index": 32,
@@ -456,7 +520,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 1: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it"
+   "description": "Zone 1: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it",
+   "how": "Sets where zone 1 stops playing in the wave, from 0 to 100 %; a short fade avoids a click.",
+   "sound": "Moving the end trims off a tail, and an end before the start plays the wave backwards."
   },
   {
    "index": 33,
@@ -473,7 +539,9 @@
     "Forward",
     "Ping-pong"
    ],
-   "description": "Zone 1: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end"
+   "description": "Zone 1: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end",
+   "how": "Chooses the loop mode of zone 1: as the wave says, off, forward or ping-pong.",
+   "sound": "Looping holds a sound as long as the key is down, and ping-pong smooths the repeat by playing back and forth."
   },
   {
    "index": 34,
@@ -487,7 +555,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 1: loop start, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 1: loop start, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 1 begins, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 35,
@@ -501,7 +571,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 1: loop end, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 1: loop end, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 1 ends, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 36,
@@ -516,7 +588,9 @@
    "b": 1.0,
    "exponent": 3.0,
    "unit": "s",
-   "description": "Zone 1: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is"
+   "description": "Zone 1: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is",
+   "how": "Sets the length of the crossfade at the loop of zone 1, up to 1 second.",
+   "sound": "A longer crossfade hides the jump where the loop restarts, and zero leaves a possible click."
   },
   {
    "index": 37,
@@ -531,7 +605,9 @@
     "Gate",
     "One-shot"
    ],
-   "description": "Zone 1: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)"
+   "description": "Zone 1: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)",
+   "how": "Chooses whether zone 1 plays only while the key is held (Gate) or always to its end (One-shot).",
+   "sound": "Gate suits sustained instruments, and One-shot suits drums and effects that should play out."
   },
   {
    "index": 38,
@@ -546,7 +622,9 @@
     "Off",
     "On"
    ],
-   "description": "Zone 1: plays backwards, from its end to its start"
+   "description": "Zone 1: plays backwards, from its end to its start",
+   "how": "Plays zone 1 backwards.",
+   "sound": "Reversed samples swell into the note, which is useful for risers and transitions."
   },
   {
    "index": 39,
@@ -558,7 +636,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 1: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)"
+   "description": "Zone 1: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)",
+   "how": "Puts zone 1 in one of eight choke groups, or none; a new note fades out the others in its group.",
+   "sound": "Choke groups let a closed hat cut off an open hat, as on a real hat."
   },
   {
    "index": 40,
@@ -571,7 +651,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "wave",
-   "description": "Zone 2's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)"
+   "description": "Zone 2's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)",
+   "how": "Chooses the sound zone 2 plays: off, a wave slot of the song, or a built-in sample.",
+   "sound": "The wave is the raw material of the zone; each slot or sample has its own character."
   },
   {
    "index": 41,
@@ -584,7 +666,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 2: the lowest key it plays (Instrument mode)"
+   "description": "Zone 2: the lowest key it plays (Instrument mode)",
+   "how": "Sets the lowest key zone 2 plays in Instrument mode.",
+   "sound": "Together with the high key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 42,
@@ -597,7 +681,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 2: the highest key it plays (Instrument mode)"
+   "description": "Zone 2: the highest key it plays (Instrument mode)",
+   "how": "Sets the highest key zone 2 plays in Instrument mode.",
+   "sound": "Together with the low key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 43,
@@ -609,7 +695,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 2: the lowest velocity it plays (Instrument mode)"
+   "description": "Zone 2: the lowest velocity it plays (Instrument mode)",
+   "how": "Sets the lowest velocity zone 2 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 44,
@@ -621,7 +709,9 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 2: the highest velocity it plays (Instrument mode)"
+   "description": "Zone 2: the highest velocity it plays (Instrument mode)",
+   "how": "Sets the highest velocity zone 2 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 45,
@@ -634,7 +724,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 2: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)"
+   "description": "Zone 2: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)",
+   "how": "Sets the key at which zone 2 plays its sample at its original pitch, or lets the wave table decide.",
+   "sound": "The root tunes the sample to the keyboard; if it is wrong, every note sounds out of tune."
   },
   {
    "index": 46,
@@ -648,7 +740,9 @@
    "a": -48.0,
    "flag": true,
    "unit": "st",
-   "description": "Zone 2: transposition"
+   "description": "Zone 2: transposition",
+   "how": "Transposes zone 2 by up to 48 semitones either way.",
+   "sound": "Use it to move a sample up or down, or to layer an octave or a fifth."
   },
   {
    "index": 47,
@@ -662,7 +756,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "Zone 2: fine tune, in 0.1 cent steps"
+   "description": "Zone 2: fine tune, in 0.1 cent steps",
+   "how": "Detunes zone 2 by up to 100 cents in steps of 0.1 cent.",
+   "sound": "A few cents between layered zones give a slow, warm beating."
   },
   {
    "index": 48,
@@ -677,7 +773,9 @@
    "b": 12.0,
    "flag": true,
    "unit": "dB",
-   "description": "Zone 2: level"
+   "description": "Zone 2: level",
+   "how": "Sets the level of zone 2, from -48 to +12 dB, or off.",
+   "sound": "Use it to balance zones against each other."
   },
   {
    "index": 49,
@@ -691,7 +789,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 2: pan (a stereo wave: balance)"
+   "description": "Zone 2: pan (a stereo wave: balance)",
+   "how": "Places zone 2 from 100 % left to 100 % right; a stereo wave is balanced instead.",
+   "sound": "Panning zones apart widens layered sounds or spreads a drum kit."
   },
   {
    "index": 50,
@@ -705,7 +805,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 2: where it starts, in % of the wave (the end, reversed)"
+   "description": "Zone 2: where it starts, in % of the wave (the end, reversed)",
+   "how": "Sets where zone 2 starts playing in the wave, from 0 to 100 %.",
+   "sound": "Moving the start skips a quiet or unwanted beginning and tightens the attack."
   },
   {
    "index": 51,
@@ -719,7 +821,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 2: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it"
+   "description": "Zone 2: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it",
+   "how": "Sets where zone 2 stops playing in the wave, from 0 to 100 %; a short fade avoids a click.",
+   "sound": "Moving the end trims off a tail, and an end before the start plays the wave backwards."
   },
   {
    "index": 52,
@@ -736,7 +840,9 @@
     "Forward",
     "Ping-pong"
    ],
-   "description": "Zone 2: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end"
+   "description": "Zone 2: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end",
+   "how": "Chooses the loop mode of zone 2: as the wave says, off, forward or ping-pong.",
+   "sound": "Looping holds a sound as long as the key is down, and ping-pong smooths the repeat by playing back and forth."
   },
   {
    "index": 53,
@@ -750,7 +856,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 2: loop start, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 2: loop start, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 2 begins, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 54,
@@ -764,7 +872,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 2: loop end, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 2: loop end, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 2 ends, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 55,
@@ -779,7 +889,9 @@
    "b": 1.0,
    "exponent": 3.0,
    "unit": "s",
-   "description": "Zone 2: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is"
+   "description": "Zone 2: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is",
+   "how": "Sets the length of the crossfade at the loop of zone 2, up to 1 second.",
+   "sound": "A longer crossfade hides the jump where the loop restarts, and zero leaves a possible click."
   },
   {
    "index": 56,
@@ -794,7 +906,9 @@
     "Gate",
     "One-shot"
    ],
-   "description": "Zone 2: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)"
+   "description": "Zone 2: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)",
+   "how": "Chooses whether zone 2 plays only while the key is held (Gate) or always to its end (One-shot).",
+   "sound": "Gate suits sustained instruments, and One-shot suits drums and effects that should play out."
   },
   {
    "index": 57,
@@ -809,7 +923,9 @@
     "Off",
     "On"
    ],
-   "description": "Zone 2: plays backwards, from its end to its start"
+   "description": "Zone 2: plays backwards, from its end to its start",
+   "how": "Plays zone 2 backwards.",
+   "sound": "Reversed samples swell into the note, which is useful for risers and transitions."
   },
   {
    "index": 58,
@@ -821,7 +937,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 2: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)"
+   "description": "Zone 2: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)",
+   "how": "Puts zone 2 in one of eight choke groups, or none; a new note fades out the others in its group.",
+   "sound": "Choke groups let a closed hat cut off an open hat, as on a real hat."
   },
   {
    "index": 59,
@@ -834,7 +952,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "wave",
-   "description": "Zone 3's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)"
+   "description": "Zone 3's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)",
+   "how": "Chooses the sound zone 3 plays: off, a wave slot of the song, or a built-in sample.",
+   "sound": "The wave is the raw material of the zone; each slot or sample has its own character."
   },
   {
    "index": 60,
@@ -847,7 +967,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 3: the lowest key it plays (Instrument mode)"
+   "description": "Zone 3: the lowest key it plays (Instrument mode)",
+   "how": "Sets the lowest key zone 3 plays in Instrument mode.",
+   "sound": "Together with the high key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 61,
@@ -860,7 +982,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 3: the highest key it plays (Instrument mode)"
+   "description": "Zone 3: the highest key it plays (Instrument mode)",
+   "how": "Sets the highest key zone 3 plays in Instrument mode.",
+   "sound": "Together with the low key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 62,
@@ -872,7 +996,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 3: the lowest velocity it plays (Instrument mode)"
+   "description": "Zone 3: the lowest velocity it plays (Instrument mode)",
+   "how": "Sets the lowest velocity zone 3 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 63,
@@ -884,7 +1010,9 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 3: the highest velocity it plays (Instrument mode)"
+   "description": "Zone 3: the highest velocity it plays (Instrument mode)",
+   "how": "Sets the highest velocity zone 3 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 64,
@@ -897,7 +1025,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 3: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)"
+   "description": "Zone 3: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)",
+   "how": "Sets the key at which zone 3 plays its sample at its original pitch, or lets the wave table decide.",
+   "sound": "The root tunes the sample to the keyboard; if it is wrong, every note sounds out of tune."
   },
   {
    "index": 65,
@@ -911,7 +1041,9 @@
    "a": -48.0,
    "flag": true,
    "unit": "st",
-   "description": "Zone 3: transposition"
+   "description": "Zone 3: transposition",
+   "how": "Transposes zone 3 by up to 48 semitones either way.",
+   "sound": "Use it to move a sample up or down, or to layer an octave or a fifth."
   },
   {
    "index": 66,
@@ -925,7 +1057,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "Zone 3: fine tune, in 0.1 cent steps"
+   "description": "Zone 3: fine tune, in 0.1 cent steps",
+   "how": "Detunes zone 3 by up to 100 cents in steps of 0.1 cent.",
+   "sound": "A few cents between layered zones give a slow, warm beating."
   },
   {
    "index": 67,
@@ -940,7 +1074,9 @@
    "b": 12.0,
    "flag": true,
    "unit": "dB",
-   "description": "Zone 3: level"
+   "description": "Zone 3: level",
+   "how": "Sets the level of zone 3, from -48 to +12 dB, or off.",
+   "sound": "Use it to balance zones against each other."
   },
   {
    "index": 68,
@@ -954,7 +1090,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 3: pan (a stereo wave: balance)"
+   "description": "Zone 3: pan (a stereo wave: balance)",
+   "how": "Places zone 3 from 100 % left to 100 % right; a stereo wave is balanced instead.",
+   "sound": "Panning zones apart widens layered sounds or spreads a drum kit."
   },
   {
    "index": 69,
@@ -968,7 +1106,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 3: where it starts, in % of the wave (the end, reversed)"
+   "description": "Zone 3: where it starts, in % of the wave (the end, reversed)",
+   "how": "Sets where zone 3 starts playing in the wave, from 0 to 100 %.",
+   "sound": "Moving the start skips a quiet or unwanted beginning and tightens the attack."
   },
   {
    "index": 70,
@@ -982,7 +1122,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 3: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it"
+   "description": "Zone 3: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it",
+   "how": "Sets where zone 3 stops playing in the wave, from 0 to 100 %; a short fade avoids a click.",
+   "sound": "Moving the end trims off a tail, and an end before the start plays the wave backwards."
   },
   {
    "index": 71,
@@ -999,7 +1141,9 @@
     "Forward",
     "Ping-pong"
    ],
-   "description": "Zone 3: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end"
+   "description": "Zone 3: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end",
+   "how": "Chooses the loop mode of zone 3: as the wave says, off, forward or ping-pong.",
+   "sound": "Looping holds a sound as long as the key is down, and ping-pong smooths the repeat by playing back and forth."
   },
   {
    "index": 72,
@@ -1013,7 +1157,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 3: loop start, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 3: loop start, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 3 begins, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 73,
@@ -1027,7 +1173,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 3: loop end, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 3: loop end, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 3 ends, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 74,
@@ -1042,7 +1190,9 @@
    "b": 1.0,
    "exponent": 3.0,
    "unit": "s",
-   "description": "Zone 3: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is"
+   "description": "Zone 3: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is",
+   "how": "Sets the length of the crossfade at the loop of zone 3, up to 1 second.",
+   "sound": "A longer crossfade hides the jump where the loop restarts, and zero leaves a possible click."
   },
   {
    "index": 75,
@@ -1057,7 +1207,9 @@
     "Gate",
     "One-shot"
    ],
-   "description": "Zone 3: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)"
+   "description": "Zone 3: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)",
+   "how": "Chooses whether zone 3 plays only while the key is held (Gate) or always to its end (One-shot).",
+   "sound": "Gate suits sustained instruments, and One-shot suits drums and effects that should play out."
   },
   {
    "index": 76,
@@ -1072,7 +1224,9 @@
     "Off",
     "On"
    ],
-   "description": "Zone 3: plays backwards, from its end to its start"
+   "description": "Zone 3: plays backwards, from its end to its start",
+   "how": "Plays zone 3 backwards.",
+   "sound": "Reversed samples swell into the note, which is useful for risers and transitions."
   },
   {
    "index": 77,
@@ -1084,7 +1238,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 3: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)"
+   "description": "Zone 3: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)",
+   "how": "Puts zone 3 in one of eight choke groups, or none; a new note fades out the others in its group.",
+   "sound": "Choke groups let a closed hat cut off an open hat, as on a real hat."
   },
   {
    "index": 78,
@@ -1097,7 +1253,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "wave",
-   "description": "Zone 4's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)"
+   "description": "Zone 4's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)",
+   "how": "Chooses the sound zone 4 plays: off, a wave slot of the song, or a built-in sample.",
+   "sound": "The wave is the raw material of the zone; each slot or sample has its own character."
   },
   {
    "index": 79,
@@ -1110,7 +1268,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 4: the lowest key it plays (Instrument mode)"
+   "description": "Zone 4: the lowest key it plays (Instrument mode)",
+   "how": "Sets the lowest key zone 4 plays in Instrument mode.",
+   "sound": "Together with the high key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 80,
@@ -1123,7 +1283,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 4: the highest key it plays (Instrument mode)"
+   "description": "Zone 4: the highest key it plays (Instrument mode)",
+   "how": "Sets the highest key zone 4 plays in Instrument mode.",
+   "sound": "Together with the low key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 81,
@@ -1135,7 +1297,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 4: the lowest velocity it plays (Instrument mode)"
+   "description": "Zone 4: the lowest velocity it plays (Instrument mode)",
+   "how": "Sets the lowest velocity zone 4 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 82,
@@ -1147,7 +1311,9 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 4: the highest velocity it plays (Instrument mode)"
+   "description": "Zone 4: the highest velocity it plays (Instrument mode)",
+   "how": "Sets the highest velocity zone 4 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 83,
@@ -1160,7 +1326,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 4: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)"
+   "description": "Zone 4: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)",
+   "how": "Sets the key at which zone 4 plays its sample at its original pitch, or lets the wave table decide.",
+   "sound": "The root tunes the sample to the keyboard; if it is wrong, every note sounds out of tune."
   },
   {
    "index": 84,
@@ -1174,7 +1342,9 @@
    "a": -48.0,
    "flag": true,
    "unit": "st",
-   "description": "Zone 4: transposition"
+   "description": "Zone 4: transposition",
+   "how": "Transposes zone 4 by up to 48 semitones either way.",
+   "sound": "Use it to move a sample up or down, or to layer an octave or a fifth."
   },
   {
    "index": 85,
@@ -1188,7 +1358,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "Zone 4: fine tune, in 0.1 cent steps"
+   "description": "Zone 4: fine tune, in 0.1 cent steps",
+   "how": "Detunes zone 4 by up to 100 cents in steps of 0.1 cent.",
+   "sound": "A few cents between layered zones give a slow, warm beating."
   },
   {
    "index": 86,
@@ -1203,7 +1375,9 @@
    "b": 12.0,
    "flag": true,
    "unit": "dB",
-   "description": "Zone 4: level"
+   "description": "Zone 4: level",
+   "how": "Sets the level of zone 4, from -48 to +12 dB, or off.",
+   "sound": "Use it to balance zones against each other."
   },
   {
    "index": 87,
@@ -1217,7 +1391,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 4: pan (a stereo wave: balance)"
+   "description": "Zone 4: pan (a stereo wave: balance)",
+   "how": "Places zone 4 from 100 % left to 100 % right; a stereo wave is balanced instead.",
+   "sound": "Panning zones apart widens layered sounds or spreads a drum kit."
   },
   {
    "index": 88,
@@ -1231,7 +1407,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 4: where it starts, in % of the wave (the end, reversed)"
+   "description": "Zone 4: where it starts, in % of the wave (the end, reversed)",
+   "how": "Sets where zone 4 starts playing in the wave, from 0 to 100 %.",
+   "sound": "Moving the start skips a quiet or unwanted beginning and tightens the attack."
   },
   {
    "index": 89,
@@ -1245,7 +1423,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 4: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it"
+   "description": "Zone 4: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it",
+   "how": "Sets where zone 4 stops playing in the wave, from 0 to 100 %; a short fade avoids a click.",
+   "sound": "Moving the end trims off a tail, and an end before the start plays the wave backwards."
   },
   {
    "index": 90,
@@ -1262,7 +1442,9 @@
     "Forward",
     "Ping-pong"
    ],
-   "description": "Zone 4: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end"
+   "description": "Zone 4: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end",
+   "how": "Chooses the loop mode of zone 4: as the wave says, off, forward or ping-pong.",
+   "sound": "Looping holds a sound as long as the key is down, and ping-pong smooths the repeat by playing back and forth."
   },
   {
    "index": 91,
@@ -1276,7 +1458,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 4: loop start, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 4: loop start, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 4 begins, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 92,
@@ -1290,7 +1474,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 4: loop end, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 4: loop end, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 4 ends, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 93,
@@ -1305,7 +1491,9 @@
    "b": 1.0,
    "exponent": 3.0,
    "unit": "s",
-   "description": "Zone 4: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is"
+   "description": "Zone 4: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is",
+   "how": "Sets the length of the crossfade at the loop of zone 4, up to 1 second.",
+   "sound": "A longer crossfade hides the jump where the loop restarts, and zero leaves a possible click."
   },
   {
    "index": 94,
@@ -1320,7 +1508,9 @@
     "Gate",
     "One-shot"
    ],
-   "description": "Zone 4: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)"
+   "description": "Zone 4: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)",
+   "how": "Chooses whether zone 4 plays only while the key is held (Gate) or always to its end (One-shot).",
+   "sound": "Gate suits sustained instruments, and One-shot suits drums and effects that should play out."
   },
   {
    "index": 95,
@@ -1335,7 +1525,9 @@
     "Off",
     "On"
    ],
-   "description": "Zone 4: plays backwards, from its end to its start"
+   "description": "Zone 4: plays backwards, from its end to its start",
+   "how": "Plays zone 4 backwards.",
+   "sound": "Reversed samples swell into the note, which is useful for risers and transitions."
   },
   {
    "index": 96,
@@ -1347,7 +1539,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 4: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)"
+   "description": "Zone 4: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)",
+   "how": "Puts zone 4 in one of eight choke groups, or none; a new note fades out the others in its group.",
+   "sound": "Choke groups let a closed hat cut off an open hat, as on a real hat."
   },
   {
    "index": 97,
@@ -1360,7 +1554,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "wave",
-   "description": "Zone 5's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)"
+   "description": "Zone 5's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)",
+   "how": "Chooses the sound zone 5 plays: off, a wave slot of the song, or a built-in sample.",
+   "sound": "The wave is the raw material of the zone; each slot or sample has its own character."
   },
   {
    "index": 98,
@@ -1373,7 +1569,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 5: the lowest key it plays (Instrument mode)"
+   "description": "Zone 5: the lowest key it plays (Instrument mode)",
+   "how": "Sets the lowest key zone 5 plays in Instrument mode.",
+   "sound": "Together with the high key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 99,
@@ -1386,7 +1584,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 5: the highest key it plays (Instrument mode)"
+   "description": "Zone 5: the highest key it plays (Instrument mode)",
+   "how": "Sets the highest key zone 5 plays in Instrument mode.",
+   "sound": "Together with the low key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 100,
@@ -1398,7 +1598,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 5: the lowest velocity it plays (Instrument mode)"
+   "description": "Zone 5: the lowest velocity it plays (Instrument mode)",
+   "how": "Sets the lowest velocity zone 5 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 101,
@@ -1410,7 +1612,9 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 5: the highest velocity it plays (Instrument mode)"
+   "description": "Zone 5: the highest velocity it plays (Instrument mode)",
+   "how": "Sets the highest velocity zone 5 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 102,
@@ -1423,7 +1627,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 5: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)"
+   "description": "Zone 5: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)",
+   "how": "Sets the key at which zone 5 plays its sample at its original pitch, or lets the wave table decide.",
+   "sound": "The root tunes the sample to the keyboard; if it is wrong, every note sounds out of tune."
   },
   {
    "index": 103,
@@ -1437,7 +1643,9 @@
    "a": -48.0,
    "flag": true,
    "unit": "st",
-   "description": "Zone 5: transposition"
+   "description": "Zone 5: transposition",
+   "how": "Transposes zone 5 by up to 48 semitones either way.",
+   "sound": "Use it to move a sample up or down, or to layer an octave or a fifth."
   },
   {
    "index": 104,
@@ -1451,7 +1659,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "Zone 5: fine tune, in 0.1 cent steps"
+   "description": "Zone 5: fine tune, in 0.1 cent steps",
+   "how": "Detunes zone 5 by up to 100 cents in steps of 0.1 cent.",
+   "sound": "A few cents between layered zones give a slow, warm beating."
   },
   {
    "index": 105,
@@ -1466,7 +1676,9 @@
    "b": 12.0,
    "flag": true,
    "unit": "dB",
-   "description": "Zone 5: level"
+   "description": "Zone 5: level",
+   "how": "Sets the level of zone 5, from -48 to +12 dB, or off.",
+   "sound": "Use it to balance zones against each other."
   },
   {
    "index": 106,
@@ -1480,7 +1692,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 5: pan (a stereo wave: balance)"
+   "description": "Zone 5: pan (a stereo wave: balance)",
+   "how": "Places zone 5 from 100 % left to 100 % right; a stereo wave is balanced instead.",
+   "sound": "Panning zones apart widens layered sounds or spreads a drum kit."
   },
   {
    "index": 107,
@@ -1494,7 +1708,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 5: where it starts, in % of the wave (the end, reversed)"
+   "description": "Zone 5: where it starts, in % of the wave (the end, reversed)",
+   "how": "Sets where zone 5 starts playing in the wave, from 0 to 100 %.",
+   "sound": "Moving the start skips a quiet or unwanted beginning and tightens the attack."
   },
   {
    "index": 108,
@@ -1508,7 +1724,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 5: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it"
+   "description": "Zone 5: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it",
+   "how": "Sets where zone 5 stops playing in the wave, from 0 to 100 %; a short fade avoids a click.",
+   "sound": "Moving the end trims off a tail, and an end before the start plays the wave backwards."
   },
   {
    "index": 109,
@@ -1525,7 +1743,9 @@
     "Forward",
     "Ping-pong"
    ],
-   "description": "Zone 5: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end"
+   "description": "Zone 5: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end",
+   "how": "Chooses the loop mode of zone 5: as the wave says, off, forward or ping-pong.",
+   "sound": "Looping holds a sound as long as the key is down, and ping-pong smooths the repeat by playing back and forth."
   },
   {
    "index": 110,
@@ -1539,7 +1759,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 5: loop start, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 5: loop start, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 5 begins, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 111,
@@ -1553,7 +1775,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 5: loop end, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 5: loop end, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 5 ends, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 112,
@@ -1568,7 +1792,9 @@
    "b": 1.0,
    "exponent": 3.0,
    "unit": "s",
-   "description": "Zone 5: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is"
+   "description": "Zone 5: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is",
+   "how": "Sets the length of the crossfade at the loop of zone 5, up to 1 second.",
+   "sound": "A longer crossfade hides the jump where the loop restarts, and zero leaves a possible click."
   },
   {
    "index": 113,
@@ -1583,7 +1809,9 @@
     "Gate",
     "One-shot"
    ],
-   "description": "Zone 5: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)"
+   "description": "Zone 5: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)",
+   "how": "Chooses whether zone 5 plays only while the key is held (Gate) or always to its end (One-shot).",
+   "sound": "Gate suits sustained instruments, and One-shot suits drums and effects that should play out."
   },
   {
    "index": 114,
@@ -1598,7 +1826,9 @@
     "Off",
     "On"
    ],
-   "description": "Zone 5: plays backwards, from its end to its start"
+   "description": "Zone 5: plays backwards, from its end to its start",
+   "how": "Plays zone 5 backwards.",
+   "sound": "Reversed samples swell into the note, which is useful for risers and transitions."
   },
   {
    "index": 115,
@@ -1610,7 +1840,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 5: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)"
+   "description": "Zone 5: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)",
+   "how": "Puts zone 5 in one of eight choke groups, or none; a new note fades out the others in its group.",
+   "sound": "Choke groups let a closed hat cut off an open hat, as on a real hat."
   },
   {
    "index": 116,
@@ -1623,7 +1855,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "wave",
-   "description": "Zone 6's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)"
+   "description": "Zone 6's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)",
+   "how": "Chooses the sound zone 6 plays: off, a wave slot of the song, or a built-in sample.",
+   "sound": "The wave is the raw material of the zone; each slot or sample has its own character."
   },
   {
    "index": 117,
@@ -1636,7 +1870,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 6: the lowest key it plays (Instrument mode)"
+   "description": "Zone 6: the lowest key it plays (Instrument mode)",
+   "how": "Sets the lowest key zone 6 plays in Instrument mode.",
+   "sound": "Together with the high key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 118,
@@ -1649,7 +1885,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 6: the highest key it plays (Instrument mode)"
+   "description": "Zone 6: the highest key it plays (Instrument mode)",
+   "how": "Sets the highest key zone 6 plays in Instrument mode.",
+   "sound": "Together with the low key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 119,
@@ -1661,7 +1899,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 6: the lowest velocity it plays (Instrument mode)"
+   "description": "Zone 6: the lowest velocity it plays (Instrument mode)",
+   "how": "Sets the lowest velocity zone 6 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 120,
@@ -1673,7 +1913,9 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 6: the highest velocity it plays (Instrument mode)"
+   "description": "Zone 6: the highest velocity it plays (Instrument mode)",
+   "how": "Sets the highest velocity zone 6 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 121,
@@ -1686,7 +1928,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 6: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)"
+   "description": "Zone 6: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)",
+   "how": "Sets the key at which zone 6 plays its sample at its original pitch, or lets the wave table decide.",
+   "sound": "The root tunes the sample to the keyboard; if it is wrong, every note sounds out of tune."
   },
   {
    "index": 122,
@@ -1700,7 +1944,9 @@
    "a": -48.0,
    "flag": true,
    "unit": "st",
-   "description": "Zone 6: transposition"
+   "description": "Zone 6: transposition",
+   "how": "Transposes zone 6 by up to 48 semitones either way.",
+   "sound": "Use it to move a sample up or down, or to layer an octave or a fifth."
   },
   {
    "index": 123,
@@ -1714,7 +1960,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "Zone 6: fine tune, in 0.1 cent steps"
+   "description": "Zone 6: fine tune, in 0.1 cent steps",
+   "how": "Detunes zone 6 by up to 100 cents in steps of 0.1 cent.",
+   "sound": "A few cents between layered zones give a slow, warm beating."
   },
   {
    "index": 124,
@@ -1729,7 +1977,9 @@
    "b": 12.0,
    "flag": true,
    "unit": "dB",
-   "description": "Zone 6: level"
+   "description": "Zone 6: level",
+   "how": "Sets the level of zone 6, from -48 to +12 dB, or off.",
+   "sound": "Use it to balance zones against each other."
   },
   {
    "index": 125,
@@ -1743,7 +1993,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 6: pan (a stereo wave: balance)"
+   "description": "Zone 6: pan (a stereo wave: balance)",
+   "how": "Places zone 6 from 100 % left to 100 % right; a stereo wave is balanced instead.",
+   "sound": "Panning zones apart widens layered sounds or spreads a drum kit."
   },
   {
    "index": 126,
@@ -1757,7 +2009,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 6: where it starts, in % of the wave (the end, reversed)"
+   "description": "Zone 6: where it starts, in % of the wave (the end, reversed)",
+   "how": "Sets where zone 6 starts playing in the wave, from 0 to 100 %.",
+   "sound": "Moving the start skips a quiet or unwanted beginning and tightens the attack."
   },
   {
    "index": 127,
@@ -1771,7 +2025,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 6: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it"
+   "description": "Zone 6: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it",
+   "how": "Sets where zone 6 stops playing in the wave, from 0 to 100 %; a short fade avoids a click.",
+   "sound": "Moving the end trims off a tail, and an end before the start plays the wave backwards."
   },
   {
    "index": 128,
@@ -1788,7 +2044,9 @@
     "Forward",
     "Ping-pong"
    ],
-   "description": "Zone 6: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end"
+   "description": "Zone 6: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end",
+   "how": "Chooses the loop mode of zone 6: as the wave says, off, forward or ping-pong.",
+   "sound": "Looping holds a sound as long as the key is down, and ping-pong smooths the repeat by playing back and forth."
   },
   {
    "index": 129,
@@ -1802,7 +2060,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 6: loop start, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 6: loop start, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 6 begins, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 130,
@@ -1816,7 +2076,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 6: loop end, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 6: loop end, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 6 ends, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 131,
@@ -1831,7 +2093,9 @@
    "b": 1.0,
    "exponent": 3.0,
    "unit": "s",
-   "description": "Zone 6: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is"
+   "description": "Zone 6: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is",
+   "how": "Sets the length of the crossfade at the loop of zone 6, up to 1 second.",
+   "sound": "A longer crossfade hides the jump where the loop restarts, and zero leaves a possible click."
   },
   {
    "index": 132,
@@ -1846,7 +2110,9 @@
     "Gate",
     "One-shot"
    ],
-   "description": "Zone 6: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)"
+   "description": "Zone 6: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)",
+   "how": "Chooses whether zone 6 plays only while the key is held (Gate) or always to its end (One-shot).",
+   "sound": "Gate suits sustained instruments, and One-shot suits drums and effects that should play out."
   },
   {
    "index": 133,
@@ -1861,7 +2127,9 @@
     "Off",
     "On"
    ],
-   "description": "Zone 6: plays backwards, from its end to its start"
+   "description": "Zone 6: plays backwards, from its end to its start",
+   "how": "Plays zone 6 backwards.",
+   "sound": "Reversed samples swell into the note, which is useful for risers and transitions."
   },
   {
    "index": 134,
@@ -1873,7 +2141,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 6: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)"
+   "description": "Zone 6: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)",
+   "how": "Puts zone 6 in one of eight choke groups, or none; a new note fades out the others in its group.",
+   "sound": "Choke groups let a closed hat cut off an open hat, as on a real hat."
   },
   {
    "index": 135,
@@ -1886,7 +2156,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "wave",
-   "description": "Zone 7's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)"
+   "description": "Zone 7's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)",
+   "how": "Chooses the sound zone 7 plays: off, a wave slot of the song, or a built-in sample.",
+   "sound": "The wave is the raw material of the zone; each slot or sample has its own character."
   },
   {
    "index": 136,
@@ -1899,7 +2171,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 7: the lowest key it plays (Instrument mode)"
+   "description": "Zone 7: the lowest key it plays (Instrument mode)",
+   "how": "Sets the lowest key zone 7 plays in Instrument mode.",
+   "sound": "Together with the high key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 137,
@@ -1912,7 +2186,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 7: the highest key it plays (Instrument mode)"
+   "description": "Zone 7: the highest key it plays (Instrument mode)",
+   "how": "Sets the highest key zone 7 plays in Instrument mode.",
+   "sound": "Together with the low key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 138,
@@ -1924,7 +2200,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 7: the lowest velocity it plays (Instrument mode)"
+   "description": "Zone 7: the lowest velocity it plays (Instrument mode)",
+   "how": "Sets the lowest velocity zone 7 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 139,
@@ -1936,7 +2214,9 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 7: the highest velocity it plays (Instrument mode)"
+   "description": "Zone 7: the highest velocity it plays (Instrument mode)",
+   "how": "Sets the highest velocity zone 7 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 140,
@@ -1949,7 +2229,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 7: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)"
+   "description": "Zone 7: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)",
+   "how": "Sets the key at which zone 7 plays its sample at its original pitch, or lets the wave table decide.",
+   "sound": "The root tunes the sample to the keyboard; if it is wrong, every note sounds out of tune."
   },
   {
    "index": 141,
@@ -1963,7 +2245,9 @@
    "a": -48.0,
    "flag": true,
    "unit": "st",
-   "description": "Zone 7: transposition"
+   "description": "Zone 7: transposition",
+   "how": "Transposes zone 7 by up to 48 semitones either way.",
+   "sound": "Use it to move a sample up or down, or to layer an octave or a fifth."
   },
   {
    "index": 142,
@@ -1977,7 +2261,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "Zone 7: fine tune, in 0.1 cent steps"
+   "description": "Zone 7: fine tune, in 0.1 cent steps",
+   "how": "Detunes zone 7 by up to 100 cents in steps of 0.1 cent.",
+   "sound": "A few cents between layered zones give a slow, warm beating."
   },
   {
    "index": 143,
@@ -1992,7 +2278,9 @@
    "b": 12.0,
    "flag": true,
    "unit": "dB",
-   "description": "Zone 7: level"
+   "description": "Zone 7: level",
+   "how": "Sets the level of zone 7, from -48 to +12 dB, or off.",
+   "sound": "Use it to balance zones against each other."
   },
   {
    "index": 144,
@@ -2006,7 +2294,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 7: pan (a stereo wave: balance)"
+   "description": "Zone 7: pan (a stereo wave: balance)",
+   "how": "Places zone 7 from 100 % left to 100 % right; a stereo wave is balanced instead.",
+   "sound": "Panning zones apart widens layered sounds or spreads a drum kit."
   },
   {
    "index": 145,
@@ -2020,7 +2310,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 7: where it starts, in % of the wave (the end, reversed)"
+   "description": "Zone 7: where it starts, in % of the wave (the end, reversed)",
+   "how": "Sets where zone 7 starts playing in the wave, from 0 to 100 %.",
+   "sound": "Moving the start skips a quiet or unwanted beginning and tightens the attack."
   },
   {
    "index": 146,
@@ -2034,7 +2326,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 7: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it"
+   "description": "Zone 7: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it",
+   "how": "Sets where zone 7 stops playing in the wave, from 0 to 100 %; a short fade avoids a click.",
+   "sound": "Moving the end trims off a tail, and an end before the start plays the wave backwards."
   },
   {
    "index": 147,
@@ -2051,7 +2345,9 @@
     "Forward",
     "Ping-pong"
    ],
-   "description": "Zone 7: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end"
+   "description": "Zone 7: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end",
+   "how": "Chooses the loop mode of zone 7: as the wave says, off, forward or ping-pong.",
+   "sound": "Looping holds a sound as long as the key is down, and ping-pong smooths the repeat by playing back and forth."
   },
   {
    "index": 148,
@@ -2065,7 +2361,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 7: loop start, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 7: loop start, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 7 begins, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 149,
@@ -2079,7 +2377,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 7: loop end, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 7: loop end, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 7 ends, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 150,
@@ -2094,7 +2394,9 @@
    "b": 1.0,
    "exponent": 3.0,
    "unit": "s",
-   "description": "Zone 7: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is"
+   "description": "Zone 7: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is",
+   "how": "Sets the length of the crossfade at the loop of zone 7, up to 1 second.",
+   "sound": "A longer crossfade hides the jump where the loop restarts, and zero leaves a possible click."
   },
   {
    "index": 151,
@@ -2109,7 +2411,9 @@
     "Gate",
     "One-shot"
    ],
-   "description": "Zone 7: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)"
+   "description": "Zone 7: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)",
+   "how": "Chooses whether zone 7 plays only while the key is held (Gate) or always to its end (One-shot).",
+   "sound": "Gate suits sustained instruments, and One-shot suits drums and effects that should play out."
   },
   {
    "index": 152,
@@ -2124,7 +2428,9 @@
     "Off",
     "On"
    ],
-   "description": "Zone 7: plays backwards, from its end to its start"
+   "description": "Zone 7: plays backwards, from its end to its start",
+   "how": "Plays zone 7 backwards.",
+   "sound": "Reversed samples swell into the note, which is useful for risers and transitions."
   },
   {
    "index": 153,
@@ -2136,7 +2442,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 7: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)"
+   "description": "Zone 7: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)",
+   "how": "Puts zone 7 in one of eight choke groups, or none; a new note fades out the others in its group.",
+   "sound": "Choke groups let a closed hat cut off an open hat, as on a real hat."
   },
   {
    "index": 154,
@@ -2149,7 +2457,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "wave",
-   "description": "Zone 8's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)"
+   "description": "Zone 8's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)",
+   "how": "Chooses the sound zone 8 plays: off, a wave slot of the song, or a built-in sample.",
+   "sound": "The wave is the raw material of the zone; each slot or sample has its own character."
   },
   {
    "index": 155,
@@ -2162,7 +2472,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 8: the lowest key it plays (Instrument mode)"
+   "description": "Zone 8: the lowest key it plays (Instrument mode)",
+   "how": "Sets the lowest key zone 8 plays in Instrument mode.",
+   "sound": "Together with the high key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 156,
@@ -2175,7 +2487,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 8: the highest key it plays (Instrument mode)"
+   "description": "Zone 8: the highest key it plays (Instrument mode)",
+   "how": "Sets the highest key zone 8 plays in Instrument mode.",
+   "sound": "Together with the low key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 157,
@@ -2187,7 +2501,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 8: the lowest velocity it plays (Instrument mode)"
+   "description": "Zone 8: the lowest velocity it plays (Instrument mode)",
+   "how": "Sets the lowest velocity zone 8 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 158,
@@ -2199,7 +2515,9 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 8: the highest velocity it plays (Instrument mode)"
+   "description": "Zone 8: the highest velocity it plays (Instrument mode)",
+   "how": "Sets the highest velocity zone 8 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 159,
@@ -2212,7 +2530,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 8: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)"
+   "description": "Zone 8: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)",
+   "how": "Sets the key at which zone 8 plays its sample at its original pitch, or lets the wave table decide.",
+   "sound": "The root tunes the sample to the keyboard; if it is wrong, every note sounds out of tune."
   },
   {
    "index": 160,
@@ -2226,7 +2546,9 @@
    "a": -48.0,
    "flag": true,
    "unit": "st",
-   "description": "Zone 8: transposition"
+   "description": "Zone 8: transposition",
+   "how": "Transposes zone 8 by up to 48 semitones either way.",
+   "sound": "Use it to move a sample up or down, or to layer an octave or a fifth."
   },
   {
    "index": 161,
@@ -2240,7 +2562,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "Zone 8: fine tune, in 0.1 cent steps"
+   "description": "Zone 8: fine tune, in 0.1 cent steps",
+   "how": "Detunes zone 8 by up to 100 cents in steps of 0.1 cent.",
+   "sound": "A few cents between layered zones give a slow, warm beating."
   },
   {
    "index": 162,
@@ -2255,7 +2579,9 @@
    "b": 12.0,
    "flag": true,
    "unit": "dB",
-   "description": "Zone 8: level"
+   "description": "Zone 8: level",
+   "how": "Sets the level of zone 8, from -48 to +12 dB, or off.",
+   "sound": "Use it to balance zones against each other."
   },
   {
    "index": 163,
@@ -2269,7 +2595,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 8: pan (a stereo wave: balance)"
+   "description": "Zone 8: pan (a stereo wave: balance)",
+   "how": "Places zone 8 from 100 % left to 100 % right; a stereo wave is balanced instead.",
+   "sound": "Panning zones apart widens layered sounds or spreads a drum kit."
   },
   {
    "index": 164,
@@ -2283,7 +2611,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 8: where it starts, in % of the wave (the end, reversed)"
+   "description": "Zone 8: where it starts, in % of the wave (the end, reversed)",
+   "how": "Sets where zone 8 starts playing in the wave, from 0 to 100 %.",
+   "sound": "Moving the start skips a quiet or unwanted beginning and tightens the attack."
   },
   {
    "index": 165,
@@ -2297,7 +2627,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 8: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it"
+   "description": "Zone 8: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it",
+   "how": "Sets where zone 8 stops playing in the wave, from 0 to 100 %; a short fade avoids a click.",
+   "sound": "Moving the end trims off a tail, and an end before the start plays the wave backwards."
   },
   {
    "index": 166,
@@ -2314,7 +2646,9 @@
     "Forward",
     "Ping-pong"
    ],
-   "description": "Zone 8: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end"
+   "description": "Zone 8: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end",
+   "how": "Chooses the loop mode of zone 8: as the wave says, off, forward or ping-pong.",
+   "sound": "Looping holds a sound as long as the key is down, and ping-pong smooths the repeat by playing back and forth."
   },
   {
    "index": 167,
@@ -2328,7 +2662,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 8: loop start, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 8: loop start, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 8 begins, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 168,
@@ -2342,7 +2678,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 8: loop end, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 8: loop end, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 8 ends, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 169,
@@ -2357,7 +2695,9 @@
    "b": 1.0,
    "exponent": 3.0,
    "unit": "s",
-   "description": "Zone 8: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is"
+   "description": "Zone 8: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is",
+   "how": "Sets the length of the crossfade at the loop of zone 8, up to 1 second.",
+   "sound": "A longer crossfade hides the jump where the loop restarts, and zero leaves a possible click."
   },
   {
    "index": 170,
@@ -2372,7 +2712,9 @@
     "Gate",
     "One-shot"
    ],
-   "description": "Zone 8: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)"
+   "description": "Zone 8: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)",
+   "how": "Chooses whether zone 8 plays only while the key is held (Gate) or always to its end (One-shot).",
+   "sound": "Gate suits sustained instruments, and One-shot suits drums and effects that should play out."
   },
   {
    "index": 171,
@@ -2387,7 +2729,9 @@
     "Off",
     "On"
    ],
-   "description": "Zone 8: plays backwards, from its end to its start"
+   "description": "Zone 8: plays backwards, from its end to its start",
+   "how": "Plays zone 8 backwards.",
+   "sound": "Reversed samples swell into the note, which is useful for risers and transitions."
   },
   {
    "index": 172,
@@ -2399,7 +2743,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 8: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)"
+   "description": "Zone 8: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)",
+   "how": "Puts zone 8 in one of eight choke groups, or none; a new note fades out the others in its group.",
+   "sound": "Choke groups let a closed hat cut off an open hat, as on a real hat."
   },
   {
    "index": 173,
@@ -2412,7 +2758,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "wave",
-   "description": "Zone 9's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)"
+   "description": "Zone 9's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)",
+   "how": "Chooses the sound zone 9 plays: off, a wave slot of the song, or a built-in sample.",
+   "sound": "The wave is the raw material of the zone; each slot or sample has its own character."
   },
   {
    "index": 174,
@@ -2425,7 +2773,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 9: the lowest key it plays (Instrument mode)"
+   "description": "Zone 9: the lowest key it plays (Instrument mode)",
+   "how": "Sets the lowest key zone 9 plays in Instrument mode.",
+   "sound": "Together with the high key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 175,
@@ -2438,7 +2788,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 9: the highest key it plays (Instrument mode)"
+   "description": "Zone 9: the highest key it plays (Instrument mode)",
+   "how": "Sets the highest key zone 9 plays in Instrument mode.",
+   "sound": "Together with the low key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 176,
@@ -2450,7 +2802,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 9: the lowest velocity it plays (Instrument mode)"
+   "description": "Zone 9: the lowest velocity it plays (Instrument mode)",
+   "how": "Sets the lowest velocity zone 9 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 177,
@@ -2462,7 +2816,9 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 9: the highest velocity it plays (Instrument mode)"
+   "description": "Zone 9: the highest velocity it plays (Instrument mode)",
+   "how": "Sets the highest velocity zone 9 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 178,
@@ -2475,7 +2831,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 9: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)"
+   "description": "Zone 9: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)",
+   "how": "Sets the key at which zone 9 plays its sample at its original pitch, or lets the wave table decide.",
+   "sound": "The root tunes the sample to the keyboard; if it is wrong, every note sounds out of tune."
   },
   {
    "index": 179,
@@ -2489,7 +2847,9 @@
    "a": -48.0,
    "flag": true,
    "unit": "st",
-   "description": "Zone 9: transposition"
+   "description": "Zone 9: transposition",
+   "how": "Transposes zone 9 by up to 48 semitones either way.",
+   "sound": "Use it to move a sample up or down, or to layer an octave or a fifth."
   },
   {
    "index": 180,
@@ -2503,7 +2863,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "Zone 9: fine tune, in 0.1 cent steps"
+   "description": "Zone 9: fine tune, in 0.1 cent steps",
+   "how": "Detunes zone 9 by up to 100 cents in steps of 0.1 cent.",
+   "sound": "A few cents between layered zones give a slow, warm beating."
   },
   {
    "index": 181,
@@ -2518,7 +2880,9 @@
    "b": 12.0,
    "flag": true,
    "unit": "dB",
-   "description": "Zone 9: level"
+   "description": "Zone 9: level",
+   "how": "Sets the level of zone 9, from -48 to +12 dB, or off.",
+   "sound": "Use it to balance zones against each other."
   },
   {
    "index": 182,
@@ -2532,7 +2896,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 9: pan (a stereo wave: balance)"
+   "description": "Zone 9: pan (a stereo wave: balance)",
+   "how": "Places zone 9 from 100 % left to 100 % right; a stereo wave is balanced instead.",
+   "sound": "Panning zones apart widens layered sounds or spreads a drum kit."
   },
   {
    "index": 183,
@@ -2546,7 +2912,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 9: where it starts, in % of the wave (the end, reversed)"
+   "description": "Zone 9: where it starts, in % of the wave (the end, reversed)",
+   "how": "Sets where zone 9 starts playing in the wave, from 0 to 100 %.",
+   "sound": "Moving the start skips a quiet or unwanted beginning and tightens the attack."
   },
   {
    "index": 184,
@@ -2560,7 +2928,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 9: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it"
+   "description": "Zone 9: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it",
+   "how": "Sets where zone 9 stops playing in the wave, from 0 to 100 %; a short fade avoids a click.",
+   "sound": "Moving the end trims off a tail, and an end before the start plays the wave backwards."
   },
   {
    "index": 185,
@@ -2577,7 +2947,9 @@
     "Forward",
     "Ping-pong"
    ],
-   "description": "Zone 9: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end"
+   "description": "Zone 9: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end",
+   "how": "Chooses the loop mode of zone 9: as the wave says, off, forward or ping-pong.",
+   "sound": "Looping holds a sound as long as the key is down, and ping-pong smooths the repeat by playing back and forth."
   },
   {
    "index": 186,
@@ -2591,7 +2963,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 9: loop start, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 9: loop start, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 9 begins, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 187,
@@ -2605,7 +2979,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 9: loop end, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 9: loop end, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 9 ends, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 188,
@@ -2620,7 +2996,9 @@
    "b": 1.0,
    "exponent": 3.0,
    "unit": "s",
-   "description": "Zone 9: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is"
+   "description": "Zone 9: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is",
+   "how": "Sets the length of the crossfade at the loop of zone 9, up to 1 second.",
+   "sound": "A longer crossfade hides the jump where the loop restarts, and zero leaves a possible click."
   },
   {
    "index": 189,
@@ -2635,7 +3013,9 @@
     "Gate",
     "One-shot"
    ],
-   "description": "Zone 9: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)"
+   "description": "Zone 9: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)",
+   "how": "Chooses whether zone 9 plays only while the key is held (Gate) or always to its end (One-shot).",
+   "sound": "Gate suits sustained instruments, and One-shot suits drums and effects that should play out."
   },
   {
    "index": 190,
@@ -2650,7 +3030,9 @@
     "Off",
     "On"
    ],
-   "description": "Zone 9: plays backwards, from its end to its start"
+   "description": "Zone 9: plays backwards, from its end to its start",
+   "how": "Plays zone 9 backwards.",
+   "sound": "Reversed samples swell into the note, which is useful for risers and transitions."
   },
   {
    "index": 191,
@@ -2662,7 +3044,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 9: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)"
+   "description": "Zone 9: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)",
+   "how": "Puts zone 9 in one of eight choke groups, or none; a new note fades out the others in its group.",
+   "sound": "Choke groups let a closed hat cut off an open hat, as on a real hat."
   },
   {
    "index": 192,
@@ -2675,7 +3059,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "wave",
-   "description": "Zone 10's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)"
+   "description": "Zone 10's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)",
+   "how": "Chooses the sound zone 10 plays: off, a wave slot of the song, or a built-in sample.",
+   "sound": "The wave is the raw material of the zone; each slot or sample has its own character."
   },
   {
    "index": 193,
@@ -2688,7 +3074,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 10: the lowest key it plays (Instrument mode)"
+   "description": "Zone 10: the lowest key it plays (Instrument mode)",
+   "how": "Sets the lowest key zone 10 plays in Instrument mode.",
+   "sound": "Together with the high key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 194,
@@ -2701,7 +3089,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 10: the highest key it plays (Instrument mode)"
+   "description": "Zone 10: the highest key it plays (Instrument mode)",
+   "how": "Sets the highest key zone 10 plays in Instrument mode.",
+   "sound": "Together with the low key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 195,
@@ -2713,7 +3103,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 10: the lowest velocity it plays (Instrument mode)"
+   "description": "Zone 10: the lowest velocity it plays (Instrument mode)",
+   "how": "Sets the lowest velocity zone 10 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 196,
@@ -2725,7 +3117,9 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 10: the highest velocity it plays (Instrument mode)"
+   "description": "Zone 10: the highest velocity it plays (Instrument mode)",
+   "how": "Sets the highest velocity zone 10 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 197,
@@ -2738,7 +3132,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 10: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)"
+   "description": "Zone 10: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)",
+   "how": "Sets the key at which zone 10 plays its sample at its original pitch, or lets the wave table decide.",
+   "sound": "The root tunes the sample to the keyboard; if it is wrong, every note sounds out of tune."
   },
   {
    "index": 198,
@@ -2752,7 +3148,9 @@
    "a": -48.0,
    "flag": true,
    "unit": "st",
-   "description": "Zone 10: transposition"
+   "description": "Zone 10: transposition",
+   "how": "Transposes zone 10 by up to 48 semitones either way.",
+   "sound": "Use it to move a sample up or down, or to layer an octave or a fifth."
   },
   {
    "index": 199,
@@ -2766,7 +3164,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "Zone 10: fine tune, in 0.1 cent steps"
+   "description": "Zone 10: fine tune, in 0.1 cent steps",
+   "how": "Detunes zone 10 by up to 100 cents in steps of 0.1 cent.",
+   "sound": "A few cents between layered zones give a slow, warm beating."
   },
   {
    "index": 200,
@@ -2781,7 +3181,9 @@
    "b": 12.0,
    "flag": true,
    "unit": "dB",
-   "description": "Zone 10: level"
+   "description": "Zone 10: level",
+   "how": "Sets the level of zone 10, from -48 to +12 dB, or off.",
+   "sound": "Use it to balance zones against each other."
   },
   {
    "index": 201,
@@ -2795,7 +3197,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 10: pan (a stereo wave: balance)"
+   "description": "Zone 10: pan (a stereo wave: balance)",
+   "how": "Places zone 10 from 100 % left to 100 % right; a stereo wave is balanced instead.",
+   "sound": "Panning zones apart widens layered sounds or spreads a drum kit."
   },
   {
    "index": 202,
@@ -2809,7 +3213,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 10: where it starts, in % of the wave (the end, reversed)"
+   "description": "Zone 10: where it starts, in % of the wave (the end, reversed)",
+   "how": "Sets where zone 10 starts playing in the wave, from 0 to 100 %.",
+   "sound": "Moving the start skips a quiet or unwanted beginning and tightens the attack."
   },
   {
    "index": 203,
@@ -2823,7 +3229,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 10: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it"
+   "description": "Zone 10: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it",
+   "how": "Sets where zone 10 stops playing in the wave, from 0 to 100 %; a short fade avoids a click.",
+   "sound": "Moving the end trims off a tail, and an end before the start plays the wave backwards."
   },
   {
    "index": 204,
@@ -2840,7 +3248,9 @@
     "Forward",
     "Ping-pong"
    ],
-   "description": "Zone 10: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end"
+   "description": "Zone 10: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end",
+   "how": "Chooses the loop mode of zone 10: as the wave says, off, forward or ping-pong.",
+   "sound": "Looping holds a sound as long as the key is down, and ping-pong smooths the repeat by playing back and forth."
   },
   {
    "index": 205,
@@ -2854,7 +3264,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 10: loop start, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 10: loop start, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 10 begins, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 206,
@@ -2868,7 +3280,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 10: loop end, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 10: loop end, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 10 ends, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 207,
@@ -2883,7 +3297,9 @@
    "b": 1.0,
    "exponent": 3.0,
    "unit": "s",
-   "description": "Zone 10: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is"
+   "description": "Zone 10: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is",
+   "how": "Sets the length of the crossfade at the loop of zone 10, up to 1 second.",
+   "sound": "A longer crossfade hides the jump where the loop restarts, and zero leaves a possible click."
   },
   {
    "index": 208,
@@ -2898,7 +3314,9 @@
     "Gate",
     "One-shot"
    ],
-   "description": "Zone 10: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)"
+   "description": "Zone 10: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)",
+   "how": "Chooses whether zone 10 plays only while the key is held (Gate) or always to its end (One-shot).",
+   "sound": "Gate suits sustained instruments, and One-shot suits drums and effects that should play out."
   },
   {
    "index": 209,
@@ -2913,7 +3331,9 @@
     "Off",
     "On"
    ],
-   "description": "Zone 10: plays backwards, from its end to its start"
+   "description": "Zone 10: plays backwards, from its end to its start",
+   "how": "Plays zone 10 backwards.",
+   "sound": "Reversed samples swell into the note, which is useful for risers and transitions."
   },
   {
    "index": 210,
@@ -2925,7 +3345,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 10: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)"
+   "description": "Zone 10: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)",
+   "how": "Puts zone 10 in one of eight choke groups, or none; a new note fades out the others in its group.",
+   "sound": "Choke groups let a closed hat cut off an open hat, as on a real hat."
   },
   {
    "index": 211,
@@ -2938,7 +3360,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "wave",
-   "description": "Zone 11's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)"
+   "description": "Zone 11's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)",
+   "how": "Chooses the sound zone 11 plays: off, a wave slot of the song, or a built-in sample.",
+   "sound": "The wave is the raw material of the zone; each slot or sample has its own character."
   },
   {
    "index": 212,
@@ -2951,7 +3375,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 11: the lowest key it plays (Instrument mode)"
+   "description": "Zone 11: the lowest key it plays (Instrument mode)",
+   "how": "Sets the lowest key zone 11 plays in Instrument mode.",
+   "sound": "Together with the high key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 213,
@@ -2964,7 +3390,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 11: the highest key it plays (Instrument mode)"
+   "description": "Zone 11: the highest key it plays (Instrument mode)",
+   "how": "Sets the highest key zone 11 plays in Instrument mode.",
+   "sound": "Together with the low key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 214,
@@ -2976,7 +3404,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 11: the lowest velocity it plays (Instrument mode)"
+   "description": "Zone 11: the lowest velocity it plays (Instrument mode)",
+   "how": "Sets the lowest velocity zone 11 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 215,
@@ -2988,7 +3418,9 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 11: the highest velocity it plays (Instrument mode)"
+   "description": "Zone 11: the highest velocity it plays (Instrument mode)",
+   "how": "Sets the highest velocity zone 11 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 216,
@@ -3001,7 +3433,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 11: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)"
+   "description": "Zone 11: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)",
+   "how": "Sets the key at which zone 11 plays its sample at its original pitch, or lets the wave table decide.",
+   "sound": "The root tunes the sample to the keyboard; if it is wrong, every note sounds out of tune."
   },
   {
    "index": 217,
@@ -3015,7 +3449,9 @@
    "a": -48.0,
    "flag": true,
    "unit": "st",
-   "description": "Zone 11: transposition"
+   "description": "Zone 11: transposition",
+   "how": "Transposes zone 11 by up to 48 semitones either way.",
+   "sound": "Use it to move a sample up or down, or to layer an octave or a fifth."
   },
   {
    "index": 218,
@@ -3029,7 +3465,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "Zone 11: fine tune, in 0.1 cent steps"
+   "description": "Zone 11: fine tune, in 0.1 cent steps",
+   "how": "Detunes zone 11 by up to 100 cents in steps of 0.1 cent.",
+   "sound": "A few cents between layered zones give a slow, warm beating."
   },
   {
    "index": 219,
@@ -3044,7 +3482,9 @@
    "b": 12.0,
    "flag": true,
    "unit": "dB",
-   "description": "Zone 11: level"
+   "description": "Zone 11: level",
+   "how": "Sets the level of zone 11, from -48 to +12 dB, or off.",
+   "sound": "Use it to balance zones against each other."
   },
   {
    "index": 220,
@@ -3058,7 +3498,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 11: pan (a stereo wave: balance)"
+   "description": "Zone 11: pan (a stereo wave: balance)",
+   "how": "Places zone 11 from 100 % left to 100 % right; a stereo wave is balanced instead.",
+   "sound": "Panning zones apart widens layered sounds or spreads a drum kit."
   },
   {
    "index": 221,
@@ -3072,7 +3514,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 11: where it starts, in % of the wave (the end, reversed)"
+   "description": "Zone 11: where it starts, in % of the wave (the end, reversed)",
+   "how": "Sets where zone 11 starts playing in the wave, from 0 to 100 %.",
+   "sound": "Moving the start skips a quiet or unwanted beginning and tightens the attack."
   },
   {
    "index": 222,
@@ -3086,7 +3530,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 11: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it"
+   "description": "Zone 11: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it",
+   "how": "Sets where zone 11 stops playing in the wave, from 0 to 100 %; a short fade avoids a click.",
+   "sound": "Moving the end trims off a tail, and an end before the start plays the wave backwards."
   },
   {
    "index": 223,
@@ -3103,7 +3549,9 @@
     "Forward",
     "Ping-pong"
    ],
-   "description": "Zone 11: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end"
+   "description": "Zone 11: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end",
+   "how": "Chooses the loop mode of zone 11: as the wave says, off, forward or ping-pong.",
+   "sound": "Looping holds a sound as long as the key is down, and ping-pong smooths the repeat by playing back and forth."
   },
   {
    "index": 224,
@@ -3117,7 +3565,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 11: loop start, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 11: loop start, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 11 begins, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 225,
@@ -3131,7 +3581,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 11: loop end, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 11: loop end, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 11 ends, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 226,
@@ -3146,7 +3598,9 @@
    "b": 1.0,
    "exponent": 3.0,
    "unit": "s",
-   "description": "Zone 11: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is"
+   "description": "Zone 11: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is",
+   "how": "Sets the length of the crossfade at the loop of zone 11, up to 1 second.",
+   "sound": "A longer crossfade hides the jump where the loop restarts, and zero leaves a possible click."
   },
   {
    "index": 227,
@@ -3161,7 +3615,9 @@
     "Gate",
     "One-shot"
    ],
-   "description": "Zone 11: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)"
+   "description": "Zone 11: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)",
+   "how": "Chooses whether zone 11 plays only while the key is held (Gate) or always to its end (One-shot).",
+   "sound": "Gate suits sustained instruments, and One-shot suits drums and effects that should play out."
   },
   {
    "index": 228,
@@ -3176,7 +3632,9 @@
     "Off",
     "On"
    ],
-   "description": "Zone 11: plays backwards, from its end to its start"
+   "description": "Zone 11: plays backwards, from its end to its start",
+   "how": "Plays zone 11 backwards.",
+   "sound": "Reversed samples swell into the note, which is useful for risers and transitions."
   },
   {
    "index": 229,
@@ -3188,7 +3646,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 11: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)"
+   "description": "Zone 11: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)",
+   "how": "Puts zone 11 in one of eight choke groups, or none; a new note fades out the others in its group.",
+   "sound": "Choke groups let a closed hat cut off an open hat, as on a real hat."
   },
   {
    "index": 230,
@@ -3201,7 +3661,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "wave",
-   "description": "Zone 12's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)"
+   "description": "Zone 12's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)",
+   "how": "Chooses the sound zone 12 plays: off, a wave slot of the song, or a built-in sample.",
+   "sound": "The wave is the raw material of the zone; each slot or sample has its own character."
   },
   {
    "index": 231,
@@ -3214,7 +3676,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 12: the lowest key it plays (Instrument mode)"
+   "description": "Zone 12: the lowest key it plays (Instrument mode)",
+   "how": "Sets the lowest key zone 12 plays in Instrument mode.",
+   "sound": "Together with the high key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 232,
@@ -3227,7 +3691,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 12: the highest key it plays (Instrument mode)"
+   "description": "Zone 12: the highest key it plays (Instrument mode)",
+   "how": "Sets the highest key zone 12 plays in Instrument mode.",
+   "sound": "Together with the low key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 233,
@@ -3239,7 +3705,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 12: the lowest velocity it plays (Instrument mode)"
+   "description": "Zone 12: the lowest velocity it plays (Instrument mode)",
+   "how": "Sets the lowest velocity zone 12 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 234,
@@ -3251,7 +3719,9 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 12: the highest velocity it plays (Instrument mode)"
+   "description": "Zone 12: the highest velocity it plays (Instrument mode)",
+   "how": "Sets the highest velocity zone 12 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 235,
@@ -3264,7 +3734,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 12: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)"
+   "description": "Zone 12: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)",
+   "how": "Sets the key at which zone 12 plays its sample at its original pitch, or lets the wave table decide.",
+   "sound": "The root tunes the sample to the keyboard; if it is wrong, every note sounds out of tune."
   },
   {
    "index": 236,
@@ -3278,7 +3750,9 @@
    "a": -48.0,
    "flag": true,
    "unit": "st",
-   "description": "Zone 12: transposition"
+   "description": "Zone 12: transposition",
+   "how": "Transposes zone 12 by up to 48 semitones either way.",
+   "sound": "Use it to move a sample up or down, or to layer an octave or a fifth."
   },
   {
    "index": 237,
@@ -3292,7 +3766,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "Zone 12: fine tune, in 0.1 cent steps"
+   "description": "Zone 12: fine tune, in 0.1 cent steps",
+   "how": "Detunes zone 12 by up to 100 cents in steps of 0.1 cent.",
+   "sound": "A few cents between layered zones give a slow, warm beating."
   },
   {
    "index": 238,
@@ -3307,7 +3783,9 @@
    "b": 12.0,
    "flag": true,
    "unit": "dB",
-   "description": "Zone 12: level"
+   "description": "Zone 12: level",
+   "how": "Sets the level of zone 12, from -48 to +12 dB, or off.",
+   "sound": "Use it to balance zones against each other."
   },
   {
    "index": 239,
@@ -3321,7 +3799,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 12: pan (a stereo wave: balance)"
+   "description": "Zone 12: pan (a stereo wave: balance)",
+   "how": "Places zone 12 from 100 % left to 100 % right; a stereo wave is balanced instead.",
+   "sound": "Panning zones apart widens layered sounds or spreads a drum kit."
   },
   {
    "index": 240,
@@ -3335,7 +3815,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 12: where it starts, in % of the wave (the end, reversed)"
+   "description": "Zone 12: where it starts, in % of the wave (the end, reversed)",
+   "how": "Sets where zone 12 starts playing in the wave, from 0 to 100 %.",
+   "sound": "Moving the start skips a quiet or unwanted beginning and tightens the attack."
   },
   {
    "index": 241,
@@ -3349,7 +3831,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 12: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it"
+   "description": "Zone 12: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it",
+   "how": "Sets where zone 12 stops playing in the wave, from 0 to 100 %; a short fade avoids a click.",
+   "sound": "Moving the end trims off a tail, and an end before the start plays the wave backwards."
   },
   {
    "index": 242,
@@ -3366,7 +3850,9 @@
     "Forward",
     "Ping-pong"
    ],
-   "description": "Zone 12: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end"
+   "description": "Zone 12: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end",
+   "how": "Chooses the loop mode of zone 12: as the wave says, off, forward or ping-pong.",
+   "sound": "Looping holds a sound as long as the key is down, and ping-pong smooths the repeat by playing back and forth."
   },
   {
    "index": 243,
@@ -3380,7 +3866,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 12: loop start, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 12: loop start, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 12 begins, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 244,
@@ -3394,7 +3882,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 12: loop end, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 12: loop end, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 12 ends, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 245,
@@ -3409,7 +3899,9 @@
    "b": 1.0,
    "exponent": 3.0,
    "unit": "s",
-   "description": "Zone 12: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is"
+   "description": "Zone 12: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is",
+   "how": "Sets the length of the crossfade at the loop of zone 12, up to 1 second.",
+   "sound": "A longer crossfade hides the jump where the loop restarts, and zero leaves a possible click."
   },
   {
    "index": 246,
@@ -3424,7 +3916,9 @@
     "Gate",
     "One-shot"
    ],
-   "description": "Zone 12: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)"
+   "description": "Zone 12: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)",
+   "how": "Chooses whether zone 12 plays only while the key is held (Gate) or always to its end (One-shot).",
+   "sound": "Gate suits sustained instruments, and One-shot suits drums and effects that should play out."
   },
   {
    "index": 247,
@@ -3439,7 +3933,9 @@
     "Off",
     "On"
    ],
-   "description": "Zone 12: plays backwards, from its end to its start"
+   "description": "Zone 12: plays backwards, from its end to its start",
+   "how": "Plays zone 12 backwards.",
+   "sound": "Reversed samples swell into the note, which is useful for risers and transitions."
   },
   {
    "index": 248,
@@ -3451,7 +3947,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 12: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)"
+   "description": "Zone 12: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)",
+   "how": "Puts zone 12 in one of eight choke groups, or none; a new note fades out the others in its group.",
+   "sound": "Choke groups let a closed hat cut off an open hat, as on a real hat."
   },
   {
    "index": 249,
@@ -3464,7 +3962,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "wave",
-   "description": "Zone 13's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)"
+   "description": "Zone 13's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)",
+   "how": "Chooses the sound zone 13 plays: off, a wave slot of the song, or a built-in sample.",
+   "sound": "The wave is the raw material of the zone; each slot or sample has its own character."
   },
   {
    "index": 250,
@@ -3477,7 +3977,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 13: the lowest key it plays (Instrument mode)"
+   "description": "Zone 13: the lowest key it plays (Instrument mode)",
+   "how": "Sets the lowest key zone 13 plays in Instrument mode.",
+   "sound": "Together with the high key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 251,
@@ -3490,7 +3992,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 13: the highest key it plays (Instrument mode)"
+   "description": "Zone 13: the highest key it plays (Instrument mode)",
+   "how": "Sets the highest key zone 13 plays in Instrument mode.",
+   "sound": "Together with the low key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 252,
@@ -3502,7 +4006,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 13: the lowest velocity it plays (Instrument mode)"
+   "description": "Zone 13: the lowest velocity it plays (Instrument mode)",
+   "how": "Sets the lowest velocity zone 13 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 253,
@@ -3514,7 +4020,9 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 13: the highest velocity it plays (Instrument mode)"
+   "description": "Zone 13: the highest velocity it plays (Instrument mode)",
+   "how": "Sets the highest velocity zone 13 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 254,
@@ -3527,7 +4035,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 13: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)"
+   "description": "Zone 13: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)",
+   "how": "Sets the key at which zone 13 plays its sample at its original pitch, or lets the wave table decide.",
+   "sound": "The root tunes the sample to the keyboard; if it is wrong, every note sounds out of tune."
   },
   {
    "index": 255,
@@ -3541,7 +4051,9 @@
    "a": -48.0,
    "flag": true,
    "unit": "st",
-   "description": "Zone 13: transposition"
+   "description": "Zone 13: transposition",
+   "how": "Transposes zone 13 by up to 48 semitones either way.",
+   "sound": "Use it to move a sample up or down, or to layer an octave or a fifth."
   },
   {
    "index": 256,
@@ -3555,7 +4067,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "Zone 13: fine tune, in 0.1 cent steps"
+   "description": "Zone 13: fine tune, in 0.1 cent steps",
+   "how": "Detunes zone 13 by up to 100 cents in steps of 0.1 cent.",
+   "sound": "A few cents between layered zones give a slow, warm beating."
   },
   {
    "index": 257,
@@ -3570,7 +4084,9 @@
    "b": 12.0,
    "flag": true,
    "unit": "dB",
-   "description": "Zone 13: level"
+   "description": "Zone 13: level",
+   "how": "Sets the level of zone 13, from -48 to +12 dB, or off.",
+   "sound": "Use it to balance zones against each other."
   },
   {
    "index": 258,
@@ -3584,7 +4100,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 13: pan (a stereo wave: balance)"
+   "description": "Zone 13: pan (a stereo wave: balance)",
+   "how": "Places zone 13 from 100 % left to 100 % right; a stereo wave is balanced instead.",
+   "sound": "Panning zones apart widens layered sounds or spreads a drum kit."
   },
   {
    "index": 259,
@@ -3598,7 +4116,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 13: where it starts, in % of the wave (the end, reversed)"
+   "description": "Zone 13: where it starts, in % of the wave (the end, reversed)",
+   "how": "Sets where zone 13 starts playing in the wave, from 0 to 100 %.",
+   "sound": "Moving the start skips a quiet or unwanted beginning and tightens the attack."
   },
   {
    "index": 260,
@@ -3612,7 +4132,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 13: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it"
+   "description": "Zone 13: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it",
+   "how": "Sets where zone 13 stops playing in the wave, from 0 to 100 %; a short fade avoids a click.",
+   "sound": "Moving the end trims off a tail, and an end before the start plays the wave backwards."
   },
   {
    "index": 261,
@@ -3629,7 +4151,9 @@
     "Forward",
     "Ping-pong"
    ],
-   "description": "Zone 13: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end"
+   "description": "Zone 13: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end",
+   "how": "Chooses the loop mode of zone 13: as the wave says, off, forward or ping-pong.",
+   "sound": "Looping holds a sound as long as the key is down, and ping-pong smooths the repeat by playing back and forth."
   },
   {
    "index": 262,
@@ -3643,7 +4167,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 13: loop start, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 13: loop start, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 13 begins, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 263,
@@ -3657,7 +4183,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 13: loop end, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 13: loop end, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 13 ends, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 264,
@@ -3672,7 +4200,9 @@
    "b": 1.0,
    "exponent": 3.0,
    "unit": "s",
-   "description": "Zone 13: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is"
+   "description": "Zone 13: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is",
+   "how": "Sets the length of the crossfade at the loop of zone 13, up to 1 second.",
+   "sound": "A longer crossfade hides the jump where the loop restarts, and zero leaves a possible click."
   },
   {
    "index": 265,
@@ -3687,7 +4217,9 @@
     "Gate",
     "One-shot"
    ],
-   "description": "Zone 13: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)"
+   "description": "Zone 13: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)",
+   "how": "Chooses whether zone 13 plays only while the key is held (Gate) or always to its end (One-shot).",
+   "sound": "Gate suits sustained instruments, and One-shot suits drums and effects that should play out."
   },
   {
    "index": 266,
@@ -3702,7 +4234,9 @@
     "Off",
     "On"
    ],
-   "description": "Zone 13: plays backwards, from its end to its start"
+   "description": "Zone 13: plays backwards, from its end to its start",
+   "how": "Plays zone 13 backwards.",
+   "sound": "Reversed samples swell into the note, which is useful for risers and transitions."
   },
   {
    "index": 267,
@@ -3714,7 +4248,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 13: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)"
+   "description": "Zone 13: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)",
+   "how": "Puts zone 13 in one of eight choke groups, or none; a new note fades out the others in its group.",
+   "sound": "Choke groups let a closed hat cut off an open hat, as on a real hat."
   },
   {
    "index": 268,
@@ -3727,7 +4263,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "wave",
-   "description": "Zone 14's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)"
+   "description": "Zone 14's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)",
+   "how": "Chooses the sound zone 14 plays: off, a wave slot of the song, or a built-in sample.",
+   "sound": "The wave is the raw material of the zone; each slot or sample has its own character."
   },
   {
    "index": 269,
@@ -3740,7 +4278,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 14: the lowest key it plays (Instrument mode)"
+   "description": "Zone 14: the lowest key it plays (Instrument mode)",
+   "how": "Sets the lowest key zone 14 plays in Instrument mode.",
+   "sound": "Together with the high key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 270,
@@ -3753,7 +4293,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 14: the highest key it plays (Instrument mode)"
+   "description": "Zone 14: the highest key it plays (Instrument mode)",
+   "how": "Sets the highest key zone 14 plays in Instrument mode.",
+   "sound": "Together with the low key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 271,
@@ -3765,7 +4307,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 14: the lowest velocity it plays (Instrument mode)"
+   "description": "Zone 14: the lowest velocity it plays (Instrument mode)",
+   "how": "Sets the lowest velocity zone 14 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 272,
@@ -3777,7 +4321,9 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 14: the highest velocity it plays (Instrument mode)"
+   "description": "Zone 14: the highest velocity it plays (Instrument mode)",
+   "how": "Sets the highest velocity zone 14 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 273,
@@ -3790,7 +4336,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 14: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)"
+   "description": "Zone 14: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)",
+   "how": "Sets the key at which zone 14 plays its sample at its original pitch, or lets the wave table decide.",
+   "sound": "The root tunes the sample to the keyboard; if it is wrong, every note sounds out of tune."
   },
   {
    "index": 274,
@@ -3804,7 +4352,9 @@
    "a": -48.0,
    "flag": true,
    "unit": "st",
-   "description": "Zone 14: transposition"
+   "description": "Zone 14: transposition",
+   "how": "Transposes zone 14 by up to 48 semitones either way.",
+   "sound": "Use it to move a sample up or down, or to layer an octave or a fifth."
   },
   {
    "index": 275,
@@ -3818,7 +4368,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "Zone 14: fine tune, in 0.1 cent steps"
+   "description": "Zone 14: fine tune, in 0.1 cent steps",
+   "how": "Detunes zone 14 by up to 100 cents in steps of 0.1 cent.",
+   "sound": "A few cents between layered zones give a slow, warm beating."
   },
   {
    "index": 276,
@@ -3833,7 +4385,9 @@
    "b": 12.0,
    "flag": true,
    "unit": "dB",
-   "description": "Zone 14: level"
+   "description": "Zone 14: level",
+   "how": "Sets the level of zone 14, from -48 to +12 dB, or off.",
+   "sound": "Use it to balance zones against each other."
   },
   {
    "index": 277,
@@ -3847,7 +4401,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 14: pan (a stereo wave: balance)"
+   "description": "Zone 14: pan (a stereo wave: balance)",
+   "how": "Places zone 14 from 100 % left to 100 % right; a stereo wave is balanced instead.",
+   "sound": "Panning zones apart widens layered sounds or spreads a drum kit."
   },
   {
    "index": 278,
@@ -3861,7 +4417,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 14: where it starts, in % of the wave (the end, reversed)"
+   "description": "Zone 14: where it starts, in % of the wave (the end, reversed)",
+   "how": "Sets where zone 14 starts playing in the wave, from 0 to 100 %.",
+   "sound": "Moving the start skips a quiet or unwanted beginning and tightens the attack."
   },
   {
    "index": 279,
@@ -3875,7 +4433,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 14: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it"
+   "description": "Zone 14: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it",
+   "how": "Sets where zone 14 stops playing in the wave, from 0 to 100 %; a short fade avoids a click.",
+   "sound": "Moving the end trims off a tail, and an end before the start plays the wave backwards."
   },
   {
    "index": 280,
@@ -3892,7 +4452,9 @@
     "Forward",
     "Ping-pong"
    ],
-   "description": "Zone 14: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end"
+   "description": "Zone 14: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end",
+   "how": "Chooses the loop mode of zone 14: as the wave says, off, forward or ping-pong.",
+   "sound": "Looping holds a sound as long as the key is down, and ping-pong smooths the repeat by playing back and forth."
   },
   {
    "index": 281,
@@ -3906,7 +4468,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 14: loop start, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 14: loop start, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 14 begins, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 282,
@@ -3920,7 +4484,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 14: loop end, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 14: loop end, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 14 ends, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 283,
@@ -3935,7 +4501,9 @@
    "b": 1.0,
    "exponent": 3.0,
    "unit": "s",
-   "description": "Zone 14: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is"
+   "description": "Zone 14: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is",
+   "how": "Sets the length of the crossfade at the loop of zone 14, up to 1 second.",
+   "sound": "A longer crossfade hides the jump where the loop restarts, and zero leaves a possible click."
   },
   {
    "index": 284,
@@ -3950,7 +4518,9 @@
     "Gate",
     "One-shot"
    ],
-   "description": "Zone 14: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)"
+   "description": "Zone 14: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)",
+   "how": "Chooses whether zone 14 plays only while the key is held (Gate) or always to its end (One-shot).",
+   "sound": "Gate suits sustained instruments, and One-shot suits drums and effects that should play out."
   },
   {
    "index": 285,
@@ -3965,7 +4535,9 @@
     "Off",
     "On"
    ],
-   "description": "Zone 14: plays backwards, from its end to its start"
+   "description": "Zone 14: plays backwards, from its end to its start",
+   "how": "Plays zone 14 backwards.",
+   "sound": "Reversed samples swell into the note, which is useful for risers and transitions."
   },
   {
    "index": 286,
@@ -3977,7 +4549,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 14: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)"
+   "description": "Zone 14: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)",
+   "how": "Puts zone 14 in one of eight choke groups, or none; a new note fades out the others in its group.",
+   "sound": "Choke groups let a closed hat cut off an open hat, as on a real hat."
   },
   {
    "index": 287,
@@ -3990,7 +4564,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "wave",
-   "description": "Zone 15's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)"
+   "description": "Zone 15's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)",
+   "how": "Chooses the sound zone 15 plays: off, a wave slot of the song, or a built-in sample.",
+   "sound": "The wave is the raw material of the zone; each slot or sample has its own character."
   },
   {
    "index": 288,
@@ -4003,7 +4579,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 15: the lowest key it plays (Instrument mode)"
+   "description": "Zone 15: the lowest key it plays (Instrument mode)",
+   "how": "Sets the lowest key zone 15 plays in Instrument mode.",
+   "sound": "Together with the high key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 289,
@@ -4016,7 +4594,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 15: the highest key it plays (Instrument mode)"
+   "description": "Zone 15: the highest key it plays (Instrument mode)",
+   "how": "Sets the highest key zone 15 plays in Instrument mode.",
+   "sound": "Together with the low key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 290,
@@ -4028,7 +4608,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 15: the lowest velocity it plays (Instrument mode)"
+   "description": "Zone 15: the lowest velocity it plays (Instrument mode)",
+   "how": "Sets the lowest velocity zone 15 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 291,
@@ -4040,7 +4622,9 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 15: the highest velocity it plays (Instrument mode)"
+   "description": "Zone 15: the highest velocity it plays (Instrument mode)",
+   "how": "Sets the highest velocity zone 15 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 292,
@@ -4053,7 +4637,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 15: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)"
+   "description": "Zone 15: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)",
+   "how": "Sets the key at which zone 15 plays its sample at its original pitch, or lets the wave table decide.",
+   "sound": "The root tunes the sample to the keyboard; if it is wrong, every note sounds out of tune."
   },
   {
    "index": 293,
@@ -4067,7 +4653,9 @@
    "a": -48.0,
    "flag": true,
    "unit": "st",
-   "description": "Zone 15: transposition"
+   "description": "Zone 15: transposition",
+   "how": "Transposes zone 15 by up to 48 semitones either way.",
+   "sound": "Use it to move a sample up or down, or to layer an octave or a fifth."
   },
   {
    "index": 294,
@@ -4081,7 +4669,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "Zone 15: fine tune, in 0.1 cent steps"
+   "description": "Zone 15: fine tune, in 0.1 cent steps",
+   "how": "Detunes zone 15 by up to 100 cents in steps of 0.1 cent.",
+   "sound": "A few cents between layered zones give a slow, warm beating."
   },
   {
    "index": 295,
@@ -4096,7 +4686,9 @@
    "b": 12.0,
    "flag": true,
    "unit": "dB",
-   "description": "Zone 15: level"
+   "description": "Zone 15: level",
+   "how": "Sets the level of zone 15, from -48 to +12 dB, or off.",
+   "sound": "Use it to balance zones against each other."
   },
   {
    "index": 296,
@@ -4110,7 +4702,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 15: pan (a stereo wave: balance)"
+   "description": "Zone 15: pan (a stereo wave: balance)",
+   "how": "Places zone 15 from 100 % left to 100 % right; a stereo wave is balanced instead.",
+   "sound": "Panning zones apart widens layered sounds or spreads a drum kit."
   },
   {
    "index": 297,
@@ -4124,7 +4718,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 15: where it starts, in % of the wave (the end, reversed)"
+   "description": "Zone 15: where it starts, in % of the wave (the end, reversed)",
+   "how": "Sets where zone 15 starts playing in the wave, from 0 to 100 %.",
+   "sound": "Moving the start skips a quiet or unwanted beginning and tightens the attack."
   },
   {
    "index": 298,
@@ -4138,7 +4734,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 15: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it"
+   "description": "Zone 15: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it",
+   "how": "Sets where zone 15 stops playing in the wave, from 0 to 100 %; a short fade avoids a click.",
+   "sound": "Moving the end trims off a tail, and an end before the start plays the wave backwards."
   },
   {
    "index": 299,
@@ -4155,7 +4753,9 @@
     "Forward",
     "Ping-pong"
    ],
-   "description": "Zone 15: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end"
+   "description": "Zone 15: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end",
+   "how": "Chooses the loop mode of zone 15: as the wave says, off, forward or ping-pong.",
+   "sound": "Looping holds a sound as long as the key is down, and ping-pong smooths the repeat by playing back and forth."
   },
   {
    "index": 300,
@@ -4169,7 +4769,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 15: loop start, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 15: loop start, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 15 begins, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 301,
@@ -4183,7 +4785,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 15: loop end, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 15: loop end, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 15 ends, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 302,
@@ -4198,7 +4802,9 @@
    "b": 1.0,
    "exponent": 3.0,
    "unit": "s",
-   "description": "Zone 15: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is"
+   "description": "Zone 15: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is",
+   "how": "Sets the length of the crossfade at the loop of zone 15, up to 1 second.",
+   "sound": "A longer crossfade hides the jump where the loop restarts, and zero leaves a possible click."
   },
   {
    "index": 303,
@@ -4213,7 +4819,9 @@
     "Gate",
     "One-shot"
    ],
-   "description": "Zone 15: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)"
+   "description": "Zone 15: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)",
+   "how": "Chooses whether zone 15 plays only while the key is held (Gate) or always to its end (One-shot).",
+   "sound": "Gate suits sustained instruments, and One-shot suits drums and effects that should play out."
   },
   {
    "index": 304,
@@ -4228,7 +4836,9 @@
     "Off",
     "On"
    ],
-   "description": "Zone 15: plays backwards, from its end to its start"
+   "description": "Zone 15: plays backwards, from its end to its start",
+   "how": "Plays zone 15 backwards.",
+   "sound": "Reversed samples swell into the note, which is useful for risers and transitions."
   },
   {
    "index": 305,
@@ -4240,7 +4850,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 15: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)"
+   "description": "Zone 15: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)",
+   "how": "Puts zone 15 in one of eight choke groups, or none; a new note fades out the others in its group.",
+   "sound": "Choke groups let a closed hat cut off an open hat, as on a real hat."
   },
   {
    "index": 306,
@@ -4253,7 +4865,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "wave",
-   "description": "Zone 16's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)"
+   "description": "Zone 16's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)",
+   "how": "Chooses the sound zone 16 plays: off, a wave slot of the song, or a built-in sample.",
+   "sound": "The wave is the raw material of the zone; each slot or sample has its own character."
   },
   {
    "index": 307,
@@ -4266,7 +4880,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 16: the lowest key it plays (Instrument mode)"
+   "description": "Zone 16: the lowest key it plays (Instrument mode)",
+   "how": "Sets the lowest key zone 16 plays in Instrument mode.",
+   "sound": "Together with the high key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 308,
@@ -4279,7 +4895,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 16: the highest key it plays (Instrument mode)"
+   "description": "Zone 16: the highest key it plays (Instrument mode)",
+   "how": "Sets the highest key zone 16 plays in Instrument mode.",
+   "sound": "Together with the low key it decides which part of the keyboard triggers this zone."
   },
   {
    "index": 309,
@@ -4291,7 +4909,9 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 16: the lowest velocity it plays (Instrument mode)"
+   "description": "Zone 16: the lowest velocity it plays (Instrument mode)",
+   "how": "Sets the lowest velocity zone 16 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 310,
@@ -4303,7 +4923,9 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 16: the highest velocity it plays (Instrument mode)"
+   "description": "Zone 16: the highest velocity it plays (Instrument mode)",
+   "how": "Sets the highest velocity zone 16 responds to in Instrument mode.",
+   "sound": "Zones with different velocity ranges give a soft layer and a hard layer on the same keys."
   },
   {
    "index": 311,
@@ -4316,7 +4938,9 @@
    "kind": "int",
    "a": 0.0,
    "unit": "note",
-   "description": "Zone 16: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)"
+   "description": "Zone 16: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)",
+   "how": "Sets the key at which zone 16 plays its sample at its original pitch, or lets the wave table decide.",
+   "sound": "The root tunes the sample to the keyboard; if it is wrong, every note sounds out of tune."
   },
   {
    "index": 312,
@@ -4330,7 +4954,9 @@
    "a": -48.0,
    "flag": true,
    "unit": "st",
-   "description": "Zone 16: transposition"
+   "description": "Zone 16: transposition",
+   "how": "Transposes zone 16 by up to 48 semitones either way.",
+   "sound": "Use it to move a sample up or down, or to layer an octave or a fifth."
   },
   {
    "index": 313,
@@ -4344,7 +4970,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "Zone 16: fine tune, in 0.1 cent steps"
+   "description": "Zone 16: fine tune, in 0.1 cent steps",
+   "how": "Detunes zone 16 by up to 100 cents in steps of 0.1 cent.",
+   "sound": "A few cents between layered zones give a slow, warm beating."
   },
   {
    "index": 314,
@@ -4359,7 +4987,9 @@
    "b": 12.0,
    "flag": true,
    "unit": "dB",
-   "description": "Zone 16: level"
+   "description": "Zone 16: level",
+   "how": "Sets the level of zone 16, from -48 to +12 dB, or off.",
+   "sound": "Use it to balance zones against each other."
   },
   {
    "index": 315,
@@ -4373,7 +5003,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 16: pan (a stereo wave: balance)"
+   "description": "Zone 16: pan (a stereo wave: balance)",
+   "how": "Places zone 16 from 100 % left to 100 % right; a stereo wave is balanced instead.",
+   "sound": "Panning zones apart widens layered sounds or spreads a drum kit."
   },
   {
    "index": 316,
@@ -4387,7 +5019,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 16: where it starts, in % of the wave (the end, reversed)"
+   "description": "Zone 16: where it starts, in % of the wave (the end, reversed)",
+   "how": "Sets where zone 16 starts playing in the wave, from 0 to 100 %.",
+   "sound": "Moving the start skips a quiet or unwanted beginning and tightens the attack."
   },
   {
    "index": 317,
@@ -4401,7 +5035,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 16: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it"
+   "description": "Zone 16: where it ends, in % of the wave (the start, reversed); it fades out over 2 ms before it",
+   "how": "Sets where zone 16 stops playing in the wave, from 0 to 100 %; a short fade avoids a click.",
+   "sound": "Moving the end trims off a tail, and an end before the start plays the wave backwards."
   },
   {
    "index": 318,
@@ -4418,7 +5054,9 @@
     "Forward",
     "Ping-pong"
    ],
-   "description": "Zone 16: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end"
+   "description": "Zone 16: Wave loops as the wavetable says (its loop points and type), Off plays through, Forward and Ping-pong loop between loop start and loop end",
+   "how": "Chooses the loop mode of zone 16: as the wave says, off, forward or ping-pong.",
+   "sound": "Looping holds a sound as long as the key is down, and ping-pong smooths the repeat by playing back and forth."
   },
   {
    "index": 319,
@@ -4432,7 +5070,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 16: loop start, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 16: loop start, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 16 begins, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 320,
@@ -4446,7 +5086,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Zone 16: loop end, in % of the wave (Forward, Ping-pong)"
+   "description": "Zone 16: loop end, in % of the wave (Forward, Ping-pong)",
+   "how": "Sets where the loop of zone 16 ends, from 0 to 100 % of the wave.",
+   "sound": "The loop points decide which part of the sample repeats while a note is held."
   },
   {
    "index": 321,
@@ -4461,7 +5103,9 @@
    "b": 1.0,
    "exponent": 3.0,
    "unit": "s",
-   "description": "Zone 16: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is"
+   "description": "Zone 16: a forward loop's crossfade (equal power), from the samples before loop start (after loop end, reversed); at most the loop's length and the room there is",
+   "how": "Sets the length of the crossfade at the loop of zone 16, up to 1 second.",
+   "sound": "A longer crossfade hides the jump where the loop restarts, and zero leaves a possible click."
   },
   {
    "index": 322,
@@ -4476,7 +5120,9 @@
     "Gate",
     "One-shot"
    ],
-   "description": "Zone 16: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)"
+   "description": "Zone 16: Gate plays while the note is held, then releases; One-shot plays to the end and ignores note-offs and loops (Kit mode is one-shot)",
+   "how": "Chooses whether zone 16 plays only while the key is held (Gate) or always to its end (One-shot).",
+   "sound": "Gate suits sustained instruments, and One-shot suits drums and effects that should play out."
   },
   {
    "index": 323,
@@ -4491,7 +5137,9 @@
     "Off",
     "On"
    ],
-   "description": "Zone 16: plays backwards, from its end to its start"
+   "description": "Zone 16: plays backwards, from its end to its start",
+   "how": "Plays zone 16 backwards.",
+   "sound": "Reversed samples swell into the note, which is useful for risers and transitions."
   },
   {
    "index": 324,
@@ -4503,7 +5151,9 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "description": "Zone 16: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)"
+   "description": "Zone 16: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)",
+   "how": "Puts zone 16 in one of eight choke groups, or none; a new note fades out the others in its group.",
+   "sound": "Choke groups let a closed hat cut off an open hat, as on a real hat."
   }
  ]
 }

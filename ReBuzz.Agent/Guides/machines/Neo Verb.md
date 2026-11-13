@@ -1,60 +1,56 @@
 ## How it sounds
 
-An algorithmic reverb with four spaces, dense and smooth (no flutter, decorrelated stereo tail), with exact decay times: the mid-band T60 measures within −5 % … +2 % of `Decay`. Modulation keeps long tails from ringing metallic; freeze holds a tail forever; shimmer feeds it back an octave up.
+An algorithmic reverb with four spaces, dense and smooth, with exact decay times: the mid-band decay measures within -5 % and +2 % of `Decay`. Modulation keeps long tails from ringing metallic, `Freeze` holds a tail forever and `Shimmer` feeds it back an octave up.
 
 | Mode | Character | Use it for |
 |---|---|---|
 | Hall | big, smooth, slow build | pads, strings, leads, long sends |
 | Room | short, early-reflection heavy | drums, percussion, a sense of place |
 | Chamber | dense and even, between room and hall | vocals, keys |
-| Plate | bright, instant density | snares, vocals, 80s drums |
+| Plate | bright, instant density | snares, vocals, drums |
 
-## Signal flow
+Path: `Pre-delay`, input `Diffusion`, `Early` reflections, a 16-line feedback network (`Size`, `Decay`, `Low decay`, `High damping`, `Mod depth`, `Mod rate`), `Late`, `Width`, `Low cut`, `High cut`, `Mix`. Every control has a How and a Sound sentence in `machine_describe`; `param_set` takes the name or the id.
 
-`Pre-delay` → input diffusion (`Diffusion`) → early reflections (`Early`) → a 16-line feedback network (`Size`, `Decay`, `Low decay` × the mid decay, `High damping`: above it the tail decays four times faster; `Mod depth`, `Mod rate`) → `Late` → `Width` → `Low cut`, `High cut` → `Mix`. `Freeze` sets the feedback to unity and stops new input; `Shimmer` pitch-shifts the feedback up 12 semitones.
+## Use it for
 
-## How to use it
+- A send reverb for a whole mix (`Mix` 100 %), a room on one drum or vocal (`Mix` 15-35 %), ambient pads with `Freeze` and `Shimmer`.
 
-- On a send: `Mix` 100 %, the send level on the connection into it. "Send — Hall (100% wet)" and "Send — Plate (100% wet)" are ready.
-- As an insert on one sound: `Mix` 15–35 %.
-- Pre-delay against tempo: 60000 ÷ BPM × the fraction of a beat (a 1/64 note at 124 BPM is 30 ms; 1/32 is 60 ms).
-- Decay against tempo: the tail should have fallen by the next downbeat or chord change: drums 1–2 beats, pads 1–2 bars.
-- Keep returns clean: `Low cut` 200–400 Hz, `High cut` 6–10 kHz.
-- Darker and farther: lower `High damping` (3–6 kHz). Warmer: `Low decay` 1.2–1.5×.
-
-A plate for snares and vocals on a send:
+## Key controls
 
 | Parameter | Value | Why |
 |---|---|---|
-| Mode | Plate | |
-| Decay | 1.6 s | |
-| Pre-delay | 20 ms | the attack stays dry |
-| High damping | 12 kHz | bright |
-| Low cut | 200 Hz | |
-| Mix | 100% | send |
+| Mode | Plate | Hall for pads, Room for drums, Chamber for vocals |
+| Decay | 1.6 s | gone by the next downbeat; 1-2 beats for drums, 1-2 bars for pads |
+| Pre-delay | 20 ms | the attack stays dry; 60000 / BPM x the beat fraction |
+| High damping | 12 kHz | lower (3-6 kHz) is darker and farther |
+| Low cut | 200 Hz | keeps the return clean; 200-400 Hz |
+| High cut | 8 kHz | 6-10 kHz keeps it from hissing |
+| Mix | 100% | on a send; 15-35 % as an insert |
 
-## Gotchas
+## Starting points
+
+- "Send — Hall (100% wet)", "Send — Plate (100% wet)", "Hall — Concert", "Room — Live Drums", "Chamber — Vocal", "Plate — Bright Vocal", "Plate — Snare".
+- Long and special: "Hall — Cathedral" (8 s), "Hall — Dark Strings", "Ambient — Shimmer", "Ambient — Infinite Pad", "Ambient — Long Dark Hall".
+- Warmer: `Low decay` 1.2-1.5 x. Darker and farther: `High damping` 3-6 kHz.
+
+## Pitfalls
 
 - `Freeze` On takes no new input: automate it with steps (On, then Off) so the reverb hears the next section.
-- `Shimmer` above 50 % with a long decay builds up: watch the level.
+- `Shimmer` above 50 % with a long decay builds up: watch the level with `machine_readings`.
 - `Width` above 100 % lowers the tail's correlation: check the mix in mono.
-- Long decays on sends add up across parts: high-pass and low-pass the return.
+- Long decays on sends add up across parts: filter the return with `Low cut` and `High cut`.
 
-## Preset map
+## Pairs well with
 
-| Preset | What |
-|---|---|
-| "Hall — Concert" | 2.4 s hall, 25 ms pre-delay |
-| "Hall — Cathedral" | 8 s, huge |
-| "Hall — Dark Strings" | 3.5 s, damped at 3.5 kHz |
-| "Room — Small Studio" | 0.6 s, close |
-| "Room — Live Drums" | 1.1 s, 120 Hz low cut |
-| "Chamber — Vocal" | 1.8 s, dense |
-| "Chamber — Echo Chamber" | 2.6 s |
-| "Plate — Bright Vocal" | 1.9 s, damped at 14 kHz |
-| "Plate — Snare" | 1.2 s, no pre-delay |
-| "Ambient — Shimmer" | 9 s with 45 % shimmer |
-| "Ambient — Infinite Pad" | 20 s, heavy modulation |
-| "Ambient — Long Dark Hall" | 6 s, damped at 2.5 kHz |
-| "Send — Hall (100% wet)" | 2.2 s hall for a send |
-| "Send — Plate (100% wet)" | 1.6 s plate for a send |
+- Neo Delay before it (echoes into a plate) or beside it on another send; Neo EQ on the return; Neo Comp with the reverb on input 2 to duck it under the source; Neo Gate on the return for a gated tail.
+
+## Successor
+
+Neo Verb replaces Jeskola Reverb and Pedal Plate: `machine_replace(machine="Reverb")` carries the settings over in their units.
+
+## Checklist
+
+- [ ] `param_set(machine="Verb", changes=[{"param": "Decay", "value": "1.6 s"}])`, then `render(probes=["Verb"])` and `analyze` its loudness: the wet level sits behind the dry sound.
+- [ ] `machine_readings(machine="Verb")` gives `rms_db` and `peak_db`: no clipping with `Shimmer` or `Freeze`.
+- [ ] `analyze(source="Verb", metrics=["stereo"])`: the correlation stays positive at the chosen `Width`.
+- [ ] `render` with `tail_seconds` longer than `Decay`, so the tail is not cut off.
