@@ -107,7 +107,10 @@ namespace ReBuzz.Agent
                     Kind = kind,
                     Description = st.Description ?? "",
                     Default = st.Default ?? "",
-                    Options = kind == SettingKind.Choice ? st.Options : null,
+                    Options = kind == SettingKind.Choice || kind == SettingKind.Int ? st.Options : null,
+                    OptionLabels = kind == SettingKind.Choice && value is Enum && st.Options != null
+                        ? st.Options.Select(o => value.GetType().GetField(o) is { } f && Attribute.GetCustomAttribute(f, typeof(System.ComponentModel.DescriptionAttribute)) is System.ComponentModel.DescriptionAttribute d ? d.Description : o.Replace('_', ' ')).ToArray()
+                        : null,
                     Min = min,
                     Max = max,
                     RestartRequired = (st.Description ?? "").Contains("restart", StringComparison.OrdinalIgnoreCase),

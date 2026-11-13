@@ -175,7 +175,11 @@ namespace NeoBuzz.Editor
         /// <summary>Shows or hides the keys; <paramref name="remember"/>: as this machine type's choice (KeyboardSettings).</summary>
         public void SetShown(bool value, bool remember = false)
         {
-            if (remember && machine.DLL?.Name is { Length: > 0 })
+            if (remember && own)
+            {
+                this.remember?.Invoke(value);
+            }
+            else if (remember && machine.DLL?.Name is { Length: > 0 })
             {
                 KeyboardSettings.Set(machine.DLL, value);      // this keyboard follows through Changed, with the gear's others
                 if (shown == value) return;
@@ -185,6 +189,20 @@ namespace NeoBuzz.Editor
             shown = value;
             Apply();
             HeightChanged?.Invoke(ExtraHeight - before);
+        }
+
+        bool own;
+        Action<bool> remember;
+
+        /// <summary>
+        /// This keyboard has a state of its own (the studio's device view: hidden at first, and remembered by that view alone): it
+        /// takes <paramref name="initial"/> now, passes a toggle to <paramref name="remember"/> and ignores the gear's choice.
+        /// </summary>
+        public void UseOwnState(bool initial, Action<bool> remember)
+        {
+            own = true;
+            this.remember = remember;
+            SetShown(initial);
         }
 
         void Apply()
@@ -316,12 +334,12 @@ namespace NeoBuzz.Editor
 
         void GearChanged(string gear)
         {
-            if (gear == machine.DLL?.Name) SetShown(KeyboardSettings.Shown(machine.DLL));
+            if (!own && gear == machine.DLL?.Name) SetShown(KeyboardSettings.Shown(machine.DLL));
         }
 
         void GeneralChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(BuzzGUI.Common.Settings.GeneralSettings.MachineKeyboard) || string.IsNullOrEmpty(e.PropertyName))
+            if (!own && e.PropertyName == nameof(BuzzGUI.Common.Settings.GeneralSettings.MachineKeyboard) || string.IsNullOrEmpty(e.PropertyName))
                 SetShown(KeyboardSettings.Shown(machine.DLL));
         }
 

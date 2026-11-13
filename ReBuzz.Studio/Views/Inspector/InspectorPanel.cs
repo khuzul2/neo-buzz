@@ -129,6 +129,7 @@ namespace ReBuzz.Studio.Views.Inspector
 
             // The clip panel of the Session View moves in here (the view keeps working without a window around it).
             clip = session?.MoveClipPanelToInspector(this);
+            session?.PropertyChanged += (s, e) => { if (e.Property == Avalonia.Visual.IsVisibleProperty || e.Property.Name == "IsEffectivelyVisible") Refresh(); };
             if (clip != null)
             {
                 clip.Margin = new Thickness(12, 0, 12, 0);
@@ -416,7 +417,9 @@ namespace ReBuzz.Studio.Views.Inspector
             if (clip != null)
             {
                 bool hasTrack = TrackOf(machine) != null;
-                clip.IsVisible = hasTrack;
+                // Only the cards the selection needs: a machine alone, in a view that isn't the Session's, has no clip to show.
+                bool wanted = hasTrack && (pattern != null || selection.Scene != null || session?.IsEffectivelyVisible == true);
+                clip.IsVisible = wanted;
                 if (hasTrack) clip.Follow(ClipSlot());
             }
         }

@@ -681,7 +681,8 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(prefs.Selected?.Title, Is.EqualTo(PreferencesWindow.AudioPageName), "on its page");
                 Assert.That(asked, Is.EqualTo(0), "the devices aren't asked for before the window shows");
                 var audio = prefs.Page<AudioPage>();
-                Assert.That(audio.LimiterBox.IsChecked, Is.True, "the rest of the page is there as it shows (no limiter shown off)");
+                prefs.Page<SafetyPage>().Show();
+                Assert.That(prefs.Page<SafetyPage>().LimiterBox.IsChecked, Is.True, "the Safety page is there as it shows (no limiter shown off)");
                 Assert.That(audio.SaysPortAudioIsMissing, Is.False, "nor PortAudio missing before it has been asked");
                 Assert.That(audio.OutputBox.Items.OfType<string>(), Has.None.Contains("not connected"), "nor the device not connected");
                 Settle(prefs);

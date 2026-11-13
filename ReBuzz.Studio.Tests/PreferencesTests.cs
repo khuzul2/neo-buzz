@@ -228,7 +228,7 @@ namespace ReBuzz.Studio.Tests
             {
                 // Pads is remembered from an earlier session, and isn't plugged in.
                 midi.SetMidiInputDevices(new Dictionary<string, int> { ["Pads"] = 1 });
-                var page = new MidiPage(midi, registry);
+                var page = new MidiPage(midi, registry, null);
                 window.Content = page;
                 window.Show();
                 page.Show();
@@ -261,7 +261,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(backend.Opened, Does.Contain("Pads"), "the others open again");
 
                 // A page anew shows what was saved.
-                var again = new MidiPage(midi, registry);
+                var again = new MidiPage(midi, registry, null);
                 again.Show();
                 Assert.That(again.Inputs.Select(r => (r.Name, r.Box.IsChecked)), Is.EqualTo(new[] { ("Keys", (bool?)false), ("Pads", (bool?)true) }));
                 Assert.That(again.Outputs.Single().Box.IsChecked, Is.True);
@@ -287,7 +287,7 @@ namespace ReBuzz.Studio.Tests
             Studio.Screenshot(prefs, "prefs-midi");
 
             // MIDISettings, generically: MIDI filtering off and on again.
-            var filtering = (CheckBox)page.SettingControl("MIDISettings/MIDIFiltering");
+            var filtering = (CheckBox)page.SettingControl("midi.MIDIFiltering");
             Assert.That(filtering.IsChecked, Is.EqualTo(Global.MIDISettings.MIDIFiltering));
             bool was = Global.MIDISettings.MIDIFiltering;
             try
@@ -364,15 +364,18 @@ namespace ReBuzz.Studio.Tests
             var prefs = Open("General");
             var page = prefs.Page<GeneralPage>();
             Studio.Screenshot(prefs, "prefs-general");
-            Assert.That(page.SettingControl("GeneralSettings/WPFSoftwareRendering"), Is.Null, "WPF's own aren't shown");
-            Assert.That(page.SettingControl("EngineSettings/AudioBufferFillThread"), Is.Null);
+            Assert.That(page.SettingControl("general.WPFSoftwareRendering"), Is.Null, "WPF's own aren't shown");
+            var advanced = prefs.Page<AdvancedPage>();
+            prefs.ShowPage("Advanced");         // a page shows its settings when it is shown
+            Settle(prefs);
+            Assert.That(advanced.SettingControl("advanced.AudioBufferFillThread"), Is.Null);
 
             var engine = Global.EngineSettings;
             var general = Global.GeneralSettings;
             bool panning = engine.EqualPowerPanning;
             var wait = general.SongLoadWait;
-            var panningBox = (CheckBox)page.SettingControl("EngineSettings/EqualPowerPanning");
-            var waitBox = (ComboBox)page.SettingControl("GeneralSettings/SongLoadWait");
+            var panningBox = (CheckBox)advanced.SettingControl("advanced.EqualPowerPanning");
+            var waitBox = (ComboBox)page.SettingControl("general.SongLoadWait");
             Assert.That(panningBox.Content, Is.EqualTo("Equal power panning"));
             try
             {
@@ -389,8 +392,11 @@ namespace ReBuzz.Studio.Tests
 
                 prefs = Open("General");
                 page = prefs.Page<GeneralPage>();
-                Assert.That(((CheckBox)page.SettingControl("EngineSettings/EqualPowerPanning")).IsChecked, Is.EqualTo(!panning));
-                Assert.That(((ComboBox)page.SettingControl("GeneralSettings/SongLoadWait")).SelectedIndex, Is.EqualTo(index));
+                advanced = prefs.Page<AdvancedPage>();
+                prefs.ShowPage("Advanced");
+                Settle(prefs);
+                Assert.That(((CheckBox)advanced.SettingControl("advanced.EqualPowerPanning")).IsChecked, Is.EqualTo(!panning));
+                Assert.That(((ComboBox)page.SettingControl("general.SongLoadWait")).SelectedIndex, Is.EqualTo(index));
             }
             finally
             {
@@ -414,8 +420,8 @@ namespace ReBuzz.Studio.Tests
             var saved = general.NoteNames;
             var prefs = Open("General");
             var page = prefs.Page<GeneralPage>();
-            var box = (ComboBox)page.SettingControl("GeneralSettings/NoteNames");
-            var octaveBox = (ComboBox)page.SettingControl("GeneralSettings/DefaultMachineBaseOctave");
+            var box = (ComboBox)page.SettingControl("general.NoteNames");
+            var octaveBox = (ComboBox)page.SettingControl("general.DefaultMachineBaseOctave");
             try
             {
                 Assert.That(box, Is.Not.Null, "General ▸ Note names");

@@ -189,7 +189,7 @@ namespace ReBuzz.Studio.Tests
             try
             {
                 var page = prefs.Pages.OfType<AppearancePage>().Single();
-                var combo = (ComboBox)page.SettingControl("AppearanceSettings/Theme");
+                var combo = (ComboBox)page.SettingControl("appearance.Theme");
                 Settle();
                 var labels = combo.Items.Cast<ComboBoxItem>().Select(i => (string)i.Content!).ToArray();
                 Assert.That(labels, Is.EqualTo(new[] { "Dark", "Classic Buzz" }), "Dark and Classic Buzz, the other no third-party name");

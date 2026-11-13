@@ -1038,10 +1038,10 @@ namespace ReBuzz.Studio.Tests
                 });
                 Try("321-prefs-safety-question", () =>
                 {
-                    prefs.ShowPage("Audio");
-                    var audio = prefs.Page<AudioPage>();
-                    DialogOnOpen(prefs, () => audio.LimiterBox.IsChecked = false, "321-prefs-safety-question", "The safety question before the limiter goes off (Preferences ▸ Audio ▸ Safety): Turn Off or Keep On, Keep On on Return and Escape.",
-                        "Preferences ▸ Audio: untick Safety limiter.", notes: Devices);
+                    prefs.ShowPage("Safety");
+                    var audio = prefs.Page<SafetyPage>();
+                    DialogOnOpen(prefs, () => audio.LimiterBox.IsChecked = false, "321-prefs-safety-question", "The safety question before the limiter goes off (Preferences ▸ Safety): Turn Off or Keep On, Keep On on Return and Escape.",
+                        "Preferences ▸ Safety: untick Safety limiter.", notes: Devices);
                     Settle();
                 });
                 prefs.Close();
