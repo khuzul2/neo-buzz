@@ -137,7 +137,19 @@ namespace ReBuzz.AppViews
                 .Select(p => (JsonNode)new JsonObject { ["param"] = p.Label, ["range"] = p.SafeRange.Text, ["marked"] = editor.Controls[p] is Knob k && k.Safe != null }).ToArray());
 
             // A typed value, as param_set reads it: the middle of the first knob's range, in its own text.
-            var typed = face.Params.FirstOrDefault(p => p.Control == FaceControl.Knob && p.Max > p.Min && (p.SafeRange == null || p.SafeRange.Contains((p.Min + p.Max) / 2)));
+            // A machine's own text ("7FFF (0.0 dB)") is what a knob shows; param_set reads a value in the manifest's unit, so a
+            // parameter whose own text isn't also a unit value can't be typed back and is left out of this check.
+            bool Resolves(FaceParam p)
+            {
+                try
+                {
+                    var ap = server.First(x => x.Name == p.Name && x.IsTrack == p.IsTrack);
+                    ValueResolver.Resolve(ap.Info, JsonValue.Create(p.Text((p.Min + p.Max) / 2)), ap.Parameter.GetValue(0));
+                    return true;
+                }
+                catch (Exception) { return false; }
+            }
+            var typed = face.Params.FirstOrDefault(p => p.Control == FaceControl.Knob && p.Max > p.Min && (p.SafeRange == null || p.SafeRange.Contains((p.Min + p.Max) / 2)) && Resolves(p));
             if (typed != null)
             {
                 var ap = server.First(x => x.Name == typed.Name && x.IsTrack == typed.IsTrack);

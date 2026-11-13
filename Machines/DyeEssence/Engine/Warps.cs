@@ -11,6 +11,7 @@
 // are smooth: Asym, Window sync, FM, PM, AM, Ring, and Mirror, which crossfades the plain read with
 // a palindrome read (forward to the half and back) whose turns are smooth.
 
+using NeoBuzz.Dsp;
 using System;
 using System.Runtime.CompilerServices;
 
@@ -21,13 +22,19 @@ namespace NeoBuzz.DyeEssence
 
     internal static class Warps
     {
+        /// <summary>
+        /// Neo Learn's phase distortion (12): a warp the engine runs but Dye Essence's controls do not offer, so it is not a member of <see cref="Warp"/> (whose members
+        /// Dye's tests and manifest enumerate: its edged warps are checked for their alias floors by name). A Learn machine turns it on through <c>OscSettings.PdOn</c>.
+        /// </summary>
+        public const Warp Pd = (Warp)12;
+
         /// <summary>FM's depth at full amount: the increment swings ±4 times its own (through zero).</summary>
         public const float FmDepth = 4f;
         /// <summary>PM's depth at full amount: the phase moves ±1 cycle for a full-scale modulator.</summary>
         public const float PmDepth = 1f;
 
         public static bool UsesModulator(Warp w) => w == Warp.Fm || w == Warp.Pm || w == Warp.Am || w == Warp.Ring;
-        public static bool MapsPhase(Warp w) => w >= Warp.BendPlus && w <= Warp.WindowSync && w != Warp.Mirror;
+        public static bool MapsPhase(Warp w) => w >= Warp.BendPlus && w <= Warp.WindowSync && w != Warp.Mirror || w == Pd;
 
         /// <summary>Bend's curve parameter: f(p) = p / (b + p (1 − b)); b = 2^(3a) for Bend+, its inverse for Bend−.</summary>
         public static float BendB(Warp w, float a)
@@ -55,6 +62,7 @@ namespace NeoBuzz.DyeEssence
                 case Warp.Pm: return 1f + 2f * MathF.PI * PmDepth * a * MathF.Max(1f, modRatio);
                 case Warp.Am:
                 case Warp.Ring: return a > 0 ? 1f + modRatio : 1f;
+                case Pd: return 1f + (PdMaxSlope - 1f) * a;
                 default: return 1f;
             }
         }
@@ -78,6 +86,7 @@ namespace NeoBuzz.DyeEssence
                 case Warp.Fm: k0 = FmDepth * a; break;
                 case Warp.Am: k0 = a; k1 = 1f / (1f + a); break;
                 case Warp.Ring: k0 = a; break;
+                case Pd: k0 = a; break;   // k1 (the shape's row in the table) is set by the caller, which knows the shape
             }
         }
 
@@ -107,6 +116,17 @@ namespace NeoBuzz.DyeEssence
                 }
                 case Warp.Pm:
                     return TL.Add(p, TL.Mul(k0, m));
+                case Pd:
+                {
+                    // p + a (T(p) − p): T is the shape's phase-read geometry at full bend, in a 256-segment table (k1: its row's first index)
+                    TF pos = TL.Mul(p, TL.Splat(256f));
+                    TU i0 = TL.Truncate(pos);
+                    TF x = TL.Sub(pos, TL.IntToFloat(i0));
+                    TU idx = TL.AddU(i0, TL.Truncate(k1));
+                    TF t0 = TL.Gather(PdTable, 0, idx), t1 = TL.Gather(PdTable, 0, TL.AddU(idx, TL.SplatU(1u)));
+                    TF target = TL.Add(t0, TL.Mul(TL.Sub(t1, t0), x));
+                    return TL.Add(p, TL.Mul(k0, TL.Sub(target, p)));
+                }
                 default:
                     return p;
             }
@@ -132,6 +152,112 @@ namespace NeoBuzz.DyeEssence
                 default:
                     return y;
             }
+        }
+
+        /// <summary>Neo Learn's phase distortion (L2b): the shapes (Saw, Square, Narrow Pulse, Double Sine, Saw-Pulse, Trapezoid), each a row of <see cref="PdRow"/> knots of the phase-read geometry T(p) at full bend.</summary>
+        public const int PdShapes = 6, PdRow = 257;
+
+        /// <summary>The steepest part of any shape's T (the phase runs this many times faster there): the mip level's guard.</summary>
+        public const float PdMaxSlope = 16f;
+
+        public static readonly float[] PdTable = BuildPd();
+
+        static float[] BuildPd()
+        {
+            var t = new float[PdShapes * PdRow];
+            for (int s = 0; s < PdShapes; s++)
+                for (int i = 0; i < PdRow; i++) t[s * PdRow + i] = (float)PdTarget(s, i / 256.0);
+            return t;
+        }
+
+        /// <summary>
+        /// Shape <paramref name="shape"/>'s phase-read geometry at full bend, T(p) from 0 to 1 (Double Sine to 2): the cosine's phase runs where T says, so 0 % bend reads the
+        /// wave evenly and 100 % reads part of the cycle much faster than the rest. Saw: half the cycle in the first 1/32 of the period; Square: a quarter cycle up, held, back down,
+        /// held; Narrow Pulse: the whole cycle in the first tenth, then still; Double Sine: twice the cycle; Saw-Pulse: a saw's first half, a pulse's second; Trapezoid: the Square's
+        /// edges stretched to a fifth of the period.
+        /// </summary>
+        public static double PdTarget(int shape, double p)
+        {
+            const double e = 8.0 / 256, wide = 52.0 / 256, q = 26.0 / 256;
+            switch (shape)
+            {
+                case 0: return Saw(p, e);
+                case 1: return Square(p, e);
+                case 2: return Pulse(p, q);
+                case 3: return 2 * p;
+                case 4: return p < 0.5 ? 0.5 * Saw(2 * p, e) : 0.5 + 0.5 * Pulse(2 * p - 1, q);
+                default: return Square(p, wide);
+            }
+        }
+
+        static double Saw(double p, double m) => p < m ? 0.5 * p / m : 0.5 + 0.5 * (p - m) / (1 - m);
+
+        static double Pulse(double p, double q) => p < q ? p / q : 1;
+
+        static double Square(double p, double e)
+        {
+            if (p < e) return 0.25 * p / e;
+            if (p < 0.5) return 0.25;
+            if (p < 0.5 + e) return 0.25 + 0.5 * (p - 0.5) / e;
+            if (p < 1 - e) return 0.75;
+            return 0.75 + 0.25 * (p - (1 - e)) / e;
+        }
+
+        /// <summary>
+        /// Neo Learn's wavefolder (L2a): <paramref name="stages"/> triangle folds in series, each of gain <paramref name="g"/> (1: the wave passes untouched
+        /// while it stays inside ±1), the first after a DC offset <paramref name="bias"/> (the symmetry). One stage is y = 4 |frac(u/4 + 3/4) − 1/2| − 1 of
+        /// u = g y: the identity inside ±1, then reflected at ±1, ±3, … So a wave that grows past the edge folds back instead of clipping, and every stage
+        /// leaves the output in [−1, 1]. An input that is not finite becomes 0.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static TF Fold<TL, TF, TU>(TF y, int stages, TF g, TF bias)
+            where TL : struct, ILanes<TF, TU> where TF : struct where TU : struct
+        {
+            TF zero = TL.Splat(0f), quarter = TL.Splat(0.25f), threeQuarter = TL.Splat(0.75f), half = TL.Splat(0.5f), four = TL.Splat(4f), one = TL.Splat(1f);
+            TF lim = TL.Splat(64f), nlim = TL.Splat(-64f);
+            y = TL.Add(y, bias);
+            // NaN and infinities fail the comparison and become 0; the rest is kept in range for the truncation
+            y = TL.Select(TL.Greater(TL.Splat(1e8f), TL.Mul(y, y)), y, zero);
+            y = TL.Select(TL.Greater(y, lim), lim, TL.Select(TL.Greater(nlim, y), nlim, y));
+            for (int s = 0; s < stages; s++)
+            {
+                TF v = Wrap<TL, TF, TU>(TL.Add(TL.Mul(TL.Mul(y, g), quarter), threeQuarter));
+                TF d = TL.Sub(v, half);
+                d = TL.Select(TL.Greater(zero, d), TL.Sub(zero, d), d);
+                y = TL.Sub(TL.Mul(four, d), one);
+            }
+            return y;
+        }
+
+        /// <summary>
+        /// Fold bandwidth: the folds' total gain times the lane's frequency (as a fraction of the oversampled rate) up to which the spectrum a fold makes fits
+        /// under the oversampled Nyquist with room for its decay. Measured on the Wavefolder machine (notes 30 to 96, 1 to 6 stages, FM 0 and 100 %): 0.022 leaves
+        /// the alias under -40 dB against the loudest harmonic in all but 3 of 1206 settings (worst -31 dB). The fold's corners make the alias floor jagged in the
+        /// gain, so a higher bandwidth is not simply a little worse: 0.028 has 15 settings above -40 dB, the worst at -12 dB.
+        /// </summary>
+        public const double FoldBandwidth = 0.022;
+
+        /// <summary>
+        /// The stage gain <paramref name="g"/> of a fold of <paramref name="stages"/> stages, lowered (all stages alike) where g^stages × the pitch
+        /// (<paramref name="inc"/>, a phase step in units of 2^−32 cycles, FM's swing included) would pass <see cref="FoldBandwidth"/>. Never below 1, never above g.
+        /// Continuous in both, so neither a drive sweep nor a glide jumps.
+        /// </summary>
+        public static float FoldLimit(float g, int stages, double inc)
+        {
+            if (stages <= 0 || g <= 1f) return 1f;
+            double cap = FoldBandwidth * 4294967296.0 / Math.Max(1.0, inc);   // the total gain this pitch allows
+            double total = 1.0;
+            for (int s = 0; s < stages; s++) total *= g;
+            if (total <= cap) return g;
+            return (float)Math.Max(1.0, PortableMath.Pow(cap, 1.0 / stages));
+        }
+
+        /// <summary>How much faster than the plain wave a fold of <paramref name="stages"/> at stage gain <paramref name="g"/> reads through its table (the bandwidth it adds), for the mip level.</summary>
+        public static float FoldSpeed(int stages, float g)
+        {
+            double total = 1.0;
+            for (int s = 0; s < stages; s++) total *= Math.Max(1f, g);
+            return (float)Math.Min(1.0 + 2.0 * (total - 1.0), 48.0);
         }
 
         /// <summary>

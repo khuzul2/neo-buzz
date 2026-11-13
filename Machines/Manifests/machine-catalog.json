@@ -751,6 +751,16 @@
    ],
    "use_for": "A teaching FM synth: electric-piano tines, glass bells and growling basses from an exact modulator ratio, depth and feedback."
   },
+  "Neo Learn Formant": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "vocal",
+    "polyphonic",
+    "pad"
+   ],
+   "use_for": "A teaching vowel synth: choirs, talking low voices and whispers from four formant filters that move across A, E, I, O and U, with tract size, Q and a talking envelope."
+  },
   "Neo Learn Granular": {
    "category": "Synths",
    "tags": [
@@ -773,6 +783,17 @@
    ],
    "use_for": "A teaching physical-modelling synth: marimbas, plucked strings, glass bowls and bowed or breathy tones from a material, a mallet-pick-bow exciter morph and a string-tube-bar-plate geometry."
   },
+  "Neo Learn String": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "physical-model",
+    "polyphonic",
+    "pluck",
+    "keys"
+   ],
+   "use_for": "A teaching plucked-string synth (Karplus-Strong): harps, guitars, harpsichords and bells from a pick position, damping, a decay time that holds at any note, stiffness and sympathetic strings."
+  },
   "Neo Learn Subtractive": {
    "category": "Synths",
    "tags": [
@@ -784,6 +805,44 @@
     "pad"
    ],
    "use_for": "Learn subtractive synthesis: one oscillator, a sub and a resonant filter, every control explained."
+  },
+  "Neo Learn Phase Distortion": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "polyphonic",
+    "bright"
+   ],
+   "use_for": "A teaching phase-distortion synth: rubbery basses, digital plucks and glassy keys from a bent cosine with six read shapes, a decaying bend, a resonant sweep, ring modulation and a warm chorus."
+  },
+  "Neo Learn Sampler": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "polyphonic",
+    "sampler"
+   ],
+   "use_for": "A teaching sampler: lo-fi keys, pads and drones from one sample (five built in, or your own WAV) with a start offset, a tone tilt, a crossfaded loop, vintage grit and a small room."
+  },
+  "Neo Learn Vector": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "polyphonic",
+    "pad",
+    "lush"
+   ],
+   "use_for": "A teaching vector synth: evolving pads and textures from four sources at the corners of a diamond, a cursor that mixes them and an orbit that moves it by itself."
+  },
+  "Neo Learn Wavefolder": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "gritty",
+    "polyphonic",
+    "pluck"
+   ],
+   "use_for": "A teaching wavefolder: metallic low tones, bongo-like plucks and sizzling leads from one to six folding stages, a symmetry offset, timbre FM and a low-pass gate."
   },
   "Neo Learn Wavetable": {
    "category": "Synths",

@@ -81,11 +81,26 @@ namespace NeoBuzz.DyeEssence
         /// </summary>
         public float GrainMorph = -1f, GrainOctave, ExciterMorph = -1f, GeomBlend;
         public int GeomTo;
+        /// <summary>
+        /// Neo Learn L2a's additions (append only, off by default). TypeExt (> 0) makes the slot another type than the one Dye Essence's controls choose
+        /// (SlotType.String). The String engine (StringEngine.cs): StrPick (0 bridge … 1 middle) places the comb the pluck gets, StrDamp (0 … 1) the loop's
+        /// low-pass, StrHard (0 … 1) the pluck's length and brightness, StrDecay the time for the fundamental to fall 60 dB (s), StrStiff (0 … 1) the
+        /// dispersion, StrSymp (0 … 1) the sympathetic strings. The wavefolder (Warps.Fold, after the slot's warps): FoldStages (0: off, 1 … 6),
+        /// FoldDrive (0 … 1, the stages' gain) and FoldSym (−1 … 1, the offset before the first).
+        /// </summary>
+        public int TypeExt, FoldStages;
+        /// <summary>Neo Learn L2b's additions (append only, neutral at their defaults): the phase distortion's shape (Warp.Pd, 0 … 5: Warps.PdTarget) and a level the host moves between ticks (the Vector machine's corner weights; Dye Essence's own Level stays what its controls say).</summary>
+        public int PdShape;
+        public bool PdOn;
+        public float LevelExt = 1f;
+        public float StrPick = 0.3f, StrDamp = 0.3f, StrHard = 0.5f, StrDecay = 3f, StrStiff, StrSymp, FoldDrive, FoldSym;
     }
 
     internal sealed class SourceSettings
     {
         public float Level, Pan, ToF2;
+        /// <summary>Neo Learn L2b: a level the host moves between ticks (multiplies <see cref="Level"/>; 1 leaves it).</summary>
+        public float LevelExt = 1f;
     }
 
     internal sealed class FilterSettings
@@ -93,6 +108,14 @@ namespace NeoBuzz.DyeEssence
         public FilterType Type;
         /// <summary>Hz; resonance 0 … 1; drive as a gain (1: none); envelope, key and velocity in octaves (key: per octave played).</summary>
         public float Cutoff = 1000, Reso, Drive = 1, Env, Key, Vel;
+        /// <summary>
+        /// Neo Learn L2a's filter types (append only; 0: the type Dye Essence's controls choose). Kind 1 is the vowel filter (FilterType.Vowel): Morph
+        /// (0 … 1, a … e … i … o … u), Tract (−1 … 1, the formants' scale), Q (0 … 1, bandwidth from wide to narrow) and EnvMod (−1 … 1, the filter
+        /// envelope's sweep of Morph). Kind 2 is the low-pass gate (FilterType.Lpg): Mode (0 … 1, an open gate … a gate that follows its own optical
+        /// memory) and Strike (0 … 1, the blow at note-on).
+        /// </summary>
+        public int Kind;
+        public float Morph, Tract, Q, EnvMod, Mode, Strike;
     }
 
     internal sealed class BankSettings
@@ -180,7 +203,7 @@ namespace NeoBuzz.DyeEssence
         public readonly BankSettings S = new BankSettings();
 
         /// <summary>The engines, by <see cref="SlotType"/> (Off has none).</summary>
-        public readonly IEngine[] Engines = { null, new WavetableEngine(), new AnalogEngine(), new SampleEngine(), new GranularEngine(), new HarmonicEngine(), new ModalEngine() };
+        public readonly IEngine[] Engines = { null, new WavetableEngine(), new AnalogEngine(), new SampleEngine(), new GranularEngine(), new HarmonicEngine(), new ModalEngine(), new StringEngine() };
         public AnalogEngine Analog => (AnalogEngine)Engines[(int)SlotType.Analog];
 
         IEngine EngineOf(OscSettings os) => (int)os.Type < Engines.Length ? Engines[(int)os.Type] : null;
@@ -365,7 +388,7 @@ namespace NeoBuzz.DyeEssence
             {
                 var os = s.Osc[o];
                 int b = SmOsc + 5 * o;
-                smTarget[b] = Math.Max(0f, os.Level);
+                smTarget[b] = Math.Max(0f, os.Level * os.LevelExt);
                 smTarget[b + 1] = DspMath.Clamp(os.ToF2, 0f, 1f);
                 smTarget[b + 2] = DspMath.Clamp(EngineOf(os)?.PositionOf(os) ?? 0f, 0f, 1f);
                 smTarget[b + 3] = DspMath.Clamp(os.Amount1, 0f, 1f);
@@ -378,9 +401,9 @@ namespace NeoBuzz.DyeEssence
                 smTarget[SmFilter + 3 * f + 1] = DspMath.Clamp(fs.Reso, 0f, 1f);
                 smTarget[SmFilter + 3 * f + 2] = Math.Max(1f, fs.Drive);
             }
-            smTarget[SmSub] = Math.Max(0f, s.Sub.Level);
+            smTarget[SmSub] = Math.Max(0f, s.Sub.Level * s.Sub.LevelExt);
             smTarget[SmSub + 1] = DspMath.Clamp(s.Sub.ToF2, 0f, 1f);
-            smTarget[SmNoise] = Math.Max(0f, s.Noise.Level);
+            smTarget[SmNoise] = Math.Max(0f, s.Noise.Level * s.Noise.LevelExt);
             smTarget[SmNoise + 1] = DspMath.Clamp(s.Noise.ToF2, 0f, 1f);
             smTarget[SmRouting] = DspMath.Clamp(s.Routing, 0f, 1f);
             smTarget[SmVolume] = Math.Max(0f, s.Volume);
@@ -908,7 +931,7 @@ namespace NeoBuzz.DyeEssence
                 var os = s.Osc[o];
                 int u = Plays(os) ? Math.Clamp(os.Unison, 1, MaxUnison) : 0;
                 playU[o] = u;
-                warped[o] = u > 0 && (os.Warp1 != Warp.None || os.Warp2 != Warp.None || os.Feedback > 0f);
+                warped[o] = u > 0 && (os.Warp1 != Warp.None || os.Warp2 != Warp.None || os.Feedback > 0f || os.FoldStages > 0);
                 if (u > 0) Shape(o, u, os);
             }
             for (int o = 0; o < Oscillators; o++)
@@ -1011,6 +1034,7 @@ namespace NeoBuzz.DyeEssence
                     float modRatio = (float)(modHz / Math.Max(1e-9, noteHz * oscRatio[o]));
                     double speed = Warps.Speed(os.Warp1, Amount(note, o, 0), modRatio) * Warps.Speed(os.Warp2, Amount(note, o, 1), modRatio);
                     if (os.Feedback > 0f) speed *= 1.0 + 2.0 * Math.PI * os.Feedback;   // the feedback moves the phase like a PM at its own pitch
+                    if (os.FoldStages > 0) speed *= Warps.FoldSpeed(os.FoldStages, 1f + FoldGainAt(os.FoldDrive));   // the folds add bandwidth
                     level = Wavetable.LevelFor(top * speed, limitWarp);
                     SetWarps(ref warpSet[note * Oscillators + o], os, Amount(note, o, 0), Amount(note, o, 1), m, TableArena.Log2(level));
                 }
@@ -1216,11 +1240,16 @@ namespace NeoBuzz.DyeEssence
             w.W2 = w2;
             Warps.Constants(w1, amount1, out w.K10, out w.K11);
             Warps.Constants(w2, amount2, out w.K20, out w.K21);
+            if (w1 == Warps.Pd) w.K11 = Math.Clamp(os.PdShape, 0, Warps.PdShapes - 1) * Warps.PdRow;
+            if (w2 == Warps.Pd) w.K21 = Math.Clamp(os.PdShape, 0, Warps.PdShapes - 1) * Warps.PdRow;
             w.Fm = (w1 == Warp.Fm ? w.K10 : 0f) + (w2 == Warp.Fm ? w.K20 : 0f);
             w.Feedback = os.Feedback;
+            w.FoldStages = os.FoldStages > 0 ? Math.Min(os.FoldStages, 6) : 0;
+            w.FoldG = 1f + FoldGainAt(os.FoldDrive);
+            w.FoldBias = 0.5f * Math.Clamp(os.FoldSym, -1f, 1f);
             w.UsesMod = mod >= 0 && (Warps.UsesModulator(w1) || Warps.UsesModulator(w2));
-            w.Wrap1 = w1 == Warp.Pm;
-            w.Wrap2 = w2 == Warp.Pm;
+            w.Wrap1 = w1 == Warp.Pm || w1 == Warps.Pd;
+            w.Wrap2 = w2 == Warp.Pm || w2 == Warps.Pd;
             w.MapsPhase = Warps.MapsPhase(w1) || Warps.MapsPhase(w2) || w.Wrap1 || w.Wrap2;
             w.Amplitude = IsAmplitude(w1) || IsAmplitude(w2);
             w.Mirror = w1 == Warp.Mirror || w2 == Warp.Mirror;
@@ -1228,6 +1257,9 @@ namespace NeoBuzz.DyeEssence
             w.Log2Len = log2;
             w.ModKind = mod == Oscillators ? 1 : mod == Oscillators + 1 ? 2 : 0;
         }
+
+        /// <summary>Each fold stage's gain over 1 at Wavefold <paramref name="drive"/> (0 … 1): 2.2 at the top.</summary>
+        public static float FoldGainAt(float drive) => 2.2f * Math.Clamp(drive, 0f, 1f);
 
         static bool IsAmplitude(Warp w) => w == Warp.WindowSync || w == Warp.Am || w == Warp.Ring;
 
@@ -1300,6 +1332,8 @@ namespace NeoBuzz.DyeEssence
                 var t = type[f];
                 if (t == FilterType.Off) continue;
                 var fs = s.Filter[f];
+                if (t == FilterType.Vowel) { VowelControl(note, fs, fe, invCount, vr); continue; }
+                if (t == FilterType.Lpg) { LpgControl(note, fs, fe, invCount, vr); continue; }
                 double oct = fs.Env * fe + fs.Key * (key - 60f) / 12f - fs.Vel * (1f - vel) + Sm(SmFilter + 3 * f) + 6f * Md(note, RouteDest.F1Cutoff + f);
                 float reso = Math.Clamp(Sm(SmFilter + 3 * f + 1) + Md(note, RouteDest.F1Reso + f), 0f, 1f);
                 var cur = coefCur[f];
@@ -1433,6 +1467,10 @@ namespace NeoBuzz.DyeEssence
             float drive = Sm(SmFilter + 3 * f + 2);
             if (t == FilterType.Off)
                 NoteFilters.RunOff<TL, TF, TU>(aL, aR, bL, bR, mix, outL, outR, Notes, g, count);
+            else if (t == FilterType.Vowel)
+                RunVowel(aL, aR, bL, bR, mix, outL, outR, g, count, drive);
+            else if (t == FilterType.Lpg)
+                RunLpg(aL, aR, bL, bR, mix, outL, outR, g, count);
             else if (NoteFilters.IsLadder(t))
                 NoteFilters.RunLadder<TL, TF, TU>(aL, aR, bL, bR, mix, outL, outR, Notes, g, count, coefCur[f], coefStep[f], filterState[f], drive, t == FilterType.Ladder12);
             else if (NoteFilters.IsComb(t))

@@ -181,6 +181,20 @@ CASES = [
     gen("learn-grain-octave-glow", "Neo Learn Granular", "Pad — Octave Glow", [], CHORDS),
     gen("learn-phys-rosewood", "Neo Learn Physical", "Marimba — Rosewood", [], KEYS),
     gen("learn-phys-cello-bow", "Neo Learn Physical", "Bow — Cello Strings", [], BASS),
+    # Neo Learn L2a: String (Karplus-Strong, sympathetic strings), Formant (vowel bank) and Wavefolder (fold stages, gate).
+    gen("learn-string-nylon", "Neo Learn String", "Pluck — Nylon Guitar", [], KEYS),
+    gen("learn-string-sitar-drone", "Neo Learn String", "Pad — Sitar Drone", [], CHORDS),
+    gen("learn-formant-ah-pad", "Neo Learn Formant", "Choir — Ah Pad", [], CHORDS),
+    gen("learn-formant-wah-talker", "Neo Learn Formant", "Bass — Wah Talker", [], BASS),
+    gen("learn-fold-metal-sub", "Neo Learn Wavefolder", "Bass — Metal Sub", [], BASS),
+    gen("learn-fold-bongo-ping", "Neo Learn Wavefolder", "Pluck — Bongo Ping", [], KEYS),
+    # Neo Learn L2b: Phase Distortion (the Pd warp, ring, window sync, chorus), Vector (the orbit) and Sampler (start, loop, tone, grit, room).
+    gen("learn-pd-bent-saw", "Neo Learn Phase Distortion", "Lead — Bent Saw", [], LEAD),
+    gen("learn-pd-ring-glass", "Neo Learn Phase Distortion", "Bell — Ring Glass", [], BELLS),
+    gen("learn-vector-poly-drift", "Neo Learn Vector", "Pad — Poly Drift", [], CHORDS),
+    gen("learn-vector-diamond-steps", "Neo Learn Vector", "Seq — Diamond Steps", [], BASS),
+    gen("learn-sampler-choir-loop", "Neo Learn Sampler", "Pad — Choir Loop", [], CHORDS),
+    gen("learn-sampler-lofi-keys", "Neo Learn Sampler", "Pluck — Lo-fi Keys", [], KEYS),
     # Dye Essence P2: the Sample engine (looped, eight-voice unison, one-shot, reversed, two slots) and the
     # Granular engine (frozen, scanning, a spray of pitched grains with reversed ones); the grain clouds and
     # the sample recipes are built from the portable maths, so every platform renders the same.
