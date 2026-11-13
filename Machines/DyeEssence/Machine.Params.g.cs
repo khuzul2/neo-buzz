@@ -31,7 +31,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "Volume", Description = "Output level", MinValue = 0, MaxValue = 1000, DefValue = 739)]
         public int Volume { get => Values[P.Volume]; set => Values.Set(P.Volume, value); }
 
-        [ParameterDecl(Name = "A engine", Description = "What slot A plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, or a struck, plucked or bowed resonating body (samples, grains, partials and bodies take no warps)", MinValue = 0, MaxValue = 6, DefValue = 1)]
+        [ParameterDecl(Name = "A engine", Description = "What slot A plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, a struck, plucked or bowed resonating body, or the resynthesis of a sample from its analysed partials and noise (samples, grains, partials, bodies and resynthesis take no warps)", MinValue = 0, MaxValue = 7, DefValue = 1)]
         public int AType { get => Values[P.AType]; set => Values.Set(P.AType, value); }
 
         [ParameterDecl(Name = "A table", Description = "Wavetable (User: a table loaded for this slot)", MinValue = 0, MaxValue = 10, DefValue = 0)]
@@ -88,7 +88,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "A → filter 2", Description = "Balance between filter 1 (0 %) and filter 2 (100 %)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int AToF2 { get => Values[P.AToF2]; set => Values.Set(P.AToF2, value); }
 
-        [ParameterDecl(Name = "B engine", Description = "What slot B plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, or a struck, plucked or bowed resonating body (samples, grains, partials and bodies take no warps)", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        [ParameterDecl(Name = "B engine", Description = "What slot B plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, a struck, plucked or bowed resonating body, or the resynthesis of a sample from its analysed partials and noise (samples, grains, partials, bodies and resynthesis take no warps)", MinValue = 0, MaxValue = 7, DefValue = 0)]
         public int BType { get => Values[P.BType]; set => Values.Set(P.BType, value); }
 
         [ParameterDecl(Name = "B table", Description = "Wavetable (User: a table loaded for this slot)", MinValue = 0, MaxValue = 10, DefValue = 2)]
@@ -145,7 +145,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "B → filter 2", Description = "Balance between filter 1 (0 %) and filter 2 (100 %)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int BToF2 { get => Values[P.BToF2]; set => Values.Set(P.BToF2, value); }
 
-        [ParameterDecl(Name = "C engine", Description = "What slot C plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, or a struck, plucked or bowed resonating body (samples, grains, partials and bodies take no warps)", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        [ParameterDecl(Name = "C engine", Description = "What slot C plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, a struck, plucked or bowed resonating body, or the resynthesis of a sample from its analysed partials and noise (samples, grains, partials, bodies and resynthesis take no warps)", MinValue = 0, MaxValue = 7, DefValue = 0)]
         public int CType { get => Values[P.CType]; set => Values.Set(P.CType, value); }
 
         [ParameterDecl(Name = "C table", Description = "Wavetable (User: a table loaded for this slot)", MinValue = 0, MaxValue = 10, DefValue = 3)]
@@ -1305,6 +1305,87 @@ namespace NeoBuzz.DyeEssence
 
         [ParameterDecl(Name = "FX10 p10", Description = "Effect slot 10, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed; Convolution: Output; Vocoder: Output", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int X10P10 { get => Values[P.X10P10]; set => Values.Set(P.X10P10, value); }
+
+        [ParameterDecl(Name = "A spectral speed", Description = "Spectral engine: how fast the sample is read, as a share of its own speed, without changing its pitch (100 %: as recorded, 25 %: four times slower, 0: frozen at \"A position\")", MinValue = 0, MaxValue = 1000, DefValue = 250)]
+        public int ASpSpeed { get => Values[P.ASpSpeed]; set => Values.Set(P.ASpSpeed, value); }
+
+        [ParameterDecl(Name = "A key tracking", Description = "Spectral engine: how much the pitch follows the key played (100 %: the sample sounds at its own pitch on its root note and moves with the keys; 0: every key sounds the sample's own pitch)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int ASpKey { get => Values[P.ASpKey]; set => Values.Set(P.ASpKey, value); }
+
+        [ParameterDecl(Name = "A formant keep", Description = "Spectral engine: holds the sample's spectral envelope (its vowel or body colour) in place when the pitch changes, so that a shifted voice does not turn into a chipmunk or a giant", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int ASpFormant { get => Values[P.ASpFormant]; set => Values.Set(P.ASpFormant, value); }
+
+        [ParameterDecl(Name = "A harmonic snap", Description = "Spectral engine: pulls each partial toward the nearest multiple of the sample's fundamental (100 %: all partials exactly harmonic; frames without a clear pitch are left alone)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int ASpSnap { get => Values[P.ASpSnap]; set => Values.Set(P.ASpSnap, value); }
+
+        [ParameterDecl(Name = "A tonal noise", Description = "Spectral engine: the balance of the two halves of the model: 0 is the noise only, 50 % both as analysed, 100 % the partials only", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int ASpBalance { get => Values[P.ASpBalance]; set => Values.Set(P.ASpBalance, value); }
+
+        [ParameterDecl(Name = "A blur", Description = "Spectral engine: smooths the model over time (up to 300 ms either side), so that attacks and changes are spread out and drift into each other", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int ASpBlur { get => Values[P.ASpBlur]; set => Values.Set(P.ASpBlur, value); }
+
+        [ParameterDecl(Name = "A spectral partials", Description = "Spectral engine: how many partials sound (the model keeps up to 64 a frame, roughly loudest first); each added partial costs CPU", MinValue = 1, MaxValue = 64, DefValue = 48)]
+        public int ASpPartials { get => Values[P.ASpPartials]; set => Values.Set(P.ASpPartials, value); }
+
+        [ParameterDecl(Name = "A spectral tilt", Description = "Spectral engine: brightness; each octave above the middle of the sample's spectrum louder (+) or softer (-) by this many dB", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int ASpTilt { get => Values[P.ASpTilt]; set => Values.Set(P.ASpTilt, value); }
+
+        [ParameterDecl(Name = "A spectral stretch", Description = "Spectral engine: spreads the partials from whole multiples of the fundamental: + stretches them apart (bells, glass), - bunches them", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int ASpStretch { get => Values[P.ASpStretch]; set => Values.Set(P.ASpStretch, value); }
+
+        [ParameterDecl(Name = "B spectral speed", Description = "Spectral engine: how fast the sample is read, as a share of its own speed, without changing its pitch (100 %: as recorded, 25 %: four times slower, 0: frozen at \"B position\")", MinValue = 0, MaxValue = 1000, DefValue = 250)]
+        public int BSpSpeed { get => Values[P.BSpSpeed]; set => Values.Set(P.BSpSpeed, value); }
+
+        [ParameterDecl(Name = "B key tracking", Description = "Spectral engine: how much the pitch follows the key played (100 %: the sample sounds at its own pitch on its root note and moves with the keys; 0: every key sounds the sample's own pitch)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int BSpKey { get => Values[P.BSpKey]; set => Values.Set(P.BSpKey, value); }
+
+        [ParameterDecl(Name = "B formant keep", Description = "Spectral engine: holds the sample's spectral envelope (its vowel or body colour) in place when the pitch changes, so that a shifted voice does not turn into a chipmunk or a giant", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int BSpFormant { get => Values[P.BSpFormant]; set => Values.Set(P.BSpFormant, value); }
+
+        [ParameterDecl(Name = "B harmonic snap", Description = "Spectral engine: pulls each partial toward the nearest multiple of the sample's fundamental (100 %: all partials exactly harmonic; frames without a clear pitch are left alone)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int BSpSnap { get => Values[P.BSpSnap]; set => Values.Set(P.BSpSnap, value); }
+
+        [ParameterDecl(Name = "B tonal noise", Description = "Spectral engine: the balance of the two halves of the model: 0 is the noise only, 50 % both as analysed, 100 % the partials only", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int BSpBalance { get => Values[P.BSpBalance]; set => Values.Set(P.BSpBalance, value); }
+
+        [ParameterDecl(Name = "B blur", Description = "Spectral engine: smooths the model over time (up to 300 ms either side), so that attacks and changes are spread out and drift into each other", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int BSpBlur { get => Values[P.BSpBlur]; set => Values.Set(P.BSpBlur, value); }
+
+        [ParameterDecl(Name = "B spectral partials", Description = "Spectral engine: how many partials sound (the model keeps up to 64 a frame, roughly loudest first); each added partial costs CPU", MinValue = 1, MaxValue = 64, DefValue = 48)]
+        public int BSpPartials { get => Values[P.BSpPartials]; set => Values.Set(P.BSpPartials, value); }
+
+        [ParameterDecl(Name = "B spectral tilt", Description = "Spectral engine: brightness; each octave above the middle of the sample's spectrum louder (+) or softer (-) by this many dB", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int BSpTilt { get => Values[P.BSpTilt]; set => Values.Set(P.BSpTilt, value); }
+
+        [ParameterDecl(Name = "B spectral stretch", Description = "Spectral engine: spreads the partials from whole multiples of the fundamental: + stretches them apart (bells, glass), - bunches them", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int BSpStretch { get => Values[P.BSpStretch]; set => Values.Set(P.BSpStretch, value); }
+
+        [ParameterDecl(Name = "C spectral speed", Description = "Spectral engine: how fast the sample is read, as a share of its own speed, without changing its pitch (100 %: as recorded, 25 %: four times slower, 0: frozen at \"C position\")", MinValue = 0, MaxValue = 1000, DefValue = 250)]
+        public int CSpSpeed { get => Values[P.CSpSpeed]; set => Values.Set(P.CSpSpeed, value); }
+
+        [ParameterDecl(Name = "C key tracking", Description = "Spectral engine: how much the pitch follows the key played (100 %: the sample sounds at its own pitch on its root note and moves with the keys; 0: every key sounds the sample's own pitch)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int CSpKey { get => Values[P.CSpKey]; set => Values.Set(P.CSpKey, value); }
+
+        [ParameterDecl(Name = "C formant keep", Description = "Spectral engine: holds the sample's spectral envelope (its vowel or body colour) in place when the pitch changes, so that a shifted voice does not turn into a chipmunk or a giant", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int CSpFormant { get => Values[P.CSpFormant]; set => Values.Set(P.CSpFormant, value); }
+
+        [ParameterDecl(Name = "C harmonic snap", Description = "Spectral engine: pulls each partial toward the nearest multiple of the sample's fundamental (100 %: all partials exactly harmonic; frames without a clear pitch are left alone)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int CSpSnap { get => Values[P.CSpSnap]; set => Values.Set(P.CSpSnap, value); }
+
+        [ParameterDecl(Name = "C tonal noise", Description = "Spectral engine: the balance of the two halves of the model: 0 is the noise only, 50 % both as analysed, 100 % the partials only", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int CSpBalance { get => Values[P.CSpBalance]; set => Values.Set(P.CSpBalance, value); }
+
+        [ParameterDecl(Name = "C blur", Description = "Spectral engine: smooths the model over time (up to 300 ms either side), so that attacks and changes are spread out and drift into each other", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int CSpBlur { get => Values[P.CSpBlur]; set => Values.Set(P.CSpBlur, value); }
+
+        [ParameterDecl(Name = "C spectral partials", Description = "Spectral engine: how many partials sound (the model keeps up to 64 a frame, roughly loudest first); each added partial costs CPU", MinValue = 1, MaxValue = 64, DefValue = 48)]
+        public int CSpPartials { get => Values[P.CSpPartials]; set => Values.Set(P.CSpPartials, value); }
+
+        [ParameterDecl(Name = "C spectral tilt", Description = "Spectral engine: brightness; each octave above the middle of the sample's spectrum louder (+) or softer (-) by this many dB", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int CSpTilt { get => Values[P.CSpTilt]; set => Values.Set(P.CSpTilt, value); }
+
+        [ParameterDecl(Name = "C spectral stretch", Description = "Spectral engine: spreads the partials from whole multiples of the fundamental: + stretches them apart (bells, glass), - bunches them", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int CSpStretch { get => Values[P.CSpStretch]; set => Values.Set(P.CSpStretch, value); }
 
         [ParameterDecl(Name = "Note", IsStateless = true, Description = "Note (off releases the track's note)")]
         public void SetNote(Note value, int track) => Notes.SetNote(track, value.Value);

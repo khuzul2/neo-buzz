@@ -68,7 +68,10 @@ namespace NeoBuzz.DyeEssence
                 // The Sample and Granular engines' parameters (appended in P2, a block of their own per slot).
                 int sm = slot == 0 ? P.ASmpSrc : slot == 1 ? P.BSmpSrc : P.CSmpSrc;
                 int K(int aParam) => sm + (aParam - P.ASmpSrc);
-                bool Streams() => ctx.Raw(I(P.AType)) == (int)SlotType.Sample || ctx.Raw(I(P.AType)) == (int)SlotType.Granular;
+                // The Spectral engine's parameters (appended in P5a, a block of their own per slot).
+                int sp = slot == 0 ? P.ASpSpeed : slot == 1 ? P.BSpSpeed : P.CSpSpeed;
+                int Sp(int aParam) => sp + (aParam - P.ASpSpeed);
+                bool Streams() => ctx.Raw(I(P.AType)) == (int)SlotType.Sample || ctx.Raw(I(P.AType)) == (int)SlotType.Granular || ctx.Raw(I(P.AType)) == (int)SlotType.Spectral;
                 var userName = new TextBlock
                 {
                     Foreground = Theme.DimText,
@@ -147,6 +150,7 @@ namespace NeoBuzz.DyeEssence
                 }
                 var loadSample = SampleButton();
                 var loadSample2 = SampleButton();
+                var loadSample3 = SampleButton();
                 var wavetablePanel = Layout.Column(
                     Layout.Row(new ParamDropdown(ctx, I(P.AWarp1), width: 104), Layout.Gap(4), new ParamKnob(ctx, I(P.AWarp1Amt), "amount", 30),
                                Layout.Gap(10), new ParamDropdown(ctx, I(P.AWarp2), width: 104), Layout.Gap(4), new ParamKnob(ctx, I(P.AWarp2Amt), "amount", 30)),
@@ -173,6 +177,14 @@ namespace NeoBuzz.DyeEssence
                     Layout.Row(new ParamDropdown(ctx, M(P.AMExc), "exciter", 112), Layout.Gap(8), new ParamDropdown(ctx, M(P.AMGeom), "body", 112)),
                     Layout.Gap(1, 4),
                     Knobs(6, (M(P.AMForce), "force"), (M(P.AMModes), "modes"), (M(P.AMMat), "material"), (M(P.AMRing), "ring"), (M(P.AMHfDamp), "hf damp"), (M(P.AMSize), "size")));
+                // Spectral: the sample, the speed, key tracking and partials (reverse and the loop are parameters, not knobs here: the row has no room), then the shaping of what is resynthesised.
+                var spectralPanel = Layout.Column(
+                    Layout.Row(new ParamDropdown(ctx, K(P.ASmpSrc), width: 90), Layout.Gap(4), loadSample3,
+                               Layout.Gap(6), new ParamKnob(ctx, Sp(P.ASpSpeed), "speed", 30), Layout.Gap(4), new ParamKnob(ctx, Sp(P.ASpKey), "key", 30),
+                               Layout.Gap(4), new ParamKnob(ctx, Sp(P.ASpPartials), "parts", 30)),
+                    Layout.Gap(1, 4),
+                    Knobs(6, (Sp(P.ASpFormant), "formant"), (Sp(P.ASpSnap), "snap"), (Sp(P.ASpBalance), "tone"), (Sp(P.ASpBlur), "blur"),
+                        (Sp(P.ASpTilt), "tilt"), (Sp(P.ASpStretch), "stretch")));
                 void ShowEngine()
                 {
                     int type = ctx.Raw(I(P.AType));
@@ -181,6 +193,7 @@ namespace NeoBuzz.DyeEssence
                     granularPanel.Visibility = type == (int)SlotType.Granular ? Visibility.Visible : Visibility.Collapsed;
                     harmonicPanel.Visibility = type == (int)SlotType.Harmonic ? Visibility.Visible : Visibility.Collapsed;
                     modalPanel.Visibility = type == (int)SlotType.Modal ? Visibility.Visible : Visibility.Collapsed;
+                    spectralPanel.Visibility = type == (int)SlotType.Spectral ? Visibility.Visible : Visibility.Collapsed;
                 }
                 ShowEngine();
                 ctx.Changed += ShowEngine;
@@ -196,7 +209,7 @@ namespace NeoBuzz.DyeEssence
                         (I(P.AUnison), "unison"), (I(P.ADetune), "detune"), (I(P.ASpread), "spread"), (I(P.APhase), "phase"), (I(P.ARandom), "random"), (I(P.AToF2), "→ F2")),
                     Layout.Gap(1, 2),
                     // The engine's own rows: one set shows at a time (the type picks it), so the slot keeps one height.
-                    wavetablePanel, samplePanel, granularPanel, harmonicPanel, modalPanel));
+                    wavetablePanel, samplePanel, granularPanel, harmonicPanel, modalPanel, spectralPanel));
             }
 
             UIElement Filter(int f)
@@ -526,9 +539,13 @@ namespace NeoBuzz.DyeEssence
                 path.Close();
                 g.Path(path, ctx.Accent.WithAlpha(0x70), new NeoStroke(ctx.Accent, 1));
                 g.Line(x0 + pos * w, r.Top + 12, x0 + pos * w, r.Bottom - 3, new NeoStroke(ctx.Accent, 2));
-                g.Text($"{layer.Name} · {layer.Length / (double)layer.Rate:0.0#} s{(layer.Stereo ? " · stereo" : "")}", r.Left + 7, r.Top + 4, 11, Palette.DimText);
+                string state = type == (int)SlotType.Spectral && src >= SampleSources.Count && machine != null && machine.AnalysisProgress(slot) >= 0f ? $" · analysing {machine.AnalysisProgress(slot) * 100:0} %"
+                    : type == (int)SlotType.Spectral && src < SampleSources.Count && !SpectralSources.AllBuilt() ? " · analysing" : "";
+                g.Text($"{layer.Name} · {layer.Length / (double)layer.Rate:0.0#} s{(layer.Stereo ? " · stereo" : "")}{state}", r.Left + 7, r.Top + 4, 11, Palette.DimText);
             });
             ctx.Changed += view.InvalidateVisual;
+            // The Spectral engine's analysis runs after the sample is loaded: show how far it is.
+            Poll.Every(view, 0.4, () => { if (ctx.Raw(typeParam) == (int)SlotType.Spectral) view.InvalidateVisual(); });
             return view;
         }
 

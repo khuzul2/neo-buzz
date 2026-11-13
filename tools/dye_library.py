@@ -78,6 +78,18 @@ def MD(s='A', geom='Bar', exc='Struck', force=55, pos=25, modes=16, mat=50, ring
             f"{s} spread={spr};{s} octave={oct};{s} semi={semi};{s} level={lvl}")
 
 
+def SP(s='A', sample='Choir', speed=100, key=100, formant=0, snap=0, bal=50, blur=0, parts=48, tilt=0, stretch=0, loop='Forward', uni=1, det=8,
+       spr=70, oct=0, lvl=100, semi=0, pos=None, rev=None):
+    t = (f"{s} engine=Spectral;{s} sample={sample};{s} loop={loop};{s} spectral speed={speed};{s} key tracking={key};{s} formant keep={formant};"
+         f"{s} harmonic snap={snap};{s} tonal noise={bal};{s} blur={blur};{s} spectral partials={parts};{s} spectral tilt={tilt};"
+         f"{s} spectral stretch={stretch};{s} unison={uni};{s} detune={det};{s} spread={spr};{s} octave={oct};{s} semi={semi};{s} level={lvl}")
+    if pos is not None:
+        t += f";{s} position={pos}"
+    if rev:
+        t += f";{s} reverse=On"
+    return t
+
+
 def FLT(cut, res=15, env=0, typ='LP 12', fd=None, fs=None, drive=None, key=None):
     t = f"F1 type={typ};F1 cutoff={cut};F1 reso={res};F1 env={env}"
     if fd is not None:
@@ -681,6 +693,39 @@ base('Lo-Fi', 'dull_bass', 'Dull Sub Bass', 'a triangle bass with the top taken 
 base('Lo-Fi', 'arp', 'Dusty Pluck Arp', 'a plucked string arpeggio, dulled and swung',
      MD('A', 'String', 'Plucked', 50, 30, 16, 40, 0.9, 60, 40, 1, 6, 50) + ';' + FLT(3500, 8, 0.4) + ';' + ENV(0.002, 0.6, 0, 0.25) + ';Arp mode=Up Down;Arp rate=1/8;Arp octaves=2;Arp gate=60;Arp swing=40',
      n=1, fxs=_LOFI_FX)
+
+
+# ---- The Spectral engine (P5a): the built-in samples resynthesised from their partials and noise.
+base('Pad', 'frozen_choir', 'Frozen Choir Pad', 'one held moment of the choir sample, resynthesised and smeared in three voices',
+     SP('A', 'Choir', 0, 100, 0, 0, 55, 40, 48, 0, 0, 'Forward', 3, 10, 85, pos=35) + ';' + FLT(6500, 10, 0.4) + ';' + ENV(0.5, 1.0, 100, 1.6),
+     n=1, fxs=_GEN_FX_PADS, no=('slow', 'snappy', 'tight', 'muted'))
+base('Pad', 'slow_strings', 'Slow Strings Pad', 'the strings sample read at an eighth of its speed, its pitch kept',
+     SP('A', 'Strings', 12, 100, 0, 0, 50, 30, 48, -2, 0, 'Forward', 3, 10, 85) + ';' + FLT(6000, 10, 0.4) + ';' + ENV(0.6, 1.0, 100, 1.8),
+     n=1, fxs=_GEN_FX_PADS, no=('slow', 'snappy', 'tight', 'muted'))
+base('Texture', 'bell_wash', 'Stretched Bell Wash', 'the bell sample stretched sixteen times, its partials blurred into a wash',
+     SP('A', 'Bell', 6, 100, 0, 0, 60, 55, 64, 0, 0, 'Forward', 2, 8, 90, pos=1) + ';' + FLT(8000, 8, 0.3) + ';' + ENV(0.8, 1.0, 100, 2.5),
+     n=1, fxs=_TEX_FX, no=('snappy', 'tight', 'muted'))
+base('Texture', 'noise_ghost', 'Noise Ghost', 'three readings of the texture sample at different speeds, its partials turned down: mostly the analysed noise, slowly moving',
+     SP('A', 'Texture', 20, 100, 0, 0, 30, 35, 24, -2, 0, 'Forward', 2, 8, 90, pos=50) + ';' + SP('B', 'Texture', 14, 100, 0, 0, 30, 45, 24, -2, 0, 'Forward', 2, 8, 90, pos=20) + ';' + SP('C', 'Texture', 26, 100, 0, 0, 30, 25, 24, -2, 0, 'Forward', 2, 8, 90, pos=75) + ';' + FLT(5000, 8, 0.2) + ';' + ENV(0.7, 1.0, 100, 2.0),
+     n=1, fxs=_TEX_FX, no=('snappy', 'tight', 'muted'))
+base('Vocal', 'formant_choir', 'Formant Choir', 'the choir sample resynthesised with its formants kept where they were, so it plays across the keyboard',
+     SP('A', 'Choir', 100, 100, 100, 0, 45, 0, 48, 0, 0, 'Forward', 2, 8, 80) + ';' + FLT(7000, 8, 0.3) + ';' + ENV(0.15, 0.8, 100, 0.8),
+     n=1, fxs=_VOC_FX, no=('snappy', 'tight', 'muted'))
+base('Keys', 'snapped_pluck', 'Snapped Pluck Keys', 'the pluck sample with its partials pulled onto a harmonic series, so it stays clean and in tune',
+     SP('A', 'Pluck', 100, 100, 0, 100, 70, 0, 32, 0, 0, 'Off', 1, 6, 60, pos=0) + ';' + FLT(9000, 8, 0.3) + ';' + ENV(0.002, 1.2, 0, 0.5),
+     n=1, fxs=_GEN_FX_KEYS, no=('slow', 'pad', 'mono'))
+base('Lead', 'strings_voice', 'Singing Strings Lead', 'the strings sample resynthesised in two voices with half of its formants kept',
+     SP('A', 'Strings', 100, 100, 60, 0, 60, 0, 40, 1, 0, 'Forward', 2, 10, 70) + ';' + FLT(8000, 10, 0.5) + ';' + ENV(0.02, 0.4, 85, 0.35),
+     n=1, fxs=_GEN_FX_LEAD, no=('slow', 'pad', 'soft'))
+base('Bell', 'stretched_pluck', 'Stretched Pluck Bell', 'the pluck sample with its partials spread apart, so a string rings like a bell',
+     SP('A', 'Pluck', 60, 100, 0, 0, 80, 0, 48, 0, 40, 'Off', 1, 6, 60, pos=0) + ';' + FLT(9000, 8, 0.3) + ';' + ENV(0.002, 2.0, 0, 1.2),
+     n=1, fxs=_GEN_FX_BELL, no=('slow', 'mono', 'pad'))
+base('FX', 'reverse_choir', 'Reverse Choir Swell', 'the choir sample resynthesised backwards, a swell into the note',
+     SP('A', 'Choir', 80, 100, 0, 0, 50, 20, 48, 0, 0, 'Off', 2, 8, 80, rev=True) + ';' + FLT(7000, 8, 0.3) + ';' + ENV(0.05, 0.6, 100, 0.8),
+     n=1, fxs=_FX_FX, no=('mono', 'tight'))
+base('Cinematic', 'time_smear', 'Time Smear', 'the strings sample at a quarter of its speed, smeared and tilted dark',
+     SP('A', 'Strings', 25, 100, 0, 0, 50, 80, 56, -4, 0, 'Forward', 3, 14, 90) + ';' + FLT(4500, 12, 0.8, 'LP 24') + ';' + ENV(0.8, 1.0, 100, 2.5),
+     n=1, fxs=_CIN_FX, no=('slow', 'snappy', 'tight', 'muted', 'bright'))
 
 
 def bases():

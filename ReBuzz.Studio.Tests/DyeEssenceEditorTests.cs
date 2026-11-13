@@ -176,7 +176,7 @@ namespace ReBuzz.Studio.Tests
                 pages.GetType().GetProperty("Selected")!.SetValue(pages, 0);
                 Assert.Multiple(() =>
                 {
-                    foreach (var (type, name) in new[] { (1, "Wavetable"), (2, "Analog"), (3, "Sample"), (4, "Granular"), (5, "Harmonic"), (6, "Modal"), (0, "Off") })
+                    foreach (var (type, name) in new[] { (1, "Wavetable"), (2, "Analog"), (3, "Sample"), (4, "Granular"), (5, "Harmonic"), (6, "Modal"), (7, "Spectral"), (0, "Off") })
                     {
                         foreach (var slot in new[] { "A", "B", "C" }) Global(m, slot + " engine").SetValue(0, type);
                         Run(0.05);
