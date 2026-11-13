@@ -425,6 +425,21 @@ namespace ReBuzz.Studio.Tests
                 canvas.TickMeters(5);
                 int dark = Brightness();
                 Assert.That(bright, Is.GreaterThan(dark), "a wire with a level is lighter than a silent one");
+
+                // On a dB curve: -3, -20 and -40 dB look clearly different (each step several shades), not all "lit".
+                int At(double db)
+                {
+                    float peak = (float)(32768 * Math.Pow(10, db / 20));
+                    canvas.PeakSource = c => (peak, peak);
+                    canvas.TickMeters(1);
+                    return Brightness();
+                }
+                int loud = At(-3), middle = At(-20), quiet = At(-40);
+                TestContext.Out.WriteLine($"[ux-measure] wire brightness (R+G+B): silent {dark}, -40 dB {quiet}, -20 dB {middle}, -3 dB {loud}");
+                Assert.That(loud, Is.GreaterThan(middle + 30), "-3 dB against -20 dB");
+                Assert.That(middle, Is.GreaterThan(quiet + 20), "-20 dB against -40 dB");
+                Assert.That(quiet, Is.GreaterThan(dark), "-40 dB against silence");
+                Assert.That(MachineCanvas.Glow(MachineCanvas.LevelOf(32768f * 0.03162f)) / MachineCanvas.Glow(1), Is.EqualTo(0.25).Within(0.01), "-30 dB glows a quarter of 0 dB");
             }
             finally
             {

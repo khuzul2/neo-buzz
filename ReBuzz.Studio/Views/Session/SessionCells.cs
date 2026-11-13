@@ -336,7 +336,8 @@ namespace ReBuzz.Studio.Views.Session
                 // Fork (ux-overhaul.md §3.1): a clip keeps its own fill in every state (an uncoloured one turned green while it
                 // played, the same green a user can pick); its state is the chip under ▶ or ●, a 2 pt outline and the progress
                 // bar, in the reserved state colours. Waiting for the launch point (queued, stopping, a take about to record) blinks.
-                var background = color ?? SessionPalette.Clip;
+                // P3h (decision 86): a clip with no colour of its own wears its machine's identity colour (not written into the song).
+                var background = color ?? SessionPalette.DefaultFill(Sequence.Machine);
                 if (hover) background = SessionPalette.Lighten(background, 0.1);
                 var text = SessionPalette.TextOn(background);
 
@@ -503,7 +504,7 @@ namespace ReBuzz.Studio.Views.Session
                 Margin = new Thickness(0, 0, Gap, Gap);
                 ToolTip.SetTip(this, name + (track < 0 ? "\nright-click for more" : "\nright-click: colour, rename, arm, stop, remove the track"));
 
-                var strip = new Border { Height = 3, Background = SessionPalette.ColorBrush(colorIndex) ?? SessionPalette.Transparent, IsHitTestVisible = false };
+                var strip = new Border { Height = 3, Background = SessionPalette.ColorBrush(colorIndex) ?? SessionPalette.IdentityBrush(machine) ?? SessionPalette.Transparent, IsHitTestVisible = false };
                 mute = new Chip("M", SessionPalette.Mute, "Mute", () => { if (Machine != null) Machine.IsMuted = !Machine.IsMuted; });
                 solo = new Chip("S", SessionPalette.Solo, "Solo", () => { if (Machine != null) Machine.IsSoloed = !Machine.IsSoloed; });
                 var chips = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(2, 0, 4, 0), VerticalAlignment = VerticalAlignment.Center };

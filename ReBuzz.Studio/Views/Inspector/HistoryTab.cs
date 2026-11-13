@@ -28,7 +28,11 @@ namespace ReBuzz.Studio.Views.Inspector
         readonly SongCore song;
         readonly StackPanel list;
         readonly TextBlock summary, keys;
+        readonly Shell.EmptyState empty;
         bool pending, disposed;
+
+        /// <summary>The empty state of a song with no steps (P3i; tests).</summary>
+        internal Shell.EmptyState EmptyState => empty;
 
         public HistoryTab(ReBuzzCore core)
         {
@@ -39,7 +43,8 @@ namespace ReBuzz.Studio.Views.Inspector
 
             summary = new TextBlock { FontSize = 12, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(12, 0, 12, 4) };
             keys = new TextBlock { FontSize = 11, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(12, 0, 12, 8) };
-            var top = new StackPanel { Children = { summary, keys } };
+            empty = new Shell.EmptyState(core) { HorizontalAlignment = HorizontalAlignment.Stretch, Padding = new Thickness(8) };
+            var top = new StackPanel { Children = { summary, keys, empty } };
             DockPanel.SetDock(top, Dock.Top);
             Children.Add(top);
 
@@ -76,7 +81,12 @@ namespace ReBuzz.Studio.Views.Inspector
                 list.Children.Add(Row(steps[i], steps[i].Id == current));
             string kept = steps.Count == 1 ? "1 step" : steps.Count + " steps";
             string dropped = stack.DroppedSteps > 0 ? $", {stack.DroppedSteps} dropped (memory cap)" : "";
-            summary.Text = steps.Count == 0 ? "Nothing done yet. Edits, yours and an agent's, show up here." : $"{kept}{dropped}. Click a step to go there.";
+            summary.Text = steps.Count == 0 ? "Nothing done yet." : $"{kept}{dropped}. Click a step to go there.";
+            // P3i: the next step is the first edit.
+            bool bare = Shell.EmptyState.SongIsEmpty(core);
+            empty.Update(steps.Count == 0, bare ? "first:bare" : "first", "Your edits show up here",
+                "Every change, yours and an agent's, is a step here that you can go back to. " + (bare ? "Make the first: start with a sound." : "Make one: add a machine, or place a note."),
+                Shell.EmptyState.AddMachineStep(), bare);
             keys.Text = "Undo " + Shell.Commands.StudioKeymap.Get("edit.undo").KeyLabel() + ", redo " + Shell.Commands.StudioKeymap.Get("edit.redo").KeyLabel() + ".";
             if (steps.Count > MaxRows) summary.Text += $" The newest {MaxRows} are shown.";
         }

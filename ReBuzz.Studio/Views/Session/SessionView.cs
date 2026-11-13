@@ -99,7 +99,7 @@ namespace ReBuzz.Studio.Views.Session
         {
             if (inspectorLink == null) clipPanel.Follow(selected, force);
         }
-        readonly TextBlock hintText;
+        readonly Shell.EmptyState hintText;
         readonly TextBlock statusText;
         readonly Border statusBar;
         readonly FlatButton stopAllButton;
@@ -282,15 +282,7 @@ namespace ReBuzz.Studio.Views.Session
             statusBar = new Border { Background = SessionPalette.Learn, Child = statusText, IsVisible = false };
 
             // ---- grid
-            hintText = new TextBlock
-            {
-                Foreground = SessionPalette.DimText,
-                Margin = new Thickness(16),
-                TextWrapping = TextWrapping.Wrap,
-                Text = "No tracks yet. Every sequence of the song is a track: add one with \"+ Track\", " +
-                       "or create machines in the Machine View.",
-                IsVisible = false
-            };
+            hintText = new Shell.EmptyState(buzz) { VerticalAlignment = VerticalAlignment.Top, HorizontalAlignment = HorizontalAlignment.Left };
             scroll = new ScrollViewer
             {
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
@@ -521,7 +513,19 @@ namespace ReBuzz.Studio.Views.Session
 
             trackCount = doc.Tracks.Count;
             sceneCount = doc.Scenes.Count;
-            hintText.IsVisible = trackCount == 0;
+            // P3i: no tracks: the starters; tracks and not one clip: how to make one.
+            bool anyClip = Enumerable.Range(0, sceneCount).Any(s => doc.SceneSlots(s).Any());
+            if (trackCount == 0)
+            {
+                bool bare = Shell.EmptyState.SongIsEmpty(buzz);
+                hintText.Update(true, bare ? "tracks:bare" : "tracks:gear", "No tracks yet",
+                    bare ? "A track plays one machine. Start with a sound, or search every machine." : "Every sequence of the song is a track, and the song has no generator. Add one to get a track.",
+                    Shell.EmptyState.AddMachineStep(), bare);
+            }
+            else
+                hintText.Update(!anyClip, "clips", "No clips yet",
+                    "Double-click a slot to create a clip, then launch it with its ▶. Or arm a track with ● and play a take.",
+                    new (string, Action)[] { ("Create a clip", () => CreateClip(0, 0)) }, false);
             PlanColumns(doc);
             int stopRow = sceneCount + 2;     // under the spare rows (row sceneCount + 1)
 
@@ -536,7 +540,7 @@ namespace ReBuzz.Studio.Views.Session
                 g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(spareRows * (RowHeight + Gap)) });
                 g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(RowHeight + 8) });
             }
-            if (trackCount == 0)
+            if (trackCount == 0 || !anyClip)
             {
                 // The hint takes a column of its own (the scene column is beside the grid).
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3 * ColumnWidth) });
@@ -854,6 +858,9 @@ namespace ReBuzz.Studio.Views.Session
         internal IReadOnlyList<SlotCell> Slots => slots;
         internal IReadOnlyList<SceneCell> Scenes => scenes;
         internal IReadOnlyList<TrackHeader> Headers => headers;
+
+        /// <summary>The empty state: no tracks (the starters), or tracks and no clip (P3i).</summary>
+        internal Shell.EmptyState EmptyState => hintText;
         internal (int Track, int Scene)? Selected => selected;
         internal SlotCell SlotAt(int track, int scene) => CellAt(track, scene);
         internal FlatButton StopAllButton => stopAllButton;

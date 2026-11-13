@@ -58,7 +58,7 @@ namespace ReBuzz.Studio.Views
         readonly Button newPattern = new Button { Content = "New pattern", Margin = new Thickness(4), Padding = new Thickness(8, 2) };
         readonly ContentControl editorHost = new ContentControl();
         readonly Detail.TrackerRoll rollView;
-        readonly TextBlock empty = new TextBlock { Foreground = StudioTokens.TextSecondaryBrush, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        readonly Shell.EmptyState empty;
         readonly List<IMachine> machines = new List<IMachine>();
         IMachine machine;
         IPattern pattern;
@@ -68,6 +68,7 @@ namespace ReBuzz.Studio.Views
         {
             core = host.Core;
             rollView = new Detail.TrackerRoll(core) { IsVisible = false };
+            empty = new Shell.EmptyState(core);
             var bar = new WrapPanel { Orientation = Orientation.Horizontal, Background = StudioTokens.SurfacePanelBrush };      // wraps in a narrow window (decision 37)
             bar.Children.Add(Label("Machine:"));
             bar.Children.Add(machineBox);
@@ -461,13 +462,31 @@ namespace ReBuzz.Studio.Views
 
         void OnPatternsChanged(IPattern p) => Dispatcher.UIThread.Post(() => Show(machine, machine != null && machine.Patterns.Contains(pattern) ? pattern : machine?.Patterns.LastOrDefault()));
 
+        /// <summary>The empty state of the Tracker and the piano roll (P3i): no machine, no pattern.</summary>
+        internal Shell.EmptyState EmptyState => empty;
+
         void UpdateEmpty()
         {
-            bool none = editorHost.Content == null;
-            empty.IsVisible = none && !rollMode;
-            empty.Text = machine == null ? "No machine." : machine.Patterns.Count == 0
-                ? $"{machine.Name} has no patterns. New pattern makes one."
-                : "Choose a pattern.";
+            // The same for both views of a pattern: nothing to show until a machine has a pattern chosen.
+            bool none = rollMode ? pattern == null : editorHost.Content == null;
+            rollView.IsVisible = rollMode && pattern != null;
+            string what = rollMode ? "piano roll" : "Tracker";
+            if (machine == null || machine.DLL?.Info?.Type == MachineType.Master)
+            {
+                bool bare = Shell.EmptyState.SongIsEmpty(core);
+                empty.Update(none, bare ? "nomachine:bare" : "nomachine", "No machine to edit",
+                    bare ? $"The {what} edits a machine's patterns. Start with a sound, or search every machine."
+                         : $"The {what} edits a machine's patterns. Choose a machine above, or select one in the Machine View.",
+                    Shell.EmptyState.AddMachineStep(), bare);
+            }
+            else if (machine.Patterns.Count == 0)
+                empty.Update(none, "nopattern:" + machine.Name, $"{machine.Name} has no patterns",
+                    $"A pattern holds the notes {machine.Name} plays. Make one and the {what} opens on it.",
+                    new (string, Action)[] { ("New pattern", NewPattern) }, false);
+            else
+                empty.Update(none, "choose:" + machine.Name, "Choose a pattern",
+                    $"Pick one of {machine.Name}'s {machine.Patterns.Count} patterns in the list above, or make another.",
+                    new (string, Action)[] { ("New pattern", NewPattern) }, false);
         }
 
         static TextBlock Label(string text) => new TextBlock { Text = text, Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush };

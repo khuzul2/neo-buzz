@@ -96,6 +96,12 @@ namespace ReBuzz.Studio.Views.Session
             return BrushOf(Color.FromUInt32(choices[index % choices.Length].Argb));
         }
 
+        /// <summary>A machine's identity colour as a brush (P3h), or null for a machine with none (the Master, a return).</summary>
+        public static IBrush IdentityBrush(BuzzGUI.Interfaces.IMachine machine) => MachineIdentity.ColourOf(machine) is { } c ? BrushOf(c) : null;
+
+        /// <summary>The fill of a clip that has no colour of its own: its machine's identity colour, else the neutral clip blue.</summary>
+        public static IBrush DefaultFill(BuzzGUI.Interfaces.IMachine machine) => IdentityBrush(machine) ?? Clip;
+
         public static IBrush BrushOf(Color color)
         {
             if (!brushes.TryGetValue(color, out var b))

@@ -124,7 +124,7 @@ namespace ReBuzz.Studio.Views.Browser
             try
             {
                 var items = rows.Select(r => BrowserRows.Item(r, model, detail: true)).ToList();
-                if (rows.Count == 0) items.Add(BrowserRows.Header("none:", "Nothing matches" + (query.Length > 0 ? " “" + query + "”" : "")));
+                if (rows.Count == 0) items.Add(BrowserRows.Header("none:", "Nothing matches" + (query.Length > 0 ? " “" + query + "”" : "") + ": try one word, or clear the category"));
                 list.ItemsSource = items;
                 // With a search, the best match is ready: Enter adds it.
                 list.SelectedItem = query.Length > 0 ? items.FirstOrDefault(i => i.DataContext is MachineEntry) : null;
