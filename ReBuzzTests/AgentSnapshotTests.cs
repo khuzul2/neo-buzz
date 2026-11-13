@@ -55,7 +55,7 @@ namespace ReBuzzTests
             Assert.That(saved["id"]!.GetValue<string>(), Is.Not.Empty);
 
             Ok(rig, "machine_add", new JsonObject { ["gear"] = "Neo Poly", ["name"] = "Bass" });
-            Ok(rig, "param_set", new JsonObject { ["machine"] = "Pad", ["changes"] = new JsonArray(new JsonObject { ["param"] = "Volume", ["value"] = "50%" }) });
+            Ok(rig, "param_set", new JsonObject { ["machine"] = "Pad", ["changes"] = new JsonArray(new JsonObject { ["param"] = "Volume", ["value"] = "-6 dB" }) });
             Ok(rig, "snapshot_save", new JsonObject { ["name"] = "B" });
 
             var list = Ok(rig, "snapshot_list", new JsonObject { ["kind"] = "full" })["snapshots"]!.AsArray();
