@@ -234,7 +234,11 @@ public:
   gvals gvalAct;
   CChannel Channels[MAX_CHANNELS];
   int numTracks;
-  CTrack Tracks[MAX_TRACKS+1];
+  // Fork (fix/ci-flakes-4): one more than upstream's MAX_TRACKS+1. DoWorkChannel takes &Tracks[MAX_TRACKS+1] as the track of a
+  // channel that has none (a note played on a track whose last one still rings moves that one to a spare channel for its fast
+  // release); upstream's array ended there, so it read the vibrato of whatever followed (a wavetable's pointer, as a float): a
+  // different vibrato in each process. This one is a track of zeros, the same in every process.
+  CTrack Tracks[MAX_TRACKS+2];
   float CurCutoff, CurRes;
   avals aval;
 

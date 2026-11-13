@@ -194,6 +194,13 @@ namespace ReBuzz.Agent
                 Description = "Sample rate in Hz (PortAudio drivers); 0 is the device's own.", Get = () => reg.Read("SampleRate", 0, PortAudioDriver.Section).ToString(CultureInfo.InvariantCulture), Set = _ => { } };
             yield return new SettingEntry { Key = "audio.Input", Section = "audio", Name = "Input", Kind = SettingKind.Text, Default = "", UseInstead = "Choose the input in Preferences ▸ Audio (audio_set handles the output).",
                 Description = "The audio input device (PortAudio drivers): empty for none, \"default\" for the system's.", Get = () => reg.Read("Input", "", PortAudioDriver.Section) ?? "", Set = _ => { } };
+            // Windows, the studio (ux-overhaul.md P6, decision 3): WASAPI's exclusive mode behind a switch, and the advanced (WDM-KS) devices.
+            yield return new SettingEntry { Key = "audio.WasapiExclusive", Section = "audio", Name = "WasapiExclusive", Kind = SettingKind.Bool, Default = "False", UseInstead = AudioDriverUse,
+                Description = "Windows studio: offer WASAPI exclusive mode (\"WASAPI: Exclusive (other apps go silent)\", event-driven) instead of the shared modes. Other apps' sound stops while it plays. Takes effect when the device is chosen again.",
+                Get = () => reg.Read("WasapiExclusive", 0, "Settings") == 1 ? "True" : "False", Set = v => reg.Write("WasapiExclusive", v == "True" ? 1 : 0, "Settings") };
+            yield return new SettingEntry { Key = "audio.ShowAdvancedDevices", Section = "audio", Name = "ShowAdvancedDevices", Kind = SettingKind.Bool, Default = "False",
+                Description = "Windows studio: also list the WDM-KS devices (PortAudio), which most people don't need.",
+                Get = () => reg.Read("ShowAdvancedDevices", 0, "Settings") == 1 ? "True" : "False", Set = v => reg.Write("ShowAdvancedDevices", v == "True" ? 1 : 0, "Settings") };
             yield return new SettingEntry { Key = "audio.AudioThreads", Section = "audio", Name = "AudioThreads", Kind = SettingKind.Int, Min = 1, Max = 8, Default = "4", RestartRequired = true,
                 Description = "Threads that render machines in parallel. Restart required.", Get = () => Math.Clamp(reg.Read("AudioThreads", 4, "Settings"), 1, 8).ToString(CultureInfo.InvariantCulture),
                 Set = v => reg.Write("AudioThreads", int.Parse(v, CultureInfo.InvariantCulture), "Settings") };

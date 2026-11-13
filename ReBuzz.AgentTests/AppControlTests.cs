@@ -587,6 +587,40 @@ namespace ReBuzz.AgentTests
         }
 
         [Test]
+        public void ExportAudioResamplesAndNormalisesTheMasterAndItsStemsTogether()
+        {
+            var calls = new List<JsonObject>();
+            string work = Path.Combine(Path.GetTempPath(), "export-rate-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(work);
+            try
+            {
+                var (s, _) = Make(t => FakeRender(t, work, calls));
+                var plain = Call(s, "export_audio", Args(("path", Path.Combine(work, "a.wav")), ("bits", 32)));
+                Assert.That(plain.Error, Is.False, plain.Text);
+                var a = Wav.Read(Path.Combine(work, "a.wav"));
+                var r = Call(s, "export_audio", Args(("path", Path.Combine(work, "b.wav")), ("bits", 32), ("sample_rate", 44100), ("normalize_db", -3.0)));
+                Assert.That(r.Error, Is.False, r.Text);
+                Assert.That(r.Data["sample_rate"]!.GetValue<int>(), Is.EqualTo(44100));
+                var b = Wav.Read(Path.Combine(work, "b.wav"));
+                Assert.That(b.Rate, Is.EqualTo(44100));
+                Assert.That(b.Frames, Is.EqualTo((int)Math.Round(a.Frames * 44100.0 / a.Rate)));
+                float peak = Math.Max(b.Left.Max(Math.Abs), b.Right.Max(Math.Abs));
+                Assert.That(20 * Math.Log10(peak), Is.EqualTo(-3).Within(0.2), "the highest sample is at -3 dBFS");
+                Assert.That(r.Data["normalised_db"], Is.Not.Null);
+                // The same call twice gives the same bytes.
+                Call(s, "export_audio", Args(("path", Path.Combine(work, "c.wav")), ("bits", 16), ("sample_rate", 96000)));
+                Call(s, "export_audio", Args(("path", Path.Combine(work, "d.wav")), ("bits", 16), ("sample_rate", 96000)));
+                Assert.That(File.ReadAllBytes(Path.Combine(work, "c.wav")), Is.EqualTo(File.ReadAllBytes(Path.Combine(work, "d.wav"))));
+                Assert.That(Call(s, "export_audio", Args(("path", Path.Combine(work, "e.wav")), ("sample_rate", 100))).Error, Is.True);
+                Assert.That(Call(s, "export_audio", Args(("path", Path.Combine(work, "e.wav")), ("normalize_db", 3.0))).Error, Is.True);
+            }
+            finally
+            {
+                Directory.Delete(work, true);
+            }
+        }
+
+        [Test]
         public void ExportAudioChecksItsArgumentsBeforeRendering()
         {
             var calls = new List<JsonObject>();

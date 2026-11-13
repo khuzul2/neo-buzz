@@ -4,6 +4,7 @@
 // machines come from the canvas's context menu.
 
 using System;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -65,6 +66,10 @@ namespace ReBuzz.Studio.Views.Machines
             Canvas.BrowseRequested += OnBrowse;
             Canvas.PointerPressed += (s, e) => popup.Hide();
             Canvas.MachinesChanged += UpdateStarters;
+            Canvas.ViewChanged += SchedulePlacing;
+            // The canvas's size is taken (its map made and its offset set) in its own layout, after Bounds has changed: place again once
+            // the layout pass is done (a placement made inside it measured with the old map, and one made in a layout handler loops).
+            Canvas.PropertyChanged += (s, e) => { if (e.Property == BoundsProperty) SchedulePlacing(); };
             popup.Added += m => { Canvas.Select(new[] { m }); Canvas.Focus(); };
             popup.Closed += () => { UpdateStarters(); Canvas.Focus(); };
             AddHandler(KeyDownEvent, (s, e) => { if (e.Key == Key.Escape && popup.IsOpen) { popup.Hide(); e.Handled = true; } }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
@@ -144,15 +149,98 @@ namespace ReBuzz.Studio.Views.Machines
             var panel = new StackPanel { Spacing = 10, MaxWidth = 460 };
             panel.Children.Add(new TextBlock { Text = "Start with a sound", FontSize = 15, FontWeight = Avalonia.Media.FontWeight.SemiBold, Foreground = Shell.Design.StudioTokens.TextPrimaryBrush, HorizontalAlignment = HorizontalAlignment.Center });
             panel.Children.Add(row);
-            panel.Children.Add(new TextBlock
+            startersHint = new TextBlock
             {
                 Text = $"Or double-click the canvas, or press {Shell.Commands.StudioKeymap.Get("view.addmachine").KeyLabel()}, to search every machine: bass, reverb, compressor…",
                 FontSize = 12,
                 TextWrapping = Avalonia.Media.TextWrapping.Wrap,
                 TextAlignment = Avalonia.Media.TextAlignment.Center,
                 Foreground = Shell.Design.StudioTokens.TextSecondaryBrush,
-            });
-            return new Border { Child = panel, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, 120), IsVisible = false };
+            };
+            panel.Children.Add(startersHint);
+            return new Border { Child = panel, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, IsVisible = false };
+        }
+
+        TextBlock startersHint;
+
+        /// <summary>The empty state's place on the canvas, P3j fix (mac-018, 019, 029): never over a machine box, at any window size.</summary>
+        public const double StartersGap = 16;
+
+        /// <summary>
+        /// The starters sit where no machine box is (a box and the gap round it are kept clear): the middle of the view when it
+        /// is free, else the nearest free place; when the view is too small for the whole of it the hint line goes, and when
+        /// even the buttons don't fit it stays hidden (the popup and the buttons in the panels still add a machine).
+        /// </summary>
+        bool placing;
+
+        void SchedulePlacing()
+        {
+            if (placing) return;
+            placing = true;
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => { placing = false; PlaceStarters(); }, Avalonia.Threading.DispatcherPriority.Loaded);
+        }
+
+        internal void PlaceStarters()
+        {
+            if (!starters.IsVisible) return;
+            double w = Canvas.Bounds.Width, h = Canvas.Bounds.Height;
+            if (w <= 0 || h <= 0) return;
+            var boxes = new System.Collections.Generic.List<Rect>();
+            foreach (var m in Canvas.Machines)
+            {
+                var b = Canvas.BoxOf(m);
+                var tl = Canvas.ToView(b.TopLeft);
+                boxes.Add(new Rect(tl.X - StartersGap, tl.Y - StartersGap, b.Width * Canvas.Zoom + 2 * StartersGap, b.Height * Canvas.Zoom + 2 * StartersGap));
+            }
+            startersHint.IsVisible = true;
+            starters.Margin = default;                  // measured as it is, not with the margin of the last placement
+            for (int attempt = 0; attempt < 2; attempt++)
+            {
+                starters.InvalidateMeasure();           // the hint's visibility changed what it needs
+                starters.Measure(new Size(w, h));
+                var size = starters.DesiredSize;
+                if (size.Width <= w && size.Height <= h)
+                {
+                    var best = FreeSpot(size, w, h, boxes);
+                    if (best != null)
+                    {
+                        starters.Margin = new Thickness(best.Value.X, best.Value.Y, 0, 0);
+                        starters.Opacity = 1;
+                        starters.IsHitTestVisible = true;
+                        return;
+                    }
+                }
+                startersHint.IsVisible = false;
+            }
+            starters.Opacity = 0;       // no room: hidden, and not clickable
+            starters.IsHitTestVisible = false;
+        }
+
+        /// <summary>The free place for a block of this size nearest the middle of the view, or null.</summary>
+        internal static Point? FreeSpot(Size size, double w, double h, System.Collections.Generic.List<Rect> boxes)
+        {
+            double cx = (w - size.Width) / 2, cy = (h - size.Height) / 2;
+            Point? best = null;
+            double bestDistance = double.MaxValue;
+            // Candidates: the middle, and the places against each box's sides and the view's edges (the free place nearest the
+            // middle is always one of these corners or edges).
+            var xs = new System.Collections.Generic.List<double> { cx, 0, w - size.Width };
+            var ys = new System.Collections.Generic.List<double> { cy, 0, h - size.Height };
+            foreach (var b in boxes)
+            {
+                xs.Add(b.Left - size.Width); xs.Add(b.Right);
+                ys.Add(b.Top - size.Height); ys.Add(b.Bottom);
+            }
+            foreach (double x0 in xs)
+                foreach (double y0 in ys)
+                {
+                    double x = Math.Clamp(x0, 0, w - size.Width), y = Math.Clamp(y0, 0, h - size.Height);
+                    var r = new Rect(x, y, size.Width, size.Height);
+                    if (boxes.Any(b => b.Intersects(r))) continue;
+                    double d = (x - cx) * (x - cx) + (y - cy) * (y - cy);
+                    if (d < bestDistance) { bestDistance = d; best = new Point(x, y); }
+                }
+            return best;
         }
 
         internal Border Starters => starters;
@@ -181,6 +269,8 @@ namespace ReBuzz.Studio.Views.Machines
                 return;
             }
             starters.IsVisible = Model.SongIsEmpty && !popup.IsOpen;
+            PlaceStarters();
+            SchedulePlacing();
         }
 
         /// <summary>One click: the starter machine near the middle of the view (one undo step; it is selected).</summary>

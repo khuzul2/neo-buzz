@@ -417,13 +417,28 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Shell.Design.StudioTokens.Contrast(Shell.Design.StudioTokens.TextPrimary, tab), Is.GreaterThanOrEqualTo(4.5), "the shown tab");
         }
 
+        static void WaitFor(Func<bool> done)
+        {
+            var until = DateTime.UtcNow.AddSeconds(10);
+            while (!done() && DateTime.UtcNow < until)
+            {
+                System.Threading.Thread.Sleep(50);
+                Settle();
+            }
+        }
+
         [AvaloniaTest]
         public void TheSelectionTabShowsTheExplainCardOfAMachineWhoseEditorHasOne()
         {
             using var restore = Studio.AfterTest(PutBack);
+            // P3j: a window starts from the inspector's saved state and the registry is the whole run's. The card is refreshed by a timer that
+            // does nothing while the panel is closed, so a closed inspector left by anything that ran before (or a failed test that never put
+            // it back) made this test fail only after other tests. It starts from an open one.
+            PutBack();
             using var rig = new Rig();
             rig.Selection.Set(rig.Bass, null, this);
             Settle();
+            Assert.That(rig.Inspector.IsOpen, Is.True);
             Assert.That(rig.Inspector.ExplainCardText, Is.Null, "a machine without Explain text has no card");
 
             // A Neo Learn editor registers its machine and publishes the control in its strip.
@@ -431,12 +446,11 @@ namespace ReBuzz.Studio.Tests
             {
                 BuzzGUI.Interfaces.ExplainBoard.Register(rig.Bass);
                 Settle();
-                System.Threading.Thread.Sleep(400);   // the card follows the board 4 times a second
-                Settle();
+                // The card follows the board 4 times a second: on a busy runner a tick can be late, so wait for it, not for a fixed time.
+                WaitFor(() => rig.Inspector.ExplainCardText?.Title == "Explain");
                 Assert.That(rig.Inspector.ExplainCardText?.Title, Is.EqualTo("Explain"), "registered, nothing touched yet");
                 BuzzGUI.Interfaces.ExplainBoard.Publish(rig.Bass, new BuzzGUI.Interfaces.ExplainCard("Cutoff", "1.20 kHz", "Agent", "Sets the corner of the filter.", "Darker when lower."));
-                System.Threading.Thread.Sleep(400);
-                Settle();
+                WaitFor(() => rig.Inspector.ExplainCardText?.Title == "Cutoff · 1.20 kHz");
                 var card = rig.Inspector.ExplainCardText!.Value;
                 Assert.That(card.Title, Is.EqualTo("Cutoff · 1.20 kHz"));
                 Assert.That(card.Badge, Is.EqualTo("Agent"));

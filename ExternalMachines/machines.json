@@ -420,7 +420,8 @@
       ],
       "patches": [
         "FSM/dspchips/DSPChips.h: no copysign macro on MSVC (it rewrote <cmath>'s declarations when Infector's <complex> included it after); the one call is _copysign, which the macro made it (U7)",
-        "FSM/WahMan, WahManPro, WahPro2: the glide's start cutoff (and WahManPro's LFO phase, whose default sets none, and WahMan's filter coefficients, which DoWork reads before it first computes them) set to 0 in Init; they were never set (U7). WahManPro's fix also starts its LFO at phase 0 where upstream's binary mostly started it elsewhere, so songs that leave its Set phase at no value can sound different (shipped by user decision 2026-11-06)"
+        "FSM/WahMan, WahManPro, WahPro2: the glide's start cutoff (and WahManPro's LFO phase, whose default sets none, and WahMan's filter coefficients, which DoWork reads before it first computes them) set to 0 in Init; they were never set (U7). WahManPro's fix also starts its LFO at phase 0 where upstream's binary mostly started it elsewhere, so songs that leave its Set phase at no value can sound different (shipped by user decision 2026-11-06)",
+        "FSM/Infector/Infector.h: Tracks[MAX_TRACKS+2], not +1: DoWorkChannel takes &Tracks[MAX_TRACKS+1] as the track of a channel that has none (a note played on a track whose last one still rings moves that one to a spare channel for its fast release), one past the end of the array, and read its vibrato depths and phases from whatever followed it in the object (the low halves of its wavetables' pointers, as floats): a vibrato of up to -87 dBFS at a different depth in each process. It is a track of zeros now, which plays what upstream's binary plays when what it reads is harmless (fix/ci-flakes-4)"
       ],
       "natives": [
         {
@@ -445,6 +446,7 @@
           "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
           "redistribute": true,
           "upstreamBinary": "x64",
+          "upstreamReads": "DoWorkChannel reads the vibrato of Tracks[MAX_TRACKS+1], one past the end of the array, for a channel left without a track: heap pointers read as floats, so each process of upstream's binary plays it its own way (rebuilt: a track of zeros of its own)",
           "ship": "rebuilt"
         },
         {

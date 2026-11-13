@@ -216,8 +216,8 @@ namespace NeoBuzz.DyeEssence
             {
                 var os = s.Osc[o];
                 int no = note * Oscillators + o;
-                bool sample = os.Type == SlotType.Sample, grain = os.Type == SlotType.Granular, harm = os.Type == SlotType.Harmonic, modal = os.Type == SlotType.Modal, spec = os.Type == SlotType.Spectral, str = os.Type == SlotType.String;
-                var layer = harm || modal || spec || str ? null : os.Source;
+                bool sample = os.Type == SlotType.Sample, grain = os.Type == SlotType.Granular, harm = os.Type == SlotType.Harmonic, modal = os.Type == SlotType.Modal, str = os.Type == SlotType.String, spec = os.Type == SlotType.Spectral;
+                var layer = harm || modal || str || spec ? null : os.Source;
                 bool play = harm || modal || str || spec && os.Spectrum != null || (sample || grain) && layer != null && layer.Length >= 8;
                 if (!play && extLvl[no] == 0f)
                 {

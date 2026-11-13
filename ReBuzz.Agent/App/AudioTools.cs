@@ -16,13 +16,11 @@ namespace ReBuzz.Agent.App
 {
     internal static class AudioTools
     {
-        /// <summary>No audio within this long after a change: the change is taken back.</summary>
-        internal static TimeSpan FlowTimeout = TimeSpan.FromSeconds(10);
-        /// <summary>Audio flowing, the output is watched this long for dropouts.</summary>
-        internal static TimeSpan Settle = TimeSpan.FromSeconds(1.5);
-        internal static TimeSpan Poll = TimeSpan.FromMilliseconds(100);
-        /// <summary>More dropouts than this while settling: a spike, the change is taken back.</summary>
-        internal static int SpikeDropouts = 3;
+        /// <summary>The way back's timings are AudioSwitch's (shared with Preferences ▸ Audio on Windows); tests set them here.</summary>
+        internal static TimeSpan FlowTimeout { get => AudioSwitch.FlowTimeout; set => AudioSwitch.FlowTimeout = value; }
+        internal static TimeSpan Settle { get => AudioSwitch.Settle; set => AudioSwitch.Settle = value; }
+        internal static TimeSpan Poll { get => AudioSwitch.Poll; set => AudioSwitch.Poll = value; }
+        internal static int SpikeDropouts { get => AudioSwitch.SpikeDropouts; set => AudioSwitch.SpikeDropouts = value; }
 
         static IAudioControl Audio(IAppServices app, string mode) =>
             app.Audio ?? throw new ToolError($"There is no audio output to control in {mode} mode (it renders only). Use rebuzz-headless --audio, or the studio.");
@@ -130,71 +128,14 @@ namespace ReBuzz.Agent.App
                 return Outcome(true, false, null, wanted, same, "The audio output already has these settings.");
             }
 
-            long dropoutsBefore = 0;
-            AudioState? after = null;
-            string? reason = null;
-            try
+            var done = await AudioSwitch.Apply(a, async (work, ct) => await app.Engine("audio_set", false, work, ct), previous, wanted, c.Cancellation);
+            if (done.Applied)
             {
-                await app.Engine("audio_set", false, () => { dropoutsBefore = a.Status().Dropouts; a.Apply(wanted); return true; }, c.Cancellation);
-            }
-            catch (ToolError e)
-            {
-                reason = e.Message;
-            }
-            catch (Exception e) when (e is not OperationCanceledException)
-            {
-                reason = $"The driver refused the new settings: {e.Message}";
-            }
-
-            if (reason == null)
-            {
-                var clock = System.Diagnostics.Stopwatch.StartNew();
-                long played0 = (await app.Engine("audio_set", false, a.Status, c.Cancellation)).PlayedFrames;
-                bool flowing = false;
-                while (clock.Elapsed < FlowTimeout)
-                {
-                    var s = await app.Engine("audio_set", false, a.Status, c.Cancellation);
-                    after = s;
-                    if (s.Open && s.SampleRate > 0 && s.PlayedFrames - played0 >= s.SampleRate / 4) { flowing = true; break; }
-                    await Task.Delay(Poll, c.Cancellation);
-                }
-                if (!flowing)
-                    reason = $"No audio flowed within {FlowTimeout.TotalSeconds:0.#} s of the change" + (after is { Open: false } ? " (the output did not open)" : "") + ".";
-                else
-                {
-                    var settle = System.Diagnostics.Stopwatch.StartNew();
-                    while (settle.Elapsed < Settle)
-                    {
-                        await Task.Delay(Poll, c.Cancellation);
-                        after = await app.Engine("audio_set", false, a.Status, c.Cancellation);
-                        long dropped = after.Dropouts - dropoutsBefore;
-                        if (dropped > SpikeDropouts)
-                        {
-                            reason = $"{dropped} dropouts in the first {settle.Elapsed.TotalSeconds:0.#} s at {wanted.BufferFrames} frames: the output can't keep up with these settings.";
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (reason == null)
-            {
-                string text = $"Audio now plays through {after!.Device} at {after.SampleRate} Hz, {after.BufferFrames} frames ({after.LatencyMs:0.#} ms).";
+                var after = done.After!;
+                string text = $"Audio now plays through {after.Device} at {after.SampleRate} Hz, {after.BufferFrames} frames ({after.LatencyMs:0.#} ms).";
                 return Outcome(true, false, null, wanted, after, text);
             }
-
-            // Back to what worked, whatever the caller does now.
-            string revertNote = "";
-            try
-            {
-                await app.Engine("audio_set", false, () => { a.Apply(previous); return true; }, CancellationToken.None);
-                after = await app.Engine("audio_set", false, a.Status, CancellationToken.None);
-            }
-            catch (Exception e)
-            {
-                revertNote = $" Putting the previous settings back failed too: {e.Message}. Choose a device in Preferences ▸ Audio.";
-            }
-            return Outcome(false, true, reason, previous, after, $"Not applied: {reason} The previous settings ({previous.Device}, {previous.BufferFrames} frames) are back." + revertNote);
+            return Outcome(false, true, done.Reason, previous, done.After, $"Not applied: {done.Reason} The previous settings ({previous.Device}, {previous.BufferFrames} frames) are back." + done.RevertNote);
         }
 
         static ToolResult Outcome(bool applied, bool reverted, string? reason, AudioConfig settings, AudioState? status, string text)

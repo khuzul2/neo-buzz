@@ -57,7 +57,7 @@ namespace ReBuzz.Studio.Shell
         public MainWindow(StudioHost host)
         {
             this.host = host;
-            Title = Product.Name;
+            Title = StudioHost.AppTitle;
             Width = 1280;
             Height = 820;
             MinWidth = 640;
@@ -404,6 +404,7 @@ namespace ReBuzz.Studio.Shell
             yield return close;
             yield return Command("file.save", mac, () => _ = SongFiles.Save(), running);
             yield return Command("file.saveas", mac, () => _ = SongFiles.SaveAs(), running);
+            yield return Command("file.export", mac, () => _ = ExportSheet.Open(host.Core), running);
             yield return Command("file.revert", mac, () => _ = RevertToSaved(), () => running() && host.Core.SongCore.SongName != null && host.Core.Modified);
             if (!mac)
             {
@@ -680,6 +681,7 @@ namespace ReBuzz.Studio.Shell
             Bind("file.close", CloseFromMenu);
             Bind("file.save", () => _ = SongFiles.Save());
             Bind("file.saveas", () => _ = SongFiles.SaveAs());
+            Bind("file.export", () => _ = ExportSheet.Open(host.Core));
             foreach (var key in StudioKeymap.Get("edit.undo").Gestures()) KeyBindings.Add(new KeyBinding { Gesture = key, Command = undo });
             foreach (var key in StudioKeymap.Get("edit.redo").Gestures()) KeyBindings.Add(new KeyBinding { Gesture = key, Command = redo });
             // The in-window menu only shows its gestures: these make them work. They act on a focused
@@ -872,7 +874,7 @@ namespace ReBuzz.Studio.Shell
             undo.Refresh();
             redo.Refresh();
             string name = core.SongCore.SongName == null ? "Untitled" : Path.GetFileName(core.SongCore.SongName);
-            Title = $"{name}{(core.Modified ? " •" : "")} — {Product.Name}";
+            Title = $"{name}{(core.Modified ? " •" : "")} — {StudioHost.AppTitle}";
             var device = core.AudioEngine?.SelectedOutDevice;
             if (ticks++ % 10 == 0) MeasureCpu(core);
             // Without an output the audio-health badge before it says so (it was said twice, ux-overhaul.md P1).
