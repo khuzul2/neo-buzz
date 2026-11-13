@@ -716,7 +716,20 @@ namespace ReBuzz.MachineManagement
             }
         }
 
+        /// <summary>Diagnosis only (tests): told which machine's block allocated on this thread, and how much. Null in normal use.</summary>
+        internal static System.Action<MachineCore, long> AllocationProbe;
+
         internal void TickAndWork(int nSamples, bool resetToNoValue = false)
+        {
+            var probe = AllocationProbe;
+            if (probe == null) { TickAndWorkCore(nSamples, resetToNoValue); return; }
+            long before = System.GC.GetAllocatedBytesForCurrentThread();
+            TickAndWorkCore(nSamples, resetToNoValue);
+            long delta = System.GC.GetAllocatedBytesForCurrentThread() - before;
+            if (delta != 0) probe(Machine, delta);
+        }
+
+        void TickAndWorkCore(int nSamples, bool resetToNoValue)
         {
             if (Machine.Ready)
             {
