@@ -1000,7 +1000,7 @@ namespace ReBuzzTests
             try
             {
                 using var rig = new Rig(machines, hum: true);
-                for (int i = 0; i < machines; i++)
+                for (int i = swapped; i < machines; i++)  // the first few have no patterns, so no pattern editor: they can be rebuilt live
                 {
                     var m = rig.Machines[i];
                     var patterns = Enumerable.Range(0, 4).Select(k => rig.Pattern(m, "P" + k, Bar)).ToList();
@@ -1021,7 +1021,7 @@ namespace ReBuzzTests
                     for (int i = 0; i < machines; i++)
                     {
                         var m = rig.Core.SongCore.MachinesList.First(x => x.Name == rig.Machines[i].Name);
-                        if (i < swapped) m.PatternsList.First(p => p.Name == "P0").Length = 2 * Bar;
+                        if (i < swapped) rig.Core.SongCore.DeleteMachines(new[] { (BuzzGUI.Interfaces.IMachine)m });   // gone since A: built beside and faded in
                         else if (i < 12) rig.Core.SongCore.SequencesList.First(s => s.Machine == m).SetEvent(5 * Bar, null);
                         else if (i < 16) m.AllOutputs.First().Amp = 0x2000;
                     }
