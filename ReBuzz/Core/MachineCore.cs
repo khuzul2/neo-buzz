@@ -294,6 +294,20 @@ namespace ReBuzz.Core
             }
         }
 
+        /// <summary>Fork (history-snapshots.md HS3): a live restore's mute, from the audio thread at the boundary: the flag only (nothing is raised, nothing allocates); the UI thread reports it afterwards with <see cref="ReportRestoredFlags"/>.</summary>
+        internal void SetMutedFromRestore(bool value) => muted = value;
+
+        /// <summary>Fork (HS3): as <see cref="SetMutedFromRestore"/>, for bypass (the bypass amount ramps by itself).</summary>
+        internal void SetBypassedFromRestore(bool value) => bypassed = value;
+
+        /// <summary>Fork (HS3): UI thread, after a live restore changed the flags.</summary>
+        internal void ReportRestoredFlags()
+        {
+            PropertyChanged.Raise(this, "IsMuted");
+            PropertyChanged.Raise(this, "IsBypassed");
+            (graph.Buzz as ReBuzzCore)?.UpdateMachineDelayCompensation();
+        }
+
         // Fork (machine-safety.md §3.2): the guard's state. The audio thread writes the details,
         // then the flag (a volatile write publishes them); the UI thread clears it.
         volatile bool diverged;

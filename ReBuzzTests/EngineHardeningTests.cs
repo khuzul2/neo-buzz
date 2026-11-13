@@ -983,6 +983,121 @@ namespace ReBuzzTests
             }
         }
 
+        /// <summary>
+        /// Fork (history-snapshots.md HS3): a snapshot restored while the 32-machine song plays. Some machines differ in shape (a pattern's length:
+        /// they are built beside the playing ones and crossfaded in), some in their tracks and wire levels (swapped or ramped at the boundary).
+        /// Asserts what the spec guards: the audio thread allocates nothing across the restore (the boundary included), the median and worst
+        /// buffer stay as they were, and nothing clicks: the Hum machines output a constant, so the sum must stay constant through the swap
+        /// (the old machine's fade-out and the new one's fade-in add up), measured as the largest step between consecutive samples.
+        /// </summary>
+        [Test]
+        public void RestoringASnapshotWhileTheBigSongPlaysIsLiveSafeAndCrossfadesWithoutAClick()
+        {
+            const int machines = 32, swapped = 4, buffers = 700;
+            string root = System.IO.Path.Combine(TestContext.CurrentContext.WorkDirectory, "restore-" + Guid.NewGuid().ToString("N"));
+            string oldRoot = ReBuzz.Core.SongHistory.SongSnapshots.UntitledRoot;
+            ReBuzz.Core.SongHistory.SongSnapshots.UntitledRoot = root;
+            try
+            {
+                using var rig = new Rig(machines, hum: true);
+                for (int i = 0; i < machines; i++)
+                {
+                    var m = rig.Machines[i];
+                    var patterns = Enumerable.Range(0, 4).Select(k => rig.Pattern(m, "P" + k, Bar)).ToList();
+                    for (int t = 0; t < 32; t++)
+                        rig.Track(i).SetEvent(t * Bar, new SequenceEvent(SequenceEventType.PlayPattern, patterns[(t + i) % 4]));
+                }
+                rig.Song.LoopEnd = 2 * Bar;
+                var reader = rig.Driver.CreateAudioReader(256);
+                rig.Core.Playing = true;
+                var snapshots = rig.Core.Snapshots;
+                WarmUp(reader, "restore live test");
+                var snap = snapshots.Capture("A");
+                snapshots.Flush();
+
+                // Moves the song away from A: shapes of some machines, tracks and wire levels of others.
+                void Change()
+                {
+                    for (int i = 0; i < machines; i++)
+                    {
+                        var m = rig.Core.SongCore.MachinesList.First(x => x.Name == rig.Machines[i].Name);
+                        if (i < swapped) m.PatternsList.First(p => p.Name == "P0").Length = 2 * Bar;
+                        else if (i < 12) rig.Core.SongCore.SequencesList.First(s => s.Machine == m).SetEvent(5 * Bar, null);
+                        else if (i < 16) m.AllOutputs.First().Amp = 0x2000;
+                    }
+                }
+                double[] Read(int count, Action? between, out double maxStep, out long allocated, bool tail = false)
+                {
+                    var times = new double[count];
+                    maxStep = 0;
+                    allocated = 0;
+                    using var window = new AllocationWindow(count);
+                    float prev = float.NaN;
+                    for (int i = 0; i < count; i++)
+                    {
+                        between?.Invoke();
+                        window.Begin();
+                        long t0 = Stopwatch.GetTimestamp();
+                        reader.Read(256);
+                        times[i] = (Stopwatch.GetTimestamp() - t0) * 1000.0 / Stopwatch.Frequency;
+                        allocated += window.End();
+                        var b = reader.Buffer;
+                        for (int k = 0; k < 256; k++)
+                        {
+                            float l = b[2 * k];
+                            if (!float.IsNaN(prev)) maxStep = Math.Max(maxStep, Math.Abs(l - prev));
+                            prev = l;
+                        }
+                    }
+                    return times;
+                }
+
+                // Two rounds to warm the restore's code (JIT, first use), then the measured one.
+                for (int round = 0; round < 2; round++)
+                {
+                    Change();
+                    var warm = snapshots.Restore(snap, ReBuzz.Core.SongHistory.RestoreQuantize.Beat);
+                    Assert.That(warm.Mode, Is.EqualTo("live"), warm.Reason);
+                    for (int i = 0; i < 400 && snapshots.LiveActive; i++) { reader.Read(256); snapshots.Pump(); Thread.Sleep(1); }
+                    Assert.That(snapshots.LiveActive, Is.False, "the warm-up restore finished");
+                    for (int i = 0; i < 100; i++) reader.Read(256);
+                }
+                double budgetMs = 256 * 1000.0 / ReBuzzCore.masterInfo.SamplesPerSec;
+                var baseline = Read(buffers, null, out double baseStep, out long baseBytes);
+
+                Change();
+                RestoreResultHolder holder = new();
+                bool started = false;
+                var during = Read(buffers, () =>
+                {
+                    if (!started) { started = true; holder.Result = snapshots.Restore(snap, ReBuzz.Core.SongHistory.RestoreQuantize.Beat); }
+                    snapshots.Pump();
+                }, out double restoreStep, out long bytes);
+                Assert.That(holder.Result!.Mode, Is.EqualTo("live"), holder.Result.Reason);
+                Assert.That(snapshots.LiveActive, Is.False, "it applied and finished within the stretch");
+
+                double Median(double[] x) => x.OrderBy(v => v).ElementAt(x.Length / 2);
+                double levelNow = Math.Abs(reader.Buffer[0]);
+                TestContext.Out.WriteLine($"[notice] restore live test: {machines} machines, {swapped} swapped; per 256-frame buffer (budget {budgetMs:F2} ms): " +
+                    $"baseline median {Median(baseline):F3} ms max {baseline.Max():F3} ms; restoring median {Median(during):F3} ms max {during.Max():F3} ms; allocated {bytes} bytes (baseline {baseBytes}); " +
+                    $"largest sample-to-sample step: baseline {baseStep:G4}, across the restore {restoreStep:G4} (level {levelNow:G4})");
+
+                Assert.That(snapshots.Diff(snap, null), Is.Empty, "the song is what the snapshot holds");
+                Assert.That(rig.Core.SongCore.Machines.Count(m => m.DLL.Info.Type != BuzzGUI.Interfaces.MachineType.Master), Is.EqualTo(machines));
+                Assert.That(bytes, Is.EqualTo(0), "a restore must not allocate on the audio thread");
+                Assert.That(Median(during), Is.LessThan(Median(baseline) * 1.5 + 0.05), "restoring must not make the audio thread slower");
+                Assert.That(during.Max(), Is.LessThan(budgetMs), "no buffer misses its real-time budget");
+                Assert.That(restoreStep, Is.LessThanOrEqualTo(baseStep + Math.Max(1e-3 * levelNow, 1e-6)), "no click: the swap's fade-out and fade-in add up to the level that was playing");
+            }
+            finally
+            {
+                ReBuzz.Core.SongHistory.SongSnapshots.UntitledRoot = oldRoot;
+                try { System.IO.Directory.Delete(root, true); } catch (System.IO.IOException) { }
+            }
+        }
+
+        sealed class RestoreResultHolder { public ReBuzz.Core.SongHistory.RestoreResult? Result; }
+
         // ------------------------------------------------------------------ 10. autosave
 
         static string UseTemporaryAutosaveFolder()

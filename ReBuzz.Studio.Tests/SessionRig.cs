@@ -194,7 +194,7 @@ namespace ReBuzz.Studio.Tests
         public int SamplesPerTick => ReBuzzCore.masterInfo.SamplesPerTick;
 
         /// <summary>Renders whole ticks, as the audio thread would.</summary>
-        public void RunTicks(int ticks)
+        public void RunTicks(int ticks, bool runJobs = true)
         {
             for (int i = 0; i < ticks; i++)
             {
@@ -207,7 +207,7 @@ namespace ReBuzz.Studio.Tests
                     frames -= n;
                 }
             }
-            Dispatcher.UIThread.RunJobs();
+            if (runJobs) Dispatcher.UIThread.RunJobs();
         }
 
         /// <summary>Renders up to the start of session tick <paramref name="clock"/>.</summary>

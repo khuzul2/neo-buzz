@@ -1,6 +1,6 @@
 # History and snapshots
 
-Status: HS1 and HS2 built (HS1a the engine, HS1b the panel, the agent tools and the live test; HS2 full snapshots). HS3 is specified here and not started.
+Status: HS1 and HS2 built (HS1a the engine, HS1b the panel, the agent tools and the live test; HS2 full snapshots). HS3 built (glitch-free restore while playing; see 5.1).
 
 **Goal.** One history for the whole song that every view shares, and full-song snapshots kept beside the song. Neither may disturb a performance: nothing here runs on the audio thread, takes `AudioLock` longer than today, or allocates while audio plays. A snapshot can be restored while the song plays, without a click.
 
@@ -107,6 +107,14 @@ Not covered, by choice: mute/solo toggles in the Session View mixer (performance
 - **Structure.** New machines are created and prepared off the audio path, then swapped in at the boundary with a 10-20 ms crossfade; the old ones fade and are disposed later.
 - **When a machine cannot be prepared safely while playing** (native machines with unknown state, a machine that allocates on create), the restore waits until the transport stops and says so.
 - **Guards.** No audio-thread allocation. Worst-block time unchanged on the big test song while a restore happens. Restore then render is bit-identical to the original.
+
+### 5.1 As built (HS3)
+
+- **Live.** `snapshot_restore` (and the panel's Apply at: Bar, Beat, Now) takes the quantization; the default is bar while playing. The restore is planned off the audio path (`LiveRestorePlanner`), takes an "Auto: before restoring X" snapshot, and runs from `SessionCore.OnTick` when the launch clock reaches the boundary. Parameters glide over one beat (tick/subtick points; Word/Byte parameters with range above 32 glide, others step at the boundary). Pattern column events, sequence events, flags and wire amp/pan change at the boundary. Changed or new machines are built hidden as "X (restore N)", fed and sequenced, silent until the boundary, then swapped with the engine's amp ramp (about 4 blocks, 23 ms at 256 frames; wider than the 10-20 ms asked). Old machines are deleted at finish. The result says live, deferred, or applied, with the wait in ms.
+- **Deferred to the stop** (UI line, agent result and history entry say so): tempo/TPB differences, waves, a missing master, a gear not installed, a new machine that has a pattern editor, a native machine whose state differs, a swapped machine with a pattern editor whose data differs (Modern Pattern Editor data cannot be swapped live), sequence track counts or wire channel counts that differ, and a restore asked before the launch clock has a position.
+- **Not restored live:** the Session View clip grid; tempo is set by the UI thread at finish.
+- **Undo.** A restore is one step on the song stack (`RestoreAction`); undo is a restore of the "before" snapshot (live again if playing). The auto snapshots a step depends on are pinned against pruning. Where a step cannot be a single action (a deferred restore that is cancelled, or a stop-time restore that replaces the song object), the "Auto: before restoring X" snapshot remains the way back.
+- **Guards.** The audio-thread boundary and glide allocate 0 bytes (Linux test); the Windows live test on the 32-machine song checks allocation, the worst block, and the largest sample step against a baseline. The restore-then-render check uses the HS2 tolerance (-50 dB), not bit identity.
 
 ## 6. Decisions and risks
 

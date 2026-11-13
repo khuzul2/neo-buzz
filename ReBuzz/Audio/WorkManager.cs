@@ -239,6 +239,11 @@ namespace ReBuzz.Audio
                             return 0;
                     }
 
+                    // Fork (history-snapshots.md HS3): a live restore's parameter glide moves where machines take values.
+                    var restore = buzzCore.ActiveRestore;
+                    if (restore != null)
+                        restore.OnBlock(framesToProcess, masterInfo.PosInTick == 0 || (engineSettings.SubTickTiming && subTickInfo.PosInSubTick == 0));
+
                     // Call Pattern Column Events
                     UpdatePatternColumnEvents(framesToProcess);
 

@@ -405,6 +405,33 @@ namespace ReBuzz.Core
             SpanCleared = null;
         }
 
+        /// <summary>
+        /// Fork (history-snapshots.md HS3): the audio thread puts a live restore's events in place at the boundary: the dictionary and
+        /// the sorted arrays were built beforehand on the UI thread, so this is two reference swaps under the events lock and
+        /// allocates nothing. Returns the old dictionary (for the UI thread to drop). Listeners are told afterwards by <see cref="InvokeEvents"/>.
+        /// </summary>
+        internal OrderedDictionary<int, SequenceEvent> SwapEvents(OrderedDictionary<int, SequenceEvent> events, ArrangedEvents arrangedEvents)
+        {
+            lock (eventsLock)
+            {
+                var old = eventsList;
+                eventsList = events;
+                arranged = arrangedEvents;
+                return old;
+            }
+        }
+
+        /// <summary>Fork (HS3): the sorted arrays for a dictionary, built the way <see cref="RebuildArranged"/> builds them.</summary>
+        internal static ArrangedEvents Arrange(OrderedDictionary<int, SequenceEvent> list)
+        {
+            if (list == null || list.Count == 0) return ArrangedEvents.Empty;
+            var times = new int[list.Count];
+            var events = new SequenceEvent[list.Count];
+            int i = 0;
+            foreach (var kv in list) { times[i] = kv.Key; events[i] = kv.Value; i++; }
+            return new ArrangedEvents(times, events);
+        }
+
         internal void InvokeEvents()
         {
             PropertyChanged.Raise(this, "Events");

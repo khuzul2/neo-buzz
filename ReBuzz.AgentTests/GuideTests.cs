@@ -84,7 +84,7 @@ namespace ReBuzz.AgentTests
             ["preset_save"] = new[] { "machine", "name", "comment", "overwrite" },
             ["snapshot_save"] = new[] { "name", "kind" },
             ["snapshot_list"] = new[] { "kind" },
-            ["snapshot_restore"] = new[] { "name", "kind" },
+            ["snapshot_restore"] = new[] { "name", "kind", "quantize" },
             ["snapshot_diff"] = new[] { "a", "b", "kind" },
             ["snapshot_delete"] = new[] { "name", "kind" },
             ["wave_list"] = new string[0],

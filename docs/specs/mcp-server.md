@@ -249,7 +249,7 @@ Phases (§9) are marked A1 … A7.
 | `param_set` | A1, U2 | Many changes in one call, global or per track. Each change is `value` (in units, §3.3), `by` (relative, in units) or `times` (a factor). Returns the values as the machine now describes them; with a draft manifest (U1) it says so, and marks values whose unit came from a description as approximate. U2 (machine-safety.md §3.4): a value outside the parameter's `safe_range` refuses the whole call with the reason, unless `allow_unsafe: true`, which sets it and marks the change `unsafe` with why. People keep the full range in every UI |
 | `param_get` | A1 | Current values (a subset, or all) |
 | `preset_list`, `preset_load`, `preset_save` | A2 | ReBuzz presets (the factory `.prs.xml` files and the user's own) |
-| `snapshot_save`, `snapshot_restore`, `snapshot_diff` | A2 | Named whole-song parameter snapshots (all machines, connections, mutes) for A/B comparison of mixes and sounds |
+| `snapshot_save`, `snapshot_restore`, `snapshot_diff`, `snapshot_list`, `snapshot_delete` | A2, HS2, HS3 | Named whole-song snapshots (history-snapshots.md; `kind="parameters"` is the old parameter-only one) for A/B comparison of mixes and sounds. `snapshot_restore` is one undo step; while the song plays it applies live at the next `quantize` boundary (`now`, `beat`, `bar`; default bar) and the result's `mode` says `applied`, `live` (`waiting`, `applies_in_ms`) or `deferred` (with the `reason`: it applies when the transport stops) |
 | `machine_data_import` | A3 | Machine-specific data: a wavetable WAV for Neo Wave, a DX7 bank for Neo FM6, a sample for a sampler. Typed per machine through the Neo manifest; never through dialog commands |
 
 ### 5.5 Composition

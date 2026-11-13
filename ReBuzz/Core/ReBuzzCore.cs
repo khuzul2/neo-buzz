@@ -1597,6 +1597,9 @@ namespace ReBuzz.Core
 
         volatile bool restoringSnapshot;
 
+        /// <summary>Fork (history-snapshots.md HS3): the live restore waiting for its boundary or gliding; the audio thread reads it each tick and block.</summary>
+        internal volatile SongHistory.LiveRestorePlan ActiveRestore;
+
         /// <summary>Fork (history-snapshots.md HS2): the song as its file sections are, for a snapshot. UI thread; touches no file.</summary>
         internal List<(uint Magic, byte[] Data)> CaptureSongSections()
         {

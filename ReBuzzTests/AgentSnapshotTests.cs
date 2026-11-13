@@ -103,9 +103,9 @@ namespace ReBuzzTests
             rig.Driver.Core.Playing = true;
             try
             {
-                var refused = rig.Call("snapshot_restore", new JsonObject { ["name"] = "whole" });
-                Assert.That(refused.Error, Is.True);
-                Assert.That(refused.Text, Does.Contain("Stop to restore"));
+                // HS3: not refused any more: applied live at a boundary, or deferred to the stop with the reason.
+                var live = Ok(rig, "snapshot_restore", new JsonObject { ["name"] = "whole", ["quantize"] = "beat" });
+                Assert.That(live["mode"]!.GetValue<string>(), Is.AnyOf("live", "deferred"));
             }
             finally { rig.Driver.Core.Playing = false; }
             Ok(rig, "snapshot_delete", new JsonObject { ["name"] = "light", ["kind"] = "parameters" });

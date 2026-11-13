@@ -20,10 +20,10 @@ namespace ReBuzz.Studio.Tests
 {
     public class SnapshotTests
     {
-        static string Temp(string what) => Path.Combine(Path.GetTempPath(), "snapshot-tests-" + Environment.ProcessId + "-" + what + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
+        internal static string Temp(string what) => Path.Combine(Path.GetTempPath(), "snapshot-tests-" + Environment.ProcessId + "-" + what + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
 
         /// <summary>Points untitled songs' history at a folder of this test.</summary>
-        static IDisposable Untitled(out string root)
+        internal static IDisposable Untitled(out string root)
         {
             string r = root = Temp("untitled");
             string old = SongSnapshots.UntitledRoot;
@@ -78,7 +78,7 @@ namespace ReBuzz.Studio.Tests
 
         // ------------------------------------------------------------------ the song
 
-        static string Wav(string path, int seconds)
+        internal static string Wav(string path, int seconds)
         {
             int n = 44100 * seconds;
             using var fs = File.Create(path);
@@ -92,7 +92,7 @@ namespace ReBuzz.Studio.Tests
             return path;
         }
 
-        static SessionRig Song(params string[] tracks)
+        internal static SessionRig Song(params string[] tracks)
         {
             var rig = new SessionRig(tracks);
             var m = rig.Machine(tracks[0]);
@@ -130,7 +130,7 @@ namespace ReBuzz.Studio.Tests
             return all;
         }
 
-        static void Silence(ReBuzzCore core)
+        internal static void Silence(ReBuzzCore core)
         {
             core.Playing = false;
             Dispatcher.UIThread.RunJobs();
@@ -181,7 +181,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void RestoreIsRefusedWhilePlayingAndLeavesTheSongAlone()
+        public void RestoreWhilePlayingWithNoClockYetWaitsForTheStop()
         {
             using var untitled = Untitled(out _);
             using var rig = Song("Lead");
@@ -193,9 +193,13 @@ namespace ReBuzz.Studio.Tests
             core.Playing = true;
             try
             {
-                var e = Assert.Throws<InvalidOperationException>(() => core.Snapshots.Restore(snap));
-                Assert.That(e!.Message, Does.StartWith("Stop to restore"));
-                Assert.That(core.SongCore.MachinesList.Any(m => m.Name == "Extra"), "unchanged");
+                // Nothing ticks here, so the Session clock isn't running: there is no boundary to apply on.
+                var r = core.Snapshots.Restore(snap);
+                Assert.That(r.Mode, Is.EqualTo("deferred"));
+                Assert.That(core.SongCore.MachinesList.Any(m => m.Name == "Extra"), "unchanged while it plays");
+                Silence(core);
+                core.Snapshots.Pump();
+                Assert.That(core.SongCore.MachinesList.Any(m => m.Name == "Extra"), Is.False, "applied at the stop");
             }
             finally { Silence(core); }
         }

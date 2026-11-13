@@ -1,7 +1,8 @@
 // Fork (docs/specs/history-snapshots.md HS2): the Snapshots section of the inspector's History tab. The song's full snapshots
 // (kept in <song>.history): a list with name, time and manual or auto; save, rename, delete; a diff (machines, wires, parameters,
 // patterns, arrangement) of two snapshots or of one against the song now; an A/B toggle between two snapshots; restore.
-// Restore applies only while the transport is stopped (HS3 does it live), and says so while the song plays.
+// Restore while the song plays is applied live at the next beat or bar (HS3: the "Apply at" choice, default a bar), or waits for the
+// transport to stop when a machine can't be prepared safely while playing; the line under the buttons says which.
 
 using System;
 using System.Collections.Generic;
@@ -29,6 +30,7 @@ namespace ReBuzz.Studio.Views.Inspector
         readonly TextBox nameBox;
         readonly Button save, rename, delete, restore, diff, setA, setB, toggle;
         readonly CheckBox embed;
+        readonly ComboBox applyAt;
         readonly TextBlock status, diffText;
         string selected, a, b;
         bool pending, disposed;
@@ -59,8 +61,11 @@ namespace ReBuzz.Studio.Views.Inspector
             diff = Small("Diff", "What changed: A against B, or the selected snapshot against the song now", () => ShowDiff());
             setA = Small("Set A", "Make the selected snapshot A", () => MarkA(selected));
             setB = Small("Set B", "Make the selected snapshot B", () => MarkB(selected));
-            toggle = Small("A/B", "Switch the song between A and B (stopped only)", () => ToggleAb());
-            Children.Add(new WrapPanel { Children = { restore, rename, delete, diff, setA, setB, toggle } });
+            toggle = Small("A/B", "Switch the song between A and B (live while playing, at the Apply choice)", () => ToggleAb());
+            applyAt = new ComboBox { ItemsSource = new[] { "Bar", "Beat", "Now" }, SelectedIndex = 0, FontSize = 11, MinHeight = 22, Margin = new Thickness(0, 0, 4, 2) };
+            ToolTip.SetTip(applyAt, "While the song plays, a restore applies at the next bar, beat or tick");
+            AutomationProperties.SetName(applyAt, "Apply restore at");
+            Children.Add(new WrapPanel { Children = { restore, applyAt, rename, delete, diff, setA, setB, toggle } });
 
             embed = new CheckBox { Content = "Embed history in song on save", FontSize = 11, Foreground = StudioTokens.TextSecondaryBrush, IsChecked = core.Snapshots.Embed };
             ToolTip.SetTip(embed, "Also write the snapshots into the song file (a section other Buzz versions ignore)");
@@ -73,9 +78,17 @@ namespace ReBuzz.Studio.Views.Inspector
             Children.Add(diffText);
 
             core.Snapshots.Changed += OnChanged;
+            core.Snapshots.RestoreFinished += OnRestoreFinished;
             core.PropertyChanged += OnCore;
             Refresh();
         }
+
+        internal ComboBox ApplyAt => applyAt;
+
+        RestoreQuantize Quantize => applyAt.SelectedIndex switch { 1 => RestoreQuantize.Beat, 2 => RestoreQuantize.Now, _ => RestoreQuantize.Bar };
+
+        void OnRestoreFinished() =>
+            Dispatcher.UIThread.Post(() => { if (!disposed) { status.Text = "Restored."; UpdateButtons(); } }, DispatcherPriority.Background);
 
         Button Small(string text, string tip, Action click)
         {
@@ -115,17 +128,21 @@ namespace ReBuzz.Studio.Views.Inspector
             return m;
         }
 
-        /// <summary>Restores a snapshot (stopped only: while the song plays it says to stop). True if it was restored.</summary>
+        /// <summary>Restores a snapshot: stopped, at once; playing, live at the next beat or bar, or when the transport stops. True if it was restored or scheduled.</summary>
         internal bool Restore(string id)
         {
             var m = id == null ? null : core.Snapshots.Find(id);
             if (m == null) return false;
-            if (core.PlayRequested) { status.Text = SongSnapshots.RestoreWhilePlaying; return false; }
             try
             {
-                core.Snapshots.Restore(m);
+                var r = core.Snapshots.Restore(m, Quantize);
                 diffText.Text = "";
-                status.Text = $"Restored \"{m.Name}\". The auto snapshot \"before restoring\" holds the song as it was.";
+                status.Text = r.Mode switch
+                {
+                    "applied" => $"Restored \"{m.Name}\". Undo returns the song to how it was.",
+                    "deferred" => $"\"{m.Name}\" waits for the transport to stop: {r.Reason}",
+                    _ => r.Waiting ? $"\"{m.Name}\" applies live at the next {r.Quantize}" + (r.WaitMs > 0 ? $" (in about {r.WaitMs / 1000:F1} s). Undo takes it back." : ".") : $"\"{m.Name}\": nothing differs from the song now.",
+                };
                 return true;
             }
             catch (InvalidOperationException e)
@@ -143,12 +160,11 @@ namespace ReBuzz.Studio.Views.Inspector
             var ma = a == null ? null : core.Snapshots.Find(a);
             var mb = b == null ? null : core.Snapshots.Find(b);
             if (ma == null || mb == null) { status.Text = "Set A and B first: select a snapshot, then Set A or Set B."; return; }
-            if (core.PlayRequested) { status.Text = SongSnapshots.RestoreWhilePlaying; return; }
             // The song is whichever of the two it was last switched to; anything else goes to A. The first switch keeps the song as it was in an auto snapshot (Restore does).
             string now = toggledTo == a ? b : a;
             toggledTo = now;
-            Restore(now);
-            status.Text = $"Now {(now == a ? "A" : "B")}: \"{core.Snapshots.Find(now)?.Name}\". Switch again for the other.";
+            if (Restore(now))
+                status.Text = $"Now {(now == a ? "A" : "B")}: \"{core.Snapshots.Find(now)?.Name}\". Switch again for the other. " + status.Text;
         }
 
         string toggledTo;
@@ -222,10 +238,10 @@ namespace ReBuzz.Studio.Views.Inspector
             bool any = selected != null;
             bool playing = core.PlayRequested;
             rename.IsEnabled = delete.IsEnabled = diff.IsEnabled = setA.IsEnabled = setB.IsEnabled = any || (a != null && b != null);
-            restore.IsEnabled = any && !playing;
-            toggle.IsEnabled = a != null && b != null && !playing;
-            if (playing) status.Text = SongSnapshots.RestoreWhilePlaying;
-            else if (status.Text == SongSnapshots.RestoreWhilePlaying) status.Text = "";
+            restore.IsEnabled = any;
+            toggle.IsEnabled = a != null && b != null;
+            var d = core.Snapshots.Deferred;
+            if (d != null) status.Text = $"\"{d.Value.Name}\" waits for the transport to stop: {d.Value.Reason}";
         }
 
         public void Dispose()
@@ -233,6 +249,7 @@ namespace ReBuzz.Studio.Views.Inspector
             if (disposed) return;
             disposed = true;
             core.Snapshots.Changed -= OnChanged;
+            core.Snapshots.RestoreFinished -= OnRestoreFinished;
             core.PropertyChanged -= OnCore;
         }
     }
