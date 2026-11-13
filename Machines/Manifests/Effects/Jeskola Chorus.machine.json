@@ -39,6 +39,7 @@
    "latency_samples": 0,
    "latency_ms": 0.0,
    "tail_seconds": 0.03,
+   "tail_hz": 7722.1,
    "echoes": 0,
    "output_correlation": 1.0,
    "spectrum_spread_db": 10.2,

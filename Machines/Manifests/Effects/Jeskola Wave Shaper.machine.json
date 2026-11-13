@@ -37,6 +37,7 @@
    "latency_ms": 0.0,
    "tail_seconds": 3.48,
    "tail_seconds_note": "rings longer than the 3 s rendered",
+   "tail_hz": 0.0,
    "echoes": 0,
    "output_correlation": 1.0,
    "spectrum_spread_db": 1.3,
