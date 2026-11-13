@@ -1026,6 +1026,7 @@ namespace ReBuzzTests
                         else if (i < 16) m.AllOutputs.First().Amp = 0x2000;
                     }
                 }
+                var windows = new List<(DateTime From, DateTime To, int Buffer)>();
                 double[] Read(int count, Action? between, out double maxStep, out long allocated, bool tail = false)
                 {
                     var times = new double[count];
@@ -1037,12 +1038,13 @@ namespace ReBuzzTests
                     {
                         between?.Invoke();
                         window.Begin();
+                        var wall0 = DateTime.UtcNow;
                         long t0 = Stopwatch.GetTimestamp();
                         reader.Read(256);
                         times[i] = (Stopwatch.GetTimestamp() - t0) * 1000.0 / Stopwatch.Frequency;
                         long got = window.End();
                         allocated += got;
-                        if (got != 0) TestContext.Out.WriteLine($"[notice] restore live test: buffer {i} allocated {got} bytes");
+                        if (got != 0) { TestContext.Out.WriteLine($"[notice] restore live test: buffer {i} allocated {got} bytes"); windows.Add((wall0, DateTime.UtcNow, i)); }
                         var b = reader.Buffer;
                         for (int k = 0; k < 256; k++)
                         {
@@ -1086,7 +1088,7 @@ namespace ReBuzzTests
                     $"baseline median {Median(baseline):F3} ms max {baseline.Max():F3} ms; restoring median {Median(during):F3} ms max {during.Max():F3} ms; allocated {bytes} bytes (baseline {baseBytes}); " +
                     $"largest sample-to-sample step: baseline {baseStep:G4}, across the restore {restoreStep:G4} (level {levelNow:G4})");
 
-                if (bytes != 0) TestContext.Out.WriteLine("[notice] restore live test: allocation ticks: " + string.Join("; ", types.Ticks));
+                if (bytes != 0) TestContext.Out.WriteLine("[notice] restore live test: allocation ticks inside the allocating buffers: " + string.Join("; ", types.Ticks.Where(k => windows.Any(w => k.Time >= w.From.AddMilliseconds(-2) && k.Time <= w.To.AddMilliseconds(2))).Select(k => k.Text)) + $" (of {types.Ticks.Count} ticks in all)");
                 Assert.That(bytes, Is.EqualTo(0), "a restore must not allocate on the audio thread");
                 Assert.That(snapshots.Diff(snap, null), Is.Empty, "the song is what the snapshot holds");
                 Assert.That(rig.Core.SongCore.Machines.Count(m => m.DLL.Info.Type != BuzzGUI.Interfaces.MachineType.Master), Is.EqualTo(machines));
@@ -1106,7 +1108,7 @@ namespace ReBuzzTests
         /// <summary>Names the types behind an allocation (the runtime's GC allocation ticks, one per ~100 KB), for the live restore test's diagnosis.</summary>
         sealed class AllocationTypes : System.Diagnostics.Tracing.EventListener
         {
-            public readonly System.Collections.Concurrent.ConcurrentQueue<string> Ticks = new();
+            public readonly System.Collections.Concurrent.ConcurrentQueue<(DateTime Time, string Text)> Ticks = new();
             protected override void OnEventSourceCreated(System.Diagnostics.Tracing.EventSource source)
             {
                 if (source.Name == "Microsoft-Windows-DotNETRuntime") EnableEvents(source, System.Diagnostics.Tracing.EventLevel.Verbose, (System.Diagnostics.Tracing.EventKeywords)1);
@@ -1115,7 +1117,7 @@ namespace ReBuzzTests
             {
                 if (e.EventName == null || !e.EventName.StartsWith("GCAllocationTick")) return;
                 int t = e.PayloadNames?.IndexOf("TypeName") ?? -1, a = e.PayloadNames?.IndexOf("AllocationAmount64") ?? -1;
-                Ticks.Enqueue($"{(t >= 0 ? e.Payload![t] : "?")} ({(a >= 0 ? e.Payload![a] : "?")} bytes) on thread {e.OSThreadId}");
+                Ticks.Enqueue((e.TimeStamp.ToUniversalTime(), $"{(t >= 0 ? e.Payload![t] : "?")} ({(a >= 0 ? e.Payload![a] : "?")} bytes)"));
             }
         }
 
