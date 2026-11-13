@@ -1,0 +1,115 @@
+# Neo Learn Wavetable factory presets. Output is set last so each chord sounds at the same level (loudest 50 ms RMS -22 dB).
+# Rebuild: python3 tools/gen-machine-presets.py Machines/NeoLearnWavetable
+machine "Neo Learn Wavetable"
+
+preset "Pad — Formant Drift"
+Frame Pos = 40
+Phase Warp = 0
+Wavetable = Formants
+Motion Rate = 0.3
+Motion Depth = 60
+Sub Anchor = 20
+Attack = 600
+Decay = 2000
+Sustain = 80
+Release = 1500
+Unison / Spread = 50
+Output = 8.0
+
+preset "Lead — Sync Sweep"
+Frame Pos = 50
+Phase Warp = 60
+Wavetable = Sync sweep
+Motion Rate = 4
+Motion Depth = 30
+Sub Anchor = 0
+Attack = 2
+Decay = 400
+Sustain = 75
+Release = 250
+Unison / Spread = 20
+Output = 0.3
+
+preset "Bass — Pinch"
+Frame Pos = 20
+Phase Warp = -50
+Wavetable = Basic
+Motion Rate = 0.5
+Motion Depth = 0
+Sub Anchor = 60
+Attack = 1
+Decay = 350
+Sustain = 50
+Release = 120
+Unison / Spread = 0
+Output = -10.6
+
+preset "Keys — Organ Table"
+Frame Pos = 30
+Phase Warp = 0
+Wavetable = Organ
+Motion Rate = 0.2
+Motion Depth = 20
+Sub Anchor = 15
+Attack = 3
+Decay = 800
+Sustain = 70
+Release = 250
+Unison / Spread = 10
+Output = 8.2
+
+preset "Pad — Digital Glass"
+Frame Pos = 55
+Phase Warp = -15
+Wavetable = Digital
+Motion Rate = 0.15
+Motion Depth = 80
+Sub Anchor = 10
+Attack = 900
+Decay = 2500
+Sustain = 70
+Release = 2500
+Unison / Spread = 70
+Output = 2.4
+
+preset "Lead — Grit Wobble"
+Frame Pos = 35
+Phase Warp = 25
+Wavetable = Grit
+Motion Rate = 6
+Motion Depth = 40
+Sub Anchor = 10
+Attack = 2
+Decay = 500
+Sustain = 70
+Release = 200
+Unison / Spread = 15
+Output = 0.2
+
+preset "Bass — PWM Wobble"
+Frame Pos = 50
+Phase Warp = 0
+Wavetable = PWM
+Motion Rate = 2
+Motion Depth = 70
+Sub Anchor = 50
+Attack = 1
+Decay = 400
+Sustain = 60
+Release = 150
+Unison / Spread = 0
+Output = -5.1
+
+preset "Pluck — Harmonic Stab"
+Frame Pos = 70
+Phase Warp = -20
+Wavetable = Harmonics
+Motion Rate = 1
+Motion Depth = 0
+Sub Anchor = 25
+Attack = 0.5
+Decay = 220
+Sustain = 0
+Release = 120
+Unison / Spread = 0
+Output = -9.6

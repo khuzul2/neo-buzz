@@ -168,7 +168,13 @@ def main():
             build(c, gear, kind)
             if kind == "Generators":
                 phrase(c, manifest)
-            names = [(p["name"], p.get("comment", "")) for p in c.call("preset_list", machine="M").get("presets", [])]
+            names = []
+            while True:   # preset_list pages (60 by default): ask for 500 at a time
+                page = c.call("preset_list", machine="M", limit=500, offset=len(names))
+                got = page.get("presets", [])
+                names += [(p["name"], p.get("comment", "")) for p in got]
+                if not got or len(names) >= page.get("total", len(names)):
+                    break
             if ours:
                 presets = read_presets(path)
                 listed = {n for n, _ in names}

@@ -28,6 +28,7 @@ namespace ReBuzz.Studio.Views.Inspector
         readonly SongCore song;
         readonly StackPanel list;
         readonly TextBlock summary, keys;
+        readonly SnapshotsSection snapshots;
         bool pending, disposed;
 
         public HistoryTab(ReBuzzCore core)
@@ -39,7 +40,8 @@ namespace ReBuzz.Studio.Views.Inspector
 
             summary = new TextBlock { FontSize = 12, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(12, 0, 12, 4) };
             keys = new TextBlock { FontSize = 11, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(12, 0, 12, 8) };
-            var top = new StackPanel { Children = { summary, keys } };
+            snapshots = new SnapshotsSection(core);        // history-snapshots.md HS2
+            var top = new StackPanel { Children = { snapshots, summary, keys } };
             DockPanel.SetDock(top, Dock.Top);
             Children.Add(top);
 
@@ -49,6 +51,8 @@ namespace ReBuzz.Studio.Views.Inspector
             if (song != null) song.HistoryChanged += OnChanged;
             Rebuild();
         }
+
+        internal SnapshotsSection Snapshots => snapshots;
 
         /// <summary>The rows drawn, newest first (tests).</summary>
         internal IReadOnlyList<Border> Rows => list.Children.OfType<Border>().ToList();
@@ -130,6 +134,7 @@ namespace ReBuzz.Studio.Views.Inspector
         {
             if (disposed) return;
             disposed = true;
+            snapshots.Dispose();
             if (song != null) song.HistoryChanged -= OnChanged;
         }
     }

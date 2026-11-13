@@ -339,8 +339,11 @@ class Profile:
 def params_by_kind(describe):
     globals_, tracks = [], []
     for p in describe.get("parameters", []):
-        if "min_raw" in p:   # a machine with Explain text gives min and max in its unit; the raw range is min_raw and max_raw
-            p = dict(p, min=p["min_raw"], max=p["max_raw"])
+        # Explain machines (Neo Learn) give "min" and "max" in the parameter's unit, or not at all for a choice, and the raw ones as
+        # min_raw and max_raw: the profiler works in raw values.
+        for end in ("min", "max"):
+            if end + "_raw" in p:
+                p[end] = p[end + "_raw"]
         (tracks if p.get("per_track") else globals_).append(p)
     return globals_, tracks
 

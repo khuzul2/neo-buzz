@@ -47,6 +47,7 @@ namespace NeoBuzz.Learn
             Read();
             map.Map(c, sink);
             Engine = new DyeEngine(dyeValues);
+            sink.Push(Engine);
             SetSampleRate(48000);
             gain = TargetGain();
             controls.Clean();
@@ -91,12 +92,19 @@ namespace NeoBuzz.Learn
             for (int i = 0; i < n; i++) dst[i] = scope[(at - n + i) & (ScopeSize - 1)];
         }
 
+        volatile bool remap;
+
+        /// <summary>The map reads something other than the 12 controls (a machine's own setting, such as Granular's source): write Dye's controls again at the next block.</summary>
+        public void Remap() => remap = true;
+
         public bool Process(float[] left, float[] right, int n)
         {
-            if (controls.AnyDirty)
+            if (controls.AnyDirty || remap)
             {
+                remap = false;
                 Read();
                 map.Map(c, sink);
+                sink.Push(Engine);
                 controls.Clean();
             }
             bool any = Engine.Process(left, right, n);
@@ -151,13 +159,51 @@ namespace NeoBuzz.Learn
         sealed class Sink : IDyeSink
         {
             readonly ParamValues values;
+            // The engine's additions a map writes (OscSettings; a map that never writes one leaves it off), pushed to the engine after each Map.
+            readonly float[] ext = new float[3 * ExtCount];
+            const int ExtCount = 11;
+            bool extUsed;
 
             public Sink(ParamValues values)
             {
                 this.values = values;
+                // The two morphs are off below 0 (0 is a place on them).
+                for (int o = 0; o < 3; o++)
+                {
+                    ext[o * ExtCount + (int)SlotExt.GrainMorph] = -1f;
+                    ext[o * ExtCount + (int)SlotExt.ExciterMorph] = -1f;
+                }
             }
 
             public void Set(int dyeParam, double value) => values.Set(dyeParam, values.Table[dyeParam].Raw(value));
+
+            public void Ext(int slot, SlotExt what, double value)
+            {
+                ext[slot * ExtCount + (int)what] = (float)value;
+                extUsed = true;
+            }
+
+            /// <summary>Writes the additions into the engine's settings (Dye's own settings code never touches them).</summary>
+            public void Push(DyeEngine engine)
+            {
+                if (!extUsed) return;
+                for (int o = 0; o < 3; o++)
+                {
+                    var os = engine.Bank.S.Osc[o];
+                    int b = o * ExtCount;
+                    os.ExactRatio = ext[b + (int)SlotExt.ExactRatio];
+                    os.Feedback = ext[b + (int)SlotExt.Feedback];
+                    os.Comb = ext[b + (int)SlotExt.Comb];
+                    os.CombPeriod = ext[b + (int)SlotExt.CombPeriod] > 0 ? ext[b + (int)SlotExt.CombPeriod] : 8f;
+                    os.Shimmer = ext[b + (int)SlotExt.Shimmer];
+                    os.Inharm = ext[b + (int)SlotExt.Inharm];
+                    os.GrainMorph = ext[b + (int)SlotExt.GrainMorph];
+                    os.GrainOctave = ext[b + (int)SlotExt.GrainOctave];
+                    os.ExciterMorph = ext[b + (int)SlotExt.ExciterMorph];
+                    os.GeomBlend = ext[b + (int)SlotExt.GeomBlend];
+                    os.GeomTo = (int)ext[b + (int)SlotExt.GeomTo];
+                }
+            }
         }
     }
 }

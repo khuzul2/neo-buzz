@@ -32,6 +32,18 @@ namespace NeoBuzz.Learn
         protected abstract int PadX { get; }
         protected abstract int PadY { get; }
 
+        /// <summary>
+        /// Draws the picture (the machine's own, Appendix A): <paramref name="scope"/> holds the last <paramref name="scopeCount"/> samples played (null
+        /// before there is a host), <paramref name="handle"/> is the pad's dot (0…1 each). The default is Subtractive's: the scope with the
+        /// filter's response curve over it, the pad being cutoff and resonance.
+        /// </summary>
+        protected virtual void DrawPicture(INeoCanvas g, NeoRect r, EditorContext ctx, float[] scope, int scopeCount, NeoPoint? handle, bool dragging, NeoColor accent)
+        {
+            double cutoff = ctx.Value(PadX);
+            double reso = ParamMapping.Normalized(ctx.Table[PadY], ctx.Raw(PadY));
+            LearnPictureGraph.Draw(g, r, scope, scopeCount, cutoff, reso, handle, dragging, accent);
+        }
+
         internal override UIElement BuildBody(EditorContext ctx)
         {
             var host = HostOf(ctx);
@@ -50,9 +62,7 @@ namespace NeoBuzz.Learn
                 plot = r;
                 int n = 0;
                 if (host != null) { host.CopyScope(scope); n = scope.Length; }
-                double cutoff = ctx.Value(PadX);
-                double reso = ParamMapping.Normalized(ctx.Table[PadY], ctx.Raw(PadY));
-                LearnPictureGraph.Draw(g, r, host != null ? scope : null, n, cutoff, reso, input.Handle, input.Capturing, accent);
+                DrawPicture(g, r, ctx, host != null ? scope : null, n, input.Handle, input.Capturing, accent);
             }, input, animate: true);
 
             // Deck zone: the six core controls, then the six global ones.

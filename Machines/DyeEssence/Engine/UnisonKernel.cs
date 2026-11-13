@@ -22,6 +22,8 @@ namespace NeoBuzz.DyeEssence
         public readonly int Total;
         public readonly uint[] Phase, Inc, ShiftR, ShiftL, ModSlot;
         public readonly float[] FrameMix;
+        /// <summary>Each lane's last output, for PM self-feedback (Neo Learn's FM).</summary>
+        public readonly float[] Fb;
         public readonly int[] OffsetA, OffsetB;
         public readonly float[][] Data;
         public readonly float[] Gain;
@@ -35,6 +37,7 @@ namespace NeoBuzz.DyeEssence
             ShiftL = new uint[total];
             ModSlot = new uint[total];
             FrameMix = new float[total];
+            Fb = new float[total];
             OffsetA = new int[total];
             OffsetB = new int[total];
             Data = new float[total][];
@@ -57,6 +60,8 @@ namespace NeoBuzz.DyeEssence
         public int Log2Len;
         /// <summary>The modulator: 0 another oscillator's lanes (ModSlot), 1 the sub, 2 the noise.</summary>
         public int ModKind;
+        /// <summary>PM self-feedback in cycles (0: none): each lane's previous output moves its own phase.</summary>
+        public float Feedback;
     }
 
     internal static class UnisonKernel
@@ -228,6 +233,8 @@ namespace NeoBuzz.DyeEssence
             TF k10 = TL.Splat(w.K10), k11 = TL.Splat(w.K11), k20 = TL.Splat(w.K20), k21 = TL.Splat(w.K21);
             TF fm = TL.Splat(w.Fm), fmLimit = TL.Splat(8e6f), fmFloor = TL.Splat(-8e6f), zero = TL.Splat(0f);
             TF mirror = TL.Splat(w.MirrorMix);
+            bool feedback = w.Feedback != 0f;
+            TF fbk = TL.Splat(w.Feedback), yPrev = feedback ? TL.Load(s.Fb, at) : zero;
             for (int t = 0; t < count; t++)
             {
                 TF m = zero;
@@ -235,6 +242,7 @@ namespace NeoBuzz.DyeEssence
                     m = w.ModKind == 0 ? TL.Gather(mod, modAt + t * modStride, modSlot) : TL.Splat(modNote[noteAt + t * noteStride]);
                 TF p = TL.Mul(TL.ToFloat(TL.ShiftRight(ph, 8)), fracScale);
                 TF q = p;
+                if (feedback) q = Warps.Wrap<TL, TF, TU>(TL.Add(p, TL.Mul(fbk, yPrev)));   // the lane's last output, back into its phase
                 if (w.MapsPhase)
                 {
                     // Wrapped straight after PM, so the second warp always sees a phase in [0, 1).
@@ -282,6 +290,7 @@ namespace NeoBuzz.DyeEssence
                     y = Warps.Amplitude<TL, TF, TU>(w.W2, y, p, k20, k21, m);
                 }
                 if (store != null) TL.Store(y, store, storeAt + t * modStride);
+                if (feedback) yPrev = y;
                 int o = t * AccStride;
                 TL.Store(TL.Add(TL.Load(acc, o), TL.Mul(y, g1l)), acc, o);
                 TL.Store(TL.Add(TL.Load(acc, o + 8), TL.Mul(y, g1r)), acc, o + 8);
@@ -305,6 +314,7 @@ namespace NeoBuzz.DyeEssence
                 else ph = TL.AddU(ph, inc);
             }
             TL.StoreU(ph, s.Phase, at);
+            if (feedback) TL.Store(yPrev, s.Fb, at);
             TL.Store(g1l, g, at);
             TL.Store(g1r, g, total + at);
             if (toF2)
