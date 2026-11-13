@@ -186,9 +186,12 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(SongModel.Manifest(gain.DLL)!.IsDraft, Is.True, "Pedal Tracker's manifest is a draft");
                 Assert.That(ManifestEditorSettings.OpensEditor(gain.DLL), Is.False, "off by default for drafts");
                 DoubleClick(window, view.PointOf(gain, window));
-                Assert.That(StudioMachineUiHost.ParameterWindowOf(gain)?.IsVisible, Is.True, "a double click opens the parameter list");
+                // P3e: the list is the device view in the Detail panel, not the classic parameter window.
+                Assert.That(window.Detail.IsOpen && window.Detail.IsDevice, Is.True, "a double click opens the device view");
+                Assert.That(((ReBuzz.Studio.Views.Device.DeviceDock)window.Detail.DevicePage).Page?.Machine, Is.SameAs(gain));
+                Assert.That(StudioMachineUiHost.ParameterWindowOf(gain), Is.Null);
                 Assert.That(StudioMachineUiHost.EditorWindowOf(gain), Is.Null);
-                StudioMachineUiHost.ParameterWindowOf(gain)!.Close();
+                window.Detail.Close();
                 Settle();
 
                 // The setting, from the machine's menu: a check item.

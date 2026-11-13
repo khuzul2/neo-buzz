@@ -597,7 +597,7 @@ namespace ReBuzz.Studio.Tests
                     Frame(window);
                     Assert.That(view.List.RenderedItems, Is.LessThan(40), $"{view.List.RenderedItems} of {view.List.Items.Count} items drawn: only what is in view");
                     Assert.That(view.List.Items.Count, Is.GreaterThan(433));
-                    TestContext.Out.WriteLine($"{n} parameters: the device view opened in {ms:F0} ms, the old parameter window in {oldMs:F0} ms (load {System.IO.File.ReadAllText("/proc/loadavg").Split(' ')[0]}); {view.List.RenderedItems} items drawn");
+                    TestContext.Out.WriteLine($"{n} parameters: the device view opened in {ms:F0} ms, the old parameter window in {oldMs:F0} ms; {view.List.RenderedItems} items drawn");
                     Assert.That(ms, Is.LessThan(oldMs * 0.6), "much faster than the old window's control per row");
 
                     // Scrolled to the end it draws as few, and the last parameter is reachable.
