@@ -5,7 +5,16 @@ name: Plugin GC measurement
 # a native harness (no .NET) on a real-time-priority audio thread; a native control plugin measures the runner.
 # Results are printed to the job log (RESULT lines and a table); the report is written from the logs.
 # macOS minutes cost about 10x Linux: set macos=false for a Windows-only run.
+#
+# workflow_dispatch needs the workflow file on the default branch, so on this experiment branch a push drives it:
+# a plain push runs Windows with 20 s per configuration (smoke test); "[mac]" in the commit message adds macOS;
+# "[full]" runs both with 300 s per configuration (5 minutes, the measurement).
 on:
+  push:
+    branches: [ experiments/plugin-gc ]
+    paths:
+      - 'experiments/plugin-gc/**'
+      - '.github/workflows/plugin-gc.yml'
   workflow_dispatch:
     inputs:
       seconds:
@@ -28,8 +37,8 @@ jobs:
     steps:
     - id: m
       env:
-        MAC: ${{ inputs.macos }}
-        WIN: ${{ inputs.windows }}
+        MAC: ${{ github.event_name == 'push' && ((contains(github.event.head_commit.message, '[mac]') || contains(github.event.head_commit.message, '[full]')) && 'true' || 'false') || inputs.macos }}
+        WIN: ${{ github.event_name == 'push' && 'true' || inputs.windows }}
       run: |
         python3 - <<'PY' >> "$GITHUB_OUTPUT"
         import json, os
@@ -49,7 +58,7 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
     env:
-      SECONDS_PER_RUN: ${{ inputs.seconds }}
+      SECONDS_PER_RUN: ${{ github.event_name == 'push' && (contains(github.event.head_commit.message, '[full]') && '300' || '20') || inputs.seconds }}
     defaults:
       run:
         shell: bash
