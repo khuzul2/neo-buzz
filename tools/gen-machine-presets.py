@@ -15,6 +15,8 @@ file ReBuzz loads presets from (next to the machine DLL). Presets.txt:
   Mix = 60                       percentages are 0–100; bipolar −100…100
   Cutoff = raw:512               or a raw parameter value
 
+  comment "What it is"           (after the preset line, optional) the preset's comment: preset_list shows it and searches it
+
   state DyeEssenceState          (once, before the presets) the class of the machine's MachineState, for:
   state Lfo1Shape = 0,1 0.5,-1   a preset's machine state as text: the property and its value. A preset
                                  with state lines carries its data (ReBuzz applies it with the parameters),
@@ -115,8 +117,11 @@ def build(folder):
                 machine = shlex.split(s)[1]
                 continue
             if s.startswith('preset '):
-                cur = {'name': shlex.split(s)[1], 'values': {}, 'state': {}}
+                cur = {'name': shlex.split(s)[1], 'values': {}, 'state': {}, 'comment': ''}
                 presets.append(cur)
+                continue
+            if s.startswith('comment ') and cur is not None:
+                cur['comment'] = shlex.split(s)[1]
                 continue
             if s.startswith('state '):
                 rest = s[len('state '):].strip()
@@ -159,7 +164,7 @@ def build(folder):
             out.append(f'        <Parameter Name={quoteattr(p["name"])} Group="1" Index="{i}" Track="0" Value="{raw}" />')
         out.append('      </Parameters>')
         out.append('      <Attributes />')
-        out.append('      <Comment></Comment>')
+        out.append(f'      <Comment>{escape(pr["comment"])}</Comment>' if pr['comment'] else '      <Comment></Comment>')
         if pr['state']:
             out.append(f'      <Data>{machine_data(state_class, pr["state"])}</Data>')
         out.append('    </Preset>')

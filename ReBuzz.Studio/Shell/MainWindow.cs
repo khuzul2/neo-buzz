@@ -234,7 +234,10 @@ namespace ReBuzz.Studio.Shell
             }
             inspector = new Views.Inspector.InspectorPanel(host.Core, host.Registry, ShowView, sessionView, notes);
             browser = new Views.Browser.BrowserPanel(host.Core, host.Registry, p => PatternView.Edit(p));
-            detail = new Views.Detail.DetailPanel(host.Registry, tracker ?? new TextBlock { Text = "The Tracker failed to start.", Foreground = StudioTokens.ErrorTextBrush, Margin = new Thickness(12) });
+            detail = new Views.Detail.DetailPanel(host.Registry, tracker ?? new TextBlock { Text = "The Tracker failed to start.", Foreground = StudioTokens.ErrorTextBrush, Margin = new Thickness(12) },
+                host.Core != null ? new Views.Device.DeviceDock(host.Core) : null);
+            // Fork (ux-overhaul.md P3e): a double click on a machine with no editor of its own opens its device view here.
+            Platform.StudioMachineUiHost.DeviceOpener = OpenDevice;
             if (tracker is PatternPage page)
             {
                 page.Reveal = () => detail.Show(detail.IsMaximised);
@@ -478,6 +481,8 @@ namespace ReBuzz.Studio.Shell
             yield return Command("view.detail", mac, () => detail?.Toggle(), () => detail != null, () => detail?.IsOpen == true);
             yield return Command("view.pianoroll", mac, ShowPianoRoll, () => detail != null, () => detail?.IsOpen == true && detail.IsPianoRoll);
             yield return Command("view.maximise", mac, () => ToggleTrackerMaximised(), () => detail != null, () => detail?.IsMaximised == true);
+            yield return Command("view.device", mac, ShowDevice, () => detail?.DevicePage != null, () => detail?.IsOpen == true && detail.IsDevice);
+            yield return Command("device.find", mac, FindParameter, () => detail?.DevicePage != null);
             yield return Command("view.mixer", mac, ToggleSessionMixer, () => host.Core?.SessionLayout != null, () => host.Core?.SessionLayout?.Document?.ShowMixer == true);
         }
 
@@ -697,6 +702,8 @@ namespace ReBuzz.Studio.Shell
             Bind("view.browser", () => browser?.Toggle());
             Bind("view.inspector", () => inspector?.Toggle());
             Bind("view.detail", () => detail?.Toggle());
+            Bind("view.device", ShowDevice);
+            Bind("device.find", FindParameter);
             Bind("view.mixer", ToggleSessionMixer);
             Bind("help.shortcuts", ShowShortcuts);
             KeyBindings.Add(new KeyBinding { Gesture = Keys(Key.OemComma, CommandModifiers), Command = new Command(ShowPreferences) });
@@ -800,6 +807,30 @@ namespace ReBuzz.Studio.Shell
         }
 
         /// <summary>⌥⌘4: the detail panel's piano roll, docked (maximised stays so), with the keyboard in it.</summary>
+        /// <summary>The detail panel on its Device page, following the selected machine.</summary>
+        internal void ShowDevice()
+        {
+            if (detail?.DevicePage is not Views.Device.DeviceDock dock) return;
+            detail.ShowDevice(detail.IsMaximised);
+            dock.Follow();
+        }
+
+        /// <summary>⌘F: the Device page's search box.</summary>
+        internal void FindParameter()
+        {
+            ShowDevice();
+            (detail?.DevicePage as Views.Device.DeviceDock)?.Page?.Parameters.FocusSearch();
+        }
+
+        /// <summary>A double click on a machine with no editor: selects it and shows its device (true when the panel took it).</summary>
+        bool OpenDevice(IMachine machine)
+        {
+            if (detail?.DevicePage is not Views.Device.DeviceDock || host.Core == null) return false;
+            StudioSelection.For(host.Core).SelectMachine(machine, this);
+            ShowDevice();
+            return true;
+        }
+
         internal void ShowPianoRoll()
         {
             if (detail == null) return;
@@ -962,6 +993,7 @@ namespace ReBuzz.Studio.Shell
             refresh.Stop();
             inspector?.Dispose();
             browser?.Dispose();
+            if (Platform.StudioMachineUiHost.DeviceOpener == (Func<IMachine, bool>)OpenDevice) Platform.StudioMachineUiHost.DeviceOpener = null;
             if (host.Agent != null) host.Agent.Changed -= Refresh;
             base.OnClosed(e);
         }

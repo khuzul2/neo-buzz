@@ -32,6 +32,26 @@ namespace ReBuzz.AgentTests
             Assert.That(m.Parameters, Has.All.Matches<ManifestParameter>(p => p.How.Length > 0 && p.Sound.Length > 0));
         }
 
+        // Neo Learn L1a: the three other synths, 12 controls each with ids, How and Sound.
+        [TestCase("NeoLearnFM", "Neo Learn FM", "mod_ratio,fm_index,mod_decay,feedback,op3_harmonic,vel_sensitivity")]
+        [TestCase("NeoLearnWavetable", "Neo Learn Wavetable", "wt_position,phase_warp,table_select,scan_speed,scan_depth,sub_anchor")]
+        [TestCase("NeoLearnAdditive", "Neo Learn Additive", "spectral_tilt,odd_even_balance,partial_count,inharmonicity,harmonic_comb,partial_shimmer")]
+        [TestCase("NeoLearnGranular", "Neo Learn Granular", "sample_position,grain_size,grain_density,position_spray,pitch_shimmer,grain_shape")]
+        [TestCase("NeoLearnPhysical", "Neo Learn Physical", "material,exciter_type,exciter_force,resonator_shape,damping,body_size")]
+        public void TheOtherLearnManifestsCarryTwelveControlsWithIdsHowAndSound(string folder, string gear, string core)
+        {
+            var m = MachineManifest.Load(Path.Combine(RepoRoot(), "Machines", folder, gear + MachineManifest.Suffix))!;
+            Assert.That(m.Parameters.Count, Is.EqualTo(12));
+            Assert.That(m.Parameters.Select(p => p.Id).Take(6), Is.EqualTo(core.Split(',')));
+            Assert.That(m.Parameters.Select(p => p.Id).Skip(6), Is.EqualTo(new[]
+                { "env_attack", "env_decay", "env_sustain", "env_release", "unison_detune", "output_gain" }));
+            Assert.That(m.Parameters, Has.All.Matches<ManifestParameter>(p => p.How.Length > 0 && p.Sound.Length > 0));
+            var o = new JsonObject();
+            ExplainFields.Add(o, m.Parameters[0]);
+            Assert.That((string)o["id"]!, Is.EqualTo(core.Split(',')[0]));
+            Assert.That((string)o["how"]!, Is.Not.Empty);
+        }
+
         [Test]
         public void DescribeAddsIdUnitRangeDefaultCurveHowAndSound()
         {

@@ -27,7 +27,7 @@ Params.def lines:
 
 Kinds and their arguments:
   lin A B [unit] [digits]          A + t(B-A)
-  exp A B [unit] [digits]          A (B/A)^t
+  exp A B [unit] [digits] [detent=N]  A (B/A)^t; detent=N: the value rests on multiples of N (within 1.5%)
   pow A B EXP [unit] [digits]      A + t^EXP (B-A)
   db A B [inf]                     dB, linear in dB; "inf": the bottom is -inf
   time A B                         seconds, exponential
@@ -165,7 +165,13 @@ def table_entry(p):
 
     if kind in ('lin', 'exp'):
         pos = [num(a[0]), num(a[1])]
-        take_unit_digits(a[2:])
+        rest = []
+        for t in a[2:]:
+            if t.startswith('detent='):
+                named.append(f'detent: {num(t[7:])}')   # exp only: the value rests on multiples of this (neo-learn.md 5.2)
+            else:
+                rest.append(t)
+        take_unit_digits(rest)
     elif kind == 'pow':
         pos = [num(a[0]), num(a[1])]
         named.append(f'exponent: {num(a[2])}')
@@ -237,7 +243,7 @@ def manifest_param(index, p):
     num_or_digits = lambda t: t.lstrip('-').isdigit()
     if kind in ('lin', 'exp'):
         m['a'], m['b'] = float(a[0]), float(a[1])
-        rest = [t for t in a[2:] if not num_or_digits(t)]
+        rest = [t for t in a[2:] if not num_or_digits(t) and not t.startswith('detent=')]
         unit = rest[0] if rest else ''
     elif kind == 'pow':
         m['a'], m['b'], m['exponent'] = float(a[0]), float(a[1]), float(a[2])

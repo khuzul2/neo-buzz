@@ -131,6 +131,8 @@ namespace ReBuzz.Agent
                         int target = step == 0 ? 0 : steps.FindIndex(s => s.Id == step) + 1;
                         if (host.FailedCallOnRedo && host.UndosSinceFailedCall == 0 && target > undone)
                             throw new ToolError("Nothing to redo there: the steps after the current one are a failed call's, taken back.");
+                        if (Math.Abs(undone - target) > ReBuzz.Core.SongHistory.SongSnapshots.BigJumpSteps)
+                            host.AutoSnapshot($"before jumping {Math.Abs(undone - target)} steps");      // history-snapshots.md HS2
                         if (!stack.JumpTo(step)) throw new ToolError($"Could not jump to step {step}.");
                         if (host.FailedCallOnRedo) host.UndosSinceFailedCall = Math.Max(0, host.UndosSinceFailedCall + (undone - target));
                         core.SetModifiedFlag();

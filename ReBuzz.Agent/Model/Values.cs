@@ -168,6 +168,8 @@ namespace ReBuzz.Agent.Model
                 case "oct": case "octave": case "octaves": return "oct";
                 case "°": case "deg": case "degrees": return "°";   // phases (Neo Ensemble's Spread)
                 case "bpm": return "bpm";
+                // Neo Learn Granular's Density.
+                case "grains/s": case "grains/sec": return "grains/s";
                 case "tick": case "ticks": return "ticks";
                 case "x": case "×": return "x";
                 case ":1": return "ratio";

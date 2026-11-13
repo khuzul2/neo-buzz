@@ -61,6 +61,14 @@ namespace ReBuzz.Agent.Guides
             return reader.ReadToEnd();
         }
 
+        /// <summary>A preset's category: the name before " — " (or ": "); empty when it has none.</summary>
+        static string Category(string name)
+        {
+            int i = name.IndexOf(" — ", StringComparison.Ordinal);
+            if (i < 0) i = name.IndexOf(": ", StringComparison.Ordinal);
+            return i > 0 ? name.Substring(0, i) : "";
+        }
+
         /// <summary>
         /// The manual resource for one installed gear. The ReBuzz side calls this once per gear with
         /// a manifest; <paramref name="presetNames"/> is read each time the manual is (presets saved later show up).
@@ -165,7 +173,19 @@ namespace ReBuzz.Agent.Guides
             if (presets.Count == 0) sb.Append("None listed. `preset_list(machine=…)` shows what the installed gear has.\n");
             else
             {
-                foreach (var p in presets) sb.Append("- ").Append(p).Append('\n');
+                // A long bank (Dye Essence's hundreds) is listed by category, the name before " — ": one heading each, with its count.
+                var groups = presets.GroupBy(p => Category(p)).ToList();
+                if (presets.Count > 40 && groups.Count(g => g.Key.Length > 0) > 1)
+                {
+                    foreach (var g in groups)
+                    {
+                        sb.Append("### ").Append(g.Key.Length > 0 ? g.Key : "Other").Append(" (").Append(g.Count()).Append(")\n\n");
+                        foreach (var p in g) sb.Append("- ").Append(p).Append('\n');
+                        sb.Append('\n');
+                    }
+                    sb.Append("`preset_list(machine=…, category=\"").Append(groups.First(g => g.Key.Length > 0).Key).Append("\")` pages one category; `search` looks in the names and comments.\n");
+                }
+                else foreach (var p in presets) sb.Append("- ").Append(p).Append('\n');
                 sb.Append($"\nLoad one with `preset_load(machine=…, preset=\"{presets[0]}\")`, then adjust with `param_set`. `preset_list(machine=…)` also shows presets saved since.\n");
             }
             if (manifest.Evidence.Count > 0)

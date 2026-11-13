@@ -1,0 +1,129 @@
+# Neo Learn Physical factory presets. Output is set last so each chord sounds at the same level (loudest 50 ms RMS -22 dB). Times are in seconds.
+# Rebuild: python3 tools/gen-machine-presets.py Machines/NeoLearnPhysical
+machine "Neo Learn Physical"
+
+preset "Marimba — Rosewood"
+Material = 5
+Exciter Mode = 0
+Strike / Pressure = 55
+Geometry = 67
+Damping = 45
+Body Size = 55
+Attack = 0.001
+Decay = 1.0
+Sustain = 100
+Release = 0.15
+Unison / Spread = 0
+Output = -3.3
+
+preset "Pluck — Nylon Guitar"
+Material = 30
+Exciter Mode = 50
+Strike / Pressure = 55
+Geometry = 0
+Damping = 40
+Body Size = 60
+Attack = 0.001
+Decay = 1.0
+Sustain = 100
+Release = 0.3
+Unison / Spread = 0
+Output = -5.4
+
+preset "Bell — Bronze"
+Material = 100
+Exciter Mode = 0
+Strike / Pressure = 70
+Geometry = 100
+Damping = 5
+Body Size = 50
+Attack = 0.001
+Decay = 1.0
+Sustain = 100
+Release = 1.5
+Unison / Spread = 0
+Output = -12.4
+
+preset "Glass — Crystal Bowl"
+Material = 70
+Exciter Mode = 25
+Strike / Pressure = 40
+Geometry = 80
+Damping = 10
+Body Size = 45
+Attack = 0.002
+Decay = 1.0
+Sustain = 100
+Release = 1.2
+Unison / Spread = 20
+Output = -19.2
+
+preset "Bow — Cello Strings"
+Material = 25
+Exciter Mode = 100
+Strike / Pressure = 55
+Geometry = 0
+Damping = 25
+Body Size = 85
+Attack = 0.09
+Decay = 1.0
+Sustain = 100
+Release = 0.4
+Unison / Spread = 25
+Output = -16.4
+
+preset "Breath — Open Pipe"
+Material = 40
+Exciter Mode = 95
+Strike / Pressure = 35
+Geometry = 33
+Damping = 20
+Body Size = 40
+Attack = 0.12
+Decay = 1.0
+Sustain = 100
+Release = 0.3
+Unison / Spread = 0
+Output = -9.5
+
+preset "Kalimba — Thumb Piano"
+Material = 15
+Exciter Mode = 10
+Strike / Pressure = 40
+Geometry = 55
+Damping = 35
+Body Size = 15
+Attack = 0.001
+Decay = 1.0
+Sustain = 100
+Release = 0.2
+Unison / Spread = 0
+Output = -6.2
+
+preset "Harp — Soft Pick"
+Material = 45
+Exciter Mode = 55
+Strike / Pressure = 30
+Geometry = 0
+Damping = 30
+Body Size = 55
+Attack = 0.001
+Decay = 1.0
+Sustain = 100
+Release = 0.5
+Unison / Spread = 15
+Output = -16.0
+
+preset "Plate — Struck Steel"
+Material = 95
+Exciter Mode = 5
+Strike / Pressure = 90
+Geometry = 100
+Damping = 20
+Body Size = 30
+Attack = 0.001
+Decay = 1.0
+Sustain = 100
+Release = 0.8
+Unison / Spread = 0
+Output = -12.9

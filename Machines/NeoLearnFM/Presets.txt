@@ -1,0 +1,115 @@
+# Neo Learn FM factory presets. Output is set last so each chord sounds at the same level (loudest 50 ms RMS -22 dB).
+# Rebuild: python3 tools/gen-machine-presets.py Machines/NeoLearnFM
+machine "Neo Learn FM"
+
+preset "Keys — Tine Piano"
+Mod Ratio = 1
+FM Depth = 32
+Mod Decay = 450
+Feedback = 0
+Metallic Edge = 45
+Velocity to FM = 60
+Attack = 1
+Decay = 900
+Sustain = 15
+Release = 250
+Unison / Spread = 0
+Output = -5.9
+
+preset "Keys — Glass Bell"
+Mod Ratio = 3.5
+FM Depth = 45
+Mod Decay = 1200
+Feedback = 0
+Metallic Edge = 25
+Velocity to FM = 40
+Attack = 1
+Decay = 2500
+Sustain = 0
+Release = 1200
+Unison / Spread = 0
+Output = -7.5
+
+preset "Bass — FM Pluck"
+Mod Ratio = 1
+FM Depth = 55
+Mod Decay = 120
+Feedback = 20
+Metallic Edge = 0
+Velocity to FM = 50
+Attack = 1
+Decay = 300
+Sustain = 40
+Release = 90
+Unison / Spread = 0
+Output = -2.4
+
+preset "Bass — Growl"
+Mod Ratio = 2
+FM Depth = 70
+Mod Decay = 400
+Feedback = 55
+Metallic Edge = 0
+Velocity to FM = 40
+Attack = 1
+Decay = 400
+Sustain = 70
+Release = 120
+Unison / Spread = 0
+Output = -5.6
+
+preset "Lead — Bright Glass"
+Mod Ratio = 3
+FM Depth = 50
+Mod Decay = 600
+Feedback = 30
+Metallic Edge = 30
+Velocity to FM = 50
+Attack = 2
+Decay = 500
+Sustain = 75
+Release = 300
+Unison / Spread = 25
+Output = -3.5
+
+preset "Pad — Slow Bells"
+Mod Ratio = 2.5
+FM Depth = 25
+Mod Decay = 1500
+Feedback = 0
+Metallic Edge = 10
+Velocity to FM = 30
+Attack = 400
+Decay = 2000
+Sustain = 60
+Release = 2500
+Unison / Spread = 40
+Output = 2.9
+
+preset "Percussion — Metal Hit"
+Mod Ratio = 5.5
+FM Depth = 80
+Mod Decay = 60
+Feedback = 40
+Metallic Edge = 70
+Velocity to FM = 50
+Attack = 0.5
+Decay = 200
+Sustain = 0
+Release = 120
+Unison / Spread = 0
+Output = -10.0
+
+preset "Lead — Clean Sine"
+Mod Ratio = 1
+FM Depth = 8
+Mod Decay = 800
+Feedback = 0
+Metallic Edge = 0
+Velocity to FM = 30
+Attack = 8
+Decay = 600
+Sustain = 80
+Release = 200
+Unison / Spread = 15
+Output = 7.7

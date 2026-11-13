@@ -58,7 +58,7 @@ namespace ReBuzz.Studio.Shell
         {
             if (timer != null) return;
             timer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
-            timer.Tick += (s, e) => core.Autosave?.Tick(DateTime.Now);
+            timer.Tick += (s, e) => { core.Autosave?.Tick(DateTime.Now); core.Snapshots?.Tick(DateTime.UtcNow); };
             timer.Start();
         }
     }
