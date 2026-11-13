@@ -38,9 +38,13 @@ namespace NeoBuzz.DyeEssence
         readonly float[][][] userPartials = new float[NoteBank.Oscillators][][];
         static readonly int[] HarmBase = { P.AHSet, P.BHSet, P.CHSet };
         static readonly int[] ModalBase = { P.AMExc, P.BMExc, P.CMExc };
+        static readonly int[] SpecBase = { P.ASpSpeed, P.BSpSpeed, P.CSpSpeed };
         readonly SampleLayer[] requestedSample = new SampleLayer[NoteBank.Oscillators];
         readonly SampleLayer[] userSample = new SampleLayer[NoteBank.Oscillators];
         readonly string[] sampleName = { "", "", "" };
+        // The Spectral engine's models of the slots' "User" samples (analysed when the sample was loaded, or read back from the song).
+        readonly SpectralModel[] requestedModel = new SpectralModel[NoteBank.Oscillators];
+        readonly SpectralModel[] userModel = new SpectralModel[NoteBank.Oscillators];
         readonly DrawnShape[] requestedShape = { DrawnShape.Default, DrawnShape.Default, DrawnShape.Default, DrawnShape.Default };
         int userChanged, shapeChanged;
         bool tablesPending;
@@ -97,7 +101,7 @@ namespace NeoBuzz.DyeEssence
         }
 
         /// <summary>Whether a built-in table is still being built (any thread): offline renders wait for it.</summary>
-        public bool TablesBuilding => !TableBank.AllBuilt() || !SampleSources.AllBuilt();
+        public bool TablesBuilding => !TableBank.AllBuilt() || !SampleSources.AllBuilt() || !SpectralSources.AllBuilt();
 
         /// <summary>A chosen table is still being built (the slot plays its previous table, or nothing yet).</summary>
         public bool TablesPending => Volatile.Read(ref tablesPending);
@@ -125,6 +129,15 @@ namespace NeoBuzz.DyeEssence
         }
 
         public SampleLayer UserSample(int osc) => Volatile.Read(ref requestedSample[osc]);
+
+        /// <summary>Any thread: slot <paramref name="osc"/>'s "User" sample's model for the Spectral engine from the next block (null: none yet).</summary>
+        public void SetUserModel(int osc, SpectralModel model)
+        {
+            Volatile.Write(ref requestedModel[osc], model);
+            Volatile.Write(ref userChanged, 1);
+        }
+
+        public SpectralModel UserModel(int osc) => Volatile.Read(ref requestedModel[osc]);
         public string UserSampleName(int osc) => sampleName[osc];
 
         /// <summary>Any thread: LFO <paramref name="lfo"/>'s drawn shape from the next block (null: the default).</summary>
@@ -156,6 +169,7 @@ namespace NeoBuzz.DyeEssence
                     userTable[o] = Volatile.Read(ref requestedUser[o]);
                     userPartials[o] = Volatile.Read(ref requestedPartials[o]);
                     userSample[o] = Volatile.Read(ref requestedSample[o]);
+                    userModel[o] = Volatile.Read(ref requestedModel[o]);
                 }
             var s = Bank.S;
             alloc.Mode = (VoiceMode)values.Choice(P.VoiceMode);
@@ -240,6 +254,25 @@ namespace NeoBuzz.DyeEssence
                 os.OddEven = values.F(h + (P.AHOddEven - P.AHSet)) / 100f;
                 os.Stretch = values.F(h + (P.AHStretch - P.AHSet)) / 100f;
                 os.Damp = values.F(h + (P.AHDamp - P.AHSet));
+                int sp = SpecBase[o];
+                if (os.Type == SlotType.Spectral)
+                {
+                    int src = values.Choice(m);
+                    var model = src >= SampleSources.Count ? userModel[o] : SpectralSources.Get(src);
+                    // Keep playing the previous model until a newly chosen one is made (a user sample's is made when it is loaded).
+                    if (model == null && (src < SampleSources.Count || userSample[o] != null)) pendingNow = true;
+                    else if (model != null) os.Spectrum = model;
+                    else os.Spectrum = null;
+                }
+                os.SpSpeed = values.F(sp) / 100f;
+                os.SpKey = values.F(sp + (P.ASpKey - P.ASpSpeed));
+                os.SpFormant = values.F(sp + (P.ASpFormant - P.ASpSpeed));
+                os.SpSnap = values.F(sp + (P.ASpSnap - P.ASpSpeed));
+                os.SpBalance = values.F(sp + (P.ASpBalance - P.ASpSpeed));
+                os.SpBlur = values.F(sp + (P.ASpBlur - P.ASpSpeed));
+                os.SpPartials = (int)values.Value(sp + (P.ASpPartials - P.ASpSpeed));
+                os.SpTilt = values.F(sp + (P.ASpTilt - P.ASpSpeed));
+                os.SpStretch = values.F(sp + (P.ASpStretch - P.ASpSpeed)) / 100f;
                 int md = ModalBase[o];
                 os.Exciter = values.Choice(md);
                 os.Force = values.F(md + (P.AMForce - P.AMExc));

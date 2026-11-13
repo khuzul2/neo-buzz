@@ -37,6 +37,12 @@
     <InternalsVisibleTo Include="ReBuzz.Studio.Tests" />
   </ItemGroup>
 
+  <!-- Fork (ux-overhaul.md P6, the studio's Windows preview): libsndfile, which BuzzGUI.Common's binding imports as "libsndfile-1"
+       (wave import), beside the app and its tests on Windows; elsewhere the OS's own (NativeLibraries). -->
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <None Include="..\3rdParty\libsndfile-1.dll" Link="libsndfile-1.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup>
     <!-- The engine's start-up off WPF, shared with rebuzz-headless. -->
     <ProjectReference Include="..\ReBuzz.Host\ReBuzz.Host.csproj" />

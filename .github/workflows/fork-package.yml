@@ -11,6 +11,8 @@ name: Fork package (NeoBuzz Live + all machines)
 # Manual inputs for test work: "quick" skips the external machines and the zip,
 # "test_filter" runs a subset of tests (dotnet test --filter syntax), and "profile_only"
 # profiles some machines (tools/machine-profiler.py --only) instead of every one.
+# "diag" (full builds) adds a natives diagnosis step: Infector's 0.4 case rendered 12 times against four instances of
+# upstream's binary (the gate, over all renders), and the work time of Jeskola Delay's and NiNjA dElaY's builds side by side.
 
 on:
   workflow_dispatch:
@@ -27,6 +29,10 @@ on:
         description: 'Machine profiler --only patterns, comma-separated (empty = every machine)'
         type: string
         default: ''
+      diag:
+        description: 'Natives diagnosis (fix/ci-flakes-4): Infector repeated, work time of Jeskola Delay and NiNjA builds (full builds only)'
+        type: boolean
+        default: false
   push:
     tags: [ 'fork-v*' ]
 
@@ -253,6 +259,20 @@ jobs:
           --zeroed Z64=build/ExternalMachines/natives-zeroed/x64/Gear
         exit $LASTEXITCODE
 
+    - name: Natives, diagnosis (fix/ci-flakes-4)
+      if: (success() || failure()) && steps.build.outcome == 'success' && inputs.quick != true && inputs.diag == true
+      timeout-minutes: 40
+      shell: pwsh
+      run: |
+        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
+        ./tools/build-natives.ps1 -OutDir build/ExternalMachines/natives-o2 -Flags '/O2' -Platforms x64 -Only 'Jeskola Delay','Jeskola NiNjA dElaY'
+        python tools/native-cpu.py $exe.FullName native-cpu --only 'Jeskola Delay,Jeskola NiNjA dElaY' --reps 5 --variant O2=build/ExternalMachines/natives-o2/x64/Gear
+        python tools/native-compare.py $exe.FullName native-compare-diag --only 'Jeskola Delay,Jeskola NiNjA dElaY' --variant O2=build/ExternalMachines/natives-o2/x64/Gear
+        python tools/native-compare.py $exe.FullName native-compare-infector --only 'FSM Infector' --repeat 12 --gate `
+          --variant R64=build/ExternalMachines/natives/x64/Gear --variant R86=build/ExternalMachines/natives/x86/Gear
+        exit $LASTEXITCODE
+
     # §12.14: songs saved with upstream's binaries of the natives the package ships rebuilt (three songs built with them here,
     # and the classic Buzz songs in ExternalMachines/source that use them) open with the rebuilt ones, Jeskola's x64 builds
     # in place of the 32-bit originals among them: the same parameters on every track, the same bits (or within -100 dBFS)
@@ -385,6 +405,76 @@ jobs:
         }
         $i = 0
         foreach ($l in $lines) { $i++; Write-Host "::notice title=Engine diagnostics $i::$l" }
+
+    # NeoBuzz Live Studio (preview) in the package (docs/specs/ux-overhaul.md P6), last so that it never hides the tests above.
+    # the package, started with a song of native Buzz machines (FSM Infector, x64, in its host; Jeskola Bass 3 and Reverb, x86,
+    # through the 32-bit bridge), its MCP server, a render on the null device, and a clean quit (tools/studio-windows-smoke.py).
+    - name: Studio preview smoke test
+      if: always() && steps.build.outcome == 'success'
+      timeout-minutes: 30
+      shell: pwsh
+      run: |
+        $pkg = (Get-ChildItem dist -Directory | Where-Object Name -like 'NeoBuzz-Live-*-x64' | Select-Object -First 1).FullName
+        python tools/studio-windows-smoke.py "$pkg\Studio\NeoBuzzLiveStudio.exe" "$env:RUNNER_TEMP\studio-package-smoke" --song "ExternalMachines/source/buzztrax-buzzmachines/FSM/Infector/FSM_Infector_Demo.bmx" --native-gear "FSM Infector,Jeskola Bass 3,Jeskola Reverb"
+        exit $LASTEXITCODE
+
+  # NeoBuzz Live Studio (preview) on Windows (docs/specs/ux-overhaul.md P6): the studio (ReBuzz.Studio, Avalonia) on a Windows
+  # runner. Its headless tests there, then it is published for win-x64 with PortAudio built from source with CMake
+  # (tools/build-portaudio.ps1: MME, DirectSound, WASAPI and WDM-KS, no ASIO) and the published NeoBuzzLiveStudio.exe is
+  # smoke-tested (tools/studio-windows-smoke.py): devices listed, started, its MCP server answers, a song plays on the null
+  # device and renders, the window closes cleanly. The package job above puts the same folder in the zip as Studio\ and
+  # smoke-tests that too, with a song of native Buzz machines.
+  studio-windows:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+    - name: Checkout (with submodules)
+      uses: actions/checkout@v5
+      with:
+        submodules: recursive
+
+    - name: Setup .NET 10 SDK
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Studio tests (headless, Windows)
+      shell: pwsh
+      run: dotnet test ReBuzz.Studio.Tests -p:ReBuzzCleanBuild=true --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath studio-test.log
+
+    - name: Failed studio tests
+      if: failure()
+      shell: pwsh
+      run: |
+        Select-String -Path studio-test.log -Pattern '^\s*Failed ' | Select-Object -First 60 | ForEach-Object { Write-Host $_.Line }
+        Select-String -Path studio-test.log -Pattern 'Failed!|Passed!' | ForEach-Object { Write-Host $_.Line }
+
+    - name: Publish the studio (win-x64) with PortAudio from source
+      if: always()
+      shell: pwsh
+      run: ./tools/publish-studio-windows.ps1 -Out build/Studio
+
+    - name: Studio smoke test (published exe)
+      if: always() && hashFiles('build/Studio/NeoBuzzLiveStudio.exe') != ''
+      timeout-minutes: 25
+      shell: pwsh
+      run: |
+        python tools/studio-windows-smoke.py "$PWD\build\Studio\NeoBuzzLiveStudio.exe" "$env:RUNNER_TEMP\studio-smoke"
+        exit $LASTEXITCODE
+
+    - name: Zip the studio
+      if: always() && hashFiles('build/Studio/NeoBuzzLiveStudio.exe') != ''
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force dist | Out-Null
+        Compress-Archive -Path build/Studio/* -DestinationPath dist/NeoBuzz-Live-Studio-preview-win-x64.zip -CompressionLevel Optimal
+
+    - name: Upload the studio
+      if: always() && hashFiles('dist/*.zip') != ''
+      uses: actions/upload-artifact@v6
+      with:
+        name: NeoBuzz-Live-Studio-preview-win-x64
+        path: dist/*.zip
 
   # The null test (docs/specs/mac-engine.md decision 6, M3/M4): rebuzz-headless renders the same cases
   # as the package job's NeoBuzzLive.exe, and each must be bit-identical to the Windows reference, every

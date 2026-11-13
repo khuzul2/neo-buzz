@@ -265,8 +265,26 @@ namespace ReBuzzTests
                 })
                 {
                     if (!Has(bin, "Effects", filter) && !Has(bin, "Effects", filter + ".NET")) continue;
-                    EffectSong(client, filter, changes, noise: true);
-                    var within = Within(Replace(client, label));
+                    bool? within;
+                    if (assert && filter == "FSM WahMan")
+                    {
+                        // The quick package plays upstream's WahMan, whose glide starts at a cutoff its code never sets (heap
+                        // garbage, per instance: the rebuilt one starts at 0, U7): one instance in a few dozen starts it where
+                        // the filter never settles and the comparison misses by 20 dB. A new song is a new instance, so a miss
+                        // is played again (GuardPolicy: up to three, the first that converts counts); a real difference is
+                        // in every instance of it.
+                        within = GuardPolicy.Retry(() =>
+                        {
+                            EffectSong(client, filter, changes?.DeepClone().AsArray(), noise: true);   // a JSON node has one parent
+                            return Within(Replace(client, label));
+                        }, w => w == true, out var attempts);
+                        if (attempts.Count > 1) TestContext.Out.WriteLine($"[notice] {label}: {attempts.Count} instances played ({string.Join(", ", attempts.Select(w => w?.ToString() ?? "-"))})");
+                    }
+                    else
+                    {
+                        EffectSong(client, filter, changes, noise: true);
+                        within = Within(Replace(client, label));
+                    }
                     if (assert) results.Add((label, within));
                 }
             }

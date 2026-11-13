@@ -4,7 +4,7 @@
 namespace NeoBuzz.DyeEssence
 class DyeEssenceMachine
 tracks 16
-summary Hybrid wavetable synth: three engine slots, each a morphing wavetable or an analog oscillator with 1–16 unison voices and two warps (bend, sync, FM, PM, AM, ring and more), a sub and a noise, samples (looped, reversed, tuned by root), granular clouds of them and additive partials (up to 128, morphing between sets, tilt, odd/even, stretch, damp), modal bodies (a bank of up to 64 resonating modes struck, plucked or bowed: string, tube, bar, membrane, plate or bell), two filters per note (ladder, state-variable, comb; serial to parallel), oversampled 2× or 4×; two modulation envelopes, four LFOs (built-in or drawn shapes), four macros and sixteen routes. Use it for wide unison leads, evolving pads, FM and sync basses, plucks and bells.
+summary Hybrid wavetable synth: three engine slots, each a morphing wavetable or an analog oscillator with 1–16 unison voices and two warps (bend, sync, FM, PM, AM, ring and more), a sub and a noise, samples (looped, reversed, tuned by root), granular clouds of them and additive partials (up to 128, morphing between sets, tilt, odd/even, stretch, damp), modal bodies (a bank of up to 64 resonating modes struck, plucked or bowed: string, tube, bar, membrane, plate or bell), spectral resynthesis of a sample (its partials and noise, played at any pitch and speed), two filters per note (ladder, state-variable, comb; serial to parallel), oversampled 2× or 4×; two modulation envelopes, four LFOs (built-in or drawn shapes), four macros and sixteen routes. Use it for wide unison leads, evolving pads, FM and sync basses, plucks and bells.
 import wavetable .wav | A WAV wavetable: frames of 2048 samples (or a clm chunk saying the frame size), or one short single cycle. Becomes a slot's "User" table: item 0 is slot A, 1 slot B, 2 slot C. The Harmonic engine reads its partial levels: the first frame is the "User" set, the last the "User" second set.
 import lfo_shape .txt | A drawn LFO shape: a text file of breakpoints "phase,value[,curve]" separated by spaces (phase 0–1 across one cycle, value −1–1, curve −1–1: 0 straight, below 0 a fast start, above a slow one; a point at 0 and one at 1 make a jump at the wrap). item 0–3 picks LFO 1–4; its shape is set to Drawn.
 import sequence .txt | The step sequencer's steps: a text file of steps separated by spaces, each "offset,velocity,gate,tie,probability" (note offset in semitones from the held key, velocity 1-127 or 0 for a rest, gate 1-100 % of the step, tie 0 or 1, probability 0-100 %; every field after the first is optional: "0,100,80,0,100" is a plain step). Up to 32 steps; the rest are plain steps. Set Seq mode to Notes or Mod to run it, and Seq length for how many steps play.
@@ -13,7 +13,7 @@ import fx_routing .txt | Which effect slots sit in which chain of the rack, and 
 import ir .wav | A WAV impulse response for the Convolution type (mono or stereo, any rate; at most 480000 frames, 10 s at 48 kHz, the rest is cut; kept in the machine state). item 0-9 picks the effect slot (FX1-FX10): it is set to Convolution and its IR (p1) to User. The response is resampled to the host rate, shaped by the slot's Size, Pre-delay, Decay, Damping, Low cut, High cut, Width and Reverse and normalised to unit energy.
 import modulator .wav | A WAV sample for the Vocoder type to talk through (mixed to mono, any rate; at most 20 s at 48 kHz, looped; kept in the machine state). item 0-9 picks the effect slot (FX1-FX10): it is set to Vocoder and its Modulator (p1) to Sample. The carrier is the synth itself (the signal into the slot); Speed (p9) plays the clip faster or slower.
 
-import sample .wav | A WAV sample (mono or stereo, up to 20 s, kept in the machine state). Becomes a slot's "User" sample and sets that slot to the Sample engine (unless it is Granular): item 0 is slot A, 1 slot B, 2 slot C. The Sample and Granular engines play it; "A position" is where playback starts (Sample) or where grains are taken from (Granular).
+import sample .wav | A WAV sample (mono or stereo, up to 20 s, kept in the machine state). Becomes a slot's "User" sample and sets that slot to the Sample engine (unless it is Granular): item 0 is slot A, 1 slot B, 2 slot C. The Sample, Granular and Spectral engines play it; "A position" is where playback starts (Sample), where grains are taken from (Granular) or where the Spectral engine starts reading its analysis (made once, when the sample is loaded, and kept in the machine state).
 
 group Voice
 VoiceMode   "Voice mode"    0 2    0    enum Poly Mono Legato           | Poly; Mono retriggers; Legato glides without retriggering
@@ -42,9 +42,9 @@ Volume      "Volume"        0 1000 739  db -40 6 inf                    | Output
     sound It scales the whole sound before the effects rack, so a compressor or clipper there reacts to it; keep the peaks below 0 dB.
 
 group Osc A
-AType      "A engine"      0 6    1    enum Off Wavetable Analog Sample Granular Harmonic Modal | What slot A plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, or a struck, plucked or bowed resonating body (samples, grains, partials and bodies take no warps)
-    how Chooses what slot A plays: off, a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials or a resonating body.
-    sound Each engine has its own character, from bright and digital through warm and analog to glassy, airy or struck and woody.
+AType      "A engine"      0 7    1    enum Off Wavetable Analog Sample Granular Harmonic Modal Spectral | What slot A plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, a struck, plucked or bowed resonating body, or the resynthesis of a sample from its analysed partials and noise (samples, grains, partials, bodies and resynthesis take no warps)
+    how Chooses what slot A plays: off, a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, a resonating body or the resynthesis of a sample.
+    sound Each engine has its own character, from bright and digital through warm and analog to glassy, airy, struck and woody, or a sample made to hold, stretch or change pitch.
 ATable     "A table"       0 10   0    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
     how Picks the wavetable slot A reads, one of ten built-in sets or a table you loaded.
     sound Basic is plain and clean, the sweep and formant tables are animated and vowel-like, and Grit and Digital are harsh and metallic.
@@ -101,9 +101,9 @@ AToF2      "A → filter 2"  0 1000 0    pct                             | Balan
     sound It decides which filter shapes this slot, so two slots can be filtered differently.
 
 group Osc B
-BType      "B engine"      0 6    0    enum Off Wavetable Analog Sample Granular Harmonic Modal | What slot B plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, or a struck, plucked or bowed resonating body (samples, grains, partials and bodies take no warps)
-    how Chooses what slot B plays: off, a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials or a resonating body.
-    sound Each engine has its own character, from bright and digital through warm and analog to glassy, airy or struck and woody.
+BType      "B engine"      0 7    0    enum Off Wavetable Analog Sample Granular Harmonic Modal Spectral | What slot B plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, a struck, plucked or bowed resonating body, or the resynthesis of a sample from its analysed partials and noise (samples, grains, partials, bodies and resynthesis take no warps)
+    how Chooses what slot B plays: off, a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, a resonating body or the resynthesis of a sample.
+    sound Each engine has its own character, from bright and digital through warm and analog to glassy, airy, struck and woody, or a sample made to hold, stretch or change pitch.
 BTable     "B table"       0 10   2    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
     how Picks the wavetable slot B reads, one of ten built-in sets or a table you loaded.
     sound Basic is plain and clean, the sweep and formant tables are animated and vowel-like, and Grit and Digital are harsh and metallic.
@@ -160,9 +160,9 @@ BToF2      "B → filter 2"  0 1000 0    pct                             | Balan
     sound It decides which filter shapes this slot, so two slots can be filtered differently.
 
 group Osc C
-CType      "C engine"      0 6    0    enum Off Wavetable Analog Sample Granular Harmonic Modal | What slot C plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, or a struck, plucked or bowed resonating body (samples, grains, partials and bodies take no warps)
-    how Chooses what slot C plays: off, a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials or a resonating body.
-    sound Each engine has its own character, from bright and digital through warm and analog to glassy, airy or struck and woody.
+CType      "C engine"      0 7    0    enum Off Wavetable Analog Sample Granular Harmonic Modal Spectral | What slot C plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, a struck, plucked or bowed resonating body, or the resynthesis of a sample from its analysed partials and noise (samples, grains, partials, bodies and resynthesis take no warps)
+    how Chooses what slot C plays: off, a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, a resonating body or the resynthesis of a sample.
+    sound Each engine has its own character, from bright and digital through warm and analog to glassy, airy, struck and woody, or a sample made to hold, stretch or change pitch.
 CTable     "C table"       0 10   3    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
     how Picks the wavetable slot C reads, one of ten built-in sets or a table you loaded.
     sound Basic is plain and clean, the sweep and formant tables are animated and vowel-like, and Grit and Digital are harsh and metallic.
@@ -1381,3 +1381,94 @@ X10P9 "FX10 p9" 0 1000 500 pct | Effect slot 10, parameter 9, as the type names 
 X10P10 "FX10 p10" 0 1000 500 pct | Effect slot 10, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed; Convolution: Output; Vocoder: Output
     how Sets the slot's control number 10 as a share of its range, whose meaning depends on the effect type: EQ High gain, Filter LFO depth, Comp Link, and others.
     sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
+
+# P5a (appended): the Spectral engine's parameters for each slot: the resynthesis of a sample from its analysis (partials and noise). The sample is
+# the slot's "A sample" (built-in or User) and "A root" is the note it sounds at its own pitch; "A position" is where the reading starts (and, at
+# speed 0, where it holds); "A loop", "A loop start", "A loop end" and "A reverse" apply as for the Sample engine. Tuning, level, pan, unison,
+# detune and spread are the slot's own. The resynthesis takes no warps.
+group Osc A
+ASpSpeed   "A spectral speed" 0 1000 250 lin 0 400 % 0 | Spectral engine: how fast the sample is read, as a share of its own speed, without changing its pitch (100 %: as recorded, 25 %: four times slower, 0: frozen at "A position")
+    how Sets how fast the model of the sample is read, from frozen at 0 % through as recorded at 100 % to four times faster at 400 %.
+    sound Slower reads stretch the sound out without lowering it; 0 % holds one moment of it as a steady drone; faster reads squeeze it.
+ASpKey     "A key tracking" 0 1000 1000 pct | Spectral engine: how much the pitch follows the key played (100 %: the sample sounds at its own pitch on its root note and moves with the keys; 0: every key sounds the sample's own pitch)
+    how Sets how far the pitch follows the played key, from every key at the sample's own pitch at 0 % to a full semitone per key at 100 %.
+    sound At 100 % the sample plays as a melody instrument; lower values make the keys change less than a semitone each, and at 0 % they only retrigger it.
+ASpFormant "A formant keep" 0 1000 0 pct | Spectral engine: holds the sample's spectral envelope (its vowel or body colour) in place when the pitch changes, so that a shifted voice does not turn into a chipmunk or a giant
+    how Sets how much of the sample's spectral envelope stays where it was when the pitch is shifted, instead of moving with the partials.
+    sound At 100 % a voice pitched up keeps its vowel and size; at 0 % the whole timbre moves with the pitch, as in a sped-up recording.
+ASpSnap    "A harmonic snap" 0 1000 0 pct | Spectral engine: pulls each partial toward the nearest multiple of the sample's fundamental (100 %: all partials exactly harmonic; frames without a clear pitch are left alone)
+    how Sets how far each partial is pulled to the nearest whole multiple of the sample's fundamental, from untouched at 0 % to exactly harmonic at 100 %.
+    sound Snapping cleans a rough or slightly out-of-tune tone into a pure one and takes the beating out of inharmonic partials.
+ASpBalance "A tonal noise" 0 1000 500 pct | Spectral engine: the balance of the two halves of the model: 0 is the noise only, 50 % both as analysed, 100 % the partials only
+    how Sets the balance between the sample's noise and its partials: 0 % plays only the noise, 50 % both as recorded, 100 % only the partials.
+    sound Toward 100 % the sound becomes clean and pitched; toward 0 % it turns into a breathy, pitchless wash that keeps the sample's colour.
+ASpBlur    "A blur" 0 1000 0 pct | Spectral engine: smooths the model over time (up to 300 ms either side), so that attacks and changes are spread out and drift into each other
+    how Sets how far in time the model is smoothed, from exact at 0 % to blurred over about a third of a second at 100 %.
+    sound Higher values soften attacks and slur changes together into a smeared, dreamy texture.
+ASpPartials "A spectral partials" 1 64 48 int 0 | Spectral engine: how many partials sound (the model keeps up to 64 a frame, roughly loudest first); each added partial costs CPU
+    how Sets how many of the sample's partials are played, from the first one to all 64 the model can hold.
+    sound Fewer partials sound thinner and simpler; they cost less CPU, and the noise keeps the missing body.
+ASpTilt    "A spectral tilt" 0 1000 500 lin -24 24 dB/oct 1 | Spectral engine: brightness; each octave above the middle of the sample's spectrum louder (+) or softer (-) by this many dB
+    how Sets the slope of the partials' levels around the middle of the spectrum, in dB per octave, from darker at negative values to brighter at positive ones.
+    sound Positive values make the sound brighter and thinner; negative values make it darker and rounder.
+ASpStretch "A spectral stretch" 0 1000 500 lin -100 100 % 0 | Spectral engine: spreads the partials from whole multiples of the fundamental: + stretches them apart (bells, glass), - bunches them
+    how Sets how far the partials are spread from the whole multiples of the fundamental, from bunched together at negative values to stretched apart at positive ones.
+    sound Stretching turns a tone into something bell-like or metallic; bunching it makes it dense and clustered.
+
+group Osc B
+BSpSpeed   "B spectral speed" 0 1000 250 lin 0 400 % 0 | Spectral engine: how fast the sample is read, as a share of its own speed, without changing its pitch (100 %: as recorded, 25 %: four times slower, 0: frozen at "B position")
+    how Sets how fast the model of the sample is read, from frozen at 0 % through as recorded at 100 % to four times faster at 400 %.
+    sound Slower reads stretch the sound out without lowering it; 0 % holds one moment of it as a steady drone; faster reads squeeze it.
+BSpKey     "B key tracking" 0 1000 1000 pct | Spectral engine: how much the pitch follows the key played (100 %: the sample sounds at its own pitch on its root note and moves with the keys; 0: every key sounds the sample's own pitch)
+    how Sets how far the pitch follows the played key, from every key at the sample's own pitch at 0 % to a full semitone per key at 100 %.
+    sound At 100 % the sample plays as a melody instrument; lower values make the keys change less than a semitone each, and at 0 % they only retrigger it.
+BSpFormant "B formant keep" 0 1000 0 pct | Spectral engine: holds the sample's spectral envelope (its vowel or body colour) in place when the pitch changes, so that a shifted voice does not turn into a chipmunk or a giant
+    how Sets how much of the sample's spectral envelope stays where it was when the pitch is shifted, instead of moving with the partials.
+    sound At 100 % a voice pitched up keeps its vowel and size; at 0 % the whole timbre moves with the pitch, as in a sped-up recording.
+BSpSnap    "B harmonic snap" 0 1000 0 pct | Spectral engine: pulls each partial toward the nearest multiple of the sample's fundamental (100 %: all partials exactly harmonic; frames without a clear pitch are left alone)
+    how Sets how far each partial is pulled to the nearest whole multiple of the sample's fundamental, from untouched at 0 % to exactly harmonic at 100 %.
+    sound Snapping cleans a rough or slightly out-of-tune tone into a pure one and takes the beating out of inharmonic partials.
+BSpBalance "B tonal noise" 0 1000 500 pct | Spectral engine: the balance of the two halves of the model: 0 is the noise only, 50 % both as analysed, 100 % the partials only
+    how Sets the balance between the sample's noise and its partials: 0 % plays only the noise, 50 % both as recorded, 100 % only the partials.
+    sound Toward 100 % the sound becomes clean and pitched; toward 0 % it turns into a breathy, pitchless wash that keeps the sample's colour.
+BSpBlur    "B blur" 0 1000 0 pct | Spectral engine: smooths the model over time (up to 300 ms either side), so that attacks and changes are spread out and drift into each other
+    how Sets how far in time the model is smoothed, from exact at 0 % to blurred over about a third of a second at 100 %.
+    sound Higher values soften attacks and slur changes together into a smeared, dreamy texture.
+BSpPartials "B spectral partials" 1 64 48 int 0 | Spectral engine: how many partials sound (the model keeps up to 64 a frame, roughly loudest first); each added partial costs CPU
+    how Sets how many of the sample's partials are played, from the first one to all 64 the model can hold.
+    sound Fewer partials sound thinner and simpler; they cost less CPU, and the noise keeps the missing body.
+BSpTilt    "B spectral tilt" 0 1000 500 lin -24 24 dB/oct 1 | Spectral engine: brightness; each octave above the middle of the sample's spectrum louder (+) or softer (-) by this many dB
+    how Sets the slope of the partials' levels around the middle of the spectrum, in dB per octave, from darker at negative values to brighter at positive ones.
+    sound Positive values make the sound brighter and thinner; negative values make it darker and rounder.
+BSpStretch "B spectral stretch" 0 1000 500 lin -100 100 % 0 | Spectral engine: spreads the partials from whole multiples of the fundamental: + stretches them apart (bells, glass), - bunches them
+    how Sets how far the partials are spread from the whole multiples of the fundamental, from bunched together at negative values to stretched apart at positive ones.
+    sound Stretching turns a tone into something bell-like or metallic; bunching it makes it dense and clustered.
+
+group Osc C
+CSpSpeed   "C spectral speed" 0 1000 250 lin 0 400 % 0 | Spectral engine: how fast the sample is read, as a share of its own speed, without changing its pitch (100 %: as recorded, 25 %: four times slower, 0: frozen at "C position")
+    how Sets how fast the model of the sample is read, from frozen at 0 % through as recorded at 100 % to four times faster at 400 %.
+    sound Slower reads stretch the sound out without lowering it; 0 % holds one moment of it as a steady drone; faster reads squeeze it.
+CSpKey     "C key tracking" 0 1000 1000 pct | Spectral engine: how much the pitch follows the key played (100 %: the sample sounds at its own pitch on its root note and moves with the keys; 0: every key sounds the sample's own pitch)
+    how Sets how far the pitch follows the played key, from every key at the sample's own pitch at 0 % to a full semitone per key at 100 %.
+    sound At 100 % the sample plays as a melody instrument; lower values make the keys change less than a semitone each, and at 0 % they only retrigger it.
+CSpFormant "C formant keep" 0 1000 0 pct | Spectral engine: holds the sample's spectral envelope (its vowel or body colour) in place when the pitch changes, so that a shifted voice does not turn into a chipmunk or a giant
+    how Sets how much of the sample's spectral envelope stays where it was when the pitch is shifted, instead of moving with the partials.
+    sound At 100 % a voice pitched up keeps its vowel and size; at 0 % the whole timbre moves with the pitch, as in a sped-up recording.
+CSpSnap    "C harmonic snap" 0 1000 0 pct | Spectral engine: pulls each partial toward the nearest multiple of the sample's fundamental (100 %: all partials exactly harmonic; frames without a clear pitch are left alone)
+    how Sets how far each partial is pulled to the nearest whole multiple of the sample's fundamental, from untouched at 0 % to exactly harmonic at 100 %.
+    sound Snapping cleans a rough or slightly out-of-tune tone into a pure one and takes the beating out of inharmonic partials.
+CSpBalance "C tonal noise" 0 1000 500 pct | Spectral engine: the balance of the two halves of the model: 0 is the noise only, 50 % both as analysed, 100 % the partials only
+    how Sets the balance between the sample's noise and its partials: 0 % plays only the noise, 50 % both as recorded, 100 % only the partials.
+    sound Toward 100 % the sound becomes clean and pitched; toward 0 % it turns into a breathy, pitchless wash that keeps the sample's colour.
+CSpBlur    "C blur" 0 1000 0 pct | Spectral engine: smooths the model over time (up to 300 ms either side), so that attacks and changes are spread out and drift into each other
+    how Sets how far in time the model is smoothed, from exact at 0 % to blurred over about a third of a second at 100 %.
+    sound Higher values soften attacks and slur changes together into a smeared, dreamy texture.
+CSpPartials "C spectral partials" 1 64 48 int 0 | Spectral engine: how many partials sound (the model keeps up to 64 a frame, roughly loudest first); each added partial costs CPU
+    how Sets how many of the sample's partials are played, from the first one to all 64 the model can hold.
+    sound Fewer partials sound thinner and simpler; they cost less CPU, and the noise keeps the missing body.
+CSpTilt    "C spectral tilt" 0 1000 500 lin -24 24 dB/oct 1 | Spectral engine: brightness; each octave above the middle of the sample's spectrum louder (+) or softer (-) by this many dB
+    how Sets the slope of the partials' levels around the middle of the spectrum, in dB per octave, from darker at negative values to brighter at positive ones.
+    sound Positive values make the sound brighter and thinner; negative values make it darker and rounder.
+CSpStretch "C spectral stretch" 0 1000 500 lin -100 100 % 0 | Spectral engine: spreads the partials from whole multiples of the fundamental: + stretches them apart (bells, glass), - bunches them
+    how Sets how far the partials are spread from the whole multiples of the fundamental, from bunched together at negative values to stretched apart at positive ones.
+    sound Stretching turns a tone into something bell-like or metallic; bunching it makes it dense and clustered.

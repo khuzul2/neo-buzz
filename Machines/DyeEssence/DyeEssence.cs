@@ -45,6 +45,13 @@ namespace NeoBuzz.DyeEssence
         public int SampleCRate { get; set; }
         public bool SampleCStereo { get; set; }
         public string SampleCData { get; set; } = "";
+        /// <summary>
+        /// The Spectral engine's analysis of each slot's user sample (SpectralModel's text: quantised partials and noise bands, deflated, base64), made when
+        /// the sample is loaded so a reloaded song gives the same sound without analysing again. Empty: none yet (a song from before P5a is analysed on load).
+        /// </summary>
+        public string SpectrumAData { get; set; } = "";
+        public string SpectrumBData { get; set; } = "";
+        public string SpectrumCData { get; set; } = "";
         public string Lfo1Shape { get; set; } = "";
         public string Lfo2Shape { get; set; } = "";
         public string Lfo3Shape { get; set; } = "";
@@ -123,11 +130,26 @@ namespace NeoBuzz.DyeEssence
         internal DyeEssenceState WithSample(int slot, string name, int rate, bool stereo, string data)
         {
             var s = (DyeEssenceState)MemberwiseClone();
+            // A new sample has no analysis yet.
             switch (slot)
             {
-                case 0: s.SampleAName = name; s.SampleARate = rate; s.SampleAStereo = stereo; s.SampleAData = data; break;
-                case 1: s.SampleBName = name; s.SampleBRate = rate; s.SampleBStereo = stereo; s.SampleBData = data; break;
-                default: s.SampleCName = name; s.SampleCRate = rate; s.SampleCStereo = stereo; s.SampleCData = data; break;
+                case 0: s.SampleAName = name; s.SampleARate = rate; s.SampleAStereo = stereo; s.SampleAData = data; s.SpectrumAData = ""; break;
+                case 1: s.SampleBName = name; s.SampleBRate = rate; s.SampleBStereo = stereo; s.SampleBData = data; s.SpectrumBData = ""; break;
+                default: s.SampleCName = name; s.SampleCRate = rate; s.SampleCStereo = stereo; s.SampleCData = data; s.SpectrumCData = ""; break;
+            }
+            return s;
+        }
+
+        internal string GetSpectrum(int slot) => slot switch { 0 => SpectrumAData, 1 => SpectrumBData, _ => SpectrumCData };
+
+        internal DyeEssenceState WithSpectrum(int slot, string data)
+        {
+            var s = (DyeEssenceState)MemberwiseClone();
+            switch (slot)
+            {
+                case 0: s.SpectrumAData = data; break;
+                case 1: s.SpectrumBData = data; break;
+                default: s.SpectrumCData = data; break;
             }
             return s;
         }
@@ -226,12 +248,19 @@ namespace NeoBuzz.DyeEssence
                         {
                             var (l, r) = SampleSources.Decode(sdata, sstereo);
                             Engine.SetUserSample(slot, l.Length >= 16 ? SampleSources.Layer(sname, l, r, srate) : null, sname);
+                            // The Spectral engine's model: as the song kept it, else made now (a song from before the engine, or a damaged text).
+                            var model = SpectralModel.FromBase64(state.GetSpectrum(slot), sname);
+                            if (model != null && model.Length == l.Length && model.Rate == srate) { CancelAnalysis(slot); Engine.SetUserModel(slot, model); }
+                            else if (l.Length >= 16) AnalyseSample(slot, sname, l, r, srate);
+                            else Engine.SetUserModel(slot, null);
                         }
-                        else Engine.SetUserSample(slot, null, "");
+                        else { CancelAnalysis(slot); Engine.SetUserSample(slot, null, ""); Engine.SetUserModel(slot, null); }
                     }
                     catch (Exception)
                     {
+                        CancelAnalysis(slot);
                         Engine.SetUserSample(slot, null, "");
+                        Engine.SetUserModel(slot, null);
                     }
                 }
             }
@@ -326,7 +355,7 @@ namespace NeoBuzz.DyeEssence
         {
             get
             {
-                if (Engine.TablesBuilding) return true;
+                if (Engine.TablesBuilding || AnalysisPending) return true;
                 int sr = SampleRate;
                 if (sr > 0) Engine.Fx.PrepareRate(sr);
                 return Engine.Fx.PendingFor(HostFxType, HostFxValue);
@@ -456,8 +485,8 @@ namespace NeoBuzz.DyeEssence
                 string note = LoadUserSample(item, path);
                 setParameter?.Invoke(SampleParam[item], UserSampleChoice);
                 int engine = Values.Choice(TypeParam[item]);
-                if (engine != (int)SlotType.Sample && engine != (int)SlotType.Granular) setParameter?.Invoke(TypeParam[item], (int)SlotType.Sample);
-                return $"Loaded the sample \"{UserSampleName(item)}\" as slot {SlotNames[item]}'s User sample, and set {SlotNames[item]} sample to User{(engine != (int)SlotType.Sample && engine != (int)SlotType.Granular ? $" and {SlotNames[item]} engine to Sample" : "")}.{note}";
+                if (engine != (int)SlotType.Sample && engine != (int)SlotType.Granular && engine != (int)SlotType.Spectral) setParameter?.Invoke(TypeParam[item], (int)SlotType.Sample);
+                return $"Loaded the sample \"{UserSampleName(item)}\" as slot {SlotNames[item]}'s User sample, and set {SlotNames[item]} sample to User{(engine != (int)SlotType.Sample && engine != (int)SlotType.Granular && engine != (int)SlotType.Spectral ? $" and {SlotNames[item]} engine to Sample" : "")}.{note}";
             }
             if (kind != "wavetable") throw new ArgumentException($"Dye Essence doesn't import \"{kind}\"; it takes wavetable, sample, lfo_shape, sequence, fx_routing, ir and modulator.");
             if (item < 0 || item >= SlotNames.Length) throw new ArgumentException($"Dye Essence has {SlotNames.Length} slots; item {item} doesn't exist (0 A, 1 B, 2 C)");
@@ -508,7 +537,64 @@ namespace NeoBuzz.DyeEssence
             var layer = SampleSources.Layer(name, l, r, rate);
             state = state.WithSample(slot, name, rate, right != null, data);
             Engine.SetUserSample(slot, layer, name);
+            Engine.SetUserModel(slot, null);
+            AnalyseSample(slot, name, l, r, rate);
             return note;
+        }
+
+        // The Spectral engine's analysis of a user sample runs in the background (one per slot; a new sample cancels the old one's) and, when done, is kept
+        // in the machine state and handed to the engine. Not on the audio thread: the audio keeps the slot silent (or on its previous model) until it is done.
+        readonly System.Threading.CancellationTokenSource[] analysing = new System.Threading.CancellationTokenSource[3];
+        readonly float[] analysisProgress = { -1f, -1f, -1f };
+        int analysesRunning;
+
+        /// <summary>True while a user sample is being analysed (offline renders and the agent wait for it).</summary>
+        internal bool AnalysisPending => System.Threading.Volatile.Read(ref analysesRunning) > 0;
+
+        /// <summary>How far slot <paramref name="slot"/>'s analysis is, 0 … 1 (negative: none running).</summary>
+        internal float AnalysisProgress(int slot) => System.Threading.Volatile.Read(ref analysisProgress[slot]);
+
+        void CancelAnalysis(int slot)
+        {
+            var old = System.Threading.Interlocked.Exchange(ref analysing[slot], null);
+            old?.Cancel();
+        }
+
+        void AnalyseSample(int slot, string name, float[] left, float[] right, int rate)
+        {
+            CancelAnalysis(slot);
+            var cts = new System.Threading.CancellationTokenSource();
+            System.Threading.Volatile.Write(ref analysing[slot], cts);
+            var mono = new float[left.Length];
+            for (int i = 0; i < mono.Length; i++) mono[i] = right == null ? left[i] : 0.5f * (left[i] + right[i]);
+            System.Threading.Interlocked.Increment(ref analysesRunning);
+            System.Threading.Volatile.Write(ref analysisProgress[slot], 0f);
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    var model = SpectralAnalysis.Analyse(mono, rate, p => System.Threading.Volatile.Write(ref analysisProgress[slot], p), cts.Token, name);
+                    if (cts.IsCancellationRequested) return;
+                    string text = model.ToBase64();
+                    DyeEssenceState cur, next;
+                    do
+                    {
+                        cur = state;
+                        // Only while the slot still holds this sample.
+                        if (cur.GetSample(slot).Data.Length == 0 || cur.GetSample(slot).Rate != rate) return;
+                        next = cur.WithSpectrum(slot, text);
+                    } while (!ReferenceEquals(System.Threading.Interlocked.CompareExchange(ref state, next, cur), cur));
+                    Engine.SetUserModel(slot, model);
+                }
+                catch (OperationCanceledException) { }
+                catch (Exception) { Engine.SetUserModel(slot, null); }
+                finally
+                {
+                    System.Threading.Interlocked.CompareExchange(ref analysing[slot], null, cts);
+                    System.Threading.Volatile.Write(ref analysisProgress[slot], -1f);
+                    System.Threading.Interlocked.Decrement(ref analysesRunning);
+                }
+            });
         }
 
         /// <summary>Where the song is now (valid in Work), for the arpeggiator and the sequencer, which follow it.</summary>
