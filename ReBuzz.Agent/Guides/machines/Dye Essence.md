@@ -6,7 +6,7 @@ The signal flow (every engine, the filters, modulation, arpeggiator and sequence
 
 ## Gotchas
 
-- The effects rack (ten slots `FX1`…`FX10`; Trio and Duo chains; EQ, Filter, Comp, Clipper, Delay, Verb) is in `guide(topic="dye-essence-effects")`, with its "Rack" presets. Its chains are machine data, so `param_set` cannot move a slot between chains.
+- The effects rack (ten slots `FX1`…`FX10`; Trio and Duo chains; EQ, Filter, Comp, Clipper, Delay, Verb, Dimension, Bitcrusher, Freq shift, Pitch delay, Convolution, Vocoder) is in `guide(topic="dye-essence-effects")`. Its chains are machine data, so `param_set` cannot move a slot between chains.
 - Routes are parameters (source, destination, amount), so `param_set` and presets set them like any other; a route with source or dest Off, or amount 0 %, does nothing.
 - Free LFOs (retrig Off) don't take the LFO-rate destinations; per-note ones do.
 - The arpeggiator and the sequencer play only while there are held notes (the sequencer's Mod mode runs always); the sequencer's Notes mode takes over from the arpeggiator. A latched arpeggio ends with an All notes off or a transport stop. Changing `Arp mode` or `Seq mode` releases what they were sounding.
@@ -24,6 +24,8 @@ The signal flow (every engine, the filters, modulation, arpeggiator and sequence
 - Samples are normalised to a peak of 0.9 and decaying ones (Bell, Pluck) are quiet by RMS: turn `Volume` up or layer a second slot.
 
 ## Preset map
+
+The `Rack — …` presets (the effects rack's types) are listed in `guide(topic="dye-essence-effects")`.
 
 | Preset | What | Tweak first |
 |---|---|---|

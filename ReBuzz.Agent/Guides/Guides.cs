@@ -26,7 +26,7 @@ namespace ReBuzz.Agent.Guides
             "(or \"bar.beat\" text); pitches are MIDI numbers or names (60 = C4); levels in dB. Every changing call is one undo step " +
             "(undo reverts it); a call that fails changes nothing. Hear your work with render and check it with analyze. In studio and live mode the user " +
             "listens live too: transport, session_launch and meters_read play with them. machine_find (or rebuzz://catalog) picks a machine for an intent; " +
-            "rebuzz://reference/tools lists every tool and its inputs. Errors say what to do next.";
+            "rebuzz://reference/tools lists every tool and its inputs. The app itself is yours too (settings, audio device, MIDI bindings, the studio window, export): guide(topic=\"app-control\"). Errors say what to do next.";
 
         /// <summary>The app's server as initialize announces it: named after the app (Product), with <see cref="ServerInstructions"/>.</summary>
         public static ServerInfo AppServer(string version) => new ServerInfo
@@ -53,6 +53,7 @@ namespace ReBuzz.Agent.Guides
             ("dye-essence-in-depth", "Dye Essence in depth", "Dye Essence's signal flow (engines, filters, modulation, arpeggiator and sequencer, effects, imports) and how to use it, with recipes."),
             ("dye-essence-effects", "Dye Essence effects", "Dye Essence's effects rack: ten slots, the Trio and Duo chains, the six hosted engines and what each slot's ten parameters mean."),
             ("neo-eq-in-depth", "Neo EQ in depth", "Neo EQ's graphic mode, linear phase and curve layer, and the map of its factory presets."),
+            ("app-control", "App control", "Settings and their audit log, the audio device with auto-revert, MIDI bindings and learn, the studio window (views, panels, selection), export to WAV with stems, and app status: what each tool does, where it works and the care it needs."),
             ("troubleshooting", "Troubleshooting", "Silence, clipping, phase, latency, CPU, missing machines, machines that ignore notes, hanging notes, and a render that differs from the last one."),
         };
 
@@ -109,7 +110,7 @@ namespace ReBuzz.Agent.Guides
                 Description =
                     "Returns a guide as markdown: 'workflow' (how to work here; read it first), 'concepts' (machines, patterns, the arrangement, " +
                     "beats, pitches, levels), then by craft: 'composition', 'genres', 'sound-design', 'synth-recipes', 'fm-recipes', 'mixing', 'mixing-dynamics', " +
-                    "'mastering', 'mastering-chain', 'troubleshooting', and the machine deep dives 'dye-essence-in-depth', 'dye-essence-effects' and 'neo-eq-in-depth'. machine gives a gear's manual " +
+                    "'mastering', 'mastering-chain', 'app-control' (preferences, audio device, MIDI, the window, export), 'troubleshooting', and the machine deep dives 'dye-essence-in-depth', 'dye-essence-effects' and 'neo-eq-in-depth'. machine gives a gear's manual " +
                     "(every parameter, how to use it, presets). Without arguments, lists the topics. Read-only. " +
                     "Example: guide(topic=\"mixing\"), guide(machine=\"Neo Poly\").",
                 Input = Object(null,

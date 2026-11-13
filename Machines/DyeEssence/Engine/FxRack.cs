@@ -134,6 +134,8 @@ namespace NeoBuzz.DyeEssence
         }
 
         readonly ParamValues values;
+        /// <summary>The clips the machine state holds for the convolution and the vocoder.</summary>
+        public readonly FxUserData User = new FxUserData();
         readonly Slot[] slot = new Slot[Slots];
         readonly int[] type = new int[Slots];
         readonly float[] aL = new float[MaxBlock], aR = new float[MaxBlock], bL = new float[MaxBlock], bR = new float[MaxBlock];
@@ -196,10 +198,17 @@ namespace NeoBuzz.DyeEssence
             foreach (var s in slot) { s.PadL.Reset(); s.PadR.Reset(); }
         }
 
-        FxHost Ready(int s, int t)
+        /// <summary>A built host for the current rate (it may still wait for its data: <see cref="FxHost.IsReady"/>).</summary>
+        FxHost Built(int s, int t)
         {
             var h = Volatile.Read(ref slot[s].Hosts[t]);
             return h != null && h.Rate == Rate ? h : null;
+        }
+
+        FxHost Ready(int s, int t)
+        {
+            var h = Built(s, t);
+            return h != null && h.IsReady ? h : null;
         }
 
         /// <summary>Asks the builder for a slot's type (audio thread: allocation-free).</summary>
@@ -217,7 +226,7 @@ namespace NeoBuzz.DyeEssence
                     {
                         try
                         {
-                            var h = FxHost.Create((FxType)t, Rate);
+                            var h = FxHost.Create((FxType)t, Rate, User);
                             Volatile.Write(ref slot[s].Hosts[t], h);
                         }
                         catch (Exception)
@@ -226,33 +235,62 @@ namespace NeoBuzz.DyeEssence
                         }
                         Volatile.Write(ref slot[s].Request[t], 0);
                     }
+            // What the built hosts asked for after they were built (the convolver's response, the vocoder's clip).
+            for (int s = 0; s < Slots; s++)
+                for (int t = 1; t < FxTypes.Count; t++)
+                {
+                    var h = Volatile.Read(ref slot[s].Hosts[t]);
+                    if (h != null && h.HasWork)
+                    {
+                        try { h.Work(); }
+                        catch (Exception) { }
+                    }
+                }
         }
 
         /// <summary>
         /// Any thread: whether a slot's chosen type is still being built. Asks for what is missing, so offline renders
         /// can wait for the rack before they start.
         /// </summary>
-        public bool Pending => PendingFor(s => ChosenType(values, s));
+        public bool Pending => PendingFor(s => ChosenType(values, s), p => values[p]);
 
         /// <summary>
         /// <see cref="Pending"/> for the types <paramref name="typeOf"/> gives (slot to type): the machine reads the host's
         /// parameter values, which a preset or a set parameter changes at once, where the engine's own values follow at the
         /// next audio tick, after an offline render has already asked whether the machine is busy.
         /// </summary>
-        public bool PendingFor(Func<int, int> typeOf)
+        public bool PendingFor(Func<int, int> typeOf, Func<int, int> paramOf = null)
         {
             bool pending = false;
             for (int s = 0; s < Slots; s++)
             {
                 int t = typeOf(s);
                 if (t <= 0 || t >= FxTypes.Count) continue;
-                if (Ready(s, t) == null)
+                var h = Built(s, t);
+                if (h == null)
                 {
                     pending = true;
                     Want(s, t);
+                    continue;
                 }
+                // A type with data of its own to build (the convolver's response): the parameters as the host has them now ask for it.
+                if (paramOf != null) Push(s, t, h, paramOf);
+                h.Poll();
+                if (!h.IsReady || !h.Settled) pending = true;
             }
             return pending;
+        }
+
+        /// <summary>The slot's ten generic parameters, mapped, into the host's engine parameters.</summary>
+        void Push(int idx, int t, FxHost h, Func<int, int> paramOf)
+        {
+            var info = FxTypes.Info((FxType)t);
+            for (int k = 0; k < FxTypes.PerType; k++)
+            {
+                int raw = info.EngineRaw(k, paramOf(GenericParam(idx, k)));
+                int engineIndex = info.Params[k].Index;
+                if (h.V[engineIndex] != raw) h.V.Set(engineIndex, raw);
+            }
         }
 
         /// <summary>Builds every chosen type now, on the calling thread (tests and offline tools).</summary>
@@ -261,8 +299,23 @@ namespace NeoBuzz.DyeEssence
             for (int s = 0; s < Slots; s++)
             {
                 int t = values.Choice(TypeParam(s));
-                if (t <= 0 || t >= FxTypes.Count || Ready(s, t) != null) continue;
-                Volatile.Write(ref slot[s].Hosts[t], FxHost.Create((FxType)t, Rate));
+                if (t <= 0 || t >= FxTypes.Count) continue;
+                var h = Built(s, t);
+                if (h == null)
+                {
+                    h = FxHost.Create((FxType)t, Rate, User);
+                    Volatile.Write(ref slot[s].Hosts[t], h);
+                }
+                // A type with data of its own: its first response, built here (the offline tools and the tests ask for it).
+                if (!h.IsReady)
+                {
+                    Push(s, t, h, p => values[p]);
+                    h.Poll();
+                    h.Work();
+                    // The builder thread may have taken the request first: wait for it.
+                    var clock = System.Diagnostics.Stopwatch.StartNew();
+                    while (!h.IsReady && clock.Elapsed.TotalSeconds < 30) Thread.Sleep(1);
+                }
             }
         }
 
@@ -449,6 +502,17 @@ namespace NeoBuzz.DyeEssence
             }
         }
 
+        void PushParams(int idx, FxTypeInfo info, FxHost h)
+        {
+            for (int k = 0; k < FxTypes.PerType; k++)
+            {
+                int x = values[GenericParam(idx, k)];
+                int raw = info.EngineRaw(k, x);
+                int engineIndex = info.Params[k].Index;
+                if (h.V[engineIndex] != raw) h.V.Set(engineIndex, raw);
+            }
+        }
+
         void RunChain(int[] chain, float[] l, float[] r, int n)
         {
             foreach (int s in chain)
@@ -462,8 +526,15 @@ namespace NeoBuzz.DyeEssence
             int t = type[idx];
             var info = FxTypes.Info((FxType)t);
             int lat = Math.Min(SlotPad, FxTypes.Latency((FxType)t, Rate));
-            var h = Ready(idx, t);
-            if (h == null) Want(idx, t);
+            var built = Built(idx, t);
+            var h = built != null && built.IsReady ? built : null;
+            if (built == null) Want(idx, t);
+            else if (h == null)
+            {
+                // Built, waiting for its data (a convolver's response): the parameters in, the request out.
+                PushParams(idx, info, built);
+                built.Poll();
+            }
             if (t != s.LastType)
             {
                 s.LastType = t;
@@ -489,13 +560,8 @@ namespace NeoBuzz.DyeEssence
                 h.Reset();
                 s.WasOff = false;
             }
-            for (int k = 0; k < FxTypes.PerType; k++)
-            {
-                int x = values[GenericParam(idx, k)];
-                int raw = info.EngineRaw(k, x);
-                int engineIndex = info.Params[k].Index;
-                if (h.V[engineIndex] != raw) h.V.Set(engineIndex, raw);
-            }
+            PushParams(idx, info, h);
+            h.Poll();
             h.SetTempo(tempo);
             Array.Copy(l, s.WetL, n);
             Array.Copy(r, s.WetR, n);

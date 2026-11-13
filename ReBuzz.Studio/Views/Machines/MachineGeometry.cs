@@ -143,6 +143,16 @@ namespace ReBuzz.Studio.Views.Machines
 
         /// <summary>The delete button: 9×9, 3 in from the top right (deleteButton).</summary>
         public static Rect DeleteButton(Rect box) => new Rect(box.Right - 3 - 9, box.Y + 3, 9, 9);
+
+        /// <summary>Fork (ux-overhaul.md P3d, decision 59): the port dots sit on the middle of the left (input) and right (output) edges.</summary>
+        public const double PortRadius = 5, PortHit = 8;
+
+        public static Point InPort(Rect box) => new Point(box.X, box.Center.Y);
+
+        public static Point OutPort(Rect box) => new Point(box.Right, box.Center.Y);
+
+        public static bool Near(Point centre, Point p, double radius = PortHit) =>
+            (p.X - centre.X) * (p.X - centre.X) + (p.Y - centre.Y) * (p.Y - centre.Y) <= radius * radius;
     }
 
     /// <summary>BuzzGUI.MachineView's Clipper: a line from a box's centre clipped at its rounded border.</summary>

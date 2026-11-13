@@ -426,7 +426,7 @@
   "Dye Essence": {
    "gear": "Dye Essence",
    "kind": "generator",
-   "load_seconds": 1.61,
+   "load_seconds": 1.63,
    "gear_info": {
     "file": "Generators/Dye Essence.NET.dll",
     "managed": true,
@@ -467,7 +467,7 @@
     "sample_peak_dbfs": -21.7,
     "true_peak_dbtp": -21.64
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 1.8,
    "type": "polysynth",
    "level_test": {
     "defaults": {
@@ -503,26 +503,26 @@
     }
    },
    "denormal": {
-    "playing_ms_per_s": 13.507,
-    "silent_ms_per_s": 2.86,
-    "silent_worst_ms_per_s": 3.686,
+    "playing_ms_per_s": 16.657,
+    "silent_ms_per_s": 3.419,
+    "silent_worst_ms_per_s": 5.137,
     "windows_ms_per_s": [
-     13.507,
-     3.507,
-     2.909,
-     2.875,
-     2.853,
-     2.795,
-     2.822,
-     3.686,
-     2.86,
-     2.769,
-     2.819
+     16.657,
+     3.955,
+     3.419,
+     3.811,
+     3.106,
+     3.102,
+     2.997,
+     3.013,
+     4.202,
+     2.986,
+     5.137
     ]
    },
-   "seconds": 3.6,
+   "seconds": 3.4,
    "platform": "linux",
-   "date": "2026-11-12",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [],
