@@ -129,17 +129,17 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void At640By400TheSwitcherTheSessionToolbarAndTheTrackerBarHaveRoom()
+        public void At640By444TheSwitcherTheSessionToolbarAndTheTrackerBarHaveRoom()
         {
             using var restore = Studio.AfterTest(PutBack);
-            using var rig = new Rig(640, 400);
+            using var rig = new Rig(640, 444);
             var w = rig.Window;
             w.Inspector.Open();
             Settle();
 
             // The switcher: one row, all three segments inside the main view.
             var centre = Box(w.Tabs, w);
-            AssertClean(w.Switcher.Segments.Select(p => (p.Key, Box(p.Value, w))).ToList(), new Rect(centre.X, 0, centre.Width, w.Switcher.Bounds.Bottom + 100), "the switcher");
+            AssertClean(w.Switcher.Segments.Select(p => (p.Key, Box(p.Value, w))).ToList(), new Rect(centre.X, 0, centre.Width, Box(w.Switcher, w).Bottom + 100), "the switcher");
             Assert.That(w.Switcher.Segments.Values.Select(b => b.Bounds.Y).Distinct().Count(), Is.EqualTo(1), "the segments share a row");
 
             // The Session toolbar: every button inside the view, none over another.

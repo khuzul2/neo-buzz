@@ -1,62 +1,56 @@
 ## How it sounds
 
-It is a set of exact, colourless tools, and at its defaults it passes the input bit for bit:
+A set of exact, colourless tools; at its defaults it passes the input bit for bit.
 
-- `Gain` in 0.1 dB steps; at its bottom, silence.
-- `Pan`, with a `Pan law`:
-  - Balance fades the far side linearly, 0 dB at centre, for stereo sources.
-  - Mono pan sums to mono, then pans.
+- `Gain` in 0.1 dB steps (-60 to +24 dB); at its bottom, silence. `Pan` with a `Pan law`: Balance fades the far side linearly (stereo sources), Mono pan sums to mono, then pans (mono sources).
 - `Width`: the side signal times the width. 0 % is mono, 100 % unchanged, 200 % twice the side.
-- `Bass mono` makes everything below `Bass mono freq` mono. It removes the side signal there with a 4th-order Butterworth high-pass: −3 dB at the frequency, −48 dB two octaves below.
-- `Invert L` and `Invert R` flip a channel's polarity; `Swap` swaps the channels (after the inversions).
-- `DC removal`: a 5 Hz high-pass. 20 Hz passes within 0.02 dB.
-- `Matrix`, for mid/side work with any stereo machine: Encode M/S puts the mid (L + R)/2 on the left and the side (L − R)/2 on the right; Decode M/S reads them back into left and right (L = M + S, R = M − S). An encode and a decode in a row give back the input within one float rounding (−150 dB).
+- `Bass mono` makes everything below `Bass mono freq` mono (a 4th-order Butterworth high-pass on the side: -3 dB at the frequency, -48 dB two octaves below).
+- `Invert L` and `Invert R` flip a channel's polarity; `Swap` swaps the channels. `DC removal` is a 5 Hz high-pass.
+- `Matrix`, for mid/side work with any stereo machine: Encode M/S puts the mid (L + R)/2 on the left and the side (L - R)/2 on the right; Decode M/S turns them back (L = M + S, R = M - S). An encode and a decode in a row give back the input within -150 dB.
 
-Gain, pan, width, polarity and swap measure exact.
+Order: Matrix Decode, inversions, Swap, DC removal, Width and Bass mono, Pan, Gain, Matrix Encode. Zero latency. Gain, pan, width, polarity and swap measure exact.
 
-## Signal flow
+## Use it for
 
-Input → `Matrix` Decode M/S → `Invert L`/`Invert R` → `Swap` → `DC removal` → `Width` and `Bass mono` → `Pan` → `Gain` → `Matrix` Encode M/S → output. Zero latency. Decode comes first and encode last, so a Utility's other stages always work on left and right.
+- Gain staging, stereo fixes, mono bass, polarity repair, and mid/side processing with a machine that has no mid/side mode.
 
-## How to use it
-
-Use it for gain staging and stereo fixes, one parameter per move:
-
-- **Trim a track to its level:** `Gain` −6 dB, then render and check.
-- **Bass and kick mono below 120 Hz:**
+## Key controls
 
 | Parameter | Value | Why |
 |---|---|---|
-| Bass mono | On | |
-| Bass mono freq | 120 Hz | 80 Hz on the master |
+| Gain | -6 dB | trim a track to its level, then render and check |
+| Pan | 0% | -100 % left to +100 % right |
+| Pan law | Balance | Mono pan for mono sources |
+| Width | 100% | 120-140 % wider; 50-80 % narrower; keep basses at 100 % or below |
+| Bass mono | On | with Bass mono freq 120 Hz (80 Hz on a master) |
+| Matrix | Off | Encode M/S before and Decode M/S after a machine |
 
-- **A pad wider or narrower:** `Width` 120–140 % or 50–80 %. Check the mix in mono afterwards (`analyze(metrics=["stereo"])`, correlation above 0).
-- **Out of phase:** `analyze_mix` reports a low end out of phase, or the correlation reads below 0. Flip one channel (`Invert R` On) and measure again.
-- **Mid/side processing** with a machine that has no mid/side mode of its own: put it between two Utilities, the first `Matrix` Encode M/S (preset "Mid/Side — Encode (Before a Stereo Machine)"), the second Decode M/S ("Mid/Side — Decode (After It)"). Between them the left channel is the mid and the right the side, so a machine that treats the channels apart treats mid and side apart: Neo Comp with `Stereo link` 0 % compresses each on its own, Neo Drive saturates each on its own. A machine that does the same to both channels (Neo EQ: its bands move both) moves mid and side alike, just as without the matrix. Example, compressing mid and side apart on a master: `machine_add(gear="Neo Utility", name="M Enc", insert_after="M EQ")`, `param_set(machine="M Enc", changes=[{"param": "Matrix", "value": "Encode M/S"}])`, a Neo Comp after it with `Stereo link` 0 %, another Utility with Decode M/S after that. Check with `analyze(metrics=["stereo"])`: `ms_bands` gives the side against the mid in four bands. Neo Multiband has mid/side built in (its `Stereo` M/S).
+## Starting points
 
-## Gotchas
+- "Gain — Trim −6 dB", "Gain — Boost +6 dB", "Gain — Stage to −18 dBFS (−12 dB)".
+- "Stereo — Mono", "Stereo — Narrow 50 %", "Stereo — Wide 140 %".
+- "Mastering — Bass Mono 120 Hz", "Mastering — Clean Up (Bass Mono 80 Hz, DC)".
+- "Fix — Flip Polarity", "Fix — Right Channel Out of Phase", "Fix — Swap Channels", "Fix — DC Offset".
+- Mid/side around a machine: "Mid/Side — Encode (Before a Stereo Machine)" then "Mid/Side — Decode (After It)". Between them left is the mid and right the side, so Neo Comp with `Stereo link` 0 % compresses each on its own. A machine that treats both channels alike (Neo EQ) moves mid and side alike.
 
-- `Width` above 100 % lowers the mono sum's correlation: keep basses at 100 % or below.
-- `Pan` with Balance on a mono source only turns one side down. Use Mono pan for mono sources.
-- `Gain` is after everything else: it doesn't change what the stereo tools see.
-- Between an encode and a decode, the signal is mid and side, not a stereo image: don't listen to it or pan it, and don't put anything there that mixes the two channels (Neo Verb, Neo Ensemble) unless that's what you want. A machine with latency between them is fine: both channels are delayed alike.
+## Pitfalls
 
-## Preset map
+- Width above 100 % lowers the mono sum's correlation; check with `analyze(source="master", metrics=["stereo"])` (correlation above 0).
+- Pan with Balance on a mono source only turns one side down: use Mono pan.
+- Gain comes after everything else, so it does not change what the stereo tools see.
+- Between an encode and a decode do not listen or pan, and avoid machines that mix the channels (Neo Verb, Neo Ensemble). A machine with latency there is fine.
+- Out of phase: `analyze_mix` reports a low end out of phase, or the correlation reads below 0: flip `Invert R` and measure again.
 
-| Preset | What |
-|---|---|
-| "Gain — Trim −6 dB" | −6 dB |
-| "Gain — Boost +6 dB" | +6 dB |
-| "Gain — Stage to −18 dBFS (−12 dB)" | −12 dB, for hot sources |
-| "Stereo — Mono" | width 0 % |
-| "Stereo — Narrow 50 %" | width 50 % |
-| "Stereo — Wide 140 %" | width 140 % |
-| "Mastering — Bass Mono 120 Hz" | lows mono |
-| "Mastering — Clean Up (Bass Mono 80 Hz, DC)" | lows mono and DC removal |
-| "Mixing — Mono Pan Left 30 %" | mono pan |
-| "Mixing — Mono Pan Right 30 %" | mono pan |
-| "Mixing — Balance Left 20 %" | balance |
-| "Fix — Flip Polarity" | both channels inverted |
-| "Fix — Right Channel Out of Phase" | right inverted |
-| "Fix — Swap Channels" | left and right swapped |
-| "Fix — DC Offset" | DC removal |
+## Pairs well with
+
+- Neo Comp, Neo Drive and Neo Exciter in mid/side; Neo Imager for per-band width; Neo Analyzer for `correlation`.
+
+## Successor
+
+Neo Utility replaces Jeskola Gain and Pedal Gain: `machine_replace(machine="Gain")`.
+
+## Checklist
+
+- [ ] `param_set(machine="Utility", changes=[{"param": "Gain", "value": "-6 dB"}])` then `machine_readings(machine="Utility")`: `peak_db` 6 dB lower.
+- [ ] `analyze(source="master", metrics=["stereo"])`: correlation above 0 after any width change.
+- [ ] For mid/side: `machine_list` shows Encode, the machine and Decode in a row.

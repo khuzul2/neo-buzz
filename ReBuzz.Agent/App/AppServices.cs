@@ -30,6 +30,8 @@ namespace ReBuzz.Agent.App
         /// <summary>The default, as text ("True", "16").</summary>
         public string Default { get; init; } = "";
         public string[]? Options { get; init; }
+        /// <summary>What a window shows for each of <see cref="Options"/> (an enum value's description); null: the options themselves.</summary>
+        public string[]? OptionLabels { get; init; }
         public double? Min { get; init; }
         public double? Max { get; init; }
         /// <summary>Takes effect only after the app restarts.</summary>

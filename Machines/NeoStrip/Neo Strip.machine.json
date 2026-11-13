@@ -31,7 +31,9 @@
     "Off",
     "On"
    ],
-   "description": "The gate in or out"
+   "description": "The gate in or out",
+   "how": "Switches the gate stage in or out.",
+   "sound": "On, quiet noise between sounds is turned down."
   },
   {
    "index": 1,
@@ -45,7 +47,9 @@
    "a": -80.0,
    "b": 0.0,
    "unit": "dB",
-   "description": "Level (dBFS, the louder channel's peak) the gate opens at; it closes 3 dB lower, after the hold"
+   "description": "Level (dBFS, the louder channel's peak) the gate opens at; it closes 3 dB lower, after the hold",
+   "how": "Sets the level, from -80 to 0 dBFS, at which the gate opens.",
+   "sound": "Higher values remove more background noise but can cut into soft notes."
   },
   {
    "index": 2,
@@ -59,7 +63,9 @@
    "a": 0.0,
    "b": 80.0,
    "unit": "dB",
-   "description": "How far a closed gate lowers the signal (80: nearly silence)"
+   "description": "How far a closed gate lowers the signal (80: nearly silence)",
+   "how": "Sets how far a closed gate turns the signal down, from 0 to 80 dB.",
+   "sound": "80 dB gives near silence between sounds; smaller values leave some of the background."
   },
   {
    "index": 3,
@@ -73,7 +79,9 @@
    "a": 0.0001,
    "b": 0.05,
    "unit": "s",
-   "description": "Time to open"
+   "description": "Time to open",
+   "how": "Sets how long the gate takes to open, from 0.1 ms to 50 ms.",
+   "sound": "Fast attacks keep hits sharp; slower ones fade them in."
   },
   {
    "index": 4,
@@ -87,7 +95,9 @@
    "a": 0.001,
    "b": 0.5,
    "unit": "s",
-   "description": "Time the gate stays open after the level falls under the threshold"
+   "description": "Time the gate stays open after the level falls under the threshold",
+   "how": "Sets how long the gate stays open after the level falls under the threshold, from 1 to 500 ms.",
+   "sound": "Longer holds stop the gate cutting off note ends."
   },
   {
    "index": 5,
@@ -101,7 +111,9 @@
    "a": 0.01,
    "b": 2.0,
    "unit": "s",
-   "description": "Time to close"
+   "description": "Time to close",
+   "how": "Sets how long the gate takes to close, from 10 ms to 2 s.",
+   "sound": "Short releases chop tails tightly; long ones let sounds fade out naturally."
   },
   {
    "index": 6,
@@ -116,7 +128,9 @@
     "Off",
     "On"
    ],
-   "description": "The EQ stage in or out (a shelf or bell with no gain, and a cut that is off, change nothing)"
+   "description": "The EQ stage in or out (a shelf or bell with no gain, and a cut that is off, change nothing)",
+   "how": "Switches the whole EQ stage in or out.",
+   "sound": "On, the cut, shelves and bells below shape the tone."
   },
   {
    "index": 7,
@@ -131,7 +145,9 @@
     "Off",
     "On"
    ],
-   "description": "The low cut (Butterworth, 12 dB/oct)"
+   "description": "The low cut (Butterworth, 12 dB/oct)",
+   "how": "Switches the 12 dB per octave low cut in or out.",
+   "sound": "On, rumble and low-end mud below the cut frequency are removed."
   },
   {
    "index": 8,
@@ -145,7 +161,9 @@
    "a": 20.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "Low cut: −3 dB here"
+   "description": "Low cut: −3 dB here",
+   "how": "Sets the low cut's frequency, from 20 Hz to 20 kHz, where it is 3 dB down.",
+   "sound": "Higher values thin the sound by removing more of the low end."
   },
   {
    "index": 9,
@@ -159,7 +177,9 @@
    "a": 20.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "Low shelf: half its gain here"
+   "description": "Low shelf: half its gain here",
+   "how": "Sets the frequency, from 20 Hz to 20 kHz, where the low shelf reaches half its gain.",
+   "sound": "It decides how high up the low-end boost or cut reaches."
   },
   {
    "index": 10,
@@ -173,7 +193,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Low shelf gain in 0.1 dB steps"
+   "description": "Low shelf gain in 0.1 dB steps",
+   "how": "Sets the low shelf's gain from -24 to +24 dB.",
+   "sound": "Positive values add weight and warmth; negative values thin out the bass."
   },
   {
    "index": 11,
@@ -187,7 +209,9 @@
    "a": 20.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "Low-mid bell centre"
+   "description": "Low-mid bell centre",
+   "how": "Sets the low-mid bell's centre frequency, from 20 Hz to 20 kHz.",
+   "sound": "It chooses which part of the lower midrange, where mud and body live, you shape."
   },
   {
    "index": 12,
@@ -201,7 +225,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Low-mid bell gain in 0.1 dB steps"
+   "description": "Low-mid bell gain in 0.1 dB steps",
+   "how": "Sets the low-mid bell's gain from -24 to +24 dB.",
+   "sound": "Cutting clears muddiness; boosting adds body."
   },
   {
    "index": 13,
@@ -214,7 +240,9 @@
    "kind": "exp",
    "a": 0.1,
    "b": 30.0,
-   "description": "Low-mid bell width"
+   "description": "Low-mid bell width",
+   "how": "Sets the low-mid bell's width: a higher Q is narrower, from 0.1 to 30.",
+   "sound": "Narrow values reach one note or resonance; wide values change the broad tone."
   },
   {
    "index": 14,
@@ -228,7 +256,9 @@
    "a": 20.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "High-mid bell centre"
+   "description": "High-mid bell centre",
+   "how": "Sets the high-mid bell's centre frequency, from 20 Hz to 20 kHz.",
+   "sound": "It chooses which part of the upper midrange, where presence and harshness live, you shape."
   },
   {
    "index": 15,
@@ -242,7 +272,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "High-mid bell gain in 0.1 dB steps"
+   "description": "High-mid bell gain in 0.1 dB steps",
+   "how": "Sets the high-mid bell's gain from -24 to +24 dB.",
+   "sound": "Boosting adds presence and bite; cutting softens harshness."
   },
   {
    "index": 16,
@@ -255,7 +287,9 @@
    "kind": "exp",
    "a": 0.1,
    "b": 30.0,
-   "description": "High-mid bell width"
+   "description": "High-mid bell width",
+   "how": "Sets the high-mid bell's width: a higher Q is narrower, from 0.1 to 30.",
+   "sound": "Narrow values reach one harsh spot; wide values change the broad tone."
   },
   {
    "index": 17,
@@ -269,7 +303,9 @@
    "a": 20.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "High shelf: half its gain here"
+   "description": "High shelf: half its gain here",
+   "how": "Sets the frequency, from 20 Hz to 20 kHz, where the high shelf reaches half its gain.",
+   "sound": "It decides how far down the top-end boost or cut reaches."
   },
   {
    "index": 18,
@@ -283,7 +319,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "High shelf gain in 0.1 dB steps"
+   "description": "High shelf gain in 0.1 dB steps",
+   "how": "Sets the high shelf's gain from -24 to +24 dB.",
+   "sound": "Positive values add air and brightness; negative values darken the sound."
   },
   {
    "index": 19,
@@ -298,7 +336,9 @@
     "Off",
     "On"
    ],
-   "description": "The high cut (Butterworth, 12 dB/oct)"
+   "description": "The high cut (Butterworth, 12 dB/oct)",
+   "how": "Switches the 12 dB per octave high cut in or out.",
+   "sound": "On, hiss and harsh highs above the cut frequency are removed."
   },
   {
    "index": 20,
@@ -312,7 +352,9 @@
    "a": 20.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "High cut: −3 dB here"
+   "description": "High cut: −3 dB here",
+   "how": "Sets the high cut's frequency, from 20 Hz to 20 kHz, where it is 3 dB down.",
+   "sound": "Lower values make the sound duller by removing more of the top end."
   },
   {
    "index": 21,
@@ -327,7 +369,9 @@
     "Off",
     "On"
    ],
-   "description": "The compressor in or out"
+   "description": "The compressor in or out",
+   "how": "Switches the compressor stage in or out.",
+   "sound": "On, the loud parts are turned down and the sound gets more even."
   },
   {
    "index": 22,
@@ -344,7 +388,9 @@
     "FET",
     "Opto"
    ],
-   "description": "Clean: transparent VCA. Glue: bus VCA. FET: fast feedback. Opto: smooth, program-dependent"
+   "description": "Clean: transparent VCA. Glue: bus VCA. FET: fast feedback. Opto: smooth, program-dependent",
+   "how": "Chooses the compressor's character: Clean, Glue, FET or Opto.",
+   "sound": "Clean is transparent, Glue binds, FET is punchy and Opto is smooth."
   },
   {
    "index": 23,
@@ -358,7 +404,9 @@
    "a": -60.0,
    "b": 0.0,
    "unit": "dB",
-   "description": "Level where compression starts"
+   "description": "Level where compression starts",
+   "how": "Sets the level, from -60 to 0 dB, above which compression starts.",
+   "sound": "Lower values compress more of the signal and sound denser."
   },
   {
    "index": 24,
@@ -373,7 +421,9 @@
    "b": 20.0,
    "flag": true,
    "unit": ":1",
-   "description": "Compression ratio (top: limiting)"
+   "description": "Compression ratio (top: limiting)",
+   "how": "Sets how strongly signal above the threshold is reduced, from 1:1 up to 20:1 and limiting.",
+   "sound": "Higher ratios flatten the peaks for a more controlled sound."
   },
   {
    "index": 25,
@@ -387,7 +437,9 @@
    "a": 5e-05,
    "b": 0.2,
    "unit": "s",
-   "description": "Time to 63 % of the gain change"
+   "description": "Time to 63 % of the gain change",
+   "how": "Sets how fast the gain falls above the threshold, from 0.05 ms to 200 ms.",
+   "sound": "Fast attacks dull the punch; slow ones let hits through."
   },
   {
    "index": 26,
@@ -401,7 +453,9 @@
    "a": 0.005,
    "b": 3.0,
    "unit": "s",
-   "description": "Time back to 37 % of the gain change"
+   "description": "Time back to 37 % of the gain change",
+   "how": "Sets how fast the gain recovers, from 5 ms to 3 s.",
+   "sound": "Short releases sound lively and can pump; long ones sound smooth."
   },
   {
    "index": 27,
@@ -415,7 +469,9 @@
    "a": 0.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Gain after compression"
+   "description": "Gain after compression",
+   "how": "Adds 0 to 24 dB of gain after compression.",
+   "sound": "It restores the level lost to compression."
   },
   {
    "index": 28,
@@ -430,7 +486,9 @@
     "Off",
     "On"
    ],
-   "description": "The saturation in or out"
+   "description": "The saturation in or out",
+   "how": "Switches the saturation stage in or out.",
+   "sound": "On, harmonics are added and the sound gets warmer or grittier."
   },
   {
    "index": 29,
@@ -448,7 +506,9 @@
     "Diode",
     "Fold"
    ],
-   "description": "Saturation model"
+   "description": "Saturation model",
+   "how": "Chooses the saturation model: Tape, Tube, Transistor, Diode or Fold.",
+   "sound": "Tape is soft and warm, Tube is rich, Transistor is firm, Diode is edgy and Fold is bright and metallic."
   },
   {
    "index": 30,
@@ -462,7 +522,9 @@
    "a": 0.0,
    "b": 36.0,
    "unit": "dB",
-   "description": "Gain into the saturation (auto gain holds the level steady)"
+   "description": "Gain into the saturation (auto gain holds the level steady)",
+   "how": "Raises the level into the saturation by 0 to 36 dB.",
+   "sound": "More drive adds more harmonics, from subtle warmth to heavy distortion."
   },
   {
    "index": 31,
@@ -474,7 +536,9 @@
    "default": 1000,
    "kind": "percent",
    "unit": "%",
-   "description": "Dry/wet of the saturation"
+   "description": "Dry/wet of the saturation",
+   "how": "Blends the saturated signal with the dry signal.",
+   "sound": "Lower values add the colour as a subtle layer under the original sound."
   },
   {
    "index": 32,
@@ -489,7 +553,9 @@
     "Off",
     "On"
    ],
-   "description": "A 4× oversampled hard clipper at the ceiling"
+   "description": "A 4× oversampled hard clipper at the ceiling",
+   "how": "Switches the 4x oversampled hard clipper in or out.",
+   "sound": "On, peaks are flattened at the ceiling, which makes the sound louder and edgier."
   },
   {
    "index": 33,
@@ -504,7 +570,9 @@
     "Off",
     "On"
    ],
-   "description": "The true-peak limiter at the ceiling (after the clipper when both are on)"
+   "description": "The true-peak limiter at the ceiling (after the clipper when both are on)",
+   "how": "Switches the true-peak limiter in or out.",
+   "sound": "On, nothing passes the ceiling, with the limiter after the clipper."
   },
   {
    "index": 34,
@@ -518,7 +586,9 @@
    "a": -24.0,
    "b": 0.0,
    "unit": "dB",
-   "description": "The clipper's ceiling (dBFS) and the limiter's true-peak ceiling (dBTP); the limiter's range is −12 to 0 dB"
+   "description": "The clipper's ceiling (dBFS) and the limiter's true-peak ceiling (dBTP); the limiter's range is −12 to 0 dB",
+   "how": "Sets the clipper's ceiling from -24 to 0 dBFS and the limiter's true-peak ceiling from -12 to 0 dBTP.",
+   "sound": "A lower ceiling cuts the peaks harder and gives a quieter, more squashed top."
   },
   {
    "index": 35,
@@ -532,7 +602,9 @@
    "a": 0.001,
    "b": 1.0,
    "unit": "s",
-   "description": "Limiter release time"
+   "description": "Limiter release time",
+   "how": "Sets the limiter's recovery time, from 1 ms to 1 s.",
+   "sound": "Short releases sound loud and punchy but can distort; long ones sound smooth."
   },
   {
    "index": 36,
@@ -546,7 +618,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Gain after the strip, 0.1 dB steps (the editor's Match sets it from the gain-match reading)"
+   "description": "Gain after the strip, 0.1 dB steps (the editor's Match sets it from the gain-match reading)",
+   "how": "Adds -24 to +24 dB of gain after the strip.",
+   "sound": "It matches the loudness to the untreated sound so you judge the processing fairly."
   },
   {
    "index": 37,
@@ -561,7 +635,9 @@
     "Off",
     "On"
    ],
-   "description": "Hear only what the strip changes: the output minus the input, delayed to match (glides over 10 ms)"
+   "description": "Hear only what the strip changes: the output minus the input, delayed to match (glides over 10 ms)",
+   "how": "Plays only the difference between the output and the input.",
+   "sound": "You hear only what the strip changes, such as the noise removed or the harmonics added."
   }
  ],
  "readings": [

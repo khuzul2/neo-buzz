@@ -26,7 +26,9 @@
    "a": -12.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Gain into the limiter in 0.1 dB steps: raises loudness by pushing the signal into the ceiling"
+   "description": "Gain into the limiter in 0.1 dB steps: raises loudness by pushing the signal into the ceiling",
+   "how": "Raises the level going into the limiter, from -12 to +24 dB.",
+   "sound": "More gain pushes the signal into the ceiling, making the track louder and denser."
   },
   {
    "index": 1,
@@ -40,7 +42,9 @@
    "a": -12.0,
    "b": 0.0,
    "unit": "dB",
-   "description": "The output's true-peak limit (dBTP), 0.1 dB steps"
+   "description": "The output's true-peak limit (dBTP), 0.1 dB steps",
+   "how": "Sets the highest true-peak level the output can reach, from -12 to 0 dBTP.",
+   "sound": "A lower ceiling leaves safety room for later conversion; the music itself is not quieter at the top."
   },
   {
    "index": 2,
@@ -54,7 +58,9 @@
    "a": 0.001,
    "b": 1.0,
    "unit": "s",
-   "description": "Time for 63 % of a reduction to recover; with Auto release, the time sustained limiting recovers in (short peaks recover faster)"
+   "description": "Time for 63 % of a reduction to recover; with Auto release, the time sustained limiting recovers in (short peaks recover faster)",
+   "how": "Sets how long 63 % of a reduction takes to recover, from 1 ms to 1 s.",
+   "sound": "Short releases sound loud and punchy but can distort; long ones sound smooth and steady."
   },
   {
    "index": 3,
@@ -69,7 +75,9 @@
     "Off",
     "On"
    ],
-   "description": "Program-dependent release: short peaks recover fast, sustained limiting slowly (less distortion on dense material)"
+   "description": "Program-dependent release: short peaks recover fast, sustained limiting slowly (less distortion on dense material)",
+   "how": "Makes the release follow the material: fast after short peaks, slow under sustained limiting.",
+   "sound": "Dense material stays cleaner and pumps less than with a fixed time."
   },
   {
    "index": 4,
@@ -83,7 +91,9 @@
    "a": 0.5,
    "b": 5.0,
    "unit": "ms",
-   "description": "The gain starts falling this long before a peak arrives (longer: smoother, less distortion; adds latency)"
+   "description": "The gain starts falling this long before a peak arrives (longer: smoother, less distortion; adds latency)",
+   "how": "Starts lowering the gain 0.5 to 5 ms before a peak arrives.",
+   "sound": "Longer lookahead makes the limiting smoother with less distortion, at the cost of latency."
   },
   {
    "index": 5,
@@ -95,7 +105,9 @@
    "default": 1000,
    "kind": "percent",
    "unit": "%",
-   "description": "100 %: both channels get the same gain (the image stays put); 0 %: each channel on its own"
+   "description": "100 %: both channels get the same gain (the image stays put); 0 %: each channel on its own",
+   "how": "Sets how much both channels share the same gain reduction, from 0 % to 100 %.",
+   "sound": "Linked keeps the stereo image steady; lower values let each side limit on its own."
   },
   {
    "index": 6,
@@ -109,7 +121,9 @@
    "a": 0.0,
    "b": 6.0,
    "unit": "dB",
-   "description": "Upward compression before the limiter (v2): quiet passages lifted by up to this much, half a dB for each dB their 3 s RMS sits under Upward threshold. 0 dB: off (as v1)"
+   "description": "Upward compression before the limiter (v2): quiet passages lifted by up to this much, half a dB for each dB their 3 s RMS sits under Upward threshold. 0 dB: off (as v1)",
+   "how": "Lifts quiet passages by up to 6 dB before the limiter.",
+   "sound": "Sparse or quiet parts get louder and denser, evening out the loudness over time."
   },
   {
    "index": 7,
@@ -123,7 +137,9 @@
    "a": -40.0,
    "b": 0.0,
    "unit": "dB",
-   "description": "The RMS level (dBFS, after Input gain) under which Upward lifts"
+   "description": "The RMS level (dBFS, after Input gain) under which Upward lifts",
+   "how": "Sets the 3 second RMS level, from -40 to 0 dB, below which the upward lift works.",
+   "sound": "A higher setting lifts more of the track; a lower one lifts only the quietest parts."
   },
   {
    "index": 8,
@@ -137,7 +153,9 @@
    "a": 0.0,
    "b": 6.0,
    "unit": "dB",
-   "description": "Transient emphasis (v2): the first milliseconds of hits raised by up to this much before the limiter (the shared transient/sustain split), so limiting keeps their punch. 0 dB: off"
+   "description": "Transient emphasis (v2): the first milliseconds of hits raised by up to this much before the limiter (the shared transient/sustain split), so limiting keeps their punch. 0 dB: off",
+   "how": "Boosts the first milliseconds of hits by up to 6 dB before the limiter.",
+   "sound": "Drums keep more of their punch after the limiter, even at high loudness."
   },
   {
    "index": 9,
@@ -154,7 +172,9 @@
     "9 dB",
     "30 dB"
    ],
-   "description": "A soft clip before the limiter (v2), 4× oversampled with anti-aliasing: the curve bends from this far under the ceiling, so the limiter does less. Off: as v1 (adds 58 samples of latency when on)"
+   "description": "A soft clip before the limiter (v2), 4× oversampled with anti-aliasing: the curve bends from this far under the ceiling, so the limiter does less. Off: as v1 (adds 58 samples of latency when on)",
+   "how": "Rounds the peaks before the limiter with a soft clip that starts 3, 9 or 30 dB under the ceiling.",
+   "sound": "More soft clipping adds loudness and warmth with a little saturation, and the limiter works less."
   },
   {
    "index": 10,
@@ -166,7 +186,9 @@
    "default": 1000,
    "kind": "percent",
    "unit": "%",
-   "description": "How much of the soft clip is heard (the rest the signal unclipped, delayed to match); the ceiling holds either way"
+   "description": "How much of the soft clip is heard (the rest the signal unclipped, delayed to match); the ceiling holds either way",
+   "how": "Sets how much of the soft clip is heard, from 0 to 100 %.",
+   "sound": "Lower values blend in the unclipped signal for a more open, natural sound."
   },
   {
    "index": 11,
@@ -178,7 +200,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "Two-stage release (v2): a slow stage holds this much of the sustained reduction, so dense material doesn't pump between hits. 0 %: off (as v1)"
+   "description": "Two-stage release (v2): a slow stage holds this much of the sustained reduction, so dense material doesn't pump between hits. 0 %: off (as v1)",
+   "how": "Sets how much of the sustained gain reduction is held by a second, slower release.",
+   "sound": "Dense material stops pumping between hits and sounds steadier."
   },
   {
    "index": 12,
@@ -192,7 +216,9 @@
    "a": 0.3,
    "b": 5.0,
    "unit": "s",
-   "description": "The slow stage's release"
+   "description": "The slow stage's release",
+   "how": "Sets the release time of the slow stage, from 0.3 to 5 s.",
+   "sound": "Longer times give a very steady level; shorter ones let it follow changes faster."
   },
   {
    "index": 13,
@@ -204,7 +230,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "Transients limited per channel (v2): on hits the stereo link drops by this much, so one side's transient doesn't duck the other; sustained sound stays linked. 0 %: as v1"
+   "description": "Transients limited per channel (v2): on hits the stereo link drops by this much, so one side's transient doesn't duck the other; sustained sound stays linked. 0 %: as v1",
+   "how": "Limits transients on each channel separately by up to this amount, from 0 to 100 %.",
+   "sound": "A loud hit on one side no longer ducks the other side, so the stereo image stays wider."
   },
   {
    "index": 14,
@@ -219,7 +247,9 @@
     "Off",
     "On"
    ],
-   "description": "Monitor at the input's loudness (v2): the output trimmed by the gain-match reading (short-term loudness out − in), to judge what limiting does at equal loudness. Off for rendering"
+   "description": "Monitor at the input's loudness (v2): the output trimmed by the gain-match reading (short-term loudness out − in), to judge what limiting does at equal loudness. Off for rendering",
+   "how": "Plays the output at the input's loudness by taking off the loudness limiting added.",
+   "sound": "You can judge the limiter's effect on tone and punch rather than just hearing it louder; switch it off before rendering."
   },
   {
    "index": 15,
@@ -234,7 +264,9 @@
     "Off",
     "On"
    ],
-   "description": "Hear only what the limiting changes (v2): the output minus the driven input, delayed to match, at the input's level (the input gain taken back off), gliding over 10 ms"
+   "description": "Hear only what the limiting changes (v2): the output minus the driven input, delayed to match, at the input's level (the input gain taken back off), gliding over 10 ms",
+   "how": "Plays only the difference between the output and the input, at the input's level.",
+   "sound": "You hear exactly what the limiting removes, such as crackle, pumping or lost punch."
   }
  ],
  "readings": [

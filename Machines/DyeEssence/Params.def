@@ -17,501 +17,1367 @@ import sample .wav | A WAV sample (mono or stereo, up to 20 s, kept in the machi
 
 group Voice
 VoiceMode   "Voice mode"    0 2    0    enum Poly Mono Legato           | Poly; Mono retriggers; Legato glides without retriggering
+    how Chooses how notes share the voices: Poly plays chords, Mono plays one note and retriggers, Legato plays one note without retriggering.
+    sound Poly is for chords, Mono for punchy basses and leads, and Legato for smooth gliding lines.
 Polyphony   "Polyphony"     1 32   8    int 0                           | Notes that sound at once
+    how Sets how many notes can sound at once, from 1 to 32.
+    sound More notes allow bigger chords and long tails but cost more CPU; too few cut off held notes.
 GlideMode   "Glide mode"    0 2    0    enum Off Always Legato          | When notes glide
+    how Chooses when notes slide into each other: never, always or only on overlapping notes.
+    sound Gliding gives a singing, expressive feel; Legato slides only when you play connected.
 Glide       "Glide"         0 1000 200  pow 0 2 3 s 3                   | Glide time
+    how Sets how long a glide between notes takes, from 0 to 2 seconds.
+    sound Short glides sound smooth, long ones swoop like a sliding synth lead.
 BendRange   "Bend range"    0 24   2    int 0 st                        | Pitch bend range
+    how Sets how far the pitch wheel moves the pitch, from 0 to 24 semitones.
+    sound 2 semitones is a gentle bend; 12 or more gives dramatic dives and risers.
 Quality     "Quality"       0 1    0    enum Standard_2× High_4×        | Voices at 2× or 4× the sample rate: High keeps hard FM, PM and sync cleaner at twice the CPU
+    how Chooses Standard (2 times) or High (4 times) oversampling for every voice.
+    sound High keeps hard FM, PM and sync cleaner and less aliased, at twice the CPU.
 VelAmp      "Vel → amp"     0 1000 700  pct                             | How much velocity changes loudness
+    how Sets how much the key velocity changes the loudness, from 0 to 100 %.
+    sound At 0 % every note is equally loud; higher values make soft playing quiet and hard playing loud.
 Volume      "Volume"        0 1000 739  db -40 6 inf                    | Output level
+    how Sets the machine's output level, from -40 dB up to +6 dB or silence.
+    sound It scales the whole sound before the effects rack, so a compressor or clipper there reacts to it; keep the peaks below 0 dB.
 
 group Osc A
 AType      "A engine"      0 6    1    enum Off Wavetable Analog Sample Granular Harmonic Modal | What slot A plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, or a struck, plucked or bowed resonating body (samples, grains, partials and bodies take no warps)
+    how Chooses what slot A plays: off, a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials or a resonating body.
+    sound Each engine has its own character, from bright and digital through warm and analog to glassy, airy or struck and woody.
 ATable     "A table"       0 10   0    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
+    how Picks the wavetable slot A reads, one of ten built-in sets or a table you loaded.
+    sound Basic is plain and clean, the sweep and formant tables are animated and vowel-like, and Grit and Digital are harsh and metallic.
 APos       "A position"    0 1000 667  pct                             | Position in the table (frames morph smoothly)
+    how Sets the place the engine reads from: the frame in the table, the start of a sample, the centre grains are taken from, the morph between two partial sets, or the strike point on a body.
+    sound Moving it changes the timbre smoothly, so it is the main control to sweep or modulate for a living, evolving tone.
 AOct       "A octave"      0 8    4    int -4 oct signed               | Octave
+    how Shifts slot A up or down by whole octaves, from 4 octaves below to 4 above.
+    sound Down gives weight and body, up gives thin and airy layers.
 ASemi      "A semi"        0 24   12   int -12 st signed               | Semitones
+    how Shifts slot A up or down by semitones, from 12 below to 12 above.
+    sound Set to a fifth or an octave apart from another slot it makes stacked, chord-like leads and basses.
 AFine      "A fine"        0 1000 500  lin -100 100 ct 0               | Fine tune
+    how Detunes slot A by up to 100 cents either way.
+    sound A few cents against another slot sounds wider and chorused; larger amounts sound out of tune.
 ALevel     "A level"       0 1000 1000 pct                             | Level
+    how Sets how loud slot A is, from silent to full.
+    sound It balances the slots against each other and the sub and noise; a muted slot still renders when another uses it as a modulator.
 APan       "A pan"         0 1000 500  bip                             | Pan
+    how Places slot A in the stereo field, from hard left to hard right.
+    sound Off-centre slots make the sound wider; unison spread works around this position.
 AUnison    "A unison"      1 16   1    int 0                           | Unison voices
+    how Sets how many detuned copies of slot A sound for each note, from 1 to 16.
+    sound More voices sound thicker, wider and more like a supersaw, and cost more CPU in direct proportion.
 ADetune    "A detune"      0 1000 447  pow 0 100 2 ct 1                | The outermost unison voices sit this far either side of the note
+    how Sets how far apart the outermost unison voices of slot A are, from 0 to 100 cents either side of the note.
+    sound Small amounts give a gentle shimmer, large amounts a thick, wide and clearly out-of-tune stack; it has no effect with one voice.
 ASpread    "A spread"      0 1000 700  pct                             | Stereo spread of the unison voices
+    how Sets how far the unison voices of slot A are spread across the stereo field, from 0 to 100 %.
+    sound At 0 % the voices sit in the middle and sound narrow; at 100 % they fan out wide.
 APhase     "A phase"       0 1000 0    lin 0 360 ° 0                   | Start phase
+    how Sets the point in its cycle where each voice of slot A starts, from 0 to 360 degrees.
+    sound It changes the attack click and how stacked voices add up; it is most audible with a low Random amount.
 ARandom    "A random"      0 1000 1000 pct                             | How much of a random phase each voice starts with
+    how Sets how much of a random start phase each voice of slot A gets, from 0 to 100 %.
+    sound 100 % gives a natural, never-the-same start for each note; 0 % makes every note start identically and punchy.
 AWarp1     "A warp 1"      0 11   0    enum None Bend+ Bend− Squeeze Mirror Asym Sync Window_sync FM PM AM Ring | First warp: how the cycle is read (FM, PM, AM and Ring take the modulator)
+    how Chooses the first warp of slot A, a bend, squeeze, mirror, sync, FM, PM, AM or ring change to how the cycle is read.
+    sound Warps turn plain waves into sharp, hollow, metallic or growling tones; FM, PM, AM and ring take their sound from the modulator slot.
 AWarp1Amt  "A warp 1 amt"  0 1000 0    pct                             | First warp's amount
+    how Sets how strongly slot A's first warp is applied, from 0 to 100 %.
+    sound More amount sounds more extreme; sweeping it is the classic way to make a bass growl or a lead scream.
 AWarp2     "A warp 2"      0 11   0    enum None Bend+ Bend− Squeeze Mirror Asym Sync Window_sync FM PM AM Ring | Second warp, after the first
+    how Chooses the second warp of slot A, applied after the first.
+    sound Stacking two warps gives harsher and more complex tones than one alone.
 AWarp2Amt  "A warp 2 amt"  0 1000 0    pct                             | Second warp's amount
+    how Sets how strongly slot A's second warp is applied, from 0 to 100 %.
+    sound It blends in the extra edge and complexity of the second warp.
 AMod       "A modulator"   0 4    1    enum Osc_A Osc_B Osc_C Sub Noise | What FM, PM, AM and Ring take (not the slot itself)
+    how Chooses which source feeds slot A's FM, PM, AM and ring warps: slot A, B or C, the sub or the noise.
+    sound A different source changes the harmonic content of the modulation; noise gives rough, breathy results.
 AToF2      "A → filter 2"  0 1000 0    pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
+    how Balances slot A between the first filter (0 %) and the second (100 %).
+    sound It decides which filter shapes this slot, so two slots can be filtered differently.
 
 group Osc B
 BType      "B engine"      0 6    0    enum Off Wavetable Analog Sample Granular Harmonic Modal | What slot B plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, or a struck, plucked or bowed resonating body (samples, grains, partials and bodies take no warps)
+    how Chooses what slot B plays: off, a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials or a resonating body.
+    sound Each engine has its own character, from bright and digital through warm and analog to glassy, airy or struck and woody.
 BTable     "B table"       0 10   2    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
+    how Picks the wavetable slot B reads, one of ten built-in sets or a table you loaded.
+    sound Basic is plain and clean, the sweep and formant tables are animated and vowel-like, and Grit and Digital are harsh and metallic.
 BPos       "B position"    0 1000 0  pct                             | Position in the table (frames morph smoothly)
+    how Sets the place the engine reads from: the frame in the table, the start of a sample, the centre grains are taken from, the morph between two partial sets, or the strike point on a body.
+    sound Moving it changes the timbre smoothly, so it is the main control to sweep or modulate for a living, evolving tone.
 BOct       "B octave"      0 8    4    int -4 oct signed               | Octave
+    how Shifts slot B up or down by whole octaves, from 4 octaves below to 4 above.
+    sound Down gives weight and body, up gives thin and airy layers.
 BSemi      "B semi"        0 24   12   int -12 st signed               | Semitones
+    how Shifts slot B up or down by semitones, from 12 below to 12 above.
+    sound Set to a fifth or an octave apart from another slot it makes stacked, chord-like leads and basses.
 BFine      "B fine"        0 1000 500  lin -100 100 ct 0               | Fine tune
+    how Detunes slot B by up to 100 cents either way.
+    sound A few cents against another slot sounds wider and chorused; larger amounts sound out of tune.
 BLevel     "B level"       0 1000 1000 pct                             | Level
+    how Sets how loud slot B is, from silent to full.
+    sound It balances the slots against each other and the sub and noise; a muted slot still renders when another uses it as a modulator.
 BPan       "B pan"         0 1000 500  bip                             | Pan
+    how Places slot B in the stereo field, from hard left to hard right.
+    sound Off-centre slots make the sound wider; unison spread works around this position.
 BUnison    "B unison"      1 16   1    int 0                           | Unison voices
+    how Sets how many detuned copies of slot B sound for each note, from 1 to 16.
+    sound More voices sound thicker, wider and more like a supersaw, and cost more CPU in direct proportion.
 BDetune    "B detune"      0 1000 447  pow 0 100 2 ct 1                | The outermost unison voices sit this far either side of the note
+    how Sets how far apart the outermost unison voices of slot B are, from 0 to 100 cents either side of the note.
+    sound Small amounts give a gentle shimmer, large amounts a thick, wide and clearly out-of-tune stack; it has no effect with one voice.
 BSpread    "B spread"      0 1000 700  pct                             | Stereo spread of the unison voices
+    how Sets how far the unison voices of slot B are spread across the stereo field, from 0 to 100 %.
+    sound At 0 % the voices sit in the middle and sound narrow; at 100 % they fan out wide.
 BPhase     "B phase"       0 1000 0    lin 0 360 ° 0                   | Start phase
+    how Sets the point in its cycle where each voice of slot B starts, from 0 to 360 degrees.
+    sound It changes the attack click and how stacked voices add up; it is most audible with a low Random amount.
 BRandom    "B random"      0 1000 1000 pct                             | How much of a random phase each voice starts with
+    how Sets how much of a random start phase each voice of slot B gets, from 0 to 100 %.
+    sound 100 % gives a natural, never-the-same start for each note; 0 % makes every note start identically and punchy.
 BWarp1     "B warp 1"      0 11   0    enum None Bend+ Bend− Squeeze Mirror Asym Sync Window_sync FM PM AM Ring | First warp: how the cycle is read (FM, PM, AM and Ring take the modulator)
+    how Chooses the first warp of slot B, a bend, squeeze, mirror, sync, FM, PM, AM or ring change to how the cycle is read.
+    sound Warps turn plain waves into sharp, hollow, metallic or growling tones; FM, PM, AM and ring take their sound from the modulator slot.
 BWarp1Amt  "B warp 1 amt"  0 1000 0    pct                             | First warp's amount
+    how Sets how strongly slot B's first warp is applied, from 0 to 100 %.
+    sound More amount sounds more extreme; sweeping it is the classic way to make a bass growl or a lead scream.
 BWarp2     "B warp 2"      0 11   0    enum None Bend+ Bend− Squeeze Mirror Asym Sync Window_sync FM PM AM Ring | Second warp, after the first
+    how Chooses the second warp of slot B, applied after the first.
+    sound Stacking two warps gives harsher and more complex tones than one alone.
 BWarp2Amt  "B warp 2 amt"  0 1000 0    pct                             | Second warp's amount
+    how Sets how strongly slot B's second warp is applied, from 0 to 100 %.
+    sound It blends in the extra edge and complexity of the second warp.
 BMod       "B modulator"   0 4    0    enum Osc_A Osc_B Osc_C Sub Noise | What FM, PM, AM and Ring take (not the slot itself)
+    how Chooses which source feeds slot B's FM, PM, AM and ring warps: slot A, B or C, the sub or the noise.
+    sound A different source changes the harmonic content of the modulation; noise gives rough, breathy results.
 BToF2      "B → filter 2"  0 1000 0    pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
+    how Balances slot B between the first filter (0 %) and the second (100 %).
+    sound It decides which filter shapes this slot, so two slots can be filtered differently.
 
 group Osc C
 CType      "C engine"      0 6    0    enum Off Wavetable Analog Sample Granular Harmonic Modal | What slot C plays: a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials, or a struck, plucked or bowed resonating body (samples, grains, partials and bodies take no warps)
+    how Chooses what slot C plays: off, a morphing wavetable, an analog wave, a sample, grains of a sample, additive partials or a resonating body.
+    sound Each engine has its own character, from bright and digital through warm and analog to glassy, airy or struck and woody.
 CTable     "C table"       0 10   3    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
+    how Picks the wavetable slot C reads, one of ten built-in sets or a table you loaded.
+    sound Basic is plain and clean, the sweep and formant tables are animated and vowel-like, and Grit and Digital are harsh and metallic.
 CPos       "C position"    0 1000 0  pct                             | Position in the table (frames morph smoothly)
+    how Sets the place the engine reads from: the frame in the table, the start of a sample, the centre grains are taken from, the morph between two partial sets, or the strike point on a body.
+    sound Moving it changes the timbre smoothly, so it is the main control to sweep or modulate for a living, evolving tone.
 COct       "C octave"      0 8    4    int -4 oct signed               | Octave
+    how Shifts slot C up or down by whole octaves, from 4 octaves below to 4 above.
+    sound Down gives weight and body, up gives thin and airy layers.
 CSemi      "C semi"        0 24   12   int -12 st signed               | Semitones
+    how Shifts slot C up or down by semitones, from 12 below to 12 above.
+    sound Set to a fifth or an octave apart from another slot it makes stacked, chord-like leads and basses.
 CFine      "C fine"        0 1000 500  lin -100 100 ct 0               | Fine tune
+    how Detunes slot C by up to 100 cents either way.
+    sound A few cents against another slot sounds wider and chorused; larger amounts sound out of tune.
 CLevel     "C level"       0 1000 1000 pct                             | Level
+    how Sets how loud slot C is, from silent to full.
+    sound It balances the slots against each other and the sub and noise; a muted slot still renders when another uses it as a modulator.
 CPan       "C pan"         0 1000 500  bip                             | Pan
+    how Places slot C in the stereo field, from hard left to hard right.
+    sound Off-centre slots make the sound wider; unison spread works around this position.
 CUnison    "C unison"      1 16   1    int 0                           | Unison voices
+    how Sets how many detuned copies of slot C sound for each note, from 1 to 16.
+    sound More voices sound thicker, wider and more like a supersaw, and cost more CPU in direct proportion.
 CDetune    "C detune"      0 1000 447  pow 0 100 2 ct 1                | The outermost unison voices sit this far either side of the note
+    how Sets how far apart the outermost unison voices of slot C are, from 0 to 100 cents either side of the note.
+    sound Small amounts give a gentle shimmer, large amounts a thick, wide and clearly out-of-tune stack; it has no effect with one voice.
 CSpread    "C spread"      0 1000 700  pct                             | Stereo spread of the unison voices
+    how Sets how far the unison voices of slot C are spread across the stereo field, from 0 to 100 %.
+    sound At 0 % the voices sit in the middle and sound narrow; at 100 % they fan out wide.
 CPhase     "C phase"       0 1000 0    lin 0 360 ° 0                   | Start phase
+    how Sets the point in its cycle where each voice of slot C starts, from 0 to 360 degrees.
+    sound It changes the attack click and how stacked voices add up; it is most audible with a low Random amount.
 CRandom    "C random"      0 1000 1000 pct                             | How much of a random phase each voice starts with
+    how Sets how much of a random start phase each voice of slot C gets, from 0 to 100 %.
+    sound 100 % gives a natural, never-the-same start for each note; 0 % makes every note start identically and punchy.
 CWarp1     "C warp 1"      0 11   0    enum None Bend+ Bend− Squeeze Mirror Asym Sync Window_sync FM PM AM Ring | First warp: how the cycle is read (FM, PM, AM and Ring take the modulator)
+    how Chooses the first warp of slot C, a bend, squeeze, mirror, sync, FM, PM, AM or ring change to how the cycle is read.
+    sound Warps turn plain waves into sharp, hollow, metallic or growling tones; FM, PM, AM and ring take their sound from the modulator slot.
 CWarp1Amt  "C warp 1 amt"  0 1000 0    pct                             | First warp's amount
+    how Sets how strongly slot C's first warp is applied, from 0 to 100 %.
+    sound More amount sounds more extreme; sweeping it is the classic way to make a bass growl or a lead scream.
 CWarp2     "C warp 2"      0 11   0    enum None Bend+ Bend− Squeeze Mirror Asym Sync Window_sync FM PM AM Ring | Second warp, after the first
+    how Chooses the second warp of slot C, applied after the first.
+    sound Stacking two warps gives harsher and more complex tones than one alone.
 CWarp2Amt  "C warp 2 amt"  0 1000 0    pct                             | Second warp's amount
+    how Sets how strongly slot C's second warp is applied, from 0 to 100 %.
+    sound It blends in the extra edge and complexity of the second warp.
 CMod       "C modulator"   0 4    0    enum Osc_A Osc_B Osc_C Sub Noise | What FM, PM, AM and Ring take (not the slot itself)
+    how Chooses which source feeds slot C's FM, PM, AM and ring warps: slot A, B or C, the sub or the noise.
+    sound A different source changes the harmonic content of the modulation; noise gives rough, breathy results.
 CToF2      "C → filter 2"  0 1000 0    pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
+    how Balances slot C between the first filter (0 %) and the second (100 %).
+    sound It decides which filter shapes this slot, so two slots can be filtered differently.
 
 group Sub
 SubShape    "Sub shape"     0 3    0    enum Sine Triangle Saw Square   | Sub oscillator wave
+    how Chooses the wave of the sub oscillator: sine, triangle, saw or square.
+    sound Sine is clean and deep, square is hollow and strong, saw is bright and buzzy.
 SubOct      "Sub octave"    0 2    1    enum 0 -1 -2                    | Octaves from the note
+    how Sets how many octaves below the note the sub sounds: 0, 1 or 2.
+    sound Lower adds weight and rumble under the main sound.
 SubLevel    "Sub level"     0 1000 0    pct                             | Sub level
+    how Sets the level of the sub oscillator, from 0 to 100 %.
+    sound It adds deep body to basses and thickness under leads; too much eats headroom.
 SubPan      "Sub pan"       0 1000 500  bip                             | Sub pan
+    how Places the sub oscillator in the stereo field, from left to right.
+    sound Keep it in the middle so the low end stays focused.
 SubToF2     "Sub → filter 2" 0 1000 0   pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
+    how Balances the sub between the first filter (0 %) and the second (100 %).
+    sound It decides which filter shapes the sub.
 
 group Noise
 NoiseColor  "Noise color"   0 1000 1000 pct                             | 0 %: dark (lowpassed from 100 Hz); 100 %: white
+    how Sets the colour of the noise, from dark (0 %, low-passed from 100 Hz) to white (100 %).
+    sound Dark noise sounds like a soft rumble or wind; white noise sounds hissy and bright.
 NoiseLevel  "Noise level"   0 1000 0    pct                             | Noise level
+    how Sets the level of the noise source, from 0 to 100 %.
+    sound A little adds breath and air; a lot gives hiss, wind and percussive snap.
 NoisePan    "Noise pan"     0 1000 500  bip                             | Noise pan
+    how Places the noise in the stereo field, from left to right.
+    sound Off-centre noise makes the sound feel wider.
 NoiseToF2   "Noise → filter 2" 0 1000 0 pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
+    how Balances the noise between the first filter (0 %) and the second (100 %).
+    sound It decides which filter shapes the noise.
 
 group Filter 1
 F1Type      "F1 type"       0 12   1    enum Off Ladder_24 Ladder_12 LP_12 LP_24 BP_12 BP_24 HP_12 HP_24 Notch Peak Comb+ Comb− | Filter model (Comb: the cutoff is its pitch)
+    how Chooses the model of filter 1: off, ladder, low-pass, band-pass, high-pass, notch, peak or comb.
+    sound Ladders sound warm and thick, the others clean or specialised, and combs ring at the pitch of the cutoff.
 F1Cutoff    "F1 cutoff"     0 1000 750  freq 20 20000                   | Cutoff
+    how Sets the cutoff frequency of filter 1, from 20 Hz to 20 kHz (for a comb, its pitch).
+    sound Lower sounds darker and duller; higher sounds brighter and more open.
 F1Reso      "F1 reso"       0 1000 150  pct                             | Resonance (comb: feedback)
+    how Sets the resonance of filter 1 (for a comb, its feedback), from 0 to 100 %.
+    sound More resonance adds a whistling peak at the cutoff; a comb near 100 % rings loudly.
 F1Drive     "F1 drive"      0 1000 0    lin 0 24 dB 1                   | Drive into the filter
+    how Pushes the signal harder into filter 1, from 0 to 24 dB.
+    sound More drive adds warmth and grit; too much distorts and gets loud.
 F1Env       "F1 env"        0 1000 600  lin -6 6 oct 1                  | Filter envelope amount
+    how Sets how far the filter envelope moves the cutoff of filter 1, from -6 to +6 octaves.
+    sound Positive opens the filter with each note for a plucky sweep; negative closes it.
 F1Key       "F1 key track"  0 1000 500  pct                             | Cutoff follows the keyboard (100 %: an octave per octave)
+    how Sets how much the cutoff of filter 1 follows the keyboard, from 0 to 100 % (100 % is an octave per octave).
+    sound At 100 % the tone stays the same brightness across the keyboard; at 0 % high notes sound duller.
 F1Vel       "F1 vel"        0 1000 250  lin 0 4 oct 1                   | Softer notes close the filter by up to this
+    how Sets how much softer notes close filter 1, by up to 4 octaves.
+    sound Soft playing sounds darker and hard playing brighter.
 
 group Filter 2
 F2Type      "F2 type"       0 12   0    enum Off Ladder_24 Ladder_12 LP_12 LP_24 BP_12 BP_24 HP_12 HP_24 Notch Peak Comb+ Comb− | Filter model (Comb: the cutoff is its pitch)
+    how Chooses the model of filter 2: off, ladder, low-pass, band-pass, high-pass, notch, peak or comb.
+    sound Ladders sound warm and thick, the others clean or specialised, and combs ring at the pitch of the cutoff.
 F2Cutoff    "F2 cutoff"     0 1000 750  freq 20 20000                   | Cutoff
+    how Sets the cutoff frequency of filter 2, from 20 Hz to 20 kHz (for a comb, its pitch).
+    sound Lower sounds darker and duller; higher sounds brighter and more open.
 F2Reso      "F2 reso"       0 1000 150  pct                             | Resonance (comb: feedback)
+    how Sets the resonance of filter 2 (for a comb, its feedback), from 0 to 100 %.
+    sound More resonance adds a whistling peak at the cutoff; a comb near 100 % rings loudly.
 F2Drive     "F2 drive"      0 1000 0    lin 0 24 dB 1                   | Drive into the filter
+    how Pushes the signal harder into filter 2, from 0 to 24 dB.
+    sound More drive adds warmth and grit; too much distorts and gets loud.
 F2Env       "F2 env"        0 1000 500  lin -6 6 oct 1                  | Filter envelope amount
+    how Sets how far the filter envelope moves the cutoff of filter 2, from -6 to +6 octaves.
+    sound Positive opens the filter with each note for a plucky sweep; negative closes it.
 F2Key       "F2 key track"  0 1000 500  pct                             | Cutoff follows the keyboard (100 %: an octave per octave)
+    how Sets how much the cutoff of filter 2 follows the keyboard, from 0 to 100 % (100 % is an octave per octave).
+    sound At 100 % the tone stays the same brightness across the keyboard; at 0 % high notes sound duller.
 F2Vel       "F2 vel"        0 1000 0  lin 0 4 oct 1                   | Softer notes close the filter by up to this
+    how Sets how much softer notes close filter 2, by up to 4 octaves.
+    sound Soft playing sounds darker and hard playing brighter.
 Routing     "Filter routing" 0 1000 0   pct                             | 0 %: filter 1 into filter 2 (serial); 100 %: side by side (parallel)
+    how Sets how the two filters connect, from in series (0 %) to side by side (100 %).
+    sound Series cuts more and sounds stronger; parallel blends two different filter tones.
 
 group Amp env
 AmpA        "Amp attack"    0 1000 100  time 0.0005 20                  | Attack time
+    how Sets how long the amplitude envelope takes to rise, from 0.5 ms to 20 s.
+    sound Short is a sharp, immediate start; long fades the note in like a pad.
 AmpD        "Amp decay"     0 1000 500  time 0.0005 20                  | Decay time
+    how Sets how long the amplitude envelope takes to fall to the sustain level, from 0.5 ms to 20 s.
+    sound Short with low sustain gives plucks and stabs; long keeps the note open.
 AmpS        "Amp sustain"   0 1000 800  pct                             | Sustain level
+    how Sets the level the amplitude envelope holds while a key is down, from 0 to 100 %.
+    sound 100 % holds full volume like an organ; 0 % makes every note decay like a pluck.
 AmpR        "Amp release"   0 1000 450  time 0.0005 20                  | Release time
+    how Sets how long the sound takes to fade after the key is released, from 0.5 ms to 20 s.
+    sound Short stops the note at once; long lets it ring out like a pad tail.
 
 group Filter env
 FltA        "Flt attack"    0 1000 100  time 0.0005 20                  | Attack time
+    how Sets how long the filter envelope takes to rise, from 0.5 ms to 20 s.
+    sound Long makes the sound open up slowly; short gives an instant bright attack.
 FltD        "Flt decay"     0 1000 520  time 0.0005 20                  | Decay time
+    how Sets how long the filter envelope takes to fall to its sustain, from 0.5 ms to 20 s.
+    sound Short sounds plucky and snappy; long keeps the filter movement slow.
 FltS        "Flt sustain"   0 1000 300  pct                             | Sustain level
+    how Sets the level the filter envelope holds while a key is down, from 0 to 100 %.
+    sound Higher keeps the filter open and the tone bright during the note.
 FltR        "Flt release"   0 1000 450  time 0.0005 20                  | Release time
+    how Sets how long the filter envelope takes to close after the key is released, from 0.5 ms to 20 s.
+    sound Longer makes the tail go on darkening after the note ends.
 
 # P1b (appended): the Analog engine's parameters for each slot.
 group Osc A
 AShape     "A shape"       0 4    2    enum Sine Triangle Saw Square Pulse | The Analog engine's wave
+    how Chooses the wave of slot A's Analog engine: sine, triangle, saw, square or pulse.
+    sound Sine is pure, triangle soft, saw bright and buzzy, square hollow and woody, and pulse thin and nasal.
 APw        "A pulse width" 0 1000 1000 lin 3 50 % 1                   | The Analog engine's pulse width (Pulse)
+    how Sets the pulse width of slot A's Analog engine when the shape is Pulse, from 3 to 50 %.
+    sound 50 % is a hollow square; narrower pulses sound thinner and more nasal.
 ADrift     "A drift"       0 1000 200  pct                             | The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are
+    how Lets each voice of slot A's Analog engine wander a little out of tune, by up to 12 cents.
+    sound It adds the slow, imperfect movement of analog oscillators and makes stacks feel alive.
 group Osc B
 BShape     "B shape"       0 4    2    enum Sine Triangle Saw Square Pulse | The Analog engine's wave
+    how Chooses the wave of slot B's Analog engine: sine, triangle, saw, square or pulse.
+    sound Sine is pure, triangle soft, saw bright and buzzy, square hollow and woody, and pulse thin and nasal.
 BPw        "B pulse width" 0 1000 1000 lin 3 50 % 1                   | The Analog engine's pulse width (Pulse)
+    how Sets the pulse width of slot B's Analog engine when the shape is Pulse, from 3 to 50 %.
+    sound 50 % is a hollow square; narrower pulses sound thinner and more nasal.
 BDrift     "B drift"       0 1000 200  pct                             | The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are
+    how Lets each voice of slot B's Analog engine wander a little out of tune, by up to 12 cents.
+    sound It adds the slow, imperfect movement of analog oscillators and makes stacks feel alive.
 group Osc C
 CShape     "C shape"       0 4    2    enum Sine Triangle Saw Square Pulse | The Analog engine's wave
+    how Chooses the wave of slot C's Analog engine: sine, triangle, saw, square or pulse.
+    sound Sine is pure, triangle soft, saw bright and buzzy, square hollow and woody, and pulse thin and nasal.
 CPw        "C pulse width" 0 1000 1000 lin 3 50 % 1                   | The Analog engine's pulse width (Pulse)
+    how Sets the pulse width of slot C's Analog engine when the shape is Pulse, from 3 to 50 %.
+    sound 50 % is a hollow square; narrower pulses sound thinner and more nasal.
 CDrift     "C drift"       0 1000 200  pct                             | The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are
+    how Lets each voice of slot C's Analog engine wander a little out of tune, by up to 12 cents.
+    sound It adds the slow, imperfect movement of analog oscillators and makes stacks feel alive.
 
 # P1b (appended): modulation. Two DAHDSR envelopes with curves, four LFOs, four macros and sixteen
 # routes (source, destination, amount), evaluated per note on the control grid.
 group Mod env 1
 E1Delay    "Env1 delay"    0 1000 0    pow 0 10 3 s 3                  | Delay before the attack
+    how Sets the delay before modulation envelope 1 starts, from 0 to 10 s.
+    sound The modulation it drives begins late, so a vibrato or sweep comes in after the note starts.
 E1A        "Env1 attack"   0 1000 300  time 0.0005 20                  | Attack time
+    how Sets the attack time of modulation envelope 1, from 0.5 ms to 20 s.
+    sound Longer makes what it controls fade in slowly.
 E1Hold     "Env1 hold"     0 1000 0    pow 0 10 3 s 3                  | Hold at the top
+    how Sets how long modulation envelope 1 stays at the top before decaying, from 0 to 10 s.
+    sound A hold keeps the modulation at full strength for a while before it falls.
 E1D        "Env1 decay"    0 1000 600  time 0.0005 20                  | Decay time
+    how Sets the decay time of modulation envelope 1, from 0.5 ms to 20 s.
+    sound Shorter makes a quick blip; longer a slow fall.
 E1S        "Env1 sustain"  0 1000 0    pct                             | Sustain level
+    how Sets the sustain level of modulation envelope 1, from 0 to 100 %.
+    sound Higher keeps the modulation on while the key is held.
 E1R        "Env1 release"  0 1000 500  time 0.0005 20                  | Release time
+    how Sets the release time of modulation envelope 1, from 0.5 ms to 20 s.
+    sound Longer makes the modulation fade out slowly after the key is released.
 E1ACurve   "Env1 att curve" 0 1000 500 bip                             | Attack shape: −100 % fast start, 0 straight, +100 % slow start
+    how Shapes the attack of modulation envelope 1, from fast start (-100 %) through straight (0) to slow start (+100 %).
+    sound A fast start rises quickly and eases in; a slow start builds up late.
 E1DCurve   "Env1 dec curve" 0 1000 200 bip                             | Decay shape: −100 % fast start, 0 straight, +100 % slow start
+    how Shapes the decay of modulation envelope 1, from fast start (-100 %) through straight (0) to slow start (+100 %).
+    sound A fast start drops quickly then lingers; a slow start holds then drops.
 E1RCurve   "Env1 rel curve" 0 1000 200 bip                             | Release shape: −100 % fast start, 0 straight, +100 % slow start
+    how Shapes the release of modulation envelope 1, from fast start (-100 %) through straight (0) to slow start (+100 %).
+    sound A fast start drops quickly then lingers; a slow start holds then drops.
 E1Sync     "Env1 sync"     0 1    0    switch Seconds Beats            | Beats: each time is read as beats of the song's tempo (1 s = 1 beat)
+    how Chooses whether modulation envelope 1 times are read in seconds or in beats of the song tempo.
+    sound Beats keep the envelope locked to the tempo; seconds stay fixed.
 group Mod env 2
 E2Delay    "Env2 delay"    0 1000 0    pow 0 10 3 s 3                  | Delay before the attack
+    how Sets the delay before modulation envelope 2 starts, from 0 to 10 s.
+    sound The modulation it drives begins late, so a vibrato or sweep comes in after the note starts.
 E2A        "Env2 attack"   0 1000 300  time 0.0005 20                  | Attack time
+    how Sets the attack time of modulation envelope 2, from 0.5 ms to 20 s.
+    sound Longer makes what it controls fade in slowly.
 E2Hold     "Env2 hold"     0 1000 0    pow 0 10 3 s 3                  | Hold at the top
+    how Sets how long modulation envelope 2 stays at the top before decaying, from 0 to 10 s.
+    sound A hold keeps the modulation at full strength for a while before it falls.
 E2D        "Env2 decay"    0 1000 600  time 0.0005 20                  | Decay time
+    how Sets the decay time of modulation envelope 2, from 0.5 ms to 20 s.
+    sound Shorter makes a quick blip; longer a slow fall.
 E2S        "Env2 sustain"  0 1000 0    pct                             | Sustain level
+    how Sets the sustain level of modulation envelope 2, from 0 to 100 %.
+    sound Higher keeps the modulation on while the key is held.
 E2R        "Env2 release"  0 1000 500  time 0.0005 20                  | Release time
+    how Sets the release time of modulation envelope 2, from 0.5 ms to 20 s.
+    sound Longer makes the modulation fade out slowly after the key is released.
 E2ACurve   "Env2 att curve" 0 1000 500 bip                             | Attack shape: −100 % fast start, 0 straight, +100 % slow start
+    how Shapes the attack of modulation envelope 2, from fast start (-100 %) through straight (0) to slow start (+100 %).
+    sound A fast start rises quickly and eases in; a slow start builds up late.
 E2DCurve   "Env2 dec curve" 0 1000 200 bip                             | Decay shape: −100 % fast start, 0 straight, +100 % slow start
+    how Shapes the decay of modulation envelope 2, from fast start (-100 %) through straight (0) to slow start (+100 %).
+    sound A fast start drops quickly then lingers; a slow start holds then drops.
 E2RCurve   "Env2 rel curve" 0 1000 200 bip                             | Release shape: −100 % fast start, 0 straight, +100 % slow start
+    how Shapes the release of modulation envelope 2, from fast start (-100 %) through straight (0) to slow start (+100 %).
+    sound A fast start drops quickly then lingers; a slow start holds then drops.
 E2Sync     "Env2 sync"     0 1    0    switch Seconds Beats            | Beats: each time is read as beats of the song's tempo (1 s = 1 beat)
+    how Chooses whether modulation envelope 2 times are read in seconds or in beats of the song tempo.
+    sound Beats keep the envelope locked to the tempo; seconds stay fixed.
 group LFO 1
 L1Shape    "LFO1 shape"    0 7    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth Drawn | Waveform (Drawn: the LFO's own breakpoints, drawn in the editor)
+    how Chooses the wave of LFO 1: sine, triangle, saw up or down, square, sample and hold, smooth random, or your drawn shape.
+    sound Sine is smooth, square jumps, sample and hold steps randomly, and a drawn shape follows your own curve.
 L1Rate     "LFO1 rate"     0 1000 500  freq 0.02 50                    | Rate (free)
+    how Sets the speed of LFO 1 when it is free-running, from 0.02 to 50 Hz.
+    sound Slow gives a gentle drift or sweep; fast gives vibrato, tremolo or buzz.
 L1Sync     "LFO1 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
+    how Locks LFO 1 to the song tempo with a note length from 1/32 to 4 bars, or leaves it free.
+    sound A synced LFO stays in time with the music and overrides the rate.
 L1Retrig   "LFO1 retrig"   0 1    1    switch                          | Restart with each note (one per note); off: one free LFO for all notes
+    how Chooses whether LFO 1 restarts with every note or runs freely for all notes.
+    sound Restarting makes every note move the same way; free-running makes each note differ.
 L1Phase    "LFO1 phase"    0 1000 0    lin 0 360 ° 0                   | Start phase (retrig)
+    how Sets where LFO 1 starts in its cycle, from 0 to 360 degrees, when it restarts per note.
+    sound It shifts where the movement begins on each note.
 L1Fade     "LFO1 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
+    how Sets how long LFO 1 takes to fade in after a note starts, from 0 to 5 s.
+    sound A fade-in brings in vibrato or movement gradually instead of at once.
 group LFO 2
 L2Shape    "LFO2 shape"    0 7    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth Drawn | Waveform (Drawn: the LFO's own breakpoints, drawn in the editor)
+    how Chooses the wave of LFO 2: sine, triangle, saw up or down, square, sample and hold, smooth random, or your drawn shape.
+    sound Sine is smooth, square jumps, sample and hold steps randomly, and a drawn shape follows your own curve.
 L2Rate     "LFO2 rate"     0 1000 500  freq 0.02 50                    | Rate (free)
+    how Sets the speed of LFO 2 when it is free-running, from 0.02 to 50 Hz.
+    sound Slow gives a gentle drift or sweep; fast gives vibrato, tremolo or buzz.
 L2Sync     "LFO2 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
+    how Locks LFO 2 to the song tempo with a note length from 1/32 to 4 bars, or leaves it free.
+    sound A synced LFO stays in time with the music and overrides the rate.
 L2Retrig   "LFO2 retrig"   0 1    1    switch                          | Restart with each note (one per note); off: one free LFO for all notes
+    how Chooses whether LFO 2 restarts with every note or runs freely for all notes.
+    sound Restarting makes every note move the same way; free-running makes each note differ.
 L2Phase    "LFO2 phase"    0 1000 0    lin 0 360 ° 0                   | Start phase (retrig)
+    how Sets where LFO 2 starts in its cycle, from 0 to 360 degrees, when it restarts per note.
+    sound It shifts where the movement begins on each note.
 L2Fade     "LFO2 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
+    how Sets how long LFO 2 takes to fade in after a note starts, from 0 to 5 s.
+    sound A fade-in brings in vibrato or movement gradually instead of at once.
 group LFO 3
 L3Shape    "LFO3 shape"    0 7    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth Drawn | Waveform (Drawn: the LFO's own breakpoints, drawn in the editor)
+    how Chooses the wave of LFO 3: sine, triangle, saw up or down, square, sample and hold, smooth random, or your drawn shape.
+    sound Sine is smooth, square jumps, sample and hold steps randomly, and a drawn shape follows your own curve.
 L3Rate     "LFO3 rate"     0 1000 500  freq 0.02 50                    | Rate (free)
+    how Sets the speed of LFO 3 when it is free-running, from 0.02 to 50 Hz.
+    sound Slow gives a gentle drift or sweep; fast gives vibrato, tremolo or buzz.
 L3Sync     "LFO3 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
+    how Locks LFO 3 to the song tempo with a note length from 1/32 to 4 bars, or leaves it free.
+    sound A synced LFO stays in time with the music and overrides the rate.
 L3Retrig   "LFO3 retrig"   0 1    1    switch                          | Restart with each note (one per note); off: one free LFO for all notes
+    how Chooses whether LFO 3 restarts with every note or runs freely for all notes.
+    sound Restarting makes every note move the same way; free-running makes each note differ.
 L3Phase    "LFO3 phase"    0 1000 0    lin 0 360 ° 0                   | Start phase (retrig)
+    how Sets where LFO 3 starts in its cycle, from 0 to 360 degrees, when it restarts per note.
+    sound It shifts where the movement begins on each note.
 L3Fade     "LFO3 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
+    how Sets how long LFO 3 takes to fade in after a note starts, from 0 to 5 s.
+    sound A fade-in brings in vibrato or movement gradually instead of at once.
 group LFO 4
 L4Shape    "LFO4 shape"    0 7    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth Drawn | Waveform (Drawn: the LFO's own breakpoints, drawn in the editor)
+    how Chooses the wave of LFO 4: sine, triangle, saw up or down, square, sample and hold, smooth random, or your drawn shape.
+    sound Sine is smooth, square jumps, sample and hold steps randomly, and a drawn shape follows your own curve.
 L4Rate     "LFO4 rate"     0 1000 500  freq 0.02 50                    | Rate (free)
+    how Sets the speed of LFO 4 when it is free-running, from 0.02 to 50 Hz.
+    sound Slow gives a gentle drift or sweep; fast gives vibrato, tremolo or buzz.
 L4Sync     "LFO4 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
+    how Locks LFO 4 to the song tempo with a note length from 1/32 to 4 bars, or leaves it free.
+    sound A synced LFO stays in time with the music and overrides the rate.
 L4Retrig   "LFO4 retrig"   0 1    1    switch                          | Restart with each note (one per note); off: one free LFO for all notes
+    how Chooses whether LFO 4 restarts with every note or runs freely for all notes.
+    sound Restarting makes every note move the same way; free-running makes each note differ.
 L4Phase    "LFO4 phase"    0 1000 0    lin 0 360 ° 0                   | Start phase (retrig)
+    how Sets where LFO 4 starts in its cycle, from 0 to 360 degrees, when it restarts per note.
+    sound It shifts where the movement begins on each note.
 L4Fade     "LFO4 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
+    how Sets how long LFO 4 takes to fade in after a note starts, from 0 to 5 s.
+    sound A fade-in brings in vibrato or movement gradually instead of at once.
 group Macros
 M1       "Macro 1"       0 1000 0    pct                             | A knob for routes to follow
+    how Sets macro 1, a single knob that modulation routes can follow, from 0 to 100 %.
+    sound Routes make this one knob move several things at once; it does nothing alone.
 M2       "Macro 2"       0 1000 0    pct                             | A knob for routes to follow
+    how Sets macro 2, a single knob that modulation routes can follow, from 0 to 100 %.
+    sound Routes make this one knob move several things at once; it does nothing alone.
 M3       "Macro 3"       0 1000 0    pct                             | A knob for routes to follow
+    how Sets macro 3, a single knob that modulation routes can follow, from 0 to 100 %.
+    sound Routes make this one knob move several things at once; it does nothing alone.
 M4       "Macro 4"       0 1000 0    pct                             | A knob for routes to follow
+    how Sets macro 4, a single knob that modulation routes can follow, from 0 to 100 %.
+    sound Routes make this one knob move several things at once; it does nothing alone.
 group Routes
 R1Src      "R1 source"     0 22   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random MPE_pressure MPE_slide MPE_bend Seq_step Seq_velocity | Route 1: what modulates
+    how Chooses what drives route 1: an envelope, LFO, velocity, key, wheel, aftertouch, macro, random, MPE or sequencer source.
+    sound The source decides what moves the destination; Off turns the route off.
 R1Dst      "R1 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 1: what it moves
+    how Chooses what route 1 moves: pitch, a slot's position, warp or level, the sub or noise level, a filter cutoff or resonance, the amplitude or an LFO rate.
+    sound The destination decides what changes with the source; Off turns the route off.
 R1Amt      "R1 amount"     0 1000 500  bip                             | Route 1: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+    how Sets how far route 1 moves its destination, from -100 to +100 % (pitch 12 semitones, cutoff 6 octaves, LFO rate 4 octaves at full).
+    sound Negative values move it the opposite way; 0 % does nothing.
 R2Src      "R2 source"     0 22   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random MPE_pressure MPE_slide MPE_bend Seq_step Seq_velocity | Route 2: what modulates
+    how Chooses what drives route 2: an envelope, LFO, velocity, key, wheel, aftertouch, macro, random, MPE or sequencer source.
+    sound The source decides what moves the destination; Off turns the route off.
 R2Dst      "R2 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 2: what it moves
+    how Chooses what route 2 moves: pitch, a slot's position, warp or level, the sub or noise level, a filter cutoff or resonance, the amplitude or an LFO rate.
+    sound The destination decides what changes with the source; Off turns the route off.
 R2Amt      "R2 amount"     0 1000 500  bip                             | Route 2: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+    how Sets how far route 2 moves its destination, from -100 to +100 % (pitch 12 semitones, cutoff 6 octaves, LFO rate 4 octaves at full).
+    sound Negative values move it the opposite way; 0 % does nothing.
 R3Src      "R3 source"     0 22   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random MPE_pressure MPE_slide MPE_bend Seq_step Seq_velocity | Route 3: what modulates
+    how Chooses what drives route 3: an envelope, LFO, velocity, key, wheel, aftertouch, macro, random, MPE or sequencer source.
+    sound The source decides what moves the destination; Off turns the route off.
 R3Dst      "R3 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 3: what it moves
+    how Chooses what route 3 moves: pitch, a slot's position, warp or level, the sub or noise level, a filter cutoff or resonance, the amplitude or an LFO rate.
+    sound The destination decides what changes with the source; Off turns the route off.
 R3Amt      "R3 amount"     0 1000 500  bip                             | Route 3: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+    how Sets how far route 3 moves its destination, from -100 to +100 % (pitch 12 semitones, cutoff 6 octaves, LFO rate 4 octaves at full).
+    sound Negative values move it the opposite way; 0 % does nothing.
 R4Src      "R4 source"     0 22   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random MPE_pressure MPE_slide MPE_bend Seq_step Seq_velocity | Route 4: what modulates
+    how Chooses what drives route 4: an envelope, LFO, velocity, key, wheel, aftertouch, macro, random, MPE or sequencer source.
+    sound The source decides what moves the destination; Off turns the route off.
 R4Dst      "R4 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 4: what it moves
+    how Chooses what route 4 moves: pitch, a slot's position, warp or level, the sub or noise level, a filter cutoff or resonance, the amplitude or an LFO rate.
+    sound The destination decides what changes with the source; Off turns the route off.
 R4Amt      "R4 amount"     0 1000 500  bip                             | Route 4: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+    how Sets how far route 4 moves its destination, from -100 to +100 % (pitch 12 semitones, cutoff 6 octaves, LFO rate 4 octaves at full).
+    sound Negative values move it the opposite way; 0 % does nothing.
 R5Src      "R5 source"     0 22   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random MPE_pressure MPE_slide MPE_bend Seq_step Seq_velocity | Route 5: what modulates
+    how Chooses what drives route 5: an envelope, LFO, velocity, key, wheel, aftertouch, macro, random, MPE or sequencer source.
+    sound The source decides what moves the destination; Off turns the route off.
 R5Dst      "R5 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 5: what it moves
+    how Chooses what route 5 moves: pitch, a slot's position, warp or level, the sub or noise level, a filter cutoff or resonance, the amplitude or an LFO rate.
+    sound The destination decides what changes with the source; Off turns the route off.
 R5Amt      "R5 amount"     0 1000 500  bip                             | Route 5: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+    how Sets how far route 5 moves its destination, from -100 to +100 % (pitch 12 semitones, cutoff 6 octaves, LFO rate 4 octaves at full).
+    sound Negative values move it the opposite way; 0 % does nothing.
 R6Src      "R6 source"     0 22   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random MPE_pressure MPE_slide MPE_bend Seq_step Seq_velocity | Route 6: what modulates
+    how Chooses what drives route 6: an envelope, LFO, velocity, key, wheel, aftertouch, macro, random, MPE or sequencer source.
+    sound The source decides what moves the destination; Off turns the route off.
 R6Dst      "R6 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 6: what it moves
+    how Chooses what route 6 moves: pitch, a slot's position, warp or level, the sub or noise level, a filter cutoff or resonance, the amplitude or an LFO rate.
+    sound The destination decides what changes with the source; Off turns the route off.
 R6Amt      "R6 amount"     0 1000 500  bip                             | Route 6: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+    how Sets how far route 6 moves its destination, from -100 to +100 % (pitch 12 semitones, cutoff 6 octaves, LFO rate 4 octaves at full).
+    sound Negative values move it the opposite way; 0 % does nothing.
 R7Src      "R7 source"     0 22   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random MPE_pressure MPE_slide MPE_bend Seq_step Seq_velocity | Route 7: what modulates
+    how Chooses what drives route 7: an envelope, LFO, velocity, key, wheel, aftertouch, macro, random, MPE or sequencer source.
+    sound The source decides what moves the destination; Off turns the route off.
 R7Dst      "R7 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 7: what it moves
+    how Chooses what route 7 moves: pitch, a slot's position, warp or level, the sub or noise level, a filter cutoff or resonance, the amplitude or an LFO rate.
+    sound The destination decides what changes with the source; Off turns the route off.
 R7Amt      "R7 amount"     0 1000 500  bip                             | Route 7: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+    how Sets how far route 7 moves its destination, from -100 to +100 % (pitch 12 semitones, cutoff 6 octaves, LFO rate 4 octaves at full).
+    sound Negative values move it the opposite way; 0 % does nothing.
 R8Src      "R8 source"     0 22   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random MPE_pressure MPE_slide MPE_bend Seq_step Seq_velocity | Route 8: what modulates
+    how Chooses what drives route 8: an envelope, LFO, velocity, key, wheel, aftertouch, macro, random, MPE or sequencer source.
+    sound The source decides what moves the destination; Off turns the route off.
 R8Dst      "R8 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 8: what it moves
+    how Chooses what route 8 moves: pitch, a slot's position, warp or level, the sub or noise level, a filter cutoff or resonance, the amplitude or an LFO rate.
+    sound The destination decides what changes with the source; Off turns the route off.
 R8Amt      "R8 amount"     0 1000 500  bip                             | Route 8: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+    how Sets how far route 8 moves its destination, from -100 to +100 % (pitch 12 semitones, cutoff 6 octaves, LFO rate 4 octaves at full).
+    sound Negative values move it the opposite way; 0 % does nothing.
 R9Src      "R9 source"     0 22   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random MPE_pressure MPE_slide MPE_bend Seq_step Seq_velocity | Route 9: what modulates
+    how Chooses what drives route 9: an envelope, LFO, velocity, key, wheel, aftertouch, macro, random, MPE or sequencer source.
+    sound The source decides what moves the destination; Off turns the route off.
 R9Dst      "R9 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 9: what it moves
+    how Chooses what route 9 moves: pitch, a slot's position, warp or level, the sub or noise level, a filter cutoff or resonance, the amplitude or an LFO rate.
+    sound The destination decides what changes with the source; Off turns the route off.
 R9Amt      "R9 amount"     0 1000 500  bip                             | Route 9: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+    how Sets how far route 9 moves its destination, from -100 to +100 % (pitch 12 semitones, cutoff 6 octaves, LFO rate 4 octaves at full).
+    sound Negative values move it the opposite way; 0 % does nothing.
 R10Src      "R10 source"     0 22   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random MPE_pressure MPE_slide MPE_bend Seq_step Seq_velocity | Route 10: what modulates
+    how Chooses what drives route 10: an envelope, LFO, velocity, key, wheel, aftertouch, macro, random, MPE or sequencer source.
+    sound The source decides what moves the destination; Off turns the route off.
 R10Dst      "R10 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 10: what it moves
+    how Chooses what route 10 moves: pitch, a slot's position, warp or level, the sub or noise level, a filter cutoff or resonance, the amplitude or an LFO rate.
+    sound The destination decides what changes with the source; Off turns the route off.
 R10Amt      "R10 amount"     0 1000 500  bip                             | Route 10: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+    how Sets how far route 10 moves its destination, from -100 to +100 % (pitch 12 semitones, cutoff 6 octaves, LFO rate 4 octaves at full).
+    sound Negative values move it the opposite way; 0 % does nothing.
 R11Src      "R11 source"     0 22   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random MPE_pressure MPE_slide MPE_bend Seq_step Seq_velocity | Route 11: what modulates
+    how Chooses what drives route 11: an envelope, LFO, velocity, key, wheel, aftertouch, macro, random, MPE or sequencer source.
+    sound The source decides what moves the destination; Off turns the route off.
 R11Dst      "R11 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 11: what it moves
+    how Chooses what route 11 moves: pitch, a slot's position, warp or level, the sub or noise level, a filter cutoff or resonance, the amplitude or an LFO rate.
+    sound The destination decides what changes with the source; Off turns the route off.
 R11Amt      "R11 amount"     0 1000 500  bip                             | Route 11: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+    how Sets how far route 11 moves its destination, from -100 to +100 % (pitch 12 semitones, cutoff 6 octaves, LFO rate 4 octaves at full).
+    sound Negative values move it the opposite way; 0 % does nothing.
 R12Src      "R12 source"     0 22   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random MPE_pressure MPE_slide MPE_bend Seq_step Seq_velocity | Route 12: what modulates
+    how Chooses what drives route 12: an envelope, LFO, velocity, key, wheel, aftertouch, macro, random, MPE or sequencer source.
+    sound The source decides what moves the destination; Off turns the route off.
 R12Dst      "R12 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 12: what it moves
+    how Chooses what route 12 moves: pitch, a slot's position, warp or level, the sub or noise level, a filter cutoff or resonance, the amplitude or an LFO rate.
+    sound The destination decides what changes with the source; Off turns the route off.
 R12Amt      "R12 amount"     0 1000 500  bip                             | Route 12: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+    how Sets how far route 12 moves its destination, from -100 to +100 % (pitch 12 semitones, cutoff 6 octaves, LFO rate 4 octaves at full).
+    sound Negative values move it the opposite way; 0 % does nothing.
 R13Src      "R13 source"     0 22   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random MPE_pressure MPE_slide MPE_bend Seq_step Seq_velocity | Route 13: what modulates
+    how Chooses what drives route 13: an envelope, LFO, velocity, key, wheel, aftertouch, macro, random, MPE or sequencer source.
+    sound The source decides what moves the destination; Off turns the route off.
 R13Dst      "R13 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 13: what it moves
+    how Chooses what route 13 moves: pitch, a slot's position, warp or level, the sub or noise level, a filter cutoff or resonance, the amplitude or an LFO rate.
+    sound The destination decides what changes with the source; Off turns the route off.
 R13Amt      "R13 amount"     0 1000 500  bip                             | Route 13: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+    how Sets how far route 13 moves its destination, from -100 to +100 % (pitch 12 semitones, cutoff 6 octaves, LFO rate 4 octaves at full).
+    sound Negative values move it the opposite way; 0 % does nothing.
 R14Src      "R14 source"     0 22   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random MPE_pressure MPE_slide MPE_bend Seq_step Seq_velocity | Route 14: what modulates
+    how Chooses what drives route 14: an envelope, LFO, velocity, key, wheel, aftertouch, macro, random, MPE or sequencer source.
+    sound The source decides what moves the destination; Off turns the route off.
 R14Dst      "R14 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 14: what it moves
+    how Chooses what route 14 moves: pitch, a slot's position, warp or level, the sub or noise level, a filter cutoff or resonance, the amplitude or an LFO rate.
+    sound The destination decides what changes with the source; Off turns the route off.
 R14Amt      "R14 amount"     0 1000 500  bip                             | Route 14: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+    how Sets how far route 14 moves its destination, from -100 to +100 % (pitch 12 semitones, cutoff 6 octaves, LFO rate 4 octaves at full).
+    sound Negative values move it the opposite way; 0 % does nothing.
 R15Src      "R15 source"     0 22   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random MPE_pressure MPE_slide MPE_bend Seq_step Seq_velocity | Route 15: what modulates
+    how Chooses what drives route 15: an envelope, LFO, velocity, key, wheel, aftertouch, macro, random, MPE or sequencer source.
+    sound The source decides what moves the destination; Off turns the route off.
 R15Dst      "R15 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 15: what it moves
+    how Chooses what route 15 moves: pitch, a slot's position, warp or level, the sub or noise level, a filter cutoff or resonance, the amplitude or an LFO rate.
+    sound The destination decides what changes with the source; Off turns the route off.
 R15Amt      "R15 amount"     0 1000 500  bip                             | Route 15: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+    how Sets how far route 15 moves its destination, from -100 to +100 % (pitch 12 semitones, cutoff 6 octaves, LFO rate 4 octaves at full).
+    sound Negative values move it the opposite way; 0 % does nothing.
 R16Src      "R16 source"     0 22   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random MPE_pressure MPE_slide MPE_bend Seq_step Seq_velocity | Route 16: what modulates
+    how Chooses what drives route 16: an envelope, LFO, velocity, key, wheel, aftertouch, macro, random, MPE or sequencer source.
+    sound The source decides what moves the destination; Off turns the route off.
 R16Dst      "R16 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 16: what it moves
+    how Chooses what route 16 moves: pitch, a slot's position, warp or level, the sub or noise level, a filter cutoff or resonance, the amplitude or an LFO rate.
+    sound The destination decides what changes with the source; Off turns the route off.
 R16Amt      "R16 amount"     0 1000 500  bip                             | Route 16: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+    how Sets how far route 16 moves its destination, from -100 to +100 % (pitch 12 semitones, cutoff 6 octaves, LFO rate 4 octaves at full).
+    sound Negative values move it the opposite way; 0 % does nothing.
 
 # P2 (appended): the Sample and Granular engines' parameters for each slot. "position" (above) is the
 # sample's start (Sample) or the centre grains are taken from (Granular); tuning, level, pan, unison,
 # detune and spread are the slot's own. Samples and grains take no warps.
 group Osc A
 ASmpSrc    "A sample"      0 5    0    enum Choir Strings Bell Pluck Texture User | The sample the Sample and Granular engines play (built-in ones are made by code; User: one loaded for this slot)
+    how Picks the sample slot A's Sample and Granular engines play, one of five built-in sounds or one you loaded.
+    sound Choir and Strings are smooth and sustained, Bell and Pluck are short and decaying, and Texture is noisy and grainy.
 ASmpRoot   "A root"        0 127  60   int 0                           | The note the sample sounds at its own pitch (MIDI note, 60 = C4)
+    how Sets the MIDI note at which the sample plays at its own pitch, from 0 to 127 (60 is middle C).
+    sound Setting it right makes the keyboard play in tune; moving it transposes the whole sample.
 ASmpLoop   "A loop"        0 2    0    enum Off Forward Ping_pong      | Sample engine: how the sample loops while a note is held (Off: plays once)
+    how Chooses how the Sample engine loops slot A's sample while a key is held: off, forward or back and forth.
+    sound Off plays the sample once and then falls silent; looping holds the sound as long as the key is down.
 ASmpLoopStart "A loop start" 0 1000 0  pct                             | Sample engine: where the loop starts, as a share of the sample
+    how Sets where the loop of slot A's sample begins, as a share of its length from 0 to 100 %.
+    sound Moving it changes which part of the sample is repeated, so the held tone changes colour.
 ASmpLoopEnd "A loop end"   0 1000 1000 pct                             | Sample engine: where the loop ends, as a share of the sample
+    how Sets where the loop of slot A's sample ends, as a share of its length from 0 to 100 %.
+    sound A shorter loop sounds more buzzy and pitched; a longer one keeps more of the sample's movement.
 ASmpFade   "A loop fade"    0 1000 0    lin 0 500 ms 0                  | Sample engine: how long the loop's end fades into its start (0: a hard wrap, right for loops of whole periods; raise it when the loop points are not)
+    how Sets how long the end of the loop fades into its start, from 0 to 500 ms.
+    sound 0 ms is a hard wrap that suits loops of whole cycles; a longer fade hides the join but softens the sound.
 ASmpRev    "A reverse"     0 1    0    switch                          | Sample engine: plays the sample backwards
+    how Plays slot A's sample backwards when switched on.
+    sound Reversed samples swell up into the note instead of striking, which sounds eerie and cinematic.
 AGrSize    "A grain size"  0 1000 500  time 0.005 0.5                  | Granular engine: length of each grain
+    how Sets the length of each grain in slot A's Granular engine, from 5 to 500 ms.
+    sound Short grains sound buzzy and rough, long grains smooth and blurred; the longer they are, the more cost.
 AGrRate    "A grain rate"  0 1000 700  freq 1 100                      | Granular engine: grains started per second (a little uneven, as grains in a cloud are)
+    how Sets how many grains start each second in slot A, from 1 to 100.
+    sound Low rates sound sparse and rhythmic, high rates form a dense continuous cloud.
 AGrSpray   "A spray"       0 1000 100  pct                             | Granular engine: how far from the centre grains may start (100%: anywhere in the sample)
+    how Sets how far from the centre position grains may start, from 0 to 100 % of the sample.
+    sound At 0 % the sound is a stable, focused tone; more spray gives a diffuse, scattered cloud.
 AGrScan    "A scan"        0 1000 500  lin -2 2 × 2                    | Granular engine: how fast the centre moves through the sample (1×: its own speed, 0: frozen, negative: backwards)
+    how Sets how fast the grain centre moves through the sample, from 2 times backwards to 2 times forwards (1 is its own speed, 0 is frozen).
+    sound At 0 the sound holds still like a frozen moment; other speeds sweep through the sample's evolution.
 AGrJitter  "A grain pitch" 0 1000 0    pow 0 1200 2 ct 0               | Granular engine: how far each grain's pitch may wander from the note
+    how Sets how far each grain's pitch may wander from the note, from 0 to 1200 cents.
+    sound A little adds shimmer and width; a lot gives a detuned, chaotic, glittering cloud.
 AGrShape   "A grain shape" 0 4    0    enum Hann Triangle Tukey Gauss Percussive | Granular engine: the window every grain fades in and out with
+    how Chooses the fade-in and fade-out window each grain uses: Hann, Triangle, Tukey, Gauss or Percussive.
+    sound Smooth windows blend grains into a pad; Percussive gives a clicky, rhythmic texture.
 AGrRev     "A grain reverse" 0 1000 0  pct                             | Granular engine: the share of grains that play backwards
+    how Sets the share of grains that play backwards, from 0 to 100 %.
+    sound More reversed grains add a sucking, washy, dreamlike quality.
 AGrWidth   "A grain width" 0 1000 500  pct                             | Granular engine: how far grains scatter across the stereo field
+    how Sets how far grains scatter across the stereo field, from 0 to 100 %.
+    sound Higher values make a wide, enveloping cloud; 0 % keeps it in the centre.
 group Osc B
 BSmpSrc    "B sample"      0 5    0    enum Choir Strings Bell Pluck Texture User | The sample the Sample and Granular engines play (built-in ones are made by code; User: one loaded for this slot)
+    how Picks the sample slot B's Sample and Granular engines play, one of five built-in sounds or one you loaded.
+    sound Choir and Strings are smooth and sustained, Bell and Pluck are short and decaying, and Texture is noisy and grainy.
 BSmpRoot   "B root"        0 127  60   int 0                           | The note the sample sounds at its own pitch (MIDI note, 60 = C4)
+    how Sets the MIDI note at which the sample plays at its own pitch, from 0 to 127 (60 is middle C).
+    sound Setting it right makes the keyboard play in tune; moving it transposes the whole sample.
 BSmpLoop   "B loop"        0 2    0    enum Off Forward Ping_pong      | Sample engine: how the sample loops while a note is held (Off: plays once)
+    how Chooses how the Sample engine loops slot B's sample while a key is held: off, forward or back and forth.
+    sound Off plays the sample once and then falls silent; looping holds the sound as long as the key is down.
 BSmpLoopStart "B loop start" 0 1000 0  pct                             | Sample engine: where the loop starts, as a share of the sample
+    how Sets where the loop of slot B's sample begins, as a share of its length from 0 to 100 %.
+    sound Moving it changes which part of the sample is repeated, so the held tone changes colour.
 BSmpLoopEnd "B loop end"   0 1000 1000 pct                             | Sample engine: where the loop ends, as a share of the sample
+    how Sets where the loop of slot B's sample ends, as a share of its length from 0 to 100 %.
+    sound A shorter loop sounds more buzzy and pitched; a longer one keeps more of the sample's movement.
 BSmpFade   "B loop fade"    0 1000 0    lin 0 500 ms 0                  | Sample engine: how long the loop's end fades into its start (0: a hard wrap, right for loops of whole periods; raise it when the loop points are not)
+    how Sets how long the end of the loop fades into its start, from 0 to 500 ms.
+    sound 0 ms is a hard wrap that suits loops of whole cycles; a longer fade hides the join but softens the sound.
 BSmpRev    "B reverse"     0 1    0    switch                          | Sample engine: plays the sample backwards
+    how Plays slot B's sample backwards when switched on.
+    sound Reversed samples swell up into the note instead of striking, which sounds eerie and cinematic.
 BGrSize    "B grain size"  0 1000 500  time 0.005 0.5                  | Granular engine: length of each grain
+    how Sets the length of each grain in slot B's Granular engine, from 5 to 500 ms.
+    sound Short grains sound buzzy and rough, long grains smooth and blurred; the longer they are, the more cost.
 BGrRate    "B grain rate"  0 1000 700  freq 1 100                      | Granular engine: grains started per second (a little uneven, as grains in a cloud are)
+    how Sets how many grains start each second in slot B, from 1 to 100.
+    sound Low rates sound sparse and rhythmic, high rates form a dense continuous cloud.
 BGrSpray   "B spray"       0 1000 100  pct                             | Granular engine: how far from the centre grains may start (100%: anywhere in the sample)
+    how Sets how far from the centre position grains may start, from 0 to 100 % of the sample.
+    sound At 0 % the sound is a stable, focused tone; more spray gives a diffuse, scattered cloud.
 BGrScan    "B scan"        0 1000 500  lin -2 2 × 2                    | Granular engine: how fast the centre moves through the sample (1×: its own speed, 0: frozen, negative: backwards)
+    how Sets how fast the grain centre moves through the sample, from 2 times backwards to 2 times forwards (1 is its own speed, 0 is frozen).
+    sound At 0 the sound holds still like a frozen moment; other speeds sweep through the sample's evolution.
 BGrJitter  "B grain pitch" 0 1000 0    pow 0 1200 2 ct 0               | Granular engine: how far each grain's pitch may wander from the note
+    how Sets how far each grain's pitch may wander from the note, from 0 to 1200 cents.
+    sound A little adds shimmer and width; a lot gives a detuned, chaotic, glittering cloud.
 BGrShape   "B grain shape" 0 4    0    enum Hann Triangle Tukey Gauss Percussive | Granular engine: the window every grain fades in and out with
+    how Chooses the fade-in and fade-out window each grain uses: Hann, Triangle, Tukey, Gauss or Percussive.
+    sound Smooth windows blend grains into a pad; Percussive gives a clicky, rhythmic texture.
 BGrRev     "B grain reverse" 0 1000 0  pct                             | Granular engine: the share of grains that play backwards
+    how Sets the share of grains that play backwards, from 0 to 100 %.
+    sound More reversed grains add a sucking, washy, dreamlike quality.
 BGrWidth   "B grain width" 0 1000 500  pct                             | Granular engine: how far grains scatter across the stereo field
+    how Sets how far grains scatter across the stereo field, from 0 to 100 %.
+    sound Higher values make a wide, enveloping cloud; 0 % keeps it in the centre.
 group Osc C
 CSmpSrc    "C sample"      0 5    0    enum Choir Strings Bell Pluck Texture User | The sample the Sample and Granular engines play (built-in ones are made by code; User: one loaded for this slot)
+    how Picks the sample slot C's Sample and Granular engines play, one of five built-in sounds or one you loaded.
+    sound Choir and Strings are smooth and sustained, Bell and Pluck are short and decaying, and Texture is noisy and grainy.
 CSmpRoot   "C root"        0 127  60   int 0                           | The note the sample sounds at its own pitch (MIDI note, 60 = C4)
+    how Sets the MIDI note at which the sample plays at its own pitch, from 0 to 127 (60 is middle C).
+    sound Setting it right makes the keyboard play in tune; moving it transposes the whole sample.
 CSmpLoop   "C loop"        0 2    0    enum Off Forward Ping_pong      | Sample engine: how the sample loops while a note is held (Off: plays once)
+    how Chooses how the Sample engine loops slot C's sample while a key is held: off, forward or back and forth.
+    sound Off plays the sample once and then falls silent; looping holds the sound as long as the key is down.
 CSmpLoopStart "C loop start" 0 1000 0  pct                             | Sample engine: where the loop starts, as a share of the sample
+    how Sets where the loop of slot C's sample begins, as a share of its length from 0 to 100 %.
+    sound Moving it changes which part of the sample is repeated, so the held tone changes colour.
 CSmpLoopEnd "C loop end"   0 1000 1000 pct                             | Sample engine: where the loop ends, as a share of the sample
+    how Sets where the loop of slot C's sample ends, as a share of its length from 0 to 100 %.
+    sound A shorter loop sounds more buzzy and pitched; a longer one keeps more of the sample's movement.
 CSmpFade   "C loop fade"    0 1000 0    lin 0 500 ms 0                  | Sample engine: how long the loop's end fades into its start (0: a hard wrap, right for loops of whole periods; raise it when the loop points are not)
+    how Sets how long the end of the loop fades into its start, from 0 to 500 ms.
+    sound 0 ms is a hard wrap that suits loops of whole cycles; a longer fade hides the join but softens the sound.
 CSmpRev    "C reverse"     0 1    0    switch                          | Sample engine: plays the sample backwards
+    how Plays slot C's sample backwards when switched on.
+    sound Reversed samples swell up into the note instead of striking, which sounds eerie and cinematic.
 CGrSize    "C grain size"  0 1000 500  time 0.005 0.5                  | Granular engine: length of each grain
+    how Sets the length of each grain in slot C's Granular engine, from 5 to 500 ms.
+    sound Short grains sound buzzy and rough, long grains smooth and blurred; the longer they are, the more cost.
 CGrRate    "C grain rate"  0 1000 700  freq 1 100                      | Granular engine: grains started per second (a little uneven, as grains in a cloud are)
+    how Sets how many grains start each second in slot C, from 1 to 100.
+    sound Low rates sound sparse and rhythmic, high rates form a dense continuous cloud.
 CGrSpray   "C spray"       0 1000 100  pct                             | Granular engine: how far from the centre grains may start (100%: anywhere in the sample)
+    how Sets how far from the centre position grains may start, from 0 to 100 % of the sample.
+    sound At 0 % the sound is a stable, focused tone; more spray gives a diffuse, scattered cloud.
 CGrScan    "C scan"        0 1000 500  lin -2 2 × 2                    | Granular engine: how fast the centre moves through the sample (1×: its own speed, 0: frozen, negative: backwards)
+    how Sets how fast the grain centre moves through the sample, from 2 times backwards to 2 times forwards (1 is its own speed, 0 is frozen).
+    sound At 0 the sound holds still like a frozen moment; other speeds sweep through the sample's evolution.
 CGrJitter  "C grain pitch" 0 1000 0    pow 0 1200 2 ct 0               | Granular engine: how far each grain's pitch may wander from the note
+    how Sets how far each grain's pitch may wander from the note, from 0 to 1200 cents.
+    sound A little adds shimmer and width; a lot gives a detuned, chaotic, glittering cloud.
 CGrShape   "C grain shape" 0 4    0    enum Hann Triangle Tukey Gauss Percussive | Granular engine: the window every grain fades in and out with
+    how Chooses the fade-in and fade-out window each grain uses: Hann, Triangle, Tukey, Gauss or Percussive.
+    sound Smooth windows blend grains into a pad; Percussive gives a clicky, rhythmic texture.
 CGrRev     "C grain reverse" 0 1000 0  pct                             | Granular engine: the share of grains that play backwards
+    how Sets the share of grains that play backwards, from 0 to 100 %.
+    sound More reversed grains add a sucking, washy, dreamlike quality.
 CGrWidth   "C grain width" 0 1000 500  pct                             | Granular engine: how far grains scatter across the stereo field
+    how Sets how far grains scatter across the stereo field, from 0 to 100 %.
+    sound Higher values make a wide, enveloping cloud; 0 % keeps it in the centre.
 
 # P3a (appended): the Harmonic engine's parameters for each slot. "position" (above) morphs from the first set to the
 # second; tuning, level, pan, unison, detune, spread and phase are the slot's own. Partials take no warps.
 group Osc A
 AHSet     "A harmonics"  0 13   0    enum Saw Square Triangle Organ Reed Brass Strings Vowel_A Vowel_O Bright Comb Random Octaves User | Harmonic engine: the first set of partial levels (made by code; User: the first frame of the slot's loaded wavetable, analysed)
+    how Picks the first set of partial levels in slot A's Harmonic engine, such as Saw, Organ, Strings or a vowel.
+    sound The set decides the basic tone colour, from bright and full to hollow, reedy or vocal.
 AHSet2    "A harmonics 2" 0 13  1    enum Saw Square Triangle Organ Reed Brass Strings Vowel_A Vowel_O Bright Comb Random Octaves User | Harmonic engine: the second set, which "position" morphs to (User: the last frame of the slot's loaded wavetable)
+    how Picks the second set of partial levels, which the position control morphs towards.
+    sound Sweeping the position glides the tone from the first set to this one.
 AHPartials "A partials"  1 128  32   int 0                           | Harmonic engine: how many partials sound (those above the Nyquist limit are dropped on high notes anyway); each added partial costs CPU
+    how Sets how many sine partials sound in slot A, from 1 to 128.
+    sound More partials sound fuller and brighter but cost CPU for each one; fewer sound plainer and mellower.
 AHTilt    "A tilt"      0 1000 500  lin -24 24 dB/oct 1                 | Harmonic engine: brightness; each octave of partials louder (+) or softer (−) by this many dB on top of the set (loudness stays)
+    how Tilts the brightness of the partials by up to 24 dB per octave either way, keeping the loudness.
+    sound Positive values sound brighter and sharper, negative values darker and softer.
 AHOddEven "A odd even"  0 1000 500  lin -100 100 % 0                | Harmonic engine: + weakens the even partials (towards a hollow, odd-only tone), − weakens the odd ones (towards the octave above)
+    how Weakens the even partials (positive) or the odd ones (negative), from -100 to +100 %.
+    sound Weaker even partials sound hollow like a clarinet; weaker odd ones sound thin, an octave higher.
 AHStretch "A stretch"   0 1000 500  lin -100 100 % 0                | Harmonic engine: spreads the partials from whole multiples of the pitch: + stretches them apart (bells, glass, plucked wire), − bunches them (clusters)
+    how Moves the partials away from whole multiples of the pitch, from -100 to +100 %.
+    sound Stretching sounds like bells, glass or plucked wire; compressing bunches them into clusters.
 AHDamp    "A damp"      0 1000 0    pct                             | Harmonic engine: how fast the upper partials die away while a note is held (0: they last; 100%: a pluck)
+    how Sets how fast the upper partials die away while a note is held, from 0 to 100 %.
+    sound At 0 % they last; at 100 % the sound dies away like a pluck.
 group Osc B
 BHSet     "B harmonics"  0 13   0    enum Saw Square Triangle Organ Reed Brass Strings Vowel_A Vowel_O Bright Comb Random Octaves User | Harmonic engine: the first set of partial levels (made by code; User: the first frame of the slot's loaded wavetable, analysed)
+    how Picks the first set of partial levels in slot B's Harmonic engine, such as Saw, Organ, Strings or a vowel.
+    sound The set decides the basic tone colour, from bright and full to hollow, reedy or vocal.
 BHSet2    "B harmonics 2" 0 13  1    enum Saw Square Triangle Organ Reed Brass Strings Vowel_A Vowel_O Bright Comb Random Octaves User | Harmonic engine: the second set, which "position" morphs to (User: the last frame of the slot's loaded wavetable)
+    how Picks the second set of partial levels, which the position control morphs towards.
+    sound Sweeping the position glides the tone from the first set to this one.
 BHPartials "B partials"  1 128  32   int 0                           | Harmonic engine: how many partials sound (those above the Nyquist limit are dropped on high notes anyway); each added partial costs CPU
+    how Sets how many sine partials sound in slot B, from 1 to 128.
+    sound More partials sound fuller and brighter but cost CPU for each one; fewer sound plainer and mellower.
 BHTilt    "B tilt"      0 1000 500  lin -24 24 dB/oct 1                 | Harmonic engine: brightness; each octave of partials louder (+) or softer (−) by this many dB on top of the set (loudness stays)
+    how Tilts the brightness of the partials by up to 24 dB per octave either way, keeping the loudness.
+    sound Positive values sound brighter and sharper, negative values darker and softer.
 BHOddEven "B odd even"  0 1000 500  lin -100 100 % 0                | Harmonic engine: + weakens the even partials (towards a hollow, odd-only tone), − weakens the odd ones (towards the octave above)
+    how Weakens the even partials (positive) or the odd ones (negative), from -100 to +100 %.
+    sound Weaker even partials sound hollow like a clarinet; weaker odd ones sound thin, an octave higher.
 BHStretch "B stretch"   0 1000 500  lin -100 100 % 0                | Harmonic engine: spreads the partials from whole multiples of the pitch: + stretches them apart (bells, glass, plucked wire), − bunches them (clusters)
+    how Moves the partials away from whole multiples of the pitch, from -100 to +100 %.
+    sound Stretching sounds like bells, glass or plucked wire; compressing bunches them into clusters.
 BHDamp    "B damp"      0 1000 0    pct                             | Harmonic engine: how fast the upper partials die away while a note is held (0: they last; 100%: a pluck)
+    how Sets how fast the upper partials die away while a note is held, from 0 to 100 %.
+    sound At 0 % they last; at 100 % the sound dies away like a pluck.
 group Osc C
 CHSet     "C harmonics"  0 13   0    enum Saw Square Triangle Organ Reed Brass Strings Vowel_A Vowel_O Bright Comb Random Octaves User | Harmonic engine: the first set of partial levels (made by code; User: the first frame of the slot's loaded wavetable, analysed)
+    how Picks the first set of partial levels in slot C's Harmonic engine, such as Saw, Organ, Strings or a vowel.
+    sound The set decides the basic tone colour, from bright and full to hollow, reedy or vocal.
 CHSet2    "C harmonics 2" 0 13  1    enum Saw Square Triangle Organ Reed Brass Strings Vowel_A Vowel_O Bright Comb Random Octaves User | Harmonic engine: the second set, which "position" morphs to (User: the last frame of the slot's loaded wavetable)
+    how Picks the second set of partial levels, which the position control morphs towards.
+    sound Sweeping the position glides the tone from the first set to this one.
 CHPartials "C partials"  1 128  32   int 0                           | Harmonic engine: how many partials sound (those above the Nyquist limit are dropped on high notes anyway); each added partial costs CPU
+    how Sets how many sine partials sound in slot C, from 1 to 128.
+    sound More partials sound fuller and brighter but cost CPU for each one; fewer sound plainer and mellower.
 CHTilt    "C tilt"      0 1000 500  lin -24 24 dB/oct 1                 | Harmonic engine: brightness; each octave of partials louder (+) or softer (−) by this many dB on top of the set (loudness stays)
+    how Tilts the brightness of the partials by up to 24 dB per octave either way, keeping the loudness.
+    sound Positive values sound brighter and sharper, negative values darker and softer.
 CHOddEven "C odd even"  0 1000 500  lin -100 100 % 0                | Harmonic engine: + weakens the even partials (towards a hollow, odd-only tone), − weakens the odd ones (towards the octave above)
+    how Weakens the even partials (positive) or the odd ones (negative), from -100 to +100 %.
+    sound Weaker even partials sound hollow like a clarinet; weaker odd ones sound thin, an octave higher.
 CHStretch "C stretch"   0 1000 500  lin -100 100 % 0                | Harmonic engine: spreads the partials from whole multiples of the pitch: + stretches them apart (bells, glass, plucked wire), − bunches them (clusters)
+    how Moves the partials away from whole multiples of the pitch, from -100 to +100 %.
+    sound Stretching sounds like bells, glass or plucked wire; compressing bunches them into clusters.
 CHDamp    "C damp"      0 1000 0    pct                             | Harmonic engine: how fast the upper partials die away while a note is held (0: they last; 100%: a pluck)
+    how Sets how fast the upper partials die away while a note is held, from 0 to 100 %.
+    sound At 0 % they last; at 100 % the sound dies away like a pluck.
 
 # P3b (appended): the Modal engine's parameters for each slot: a bank of resonating modes (spacing by geometry, loss by material,
 # ring time and body size) excited by a mallet, a pluck or a continuous bow/breath. "position" (above) is where on the body it is
 # excited. Tuning, level, pan, unison, detune, spread and phase are the slot's own. Modes take no warps.
 group Osc A
 AMExc     "A exciter" 0 2 0 enum Struck Plucked Continuous | Modal engine: what excites the body: a mallet strike, a plucked release, or a continuous noise-driven bow or breath that sounds while the key is held
+    how Chooses what excites the resonating body of slot A: a mallet strike, a pluck or a continuous bow or breath.
+    sound Struck rings and fades, plucked sounds like a string, and continuous keeps sounding as long as the key is held.
 AMForce   "A force" 0 1000 500 pct | Modal engine: how hard it is excited: harder is brighter (a harder mallet, a sharper pluck, a pressed bow); loudness stays
+    how Sets how hard the body of slot A is excited, from 0 to 100 %.
+    sound Harder sounds brighter, like a hard mallet or a pressed bow, at the same loudness.
 AMGeom    "A geometry" 0 5 0 enum String Tube Bar Membrane Plate Bell | Modal engine: the body whose modes sound: a string (whole multiples), a tube closed at one end (odd multiples), a free bar, a drum membrane, a plate or a bell (the spacings of each, not whole multiples)
+    how Chooses the shape of the body: string, tube, bar, membrane, plate or bell.
+    sound A string sounds harmonic, a tube hollow, a bar and plate metallic, a membrane drum-like and a bell clangorous.
 AMModes   "A modes" 1 64 24 int 0 | Modal engine: how many modes sound, lowest first (a membrane has 31, a bell 12; those above the Nyquist limit are dropped on high notes); each mode costs CPU
+    how Sets how many resonating modes the body has, from 1 to 64, lowest first.
+    sound More modes sound richer and more detailed and cost CPU for each one; fewer sound simpler and duller.
 AMMat     "A material" 0 1000 500 pct | Modal engine: soft to hard: 0 is gut, felt or skin (exact spacing, the upper modes die fast), 100% is glass or steel (stiffness stretches the spacing, the upper modes ring on)
+    how Sets how hard the body's material is, from soft (0 %, like gut or felt) to hard (100 %, like glass or steel).
+    sound Soft is warm and dies quickly; hard is bright, stiff and rings on.
 AMRing    "A ring time" 0 1000 568 time 0.05 20 | Modal engine: how long the lowest mode takes to fall by 60 dB (the damping of the body)
+    how Sets how long the lowest mode takes to fall by 60 dB, from 50 ms to 20 s.
+    sound Short is a dry thud or click; long is a ringing, sustained tone.
 AMHfDamp  "A hf damp" 0 1000 300 pct | Modal engine: how much faster the upper modes die than the lowest (the loss grows with the square of the frequency; the material softens or hardens it)
+    how Sets how much faster the upper modes die than the lowest, from 0 to 100 %.
+    sound Higher values make a warm, mellow sound where the brightness fades quickly.
 AMSize    "A body size" 0 1000 500 pct | Modal engine: small to large body: a larger one rings longer and favours the low modes, a smaller one the high ones
+    how Sets the size of the body from small to large, from 0 to 100 %.
+    sound A larger body rings longer and favours the lows; a smaller one is brighter and shorter.
 
 group Osc B
 BMExc     "B exciter" 0 2 0 enum Struck Plucked Continuous | Modal engine: what excites the body: a mallet strike, a plucked release, or a continuous noise-driven bow or breath that sounds while the key is held
+    how Chooses what excites the resonating body of slot B: a mallet strike, a pluck or a continuous bow or breath.
+    sound Struck rings and fades, plucked sounds like a string, and continuous keeps sounding as long as the key is held.
 BMForce   "B force" 0 1000 500 pct | Modal engine: how hard it is excited: harder is brighter (a harder mallet, a sharper pluck, a pressed bow); loudness stays
+    how Sets how hard the body of slot B is excited, from 0 to 100 %.
+    sound Harder sounds brighter, like a hard mallet or a pressed bow, at the same loudness.
 BMGeom    "B geometry" 0 5 0 enum String Tube Bar Membrane Plate Bell | Modal engine: the body whose modes sound: a string (whole multiples), a tube closed at one end (odd multiples), a free bar, a drum membrane, a plate or a bell (the spacings of each, not whole multiples)
+    how Chooses the shape of the body: string, tube, bar, membrane, plate or bell.
+    sound A string sounds harmonic, a tube hollow, a bar and plate metallic, a membrane drum-like and a bell clangorous.
 BMModes   "B modes" 1 64 24 int 0 | Modal engine: how many modes sound, lowest first (a membrane has 31, a bell 12; those above the Nyquist limit are dropped on high notes); each mode costs CPU
+    how Sets how many resonating modes the body has, from 1 to 64, lowest first.
+    sound More modes sound richer and more detailed and cost CPU for each one; fewer sound simpler and duller.
 BMMat     "B material" 0 1000 500 pct | Modal engine: soft to hard: 0 is gut, felt or skin (exact spacing, the upper modes die fast), 100% is glass or steel (stiffness stretches the spacing, the upper modes ring on)
+    how Sets how hard the body's material is, from soft (0 %, like gut or felt) to hard (100 %, like glass or steel).
+    sound Soft is warm and dies quickly; hard is bright, stiff and rings on.
 BMRing    "B ring time" 0 1000 568 time 0.05 20 | Modal engine: how long the lowest mode takes to fall by 60 dB (the damping of the body)
+    how Sets how long the lowest mode takes to fall by 60 dB, from 50 ms to 20 s.
+    sound Short is a dry thud or click; long is a ringing, sustained tone.
 BMHfDamp  "B hf damp" 0 1000 300 pct | Modal engine: how much faster the upper modes die than the lowest (the loss grows with the square of the frequency; the material softens or hardens it)
+    how Sets how much faster the upper modes die than the lowest, from 0 to 100 %.
+    sound Higher values make a warm, mellow sound where the brightness fades quickly.
 BMSize    "B body size" 0 1000 500 pct | Modal engine: small to large body: a larger one rings longer and favours the low modes, a smaller one the high ones
+    how Sets the size of the body from small to large, from 0 to 100 %.
+    sound A larger body rings longer and favours the lows; a smaller one is brighter and shorter.
 
 group Osc C
 CMExc     "C exciter" 0 2 0 enum Struck Plucked Continuous | Modal engine: what excites the body: a mallet strike, a plucked release, or a continuous noise-driven bow or breath that sounds while the key is held
+    how Chooses what excites the resonating body of slot C: a mallet strike, a pluck or a continuous bow or breath.
+    sound Struck rings and fades, plucked sounds like a string, and continuous keeps sounding as long as the key is held.
 CMForce   "C force" 0 1000 500 pct | Modal engine: how hard it is excited: harder is brighter (a harder mallet, a sharper pluck, a pressed bow); loudness stays
+    how Sets how hard the body of slot C is excited, from 0 to 100 %.
+    sound Harder sounds brighter, like a hard mallet or a pressed bow, at the same loudness.
 CMGeom    "C geometry" 0 5 0 enum String Tube Bar Membrane Plate Bell | Modal engine: the body whose modes sound: a string (whole multiples), a tube closed at one end (odd multiples), a free bar, a drum membrane, a plate or a bell (the spacings of each, not whole multiples)
+    how Chooses the shape of the body: string, tube, bar, membrane, plate or bell.
+    sound A string sounds harmonic, a tube hollow, a bar and plate metallic, a membrane drum-like and a bell clangorous.
 CMModes   "C modes" 1 64 24 int 0 | Modal engine: how many modes sound, lowest first (a membrane has 31, a bell 12; those above the Nyquist limit are dropped on high notes); each mode costs CPU
+    how Sets how many resonating modes the body has, from 1 to 64, lowest first.
+    sound More modes sound richer and more detailed and cost CPU for each one; fewer sound simpler and duller.
 CMMat     "C material" 0 1000 500 pct | Modal engine: soft to hard: 0 is gut, felt or skin (exact spacing, the upper modes die fast), 100% is glass or steel (stiffness stretches the spacing, the upper modes ring on)
+    how Sets how hard the body's material is, from soft (0 %, like gut or felt) to hard (100 %, like glass or steel).
+    sound Soft is warm and dies quickly; hard is bright, stiff and rings on.
 CMRing    "C ring time" 0 1000 568 time 0.05 20 | Modal engine: how long the lowest mode takes to fall by 60 dB (the damping of the body)
+    how Sets how long the lowest mode takes to fall by 60 dB, from 50 ms to 20 s.
+    sound Short is a dry thud or click; long is a ringing, sustained tone.
 CMHfDamp  "C hf damp" 0 1000 300 pct | Modal engine: how much faster the upper modes die than the lowest (the loss grows with the square of the frequency; the material softens or hardens it)
+    how Sets how much faster the upper modes die than the lowest, from 0 to 100 %.
+    sound Higher values make a warm, mellow sound where the brightness fades quickly.
 CMSize    "C body size" 0 1000 500 pct | Modal engine: small to large body: a larger one rings longer and favours the low modes, a smaller one the high ones
+    how Sets the size of the body from small to large, from 0 to 100 %.
+    sound A larger body rings longer and favours the lows; a smaller one is brighter and shorter.
 
 # P4a: the arpeggiator, the step sequencer (its steps are in the machine state) and live MPE.
 group Arp
 ArpMode    "Arp mode"      0 6    0    enum Off Up Down Up_Down Played Random Chord | Arpeggiator: how the held notes are played one by one on the song's grid (Off: the notes sound as played; Played: in the order they were pressed; Random: a seeded draw; Chord: all held notes at once, shifted up each step across the octave range). Overridden by the sequencer in Notes mode
+    how Chooses how the arpeggiator plays held notes one at a time: up, down, up and down, as played, random or as a chord.
+    sound Off passes notes through; the other modes turn held chords into a running pattern.
 ArpRate    "Arp rate"      0 5    1    enum 1/32 1/16 1/8 1/4 1/2 1_bar | Arpeggiator: the length of a step (a quarter note is a beat)
+    how Sets the arpeggiator step length, from a 32nd note to a whole bar.
+    sound Short steps sound fast and busy, long ones slow and spacious.
 ArpFeel    "Arp feel"      0 2    0    enum Straight Dotted Triplet | Arpeggiator: straight steps, dotted (1.5 x as long) or triplet (2/3 as long)
+    how Chooses straight, dotted (1.5 times as long) or triplet (two thirds as long) arpeggiator steps.
+    sound Triplets and dotted notes add a rolling or lilting feel.
 ArpOct     "Arp octaves"   0 3    0    int 1 oct | Arpeggiator: how many octaves the held notes are repeated across (upwards)
+    how Sets how many octaves the arpeggio repeats across, from 1 to 4.
+    sound More octaves make a wider, rising pattern.
 ArpGate    "Arp gate"      0 1000 600  pct | Arpeggiator: how much of its step each note sounds (5% at least)
+    how Sets how much of each step a note sounds, from 5 to 100 %.
+    sound Low sounds short and staccato, high sounds long and legato.
 ArpSwing   "Arp swing"     0 1000 0    pct | Arpeggiator: delays every second step, by up to half a step at 100% (66% is a triplet feel)
+    how Delays every second arpeggiator step by up to half a step.
+    sound More swing sounds looser and groovier; 66 % is a triplet feel.
 ArpLatch   "Arp latch"     0 1    0    switch | Arpeggiator: keep the notes going after the keys are released; the next key played replaces them
+    how Keeps the arpeggio playing after the keys are released; the next key played replaces it.
+    sound It frees your hands while the pattern keeps running.
 ArpSeed    "Arp seed"      0 255  0    int 0 | Arpeggiator and sequencer: the seed of the random mode and of the step probabilities (the same seed gives the same notes in every render)
+    how Sets the seed, from 0 to 255, of the random arpeggio and of the step probabilities.
+    sound The same seed gives the same notes every time, so a render repeats exactly.
 
 group Seq
 SeqMode    "Seq mode"      0 2    0    enum Off Notes Mod | Step sequencer: Notes plays the steps on the held key (the arpeggiator stands aside), Mod only runs the steps as modulation sources (Seq step, Seq velocity). The steps are edited on the Arp page and kept in the song
+    how Chooses what the step sequencer does: off, play the steps as notes on the held key, or only run them as modulation sources.
+    sound Notes turns a held key into a melodic pattern; Mod moves other controls in steps.
 SeqLength  "Seq length"    0 31   15   int 1 | Step sequencer: the number of steps (1 to 32)
+    how Sets how many steps the sequencer plays, from 1 to 32.
+    sound Short loops repeat quickly and feel tight; long ones evolve.
 SeqRate    "Seq rate"      0 5    1    enum 1/32 1/16 1/8 1/4 1/2 1_bar | Step sequencer: the length of a step
+    how Sets the sequencer step length, from a 32nd note to a whole bar.
+    sound Short steps sound fast and busy, long ones slow and spacious.
 SeqFeel    "Seq feel"      0 2    0    enum Straight Dotted Triplet | Step sequencer: straight steps, dotted or triplet
+    how Chooses straight, dotted or triplet sequencer steps.
+    sound Triplets and dotted notes add a rolling or lilting feel.
 SeqSwing   "Seq swing"     0 1000 0    pct | Step sequencer: delays every second step, by up to half a step at 100%
+    how Delays every second sequencer step by up to half a step.
+    sound More swing sounds looser and groovier.
 SeqSlew    "Seq slew"      0 1000 0    pct | Step sequencer: how smoothly the modulation sources glide from one step to the next (0: stepped, 100%: a whole step)
+    how Sets how smoothly the sequencer's modulation sources glide from step to step, from 0 to 100 %.
+    sound At 0 % the changes jump in steps; at 100 % they glide through the whole step.
 
 group MPE
 MpeMode    "MPE"           0 1    0    switch Off On | Live MPE: notes keep the MIDI channel they came on (channel 1 is the master): each member channel's pitch bend, pressure and slide (CC74) move that note alone, as the modulation sources MPE bend, MPE pressure and MPE slide. Off: channels are ignored
+    how Switches live MPE on, so each note keeps its own MIDI channel and its own pitch bend, pressure and slide.
+    sound Each finger can bend and shape its own note; off ignores the channels.
 MpeBend    "MPE bend range" 0 96  48   int 0 st | Live MPE: the pitch bend range of a member channel, in semitones (48 is the MPE default)
+    how Sets the pitch bend range of each MPE member channel, from 0 to 96 semitones.
+    sound 48 is the usual MPE range; a smaller value makes each finger's pitch moves smaller.
 
 # P4b0: the effects rack (docs/specs/dye-essence.md section 4.10): ten slots, each a type, a mix and ten generic parameters whose meaning the type gives (the engines of Neo EQ, Neo Filter, Neo Comp, Neo Clipper, Neo Delay and Neo Verb). Which chain a slot is in, and the order, are in the machine state (FxRouting).
 group FX
 FxLayout    "FX layout"     0 1    0    enum Trio Duo   | Trio: bus A and bus B (parallel sends from the synth) and a main chain (serial on the sum). Duo: insert 1 and insert 2 in series, then an aux (a send and return). Which slots sit in which chain: the machine state (default: slots 1-4 bus A or insert 1, 5-7 bus B or insert 2, 8-10 main or aux)
+    how Chooses the rack's layout: Trio (two parallel buses and a main chain) or Duo (two inserts in series, then an aux).
+    sound It decides whether effects work as parallel sends or as a serial chain.
 FxSendA     "FX send A"     0 1000 870  db -40 6 inf   | Level sent to bus A (Trio) or to the aux (Duo)
+    how Sets the level sent to bus A (Trio) or to the aux (Duo), from -40 dB to +6 dB.
+    sound More send sounds wetter through the effects on that chain.
 FxSendB     "FX send B"     0 1000 870  db -40 6 inf   | Level sent to bus B (Trio; unused in Duo)
+    how Sets the level sent to bus B (Trio only), from -40 dB to +6 dB.
+    sound More send sounds wetter through the effects on bus B; it does nothing in Duo.
 FxRetA      "FX return A"   0 1000 870  db -40 6 inf   | Level of bus A (Trio) or of the aux (Duo) back into the mix
+    how Sets the level of bus A (Trio) or the aux (Duo) returned to the mix, from -40 dB to +6 dB.
+    sound It sets how loud the processed signal is next to the dry sound.
 FxRetB      "FX return B"   0 1000 870  db -40 6 inf   | Level of bus B back into the mix (Trio; unused in Duo)
+    how Sets the level of bus B returned to the mix (Trio only), from -40 dB to +6 dB.
+    sound It sets how loud bus B is next to the dry sound; it does nothing in Duo.
 X1Type "FX1 type" 0 12 0 enum Off EQ Filter Comp Clipper Delay Verb Dimension Bitcrusher Freq_shift Pitch_delay Convolution Vocoder | Effect slot 1: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback); Convolution (a partitioned convolution reverb of built-in or imported impulse responses) or Vocoder (a channel vocoder, its modulator an internal voice or an imported sample)
+    how Chooses the effect in slot 1: off, EQ, filter, compressor, clipper, delay, reverb, dimension, bitcrusher, frequency shifter, pitch delay, convolution or vocoder.
+    sound Each type has its own sound; it also decides what the ten p controls of the slot mean.
 X1Mix  "FX1 mix" 0 1000 1000 pct | Effect slot 1: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain
+    how Sets how much of effect slot 1 is heard against the dry signal, from 0 to 100 %.
+    sound Keep delays and reverbs below 100 % in a serial chain to hear the dry sound as well.
 X1P1 "FX1 p1" 0 1000 500 pct | Effect slot 1, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time; Convolution: IR; Vocoder: Modulator
+    how Sets the slot's control number 1 as a share of its range, whose meaning depends on the effect type: EQ Low freq, Filter Type, Comp Mode, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X1P2 "FX1 p2" 0 1000 500 pct | Effect slot 1, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch; Convolution: Size; Vocoder: Bands
+    how Sets the slot's control number 2 as a share of its range, whose meaning depends on the effect type: EQ Low gain, Filter Slope, Comp Threshold, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X1P3 "FX1 p3" 0 1000 500 pct | Effect slot 1, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine; Convolution: Pre-delay; Vocoder: Formant
+    how Sets the slot's control number 3 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 freq, Filter Cutoff, Comp Ratio, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X1P4 "FX1 p4" 0 1000 500 pct | Effect slot 1, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback; Convolution: Decay; Vocoder: Low
+    how Sets the slot's control number 4 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 gain, Filter Resonance, Comp Knee, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X1P5 "FX1 p5" 0 1000 500 pct | Effect slot 1, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain; Convolution: Damping; Vocoder: High
+    how Sets the slot's control number 5 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 Q, Filter Drive, Comp Attack, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X1P6 "FX1 p6" 0 1000 500 pct | Effect slot 1, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode; Convolution: Low cut; Vocoder: Attack
+    how Sets the slot's control number 6 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 freq, Filter Env amount, Comp Release, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X1P7 "FX1 p7" 0 1000 500 pct | Effect slot 1, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone; Convolution: High cut; Vocoder: Release
+    how Sets the slot's control number 7 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 gain, Filter LFO rate, Comp SC low cut, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X1P8 "FX1 p8" 0 1000 500 pct | Effect slot 1, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut; Convolution: Width; Vocoder: Sibilance
+    how Sets the slot's control number 8 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 Q, Filter LFO sync, Comp Makeup, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X1P9 "FX1 p9" 0 1000 500 pct | Effect slot 1, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread; Convolution: Reverse; Vocoder: Speed
+    how Sets the slot's control number 9 as a share of its range, whose meaning depends on the effect type: EQ High freq, Filter LFO shape, Comp Character, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X1P10 "FX1 p10" 0 1000 500 pct | Effect slot 1, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed; Convolution: Output; Vocoder: Output
+    how Sets the slot's control number 10 as a share of its range, whose meaning depends on the effect type: EQ High gain, Filter LFO depth, Comp Link, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X2Type "FX2 type" 0 12 0 enum Off EQ Filter Comp Clipper Delay Verb Dimension Bitcrusher Freq_shift Pitch_delay Convolution Vocoder | Effect slot 2: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback); Convolution (a partitioned convolution reverb of built-in or imported impulse responses) or Vocoder (a channel vocoder, its modulator an internal voice or an imported sample)
+    how Chooses the effect in slot 2: off, EQ, filter, compressor, clipper, delay, reverb, dimension, bitcrusher, frequency shifter, pitch delay, convolution or vocoder.
+    sound Each type has its own sound; it also decides what the ten p controls of the slot mean.
 X2Mix  "FX2 mix" 0 1000 1000 pct | Effect slot 2: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain
+    how Sets how much of effect slot 2 is heard against the dry signal, from 0 to 100 %.
+    sound Keep delays and reverbs below 100 % in a serial chain to hear the dry sound as well.
 X2P1 "FX2 p1" 0 1000 500 pct | Effect slot 2, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time; Convolution: IR; Vocoder: Modulator
+    how Sets the slot's control number 1 as a share of its range, whose meaning depends on the effect type: EQ Low freq, Filter Type, Comp Mode, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X2P2 "FX2 p2" 0 1000 500 pct | Effect slot 2, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch; Convolution: Size; Vocoder: Bands
+    how Sets the slot's control number 2 as a share of its range, whose meaning depends on the effect type: EQ Low gain, Filter Slope, Comp Threshold, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X2P3 "FX2 p3" 0 1000 500 pct | Effect slot 2, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine; Convolution: Pre-delay; Vocoder: Formant
+    how Sets the slot's control number 3 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 freq, Filter Cutoff, Comp Ratio, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X2P4 "FX2 p4" 0 1000 500 pct | Effect slot 2, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback; Convolution: Decay; Vocoder: Low
+    how Sets the slot's control number 4 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 gain, Filter Resonance, Comp Knee, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X2P5 "FX2 p5" 0 1000 500 pct | Effect slot 2, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain; Convolution: Damping; Vocoder: High
+    how Sets the slot's control number 5 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 Q, Filter Drive, Comp Attack, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X2P6 "FX2 p6" 0 1000 500 pct | Effect slot 2, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode; Convolution: Low cut; Vocoder: Attack
+    how Sets the slot's control number 6 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 freq, Filter Env amount, Comp Release, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X2P7 "FX2 p7" 0 1000 500 pct | Effect slot 2, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone; Convolution: High cut; Vocoder: Release
+    how Sets the slot's control number 7 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 gain, Filter LFO rate, Comp SC low cut, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X2P8 "FX2 p8" 0 1000 500 pct | Effect slot 2, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut; Convolution: Width; Vocoder: Sibilance
+    how Sets the slot's control number 8 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 Q, Filter LFO sync, Comp Makeup, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X2P9 "FX2 p9" 0 1000 500 pct | Effect slot 2, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread; Convolution: Reverse; Vocoder: Speed
+    how Sets the slot's control number 9 as a share of its range, whose meaning depends on the effect type: EQ High freq, Filter LFO shape, Comp Character, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X2P10 "FX2 p10" 0 1000 500 pct | Effect slot 2, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed; Convolution: Output; Vocoder: Output
+    how Sets the slot's control number 10 as a share of its range, whose meaning depends on the effect type: EQ High gain, Filter LFO depth, Comp Link, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X3Type "FX3 type" 0 12 0 enum Off EQ Filter Comp Clipper Delay Verb Dimension Bitcrusher Freq_shift Pitch_delay Convolution Vocoder | Effect slot 3: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback); Convolution (a partitioned convolution reverb of built-in or imported impulse responses) or Vocoder (a channel vocoder, its modulator an internal voice or an imported sample)
+    how Chooses the effect in slot 3: off, EQ, filter, compressor, clipper, delay, reverb, dimension, bitcrusher, frequency shifter, pitch delay, convolution or vocoder.
+    sound Each type has its own sound; it also decides what the ten p controls of the slot mean.
 X3Mix  "FX3 mix" 0 1000 1000 pct | Effect slot 3: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain
+    how Sets how much of effect slot 3 is heard against the dry signal, from 0 to 100 %.
+    sound Keep delays and reverbs below 100 % in a serial chain to hear the dry sound as well.
 X3P1 "FX3 p1" 0 1000 500 pct | Effect slot 3, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time; Convolution: IR; Vocoder: Modulator
+    how Sets the slot's control number 1 as a share of its range, whose meaning depends on the effect type: EQ Low freq, Filter Type, Comp Mode, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X3P2 "FX3 p2" 0 1000 500 pct | Effect slot 3, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch; Convolution: Size; Vocoder: Bands
+    how Sets the slot's control number 2 as a share of its range, whose meaning depends on the effect type: EQ Low gain, Filter Slope, Comp Threshold, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X3P3 "FX3 p3" 0 1000 500 pct | Effect slot 3, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine; Convolution: Pre-delay; Vocoder: Formant
+    how Sets the slot's control number 3 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 freq, Filter Cutoff, Comp Ratio, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X3P4 "FX3 p4" 0 1000 500 pct | Effect slot 3, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback; Convolution: Decay; Vocoder: Low
+    how Sets the slot's control number 4 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 gain, Filter Resonance, Comp Knee, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X3P5 "FX3 p5" 0 1000 500 pct | Effect slot 3, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain; Convolution: Damping; Vocoder: High
+    how Sets the slot's control number 5 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 Q, Filter Drive, Comp Attack, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X3P6 "FX3 p6" 0 1000 500 pct | Effect slot 3, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode; Convolution: Low cut; Vocoder: Attack
+    how Sets the slot's control number 6 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 freq, Filter Env amount, Comp Release, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X3P7 "FX3 p7" 0 1000 500 pct | Effect slot 3, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone; Convolution: High cut; Vocoder: Release
+    how Sets the slot's control number 7 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 gain, Filter LFO rate, Comp SC low cut, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X3P8 "FX3 p8" 0 1000 500 pct | Effect slot 3, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut; Convolution: Width; Vocoder: Sibilance
+    how Sets the slot's control number 8 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 Q, Filter LFO sync, Comp Makeup, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X3P9 "FX3 p9" 0 1000 500 pct | Effect slot 3, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread; Convolution: Reverse; Vocoder: Speed
+    how Sets the slot's control number 9 as a share of its range, whose meaning depends on the effect type: EQ High freq, Filter LFO shape, Comp Character, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X3P10 "FX3 p10" 0 1000 500 pct | Effect slot 3, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed; Convolution: Output; Vocoder: Output
+    how Sets the slot's control number 10 as a share of its range, whose meaning depends on the effect type: EQ High gain, Filter LFO depth, Comp Link, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X4Type "FX4 type" 0 12 0 enum Off EQ Filter Comp Clipper Delay Verb Dimension Bitcrusher Freq_shift Pitch_delay Convolution Vocoder | Effect slot 4: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback); Convolution (a partitioned convolution reverb of built-in or imported impulse responses) or Vocoder (a channel vocoder, its modulator an internal voice or an imported sample)
+    how Chooses the effect in slot 4: off, EQ, filter, compressor, clipper, delay, reverb, dimension, bitcrusher, frequency shifter, pitch delay, convolution or vocoder.
+    sound Each type has its own sound; it also decides what the ten p controls of the slot mean.
 X4Mix  "FX4 mix" 0 1000 1000 pct | Effect slot 4: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain
+    how Sets how much of effect slot 4 is heard against the dry signal, from 0 to 100 %.
+    sound Keep delays and reverbs below 100 % in a serial chain to hear the dry sound as well.
 X4P1 "FX4 p1" 0 1000 500 pct | Effect slot 4, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time; Convolution: IR; Vocoder: Modulator
+    how Sets the slot's control number 1 as a share of its range, whose meaning depends on the effect type: EQ Low freq, Filter Type, Comp Mode, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X4P2 "FX4 p2" 0 1000 500 pct | Effect slot 4, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch; Convolution: Size; Vocoder: Bands
+    how Sets the slot's control number 2 as a share of its range, whose meaning depends on the effect type: EQ Low gain, Filter Slope, Comp Threshold, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X4P3 "FX4 p3" 0 1000 500 pct | Effect slot 4, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine; Convolution: Pre-delay; Vocoder: Formant
+    how Sets the slot's control number 3 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 freq, Filter Cutoff, Comp Ratio, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X4P4 "FX4 p4" 0 1000 500 pct | Effect slot 4, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback; Convolution: Decay; Vocoder: Low
+    how Sets the slot's control number 4 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 gain, Filter Resonance, Comp Knee, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X4P5 "FX4 p5" 0 1000 500 pct | Effect slot 4, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain; Convolution: Damping; Vocoder: High
+    how Sets the slot's control number 5 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 Q, Filter Drive, Comp Attack, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X4P6 "FX4 p6" 0 1000 500 pct | Effect slot 4, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode; Convolution: Low cut; Vocoder: Attack
+    how Sets the slot's control number 6 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 freq, Filter Env amount, Comp Release, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X4P7 "FX4 p7" 0 1000 500 pct | Effect slot 4, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone; Convolution: High cut; Vocoder: Release
+    how Sets the slot's control number 7 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 gain, Filter LFO rate, Comp SC low cut, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X4P8 "FX4 p8" 0 1000 500 pct | Effect slot 4, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut; Convolution: Width; Vocoder: Sibilance
+    how Sets the slot's control number 8 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 Q, Filter LFO sync, Comp Makeup, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X4P9 "FX4 p9" 0 1000 500 pct | Effect slot 4, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread; Convolution: Reverse; Vocoder: Speed
+    how Sets the slot's control number 9 as a share of its range, whose meaning depends on the effect type: EQ High freq, Filter LFO shape, Comp Character, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X4P10 "FX4 p10" 0 1000 500 pct | Effect slot 4, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed; Convolution: Output; Vocoder: Output
+    how Sets the slot's control number 10 as a share of its range, whose meaning depends on the effect type: EQ High gain, Filter LFO depth, Comp Link, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X5Type "FX5 type" 0 12 0 enum Off EQ Filter Comp Clipper Delay Verb Dimension Bitcrusher Freq_shift Pitch_delay Convolution Vocoder | Effect slot 5: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback); Convolution (a partitioned convolution reverb of built-in or imported impulse responses) or Vocoder (a channel vocoder, its modulator an internal voice or an imported sample)
+    how Chooses the effect in slot 5: off, EQ, filter, compressor, clipper, delay, reverb, dimension, bitcrusher, frequency shifter, pitch delay, convolution or vocoder.
+    sound Each type has its own sound; it also decides what the ten p controls of the slot mean.
 X5Mix  "FX5 mix" 0 1000 1000 pct | Effect slot 5: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain
+    how Sets how much of effect slot 5 is heard against the dry signal, from 0 to 100 %.
+    sound Keep delays and reverbs below 100 % in a serial chain to hear the dry sound as well.
 X5P1 "FX5 p1" 0 1000 500 pct | Effect slot 5, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time; Convolution: IR; Vocoder: Modulator
+    how Sets the slot's control number 1 as a share of its range, whose meaning depends on the effect type: EQ Low freq, Filter Type, Comp Mode, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X5P2 "FX5 p2" 0 1000 500 pct | Effect slot 5, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch; Convolution: Size; Vocoder: Bands
+    how Sets the slot's control number 2 as a share of its range, whose meaning depends on the effect type: EQ Low gain, Filter Slope, Comp Threshold, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X5P3 "FX5 p3" 0 1000 500 pct | Effect slot 5, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine; Convolution: Pre-delay; Vocoder: Formant
+    how Sets the slot's control number 3 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 freq, Filter Cutoff, Comp Ratio, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X5P4 "FX5 p4" 0 1000 500 pct | Effect slot 5, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback; Convolution: Decay; Vocoder: Low
+    how Sets the slot's control number 4 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 gain, Filter Resonance, Comp Knee, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X5P5 "FX5 p5" 0 1000 500 pct | Effect slot 5, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain; Convolution: Damping; Vocoder: High
+    how Sets the slot's control number 5 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 Q, Filter Drive, Comp Attack, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X5P6 "FX5 p6" 0 1000 500 pct | Effect slot 5, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode; Convolution: Low cut; Vocoder: Attack
+    how Sets the slot's control number 6 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 freq, Filter Env amount, Comp Release, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X5P7 "FX5 p7" 0 1000 500 pct | Effect slot 5, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone; Convolution: High cut; Vocoder: Release
+    how Sets the slot's control number 7 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 gain, Filter LFO rate, Comp SC low cut, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X5P8 "FX5 p8" 0 1000 500 pct | Effect slot 5, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut; Convolution: Width; Vocoder: Sibilance
+    how Sets the slot's control number 8 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 Q, Filter LFO sync, Comp Makeup, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X5P9 "FX5 p9" 0 1000 500 pct | Effect slot 5, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread; Convolution: Reverse; Vocoder: Speed
+    how Sets the slot's control number 9 as a share of its range, whose meaning depends on the effect type: EQ High freq, Filter LFO shape, Comp Character, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X5P10 "FX5 p10" 0 1000 500 pct | Effect slot 5, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed; Convolution: Output; Vocoder: Output
+    how Sets the slot's control number 10 as a share of its range, whose meaning depends on the effect type: EQ High gain, Filter LFO depth, Comp Link, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X6Type "FX6 type" 0 12 0 enum Off EQ Filter Comp Clipper Delay Verb Dimension Bitcrusher Freq_shift Pitch_delay Convolution Vocoder | Effect slot 6: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback); Convolution (a partitioned convolution reverb of built-in or imported impulse responses) or Vocoder (a channel vocoder, its modulator an internal voice or an imported sample)
+    how Chooses the effect in slot 6: off, EQ, filter, compressor, clipper, delay, reverb, dimension, bitcrusher, frequency shifter, pitch delay, convolution or vocoder.
+    sound Each type has its own sound; it also decides what the ten p controls of the slot mean.
 X6Mix  "FX6 mix" 0 1000 1000 pct | Effect slot 6: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain
+    how Sets how much of effect slot 6 is heard against the dry signal, from 0 to 100 %.
+    sound Keep delays and reverbs below 100 % in a serial chain to hear the dry sound as well.
 X6P1 "FX6 p1" 0 1000 500 pct | Effect slot 6, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time; Convolution: IR; Vocoder: Modulator
+    how Sets the slot's control number 1 as a share of its range, whose meaning depends on the effect type: EQ Low freq, Filter Type, Comp Mode, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X6P2 "FX6 p2" 0 1000 500 pct | Effect slot 6, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch; Convolution: Size; Vocoder: Bands
+    how Sets the slot's control number 2 as a share of its range, whose meaning depends on the effect type: EQ Low gain, Filter Slope, Comp Threshold, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X6P3 "FX6 p3" 0 1000 500 pct | Effect slot 6, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine; Convolution: Pre-delay; Vocoder: Formant
+    how Sets the slot's control number 3 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 freq, Filter Cutoff, Comp Ratio, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X6P4 "FX6 p4" 0 1000 500 pct | Effect slot 6, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback; Convolution: Decay; Vocoder: Low
+    how Sets the slot's control number 4 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 gain, Filter Resonance, Comp Knee, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X6P5 "FX6 p5" 0 1000 500 pct | Effect slot 6, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain; Convolution: Damping; Vocoder: High
+    how Sets the slot's control number 5 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 Q, Filter Drive, Comp Attack, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X6P6 "FX6 p6" 0 1000 500 pct | Effect slot 6, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode; Convolution: Low cut; Vocoder: Attack
+    how Sets the slot's control number 6 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 freq, Filter Env amount, Comp Release, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X6P7 "FX6 p7" 0 1000 500 pct | Effect slot 6, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone; Convolution: High cut; Vocoder: Release
+    how Sets the slot's control number 7 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 gain, Filter LFO rate, Comp SC low cut, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X6P8 "FX6 p8" 0 1000 500 pct | Effect slot 6, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut; Convolution: Width; Vocoder: Sibilance
+    how Sets the slot's control number 8 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 Q, Filter LFO sync, Comp Makeup, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X6P9 "FX6 p9" 0 1000 500 pct | Effect slot 6, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread; Convolution: Reverse; Vocoder: Speed
+    how Sets the slot's control number 9 as a share of its range, whose meaning depends on the effect type: EQ High freq, Filter LFO shape, Comp Character, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X6P10 "FX6 p10" 0 1000 500 pct | Effect slot 6, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed; Convolution: Output; Vocoder: Output
+    how Sets the slot's control number 10 as a share of its range, whose meaning depends on the effect type: EQ High gain, Filter LFO depth, Comp Link, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X7Type "FX7 type" 0 12 0 enum Off EQ Filter Comp Clipper Delay Verb Dimension Bitcrusher Freq_shift Pitch_delay Convolution Vocoder | Effect slot 7: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback); Convolution (a partitioned convolution reverb of built-in or imported impulse responses) or Vocoder (a channel vocoder, its modulator an internal voice or an imported sample)
+    how Chooses the effect in slot 7: off, EQ, filter, compressor, clipper, delay, reverb, dimension, bitcrusher, frequency shifter, pitch delay, convolution or vocoder.
+    sound Each type has its own sound; it also decides what the ten p controls of the slot mean.
 X7Mix  "FX7 mix" 0 1000 1000 pct | Effect slot 7: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain
+    how Sets how much of effect slot 7 is heard against the dry signal, from 0 to 100 %.
+    sound Keep delays and reverbs below 100 % in a serial chain to hear the dry sound as well.
 X7P1 "FX7 p1" 0 1000 500 pct | Effect slot 7, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time; Convolution: IR; Vocoder: Modulator
+    how Sets the slot's control number 1 as a share of its range, whose meaning depends on the effect type: EQ Low freq, Filter Type, Comp Mode, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X7P2 "FX7 p2" 0 1000 500 pct | Effect slot 7, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch; Convolution: Size; Vocoder: Bands
+    how Sets the slot's control number 2 as a share of its range, whose meaning depends on the effect type: EQ Low gain, Filter Slope, Comp Threshold, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X7P3 "FX7 p3" 0 1000 500 pct | Effect slot 7, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine; Convolution: Pre-delay; Vocoder: Formant
+    how Sets the slot's control number 3 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 freq, Filter Cutoff, Comp Ratio, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X7P4 "FX7 p4" 0 1000 500 pct | Effect slot 7, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback; Convolution: Decay; Vocoder: Low
+    how Sets the slot's control number 4 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 gain, Filter Resonance, Comp Knee, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X7P5 "FX7 p5" 0 1000 500 pct | Effect slot 7, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain; Convolution: Damping; Vocoder: High
+    how Sets the slot's control number 5 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 Q, Filter Drive, Comp Attack, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X7P6 "FX7 p6" 0 1000 500 pct | Effect slot 7, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode; Convolution: Low cut; Vocoder: Attack
+    how Sets the slot's control number 6 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 freq, Filter Env amount, Comp Release, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X7P7 "FX7 p7" 0 1000 500 pct | Effect slot 7, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone; Convolution: High cut; Vocoder: Release
+    how Sets the slot's control number 7 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 gain, Filter LFO rate, Comp SC low cut, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X7P8 "FX7 p8" 0 1000 500 pct | Effect slot 7, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut; Convolution: Width; Vocoder: Sibilance
+    how Sets the slot's control number 8 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 Q, Filter LFO sync, Comp Makeup, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X7P9 "FX7 p9" 0 1000 500 pct | Effect slot 7, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread; Convolution: Reverse; Vocoder: Speed
+    how Sets the slot's control number 9 as a share of its range, whose meaning depends on the effect type: EQ High freq, Filter LFO shape, Comp Character, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X7P10 "FX7 p10" 0 1000 500 pct | Effect slot 7, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed; Convolution: Output; Vocoder: Output
+    how Sets the slot's control number 10 as a share of its range, whose meaning depends on the effect type: EQ High gain, Filter LFO depth, Comp Link, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X8Type "FX8 type" 0 12 0 enum Off EQ Filter Comp Clipper Delay Verb Dimension Bitcrusher Freq_shift Pitch_delay Convolution Vocoder | Effect slot 8: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback); Convolution (a partitioned convolution reverb of built-in or imported impulse responses) or Vocoder (a channel vocoder, its modulator an internal voice or an imported sample)
+    how Chooses the effect in slot 8: off, EQ, filter, compressor, clipper, delay, reverb, dimension, bitcrusher, frequency shifter, pitch delay, convolution or vocoder.
+    sound Each type has its own sound; it also decides what the ten p controls of the slot mean.
 X8Mix  "FX8 mix" 0 1000 1000 pct | Effect slot 8: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain
+    how Sets how much of effect slot 8 is heard against the dry signal, from 0 to 100 %.
+    sound Keep delays and reverbs below 100 % in a serial chain to hear the dry sound as well.
 X8P1 "FX8 p1" 0 1000 500 pct | Effect slot 8, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time; Convolution: IR; Vocoder: Modulator
+    how Sets the slot's control number 1 as a share of its range, whose meaning depends on the effect type: EQ Low freq, Filter Type, Comp Mode, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X8P2 "FX8 p2" 0 1000 500 pct | Effect slot 8, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch; Convolution: Size; Vocoder: Bands
+    how Sets the slot's control number 2 as a share of its range, whose meaning depends on the effect type: EQ Low gain, Filter Slope, Comp Threshold, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X8P3 "FX8 p3" 0 1000 500 pct | Effect slot 8, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine; Convolution: Pre-delay; Vocoder: Formant
+    how Sets the slot's control number 3 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 freq, Filter Cutoff, Comp Ratio, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X8P4 "FX8 p4" 0 1000 500 pct | Effect slot 8, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback; Convolution: Decay; Vocoder: Low
+    how Sets the slot's control number 4 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 gain, Filter Resonance, Comp Knee, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X8P5 "FX8 p5" 0 1000 500 pct | Effect slot 8, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain; Convolution: Damping; Vocoder: High
+    how Sets the slot's control number 5 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 Q, Filter Drive, Comp Attack, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X8P6 "FX8 p6" 0 1000 500 pct | Effect slot 8, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode; Convolution: Low cut; Vocoder: Attack
+    how Sets the slot's control number 6 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 freq, Filter Env amount, Comp Release, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X8P7 "FX8 p7" 0 1000 500 pct | Effect slot 8, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone; Convolution: High cut; Vocoder: Release
+    how Sets the slot's control number 7 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 gain, Filter LFO rate, Comp SC low cut, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X8P8 "FX8 p8" 0 1000 500 pct | Effect slot 8, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut; Convolution: Width; Vocoder: Sibilance
+    how Sets the slot's control number 8 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 Q, Filter LFO sync, Comp Makeup, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X8P9 "FX8 p9" 0 1000 500 pct | Effect slot 8, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread; Convolution: Reverse; Vocoder: Speed
+    how Sets the slot's control number 9 as a share of its range, whose meaning depends on the effect type: EQ High freq, Filter LFO shape, Comp Character, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X8P10 "FX8 p10" 0 1000 500 pct | Effect slot 8, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed; Convolution: Output; Vocoder: Output
+    how Sets the slot's control number 10 as a share of its range, whose meaning depends on the effect type: EQ High gain, Filter LFO depth, Comp Link, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X9Type "FX9 type" 0 12 0 enum Off EQ Filter Comp Clipper Delay Verb Dimension Bitcrusher Freq_shift Pitch_delay Convolution Vocoder | Effect slot 9: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback); Convolution (a partitioned convolution reverb of built-in or imported impulse responses) or Vocoder (a channel vocoder, its modulator an internal voice or an imported sample)
+    how Chooses the effect in slot 9: off, EQ, filter, compressor, clipper, delay, reverb, dimension, bitcrusher, frequency shifter, pitch delay, convolution or vocoder.
+    sound Each type has its own sound; it also decides what the ten p controls of the slot mean.
 X9Mix  "FX9 mix" 0 1000 1000 pct | Effect slot 9: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain
+    how Sets how much of effect slot 9 is heard against the dry signal, from 0 to 100 %.
+    sound Keep delays and reverbs below 100 % in a serial chain to hear the dry sound as well.
 X9P1 "FX9 p1" 0 1000 500 pct | Effect slot 9, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time; Convolution: IR; Vocoder: Modulator
+    how Sets the slot's control number 1 as a share of its range, whose meaning depends on the effect type: EQ Low freq, Filter Type, Comp Mode, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X9P2 "FX9 p2" 0 1000 500 pct | Effect slot 9, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch; Convolution: Size; Vocoder: Bands
+    how Sets the slot's control number 2 as a share of its range, whose meaning depends on the effect type: EQ Low gain, Filter Slope, Comp Threshold, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X9P3 "FX9 p3" 0 1000 500 pct | Effect slot 9, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine; Convolution: Pre-delay; Vocoder: Formant
+    how Sets the slot's control number 3 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 freq, Filter Cutoff, Comp Ratio, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X9P4 "FX9 p4" 0 1000 500 pct | Effect slot 9, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback; Convolution: Decay; Vocoder: Low
+    how Sets the slot's control number 4 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 gain, Filter Resonance, Comp Knee, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X9P5 "FX9 p5" 0 1000 500 pct | Effect slot 9, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain; Convolution: Damping; Vocoder: High
+    how Sets the slot's control number 5 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 Q, Filter Drive, Comp Attack, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X9P6 "FX9 p6" 0 1000 500 pct | Effect slot 9, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode; Convolution: Low cut; Vocoder: Attack
+    how Sets the slot's control number 6 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 freq, Filter Env amount, Comp Release, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X9P7 "FX9 p7" 0 1000 500 pct | Effect slot 9, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone; Convolution: High cut; Vocoder: Release
+    how Sets the slot's control number 7 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 gain, Filter LFO rate, Comp SC low cut, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X9P8 "FX9 p8" 0 1000 500 pct | Effect slot 9, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut; Convolution: Width; Vocoder: Sibilance
+    how Sets the slot's control number 8 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 Q, Filter LFO sync, Comp Makeup, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X9P9 "FX9 p9" 0 1000 500 pct | Effect slot 9, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread; Convolution: Reverse; Vocoder: Speed
+    how Sets the slot's control number 9 as a share of its range, whose meaning depends on the effect type: EQ High freq, Filter LFO shape, Comp Character, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X9P10 "FX9 p10" 0 1000 500 pct | Effect slot 9, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed; Convolution: Output; Vocoder: Output
+    how Sets the slot's control number 10 as a share of its range, whose meaning depends on the effect type: EQ High gain, Filter LFO depth, Comp Link, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X10Type "FX10 type" 0 12 0 enum Off EQ Filter Comp Clipper Delay Verb Dimension Bitcrusher Freq_shift Pitch_delay Convolution Vocoder | Effect slot 10: Off, or the engine of Neo EQ (four bands), Neo Filter, Neo Comp, Neo Clipper, Neo Delay or Neo Verb; or Dimension (a stereo-widening chorus), Bitcrusher (with wow and flutter), Freq shift (a frequency shifter) or Pitch delay (a delay with a pitch shifter in its feedback); Convolution (a partitioned convolution reverb of built-in or imported impulse responses) or Vocoder (a channel vocoder, its modulator an internal voice or an imported sample)
+    how Chooses the effect in slot 10: off, EQ, filter, compressor, clipper, delay, reverb, dimension, bitcrusher, frequency shifter, pitch delay, convolution or vocoder.
+    sound Each type has its own sound; it also decides what the ten p controls of the slot mean.
 X10Mix  "FX10 mix" 0 1000 1000 pct | Effect slot 10: dry to wet (the dry signal is delayed to match the effect's latency). Set a delay or a reverb below 100 % in a serial chain
+    how Sets how much of effect slot 10 is heard against the dry signal, from 0 to 100 %.
+    sound Keep delays and reverbs below 100 % in a serial chain to hear the dry sound as well.
 X10P1 "FX10 p1" 0 1000 500 pct | Effect slot 10, parameter 1, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low freq; Filter: Type; Comp: Mode; Clipper: Drive; Delay: Mode; Verb: Mode; Dimension: Voices; Bitcrusher: Bits; Freq shift: Shift; Pitch delay: Time; Convolution: IR; Vocoder: Modulator
+    how Sets the slot's control number 1 as a share of its range, whose meaning depends on the effect type: EQ Low freq, Filter Type, Comp Mode, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X10P2 "FX10 p2" 0 1000 500 pct | Effect slot 10, parameter 2, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Low gain; Filter: Slope; Comp: Threshold; Clipper: Ceiling; Delay: Sync; Verb: Pre-delay; Dimension: Rate; Bitcrusher: Rate; Freq shift: Range; Pitch delay: Pitch; Convolution: Size; Vocoder: Bands
+    how Sets the slot's control number 2 as a share of its range, whose meaning depends on the effect type: EQ Low gain, Filter Slope, Comp Threshold, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X10P3 "FX10 p3" 0 1000 500 pct | Effect slot 10, parameter 3, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 freq; Filter: Cutoff; Comp: Ratio; Clipper: Shape; Delay: Feel; Verb: Size; Dimension: Depth; Bitcrusher: Anti-alias; Freq shift: Mode; Pitch delay: Fine; Convolution: Pre-delay; Vocoder: Formant
+    how Sets the slot's control number 3 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 freq, Filter Cutoff, Comp Ratio, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X10P4 "FX10 p4" 0 1000 500 pct | Effect slot 10, parameter 4, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 gain; Filter: Resonance; Comp: Knee; Clipper: Knee; Delay: Time; Verb: Decay; Dimension: Delay; Bitcrusher: Drive; Freq shift: Feedback; Pitch delay: Feedback; Convolution: Decay; Vocoder: Low
+    how Sets the slot's control number 4 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 gain, Filter Resonance, Comp Knee, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X10P5 "FX10 p5" 0 1000 500 pct | Effect slot 10, parameter 5, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 1 Q; Filter: Drive; Comp: Attack; Clipper: Oversampling; Delay: Offset; Verb: Low decay; Dimension: Width; Bitcrusher: Quantizer; Freq shift: Feedback tone; Pitch delay: Grain; Convolution: Damping; Vocoder: High
+    how Sets the slot's control number 5 as a share of its range, whose meaning depends on the effect type: EQ Mid 1 Q, Filter Drive, Comp Attack, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X10P6 "FX10 p6" 0 1000 500 pct | Effect slot 10, parameter 6, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 freq; Filter: Env amount; Comp: Release; Clipper: Bands; Delay: Feedback; Verb: Damping; Dimension: Shape; Bitcrusher: Bias; Freq shift: Stereo; Pitch delay: Mode; Convolution: Low cut; Vocoder: Attack
+    how Sets the slot's control number 6 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 freq, Filter Env amount, Comp Release, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X10P7 "FX10 p7" 0 1000 500 pct | Effect slot 10, parameter 7, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 gain; Filter: LFO rate; Comp: SC low cut; Clipper: Crossover 1; Delay: Low cut; Verb: Shimmer; Dimension: Tone; Bitcrusher: Dither; Freq shift: LFO rate; Pitch delay: Tone; Convolution: High cut; Vocoder: Release
+    how Sets the slot's control number 7 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 gain, Filter LFO rate, Comp SC low cut, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X10P8 "FX10 p8" 0 1000 500 pct | Effect slot 10, parameter 8, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: Mid 2 Q; Filter: LFO sync; Comp: Makeup; Clipper: Crossover 2; Delay: High cut; Verb: Width; Dimension: Low cut; Bitcrusher: Tone; Freq shift: LFO depth; Pitch delay: Low cut; Convolution: Width; Vocoder: Sibilance
+    how Sets the slot's control number 8 as a share of its range, whose meaning depends on the effect type: EQ Mid 2 Q, Filter LFO sync, Comp Makeup, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X10P9 "FX10 p9" 0 1000 500 pct | Effect slot 10, parameter 9, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High freq; Filter: LFO shape; Comp: Character; Clipper: Stereo; Delay: Mod depth; Verb: Low cut; Dimension: Drift; Bitcrusher: Wobble; Freq shift: Glide; Pitch delay: Spread; Convolution: Reverse; Vocoder: Speed
+    how Sets the slot's control number 9 as a share of its range, whose meaning depends on the effect type: EQ High freq, Filter LFO shape, Comp Character, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.
 X10P10 "FX10 p10" 0 1000 500 pct | Effect slot 10, parameter 10, as the type names it (0-100 % spans the engine parameter's range, 50 % is the engine's own default). EQ: High gain; Filter: LFO depth; Comp: Link; Clipper: Output; Delay: Width; Verb: High cut; Dimension: Feedback; Bitcrusher: Output; Freq shift: Output; Pitch delay: Cross-feed; Convolution: Output; Vocoder: Output
+    how Sets the slot's control number 10 as a share of its range, whose meaning depends on the effect type: EQ High gain, Filter LFO depth, Comp Link, and others.
+    sound What you hear depends on the type; at 50 % it sits at the effect's own default, and the effects guide lists every type's controls.

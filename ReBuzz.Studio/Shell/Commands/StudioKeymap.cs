@@ -65,7 +65,7 @@ namespace ReBuzz.Studio.Shell.Commands
 
     internal static class StudioKeymap
     {
-        public const string SingleKeyViews = "Machines (letters there search the machine browser when no machine is selected: use the F-key or the button), Session and Song Notes (the Sequence and the Pattern editor type letters: use the F-key or the button there)";
+        public const string SingleKeyViews = "Machines and Session (the Sequence and the Pattern editor type letters, and Song Notes types text: use the F-key or the button there)";
 
         static CommandInfo C(string id, string menu, string title, string keys = null, string mac = null, bool native = true, string where = null, string help = null) =>
             new CommandInfo { Id = id, Menu = menu, Title = title, Keys = keys, MacKeys = mac, Native = native, Where = where, Help = help };
@@ -114,6 +114,7 @@ namespace ReBuzz.Studio.Shell.Commands
             C("view.pianoroll", "View", "_Piano Roll", "Ctrl+Alt+4", "Alt+Cmd+4", help: "The detail panel's piano roll: the Tracker's notes as a grid, edited in the same pattern"),
             C("view.device", "View", "D_evice", "Ctrl+Alt+5", "Alt+Cmd+5", help: "The detail panel's Device page: the selected machine's parameters, grouped and searchable, its editor, and the piano keyboard under it"),
             C("device.find", "View", "_Find Parameter", "Cmd+F", help: "Searches the parameters of the Device page"),
+            C("view.addmachine", "View", "Add _Machine…", "Shift+Cmd+N", help: "Opens the machine browser on the Machine View, to search and add a machine (a double click on empty canvas does too)"),
             C("view.mixer", "View", "Session Mi_xer", "Ctrl+Alt+M", "Alt+Cmd+M", help: "Shows or hides the mixer under the Session View's grid"),
 
             C("window.minimize", "Window", "_Minimize", null, "Cmd+M"),

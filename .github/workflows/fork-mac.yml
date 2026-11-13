@@ -214,6 +214,14 @@ jobs:
         git submodule update --init --depth 1 3rdParty/serilog/serilog
         dotnet test ReBuzz.Studio.Tests -c Release --filter TestCategory=Gallery --logger "console;verbosity=normal" 2>&1 | grep -E "gallery\]|Passed |Failed |Total tests|error" || true
 
+    # P3g polish: the Machine View's frame time on the big song (49 machines, 46 wires), meters off and on, alternated twice, and the Window's
+    # views: UxFrameTimeTests (explicit, category UxMeasure). The figures are the lines "[ux-measure]" of this step's log.
+    - name: Frame times, meters on and off
+      if: always()
+      shell: bash
+      run: |
+        dotnet test ReBuzz.Studio.Tests -c Release --filter TestCategory=UxMeasure --logger "console;verbosity=detailed" 2>&1 | grep -E "ux-measure|Passed |Failed |Total tests|error" || true
+
     - name: The real app on the runner's screen
       if: always()
       shell: bash

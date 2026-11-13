@@ -2,14 +2,18 @@
 // to the audio device, measured before the safety limiter (SafeMaster); the clip indicator, red with
 // the highest over ("+3.2 dB") once the signal went above the clip threshold, latched until clicked,
 // as Ableton's master meter does; and a "limiting" lamp, lit while the safety limiter turns the
-// output down. The main window refreshes it ten times a second.
+// output down. Fork (ux-overhaul.md P3g, decision 81): the bars have a scale, -60 to 0 dB with its numbers under them, and the meter
+// refreshes itself thirty times a second while shown (the peaks fall at 60 dB a second whatever the rate).
 
 using ReBuzz.Studio.Shell.Design;
 using System;
+using System.Diagnostics;
+using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 using ReBuzz.Core;
 
 namespace ReBuzz.Studio.Shell
@@ -24,8 +28,11 @@ namespace ReBuzz.Studio.Shell
         static readonly IBrush OffText = StudioTokens.TextSecondaryBrush;
 
         readonly Func<ReBuzzCore> core;
-        readonly Bars bars = new Bars { Width = 120, Height = 16, VerticalAlignment = VerticalAlignment.Center };
+        readonly Bars bars = new Bars { Width = 200, Height = 36, VerticalAlignment = VerticalAlignment.Center };
         readonly Button clip = new Button { MinWidth = 64, Padding = new Thickness(6, 1), FontSize = 11, VerticalAlignment = VerticalAlignment.Center, HorizontalContentAlignment = HorizontalAlignment.Center };
+        readonly DispatcherTimer timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };
+        readonly Stopwatch clock = Stopwatch.StartNew();
+        double lastSeconds;
         readonly Border limit = new Border { CornerRadius = new CornerRadius(2), Padding = new Thickness(4, 1), VerticalAlignment = VerticalAlignment.Center };
         readonly TextBlock limitText = new TextBlock { Text = "LIM", FontSize = 11, FontWeight = FontWeight.Bold };
 
@@ -39,11 +46,31 @@ namespace ReBuzz.Studio.Shell
             ToolTip.SetTip(clip, "Clip indicator: the highest peak above the clip threshold, before the safety limiter. Click to clear it.");
             ToolTip.SetTip(limit, "The safety limiter is turning the output down (Preferences ▸ Audio)");
             clip.Click += (s, e) => Clear();
+            timer.Tick += (s, e) => Refresh();
             Children.Add(bars);
             Children.Add(clip);
             Children.Add(limit);
             Show("", false);
         }
+
+        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnAttachedToVisualTree(e);
+            lastSeconds = clock.Elapsed.TotalSeconds;
+            timer.Start();
+        }
+
+        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            timer.Stop();
+            base.OnDetachedFromVisualTree(e);
+        }
+
+        /// <summary>The bars' levels now, in dB (tests): left, right.</summary>
+        public (double Left, double Right) Levels => bars.Levels;
+
+        /// <summary>The scale's lowest and highest dB.</summary>
+        public const double FloorDb = -60, TopDb = 0;
 
         /// <summary>The clip indicator's text now: the latched over ("+3.2 dB"), empty when none (tests).</summary>
         public string OverText { get; private set; } = "";
@@ -66,7 +93,10 @@ namespace ReBuzz.Studio.Shell
             if (c == null) return;
             c.RefreshMasterLamps();
             var (l, r) = c.SafeMaster.TakePeaks();
-            bars.Set(l, r);
+            double now = clock.Elapsed.TotalSeconds;
+            double dt = Math.Clamp(now - lastSeconds, 0.001, 0.25);
+            lastSeconds = now;
+            bars.Set(l, r, dt);
             Show(c.MasterOverText, c.MasterLimiting);
         }
 
@@ -82,45 +112,57 @@ namespace ReBuzz.Studio.Shell
             limitText.Foreground = limiting ? StudioTokens.Black : OffText;
         }
 
-        /// <summary>Two peak bars, −60 to +6 dBFS, green to yellow to red above 0 dBFS; they fall back in about half a second.</summary>
+        /// <summary>Two peak bars on a -60 to 0 dBFS scale, with the numbers under them; green, yellow above -6 dB; they fall back at 60 dB a second.</summary>
         sealed class Bars : Control
         {
-            const double Floor = -60, Top = 6;
+            const double Floor = FloorDb, Top = TopDb, FallPerSecond = 60, BarHeight = 9;
+            static readonly double[] Marks = { -60, -40, -20, -10, 0 };
             static readonly IBrush Back = StudioTokens.SurfaceViewBrush;
             static readonly IBrush Green = StudioTokens.Brush(StudioTokens.Of(NeoBuzz.Editor.Tokens.MeterNormal));
             static readonly IBrush Yellow = StudioTokens.Brush(StudioTokens.Of(NeoBuzz.Editor.Tokens.MeterHot));
             static readonly IPen ZeroPen = new Pen(StudioTokens.Brush(StudioTokens.Of(NeoBuzz.Editor.Tokens.ControlTrack)), 1);
+            static readonly Typeface Face = new Typeface(new FontFamily("monospace"));
             double left = Floor, right = Floor;
 
-            public void Set(float peakLeft, float peakRight)
+            public (double Left, double Right) Levels => (left, right);
+
+            public void Set(float peakLeft, float peakRight, double seconds)
             {
-                left = Math.Max(Db(peakLeft), left - 6);
-                right = Math.Max(Db(peakRight), right - 6);
+                double fall = FallPerSecond * seconds;
+                left = Math.Max(Db(peakLeft), left - fall);
+                right = Math.Max(Db(peakRight), right - fall);
                 InvalidateVisual();
             }
 
             static double Db(float peak) => peak > 0 ? Math.Clamp(20 * Math.Log10(peak), Floor, Top) : Floor;
 
-            double X(double db) => (db - Floor) / (Top - Floor) * Bounds.Width;
+            double X(double db) => (db - Floor) / (Top - Floor) * (Bounds.Width - 1);
 
             public override void Render(DrawingContext ctx)
             {
                 var size = Bounds.Size;
-                ctx.FillRectangle(Back, new Rect(size));
-                double h = (size.Height - 3) / 2;
-                Bar(ctx, left, 1, h);
-                Bar(ctx, right, 2 + h, h);
-                double zero = X(0);
-                ctx.DrawLine(ZeroPen, new Point(zero, 0), new Point(zero, size.Height));
+                ctx.FillRectangle(Back, new Rect(0, 0, size.Width, 2 * BarHeight + 3));
+                Bar(ctx, left, 1);
+                Bar(ctx, right, 2 + BarHeight);
+                // The scale: a tick and its number under each mark, the last one right-aligned.
+                var text = StudioTokens.TextSecondaryBrush;
+                foreach (double mark in Marks)
+                {
+                    double x = X(mark);
+                    ctx.DrawLine(ZeroPen, new Point(x, 0), new Point(x, 2 * BarHeight + 5));
+                    var ft = new FormattedText(mark == 0 ? "0" : "−" + (-mark).ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture,
+                        FlowDirection.LeftToRight, Face, StudioTokens.FontCaption, text);
+                    double at = mark == Floor ? 0 : mark == Top ? size.Width - ft.Width : x - ft.Width / 2;
+                    ctx.DrawText(ft, new Point(at, 2 * BarHeight + 4));
+                }
             }
 
-            void Bar(DrawingContext ctx, double db, double y, double h)
+            void Bar(DrawingContext ctx, double db, double y)
             {
                 if (db <= Floor) return;
-                double x = X(db), six = X(-6), zero = X(0);
-                ctx.FillRectangle(Green, new Rect(0, y, Math.Min(x, six), h));
-                if (x > six) ctx.FillRectangle(Yellow, new Rect(six, y, Math.Min(x, zero) - six, h));
-                if (x > zero) ctx.FillRectangle(ClipBrush, new Rect(zero, y, x - zero, h));
+                double x = X(db), six = X(-6);
+                ctx.FillRectangle(Green, new Rect(0, y, Math.Min(x, six), BarHeight));
+                if (x > six) ctx.FillRectangle(Yellow, new Rect(six, y, x - six, BarHeight));
             }
         }
     }
