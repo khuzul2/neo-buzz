@@ -107,16 +107,17 @@ s = Server(exe, "main")
 ok, _, g = s.call("gear_list", search="Pedal", limit=100, include_unhealthy=True)
 rows = {x["name"]: x for x in g.get("gear", [])}
 tracker = rows.get("Pedal Tracker", {})
-check(tracker.get("manifest") == "generated" and tracker.get("exact_units") is True and "Matilde" in tracker.get("summary", ""),
-      f"gear_list: Pedal Tracker's manifest is generated from its source, exact ({tracker.get('manifest')}: {tracker.get('summary', '')[:80]})")
+check(tracker.get("manifest") == "curated" and tracker.get("exact_units") is True and "Matilde" in tracker.get("summary", ""),
+      f"gear_list: Pedal Tracker's manifest is curated (K2: from its source, with its quirks), exact ({tracker.get('manifest')}: {tracker.get('summary', '')[:80]})")
 shaper = rows.get("Pedal Shaper", {})
-check(shaper.get("manifest") == "generated" and shaper.get("exact_units") is True and "waveshaping" in shaper.get("summary", ""),
-      f"gear_list: Pedal Shaper's manifest is generated from its source, exact ({shaper.get('manifest')}: {shaper.get('summary', '')[:80]})")
+check(shaper.get("manifest") == "curated" and shaper.get("exact_units") is True and "waveshaping" in shaper.get("summary", ""),
+      f"gear_list: Pedal Shaper's manifest is curated (K2: from its source, with its quirks), exact ({shaper.get('manifest')}: {shaper.get('summary', '')[:80]})")
 juno = rows.get("Pedal Juno106", {})
 check(juno.get("manifest") == "curated" and juno.get("exact_units") is True and "polysynth" in juno.get("summary", "") and juno.get("quirks"),
       f"gear_list: Pedal Juno106 is curated, exact, says what it's for and its quirks ({juno.get('summary', '')[:80]})")
 curated = sorted(n for n, x in rows.items() if x.get("manifest") == "curated")
-check(curated == ["Pedal Chorus", "Pedal Comp", "Pedal Drum Matrix", "Pedal EQ", "Pedal FM", "Pedal Filter", "Pedal Juno106", "Pedal M1", "Pedal Plate", "Pedal SH101"],
+check(curated == ["Pedal Chord", "Pedal Chorus", "Pedal Comp", "Pedal Drum Matrix", "Pedal EQ", "Pedal FM", "Pedal Filter", "Pedal Gain", "Pedal Gain Multi", "Pedal Gate", "Pedal Juno106",
+                  "Pedal LFO", "Pedal M1", "Pedal MComp", "Pedal Peer Control", "Pedal Plate", "Pedal SH101", "Pedal Shaper", "Pedal Tracker"],
       f"gear_list: the curated Pedal machines ({curated})")
 missing = [n for n, x in rows.items() if not x.get("manifest")]
 check(not missing, f"every Pedal machine has a manifest beside it (missing: {missing}): Machines/Manifests is up to date")
@@ -202,9 +203,9 @@ md = gd.get("markdown", "")
 check(ok and "## Quirks" in md and "**Filter cutoff** (`filter.cutoff`)" in md and "| VCF Freq |" in md and "## Sources" in md,
       "guide(machine=\"Pedal Juno106\"): the curated manual")
 ok, _, gd = s.call("guide", machine="Pedal Tracker")
-check(ok and gd.get("markdown", "").startswith("# Pedal Tracker manual") and "generated from its source code" in gd.get("markdown", "")
+check(ok and gd.get("markdown", "").startswith("# Pedal Tracker manual") and "exact units from a curated manifest" in gd.get("markdown", "")
       and "Pedal Tracker" in gd.get("manuals", []),
-      "guide(machine=\"Pedal Tracker\"): the manual of a manifest from source, and the list names it")
+      "guide(machine=\"Pedal Tracker\"): the curated manual, and the list names it")
 # U6: a manifest generated from the source. Pedal Shaper's Drive reads bare numbers (48); its code makes it dB.
 s.call("machine_add", gear="Pedal Shaper", name="Shp", connect_to="none")
 ok, _, p = s.call("param_set", machine="Shp", changes=[{"param": "Drive", "value": "+6 dB"}, {"param": "Mix", "value": "50%"}])
@@ -298,6 +299,9 @@ def tracker_draft(m):
     m["source"] = "profiled by tools/machine-profiler.py (a test); not curated"
     m["summary"] = "Monosynth (profiled draft): pitched, plays A4 at 440 Hz as written; takes MIDI notes (a test)."
     for p in m["parameters"] + m["track_parameters"]:
+        # K2 batch a curated it (roles and plain names, Explain text): the draft it stands for has none of them.
+        for k in ("role", "plain_name", "how", "sound"):
+            p.pop(k, None)
         if p["name"] in ("Master", "Volume"):
             p["suggested_role"], p["role_evidence"] = "level", "silent at its minimum, sounding at the other end (a test)"
 

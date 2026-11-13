@@ -67,7 +67,7 @@ Loud but steady: above 0 dBFS, under +60 dBFS, not growing, at the setting named
 | Neo Utility | windows | hot (loud but steady) with Gain at its maximum (+24.0 dB): +14.8 dBFS peak |  |
 | Neo Verb | windows | hot with every parameter at its maximum at once (+2.6 dBFS peak), but with no parameter alone |  |
 | Pedal EQ | linux | hot (loud but steady) with LM Gain at its maximum (+24.0 dB): +0.3 dBFS peak; HM Gain at its maximum (+24.0 dB): +7.2 dBFS peak; HS Gain at its maximum (+24.0 dB): +10.9 dBFS peak; Output at its maximum (+24.0 dB): +15.0 dBFS peak |  |
-| Pedal Filter | linux | hot with every parameter at its maximum at once (+15.5 dBFS peak), but with no parameter alone |  |
+| Pedal Filter | linux | hot with every parameter at its maximum at once (+15.3 dBFS peak), but with no parameter alone |  |
 | Pedal Gain Multi | linux | hot (loud but steady) with Gain at its maximum (+10.0 dB): +0.8 dBFS peak; Volume at its maximum (+10.0 dB): +1.0 dBFS peak |  |
 | Pedal MComp | linux | hot (loud but steady) with LM Makeup at its maximum (24.0 dB): +2.5 dBFS peak; HM Makeup at its maximum (24.0 dB): +10.0 dBFS peak; H Makeup at its maximum (24.0 dB): +14.8 dBFS peak; Output Gain at its maximum (+24.0 dB): +17.5 dBFS peak |  |
 | Pedal Shaper | linux | hot (loud but steady) with Drive at its maximum (+24.0 dB): +1.0 dBFS peak; Output at its maximum (+24.0 dB): +14.6 dBFS peak |  |
@@ -124,7 +124,7 @@ None.
 
 What moving each parameter alone changes, as a role (`suggested_role` in the drafts, `machine_describe` shows it). Curated manifests keep their own roles: for their filter, time and mix parameters, the profile's suggestion is listed beside the curated role, and a disagreement is a note here, never a change to the manifest.
 
-Curated filter, time and mix parameters: 80 of 137 suggestions agree.
+Curated filter, time and mix parameters: 82 of 151 suggestions agree.
 
 | Machine | Parameter | Kind | Curated | Suggested | Agrees | Evidence |
 |---|---|---|---|---|---|---|
@@ -192,9 +192,23 @@ Curated filter, time and mix parameters: 80 of 137 suggestions agree.
 | Pedal Filter | Resonance | filter | `filter.resonance` | `filter.resonance` | yes | a peak at 2.09 kHz: its prominence +0 → +18 dB over the response |
 | Pedal Filter | Drive | filter | `filter.drive` | `filter.drive` | yes | harmonics 1.3 → 11.7 % on a sine |
 | Pedal Filter | Mix | mix | `mix.wet` | `mix.wet` | yes | at its minimum the effect passes the signal unchanged; at the other end the response's shape (35.81 dB); half way less of the same |
+| Pedal Gate | Attack ms | time | `dyn.attack` | `filter.bandwidth` | no | the band's width 9.5 → 9.0 octaves |
+| Pedal Gate | Release ms | time | `dyn.release` | `dyn.ratio` | no | the loudest steps lose -90 → -2 dB against the quietest, from the same knee |
+| Pedal Gate | Lookahead ms | time | `dyn.lookahead` | `dyn.lookahead` | yes | the latency 52 → 1102 samples |
+| Pedal MComp | L Attack | time | `dyn.attack` | — | no | no measurable change between its ends with the others at their defaults |
+| Pedal MComp | L Release | time | `dyn.release` | — | no | no measurable change between its ends with the others at their defaults |
+| Pedal MComp | LM Attack | time | `dyn.attack` | — | no | no measurable change between its ends with the others at their defaults |
+| Pedal MComp | LM Release | time | `dyn.release` | `filter.cutoff` | no | the response's upper corner moves 16.7 kHz → 370 Hz (with Xover HM-H half way) |
+| Pedal MComp | HM Attack | time | `dyn.attack` | — | no | no measurable change between its ends with the others at their defaults |
+| Pedal MComp | HM Release | time | `dyn.release` | — | no | no measurable change between its ends with the others at their defaults |
+| Pedal MComp | H Attack | time | `dyn.attack` | — | no | no measurable change between its ends with the others at their defaults |
+| Pedal MComp | H Release | time | `dyn.release` | — | no | no measurable change between its ends with the others at their defaults |
+| Pedal MComp | Dry-Wet | mix | `mix.wet` | — | no | no measurable change between its ends with the others at their defaults |
+| Pedal MComp | Lookahead | time | `dyn.lookahead` | `dyn.lookahead` | yes | the latency 1 → 444 samples |
 | Pedal Plate | Mix | mix | `mix.wet` | `mix.wet` | yes | at its minimum the effect passes the signal unchanged; at the other end echoes from 155 ms; half way less of the same |
 | Pedal Plate | PreDelayMs | time | `reverb.predelay` | `reverb.predelay` | yes | the reverb starts 165 ms → 665 ms after the sound, its tail alike |
 | Pedal Plate | Decay | time | `reverb.decay` | `reverb.decay` | yes | the tail 453 ms → 3.44 s (T60) |
+| Pedal Shaper | Mix | mix | `mix.wet` | — | no | no measurable change between its ends with the others at their defaults |
 | FSM Infector | Flt Type | filter | `filter.type` | — | no | a choice: its texts say what it is; no role measured |
 | FSM Infector |  - Cutoff | filter | `filter.cutoff` | `filter.cutoff` | yes | the brightness (centroid) 39 Hz → 1.19 kHz |
 | FSM Infector |  - Reso | filter | `filter.resonance` | `filter.resonance` | yes | a peak at 250 Hz stands -18 → -1 dB over the spectrum an octave either side |
@@ -334,13 +348,13 @@ Drafts:
 | Neo Wave | polysynth | midi | +0 | 8 | -20.7 | 2.74 | 0 ms / 45 ms / — | 0.0 | 1.912 | hot |
 | Oomek Aggressor 303 | monosynth | tracks | +0 (+1 ct) (sieve) | 1 | -17.6 | -0.01 | 0 ms / — / 75 ms | 3.3 | 10.311 | hot |
 | Pedal Chord | control |  |  |  |  |  |  |  |  | ok |
-| Pedal FM | polysynth | midi | +0 (sieve) | 8 | -8.7 | 5.95 | 5 ms / > 2.01 s / — | 0.0 | 1.244 | hot |
-| Pedal Juno106 | polysynth | midi | +0 | 8 | -15.1 | 6.02 | 0 ms / 235 ms / — | 0.0 | 0.921 | ok |
+| Pedal FM | polysynth | midi | +0 (sieve) | 8 | -8.7 | 5.95 | 5 ms / > 2.01 s / — | 0.0 | 1.066 | hot |
+| Pedal Juno106 | polysynth | midi | +0 | 8 | -15.1 | 6.02 | 0 ms / 235 ms / — | 0.0 | 1.009 | ok |
 | Pedal LFO | control |  |  |  |  |  |  |  |  | ok |
-| Pedal M1 | polysynth | midi | +0 | 8 | -26.7 | 2.33 | 5 ms / 5 ms / — | 0.0 | 0.869 | ok |
+| Pedal M1 | polysynth | midi | +0 | 8 | -26.7 | 2.33 | 5 ms / 5 ms / — | 0.0 | 1.137 | ok |
 | Pedal Peer Control | generator (silent at its defaults) | none |  |  |  |  |  |  |  | warn |
-| Pedal SH101 | monosynth | midi | +0 | 1 | -8 | 6.02 | 5 ms / 315 ms / — | 0.0 | 0.29 | hot |
-| Pedal Tracker | polysynth | midi | +0 | 8 | -19.5 | 12.04 | 0 ms / 10 ms / — | 0.0 | 3.748 | ok |
+| Pedal SH101 | monosynth | midi | +0 | 1 | -8 | 6.02 | 5 ms / 315 ms / — | 0.0 | 0.3 | hot |
+| Pedal Tracker | polysynth | midi | +0 | 8 | -19.5 | 12.04 | 0 ms / 10 ms / — | 0.0 | 2.271 | ok |
 | Polac Audio In | generator (silent at its defaults) | none |  |  |  |  |  |  |  | warn |
 | Polac MIDI Bus II | control |  |  |  |  |  |  |  |  | ok |
 | Polac VSTi 1.1 | generator (silent at its defaults) | none |  |  |  |  |  |  |  | warn |
@@ -412,17 +426,17 @@ Drafts:
 | Neo Verb | reverb | -2.8 | 0 | 1.52 | 2.22 s | 35 ms | 21 Hz – 18.8 kHz | 15.6 | 0.383 | hot |
 | Oomek Exciter | filter or EQ | 7.22 | 0 | 0.0 |  |  | 8372 Hz – 18.8 kHz | 7.7 | 16.897 | ok |
 | Oomek Masterizer | utility | -1.0 | 176 | 0.0 |  |  | 21 Hz – 18.8 kHz | 18.9 | 27.496 | ok |
-| Pedal Chorus | modulation, filter or EQ | -4.31 | 0 | 0.01 | 22 ms |  | 208 Hz – 0.2 kHz | 2.2 | 0.43 | ok |
-| Pedal Comp | dynamics | -0.32 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 1.225 | ok |
-| Pedal Drum Matrix | utility | -0.04 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 2.822 | ok |
-| Pedal EQ | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 2.3 | 0.328 | hot |
-| Pedal Filter | filter or EQ | -9.49 | 3 | 0.16 | 306 ms |  | 21 Hz – 1.7 kHz | 1.7 | 0.344 | hot |
-| Pedal Gain | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.332 | ok |
-| Pedal Gain Multi | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.932 | hot |
-| Pedal Gate | dynamics | 0.0 | 37 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.735 | ok |
-| Pedal MComp | utility | -0.22 | 2 | 0.01 |  |  | 21 Hz – 18.8 kHz | 0.0 | 4.208 | hot |
-| Pedal Plate | reverb | -5.68 | 0 | 2.47 | 3.13 s | 165 ms | 21 Hz – 18.8 kHz | 0.0 | 0.315 | ok |
-| Pedal Shaper | utility | -0.09 | 0 | 0.01 | 52 ms |  | 23 Hz – 18.8 kHz | 0.0 | 1.941 | hot |
+| Pedal Chorus | modulation, filter or EQ | -4.31 | 0 | 0.01 | 22 ms |  | 208 Hz – 0.2 kHz | 0.2 | 0.242 | ok |
+| Pedal Comp | dynamics | -0.32 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.7 | 0.899 | ok |
+| Pedal Drum Matrix | utility | -0.04 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 1.4 | 4.699 | ok |
+| Pedal EQ | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.251 | hot |
+| Pedal Filter | filter or EQ | -9.49 | 3 | 0.16 | 306 ms |  | 21 Hz – 1.7 kHz | 0.0 | 0.24 | hot |
+| Pedal Gain | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.24 | ok |
+| Pedal Gain Multi | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.667 | hot |
+| Pedal Gate | dynamics | 0.0 | 37 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.467 | ok |
+| Pedal MComp | utility | -0.22 | 2 | 0.01 |  |  | 21 Hz – 18.8 kHz | 1.0 | 3.253 | hot |
+| Pedal Plate | reverb | -5.68 | 0 | 2.47 | 3.13 s | 165 ms | 21 Hz – 18.8 kHz | 2.0 | 0.237 | ok |
+| Pedal Shaper | utility | -0.09 | 0 | 0.01 | 52 ms |  | 23 Hz – 18.8 kHz | 0.4 | 1.284 | hot |
 | Polac Audio Out | control |  |  |  |  |  |  |  |  | ok |
 | Polac MIDI In | control |  |  |  |  |  |  |  |  | ok |
 | Polac Out | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 7.7 | 11.17 | ok |

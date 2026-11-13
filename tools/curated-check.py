@@ -106,6 +106,10 @@ def main():
         checked += 1
         live = {}
         for p in d.get("parameters", []):
+            # A machine with Explain text (K2: the Pedal machines have it) gives min and max in the parameter's unit and the raw ones as min_raw and max_raw.
+            for end in ("min", "max"):
+                if end + "_raw" in p:
+                    p[end] = p[end + "_raw"]
             live[(bool(p.get("per_track")), p["name"], p.get("index"))] = p
         problems = []
         for group, track in (("parameters", False), ("track_parameters", True)):

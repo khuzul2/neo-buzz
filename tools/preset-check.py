@@ -68,7 +68,8 @@ def curated_without_presets():
             if f.endswith(".machine.json") and not os.path.exists(os.path.join(folder, f[:-len(".machine.json")] + ".prs.xml")):
                 with open(os.path.join(folder, f), encoding="utf-8") as h:
                     m = json.load(h)
-                if m.get("status") == "curated":
+                # A control machine (Pedal Chord, LFO, Peer Control: K2 curated them) makes no sound and has no output to measure.
+                if m.get("status") == "curated" and m.get("type") != "control":
                     out[m["gear"]] = (None, sub, m)
     return out
 
