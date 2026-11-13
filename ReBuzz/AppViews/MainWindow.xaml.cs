@@ -1131,7 +1131,7 @@ namespace ReBuzz
             }
 
             autosaveTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
-            autosaveTimer.Tick += (s, e) => Buzz.Autosave.Tick(DateTime.Now);
+            autosaveTimer.Tick += (s, e) => { Buzz.Autosave.Tick(DateTime.Now); Buzz.Snapshots?.Tick(DateTime.UtcNow); };
             autosaveTimer.Start();
         }
 

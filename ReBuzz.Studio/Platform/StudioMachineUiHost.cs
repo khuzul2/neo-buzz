@@ -50,6 +50,12 @@ namespace ReBuzz.Studio.Platform
         /// </summary>
         public static Func<IMachine, Control> GuiContent { get; set; } = MachineGuis.Create;
 
+        /// <summary>
+        /// Fork (ux-overhaul.md P3e): shows a machine's device view (the main window's Detail ▸ Device) and says whether it did; set by the
+        /// main window. A machine with no editor of its own opens that instead of the classic parameter window.
+        /// </summary>
+        public static Func<IMachine, bool> DeviceOpener { get; set; }
+
         /// <summary>The window a machine's GUI or parameters are in, if open (for tests).</summary>
         public static Window GuiWindowOf(IMachine machine) => windows.TryGetValue(machine, out var w) ? w.Gui : null;
 
@@ -80,6 +86,8 @@ namespace ReBuzz.Studio.Platform
                 {
                     // U4: its manifest editor where the setting says so, else its parameter window.
                     if (ReBuzz.Agent.ManifestEditorSettings.OpensEditor(machine.DLL) && OpenEditor(machine)) return;
+                    // P3e: the device view in the Detail panel, where the studio has one; else the classic window.
+                    if (DeviceOpener?.Invoke(machine) == true) return;
                     OpenParameterWindow(machine, at);
                     return;
                 }

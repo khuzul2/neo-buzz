@@ -114,6 +114,14 @@ namespace ReBuzz.Agent
             }
         }
 
+        /// <summary>A preset's category: the part of its name before " — " (or ": "); empty when it has none. The preset bars group by the same.</summary>
+        internal static string PresetCategory(string name)
+        {
+            int i = name.IndexOf(" — ", StringComparison.Ordinal);
+            if (i < 0) i = name.IndexOf(": ", StringComparison.Ordinal);
+            return i > 0 ? name.Substring(0, i) : "";
+        }
+
         public static void Register(ToolRegistry tools, AgentHost host)
         {
             var core = host.Core;
@@ -123,32 +131,67 @@ namespace ReBuzz.Agent
                 Name = "preset_list",
                 Title = "List presets",
                 Description =
-                    "A machine's presets (its gear's factory presets and ones saved since), with their comments. Optionally filtered by text. " +
-                    "Example: preset_list(machine=\"Pad\", search=\"warm\").",
-                Input = Object(null, Req("machine", String("The machine")), Opt("search", String("Text in the name or comment"))),
-                Output = Object(null, Req("presets", Array(Object(null, Req("name", String("Pass to preset_load")), Opt("comment", String("What it is"))), "Presets"))),
+                    "A machine's presets (its gear's factory presets and ones saved since), with their comments. Filter by text (name or comment) " +
+                    "and by category (the part of the name before \" — \": Bass, Pad, Drum…); a long list comes in pages (limit, offset) and the " +
+                    "categories with their counts come back with it, so a machine with hundreds of presets is browsed, not dumped. " +
+                    "Example: preset_list(machine=\"Pad\", search=\"warm\"), preset_list(machine=\"Dye\", category=\"Bass\", limit=20).",
+                Input = Object(null, Req("machine", String("The machine")), Opt("search", String("Text in the name or comment")),
+                    Opt("category", String("Only this category: the text before \" — \" in a preset's name (Bass, Pad, Drum, Lo-Fi…; \"Arp/Seq\" takes both); the counts are in categories")),
+                    Opt("limit", Integer("At most this many presets (default 60)", 1, 500)),
+                    Opt("offset", Integer("Skip this many matches first, to read the next page", 0))),
+                Output = Object(null,
+                    Req("presets", Array(Object(null, Req("name", String("Pass to preset_load")), Opt("comment", String("What it is")), Opt("category", String("Its category"))), "Presets")),
+                    Req("total", Integer("How many matched before limit and offset")),
+                    Opt("offset", Integer("Where this page started")),
+                    Opt("categories", Array(Object(null, Req("name", String("Category")), Req("count", Integer("Matches in it"))), "The matches' categories with their counts (before the category filter)"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
                 {
-                    string search = c.String("search");
+                    string search = c.String("search"), category = c.String("category")?.Trim();
+                    int limit = c.Int("limit") ?? 60, offset = Math.Max(0, c.Int("offset") ?? 0);
                     var r = await host.Engine("preset_list", false, _ =>
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
                         var problems = new List<string>();
-                        var list = new JsonArray();
+                        var matches = new List<(string Name, string Comment, string Category)>();
                         foreach (var kv in Presets(m, problems))
                         {
                             string comment = kv.Value?.Comment ?? "";
                             if (search != null && !kv.Key.Contains(search, StringComparison.OrdinalIgnoreCase) && !comment.Contains(search, StringComparison.OrdinalIgnoreCase)) continue;
-                            var o = new JsonObject { ["name"] = kv.Key };
-                            if (comment.Length > 0) o["comment"] = comment;
+                            matches.Add((kv.Key, comment, PresetCategory(kv.Key)));
+                        }
+                        var categories = new JsonArray();
+                        foreach (var g in matches.Where(x => x.Category.Length > 0).GroupBy(x => x.Category))
+                            categories.Add(new JsonObject { ["name"] = g.Key, ["count"] = g.Count() });
+                        if (!string.IsNullOrEmpty(category))
+                        {
+                            var wanted = category.Split('/').Select(x => x.Trim()).ToArray();
+                            matches = matches.Where(x => wanted.Any(w => string.Equals(w, x.Category, StringComparison.OrdinalIgnoreCase))).ToList();
+                        }
+                        var list = new JsonArray();
+                        foreach (var x in matches.Skip(offset).Take(limit))
+                        {
+                            var o = new JsonObject { ["name"] = x.Name };
+                            if (x.Comment.Length > 0) o["comment"] = x.Comment;
+                            if (x.Category.Length > 0) o["category"] = x.Category;
                             list.Add(o);
                         }
-                        return new JsonObject { ["machine"] = m.Name, ["presets"] = list, ["problems"] = new JsonArray(problems.Select(x => (JsonNode)x).ToArray()) };
+                        return new JsonObject
+                        {
+                            ["machine"] = m.Name, ["presets"] = list, ["total"] = matches.Count, ["offset"] = offset, ["categories"] = categories,
+                            ["problems"] = new JsonArray(problems.Select(x => (JsonNode)x).ToArray()),
+                        };
                     }, c.Cancellation);
                     var ps = r["presets"]!.AsArray();
-                    return ToolResult.Ok(ps.Count == 0 ? $"{r["machine"]} has no presets{(search != null ? $" matching \"{search}\"" : "")}."
-                        : $"{r["machine"]}: {ps.Count} presets: " + string.Join(", ", ps.Take(40).Select(p => p!["name"]!.GetValue<string>())) + (ps.Count > 40 ? ", …" : "") + ".", r);
+                    int total = r["total"]!.GetValue<int>();
+                    string filter = (category != null ? $" in category \"{category}\"" : "") + (search != null ? $" matching \"{search}\"" : "");
+                    if (total == 0) return ToolResult.Ok($"{r["machine"]} has no presets{filter}.", r);
+                    if (ps.Count == 0) return ToolResult.Ok($"{r["machine"]}: {total} presets{filter}; offset {offset} is past the end.", r);
+                    string more = offset + ps.Count < total ? $" More: offset={offset + ps.Count}." : "";
+                    var cats = r["categories"]!.AsArray();
+                    string byCategory = category == null && cats.Count > 1 ? " Categories: " + string.Join(", ", cats.Select(x => $"{x!["name"]} {x["count"]}")) + "." : "";
+                    return ToolResult.Ok($"{r["machine"]}: {total} presets{filter}, showing {offset + 1} to {offset + ps.Count}: " +
+                        string.Join(", ", ps.Take(40).Select(p => p!["name"]!.GetValue<string>())) + (ps.Count > 40 ? ", …" : "") + "." + more + byCategory, r);
                 },
             });
 
@@ -241,18 +284,35 @@ namespace ReBuzz.Agent
                 Name = "snapshot_save",
                 Title = "Save a snapshot",
                 Description =
-                    "Remembers every machine's parameters, mutes and connection gains under a name, for A/B comparison: save \"before\", change things, " +
-                    "render both, and snapshot_restore the better one. Snapshots last for this session. Example: snapshot_save(name=\"mix A\").",
-                Input = Object(null, Req("name", String("Snapshot name (replaces one of the same name)"))),
-                Output = Object(null, Req("name", String("Name")), Req("machines", Integer("Machines captured"))),
+                    "Remembers the whole song under a name: every machine's parameters, state (samples, wavetables, banks), patterns, arrangement, wires and Session layout, " +
+                    "stored in a history folder beside the song (<song>.history) so it outlives this session. Save \"before\", change things, render both, and snapshot_restore the better one. " +
+                    "kind=\"parameters\" keeps the old light snapshot instead (parameters, mutes and connection gains only, this session only). " +
+                    "Snapshots are also taken automatically on save, every few minutes of editing and before big operations, labelled auto. Example: snapshot_save(name=\"mix A\").",
+                Input = Object(null, Req("name", String("Snapshot name (replaces a manual one of the same name)")), Opt("kind", String("full: the whole song, kept on disk (default); parameters: parameters, mutes and gains for this session only", "full", "parameters"))),
+                Output = Object(null, Req("name", String("Name")), Req("kind", String("full or parameters")), Req("machines", Integer("Machines captured")), Opt("id", String("The snapshot's id (full)")), Opt("megabytes", Number("The song's size before deduplication (full)"))),
                 Annotations = ToolAnnotations.WriteIdempotent,
                 Handler = async c =>
                 {
                     string name = c.RequiredString("name").Trim();
-                    var s = await host.Engine("snapshot_save", false, _ => Snapshot.Take(core, name), c.Cancellation);
-                    host.Snapshots[name] = s;
-                    var r = new JsonObject { ["name"] = name, ["machines"] = s.Machines.Count, ["parameters"] = s.Machines.Values.Sum(m => m.Params.Count) };
-                    return ToolResult.Ok($"Snapshot \"{name}\": {r["machines"]} machines, {r["parameters"]} parameter values.", r);
+                    if (Kind(c) == "parameters")
+                    {
+                        var s = await host.Engine("snapshot_save", false, _ => Snapshot.Take(core, name), c.Cancellation);
+                        host.Snapshots[name] = s;
+                        var pr = new JsonObject { ["name"] = name, ["kind"] = "parameters", ["machines"] = s.Machines.Count, ["parameters"] = s.Machines.Values.Sum(m => m.Params.Count) };
+                        return ToolResult.Ok($"Parameter snapshot \"{name}\": {pr["machines"]} machines, {pr["parameters"]} parameter values.", pr);
+                    }
+                    var m = await host.Engine("snapshot_save", false, _ =>
+                    {
+                        var old = core.Snapshots.List().Where(x => !x.IsAuto && x.Name == name).ToList();
+                        var made = core.Snapshots.Capture(name) ?? throw new ToolError("The song is loading; try again in a moment.");
+                        foreach (var o in old) core.Snapshots.Delete(o.Id);
+                        return made;
+                    }, c.Cancellation);
+                    core.Snapshots.Flush();
+                    if (core.Snapshots.LastError is string err && !core.Snapshots.List().Contains(m))
+                        throw new ToolError(err);
+                    var r = new JsonObject { ["name"] = m.Name, ["kind"] = "full", ["id"] = m.Id, ["machines"] = m.Machines, ["megabytes"] = Math.Round(m.Bytes / 1048576.0, 2) };
+                    return ToolResult.Ok($"Snapshot \"{m.Name}\" ({m.Id}): {m.Machines} machines, kept in {core.Snapshots.Folder}.", r);
                 },
             });
 
@@ -260,16 +320,27 @@ namespace ReBuzz.Agent
             {
                 Name = "snapshot_list",
                 Title = "List snapshots",
-                Description = "This session's snapshots with when they were taken. Example: snapshot_list().",
-                Input = Object(null),
+                Description =
+                    "The song's snapshots, oldest first: id, name, time (UTC), trigger (manual, or auto: on save, every few minutes, before replace, restore, import or a big history jump) and kind. " +
+                    "Full snapshots live in the song's history folder; parameter snapshots (kind=\"parameters\") last this session. Without kind both are listed. Example: snapshot_list(kind=\"full\").",
+                Input = Object(null, Opt("kind", String("Which snapshots (default: both)", "full", "parameters"))),
                 Output = Object(null, Req("snapshots", Array(Object(null, Req("name", String("Name")), Req("taken", String("Time"))), "Snapshots"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = c =>
                 {
-                    var list = new JsonArray(host.Snapshots.Values.OrderBy(s => s.Taken)
-                        .Select(s => (JsonNode)new JsonObject { ["name"] = s.Name, ["taken"] = s.Taken.ToString("HH:mm:ss"), ["machines"] = s.Machines.Count }).ToArray());
+                    string kind = c.String("kind");
+                    var list = new JsonArray();
+                    if (kind != "parameters")
+                    {
+                        core.Snapshots.Flush();
+                        foreach (var s in core.Snapshots.List())
+                            list.Add(new JsonObject { ["id"] = s.Id, ["name"] = s.Name, ["kind"] = "full", ["trigger"] = s.IsAuto ? "auto" : "manual", ["reason"] = s.Reason, ["taken"] = s.Time.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"), ["machines"] = s.Machines, ["megabytes"] = Math.Round(s.Bytes / 1048576.0, 2) });
+                    }
+                    if (kind != "full")
+                        foreach (var s in host.Snapshots.Values.OrderBy(s => s.Taken))
+                            list.Add(new JsonObject { ["name"] = s.Name, ["kind"] = "parameters", ["trigger"] = "manual", ["taken"] = s.Taken.ToString("HH:mm:ss"), ["machines"] = s.Machines.Count });
                     return System.Threading.Tasks.Task.FromResult(ToolResult.Ok(list.Count == 0 ? "No snapshots yet; snapshot_save makes one."
-                        : "Snapshots: " + string.Join(", ", list.Select(s => s!["name"]!.GetValue<string>())) + ".", new JsonObject { ["snapshots"] = list }));
+                        : "Snapshots: " + string.Join(", ", list.Select(s => (s!["trigger"]!.GetValue<string>() == "auto" ? "(auto) " : "") + s["name"]!.GetValue<string>())) + ".", new JsonObject { ["snapshots"] = list }));
                 },
             });
 
@@ -278,15 +349,33 @@ namespace ReBuzz.Agent
                 Name = "snapshot_restore",
                 Title = "Restore a snapshot",
                 Description =
-                    "Puts every machine in a snapshot back to its saved parameters, mutes and connection gains. Machines added since are left " +
-                    "alone; machines removed since are reported. One undo step. Example: snapshot_restore(name=\"mix A\").",
-                Input = Object(null, Req("name", String("Snapshot name"))),
-                Output = Object(null, Req("changed", Integer("Values put back")), Req("missing", Array(String("Machine"), "Machines no longer in the song"))),
-                Annotations = ToolAnnotations.WriteIdempotent,
+                    "Puts the whole song back as a full snapshot had it (name or id from snapshot_list). Destructive: the song is replaced as opening a file does, so the undo history starts again; " +
+                    "first it takes an auto snapshot of the song as it is (\"Auto: before restoring …\"), which is the way back. Only while the transport is stopped " +
+                    "(glitch-free restore while playing comes next). kind=\"parameters\" instead puts every machine's parameters, mutes and connection gains back (machines added since are left alone; removed ones are reported; one undo step). " +
+                    "Example: snapshot_restore(name=\"mix A\").",
+                Input = Object(null, Req("name", String("Snapshot name, or id")), Opt("kind", String("full or parameters (default: the full snapshot of that name, else the parameter one)", "full", "parameters"))),
+                Output = Object(null, Req("kind", String("full or parameters")), Req("changed", Integer("Differences put back (full: listed by snapshot_diff)")), Opt("missing", Array(String("Machine"), "Machines no longer in the song (parameters)"))),
+                Annotations = new ToolAnnotations(Destructive: true, Idempotent: true),
                 Handler = async c =>
                 {
-                    var s = Find(host, c.RequiredString("name"));
-                    var r = await host.Engine("snapshot_restore", true, _ =>
+                    string name = c.RequiredString("name");
+                    string kind = Kind(c);
+                    if (kind == null)
+                        kind = core.Snapshots.Find(name) != null || !host.Snapshots.ContainsKey(name) ? "full" : "parameters";
+                    if (kind == "full")
+                    {
+                        var m = FindFull(host, name);
+                        var r = await host.Engine("snapshot_restore", false, _ =>
+                        {
+                            int changes = core.Snapshots.Diff(m, null).Count;
+                            try { core.Snapshots.Restore(m); }
+                            catch (InvalidOperationException e) { throw new ToolError(e.Message); }
+                            return new JsonObject { ["kind"] = "full", ["name"] = m.Name, ["changed"] = changes };
+                        }, c.Cancellation);
+                        return ToolResult.Ok($"Restored \"{m.Name}\" ({r["changed"]} differences from the song before). The undo history starts again; \"Auto: before restoring {m.Name}\" holds the song as it was.", r);
+                    }
+                    var s = Find(host, name);
+                    var pr = await host.Engine("snapshot_restore", true, _ =>
                     {
                         int changed = 0;
                         var missing = new JsonArray();
@@ -314,11 +403,11 @@ namespace ReBuzz.Agent
                                 changed++;
                             }
                         }
-                        return new JsonObject { ["name"] = s.Name, ["changed"] = changed, ["missing"] = missing };
+                        return new JsonObject { ["kind"] = "parameters", ["name"] = s.Name, ["changed"] = changed, ["missing"] = missing };
                     }, c.Cancellation);
-                    var miss = r["missing"]!.AsArray();
-                    return ToolResult.Ok($"Restored \"{r["name"]}\": {r["changed"]} values put back." +
-                                         (miss.Count > 0 ? " Not in the song any more: " + string.Join(", ", miss.Select(x => x!.GetValue<string>())) + "." : ""), r);
+                    var miss = pr["missing"]!.AsArray();
+                    return ToolResult.Ok($"Restored \"{pr["name"]}\": {pr["changed"]} values put back." +
+                                         (miss.Count > 0 ? " Not in the song any more: " + string.Join(", ", miss.Select(x => x!.GetValue<string>())) + "." : ""), pr);
                 },
             });
 
@@ -327,14 +416,43 @@ namespace ReBuzz.Agent
                 Name = "snapshot_diff",
                 Title = "Compare snapshots",
                 Description =
-                    "What differs between two snapshots, or between a snapshot and the song now: parameters (as the machines show them), mutes and " +
-                    "connection gains, per machine. Example: snapshot_diff(a=\"mix A\") compares with now; snapshot_diff(a=\"mix A\", b=\"mix B\").",
-                Input = Object(null, Req("a", String("A snapshot")), Opt("b", String("Another snapshot (default: the song now)"))),
-                Output = Object(null, Req("machines", Array(Object(null, Req("machine", String("Name")), Req("changes", Array(String("A change"), "Changes"))), "Machines that differ"))),
+                    "What differs between two snapshots, or between a snapshot and the song now. Full snapshots: machines added, removed or replaced, wires and gains, parameters (as the machines show them), " +
+                    "patterns edited, arrangement and waves, tempo. Parameter snapshots: parameters, mutes and connection gains per machine. " +
+                    "Example: snapshot_diff(a=\"mix A\") compares with now; snapshot_diff(a=\"mix A\", b=\"mix B\").",
+                Input = Object(null, Req("a", String("A snapshot (name or id)")), Opt("b", String("Another snapshot (default: the song now)")), Opt("kind", String("full or parameters (default: the full snapshot of that name, else the parameter one)", "full", "parameters"))),
+                Output = Object(null, Req("machines", Array(Object(null, Req("machine", String("Name")), Req("changes", Array(String("A change"), "Changes"))), "Machines that differ")),
+                    Opt("changes", Array(Object(null, Req("area", String("machines, wires, parameters, patterns, sequence, waves or song")), Req("subject", String("What it is about")), Req("text", String("What changed"))), "Full snapshots: every change, going from a to b"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
                 {
-                    var a = Find(host, c.RequiredString("a"));
+                    string kind = Kind(c);
+                    string aName = c.RequiredString("a");
+                    if (kind == null)
+                        kind = core.Snapshots.Find(aName) != null || !host.Snapshots.ContainsKey(aName) ? "full" : "parameters";
+                    if (kind == "full")
+                    {
+                        var fa = FindFull(host, aName);
+                        string fb = c.String("b");
+                        var fbm = fb != null ? FindFull(host, fb) : null;
+                        var fr = await host.Engine("snapshot_diff", false, _ =>
+                        {
+                            var changes = core.Snapshots.Diff(fa, fbm);
+                            var machinesJson = new JsonArray(changes.GroupBy(x => x.Subject).Select(g => (JsonNode)new JsonObject
+                            {
+                                ["machine"] = g.Key,
+                                ["changes"] = new JsonArray(g.Select(x => (JsonNode)(x.Area + ": " + x.Text)).ToArray()),
+                            }).ToArray());
+                            return new JsonObject
+                            {
+                                ["a"] = fa.Name, ["b"] = fbm?.Name ?? "now", ["machines"] = machinesJson,
+                                ["changes"] = new JsonArray(changes.Select(x => (JsonNode)new JsonObject { ["area"] = x.Area, ["subject"] = x.Subject, ["text"] = x.Text }).ToArray()),
+                            };
+                        }, c.Cancellation);
+                        var ch = fr["changes"]!.AsArray();
+                        return ToolResult.Ok(ch.Count == 0 ? $"\"{fr["a"]}\" and {fr["b"]} are the same." :
+                            $"{ch.Count} changes: " + string.Join("; ", ch.Take(12).Select(x => $"{x!["subject"]}: {x["text"]}")) + (ch.Count > 12 ? "; …" : ""), fr);
+                    }
+                    var a = Find(host, aName);
                     string bName = c.String("b");
                     var b = bName != null ? Find(host, bName) : null;
                     var r = await host.Engine("snapshot_diff", false, _ =>
@@ -375,6 +493,50 @@ namespace ReBuzz.Agent
                                                          (m["changes"]!.AsArray().Count > 8 ? ", …" : ""))), r);
                 },
             });
+
+            tools.Add(new ToolDef
+            {
+                Name = "snapshot_delete",
+                Title = "Delete a snapshot",
+                Description =
+                    "Deletes a snapshot for good (name or id from snapshot_list); chunks no other snapshot holds are removed from the history folder. " +
+                    "Auto snapshots can be deleted too. kind=\"parameters\" deletes a session parameter snapshot. Example: snapshot_delete(name=\"mix A\").",
+                Input = Object(null, Req("name", String("Snapshot name, or id")), Opt("kind", String("full or parameters (default: the full snapshot of that name, else the parameter one)", "full", "parameters"))),
+                Output = Object(null, Req("deleted", String("The name deleted")), Req("kind", String("full or parameters"))),
+                Annotations = ToolAnnotations.Delete,
+                Handler = async c =>
+                {
+                    string name = c.RequiredString("name");
+                    string kind = Kind(c);
+                    if (kind == null)
+                        kind = core.Snapshots.Find(name) != null || !host.Snapshots.ContainsKey(name) ? "full" : "parameters";
+                    if (kind == "parameters")
+                    {
+                        Find(host, name);
+                        host.Snapshots.TryRemove(name, out _);
+                        return ToolResult.Ok($"Deleted the parameter snapshot \"{name}\".", new JsonObject { ["deleted"] = name, ["kind"] = "parameters" });
+                    }
+                    var m = FindFull(host, name);
+                    await host.Engine("snapshot_delete", false, _ => core.Snapshots.Delete(m.Id), c.Cancellation);
+                    return ToolResult.Ok($"Deleted the snapshot \"{m.Name}\" ({m.Id}).", new JsonObject { ["deleted"] = m.Name, ["kind"] = "full" });
+                },
+            });
+        }
+
+        /// <summary>kind: "full", "parameters" or null (not given).</summary>
+        static string Kind(ToolContext c)
+        {
+            string k = c.String("kind");
+            if (k == null) return null;
+            if (k is "full" or "parameters") return k;
+            throw new ToolError("kind is \"full\" or \"parameters\".");
+        }
+
+        static ReBuzz.Core.SongHistory.SnapshotManifest FindFull(AgentHost host, string name)
+        {
+            var snaps = host.Core.Snapshots;
+            snaps.Flush();
+            return snaps.Find(name) ?? throw new ToolError($"No snapshot \"{name}\"." + (snaps.List().Count == 0 ? " Make one with snapshot_save." : " snapshot_list shows them: " + string.Join(", ", snaps.List().Where(s => !s.IsAuto).Select(s => s.Name).Take(10)) + "."));
         }
 
         static Snapshot Find(AgentHost host, string name)

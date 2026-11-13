@@ -90,7 +90,7 @@ namespace NeoBuzz.DyeEssence
             public static readonly ParamDef[] Table =
             {
                 Sec(Time, "Time", "Time", 0.01, 2, 0.3),
-                D(Pitch, "Pitch", "Pitch", 0, 48, 12, MapKind.Int, -24, 1, "st", flag: true),
+                D(Pitch, "Pitch", "Pitch", 0, 48, 0, MapKind.Int, -24, 1, "st", flag: true),
                 D(Fine, "Fine", "Fine", 0, 200, 0, MapKind.Int, -100, 1, "ct", flag: true),
                 Pct(Feedback, "Feedback", "Feedback", 0.4),
                 Sec(Grain, "Grain", "Grain", 0.02, 0.2, 0.06),
