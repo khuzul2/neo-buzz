@@ -416,5 +416,40 @@ namespace ReBuzz.Studio.Tests
             var tab = Avalonia.Media.Color.FromRgb((byte)(fill.R * a + surface.R * (1 - a)), (byte)(fill.G * a + surface.G * (1 - a)), (byte)(fill.B * a + surface.B * (1 - a)));
             Assert.That(Shell.Design.StudioTokens.Contrast(Shell.Design.StudioTokens.TextPrimary, tab), Is.GreaterThanOrEqualTo(4.5), "the shown tab");
         }
+
+        [AvaloniaTest]
+        public void TheSelectionTabShowsTheExplainCardOfAMachineWhoseEditorHasOne()
+        {
+            using var restore = Studio.AfterTest(PutBack);
+            using var rig = new Rig();
+            rig.Selection.Set(rig.Bass, null, this);
+            Settle();
+            Assert.That(rig.Inspector.ExplainCardText, Is.Null, "a machine without Explain text has no card");
+
+            // A Neo Learn editor registers its machine and publishes the control in its strip.
+            try
+            {
+                BuzzGUI.Interfaces.ExplainBoard.Register(rig.Bass);
+                Settle();
+                System.Threading.Thread.Sleep(400);   // the card follows the board 4 times a second
+                Settle();
+                Assert.That(rig.Inspector.ExplainCardText?.Title, Is.EqualTo("Explain"), "registered, nothing touched yet");
+                BuzzGUI.Interfaces.ExplainBoard.Publish(rig.Bass, new BuzzGUI.Interfaces.ExplainCard("Cutoff", "1.20 kHz", "Agent", "Sets the corner of the filter.", "Darker when lower."));
+                System.Threading.Thread.Sleep(400);
+                Settle();
+                var card = rig.Inspector.ExplainCardText!.Value;
+                Assert.That(card.Title, Is.EqualTo("Cutoff · 1.20 kHz"));
+                Assert.That(card.Badge, Is.EqualTo("Agent"));
+                Assert.That(card.How, Does.Contain("Sets the corner of the filter."));
+                Assert.That(card.Sound, Does.Contain("Darker when lower."));
+                rig.Selection.Set(rig.Drums, null, this);
+                Settle();
+                Assert.That(rig.Inspector.ExplainCardText, Is.Null, "another machine: no card");
+            }
+            finally
+            {
+                BuzzGUI.Interfaces.ExplainBoard.Publish(rig.Bass, null);
+            }
+        }
     }
 }

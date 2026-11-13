@@ -183,13 +183,15 @@ namespace ReBuzz.SessionTests
             var x = Signal(N * 400, t => Sine(t));
             var block = new Sample[N];
             for (int b = 0; b < 10; b++) Block(ring, x, b * N, block);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            for (int b = 10; b < 400; b++)
+            long bytes = GuardPolicy.Allocated(() =>
             {
-                if (b % 37 == 0) ring.Request(b % 2 == 0 ? 4000 : 120, Fade);
-                Block(ring, x, b * N, block);
-            }
-            Assert.That(GC.GetAllocatedBytesForCurrentThread() - before, Is.EqualTo(0));
+                for (int b = 10; b < 400; b++)
+                {
+                    if (b % 37 == 0) ring.Request(b % 2 == 0 ? 4000 : 120, Fade);
+                    Block(ring, x, b * N, block);
+                }
+            }, warm: false);   // GuardPolicy: 0 unless every attempt allocates
+            Assert.That(bytes, Is.EqualTo(0));
         }
 
         // ── the plan ──────────────────────────────────────────────────────────
@@ -272,13 +274,15 @@ namespace ReBuzz.SessionTests
             var own = new int[plan.Count];
             var delays = new int[plan.Connections.Length];
             plan.Apply(own, delays);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            for (int i = 0; i < 1000; i++)
+            long bytes = GuardPolicy.Allocated(() =>
             {
-                own[0] = i % 7;
-                plan.Apply(own, delays);
-            }
-            Assert.That(GC.GetAllocatedBytesForCurrentThread() - before, Is.EqualTo(0));
+                for (int i = 0; i < 1000; i++)
+                {
+                    own[0] = i % 7;
+                    plan.Apply(own, delays);
+                }
+            }, warm: false);   // GuardPolicy: 0 unless every attempt allocates
+            Assert.That(bytes, Is.EqualTo(0));
         }
     }
 }

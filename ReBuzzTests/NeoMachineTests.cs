@@ -106,6 +106,8 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Filter = new("Neo Filter", "Filter", false);
         // The hybrid wavetable synth (docs/specs/dye-essence.md): a Neo-family machine with its own name.
         internal static readonly NeoInfo Dye = new("Dye Essence", "Dye", true);
+        // Neo Learn (docs/specs/neo-learn.md): the teaching synth, one Dye Essence patch behind 12 controls.
+        internal static readonly NeoInfo LearnSub = new("Neo Learn Subtractive", "Learn Sub", true);
         // The clipper (docs/specs/mastering-tools.md §5.1): oversampled curves into a ceiling no sample passes.
         internal static readonly NeoInfo Clipper = new("Neo Clipper", "Clipper", false);
         // The transient shaper and the low-end shaper (docs/specs/mastering-tools.md §5.4, §5.5).
@@ -1803,7 +1805,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip, Tape, DeEsser, Gate })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, LearnSub, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip, Tape, DeEsser, Gate })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");

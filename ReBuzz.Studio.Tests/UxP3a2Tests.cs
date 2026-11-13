@@ -226,6 +226,8 @@ namespace ReBuzz.Studio.Tests
             rig.Browser.Open();
             Settle();
             int before = rig.Song.Core.Song.Machines.Count;
+            rig.Row("gear:Neo EQ").BringIntoView();   // the list grows with every machine: scroll the row to the pointer
+            Settle();
             DoubleClick(rig.Window, rig.CentreOf(rig.Row("gear:Neo EQ")));
             Settle();
             Assert.That(rig.Song.Core.Song.Machines.Count, Is.EqualTo(before + 1));

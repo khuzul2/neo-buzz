@@ -2607,7 +2607,7 @@ namespace ReBuzz.Core
             SongCore.MoveMachines(moveList);
             songCore.SongName = null;
 
-            SongCore.ActionStack = new ManagedActionStack();
+            SongCore.ActionStack = HistorySettings.NewStack();
             SongCore.PlayPosition = 0;
             SongCore.LoopStart = 0;
             SongCore.LoopEnd = 16;

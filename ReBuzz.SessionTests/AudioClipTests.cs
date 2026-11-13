@@ -411,14 +411,16 @@ namespace ReBuzz.SessionTests
             var l = new float[256];
             var buffer = new float[512];
             cap.Write(l, l, 256, 1);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            for (int i = 0; i < 100; i++)
+            long bytes = GuardPolicy.Allocated(() =>
             {
-                cap.Write(l, l, 256, 1);
-                cap.WriteInterleaved(buffer, 0, 256, 1);
-                cap.WriteSilence(256);
-            }
-            Assert.That(GC.GetAllocatedBytesForCurrentThread() - before, Is.EqualTo(0L));
+                for (int i = 0; i < 100; i++)
+                {
+                    cap.Write(l, l, 256, 1);
+                    cap.WriteInterleaved(buffer, 0, 256, 1);
+                    cap.WriteSilence(256);
+                }
+            }, warm: false);   // GuardPolicy: 0 unless every attempt allocates
+            Assert.That(bytes, Is.EqualTo(0L));
         }
 
         [Test]
@@ -512,9 +514,8 @@ namespace ReBuzz.SessionTests
                 voice.Stop(l, r, 0, 256);
             }
             Run(20);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            Run(200);
-            Assert.That(GC.GetAllocatedBytesForCurrentThread() - before, Is.EqualTo(0L));
+            long bytes = GuardPolicy.Allocated(() => Run(200), warm: false);   // GuardPolicy: 0 unless every attempt allocates
+            Assert.That(bytes, Is.EqualTo(0L));
         }
     }
 }

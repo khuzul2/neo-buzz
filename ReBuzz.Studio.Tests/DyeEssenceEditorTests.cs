@@ -433,6 +433,21 @@ namespace ReBuzz.Studio.Tests
                 names = window.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name == "FxKnob" && c.IsEffectivelyVisible).Select(c => (string)Get(c, "Label")).ToArray();
                 Assert.That(names[0], Is.EqualTo("Drive"));
                 Assert.That(names[9], Is.EqualTo("Output"));
+                // And the new types': 8 is the bitcrusher, 10 the pitch delay.
+                Global(m, "FX1 type").SetValue(0, 8);
+                Run(0.1);
+                Pump();
+                names = window.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name == "FxKnob" && c.IsEffectivelyVisible).Select(c => (string)Get(c, "Label")).ToArray();
+                Assert.That(names, Is.EqualTo(new[] { "Bits", "Rate", "Anti-alias", "Drive", "Quantizer", "Bias", "Dither", "Tone", "Wobble", "Output" }));
+                Global(m, "FX1 type").SetValue(0, 10);
+                Run(0.1);
+                Pump();
+                names = window.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name == "FxKnob" && c.IsEffectivelyVisible).Select(c => (string)Get(c, "Label")).ToArray();
+                Assert.That(names[0], Is.EqualTo("Time"));
+                Assert.That(names[9], Is.EqualTo("Cross-feed"));
+                Global(m, "FX1 type").SetValue(0, 4);
+                Run(0.1);
+                Pump();
                 Studio.Screenshot(window, "dye-essence-editor-effects");
 
                 // Slot 1 to the main chain, one undo step; the chains are in the saved data.

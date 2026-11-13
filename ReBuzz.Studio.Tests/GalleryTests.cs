@@ -1114,10 +1114,12 @@ namespace ReBuzz.Studio.Tests
                 }
 
                 // Every Neo machine's editor, as a double click opens it.
-                var neo = Core.MachineDLLs.Values.Where(d => d?.Info != null && d.Name.StartsWith("Neo ") && d.Info.Type != MachineType.Master)
+                var neo = Core.MachineDLLs.Values.Where(d => d?.Info != null && d.Name.StartsWith("Neo ") && d.Name != "Neo Learn Subtractive" && d.Info.Type != MachineType.Master)
                     .Select(d => d.Name).OrderBy(x => x, System.StringComparer.Ordinal).ToList();
                 // Dye Essence, a Neo-family machine with its own name (docs/specs/dye-essence.md), after them (the others keep their numbers).
                 if (Core.MachineDLLs.ContainsKey("Dye Essence")) neo.Add("Dye Essence");
+                // Neo Learn Subtractive (docs/specs/neo-learn.md), after Dye Essence for the same reason.
+                if (Core.MachineDLLs.ContainsKey("Neo Learn Subtractive")) neo.Add("Neo Learn Subtractive");
                 int i = 0;
                 foreach (var gear in neo)
                 {
