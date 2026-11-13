@@ -217,6 +217,50 @@ namespace ReBuzz.Studio.Tests
             {
                 foreach (var w in Popups().ToList()) w.Close();
                 CloseMenus();
+                ResetViewState();
+                Settle();
+            }
+        }
+
+        /// <summary>
+        /// What a shot typed or opened must not show in the next (mac-341 showed the device view's search still holding "cutoff"): the device
+        /// view's search and the browser's search are emptied after every shot, whether it was taken or failed.
+        /// </summary>
+        static void ResetViewState()
+        {
+            foreach (var w in mains.OfType<MainWindow>().ToList())
+            {
+                try
+                {
+                    if (w.Detail?.DevicePage is ReBuzz.Studio.Views.Device.DeviceDock { Page: { } page } && page.Parameters.Query.Length > 0) page.Parameters.Query = "";
+                    if (w.Browser?.Search is { } search && (search.Text ?? "").Length > 0) search.Text = "";
+                }
+                catch (System.Exception e)
+                {
+                    TestContext.Out.WriteLine("[gallery] view state not reset: " + e.Message);
+                }
+            }
+        }
+
+        /// <summary>Runs shots with the song's clip and track colours at "none" (what P3h gives the machine's identity colour), then puts them back.</summary>
+        static void WithMachineColours(System.Action shots)
+        {
+            var layout = Core.SessionLayout;
+            var doc = layout.Ensure();
+            var patterns = Core.SongCore.Machines.SelectMany(m => m.Patterns).ToList();
+            var clips = patterns.ToDictionary(p => p, p => ReBuzz.Core.Session.PatternColors.Get(p));
+            var tracks = Enumerable.Range(0, doc.Tracks.Count).Select(t => doc.Tracks[t].ColorIndex).ToList();
+            foreach (var p in patterns) layout.SetClipColor(p, -1);
+            for (int t = 0; t < tracks.Count; t++) layout.SetTrackColor(t, -1);
+            Settle();
+            try
+            {
+                shots();
+            }
+            finally
+            {
+                foreach (var (p, c) in clips) layout.SetClipColor(p, c);
+                for (int t = 0; t < tracks.Count; t++) layout.SetTrackColor(t, tracks[t]);
                 Settle();
             }
         }
@@ -483,6 +527,22 @@ namespace ReBuzz.Studio.Tests
                 Try("017-start-machine-starters", () => { window.ShowView("Machines"); Shot(window, "017-start-machine-starters", "The Machine View on a new song (P3d): the starters Neo Poly, Neo Drums and Neo Wave one click each, and the hint to double-click or press the Add Machine key to search.", "Open a new song.", song: "none (new song)"); });
                 Try("016-start-browser", () => { window.Detail.Close(); window.ShowView("Machines"); window.Browser.Open(); Shot(window, "016-start-browser", "The browser on the left (P3a): a search box over the installed machines, the patterns of the selection first.", "Alt+Cmd+B, or the rail's button.", song: "none (new song)"); window.Browser.Close(); });
                 Try("014-start-notes-empty", () => { window.ShowView("Song Notes"); Shot(window, "014-start-notes-empty", "The Song Notes tab on a new song: the empty notes editor and its toolbar.", "F10, or the Song Notes tab.", song: "none (new song)"); });
+
+                // P3i: every view of an empty song shows a next step; then the views of a song with a track and nothing in it.
+                Try("018-start-piano-roll-empty", () => { window.Detail.ShowPage(true, false); Shot(window, "018-start-piano-roll-empty", "The piano roll on a new song (P3i): no machine to edit, so the starters and Add machine… are the next step, as in the Tracker.", "Alt+Cmd+R.", song: "none (new song)"); });
+                Try("019-start-device-empty", () => { ReBuzz.Studio.Views.StudioSelection.For(Core).Clear(window); window.Detail.ShowDevice(); Shot(window, "019-start-device-empty", "The device view on a new song (P3i): no machine selected; the starters and Add machine….", "Alt+Cmd+5.", song: "none (new song)"); });
+                Try("029-start-history-empty", () => { window.Detail.Close(); window.Inspector.Open(); window.Inspector.ShowTab(ReBuzz.Studio.Views.Inspector.InspectorPanel.HistoryTabName); Shot(window, "029-start-history-empty", "The inspector's History on a new song (P3i): nothing done yet, and the first step to make.", "Alt+Cmd+I, then History.", song: "none (new song)"); window.Inspector.ShowTab(ReBuzz.Studio.Views.Inspector.InspectorPanel.SelectionTab); });
+                Try("034-start-sequence-nothing-arranged", () =>
+                {
+                    ReBuzz.Studio.Shell.EmptyStates.AddStarter(Core, "Neo Poly");
+                    Settle();
+                    window.ShowView("Sequence");
+                    window.Tabs.Items.OfType<TabItem>().Select(t => t.Content).OfType<ReBuzz.Studio.Views.Sequence.SequenceView>().First().RefreshEmpty();
+                    Settle();
+                    Shot(window, "034-start-sequence-nothing-arranged", "The Sequence tab after the Neo Poly starter (P3i): it has its track and nothing placed on it; the step is a new pattern on the track.", "Click the Neo Poly starter, then the Sequence tab.", song: "new song with Neo Poly");
+                });
+                Try("044-start-session-no-clips", () => { window.ShowView("Session"); Shot(window, "044-start-session-no-clips", "The Session tab after the Neo Poly starter (P3i): a track and no clip; the step is Create a clip, or a double click on a slot.", "Click the Neo Poly starter, then the Session tab.", song: "new song with Neo Poly"); });
+                Try("046-start-tracker-no-patterns", () => { window.Detail.ShowPage(false, false); Shot(window, "046-start-tracker-no-patterns", "The Tracker on a machine with no patterns (P3i): New pattern is the next step.", "Select a machine that has no pattern, then the Tracker.", song: "new song with Neo Poly"); });
             }
             finally
             {
@@ -540,12 +600,12 @@ namespace ReBuzz.Studio.Tests
                 Try("028-device-search-explain", () =>
                 {
                     var view = ((ReBuzz.Studio.Views.Device.DeviceDock)window.Detail.DevicePage).Page!.Parameters;
-                    view.Query = "cutoff";
+                    view.Query = "feedback";
                     Settle();
-                    var first = view.Layout.All.First(p => p.FullName.Contains("cutoff", System.StringComparison.OrdinalIgnoreCase));
+                    var first = view.Layout.All.First(p => p.FullName.Contains("feedback", System.StringComparison.OrdinalIgnoreCase));
                     view.List.SetFocus(first);
                     Settle();
-                    Shot(window, "028-device-search-explain", "The device view searching \"cutoff\" (Cmd+F): the groups with a match, the focused parameter's name and value under the list with its description (How and Sound where the manifest has them).", "Cmd+F in the Device page, then click a parameter.");
+                    Shot(window, "028-device-search-explain", "The device view searching \"feedback\" (Cmd+F): the groups with a match, the focused parameter's name and value under the list with its description (How and Sound where the manifest has them).", "Cmd+F in the Device page, then click a parameter.");
                     view.Query = "";
                     window.Detail.Close();
                     Settle();
@@ -601,8 +661,22 @@ namespace ReBuzz.Studio.Tests
                 });
                 Try("340-session-no-transport", () =>
                     Shot(window, "340-session-no-transport", "Session (P3g): its toolbar has no transport of its own any more: Stop all, Overdub, Capture, Back to arrangement, Launch, Follow, the nudge and Scenes; the one transport is the top bar above (metronome, time signature, tempo, Tap, the clock).", "Ctrl+Tab, or the Session tab."));
+                Try("345-session-machine-colours", () => WithMachineColours(() =>
+                {
+                    window.ShowView("Session");
+                    Shot(window, "345-session-machine-colours", "The Session View with no colour picked on any clip or track (P3h): each clip and track takes its machine's identity colour (Synth pink, Drums amber, Delay and reverb violet, Dynamics teal, EQ sky); a colour the user picks wins.", "Right-click a clip ▸ Colour ▸ Machine's colour.");
+                }));
+                Try("346-sequence-machine-colours", () => WithMachineColours(() =>
+                {
+                    window.ShowView("Sequence");
+                    Shot(window, "346-sequence-machine-colours", "The Arrangement with no colour picked on any pattern (P3h): the blocks and the track headers' left strips take the machine's identity colour.", "Right-click a block ▸ Color ▸ Default.");
+                    window.ShowView("Session");
+                }));
                 Try("341-machines-meters-playing", () =>
                 {
+                    // A machine alone is selected here (a clip chosen in the Session View stays selected with its machine across views, and
+                    // that selection has the inspector's clip card: mac-341 showed it on Lead).
+                    ReBuzz.Studio.Views.StudioSelection.For(Core).Set(demo.Lead, null, window);
                     window.ShowView("Machines");
                     var canvas = Tab<MachineView>(window, "Machines").Canvas;
                     for (int i = 0; i < 4; i++)
@@ -628,7 +702,7 @@ namespace ReBuzz.Studio.Tests
                     Core.SafeMaster.Process(soft, 2, 44100);
                     meter.Refresh();
                     window.RefreshNow();
-                    Shot(window, "342-top-bar-master-meter", "The top bar (P3g): metronome, time signature, the tempo (drag it, or double-click to type), Tap, the clock as bar.beat.tick and minutes and seconds, and the master meter: two bars on a -60 to 0 dB scale and the clip light, latched red with the highest over until it is clicked (the bars here at about -10 dB, a hot peak earlier).", "The bar above every view.");
+                    Shot(window, "342-top-bar-master-meter", "The top bar (P3g): metronome, time signature, the tempo (drag it, or double-click to type), Tap, the clock as bar.beat.tick and minutes and seconds, and the master meter: two bars on a -60 to 0 dB scale and the clip light, latched red with the highest over until it is clicked (the test feeds it a signal of 1.8, +5.1 dB, and then one at -10 dB to show the latch; the demo song itself peaks well under 0 dB, UxP3hTests).", "The bar above every view.");
                     Core.ClearMasterOver();
                     meter.Refresh();
                     Core.SafeMaster.Reset();

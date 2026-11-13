@@ -338,25 +338,42 @@ namespace ReBuzz.Studio.Views.Machines
         /// <summary>The meter's colour at a level: green, yellow from -6 dB.</summary>
         static Color MeterColour(double level) => level > 0.9 ? MeterYellow : MeterGreen;
 
-        static readonly Dictionary<long, (IPen Pen, IBrush Fill)> litWires = new Dictionary<long, (IPen, IBrush)>();
+        static readonly Dictionary<(int, uint, uint), (IPen Pen, IBrush Fill)> litWires = new Dictionary<(int, uint, uint), (IPen, IBrush)>();
 
-        static (IPen Pen, IBrush Fill) LitWire(double level, Color track)
+        /// <summary>
+        /// How lit a level looks (0 to 1): the level is already on a dB scale (-60 to 0 dB is 0 to 1); the look is the square of it, so a path
+        /// at -30 dB glows a quarter as much as one at 0 dB, and the paths of a song with a few loud and many quiet wires differ at a glance.
+        /// </summary>
+        internal static double Glow(double level) => level * level;
+
+        /// <summary>The pen of a wire carrying a level, and the fill of its arrow: the line's colour and the arrow's, each towards the meter's colour.</summary>
+        static (IPen Pen, IBrush Fill) LitWire(double level, Color track, Color arrow)
         {
-            int step = Math.Clamp((int)Math.Round(level * 16), 1, 16);
-            long key = step | ((long)track.ToUInt32() << 8);
+            int step = Math.Clamp((int)Math.Round(Glow(level) * 16), 1, 16);
+            var key = (step, track.ToUInt32(), arrow.ToUInt32());
             if (!litWires.TryGetValue(key, out var lit))
             {
-                double l = step / 16.0;
-                var colour = Mix(track, MeterColour(l), 0.35 + 0.65 * l);
-                var brush = new SolidColorBrush(colour).ToImmutable();
-                lit = (new Pen(brush, 1 + 1.5 * l), brush);
+                double g = step / 16.0;
+                var meter = MeterColour(Math.Sqrt(g));
+                double t = 0.12 + 0.88 * g;
+                var brush = new SolidColorBrush(Mix(track, meter, t)).ToImmutable();
+                var fill = new SolidColorBrush(Mix(arrow, meter, t)).ToImmutable();
+                lit = (new Pen(brush, 1 + 2 * g), fill);
                 if (litWires.Count > 512) litWires.Clear();
                 litWires[key] = lit;
             }
             return lit;
         }
 
-        static readonly IBrush[] Veils = Enumerable.Range(0, 17).Select(i => (IBrush)new SolidColorBrush(Color.FromArgb((byte)(70 * i / 16), 255, 255, 255)).ToImmutable()).ToArray();
+        static readonly Dictionary<Color, IBrush> bands = new Dictionary<Color, IBrush>();
+
+        static IBrush IdentityBand(Color c)
+        {
+            if (!bands.TryGetValue(c, out var brush)) bands[c] = brush = new SolidColorBrush(c).ToImmutable();
+            return brush;
+        }
+
+        static readonly IBrush[] Veils = Enumerable.Range(0, 17).Select(i => (IBrush)new SolidColorBrush(Color.FromArgb((byte)(90 * i / 16), 255, 255, 255)).ToImmutable()).ToArray();
         static readonly IBrush StripGreen = new SolidColorBrush(MeterGreen).ToImmutable();
         static readonly IBrush StripYellow = new SolidColorBrush(MeterYellow).ToImmutable();
 
@@ -638,7 +655,7 @@ namespace ReBuzz.Studio.Views.Machines
             if (level > 0.01)
             {
                 // The level lights the wire: its line colour towards the meter's colour, and a little thicker (sixteen steps, drawn with cached pens).
-                var (pen, fill) = LitWire(level, track);
+                var (pen, fill) = LitWire(level, track, colours.Colour("MV Arrow"));
                 ctx.DrawLine(pen, w.Start, w.End);
                 if (!arrow) return;
                 var tri = new StreamGeometry();
@@ -676,11 +693,16 @@ namespace ReBuzz.Studio.Views.Machines
             ctx.DrawRectangle(new SolidColorBrush(BackgroundOf(m, colours)), null, box, 0, 0, Shadow);
             ctx.DrawRectangle(null, new Pen(colours["MV Machine Border"], 1), box.Deflate(0.5));
 
+            // P3h (decision 85): in the dark theme the box wears its category's identity colour: a tint for the body (above) and the colour whole
+            // along the top edge. The Master, a machine the guard muted and Classic Buzz keep theirs.
+            if (!look.IsClassic && !IsDiverged(m) && MachineIdentity.ColourOf(m) is { } identity)
+                ctx.FillRectangle(IdentityBand(MachineIdentity.BandOf(identity, m.IsMuted)), new Rect(box.X + 1, box.Y + 1, box.Width - 2, 3));
+
             // P3g: the level through it brightens the box and fills a strip along its foot, green, yellow from -6 dB.
             double level = MetersShown ? BoxLevel(m) : 0;
             if (level > 0.01)
             {
-                ctx.FillRectangle(Veils[(int)Math.Round(level * 16)], box);
+                ctx.FillRectangle(Veils[(int)Math.Round(Glow(level) * 16)], box);
                 var strip = new Rect(box.X + 2, box.Bottom - 6, (box.Width - 4) * level, 4);
                 ctx.FillRectangle(level > 0.9 ? StripYellow : StripGreen, strip);
             }
@@ -754,6 +776,8 @@ namespace ReBuzz.Studio.Views.Machines
         static Color BackgroundOf(IMachine m, Palette colours)
         {
             if (IsDiverged(m)) return DivergedColour;
+            if (!Shell.Design.StudioTheme.Machines.IsClassic && MachineIdentity.ColourOf(m) is { } identity)
+                return MachineIdentity.BodyOf(identity, m.IsMuted);
             if (m.IsControlMachine) return colours.Colour("MV Control");
             return m.DLL.Info.Type switch
             {

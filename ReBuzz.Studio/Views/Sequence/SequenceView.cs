@@ -52,6 +52,8 @@ namespace ReBuzz.Studio.Views.Sequence
 
         readonly ReBuzzCore core;
         readonly SequenceSongState state;
+        readonly Shell.EmptyState emptyState;
+        readonly DispatcherTimer emptyTimer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(250) };
         readonly ScrollBar horizontal = new ScrollBar { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Bottom, AllowAutoHide = true, Margin = new Thickness(SequenceGeometry.HeaderWidth, 0, 0, 0) };
         readonly ScrollBar vertical = new ScrollBar { Orientation = Orientation.Vertical, HorizontalAlignment = HorizontalAlignment.Right, AllowAutoHide = true, Margin = new Thickness(0, SequenceGeometry.RulerHeight, 0, 0) };
         readonly Slider zoom = new Slider
@@ -143,7 +145,8 @@ namespace ReBuzz.Studio.Views.Sequence
                 Height = SequenceGeometry.RulerHeight,
                 Children = { addTrack, steps, follow },
             };
-            var timeline = new Panel { Children = { Canvas, Canvas.Overlay, horizontal, vertical, corner } };
+            emptyState = new Shell.EmptyState(core) { Margin = new Thickness(SequenceGeometry.HeaderWidth, SequenceGeometry.RulerHeight, 0, 0) };
+            var timeline = new Panel { Children = { Canvas, Canvas.Overlay, emptyState, horizontal, vertical, corner } };
 
             right = new DockPanel { Width = 120 };
             var zoomRow = new Border { Height = SequenceGeometry.RulerHeight, Child = zoom };
@@ -162,6 +165,8 @@ namespace ReBuzz.Studio.Views.Sequence
             Canvas.ViewChanged += Sync;
             Canvas.CursorChanged += OnCursorChanged;
             Canvas.TracksChanged += RefreshPatternList;
+            Canvas.TracksChanged += UpdateEmpty;
+            emptyTimer.Tick += (s, e) => UpdateEmpty();
             Canvas.PatternDoubleClicked += p => ChoosePattern(p, true);
             Canvas.MenuRequested += p => OpenContextMenu(Canvas);
             horizontal.ValueChanged += (s, e) => { if (!syncing) Canvas.ScrollTo(e.NewValue, Canvas.Geometry.ScrollY); };
@@ -215,6 +220,8 @@ namespace ReBuzz.Studio.Views.Sequence
             state.Changed += OnStateChanged;
             OnStateChanged();
             RefreshPatternList();
+            UpdateEmpty();
+            emptyTimer.Start();
             // Shown (its tab selected): the timeline takes the keys, unless something in the view has them.
             Dispatcher.UIThread.Post(() => { if (attached && !IsKeyboardFocusWithin) Canvas.Focus(); });
         }
@@ -225,7 +232,31 @@ namespace ReBuzz.Studio.Views.Sequence
             StudioTheme.Changed -= OnThemeChanged;
             StudioSelection.For(core).Changed -= FollowSelection;
             state.Changed -= OnStateChanged;
+            emptyTimer.Stop();
             base.OnDetachedFromVisualTree(e);
+        }
+
+        /// <summary>The empty state (P3i): no tracks yet, or tracks with nothing arranged.</summary>
+        public Shell.EmptyState EmptyState => emptyState;
+
+        internal void RefreshEmpty() => UpdateEmpty();
+
+        void UpdateEmpty()
+        {
+            var sequences = core.Song.Sequences;
+            if (sequences.Count == 0)
+            {
+                bool bare = Shell.EmptyState.SongIsEmpty(core);
+                emptyState.Update(true, bare ? "tracks:bare" : "tracks:gear", "No tracks yet",
+                    bare ? "A track plays one machine. Start with a sound, or search every machine."
+                         : "A track plays a generator, and the song has none. Add one to get a track.",
+                    Shell.EmptyState.AddMachineStep(), bare);
+                return;
+            }
+            bool arranged = sequences.Any(s => s.Events.Count > 0);
+            emptyState.Update(!arranged, "arrange", "Nothing is arranged yet",
+                "Put a pattern on a track: pick a row and press the pattern's key, or double-click it in the list on the right. Or launch clips in the Session View.",
+                new (string, Action)[] { ("New pattern here", () => { Canvas.Edits.CreatePatterns(Math.Max(0, Canvas.CursorRow), Math.Max(0, Canvas.CursorTime), 1, SequenceCanvas.NewPatternLength, false); Canvas.Focus(); }) }, false);
         }
 
         void OnStateChanged()

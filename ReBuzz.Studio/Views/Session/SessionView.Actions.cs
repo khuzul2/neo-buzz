@@ -617,7 +617,7 @@ namespace ReBuzz.Studio.Views.Session
                 }
                 menu.Items.Add(Item("Rename…", () => _ = RenameClip(pattern), KeyOf("Cmd+R")));
                 menu.Items.Add(Item("Duplicate", () => DuplicateClip(cell.Track, cell.Scene), KeyOf("Cmd+D")));
-                menu.Items.Add(ColorMenu("Colour", PatternColors.Get(pattern), i => layout.SetClipColor(pattern, i)));
+                menu.Items.Add(ColorMenu("Colour", PatternColors.Get(pattern), i => layout.SetClipColor(pattern, i), MachineColourName));
                 int notes = layout.RecordedNoteCount(pattern);
                 if (notes > 0)
                     menu.Items.Add(Item($"Clear recorded notes ({notes})", () => layout.ClearRecordedNotes(pattern)));
@@ -696,7 +696,7 @@ namespace ReBuzz.Studio.Views.Session
             var doc = layout.Ensure();
             int track = header.Track;
             var menu = new ContextMenu();
-            menu.Items.Add(ColorMenu("Track colour", track < doc.Tracks.Count ? doc.Tracks[track].ColorIndex : -1, i => layout.SetTrackColor(track, i)));
+            menu.Items.Add(ColorMenu("Track colour", track < doc.Tracks.Count ? doc.Tracks[track].ColorIndex : -1, i => layout.SetTrackColor(track, i), MachineColourName));
             var machine = header.Machine;
             if (machine != null)
             {
@@ -917,10 +917,13 @@ namespace ReBuzz.Studio.Views.Session
             menu.Items.Add(item);
         }
 
-        MenuItem ColorMenu(string header, int current, Action<int> set)
+        /// <summary>The no-colour entry of a clip's or a track's menu (P3h): its machine's identity colour is what shows.</summary>
+        const string MachineColourName = "Machine's colour";
+
+        MenuItem ColorMenu(string header, int current, Action<int> set, string none = "None")
         {
             var item = new MenuItem { Header = header, Tag = header };
-            item.Items.Add(Check("None", current < 0, () => set(-1)));
+            item.Items.Add(Check(none, current < 0, () => set(-1)));
             // Fork (ux-overhaul.md §3.1): the state colours aren't offered (a colour in use stays, ticked).
             int count = SessionPalette.ColorChoices.Length;
             foreach (var (index, name, colour) in SessionPalette.OfferedColours(current))

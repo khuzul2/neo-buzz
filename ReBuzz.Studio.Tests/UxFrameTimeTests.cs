@@ -26,6 +26,13 @@ namespace ReBuzz.Studio.Tests
     {
         static ReBuzzCore Core => Studio.Host.Core;
 
+        /// <summary>The machine's 1-minute load average ("n/a" where /proc has none: macOS).</summary>
+        static string Load()
+        {
+            try { return System.IO.File.ReadAllText("/proc/loadavg").Split(' ')[0]; }
+            catch (System.Exception) { return "n/a"; }
+        }
+
         static void Settle()
         {
             Dispatcher.UIThread.RunJobs();
@@ -143,7 +150,7 @@ namespace ReBuzz.Studio.Tests
                         window.UpdateLayout();
                         target.Render(window);
                     });
-                    lines.Add($"draw Machines, {what}: {ms:0.00} ms  (load {System.IO.File.ReadAllText("/proc/loadavg").Split(' ')[0]})");
+                    lines.Add($"draw Machines, {what}: {ms:0.00} ms  (load {Load()})");
                     return ms;
                 }
                 var wireList = canvas.Wires.ToList();

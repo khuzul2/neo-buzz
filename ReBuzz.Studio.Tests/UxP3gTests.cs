@@ -376,8 +376,11 @@ namespace ReBuzz.Studio.Tests
 
                 // The engine's own peaks, while a scene plays.
                 rig.Layout.LaunchScene(0);
-                rig.RunTicks(6);
-                canvas.TickMeters(1.0 / MachineCanvas.MeterRate);
+                for (int round = 0; round < 40 && canvas.WireLevel(wire) <= 0; round++)      // a slower runner needs more ticks before the first peak
+                {
+                    rig.RunTicks(6);
+                    canvas.TickMeters(1.0 / MachineCanvas.MeterRate);
+                }
                 Assert.That(canvas.WireLevel(wire), Is.GreaterThan(0), "the wire Drums → Master carries a level");
                 Assert.That(canvas.BoxLevel(drums), Is.GreaterThan(0), "the box shows the loudest wire out of it");
                 Assert.That(canvas.BoxLevel(Core.SongCore.Machines.First(m => m.DLL.Info.Type == MachineType.Master)), Is.GreaterThan(0), "the Master, what comes into it");
@@ -403,14 +406,14 @@ namespace ReBuzz.Studio.Tests
                     foreach (var v in window.GetVisualDescendants()) v.InvalidateVisual();
                     Settle();
                     var shape = canvas.WireOf(wire);
-                    var middle = canvas.TranslatePoint(new Point((shape.Start.X + shape.End.X) / 2 * canvas.Zoom - canvas.Offset.X, (shape.Start.Y + shape.End.Y) / 2 * canvas.Zoom - canvas.Offset.Y), window)!.Value;
+                    var spot = canvas.TranslatePoint(new Point((shape.Start.X * 3 + shape.End.X) / 4 * canvas.Zoom - canvas.Offset.X, (shape.Start.Y * 3 + shape.End.Y) / 4 * canvas.Zoom - canvas.Offset.Y), window)!.Value;
                     var bitmap = window.CaptureRenderedFrame();
                     Assert.That(bitmap, Is.Not.Null);
                     using var fb = bitmap!.Lock();
                     bool rgba = fb.Format == Avalonia.Platform.PixelFormat.Rgba8888;
                     int best = 0;
-                    for (int y = (int)middle.Y - 3; y <= (int)middle.Y + 3; y++)
-                        for (int x = (int)middle.X - 3; x <= (int)middle.X + 3; x++)
+                    for (int y = (int)spot.Y - 2; y <= (int)spot.Y + 2; y++)
+                        for (int x = (int)spot.X - 2; x <= (int)spot.X + 2; x++)
                         {
                             int p = System.Runtime.InteropServices.Marshal.ReadInt32(fb.Address + y * fb.RowBytes + x * 4);
                             int r = rgba ? p & 0xFF : (p >> 16) & 0xFF, g = (p >> 8) & 0xFF, bl = rgba ? (p >> 16) & 0xFF : p & 0xFF;
@@ -425,6 +428,21 @@ namespace ReBuzz.Studio.Tests
                 canvas.TickMeters(5);
                 int dark = Brightness();
                 Assert.That(bright, Is.GreaterThan(dark), "a wire with a level is lighter than a silent one");
+
+                // On a dB curve: -3, -20 and -40 dB look clearly different (each step several shades), not all "lit".
+                int At(double db)
+                {
+                    float peak = (float)(32768 * Math.Pow(10, db / 20));
+                    canvas.PeakSource = c => (peak, peak);
+                    canvas.TickMeters(1);
+                    return Brightness();
+                }
+                int loud = At(-3), middle = At(-20), quiet = At(-40);
+                TestContext.Out.WriteLine($"[ux-measure] wire brightness (R+G+B): silent {dark}, -40 dB {quiet}, -20 dB {middle}, -3 dB {loud}");
+                Assert.That(loud, Is.GreaterThan(middle + 30), "-3 dB against -20 dB");
+                Assert.That(middle, Is.GreaterThan(quiet + 20), "-20 dB against -40 dB");
+                Assert.That(quiet, Is.GreaterThan(dark), "-40 dB against silence");
+                Assert.That(MachineCanvas.Glow(MachineCanvas.LevelOf(32768f * 0.03162f)) / MachineCanvas.Glow(1), Is.EqualTo(0.25).Within(0.01), "-30 dB glows a quarter of 0 dB");
             }
             finally
             {
