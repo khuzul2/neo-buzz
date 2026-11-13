@@ -114,6 +114,14 @@ namespace ReBuzz.Agent
             }
         }
 
+        /// <summary>A preset's category: the part of its name before " — " (or ": "); empty when it has none. The preset bars group by the same.</summary>
+        internal static string PresetCategory(string name)
+        {
+            int i = name.IndexOf(" — ", StringComparison.Ordinal);
+            if (i < 0) i = name.IndexOf(": ", StringComparison.Ordinal);
+            return i > 0 ? name.Substring(0, i) : "";
+        }
+
         public static void Register(ToolRegistry tools, AgentHost host)
         {
             var core = host.Core;
@@ -123,32 +131,67 @@ namespace ReBuzz.Agent
                 Name = "preset_list",
                 Title = "List presets",
                 Description =
-                    "A machine's presets (its gear's factory presets and ones saved since), with their comments. Optionally filtered by text. " +
-                    "Example: preset_list(machine=\"Pad\", search=\"warm\").",
-                Input = Object(null, Req("machine", String("The machine")), Opt("search", String("Text in the name or comment"))),
-                Output = Object(null, Req("presets", Array(Object(null, Req("name", String("Pass to preset_load")), Opt("comment", String("What it is"))), "Presets"))),
+                    "A machine's presets (its gear's factory presets and ones saved since), with their comments. Filter by text (name or comment) " +
+                    "and by category (the part of the name before \" — \": Bass, Pad, Drum…); a long list comes in pages (limit, offset) and the " +
+                    "categories with their counts come back with it, so a machine with hundreds of presets is browsed, not dumped. " +
+                    "Example: preset_list(machine=\"Pad\", search=\"warm\"), preset_list(machine=\"Dye\", category=\"Bass\", limit=20).",
+                Input = Object(null, Req("machine", String("The machine")), Opt("search", String("Text in the name or comment")),
+                    Opt("category", String("Only this category: the text before \" — \" in a preset's name (Bass, Pad, Drum, Lo-Fi…; \"Arp/Seq\" takes both); the counts are in categories")),
+                    Opt("limit", Integer("At most this many presets (default 60)", 1, 500)),
+                    Opt("offset", Integer("Skip this many matches first, to read the next page", 0))),
+                Output = Object(null,
+                    Req("presets", Array(Object(null, Req("name", String("Pass to preset_load")), Opt("comment", String("What it is")), Opt("category", String("Its category"))), "Presets")),
+                    Req("total", Integer("How many matched before limit and offset")),
+                    Opt("offset", Integer("Where this page started")),
+                    Opt("categories", Array(Object(null, Req("name", String("Category")), Req("count", Integer("Matches in it"))), "The matches' categories with their counts (before the category filter)"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
                 {
-                    string search = c.String("search");
+                    string search = c.String("search"), category = c.String("category")?.Trim();
+                    int limit = c.Int("limit") ?? 60, offset = Math.Max(0, c.Int("offset") ?? 0);
                     var r = await host.Engine("preset_list", false, _ =>
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
                         var problems = new List<string>();
-                        var list = new JsonArray();
+                        var matches = new List<(string Name, string Comment, string Category)>();
                         foreach (var kv in Presets(m, problems))
                         {
                             string comment = kv.Value?.Comment ?? "";
                             if (search != null && !kv.Key.Contains(search, StringComparison.OrdinalIgnoreCase) && !comment.Contains(search, StringComparison.OrdinalIgnoreCase)) continue;
-                            var o = new JsonObject { ["name"] = kv.Key };
-                            if (comment.Length > 0) o["comment"] = comment;
+                            matches.Add((kv.Key, comment, PresetCategory(kv.Key)));
+                        }
+                        var categories = new JsonArray();
+                        foreach (var g in matches.Where(x => x.Category.Length > 0).GroupBy(x => x.Category))
+                            categories.Add(new JsonObject { ["name"] = g.Key, ["count"] = g.Count() });
+                        if (!string.IsNullOrEmpty(category))
+                        {
+                            var wanted = category.Split('/').Select(x => x.Trim()).ToArray();
+                            matches = matches.Where(x => wanted.Any(w => string.Equals(w, x.Category, StringComparison.OrdinalIgnoreCase))).ToList();
+                        }
+                        var list = new JsonArray();
+                        foreach (var x in matches.Skip(offset).Take(limit))
+                        {
+                            var o = new JsonObject { ["name"] = x.Name };
+                            if (x.Comment.Length > 0) o["comment"] = x.Comment;
+                            if (x.Category.Length > 0) o["category"] = x.Category;
                             list.Add(o);
                         }
-                        return new JsonObject { ["machine"] = m.Name, ["presets"] = list, ["problems"] = new JsonArray(problems.Select(x => (JsonNode)x).ToArray()) };
+                        return new JsonObject
+                        {
+                            ["machine"] = m.Name, ["presets"] = list, ["total"] = matches.Count, ["offset"] = offset, ["categories"] = categories,
+                            ["problems"] = new JsonArray(problems.Select(x => (JsonNode)x).ToArray()),
+                        };
                     }, c.Cancellation);
                     var ps = r["presets"]!.AsArray();
-                    return ToolResult.Ok(ps.Count == 0 ? $"{r["machine"]} has no presets{(search != null ? $" matching \"{search}\"" : "")}."
-                        : $"{r["machine"]}: {ps.Count} presets: " + string.Join(", ", ps.Take(40).Select(p => p!["name"]!.GetValue<string>())) + (ps.Count > 40 ? ", …" : "") + ".", r);
+                    int total = r["total"]!.GetValue<int>();
+                    string filter = (category != null ? $" in category \"{category}\"" : "") + (search != null ? $" matching \"{search}\"" : "");
+                    if (total == 0) return ToolResult.Ok($"{r["machine"]} has no presets{filter}.", r);
+                    if (ps.Count == 0) return ToolResult.Ok($"{r["machine"]}: {total} presets{filter}; offset {offset} is past the end.", r);
+                    string more = offset + ps.Count < total ? $" More: offset={offset + ps.Count}." : "";
+                    var cats = r["categories"]!.AsArray();
+                    string byCategory = category == null && cats.Count > 1 ? " Categories: " + string.Join(", ", cats.Select(x => $"{x!["name"]} {x["count"]}")) + "." : "";
+                    return ToolResult.Ok($"{r["machine"]}: {total} presets{filter}, showing {offset + 1} to {offset + ps.Count}: " +
+                        string.Join(", ", ps.Take(40).Select(p => p!["name"]!.GetValue<string>())) + (ps.Count > 40 ? ", …" : "") + "." + more + byCategory, r);
                 },
             });
 

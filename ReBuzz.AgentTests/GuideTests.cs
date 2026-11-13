@@ -79,7 +79,7 @@ namespace ReBuzz.AgentTests
             ["analyze_mix"] = new[] { "from", "to", "section", "machines" },
             ["compare"] = new[] { "a", "b", "from_seconds", "to_seconds" },
             ["plot"] = new[] { "kind", "sources", "title", "from_seconds", "to_seconds" },
-            ["preset_list"] = new[] { "machine", "search" },
+            ["preset_list"] = new[] { "machine", "search", "category", "limit", "offset" },
             ["preset_load"] = new[] { "machine", "preset" },
             ["preset_save"] = new[] { "machine", "name", "comment", "overwrite" },
             ["snapshot_save"] = new[] { "name" },
