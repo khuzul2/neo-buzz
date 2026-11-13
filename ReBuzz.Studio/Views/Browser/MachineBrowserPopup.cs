@@ -1,5 +1,5 @@
 // Fork (docs/specs/ux-overhaul.md P3d, decisions 56-58): the machine browser on the Machine View's canvas. A double click on empty
-// canvas opens it there, and typing on the canvas (with nothing selected) opens it with the typed text as the search. Enter or a
+// canvas opens it there, and so does Add Machine… (a key; decision 58: typing on the canvas does not open it, letters keep their shortcuts). Enter or a
 // double click adds the machine where the click was (one undo step); Esc or a click elsewhere closes it. It lists what the left
 // panel lists, from the same MachineBrowserModel.
 
@@ -124,7 +124,7 @@ namespace ReBuzz.Studio.Views.Browser
             try
             {
                 var items = rows.Select(r => BrowserRows.Item(r, model, detail: true)).ToList();
-                if (rows.Count == 0) items.Add(BrowserRows.Header("none:", "Nothing matches" + (query.Length > 0 ? " “" + query + "”" : "")));
+                if (rows.Count == 0) items.Add(BrowserRows.Header("none:", "Nothing matches" + (query.Length > 0 ? " “" + query + "”" : "") + ": try one word, or clear the category"));
                 list.ItemsSource = items;
                 // With a search, the best match is ready: Enter adds it.
                 list.SelectedItem = query.Length > 0 ? items.FirstOrDefault(i => i.DataContext is MachineEntry) : null;

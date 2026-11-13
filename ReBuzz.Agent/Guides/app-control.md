@@ -17,7 +17,7 @@ You can do what a person does in the app: change preferences, bind MIDI controll
 
 ## Settings
 
-`settings_get(section="audio")` lists keys as `section.Name` with value, default, type, choices or range, what it does and `restart_required`. Sections: general, audio, midi, appearance, agent, safety, advanced. Narrow with `search`, `key` or `changed_only=true`.
+`settings_get(section="audio")` lists keys as `section.Name` with value, default, type, choices or range, what it does and `restart_required`. Sections: general, audio, midi, sync (Link and MIDI clock: `sync.Link`, `sync.LinkStartStop`, `sync.MidiClockIn`, `sync.MidiClockOut` as output names separated by "|"), appearance, agent, safety, advanced. Narrow with `search`, `key` or `changed_only=true`.
 
 - `settings_set(key="general.PatternLength", value=32)` checks the value against the type and range, writes and saves it, and logs it. It says when a restart is needed (`restart_required`): tell the person, don't assume it took effect.
 - Two classes need care, and the tools are annotated destructive so a client may ask first:

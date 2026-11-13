@@ -31,7 +31,9 @@
     "Diode",
     "Fold"
    ],
-   "description": "Saturation model"
+   "description": "Saturation model",
+   "how": "Chooses the saturation model: Tape, Tube, Transistor, Diode or Fold.",
+   "sound": "Tape is soft and warm, Tube is rich and full, Transistor is firmer, Diode is edgy and Fold is bright and metallic."
   },
   {
    "index": 1,
@@ -45,7 +47,9 @@
    "a": 0.0,
    "b": 36.0,
    "unit": "dB",
-   "description": "Gain into the saturation"
+   "description": "Gain into the saturation",
+   "how": "Raises the level going into the saturation by 0 to 36 dB.",
+   "sound": "More drive adds harmonics, going from a subtle warmth to heavy distortion."
   },
   {
    "index": 2,
@@ -57,7 +61,9 @@
    "default": 500,
    "kind": "bipolar",
    "unit": "%",
-   "description": "Shifts the curve off centre: even harmonics"
+   "description": "Shifts the curve off centre: even harmonics",
+   "how": "Shifts the signal off centre before the saturation.",
+   "sound": "Pushing it away from the middle adds even harmonics, which sound fuller and more asymmetric."
   },
   {
    "index": 3,
@@ -69,7 +75,9 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Tape: emphasis. Tube: sag. Transistor: hardness. Diode: asymmetry. Fold: folds"
+   "description": "Tape: emphasis. Tube: sag. Transistor: hardness. Diode: asymmetry. Fold: folds",
+   "how": "Sets the model's special trait: tape emphasis, tube sag, transistor hardness, diode asymmetry or fold amount.",
+   "sound": "Higher values make each model more pronounced and more obviously coloured."
   },
   {
    "index": 4,
@@ -83,7 +91,9 @@
    "a": 10.0,
    "b": 1000.0,
    "unit": "Hz",
-   "description": "High-pass before the saturation"
+   "description": "High-pass before the saturation",
+   "how": "Filters the low frequencies, from 10 Hz to 1 kHz, out of the signal before it is saturated.",
+   "sound": "Bass stops overloading the saturation, so the result is tighter and less muddy."
   },
   {
    "index": 5,
@@ -95,7 +105,9 @@
    "default": 500,
    "kind": "bipolar",
    "unit": "%",
-   "description": "Tilt after the saturation: darker or brighter"
+   "description": "Tilt after the saturation: darker or brighter",
+   "how": "Tilts the tone after the saturation, darker towards the left and brighter towards the right.",
+   "sound": "Turn it down to soften harsh distortion; turn it up for more sparkle."
   },
   {
    "index": 6,
@@ -109,7 +121,9 @@
    "a": 1000.0,
    "b": 22000.0,
    "unit": "Hz",
-   "description": "Low-pass after the saturation"
+   "description": "Low-pass after the saturation",
+   "how": "Removes frequencies above 1 to 22 kHz after the saturation.",
+   "sound": "Lower values tame fizz and harshness, making the drive darker and smoother."
   },
   {
    "index": 7,
@@ -123,7 +137,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Output level"
+   "description": "Output level",
+   "how": "Sets the final level in dB, from -24 to +24.",
+   "sound": "It makes the sound louder or quieter without changing the amount of distortion."
   },
   {
    "index": 8,
@@ -138,7 +154,9 @@
     "Off",
     "On"
    ],
-   "description": "Holds the level steady as the drive changes"
+   "description": "Holds the level steady as the drive changes",
+   "how": "Keeps the output level steady as Drive changes.",
+   "sound": "You hear the character change rather than a simple volume increase."
   },
   {
    "index": 9,
@@ -150,7 +168,9 @@
    "default": 1000,
    "kind": "percent",
    "unit": "%",
-   "description": "Dry/wet (the dry signal is delayed to match)"
+   "description": "Dry/wet (the dry signal is delayed to match)",
+   "how": "Blends the saturated signal with the dry signal, delayed to match.",
+   "sound": "Lower values keep the original punch and add the saturation as a subtle layer."
   },
   {
    "index": 10,
@@ -166,7 +186,9 @@
     "4×",
     "8×"
    ],
-   "description": "Oversampling"
+   "description": "Oversampling",
+   "how": "Chooses the oversampling: 2x, 4x or 8x.",
+   "sound": "Higher settings keep high-frequency distortion clean and free of aliasing, but use more processing power."
   }
  ]
 }

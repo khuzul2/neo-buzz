@@ -435,9 +435,9 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Dialogs.Order(new[] { UserAnswer.Yes, UserAnswer.No, UserAnswer.Cancel }, UserAnswer.Yes, UserAnswer.Cancel, mac: false),
                 Is.EqualTo(new[] { UserAnswer.Yes, UserAnswer.No, UserAnswer.Cancel }), "elsewhere: Save, Don't Save, Cancel");
 
-            var prefs = PreferencesWindow.Open(Host, "Audio");
+            var prefs = PreferencesWindow.Open(Host, "Safety");
             Settle();
-            var page = prefs.Page<AudioPage>();
+            var page = prefs.Page<SafetyPage>();
             Window dialog = null;
             using var opened = Window.WindowOpenedEvent.AddClassHandler<Window>((w, e) => { if (w.Title == "Safety limiter") dialog = w; },
                 Avalonia.Interactivity.RoutingStrategies.Direct, handledEventsToo: true);
@@ -476,9 +476,9 @@ namespace ReBuzz.Studio.Tests
             var registry = Host.Registry;
             try
             {
-                var prefs = PreferencesWindow.Open(Host, "Audio");
+                var prefs = PreferencesWindow.Open(Host, "Safety");
                 Settle();
-                var page = prefs.Page<AudioPage>();
+                var page = prefs.Page<SafetyPage>();
                 Assert.That(page.LimiterBox.IsChecked, Is.True, "on by default");
                 Assert.That(page.GuardBox.IsChecked, Is.True);
                 Assert.That(page.CeilingBox.SelectedItem, Is.EqualTo("0 dBFS"));

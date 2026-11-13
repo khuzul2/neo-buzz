@@ -15,6 +15,7 @@ using BuzzGUI.Interfaces;
 using NUnit.Framework;
 using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
+using ReBuzz.Studio.Shell.Commands;
 using ReBuzz.Studio.Shell.Design;
 using ReBuzz.Studio.Views.Browser;
 using ReBuzz.Studio.Views.Machines;
@@ -189,30 +190,34 @@ namespace ReBuzz.Studio.Tests
         static MachineBrowserModel Model() => MachineBrowserModel.For(Core, Studio.Host.Registry);
 
         [AvaloniaTest]
-        public void TypingOnTheCanvasSeedsTheSearch()
+        public void TypingOnTheCanvasDoesNotOpenTheBrowserAndAddMachineDoes()
         {
+            // Decision 58, the user's choice of 2026-11-13: no type-to-search; letters keep their shortcuts.
             using var restore = Studio.AfterTest(PutBack);
             var (window, view) = OpenEmpty();
             try
             {
-                Click(window, view.PointOf(0.5, 0.5, window));       // empty canvas: nothing selected, the canvas has the keys
-                Assert.That(view.Canvas.TypesToSearch, Is.True);
-                Assert.That(view.Popup.IsOpen, Is.False);
+                Click(window, view.PointOf(0.5, 0.5, window));       // empty canvas, nothing selected
                 window.KeyTextInput("rev");
                 Settle();
-                Assert.That(view.Popup.IsOpen, Is.True, "typing opens it");
-                Assert.That(view.Popup.Search.Text, Is.EqualTo("rev"), "the typed text is the search");
-                Assert.That(view.Popup.Rows, Does.Contain("gear:Neo Verb"));
+                Assert.That(view.Popup.IsOpen, Is.False, "typing does not open it");
+                var poly = Make("Neo Poly", -0.5f, -0.5f);
+                view.Canvas.Select(new[] { poly });
+                Assert.That(Core.SongCore.Machines.Count, Is.EqualTo(2));
+
+                var command = OperatingSystem.IsMacOS() ? RawInputModifiers.Meta : RawInputModifiers.Control;
+                // The dedicated key (Add Machine…) opens it, from any view, and Esc closes it.
+                view.Canvas.ClearSelection();
+                window.KeyPressQwerty(PhysicalKey.N, command | RawInputModifiers.Shift);
+                window.KeyReleaseQwerty(PhysicalKey.N, command | RawInputModifiers.Shift);
+                Settle();
+                Assert.That(view.Popup.IsOpen, Is.True, "Shift+Cmd+N opens the browser");
                 window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
                 window.KeyReleaseQwerty(PhysicalKey.Escape, RawInputModifiers.None);
                 Settle();
                 Assert.That(view.Popup.IsOpen, Is.False, "Esc closes it");
-                Assert.That(Core.SongCore.Machines.Count, Is.EqualTo(1), "and adds nothing");
-
-                // With a machine selected the letters are M, S and B, not typing.
-                var poly = Make("Neo Poly", -0.5f, -0.5f);
-                view.Canvas.Select(new[] { poly });
-                Assert.That(view.Canvas.TypesToSearch, Is.False);
+                Assert.That(Core.SongCore.Machines.Count, Is.EqualTo(2), "and adds nothing");
+                Assert.That(StudioKeymap.Get("view.addmachine").KeyLabel(false), Is.EqualTo("Ctrl+Shift+N"));
             }
             finally
             {

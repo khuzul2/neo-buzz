@@ -6,224 +6,614 @@ summary Eight-band parametric EQ, minimum phase and zero latency (Phase Linear: 
 
 group Band 1
 B1On     "B1 on"     0 1     0     switch                                         | Band 1 in or out (an off band passes the signal untouched)
+    how Switches band 1 in or out; an off band passes the signal untouched.
+    sound On, band 1's shape is applied; off, the sound is unchanged by it.
 B1Type   "B1 type"   0 5     3     enum Bell Low_shelf High_shelf Low_cut High_cut Notch | Band 1: bell, shelves (half the gain at the frequency), Butterworth cuts (−3 dB at the frequency with Q 0.71), notch
+    how Chooses band 1's shape: bell, low shelf, high shelf, low cut, high cut or notch.
+    sound Bells boost or cut one region, shelves tilt the lows or highs, cuts remove the extremes and a notch carves a narrow hole.
 B1Freq   "B1 freq"   0 10000 587   freq 20 20000                                  | Band 1 frequency: centre, shelf midpoint or cutoff
+    how Sets band 1's frequency, from 20 Hz to 20 kHz: its centre, shelf midpoint or cutoff.
+    sound Moving it chooses which part of the sound the band shapes, from deep bass to air.
 B1Gain   "B1 gain"   0 480   240   db -24 24                                      | Band 1 gain in 0.1 dB steps (bells and shelves)
+    how Sets band 1's boost or cut, from -24 to +24 dB, for bells and shelves.
+    sound Positive values bring that region forward; negative values pull it back.
 B1Q      "B1 Q"      0 2000  686   exp 0.1 30 2                                   | Band 1 Q: bell and notch width, shelf and cut resonance (0.71 is flat)
+    how Sets band 1's width, from 0.1 to 30; higher values are narrower (and make shelves and cuts resonate).
+    sound Narrow values shape one tone or resonance; wide values change the broad tone smoothly.
 B1Slope  "B1 slope"  0 2     1     enum 12_dB/oct 24_dB/oct 48_dB/oct            | Band 1 slope (low and high cut)
+    how Sets the steepness of band 1 when it is a low or high cut: 12, 24 or 48 dB per octave.
+    sound Steeper slopes remove the cut region more completely; gentler ones blend in more naturally.
 group Band 2
 B2On     "B2 on"     0 1     1     switch                                         | Band 2 in or out (an off band passes the signal untouched)
+    how Switches band 2 in or out; an off band passes the signal untouched.
+    sound On, band 2's shape is applied; off, the sound is unchanged by it.
 B2Type   "B2 type"   0 5     1     enum Bell Low_shelf High_shelf Low_cut High_cut Notch | Band 2: bell, shelves (half the gain at the frequency), Butterworth cuts (−3 dB at the frequency with Q 0.71), notch
+    how Chooses band 2's shape: bell, low shelf, high shelf, low cut, high cut or notch.
+    sound Bells boost or cut one region, shelves tilt the lows or highs, cuts remove the extremes and a notch carves a narrow hole.
 B2Freq   "B2 freq"   0 10000 2330  freq 20 20000                                  | Band 2 frequency: centre, shelf midpoint or cutoff
+    how Sets band 2's frequency, from 20 Hz to 20 kHz: its centre, shelf midpoint or cutoff.
+    sound Moving it chooses which part of the sound the band shapes, from deep bass to air.
 B2Gain   "B2 gain"   0 480   240   db -24 24                                      | Band 2 gain in 0.1 dB steps (bells and shelves)
+    how Sets band 2's boost or cut, from -24 to +24 dB, for bells and shelves.
+    sound Positive values bring that region forward; negative values pull it back.
 B2Q      "B2 Q"      0 2000  686   exp 0.1 30 2                                   | Band 2 Q: bell and notch width, shelf and cut resonance (0.71 is flat)
+    how Sets band 2's width, from 0.1 to 30; higher values are narrower (and make shelves and cuts resonate).
+    sound Narrow values shape one tone or resonance; wide values change the broad tone smoothly.
 B2Slope  "B2 slope"  0 2     0     enum 12_dB/oct 24_dB/oct 48_dB/oct            | Band 2 slope (low and high cut)
+    how Sets the steepness of band 2 when it is a low or high cut: 12, 24 or 48 dB per octave.
+    sound Steeper slopes remove the cut region more completely; gentler ones blend in more naturally.
 group Band 3
 B3On     "B3 on"     0 1     1     switch                                         | Band 3 in or out (an off band passes the signal untouched)
+    how Switches band 3 in or out; an off band passes the signal untouched.
+    sound On, band 3's shape is applied; off, the sound is unchanged by it.
 B3Type   "B3 type"   0 5     0     enum Bell Low_shelf High_shelf Low_cut High_cut Notch | Band 3: bell, shelves (half the gain at the frequency), Butterworth cuts (−3 dB at the frequency with Q 0.71), notch
+    how Chooses band 3's shape: bell, low shelf, high shelf, low cut, high cut or notch.
+    sound Bells boost or cut one region, shelves tilt the lows or highs, cuts remove the extremes and a notch carves a narrow hole.
 B3Freq   "B3 freq"   0 10000 3656  freq 20 20000                                  | Band 3 frequency: centre, shelf midpoint or cutoff
+    how Sets band 3's frequency, from 20 Hz to 20 kHz: its centre, shelf midpoint or cutoff.
+    sound Moving it chooses which part of the sound the band shapes, from deep bass to air.
 B3Gain   "B3 gain"   0 480   240   db -24 24                                      | Band 3 gain in 0.1 dB steps (bells and shelves)
+    how Sets band 3's boost or cut, from -24 to +24 dB, for bells and shelves.
+    sound Positive values bring that region forward; negative values pull it back.
 B3Q      "B3 Q"      0 2000  807   exp 0.1 30 2                                   | Band 3 Q: bell and notch width, shelf and cut resonance (0.71 is flat)
+    how Sets band 3's width, from 0.1 to 30; higher values are narrower (and make shelves and cuts resonate).
+    sound Narrow values shape one tone or resonance; wide values change the broad tone smoothly.
 B3Slope  "B3 slope"  0 2     0     enum 12_dB/oct 24_dB/oct 48_dB/oct            | Band 3 slope (low and high cut)
+    how Sets the steepness of band 3 when it is a low or high cut: 12, 24 or 48 dB per octave.
+    sound Steeper slopes remove the cut region more completely; gentler ones blend in more naturally.
 group Band 4
 B4On     "B4 on"     0 1     1     switch                                         | Band 4 in or out (an off band passes the signal untouched)
+    how Switches band 4 in or out; an off band passes the signal untouched.
+    sound On, band 4's shape is applied; off, the sound is unchanged by it.
 B4Type   "B4 type"   0 5     0     enum Bell Low_shelf High_shelf Low_cut High_cut Notch | Band 4: bell, shelves (half the gain at the frequency), Butterworth cuts (−3 dB at the frequency with Q 0.71), notch
+    how Chooses band 4's shape: bell, low shelf, high shelf, low cut, high cut or notch.
+    sound Bells boost or cut one region, shelves tilt the lows or highs, cuts remove the extremes and a notch carves a narrow hole.
 B4Freq   "B4 freq"   0 10000 4924  freq 20 20000                                  | Band 4 frequency: centre, shelf midpoint or cutoff
+    how Sets band 4's frequency, from 20 Hz to 20 kHz: its centre, shelf midpoint or cutoff.
+    sound Moving it chooses which part of the sound the band shapes, from deep bass to air.
 B4Gain   "B4 gain"   0 480   240   db -24 24                                      | Band 4 gain in 0.1 dB steps (bells and shelves)
+    how Sets band 4's boost or cut, from -24 to +24 dB, for bells and shelves.
+    sound Positive values bring that region forward; negative values pull it back.
 B4Q      "B4 Q"      0 2000  807   exp 0.1 30 2                                   | Band 4 Q: bell and notch width, shelf and cut resonance (0.71 is flat)
+    how Sets band 4's width, from 0.1 to 30; higher values are narrower (and make shelves and cuts resonate).
+    sound Narrow values shape one tone or resonance; wide values change the broad tone smoothly.
 B4Slope  "B4 slope"  0 2     0     enum 12_dB/oct 24_dB/oct 48_dB/oct            | Band 4 slope (low and high cut)
+    how Sets the steepness of band 4 when it is a low or high cut: 12, 24 or 48 dB per octave.
+    sound Steeper slopes remove the cut region more completely; gentler ones blend in more naturally.
 group Band 5
 B5On     "B5 on"     0 1     1     switch                                         | Band 5 in or out (an off band passes the signal untouched)
+    how Switches band 5 in or out; an off band passes the signal untouched.
+    sound On, band 5's shape is applied; off, the sound is unchanged by it.
 B5Type   "B5 type"   0 5     0     enum Bell Low_shelf High_shelf Low_cut High_cut Notch | Band 5: bell, shelves (half the gain at the frequency), Butterworth cuts (−3 dB at the frequency with Q 0.71), notch
+    how Chooses band 5's shape: bell, low shelf, high shelf, low cut, high cut or notch.
+    sound Bells boost or cut one region, shelves tilt the lows or highs, cuts remove the extremes and a notch carves a narrow hole.
 B5Freq   "B5 freq"   0 10000 6250  freq 20 20000                                  | Band 5 frequency: centre, shelf midpoint or cutoff
+    how Sets band 5's frequency, from 20 Hz to 20 kHz: its centre, shelf midpoint or cutoff.
+    sound Moving it chooses which part of the sound the band shapes, from deep bass to air.
 B5Gain   "B5 gain"   0 480   240   db -24 24                                      | Band 5 gain in 0.1 dB steps (bells and shelves)
+    how Sets band 5's boost or cut, from -24 to +24 dB, for bells and shelves.
+    sound Positive values bring that region forward; negative values pull it back.
 B5Q      "B5 Q"      0 2000  807   exp 0.1 30 2                                   | Band 5 Q: bell and notch width, shelf and cut resonance (0.71 is flat)
+    how Sets band 5's width, from 0.1 to 30; higher values are narrower (and make shelves and cuts resonate).
+    sound Narrow values shape one tone or resonance; wide values change the broad tone smoothly.
 B5Slope  "B5 slope"  0 2     0     enum 12_dB/oct 24_dB/oct 48_dB/oct            | Band 5 slope (low and high cut)
+    how Sets the steepness of band 5 when it is a low or high cut: 12, 24 or 48 dB per octave.
+    sound Steeper slopes remove the cut region more completely; gentler ones blend in more naturally.
 group Band 6
 B6On     "B6 on"     0 1     1     switch                                         | Band 6 in or out (an off band passes the signal untouched)
+    how Switches band 6 in or out; an off band passes the signal untouched.
+    sound On, band 6's shape is applied; off, the sound is unchanged by it.
 B6Type   "B6 type"   0 5     0     enum Bell Low_shelf High_shelf Low_cut High_cut Notch | Band 6: bell, shelves (half the gain at the frequency), Butterworth cuts (−3 dB at the frequency with Q 0.71), notch
+    how Chooses band 6's shape: bell, low shelf, high shelf, low cut, high cut or notch.
+    sound Bells boost or cut one region, shelves tilt the lows or highs, cuts remove the extremes and a notch carves a narrow hole.
 B6Freq   "B6 freq"   0 10000 7670  freq 20 20000                                  | Band 6 frequency: centre, shelf midpoint or cutoff
+    how Sets band 6's frequency, from 20 Hz to 20 kHz: its centre, shelf midpoint or cutoff.
+    sound Moving it chooses which part of the sound the band shapes, from deep bass to air.
 B6Gain   "B6 gain"   0 480   240   db -24 24                                      | Band 6 gain in 0.1 dB steps (bells and shelves)
+    how Sets band 6's boost or cut, from -24 to +24 dB, for bells and shelves.
+    sound Positive values bring that region forward; negative values pull it back.
 B6Q      "B6 Q"      0 2000  807   exp 0.1 30 2                                   | Band 6 Q: bell and notch width, shelf and cut resonance (0.71 is flat)
+    how Sets band 6's width, from 0.1 to 30; higher values are narrower (and make shelves and cuts resonate).
+    sound Narrow values shape one tone or resonance; wide values change the broad tone smoothly.
 B6Slope  "B6 slope"  0 2     0     enum 12_dB/oct 24_dB/oct 48_dB/oct            | Band 6 slope (low and high cut)
+    how Sets the steepness of band 6 when it is a low or high cut: 12, 24 or 48 dB per octave.
+    sound Steeper slopes remove the cut region more completely; gentler ones blend in more naturally.
 group Band 7
 B7On     "B7 on"     0 1     1     switch                                         | Band 7 in or out (an off band passes the signal untouched)
+    how Switches band 7 in or out; an off band passes the signal untouched.
+    sound On, band 7's shape is applied; off, the sound is unchanged by it.
 B7Type   "B7 type"   0 5     2     enum Bell Low_shelf High_shelf Low_cut High_cut Notch | Band 7: bell, shelves (half the gain at the frequency), Butterworth cuts (−3 dB at the frequency with Q 0.71), notch
+    how Chooses band 7's shape: bell, low shelf, high shelf, low cut, high cut or notch.
+    sound Bells boost or cut one region, shelves tilt the lows or highs, cuts remove the extremes and a notch carves a narrow hole.
 B7Freq   "B7 freq"   0 10000 8674  freq 20 20000                                  | Band 7 frequency: centre, shelf midpoint or cutoff
+    how Sets band 7's frequency, from 20 Hz to 20 kHz: its centre, shelf midpoint or cutoff.
+    sound Moving it chooses which part of the sound the band shapes, from deep bass to air.
 B7Gain   "B7 gain"   0 480   240   db -24 24                                      | Band 7 gain in 0.1 dB steps (bells and shelves)
+    how Sets band 7's boost or cut, from -24 to +24 dB, for bells and shelves.
+    sound Positive values bring that region forward; negative values pull it back.
 B7Q      "B7 Q"      0 2000  686   exp 0.1 30 2                                   | Band 7 Q: bell and notch width, shelf and cut resonance (0.71 is flat)
+    how Sets band 7's width, from 0.1 to 30; higher values are narrower (and make shelves and cuts resonate).
+    sound Narrow values shape one tone or resonance; wide values change the broad tone smoothly.
 B7Slope  "B7 slope"  0 2     0     enum 12_dB/oct 24_dB/oct 48_dB/oct            | Band 7 slope (low and high cut)
+    how Sets the steepness of band 7 when it is a low or high cut: 12, 24 or 48 dB per octave.
+    sound Steeper slopes remove the cut region more completely; gentler ones blend in more naturally.
 group Band 8
 B8On     "B8 on"     0 1     0     switch                                         | Band 8 in or out (an off band passes the signal untouched)
+    how Switches band 8 in or out; an off band passes the signal untouched.
+    sound On, band 8's shape is applied; off, the sound is unchanged by it.
 B8Type   "B8 type"   0 5     4     enum Bell Low_shelf High_shelf Low_cut High_cut Notch | Band 8: bell, shelves (half the gain at the frequency), Butterworth cuts (−3 dB at the frequency with Q 0.71), notch
+    how Chooses band 8's shape: bell, low shelf, high shelf, low cut, high cut or notch.
+    sound Bells boost or cut one region, shelves tilt the lows or highs, cuts remove the extremes and a notch carves a narrow hole.
 B8Freq   "B8 freq"   0 10000 9847  freq 20 20000                                  | Band 8 frequency: centre, shelf midpoint or cutoff
+    how Sets band 8's frequency, from 20 Hz to 20 kHz: its centre, shelf midpoint or cutoff.
+    sound Moving it chooses which part of the sound the band shapes, from deep bass to air.
 B8Gain   "B8 gain"   0 480   240   db -24 24                                      | Band 8 gain in 0.1 dB steps (bells and shelves)
+    how Sets band 8's boost or cut, from -24 to +24 dB, for bells and shelves.
+    sound Positive values bring that region forward; negative values pull it back.
 B8Q      "B8 Q"      0 2000  686   exp 0.1 30 2                                   | Band 8 Q: bell and notch width, shelf and cut resonance (0.71 is flat)
+    how Sets band 8's width, from 0.1 to 30; higher values are narrower (and make shelves and cuts resonate).
+    sound Narrow values shape one tone or resonance; wide values change the broad tone smoothly.
 B8Slope  "B8 slope"  0 2     0     enum 12_dB/oct 24_dB/oct 48_dB/oct            | Band 8 slope (low and high cut)
+    how Sets the steepness of band 8 when it is a low or high cut: 12, 24 or 48 dB per octave.
+    sound Steeper slopes remove the cut region more completely; gentler ones blend in more naturally.
 group Output
 Output   "Output"     0 480   240   db -24 24                                      | Output gain in 0.1 dB steps
+    how Sets the output gain, from -24 to +24 dB.
+    sound It makes the whole sound louder or quieter after the EQ, without changing the tone.
 group Mode
 Mode     "Mode"      0 1     0     enum Parametric Graphic                       | Parametric: the eight bands above. Graphic: 31 constant-Q bands at the ISO third-octave centres, 20 Hz – 20 kHz, set by the G sliders; the response passes through every slider (the bands' overlap compensated), and the parametric bands rest
+    how Chooses Parametric, with eight bands, or Graphic, with 31 third-octave sliders.
+    sound Parametric suits precise surgery; Graphic suits quick tonal shaping across the whole spectrum.
 group Graphic
 G20      "G 20 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 20 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 20 Hz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 20 Hz forward; lowering it pulls that region back.
 G25      "G 25 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 25 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 25 Hz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 25 Hz forward; lowering it pulls that region back.
 G31_5    "G 31.5 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 31.5 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 31.5 Hz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 31.5 Hz forward; lowering it pulls that region back.
 G40      "G 40 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 40 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 40 Hz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 40 Hz forward; lowering it pulls that region back.
 G50      "G 50 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 50 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 50 Hz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 50 Hz forward; lowering it pulls that region back.
 G63      "G 63 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 63 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 63 Hz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 63 Hz forward; lowering it pulls that region back.
 G80      "G 80 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 80 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 80 Hz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 80 Hz forward; lowering it pulls that region back.
 G100     "G 100 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 100 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 100 Hz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 100 Hz forward; lowering it pulls that region back.
 G125     "G 125 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 125 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 125 Hz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 125 Hz forward; lowering it pulls that region back.
 G160     "G 160 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 160 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 160 Hz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 160 Hz forward; lowering it pulls that region back.
 G200     "G 200 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 200 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 200 Hz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 200 Hz forward; lowering it pulls that region back.
 G250     "G 250 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 250 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 250 Hz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 250 Hz forward; lowering it pulls that region back.
 G315     "G 315 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 315 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 315 Hz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 315 Hz forward; lowering it pulls that region back.
 G400     "G 400 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 400 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 400 Hz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 400 Hz forward; lowering it pulls that region back.
 G500     "G 500 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 500 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 500 Hz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 500 Hz forward; lowering it pulls that region back.
 G630     "G 630 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 630 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 630 Hz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 630 Hz forward; lowering it pulls that region back.
 G800     "G 800 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 800 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 800 Hz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 800 Hz forward; lowering it pulls that region back.
 G1k      "G 1 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 1 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 1 kHz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 1 kHz forward; lowering it pulls that region back.
 G1_25k   "G 1.25 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 1.25 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 1.25 kHz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 1.25 kHz forward; lowering it pulls that region back.
 G1_6k    "G 1.6 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 1.6 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 1.6 kHz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 1.6 kHz forward; lowering it pulls that region back.
 G2k      "G 2 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 2 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 2 kHz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 2 kHz forward; lowering it pulls that region back.
 G2_5k    "G 2.5 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 2.5 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 2.5 kHz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 2.5 kHz forward; lowering it pulls that region back.
 G3_15k   "G 3.15 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 3.15 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 3.15 kHz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 3.15 kHz forward; lowering it pulls that region back.
 G4k      "G 4 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 4 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 4 kHz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 4 kHz forward; lowering it pulls that region back.
 G5k      "G 5 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 5 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 5 kHz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 5 kHz forward; lowering it pulls that region back.
 G6_3k    "G 6.3 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 6.3 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 6.3 kHz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 6.3 kHz forward; lowering it pulls that region back.
 G8k      "G 8 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 8 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 8 kHz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 8 kHz forward; lowering it pulls that region back.
 G10k     "G 10 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 10 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 10 kHz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 10 kHz forward; lowering it pulls that region back.
 G12_5k   "G 12.5 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 12.5 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 12.5 kHz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 12.5 kHz forward; lowering it pulls that region back.
 G16k     "G 16 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 16 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 16 kHz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 16 kHz forward; lowering it pulls that region back.
 G20k     "G 20 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 20 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+    how Sets the boost or cut at 20 kHz in Graphic mode, from -18 to +18 dB.
+    sound Raising it brings the region around 20 kHz forward; lowering it pulls that region back.
 
 # v2 (docs/specs/mastering-tools.md §5.3, M3): per band its channel, a shape, and dynamics, at the end so old songs
 # and presets keep their sound (the defaults are v1's: Stereo, Standard, Off); then Delta.
 group Channel and dynamics 1
 B1Chan    "B1 channel"   0 4    0   enum Stereo Left Right Mid Side | Band 1: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)
+    how Chooses which channel band 1 works on: both, left, right, mid or side.
+    sound Mid or side lets you shape the centre or the width alone, for example brightening only the sides.
 B1Shape   "B1 shape"     0 4    0   enum Standard Proportional_Q Baxandall Vintage All-pass | Band 1: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)
+    how Chooses band 1's character: Standard, Proportional Q, Baxandall, Vintage or All-pass.
+    sound Proportional Q narrows with gain for a more musical feel, Baxandall makes a gentle tone-control tilt and All-pass shifts phase without changing tone.
 B1Dyn     "B1 dynamic"   0 2    0   enum Off Down Up | Band 1 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)
+    how Makes band 1 dynamic: Down turns its gain down when its detector gets loud, Up turns it up.
+    sound The band only acts when the sound in that region needs it, such as taming harshness only on loud notes.
 B1Thresh  "B1 threshold" 0 600  300 lin -60 0 dB 1 | Band 1 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)
+    how Sets the level, from -60 to 0 dB, that band 1's detector must pass before its gain moves.
+    sound Lower values make the dynamic band act more often.
 B1Ratio   "B1 ratio"     0 1000 463 ratio 1 20 inf | Band 1 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)
+    how Sets how strongly band 1's gain follows the level above its threshold, from 1:1 to infinity.
+    sound Higher ratios make the dynamic action firmer and more decisive.
 B1Knee    "B1 knee"      0 240  60  lin 0 24 dB 1 | Band 1 dynamic: width of the soft knee around the threshold
+    how Sets how gradually band 1's dynamic action starts around the threshold, from 0 to 24 dB.
+    sound Wider knees are smoother and less noticeable.
 B1Range   "B1 range"     0 240  60  lin 0 24 dB 1 | Band 1 dynamic: the most the gain moves from its setting
+    how Limits how far band 1's gain can move from its setting, from 0 to 24 dB.
+    sound A small range keeps the dynamic effect subtle; a large one lets it act strongly.
 B1Attack  "B1 attack"    0 1000 639 time 0.00005 0.2 | Band 1 dynamic: time to 63 % of a gain change
+    how Sets how fast band 1's gain reacts, from 0.05 ms to 200 ms.
+    sound Fast attacks catch short peaks; slow ones let them through first.
 B1Release "B1 release"   0 1000 532 time 0.005 3 | Band 1 dynamic: time back to 37 % of a gain change
+    how Sets how fast band 1's gain returns, from 5 ms to 3 s.
+    sound Short releases sound lively; long ones sound smooth and steady.
 B1Detect  "B1 detector"  0 1    0   enum Band Sidechain | Band 1 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel
+    how Chooses whether band 1's detector hears its own input or the machine on the second input.
+    sound Sidechain lets another sound, such as a vocal, control the band, for example to clear space in a pad.
 group Channel and dynamics 2
 B2Chan    "B2 channel"   0 4    0   enum Stereo Left Right Mid Side | Band 2: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)
+    how Chooses which channel band 2 works on: both, left, right, mid or side.
+    sound Mid or side lets you shape the centre or the width alone, for example brightening only the sides.
 B2Shape   "B2 shape"     0 4    0   enum Standard Proportional_Q Baxandall Vintage All-pass | Band 2: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)
+    how Chooses band 2's character: Standard, Proportional Q, Baxandall, Vintage or All-pass.
+    sound Proportional Q narrows with gain for a more musical feel, Baxandall makes a gentle tone-control tilt and All-pass shifts phase without changing tone.
 B2Dyn     "B2 dynamic"   0 2    0   enum Off Down Up | Band 2 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)
+    how Makes band 2 dynamic: Down turns its gain down when its detector gets loud, Up turns it up.
+    sound The band only acts when the sound in that region needs it, such as taming harshness only on loud notes.
 B2Thresh  "B2 threshold" 0 600  300 lin -60 0 dB 1 | Band 2 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)
+    how Sets the level, from -60 to 0 dB, that band 2's detector must pass before its gain moves.
+    sound Lower values make the dynamic band act more often.
 B2Ratio   "B2 ratio"     0 1000 463 ratio 1 20 inf | Band 2 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)
+    how Sets how strongly band 2's gain follows the level above its threshold, from 1:1 to infinity.
+    sound Higher ratios make the dynamic action firmer and more decisive.
 B2Knee    "B2 knee"      0 240  60  lin 0 24 dB 1 | Band 2 dynamic: width of the soft knee around the threshold
+    how Sets how gradually band 2's dynamic action starts around the threshold, from 0 to 24 dB.
+    sound Wider knees are smoother and less noticeable.
 B2Range   "B2 range"     0 240  60  lin 0 24 dB 1 | Band 2 dynamic: the most the gain moves from its setting
+    how Limits how far band 2's gain can move from its setting, from 0 to 24 dB.
+    sound A small range keeps the dynamic effect subtle; a large one lets it act strongly.
 B2Attack  "B2 attack"    0 1000 639 time 0.00005 0.2 | Band 2 dynamic: time to 63 % of a gain change
+    how Sets how fast band 2's gain reacts, from 0.05 ms to 200 ms.
+    sound Fast attacks catch short peaks; slow ones let them through first.
 B2Release "B2 release"   0 1000 532 time 0.005 3 | Band 2 dynamic: time back to 37 % of a gain change
+    how Sets how fast band 2's gain returns, from 5 ms to 3 s.
+    sound Short releases sound lively; long ones sound smooth and steady.
 B2Detect  "B2 detector"  0 1    0   enum Band Sidechain | Band 2 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel
+    how Chooses whether band 2's detector hears its own input or the machine on the second input.
+    sound Sidechain lets another sound, such as a vocal, control the band, for example to clear space in a pad.
 group Channel and dynamics 3
 B3Chan    "B3 channel"   0 4    0   enum Stereo Left Right Mid Side | Band 3: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)
+    how Chooses which channel band 3 works on: both, left, right, mid or side.
+    sound Mid or side lets you shape the centre or the width alone, for example brightening only the sides.
 B3Shape   "B3 shape"     0 4    0   enum Standard Proportional_Q Baxandall Vintage All-pass | Band 3: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)
+    how Chooses band 3's character: Standard, Proportional Q, Baxandall, Vintage or All-pass.
+    sound Proportional Q narrows with gain for a more musical feel, Baxandall makes a gentle tone-control tilt and All-pass shifts phase without changing tone.
 B3Dyn     "B3 dynamic"   0 2    0   enum Off Down Up | Band 3 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)
+    how Makes band 3 dynamic: Down turns its gain down when its detector gets loud, Up turns it up.
+    sound The band only acts when the sound in that region needs it, such as taming harshness only on loud notes.
 B3Thresh  "B3 threshold" 0 600  300 lin -60 0 dB 1 | Band 3 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)
+    how Sets the level, from -60 to 0 dB, that band 3's detector must pass before its gain moves.
+    sound Lower values make the dynamic band act more often.
 B3Ratio   "B3 ratio"     0 1000 463 ratio 1 20 inf | Band 3 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)
+    how Sets how strongly band 3's gain follows the level above its threshold, from 1:1 to infinity.
+    sound Higher ratios make the dynamic action firmer and more decisive.
 B3Knee    "B3 knee"      0 240  60  lin 0 24 dB 1 | Band 3 dynamic: width of the soft knee around the threshold
+    how Sets how gradually band 3's dynamic action starts around the threshold, from 0 to 24 dB.
+    sound Wider knees are smoother and less noticeable.
 B3Range   "B3 range"     0 240  60  lin 0 24 dB 1 | Band 3 dynamic: the most the gain moves from its setting
+    how Limits how far band 3's gain can move from its setting, from 0 to 24 dB.
+    sound A small range keeps the dynamic effect subtle; a large one lets it act strongly.
 B3Attack  "B3 attack"    0 1000 639 time 0.00005 0.2 | Band 3 dynamic: time to 63 % of a gain change
+    how Sets how fast band 3's gain reacts, from 0.05 ms to 200 ms.
+    sound Fast attacks catch short peaks; slow ones let them through first.
 B3Release "B3 release"   0 1000 532 time 0.005 3 | Band 3 dynamic: time back to 37 % of a gain change
+    how Sets how fast band 3's gain returns, from 5 ms to 3 s.
+    sound Short releases sound lively; long ones sound smooth and steady.
 B3Detect  "B3 detector"  0 1    0   enum Band Sidechain | Band 3 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel
+    how Chooses whether band 3's detector hears its own input or the machine on the second input.
+    sound Sidechain lets another sound, such as a vocal, control the band, for example to clear space in a pad.
 group Channel and dynamics 4
 B4Chan    "B4 channel"   0 4    0   enum Stereo Left Right Mid Side | Band 4: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)
+    how Chooses which channel band 4 works on: both, left, right, mid or side.
+    sound Mid or side lets you shape the centre or the width alone, for example brightening only the sides.
 B4Shape   "B4 shape"     0 4    0   enum Standard Proportional_Q Baxandall Vintage All-pass | Band 4: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)
+    how Chooses band 4's character: Standard, Proportional Q, Baxandall, Vintage or All-pass.
+    sound Proportional Q narrows with gain for a more musical feel, Baxandall makes a gentle tone-control tilt and All-pass shifts phase without changing tone.
 B4Dyn     "B4 dynamic"   0 2    0   enum Off Down Up | Band 4 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)
+    how Makes band 4 dynamic: Down turns its gain down when its detector gets loud, Up turns it up.
+    sound The band only acts when the sound in that region needs it, such as taming harshness only on loud notes.
 B4Thresh  "B4 threshold" 0 600  300 lin -60 0 dB 1 | Band 4 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)
+    how Sets the level, from -60 to 0 dB, that band 4's detector must pass before its gain moves.
+    sound Lower values make the dynamic band act more often.
 B4Ratio   "B4 ratio"     0 1000 463 ratio 1 20 inf | Band 4 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)
+    how Sets how strongly band 4's gain follows the level above its threshold, from 1:1 to infinity.
+    sound Higher ratios make the dynamic action firmer and more decisive.
 B4Knee    "B4 knee"      0 240  60  lin 0 24 dB 1 | Band 4 dynamic: width of the soft knee around the threshold
+    how Sets how gradually band 4's dynamic action starts around the threshold, from 0 to 24 dB.
+    sound Wider knees are smoother and less noticeable.
 B4Range   "B4 range"     0 240  60  lin 0 24 dB 1 | Band 4 dynamic: the most the gain moves from its setting
+    how Limits how far band 4's gain can move from its setting, from 0 to 24 dB.
+    sound A small range keeps the dynamic effect subtle; a large one lets it act strongly.
 B4Attack  "B4 attack"    0 1000 639 time 0.00005 0.2 | Band 4 dynamic: time to 63 % of a gain change
+    how Sets how fast band 4's gain reacts, from 0.05 ms to 200 ms.
+    sound Fast attacks catch short peaks; slow ones let them through first.
 B4Release "B4 release"   0 1000 532 time 0.005 3 | Band 4 dynamic: time back to 37 % of a gain change
+    how Sets how fast band 4's gain returns, from 5 ms to 3 s.
+    sound Short releases sound lively; long ones sound smooth and steady.
 B4Detect  "B4 detector"  0 1    0   enum Band Sidechain | Band 4 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel
+    how Chooses whether band 4's detector hears its own input or the machine on the second input.
+    sound Sidechain lets another sound, such as a vocal, control the band, for example to clear space in a pad.
 group Channel and dynamics 5
 B5Chan    "B5 channel"   0 4    0   enum Stereo Left Right Mid Side | Band 5: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)
+    how Chooses which channel band 5 works on: both, left, right, mid or side.
+    sound Mid or side lets you shape the centre or the width alone, for example brightening only the sides.
 B5Shape   "B5 shape"     0 4    0   enum Standard Proportional_Q Baxandall Vintage All-pass | Band 5: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)
+    how Chooses band 5's character: Standard, Proportional Q, Baxandall, Vintage or All-pass.
+    sound Proportional Q narrows with gain for a more musical feel, Baxandall makes a gentle tone-control tilt and All-pass shifts phase without changing tone.
 B5Dyn     "B5 dynamic"   0 2    0   enum Off Down Up | Band 5 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)
+    how Makes band 5 dynamic: Down turns its gain down when its detector gets loud, Up turns it up.
+    sound The band only acts when the sound in that region needs it, such as taming harshness only on loud notes.
 B5Thresh  "B5 threshold" 0 600  300 lin -60 0 dB 1 | Band 5 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)
+    how Sets the level, from -60 to 0 dB, that band 5's detector must pass before its gain moves.
+    sound Lower values make the dynamic band act more often.
 B5Ratio   "B5 ratio"     0 1000 463 ratio 1 20 inf | Band 5 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)
+    how Sets how strongly band 5's gain follows the level above its threshold, from 1:1 to infinity.
+    sound Higher ratios make the dynamic action firmer and more decisive.
 B5Knee    "B5 knee"      0 240  60  lin 0 24 dB 1 | Band 5 dynamic: width of the soft knee around the threshold
+    how Sets how gradually band 5's dynamic action starts around the threshold, from 0 to 24 dB.
+    sound Wider knees are smoother and less noticeable.
 B5Range   "B5 range"     0 240  60  lin 0 24 dB 1 | Band 5 dynamic: the most the gain moves from its setting
+    how Limits how far band 5's gain can move from its setting, from 0 to 24 dB.
+    sound A small range keeps the dynamic effect subtle; a large one lets it act strongly.
 B5Attack  "B5 attack"    0 1000 639 time 0.00005 0.2 | Band 5 dynamic: time to 63 % of a gain change
+    how Sets how fast band 5's gain reacts, from 0.05 ms to 200 ms.
+    sound Fast attacks catch short peaks; slow ones let them through first.
 B5Release "B5 release"   0 1000 532 time 0.005 3 | Band 5 dynamic: time back to 37 % of a gain change
+    how Sets how fast band 5's gain returns, from 5 ms to 3 s.
+    sound Short releases sound lively; long ones sound smooth and steady.
 B5Detect  "B5 detector"  0 1    0   enum Band Sidechain | Band 5 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel
+    how Chooses whether band 5's detector hears its own input or the machine on the second input.
+    sound Sidechain lets another sound, such as a vocal, control the band, for example to clear space in a pad.
 group Channel and dynamics 6
 B6Chan    "B6 channel"   0 4    0   enum Stereo Left Right Mid Side | Band 6: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)
+    how Chooses which channel band 6 works on: both, left, right, mid or side.
+    sound Mid or side lets you shape the centre or the width alone, for example brightening only the sides.
 B6Shape   "B6 shape"     0 4    0   enum Standard Proportional_Q Baxandall Vintage All-pass | Band 6: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)
+    how Chooses band 6's character: Standard, Proportional Q, Baxandall, Vintage or All-pass.
+    sound Proportional Q narrows with gain for a more musical feel, Baxandall makes a gentle tone-control tilt and All-pass shifts phase without changing tone.
 B6Dyn     "B6 dynamic"   0 2    0   enum Off Down Up | Band 6 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)
+    how Makes band 6 dynamic: Down turns its gain down when its detector gets loud, Up turns it up.
+    sound The band only acts when the sound in that region needs it, such as taming harshness only on loud notes.
 B6Thresh  "B6 threshold" 0 600  300 lin -60 0 dB 1 | Band 6 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)
+    how Sets the level, from -60 to 0 dB, that band 6's detector must pass before its gain moves.
+    sound Lower values make the dynamic band act more often.
 B6Ratio   "B6 ratio"     0 1000 463 ratio 1 20 inf | Band 6 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)
+    how Sets how strongly band 6's gain follows the level above its threshold, from 1:1 to infinity.
+    sound Higher ratios make the dynamic action firmer and more decisive.
 B6Knee    "B6 knee"      0 240  60  lin 0 24 dB 1 | Band 6 dynamic: width of the soft knee around the threshold
+    how Sets how gradually band 6's dynamic action starts around the threshold, from 0 to 24 dB.
+    sound Wider knees are smoother and less noticeable.
 B6Range   "B6 range"     0 240  60  lin 0 24 dB 1 | Band 6 dynamic: the most the gain moves from its setting
+    how Limits how far band 6's gain can move from its setting, from 0 to 24 dB.
+    sound A small range keeps the dynamic effect subtle; a large one lets it act strongly.
 B6Attack  "B6 attack"    0 1000 639 time 0.00005 0.2 | Band 6 dynamic: time to 63 % of a gain change
+    how Sets how fast band 6's gain reacts, from 0.05 ms to 200 ms.
+    sound Fast attacks catch short peaks; slow ones let them through first.
 B6Release "B6 release"   0 1000 532 time 0.005 3 | Band 6 dynamic: time back to 37 % of a gain change
+    how Sets how fast band 6's gain returns, from 5 ms to 3 s.
+    sound Short releases sound lively; long ones sound smooth and steady.
 B6Detect  "B6 detector"  0 1    0   enum Band Sidechain | Band 6 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel
+    how Chooses whether band 6's detector hears its own input or the machine on the second input.
+    sound Sidechain lets another sound, such as a vocal, control the band, for example to clear space in a pad.
 group Channel and dynamics 7
 B7Chan    "B7 channel"   0 4    0   enum Stereo Left Right Mid Side | Band 7: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)
+    how Chooses which channel band 7 works on: both, left, right, mid or side.
+    sound Mid or side lets you shape the centre or the width alone, for example brightening only the sides.
 B7Shape   "B7 shape"     0 4    0   enum Standard Proportional_Q Baxandall Vintage All-pass | Band 7: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)
+    how Chooses band 7's character: Standard, Proportional Q, Baxandall, Vintage or All-pass.
+    sound Proportional Q narrows with gain for a more musical feel, Baxandall makes a gentle tone-control tilt and All-pass shifts phase without changing tone.
 B7Dyn     "B7 dynamic"   0 2    0   enum Off Down Up | Band 7 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)
+    how Makes band 7 dynamic: Down turns its gain down when its detector gets loud, Up turns it up.
+    sound The band only acts when the sound in that region needs it, such as taming harshness only on loud notes.
 B7Thresh  "B7 threshold" 0 600  300 lin -60 0 dB 1 | Band 7 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)
+    how Sets the level, from -60 to 0 dB, that band 7's detector must pass before its gain moves.
+    sound Lower values make the dynamic band act more often.
 B7Ratio   "B7 ratio"     0 1000 463 ratio 1 20 inf | Band 7 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)
+    how Sets how strongly band 7's gain follows the level above its threshold, from 1:1 to infinity.
+    sound Higher ratios make the dynamic action firmer and more decisive.
 B7Knee    "B7 knee"      0 240  60  lin 0 24 dB 1 | Band 7 dynamic: width of the soft knee around the threshold
+    how Sets how gradually band 7's dynamic action starts around the threshold, from 0 to 24 dB.
+    sound Wider knees are smoother and less noticeable.
 B7Range   "B7 range"     0 240  60  lin 0 24 dB 1 | Band 7 dynamic: the most the gain moves from its setting
+    how Limits how far band 7's gain can move from its setting, from 0 to 24 dB.
+    sound A small range keeps the dynamic effect subtle; a large one lets it act strongly.
 B7Attack  "B7 attack"    0 1000 639 time 0.00005 0.2 | Band 7 dynamic: time to 63 % of a gain change
+    how Sets how fast band 7's gain reacts, from 0.05 ms to 200 ms.
+    sound Fast attacks catch short peaks; slow ones let them through first.
 B7Release "B7 release"   0 1000 532 time 0.005 3 | Band 7 dynamic: time back to 37 % of a gain change
+    how Sets how fast band 7's gain returns, from 5 ms to 3 s.
+    sound Short releases sound lively; long ones sound smooth and steady.
 B7Detect  "B7 detector"  0 1    0   enum Band Sidechain | Band 7 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel
+    how Chooses whether band 7's detector hears its own input or the machine on the second input.
+    sound Sidechain lets another sound, such as a vocal, control the band, for example to clear space in a pad.
 group Channel and dynamics 8
 B8Chan    "B8 channel"   0 4    0   enum Stereo Left Right Mid Side | Band 8: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)
+    how Chooses which channel band 8 works on: both, left, right, mid or side.
+    sound Mid or side lets you shape the centre or the width alone, for example brightening only the sides.
 B8Shape   "B8 shape"     0 4    0   enum Standard Proportional_Q Baxandall Vintage All-pass | Band 8: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)
+    how Chooses band 8's character: Standard, Proportional Q, Baxandall, Vintage or All-pass.
+    sound Proportional Q narrows with gain for a more musical feel, Baxandall makes a gentle tone-control tilt and All-pass shifts phase without changing tone.
 B8Dyn     "B8 dynamic"   0 2    0   enum Off Down Up | Band 8 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)
+    how Makes band 8 dynamic: Down turns its gain down when its detector gets loud, Up turns it up.
+    sound The band only acts when the sound in that region needs it, such as taming harshness only on loud notes.
 B8Thresh  "B8 threshold" 0 600  300 lin -60 0 dB 1 | Band 8 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)
+    how Sets the level, from -60 to 0 dB, that band 8's detector must pass before its gain moves.
+    sound Lower values make the dynamic band act more often.
 B8Ratio   "B8 ratio"     0 1000 463 ratio 1 20 inf | Band 8 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)
+    how Sets how strongly band 8's gain follows the level above its threshold, from 1:1 to infinity.
+    sound Higher ratios make the dynamic action firmer and more decisive.
 B8Knee    "B8 knee"      0 240  60  lin 0 24 dB 1 | Band 8 dynamic: width of the soft knee around the threshold
+    how Sets how gradually band 8's dynamic action starts around the threshold, from 0 to 24 dB.
+    sound Wider knees are smoother and less noticeable.
 B8Range   "B8 range"     0 240  60  lin 0 24 dB 1 | Band 8 dynamic: the most the gain moves from its setting
+    how Limits how far band 8's gain can move from its setting, from 0 to 24 dB.
+    sound A small range keeps the dynamic effect subtle; a large one lets it act strongly.
 B8Attack  "B8 attack"    0 1000 639 time 0.00005 0.2 | Band 8 dynamic: time to 63 % of a gain change
+    how Sets how fast band 8's gain reacts, from 0.05 ms to 200 ms.
+    sound Fast attacks catch short peaks; slow ones let them through first.
 B8Release "B8 release"   0 1000 532 time 0.005 3 | Band 8 dynamic: time back to 37 % of a gain change
+    how Sets how fast band 8's gain returns, from 5 ms to 3 s.
+    sound Short releases sound lively; long ones sound smooth and steady.
 B8Detect  "B8 detector"  0 1    0   enum Band Sidechain | Band 8 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel
+    how Chooses whether band 8's detector hears its own input or the machine on the second input.
+    sound Sidechain lets another sound, such as a vocal, control the band, for example to clear space in a pad.
 group Monitor
 Delta    "Delta"   0 1   0   switch | Hear only what the EQ changes: the output minus the input, before Output (zero latency, nothing to delay), gliding over 10 ms. Off for rendering
+    how Plays only the difference between the output and the input.
+    sound You hear only what the EQ adds or removes.
 
 group Linear phase
 Phase    "Phase"   0 1   0   enum Minimum Linear | Minimum: the bands as always, zero latency. Linear: one FIR from the bands' zero-phase magnitude (same dB at every frequency from 30 Hz, no phase turning, constant delay of 4095 + 512 samples at 44.1/48 kHz, reported to the host); Parametric mode only; dynamic bands are static in it; the Curve layer applies; a very narrow band at a low frequency is limited in Q (the editor says so)
+    how Chooses minimum phase with no latency, or linear phase with a constant delay of about 4600 samples (about 100 ms).
+    sound Linear phase keeps the timing of all frequencies intact, which sounds cleaner on big boosts and in mastering.
 Curve1  "Curve 1" 0 480 240 db -24 24 | Curve layer point 1 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 1 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve2  "Curve 2" 0 480 240 db -24 24 | Curve layer point 2 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 2 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve3  "Curve 3" 0 480 240 db -24 24 | Curve layer point 3 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 3 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve4  "Curve 4" 0 480 240 db -24 24 | Curve layer point 4 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 4 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve5  "Curve 5" 0 480 240 db -24 24 | Curve layer point 5 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 5 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve6  "Curve 6" 0 480 240 db -24 24 | Curve layer point 6 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 6 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve7  "Curve 7" 0 480 240 db -24 24 | Curve layer point 7 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 7 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve8  "Curve 8" 0 480 240 db -24 24 | Curve layer point 8 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 8 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve9  "Curve 9" 0 480 240 db -24 24 | Curve layer point 9 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 9 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve10 "Curve 10" 0 480 240 db -24 24 | Curve layer point 10 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 10 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve11 "Curve 11" 0 480 240 db -24 24 | Curve layer point 11 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 11 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve12 "Curve 12" 0 480 240 db -24 24 | Curve layer point 12 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 12 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve13 "Curve 13" 0 480 240 db -24 24 | Curve layer point 13 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 13 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve14 "Curve 14" 0 480 240 db -24 24 | Curve layer point 14 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 14 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve15 "Curve 15" 0 480 240 db -24 24 | Curve layer point 15 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 15 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve16 "Curve 16" 0 480 240 db -24 24 | Curve layer point 16 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 16 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve17 "Curve 17" 0 480 240 db -24 24 | Curve layer point 17 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 17 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve18 "Curve 18" 0 480 240 db -24 24 | Curve layer point 18 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 18 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve19 "Curve 19" 0 480 240 db -24 24 | Curve layer point 19 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 19 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve20 "Curve 20" 0 480 240 db -24 24 | Curve layer point 20 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 20 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve21 "Curve 21" 0 480 240 db -24 24 | Curve layer point 21 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 21 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve22 "Curve 22" 0 480 240 db -24 24 | Curve layer point 22 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 22 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve23 "Curve 23" 0 480 240 db -24 24 | Curve layer point 23 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 23 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve24 "Curve 24" 0 480 240 db -24 24 | Curve layer point 24 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 24 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve25 "Curve 25" 0 480 240 db -24 24 | Curve layer point 25 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 25 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve26 "Curve 26" 0 480 240 db -24 24 | Curve layer point 26 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 26 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve27 "Curve 27" 0 480 240 db -24 24 | Curve layer point 27 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 27 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve28 "Curve 28" 0 480 240 db -24 24 | Curve layer point 28 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 28 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve29 "Curve 29" 0 480 240 db -24 24 | Curve layer point 29 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 29 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve30 "Curve 30" 0 480 240 db -24 24 | Curve layer point 30 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 30 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve31 "Curve 31" 0 480 240 db -24 24 | Curve layer point 31 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 31 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 Curve32 "Curve 32" 0 480 240 db -24 24 | Curve layer point 32 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+    how Sets point 32 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).
+    sound It adds a detailed overall tone correction, such as a matching curve, on top of the bands.
 
 # What the EQ measures (NeoEqMachine.Readings, machine_readings).
 reading gain_match_db  dB | Short-term loudness out − in (K-weighted, 3 s): the editor's Match sets Output by it

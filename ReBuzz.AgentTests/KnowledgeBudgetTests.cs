@@ -1,7 +1,7 @@
 // Fork (docs/specs/agent-knowledge.md, K0): what an agent reads is measured and held to a budget, so the ladder of progressive
 // disclosure stays a ladder: server instructions, then a guide, then a machine page, then the full manual on request. Size is
-// counted in tokens, estimated as characters / 4. The machine page template (§4) is checked as a warning list until K1 makes it a
-// failure; docs/agent-coverage.md is generated (tools/agent-coverage.py) and a stale committed copy fails here.
+// counted in tokens, estimated as characters / 4. The machine page template (§4) is a failure for every page except those of the
+// machines in KnowledgePending (K1 still to do: a warning); docs/agent-coverage.md is generated (tools/agent-coverage.py) and a stale committed copy fails here.
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -14,9 +14,6 @@ namespace ReBuzz.AgentTests
     public class KnowledgeBudgetTests
     {
         public const int InstructionsBudget = 1000, GuideBudget = 4000, PageBudget = 2500;
-
-        /// <summary>K1 turns this on: every curated page must follow the template (agent-knowledge.md §4).</summary>
-        const bool EnforceTemplate = false;
 
         static int Tokens(string text) => (text.Length + 3) / 4;
 
@@ -73,6 +70,11 @@ namespace ReBuzz.AgentTests
         static readonly string[] Sections = { "How it sounds", "Use it for", "Key controls", "Starting points", "Pitfalls", "Pairs well with", "Successor", "Checklist" };
         static readonly string[] OptionalSections = { "Successor" };
 
+        /// <summary>Whether a checklist item names a tool (a call such as render(...) or a backticked tool name) that the guides know.</summary>
+        static bool NamesATool(string item) =>
+            Regex.Matches(item, @"(?<![\w./-])([a-z][a-z0-9_]*)\(|`([a-z][a-z0-9_]*)`")
+                .Any(m => GuideTests.KnownTools.ContainsKey(m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value));
+
         /// <summary>What is wrong with a page against the template: missing or misordered sections, a Key controls list outside 5 to 8, a Checklist with no items.</summary>
         internal static List<string> TemplateProblems(string page)
         {
@@ -99,37 +101,45 @@ namespace ReBuzz.AgentTests
                 if (rows < 5 || rows > 8) problems.Add($"\"Key controls\" lists {rows} controls (5 to 8)");
             }
             string checklist = Section("Checklist");
-            if (checklist.Length > 0 && !Regex.IsMatch(checklist, @"(?m)^- \[ \] ")) problems.Add("\"Checklist\" has no \"- [ ]\" items");
+            if (checklist.Length > 0)
+            {
+                var items = Regex.Matches(checklist, @"(?m)^- \[ \] (.*)$").Select(m => m.Groups[1].Value).ToList();
+                if (items.Count == 0) problems.Add("\"Checklist\" has no \"- [ ]\" items");
+                foreach (var item in items)
+                    if (!NamesATool(item)) problems.Add($"Checklist item names no tool: \"{(item.Length > 50 ? item[..50] + "..." : item)}\"");
+            }
             return problems;
         }
 
         [Test]
         public void ThePagesAgainstTheTemplate()
         {
-            var report = new List<string>();
+            var failures = new List<string>();
+            var pending = new List<string>();
             int conforming = 0;
             foreach (var gear in MachineManual.CuratedGear)
             {
                 var problems = TemplateProblems(MachineManual.Curated(gear)!);
                 if (problems.Count == 0) conforming++;
-                else report.Add($"{gear}: {string.Join("; ", problems)}");
+                else (KnowledgePending.Gear.Contains(gear) ? pending : failures).Add($"{gear}: {string.Join("; ", problems)}");
             }
             TestContext.Out.WriteLine($"{conforming} of {MachineManual.CuratedGear.Count} pages follow the template");
-            if (report.Count == 0) return;
-            string text = $"{report.Count} of {MachineManual.CuratedGear.Count} pages don't follow the page template yet (agent-knowledge.md §4; K1 makes this a failure):\n" + string.Join("\n", report);
-            if (EnforceTemplate) Assert.Fail(text);
-            Assert.Warn(text);
+            Assert.That(failures, Is.Empty, "pages that don't follow the page template (agent-knowledge.md §4):\n" + string.Join("\n", failures));
+            Assert.That(KnowledgePending.Gear.Where(g => !MachineManual.CuratedGear.Contains(g)), Is.Empty, "KnowledgePending names a machine with no page");
+            if (pending.Count > 0)
+                Assert.Warn($"{pending.Count} pages still to bring to the template (K1; KnowledgePending):\n" + string.Join("\n", pending));
         }
 
         [Test]
         public void TheTemplateCheckFindsWhatIsWrong()
         {
-            string good = "# Neo X\n\n## How it sounds\nSmooth.\n\n## Use it for\nBuses.\n\n## Key controls\n- A: 1 dB\n- B: 2 dB\n- C: 3 dB\n- D: 4 dB\n- E: 5 dB\n\n## Starting points\n- Glue: A 1 dB\n\n## Pitfalls\nLevel.\n\n## Pairs well with\nNeo Verb.\n\n## Successor\nPedal X.\n\n## Checklist\n- [ ] It sounds.\n";
+            string good = "# Neo X\n\n## How it sounds\nSmooth.\n\n## Use it for\nBuses.\n\n## Key controls\n- A: 1 dB\n- B: 2 dB\n- C: 3 dB\n- D: 4 dB\n- E: 5 dB\n\n## Starting points\n- Glue: A 1 dB\n\n## Pitfalls\nLevel.\n\n## Pairs well with\nNeo Verb.\n\n## Successor\nPedal X.\n\n## Checklist\n- [ ] It sounds: `machine_readings(machine=\"X\")` reads under 0 dB.\n";
             Assert.That(TemplateProblems(good), Is.Empty);
             Assert.That(TemplateProblems(good.Replace("## Successor\nPedal X.\n\n", "")), Is.Empty, "Successor is optional");
             Assert.That(TemplateProblems(good.Replace("## Pitfalls\nLevel.\n\n", "")), Has.Some.Contain("no \"## Pitfalls\""));
             Assert.That(TemplateProblems(good.Replace("- E: 5 dB\n", "")), Has.Some.Contain("lists 4 controls"));
-            Assert.That(TemplateProblems(good.Replace("- [ ] It sounds.", "It sounds.")), Has.Some.Contain("no \"- [ ]\""));
+            Assert.That(TemplateProblems(good.Replace("- [ ] It sounds", "It sounds")), Has.Some.Contain("no \"- [ ]\""));
+            Assert.That(TemplateProblems(good.Replace("`machine_readings(machine=\"X\")`", "the meter")), Has.Some.Contain("names no tool"));
             Assert.That(TemplateProblems("## Use it for\nBuses.\n\n## How it sounds\nSmooth.\n"), Has.Some.Contain("out of order"));
             string table = good.Replace("- A: 1 dB\n- B: 2 dB\n- C: 3 dB\n- D: 4 dB\n- E: 5 dB\n", "| Param | Value |\n|---|---|\n| A | 1 |\n| B | 2 |\n| C | 3 |\n| D | 4 |\n| E | 5 |\n");
             Assert.That(TemplateProblems(table), Is.Empty, "a table of controls counts its rows");

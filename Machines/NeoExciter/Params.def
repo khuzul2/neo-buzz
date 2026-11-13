@@ -6,22 +6,52 @@ summary Harmonic exciter, the successor of Oomek Exciter: up to four Linkwitz–
 
 group Exciter
 Mode       "Mode"         0 4     0     enum Tape Tube Transistor Diode Warm | The curve: Tape (tanh, odd harmonics), Tube (asymmetric, even and odd), Transistor (towards a hard clip), Diode (soft logarithmic, asymmetric), Warm (even harmonics only)
+    how Chooses the curve that creates the added harmonics: Tape, Tube, Transistor, Diode or Warm.
+    sound Tape and Tube sound smooth and rich, Transistor is bolder, Diode is edgy and Warm adds only even, full-sounding harmonics.
 Drive      "Drive"        0 360   120   db 0 36                          | Gain into the shaper (before its output is brought back), 0.1 dB steps. More drive, more harmonics, higher orders
+    how Raises the level into the harmonic generator by 0 to 36 dB.
+    sound More drive creates more, and higher, harmonics for a brighter, more present sound.
 group Bands
 Xo1        "Crossover 1"  0 10000 5340  freq 20 20000                      | Between the first and the second band
+    how Sets the frequency between the first and second band, from 20 Hz to 20 kHz.
+    sound It decides where the lowest band, usually left alone, ends.
 Xo2        "Crossover 2"  0 10000 7253  freq 20 20000                      | Between the second and the third band (never below Crossover 1)
+    how Sets the frequency between the second and third band.
+    sound It moves the boundary between the lower and upper midrange for excitation.
 Xo3        "Crossover 3"  0 10000 8674  freq 20 20000                      | Between the third and the fourth band (never below Crossover 2)
+    how Sets the frequency between the third and fourth band.
+    sound It decides where the topmost band, which usually carries the air, begins.
 Amount1    "Amount 1"     0 1000  0     pct                                | How much of the first band's harmonics is added. 0 % leaves the band alone
+    how Sets how much harmonic content is added to the first band, from 0 to 100 %.
+    sound Above 0 the lows gain weight and warmth; at 0 they are left untouched.
 Amount2    "Amount 2"     0 1000  0     pct                                | The second band's Amount
+    how Sets how much harmonic content is added to the second band.
+    sound More adds body and warmth to the low midrange.
 Amount3    "Amount 3"     0 1000  0     pct                                | The third band's Amount
+    how Sets how much harmonic content is added to the third band.
+    sound More adds presence and bite to the upper midrange.
 Amount4    "Amount 4"     0 1000  250   pct                                | The fourth band's Amount
+    how Sets how much harmonic content is added to the fourth band.
+    sound More adds shine and air to the top end.
 group Output
 ShelfFreq  "Shelf freq"   0 10000 6942  freq 1000 20000                    | The corner of the high shelf on the added harmonics
+    how Sets the corner of a high shelf that shapes only the added harmonics, from 1 to 20 kHz.
+    sound It decides where the added sparkle starts to be boosted or softened.
 ShelfGain  "Shelf gain"   0 240   120   db -12 12                          | The high shelf's gain on the added harmonics: brighter or duller excitation without touching the audio
+    how Sets the high shelf's gain on the added harmonics, from -12 to +12 dB.
+    sound Positive values make the excitation brighter, negative values make it duller, without changing the original audio.
 Auto       "Auto gain"    0 1     0     switch                             | Keeps the loudness: the output's level (300 ms) follows the input's, within ±6 dB
+    how Keeps the loudness steady by following the input level within 6 dB.
+    sound You hear the added brightness rather than a louder sound.
 Stereo     "Stereo"       0 1     0     enum L/R M/S                       | What is excited: left and right, or mid and side (harmonics of the side widen, of the mid centre)
+    how Chooses whether harmonics are added to left and right, or to mid and side.
+    sound Mid/side adds harmonics to the sides to widen the sound, or to the centre to focus it.
 Output     "Output"       0 480   240   db -24 24                          | Gain after the exciter, 0.1 dB steps (the editor's Match sets it from the gain-match reading)
+    how Adds -24 to +24 dB of gain after the exciter.
+    sound It matches the loudness to the dry sound so you judge the added tone fairly.
 Delta      "Delta"        0 1     0     switch                             | Hear only what the exciter adds: the output minus the input, delayed to match (glides over 10 ms)
+    how Plays only the difference between the output and the input.
+    sound You hear only the harmonics that the exciter adds.
 
 # What the exciter measures (NeoExciterMachine.Readings, machine_readings), over the last 3 s.
 reading added_db          dB    | Level of the added harmonics against the input (RMS, dB); −100 when nothing is added

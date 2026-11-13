@@ -50,14 +50,14 @@ namespace ReBuzz.Studio.Shell
 
         public void Add(string title, string tip, Action run)
         {
-            var b = new Button
+            var b = new Segment
             {
                 Content = title,
                 FontSize = 12,
                 Padding = new Thickness(12, 3),
                 MinHeight = 24,
                 MinWidth = 72,
-                Focusable = false,
+                Focusable = true,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(4),
                 HorizontalContentAlignment = HorizontalAlignment.Center,
@@ -65,23 +65,53 @@ namespace ReBuzz.Studio.Shell
             AutomationProperties.SetName(b, title);
             ToolTip.SetTip(b, tip);
             b.Click += (s, e) => run();
+            // Tab reaches each segment (Enter picks it); a ring shows where the keyboard is.
+            b.GotFocus += (s, e) => { focusRing = b; Mark(b, selected == title); };
+            b.LostFocus += (s, e) => { if (focusRing == b) focusRing = null; Mark(b, selected == title); };
             Mark(b, false);
             buttons[title] = b;
             strip.Children.Add(b);
         }
 
         /// <summary>Lights the segment of the view shown.</summary>
+        string selected;
+        static Button focusRing;
+
         public void Select(string title)
         {
+            selected = title;
             foreach (var pair in buttons) Mark(pair.Value, pair.Key == title);
         }
 
         static void Mark(Button b, bool on)
         {
             b.Background = on ? StudioTokens.SelectionFillBrush : Brushes.Transparent;
-            b.BorderBrush = on ? StudioTokens.AccentBrush : Brushes.Transparent;
+            bool ring = focusRing == b && b.IsKeyboardFocusWithin;
+            b.BorderBrush = ring ? StudioTokens.TextPrimaryBrush : on ? StudioTokens.AccentBrush : Brushes.Transparent;
+            b.BorderThickness = new Thickness(ring ? 2 : 1);
             b.Foreground = on ? StudioTokens.TextPrimaryBrush : StudioTokens.TextSecondaryBrush;
             b.FontWeight = on ? FontWeight.SemiBold : FontWeight.Normal;
+        }
+    }
+
+    /// <summary>
+    /// A segment of the switcher: Tab-focusable, Enter and a click pick it, and Space is left to the window (it plays and stops everywhere,
+    /// studio-mvp.md §3.11), so a focused segment never takes it.
+    /// </summary>
+    internal sealed class Segment : Button
+    {
+        protected override Type StyleKeyOverride => typeof(Button);
+
+        protected override void OnKeyDown(Avalonia.Input.KeyEventArgs e)
+        {
+            if (e.Key == Avalonia.Input.Key.Space) return;
+            base.OnKeyDown(e);
+        }
+
+        protected override void OnKeyUp(Avalonia.Input.KeyEventArgs e)
+        {
+            if (e.Key == Avalonia.Input.Key.Space) return;
+            base.OnKeyUp(e);
         }
     }
 }

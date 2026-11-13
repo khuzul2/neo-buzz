@@ -29,7 +29,9 @@
     "3 bands",
     "4 bands"
    ],
-   "description": "Three bands (Crossover 1 and 2) or four (all three crossovers)"
+   "description": "Three bands (Crossover 1 and 2) or four (all three crossovers)",
+   "how": "Chooses three or four bands for the dynamics.",
+   "sound": "Four bands give finer control over the top end; three keep things simpler."
   },
   {
    "index": 1,
@@ -43,7 +45,9 @@
    "a": 20.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "Between bands 1 and 2 (Linkwitz–Riley, 24 dB/oct, −6 dB here)"
+   "description": "Between bands 1 and 2 (Linkwitz–Riley, 24 dB/oct, −6 dB here)",
+   "how": "Sets the frequency between bands 1 and 2, from 20 Hz to 20 kHz.",
+   "sound": "It decides how much of the low end belongs to the lowest band."
   },
   {
    "index": 2,
@@ -57,7 +61,9 @@
    "a": 20.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "Between bands 2 and 3 (never below Crossover 1)"
+   "description": "Between bands 2 and 3 (never below Crossover 1)",
+   "how": "Sets the frequency between bands 2 and 3.",
+   "sound": "It moves the boundary between the lower and upper midrange."
   },
   {
    "index": 3,
@@ -71,7 +77,9 @@
    "a": 20.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "Between bands 3 and 4 with four bands (never below Crossover 2)"
+   "description": "Between bands 3 and 4 with four bands (never below Crossover 2)",
+   "how": "Sets the frequency between bands 3 and 4 when four bands are used.",
+   "sound": "It decides where the top band begins."
   },
   {
    "index": 4,
@@ -87,7 +95,9 @@
     "Minimum",
     "Dynamic"
    ],
-   "description": "Linear: the bands sum back to the input exactly, no phase shift, about 96 ms of latency (reported to NeoBuzz Live). Minimum: zero latency, the same band shapes, the crossovers' phase shift (as an analog crossover's). Dynamic: zero latency and no static phase shift: the output is the input plus each band's gain change times the band, so a band at 0 dB change leaves the input exactly as it was (the crossovers' phase shift shows only where a band is changing)"
+   "description": "Linear: the bands sum back to the input exactly, no phase shift, about 96 ms of latency (reported to NeoBuzz Live). Minimum: zero latency, the same band shapes, the crossovers' phase shift (as an analog crossover's). Dynamic: zero latency and no static phase shift: the output is the input plus each band's gain change times the band, so a band at 0 dB change leaves the input exactly as it was (the crossovers' phase shift shows only where a band is changing)",
+   "how": "Chooses Linear (about 96 ms latency, no phase shift), Minimum (no latency, crossover phase shift) or Dynamic (no latency, phase shift only where a band changes).",
+   "sound": "Linear and Dynamic keep the untouched sound exactly as it was, which suits mastering; Minimum suits live use where latency matters."
   },
   {
    "index": 5,
@@ -102,7 +112,9 @@
     "L/R",
     "M/S"
    ],
-   "description": "What each band's detector and gain work on: left and right, or mid and side"
+   "description": "What each band's detector and gain work on: left and right, or mid and side",
+   "how": "Chooses whether the bands work on left and right, or on mid and side.",
+   "sound": "Mid/side lets the centre and the width be compressed separately."
   },
   {
    "index": 6,
@@ -114,7 +126,9 @@
    "default": 1000,
    "kind": "percent",
    "unit": "%",
-   "description": "100 %: both channels (or mid and side) get the same gain, from the louder; 0 %: each its own"
+   "description": "100 %: both channels (or mid and side) get the same gain, from the louder; 0 %: each its own",
+   "how": "Sets how much both channels share the same gain, from 0 % to 100 %.",
+   "sound": "Linked keeps the stereo image steady; unlinked lets each side react on its own."
   },
   {
    "index": 7,
@@ -128,7 +142,9 @@
    "a": -60.0,
    "b": 0.0,
    "unit": "dB",
-   "description": "Band 1: level where the gain starts to change (the band's peak)"
+   "description": "Band 1: level where the gain starts to change (the band's peak)",
+   "how": "Sets the level, from -60 to 0 dB, at which band 1's gain starts to change.",
+   "sound": "Lower values act on more of the band and make it denser and more even."
   },
   {
    "index": 8,
@@ -143,7 +159,9 @@
    "b": 32.0,
    "flag": true,
    "unit": ":1",
-   "description": "Band 1: above 1:1 compresses above the threshold (∞: limits); below 1:1 expands upward (0.5:1 doubles the level over the threshold); 1:1 does nothing"
+   "description": "Band 1: above 1:1 compresses above the threshold (∞: limits); below 1:1 expands upward (0.5:1 doubles the level over the threshold); 1:1 does nothing",
+   "how": "Sets band 1's ratio: above 1:1 it compresses, below 1:1 it expands, and 1:1 does nothing.",
+   "sound": "Higher ratios squeeze the band harder; ratios under 1:1 make loud parts louder."
   },
   {
    "index": 9,
@@ -157,7 +175,9 @@
    "a": 5e-05,
    "b": 0.2,
    "unit": "s",
-   "description": "Band 1: time to 63 % of a gain change"
+   "description": "Band 1: time to 63 % of a gain change",
+   "how": "Sets how fast band 1's gain reacts, from 0.05 ms to 200 ms.",
+   "sound": "Fast attacks tame the start of hits; slow ones let them through for more punch."
   },
   {
    "index": 10,
@@ -171,7 +191,9 @@
    "a": 0.005,
    "b": 3.0,
    "unit": "s",
-   "description": "Band 1: time back to 37 % of a gain change"
+   "description": "Band 1: time back to 37 % of a gain change",
+   "how": "Sets how fast band 1's gain returns, from 5 ms to 3 s.",
+   "sound": "Short releases sound lively and can pump; long ones sound smooth."
   },
   {
    "index": 11,
@@ -185,7 +207,9 @@
    "a": 0.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Band 1: width of the soft knee around the threshold"
+   "description": "Band 1: width of the soft knee around the threshold",
+   "how": "Sets how gradually band 1's dynamics start around the threshold, from 0 to 24 dB.",
+   "sound": "Wider knees are smoother and less noticeable."
   },
   {
    "index": 12,
@@ -199,7 +223,9 @@
    "a": 0.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Band 1: the most the gain changes, either way"
+   "description": "Band 1: the most the gain changes, either way",
+   "how": "Limits how far band 1's gain can change either way, from 0 to 24 dB.",
+   "sound": "A small range keeps the effect gentle; a large one allows strong action."
   },
   {
    "index": 13,
@@ -213,7 +239,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Band 1: gain after the dynamics (negative cuts the band)"
+   "description": "Band 1: gain after the dynamics (negative cuts the band)",
+   "how": "Adds or removes up to 24 dB of gain on band 1 after the dynamics.",
+   "sound": "Positive values lift the band; negative values cut it, changing the tonal balance."
   },
   {
    "index": 14,
@@ -228,7 +256,9 @@
     "Off",
     "On"
    ],
-   "description": "Band 1: hear only the soloed bands (processed, Mix ignored)"
+   "description": "Band 1: hear only the soloed bands (processed, Mix ignored)",
+   "how": "Plays only the soloed bands, processed, ignoring Mix.",
+   "sound": "You hear band 1 by itself, which helps you set its dynamics."
   },
   {
    "index": 15,
@@ -243,7 +273,9 @@
     "Off",
     "On"
    ],
-   "description": "Band 1: pass the band untouched (no dynamics, no makeup)"
+   "description": "Band 1: pass the band untouched (no dynamics, no makeup)",
+   "how": "Passes band 1 untouched, with no dynamics and no makeup.",
+   "sound": "Band 1 sounds as it came in, so you can compare with and without it."
   },
   {
    "index": 16,
@@ -257,7 +289,9 @@
    "a": -60.0,
    "b": 0.0,
    "unit": "dB",
-   "description": "Band 2: level where the gain starts to change (the band's peak)"
+   "description": "Band 2: level where the gain starts to change (the band's peak)",
+   "how": "Sets the level, from -60 to 0 dB, at which band 2's gain starts to change.",
+   "sound": "Lower values act on more of the band and make it denser and more even."
   },
   {
    "index": 17,
@@ -272,7 +306,9 @@
    "b": 32.0,
    "flag": true,
    "unit": ":1",
-   "description": "Band 2: above 1:1 compresses above the threshold (∞: limits); below 1:1 expands upward (0.5:1 doubles the level over the threshold); 1:1 does nothing"
+   "description": "Band 2: above 1:1 compresses above the threshold (∞: limits); below 1:1 expands upward (0.5:1 doubles the level over the threshold); 1:1 does nothing",
+   "how": "Sets band 2's ratio: above 1:1 it compresses, below 1:1 it expands, and 1:1 does nothing.",
+   "sound": "Higher ratios squeeze the band harder; ratios under 1:1 make loud parts louder."
   },
   {
    "index": 18,
@@ -286,7 +322,9 @@
    "a": 5e-05,
    "b": 0.2,
    "unit": "s",
-   "description": "Band 2: time to 63 % of a gain change"
+   "description": "Band 2: time to 63 % of a gain change",
+   "how": "Sets how fast band 2's gain reacts, from 0.05 ms to 200 ms.",
+   "sound": "Fast attacks tame the start of hits; slow ones let them through for more punch."
   },
   {
    "index": 19,
@@ -300,7 +338,9 @@
    "a": 0.005,
    "b": 3.0,
    "unit": "s",
-   "description": "Band 2: time back to 37 % of a gain change"
+   "description": "Band 2: time back to 37 % of a gain change",
+   "how": "Sets how fast band 2's gain returns, from 5 ms to 3 s.",
+   "sound": "Short releases sound lively and can pump; long ones sound smooth."
   },
   {
    "index": 20,
@@ -314,7 +354,9 @@
    "a": 0.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Band 2: width of the soft knee around the threshold"
+   "description": "Band 2: width of the soft knee around the threshold",
+   "how": "Sets how gradually band 2's dynamics start around the threshold, from 0 to 24 dB.",
+   "sound": "Wider knees are smoother and less noticeable."
   },
   {
    "index": 21,
@@ -328,7 +370,9 @@
    "a": 0.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Band 2: the most the gain changes, either way"
+   "description": "Band 2: the most the gain changes, either way",
+   "how": "Limits how far band 2's gain can change either way, from 0 to 24 dB.",
+   "sound": "A small range keeps the effect gentle; a large one allows strong action."
   },
   {
    "index": 22,
@@ -342,7 +386,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Band 2: gain after the dynamics (negative cuts the band)"
+   "description": "Band 2: gain after the dynamics (negative cuts the band)",
+   "how": "Adds or removes up to 24 dB of gain on band 2 after the dynamics.",
+   "sound": "Positive values lift the band; negative values cut it, changing the tonal balance."
   },
   {
    "index": 23,
@@ -357,7 +403,9 @@
     "Off",
     "On"
    ],
-   "description": "Band 2: hear only the soloed bands (processed, Mix ignored)"
+   "description": "Band 2: hear only the soloed bands (processed, Mix ignored)",
+   "how": "Plays only the soloed bands, processed, ignoring Mix.",
+   "sound": "You hear band 2 by itself, which helps you set its dynamics."
   },
   {
    "index": 24,
@@ -372,7 +420,9 @@
     "Off",
     "On"
    ],
-   "description": "Band 2: pass the band untouched (no dynamics, no makeup)"
+   "description": "Band 2: pass the band untouched (no dynamics, no makeup)",
+   "how": "Passes band 2 untouched, with no dynamics and no makeup.",
+   "sound": "Band 2 sounds as it came in, so you can compare with and without it."
   },
   {
    "index": 25,
@@ -386,7 +436,9 @@
    "a": -60.0,
    "b": 0.0,
    "unit": "dB",
-   "description": "Band 3: level where the gain starts to change (the band's peak)"
+   "description": "Band 3: level where the gain starts to change (the band's peak)",
+   "how": "Sets the level, from -60 to 0 dB, at which band 3's gain starts to change.",
+   "sound": "Lower values act on more of the band and make it denser and more even."
   },
   {
    "index": 26,
@@ -401,7 +453,9 @@
    "b": 32.0,
    "flag": true,
    "unit": ":1",
-   "description": "Band 3: above 1:1 compresses above the threshold (∞: limits); below 1:1 expands upward (0.5:1 doubles the level over the threshold); 1:1 does nothing"
+   "description": "Band 3: above 1:1 compresses above the threshold (∞: limits); below 1:1 expands upward (0.5:1 doubles the level over the threshold); 1:1 does nothing",
+   "how": "Sets band 3's ratio: above 1:1 it compresses, below 1:1 it expands, and 1:1 does nothing.",
+   "sound": "Higher ratios squeeze the band harder; ratios under 1:1 make loud parts louder."
   },
   {
    "index": 27,
@@ -415,7 +469,9 @@
    "a": 5e-05,
    "b": 0.2,
    "unit": "s",
-   "description": "Band 3: time to 63 % of a gain change"
+   "description": "Band 3: time to 63 % of a gain change",
+   "how": "Sets how fast band 3's gain reacts, from 0.05 ms to 200 ms.",
+   "sound": "Fast attacks tame the start of hits; slow ones let them through for more punch."
   },
   {
    "index": 28,
@@ -429,7 +485,9 @@
    "a": 0.005,
    "b": 3.0,
    "unit": "s",
-   "description": "Band 3: time back to 37 % of a gain change"
+   "description": "Band 3: time back to 37 % of a gain change",
+   "how": "Sets how fast band 3's gain returns, from 5 ms to 3 s.",
+   "sound": "Short releases sound lively and can pump; long ones sound smooth."
   },
   {
    "index": 29,
@@ -443,7 +501,9 @@
    "a": 0.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Band 3: width of the soft knee around the threshold"
+   "description": "Band 3: width of the soft knee around the threshold",
+   "how": "Sets how gradually band 3's dynamics start around the threshold, from 0 to 24 dB.",
+   "sound": "Wider knees are smoother and less noticeable."
   },
   {
    "index": 30,
@@ -457,7 +517,9 @@
    "a": 0.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Band 3: the most the gain changes, either way"
+   "description": "Band 3: the most the gain changes, either way",
+   "how": "Limits how far band 3's gain can change either way, from 0 to 24 dB.",
+   "sound": "A small range keeps the effect gentle; a large one allows strong action."
   },
   {
    "index": 31,
@@ -471,7 +533,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Band 3: gain after the dynamics (negative cuts the band)"
+   "description": "Band 3: gain after the dynamics (negative cuts the band)",
+   "how": "Adds or removes up to 24 dB of gain on band 3 after the dynamics.",
+   "sound": "Positive values lift the band; negative values cut it, changing the tonal balance."
   },
   {
    "index": 32,
@@ -486,7 +550,9 @@
     "Off",
     "On"
    ],
-   "description": "Band 3: hear only the soloed bands (processed, Mix ignored)"
+   "description": "Band 3: hear only the soloed bands (processed, Mix ignored)",
+   "how": "Plays only the soloed bands, processed, ignoring Mix.",
+   "sound": "You hear band 3 by itself, which helps you set its dynamics."
   },
   {
    "index": 33,
@@ -501,7 +567,9 @@
     "Off",
     "On"
    ],
-   "description": "Band 3: pass the band untouched (no dynamics, no makeup)"
+   "description": "Band 3: pass the band untouched (no dynamics, no makeup)",
+   "how": "Passes band 3 untouched, with no dynamics and no makeup.",
+   "sound": "Band 3 sounds as it came in, so you can compare with and without it."
   },
   {
    "index": 34,
@@ -515,7 +583,9 @@
    "a": -60.0,
    "b": 0.0,
    "unit": "dB",
-   "description": "Band 4: level where the gain starts to change (the band's peak)"
+   "description": "Band 4: level where the gain starts to change (the band's peak)",
+   "how": "Sets the level, from -60 to 0 dB, at which band 4's gain starts to change.",
+   "sound": "Lower values act on more of the band and make it denser and more even."
   },
   {
    "index": 35,
@@ -530,7 +600,9 @@
    "b": 32.0,
    "flag": true,
    "unit": ":1",
-   "description": "Band 4: above 1:1 compresses above the threshold (∞: limits); below 1:1 expands upward (0.5:1 doubles the level over the threshold); 1:1 does nothing"
+   "description": "Band 4: above 1:1 compresses above the threshold (∞: limits); below 1:1 expands upward (0.5:1 doubles the level over the threshold); 1:1 does nothing",
+   "how": "Sets band 4's ratio: above 1:1 it compresses, below 1:1 it expands, and 1:1 does nothing.",
+   "sound": "Higher ratios squeeze the band harder; ratios under 1:1 make loud parts louder."
   },
   {
    "index": 36,
@@ -544,7 +616,9 @@
    "a": 5e-05,
    "b": 0.2,
    "unit": "s",
-   "description": "Band 4: time to 63 % of a gain change"
+   "description": "Band 4: time to 63 % of a gain change",
+   "how": "Sets how fast band 4's gain reacts, from 0.05 ms to 200 ms.",
+   "sound": "Fast attacks tame the start of hits; slow ones let them through for more punch."
   },
   {
    "index": 37,
@@ -558,7 +632,9 @@
    "a": 0.005,
    "b": 3.0,
    "unit": "s",
-   "description": "Band 4: time back to 37 % of a gain change"
+   "description": "Band 4: time back to 37 % of a gain change",
+   "how": "Sets how fast band 4's gain returns, from 5 ms to 3 s.",
+   "sound": "Short releases sound lively and can pump; long ones sound smooth."
   },
   {
    "index": 38,
@@ -572,7 +648,9 @@
    "a": 0.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Band 4: width of the soft knee around the threshold"
+   "description": "Band 4: width of the soft knee around the threshold",
+   "how": "Sets how gradually band 4's dynamics start around the threshold, from 0 to 24 dB.",
+   "sound": "Wider knees are smoother and less noticeable."
   },
   {
    "index": 39,
@@ -586,7 +664,9 @@
    "a": 0.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Band 4: the most the gain changes, either way"
+   "description": "Band 4: the most the gain changes, either way",
+   "how": "Limits how far band 4's gain can change either way, from 0 to 24 dB.",
+   "sound": "A small range keeps the effect gentle; a large one allows strong action."
   },
   {
    "index": 40,
@@ -600,7 +680,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Band 4: gain after the dynamics (negative cuts the band)"
+   "description": "Band 4: gain after the dynamics (negative cuts the band)",
+   "how": "Adds or removes up to 24 dB of gain on band 4 after the dynamics.",
+   "sound": "Positive values lift the band; negative values cut it, changing the tonal balance."
   },
   {
    "index": 41,
@@ -615,7 +697,9 @@
     "Off",
     "On"
    ],
-   "description": "Band 4: hear only the soloed bands (processed, Mix ignored)"
+   "description": "Band 4: hear only the soloed bands (processed, Mix ignored)",
+   "how": "Plays only the soloed bands, processed, ignoring Mix.",
+   "sound": "You hear band 4 by itself, which helps you set its dynamics."
   },
   {
    "index": 42,
@@ -630,7 +714,9 @@
     "Off",
     "On"
    ],
-   "description": "Band 4: pass the band untouched (no dynamics, no makeup)"
+   "description": "Band 4: pass the band untouched (no dynamics, no makeup)",
+   "how": "Passes band 4 untouched, with no dynamics and no makeup.",
+   "sound": "Band 4 sounds as it came in, so you can compare with and without it."
   },
   {
    "index": 43,
@@ -642,7 +728,9 @@
    "default": 1000,
    "kind": "percent",
    "unit": "%",
-   "description": "Dry against the processed bands (the dry is latency-aligned, so parallel compression never combs)"
+   "description": "Dry against the processed bands (the dry is latency-aligned, so parallel compression never combs)",
+   "how": "Blends the dry signal with the processed bands.",
+   "sound": "Lower values add the dynamics as a parallel layer, keeping punch and detail."
   },
   {
    "index": 44,
@@ -656,7 +744,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Output gain, −24 … +24 dB in 0.1 dB steps"
+   "description": "Output gain, −24 … +24 dB in 0.1 dB steps",
+   "how": "Sets the output gain, from -24 to +24 dB.",
+   "sound": "It makes the whole sound louder or quieter without changing the tone."
   },
   {
    "index": 45,
@@ -671,7 +761,9 @@
     "Peak",
     "RMS"
    ],
-   "description": "What every band's detector reads: the peak, or the RMS (3 ms mean square, on the peak scale: a sine reads the same as with Peak)"
+   "description": "What every band's detector reads: the peak, or the RMS (3 ms mean square, on the peak scale: a sine reads the same as with Peak)",
+   "how": "Chooses whether every band's detector reads the peak or the RMS level.",
+   "sound": "Peak reacts quickly to hits; RMS is smoother and follows loudness more closely."
   },
   {
    "index": 46,
@@ -685,7 +777,9 @@
    "a": 0.0,
    "b": 10.0,
    "unit": "ms",
-   "description": "Delays the bands (and the dry) so each detector sees what is coming; adds this much latency to the phase's own, reported to NeoBuzz Live. A change fades the sound out and in over 10 ms each"
+   "description": "Delays the bands (and the dry) so each detector sees what is coming; adds this much latency to the phase's own, reported to NeoBuzz Live. A change fades the sound out and in over 10 ms each",
+   "how": "Delays the bands by up to 10 ms so each detector sees what is coming.",
+   "sound": "Fast peaks are caught cleanly, at the cost of extra latency."
   },
   {
    "index": 47,
@@ -699,7 +793,9 @@
    "a": 1.0,
    "b": 8.0,
    "unit": ":1",
-   "description": "Band 1: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)"
+   "description": "Band 1: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)",
+   "how": "Raises band 1 when it falls below its threshold, up to 8:1 (1:1 is off).",
+   "sound": "Quiet detail and tails in the band come up, giving a fuller, more even sound."
   },
   {
    "index": 48,
@@ -714,7 +810,9 @@
     "Internal",
     "External"
    ],
-   "description": "Band 1: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)"
+   "description": "Band 1: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)",
+   "how": "Chooses whether band 1's detector hears its own signal or the machine on the second input.",
+   "sound": "External lets another sound, such as a kick, duck or lift this band."
   },
   {
    "index": 49,
@@ -728,7 +826,9 @@
    "a": 1.0,
    "b": 8.0,
    "unit": ":1",
-   "description": "Band 2: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)"
+   "description": "Band 2: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)",
+   "how": "Raises band 2 when it falls below its threshold, up to 8:1 (1:1 is off).",
+   "sound": "Quiet detail and tails in the band come up, giving a fuller, more even sound."
   },
   {
    "index": 50,
@@ -743,7 +843,9 @@
     "Internal",
     "External"
    ],
-   "description": "Band 2: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)"
+   "description": "Band 2: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)",
+   "how": "Chooses whether band 2's detector hears its own signal or the machine on the second input.",
+   "sound": "External lets another sound, such as a kick, duck or lift this band."
   },
   {
    "index": 51,
@@ -757,7 +859,9 @@
    "a": 1.0,
    "b": 8.0,
    "unit": ":1",
-   "description": "Band 3: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)"
+   "description": "Band 3: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)",
+   "how": "Raises band 3 when it falls below its threshold, up to 8:1 (1:1 is off).",
+   "sound": "Quiet detail and tails in the band come up, giving a fuller, more even sound."
   },
   {
    "index": 52,
@@ -772,7 +876,9 @@
     "Internal",
     "External"
    ],
-   "description": "Band 3: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)"
+   "description": "Band 3: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)",
+   "how": "Chooses whether band 3's detector hears its own signal or the machine on the second input.",
+   "sound": "External lets another sound, such as a kick, duck or lift this band."
   },
   {
    "index": 53,
@@ -786,7 +892,9 @@
    "a": 1.0,
    "b": 8.0,
    "unit": ":1",
-   "description": "Band 4: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)"
+   "description": "Band 4: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)",
+   "how": "Raises band 4 when it falls below its threshold, up to 8:1 (1:1 is off).",
+   "sound": "Quiet detail and tails in the band come up, giving a fuller, more even sound."
   },
   {
    "index": 54,
@@ -801,7 +909,9 @@
     "Internal",
     "External"
    ],
-   "description": "Band 4: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)"
+   "description": "Band 4: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)",
+   "how": "Chooses whether band 4's detector hears its own signal or the machine on the second input.",
+   "sound": "External lets another sound, such as a kick, duck or lift this band."
   }
  ],
  "readings": [

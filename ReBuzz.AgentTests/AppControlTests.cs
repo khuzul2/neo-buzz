@@ -137,7 +137,7 @@ namespace ReBuzz.AgentTests
             public string Folder = Path.Combine(Path.GetTempPath(), "app-control-" + Guid.NewGuid().ToString("N"));
             public Dictionary<string, string> Values = new() { ["general.PatternLength"] = "16", ["general.AutomaticBackups"] = "True", ["general.SequenceView"] = "ModernVertical",
                 ["advanced.Multithreading"] = "True", ["advanced.AudioBufferFillThread"] = "False", ["agent.AllowAgents"] = "True", ["agent.Port"] = "7481",
-                ["safety.SafetyLimiter"] = "True", ["audio.BufferSize"] = "256" };
+                ["safety.SafetyLimiter"] = "True", ["audio.BufferSize"] = "256", ["sync.Link"] = "False", ["sync.MidiClockOut"] = "" };
             public List<(string What, bool Changes)> Calls = new();
             public FakeMidi MidiFake = new();
             public FakeAudio? AudioFake = new();
@@ -176,6 +176,8 @@ namespace ReBuzz.AgentTests
                 E("agent.Port", SettingKind.Int, "7481", "The agent port.", min: 1, max: 65535, ends: true),
                 E("safety.SafetyLimiter", SettingKind.Bool, "True", "The safety limiter.", cls: SettingClass.Safety),
                 E("audio.BufferSize", SettingKind.Int, "256", "Frames per buffer.", use: "Use audio_set."),
+                E("sync.Link", SettingKind.Bool, "False", "Ableton Link.", set: v => { if (v == "True") throw new InvalidOperationException("The Link helper is missing."); }),
+                E("sync.MidiClockOut", SettingKind.Text, "", "Outputs that get the MIDI clock, names separated by |."),
             };
 
             public string SettingsHistoryFile => Path.Combine(Folder, "settings-history.jsonl");
@@ -264,7 +266,7 @@ namespace ReBuzz.AgentTests
         {
             var (s, _) = Make();
             var all = Call(s, "settings_get");
-            Assert.That(all.Data["total"]!.GetValue<int>(), Is.EqualTo(9));
+            Assert.That(all.Data["total"]!.GetValue<int>(), Is.EqualTo(11));
             var one = Call(s, "settings_get", Args(("key", "general.PatternLength")));
             var row = one.Data["settings"]![0]!;
             Assert.That(row["value"]!.GetValue<string>(), Is.EqualTo("16"));
@@ -278,6 +280,29 @@ namespace ReBuzz.AgentTests
             var err = Call(s, "settings_get", Args(("key", "general.PatternLenght")));
             Assert.That(err.Error, Is.True);
             Assert.That(err.Text, Does.Contain("Did you mean \"general.PatternLength\""));
+        }
+
+        [Test]
+        public void SyncIsASectionLikeTheOthers()
+        {
+            var (s, app) = Make();
+            Assert.That(Call(s, "settings_get", Args(("section", "sync"))).Data["settings"]!.AsArray().Select(x => x!["key"]!.GetValue<string>()), Is.EqualTo(new[] { "sync.Link", "sync.MidiClockOut" }));
+            var set = Call(s, "settings_set", Args(("key", "sync.MidiClockOut"), ("value", "Port A|Port B")));
+            Assert.That(set.Data["changed"]!.GetValue<bool>(), Is.True);
+            Assert.That(app.Values["sync.MidiClockOut"], Is.EqualTo("Port A|Port B"));
+            var entry = Call(s, "settings_history", Args(("key", "sync.MidiClockOut"))).Data["entries"]![0]!;
+            Assert.That((entry["source"]!.GetValue<string>(), entry["from"]!.GetValue<string>()), Is.EqualTo(("Agent", "")));
+
+            // A Link that doesn't start is the tool's error with the reason, and nothing is logged.
+            var refused = Call(s, "settings_set", Args(("key", "sync.Link"), ("value", true)));
+            Assert.That(refused.Error, Is.True);
+            Assert.That(refused.Text, Does.Contain("The Link helper is missing."));
+            Assert.That(Call(s, "settings_history", Args(("key", "sync.Link"))).Data["count"]!.GetValue<int>(), Is.EqualTo(0));
+
+            // The section resets as any other.
+            var reset = Call(s, "settings_reset", Args(("section", "sync")));
+            Assert.That(reset.Data["reset"]!.AsArray().Select(x => x!["key"]!.GetValue<string>()), Is.EqualTo(new[] { "sync.MidiClockOut" }));
+            Assert.That(app.Values["sync.MidiClockOut"], Is.EqualTo(""));
         }
 
         [Test]
@@ -326,6 +351,53 @@ namespace ReBuzz.AgentTests
             Assert.That(h.Data["entries"]![1]!["class"]!.GetValue<string>(), Is.EqualTo("engine"));
             Assert.That(Call(s, "settings_history", Args(("key", "general.PatternLength"))).Data["count"]!.GetValue<int>(), Is.EqualTo(2));
             Assert.That(Call(s, "settings_history", Args(("limit", 1))).Data["count"]!.GetValue<int>(), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void AToolCallIsLoggedAsAgentAndAWindowChangeAsManualAndBothAreAnnounced()
+        {
+            // P3f: Preferences changes settings through SettingsService, on the same entries and keys as the tools.
+            var (s, app) = Make();
+            var seen = new List<SettingChange>();
+            void On(SettingChange c) => seen.Add(c);
+            SettingsService.Changed += On;
+            try
+            {
+                Call(s, "settings_set", Args(("key", "general.PatternLength"), ("value", 32)));
+                var entry = app.Settings().Single(e => e.Key == "general.PatternLength");
+                Assert.That(SettingsService.Apply(app, entry, SettingsService.Normalize(entry, "48")), Is.EqualTo("48"));
+                Assert.That(SettingsService.Apply(app, entry, "48"), Is.EqualTo("48"), "no change, nothing logged");
+                var restart = app.Settings().Single(e => e.Key == "advanced.AudioBufferFillThread");
+                SettingsService.Apply(app, restart, "True");
+
+                var h = Call(s, "settings_history").Data["entries"]!.AsArray();
+                Assert.That(h.Count, Is.EqualTo(3));
+                Assert.That(h[0]!["source"]!.GetValue<string>(), Is.EqualTo("Manual"));
+                Assert.That(h[0]!["key"]!.GetValue<string>(), Is.EqualTo("advanced.AudioBufferFillThread"));
+                Assert.That(h[1]!["source"]!.GetValue<string>(), Is.EqualTo("Manual"));
+                Assert.That(h[1]!["from"]!.GetValue<string>(), Is.EqualTo("32"));
+                Assert.That(h[2]!["source"]!.GetValue<string>(), Is.EqualTo("Agent"));
+                Assert.That(seen.Select(c => (c.Key, c.Source, c.RestartRequired)), Is.EqualTo(new[]
+                {
+                    ("general.PatternLength", "Agent", false), ("general.PatternLength", "Manual", false), ("advanced.AudioBufferFillThread", "Manual", true),
+                }));
+
+                // The window's checks are the tools': a value out of range is refused with what the setting takes.
+                var ex = Assert.Throws<ToolError>(() => SettingsService.Normalize(entry, "9999"))!;
+                Assert.That(ex.Message, Does.Contain("1 to 512"));
+                Assert.Throws<ToolError>(() => SettingsService.Normalize(entry, "many"));
+
+                // Restore Defaults is settings_reset: a section, logged as Manual, leaving the agent connection's keys.
+                var reset = SettingsService.Reset(app, null, "general");
+                Assert.That(reset, Is.EqualTo(new[] { "general.PatternLength" }));
+                Assert.That(app.Values["general.PatternLength"], Is.EqualTo("16"));
+                Assert.That(SettingsService.Reset(app, null, "agent"), Is.Empty, "the switch and the port are left alone");
+                Assert.That(Call(s, "settings_history", Args(("limit", 1))).Data["entries"]![0]!["source"]!.GetValue<string>(), Is.EqualTo("Manual"));
+            }
+            finally
+            {
+                SettingsService.Changed -= On;
+            }
         }
 
         [Test]

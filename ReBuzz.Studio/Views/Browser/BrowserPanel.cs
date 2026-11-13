@@ -250,7 +250,7 @@ namespace ReBuzz.Studio.Views.Browser
             if (machine != null)
             {
                 rows.Add(new MachineBrowserModel.Row("#Patterns of " + machine.Name, "Patterns of " + machine.Name, null, true));
-                if (patterns.Count == 0 && query.Length == 0) rows.Add(new MachineBrowserModel.Row("none:", "No patterns yet", null, true));
+                if (patterns.Count == 0 && query.Length == 0) rows.Add(new MachineBrowserModel.Row("none:", "No patterns yet: make one in the Tracker", null, true));
                 foreach (var p in patterns)
                 {
                     rows.Add(new MachineBrowserModel.Row("pattern:" + p.Name, $"{p.Name}   {p.Length}", null, false));
@@ -259,7 +259,7 @@ namespace ReBuzz.Studio.Views.Browser
             }
             rows.AddRange(model.Rows(query, filter.Category, filter.FavouritesOnly));
             if (rows.Count == 0 || rows.All(r => r.Tag.StartsWith("none:")))
-                rows.Add(new MachineBrowserModel.Row("none:", query.Length > 0 || filter.Category != null || filter.FavouritesOnly ? "Nothing matches" + (query.Length > 0 ? " “" + query + "”" : "") : "No machines installed", null, true));
+                rows.Add(new MachineBrowserModel.Row("none:", query.Length > 0 || filter.Category != null || filter.FavouritesOnly ? "Nothing matches" + (query.Length > 0 ? " “" + query + "”" : "") + ": clear the search" + (filter.Category != null ? ", or pick All" : "") : "No machines installed", null, true));
 
             string tags = string.Join("\n", rows.Select(r => r.Tag));
             string shownPattern = pattern?.Name ?? "";

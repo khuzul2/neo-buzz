@@ -10,196 +10,540 @@ import dx7_bank .syx | A DX7 SysEx file: a 32-voice bank or one voice. item pick
 
 group Algorithm
 Algorithm   "Algorithm"     0 31   0    int 1                           | Which operators modulate which (the 32 DX7 algorithms)
+    how Chooses which of the 32 wiring layouts decides how the six operators modulate each other and which reach the output.
+    sound Different algorithms give different families of sounds, from stacked bell and organ layers to deep modulation chains for brass and basses.
 Feedback    "Feedback"      0 7    0    int 0                           | Self-modulation of the feedback operator (7: near saw)
+    how Sets how strongly the feedback operator modulates itself, from 0 to 7.
+    sound Low values add a little brightness and edge, and high values turn the tone towards a buzzy saw and then noise.
 OscSync     "Osc key sync"  0 1    1    switch                          | Operators restart their phase with each note
+    how Makes the operators restart their phase with each new note.
+    sound On gives the same attack every time, and off lets the phase float for a looser, more varied start.
 Transpose   "Transpose"     0 48   24   int -24 st signed               | Transposes the whole voice
+    how Transposes the whole voice by up to 24 semitones either way.
+    sound Use it to move a patch to the register where it sounds best.
 
 group Pitch envelope
 PegR1       "PEG rate 1"    0 99   99   int 0                           | Pitch envelope rate 1 (99: fastest)
+    how Sets how fast the pitch envelope moves through stage 1, from 0 to 99.
+    sound Fast rates make the pitch change instantly and slow rates make it glide.
 PegR2       "PEG rate 2"    0 99   99   int 0                           | Pitch envelope rate 2 (99: fastest)
+    how Sets how fast the pitch envelope moves through stage 2, from 0 to 99.
+    sound Fast rates make the pitch change instantly and slow rates make it glide.
 PegR3       "PEG rate 3"    0 99   99   int 0                           | Pitch envelope rate 3 (99: fastest)
+    how Sets how fast the pitch envelope moves through stage 3, from 0 to 99.
+    sound Fast rates make the pitch change instantly and slow rates make it glide.
 PegR4       "PEG rate 4"    0 99   99   int 0                           | Pitch envelope rate 4 (99: fastest)
+    how Sets how fast the pitch envelope moves through stage 4, from 0 to 99.
+    sound Fast rates make the pitch change instantly and slow rates make it glide.
 PegL1       "PEG level 1"   0 99   50   int 0                           | Pitch envelope level 1 (50: no shift; 0/99: about −4/+4 octaves)
+    how Sets the pitch the envelope reaches at stage 1, where 50 is no shift and the ends are about four octaves down or up.
+    sound Moving the levels away from 50 adds pitch swoops, such as a short rise at the start of a note.
 PegL2       "PEG level 2"   0 99   50   int 0                           | Pitch envelope level 2 (50: no shift; 0/99: about −4/+4 octaves)
+    how Sets the pitch the envelope reaches at stage 2, where 50 is no shift and the ends are about four octaves down or up.
+    sound Moving the levels away from 50 adds pitch swoops, such as a short rise at the start of a note.
 PegL3       "PEG level 3"   0 99   50   int 0                           | Pitch envelope level 3 (50: no shift; 0/99: about −4/+4 octaves)
+    how Sets the pitch the envelope reaches at stage 3, where 50 is no shift and the ends are about four octaves down or up.
+    sound Moving the levels away from 50 adds pitch swoops, such as a short rise at the start of a note.
 PegL4       "PEG level 4"   0 99   50   int 0                           | Pitch envelope level 4 (50: no shift; 0/99: about −4/+4 octaves)
+    how Sets the pitch the envelope reaches at stage 4, where 50 is no shift and the ends are about four octaves down or up.
+    sound Moving the levels away from 50 adds pitch swoops, such as a short rise at the start of a note.
 
 group LFO
 LfoWave     "LFO wave"      0 5    0    enum Triangle Saw_down Saw_up Square Sine S&H | LFO waveform
+    how Chooses the LFO waveform: triangle, falling or rising saw, square, sine or random steps.
+    sound Smooth shapes make vibrato, square makes trills, and random steps make stepped, unpredictable movement.
 LfoSpeed    "LFO speed"     0 99   35   int 0                           | LFO rate (0: 0.06 Hz, 35: about 6 Hz, 99: about 24 Hz)
+    how Sets the LFO speed from 0 to 99, about 0.06 Hz to 24 Hz.
+    sound Low values are slow drifts and high values a fast flutter.
 LfoDelay    "LFO delay"     0 99   0    int 0                           | Time before the LFO fades in after a note
+    how Sets how long after a note the LFO takes to fade in, from 0 to 99.
+    sound A delay lets the note start steady and add vibrato later, as a singer would.
 LfoPmd      "LFO pitch"     0 99   0    int 0                           | Pitch modulation depth (scaled by Pitch sens)
+    how Sets how deeply the LFO modulates pitch, from 0 to 99.
+    sound More depth gives a stronger vibrato.
 LfoAmd      "LFO amp"       0 99   0    int 0                           | Amplitude modulation depth (scaled by each operator's Amp sens)
+    how Sets how deeply the LFO modulates amplitude, from 0 to 99.
+    sound More depth gives a stronger tremolo on the operators that respond to it.
 LfoSync     "LFO key sync"  0 1    1    switch                          | The LFO restarts with each note
+    how Makes the LFO restart with each note.
+    sound On gives every note the same vibrato start, and off lets the LFO run freely.
 PitchSens   "Pitch sens"    0 7    3    int 0                           | How far LFO, mod wheel and aftertouch move the pitch
+    how Sets how far the LFO, mod wheel and aftertouch can move the pitch, from 0 to 7.
+    sound Low values keep vibrato subtle and high values make it wide.
 
 group Voice
 VoiceMode   "Voice mode"    0 2    0    enum Poly Mono Legato           | Poly; Mono retriggers; Legato glides without retriggering
+    how Chooses how notes share voices: Poly plays chords, Mono retriggers on each note, Legato glides between overlapping notes.
+    sound Poly suits keys and pads, Mono gives a punchy lead or bass, and Legato gives smooth, connected lines.
 Polyphony   "Polyphony"     1 16   8    int 0                           | Notes that sound at once
+    how Sets how many notes can sound at once, from 1 to 16.
+    sound More voices let chords and long releases overlap, and fewer save processing power.
 Unison      "Unison"        1 4    1    int 0                           | Voices per note
+    how Sets the number of stacked voices per note, from 1 to 4.
+    sound More voices make the note thicker and wider, and one voice is a single clean tone.
 UniDetune   "Uni detune"    0 1000 150  pct                             | Detune between unison voices (up to ±25 cents)
+    how Sets how far apart the unison voices are tuned, up to 25 cents.
+    sound Small amounts give a warm thickness and large ones a wide chorus-like swarm.
 UniSpread   "Uni spread"    0 1000 600  pct                             | Stereo spread of unison voices
+    how Sets how widely the unison voices are spread across the stereo field, from 0 to 100 %.
+    sound More spread makes the note wider, and zero keeps it centred.
 GlideMode   "Glide mode"    0 2    0    enum Off Always Legato          | When notes glide
+    how Chooses when notes slide into each other: never, always, or only on overlapping notes.
+    sound Gliding adds a singing slur between notes.
 Glide       "Glide"         0 1000 200  pow 0 2 3 s 3                   | Glide time
+    how Sets how long the slide takes, up to 2 seconds.
+    sound Short glides are subtle and long ones sweep slowly between pitches.
 BendRange   "Bend range"    0 12   2    int 0 st                        | Pitch bend range
+    how Sets how far the pitch bend wheel moves the pitch, from 0 to 12 semitones.
+    sound A small range gives expressive nudges and a large one gives big sweeps.
 
 group Controllers
 WheelPitch  "Wheel pitch"   0 99   50   int 0                           | Mod wheel → pitch modulation (vibrato from the LFO)
+    how Sets how much the mod wheel adds LFO vibrato, from 0 to 99.
+    sound Pushing the wheel up brings in vibrato, which makes held notes feel more expressive.
 WheelAmp    "Wheel amp"     0 99   0    int 0                           | Mod wheel → amplitude modulation
+    how Sets how much the mod wheel adds LFO tremolo, from 0 to 99.
+    sound Pushing the wheel up brings in a pulsing volume change.
 AtPitch     "AT pitch"      0 99   0    int 0                           | Aftertouch → pitch modulation
+    how Sets how much key pressure after the note starts adds LFO vibrato, from 0 to 99.
+    sound Pressing harder on a held key adds vibrato.
 AtAmp       "AT amp"        0 99   0    int 0                           | Aftertouch → amplitude modulation
+    how Sets how much key pressure after the note starts adds LFO tremolo, from 0 to 99.
+    sound Pressing harder on a held key adds a pulsing volume change.
 
 group Output
 Tone        "Tone"          0 1000 1000 freq 1000 20000                 | Gentle low-pass on the output (20 kHz: open)
+    how Applies a gentle low-pass filter to the output, from 1 to 20 kHz.
+    sound Lowering it takes the edge off the top, and fully open it leaves the sound unfiltered.
 EngineMode  "Engine"        0 1    0    enum Clean_2× Raw_1×             | Clean: 2× oversampled; Raw: the original's aliasing grit
+    how Chooses Clean (oversampled twice) or Raw (no oversampling).
+    sound Clean is smooth and quiet at the top, and Raw keeps the gritty aliasing of the classic hardware sound.
 Volume      "Volume"        0 1000 739  db -40 6 inf                    | Output level
+    how Sets the output level of the synth, from -40 to +6 dB, or off.
+    sound Use it to place the instrument in the mix without changing its tone.
 
 group Operator 1
 O1On      "Op1 on"       0 1    1    switch                          | Operator 1 sounds (off: silent, as on the DX7)
+    how Turns operator 1 on or off.
+    sound Muting one operator shows what it adds to the sound.
 O1Level   "Op1 level"    0 99   99   int 0                           | Output level (carriers: loudness; modulators: brightness)
+    how Sets the output level of operator 1, from 0 to 99.
+    sound For a carrier this is loudness, and for a modulator it is brightness: more level makes a harsher, richer tone.
 O1Mode    "Op1 mode"     0 1    0    enum Ratio Fixed                | Ratio: follows the note; Fixed: a fixed frequency
+    how Chooses whether operator 1 follows the note pitch or runs at a fixed frequency.
+    sound Ratio mode plays in tune across the keyboard, and Fixed mode gives a constant tone for noise-like or percussive effects.
 O1Coarse  "Op1 coarse"   0 31   1    int 0                           | Ratio 0.5, 1 … 31 (Fixed: 1, 10, 100, 1000 Hz)
+    how Sets the frequency ratio of operator 1 in whole steps, from 0.5 to 31.
+    sound Whole-number ratios give harmonic tones and others give bells and metallic sounds.
 O1Fine    "Op1 fine"     0 99   0    int 0                           | Ratio +0 … +99% (Fixed: ×1 … ×9.77)
+    how Adds a fine amount to the frequency ratio of operator 1, from 0 to 99 %.
+    sound Small offsets detune the operator for a slow beating, and larger ones give inharmonic colour.
 O1Detune  "Op1 detune"   0 14   7    int -7 signed                   | Detune, −7 … +7 (about 1 cent a step at A4)
+    how Detunes operator 1 by about 7 cents either way.
+    sound A little detune adds a gentle movement against the other operators.
 O1Wave    "Op1 wave"     0 3    0    enum Sine Half_sine Abs_sine Pulse_sine | Operator waveform (Sine: DX7)
+    how Chooses the waveform of operator 1: sine, half sine, absolute sine or pulse sine.
+    sound Sine is the classic tone, and the other shapes add more harmonics and a harsher edge.
 O1R1      "Op1 rate 1"   0 99   99   int 0                           | Envelope rate 1 (99: fastest)
+    how Sets how fast the envelope of operator 1 moves through stage 1, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O1R2      "Op1 rate 2"   0 99   99   int 0                           | Envelope rate 2 (99: fastest)
+    how Sets how fast the envelope of operator 1 moves through stage 2, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O1R3      "Op1 rate 3"   0 99   99   int 0                           | Envelope rate 3 (99: fastest)
+    how Sets how fast the envelope of operator 1 moves through stage 3, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O1R4      "Op1 rate 4"   0 99   99   int 0                           | Envelope rate 4 (99: fastest)
+    how Sets how fast the envelope of operator 1 moves through stage 4, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O1L1      "Op1 level 1"  0 99   99   int 0                           | Envelope level 1
+    how Sets the level of the envelope of operator 1 at stage 1, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O1L2      "Op1 level 2"  0 99   99   int 0                           | Envelope level 2
+    how Sets the level of the envelope of operator 1 at stage 2, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O1L3      "Op1 level 3"  0 99   99   int 0                           | Envelope level 3
+    how Sets the level of the envelope of operator 1 at stage 3, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O1L4      "Op1 level 4"  0 99   0    int 0                           | Envelope level 4
+    how Sets the level of the envelope of operator 1 at stage 4, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O1Break   "Op1 break"    0 99   39   int 0                           | Keyboard scaling break point (39: C4)
+    how Sets the key at which level scaling for operator 1 changes sides, from 0 to 99, where 39 is middle C.
+    sound Notes either side of the break point are scaled by the depth settings.
 O1LDepth  "Op1 L depth"  0 99   0    int 0                           | Level scaling below the break point
+    how Sets how much the level of operator 1 changes for keys below the break point, from 0 to 99.
+    sound It lets low notes sound brighter or softer than the middle of the keyboard.
 O1RDepth  "Op1 R depth"  0 99   0    int 0                           | Level scaling above the break point
+    how Sets how much the level of operator 1 changes for keys above the break point, from 0 to 99.
+    sound It lets high notes sound brighter or softer than the middle of the keyboard.
 O1LCurve  "Op1 L curve"  0 3    0    enum -Lin -Exp +Exp +Lin        | Scaling curve below the break point
+    how Chooses the shape of the level scaling below the break point: linear or exponential, falling or rising.
+    sound Exponential curves change faster near the extremes, linear curves change evenly.
 O1RCurve  "Op1 R curve"  0 3    0    enum -Lin -Exp +Exp +Lin        | Scaling curve above the break point
+    how Chooses the shape of the level scaling above the break point: linear or exponential, falling or rising.
+    sound Exponential curves change faster near the extremes, linear curves change evenly.
 O1RateSc  "Op1 rate sc"  0 7    0    int 0                           | Envelopes run faster for higher notes
+    how Makes the envelope of operator 1 run faster for higher notes, from 0 to 7.
+    sound Higher notes decay sooner, as they do on a plucked or struck instrument.
 O1AmpSens "Op1 amp sens" 0 3    0    int 0                           | How much LFO / wheel / aftertouch amplitude modulation applies
+    how Sets how much LFO, wheel and aftertouch amplitude modulation reaches operator 1, from 0 to 3.
+    sound Higher values let tremolo shape this operator, and zero leaves it steady.
 O1VelSens "Op1 vel sens" 0 7    0    int 0                           | How much velocity changes the level
+    how Sets how much note velocity changes the level of operator 1, from 0 to 7.
+    sound Higher values make hard playing brighter or louder, depending on whether it is a modulator or a carrier.
 
 group Operator 2
 O2On      "Op2 on"       0 1    1    switch                          | Operator 2 sounds (off: silent, as on the DX7)
+    how Turns operator 2 on or off.
+    sound Muting one operator shows what it adds to the sound.
 O2Level   "Op2 level"    0 99   0    int 0                           | Output level (carriers: loudness; modulators: brightness)
+    how Sets the output level of operator 2, from 0 to 99.
+    sound For a carrier this is loudness, and for a modulator it is brightness: more level makes a harsher, richer tone.
 O2Mode    "Op2 mode"     0 1    0    enum Ratio Fixed                | Ratio: follows the note; Fixed: a fixed frequency
+    how Chooses whether operator 2 follows the note pitch or runs at a fixed frequency.
+    sound Ratio mode plays in tune across the keyboard, and Fixed mode gives a constant tone for noise-like or percussive effects.
 O2Coarse  "Op2 coarse"   0 31   1    int 0                           | Ratio 0.5, 1 … 31 (Fixed: 1, 10, 100, 1000 Hz)
+    how Sets the frequency ratio of operator 2 in whole steps, from 0.5 to 31.
+    sound Whole-number ratios give harmonic tones and others give bells and metallic sounds.
 O2Fine    "Op2 fine"     0 99   0    int 0                           | Ratio +0 … +99% (Fixed: ×1 … ×9.77)
+    how Adds a fine amount to the frequency ratio of operator 2, from 0 to 99 %.
+    sound Small offsets detune the operator for a slow beating, and larger ones give inharmonic colour.
 O2Detune  "Op2 detune"   0 14   7    int -7 signed                   | Detune, −7 … +7 (about 1 cent a step at A4)
+    how Detunes operator 2 by about 7 cents either way.
+    sound A little detune adds a gentle movement against the other operators.
 O2Wave    "Op2 wave"     0 3    0    enum Sine Half_sine Abs_sine Pulse_sine | Operator waveform (Sine: DX7)
+    how Chooses the waveform of operator 2: sine, half sine, absolute sine or pulse sine.
+    sound Sine is the classic tone, and the other shapes add more harmonics and a harsher edge.
 O2R1      "Op2 rate 1"   0 99   99   int 0                           | Envelope rate 1 (99: fastest)
+    how Sets how fast the envelope of operator 2 moves through stage 1, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O2R2      "Op2 rate 2"   0 99   99   int 0                           | Envelope rate 2 (99: fastest)
+    how Sets how fast the envelope of operator 2 moves through stage 2, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O2R3      "Op2 rate 3"   0 99   99   int 0                           | Envelope rate 3 (99: fastest)
+    how Sets how fast the envelope of operator 2 moves through stage 3, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O2R4      "Op2 rate 4"   0 99   99   int 0                           | Envelope rate 4 (99: fastest)
+    how Sets how fast the envelope of operator 2 moves through stage 4, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O2L1      "Op2 level 1"  0 99   99   int 0                           | Envelope level 1
+    how Sets the level of the envelope of operator 2 at stage 1, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O2L2      "Op2 level 2"  0 99   99   int 0                           | Envelope level 2
+    how Sets the level of the envelope of operator 2 at stage 2, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O2L3      "Op2 level 3"  0 99   99   int 0                           | Envelope level 3
+    how Sets the level of the envelope of operator 2 at stage 3, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O2L4      "Op2 level 4"  0 99   0    int 0                           | Envelope level 4
+    how Sets the level of the envelope of operator 2 at stage 4, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O2Break   "Op2 break"    0 99   39   int 0                           | Keyboard scaling break point (39: C4)
+    how Sets the key at which level scaling for operator 2 changes sides, from 0 to 99, where 39 is middle C.
+    sound Notes either side of the break point are scaled by the depth settings.
 O2LDepth  "Op2 L depth"  0 99   0    int 0                           | Level scaling below the break point
+    how Sets how much the level of operator 2 changes for keys below the break point, from 0 to 99.
+    sound It lets low notes sound brighter or softer than the middle of the keyboard.
 O2RDepth  "Op2 R depth"  0 99   0    int 0                           | Level scaling above the break point
+    how Sets how much the level of operator 2 changes for keys above the break point, from 0 to 99.
+    sound It lets high notes sound brighter or softer than the middle of the keyboard.
 O2LCurve  "Op2 L curve"  0 3    0    enum -Lin -Exp +Exp +Lin        | Scaling curve below the break point
+    how Chooses the shape of the level scaling below the break point: linear or exponential, falling or rising.
+    sound Exponential curves change faster near the extremes, linear curves change evenly.
 O2RCurve  "Op2 R curve"  0 3    0    enum -Lin -Exp +Exp +Lin        | Scaling curve above the break point
+    how Chooses the shape of the level scaling above the break point: linear or exponential, falling or rising.
+    sound Exponential curves change faster near the extremes, linear curves change evenly.
 O2RateSc  "Op2 rate sc"  0 7    0    int 0                           | Envelopes run faster for higher notes
+    how Makes the envelope of operator 2 run faster for higher notes, from 0 to 7.
+    sound Higher notes decay sooner, as they do on a plucked or struck instrument.
 O2AmpSens "Op2 amp sens" 0 3    0    int 0                           | How much LFO / wheel / aftertouch amplitude modulation applies
+    how Sets how much LFO, wheel and aftertouch amplitude modulation reaches operator 2, from 0 to 3.
+    sound Higher values let tremolo shape this operator, and zero leaves it steady.
 O2VelSens "Op2 vel sens" 0 7    0    int 0                           | How much velocity changes the level
+    how Sets how much note velocity changes the level of operator 2, from 0 to 7.
+    sound Higher values make hard playing brighter or louder, depending on whether it is a modulator or a carrier.
 
 group Operator 3
 O3On      "Op3 on"       0 1    1    switch                          | Operator 3 sounds (off: silent, as on the DX7)
+    how Turns operator 3 on or off.
+    sound Muting one operator shows what it adds to the sound.
 O3Level   "Op3 level"    0 99   0    int 0                           | Output level (carriers: loudness; modulators: brightness)
+    how Sets the output level of operator 3, from 0 to 99.
+    sound For a carrier this is loudness, and for a modulator it is brightness: more level makes a harsher, richer tone.
 O3Mode    "Op3 mode"     0 1    0    enum Ratio Fixed                | Ratio: follows the note; Fixed: a fixed frequency
+    how Chooses whether operator 3 follows the note pitch or runs at a fixed frequency.
+    sound Ratio mode plays in tune across the keyboard, and Fixed mode gives a constant tone for noise-like or percussive effects.
 O3Coarse  "Op3 coarse"   0 31   1    int 0                           | Ratio 0.5, 1 … 31 (Fixed: 1, 10, 100, 1000 Hz)
+    how Sets the frequency ratio of operator 3 in whole steps, from 0.5 to 31.
+    sound Whole-number ratios give harmonic tones and others give bells and metallic sounds.
 O3Fine    "Op3 fine"     0 99   0    int 0                           | Ratio +0 … +99% (Fixed: ×1 … ×9.77)
+    how Adds a fine amount to the frequency ratio of operator 3, from 0 to 99 %.
+    sound Small offsets detune the operator for a slow beating, and larger ones give inharmonic colour.
 O3Detune  "Op3 detune"   0 14   7    int -7 signed                   | Detune, −7 … +7 (about 1 cent a step at A4)
+    how Detunes operator 3 by about 7 cents either way.
+    sound A little detune adds a gentle movement against the other operators.
 O3Wave    "Op3 wave"     0 3    0    enum Sine Half_sine Abs_sine Pulse_sine | Operator waveform (Sine: DX7)
+    how Chooses the waveform of operator 3: sine, half sine, absolute sine or pulse sine.
+    sound Sine is the classic tone, and the other shapes add more harmonics and a harsher edge.
 O3R1      "Op3 rate 1"   0 99   99   int 0                           | Envelope rate 1 (99: fastest)
+    how Sets how fast the envelope of operator 3 moves through stage 1, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O3R2      "Op3 rate 2"   0 99   99   int 0                           | Envelope rate 2 (99: fastest)
+    how Sets how fast the envelope of operator 3 moves through stage 2, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O3R3      "Op3 rate 3"   0 99   99   int 0                           | Envelope rate 3 (99: fastest)
+    how Sets how fast the envelope of operator 3 moves through stage 3, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O3R4      "Op3 rate 4"   0 99   99   int 0                           | Envelope rate 4 (99: fastest)
+    how Sets how fast the envelope of operator 3 moves through stage 4, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O3L1      "Op3 level 1"  0 99   99   int 0                           | Envelope level 1
+    how Sets the level of the envelope of operator 3 at stage 1, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O3L2      "Op3 level 2"  0 99   99   int 0                           | Envelope level 2
+    how Sets the level of the envelope of operator 3 at stage 2, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O3L3      "Op3 level 3"  0 99   99   int 0                           | Envelope level 3
+    how Sets the level of the envelope of operator 3 at stage 3, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O3L4      "Op3 level 4"  0 99   0    int 0                           | Envelope level 4
+    how Sets the level of the envelope of operator 3 at stage 4, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O3Break   "Op3 break"    0 99   39   int 0                           | Keyboard scaling break point (39: C4)
+    how Sets the key at which level scaling for operator 3 changes sides, from 0 to 99, where 39 is middle C.
+    sound Notes either side of the break point are scaled by the depth settings.
 O3LDepth  "Op3 L depth"  0 99   0    int 0                           | Level scaling below the break point
+    how Sets how much the level of operator 3 changes for keys below the break point, from 0 to 99.
+    sound It lets low notes sound brighter or softer than the middle of the keyboard.
 O3RDepth  "Op3 R depth"  0 99   0    int 0                           | Level scaling above the break point
+    how Sets how much the level of operator 3 changes for keys above the break point, from 0 to 99.
+    sound It lets high notes sound brighter or softer than the middle of the keyboard.
 O3LCurve  "Op3 L curve"  0 3    0    enum -Lin -Exp +Exp +Lin        | Scaling curve below the break point
+    how Chooses the shape of the level scaling below the break point: linear or exponential, falling or rising.
+    sound Exponential curves change faster near the extremes, linear curves change evenly.
 O3RCurve  "Op3 R curve"  0 3    0    enum -Lin -Exp +Exp +Lin        | Scaling curve above the break point
+    how Chooses the shape of the level scaling above the break point: linear or exponential, falling or rising.
+    sound Exponential curves change faster near the extremes, linear curves change evenly.
 O3RateSc  "Op3 rate sc"  0 7    0    int 0                           | Envelopes run faster for higher notes
+    how Makes the envelope of operator 3 run faster for higher notes, from 0 to 7.
+    sound Higher notes decay sooner, as they do on a plucked or struck instrument.
 O3AmpSens "Op3 amp sens" 0 3    0    int 0                           | How much LFO / wheel / aftertouch amplitude modulation applies
+    how Sets how much LFO, wheel and aftertouch amplitude modulation reaches operator 3, from 0 to 3.
+    sound Higher values let tremolo shape this operator, and zero leaves it steady.
 O3VelSens "Op3 vel sens" 0 7    0    int 0                           | How much velocity changes the level
+    how Sets how much note velocity changes the level of operator 3, from 0 to 7.
+    sound Higher values make hard playing brighter or louder, depending on whether it is a modulator or a carrier.
 
 group Operator 4
 O4On      "Op4 on"       0 1    1    switch                          | Operator 4 sounds (off: silent, as on the DX7)
+    how Turns operator 4 on or off.
+    sound Muting one operator shows what it adds to the sound.
 O4Level   "Op4 level"    0 99   0    int 0                           | Output level (carriers: loudness; modulators: brightness)
+    how Sets the output level of operator 4, from 0 to 99.
+    sound For a carrier this is loudness, and for a modulator it is brightness: more level makes a harsher, richer tone.
 O4Mode    "Op4 mode"     0 1    0    enum Ratio Fixed                | Ratio: follows the note; Fixed: a fixed frequency
+    how Chooses whether operator 4 follows the note pitch or runs at a fixed frequency.
+    sound Ratio mode plays in tune across the keyboard, and Fixed mode gives a constant tone for noise-like or percussive effects.
 O4Coarse  "Op4 coarse"   0 31   1    int 0                           | Ratio 0.5, 1 … 31 (Fixed: 1, 10, 100, 1000 Hz)
+    how Sets the frequency ratio of operator 4 in whole steps, from 0.5 to 31.
+    sound Whole-number ratios give harmonic tones and others give bells and metallic sounds.
 O4Fine    "Op4 fine"     0 99   0    int 0                           | Ratio +0 … +99% (Fixed: ×1 … ×9.77)
+    how Adds a fine amount to the frequency ratio of operator 4, from 0 to 99 %.
+    sound Small offsets detune the operator for a slow beating, and larger ones give inharmonic colour.
 O4Detune  "Op4 detune"   0 14   7    int -7 signed                   | Detune, −7 … +7 (about 1 cent a step at A4)
+    how Detunes operator 4 by about 7 cents either way.
+    sound A little detune adds a gentle movement against the other operators.
 O4Wave    "Op4 wave"     0 3    0    enum Sine Half_sine Abs_sine Pulse_sine | Operator waveform (Sine: DX7)
+    how Chooses the waveform of operator 4: sine, half sine, absolute sine or pulse sine.
+    sound Sine is the classic tone, and the other shapes add more harmonics and a harsher edge.
 O4R1      "Op4 rate 1"   0 99   99   int 0                           | Envelope rate 1 (99: fastest)
+    how Sets how fast the envelope of operator 4 moves through stage 1, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O4R2      "Op4 rate 2"   0 99   99   int 0                           | Envelope rate 2 (99: fastest)
+    how Sets how fast the envelope of operator 4 moves through stage 2, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O4R3      "Op4 rate 3"   0 99   99   int 0                           | Envelope rate 3 (99: fastest)
+    how Sets how fast the envelope of operator 4 moves through stage 3, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O4R4      "Op4 rate 4"   0 99   99   int 0                           | Envelope rate 4 (99: fastest)
+    how Sets how fast the envelope of operator 4 moves through stage 4, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O4L1      "Op4 level 1"  0 99   99   int 0                           | Envelope level 1
+    how Sets the level of the envelope of operator 4 at stage 1, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O4L2      "Op4 level 2"  0 99   99   int 0                           | Envelope level 2
+    how Sets the level of the envelope of operator 4 at stage 2, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O4L3      "Op4 level 3"  0 99   99   int 0                           | Envelope level 3
+    how Sets the level of the envelope of operator 4 at stage 3, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O4L4      "Op4 level 4"  0 99   0    int 0                           | Envelope level 4
+    how Sets the level of the envelope of operator 4 at stage 4, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O4Break   "Op4 break"    0 99   39   int 0                           | Keyboard scaling break point (39: C4)
+    how Sets the key at which level scaling for operator 4 changes sides, from 0 to 99, where 39 is middle C.
+    sound Notes either side of the break point are scaled by the depth settings.
 O4LDepth  "Op4 L depth"  0 99   0    int 0                           | Level scaling below the break point
+    how Sets how much the level of operator 4 changes for keys below the break point, from 0 to 99.
+    sound It lets low notes sound brighter or softer than the middle of the keyboard.
 O4RDepth  "Op4 R depth"  0 99   0    int 0                           | Level scaling above the break point
+    how Sets how much the level of operator 4 changes for keys above the break point, from 0 to 99.
+    sound It lets high notes sound brighter or softer than the middle of the keyboard.
 O4LCurve  "Op4 L curve"  0 3    0    enum -Lin -Exp +Exp +Lin        | Scaling curve below the break point
+    how Chooses the shape of the level scaling below the break point: linear or exponential, falling or rising.
+    sound Exponential curves change faster near the extremes, linear curves change evenly.
 O4RCurve  "Op4 R curve"  0 3    0    enum -Lin -Exp +Exp +Lin        | Scaling curve above the break point
+    how Chooses the shape of the level scaling above the break point: linear or exponential, falling or rising.
+    sound Exponential curves change faster near the extremes, linear curves change evenly.
 O4RateSc  "Op4 rate sc"  0 7    0    int 0                           | Envelopes run faster for higher notes
+    how Makes the envelope of operator 4 run faster for higher notes, from 0 to 7.
+    sound Higher notes decay sooner, as they do on a plucked or struck instrument.
 O4AmpSens "Op4 amp sens" 0 3    0    int 0                           | How much LFO / wheel / aftertouch amplitude modulation applies
+    how Sets how much LFO, wheel and aftertouch amplitude modulation reaches operator 4, from 0 to 3.
+    sound Higher values let tremolo shape this operator, and zero leaves it steady.
 O4VelSens "Op4 vel sens" 0 7    0    int 0                           | How much velocity changes the level
+    how Sets how much note velocity changes the level of operator 4, from 0 to 7.
+    sound Higher values make hard playing brighter or louder, depending on whether it is a modulator or a carrier.
 
 group Operator 5
 O5On      "Op5 on"       0 1    1    switch                          | Operator 5 sounds (off: silent, as on the DX7)
+    how Turns operator 5 on or off.
+    sound Muting one operator shows what it adds to the sound.
 O5Level   "Op5 level"    0 99   0    int 0                           | Output level (carriers: loudness; modulators: brightness)
+    how Sets the output level of operator 5, from 0 to 99.
+    sound For a carrier this is loudness, and for a modulator it is brightness: more level makes a harsher, richer tone.
 O5Mode    "Op5 mode"     0 1    0    enum Ratio Fixed                | Ratio: follows the note; Fixed: a fixed frequency
+    how Chooses whether operator 5 follows the note pitch or runs at a fixed frequency.
+    sound Ratio mode plays in tune across the keyboard, and Fixed mode gives a constant tone for noise-like or percussive effects.
 O5Coarse  "Op5 coarse"   0 31   1    int 0                           | Ratio 0.5, 1 … 31 (Fixed: 1, 10, 100, 1000 Hz)
+    how Sets the frequency ratio of operator 5 in whole steps, from 0.5 to 31.
+    sound Whole-number ratios give harmonic tones and others give bells and metallic sounds.
 O5Fine    "Op5 fine"     0 99   0    int 0                           | Ratio +0 … +99% (Fixed: ×1 … ×9.77)
+    how Adds a fine amount to the frequency ratio of operator 5, from 0 to 99 %.
+    sound Small offsets detune the operator for a slow beating, and larger ones give inharmonic colour.
 O5Detune  "Op5 detune"   0 14   7    int -7 signed                   | Detune, −7 … +7 (about 1 cent a step at A4)
+    how Detunes operator 5 by about 7 cents either way.
+    sound A little detune adds a gentle movement against the other operators.
 O5Wave    "Op5 wave"     0 3    0    enum Sine Half_sine Abs_sine Pulse_sine | Operator waveform (Sine: DX7)
+    how Chooses the waveform of operator 5: sine, half sine, absolute sine or pulse sine.
+    sound Sine is the classic tone, and the other shapes add more harmonics and a harsher edge.
 O5R1      "Op5 rate 1"   0 99   99   int 0                           | Envelope rate 1 (99: fastest)
+    how Sets how fast the envelope of operator 5 moves through stage 1, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O5R2      "Op5 rate 2"   0 99   99   int 0                           | Envelope rate 2 (99: fastest)
+    how Sets how fast the envelope of operator 5 moves through stage 2, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O5R3      "Op5 rate 3"   0 99   99   int 0                           | Envelope rate 3 (99: fastest)
+    how Sets how fast the envelope of operator 5 moves through stage 3, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O5R4      "Op5 rate 4"   0 99   99   int 0                           | Envelope rate 4 (99: fastest)
+    how Sets how fast the envelope of operator 5 moves through stage 4, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O5L1      "Op5 level 1"  0 99   99   int 0                           | Envelope level 1
+    how Sets the level of the envelope of operator 5 at stage 1, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O5L2      "Op5 level 2"  0 99   99   int 0                           | Envelope level 2
+    how Sets the level of the envelope of operator 5 at stage 2, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O5L3      "Op5 level 3"  0 99   99   int 0                           | Envelope level 3
+    how Sets the level of the envelope of operator 5 at stage 3, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O5L4      "Op5 level 4"  0 99   0    int 0                           | Envelope level 4
+    how Sets the level of the envelope of operator 5 at stage 4, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O5Break   "Op5 break"    0 99   39   int 0                           | Keyboard scaling break point (39: C4)
+    how Sets the key at which level scaling for operator 5 changes sides, from 0 to 99, where 39 is middle C.
+    sound Notes either side of the break point are scaled by the depth settings.
 O5LDepth  "Op5 L depth"  0 99   0    int 0                           | Level scaling below the break point
+    how Sets how much the level of operator 5 changes for keys below the break point, from 0 to 99.
+    sound It lets low notes sound brighter or softer than the middle of the keyboard.
 O5RDepth  "Op5 R depth"  0 99   0    int 0                           | Level scaling above the break point
+    how Sets how much the level of operator 5 changes for keys above the break point, from 0 to 99.
+    sound It lets high notes sound brighter or softer than the middle of the keyboard.
 O5LCurve  "Op5 L curve"  0 3    0    enum -Lin -Exp +Exp +Lin        | Scaling curve below the break point
+    how Chooses the shape of the level scaling below the break point: linear or exponential, falling or rising.
+    sound Exponential curves change faster near the extremes, linear curves change evenly.
 O5RCurve  "Op5 R curve"  0 3    0    enum -Lin -Exp +Exp +Lin        | Scaling curve above the break point
+    how Chooses the shape of the level scaling above the break point: linear or exponential, falling or rising.
+    sound Exponential curves change faster near the extremes, linear curves change evenly.
 O5RateSc  "Op5 rate sc"  0 7    0    int 0                           | Envelopes run faster for higher notes
+    how Makes the envelope of operator 5 run faster for higher notes, from 0 to 7.
+    sound Higher notes decay sooner, as they do on a plucked or struck instrument.
 O5AmpSens "Op5 amp sens" 0 3    0    int 0                           | How much LFO / wheel / aftertouch amplitude modulation applies
+    how Sets how much LFO, wheel and aftertouch amplitude modulation reaches operator 5, from 0 to 3.
+    sound Higher values let tremolo shape this operator, and zero leaves it steady.
 O5VelSens "Op5 vel sens" 0 7    0    int 0                           | How much velocity changes the level
+    how Sets how much note velocity changes the level of operator 5, from 0 to 7.
+    sound Higher values make hard playing brighter or louder, depending on whether it is a modulator or a carrier.
 
 group Operator 6
 O6On      "Op6 on"       0 1    1    switch                          | Operator 6 sounds (off: silent, as on the DX7)
+    how Turns operator 6 on or off.
+    sound Muting one operator shows what it adds to the sound.
 O6Level   "Op6 level"    0 99   0    int 0                           | Output level (carriers: loudness; modulators: brightness)
+    how Sets the output level of operator 6, from 0 to 99.
+    sound For a carrier this is loudness, and for a modulator it is brightness: more level makes a harsher, richer tone.
 O6Mode    "Op6 mode"     0 1    0    enum Ratio Fixed                | Ratio: follows the note; Fixed: a fixed frequency
+    how Chooses whether operator 6 follows the note pitch or runs at a fixed frequency.
+    sound Ratio mode plays in tune across the keyboard, and Fixed mode gives a constant tone for noise-like or percussive effects.
 O6Coarse  "Op6 coarse"   0 31   1    int 0                           | Ratio 0.5, 1 … 31 (Fixed: 1, 10, 100, 1000 Hz)
+    how Sets the frequency ratio of operator 6 in whole steps, from 0.5 to 31.
+    sound Whole-number ratios give harmonic tones and others give bells and metallic sounds.
 O6Fine    "Op6 fine"     0 99   0    int 0                           | Ratio +0 … +99% (Fixed: ×1 … ×9.77)
+    how Adds a fine amount to the frequency ratio of operator 6, from 0 to 99 %.
+    sound Small offsets detune the operator for a slow beating, and larger ones give inharmonic colour.
 O6Detune  "Op6 detune"   0 14   7    int -7 signed                   | Detune, −7 … +7 (about 1 cent a step at A4)
+    how Detunes operator 6 by about 7 cents either way.
+    sound A little detune adds a gentle movement against the other operators.
 O6Wave    "Op6 wave"     0 3    0    enum Sine Half_sine Abs_sine Pulse_sine | Operator waveform (Sine: DX7)
+    how Chooses the waveform of operator 6: sine, half sine, absolute sine or pulse sine.
+    sound Sine is the classic tone, and the other shapes add more harmonics and a harsher edge.
 O6R1      "Op6 rate 1"   0 99   99   int 0                           | Envelope rate 1 (99: fastest)
+    how Sets how fast the envelope of operator 6 moves through stage 1, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O6R2      "Op6 rate 2"   0 99   99   int 0                           | Envelope rate 2 (99: fastest)
+    how Sets how fast the envelope of operator 6 moves through stage 2, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O6R3      "Op6 rate 3"   0 99   99   int 0                           | Envelope rate 3 (99: fastest)
+    how Sets how fast the envelope of operator 6 moves through stage 3, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O6R4      "Op6 rate 4"   0 99   99   int 0                           | Envelope rate 4 (99: fastest)
+    how Sets how fast the envelope of operator 6 moves through stage 4, from 0 to 99.
+    sound Fast rates make instant changes, and slow rates make the level glide over time.
 O6L1      "Op6 level 1"  0 99   99   int 0                           | Envelope level 1
+    how Sets the level of the envelope of operator 6 at stage 1, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O6L2      "Op6 level 2"  0 99   99   int 0                           | Envelope level 2
+    how Sets the level of the envelope of operator 6 at stage 2, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O6L3      "Op6 level 3"  0 99   99   int 0                           | Envelope level 3
+    how Sets the level of the envelope of operator 6 at stage 3, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O6L4      "Op6 level 4"  0 99   0    int 0                           | Envelope level 4
+    how Sets the level of the envelope of operator 6 at stage 4, from 0 to 99.
+    sound Together the four levels shape how the operator swells, decays and fades away.
 O6Break   "Op6 break"    0 99   39   int 0                           | Keyboard scaling break point (39: C4)
+    how Sets the key at which level scaling for operator 6 changes sides, from 0 to 99, where 39 is middle C.
+    sound Notes either side of the break point are scaled by the depth settings.
 O6LDepth  "Op6 L depth"  0 99   0    int 0                           | Level scaling below the break point
+    how Sets how much the level of operator 6 changes for keys below the break point, from 0 to 99.
+    sound It lets low notes sound brighter or softer than the middle of the keyboard.
 O6RDepth  "Op6 R depth"  0 99   0    int 0                           | Level scaling above the break point
+    how Sets how much the level of operator 6 changes for keys above the break point, from 0 to 99.
+    sound It lets high notes sound brighter or softer than the middle of the keyboard.
 O6LCurve  "Op6 L curve"  0 3    0    enum -Lin -Exp +Exp +Lin        | Scaling curve below the break point
+    how Chooses the shape of the level scaling below the break point: linear or exponential, falling or rising.
+    sound Exponential curves change faster near the extremes, linear curves change evenly.
 O6RCurve  "Op6 R curve"  0 3    0    enum -Lin -Exp +Exp +Lin        | Scaling curve above the break point
+    how Chooses the shape of the level scaling above the break point: linear or exponential, falling or rising.
+    sound Exponential curves change faster near the extremes, linear curves change evenly.
 O6RateSc  "Op6 rate sc"  0 7    0    int 0                           | Envelopes run faster for higher notes
+    how Makes the envelope of operator 6 run faster for higher notes, from 0 to 7.
+    sound Higher notes decay sooner, as they do on a plucked or struck instrument.
 O6AmpSens "Op6 amp sens" 0 3    0    int 0                           | How much LFO / wheel / aftertouch amplitude modulation applies
+    how Sets how much LFO, wheel and aftertouch amplitude modulation reaches operator 6, from 0 to 3.
+    sound Higher values let tremolo shape this operator, and zero leaves it steady.
 O6VelSens "Op6 vel sens" 0 7    0    int 0                           | How much velocity changes the level
+    how Sets how much note velocity changes the level of operator 6, from 0 to 7.
+    sound Higher values make hard playing brighter or louder, depending on whether it is a modulator or a carrier.

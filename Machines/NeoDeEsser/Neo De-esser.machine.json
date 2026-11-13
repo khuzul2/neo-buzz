@@ -26,7 +26,9 @@
     "Relative",
     "Absolute"
    ],
-   "description": "Relative: the band's level against the whole signal's (follows the singer). Absolute: the band's level in dBFS"
+   "description": "Relative: the band's level against the whole signal's (follows the singer). Absolute: the band's level in dBFS",
+   "how": "Chooses what the detector compares: Relative uses the band against the whole signal, Absolute uses the band's level in dBFS.",
+   "sound": "Relative follows the singer's level so quiet and loud passages are treated alike; Absolute reacts only when the band gets loud."
   },
   {
    "index": 1,
@@ -40,7 +42,9 @@
    "a": 2000.0,
    "b": 16000.0,
    "unit": "Hz",
-   "description": "Centre of the sibilance band"
+   "description": "Centre of the sibilance band",
+   "how": "Sets the centre of the sibilance band, from 2 to 16 kHz.",
+   "sound": "Aim it at the harsh hiss of the voice, typically 5 to 9 kHz, so only that sound is turned down."
   },
   {
    "index": 2,
@@ -54,7 +58,9 @@
    "a": 0.5,
    "b": 3.0,
    "unit": "oct",
-   "description": "Width of the band in octaves: the detector's band, the split band and the bell"
+   "description": "Width of the band in octaves: the detector's band, the split band and the bell",
+   "how": "Sets how wide the band is, from 0.5 to 3 octaves.",
+   "sound": "A narrow band targets one harsh note; a wide band calms a broad, hissy zone but touches more of the voice."
   },
   {
    "index": 3,
@@ -68,7 +74,9 @@
    "a": -60.0,
    "b": 0.0,
    "unit": "dB",
-   "description": "Where reduction starts: Relative, the band's level under the whole signal's; Absolute, dBFS"
+   "description": "Where reduction starts: Relative, the band's level under the whole signal's; Absolute, dBFS",
+   "how": "Sets the level, from -60 to 0 dB, above which the band is reduced.",
+   "sound": "Lower values catch more sibilants; set too low, the voice sounds dull and lispy."
   },
   {
    "index": 4,
@@ -82,7 +90,9 @@
    "a": 1.0,
    "b": 20.0,
    "unit": ":1",
-   "description": "How much of the excess is taken out: 1 nothing, 20 nearly all"
+   "description": "How much of the excess is taken out: 1 nothing, 20 nearly all",
+   "how": "Sets how much of the excess above the threshold is removed, from 1:1 (nothing) to 20:1 (almost all).",
+   "sound": "Higher ratios make the s sounds smaller and more uniform."
   },
   {
    "index": 5,
@@ -99,7 +109,9 @@
     "Shelf",
     "Bell"
    ],
-   "description": "Split: only the band is reduced, minimum phase, no latency of its own. Split linear: the band by a linear-phase filter (latency 255 samples). Shelf: a dynamic high shelf on the whole signal. Bell: a dynamic bell"
+   "description": "Split: only the band is reduced, minimum phase, no latency of its own. Split linear: the band by a linear-phase filter (latency 255 samples). Shelf: a dynamic high shelf on the whole signal. Bell: a dynamic bell",
+   "how": "Chooses how the band is reduced: Split (only the band), Split linear (linear phase, with latency), Shelf (dynamic high shelf) or Bell.",
+   "sound": "Split sounds the most transparent, Shelf darkens the whole top end, and Bell is a gentle dip around the band."
   },
   {
    "index": 6,
@@ -113,7 +125,9 @@
    "a": 0.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "The most the de-esser takes out"
+   "description": "The most the de-esser takes out",
+   "how": "Limits how much the de-esser can take out, from 0 to 24 dB.",
+   "sound": "A small range keeps it natural; a large one removes sibilance fully but can sound lisping."
   },
   {
    "index": 7,
@@ -127,7 +141,9 @@
    "a": 0.0001,
    "b": 0.02,
    "unit": "s",
-   "description": "How fast the reduction comes in"
+   "description": "How fast the reduction comes in",
+   "how": "Sets how fast the reduction comes in, from 0.1 ms to 20 ms.",
+   "sound": "Fast attacks catch short s sounds; slow ones let the start of each hiss through."
   },
   {
    "index": 8,
@@ -141,7 +157,9 @@
    "a": 0.01,
    "b": 0.5,
    "unit": "s",
-   "description": "How fast it lets go"
+   "description": "How fast it lets go",
+   "how": "Sets how fast the reduction lets go, from 10 ms to 0.5 s.",
+   "sound": "Short releases follow each syllable closely; long ones can dull the sound after a sibilant."
   },
   {
    "index": 9,
@@ -155,7 +173,9 @@
    "a": 0.0,
    "b": 5.0,
    "unit": "ms",
-   "description": "Delays the audio so the reduction is in place when the sibilant arrives (latency)"
+   "description": "Delays the audio so the reduction is in place when the sibilant arrives (latency)",
+   "how": "Delays the audio by up to 5 ms so the reduction is in place when the sibilant arrives.",
+   "sound": "The first part of each hiss is caught cleanly, at the cost of a little latency."
   },
   {
    "index": 10,
@@ -170,7 +190,9 @@
     "Off",
     "On"
    ],
-   "description": "Hear the band the detector hears"
+   "description": "Hear the band the detector hears",
+   "how": "Switches the output to the band the detector hears.",
+   "sound": "You hear only the sibilance range, which helps you place Frequency and Width exactly."
   },
   {
    "index": 11,
@@ -184,7 +206,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Gain after the de-esser, 0.1 dB steps (the editor's Match sets it from the gain-match reading)"
+   "description": "Gain after the de-esser, 0.1 dB steps (the editor's Match sets it from the gain-match reading)",
+   "how": "Adds -24 to +24 dB of gain after the de-esser.",
+   "sound": "It matches the loudness to the untreated voice so you can judge the tone fairly."
   },
   {
    "index": 12,
@@ -199,7 +223,9 @@
     "Off",
     "On"
    ],
-   "description": "Hear only what the de-esser takes out: the output minus the input, delayed to match (glides over 10 ms)"
+   "description": "Hear only what the de-esser takes out: the output minus the input, delayed to match (glides over 10 ms)",
+   "how": "Plays only the difference between the output and the input.",
+   "sound": "You hear exactly what the de-esser removes, so you can check it is taking hiss and not the voice's body."
   }
  ],
  "readings": [

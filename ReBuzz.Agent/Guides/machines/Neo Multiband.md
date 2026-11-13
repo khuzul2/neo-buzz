@@ -1,120 +1,57 @@
 ## How it sounds
 
-A multiband compressor and upward expander: the input split into 3 or 4 bands, each with its own dynamics, then summed. With every band at 1:1 and 0 dB it passes the input untouched (in linear phase, delayed by the latency, bit for bit), so it only changes what you ask it to.
+A multiband compressor and upward expander: the input split into 3 or 4 bands, each with its own dynamics, then summed. With every band at 1:1 and 0 dB it passes the input untouched (bit for bit, delayed by the latency), so it changes only what you ask. Above 1:1 a band compresses (infinity limits), below 1:1 it expands upward, 1:1 does nothing; `Range` caps the change either way. A band's static curve is Neo Comp's gain computer to 0.0003 dB.
 
 | Phase | What it does | Use it for |
 |---|---|---|
-| Linear (the default) | the bands sum back to the input exactly, with no phase shift; about 96 ms of latency (4607 samples at 44.1 and 48 kHz), which NeoBuzz Live compensates | mastering, and any bus where phase matters (parallel paths, mid/side) |
-| Minimum | zero latency, the same band shapes (Linkwitz–Riley, 24 dB/oct, −6 dB at a crossover), the crossovers' phase shift | live playing, buses where the latency would be in the way |
-| Dynamic | zero latency and no static phase shift: the output is the input plus each band's gain change times the band, so a band that isn't changing leaves the input exactly as it was (bit for bit with every band at 1:1) | mastering where latency matters, or where the crossovers' phase shift would show on a mono or parallel path |
+| Linear (default) | bands sum back exactly, no phase shift; about 96 ms of latency (4607 samples), compensated | mastering, buses where phase matters |
+| Minimum | zero latency, Linkwitz-Riley 24 dB/oct crossovers with their phase shift | live playing |
+| Dynamic | zero latency, no static phase shift: input plus each band's gain change times the band | mastering where latency matters; cuts are shallower than set (14 dB measures 8.7), so keep control gentle |
 
-Each band's ratio works above its threshold: above 1:1 it compresses (∞:1 limits), below 1:1 it expands upward (0.5:1 doubles how far a peak rises over the threshold), 1:1 does nothing. `Range` caps the change either way. Measured: a band's static curve is Neo Comp's gain computer to 0.0003 dB; attack and release times within 2.5 % of their settings; with every band at 1:1 the input comes out bit for bit, 4607 samples later at 44.1 and 48 kHz.
+Path: crossovers (`Crossover 1` to `Crossover 3`, never closer than the one below), per band a detector (peak or RMS; `Stereo` L/R or M/S, `Link`), threshold, ratio, knee, `Range`, attack and release (63 % and 37 % times), `Makeup`, `Solo` and `Bypass`, the sum, then `Mix` (latency-aligned, so parallel compression never combs) and `Output`. `Lookahead` adds to the latency, fading over 10 ms when changed. `B1 upward ratio` to `B4 upward ratio` lift a band under its threshold (nothing under -80 dBFS). `B1 sidechain` (any band) External reads a machine on input 2 through the same crossovers: a kick on input 2 ducks the lows; nothing connected means silence.
 
-## Signal flow
+## Use it for
 
-Input → crossovers (`Crossover 1`, `Crossover 2`, and with 4 bands `Crossover 3`; never closer than the one below) → per band: detector (the band's peak; `Stereo` L/R or M/S, `Link`) → threshold, ratio, knee, `Range` → attack and release → `Makeup` → `Solo`, `Bypass` → the bands summed → `Mix` against the dry signal (latency-aligned, so parallel compression never combs) → `Output`.
+- Fixing one band in a master (boomy kick, harsh 2-6 kHz, sibilance) while the rest is untouched.
+- Gentle multiband glue, upward lift of air or detail, transient restore (ratio under 1:1), kick-keyed ducking of the lows.
 
-- Band 1 is everything below `Crossover 1`, band 2 between `Crossover 1` and `Crossover 2`, and so on; the top band is everything above the last crossover.
-- `Attack` is the time to 63 % of the gain change, `Release` back to 37 %, either way (compression or expansion).
-- With `Lookahead` above 0 the latency is the phase's own plus the lookahead (a constant: 0.5 ms is 24 samples at 48 kHz); it changes only through a 10 ms fade out and in, never as a click. In Dynamic phase `Solo` blends the dry from the input to the bands' sum so the soloed band is heard alone.
-- External sidechain: connect a machine to the second input ("Sidechain", the way Neo Comp, Neo EQ and Neo Gate take theirs), set `B1 sidechain` (or any band's) to External. The key goes through its own minimum-phase crossovers at the same frequencies and each band's detector reads that band of the key; in linear phase the key's bands are held back by the same delay as the signal's, so a kick on input 2 ducks the lows exactly at the kick. Nothing connected: an external band hears silence (nothing is compressed).
-- `Solo` on any band plays only the soloed bands (`Mix` is ignored meanwhile); `Bypass` passes a band untouched.
-- Changing `Phase` while playing fades out, switches and fades back in (into linear phase, after its latency); NeoBuzz Live realigns the other paths.
-- `machine_readings(machine=…)` gives each band's gain change now (`b1_gr_db` …), its largest over the last 3 s (`b1_gr_peak_db`) and its peak level (`b1_level_db`, what the threshold compares against), and `latency_samples`.
-
-## How to use it
-
-- In a master chain after the EQ, before the limiter: `machine_add(gear="Neo Multiband", name="M Bands", insert_after="M EQ")`, then a preset (`preset_load(machine="M Bands", preset="Mastering — Gentle Glue (4 Bands)")`).
-- Thresholds from the band's level: render, `machine_readings(machine="M Bands")`, then set each band's threshold 3–6 dB under its `bN_level_db` for 2–4 dB of reduction at 2:1 to 3:1. Check with `machine_readings` again: the reduction sits in `bN_gr_peak_db`.
-- Fix one band and leave the rest: set the others to 1:1 (`B2 ratio` "1:1") and only the band that misbehaves compresses.
-- Put a crossover at the problem: a de-esser is the top band above 5–8 kHz, mud control a band around 200–500 Hz, boom control band 1 below 80–100 Hz.
-- Upward expansion (ratio under 1:1, `Range` 3–6 dB) restores transients a mix lost, or lifts the air band only when it is there.
-- Upward compression (`B2 upward ratio` 2:1, a threshold under the band's typical level, `Range` 3–6 dB) lifts quiet detail without touching loud parts; set it where `bN_level_db` sits 10 dB over the quiet passages. It never lifts under −80 dBFS, so silence and noise floors stay as they are.
-- RMS (`Detector`) follows a band's loudness rather than its peaks: a steadier gain for glue; Peak catches the transients.
-- Check: render, `analyze(source=…, metrics=["loudness", "dynamics", "spectrum"])` against the input: loudness within 0.5 LU after makeup, the fixed band 1–4 dB lower on its peaks.
-
-Mastering, gentle control of the lows (one band working):
+## Key controls
 
 | Parameter | Value | Why |
 |---|---|---|
-| Bands | 4 bands | |
-| Crossover 1 | 100 Hz | the kick and bass |
-| B1 threshold | -30 dB | 2–3 dB of reduction on the kick |
-| B1 ratio | 3:1 | |
+| Bands | 4 bands | 3 bands ignore Crossover 3 |
+| Crossover 1 | 100 Hz | the kick and bass band |
+| B1 threshold | -30 dB | 2-3 dB of reduction; set it 3-6 dB under `b1_level_db` |
+| B1 ratio | 3:1 | the other bands at 1:1 so only this one works |
 | B1 attack | 20 ms | the kick's click passes |
 | B1 release | 200 ms | |
-| B1 range | 12 dB | |
 | B1 makeup | 1.5 dB | loudness matched |
-| B2 ratio | 1:1 | untouched |
-| B3 ratio | 1:1 | |
-| B4 ratio | 1:1 | |
+| Mix | 100% | 40 % under dry drums for parallel squash |
 
-De-esser on a vocal bus:
+The defaults compress (every band 2:1 at -20 dB): set the bands you do not want to 1:1, or start from a preset.
 
-| Parameter | Value | Why |
-|---|---|---|
-| Crossover 3 | 5 kHz | the top band is the sibilance |
-| B1 ratio | 1:1 | |
-| B2 ratio | 1:1 | |
-| B3 ratio | 1:1 | |
-| B4 threshold | -42 dB | |
-| B4 ratio | 6:1 | |
-| B4 attack | 0.5 ms | catches the "s" |
-| B4 release | 60 ms | |
-| B4 range | 9 dB | never more than 9 dB down |
+## Starting points
 
-Parallel multiband squash on drums:
+- "Mastering — Gentle Glue (4 Bands)", "Mastering — Tight Low End" (band 1 only), "Mastering — De-Harsh 2–6 kHz" (band 3 only), "Mastering — Air Lift (Upward Expansion)", "Mastering — Transient Restore (Upward Expansion)", "Mastering — Quiet Detail Lift (Upward)".
+- "Mastering — Zero-Latency Glue (Minimum Phase)", "Mastering — Dynamic-Phase Glue (Zero Latency)", "Mastering — Mid/Side Control (Unlinked)", "Mastering — Loud and Dense".
+- "Bus — Drum Bus Punch (3 Bands)", "Bus — Mix Bus Glue (3 Bands)", "Bus — Kick Duck on the Lows (Sidechain)", "Bus — Bass Leveler".
+- "Vocal — De-Esser Above 5 kHz" (Crossover 3 5 kHz, B4 6:1, attack 0.5 ms, range 9 dB), "Fix — De-Mud 200–500 Hz", "Fix — Boom Control Below 90 Hz", "Creative — Heavy Squash (Parallel 50 %)".
 
-| Parameter | Value | Why |
-|---|---|---|
-| Bands | 3 bands | |
-| Crossover 1 | 120 Hz | |
-| Crossover 2 | 3 kHz | |
-| B1 threshold | -40 dB | |
-| B1 ratio | 8:1 | |
-| B2 threshold | -42 dB | |
-| B2 ratio | 8:1 | |
-| B3 threshold | -44 dB | |
-| B3 ratio | 8:1 | |
-| B1 makeup | +10 dB | |
-| B2 makeup | +10 dB | |
-| B3 makeup | +10 dB | |
-| Mix | 40% | the squashed bands under the dry drums, in phase |
+## Pitfalls
 
-## Gotchas
+- Linear phase delays by about 96 ms. The engine delays other paths to match (machine delay compensation, on by default); with it off, a parallel path combs and a live input arrives late: use Minimum phase there. Renders start later: give them a tail.
+- Linear-phase crossovers ring a little before a transient below about 100 Hz; Minimum rings after it.
+- Thresholds read the band's peak, which is lower than the whole signal's: use `machine_readings` (`b1_level_db`, `b1_gr_db`, `b1_gr_peak_db`) to set them.
+- Upward expansion raises peaks: keep Range 3-6 dB and a limiter after it. Mix is ignored while a band is soloed.
+- A crossover set below the one before it sits at that one.
 
-- Dynamic phase's cut is shallower than the setting: a band's change reaches the output through the band's phase against the input, so a 14 dB cut at the middle of a band measured 8.7 dB, and a 6 dB cut about 5 dB. Gentle control (1–4 dB) is close; for deep cuts use Linear or Minimum. Its onset is also less clean: a burst's first millisecond isn't cancelled as in the others.
-- `Lookahead` adds latency in every phase (in Dynamic and Minimum it is the only latency): the parallel paths are compensated, but a live input monitored through it arrives late.
+## Pairs well with
 
-- The defaults compress (every band 2:1 at −20 dB): set the bands you don't want to 1:1, or start from a preset.
-- Linear phase delays by about 96 ms. NeoBuzz Live delays the other paths to match (its machine delay compensation, on by default: Preferences ▸ Engine on Windows, Preferences ▸ General in the studio); bypassed, it still delays by that much, so the other paths stay lined up. If the user turned the compensation off, a parallel path around it combs; a live input monitored through it arrives late either way. Use `Phase` Minimum there. Renders start that much later: give them the tail.
-- The linear-phase crossovers ring a little before a transient below about 100 Hz (pre-echo, the price of no phase shift); minimum phase rings after it instead.
-- `Crossover 3` only matters with 4 bands. A crossover set below the one before it sits at that one.
-- Thresholds read the band's peak, not the whole signal's: a band holds only part of the energy, so its level (`bN_level_db`) is lower than the input's.
-- Upward expansion raises peaks: keep `Range` small (3–6 dB) and a limiter after it.
-- `Mix` is ignored while a band is soloed; solo is for listening, not for the final setting.
+- Neo EQ before it, Neo Comp for broad glue, Neo Limiter and Neo Dither after it, Neo Analyzer to see the bands (`guide(topic="mastering-chain")`).
 
-## Preset map
+## Checklist
 
-| Preset | What |
-|---|---|
-| "Mastering — Gentle Glue (4 Bands)" | 1.5:1 everywhere, soft knees, slow on the lows, faster on top |
-| "Mastering — Tight Low End" | only band 1 (under 100 Hz), 3:1 |
-| "Mastering — De-Harsh 2–6 kHz" | only band 3 (2–6 kHz), 3:1, fast, at most 6 dB |
-| "Mastering — Air Lift (Upward Expansion)" | band 4 above 10 kHz expands upward, at most 3 dB |
-| "Mastering — Transient Restore (Upward Expansion)" | three bands at 0.85:1, at most 3 dB: the peaks back |
-| "Mastering — Loud and Dense" | 3:1 everywhere, +6 dB makeup |
-| "Mastering — Mid/Side Control (Unlinked)" | mid and side compressed each by their own level |
-| "Mastering — Zero-Latency Glue (Minimum Phase)" | the gentle glue, minimum phase |
-| "Bus — Drum Bus Punch (3 Bands)" | slow attack on the lows, faster above, makeup |
-| "Bus — Mix Bus Glue (3 Bands)" | 2:1, 30 ms attack on three bands |
-| "Bus — Bass Leveler" | the lows and low mids levelled |
-| "Vocal — De-Esser Above 5 kHz" | band 4 above 5 kHz, 6:1, fast, at most 9 dB |
-| "Vocal — Smooth Mids 300 Hz–3 kHz" | only the middle band, 2.5:1 |
-| "Fix — De-Mud 200–500 Hz" | only band 2 (200–500 Hz), 4:1, at most 6 dB |
-| "Fix — Boom Control Below 90 Hz" | only band 1 (under 90 Hz), 6:1, at most 9 dB |
-| "Creative — Heavy Squash (Parallel 50 %)" | 10:1 on every band, +12 dB makeup, half wet |
-| "Utility — Linear-Phase Split (Transparent)" | every band 1:1: the input, delayed, bit for bit |
-| "Mastering — Dynamic-Phase Glue (Zero Latency)" | the gentle glue in Dynamic phase |
-| "Mastering — Quiet Detail Lift (Upward)" | bands 2–4 lifted up to 4 dB under −42 dB (upward 2:1), nothing compressed |
-| "Bus — Kick Duck on the Lows (Sidechain)" | band 1 keyed by input 2, minimum phase, 2 ms lookahead |
+- [ ] `machine_add(gear="Neo Multiband", name="M Bands", insert_after="M EQ")`, then `preset_load(machine="M Bands", preset="Mastering — Gentle Glue (4 Bands)")`.
+- [ ] `machine_readings(machine="M Bands")`: the working band's `b1_gr_peak_db` is 2-4 dB, the other bands about 0.
+- [ ] `analyze(source="master", metrics=["loudness", "dynamics", "spectrum"])`: loudness within 0.5 LU after makeup, the fixed band 1-4 dB lower on its peaks.
+- [ ] `latency_samples` in `machine_readings` is what you expect for the Phase you chose.

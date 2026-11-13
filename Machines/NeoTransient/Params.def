@@ -6,24 +6,58 @@ summary Transient shaper for drums, buses and masters: Attack and Sustain gains 
 
 group Transient
 Attack     "Attack"       0 240   120   db -12 12                          | Gain on the onsets (the first milliseconds of a hit), 0.1 dB steps. 0 dB with Sustain at 0 dB passes the audio bit for bit
+    how Adds or removes up to 12 dB of gain on the onsets, the first milliseconds of a hit.
+    sound Positive values make hits punchier and sharper; negative values soften them.
 Sustain    "Sustain"      0 240   120   db -12 12                          | Gain on the body and the tail after the onset, 0.1 dB steps
+    how Adds or removes up to 12 dB of gain on the body and tail after the onset.
+    sound Positive values make notes longer and fuller; negative values dry the sound out.
 Speed      "Speed"        0 2     1     enum Punchy Balanced Smooth        | The followers' time constants. Punchy: onsets of 0.1 ms, fast release. Balanced: the default. Smooth: slower, for bass and long hits
+    how Chooses how quickly the followers react: Punchy, Balanced or Smooth.
+    sound Punchy suits short hits, Smooth suits bass and long sounds.
 Lookahead  "Lookahead"    0 50    30    lin 0 5 ms 1                       | The audio is delayed this long so the gain is already up at the first sample of a hit (reported to NeoBuzz Live and compensated; 0 is no latency, and the first millisecond of a hit then gets less of the Attack gain)
+    how Delays the audio by up to 5 ms so the gain is ready on the first sample of a hit.
+    sound Attack changes act on the very start of a hit, at the cost of a little latency.
 group Impact
 Mode       "Mode"         0 1     0     enum Attack_Sustain Impact         | Attack/Sustain: the two gains above. Impact: four bands, each with its microdynamics moved by its Impact knob (Attack and Sustain are not used)
+    how Chooses Attack/Sustain gains, or Impact, which has a separate microdynamics control for each of four bands.
+    sound Impact lets you sharpen the highs while smoothing the lows, or the reverse.
 Xo1        "Crossover 1"  0 10000 2594  freq 20 20000                      | Between the first and the second band (Impact mode)
+    how Sets the frequency between the first and second band in Impact mode, from 20 Hz to 20 kHz.
+    sound It decides how much of the low end is treated as the lowest band.
 Xo2        "Crossover 2"  0 10000 5663  freq 20 20000                      | Between the second and the third band (never below Crossover 1)
+    how Sets the frequency between the second and third band in Impact mode.
+    sound It moves the boundary between the lower and upper midrange.
 Xo3        "Crossover 3"  0 10000 8257  freq 20 20000                      | Between the third and the fourth band (never below Crossover 2)
+    how Sets the frequency between the third and fourth band in Impact mode.
+    sound It decides where the top band begins.
 Impact1    "Impact 1"     0 1000  500   bip                                | The first band's microdynamics: −100 % takes them out (the band follows its slow level), +100 % doubles them (in dB), 0 leaves them
+    how Sets the first band's microdynamics from -100 % (flattened) to +100 % (doubled).
+    sound Positive values make low hits livelier; negative values smooth the bass out.
 Impact2    "Impact 2"     0 1000  500   bip                                | The second band's microdynamics
+    how Sets the second band's microdynamics from -100 % to +100 %.
+    sound Positive values add punch to the lower midrange, negative values soften it.
 Impact3    "Impact 3"     0 1000  500   bip                                | The third band's microdynamics
+    how Sets the third band's microdynamics from -100 % to +100 %.
+    sound Positive values add snap to snares and vocals, negative values soften them.
 Impact4    "Impact 4"     0 1000  500   bip                                | The fourth band's microdynamics
+    how Sets the fourth band's microdynamics from -100 % to +100 %.
+    sound Positive values add crispness to cymbals and hats, negative values soften them.
 Auto       "Auto gain"    0 1     1     switch                             | Impact mode: each band's energy stays what it was whatever its Impact (a 300 ms average, within ±12 dB)
+    how Keeps each band's loudness the same whatever its Impact, in Impact mode.
+    sound You hear the change in feel rather than a change in volume.
 group Output
 Stereo     "Stereo"       0 1     0     enum L/R M/S                       | What is shaped: left and right (one gain for both, from the louder), or mid and side (each its own)
+    how Chooses whether the shaping works on left and right, or on mid and side.
+    sound Mid/side lets the centre and the width be shaped separately; left/right keeps one gain for both sides.
 Mix        "Mix"          0 1000  1000  pct                                | Dry/wet (the dry signal is delayed to match)
+    how Blends the shaped signal with the dry signal.
+    sound Lower values give a subtler effect that keeps more of the original dynamics.
 Output     "Output"       0 480   240   db -24 24                          | Gain after the shaper, 0.1 dB steps (the editor's Match sets it from the gain-match reading)
+    how Adds -24 to +24 dB of gain after the shaper.
+    sound It matches the loudness to the untreated sound so you judge the punch fairly.
 Delta      "Delta"        0 1     0     switch                             | Hear only what the shaper changes: the output minus the input, delayed to match (gliding over 10 ms)
+    how Plays only the difference between the output and the input.
+    sound You hear only what the shaper adds or removes, which shows how much the hits have changed.
 
 # What the shaper measures (NeoTransientMachine.Readings, machine_readings), over the last 3 s.
 reading gain_match_db     dB    | Short-term loudness out − in (K-weighted, 3 s): what Output would have to take back for equal loudness

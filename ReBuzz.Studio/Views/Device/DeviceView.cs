@@ -88,8 +88,9 @@ namespace ReBuzz.Studio.Views.Device
             explainSound = new TextBlock { FontSize = StudioTokens.FontBody, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
             explain = new Border
             {
-                // A fixed height, so that focusing a parameter never moves the rows under the pointer (a double click needs them still).
-                Height = ExplainHeight,
+                // One line until a parameter is chosen, then its fixed height (the strip is under the list: choosing grows it upward only
+                // over the list's bottom rows, never moving the rows above, so a double click still finds them still).
+                Height = ExplainLineHeight,
                 ClipToBounds = true,
                 IsVisible = layout.All.Any(p => p.HasExplain || p.Description.Length > 0),
                 Background = StudioTokens.SurfaceControlBrush,
@@ -131,7 +132,7 @@ namespace ReBuzz.Studio.Views.Device
         }
 
         const double Pad = 12;
-        const double ExplainHeight = 72;
+        const double ExplainHeight = 72, ExplainLineHeight = 28;
         public const string ExplainPrompt = "Click a parameter to see what it does.";
 
         public static string FindKeyLabel => OperatingSystem.IsMacOS() ? "⌘F" : "Ctrl+F";
@@ -212,6 +213,9 @@ namespace ReBuzz.Studio.Views.Device
         public void ShowExplain(DeviceParam p)
         {
             ExplainFocused = p != null;
+            if (p == null) SetExpanded(false);
+            else if (!expanded) ExpandSoon();
+            ShowDetail();
             if (p == null)
             {
                 explainTitle.Text = "";
@@ -230,6 +234,60 @@ namespace ReBuzz.Studio.Views.Device
             explainSound.Text = "Sound: " + p.Sound;
         }
 
+        bool expanded;
+        DispatcherTimer expandTimer;
+
+        /// <summary>The How and Sound lines show once the strip is open (before, they would peek under the one line); the prompt is the line.</summary>
+        void ShowDetail()
+        {
+            explainTitle.IsVisible = ExplainFocused;
+            explainValue.IsVisible = ExplainFocused;
+            explainHow.Opacity = explainSound.Opacity = !ExplainFocused || expanded ? 1 : 0;
+        }
+
+        void SetExpanded(bool on)
+        {
+            expandTimer?.Stop();
+            expanded = on;
+            explain.Height = on ? ExplainHeight : ExplainLineHeight;
+            explain.Padding = on ? new Thickness(Pad, 6, Pad, 8) : new Thickness(Pad, 5, Pad, 0);
+            explainHow.Margin = on ? new Thickness(0, 4, 0, 0) : new Thickness(0);
+            ShowDetail();
+        }
+
+        /// <summary>
+        /// The strip opens to its full height only once the click that chose the parameter can't be the first of a double click (which would
+        /// type the value): growing at once moved the rows at the bottom of the list from under the pointer.
+        /// </summary>
+        void ExpandSoon()
+        {
+            expandTimer ??= new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(450) };
+            expandTimer.Stop();
+            expandTimer.Tick -= ExpandNow;
+            expandTimer.Tick += ExpandNow;
+            expandTimer.Start();
+        }
+
+        void ExpandNow(object sender, EventArgs e)
+        {
+            expandTimer.Stop();
+            if (list.IsTyping || macros.IsTyping)
+            {
+                expandTimer.Start();
+                return;
+            }
+            var p = list.Focused ?? macros.Focused;
+            if (p == null) return;
+            SetExpanded(true);
+            if (list.Focused != null) Dispatcher.UIThread.Post(() => list.Reveal(p), DispatcherPriority.Loaded);
+        }
+
+        /// <summary>Opens the strip now instead of after the pause (tests).</summary>
+        internal void ExplainExpandedNow() => ExpandNow(null, EventArgs.Empty);
+
+        /// <summary>The strip is open to its full height (a parameter is chosen and the pause has passed).</summary>
+        public bool ExplainExpanded => expanded;
+
         // ------------------------------------------------------------------ life
 
         protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
@@ -246,6 +304,7 @@ namespace ReBuzz.Studio.Views.Device
         {
             base.OnDetachedFromVisualTree(e);
             poll.Stop();
+            expandTimer?.Stop();
             poll.Tick -= Tick;
             machine.PropertyChanged -= MachineChanged;
             top?.RemoveHandler(KeyDownEvent, FindKey);

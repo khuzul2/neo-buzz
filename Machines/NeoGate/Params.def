@@ -6,23 +6,53 @@ summary Noise gate and downward expander, the successor of Pedal Gate: a thresho
 
 group Gate
 Threshold  "Threshold"     0 1000 625   lin -80 0 dB 1                    | The level that opens the gate
+    how Sets the level in dB, from -80 to 0, at which the gate opens.
+    sound Raising it silences more of the quiet noise and bleed, but cuts into soft notes if set too high.
 Hysteresis "Hysteresis"    0 1000 300   lin 0 20 dB 1                     | The gate closes this far under the threshold: more means less chatter
+    how Makes the gate close this far below the opening level, from 0 to 20 dB.
+    sound More hysteresis stops the gate chattering on and off around the threshold.
 Ratio      "Ratio"         0 1000 1000  ratio 1 20 inf                    | Expansion below the close threshold: every dB under it is (ratio − 1) dB quieter, down to Range. Infinity: a hard gate that goes straight to Range
+    how Sets how strongly the signal below the threshold is turned down, from 1:1 up to infinity.
+    sound Low ratios fade quiet sounds gently; infinity shuts the gate completely down to the Range.
 Range      "Range"         0 90    0    lin -90 0 dB 0                    | The closed gate's gain floor: -90 dB nearly shut, 0 dB no gating
+    how Sets how far a closed gate turns the signal down, from 0 to -90 dB.
+    sound -90 dB gives silence between hits; a smaller range leaves some of the background, for a more natural result.
 group Timing
 Attack     "Attack"        0 1000  459  time 0.0001 0.5                   | Time for the gain to open fully (a linear ramp)
+    how Sets how long the gate takes to open fully, from 0.1 ms to 0.5 s.
+    sound Fast attacks keep the start of a hit sharp; slow ones fade it in softly.
 Hold       "Hold"          0 1000  606  time 0.001 2                      | How long the gate stays open after the signal falls under the close threshold
+    how Sets how long the gate stays open after the signal drops under the closing level, from 1 ms to 2 s.
+    sound Longer holds stop the gate cutting off the ends of notes and flickering between hits.
 Release    "Release"       0 1000  697  time 0.001 2                      | Time for the gain to close fully (a linear ramp)
+    how Sets how long the gate takes to close, from 1 ms to 2 s.
+    sound Short releases chop tails tightly; long ones let sounds fade out naturally.
 Lookahead  "Lookahead"     0 1000  0    lin 0 25 ms 1                     | Delays the audio so the gate opens before the transient arrives (latency)
+    how Delays the audio by up to 25 ms so the gate opens before the transient arrives.
+    sound Hits keep their sharp attack instead of being clipped at the start, at the cost of some latency.
 group Key
 Detection  "Detection"     0 1     0    enum Peak RMS                     | Peak: fast, follows transients. RMS: 10 ms average, smoother on sustained sources
+    how Chooses whether the gate reacts to the peak level or to a 10 ms RMS average.
+    sound Peak responds instantly to hits; RMS is smoother and avoids false triggers on sustained sounds.
 Sidechain  "Sidechain"     0 1     0    enum Internal External            | Detect from the input, or from input 2 (connect a machine to the second input)
+    how Chooses whether the gate listens to its own input or to the machine on the second input.
+    sound External lets another sound, such as a kick, open the gate for rhythmic chopping.
 KeyLow     "Key low cut"   0 1000  0    freq 10 2000                      | High-pass on the key: keeps low rumble from opening the gate (off at its minimum)
+    how Filters low frequencies, from 10 Hz to 2 kHz, out of the signal the gate listens to.
+    sound Rumble and bass bleed stop opening the gate, so it reacts only to the sound you want.
 KeyHigh    "Key high cut"  0 1000  1000 freq 1000 22000                   | Low-pass on the key: keeps hiss and cymbals from opening the gate (off at its maximum)
+    how Filters high frequencies, from 1 kHz to 22 kHz, out of the signal the gate listens to.
+    sound Hiss and cymbal bleed stop opening the gate, so it reacts only to the main source.
 Listen     "Listen"        0 1     0    switch                            | Hear the key signal, filtered
+    how Switches the output to the filtered key signal that the gate hears.
+    sound You hear what the gate hears, which helps you set the key filters and threshold.
 group Output
 Output     "Output"        0 480   240  db -24 24                         | Gain after the gate, 0.1 dB steps (the editor's Match sets it from the gain-match reading)
+    how Adds -24 to +24 dB of gain after the gate.
+    sound It makes the gated sound louder or quieter without changing how the gate works.
 Delta      "Delta"         0 1     0    switch                            | Hear only what the gate takes out: the output minus the input, delayed to match (glides over 10 ms)
+    how Plays only the difference between the output and the input.
+    sound You hear exactly what the gate cuts out, so you can check it leaves the wanted sound alone.
 
 # What the gate measures (NeoGateMachine.Readings, machine_readings).
 reading gain_db           dB    | The gate's gain now, dB (0 open, down to Range when closed)

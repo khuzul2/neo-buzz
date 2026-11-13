@@ -9,56 +9,53 @@ A compressor with four characters, measured to the curve (the static curve withi
 | FET | fast feedback, program-dependent release, light harmonics | vocals, drums, aggressive bass, parallel |
 | Opto | smooth, program-dependent attack, two-stage release | basses, vocals, pads: levelling |
 
-## Signal flow
+Signal path: input 1 (the signal) and input 2 (the external trigger) go to the detector (`SC low cut`, `Stereo link`), then the gain computer, then the `Lookahead` delay on the audio, `Makeup` or `Auto makeup`, `Character`, `Mix` with the dry signal and `Output`. `Attack` is the time to 63 % of the gain change and `Release` back to 37 %. `Ratio` at its top is infinity: limiting.
 
-Input 1 (the signal) and input 2 ("Sidechain", for an external trigger) → detector (`SC low cut` high-pass, `Stereo link`) → gain computer (`Threshold`, `Ratio`, `Knee`, `Attack`, `Release`, `Auto release`) → `Lookahead` delay on the audio → `Makeup` (or `Auto makeup`) → `Character` → `Mix` with the dry signal → `Output`.
+## Use it for
 
-- `Attack` is the time to 63 % of the gain change, `Release` back to 37 %.
-- `Auto makeup` adds the gain a −12 dBFS signal loses.
-- `Lookahead` (0–5 ms) delays the audio so peaks are caught (overshoot within 1 dB at ratio ∞ and attack 0); it adds latency, which NeoBuzz Live is told about.
-- `Ratio` at its top is ∞:1: limiting.
+- Levelling a vocal or bass, glueing a drum or mix bus, parallel compression, sidechain ducking, a quick limiter.
 
-## How to use it
-
-- Threshold from a measurement: the reduction at level L is (L − Threshold) × (1 − 1/Ratio). Measure the part's loud level (`analyze(source=…, metrics=["dynamics"])`, the p95 RMS) and set Threshold = p95 − reduction × Ratio ÷ (Ratio − 1).
-- Slow attack (10–30 ms) keeps transients; under 1 ms flattens them. Release under the spacing of the hits.
-- Parallel compression: `Mix` 25–40 % with heavy settings (8:1, 10–15 dB of reduction).
-- Bus: `SC low cut` 80–150 Hz so the kick and bass don't drive all the reduction.
-
-Sidechain ducking (the kick at input 2: `connect(from="Kick", to=…, input="Sidechain")`):
+## Key controls
 
 | Parameter | Value | Why |
 |---|---|---|
-| Mode | Clean | |
-| Sidechain | External | detect from input 2 |
-| Threshold | -30 dB | under the kick's level at input 2 |
-| Ratio | 8:1 | |
-| Knee | 0 dB | |
-| Attack | 1 ms | |
-| Release | 150 ms | back up before the next 8th at 124 BPM |
+| Mode | Glue | bus character; Clean for transparent control |
+| Threshold | -18 dB | 1-3 dB of reduction on the loudest parts |
+| Ratio | 2:1 | gentle; 4:1 to 8:1 for control |
+| Attack | 30 ms | 10-30 ms keeps transients; under 1 ms flattens them |
+| Release | 300 ms | shorter than the spacing of the hits; or turn Auto release On |
+| Makeup | 1 dB | about the reduction, or use Auto makeup |
+| Mix | 100% | 25-40 % with heavy settings for parallel compression |
 
-## Gotchas
+Threshold from a measurement: the reduction at level L is (L - Threshold) x (1 - 1/Ratio). Measure the loud level with `analyze(source="Drums", metrics=["dynamics"])` (the p95 RMS) and set Threshold = p95 - reduction x Ratio / (Ratio - 1).
 
-- With `Sidechain` External and nothing connected to input 2, it never compresses. With nothing at input 1 it is silent.
-- The sidechain's level is the connection gain into input 2: the threshold depends on it.
-- Changing `Lookahead` changes the latency: keep it fixed on parallel routes, or use `Mix`.
-- `Character` does nothing in Clean mode.
+## Starting points
 
-## Preset map
+- "Glue — Mix Bus" (2:1, auto release), "Glue — Drum Bus" (4:1, 3 ms attack), "Mastering — Transparent" (1.5:1, auto release, 1 ms lookahead, 80 Hz SC low cut).
+- "Clean — Gentle Leveler", "Clean — Vocal Control", "Clean — Brickwall" (infinity:1, 2 ms lookahead: a limiter).
+- "FET — Vocal Grab", "FET — All Buttons" (20:1, smashed drums), "FET — Bass Tamer", "Opto — Smooth Vocal", "Opto — Bass Leveler".
+- "Parallel — New York Drums" (FET 8:1 at 35 % mix).
+- Sidechain duck with the kick at input 2 (`connect(from="Kick", to="Pad", input="Sidechain")`): Sidechain External, Threshold -30 dB, Ratio 8:1, Knee 0 dB, Attack 1 ms, Release 150 ms, or the presets "Sidechain — Kick Duck" and "Sidechain — Pump".
 
-| Preset | What |
-|---|---|
-| "Clean — Gentle Leveler" | 2:1, soft knee, auto makeup |
-| "Clean — Vocal Control" | 3.5:1, 5 ms attack |
-| "Clean — Brickwall" | ∞:1, 0.05 ms attack, 2 ms lookahead: a limiter |
-| "Glue — Mix Bus" | 2:1, auto release, a little colour |
-| "Glue — Drum Bus" | 4:1, 3 ms attack, more colour |
-| "FET — Vocal Grab" | 4:1, very fast attack |
-| "FET — All Buttons" | 20:1, maximum colour: smashed drums |
-| "FET — Bass Tamer" | 8:1, 1 ms attack |
-| "Opto — Smooth Vocal" | 3:1, slow release |
-| "Opto — Bass Leveler" | 4:1, 0.8 s release |
-| "Parallel — New York Drums" | FET 8:1 at 35 % mix |
-| "Sidechain — Kick Duck" | external trigger, 8:1, 150 ms release |
-| "Sidechain — Pump" | external trigger, ∞:1, 300 ms release: audible pumping |
-| "Mastering — Transparent" | 1.5:1, auto release, 1 ms lookahead, 80 Hz SC low cut |
+## Pitfalls
+
+- With `Sidechain` External and nothing connected to input 2 it never compresses. With nothing at input 1 it is silent. The detector level is the connection gain into input 2, so the threshold depends on it.
+- `Lookahead` (0-5 ms) adds latency that NeoBuzz Live is told about; changing it moves the audio, so keep it fixed on parallel routes, or use `Mix`.
+- `Character` does nothing in Clean.
+- On a bus, set `SC low cut` 80-150 Hz so the kick and bass do not drive all the reduction.
+
+## Pairs well with
+
+- Neo EQ before it (cut the lows) and after it (tone); Neo Limiter after a bus compressor; Neo Multiband when one band misbehaves; Neo Transient to restore punch.
+- The whole chain: `guide(topic="mixing-dynamics")` and `guide(topic="mastering-chain")`.
+
+## Successor
+
+Neo Comp replaces Pedal Comp: `machine_replace(machine="Comp")` carries its settings over in their units.
+
+## Checklist
+
+- [ ] `machine_readings(machine="Comp")` gives `rms_db` and `peak_db` out; compare with the input's `analyze` figures: the loudest parts are down 1-3 dB (glue) or the amount you planned.
+- [ ] `analyze(source="Bus", metrics=["dynamics"])`: crest factor down, loudness matched with Auto makeup or Makeup.
+- [ ] For a duck: `connection_set` or `connect` shows input 2 connected, and `analyze` shows the level drop on every kick.
+- [ ] `render` with the machine bypassed (`machine_set(machine="Comp", bypass=true)`) and compare with `compare`.
