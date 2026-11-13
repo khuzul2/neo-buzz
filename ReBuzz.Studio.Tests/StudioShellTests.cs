@@ -324,10 +324,10 @@ namespace ReBuzz.Studio.Tests
             {
                 NewSong();
                 window.RefreshNow();
-                Assert.That(window.Title, Is.EqualTo("Untitled — NeoBuzz Live"));
+                Assert.That(window.Title, Is.EqualTo("Untitled — " + StudioHost.AppTitle));
                 Core.Modified = true;
                 window.RefreshNow();
-                Assert.That(window.Title, Is.EqualTo("Untitled • — NeoBuzz Live"), "modified");
+                Assert.That(window.Title, Is.EqualTo("Untitled • — " + StudioHost.AppTitle), "modified");
 
                 var appMenu = AppMenu.ToNativeMenu(window.AppMenuModel());
                 Assert.That(appMenu.Items.OfType<NativeMenuItem>().First().Header, Is.EqualTo("About NeoBuzz Live"), "the macOS app menu");

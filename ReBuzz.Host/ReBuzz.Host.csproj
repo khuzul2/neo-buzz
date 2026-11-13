@@ -14,6 +14,8 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <Platforms>AnyCPU;x64</Platforms>
+    <!-- WinMmMidiBackend calls Windows-only NAudio types behind OperatingSystem.IsWindows(). -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +23,22 @@
     <!-- The engine references the portable machine API without copying it; the apps ship it. -->
     <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj" />
     <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WinMM MIDI on Windows (WinMmMidiBackend): NAudio's MidiIn and MidiOut (NAudio.WinMM), which only Windows loads. -->
+    <Reference Include="NAudio.Core"><HintPath>..\3rdParty\NAudio\NAudio.Core.dll</HintPath></Reference>
+    <Reference Include="NAudio.Midi"><HintPath>..\3rdParty\NAudio\NAudio.Midi.dll</HintPath></Reference>
+    <!-- ASIO on Windows (WindowsHostAudioDriverFactory): NAudio.Asio (MIT), which uses the installed drivers' COM interface. -->
+    <Reference Include="NAudio.Asio"><HintPath>..\3rdParty\NAudio\NAudio.Asio.dll</HintPath></Reference>
+    <Reference Include="NAudio.Wasapi"><HintPath>..\3rdParty\NAudio\NAudio.Wasapi.dll</HintPath></Reference>
+    <Reference Include="NAudio.WinMM"><HintPath>..\3rdParty\NAudio\NAudio.WinMM.dll</HintPath></Reference>
+  </ItemGroup>
+
+  <!-- The WPF app's ASIO and WASAPI drivers, shared as it is (it builds in ReBuzz.exe too); the engine excludes it (EngineFiles.props). -->
+  <ItemGroup>
+    <Compile Include="..\ReBuzz\Audio\Driver\AsioAudioDriver.cs" Link="Asio\AsioAudioDriver.cs" />
+    <Compile Include="..\ReBuzz\Audio\Driver\WasapiAudioDriver.cs" Link="Asio\WasapiAudioDriver.cs" />
   </ItemGroup>
 
   <ItemGroup>

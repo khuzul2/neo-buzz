@@ -406,6 +406,76 @@ jobs:
         $i = 0
         foreach ($l in $lines) { $i++; Write-Host "::notice title=Engine diagnostics $i::$l" }
 
+    # NeoBuzz Live Studio (preview) in the package (docs/specs/ux-overhaul.md P6), last so that it never hides the tests above.
+    # the package, started with a song of native Buzz machines (FSM Infector, x64, in its host; Jeskola Bass 3 and Reverb, x86,
+    # through the 32-bit bridge), its MCP server, a render on the null device, and a clean quit (tools/studio-windows-smoke.py).
+    - name: Studio preview smoke test
+      if: always() && steps.build.outcome == 'success'
+      timeout-minutes: 30
+      shell: pwsh
+      run: |
+        $pkg = (Get-ChildItem dist -Directory | Where-Object Name -like 'NeoBuzz-Live-*-x64' | Select-Object -First 1).FullName
+        python tools/studio-windows-smoke.py "$pkg\Studio\NeoBuzzLiveStudio.exe" "$env:RUNNER_TEMP\studio-package-smoke" --song "ExternalMachines/source/buzztrax-buzzmachines/FSM/Infector/FSM_Infector_Demo.bmx" --native-gear "FSM Infector,Jeskola Bass 3,Jeskola Reverb"
+        exit $LASTEXITCODE
+
+  # NeoBuzz Live Studio (preview) on Windows (docs/specs/ux-overhaul.md P6): the studio (ReBuzz.Studio, Avalonia) on a Windows
+  # runner. Its headless tests there, then it is published for win-x64 with PortAudio built from source with CMake
+  # (tools/build-portaudio.ps1: MME, DirectSound, WASAPI and WDM-KS, no ASIO) and the published NeoBuzzLiveStudio.exe is
+  # smoke-tested (tools/studio-windows-smoke.py): devices listed, started, its MCP server answers, a song plays on the null
+  # device and renders, the window closes cleanly. The package job above puts the same folder in the zip as Studio\ and
+  # smoke-tests that too, with a song of native Buzz machines.
+  studio-windows:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+    - name: Checkout (with submodules)
+      uses: actions/checkout@v5
+      with:
+        submodules: recursive
+
+    - name: Setup .NET 10 SDK
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Studio tests (headless, Windows)
+      shell: pwsh
+      run: dotnet test ReBuzz.Studio.Tests -p:ReBuzzCleanBuild=true --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath studio-test.log
+
+    - name: Failed studio tests
+      if: failure()
+      shell: pwsh
+      run: |
+        Select-String -Path studio-test.log -Pattern '^\s*Failed ' | Select-Object -First 60 | ForEach-Object { Write-Host $_.Line }
+        Select-String -Path studio-test.log -Pattern 'Failed!|Passed!' | ForEach-Object { Write-Host $_.Line }
+
+    - name: Publish the studio (win-x64) with PortAudio from source
+      if: always()
+      shell: pwsh
+      run: ./tools/publish-studio-windows.ps1 -Out build/Studio
+
+    - name: Studio smoke test (published exe)
+      if: always() && hashFiles('build/Studio/NeoBuzzLiveStudio.exe') != ''
+      timeout-minutes: 25
+      shell: pwsh
+      run: |
+        python tools/studio-windows-smoke.py "$PWD\build\Studio\NeoBuzzLiveStudio.exe" "$env:RUNNER_TEMP\studio-smoke"
+        exit $LASTEXITCODE
+
+    - name: Zip the studio
+      if: always() && hashFiles('build/Studio/NeoBuzzLiveStudio.exe') != ''
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force dist | Out-Null
+        Compress-Archive -Path build/Studio/* -DestinationPath dist/NeoBuzz-Live-Studio-preview-win-x64.zip -CompressionLevel Optimal
+
+    - name: Upload the studio
+      if: always() && hashFiles('dist/*.zip') != ''
+      uses: actions/upload-artifact@v6
+      with:
+        name: NeoBuzz-Live-Studio-preview-win-x64
+        path: dist/*.zip
+
   # The null test (docs/specs/mac-engine.md decision 6, M3/M4): rebuzz-headless renders the same cases
   # as the package job's NeoBuzzLive.exe, and each must be bit-identical to the Windows reference, every
   # sample. A case that differs reports its first differing sample and its largest difference (dBFS).

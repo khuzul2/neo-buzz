@@ -5,7 +5,11 @@
 // sign is the one we build.
 //
 // The binding is for LP64 platforms (macOS, Linux), where C's `unsigned long` is 64 bits: the
-// sample format, frame counts and callback flags are nuint. Windows keeps ASIO and WASAPI.
+// sample format, frame counts and callback flags are nuint. On Windows (LLP64, the studio's preview,
+// docs/specs/ux-overhaul.md P6) `unsigned long` is 32 bits: what we pass is still right (the callee
+// reads the low half; the stream parameters' format sits where the padding is), and what we
+// receive in the callback is cut to 32 bits first (its upper half is not defined there).
+// The WPF app keeps ASIO and WASAPI.
 //
 // Real time: the callback runs on the device's thread (CoreAudio's I/O thread on macOS, already
 // real-time and in the device's workgroup). It calls the render delegate with buffers allocated
@@ -250,7 +254,7 @@ namespace ReBuzz.Platform
             static int Callback(void* inputBuffer, void* outputBuffer, nuint frameCount, CallbackTimeInfo* time, nuint flags, void* user)
             {
                 var s = (Stream)GCHandle.FromIntPtr((IntPtr)user).Target;
-                int frames = (int)frameCount;
+                int frames = (int)(uint)frameCount;      // 32 bits on Windows: the upper half is undefined there
                 float* outPtr = (float*)outputBuffer;
                 System.Threading.Interlocked.Increment(ref s.callbacks);
                 if (frames * 2 > s.output.Length)
