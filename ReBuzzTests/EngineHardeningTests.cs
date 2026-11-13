@@ -1073,6 +1073,7 @@ namespace ReBuzzTests
                 RestoreResultHolder holder = new();
                 using var types = new AllocationTypes();
                 var probed = new System.Collections.Concurrent.ConcurrentQueue<string>();
+                ReBuzz.Audio.WorkManager.StageProbe = (s, d) => probed.Enqueue($"[{s}] +{d}");
                 ReBuzz.MachineManagement.MachineWorkInstance.AllocationProbe = (m, d) => probed.Enqueue($"{m.Name} +{d}");
                 bool started = false;
                 var during = Read(buffers, () =>
@@ -1091,6 +1092,7 @@ namespace ReBuzzTests
                     $"largest sample-to-sample step: baseline {baseStep:G4}, across the restore {restoreStep:G4} (level {levelNow:G4})");
 
                 ReBuzz.MachineManagement.MachineWorkInstance.AllocationProbe = null;
+                ReBuzz.Audio.WorkManager.StageProbe = null;
                 if (bytes != 0) TestContext.Out.WriteLine("[notice] restore live test: machines that allocated in their block: " + string.Join("; ", probed));
                 if (bytes != 0) TestContext.Out.WriteLine("[notice] restore live test: allocation ticks inside the allocating buffers: " + string.Join("; ", types.Ticks.Where(k => windows.Any(w => k.Time >= w.From.AddMilliseconds(-2) && k.Time <= w.To.AddMilliseconds(2))).Select(k => k.Text)) + $" (of {types.Ticks.Count} ticks in all)");
                 Assert.That(bytes, Is.EqualTo(0), "a restore must not allocate on the audio thread");

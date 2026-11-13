@@ -142,6 +142,18 @@ namespace ReBuzz.Audio
 
         internal int workBufferOffset;
         // Avoid new object creation to minimize GC.
+        /// <summary>Diagnosis only (tests): told which stage of a block allocated on the audio thread, and how much. Null in normal use.</summary>
+        internal static Action<string, long> StageProbe;
+        long markBase;
+        void Mark(string stage)
+        {
+            var p = StageProbe;
+            if (p == null) return;
+            long now = GC.GetAllocatedBytesForCurrentThread();
+            if (now != markBase) p(stage, now - markBase);
+            markBase = now;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public int MainAudioFillBuffer(float[] buffer, int offset, int count)
         {
@@ -210,6 +222,7 @@ namespace ReBuzz.Audio
                         masterInfo.SamplesPerTick = samples;
                     }
 
+                    if (StageProbe != null) markBase = GC.GetAllocatedBytesForCurrentThread();
                     UpdateMasterParams();
 
                     // Initiate master info for Audio Messages
@@ -245,14 +258,18 @@ namespace ReBuzz.Audio
                     if (restore != null)
                         restore.OnBlock(framesToProcess, masterInfo.PosInTick == 0 || (engineSettings.SubTickTiming && subTickInfo.PosInSubTick == 0));
 
+                    Mark("tick setup");
                     // Call Pattern Column Events
                     UpdatePatternColumnEvents(framesToProcess);
+                    Mark("pattern column events");
 
                     // Update Managed Machine host info
                     buzzCore.MachineManager.UpdateMasterAndSubTickInfoToHost();
 
                     // Tick all machines first and then call tick again if sendcontrolchanges flag set?
+                    Mark("master info to host");
                     CallTick();
+                    Mark("CallTick");
 
                     // Fork (docs/specs/mastering-tools.md §4.1): a latency a machine reported at its tick reaches the
                     // delay compensation before this block's work (the same samples every run).
@@ -260,6 +277,7 @@ namespace ReBuzz.Audio
 
                     // Call work
                     ReadWork(buffer, workBufferOffset, framesToProcess);
+                    Mark("ReadWork");
 
                     // Mix waves playing from wavetable 
                     if (buzzCore.SongCore.WavetableCore.IsPlayingWave())
@@ -294,7 +312,9 @@ namespace ReBuzz.Audio
                     global::ReBuzz.Core.Session.SessionClipEngine.AfterMix(buzzCore, buffer, workBufferOffset, framesToProcess);
 
                     // Session View (fork, 0.7): the metronome, after the tap (heard, not recorded).
+                    Mark("wave, taps, clip engine");
                     buzzCore.SessionCore.MixMetronome(buffer, workBufferOffset, framesToProcess);
+                    Mark("metronome");
 
                     workBufferOffset += framesToProcess * 2;
                     reminingBuffer -= framesToProcess * 2;
@@ -336,8 +356,10 @@ namespace ReBuzz.Audio
                         }
                     }
 
+                    Mark("tick end (position, session OnTick)");
                     // Update position info in patterns
                     UpdatePatternPositions(framesToProcess);
+                    Mark("pattern positions");
 
                     // Update frame count
                     unchecked { ReBuzzCore.GlobalState.AudioFrame += framesToProcess; }
