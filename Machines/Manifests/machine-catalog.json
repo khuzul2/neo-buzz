@@ -803,6 +803,34 @@
    ],
    "use_for": "Learn subtractive synthesis: one oscillator, a sub and a resonant filter, every control explained."
   },
+  "Neo Learn Phase Distortion": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "polyphonic",
+    "bright"
+   ],
+   "use_for": "A teaching phase-distortion synth: rubbery basses, digital plucks and glassy keys from a bent cosine with six read shapes, a decaying bend, a resonant sweep, ring modulation and a warm chorus."
+  },
+  "Neo Learn Sampler": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "polyphonic",
+    "sampler"
+   ],
+   "use_for": "A teaching sampler: lo-fi keys, pads and drones from one sample (five built in, or your own WAV) with a start offset, a tone tilt, a crossfaded loop, vintage grit and a small room."
+  },
+  "Neo Learn Vector": {
+   "category": "Synths",
+   "tags": [
+    "learning",
+    "polyphonic",
+    "pad",
+    "lush"
+   ],
+   "use_for": "A teaching vector synth: evolving pads and textures from four sources at the corners of a diamond, a cursor that mixes them and an orbit that moves it by itself."
+  },
   "Neo Learn Wavefolder": {
    "category": "Synths",
    "tags": [

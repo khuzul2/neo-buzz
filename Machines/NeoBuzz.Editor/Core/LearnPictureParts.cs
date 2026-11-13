@@ -307,6 +307,80 @@ namespace NeoBuzz.Editor
             g.Path(folded, NeoFill.None, new NeoStroke(accent, 1.5));
             g.Text("folded sine", wr.Left, wr.Top - 14, 9, Palette.DimText);
         }
+        /// <summary>
+        /// Phase distortion: the read phase against the position (the identity dotted: the curve leaves it as the bend grows) and the sine read through it, two cycles
+        /// (the left box and the wave beside it). <paramref name="phase"/> is 0 … <paramref name="top"/> (1, or 2 for the double sine).
+        /// </summary>
+        public static void PhaseAndWave(INeoCanvas g, NeoRect r, double[] phase, int n, double top, double[] wave, int waveCount, NeoColor accent)
+        {
+            var box = new NeoRect(r.Left + 10, r.Top + 26, Math.Min(r.Height - 40, r.Width * 0.38), r.Height - 40);
+            g.Rect(box, Palette.Panel.WithAlpha(0xB0), new NeoStroke(Palette.Grid, 1), 3);
+            g.Line(box.Left, box.Bottom, box.Right, box.Bottom - box.Height / top, new NeoStroke(Palette.DimText.WithAlpha(0x60), 1, true));
+            var path = new NeoPath();
+            for (int i = 0; i < n; i++)
+            {
+                double x = box.Left + box.Width * i / (n - 1), y = box.Bottom - box.Height * Math.Clamp(phase[i] / top, 0, 1);
+                if (i == 0) path.MoveTo(x, y); else path.LineTo(x, y);
+            }
+            g.Path(path, NeoFill.None, new NeoStroke(accent, 2));
+            g.Text("read position", box.Right - 70, box.Bottom - 12, 9, Palette.DimText);
+            g.Text("phase", box.Left + 3, box.Top + 1, 9, Palette.DimText);
+            var wr = new NeoRect(box.Right + 14, r.Top + 26, r.Right - box.Right - 24, r.Height - 40);
+            g.Line(wr.Left, wr.Top + wr.Height / 2, wr.Right, wr.Top + wr.Height / 2, new NeoStroke(Palette.Grid, 1, false));
+            var bent = new NeoPath();
+            for (int i = 0; i < waveCount; i++)
+            {
+                double x = wr.Left + wr.Width * i / (waveCount - 1), y = wr.Top + wr.Height * (0.5 - 0.5 * Math.Clamp(wave[i], -1, 1));
+                if (i == 0) bent.MoveTo(x, y); else bent.LineTo(x, y);
+            }
+            g.Path(bent, NeoFill.None, new NeoStroke(accent, 1.5));
+            g.Text("bent sine", wr.Left, wr.Top - 14, 9, Palette.DimText);
+        }
+
+        /// <summary>
+        /// The vector diamond: four corners (west, east, north, south, each named in <paramref name="names"/>) lit by their weight, the cursor's trail (<paramref name="trail"/>
+        /// points of x, y in -1 … 1, oldest first) and the cursor.
+        /// </summary>
+        public static void VectorDiamond(INeoCanvas g, NeoRect r, string[] names, double[] weights, double[] trailX, double[] trailY, int trail, double cx, double cy, NeoColor accent)
+        {
+            double size = Math.Min(r.Width, r.Height) * 0.40;
+            double mx = r.Left + r.Width / 2, my = r.Top + r.Height / 2 + 6;
+            var d = new NeoPath();
+            d.MoveTo(mx - size, my); d.LineTo(mx, my - size); d.LineTo(mx + size, my); d.LineTo(mx, my + size); d.Close();
+            g.Path(d, Palette.Panel.WithAlpha(0xB0), new NeoStroke(Palette.Grid, 1));
+            g.Line(mx - size, my, mx + size, my, new NeoStroke(Palette.Grid, 1, false));
+            g.Line(mx, my - size, mx, my + size, new NeoStroke(Palette.Grid, 1, false));
+            double[] px = { mx - size, mx + size, mx, mx }, py = { my, my, my - size, my + size };
+            for (int k = 0; k < 4; k++)
+            {
+                double w = Math.Clamp(weights[k], 0, 1), rad = 4 + 10 * w;
+                g.Ellipse(new NeoPoint(px[k], py[k]), rad, rad, accent.WithAlpha((byte)(0x30 + (int)(0xC0 * w))), new NeoStroke(accent, 1));
+                double tx = k == 0 ? px[k] - 4 : k == 1 ? px[k] - 4 : px[k] + 12;
+                double ty = k == 2 ? py[k] - 4 : k == 3 ? py[k] - 14 : py[k] - 22;
+                g.Text(names[k], k == 0 ? px[k] : tx, ty, 9, Palette.DimText);
+            }
+            if (trail > 1)
+            {
+                var t = new NeoPath();
+                for (int i = 0; i < trail; i++)
+                {
+                    double x = mx + size * Math.Clamp(trailX[i], -1, 1), y = my - size * Math.Clamp(trailY[i], -1, 1);
+                    if (i == 0) t.MoveTo(x, y); else t.LineTo(x, y);
+                }
+                g.Path(t, NeoFill.None, new NeoStroke(accent.WithAlpha(0x70), 1));
+            }
+            g.Ellipse(new NeoPoint(mx + size * Math.Clamp(cx, -1, 1), my - size * Math.Clamp(cy, -1, 1)), 5, 5, accent, new NeoStroke(Palette.Text, 1.5));
+        }
+
+        /// <summary>A start line and, when <paramref name="loop"/> is set, a loop band from <paramref name="start"/> to <paramref name="end"/> (shares of the width) over a waveform.</summary>
+        public static void Region(INeoCanvas g, NeoRect r, double start, double end, bool loop, NeoColor accent)
+        {
+            double x0 = r.Left + r.Width * Math.Clamp(start, 0, 1), x1 = r.Left + r.Width * Math.Clamp(end, 0, 1);
+            if (loop) g.Rect(new NeoRect(x0, r.Top + 24, Math.Max(1, x1 - x0), r.Height - 30), accent.WithAlpha(0x28), new NeoStroke(accent.WithAlpha(0x80), 1, true), 0);
+            g.Line(x0, r.Top + 24, x0, r.Bottom - 6, new NeoStroke(accent, 2));
+            g.Text(loop ? "start / loop" : "start", Math.Min(x0 + 4, r.Right - 70), r.Top + 26, 9, Palette.DimText);
+        }
+
         /// <summary>The pad's handle at (<paramref name="handle"/>.X, .Y) over <paramref name="r"/> (y up), with guide lines, and the caption naming what the pad moves.</summary>
         public static void Handle(INeoCanvas g, NeoRect r, NeoPoint? handle, bool dragging, NeoColor accent, string caption)
         {

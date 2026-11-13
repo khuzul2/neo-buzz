@@ -24,6 +24,10 @@ namespace NeoBuzz.DyeEssence
         public readonly float[] FrameMix;
         /// <summary>Each lane's last output, for PM self-feedback (Neo Learn's FM).</summary>
         public readonly float[] Fb;
+        /// <summary>Each lane's wavefolder stages' last input and its antiderivative (six rows of <see cref="Total"/>; Neo Learn's anti-aliased fold).</summary>
+        public readonly float[] FoldU, FoldF;
+        /// <summary>Each lane's fold stage gain after the bandwidth limit (<see cref="Warps.FoldLimit"/>).</summary>
+        public readonly float[] FoldGain;
         public readonly int[] OffsetA, OffsetB;
         public readonly float[][] Data;
         public readonly float[] Gain;
@@ -38,6 +42,9 @@ namespace NeoBuzz.DyeEssence
             ModSlot = new uint[total];
             FrameMix = new float[total];
             Fb = new float[total];
+            FoldU = new float[6 * total];
+            FoldF = new float[6 * total];
+            FoldGain = new float[total];
             OffsetA = new int[total];
             OffsetB = new int[total];
             Data = new float[total][];
@@ -239,7 +246,12 @@ namespace NeoBuzz.DyeEssence
             bool feedback = w.Feedback != 0f;
             TF fbk = TL.Splat(w.Feedback), yPrev = feedback ? TL.Load(s.Fb, at) : zero;
             int foldN = w.FoldStages;
-            TF foldG = TL.Splat(w.FoldG), foldB = TL.Splat(w.FoldBias);
+            if (foldN > 0)
+            {
+                // each lane's stage gain, held so that the folds' total gain times the lane's pitch stays inside what the oversampled rate can carry
+                for (int l = 0; l < 8; l++) s.FoldGain[at + l] = Warps.FoldLimit(w.FoldG, foldN, s.Inc[at + l] * (1.0 + Math.Abs(w.Fm)));
+            }
+            TF foldG = foldN > 0 ? TL.Load(s.FoldGain, at) : zero, foldB = TL.Splat(w.FoldBias);
             for (int t = 0; t < count; t++)
             {
                 TF m = zero;
@@ -294,7 +306,7 @@ namespace NeoBuzz.DyeEssence
                     y = Warps.Amplitude<TL, TF, TU>(w.W1, y, p, k10, k11, m);
                     y = Warps.Amplitude<TL, TF, TU>(w.W2, y, p, k20, k21, m);
                 }
-                if (foldN > 0) y = Warps.Fold<TL, TF, TU>(y, foldN, foldG, foldB);
+                if (foldN > 0) y = Warps.FoldAdaa<TL, TF, TU>(y, foldN, foldG, foldB, s.FoldU, s.FoldF, at, total);
                 if (store != null) TL.Store(y, store, storeAt + t * modStride);
                 if (feedback) yPrev = y;
                 int o = t * AccStride;

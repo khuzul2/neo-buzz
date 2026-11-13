@@ -197,7 +197,7 @@ namespace NeoBuzz.DyeEssence
                 os.Spread = values.F(b + (P.ASpread - P.AType));
                 os.Phase = values.F(b + (P.APhase - P.AType)) / 360f;
                 os.Random = values.F(b + (P.ARandom - P.AType));
-                os.Warp1 = (Warp)values.Choice(b + (P.AWarp1 - P.AType));
+                os.Warp1 = os.PdOn ? Warps.Pd : (Warp)values.Choice(b + (P.AWarp1 - P.AType));   // Neo Learn: the phase distortion is not one of Dye Essence's warps
                 os.Amount1 = values.F(b + (P.AWarp1Amt - P.AType));
                 os.Warp2 = (Warp)values.Choice(b + (P.AWarp2 - P.AType));
                 os.Amount2 = values.F(b + (P.AWarp2Amt - P.AType));

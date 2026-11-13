@@ -89,12 +89,18 @@ namespace NeoBuzz.DyeEssence
         /// FoldDrive (0 … 1, the stages' gain) and FoldSym (−1 … 1, the offset before the first).
         /// </summary>
         public int TypeExt, FoldStages;
+        /// <summary>Neo Learn L2b's additions (append only, neutral at their defaults): the phase distortion's shape (Warp.Pd, 0 … 5: Warps.PdTarget) and a level the host moves between ticks (the Vector machine's corner weights; Dye Essence's own Level stays what its controls say).</summary>
+        public int PdShape;
+        public bool PdOn;
+        public float LevelExt = 1f;
         public float StrPick = 0.3f, StrDamp = 0.3f, StrHard = 0.5f, StrDecay = 3f, StrStiff, StrSymp, FoldDrive, FoldSym;
     }
 
     internal sealed class SourceSettings
     {
         public float Level, Pan, ToF2;
+        /// <summary>Neo Learn L2b: a level the host moves between ticks (multiplies <see cref="Level"/>; 1 leaves it).</summary>
+        public float LevelExt = 1f;
     }
 
     internal sealed class FilterSettings
@@ -382,7 +388,7 @@ namespace NeoBuzz.DyeEssence
             {
                 var os = s.Osc[o];
                 int b = SmOsc + 5 * o;
-                smTarget[b] = Math.Max(0f, os.Level);
+                smTarget[b] = Math.Max(0f, os.Level * os.LevelExt);
                 smTarget[b + 1] = DspMath.Clamp(os.ToF2, 0f, 1f);
                 smTarget[b + 2] = DspMath.Clamp(EngineOf(os)?.PositionOf(os) ?? 0f, 0f, 1f);
                 smTarget[b + 3] = DspMath.Clamp(os.Amount1, 0f, 1f);
@@ -395,9 +401,9 @@ namespace NeoBuzz.DyeEssence
                 smTarget[SmFilter + 3 * f + 1] = DspMath.Clamp(fs.Reso, 0f, 1f);
                 smTarget[SmFilter + 3 * f + 2] = Math.Max(1f, fs.Drive);
             }
-            smTarget[SmSub] = Math.Max(0f, s.Sub.Level);
+            smTarget[SmSub] = Math.Max(0f, s.Sub.Level * s.Sub.LevelExt);
             smTarget[SmSub + 1] = DspMath.Clamp(s.Sub.ToF2, 0f, 1f);
-            smTarget[SmNoise] = Math.Max(0f, s.Noise.Level);
+            smTarget[SmNoise] = Math.Max(0f, s.Noise.Level * s.Noise.LevelExt);
             smTarget[SmNoise + 1] = DspMath.Clamp(s.Noise.ToF2, 0f, 1f);
             smTarget[SmRouting] = DspMath.Clamp(s.Routing, 0f, 1f);
             smTarget[SmVolume] = Math.Max(0f, s.Volume);
@@ -1234,14 +1240,16 @@ namespace NeoBuzz.DyeEssence
             w.W2 = w2;
             Warps.Constants(w1, amount1, out w.K10, out w.K11);
             Warps.Constants(w2, amount2, out w.K20, out w.K21);
+            if (w1 == Warps.Pd) w.K11 = Math.Clamp(os.PdShape, 0, Warps.PdShapes - 1) * Warps.PdRow;
+            if (w2 == Warps.Pd) w.K21 = Math.Clamp(os.PdShape, 0, Warps.PdShapes - 1) * Warps.PdRow;
             w.Fm = (w1 == Warp.Fm ? w.K10 : 0f) + (w2 == Warp.Fm ? w.K20 : 0f);
             w.Feedback = os.Feedback;
             w.FoldStages = os.FoldStages > 0 ? Math.Min(os.FoldStages, 6) : 0;
             w.FoldG = 1f + FoldGainAt(os.FoldDrive);
             w.FoldBias = 0.5f * Math.Clamp(os.FoldSym, -1f, 1f);
             w.UsesMod = mod >= 0 && (Warps.UsesModulator(w1) || Warps.UsesModulator(w2));
-            w.Wrap1 = w1 == Warp.Pm;
-            w.Wrap2 = w2 == Warp.Pm;
+            w.Wrap1 = w1 == Warp.Pm || w1 == Warps.Pd;
+            w.Wrap2 = w2 == Warp.Pm || w2 == Warps.Pd;
             w.MapsPhase = Warps.MapsPhase(w1) || Warps.MapsPhase(w2) || w.Wrap1 || w.Wrap2;
             w.Amplitude = IsAmplitude(w1) || IsAmplitude(w2);
             w.Mirror = w1 == Warp.Mirror || w2 == Warp.Mirror;

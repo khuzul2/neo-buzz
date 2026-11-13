@@ -41,6 +41,9 @@ namespace ReBuzz.AgentTests
         [TestCase("NeoLearnString", "Neo Learn String", "pluck_position,string_damping,pick_hardness,string_decay,dispersion,sympathetic_res")]
         [TestCase("NeoLearnFormant", "Neo Learn Formant", "vowel_morph,vocal_tract_scale,formant_resonance,glottal_edge,breath_air,vowel_env_mod")]
         [TestCase("NeoLearnWavefolder", "Neo Learn Wavefolder", "fold_drive,fold_symmetry,fold_stages,linear_fm,lpg_mode,lpg_ping")]
+        [TestCase("NeoLearnPhaseDistortion", "Neo Learn Phase Distortion", "phase_bend,resonance,pd_wave_shape,bend_decay,ring_mod,chorus")]
+        [TestCase("NeoLearnVector", "Neo Learn Vector", "vector_x,vector_y,corner_palette,orbit_speed,orbit_radius,orbit_shape")]
+        [TestCase("NeoLearnSampler", "Neo Learn Sampler", "sample_offset,timbre_tilt,source,loop,vintage_dac,room_space")]
         public void TheOtherLearnManifestsCarryTwelveControlsWithIdsHowAndSound(string folder, string gear, string core)
         {
             var m = MachineManifest.Load(Path.Combine(RepoRoot(), "Machines", folder, gear + MachineManifest.Suffix))!;

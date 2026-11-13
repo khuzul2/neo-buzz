@@ -7,6 +7,7 @@
 
 using System;
 using NeoBuzz.Dsp;
+using NeoBuzz.DyeEssence;
 using DyeP = NeoBuzz.DyeEssence.P;
 
 namespace NeoBuzz.Learn
@@ -28,12 +29,14 @@ namespace NeoBuzz.Learn
         TypeExt, StrPick, StrDamp, StrHard, StrDecay, StrStiff, StrSymp, FoldStages, FoldDrive, FoldSym,
         // L2a: a filter's kind (slots 3 and 4 are filters 1 and 2): 1 vowel, 2 low-pass gate; the vowel filter's and the gate's controls.
         FKind, FMorph, FTract, FQ, FEnvMod, FMode, FStrike,
+        // L2b: the phase distortion's shape (-1: off; 0 … 5 puts Warp.Pd in warp 1) and a level the host moves between ticks (1: as Dye's controls say; also for the sub and the noise).
+        PdShape, LevelExt,
     }
 
-    /// <summary>The slots <see cref="IDyeSink.Ext"/> addresses: the three oscillators, then the two filters.</summary>
+    /// <summary>The slots <see cref="IDyeSink.Ext"/> addresses: the three oscillators, the two filters, then the sub and the noise (their <see cref="SlotExt.LevelExt"/> only).</summary>
     internal static class ExtSlot
     {
-        public const int Filter1 = 3, Filter2 = 4, Count = 5;
+        public const int Filter1 = 3, Filter2 = 4, Sub = 5, Noise = 6, Count = 7;
     }
 
     internal abstract class MacroMap
@@ -48,6 +51,25 @@ namespace NeoBuzz.Learn
 
         /// <summary>A map that plays String slots needs their delay lines made (off the audio thread): the voice rate's oversampling, else 0.</summary>
         public virtual int StringOversample => 0;
+
+        /// <summary>The effects after the engine this machine's map asks for (L2b): a sum of <see cref="FxChorus"/>, <see cref="FxGrit"/>, <see cref="FxRoom"/>, <see cref="FxTilt"/>.</summary>
+        public virtual int FxFlags => 0;
+        public const int FxChorus = 1, FxGrit = 2, FxRoom = 4, FxTilt = 8;
+
+        /// <summary>The effects' amounts from the 12 control values (called with <see cref="Map"/>, on the audio thread; the set exists when <see cref="FxFlags"/> is not 0).</summary>
+        public virtual void Post(double[] c, LearnFxSet fx) { }
+
+        /// <summary>
+        /// A map that moves something continuously (the Vector machine's orbit) says how often, in samples: the host then plays the engine in pieces of at most this many
+        /// samples and calls <see cref="Tick"/> before each, with the piece's length. 0: one call for the block.
+        /// </summary>
+        public virtual int TickSamples => 0;
+
+        /// <summary>The host's sample rate (a map that moves something in time needs it); called whenever it changes.</summary>
+        public virtual void SetSampleRate(float rate) { }
+
+        /// <summary>Moves what the map moves by <paramref name="samples"/> (audio thread, allocation-free); writes through <paramref name="dye"/> as <see cref="Map"/> does.</summary>
+        public virtual void Tick(double[] c, int samples, IDyeSink dye) { }
 
         /// <summary>The fixed base patch, written once before the first block (a map may also write these controls again).</summary>
         public abstract void Base(IDyeSink dye);

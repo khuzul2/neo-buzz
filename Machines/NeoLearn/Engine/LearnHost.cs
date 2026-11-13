@@ -25,6 +25,8 @@ namespace NeoBuzz.Learn
         readonly ParamValues controls;
         readonly ParamValues dyeValues;
         readonly Sink sink;
+        LearnFxSet fx;
+        float[] pieceL, pieceR;
         readonly double[] c = new double[MacroMap.Count];
         readonly LevelMeter meter = new LevelMeter();
         float gain = 1f, rate = 48000;
@@ -48,7 +50,9 @@ namespace NeoBuzz.Learn
             map.Map(c, sink);
             Engine = new DyeEngine(dyeValues);
             sink.Push(Engine);
+            if (map.TickSamples > 0) { pieceL = new float[DyeEngine.MaxBlock]; pieceR = new float[DyeEngine.MaxBlock]; }
             SetSampleRate(48000);
+            map.Post(c, fx);
             gain = TargetGain();
             controls.Clean();
         }
@@ -63,9 +67,16 @@ namespace NeoBuzz.Learn
         public void SetSampleRate(float sr)
         {
             rate = sr;
+            map.SetSampleRate(sr);
             Engine.SetSampleRate(sr);
             if (map.StringOversample > 0) Engine.Bank.PrepareStrings(sr * map.StringOversample);
             meter.SetSampleRate(sr);
+            if (map.FxFlags != 0)
+            {
+                int f = map.FxFlags;
+                fx = new LearnFxSet(sr, (f & MacroMap.FxChorus) != 0, (f & MacroMap.FxGrit) != 0, (f & MacroMap.FxRoom) != 0, (f & MacroMap.FxTilt) != 0);
+                map.Post(c, fx);
+            }
         }
 
         void Read()
@@ -106,9 +117,27 @@ namespace NeoBuzz.Learn
                 Read();
                 map.Map(c, sink);
                 sink.Push(Engine);
+                if (fx != null) map.Post(c, fx);
                 controls.Clean();
             }
-            bool any = Engine.Process(left, right, n);
+            bool any;
+            int piece = map.TickSamples;
+            if (piece <= 0) any = Engine.Process(left, right, n);
+            else
+            {
+                // A map that moves something between ticks (the orbit): the engine plays in pieces and the map moves before each.
+                any = false;
+                for (int at = 0; at < n; at += piece)
+                {
+                    int len = Math.Min(piece, n - at);
+                    map.Tick(c, len, sink);
+                    sink.Push(Engine);
+                    any |= Engine.Process(pieceL, pieceR, len);
+                    Array.Copy(pieceL, 0, left, at, len);
+                    Array.Copy(pieceR, 0, right, at, len);
+                }
+            }
+            fx?.Process(left, right, n);
             float target = TargetGain();
             float g0 = gain, step = (target - g0) / n;
             double sum = 0;
@@ -173,7 +202,9 @@ namespace NeoBuzz.Learn
                 {
                     ext[o * ExtCount + (int)SlotExt.GrainMorph] = -1f;
                     ext[o * ExtCount + (int)SlotExt.ExciterMorph] = -1f;
+                    ext[o * ExtCount + (int)SlotExt.PdShape] = -1f;
                 }
+                for (int o = 0; o < ExtSlot.Count; o++) ext[o * ExtCount + (int)SlotExt.LevelExt] = 1f;
             }
 
             public void Set(int dyeParam, double value) => values.Set(dyeParam, values.Table[dyeParam].Raw(value));
@@ -214,7 +245,13 @@ namespace NeoBuzz.Learn
                     os.FoldStages = (int)ext[b + (int)SlotExt.FoldStages];
                     os.FoldDrive = ext[b + (int)SlotExt.FoldDrive];
                     os.FoldSym = ext[b + (int)SlotExt.FoldSym];
+                    os.PdOn = ext[b + (int)SlotExt.PdShape] >= 0f;
+                    os.PdShape = os.PdOn ? (int)ext[b + (int)SlotExt.PdShape] : 0;
+                    if (os.PdOn) os.Warp1 = Warps.Pd;                                              // as for the type above
+                    os.LevelExt = ext[b + (int)SlotExt.LevelExt];
                 }
+                engine.Bank.S.Sub.LevelExt = ext[ExtSlot.Sub * ExtCount + (int)SlotExt.LevelExt];
+                engine.Bank.S.Noise.LevelExt = ext[ExtSlot.Noise * ExtCount + (int)SlotExt.LevelExt];
                 for (int f = 0; f < 2; f++)
                 {
                     var fs = engine.Bank.S.Filter[f];
