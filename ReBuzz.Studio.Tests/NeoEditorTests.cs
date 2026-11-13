@@ -1718,6 +1718,33 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        // K1 (agent-knowledge.md): a mix and master machine with Explain text on every control feeds the inspector's card from its own
+        // editor (the strip itself belongs to the template editors), and the editor keeps its size.
+        [AvaloniaTest]
+        public void NeoCompsEditorFeedsTheInspectorsExplainCardFromItsHoveredKnob()
+        {
+            var m = Add("Neo Comp", "Comp Explain");
+            try
+            {
+                var window = OpenEditor(m);
+                Assert.That(ExplainBoard.IsRegistered(m), Is.True, "Neo Comp's controls have Explain text");
+                var knob = Find(window, "ParamKnob", "Threshold");
+                window.MouseMove(Centre(knob, window));
+                var card = ExplainBoard.Get(m);
+                Assert.That(card?.Name, Is.EqualTo("Threshold"));
+                Assert.That(card?.How, Is.Not.Empty);
+                Assert.That(card?.Sound, Is.Not.Empty);
+                Studio.Screenshot(window, "neo-comp-editor-explain");
+                var size = StudioMachineUiHost.ContentOf(window)!.Bounds.Size;
+                Assert.That(size.Width, Is.LessThanOrEqualTo(1280));
+                Assert.That(size.Height, Is.LessThanOrEqualTo(720));
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+
         [AvaloniaTest]
         public void DraggingNeoLearnsPictureMovesCutoffAndResonanceAsOneUndoStep()
         {
