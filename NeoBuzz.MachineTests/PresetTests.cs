@@ -51,6 +51,13 @@ namespace NeoBuzz.MachineTests
                 var host = new NeoBuzz.Learn.LearnHost(new NeoBuzz.Learn.SubtractiveMap(NeoBuzz.LearnSub.Params.Table), v);
                 return RenderSynth(host.Engine, (e, l, r, n) => host.Process(l, r, n), x.Length);
             }),
+            // docs/specs/neo-learn.md L1a: Neo Learn FM, Wavetable and Additive, the same way.
+            ["Neo Learn FM"] = (NeoBuzz.LearnFm.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.FmMap(NeoBuzz.LearnFm.Params.Table), v, x.Length)),
+            ["Neo Learn Wavetable"] = (NeoBuzz.LearnWt.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.WavetableMap(NeoBuzz.LearnWt.Params.Table), v, x.Length)),
+            ["Neo Learn Additive"] = (NeoBuzz.LearnAdd.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.AdditiveMap(NeoBuzz.LearnAdd.Params.Table), v, x.Length)),
+            // docs/specs/neo-learn.md L1b: Neo Learn Granular and Physical.
+            ["Neo Learn Granular"] = (NeoBuzz.LearnGrain.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.GranularMap(NeoBuzz.LearnGrain.Params.Table), v, x.Length)),
+            ["Neo Learn Physical"] = (NeoBuzz.LearnPhys.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.PhysicalMap(NeoBuzz.LearnPhys.Params.Table), v, x.Length)),
             // mastering-tools.md §5.1: the clipper.
             ["Neo Clipper"] = (NeoBuzz.Clipper.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Clipper.ClipperEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             // mastering-tools.md §5.4, §5.5: the transient shaper and the low-end shaper.
@@ -66,6 +73,14 @@ namespace NeoBuzz.MachineTests
             ["Neo Dither"] = (NeoBuzz.Dither.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Dither.DitherEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             ["Neo Strip"] = (NeoBuzz.Strip.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Strip.StripEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
         };
+
+        /// <summary>A Neo Learn machine's factory preset: its host plays the chord (the built-in tables are built first).</summary>
+        static float[] RenderLearn(NeoBuzz.Learn.MacroMap map, ParamValues v, int length)
+        {
+            for (int i = 0; i < NeoBuzz.DyeEssence.TableBank.Count; i++) NeoBuzz.DyeEssence.TableBank.GetNow(i);
+            var host = new NeoBuzz.Learn.LearnHost(map, v);
+            return RenderSynth(host.Engine, (e, l, r, n) => host.Process(l, r, n), length);
+        }
 
         /// <summary>The Neo-family machine folders: Neo* and Dye Essence (docs/specs/dye-essence.md §2).</summary>
         internal static bool IsNeoFamily(string folder) => Path.GetFileName(folder).StartsWith("Neo") || Path.GetFileName(folder) == "DyeEssence";
@@ -83,7 +98,7 @@ namespace NeoBuzz.MachineTests
             return (T)e;
         }
 
-        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive" };
+        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical" };
 
         /// <summary>
         /// Neo Sampler: the song's slots 1–16 hold the built-in drums and the sine (the presets that
@@ -168,7 +183,7 @@ namespace NeoBuzz.MachineTests
         }
 
         /// <summary>The Dye Essence preset being rendered: its machine state (null: none).</summary>
-        static XElement dyeState;
+        internal static XElement dyeState;
 
         /// <summary>
         /// A preset's machine data as ReBuzz stores it (MachineManager.GetMachineData: a version byte, the size, then the
@@ -186,6 +201,24 @@ namespace NeoBuzz.MachineTests
             return XDocument.Parse(System.Text.Encoding.UTF8.GetString(bytes, 5, size)).Root;
         }
 
+        /// <summary>The notes RenderSynth plays instead of the chord (the library test's single note); null: the chord.</summary>
+        internal static int[] NotesOverride;
+
+        /// <summary>One Dye Essence preset of a preset file, rendered as EveryPresetSoundsSensible does: the chord, one second.</summary>
+        internal static float[] RenderDyePreset(string file, string name, Dictionary<int, int> values, int[] notes = null)
+        {
+            var (table, render) = Machines["Dye Essence"];
+            dyeState = PresetState(file, name);
+            NotesOverride = notes;
+            try
+            {
+                var v = new ParamValues(table);
+                foreach (var kv in values) if (kv.Key >= 0) v.Set(kv.Key, kv.Value);
+                return render(v, new float[Measure.Rate]);
+            }
+            finally { NotesOverride = null; dyeState = null; }
+        }
+
         /// <summary>A chord (C3 E3 G3 B3) held for two thirds of the length, then released.</summary>
         internal static float[] RenderSynth(INoteSink engine, Func<INoteSink, float[], float[], int, bool> process, int length)
         {
@@ -193,7 +226,7 @@ namespace NeoBuzz.MachineTests
             var y = new float[length];
             var l = new float[256];
             var r = new float[256];
-            int[] chord = { 48, 52, 55, 59 };
+            int[] chord = NotesOverride ?? new[] { 48, 52, 55, 59 };
             for (int k = 0; k < chord.Length; k++) engine.NoteOn(k, chord[k], 0.8f);
             for (int pos = 0; pos < length; pos += 256)
             {

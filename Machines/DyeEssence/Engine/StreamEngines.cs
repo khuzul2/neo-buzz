@@ -9,6 +9,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using NeoBuzz.Dsp;
 using NeoBuzz.Sampler;
 
@@ -81,6 +82,45 @@ namespace NeoBuzz.DyeEssence
             }
             return all;
         }
+
+        /// <summary>Neo Learn's trapezoid (the morph's sharp end): a straight ramp over the first and last <see cref="TrapezoidEdge"/> of the grain, flat between.</summary>
+        public const double TrapezoidEdge = 0.08;
+        public static readonly float[] Trapezoid = BuildTrapezoid();
+
+        static float[] BuildTrapezoid()
+        {
+            var w = new float[Size + 1];
+            for (int i = 0; i <= Size; i++)
+            {
+                double x = i / (double)Size;
+                w[i] = (float)(x < TrapezoidEdge ? x / TrapezoidEdge : x > 1 - TrapezoidEdge ? (1 - x) / TrapezoidEdge : 1.0);
+            }
+            w[0] = w[Size] = 0f;
+            return w;
+        }
+
+        /// <summary>The window of the morph at <paramref name="m"/> (0 trapezoid … 1 Gaussian) at window point <paramref name="i"/> (the engine's own blend, for pictures and tests).</summary>
+        public static float Morphed(double m, int i) => (float)((1 - m) * Trapezoid[i] + m * Table[(int)GrainShape.Gauss][i]);
+
+        static readonly double[] morphEnergy = MorphEnergies();
+
+        // The integrals of w² for the trapezoid, trapezoid x Gaussian and the Gaussian (a Hann window: 0.375).
+        static double[] MorphEnergies()
+        {
+            var g = Table[(int)GrainShape.Gauss];
+            double tt = 0, tg = 0, gg = 0;
+            for (int i = 0; i < Size; i++)
+            {
+                tt += (double)Trapezoid[i] * Trapezoid[i];
+                tg += (double)Trapezoid[i] * g[i];
+                gg += (double)g[i] * g[i];
+            }
+            return new[] { tt / Size, tg / Size, gg / Size };
+        }
+
+        /// <summary>The loudness of a cloud of grains of the morph at <paramref name="m"/> relative to a Hann window's (power adds: the amplitude to scale by is its inverse).</summary>
+        public static double MorphLoudness(double m) =>
+            Math.Sqrt(((1 - m) * (1 - m) * morphEnergy[0] + 2 * m * (1 - m) * morphEnergy[1] + m * m * morphEnergy[2]) / 0.375);
     }
 
     internal sealed partial class NoteBank
@@ -105,6 +145,8 @@ namespace NeoBuzz.DyeEssence
             public float GainL, GainR;
             public float[] Left, Right, Kernel, Window;
             public bool Stereo;
+            public float[] Window2;            // Neo Learn's window morph: the Gaussian end (null: Window alone)
+            public float Mix;                  // the share of Window2
         }
 
         // Per note × slot (note · Oscillators + slot).
@@ -136,6 +178,17 @@ namespace NeoBuzz.DyeEssence
             grWidth = new float[Notes * Oscillators], grAmp = new float[Notes * Oscillators], grPos = new float[Notes * Oscillators],
             grPan = new float[Notes * Oscillators], grSpread = new float[Notes * Oscillators];
         readonly int[] grLive = new int[Notes * Oscillators];
+        // Neo Learn's additions this tick: the window morph (below 0: off) and the share of octave-up grains (0 … 0.5).
+        readonly float[] grMorph = new float[Notes * Oscillators], grOct = new float[Notes * Oscillators], grSize = new float[Notes * Oscillators];
+
+        /// <summary>
+        /// The last grains started (a ring for pictures; any note's, any slot's): where in the sample (0 … 1), how long (s), where in the stereo field
+        /// (-1 … 1) and whether it sounds an octave up. The audio thread writes; a picture reads <see cref="GrainLogAt"/> first, then the entries.
+        /// </summary>
+        public const int GrainLogSize = 32;
+        public readonly float[] GrainLogPos = new float[GrainLogSize], GrainLogLen = new float[GrainLogSize], GrainLogPan = new float[GrainLogSize];
+        public readonly bool[] GrainLogUp = new bool[GrainLogSize];
+        public int GrainLogAt;
         int grCap = GrainCap;
         readonly float[] exL = new float[MaxTick], exR = new float[MaxTick];
 
@@ -320,7 +373,13 @@ namespace NeoBuzz.DyeEssence
             // Grains overlapping at random add in power: hold the cloud's loudness as the overlap grows.
             double overlap = Math.Min(size * rate, grCap);
             grAmp[no] = (float)(1.0 / Math.Sqrt(Math.Max(1.0, overlap * 0.4)));
+            grSize[no] = size;
+            grMorph[no] = os.GrainMorph < 0f ? -1f : Math.Min(os.GrainMorph, 1f);
+            grOct[no] = 0.5f * Math.Clamp(os.GrainOctave, 0f, 1f);
+            if (grMorph[no] >= 0f) grAmp[no] = (float)(grAmp[no] / MorphLoudnessAt(grMorph[no]));
         }
+
+        static double MorphLoudnessAt(float m) => GrainWindows.MorphLoudness(m);
 
         /// <summary>Each tick: the cap for a slot's grains, the bank's budget shared between the granular slots sounding.</summary>
         void GrainShare()
@@ -525,6 +584,8 @@ namespace NeoBuzz.DyeEssence
                 var right = gr.Right;
                 var kernel = gr.Kernel;
                 var win = gr.Window;
+                var win2 = gr.Window2;
+                float mix = gr.Mix;
                 double ymax = left.Length - SampleLayer.Pad - Interpolation.Half - 1, ymin = -(SampleLayer.Pad - Interpolation.Half);
                 double y = gr.Pos, step = gr.Step;
                 float gl = gr.GainL, grr = gr.GainR, fade = gr.Fade, fs = gr.FadeStep, ws = gr.WinStep;
@@ -535,7 +596,9 @@ namespace NeoBuzz.DyeEssence
                     {
                         float fi = k++ * ws;
                         int wi = (int)fi;
-                        float w = (win[wi] + (fi - wi) * (win[wi + 1] - win[wi])) * fade;
+                        float w = win[wi] + (fi - wi) * (win[wi + 1] - win[wi]);
+                        if (win2 != null) w += mix * (win2[wi] + (fi - wi) * (win2[wi + 1] - win2[wi]) - w);
+                        w *= fade;
                         fade += fs;
                         double yc = y < ymin ? ymin : y > ymax ? ymax : y;
                         Interpolation.Read(left, right, yc, kernel, out float l, out float r);
@@ -550,7 +613,9 @@ namespace NeoBuzz.DyeEssence
                     {
                         float fi = k++ * ws;
                         int wi = (int)fi;
-                        float w = (win[wi] + (fi - wi) * (win[wi + 1] - win[wi])) * fade;
+                        float w = win[wi] + (fi - wi) * (win[wi + 1] - win[wi]);
+                        if (win2 != null) w += mix * (win2[wi] + (fi - wi) * (win2[wi + 1] - win2[wi]) - w);
+                        w *= fade;
                         fade += fs;
                         double yc = y < ymin ? ymin : y > ymax ? ymax : y;
                         float l = Interpolation.Read(left, yc, kernel);
@@ -596,12 +661,15 @@ namespace NeoBuzz.DyeEssence
             ref var rng = ref grRng[no];
             // The draws always happen, in one order, so the stream doesn't depend on the settings.
             float dPlace = rng.NextBipolar(), dPitch = rng.NextBipolar(), dRev = rng.NextUnipolar(), dPan = rng.NextBipolar();
+            // Neo Learn: an octave-up grain is a draw of its own, taken only when asked for, so Dye Essence's stream is unchanged.
+            float dOct = grOct[no] > 0f ? rng.NextUnipolar() : 1f;
             if (free < 0) return;
             var layer = extLayer[no];
             double frac = grPos[no] + scan + 0.5 * grSpray[no] * dPlace;
             frac -= Math.Floor(frac);
             double r = grRatio[no] * ratio[o * MaxUnison + j];
             if (grJit[no] > 0f) r *= PortableMath.Pow(2.0, grJit[no] * dPitch / 1200.0);
+            if (dOct < grOct[no]) r *= 2.0;
             r = Math.Clamp(r, 1e-4, 60.0);
             double step = dRev < grRev[no] ? -r : r;
             double ar = r;
@@ -616,7 +684,8 @@ namespace NeoBuzz.DyeEssence
             // Centred on the place: half the grain's reading before it, half after.
             double start = frac * layer.Length - 0.5 * len * step;
             float pj = u > 1 ? 2f * j / (u - 1) - 1f : 0f;
-            DspMath.PanGains(Math.Clamp(grPan[no] + pj * grSpread[no] + grWidth[no] * dPan, -1f, 1f), out float pl, out float pr);
+            float panned = Math.Clamp(grPan[no] + pj * grSpread[no] + grWidth[no] * dPan, -1f, 1f);
+            DspMath.PanGains(panned, out float pl, out float pr);
             ref var gn = ref grains[gb + free];
             gn.On = true;
             gn.Pos = start * scale;
@@ -633,7 +702,24 @@ namespace NeoBuzz.DyeEssence
             gn.Right = layer.Right[lev];
             gn.Stereo = layer.Stereo;
             gn.Kernel = Interpolation.Kernel(Interpolation.CutoffFor(ar));
-            gn.Window = GrainWindows.Table[grShape[no]];
+            int li = GrainLogAt & (GrainLogSize - 1);
+            GrainLogPos[li] = (float)frac;
+            GrainLogLen[li] = grSize[no];
+            GrainLogPan[li] = panned;
+            GrainLogUp[li] = dOct < grOct[no];
+            Volatile.Write(ref GrainLogAt, GrainLogAt + 1);
+            if (grMorph[no] >= 0f)
+            {
+                gn.Window = GrainWindows.Trapezoid;
+                gn.Window2 = GrainWindows.Table[(int)GrainShape.Gauss];
+                gn.Mix = grMorph[no];
+            }
+            else
+            {
+                gn.Window = GrainWindows.Table[grShape[no]];
+                gn.Window2 = null;
+                gn.Mix = 0f;
+            }
         }
     }
 }

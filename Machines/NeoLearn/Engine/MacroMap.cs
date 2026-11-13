@@ -15,7 +15,13 @@ namespace NeoBuzz.Learn
     internal interface IDyeSink
     {
         void Set(int dyeParam, double value);
+
+        /// <summary>One of the shared engine's additions for a slot (0 A, 1 B, 2 C) that Dye Essence's own controls do not reach (L1: the host writes them into the engine).</summary>
+        void Ext(int slot, SlotExt what, double value);
     }
+
+    /// <summary>The shared engine's Neo Learn additions, per slot (OscSettings: all off at 0).</summary>
+    internal enum SlotExt { ExactRatio, Feedback, Comb, CombPeriod, Shimmer, Inharm, GrainMorph, GrainOctave, ExciterMorph, GeomBlend, GeomTo }
 
     internal abstract class MacroMap
     {

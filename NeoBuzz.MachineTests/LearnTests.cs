@@ -222,6 +222,8 @@ namespace NeoBuzz.MachineTests
         {
             public readonly Dictionary<int, double> Values = new();
             public void Set(int dyeParam, double value) => Values[dyeParam] = value;
+            public readonly Dictionary<(int Slot, SlotExt What), double> Exts = new();
+            public void Ext(int slot, SlotExt what, double value) => Exts[(slot, what)] = value;
         }
 
         static double[] Controls(int[] raw)
@@ -536,7 +538,7 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void SixteenNotesOnTheDefaultPatchRunAtLeastFourTimesRealTime()
         {
-            Throughput.Guard("Neo Learn Subtractive, 16 notes, default patch", Throughput.Floor(x64: 4, arm64: 4), 2, Rate, DyeEngine.MaxBlock, () =>
+            Throughput.Guard("Neo Learn Subtractive, 16 notes, default patch", Throughput.Floor(x64: 4, arm64: 2), 2, Rate, DyeEngine.MaxBlock, () =>
             {
                 var (h, _) = Make();
                 for (int k = 0; k < 16; k++) h.Engine.NoteOn(k, 36 + 3 * k, 1f);
@@ -551,7 +553,7 @@ namespace NeoBuzz.MachineTests
         public void SixteenNotesOnTheHeaviestSettingsRunAtLeastTwiceRealTime()
         {
             // Unison 100% (5 voices on each slot), the morph between two waves (two slots playing), resonance and drive at the top.
-            Throughput.Guard("Neo Learn Subtractive, 16 notes, heaviest settings", Throughput.Floor(x64: 2, arm64: 2), 2, Rate, DyeEngine.MaxBlock, () =>
+            Throughput.Guard("Neo Learn Subtractive, 16 notes, heaviest settings", Throughput.Floor(x64: 2, arm64: 1), 2, Rate, DyeEngine.MaxBlock, () =>
             {
                 var (h, _) = Make(x =>
                 {

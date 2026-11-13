@@ -18,11 +18,13 @@ namespace ReBuzz.Studio.Views.Detail
     {
         public const string TrackerTab = "Tracker";
         public const string RollTab = "Piano roll";
+        public const string DeviceTab = "Device";
 
         internal const string RegistrySection = "Studio";
         internal const string OpenKey = "DetailOpen";
         internal const string HeightKey = "DetailHeight";
         internal const string RollKey = "DetailPianoRoll";       // the Piano roll page is the one shown (P3b)
+        internal const string DeviceKey = "DetailDevice";        // the Device page is the one shown (P3e)
 
         public const double DefaultHeight = 340;
         public const double MinPanelHeight = 120;
@@ -32,18 +34,21 @@ namespace ReBuzz.Studio.Views.Detail
         readonly IRegistryEx registry;
         readonly Avalonia.Controls.Control page;
         readonly Border grip;
-        readonly Button trackerButton, rollButton, maximiseButton, collapseButton;
+        readonly Avalonia.Controls.Control device;
+        readonly Button trackerButton, rollButton, deviceButton, maximiseButton, collapseButton;
         readonly Panel content;
-        bool open, maximised, rollPage;
+        bool open, maximised, rollPage, devicePage;
         double height;
 
-        public DetailPanel(IRegistryEx registry, Avalonia.Controls.Control tracker)
+        public DetailPanel(IRegistryEx registry, Avalonia.Controls.Control tracker, Avalonia.Controls.Control deviceView = null)
         {
             this.registry = registry;
             page = tracker;
+            device = deviceView;
             open = Read(OpenKey, false);
             height = Math.Clamp(Read(HeightKey, DefaultHeight), MinPanelHeight, MaxPanelHeight);
             rollPage = Read(RollKey, false);
+            devicePage = device != null && Read(DeviceKey, false);
 
             Background = StudioTokens.SurfacePanelBrush;
             BorderBrush = StudioTokens.SurfaceBorderBrush;
@@ -62,16 +67,23 @@ namespace ReBuzz.Studio.Views.Detail
             ToolTip.SetTip(rollButton, Shell.Commands.StudioKeymap.Tip("view.pianoroll"));
             rollButton.Click += (s, e) => Choose(true);
 
+            // Fork (ux-overhaul.md P3e): Tracker | Piano roll | Device; the Device page follows the selected machine.
+            deviceButton = new Button { Content = DeviceTab, FontSize = 12, Padding = new Thickness(10, 3), MinHeight = 22, Focusable = false, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), IsVisible = device != null };
+            AutomationProperties.SetName(deviceButton, DeviceTab);
+            ToolTip.SetTip(deviceButton, Shell.Commands.StudioKeymap.Tip("view.device"));
+            deviceButton.Click += (s, e) => ChooseDevice();
+
             maximiseButton = Glyph("⤢", Shell.Commands.StudioKeymap.Tip("view.maximise"), "Maximise Tracker", ToggleMaximised);
             collapseButton = Glyph("⌄", "Hide the detail (" + Shell.Commands.StudioKeymap.Get("view.detail").KeyLabel() + ")", "Hide detail", Close);
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { maximiseButton, collapseButton } };
             var bar = new DockPanel { Height = BarHeight, Margin = new Thickness(8, 0, 6, 0), LastChildFill = true };
             DockPanel.SetDock(buttons, Dock.Right);
             bar.Children.Add(buttons);
-            bar.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Children = { trackerButton, rollButton } });
+            bar.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Children = { trackerButton, rollButton, deviceButton } });
             DockPanel.SetDock(bar, Dock.Top);
 
             content = new Panel { Children = { page } };
+            if (device != null) content.Children.Add(device);
             var frame = new DockPanel { LastChildFill = true };
             frame.Children.Add(bar);
             frame.Children.Add(content);
@@ -89,9 +101,38 @@ namespace ReBuzz.Studio.Views.Detail
         /// <summary>A page's button: shows that page; clicking the page that is shown hides the panel.</summary>
         void Choose(bool roll)
         {
-            if (open && rollPage == roll) Close();
+            if (open && !devicePage && rollPage == roll) Close();
             else ShowPage(roll, maximised);
         }
+
+        void ChooseDevice()
+        {
+            if (open && devicePage) Close();
+            else ShowDevice(maximised);
+        }
+
+        /// <summary>Opens the panel on the Device page (the selected machine's parameters), docked or maximised.</summary>
+        public void ShowDevice(bool maximise = false)
+        {
+            if (device == null) return;
+            SetDevice(true);
+            Set(true, maximise);
+        }
+
+        void SetDevice(bool on)
+        {
+            if (devicePage == on || on && device == null) return;
+            devicePage = on;
+            Write(DeviceKey, on);
+            Apply();
+        }
+
+        /// <summary>Whether the Device page is the one shown.</summary>
+        public bool IsDevice => devicePage;
+
+        public Avalonia.Controls.Control DevicePage => device;
+
+        internal Button DeviceButton => deviceButton;
 
         /// <summary>Opens the panel on the Tracker (false) or the piano roll (true), docked or maximised.</summary>
         public void ShowPage(bool roll, bool maximise)
@@ -103,6 +144,7 @@ namespace ReBuzz.Studio.Views.Detail
         /// <summary>Which page is shown: the piano roll (true) or the Tracker. Remembered.</summary>
         public void SetPage(bool roll)
         {
+            SetDevice(false);
             if (rollPage == roll) return;
             rollPage = roll;
             Write(RollKey, roll);
@@ -110,7 +152,7 @@ namespace ReBuzz.Studio.Views.Detail
             Apply();
         }
 
-        public bool IsPianoRoll => rollPage;
+        public bool IsPianoRoll => rollPage && !devicePage;
 
         /// <summary>The layout around it changed (shown, hidden, maximised, sized): the window rearranges its rows.</summary>
         public event Action Changed;
@@ -179,15 +221,18 @@ namespace ReBuzz.Studio.Views.Detail
         void Apply()
         {
             content.IsVisible = open;
+            page.IsVisible = !devicePage;
+            if (device != null) device.IsVisible = devicePage;
             grip.IsVisible = open && !maximised;
             Height = !open ? BarHeight : maximised ? double.NaN : height;
             maximiseButton.Content = maximised ? "⤡" : "⤢";
             ToolTip.SetTip(maximiseButton, maximised ? "Back to the panel (" + Shell.Commands.StudioKeymap.Get("view.maximise").KeyLabel() + ")" : Shell.Commands.StudioKeymap.Tip("view.maximise"));
-            string what = rollPage ? "Piano roll" : "Tracker";
+            string what = devicePage ? "Device" : rollPage ? "Piano roll" : "Tracker";
             AutomationProperties.SetName(maximiseButton, maximised ? "Restore " + what : "Maximise " + what);
             collapseButton.Content = "⌄";
-            Mark(trackerButton, open && !rollPage);
-            Mark(rollButton, open && rollPage);
+            Mark(trackerButton, open && !rollPage && !devicePage);
+            Mark(rollButton, open && rollPage && !devicePage);
+            Mark(deviceButton, open && devicePage);
             Changed?.Invoke();
         }
 

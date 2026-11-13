@@ -40,7 +40,7 @@ namespace NeoBuzz.Dsp
     {
         public ParamDef(int index, string id, string name, int min, int max, int def, MapKind kind,
             double a = 0, double b = 1, double exponent = 1, string unit = "", int digits = -1,
-            string[] names = null, bool flag = false, string group = "", string description = "", string how = "", string sound = "")
+            string[] names = null, bool flag = false, string group = "", string description = "", string how = "", string sound = "", double detent = 0)
         {
             Index = index;
             Id = id;
@@ -60,6 +60,7 @@ namespace NeoBuzz.Dsp
             Description = description ?? name;
             How = how ?? "";
             Sound = sound ?? "";
+            Detent = detent;
         }
 
         public int Index { get; }
@@ -83,6 +84,13 @@ namespace NeoBuzz.Dsp
         public string How { get; }
         /// <summary>Explain: what you will hear (one sentence).</summary>
         public string Sound { get; }
+        /// <summary>
+        /// Exp, Time and Freq only (neo-learn.md §5.2): detents. A value within <see cref="DetentWindow"/> of a multiple of this
+        /// (a ratio's whole and half numbers) reads as that multiple (see <see cref="DetentWindow"/>), so the knob rests on it; 0: none.
+        /// </summary>
+        public double Detent { get; }
+        /// <summary>How near a detent a value must be to rest on it, as a fraction of the value, at most 12 % of the detent spacing either way (so at high values free ratios remain between detents).</summary>
+        public const double DetentWindow = 0.015, DetentWindowMax = 0.12;
         /// <summary>Whether the control has Explain text (How or Sound).</summary>
         public bool HasExplain => How.Length > 0 || Sound.Length > 0;
 
@@ -107,7 +115,7 @@ namespace NeoBuzz.Dsp
                 case MapKind.Linear: return A + t * (B - A);
                 case MapKind.Exp:
                 case MapKind.Time:
-                case MapKind.Freq: return A * PortableMath.Pow(B / A, t);
+                case MapKind.Freq: return Detent > 0 ? Snap(A * PortableMath.Pow(B / A, t)) : A * PortableMath.Pow(B / A, t);
                 case MapKind.Power: return A + PortableMath.Pow(t, Exponent) * (B - A);
                 case MapKind.Db: return Flag && raw <= Min ? double.NegativeInfinity : A + t * (B - A);
                 case MapKind.Percent: return t;
@@ -118,6 +126,12 @@ namespace NeoBuzz.Dsp
                 case MapKind.Ratio: return Flag && raw >= Max ? double.PositiveInfinity : A * PortableMath.Pow(B / A, t);
                 default: return t;
             }
+        }
+
+        double Snap(double v)
+        {
+            double n = Math.Round(v / Detent) * Detent;
+            return n > 0 && Math.Abs(v - n) <= Math.Min(DetentWindow * n, DetentWindowMax * Detent) ? n : v;
         }
 
         /// <summary>The raw value whose physical value is closest to <paramref name="value"/>.</summary>
