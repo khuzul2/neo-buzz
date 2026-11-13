@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Fork addition (neo-buzz, docs/specs/neo-patch.md §3): Neo Envelope, a canvas modulator (a control machine). Shared DSP, Buzz glue and editor kit are linked as source. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>Neo Envelope.NET</AssemblyName>
+    <RootNamespace>NeoBuzz.Envelope</RootNamespace>
+    <Optimize Condition="'$(Configuration)' == 'Release'">true</Optimize>
+	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	<OutputPath>$(SolutionDir)bin\$(Configuration)\$(Platform)\$(TargetFramework)\Gear\Generators</OutputPath>
+	<IntermediateOutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\NeoEnvelope\obj</IntermediateOutputPath>
+	<Platforms>AnyCPU;x64</Platforms>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>MSB3277;CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\NeoBuzz.Dsp\**\*.cs" Link="Shared\Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\NeoBuzz.Machine\**\*.cs" Link="Shared\Machine\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\NeoBuzz.Editor\**\*.cs" Link="Shared\Editor\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- The canvas modulators' editor template (shared by all four). -->
+    <Compile Include="..\NeoModulator\**\*.cs" Link="Shared\Modulator\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="Params.def" />
+    <None Include="Neo Envelope.machine.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+	  <ProjectReference Include="..\..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" />
+	  <ProjectReference Include="..\..\ReBuzzGUI\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj" />
+  </ItemGroup>
+
+  <Target Name="ForcePerformRestore" AfterTargets="BeforeBuild">
+	  <Exec Command="IF NOT EXIST  &quot;$(IntermediateOutputPath)project.assets.json&quot;  echo restore to $(IntermediateOutputPath)project.assets.json &amp;&amp;  dotnet restore &quot;$(ProjectName).csproj&quot;  --no-dependencies &amp;&amp; move &quot;build\$(ProjectName)\obj\*&quot; &quot;$(IntermediateOutputPath)&quot; &amp;&amp; rmdir /Q /S build	 " />
+  </Target>
+
+  <Target Name="RemoveEmptyObj" AfterTargets="AfterBuild">
+	  <Exec Command="IF EXIST obj rmdir obj" />
+  </Target>
+
+</Project>

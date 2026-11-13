@@ -1,0 +1,161 @@
+# Neo Step parameters (docs/specs/neo-patch.md §3). The order is permanent: songs and presets store values by position.
+# Regenerate: python3 tools/gen-machine-params.py Machines/NeoStep
+namespace NeoBuzz.Step
+class NeoStepMachine
+summary A step sequencer for values: 1 to 32 steps, each a level from 0 to 100 %, played at a synced rate with swing, a glide between steps and a random amount. It moves up to 8 parameters of other machines, each with its own depth, polarity, range and curve. Use it for stepped filter patterns, rhythmic gain and pan moves, and melodic control of any value, effects included.
+
+group Pattern
+Steps     "Steps"       1 32 8   int 0 steps                    | How many steps the pattern has (1 … 32)
+    id steps
+    how Sets how many steps the pattern runs before it repeats, from 1 to 32.
+    sound Different step counts against the song's bars make the pattern shift against the beat.
+Rate      "Rate"        0 8 4    enum 1/2 1/4 1/8 1/16 1/32 1/2_dotted 1/4_dotted 1/8_dotted 1/16_dotted | How long each step lasts at the song's tempo
+    id rate
+    how Sets how long each step lasts, from 1/2 down to 1/32, straight or dotted.
+    sound Faster rates make a busier pattern; dotted rates lilt against the beat.
+Glide     "Glide"       0 1000 0 pct                           | How much of each step is spent gliding to its level
+    id glide
+    how Glides from one step's level to the next over up to a whole step.
+    sound At 0 % the steps jump; higher values slide between them like a ramp.
+Random    "Random"      0 1000 0 pct                           | Blends each step toward a random level
+    id random
+    how Mixes each step's level toward a fresh random level, by this amount.
+    sound At 0 % the pattern repeats exactly; at 100 % every step is random.
+Swing     "Swing"       0 750 0  pct                           | Delays every second step by up to 75 % of a step
+    id swing
+    how Delays every second step, up to three quarters of a step.
+    sound The pattern gets a shuffled, off-beat feel.
+WriteGlide "Write glide" 0 1000 408 time 0.001 1               | Time a target takes to cross its whole range: no write moves further than this allows
+    id write_glide
+    how Limits how fast a target may move: it takes at least this long to cross its whole range.
+    sound A short glide keeps fast steps clean; a long one smooths them into slow sweeps.
+
+group Levels
+S1        "Step 1"  0 1000 1000 pct                          | Level of step 1, 0 … 100 %
+    id step_1
+    how Sets the level of step 1, from 0 to 100 %.
+    sound The targets move to this level while step 1 plays.
+S2        "Step 2"  0 1000 500 pct                          | Level of step 2, 0 … 100 %
+    id step_2
+    how Sets the level of step 2, from 0 to 100 %.
+    sound The targets move to this level while step 2 plays.
+S3        "Step 3"  0 1000 750 pct                          | Level of step 3, 0 … 100 %
+    id step_3
+    how Sets the level of step 3, from 0 to 100 %.
+    sound The targets move to this level while step 3 plays.
+S4        "Step 4"  0 1000 250 pct                          | Level of step 4, 0 … 100 %
+    id step_4
+    how Sets the level of step 4, from 0 to 100 %.
+    sound The targets move to this level while step 4 plays.
+S5        "Step 5"  0 1000 1000 pct                          | Level of step 5, 0 … 100 %
+    id step_5
+    how Sets the level of step 5, from 0 to 100 %.
+    sound The targets move to this level while step 5 plays.
+S6        "Step 6"  0 1000 0 pct                          | Level of step 6, 0 … 100 %
+    id step_6
+    how Sets the level of step 6, from 0 to 100 %.
+    sound The targets move to this level while step 6 plays.
+S7        "Step 7"  0 1000 625 pct                          | Level of step 7, 0 … 100 %
+    id step_7
+    how Sets the level of step 7, from 0 to 100 %.
+    sound The targets move to this level while step 7 plays.
+S8        "Step 8"  0 1000 375 pct                          | Level of step 8, 0 … 100 %
+    id step_8
+    how Sets the level of step 8, from 0 to 100 %.
+    sound The targets move to this level while step 8 plays.
+S9        "Step 9"  0 1000 1000 pct                          | Level of step 9, 0 … 100 %
+    id step_9
+    how Sets the level of step 9, from 0 to 100 %.
+    sound The targets move to this level while step 9 plays.
+S10       "Step 10"  0 1000 500 pct                          | Level of step 10, 0 … 100 %
+    id step_10
+    how Sets the level of step 10, from 0 to 100 %.
+    sound The targets move to this level while step 10 plays.
+S11       "Step 11"  0 1000 750 pct                          | Level of step 11, 0 … 100 %
+    id step_11
+    how Sets the level of step 11, from 0 to 100 %.
+    sound The targets move to this level while step 11 plays.
+S12       "Step 12"  0 1000 250 pct                          | Level of step 12, 0 … 100 %
+    id step_12
+    how Sets the level of step 12, from 0 to 100 %.
+    sound The targets move to this level while step 12 plays.
+S13       "Step 13"  0 1000 1000 pct                          | Level of step 13, 0 … 100 %
+    id step_13
+    how Sets the level of step 13, from 0 to 100 %.
+    sound The targets move to this level while step 13 plays.
+S14       "Step 14"  0 1000 0 pct                          | Level of step 14, 0 … 100 %
+    id step_14
+    how Sets the level of step 14, from 0 to 100 %.
+    sound The targets move to this level while step 14 plays.
+S15       "Step 15"  0 1000 625 pct                          | Level of step 15, 0 … 100 %
+    id step_15
+    how Sets the level of step 15, from 0 to 100 %.
+    sound The targets move to this level while step 15 plays.
+S16       "Step 16"  0 1000 375 pct                          | Level of step 16, 0 … 100 %
+    id step_16
+    how Sets the level of step 16, from 0 to 100 %.
+    sound The targets move to this level while step 16 plays.
+S17       "Step 17"  0 1000 1000 pct                          | Level of step 17, 0 … 100 %
+    id step_17
+    how Sets the level of step 17, from 0 to 100 %.
+    sound The targets move to this level while step 17 plays.
+S18       "Step 18"  0 1000 500 pct                          | Level of step 18, 0 … 100 %
+    id step_18
+    how Sets the level of step 18, from 0 to 100 %.
+    sound The targets move to this level while step 18 plays.
+S19       "Step 19"  0 1000 750 pct                          | Level of step 19, 0 … 100 %
+    id step_19
+    how Sets the level of step 19, from 0 to 100 %.
+    sound The targets move to this level while step 19 plays.
+S20       "Step 20"  0 1000 250 pct                          | Level of step 20, 0 … 100 %
+    id step_20
+    how Sets the level of step 20, from 0 to 100 %.
+    sound The targets move to this level while step 20 plays.
+S21       "Step 21"  0 1000 1000 pct                          | Level of step 21, 0 … 100 %
+    id step_21
+    how Sets the level of step 21, from 0 to 100 %.
+    sound The targets move to this level while step 21 plays.
+S22       "Step 22"  0 1000 0 pct                          | Level of step 22, 0 … 100 %
+    id step_22
+    how Sets the level of step 22, from 0 to 100 %.
+    sound The targets move to this level while step 22 plays.
+S23       "Step 23"  0 1000 625 pct                          | Level of step 23, 0 … 100 %
+    id step_23
+    how Sets the level of step 23, from 0 to 100 %.
+    sound The targets move to this level while step 23 plays.
+S24       "Step 24"  0 1000 375 pct                          | Level of step 24, 0 … 100 %
+    id step_24
+    how Sets the level of step 24, from 0 to 100 %.
+    sound The targets move to this level while step 24 plays.
+S25       "Step 25"  0 1000 1000 pct                          | Level of step 25, 0 … 100 %
+    id step_25
+    how Sets the level of step 25, from 0 to 100 %.
+    sound The targets move to this level while step 25 plays.
+S26       "Step 26"  0 1000 500 pct                          | Level of step 26, 0 … 100 %
+    id step_26
+    how Sets the level of step 26, from 0 to 100 %.
+    sound The targets move to this level while step 26 plays.
+S27       "Step 27"  0 1000 750 pct                          | Level of step 27, 0 … 100 %
+    id step_27
+    how Sets the level of step 27, from 0 to 100 %.
+    sound The targets move to this level while step 27 plays.
+S28       "Step 28"  0 1000 250 pct                          | Level of step 28, 0 … 100 %
+    id step_28
+    how Sets the level of step 28, from 0 to 100 %.
+    sound The targets move to this level while step 28 plays.
+S29       "Step 29"  0 1000 1000 pct                          | Level of step 29, 0 … 100 %
+    id step_29
+    how Sets the level of step 29, from 0 to 100 %.
+    sound The targets move to this level while step 29 plays.
+S30       "Step 30"  0 1000 0 pct                          | Level of step 30, 0 … 100 %
+    id step_30
+    how Sets the level of step 30, from 0 to 100 %.
+    sound The targets move to this level while step 30 plays.
+S31       "Step 31"  0 1000 625 pct                          | Level of step 31, 0 … 100 %
+    id step_31
+    how Sets the level of step 31, from 0 to 100 %.
+    sound The targets move to this level while step 31 plays.
+S32       "Step 32"  0 1000 375 pct                          | Level of step 32, 0 … 100 %
+    id step_32
+    how Sets the level of step 32, from 0 to 100 %.
+    sound The targets move to this level while step 32 plays.

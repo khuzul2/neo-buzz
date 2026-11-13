@@ -88,7 +88,10 @@
   "chords": "Builds chords from single notes",
   "automation": "Moves other machines' parameters over time",
   "groove": "Timing feel: swing and shuffle",
-  "notes": "Holds notes or text for the song"
+  "notes": "Holds notes or text for the song",
+  "envelope": "Shapes a value over time from notes or from a signal level",
+  "modulation": "Moves other machines' parameters automatically",
+  "macro": "One control that drives several parameters at once"
  },
  "machines": {
   "AudioBlock": {
@@ -1242,6 +1245,45 @@
     "sequencer"
    ],
    "use_for": "An older control machine steered by a Bar control; it makes no sound of its own."
+  },
+  "Neo LFO": {
+   "category": "Control",
+   "tags": [
+    "lfo",
+    "modulation",
+    "tempo-sync",
+    "automation"
+   ],
+   "use_for": "Move any machine's parameter with a wave: wobble, sweeps, tremolo, vibrato, up to 8 targets, smoothly."
+  },
+  "Neo Envelope": {
+   "category": "Control",
+   "tags": [
+    "envelope",
+    "modulation",
+    "sidechain",
+    "automation"
+   ],
+   "use_for": "Open or duck any parameter from the notes of a machine or the level of its output (ADSR or follower)."
+  },
+  "Neo Step": {
+   "category": "Control",
+   "tags": [
+    "sequencer",
+    "rhythmic",
+    "modulation",
+    "tempo-sync"
+   ],
+   "use_for": "A 32-step pattern of values that moves any machine's parameters in time: stepped filters, rhythmic pan and gain."
+  },
+  "Neo Macro": {
+   "category": "Control",
+   "tags": [
+    "macro",
+    "modulation",
+    "automation"
+   ],
+   "use_for": "One knob that moves up to 8 parameters of other machines at once, for one-move performance changes."
   }
  }
 }

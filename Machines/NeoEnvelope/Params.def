@@ -1,0 +1,45 @@
+# Neo Envelope parameters (docs/specs/neo-patch.md §3). The order is permanent: songs and presets store values by position.
+# Regenerate: python3 tools/gen-machine-params.py Machines/NeoEnvelope
+namespace NeoBuzz.Envelope
+class NeoEnvelopeMachine
+summary An envelope that moves other machines' parameters, up to 8 targets each with its own depth, polarity, range and curve. Note mode: an ADSR started by the notes of a chosen machine (and track) or by its Gate switch. Follower mode: follows the level of a chosen machine's output, with attack and release and a threshold (ducking, envelope-driven filters). Use it for a filter that opens on every note, a pad that ducks under the kick, an effect that opens with the drums.
+
+group Shape
+Mode      "Mode"        0 1 0    enum Note Follower            | Note: an ADSR started by notes. Follower: follows the level of a machine's output
+    id mode
+    how Chooses an ADSR started by notes (Note) or a follower that tracks the level of a machine's output (Follower).
+    sound Note mode opens and closes with each note; follower mode rises and falls with the loudness of the machine it listens to.
+Attack    "Attack"      0 1000 313 time 0.001 5                | Note: time to rise to the top. Follower: how fast it follows a rise in level
+    id attack
+    how Sets how long the rise takes, from 1 ms to 5 s; in Follower mode, how quickly it follows a louder signal.
+    sound Short is a snap, long is a slow swell.
+Decay     "Decay"       0 1000 500 time 0.001 5                | Note mode: time to fall from the top to Sustain
+    id decay
+    how Sets how long the fall from the top to the Sustain level takes (Note mode).
+    sound Short decays make a pluck; long ones let the movement hang on.
+Sustain   "Sustain"     0 1000 700 pct                         | Note mode: the level held while the note is held
+    id sustain
+    how Sets the level held while the note stays down (Note mode), from 0 to 100 %.
+    sound At 100 % the movement stays at the top; at 0 % it is a single pluck with no hold.
+Release   "Release"     0 1000 500 time 0.001 5                | Note mode: time to fall to nothing after the note ends. Follower: how fast it follows a fall in level
+    id release
+    how Sets how long the fall to nothing takes after the note ends; in Follower mode, how quickly it follows a quieter signal.
+    sound Short releases cut the movement off; long ones let it trail away.
+Threshold "Threshold"   0 600 0  lin -60 0 dB 0                | Follower: levels at or under this are zero; 0 dB is the top
+    id threshold
+    how Sets the level, from -60 to 0 dB, below which the follower reads zero.
+    sound A higher threshold ignores quiet bleed, so the follower only reacts to the loud hits.
+Curve     "Curve"       0 1000 500 bip                         | Bends the output: negative eases out (fast start), positive eases in (slow start)
+    id curve
+    how Bends the output from -100 % (fast start, eases out) to +100 % (slow start, eases in).
+    sound Negative curves make the movement jump then settle; positive curves hold back then rush.
+
+group Control
+Gate      "Gate"        0 1 0    switch                        | A manual gate in Note mode: on starts the envelope, off releases it (patterns can write it)
+    id gate
+    how Starts the envelope when switched on and releases it when switched off, with no notes needed (Note mode).
+    sound A pattern writing this switch triggers the envelope on its own steps.
+Glide     "Write glide" 0 1000 408 time 0.001 1                | Time a target takes to cross its whole range: no write moves further than this allows
+    id glide
+    how Limits how fast a target may move: it takes at least this long to cross its whole range.
+    sound A short glide keeps fast modulation clean; a long one smooths and slows it.

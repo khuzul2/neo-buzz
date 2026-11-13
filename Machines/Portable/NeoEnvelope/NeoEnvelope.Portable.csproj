@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Envelope, portable (docs/specs/mac-engine.md M2): see ../NeoPortable.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoEnvelope</NeoFolder>
+    <NeoName>Neo Envelope</NeoName>
+    <NeoKind>Generators</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoPortable.targets" />
+</Project>
