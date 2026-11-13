@@ -78,10 +78,16 @@ namespace ReBuzz.AgentTests
         [Test]
         public void ParametersWithoutExplainTextAreDescribedAsBefore()
         {
-            // A machine that still has no Explain text (K1c writes Dye Essence's: then this needs another, or a hand-made manifest).
-            var poly = MachineManifest.Load(Path.Combine(RepoRoot(), "Machines", "DyeEssence", "Dye Essence" + MachineManifest.Suffix))!;
+            // A machine with no Explain text (every Neo machine and Dye Essence have it now): a hand-made manifest.
+            var json = JsonNode.Parse("{\"format\":\"rebuzz-machine-manifest/1\",\"gear\":\"Neo X\",\"kind\":\"effect\",\"parameters\":[{\"index\":0,\"id\":\"a\",\"name\":\"A\",\"min\":0,\"max\":1,\"default\":0,\"kind\":\"linear\"}]}")!.ToJsonString();
+            var path = Path.Combine(Path.GetTempPath(), "explainfields-" + Guid.NewGuid().ToString("N") + MachineManifest.Suffix);
             var o = new JsonObject();
-            foreach (var p in poly.Parameters) ExplainFields.Add(o, p);
+            try
+            {
+                File.WriteAllText(path, json);
+                foreach (var p in MachineManifest.Load(path)!.Parameters) ExplainFields.Add(o, p);
+            }
+            finally { File.Delete(path); }
             Assert.That(o, Is.Empty, "no Explain text: no new fields");
         }
     }
