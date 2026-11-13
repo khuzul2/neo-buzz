@@ -44,6 +44,7 @@ namespace ReBuzz.AgentTests
         [TestCase("NeoLearnPhaseDistortion", "Neo Learn Phase Distortion", "phase_bend,resonance,pd_wave_shape,bend_decay,ring_mod,chorus")]
         [TestCase("NeoLearnVector", "Neo Learn Vector", "vector_x,vector_y,corner_palette,orbit_speed,orbit_radius,orbit_shape")]
         [TestCase("NeoLearnSampler", "Neo Learn Sampler", "sample_offset,timbre_tilt,source,loop,vintage_dac,room_space")]
+        [TestCase("NeoLearnSpectral", "Neo Learn Spectral", "spectral_shift,spectral_blur,spectral_freeze,spectral_source,bin_gate,tonal_noise")]
         public void TheOtherLearnManifestsCarryTwelveControlsWithIdsHowAndSound(string folder, string gear, string core)
         {
             var m = MachineManifest.Load(Path.Combine(RepoRoot(), "Machines", folder, gear + MachineManifest.Suffix))!;

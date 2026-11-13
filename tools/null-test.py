@@ -235,6 +235,15 @@ CASES = [
     gen("dye-spec-snapped", "Dye Essence", "Keys — Snapped Pluck Keys", [], KEYS),
     gen("dye-spec-lead", "Dye Essence", "Lead — Singing Strings Lead", [], LEAD),
     gen("dye-spec-pluckbell", "Dye Essence", "Bell — Stretched Pluck Bell", [], BELLS),
+    # P5b: the Harmonic engine's partial table and the Modal engine's mode table taken from a sample (from the same deterministic analysis).
+    gen("dye-import-choir", "Dye Essence", "Pad — Imported Choir Pad", [], CHORDS),
+    gen("dye-import-pluck", "Dye Essence", "Keys — Imported Pluck Keys", [], KEYS),
+    gen("dye-import-modes", "Dye Essence", "Bell — Impulse Bell Body", [], BELLS),
+    # Neo Learn L3: Spectral (stretch, smear, freeze, gate, tone and noise over the analysed model).
+    gen("learn-spectral-frozen-choir", "Neo Learn Spectral", "Pad — Frozen Choir", [], CHORDS),
+    gen("learn-spectral-slowed-strings", "Neo Learn Spectral", "Pad — Slowed Strings", [], CHORDS),
+    gen("learn-spectral-gated-bell", "Neo Learn Spectral", "Keys — Gated Bell", [], KEYS),
+    gen("learn-spectral-noise-ghost", "Neo Learn Spectral", "Texture — Noise Ghost", [], CHORDS),
     # P4a (docs/specs/dye-essence.md §4.9): the arpeggiator and the sequencer follow the song's position; the notes land on exact samples.
     gen("dye-arp-pluck", "Dye Essence", "Arp — Glass Pluck Up", [], CHORDS),
     gen("dye-arp-saw", "Dye Essence", "Arp — Saw Up Down", [], CHORDS),

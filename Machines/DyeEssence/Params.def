@@ -13,7 +13,7 @@ import fx_routing .txt | Which effect slots sit in which chain of the rack, and 
 import ir .wav | A WAV impulse response for the Convolution type (mono or stereo, any rate; at most 480000 frames, 10 s at 48 kHz, the rest is cut; kept in the machine state). item 0-9 picks the effect slot (FX1-FX10): it is set to Convolution and its IR (p1) to User. The response is resampled to the host rate, shaped by the slot's Size, Pre-delay, Decay, Damping, Low cut, High cut, Width and Reverse and normalised to unit energy.
 import modulator .wav | A WAV sample for the Vocoder type to talk through (mixed to mono, any rate; at most 20 s at 48 kHz, looped; kept in the machine state). item 0-9 picks the effect slot (FX1-FX10): it is set to Vocoder and its Modulator (p1) to Sample. The carrier is the synth itself (the signal into the slot); Speed (p9) plays the clip faster or slower.
 
-import sample .wav | A WAV sample (mono or stereo, up to 20 s, kept in the machine state). Becomes a slot's "User" sample and sets that slot to the Sample engine (unless it is Granular): item 0 is slot A, 1 slot B, 2 slot C. The Sample, Granular and Spectral engines play it; "A position" is where playback starts (Sample), where grains are taken from (Granular) or where the Spectral engine starts reading its analysis (made once, when the sample is loaded, and kept in the machine state).
+import sample .wav | A WAV sample (mono or stereo, up to 20 s, kept in the machine state). Becomes a slot's "User" sample and sets that slot to the Sample engine (unless it is Granular, or Harmonic or Modal with their sample import on): item 0 is slot A, 1 slot B, 2 slot C. The Sample, Granular and Spectral engines play it, and the Harmonic and Modal engines read their partial table or mode table from it; "A position" is where playback starts (Sample), where grains are taken from (Granular) or where the Spectral engine starts reading its analysis (made once, when the sample is loaded, and kept in the machine state).
 
 group Voice
 VoiceMode   "Voice mode"    0 2    0    enum Poly Mono Legato           | Poly; Mono retriggers; Legato glides without retriggering
@@ -1472,3 +1472,82 @@ CSpTilt    "C spectral tilt" 0 1000 500 lin -24 24 dB/oct 1 | Spectral engine: b
 CSpStretch "C spectral stretch" 0 1000 500 lin -100 100 % 0 | Spectral engine: spreads the partials from whole multiples of the fundamental: + stretches them apart (bells, glass), - bunches them
     how Sets how far the partials are spread from the whole multiples of the fundamental, from bunched together at negative values to stretched apart at positive ones.
     sound Stretching turns a tone into something bell-like or metallic; bunching it makes it dense and clustered.
+
+# P5b (appended): the Spectral engine's analysis turned into the Harmonic engine's partial table and the Modal engine's mode table. Both read the slot's
+# "A sample" (built-in or User; its model is made once, when it is loaded, and kept in the song) and are worked out from that model and these parameters, so a
+# song reloads to the same bits and a preset carries them.
+group Osc A
+AHImp      "A import partials" 0 1 0 enum Off Sample | Harmonic engine: take the partials from a sample (its frame or range of the Spectral engine's analysis: their levels and their spacing, as analysed) instead of the two sets
+    how Replaces the two sets in the slot's Harmonic engine with the partials of the slot's sample, found by the same analysis as the Spectral engine's: each partial's level and where it sits against the pitch.
+    sound The slot plays the sample's own tone colour, as a steady chord of sines: a clarinet, a bell or a voice with its real overtones, inharmonic ones included.
+AHImpFrom  "A import from" 0 1000 500 pct | Harmonic engine: where in the sample the imported partials are taken from (0 % the start, 100 % the end)
+    how Sets where in the sample the partial table is read, as a share of its length.
+    sound Moving it changes the tone colour to that of another moment of the sample, from an attack's bright mix to the settled body.
+AHImpSpan  "A import span" 0 1000 0 pct | Harmonic engine: how much of the sample after "import from" is averaged into the partials (0: the single frame)
+    how Sets how much of the sample, from the starting point on, is averaged into one table, as a share of its length; 0 % takes a single frame.
+    sound A single frame is a snapshot and can be thin or sharp; a longer span gives the average colour of that part of the sound.
+AHImpRatio "A import ratios" 0 1000 1000 pct | Harmonic engine: how much of the imported partials' spacing is kept (100 %: as analysed, bell-like or reedy; 0: whole multiples of the pitch)
+    how Blends the spacing of the imported partials between whole multiples of the pitch at 0 % and exactly as analysed at 100 %.
+    sound At 100 % an inharmonic sample keeps its metallic or noisy character; at 0 % the same levels sound like a clean, tuned tone.
+AMImp      "A mode table" 0 1 0 enum Geometry Impulse_response | Modal engine: where the modes come from: the chosen geometry, or the modes (frequency, decay, gain) found in a short sample treated as an impulse response
+    how Chooses whether the body's modes come from the geometry or from the slot's sample, read as an impulse response and analysed into its modes.
+    sound The geometry gives the idealised bodies; the impulse response gives the body that was recorded: a bell, a box, a room or a plate.
+AMImpStart "A ir start" 0 1000 0 pct | Modal engine: where in the sample the impulse response starts, as a share of its length
+    how Sets where in the sample the impulse response starts, as a share of its length.
+    sound Moving it skips the click or the strike at the start, so the modes are those of the ringing that follows.
+AMImpLen   "A ir length" 0 1000 624 time 0.05 2 | Modal engine: how long a stretch of the sample is analysed for modes
+    how Sets the length of the stretch analysed, from 50 ms to 2 s; the modes are those that ring through at least three analysis frames in it.
+    sound Short finds only the fast, bright modes; long finds the slow, low ones too, and takes more of the body in.
+AMImpDecay "A ir decay" 0 1000 200 lin 25 400 % 0 | Modal engine: scales the decay of every imported mode (100 %: as measured)
+    how Scales how long each imported mode rings: 100 % is as measured, 25 % four times shorter and 400 % four times longer.
+    sound Shorter damps the body into a dry thud; longer lets it ring on like a larger, harder one.
+group Osc B
+BHImp      "B import partials" 0 1 0 enum Off Sample | Harmonic engine: take the partials from a sample (its frame or range of the Spectral engine's analysis: their levels and their spacing, as analysed) instead of the two sets
+    how Replaces the two sets in the slot's Harmonic engine with the partials of the slot's sample, found by the same analysis as the Spectral engine's: each partial's level and where it sits against the pitch.
+    sound The slot plays the sample's own tone colour, as a steady chord of sines: a clarinet, a bell or a voice with its real overtones, inharmonic ones included.
+BHImpFrom  "B import from" 0 1000 500 pct | Harmonic engine: where in the sample the imported partials are taken from (0 % the start, 100 % the end)
+    how Sets where in the sample the partial table is read, as a share of its length.
+    sound Moving it changes the tone colour to that of another moment of the sample, from an attack's bright mix to the settled body.
+BHImpSpan  "B import span" 0 1000 0 pct | Harmonic engine: how much of the sample after "import from" is averaged into the partials (0: the single frame)
+    how Sets how much of the sample, from the starting point on, is averaged into one table, as a share of its length; 0 % takes a single frame.
+    sound A single frame is a snapshot and can be thin or sharp; a longer span gives the average colour of that part of the sound.
+BHImpRatio "B import ratios" 0 1000 1000 pct | Harmonic engine: how much of the imported partials' spacing is kept (100 %: as analysed, bell-like or reedy; 0: whole multiples of the pitch)
+    how Blends the spacing of the imported partials between whole multiples of the pitch at 0 % and exactly as analysed at 100 %.
+    sound At 100 % an inharmonic sample keeps its metallic or noisy character; at 0 % the same levels sound like a clean, tuned tone.
+BMImp      "B mode table" 0 1 0 enum Geometry Impulse_response | Modal engine: where the modes come from: the chosen geometry, or the modes (frequency, decay, gain) found in a short sample treated as an impulse response
+    how Chooses whether the body's modes come from the geometry or from the slot's sample, read as an impulse response and analysed into its modes.
+    sound The geometry gives the idealised bodies; the impulse response gives the body that was recorded: a bell, a box, a room or a plate.
+BMImpStart "B ir start" 0 1000 0 pct | Modal engine: where in the sample the impulse response starts, as a share of its length
+    how Sets where in the sample the impulse response starts, as a share of its length.
+    sound Moving it skips the click or the strike at the start, so the modes are those of the ringing that follows.
+BMImpLen   "B ir length" 0 1000 624 time 0.05 2 | Modal engine: how long a stretch of the sample is analysed for modes
+    how Sets the length of the stretch analysed, from 50 ms to 2 s; the modes are those that ring through at least three analysis frames in it.
+    sound Short finds only the fast, bright modes; long finds the slow, low ones too, and takes more of the body in.
+BMImpDecay "B ir decay" 0 1000 200 lin 25 400 % 0 | Modal engine: scales the decay of every imported mode (100 %: as measured)
+    how Scales how long each imported mode rings: 100 % is as measured, 25 % four times shorter and 400 % four times longer.
+    sound Shorter damps the body into a dry thud; longer lets it ring on like a larger, harder one.
+group Osc C
+CHImp      "C import partials" 0 1 0 enum Off Sample | Harmonic engine: take the partials from a sample (its frame or range of the Spectral engine's analysis: their levels and their spacing, as analysed) instead of the two sets
+    how Replaces the two sets in the slot's Harmonic engine with the partials of the slot's sample, found by the same analysis as the Spectral engine's: each partial's level and where it sits against the pitch.
+    sound The slot plays the sample's own tone colour, as a steady chord of sines: a clarinet, a bell or a voice with its real overtones, inharmonic ones included.
+CHImpFrom  "C import from" 0 1000 500 pct | Harmonic engine: where in the sample the imported partials are taken from (0 % the start, 100 % the end)
+    how Sets where in the sample the partial table is read, as a share of its length.
+    sound Moving it changes the tone colour to that of another moment of the sample, from an attack's bright mix to the settled body.
+CHImpSpan  "C import span" 0 1000 0 pct | Harmonic engine: how much of the sample after "import from" is averaged into the partials (0: the single frame)
+    how Sets how much of the sample, from the starting point on, is averaged into one table, as a share of its length; 0 % takes a single frame.
+    sound A single frame is a snapshot and can be thin or sharp; a longer span gives the average colour of that part of the sound.
+CHImpRatio "C import ratios" 0 1000 1000 pct | Harmonic engine: how much of the imported partials' spacing is kept (100 %: as analysed, bell-like or reedy; 0: whole multiples of the pitch)
+    how Blends the spacing of the imported partials between whole multiples of the pitch at 0 % and exactly as analysed at 100 %.
+    sound At 100 % an inharmonic sample keeps its metallic or noisy character; at 0 % the same levels sound like a clean, tuned tone.
+CMImp      "C mode table" 0 1 0 enum Geometry Impulse_response | Modal engine: where the modes come from: the chosen geometry, or the modes (frequency, decay, gain) found in a short sample treated as an impulse response
+    how Chooses whether the body's modes come from the geometry or from the slot's sample, read as an impulse response and analysed into its modes.
+    sound The geometry gives the idealised bodies; the impulse response gives the body that was recorded: a bell, a box, a room or a plate.
+CMImpStart "C ir start" 0 1000 0 pct | Modal engine: where in the sample the impulse response starts, as a share of its length
+    how Sets where in the sample the impulse response starts, as a share of its length.
+    sound Moving it skips the click or the strike at the start, so the modes are those of the ringing that follows.
+CMImpLen   "C ir length" 0 1000 624 time 0.05 2 | Modal engine: how long a stretch of the sample is analysed for modes
+    how Sets the length of the stretch analysed, from 50 ms to 2 s; the modes are those that ring through at least three analysis frames in it.
+    sound Short finds only the fast, bright modes; long finds the slow, low ones too, and takes more of the body in.
+CMImpDecay "C ir decay" 0 1000 200 lin 25 400 % 0 | Modal engine: scales the decay of every imported mode (100 %: as measured)
+    how Scales how long each imported mode rings: 100 % is as measured, 25 % four times shorter and 400 % four times longer.
+    sound Shorter damps the body into a dry thud; longer lets it ring on like a larger, harder one.

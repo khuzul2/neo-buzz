@@ -381,6 +381,34 @@ namespace NeoBuzz.Editor
             g.Text(loop ? "start / loop" : "start", Math.Min(x0 + 4, r.Right - 70), r.Top + 26, 9, Palette.DimText);
         }
 
+        /// <summary>
+        /// A spectrogram of a recording's partials (docs/specs/neo-learn.md §5.4, L3): time across, frequency up on a log scale, one cell for each of
+        /// <paramref name="cols"/> × <paramref name="rows"/> (column-major, row 0 the lowest) with a level 0 … 1. <paramref name="kept"/> are the partials that sound
+        /// (the accent colour), <paramref name="dropped"/> those the gate leaves out (dim). <paramref name="mark"/> (0 … 1, negative: none) is where the reading starts
+        /// as a line; a frozen reading (<paramref name="frozen"/>) is captioned. Cells under 0.05 are not drawn, so a frame is a few hundred rectangles.
+        /// </summary>
+        public static void Spectrogram(INeoCanvas g, NeoRect r, float[] kept, float[] dropped, int cols, int rows, double mark, bool frozen, NeoColor accent)
+        {
+            if (kept == null || cols < 1 || rows < 1 || kept.Length < cols * rows) return;
+            double cw = r.Width / cols, ch = (r.Height - 8) / rows, bottom = r.Bottom - 4;
+            for (int c = 0; c < cols; c++)
+                for (int y = 0; y < rows; y++)
+                {
+                    int i = c * rows + y;
+                    float k = kept[i], d = dropped == null ? 0f : dropped[i];
+                    if (k < 0.05f && d < 0.05f) continue;
+                    var rect = new NeoRect(r.Left + c * cw, bottom - (y + 1) * ch, cw + 0.5, ch + 0.5);
+                    if (k >= 0.05f) g.Rect(rect, accent.WithAlpha((byte)(0x20 + 0xB0 * Math.Min(1f, k))), NeoStroke.None, 0);
+                    else g.Rect(rect, Palette.DimText.WithAlpha((byte)(0x10 + 0x40 * Math.Min(1f, d))), NeoStroke.None, 0);
+                }
+            if (mark >= 0)
+            {
+                double x = r.Left + r.Width * Math.Clamp(mark, 0, 1);
+                g.Line(x, r.Top + 24, x, r.Bottom - 6, new NeoStroke(accent, 2));
+                g.Text(frozen ? "frozen here" : "starts here", Math.Min(x + 4, r.Right - 80), r.Top + 26, 9, Palette.DimText);
+            }
+        }
+
         /// <summary>The pad's handle at (<paramref name="handle"/>.X, .Y) over <paramref name="r"/> (y up), with guide lines, and the caption naming what the pad moves.</summary>
         public static void Handle(INeoCanvas g, NeoRect r, NeoPoint? handle, bool dragging, NeoColor accent, string caption)
         {

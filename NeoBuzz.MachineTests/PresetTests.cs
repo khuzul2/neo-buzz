@@ -66,6 +66,7 @@ namespace NeoBuzz.MachineTests
             ["Neo Learn Phase Distortion"] = (NeoBuzz.LearnPd.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.PhaseDistortionMap(NeoBuzz.LearnPd.Params.Table), v, x.Length)),
             ["Neo Learn Vector"] = (NeoBuzz.LearnVector.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.VectorMap(NeoBuzz.LearnVector.Params.Table), v, x.Length)),
             ["Neo Learn Sampler"] = (NeoBuzz.LearnSampler.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.SamplerMap(NeoBuzz.LearnSampler.Params.Table), v, x.Length)),
+            ["Neo Learn Spectral"] = (NeoBuzz.LearnSpectral.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.SpectralMap(NeoBuzz.LearnSpectral.Params.Table), v, x.Length)),
             // mastering-tools.md §5.1: the clipper.
             ["Neo Clipper"] = (NeoBuzz.Clipper.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Clipper.ClipperEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             // mastering-tools.md §5.4, §5.5: the transient shaper and the low-end shaper.
@@ -86,6 +87,8 @@ namespace NeoBuzz.MachineTests
         static float[] RenderLearn(NeoBuzz.Learn.MacroMap map, ParamValues v, int length)
         {
             for (int i = 0; i < NeoBuzz.DyeEssence.TableBank.Count; i++) NeoBuzz.DyeEssence.TableBank.GetNow(i);
+            for (int i = 0; i < NeoBuzz.DyeEssence.SampleSources.Count; i++) NeoBuzz.DyeEssence.SampleSources.GetNow(i);
+            for (int i = 0; i < NeoBuzz.DyeEssence.SpectralSources.Count; i++) NeoBuzz.DyeEssence.SpectralSources.GetNow(i);
             var host = new NeoBuzz.Learn.LearnHost(map, v);
             return RenderSynth(host.Engine, (e, l, r, n) => host.Process(l, r, n), length);
         }
@@ -106,7 +109,7 @@ namespace NeoBuzz.MachineTests
             return (T)e;
         }
 
-        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler" };
+        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral" };
 
         /// <summary>
         /// Neo Sampler: the song's slots 1–16 hold the built-in drums and the sine (the presets that

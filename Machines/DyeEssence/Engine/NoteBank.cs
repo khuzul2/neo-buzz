@@ -101,6 +101,12 @@ namespace NeoBuzz.DyeEssence
         public SpectralModel Spectrum;
         public float SpSpeed = 1f, SpKey = 1f, SpFormant, SpSnap, SpBalance = 0.5f, SpBlur, SpTilt, SpStretch;
         public int SpPartials = 48;
+        /// <summary>
+        /// P5b: the Harmonic engine's partials from the slot's sample (ImpOn; the frame or range ImpFrom, ImpSpan of the model in <see cref="Spectrum"/>, the spacing ImpRatio
+        /// of it kept) and the Modal engine's modes from it read as an impulse response (ModeOn; from ModeStart for ModeLen seconds, their decays scaled by ModeDecay).
+        /// </summary>
+        public bool ImpOn, ModeOn;
+        public float ImpFrom = 0.5f, ImpSpan, ImpRatio = 1f, ModeStart, ModeLen = 0.5f, ModeDecay = 1f;
     }
 
     internal sealed class SourceSettings

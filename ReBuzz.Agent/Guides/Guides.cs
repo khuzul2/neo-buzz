@@ -51,6 +51,7 @@ namespace ReBuzz.Agent.Guides
             ("mastering", "Mastering", "Loudness and true-peak targets (streaming, club, broadcast), the flow, matching a reference, measuring after every change, and what not to do."),
             ("mastering-chain", "Mastering chain", "The chain stage by stage with settings: corrective EQ, glue compression, saturation, clipping, low end, stereo image, tape, limiter and dither."),
             ("dye-essence-in-depth", "Dye Essence in depth", "Dye Essence's signal flow (engines, filters, modulation, arpeggiator and sequencer, effects, imports) and how to use it, with recipes."),
+            ("dye-essence-analysis", "Dye Essence analysis", "Dye Essence's Spectral engine and the sample imports: partials into the Harmonic engine and an impulse response into the Modal engine."),
             ("dye-essence-effects", "Dye Essence effects", "Dye Essence's effects rack: ten slots, the Trio and Duo chains, the six hosted engines and what each slot's ten parameters mean."),
             ("neo-eq-in-depth", "Neo EQ in depth", "Neo EQ's graphic mode, linear phase and curve layer, and the map of its factory presets."),
             ("app-control", "App control", "Settings and their audit log, the audio device with auto-revert, MIDI bindings and learn, the studio window (views, panels, selection), export to WAV with stems, and app status: what each tool does, where it works and the care it needs."),
@@ -110,7 +111,7 @@ namespace ReBuzz.Agent.Guides
                 Description =
                     "Returns a guide as markdown: 'workflow' (how to work here; read it first), 'concepts' (machines, patterns, the arrangement, " +
                     "beats, pitches, levels), then by craft: 'composition', 'genres', 'sound-design', 'synth-recipes', 'fm-recipes', 'mixing', 'mixing-dynamics', " +
-                    "'mastering', 'mastering-chain', 'app-control' (preferences, audio device, MIDI, the window, export), 'troubleshooting', and the machine deep dives 'dye-essence-in-depth', 'dye-essence-effects' and 'neo-eq-in-depth'. machine gives a gear's manual " +
+                    "'mastering', 'mastering-chain', 'app-control' (preferences, audio device, MIDI, the window, export), 'troubleshooting', and the machine deep dives 'dye-essence-in-depth', 'dye-essence-analysis', 'dye-essence-effects' and 'neo-eq-in-depth'. machine gives a gear's manual " +
                     "(every parameter, how to use it, presets). Without arguments, lists the topics. Read-only. " +
                     "Example: guide(topic=\"mixing\"), guide(machine=\"Neo Poly\").",
                 Input = Object(null,
