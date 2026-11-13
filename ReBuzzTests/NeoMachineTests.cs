@@ -115,6 +115,10 @@ namespace ReBuzzTests
         // L1b: Granular and Physical.
         internal static readonly NeoInfo LearnGrain = new("Neo Learn Granular", "Learn Grain", true);
         internal static readonly NeoInfo LearnPhys = new("Neo Learn Physical", "Learn Phys", true);
+        // L2a: String, Formant (box name Learn Voice) and Wavefolder.
+        internal static readonly NeoInfo LearnString = new("Neo Learn String", "Learn String", true);
+        internal static readonly NeoInfo LearnFormant = new("Neo Learn Formant", "Learn Voice", true);
+        internal static readonly NeoInfo LearnFold = new("Neo Learn Wavefolder", "Learn Fold", true);
         // The clipper (docs/specs/mastering-tools.md §5.1): oversampled curves into a ceiling no sample passes.
         internal static readonly NeoInfo Clipper = new("Neo Clipper", "Clipper", false);
         // The transient shaper and the low-end shaper (docs/specs/mastering-tools.md §5.4, §5.5).
@@ -1812,7 +1816,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, LearnSub, LearnFm, LearnWt, LearnAdd, LearnGrain, LearnPhys, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip, Tape, DeEsser, Gate })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, LearnSub, LearnFm, LearnWt, LearnAdd, LearnGrain, LearnPhys, LearnString, LearnFormant, LearnFold, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip, Tape, DeEsser, Gate })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");

@@ -186,7 +186,7 @@
    "group": "Global",
    "min": 0,
    "max": 1000,
-   "default": 600,
+   "default": 581,
    "kind": "db",
    "a": -36.0,
    "b": 12.0,

@@ -1,0 +1,115 @@
+# Neo Learn Wavefolder factory presets. Output is set last so each chord sounds at the same level (loudest 50 ms RMS -22 dB). Times are in seconds.
+# Rebuild: python3 tools/gen-machine-presets.py Machines/NeoLearnWavefolder
+machine "Neo Learn Wavefolder"
+
+preset "Bass — Metal Sub"
+Wavefold = 45
+Symmetry = 0
+Fold Stages = 2
+Timbre FM = 0
+Low-Pass Gate = 60
+Gate Strike = 30
+Attack = 0.001
+Decay = 0.5
+Sustain = 60
+Release = 0.2
+Unison / Spread = 0
+Output = -9.5
+
+preset "Pluck — Bongo Ping"
+Wavefold = 55
+Symmetry = 0
+Fold Stages = 3
+Timbre FM = 20
+Low-Pass Gate = 85
+Gate Strike = 85
+Attack = 0.001
+Decay = 0.35
+Sustain = 0
+Release = 0.15
+Unison / Spread = 0
+Output = -6.1
+
+preset "Lead — Sizzle"
+Wavefold = 75
+Symmetry = 20
+Fold Stages = 4
+Timbre FM = 35
+Low-Pass Gate = 30
+Gate Strike = 20
+Attack = 0.003
+Decay = 0.6
+Sustain = 80
+Release = 0.25
+Unison / Spread = 0
+Output = -7.7
+
+preset "Lead — Glass Fold"
+Wavefold = 35
+Symmetry = 0
+Fold Stages = 1
+Timbre FM = 10
+Low-Pass Gate = 20
+Gate Strike = 0
+Attack = 0.003
+Decay = 0.6
+Sustain = 85
+Release = 0.3
+Unison / Spread = 0
+Output = -10.5
+
+preset "Bass — Asymmetric Growl"
+Wavefold = 65
+Symmetry = 60
+Fold Stages = 3
+Timbre FM = 0
+Low-Pass Gate = 50
+Gate Strike = 40
+Attack = 0.002
+Decay = 0.5
+Sustain = 70
+Release = 0.2
+Unison / Spread = 0
+Output = -8.2
+
+preset "Keys — Tine Gate"
+Wavefold = 30
+Symmetry = -10
+Fold Stages = 2
+Timbre FM = 45
+Low-Pass Gate = 70
+Gate Strike = 60
+Attack = 0.001
+Decay = 0.9
+Sustain = 20
+Release = 0.4
+Unison / Spread = 0
+Output = -10.2
+
+preset "Pad — Rust Choir"
+Wavefold = 55
+Symmetry = 0
+Fold Stages = 5
+Timbre FM = 25
+Low-Pass Gate = 15
+Gate Strike = 0
+Attack = 0.4
+Decay = 2.0
+Sustain = 90
+Release = 1.0
+Unison / Spread = 35
+Output = -8.1
+
+preset "Percussion — Metal Zap"
+Wavefold = 90
+Symmetry = 40
+Fold Stages = 6
+Timbre FM = 70
+Low-Pass Gate = 100
+Gate Strike = 100
+Attack = 0.001
+Decay = 0.25
+Sustain = 0
+Release = 0.1
+Unison / Spread = 0
+Output = 4.5

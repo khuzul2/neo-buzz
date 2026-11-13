@@ -1,0 +1,163 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Bass — Metal Sub">
+    <Preset Machine="Neo Learn Wavefolder">
+      <Parameters>
+        <Parameter Name="Wavefold" Group="1" Index="0" Track="0" Value="450" />
+        <Parameter Name="Symmetry" Group="1" Index="1" Track="0" Value="500" />
+        <Parameter Name="Fold Stages" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Timbre FM" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Low-Pass Gate" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Gate Strike" Group="1" Index="5" Track="0" Value="300" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="75" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="624" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="600" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="485" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="552" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pluck — Bongo Ping">
+    <Preset Machine="Neo Learn Wavefolder">
+      <Parameters>
+        <Parameter Name="Wavefold" Group="1" Index="0" Track="0" Value="550" />
+        <Parameter Name="Symmetry" Group="1" Index="1" Track="0" Value="500" />
+        <Parameter Name="Fold Stages" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Timbre FM" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Low-Pass Gate" Group="1" Index="4" Track="0" Value="850" />
+        <Parameter Name="Gate Strike" Group="1" Index="5" Track="0" Value="850" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="75" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="576" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="447" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="623" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Lead — Sizzle">
+    <Preset Machine="Neo Learn Wavefolder">
+      <Parameters>
+        <Parameter Name="Wavefold" Group="1" Index="0" Track="0" Value="750" />
+        <Parameter Name="Symmetry" Group="1" Index="1" Track="0" Value="600" />
+        <Parameter Name="Fold Stages" Group="1" Index="2" Track="0" Value="3" />
+        <Parameter Name="Timbre FM" Group="1" Index="3" Track="0" Value="350" />
+        <Parameter Name="Low-Pass Gate" Group="1" Index="4" Track="0" Value="300" />
+        <Parameter Name="Gate Strike" Group="1" Index="5" Track="0" Value="200" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="195" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="649" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="800" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="515" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="590" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Lead — Glass Fold">
+    <Preset Machine="Neo Learn Wavefolder">
+      <Parameters>
+        <Parameter Name="Wavefold" Group="1" Index="0" Track="0" Value="350" />
+        <Parameter Name="Symmetry" Group="1" Index="1" Track="0" Value="500" />
+        <Parameter Name="Fold Stages" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Timbre FM" Group="1" Index="3" Track="0" Value="100" />
+        <Parameter Name="Low-Pass Gate" Group="1" Index="4" Track="0" Value="200" />
+        <Parameter Name="Gate Strike" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="195" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="649" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="850" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="539" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="531" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Asymmetric Growl">
+    <Preset Machine="Neo Learn Wavefolder">
+      <Parameters>
+        <Parameter Name="Wavefold" Group="1" Index="0" Track="0" Value="650" />
+        <Parameter Name="Symmetry" Group="1" Index="1" Track="0" Value="800" />
+        <Parameter Name="Fold Stages" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Timbre FM" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Low-Pass Gate" Group="1" Index="4" Track="0" Value="500" />
+        <Parameter Name="Gate Strike" Group="1" Index="5" Track="0" Value="400" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="151" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="624" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="700" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="485" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="579" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Keys — Tine Gate">
+    <Preset Machine="Neo Learn Wavefolder">
+      <Parameters>
+        <Parameter Name="Wavefold" Group="1" Index="0" Track="0" Value="300" />
+        <Parameter Name="Symmetry" Group="1" Index="1" Track="0" Value="450" />
+        <Parameter Name="Fold Stages" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Timbre FM" Group="1" Index="3" Track="0" Value="450" />
+        <Parameter Name="Low-Pass Gate" Group="1" Index="4" Track="0" Value="700" />
+        <Parameter Name="Gate Strike" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="75" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="704" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="200" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="577" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="538" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pad — Rust Choir">
+    <Preset Machine="Neo Learn Wavefolder">
+      <Parameters>
+        <Parameter Name="Wavefold" Group="1" Index="0" Track="0" Value="550" />
+        <Parameter Name="Symmetry" Group="1" Index="1" Track="0" Value="500" />
+        <Parameter Name="Fold Stages" Group="1" Index="2" Track="0" Value="4" />
+        <Parameter Name="Timbre FM" Group="1" Index="3" Track="0" Value="250" />
+        <Parameter Name="Low-Pass Gate" Group="1" Index="4" Track="0" Value="150" />
+        <Parameter Name="Gate Strike" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="726" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="812" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="900" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="697" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="350" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="581" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Percussion — Metal Zap">
+    <Preset Machine="Neo Learn Wavefolder">
+      <Parameters>
+        <Parameter Name="Wavefold" Group="1" Index="0" Track="0" Value="900" />
+        <Parameter Name="Symmetry" Group="1" Index="1" Track="0" Value="700" />
+        <Parameter Name="Fold Stages" Group="1" Index="2" Track="0" Value="5" />
+        <Parameter Name="Timbre FM" Group="1" Index="3" Track="0" Value="700" />
+        <Parameter Name="Low-Pass Gate" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Gate Strike" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Attack" Group="1" Index="6" Track="0" Value="75" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="530" />
+        <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Release" Group="1" Index="9" Track="0" Value="394" />
+        <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="844" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

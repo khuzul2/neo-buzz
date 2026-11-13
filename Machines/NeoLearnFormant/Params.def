@@ -54,7 +54,7 @@ UnisonDetune     "Unison / Spread" 0 1000 0 pct
     id unison_detune
     how 0% plays one voice per note; above 0% each note plays 5 detuned, stereo-spread voices (3 in Additive, Granular and Spectral), with detune (up to ±50 cents) and width growing with the value.
     sound Thickens thin waveforms into wide, chorus-like stereo leads and pads.
-OutputGain       "Output" 0 1000 600 db -36 12
+OutputGain       "Output" 0 1000 581 db -36 12
     id output_gain
     how Sets the level after synthesis. There is no limiter (NeoBuzz mixes in floating point); a clip light shows when the output passes 0 dBFS.
     sound Controls overall loudness; keep the clip light dark when the next machine expects levels at or below 0 dBFS.

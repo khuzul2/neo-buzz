@@ -58,6 +58,10 @@ namespace NeoBuzz.MachineTests
             // docs/specs/neo-learn.md L1b: Neo Learn Granular and Physical.
             ["Neo Learn Granular"] = (NeoBuzz.LearnGrain.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.GranularMap(NeoBuzz.LearnGrain.Params.Table), v, x.Length)),
             ["Neo Learn Physical"] = (NeoBuzz.LearnPhys.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.PhysicalMap(NeoBuzz.LearnPhys.Params.Table), v, x.Length)),
+            // docs/specs/neo-learn.md L2a: Neo Learn String, Formant and Wavefolder.
+            ["Neo Learn String"] = (NeoBuzz.LearnString.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.StringMap(NeoBuzz.LearnString.Params.Table), v, x.Length)),
+            ["Neo Learn Formant"] = (NeoBuzz.LearnFormant.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.FormantMap(NeoBuzz.LearnFormant.Params.Table), v, x.Length)),
+            ["Neo Learn Wavefolder"] = (NeoBuzz.LearnFold.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.WavefolderMap(NeoBuzz.LearnFold.Params.Table), v, x.Length)),
             // mastering-tools.md §5.1: the clipper.
             ["Neo Clipper"] = (NeoBuzz.Clipper.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Clipper.ClipperEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             // mastering-tools.md §5.4, §5.5: the transient shaper and the low-end shaper.
@@ -98,7 +102,7 @@ namespace NeoBuzz.MachineTests
             return (T)e;
         }
 
-        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical" };
+        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder" };
 
         /// <summary>
         /// Neo Sampler: the song's slots 1–16 hold the built-in drums and the sine (the presets that

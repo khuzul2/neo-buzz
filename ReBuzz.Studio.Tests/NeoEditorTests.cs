@@ -1685,6 +1685,9 @@ namespace ReBuzz.Studio.Tests
         [TestCase("Neo Learn Additive", "NeoLearnAdditiveEditor", "neo-learn-additive-editor", "Odd / Even")]
         [TestCase("Neo Learn Granular", "NeoLearnGranularEditor", "neo-learn-granular-editor", "Scan Position")]
         [TestCase("Neo Learn Physical", "NeoLearnPhysicalEditor", "neo-learn-physical-editor", "Exciter Mode")]
+        [TestCase("Neo Learn String", "NeoLearnStringEditor", "neo-learn-string-editor", "Pick Position")]
+        [TestCase("Neo Learn Formant", "NeoLearnFormantEditor", "neo-learn-formant-editor", "Tract Size")]
+        [TestCase("Neo Learn Wavefolder", "NeoLearnWavefolderEditor", "neo-learn-wavefolder-editor", "Wavefold")]
         public void NeoLearnL1EditorsHaveTheTemplatesZonesFitAndExplainTheirKnobs(string gear, string editor, string shot, string knobName)
         {
             var m = Add(gear, "Learn L1");

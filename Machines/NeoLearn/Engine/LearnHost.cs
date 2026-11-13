@@ -204,6 +204,7 @@ namespace NeoBuzz.Learn
                     os.GeomBlend = ext[b + (int)SlotExt.GeomBlend];
                     os.GeomTo = (int)ext[b + (int)SlotExt.GeomTo];
                     os.TypeExt = (int)ext[b + (int)SlotExt.TypeExt];
+                    if (os.TypeExt > 0) os.Type = (SlotType)os.TypeExt;                         // Dye's settings code does the same on its next read; this one is for the block that follows a map
                     os.StrPick = ext[b + (int)SlotExt.StrPick];
                     os.StrDamp = ext[b + (int)SlotExt.StrDamp];
                     os.StrHard = ext[b + (int)SlotExt.StrHard];
@@ -219,6 +220,7 @@ namespace NeoBuzz.Learn
                     var fs = engine.Bank.S.Filter[f];
                     int b = (ExtSlot.Filter1 + f) * ExtCount;
                     fs.Kind = (int)ext[b + (int)SlotExt.FKind];
+                    if (fs.Kind > 0) fs.Type = FilterType.Vowel + (fs.Kind - 1);                  // as for the oscillator type above
                     fs.Morph = ext[b + (int)SlotExt.FMorph];
                     fs.Tract = ext[b + (int)SlotExt.FTract];
                     fs.Q = ext[b + (int)SlotExt.FQ];

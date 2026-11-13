@@ -49,6 +49,8 @@ namespace NeoBuzz.DyeEssence
         readonly float[] sKeyT = new float[StringLineCount], sKeyD = new float[StringLineCount], sKeyS = new float[StringLineCount];
         readonly double[] sKeyVr = new double[StringLineCount];
         readonly bool[] sLive = new bool[StringLineCount];
+        // Samples in a row a line has been silent: a burst that is not on the stretch of the loop being written is not a dead string; a whole trip of silence is.
+        readonly int[] sQuiet = new int[StringLineCount];
         // Per note: the sympathetic strings' level (now and the step), whether they are on, and the sum of the note's strings (the strings' input).
         readonly float[] sSympLvl = new float[Notes], sSympStep = new float[Notes];
         readonly bool[] sSympOn = new bool[Notes];
@@ -113,7 +115,7 @@ namespace NeoBuzz.DyeEssence
             double lpDelay = la > 0 ? LowpassDelay(la, w0) : 0;
             double gLp = la > 0 ? LowpassGain(la, w0) : 1.0;
             // Stiffness: two all-passes with a negative coefficient (the delay falls with frequency). Scaled down while they would eat the line.
-            double c = -0.75 * Math.Clamp(stiff, 0f, 1f);
+            double c = -0.95 * Math.Clamp(stiff, 0f, 1f);
             double apDelay = 0;
             for (int tries = 0; tries < 6; tries++)
             {
@@ -213,7 +215,7 @@ namespace NeoBuzz.DyeEssence
                     {
                         uint seed = unchecked(seeds[note] * 2654435761u + (uint)(o + 1) * 0xC2B2AE35u + (uint)(l + 1) * 0x27D4EB2Fu);
                         StringPluck(line, seed, os.StrPick, os.StrHard, noteVel[note]);
-                        sLive[line] = true;
+                        sLive[line] = true; sQuiet[line] = 0;
                         mQuiet[k] = false;
                     }
                 }
@@ -240,7 +242,7 @@ namespace NeoBuzz.DyeEssence
                         Array.Clear(sBuf[line], 0, sBuf[line].Length);
                         sW[line] = 0; sFx[line] = sFy[line] = sLp[line] = 0f;
                         sX1[2 * line] = sX1[2 * line + 1] = sY1[2 * line] = sY1[2 * line + 1] = 0f;
-                        sLive[line] = true;
+                        sLive[line] = true; sQuiet[line] = 0;
                     }
                 }
                 sSympOn[note] = true;
@@ -310,7 +312,9 @@ namespace NeoBuzz.DyeEssence
             sY1[s0] = MathF.Abs(y1a) < 1e-20f ? 0f : y1a;
             sX1[s0 + 1] = MathF.Abs(x1b) < 1e-20f ? 0f : x1b;
             sY1[s0 + 1] = MathF.Abs(y1b) < 1e-20f ? 0f : y1b;
-            return peak > 1e-9f;
+            if (peak > 1e-9f) sQuiet[line] = 0;
+            else sQuiet[line] += count;
+            return sQuiet[line] <= d + 8;
         }
 
         /// <summary>A note's String slot over <paramref name="count"/> samples into the engine buffers.</summary>

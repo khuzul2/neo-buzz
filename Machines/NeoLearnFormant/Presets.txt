@@ -1,0 +1,115 @@
+# Neo Learn Formant factory presets. Output is set last so each chord sounds at the same level (loudest 50 ms RMS -22 dB). Times are in seconds.
+# Rebuild: python3 tools/gen-machine-presets.py Machines/NeoLearnFormant
+machine "Neo Learn Formant"
+
+preset "Choir — Ah Pad"
+Vowel (A-E-I-O-U) = 0
+Tract Size = 0
+Formant Q = 25
+Glottal / Bass = 30
+Breath Noise = 10
+Talking Env = 0
+Attack = 0.3
+Decay = 2.0
+Sustain = 80
+Release = 0.8
+Unison / Spread = 30
+Output = -11.4
+
+preset "Choir — Ooh Swell"
+Vowel (A-E-I-O-U) = 100
+Tract Size = 10
+Formant Q = 30
+Glottal / Bass = 25
+Breath Noise = 15
+Talking Env = 0
+Attack = 0.8
+Decay = 2.0
+Sustain = 85
+Release = 1.2
+Unison / Spread = 40
+Output = -19.5
+
+preset "Voice — Whisper"
+Vowel (A-E-I-O-U) = 50
+Tract Size = 20
+Formant Q = 45
+Glottal / Bass = 5
+Breath Noise = 90
+Talking Env = 0
+Attack = 0.05
+Decay = 1.0
+Sustain = 70
+Release = 0.4
+Unison / Spread = 0
+Output = -19.1
+
+preset "Bass — Wah Talker"
+Vowel (A-E-I-O-U) = 0
+Tract Size = -40
+Formant Q = 60
+Glottal / Bass = 70
+Breath Noise = 0
+Talking Env = 60
+Attack = 0.002
+Decay = 0.4
+Sustain = 60
+Release = 0.15
+Unison / Spread = 0
+Output = -10.7
+
+preset "Lead — Yoi Synth"
+Vowel (A-E-I-O-U) = 25
+Tract Size = 30
+Formant Q = 55
+Glottal / Bass = 65
+Breath Noise = 5
+Talking Env = -50
+Attack = 0.005
+Decay = 0.5
+Sustain = 75
+Release = 0.2
+Unison / Spread = 0
+Output = -11.8
+
+preset "Voice — Giant Bass"
+Vowel (A-E-I-O-U) = 75
+Tract Size = -90
+Formant Q = 40
+Glottal / Bass = 45
+Breath Noise = 10
+Talking Env = 0
+Attack = 0.05
+Decay = 1.0
+Sustain = 90
+Release = 0.5
+Unison / Spread = 0
+Output = -18.8
+
+preset "Voice — Child Choir"
+Vowel (A-E-I-O-U) = 50
+Tract Size = 80
+Formant Q = 35
+Glottal / Bass = 20
+Breath Noise = 20
+Talking Env = 0
+Attack = 0.2
+Decay = 1.5
+Sustain = 80
+Release = 0.6
+Unison / Spread = 35
+Output = -18.2
+
+preset "Texture — Robot Chant"
+Vowel (A-E-I-O-U) = 40
+Tract Size = 0
+Formant Q = 90
+Glottal / Bass = 85
+Breath Noise = 0
+Talking Env = 80
+Attack = 0.002
+Decay = 0.3
+Sustain = 50
+Release = 0.1
+Unison / Spread = 0
+Output = -5.6
