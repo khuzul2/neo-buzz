@@ -99,6 +99,10 @@ namespace NeoPluginGc
         [UnmanagedCallersOnly(EntryPoint = "np_load_start")]
         public static void LoadStart(int mode) => LoadGen.Start(mode);
 
+        /// <summary>1 once the load generator has built its live heap and is running.</summary>
+        [UnmanagedCallersOnly(EntryPoint = "np_load_ready")]
+        public static int LoadReady() => LoadGen.Ready;
+
         [UnmanagedCallersOnly(EntryPoint = "np_load_stop")]
         public static void LoadStop() => LoadGen.Stop();
 

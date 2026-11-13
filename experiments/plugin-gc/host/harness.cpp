@@ -7,6 +7,7 @@
 // Output: "RESULT key=value ..." (one line), "GCCFG ..." and "WORST ..." lines; tools/summarize.py makes tables from them.
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -72,7 +73,7 @@ static void wait_until(int64_t target)
 struct Api {
     np_create_t create; np_param_t param; np_note_on_t noteOn; np_note_off_t noteOff; np_process_t process;
     np_gc_count_t gcCount; np_gc_count_gen_t gcCountGen; np_gc_pause_ns_t gcPause; np_gc_max_pause_ns_t gcMaxPause;
-    np_gc_max_pause_reset_t gcMaxPauseReset; np_alloc_bytes_t allocBytes; np_load_start_t loadStart; np_load_stop_t loadStop;
+    np_gc_max_pause_reset_t gcMaxPauseReset; np_alloc_bytes_t allocBytes; np_load_start_t loadStart; np_load_stop_t loadStop; np_load_ready_t loadReady;
     np_set_latency_t setLatency; np_gc_config_t gcConfig;
 };
 static Api api;
@@ -104,6 +105,7 @@ static bool loadPlugin(const char* path)
     api.allocBytes = (np_alloc_bytes_t)sym(lib, "np_alloc_bytes");
     api.loadStart = (np_load_start_t)sym(lib, "np_load_start");
     api.loadStop = (np_load_stop_t)sym(lib, "np_load_stop");
+    api.loadReady = (np_load_ready_t)sym(lib, "np_load_ready");
     api.setLatency = (np_set_latency_t)sym(lib, "np_set_latency");
     api.gcConfig = (np_gc_config_t)sym(lib, "np_gc_config");
     return true;
@@ -174,6 +176,7 @@ int main(int argc, char** argv)
     // 0 = 2x, 1 = 4x, 2 = 8x oversampling
     if (api.setLatency) api.setLatency(c.latency);
     if (api.loadStart) api.loadStart(c.load);
+    if (api.loadReady) for (int i = 0; i < 1200 && !api.loadReady(); i++) std::this_thread::sleep_for(std::chrono::milliseconds(100));   // live heap built
 
     char cfg[512] = "";
     if (api.gcConfig) api.gcConfig(cfg, sizeof cfg);

@@ -21,6 +21,7 @@ struct Inst { int kind; float s1[8]{}, s2[8]{}; float p0 = 0, p1 = 0; };
 std::vector<Inst*> insts;
 std::mutex mu;
 std::atomic<bool> loadRun{false};
+std::atomic<int> loadReady{1};
 std::thread loadThread;
 // Work per sample per instance: calibrated so a 16-instance block costs about what the managed machines do.
 int workPerSample() { static int w = getenv("NP_CONTROL_WORK") ? atoi(getenv("NP_CONTROL_WORK")) : 60; return w; }
@@ -56,17 +57,19 @@ EXPORT int64_t np_alloc_bytes(void) { return 0; }
 EXPORT void np_set_latency(int) {}
 EXPORT int np_gc_config(char* buf, int cap) { return snprintf(buf, cap, "native control, no GC"); }
 
+EXPORT int np_load_ready(void) { return loadReady; }
 EXPORT void np_load_stop(void) { loadRun = false; if (loadThread.joinable()) loadThread.join(); }
 EXPORT void np_load_start(int mode)
 {
     np_load_stop();
     if (mode <= 0) return;
-    loadRun = true;
+    loadRun = true; loadReady = 0;
     loadThread = std::thread([mode] {
         double bytesPerSec = mode == 1 ? 1e6 : 20e6;
         std::vector<void*> ring(2048, nullptr);
         std::vector<char*> live;
         if (mode == 3) { live.resize(1000000); for (auto& p : live) { p = (char*)malloc(232); memset(p, 1, 232); } }
+        loadReady = 1;
         unsigned rnd = 12345;
         auto next = [&] { rnd = rnd * 1664525u + 1013904223u; return rnd >> 8; };
         auto t0 = std::chrono::steady_clock::now();

@@ -19,6 +19,7 @@ typedef void (*np_gc_max_pause_reset_t)(void);
 typedef int64_t (*np_alloc_bytes_t)(void);
 typedef void (*np_load_start_t)(int mode);                         // 0 none, 1 = 1 MB/s, 2 = 20 MB/s, 3 = 20 MB/s + 256 MB live gen2 churn
 typedef void (*np_load_stop_t)(void);
+typedef int (*np_load_ready_t)(void);                               // 1 once the load generator has built its live heap
 typedef void (*np_set_latency_t)(int sustained);
 typedef int (*np_gc_config_t)(char* buf, int cap);
 

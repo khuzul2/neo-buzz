@@ -15,6 +15,8 @@ namespace NeoPluginGc
         static Thread loadThread, sampler;
         static volatile bool run;
         static object sink;
+        static volatile int ready;
+        public static int Ready => ready;
         static long maxPauseNs;
         public static long MaxPauseNs => Volatile.Read(ref maxPauseNs);
 
@@ -28,7 +30,8 @@ namespace NeoPluginGc
                 sampler.Start();
             }
             Stop();
-            if (mode <= 0) return;
+            ready = 0;
+            if (mode <= 0) { ready = 1; return; }
             run = true;
             loadThread = new Thread(() => Load(mode)) { IsBackground = true, Name = "editor-load" };
             loadThread.Start();
@@ -54,6 +57,7 @@ namespace NeoPluginGc
                 live = new Node[1_000_000];           // ~256 MB: node + 200 byte payload
                 for (int i = 0; i < live.Length; i++) live[i] = new Node { Data = new byte[200], Next = i > 0 ? live[i - 1] : null };
             }
+            ready = 1;
             var sw = Stopwatch.StartNew();
             double allocated = 0, churned = 0, lohAt = 0;
             while (run)
