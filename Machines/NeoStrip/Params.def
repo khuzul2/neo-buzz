@@ -6,47 +6,123 @@ summary Channel strip in one machine, five stages in the classic order: gate, EQ
 
 group Gate
 GateOn      "Gate on"        0 1    0    switch                       | The gate in or out
+    how Switches the gate stage in or out.
+    sound On, quiet noise between sounds is turned down.
 GateThresh  "Gate threshold" 0 800  300  lin -80 0 dB 1              | Level (dBFS, the louder channel's peak) the gate opens at; it closes 3 dB lower, after the hold
+    how Sets the level, from -80 to 0 dBFS, at which the gate opens.
+    sound Higher values remove more background noise but can cut into soft notes.
 GateRange   "Gate range"     0 800  400  lin 0 80 dB 1               | How far a closed gate lowers the signal (80: nearly silence)
+    how Sets how far a closed gate turns the signal down, from 0 to 80 dB.
+    sound 80 dB gives near silence between sounds; smaller values leave some of the background.
 GateAttack  "Gate attack"    0 1000 371  time 0.0001 0.05            | Time to open
+    how Sets how long the gate takes to open, from 0.1 ms to 50 ms.
+    sound Fast attacks keep hits sharp; slower ones fade them in.
 GateHold    "Gate hold"      0 1000 630  time 0.001 0.5              | Time the gate stays open after the level falls under the threshold
+    how Sets how long the gate stays open after the level falls under the threshold, from 1 to 500 ms.
+    sound Longer holds stop the gate cutting off note ends.
 GateRelease "Gate release"   0 1000 511  time 0.01 2                 | Time to close
+    how Sets how long the gate takes to close, from 10 ms to 2 s.
+    sound Short releases chop tails tightly; long ones let sounds fade out naturally.
 group EQ
 EqOn        "EQ on"          0 1    0    switch                       | The EQ stage in or out (a shelf or bell with no gain, and a cut that is off, change nothing)
+    how Switches the whole EQ stage in or out.
+    sound On, the cut, shelves and bells below shape the tone.
 LoCutOn     "Low cut on"     0 1    0    switch                       | The low cut (Butterworth, 12 dB/oct)
+    how Switches the 12 dB per octave low cut in or out.
+    sound On, rumble and low-end mud below the cut frequency are removed.
 LoCutFreq   "Low cut freq"   0 10000 2007 freq 20 20000              | Low cut: −3 dB here
+    how Sets the low cut's frequency, from 20 Hz to 20 kHz, where it is 3 dB down.
+    sound Higher values thin the sound by removing more of the low end.
 LoShelfFreq "Low shelf freq" 0 10000 2330 freq 20 20000              | Low shelf: half its gain here
+    how Sets the frequency, from 20 Hz to 20 kHz, where the low shelf reaches half its gain.
+    sound It decides how high up the low-end boost or cut reaches.
 LoShelfGain "Low shelf gain" 0 480  240  db -24 24                    | Low shelf gain in 0.1 dB steps
+    how Sets the low shelf's gain from -24 to +24 dB.
+    sound Positive values add weight and warmth; negative values thin out the bass.
 LmFreq      "Low mid freq"   0 10000 4337 freq 20 20000              | Low-mid bell centre
+    how Sets the low-mid bell's centre frequency, from 20 Hz to 20 kHz.
+    sound It chooses which part of the lower midrange, where mud and body live, you shape.
 LmGain      "Low mid gain"   0 480  240  db -24 24                    | Low-mid bell gain in 0.1 dB steps
+    how Sets the low-mid bell's gain from -24 to +24 dB.
+    sound Cutting clears muddiness; boosting adds body.
 LmQ         "Low mid Q"      0 2000 807  exp 0.1 30 2                | Low-mid bell width
+    how Sets the low-mid bell's width: a higher Q is narrower, from 0.1 to 30.
+    sound Narrow values reach one note or resonance; wide values change the broad tone.
 HmFreq      "High mid freq"  0 10000 7254 freq 20 20000              | High-mid bell centre
+    how Sets the high-mid bell's centre frequency, from 20 Hz to 20 kHz.
+    sound It chooses which part of the upper midrange, where presence and harshness live, you shape.
 HmGain      "High mid gain"  0 480  240  db -24 24                    | High-mid bell gain in 0.1 dB steps
+    how Sets the high-mid bell's gain from -24 to +24 dB.
+    sound Boosting adds presence and bite; cutting softens harshness.
 HmQ         "High mid Q"     0 2000 807  exp 0.1 30 2                | High-mid bell width
+    how Sets the high-mid bell's width: a higher Q is narrower, from 0.1 to 30.
+    sound Narrow values reach one harsh spot; wide values change the broad tone.
 HiShelfFreq "High shelf freq" 0 10000 8673 freq 20 20000             | High shelf: half its gain here
+    how Sets the frequency, from 20 Hz to 20 kHz, where the high shelf reaches half its gain.
+    sound It decides how far down the top-end boost or cut reaches.
 HiShelfGain "High shelf gain" 0 480 240  db -24 24                    | High shelf gain in 0.1 dB steps
+    how Sets the high shelf's gain from -24 to +24 dB.
+    sound Positive values add air and brightness; negative values darken the sound.
 HiCutOn     "High cut on"    0 1    0    switch                       | The high cut (Butterworth, 12 dB/oct)
+    how Switches the 12 dB per octave high cut in or out.
+    sound On, hiss and harsh highs above the cut frequency are removed.
 HiCutFreq   "High cut freq"  0 10000 9677 freq 20 20000              | High cut: −3 dB here
+    how Sets the high cut's frequency, from 20 Hz to 20 kHz, where it is 3 dB down.
+    sound Lower values make the sound duller by removing more of the top end.
 group Compressor
 CompOn      "Comp on"        0 1    0    switch                       | The compressor in or out
+    how Switches the compressor stage in or out.
+    sound On, the loud parts are turned down and the sound gets more even.
 CompMode    "Comp mode"      0 3    0    enum Clean Glue FET Opto     | Clean: transparent VCA. Glue: bus VCA. FET: fast feedback. Opto: smooth, program-dependent
+    how Chooses the compressor's character: Clean, Glue, FET or Opto.
+    sound Clean is transparent, Glue binds, FET is punchy and Opto is smooth.
 CompThresh  "Comp threshold" 0 1000 700  lin -60 0 dB 1              | Level where compression starts
+    how Sets the level, from -60 to 0 dB, above which compression starts.
+    sound Lower values compress more of the signal and sound denser.
 CompRatio   "Comp ratio"     0 1000 463  ratio 1 20 inf              | Compression ratio (top: limiting)
+    how Sets how strongly signal above the threshold is reduced, from 1:1 up to 20:1 and limiting.
+    sound Higher ratios flatten the peaks for a more controlled sound.
 CompAttack  "Comp attack"    0 1000 639  time 0.00005 0.2            | Time to 63 % of the gain change
+    how Sets how fast the gain falls above the threshold, from 0.05 ms to 200 ms.
+    sound Fast attacks dull the punch; slow ones let hits through.
 CompRelease "Comp release"   0 1000 532  time 0.005 3                | Time back to 37 % of the gain change
+    how Sets how fast the gain recovers, from 5 ms to 3 s.
+    sound Short releases sound lively and can pump; long ones sound smooth.
 CompMakeup  "Comp makeup"    0 1000 0    lin 0 24 dB 1               | Gain after compression
+    how Adds 0 to 24 dB of gain after compression.
+    sound It restores the level lost to compression.
 group Drive
 DriveOn     "Drive on"       0 1    0    switch                       | The saturation in or out
+    how Switches the saturation stage in or out.
+    sound On, harmonics are added and the sound gets warmer or grittier.
 DriveMode   "Drive mode"     0 4    0    enum Tape Tube Transistor Diode Fold | Saturation model
+    how Chooses the saturation model: Tape, Tube, Transistor, Diode or Fold.
+    sound Tape is soft and warm, Tube is rich, Transistor is firm, Diode is edgy and Fold is bright and metallic.
 DriveAmount "Drive"          0 1000 250  lin 0 36 dB 1               | Gain into the saturation (auto gain holds the level steady)
+    how Raises the level into the saturation by 0 to 36 dB.
+    sound More drive adds more harmonics, from subtle warmth to heavy distortion.
 DriveMix    "Drive mix"      0 1000 1000 pct                         | Dry/wet of the saturation
+    how Blends the saturated signal with the dry signal.
+    sound Lower values add the colour as a subtle layer under the original sound.
 group Output
 ClipOn      "Clip on"        0 1    0    switch                       | A 4× oversampled hard clipper at the ceiling
+    how Switches the 4x oversampled hard clipper in or out.
+    sound On, peaks are flattened at the ceiling, which makes the sound louder and edgier.
 LimitOn     "Limit on"       0 1    0    switch                       | The true-peak limiter at the ceiling (after the clipper when both are on)
+    how Switches the true-peak limiter in or out.
+    sound On, nothing passes the ceiling, with the limiter after the clipper.
 Ceiling     "Ceiling"        0 240  237  db -24 0                     | The clipper's ceiling (dBFS) and the limiter's true-peak ceiling (dBTP); the limiter's range is −12 to 0 dB
+    how Sets the clipper's ceiling from -24 to 0 dBFS and the limiter's true-peak ceiling from -12 to 0 dBTP.
+    sound A lower ceiling cuts the peaks harder and gives a quieter, more squashed top.
 LimRelease  "Limiter release" 0 1500 1000 time 0.001 1               | Limiter release time
+    how Sets the limiter's recovery time, from 1 ms to 1 s.
+    sound Short releases sound loud and punchy but can distort; long ones sound smooth.
 Output      "Output"         0 480  240  db -24 24                    | Gain after the strip, 0.1 dB steps (the editor's Match sets it from the gain-match reading)
+    how Adds -24 to +24 dB of gain after the strip.
+    sound It matches the loudness to the untreated sound so you judge the processing fairly.
 Delta       "Delta"          0 1    0    switch                       | Hear only what the strip changes: the output minus the input, delayed to match (glides over 10 ms)
+    how Plays only the difference between the output and the input.
+    sound You hear only what the strip changes, such as the noise removed or the harmonics added.
 
 # What the strip measures (NeoStripMachine.Readings, machine_readings).
 reading gain_match_db     dB      | Short-term loudness out − in (K-weighted, 3 s): what Output would have to take back for equal loudness

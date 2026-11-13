@@ -6,19 +6,41 @@ summary Oscilloscope and vectorscope that pass the audio through untouched: the 
 
 group Scope
 Display   "Display"      0 4    4    enum L R Mid Side L_&_R                         | What the scope draws: the left or right channel, mid (L + R)/2, side (L − R)/2, or left and right overlaid
+    how Chooses what the scope draws: left, right, mid, side, or left and right overlaid.
+    sound The audio does not change; you see the wave of the channel or of the centre or width signal.
 Sync      "Sync"         0 7    3    enum Free 1/16 1/8 1/4 1/2 1_bar 2_bars 4_bars | The screen's width as a note value of the song's tempo, its sweeps starting on the song's beats and bars (a bar is 4 beats), so a loop stands still; while the song stands still it runs free at the tempo. Free: Time/div and the trigger
+    how Sets the screen width to a note value of the song's tempo, from 1/16 to 4 bars, or leaves it Free.
+    sound The audio does not change; a loop stands still on screen because each sweep starts on the beat.
 Time      "Time/div"     0 1000 394  time 0.0001 0.2                             | With Sync Free: the time per division, 10 across the screen (0.1 ms – 200 ms)
+    how Sets the time per division in Free sync, from 0.1 ms to 200 ms.
+    sound The audio does not change; short times show the shape of a single wave, long times show a whole note.
 group Trigger
 Trigger   "Trigger"      0 2    1    enum Off Rising Falling                     | With Sync Free: each sweep starts where the first trace crosses Level going up (Rising) or down (Falling); with no crossing for two sweeps' time (at least 100 ms) it runs free until one comes. Off: sweeps follow each other
+    how Starts each sweep where the trace crosses the Level going up, going down, or at any moment.
+    sound The audio does not change; a trigger holds a repeating wave steady instead of letting it drift.
 Level     "Level"        0 2000 1000 lin -100 100 % 1                            | The trigger's level, in percent of full scale (0 dBFS)
+    how Sets the level the trigger waits for, as a percentage of full scale from -100 to +100 %.
+    sound The audio does not change; it decides which part of the wave starts the sweep.
 Holdoff   "Holdoff"      0 1000 0    pow 0 500 2 ms 1                            | After a sweep, the trigger waits this long before it looks for the next crossing (0 – 500 ms)
+    how Makes the trigger wait up to 500 ms after a sweep before it looks for the next crossing.
+    sound The audio does not change; it steadies complex waves that cross the level several times.
 group View
 AutoScale "Auto scale"   0 1    1    switch                                      | On: both displays fit the signal (the scope its sweep's peak, the vectorscope its points). Off: Gain
+    how Fits both displays to the signal automatically.
+    sound The audio does not change; quiet and loud signals both fill the screen.
 Gain      "Gain"         0 120  24   db -12 48                                   | With Auto scale Off: the vertical gain of both displays, in 0.5 dB steps (0 dB: full scale fills the screen)
+    how Sets the vertical zoom of both displays, from -12 to +48 dB, when Auto scale is off.
+    sound The audio does not change; quiet detail looks bigger as you raise it.
 Trail     "Trail"        0 3    1    enum Off Short Medium Long                  | Earlier sweeps stay behind the newest, fading over about 0.15, 0.4 or 1 s
+    how Keeps earlier sweeps on screen, fading over about 0.15, 0.4 or 1 second.
+    sound The audio does not change; you see how the wave moves over time.
 Freeze    "Freeze"       0 1    0    switch                                      | Holds both displays; the readings go on
+    how Holds both displays still while the readings carry on.
+    sound The audio does not change; you can study a moment of the signal.
 group Vector
 Vector    "Vector"       0 1    0    enum Lissajous Polar                        | Lissajous: the goniometer (mid up, side across, the left channel up-left). Polar: each sample at its angle and level, folded into the upper half (mono straight up, opposed channels along the base)
+    how Chooses the stereo display: Lissajous goniometer or Polar.
+    sound The audio does not change; you see the stereo image: a vertical line is mono, a wide cloud is wide stereo.
 
 # What the scope measures (NeoScopeMachine.Readings, machine_readings). Windows end now.
 reading peak_dbfs       dBFS  | The highest sample of either channel over the last 3 s

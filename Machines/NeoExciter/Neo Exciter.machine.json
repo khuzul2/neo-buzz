@@ -30,7 +30,9 @@
     "Diode",
     "Warm"
    ],
-   "description": "The curve: Tape (tanh, odd harmonics), Tube (asymmetric, even and odd), Transistor (towards a hard clip), Diode (soft logarithmic, asymmetric), Warm (even harmonics only)"
+   "description": "The curve: Tape (tanh, odd harmonics), Tube (asymmetric, even and odd), Transistor (towards a hard clip), Diode (soft logarithmic, asymmetric), Warm (even harmonics only)",
+   "how": "Chooses the curve that creates the added harmonics: Tape, Tube, Transistor, Diode or Warm.",
+   "sound": "Tape and Tube sound smooth and rich, Transistor is bolder, Diode is edgy and Warm adds only even, full-sounding harmonics."
   },
   {
    "index": 1,
@@ -44,7 +46,9 @@
    "a": 0.0,
    "b": 36.0,
    "unit": "dB",
-   "description": "Gain into the shaper (before its output is brought back), 0.1 dB steps. More drive, more harmonics, higher orders"
+   "description": "Gain into the shaper (before its output is brought back), 0.1 dB steps. More drive, more harmonics, higher orders",
+   "how": "Raises the level into the harmonic generator by 0 to 36 dB.",
+   "sound": "More drive creates more, and higher, harmonics for a brighter, more present sound."
   },
   {
    "index": 2,
@@ -58,7 +62,9 @@
    "a": 20.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "Between the first and the second band"
+   "description": "Between the first and the second band",
+   "how": "Sets the frequency between the first and second band, from 20 Hz to 20 kHz.",
+   "sound": "It decides where the lowest band, usually left alone, ends."
   },
   {
    "index": 3,
@@ -72,7 +78,9 @@
    "a": 20.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "Between the second and the third band (never below Crossover 1)"
+   "description": "Between the second and the third band (never below Crossover 1)",
+   "how": "Sets the frequency between the second and third band.",
+   "sound": "It moves the boundary between the lower and upper midrange for excitation."
   },
   {
    "index": 4,
@@ -86,7 +94,9 @@
    "a": 20.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "Between the third and the fourth band (never below Crossover 2)"
+   "description": "Between the third and the fourth band (never below Crossover 2)",
+   "how": "Sets the frequency between the third and fourth band.",
+   "sound": "It decides where the topmost band, which usually carries the air, begins."
   },
   {
    "index": 5,
@@ -98,7 +108,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "How much of the first band's harmonics is added. 0 % leaves the band alone"
+   "description": "How much of the first band's harmonics is added. 0 % leaves the band alone",
+   "how": "Sets how much harmonic content is added to the first band, from 0 to 100 %.",
+   "sound": "Above 0 the lows gain weight and warmth; at 0 they are left untouched."
   },
   {
    "index": 6,
@@ -110,7 +122,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "The second band's Amount"
+   "description": "The second band's Amount",
+   "how": "Sets how much harmonic content is added to the second band.",
+   "sound": "More adds body and warmth to the low midrange."
   },
   {
    "index": 7,
@@ -122,7 +136,9 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "The third band's Amount"
+   "description": "The third band's Amount",
+   "how": "Sets how much harmonic content is added to the third band.",
+   "sound": "More adds presence and bite to the upper midrange."
   },
   {
    "index": 8,
@@ -134,7 +150,9 @@
    "default": 250,
    "kind": "percent",
    "unit": "%",
-   "description": "The fourth band's Amount"
+   "description": "The fourth band's Amount",
+   "how": "Sets how much harmonic content is added to the fourth band.",
+   "sound": "More adds shine and air to the top end."
   },
   {
    "index": 9,
@@ -148,7 +166,9 @@
    "a": 1000.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "The corner of the high shelf on the added harmonics"
+   "description": "The corner of the high shelf on the added harmonics",
+   "how": "Sets the corner of a high shelf that shapes only the added harmonics, from 1 to 20 kHz.",
+   "sound": "It decides where the added sparkle starts to be boosted or softened."
   },
   {
    "index": 10,
@@ -162,7 +182,9 @@
    "a": -12.0,
    "b": 12.0,
    "unit": "dB",
-   "description": "The high shelf's gain on the added harmonics: brighter or duller excitation without touching the audio"
+   "description": "The high shelf's gain on the added harmonics: brighter or duller excitation without touching the audio",
+   "how": "Sets the high shelf's gain on the added harmonics, from -12 to +12 dB.",
+   "sound": "Positive values make the excitation brighter, negative values make it duller, without changing the original audio."
   },
   {
    "index": 11,
@@ -177,7 +199,9 @@
     "Off",
     "On"
    ],
-   "description": "Keeps the loudness: the output's level (300 ms) follows the input's, within ±6 dB"
+   "description": "Keeps the loudness: the output's level (300 ms) follows the input's, within ±6 dB",
+   "how": "Keeps the loudness steady by following the input level within 6 dB.",
+   "sound": "You hear the added brightness rather than a louder sound."
   },
   {
    "index": 12,
@@ -192,7 +216,9 @@
     "L/R",
     "M/S"
    ],
-   "description": "What is excited: left and right, or mid and side (harmonics of the side widen, of the mid centre)"
+   "description": "What is excited: left and right, or mid and side (harmonics of the side widen, of the mid centre)",
+   "how": "Chooses whether harmonics are added to left and right, or to mid and side.",
+   "sound": "Mid/side adds harmonics to the sides to widen the sound, or to the centre to focus it."
   },
   {
    "index": 13,
@@ -206,7 +232,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Gain after the exciter, 0.1 dB steps (the editor's Match sets it from the gain-match reading)"
+   "description": "Gain after the exciter, 0.1 dB steps (the editor's Match sets it from the gain-match reading)",
+   "how": "Adds -24 to +24 dB of gain after the exciter.",
+   "sound": "It matches the loudness to the dry sound so you judge the added tone fairly."
   },
   {
    "index": 14,
@@ -221,7 +249,9 @@
     "Off",
     "On"
    ],
-   "description": "Hear only what the exciter adds: the output minus the input, delayed to match (glides over 10 ms)"
+   "description": "Hear only what the exciter adds: the output minus the input, delayed to match (glides over 10 ms)",
+   "how": "Plays only the difference between the output and the input.",
+   "sound": "You hear only the harmonics that the exciter adds."
   }
  ],
  "readings": [

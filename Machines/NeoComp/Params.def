@@ -6,20 +6,52 @@ summary Compressor with four characters (Clean VCA, Glue bus, FET, Opto), knee, 
 
 group Dynamics
 Mode        "Mode"          0 3    0    enum Clean Glue FET Opto       | Clean: transparent VCA. Glue: bus VCA. FET: fast feedback. Opto: smooth, program-dependent
+    how Chooses the compressor's character: Clean transparent, Glue for buses, FET fast and punchy, Opto slow and smooth.
+    sound Clean stays out of the way, Glue binds a mix together, FET adds bite and Opto feels gentle and rounded.
 Threshold   "Threshold"     0 1000 700  lin -60 0 dB 1                 | Level where compression starts
+    how Sets the level in dB, from -60 to 0, above which the compressor starts turning the signal down.
+    sound A lower threshold compresses more of the signal and makes the sound more even and dense.
 Ratio       "Ratio"         0 1000 463  ratio 1 20 inf                 | Compression ratio (top: limiting)
+    how Sets how strongly signal above the threshold is reduced, from 1:1 up to 20:1 and limiting at the top.
+    sound Low ratios are gentle and natural; high ratios flatten the peaks and give a squashed, controlled sound.
 Knee        "Knee"          0 1000 250  lin 0 24 dB 1                  | Width of the soft knee
+    how Sets how gradually compression sets in around the threshold, from 0 to 24 dB.
+    sound A wide knee is smooth and hard to notice; a narrow one grabs suddenly and sounds firmer.
 Attack      "Attack"        0 1000 639  time 0.00005 0.2               | Time to 63 % of the gain change
+    how Sets how fast the gain falls once the signal passes the threshold, from 0.05 ms to 200 ms.
+    sound Fast attacks tame transients and dull the punch; slow ones let the hit through before the squeeze.
 Release     "Release"       0 1000 532  time 0.005 3                   | Time back to 37 % of the gain change
+    how Sets how fast the gain recovers after the signal drops, from 5 ms to 3 s.
+    sound Short releases sound lively and can pump; long ones sound smooth and steady.
 AutoRelease "Auto release"  0 1    0    switch                         | Program-dependent release: fast after transients, slow under sustained compression
+    how Lets the release time follow the material: fast after sharp hits, slow under sustained loud passages.
+    sound It sounds more natural and pumps less than a fixed release on mixed material.
 group Sidechain
 Sidechain   "Sidechain"     0 1    0    enum Internal External         | Detect from the input, or from input 2 (connect a machine to the second input)
+    how Chooses whether the compressor listens to its own input or to the machine connected to the second input.
+    sound External lets another sound, such as a kick, duck this one for a pumping effect.
 ScLowCut    "SC low cut"    0 1000 0    freq 10 500                    | High-pass on the detector: lets the lows through uncompressed
+    how Filters the low frequencies, from 10 to 500 Hz, out of the signal the compressor listens to.
+    sound Bass no longer triggers heavy squeezing, so the lows stay full while the rest is controlled.
 Lookahead   "Lookahead"     0 1000 0    lin 0 5 ms 2                   | Delays the audio so the detector sees peaks coming (adds latency)
+    how Delays the audio by up to 5 ms so the compressor sees peaks before they arrive.
+    sound Fast peaks are caught cleanly without a click at the start, at the cost of a little latency.
 Link        "Stereo link"   0 1000 1000 pct                            | 100 %: both channels get the same gain
+    how Sets how much both channels share the same gain reduction, from independent (0 %) to fully linked (100 %).
+    sound Linked keeps the stereo image steady; unlinked can widen it but may shift the image on loud one-sided parts.
 group Output
 Makeup      "Makeup"        0 1000 0    lin 0 24 dB 1                  | Gain after compression
+    how Adds 0 to 24 dB of gain after compression.
+    sound It brings the level back up after the squeeze, so the compressed sound seems fuller and louder.
 AutoMakeup  "Auto makeup"   0 1    0    switch                         | Adds the gain a −12 dBFS signal loses
+    how Adds the gain that a -12 dBFS signal loses to compression, automatically.
+    sound The level stays about the same as you change Threshold and Ratio, so you hear the character, not the volume.
 Character   "Character"     0 1000 0    pct                            | Mode colour: Glue VCA, FET and Opto saturation (Clean ignores it)
+    how Sets how strongly the chosen mode adds its own colour: Glue VCA, FET and Opto saturation (Clean ignores it).
+    sound More character adds warmth and density to the compressed sound.
 Mix         "Mix"           0 1000 1000 pct                            | Dry/wet (parallel compression)
+    how Blends the compressed signal with the dry signal.
+    sound Mixing some dry back in keeps the punch and detail while adding density, known as parallel compression.
 Output      "Output"        0 1000 500  db -24 24                      | Output level
+    how Sets the final level in dB, from -24 to +24.
+    sound It makes the whole sound louder or quieter without changing its tone.

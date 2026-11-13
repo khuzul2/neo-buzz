@@ -44,7 +44,9 @@
    "b": 12.0,
    "flag": true,
    "unit": "dB",
-   "description": "Output level"
+   "description": "Output level",
+   "how": "Sets the overall output level of the kit, from -60 to +12 dB, or off.",
+   "sound": "Use it to place the whole kit in the mix without changing the balance between drums."
   },
   {
    "index": 1,
@@ -58,7 +60,9 @@
    "a": 0.0,
    "b": 12.0,
    "unit": "dB",
-   "description": "How much louder an accented hit plays (a hit on a row with Accent): a TR-909's accent"
+   "description": "How much louder an accented hit plays (a hit on a row with Accent): a TR-909's accent",
+   "how": "Sets how much louder an accented hit plays, from 0 to 12 dB.",
+   "sound": "Accented steps jump out of the pattern and give it a human, driving push."
   },
   {
    "index": 2,
@@ -70,7 +74,9 @@
    "default": 700,
    "kind": "percent",
    "unit": "%",
-   "description": "How much velocity sets a hit's level: the gain is velocity^(2 × this) (100 %: velocity 64 is −12 dB; 0 %: every hit at full level)"
+   "description": "How much velocity sets a hit's level: the gain is velocity^(2 × this) (100 %: velocity 64 is −12 dB; 0 %: every hit at full level)",
+   "how": "Sets how strongly velocity changes the level of a hit, from 0 to 100 %.",
+   "sound": "High values give a lively, dynamic kit, and 0 % makes every hit equally loud like a drum machine."
   },
   {
    "index": 3,
@@ -82,7 +88,9 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "How much velocity (and accent) opens a hit: the kick's click and sweep, the snare's snap and tone, the toms' attack, the hats' and cymbals' tone; a hit at velocity 100 sounds as its parameters say"
+   "description": "How much velocity (and accent) opens a hit: the kick's click and sweep, the snare's snap and tone, the toms' attack, the hats' and cymbals' tone; a hit at velocity 100 sounds as its parameters say",
+   "how": "Sets how much velocity and accent open up the tone of a hit, from 0 to 100 %.",
+   "sound": "Harder hits get a sharper click, snap and brightness, and softer ones sound duller and rounder."
   },
   {
    "index": 4,
@@ -96,7 +104,9 @@
    "a": 30.0,
    "b": 150.0,
    "unit": "Hz",
-   "description": "The body's pitch once its sweep has settled"
+   "description": "The body's pitch once its sweep has settled",
+   "how": "Sets the pitch the kick body settles on, from 30 to 150 Hz.",
+   "sound": "Low values give a deep sub thump, and higher ones a tighter, more tonal kick."
   },
   {
    "index": 5,
@@ -110,7 +120,9 @@
    "a": 0.0,
    "b": 48.0,
    "unit": "st",
-   "description": "How far above its tune the body starts, falling to it"
+   "description": "How far above its tune the body starts, falling to it",
+   "how": "Sets how far above its tune the kick starts, from 0 to 48 semitones.",
+   "sound": "More sweep gives a stronger pitch-drop zap at the start, and none gives a flat sine boom."
   },
   {
    "index": 6,
@@ -124,7 +136,9 @@
    "a": 0.002,
    "b": 0.2,
    "unit": "s",
-   "description": "The sweep's time constant: the pitch is 63 % of the way down after this"
+   "description": "The sweep's time constant: the pitch is 63 % of the way down after this",
+   "how": "Sets how quickly the kick falls from its start pitch to its tune, from 2 to 200 ms.",
+   "sound": "Short sweeps sound clicky and tight, and long ones sound like a falling laser."
   },
   {
    "index": 7,
@@ -138,7 +152,9 @@
    "a": 0.05,
    "b": 4.0,
    "unit": "s",
-   "description": "Time for the body to fall 60 dB"
+   "description": "Time for the body to fall 60 dB",
+   "how": "Sets how long the kick body takes to die away, from 0.05 to 4 seconds.",
+   "sound": "Short decays make a tight kick, and long ones a booming, held bass note."
   },
   {
    "index": 8,
@@ -150,7 +166,9 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "Level of the attack's click (a short burst of high-passed noise)"
+   "description": "Level of the attack's click (a short burst of high-passed noise)",
+   "how": "Sets the level of the noisy click at the start of the kick, from 0 to 100 %.",
+   "sound": "More click makes the beater attack audible and helps the kick cut through a mix."
   },
   {
    "index": 9,
@@ -162,7 +180,9 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "How much louder the body starts (up to +12 dB at 100 %), falling back with the sweep: a TR-909's attack"
+   "description": "How much louder the body starts (up to +12 dB at 100 %), falling back with the sweep: a TR-909's attack",
+   "how": "Boosts the level of the kick's first moments by up to 12 dB, from 0 to 100 %.",
+   "sound": "More punch gives a harder, more percussive attack that then settles into the body."
   },
   {
    "index": 10,
@@ -176,7 +196,9 @@
    "a": 0.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "Saturation of the body, its level kept"
+   "description": "Saturation of the body, its level kept",
+   "how": "Adds saturation to the kick body, from 0 to 24 dB, keeping its level.",
+   "sound": "A little adds harmonics so the kick reads on small speakers, and a lot makes it gritty."
   },
   {
    "index": 11,
@@ -191,7 +213,9 @@
    "b": 6.0,
    "flag": true,
    "unit": "dB",
-   "description": "Level of the kick"
+   "description": "Level of the kick",
+   "how": "Sets the level of the kick, from -60 to +6 dB, or off.",
+   "sound": "Use it to balance the kick against the other drums."
   },
   {
    "index": 12,
@@ -205,7 +229,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Where the kick sits, from −100 % (left) to +100 % (right)"
+   "description": "Where the kick sits, from −100 % (left) to +100 % (right)",
+   "how": "Places the kick from 100 % left to 100 % right.",
+   "sound": "The centre is the usual place for a kick; moving it makes the kit feel off-balance."
   },
   {
    "index": 13,
@@ -219,7 +245,9 @@
    "a": 100.0,
    "b": 400.0,
    "unit": "Hz",
-   "description": "The body's lower tone, once its short fall has settled (the upper sits an octave above)"
+   "description": "The body's lower tone, once its short fall has settled (the upper sits an octave above)",
+   "how": "Sets the lower tone of the snare body, from 100 to 400 Hz.",
+   "sound": "Lower values sound fat and deep, and higher ones sound thin and tight."
   },
   {
    "index": 14,
@@ -233,7 +261,9 @@
    "a": 1000.0,
    "b": 16000.0,
    "unit": "Hz",
-   "description": "Centre of the snappy noise's band (from about half of it to 1.3 times it): brighter up"
+   "description": "Centre of the snappy noise's band (from about half of it to 1.3 times it): brighter up",
+   "how": "Sets the centre of the snappy noise band, from 1 to 16 kHz.",
+   "sound": "Higher values give a bright, crisp rattle, and lower ones a darker, rounder one."
   },
   {
    "index": 15,
@@ -245,7 +275,9 @@
    "default": 500,
    "kind": "percent",
    "unit": "%",
-   "description": "The snappy noise against the body (0 %: the body alone)"
+   "description": "The snappy noise against the body (0 %: the body alone)",
+   "how": "Sets the level of the snappy noise against the body, from 0 to 100 %.",
+   "sound": "Zero leaves only the drum body, while more snap adds the sizzle of the snare wires."
   },
   {
    "index": 16,
@@ -259,7 +291,9 @@
    "a": 0.05,
    "b": 2.0,
    "unit": "s",
-   "description": "Time for the snappy noise to fall 60 dB (the body takes about half)"
+   "description": "Time for the snappy noise to fall 60 dB (the body takes about half)",
+   "how": "Sets how long the snare noise rings, from 0.05 to 2 seconds.",
+   "sound": "Short decays are dry and snappy, and long ones add a washy tail."
   },
   {
    "index": 17,
@@ -274,7 +308,9 @@
    "b": 6.0,
    "flag": true,
    "unit": "dB",
-   "description": "Level of the snare"
+   "description": "Level of the snare",
+   "how": "Sets the level of the snare, from -60 to +6 dB, or off.",
+   "sound": "Use it to balance the snare against the other drums."
   },
   {
    "index": 18,
@@ -288,7 +324,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Where the snare sits, from −100 % (left) to +100 % (right)"
+   "description": "Where the snare sits, from −100 % (left) to +100 % (right)",
+   "how": "Places the snare from 100 % left to 100 % right.",
+   "sound": "Centre is standard; a slight offset gives a more natural kit image."
   },
   {
    "index": 19,
@@ -302,7 +340,9 @@
    "a": 500.0,
    "b": 5000.0,
    "unit": "Hz",
-   "description": "Centre of the clap's band-pass"
+   "description": "Centre of the clap's band-pass",
+   "how": "Sets the centre frequency of the clap, from 500 Hz to 5 kHz.",
+   "sound": "Lower values sound thick and woody, and higher ones sharp and papery."
   },
   {
    "index": 20,
@@ -316,7 +356,9 @@
    "a": 0.002,
    "b": 0.03,
    "unit": "s",
-   "description": "Time between the clap's three bursts"
+   "description": "Time between the clap's three bursts",
+   "how": "Sets the time between the clap's three bursts, from 2 to 30 ms.",
+   "sound": "Short spreads sound like one tight clap, and longer ones like several people clapping."
   },
   {
    "index": 21,
@@ -330,7 +372,9 @@
    "a": 0.05,
    "b": 2.0,
    "unit": "s",
-   "description": "Time for its tail to fall 60 dB"
+   "description": "Time for its tail to fall 60 dB",
+   "how": "Sets how long the clap tail rings, from 0.05 to 2 seconds.",
+   "sound": "Short decays are dry, and long ones add a roomy tail."
   },
   {
    "index": 22,
@@ -345,7 +389,9 @@
    "b": 6.0,
    "flag": true,
    "unit": "dB",
-   "description": "Level of the clap"
+   "description": "Level of the clap",
+   "how": "Sets the level of the clap, from -60 to +6 dB, or off.",
+   "sound": "Use it to balance the clap against the other drums."
   },
   {
    "index": 23,
@@ -359,7 +405,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Where the clap sits, from −100 % (left) to +100 % (right)"
+   "description": "Where the clap sits, from −100 % (left) to +100 % (right)",
+   "how": "Places the clap from 100 % left to 100 % right.",
+   "sound": "Off-centre claps help them sit beside the snare."
   },
   {
    "index": 24,
@@ -373,7 +421,9 @@
    "a": 400.0,
    "b": 4000.0,
    "unit": "Hz",
-   "description": "Pitch of the rim shot's highest ping (the others sit at half and 0.23 of it)"
+   "description": "Pitch of the rim shot's highest ping (the others sit at half and 0.23 of it)",
+   "how": "Sets the pitch of the rim shot, from 400 Hz to 4 kHz.",
+   "sound": "Low values sound woody and dull, and high ones sound sharp and metallic."
   },
   {
    "index": 25,
@@ -387,7 +437,9 @@
    "a": 0.01,
    "b": 0.5,
    "unit": "s",
-   "description": "Time for its pings to fall 60 dB"
+   "description": "Time for its pings to fall 60 dB",
+   "how": "Sets how long the rim shot rings, from 10 to 500 ms.",
+   "sound": "Short decays are a dry click, and longer ones let the ping ring."
   },
   {
    "index": 26,
@@ -402,7 +454,9 @@
    "b": 6.0,
    "flag": true,
    "unit": "dB",
-   "description": "Level of the rim shot"
+   "description": "Level of the rim shot",
+   "how": "Sets the level of the rim shot, from -60 to +6 dB, or off.",
+   "sound": "Use it to balance the rim shot against the other drums."
   },
   {
    "index": 27,
@@ -416,7 +470,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Where the rim shot sits, from −100 % (left) to +100 % (right)"
+   "description": "Where the rim shot sits, from −100 % (left) to +100 % (right)",
+   "how": "Places the rim shot from 100 % left to 100 % right.",
+   "sound": "Moving it aside gives a sparse beat more width."
   },
   {
    "index": 28,
@@ -430,7 +486,9 @@
    "a": -12.0,
    "b": 12.0,
    "unit": "st",
-   "description": "Pitch of the six metallic oscillators, in semitones from the TR-808's"
+   "description": "Pitch of the six metallic oscillators, in semitones from the TR-808's",
+   "how": "Shifts the pitch of the closed hat by up to 12 semitones either way.",
+   "sound": "Lower values sound heavier and darker, and higher ones thinner and brighter."
   },
   {
    "index": 29,
@@ -444,7 +502,9 @@
    "a": 2000.0,
    "b": 16000.0,
    "unit": "Hz",
-   "description": "Centre of the band the hats ring in (more above it, a little across the mids): brighter up"
+   "description": "Centre of the band the hats ring in (more above it, a little across the mids): brighter up",
+   "how": "Sets the centre of the band the closed hat rings in, from 2 to 16 kHz.",
+   "sound": "Higher values give a bright, sizzling hat, and lower ones a duller, softer one."
   },
   {
    "index": 30,
@@ -458,7 +518,9 @@
    "a": 0.01,
    "b": 1.0,
    "unit": "s",
-   "description": "Time to fall 60 dB"
+   "description": "Time to fall 60 dB",
+   "how": "Sets how long the closed hat rings, from 10 ms to 1 second.",
+   "sound": "Short decays tick tightly, and longer ones sound looser and more open."
   },
   {
    "index": 31,
@@ -473,7 +535,9 @@
    "b": 6.0,
    "flag": true,
    "unit": "dB",
-   "description": "Level of the closed hat"
+   "description": "Level of the closed hat",
+   "how": "Sets the level of the closed hat, from -60 to +6 dB, or off.",
+   "sound": "Use it to balance the hat against the other drums."
   },
   {
    "index": 32,
@@ -487,7 +551,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Where the closed hat sits, from −100 % (left) to +100 % (right)"
+   "description": "Where the closed hat sits, from −100 % (left) to +100 % (right)",
+   "how": "Places the closed hat from 100 % left to 100 % right.",
+   "sound": "Moving the hats slightly off-centre widens the top of the kit."
   },
   {
    "index": 33,
@@ -501,7 +567,9 @@
    "a": -12.0,
    "b": 12.0,
    "unit": "st",
-   "description": "Pitch of the six metallic oscillators, in semitones from the TR-808's"
+   "description": "Pitch of the six metallic oscillators, in semitones from the TR-808's",
+   "how": "Shifts the pitch of the open hat by up to 12 semitones either way.",
+   "sound": "Lower values sound heavier and darker, and higher ones thinner and brighter."
   },
   {
    "index": 34,
@@ -515,7 +583,9 @@
    "a": 2000.0,
    "b": 16000.0,
    "unit": "Hz",
-   "description": "Centre of the band the hats ring in (more above it, a little across the mids): brighter up"
+   "description": "Centre of the band the hats ring in (more above it, a little across the mids): brighter up",
+   "how": "Sets the centre of the band the open hat rings in, from 2 to 16 kHz.",
+   "sound": "Higher values give a bright, sizzling hat, and lower ones a duller, softer one."
   },
   {
    "index": 35,
@@ -529,7 +599,9 @@
    "a": 0.05,
    "b": 4.0,
    "unit": "s",
-   "description": "Time to fall 60 dB (a closed hat cuts it in 5 ms)"
+   "description": "Time to fall 60 dB (a closed hat cuts it in 5 ms)",
+   "how": "Sets how long the open hat rings, from 50 ms to 4 seconds; a closed hat cuts it off.",
+   "sound": "Short decays sound like a half-open hat, and long ones like a wide, splashing hat."
   },
   {
    "index": 36,
@@ -544,7 +616,9 @@
    "b": 6.0,
    "flag": true,
    "unit": "dB",
-   "description": "Level of the open hat"
+   "description": "Level of the open hat",
+   "how": "Sets the level of the open hat, from -60 to +6 dB, or off.",
+   "sound": "Use it to balance the hat against the other drums."
   },
   {
    "index": 37,
@@ -558,7 +632,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Where the open hat sits, from −100 % (left) to +100 % (right)"
+   "description": "Where the open hat sits, from −100 % (left) to +100 % (right)",
+   "how": "Places the open hat from 100 % left to 100 % right.",
+   "sound": "Moving the hats slightly off-centre widens the top of the kit."
   },
   {
    "index": 38,
@@ -572,7 +648,9 @@
    "a": 40.0,
    "b": 500.0,
    "unit": "Hz",
-   "description": "The tom's pitch once its sweep has settled (it starts 1.2 octaves above, falls an octave in about 25 ms, then the rest over about a second)"
+   "description": "The tom's pitch once its sweep has settled (it starts 1.2 octaves above, falls an octave in about 25 ms, then the rest over about a second)",
+   "how": "Sets the pitch the low tom settles on, from 40 to 500 Hz.",
+   "sound": "Lower values sound big and booming, and higher ones short and tuned."
   },
   {
    "index": 39,
@@ -586,7 +664,9 @@
    "a": 0.05,
    "b": 3.0,
    "unit": "s",
-   "description": "Time to fall 60 dB"
+   "description": "Time to fall 60 dB",
+   "how": "Sets how long the low tom rings, from 0.05 to 3 seconds.",
+   "sound": "Short decays are tight and dry, and long ones sing out like a floor tom."
   },
   {
    "index": 40,
@@ -598,7 +678,9 @@
    "default": 300,
    "kind": "percent",
    "unit": "%",
-   "description": "Level of the attack's noise"
+   "description": "Level of the attack's noise",
+   "how": "Sets the level of the noisy attack of the low tom, from 0 to 100 %.",
+   "sound": "More tone adds a stick-on-skin click, and less leaves a smooth, round sound."
   },
   {
    "index": 41,
@@ -613,7 +695,9 @@
    "b": 6.0,
    "flag": true,
    "unit": "dB",
-   "description": "Level of the low tom"
+   "description": "Level of the low tom",
+   "how": "Sets the level of the low tom, from -60 to +6 dB, or off.",
+   "sound": "Use it to balance the tom against the other drums."
   },
   {
    "index": 42,
@@ -627,7 +711,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Where the low tom sits, from −100 % (left) to +100 % (right)"
+   "description": "Where the low tom sits, from −100 % (left) to +100 % (right)",
+   "how": "Places the low tom from 100 % left to 100 % right.",
+   "sound": "Spreading the three toms from left to right gives fills a natural sweep."
   },
   {
    "index": 43,
@@ -641,7 +727,9 @@
    "a": 40.0,
    "b": 500.0,
    "unit": "Hz",
-   "description": "The tom's pitch once its sweep has settled (it starts 1.2 octaves above, falls an octave in about 25 ms, then the rest over about a second)"
+   "description": "The tom's pitch once its sweep has settled (it starts 1.2 octaves above, falls an octave in about 25 ms, then the rest over about a second)",
+   "how": "Sets the pitch the mid tom settles on, from 40 to 500 Hz.",
+   "sound": "Lower values sound big and booming, and higher ones short and tuned."
   },
   {
    "index": 44,
@@ -655,7 +743,9 @@
    "a": 0.05,
    "b": 3.0,
    "unit": "s",
-   "description": "Time to fall 60 dB"
+   "description": "Time to fall 60 dB",
+   "how": "Sets how long the mid tom rings, from 0.05 to 3 seconds.",
+   "sound": "Short decays are tight and dry, and long ones sing out like a floor tom."
   },
   {
    "index": 45,
@@ -667,7 +757,9 @@
    "default": 300,
    "kind": "percent",
    "unit": "%",
-   "description": "Level of the attack's noise"
+   "description": "Level of the attack's noise",
+   "how": "Sets the level of the noisy attack of the mid tom, from 0 to 100 %.",
+   "sound": "More tone adds a stick-on-skin click, and less leaves a smooth, round sound."
   },
   {
    "index": 46,
@@ -682,7 +774,9 @@
    "b": 6.0,
    "flag": true,
    "unit": "dB",
-   "description": "Level of the mid tom"
+   "description": "Level of the mid tom",
+   "how": "Sets the level of the mid tom, from -60 to +6 dB, or off.",
+   "sound": "Use it to balance the tom against the other drums."
   },
   {
    "index": 47,
@@ -696,7 +790,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Where the mid tom sits, from −100 % (left) to +100 % (right)"
+   "description": "Where the mid tom sits, from −100 % (left) to +100 % (right)",
+   "how": "Places the mid tom from 100 % left to 100 % right.",
+   "sound": "Spreading the three toms from left to right gives fills a natural sweep."
   },
   {
    "index": 48,
@@ -710,7 +806,9 @@
    "a": 40.0,
    "b": 500.0,
    "unit": "Hz",
-   "description": "The tom's pitch once its sweep has settled (it starts 1.2 octaves above, falls an octave in about 25 ms, then the rest over about a second)"
+   "description": "The tom's pitch once its sweep has settled (it starts 1.2 octaves above, falls an octave in about 25 ms, then the rest over about a second)",
+   "how": "Sets the pitch the high tom settles on, from 40 to 500 Hz.",
+   "sound": "Lower values sound big and booming, and higher ones short and tuned."
   },
   {
    "index": 49,
@@ -724,7 +822,9 @@
    "a": 0.05,
    "b": 3.0,
    "unit": "s",
-   "description": "Time to fall 60 dB"
+   "description": "Time to fall 60 dB",
+   "how": "Sets how long the high tom rings, from 0.05 to 3 seconds.",
+   "sound": "Short decays are tight and dry, and long ones sing out like a floor tom."
   },
   {
    "index": 50,
@@ -736,7 +836,9 @@
    "default": 300,
    "kind": "percent",
    "unit": "%",
-   "description": "Level of the attack's noise"
+   "description": "Level of the attack's noise",
+   "how": "Sets the level of the noisy attack of the high tom, from 0 to 100 %.",
+   "sound": "More tone adds a stick-on-skin click, and less leaves a smooth, round sound."
   },
   {
    "index": 51,
@@ -751,7 +853,9 @@
    "b": 6.0,
    "flag": true,
    "unit": "dB",
-   "description": "Level of the high tom"
+   "description": "Level of the high tom",
+   "how": "Sets the level of the high tom, from -60 to +6 dB, or off.",
+   "sound": "Use it to balance the tom against the other drums."
   },
   {
    "index": 52,
@@ -765,7 +869,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Where the high tom sits, from −100 % (left) to +100 % (right)"
+   "description": "Where the high tom sits, from −100 % (left) to +100 % (right)",
+   "how": "Places the high tom from 100 % left to 100 % right.",
+   "sound": "Spreading the three toms from left to right gives fills a natural sweep."
   },
   {
    "index": 53,
@@ -779,7 +885,9 @@
    "a": 300.0,
    "b": 1500.0,
    "unit": "Hz",
-   "description": "Pitch of the lower of its two square waves (the upper sits 1.48 times above)"
+   "description": "Pitch of the lower of its two square waves (the upper sits 1.48 times above)",
+   "how": "Sets the pitch of the cowbell, from 300 Hz to 1.5 kHz.",
+   "sound": "Lower values clunk like a big bell, and higher ones ring like a small one."
   },
   {
    "index": 54,
@@ -793,7 +901,9 @@
    "a": 0.02,
    "b": 2.0,
    "unit": "s",
-   "description": "Time for its tail to fall 60 dB (the attack falls faster)"
+   "description": "Time for its tail to fall 60 dB (the attack falls faster)",
+   "how": "Sets how long the cowbell rings, from 20 ms to 2 seconds.",
+   "sound": "Short decays are a dry clack, and longer ones a ringing bell."
   },
   {
    "index": 55,
@@ -808,7 +918,9 @@
    "b": 6.0,
    "flag": true,
    "unit": "dB",
-   "description": "Level of the cowbell"
+   "description": "Level of the cowbell",
+   "how": "Sets the level of the cowbell, from -60 to +6 dB, or off.",
+   "sound": "Use it to balance the cowbell against the other drums."
   },
   {
    "index": 56,
@@ -822,7 +934,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Where the cowbell sits, from −100 % (left) to +100 % (right)"
+   "description": "Where the cowbell sits, from −100 % (left) to +100 % (right)",
+   "how": "Places the cowbell from 100 % left to 100 % right.",
+   "sound": "Moving it aside keeps it from crowding the centre."
   },
   {
    "index": 57,
@@ -836,7 +950,9 @@
    "a": -12.0,
    "b": 12.0,
    "unit": "st",
-   "description": "Pitch of the six metallic oscillators, in semitones from where they sit"
+   "description": "Pitch of the six metallic oscillators, in semitones from where they sit",
+   "how": "Shifts the pitch of the crash by up to 12 semitones either way.",
+   "sound": "Lower values sound bigger and darker, and higher ones lighter and thinner."
   },
   {
    "index": 58,
@@ -850,7 +966,9 @@
    "a": 1000.0,
    "b": 16000.0,
    "unit": "Hz",
-   "description": "Centre of the wide band it rings in (more above it, a little across the mids): brighter up"
+   "description": "Centre of the wide band it rings in (more above it, a little across the mids): brighter up",
+   "how": "Sets the centre of the band the crash rings in, from 1 to 16 kHz.",
+   "sound": "Higher values give a brighter, harsher cymbal, and lower ones a softer, darker one."
   },
   {
    "index": 59,
@@ -864,7 +982,9 @@
    "a": 0.2,
    "b": 8.0,
    "unit": "s",
-   "description": "Time to fall 60 dB"
+   "description": "Time to fall 60 dB",
+   "how": "Sets how long the crash rings, from 0.2 to 8 seconds.",
+   "sound": "Short decays are a quick accent, and long ones a washy cymbal that fills the space."
   },
   {
    "index": 60,
@@ -879,7 +999,9 @@
    "b": 6.0,
    "flag": true,
    "unit": "dB",
-   "description": "Level of the crash"
+   "description": "Level of the crash",
+   "how": "Sets the level of the crash, from -60 to +6 dB, or off.",
+   "sound": "Use it to balance the cymbal against the other drums."
   },
   {
    "index": 61,
@@ -893,7 +1015,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Where the crash sits, from −100 % (left) to +100 % (right)"
+   "description": "Where the crash sits, from −100 % (left) to +100 % (right)",
+   "how": "Places the crash from 100 % left to 100 % right.",
+   "sound": "A slight offset gives the cymbal a place in the kit's stereo picture."
   },
   {
    "index": 62,
@@ -907,7 +1031,9 @@
    "a": -12.0,
    "b": 12.0,
    "unit": "st",
-   "description": "Pitch of the six metallic oscillators, in semitones from where they sit"
+   "description": "Pitch of the six metallic oscillators, in semitones from where they sit",
+   "how": "Shifts the pitch of the ride by up to 12 semitones either way.",
+   "sound": "Lower values sound bigger and darker, and higher ones lighter and thinner."
   },
   {
    "index": 63,
@@ -921,7 +1047,9 @@
    "a": 1000.0,
    "b": 16000.0,
    "unit": "Hz",
-   "description": "Centre of the band it pings in (more above it, a little across the mids): brighter up"
+   "description": "Centre of the band it pings in (more above it, a little across the mids): brighter up",
+   "how": "Sets the centre of the band the ride rings in, from 1 to 16 kHz.",
+   "sound": "Higher values give a brighter, harsher cymbal, and lower ones a softer, darker one."
   },
   {
    "index": 64,
@@ -935,7 +1063,9 @@
    "a": 0.2,
    "b": 8.0,
    "unit": "s",
-   "description": "Time to fall 60 dB"
+   "description": "Time to fall 60 dB",
+   "how": "Sets how long the ride rings, from 0.2 to 8 seconds.",
+   "sound": "Short decays are a quick accent, and long ones a washy cymbal that fills the space."
   },
   {
    "index": 65,
@@ -950,7 +1080,9 @@
    "b": 6.0,
    "flag": true,
    "unit": "dB",
-   "description": "Level of the ride"
+   "description": "Level of the ride",
+   "how": "Sets the level of the ride, from -60 to +6 dB, or off.",
+   "sound": "Use it to balance the cymbal against the other drums."
   },
   {
    "index": 66,
@@ -964,7 +1096,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Where the ride sits, from −100 % (left) to +100 % (right)"
+   "description": "Where the ride sits, from −100 % (left) to +100 % (right)",
+   "how": "Places the ride from 100 % left to 100 % right.",
+   "sound": "A slight offset gives the cymbal a place in the kit's stereo picture."
   }
  ]
 }

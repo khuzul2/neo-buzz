@@ -6,20 +6,46 @@ summary De-esser with a band-pass detector on the sibilance band: Relative (the 
 
 group Detector
 Mode       "Detector"       0 1     0     enum Relative Absolute            | Relative: the band's level against the whole signal's (follows the singer). Absolute: the band's level in dBFS
+    how Chooses what the detector compares: Relative uses the band against the whole signal, Absolute uses the band's level in dBFS.
+    sound Relative follows the singer's level so quiet and loud passages are treated alike; Absolute reacts only when the band gets loud.
 Freq       "Frequency"      0 10000 5669  freq 2000 16000                    | Centre of the sibilance band
+    how Sets the centre of the sibilance band, from 2 to 16 kHz.
+    sound Aim it at the harsh hiss of the voice, typically 5 to 9 kHz, so only that sound is turned down.
 Width      "Width"          0 1000  400   lin 0.5 3 oct 2                   | Width of the band in octaves: the detector's band, the split band and the bell
+    how Sets how wide the band is, from 0.5 to 3 octaves.
+    sound A narrow band targets one harsh note; a wide band calms a broad, hissy zone but touches more of the voice.
 Threshold  "Threshold"      0 1000  750   lin -60 0 dB 1                    | Where reduction starts: Relative, the band's level under the whole signal's; Absolute, dBFS
+    how Sets the level, from -60 to 0 dB, above which the band is reduced.
+    sound Lower values catch more sibilants; set too low, the voice sounds dull and lispy.
 Ratio      "Ratio"          0 1000  463   ratio 1 20                        | How much of the excess is taken out: 1 nothing, 20 nearly all
+    how Sets how much of the excess above the threshold is removed, from 1:1 (nothing) to 20:1 (almost all).
+    sound Higher ratios make the s sounds smaller and more uniform.
 group Reduction
 Action     "Action"         0 3     0     enum Split Split_linear Shelf Bell | Split: only the band is reduced, minimum phase, no latency of its own. Split linear: the band by a linear-phase filter (latency 255 samples). Shelf: a dynamic high shelf on the whole signal. Bell: a dynamic bell
+    how Chooses how the band is reduced: Split (only the band), Split linear (linear phase, with latency), Shelf (dynamic high shelf) or Bell.
+    sound Split sounds the most transparent, Shelf darkens the whole top end, and Bell is a gentle dip around the band.
 Range      "Max reduction"  0 1000  333   lin 0 24 dB 1                     | The most the de-esser takes out
+    how Limits how much the de-esser can take out, from 0 to 24 dB.
+    sound A small range keeps it natural; a large one removes sibilance fully but can sound lisping.
 Attack     "Attack"         0 1000  435   time 0.0001 0.02                   | How fast the reduction comes in
+    how Sets how fast the reduction comes in, from 0.1 ms to 20 ms.
+    sound Fast attacks catch short s sounds; slow ones let the start of each hiss through.
 Release    "Release"        0 1000  411   time 0.01 0.5                      | How fast it lets go
+    how Sets how fast the reduction lets go, from 10 ms to 0.5 s.
+    sound Short releases follow each syllable closely; long ones can dull the sound after a sibilant.
 Lookahead  "Lookahead"      0 1000  200   lin 0 5 ms 2                      | Delays the audio so the reduction is in place when the sibilant arrives (latency)
+    how Delays the audio by up to 5 ms so the reduction is in place when the sibilant arrives.
+    sound The first part of each hiss is caught cleanly, at the cost of a little latency.
 Listen     "Listen"         0 1     0     switch                            | Hear the band the detector hears
+    how Switches the output to the band the detector hears.
+    sound You hear only the sibilance range, which helps you place Frequency and Width exactly.
 group Output
 Output     "Output"         0 480   240   db -24 24                         | Gain after the de-esser, 0.1 dB steps (the editor's Match sets it from the gain-match reading)
+    how Adds -24 to +24 dB of gain after the de-esser.
+    sound It matches the loudness to the untreated voice so you can judge the tone fairly.
 Delta      "Delta"          0 1     0     switch                            | Hear only what the de-esser takes out: the output minus the input, delayed to match (glides over 10 ms)
+    how Plays only the difference between the output and the input.
+    sound You hear exactly what the de-esser removes, so you can check it is taking hiss and not the voice's body.
 
 # What the de-esser measures (NeoDeEsserMachine.Readings, machine_readings).
 reading reduction_db      dB    | The reduction now, dB (0 or more)
