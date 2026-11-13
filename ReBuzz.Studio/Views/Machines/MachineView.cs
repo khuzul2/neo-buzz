@@ -67,7 +67,6 @@ namespace ReBuzz.Studio.Views.Machines
             Canvas.MachinesChanged += UpdateStarters;
             popup.Added += m => { Canvas.Select(new[] { m }); Canvas.Focus(); };
             popup.Closed += () => { UpdateStarters(); Canvas.Focus(); };
-            Model.Changed += UpdateStarters;
             AddHandler(KeyDownEvent, (s, e) => { if (e.Key == Key.Escape && popup.IsOpen) { popup.Hide(); e.Handled = true; } }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
             UpdateStarters();
 
@@ -151,6 +150,22 @@ namespace ReBuzz.Studio.Views.Machines
         }
 
         internal Border Starters => starters;
+
+        // The model lives as long as the engine: the view hears it only while it is shown (a closed window is released).
+        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnAttachedToVisualTree(e);
+            Model.Changed += UpdateStarters;
+            popup.Attach();
+            UpdateStarters();
+        }
+
+        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnDetachedFromVisualTree(e);
+            Model.Changed -= UpdateStarters;
+            popup.Detach();
+        }
 
         void UpdateStarters()
         {

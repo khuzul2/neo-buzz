@@ -60,8 +60,17 @@ namespace ReBuzz.Studio.Views.Browser
             panel.Children.Add(filter);
             panel.Children.Add(list);
             Child = panel;
-            model.Changed += () => { if (IsVisible) { lastKey = null; Rebuild(); } };
         }
+
+        void OnModelChanged()
+        {
+            if (IsVisible) { lastKey = null; Rebuild(); }
+        }
+
+        /// <summary>The model outlives the window: the popup listens only while its view is shown.</summary>
+        internal void Attach() => model.Changed += OnModelChanged;
+
+        internal void Detach() => model.Changed -= OnModelChanged;
 
         /// <summary>Where the machine goes: a song position (the canvas point the double click was at).</summary>
         public Point Position { get; private set; }
