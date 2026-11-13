@@ -542,7 +542,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "±24 dB (0 dB at raw 4096)."
+   "description": "±24 dB (0 dB at raw 4096).",
+   "how": "Raises or lowers the band below the low crossover by up to 24 dB; the middle step is 0 dB.",
+   "sound": "Boost for weight and boom, cut to thin the bass."
   },
   {
    "index": 1,
@@ -558,7 +560,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "±24 dB."
+   "description": "±24 dB.",
+   "how": "Raises or lowers the band between the two crossovers by up to 24 dB; the middle step is 0 dB.",
+   "sound": "Boost to push the body or presence forward, cut to scoop it out."
   },
   {
    "index": 2,
@@ -574,7 +578,9 @@
    "a": -24.0,
    "b": 24.0,
    "unit": "dB",
-   "description": "±24 dB."
+   "description": "±24 dB.",
+   "how": "Raises or lowers the band above the high crossover by up to 24 dB; the middle step is 0 dB.",
+   "sound": "Boost for air and sizzle, cut to soften harsh top."
   },
   {
    "index": 3,
@@ -590,7 +596,9 @@
    "a": 10.0,
    "b": 16000.0,
    "unit": "Hz",
-   "description": "Where the low band ends, 10 Hz – 16 kHz."
+   "description": "Where the low band ends, 10 Hz – 16 kHz.",
+   "how": "Sets where the low band ends and the mid band starts, 10 Hz to 16 kHz.",
+   "sound": "Lower it to confine the low gain to the deepest bass; raise it to include more body."
   },
   {
    "index": 4,
@@ -606,7 +614,9 @@
    "a": 10.0,
    "b": 16000.0,
    "unit": "Hz",
-   "description": "Where the high band starts, 10 Hz – 16 kHz."
+   "description": "Where the high band starts, 10 Hz – 16 kHz.",
+   "how": "Sets where the mid band ends and the high band starts, 10 Hz to 16 kHz.",
+   "sound": "Lower it to bring more of the upper mids into the high band; raise it to keep the high gain for the top only."
   },
   {
    "index": 5,
@@ -620,7 +630,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 1.0,
-   "description": "0 or 1 (1 by default); what it does isn't documented."
+   "description": "0 or 1 (1 by default); what it does isn't documented.",
+   "how": "Switches between 0 and 1; the machine's own text does not say what it does and no measurement isolated it.",
+   "sound": "Left at its default of 1; the effect of changing it is unverified."
   }
  ],
  "track_parameters": []

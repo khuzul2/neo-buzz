@@ -2,10 +2,19 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Jeskola Live",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "control",
- "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "summary": "A Buzz control machine with one parameter, Bar (1 to 128, 16 by default); it makes no sound. What it controls was not measured and is unverified here.",
+ "quirks": [
+  "It makes no sound; it is a control machine.",
+  "Its one parameter has no description and nothing was measured beyond its range, so its role is unverified.",
+  "Closed source: names come from its own descriptions and measurements, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-13) — a control machine, silent, one parameter"
+ ],
  "category": "Control",
  "tags": [
   "sequencer"
@@ -22,6 +31,7 @@
    "index": 0,
    "id": "Bar",
    "name": "Bar",
+   "plain_name": "Bar",
    "group": "",
    "min": 1,
    "max": 128,
@@ -29,8 +39,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 128.0,
-   "description": "",
-   "confidence": "values"
+   "description": "A number from 1 to 128 (16 by default); the machine gives no description.",
+   "how": "A number from 1 to 128, 16 by default; the machine's own text gives no description and nothing was measured.",
+   "sound": "Unverified: the machine makes no sound itself."
   }
  ],
  "track_parameters": []

@@ -129,7 +129,7 @@ None.
 
 What moving each parameter alone changes, as a role (`suggested_role` in the drafts, `machine_describe` shows it). Curated manifests keep their own roles: for their filter, time and mix parameters, the profile's suggestion is listed beside the curated role, and a disagreement is a note here, never a change to the manifest.
 
-Curated filter, time and mix parameters: 82 of 151 suggestions agree.
+Curated filter, time and mix parameters: 104 of 186 suggestions agree.
 
 | Machine | Parameter | Kind | Curated | Suggested | Agrees | Evidence |
 |---|---|---|---|---|---|---|
@@ -142,6 +142,9 @@ Curated filter, time and mix parameters: 82 of 151 suggestions agree.
 | FSM PanzerDelay | track R Delay Len | time | `delay.time_right` | `delay.time_left` | yes | the left echo moves 125 ms → 1.49 s, the right stays |
 | FSM PanzerDelay | track Tap Amp | mix | `mix.wet` | `mix.wet` | yes | at its minimum the effect passes the signal unchanged; at the other end echoes from 375 ms; half way less of the same |
 | FSM PanzerDelay | track FB Amp | time | `delay.feedback` | `delay.feedback` | yes | the echoes fade 3 → 27 dB per second, the echo time unchanged |
+| Jeskola Chorus | min. delay | time | `mod.delay` | `mod.delay` | yes | the delayed copy moves 30 ms → 55 ms |
+| Jeskola Chorus | dry out | mix | `mix.dry` | `mix.wet` | no | the late sound -120 → -4 dB, the direct sound unchanged |
+| Jeskola Chorus | wet out | mix | `mix.wet` | `mix.wet` | yes | the late sound -120 → -4 dB, the direct sound unchanged |
 | Jeskola Cross Delay | Dry thru | mix | `mix.dry` | `mix.dry` | yes | the direct sound -120 → +4 dB while the tail stays (-7 → -7 dB) |
 | Jeskola Cross Delay | track L. Length | time | `delay.time_left` | `delay.time` | yes | the first echo moves 125 ms → 1 s |
 | Jeskola Cross Delay | track R. Length | time | `delay.time_right` | `delay.feedback` | no | the tail 3.16 s → 605 s (T60), the echo time unchanged |
@@ -162,11 +165,32 @@ Curated filter, time and mix parameters: 82 of 151 suggestions agree.
 | Jeskola Filter | Cutoff | filter | `filter.cutoff` | `filter.cutoff` | yes | silent at one end; half way a low-pass with its corner at 5.92 kHz |
 | Jeskola Filter | Resonance | filter | `filter.resonance` | `filter.resonance` | yes | a peak at 8.37 kHz: its prominence +0 → +8 dB over the response |
 | Jeskola Filter | Bandwidth | filter | `filter.bandwidth` | — | no | no measurable change between its ends with the others at their defaults |
+| Jeskola Filter 2 | Type | filter | `filter.type` | `filter.type` | yes | its settings change the response's shape (up to 40 dB) and corners, 23.1 Hz–16.7 kHz → 11.8 kHz–16.7 kHz |
+| Jeskola Filter 2 | Cutoff | filter | `filter.cutoff` | `filter.cutoff` | yes | the response's upper corner moves 92.5 Hz → 16.7 kHz |
+| Jeskola Filter 2 | Resonance | filter | `filter.resonance` | `filter.resonance` | yes | a peak at 8.37 kHz: its prominence +0 → +8 dB over the response |
+| Jeskola Flanger | min. delay | time | `mod.delay` | — | no | not swept on this platform |
+| Jeskola Flanger | dry out | mix | `mix.dry` | — | no | not swept on this platform |
+| Jeskola Flanger | wet out | mix | `mix.wet` | — | no | not swept on this platform |
+| Jeskola NiNjA dElaY | track Length | time | `delay.time` | `delay.time` | yes | the first echo moves 125 ms → 1 s |
+| Jeskola NiNjA dElaY | track Length unit | time | `delay.unit` | `delay.unit` | yes | a choice of units: the first echo at 375 ms at one setting, within the click at the other |
+| Jeskola NiNjA dElaY | track Feedback | time | `delay.feedback` | `delay.feedback` | yes | the echoes fade 4 → 10 dB per second, the echo time unchanged |
+| Jeskola NiNjA dElaY | track f. type | filter | `filter.type` | — | no | a choice: its texts say what it is; no role measured |
+| Jeskola NiNjA dElaY | track f. cutoff | filter | `filter.cutoff` | `delay.feedback` | no | the echoes fade 10 → 23 dB per second, the echo time unchanged |
+| Jeskola NiNjA dElaY | track f. bandwidth | filter | `filter.bandwidth` | — | no | no measurable change between its ends with the others at their defaults |
+| Jeskola NiNjA dElaY | track Wet out | mix | `mix.wet` | `mix.wet` | yes | at its minimum the effect passes the signal unchanged; at the other end echoes from 375 ms; half way less of the same |
+| Jeskola Raverb | Rev Time | time | `reverb.decay` | `reverb.decay` | yes | the tail 381 ms → 4.03 s (T60) |
+| Jeskola Raverb | Rev Out | mix | `mix.wet` | `mix.wet` | yes | at its minimum the effect passes the signal unchanged; at the other end echoes from 55 ms; half way less of the same |
+| Jeskola Raverb | Dry Out | mix | `mix.dry` | — | no | no measurable change between its ends with the others at their defaults |
 | Jeskola Reverb | Dry Out | mix | `mix.dry` | `mix.dry` | yes | the direct sound -120 → +4 dB while the tail stays (-8 → -8 dB) |
 | Jeskola Reverb | Rev Out | mix | `mix.wet` | `mix.wet` | yes | at its minimum the effect passes the signal unchanged; at the other end echoes from 40 ms; half way less of the same |
 | Jeskola Reverb | ER Out | mix | `reverb.early` | `reverb.early` | yes | reflections from 20 ms come in ahead of the reverb's own at 40 ms, the early sound +2 → +6 dB |
 | Jeskola Reverb | Rev Time | time | `reverb.decay` | `reverb.decay` | yes | the tail 492 ms → 3.71 s (T60) |
 | Jeskola Reverb | Pre-Delay | time | `reverb.predelay` | — | no | no measurable change between its ends with the others at their defaults |
+| Jeskola Stereo Reverb | Dry Out | mix | `mix.dry` | `mix.dry` | yes | the direct sound -120 → +4 dB while the tail stays (-14 → -14 dB) |
+| Jeskola Stereo Reverb | Rev Out | mix | `mix.wet` | `mix.wet` | yes | at its minimum the effect passes the signal unchanged; at the other end echoes from 40 ms; half way less of the same |
+| Jeskola Stereo Reverb | ER Out | mix | `reverb.early` | `reverb.early` | yes | reflections from 20 ms come in ahead of the reverb's own at 40 ms, the early sound +2 → +3 dB |
+| Jeskola Stereo Reverb | Rev Time | time | `reverb.decay` | `reverb.decay` | yes | the tail 492 ms → 3.71 s (T60) |
+| Jeskola Stereo Reverb | Pre-Delay | time | `reverb.predelay` | — | no | no measurable change between its ends with the others at their defaults |
 | Oomek Exciter | Pre Cut | filter | `filter.highpass` | `filter.cutoff` | yes | the response's lower corner moves 2.96 kHz → 23.1 Hz |
 | Oomek Exciter | Post Cut | filter | `filter.highpass` | `filter.cutoff` | yes | the response's lower corner moves 4.19 kHz → 23.1 Hz |
 | Oomek Masterizer | Decay Lo | time | `dyn.release` | — | no | no measurable change between its ends with the others at their defaults |
@@ -230,10 +254,21 @@ Curated filter, time and mix parameters: 82 of 151 suggestions agree.
 | FSM KickXP | track C+P DecRate | time | `drum.decay` | `pitch.coarse` | no | the pitch moves -1.7 semitones |
 | FSM KickXP | track A DecTime | time | `env.decay` | `env.decay` | yes | the level falls half way to its held level in 220 ms → 785 ms |
 | FSM KickXP | track A RelSlope | time | `env.release` | `env.decay` | no | the level falls half way in 785 ms → 165 ms (the default 310 ms) to the same held level |
+| Jeskola Bass | Cutoff | filter | `filter.cutoff` | `level` | no | silent at its minimum, sounding at the other end |
+| Jeskola Bass | Resonance | filter | `filter.resonance` | `filter.resonance` | yes | a peak at 8 kHz stands -2 → +60 dB over the spectrum an octave either side |
+| Jeskola Bass 2 | track Cutoff | filter | `filter.cutoff` | `level` | no | the level +53 dB, the sound otherwise alike |
+| Jeskola Bass 2 | track Resonance | filter | `filter.resonance` | `filter.resonance` | yes | a peak at 8 kHz stands -3 → +17 dB over the spectrum an octave either side |
+| Jeskola Bass 2 | track Envmod | filter | `filter.env_amount` | `env.decay` | no | the level falls half way to its held level in 45 ms → 15 ms |
+| Jeskola Bass 2 | track Decay | time | `env.decay` | `env.decay` | yes | the level falls half way in 85 ms → 65 ms (the default 45 ms) to the same held level |
 | Jeskola Bass 3 | track Cutoff | filter | `filter.cutoff` | `filter.cutoff` | yes | the brightness (centroid) 173 Hz → 716 Hz |
 | Jeskola Bass 3 | track Resonance | filter | `filter.resonance` | `filter.resonance` | yes | a peak at 4 kHz stands -3 → +18 dB over the spectrum an octave either side |
 | Jeskola Bass 3 | track Envmod | filter | `filter.env_amount` | `env.decay` | no | the level falls half way to its held level in 45 ms → 15 ms |
 | Jeskola Bass 3 | track Decay | time | `filter.env.decay` | `env.decay` | no | the level falls half way in 85 ms → 65 ms (the default 45 ms) to the same held level |
+| Jeskola Noise Generator | track Attack | time | `env.attack` | `drum.attack` | yes | the attack 0 ms → 200 ms |
+| Jeskola Noise Generator | track Release | time | `env.release` | `drum.decay` | no | the level falls half way in 10 ms → ? (the default 260 ms) to the same held level |
+| Jeskola Organ | Attack | time | `env.attack` | `env.attack` | yes | the attack 15 ms → 875 ms |
+| Jeskola Organ | Release | time | `env.release` | `env.release` | yes | the release 10 ms → 255 ms |
+| Jeskola Trilok | BD Decay | time | `drum.decay` | `drum.decay` | yes | the level falls half way in 20 ms → 470 ms (the default 150 ms) to the same held level |
 | Oomek Aggressor 303 | Cutoff | filter | `filter.cutoff` | `filter.cutoff` | yes | the brightness (centroid) 433 Hz → 2.72 kHz |
 | Oomek Aggressor 303 | Res | filter | `filter.resonance` | `filter.resonance` | yes | a peak at 2.5 kHz stands -4 → +17 dB over the spectrum an octave either side |
 | Oomek Aggressor 303 | Env.Mod | filter | `filter.env_amount` | `filter.cutoff` | no | the brightness (centroid) 426 Hz → 1.69 kHz |
@@ -290,20 +325,11 @@ Drafts:
 | Machine | Suggested roles |
 |---|---|
 | FSM Philthy | track Cutoff: `filter.cutoff`; track Resonance: `filter.cutoff`; track ThevFactor: `filter.resonance`; track Filter: `filter.type`; track LFO mod: `filter.cutoff`; track L-R phasing: `filter.bandwidth`; track Set phase: `filter.bandwidth` |
-| Jeskola Chorus | freq: `mix.wet`; depth: `mod.delay`; feedback: `mod.feedback`; min. delay: `mod.delay`; dry out: `mix.wet`; wet out: `mix.wet` |
-| Jeskola Filter 2 | Type: `filter.type`; Cutoff: `filter.cutoff`; Resonance: `filter.resonance` |
-| Jeskola Gain | Gain: `level` |
-| Jeskola Raverb | Rev Time: `reverb.decay`; HF Damp: `mix.wet`; Rev Out: `mix.wet` |
-| Jeskola Stereo Reverb | Dry Out: `mix.dry`; Rev Out: `mix.wet`; ER Out: `reverb.early`; Rev Time: `reverb.decay`; High Cutoff: `mix.wet` |
-| Jeskola Wave Shaper | track gain: `reverb.early` |
 | Joachims Enceladus Tube EQ v1 | 1. Boost: `eq.low.gain`;     Freq #2: `eq.high.freq`;     Bandwidth #3: `eq.high.freq`; 2. Boost: `eq.mid.gain`; 3. Boost: `eq.high.gain`;     Freq #12: `eq.high.freq`;     Bandwidth #13: `eq.high.q` |
 | Joachims Hyperion | Input gain.: `level`; 20000 Hz: `filter.cutoff`; 15800 Hz: `filter.cutoff`; 12400 Hz: `filter.cutoff`;  9800 Hz: `filter.resonance`;  7700 Hz: `filter.resonance`;  6100 Hz: `filter.resonance`;  4800 Hz: `filter.resonance`;  3800 Hz: `filter.resonance`;  2970 Hz: `filter.resonance`;  2340 Hz: `filter.resonance`;  1850 Hz: `filter.resonance`;  1460 Hz: `filter.resonance`;  1150 Hz: `filter.resonance`;   900 Hz: `filter.resonance`;   710 Hz: `filter.resonance`;   560 Hz: `filter.resonance`;   440 Hz: `filter.cutoff`;   350 Hz: `filter.resonance`;   275 Hz: `filter.resonance`;   217 Hz: `filter.cutoff`;   171 Hz: `filter.resonance`;   134 Hz: `filter.resonance`;   106 Hz: `filter.resonance`;    84 Hz: `filter.resonance`;    66 Hz: `mix.wet`;    52 Hz: `mix.wet`;    41 Hz: `filter.resonance`;    32 Hz: `mix.wet`;    25 Hz: `mix.wet`;    20 Hz: `mix.wet`; Highpass: `filter.highpass` |
 | Joachims Saturn 1.4 | Temp. Input: `mix.dry`; Noise type: `mix.dry`; Noise amount: `delay.feedback`; Room Level: `filter.highpass`; Samplerate: `mix.wet`; Antique: `filter.resonance`; Detune Amount: `filter.cutoff`; Detune Speed: `lfo.depth`; Ring Mix: `filter.resonance`; Tube Drive: `drive`; Temp. Output: `mix.dry`; Highpass: `filter.highpass` |
 | mixIO | track Gain: `level`; track Mute: `bypass` |
 | Bigyo Wood One | Noise Time: `filter.cutoff`; Pulse Color: `filter.env_amount`; Inharmonicity: `pitch.coarse`; Damping: `pitch.fine`; Brightness: `filter.env_amount`; Resonator F: `env.decay`; Resonator Q: `env.decay`; Resonator G: `level`; Decay: `filter.cutoff`; Release: `env.release` |
-| Jeskola Bass | Cutoff: `level`; Resonance: `filter.resonance` |
-| Jeskola Bass 2 | track Cutoff: `level`; track Resonance: `filter.resonance`; track Envmod: `env.decay`; track Decay: `env.decay` |
-| Jeskola Organ | Attack: `env.attack`; Release: `env.release` |
 | kibibu Green Milk | Unison Depth: `env.decay`; Unison Min S: `env.attack`; Unison Max S: `env.attack`; Oscillators: `level`; Glide: `env.attack`; Amp A: `env.attack`; Amp D: `filter.env_amount`; Amp S: `env.decay`; Amp R: `env.release`; Filt Cut: `filter.resonance`; Filt Res: `lfo.filter`; Filt Env: `filter.env_amount`; Filt A: `filter.cutoff`; Filt D: `filter.env.decay`; Filt S: `filter.cutoff`; Length Scale: `env.release`; PreF Dist: `filter.env.decay`; PostF Dist: `filter.cutoff`; TLFO1 Speed: `env.attack`; TLFO1 Delay: `env.attack`; TLFO1->Cut: `lfo.filter`; TLFO1->Res: `lfo.filter`; TLFO2 Speed: `env.attack`; TLFO2 Delay: `env.decay`; TLFO2->Cut: `filter.env_amount`; TLFO2->Res: `filter.env.decay`; TLFO2->Pitch: `env.attack` |
 | KrimZon AY-3-8910 | FinalAmp: `level`; Tune: `env.decay`; track NumSubNotes: `env.decay`; track SubLength: `env.decay`; track Glide: `filter.cutoff`; track EnvTime: `level`; track Volume: `level` |
 | Matilde Tracker2 | Ampl.Decay: `level`; Offset: `level`; track Volume: `level` |
@@ -324,17 +350,17 @@ Drafts:
 | GuitarChordBox | control |  |  |  |  |  |  |  |  | ok |
 | Info | control |  |  |  |  |  |  |  |  | ok |
 | Intoxicat ACloud15 | generator (silent at its defaults) | none |  |  |  |  |  |  |  | warn |
-| Jeskola Bass | polysynth | tracks | +0 (sieve) | 4 | -9 | 0.0 | 10 ms / — / 90 ms | 2.9 | 8.186 | hot |
-| Jeskola Bass 2 | monosynth | tracks | +0 (sieve) | 1 | -9.7 | -0.0 | 10 ms / — / 110 ms | 1.7 | 5.306 | ok |
-| Jeskola Bass 3 | monosynth | tracks | +0 (sieve) | 1 | -10.9 | -0.01 | 10 ms / — / 110 ms | 3.9 | 5.172 | ok |
+| Jeskola Bass | polysynth | tracks | +0 (sieve) | 4 | -9 | 0.0 | 10 ms / — / 90 ms | 12.4 | 14.368 | hot |
+| Jeskola Bass 2 | monosynth | tracks | +0 (sieve) | 1 | -9.7 | -0.0 | 10 ms / — / 110 ms | 12.4 | 9.523 | ok |
+| Jeskola Bass 3 | monosynth | tracks | +0 (sieve) | 1 | -10.9 | -0.01 | 10 ms / — / 110 ms | 22.9 | 10.236 | ok |
 | Jeskola Live | control |  |  |  |  |  |  |  |  | ok |
 | Jeskola Loop Recorder | control |  |  |  |  |  |  |  |  | ok |
-| Jeskola Noise Generator | triggered | none (trigger: Trigger) |  |  | -17 |  | 10 ms / — / 280 ms |  | 9.689 | ok |
+| Jeskola Noise Generator | triggered | none (trigger: Trigger) |  |  | -17 |  | 10 ms / — / 280 ms |  | 9.63 | ok |
 | Jeskola Note Matrix | control |  |  |  |  |  |  |  |  | ok |
-| Jeskola Organ | monosynth | tracks | +0 (+2 ct) | 1 | -6.7 | 0.0 | 15 ms / 255 ms / — | 3.9 | 5.22 | hot |
+| Jeskola Organ | monosynth | tracks | +0 (+2 ct) | 1 | -6.7 | 0.0 | 15 ms / 255 ms / — | 15.9 | 11.146 | hot |
 | Jeskola Relativion | control |  |  |  |  |  |  |  |  | ok |
 | Jeskola Tracker | generator (silent at its defaults) | none |  |  |  |  |  |  |  | warn |
-| Jeskola Trilok | triggered | none (trigger: BD Trigger) |  |  | -11.9 |  | 5 ms / — / 160 ms |  | 9.663 | hot |
+| Jeskola Trilok | triggered | none (trigger: BD Trigger) |  |  | -11.9 |  | 5 ms / — / 160 ms |  | 9.63 | hot |
 | JumpLoop | control |  |  |  |  |  |  |  |  | ok |
 | kibibu Green Milk | monosynth | tracks | +12 (+4 ct) | 1 | -9 | 2.59 | 710 ms / 125 ms / — | 4.9 | 5.314 | ok |
 | KrimZon AY-3-8910 | polysynth | tracks | -13 (-1 ct) | 3 | -21.5 | 0.0 | 0 ms / — / 410 ms | 2.9 | 5.197 | ok |
@@ -391,20 +417,20 @@ Drafts:
 | FSM WahMan | distortion, filter or EQ | 10.15 | 6 | 0.01 | 17 ms |  | 1046 Hz – 1.0 kHz | 0.0 | 8.021 | hot |
 | FSM WahManPro | distortion, modulation, filter or EQ | 10.09 | 0 | 0.01 | 52 ms |  | 1318 Hz – 1.3 kHz | 20.9 | 14.99 | hot |
 | FSM WahPro2 | modulation, filter or EQ | 3.29 | 1 | 0.01 | 22 ms |  | 370 Hz – 0.4 kHz | 0.7 | 9.122 | hot |
-| Jeskola Chorus | modulation, filter or EQ | 8.76 | 0 | 0.03 |  | 30 ms | 26 Hz – 0.0 kHz | 0.2 | 8.605 | hot |
-| Jeskola Cross Delay | delay | 6.09 | 0 | 3.0 | 3.98 s | 375 ms | 21 Hz – 18.8 kHz | 6.5 | 8.05 | hot |
-| Jeskola Delay | delay | 6.15 | 0 | 3.38 | 3.98 s | 375 ms | 26 Hz – 0.0 kHz | 19.7 | 7.354 | hot |
-| Jeskola Distortion | distortion, dynamics | 19.65 | 2 | 0.0 |  |  | 21 Hz – 16.7 kHz | 1.5 | 12.291 | hot |
-| Jeskola EQ-3 | utility | 6.02 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 8.482 | hot |
-| Jeskola Filter | utility | 6.02 | 1 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 8.149 | hot |
-| Jeskola Filter 2 | utility | 6.02 | 1 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 7.679 | hot |
-| Jeskola Flanger | modulation, filter or EQ | 8.81 | 0 | 0.0 |  |  | 58 Hz – 0.4 kHz | 0.3 |  | diverging |
-| Jeskola Gain | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.506 | hot |
-| Jeskola NiNjA dElaY | delay | 6.49 | 0 | 3.38 | 7.12 s | 375 ms | 21 Hz – 18.8 kHz | 30.9 | 7.966 | hot |
-| Jeskola Raverb | reverb | 6.07 | 0 | 3.48 | 8.49 s | 55 ms | 21 Hz – 18.8 kHz | 21.6 | 10.651 | ok |
-| Jeskola Reverb | reverb | 6.19 | 0 | 0.7 | 951 ms | 40 ms | 21 Hz – 0.0 kHz | 0.7 | 8.895 | hot |
-| Jeskola Stereo Reverb | reverb | 6.11 | 0 | 0.6 | 951 ms | 40 ms | 21 Hz – 0.0 kHz | 0.5 | 9.206 | hot |
-| Jeskola Wave Shaper | reverb, distortion | 13.29 | 0 | 3.48 | 4.67 s |  | 21 Hz – 18.8 kHz | 15.1 | 7.565 | warn |
+| Jeskola Chorus | modulation, filter or EQ | 8.76 | 0 | 0.03 |  | 30 ms | 26 Hz – 0.0 kHz | 15.7 | 15.177 | hot |
+| Jeskola Cross Delay | delay | 6.09 | 0 | 3.0 | 3.98 s | 375 ms | 21 Hz – 18.8 kHz | 29.3 | 12.987 | hot |
+| Jeskola Delay | delay | 6.15 | 0 | 3.38 | 3.98 s | 375 ms | 26 Hz – 0.0 kHz | 24.5 | 12.221 | hot |
+| Jeskola Distortion | distortion, dynamics | 19.65 | 2 | 0.0 |  |  | 21 Hz – 16.7 kHz | 12.1 | 11.579 | hot |
+| Jeskola EQ-3 | utility | 6.02 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 15.8 | 15.502 | hot |
+| Jeskola Filter | utility | 6.02 | 1 | 0.0 |  |  | 21 Hz – 18.8 kHz | 14.0 | 13.611 | hot |
+| Jeskola Filter 2 | utility | 6.02 | 1 | 0.0 |  |  | 21 Hz – 18.8 kHz | 15.0 | 13.503 | hot |
+| Jeskola Flanger | modulation, filter or EQ | 8.81 | 0 | 0.0 |  |  | 58 Hz – 0.4 kHz | 15.5 |  | diverging |
+| Jeskola Gain | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.573 | hot |
+| Jeskola NiNjA dElaY | delay | 6.49 | 0 | 3.38 | 7.12 s | 375 ms | 21 Hz – 18.8 kHz | 41.8 | 13.56 | hot |
+| Jeskola Raverb | reverb | 6.07 | 0 | 3.48 | 8.49 s | 55 ms | 21 Hz – 18.8 kHz | 52.7 | 18.457 | ok |
+| Jeskola Reverb | reverb | 6.19 | 0 | 0.7 | 951 ms | 40 ms | 21 Hz – 0.0 kHz | 16.9 | 16.18 | hot |
+| Jeskola Stereo Reverb | reverb | 6.11 | 0 | 0.6 | 951 ms | 40 ms | 21 Hz – 0.0 kHz | 16.8 | 16.54 | hot |
+| Jeskola Wave Shaper | reverb, distortion | 13.29 | 0 | 3.48 | 4.67 s |  | 21 Hz – 18.8 kHz | 41.3 | 13.134 | warn |
 | Joachims Chopper 2 | utility | -0.83 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 8.7 | 11.71 | ok |
 | Joachims Enceladus Tube EQ v1 | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 11.7 | 15.266 | hot |
 | Joachims Hyperion | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 4.0 | 11.696 | hot |

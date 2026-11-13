@@ -36,6 +36,7 @@
    "latency_samples": 0,
    "latency_ms": 0.0,
    "tail_seconds": 0.7,
+   "tail_hz": 3587.9,
    "echoes": 0,
    "output_correlation": 1.0,
    "spectrum_spread_db": 4.0,
@@ -1354,7 +1355,9 @@
      0.0
     ]
    ],
-   "description": "Level of the dry signal (0 dB at the top): 20 × log₁₀(raw ÷ 4096) dB, −inf at 0."
+   "description": "Level of the dry signal (0 dB at the top): 20 × log₁₀(raw ÷ 4096) dB, −inf at 0.",
+   "how": "Sets the unprocessed signal's level, from silence up to 0 dB.",
+   "sound": "Lower it to push the sound back into the reverb; at silence only the reverb remains."
   },
   {
    "index": 1,
@@ -2170,7 +2173,9 @@
      0.0
     ]
    ],
-   "description": "Level of the reverb tail: 20 × log₁₀(raw ÷ 4096) dB, −inf at 0."
+   "description": "Level of the reverb tail: 20 × log₁₀(raw ÷ 4096) dB, −inf at 0.",
+   "how": "Sets the reverb tail's level, from silence up to 0 dB.",
+   "sound": "Raises or lowers how much of the tail is heard behind the dry sound."
   },
   {
    "index": 2,
@@ -2986,7 +2991,9 @@
      0.0
     ]
    ],
-   "description": "Level of the early reflections (off by default): 20 × log₁₀(raw ÷ 4096) dB, −inf at 0."
+   "description": "Level of the early reflections (off by default): 20 × log₁₀(raw ÷ 4096) dB, −inf at 0.",
+   "how": "Sets the early reflections' level, from silence up to 0 dB; it is off by default.",
+   "sound": "Adds the first few close echoes that give a sense of a room around the sound."
   },
   {
    "index": 3,
@@ -3002,7 +3009,9 @@
    "a": 0.1,
    "b": 6.4,
    "unit": "s",
-   "description": "Tail length in tenths of a second, 0.1–6.4 s."
+   "description": "Tail length in tenths of a second, 0.1–6.4 s.",
+   "how": "Sets the tail length from 0.1 to 6.4 s.",
+   "sound": "Short values sound like a small room, long ones like a hall that keeps ringing."
   },
   {
    "index": 4,
@@ -3018,7 +3027,9 @@
    "a": 0.0,
    "b": 0.1,
    "unit": "s",
-   "description": "Gap before the reverb, 0–100 ms."
+   "description": "Gap before the reverb, 0–100 ms.",
+   "how": "Sets the gap before the reverb starts, from 0 to 100 ms.",
+   "sound": "A longer gap keeps the dry sound clear before the reverb blooms behind it."
   },
   {
    "index": 5,
@@ -3034,7 +3045,9 @@
    "a": 100.0,
    "b": 16384.0,
    "unit": "Hz",
-   "description": "Low-pass on the reverb, 100 Hz – 16.4 kHz."
+   "description": "Low-pass on the reverb, 100 Hz – 16.4 kHz.",
+   "how": "Sets a low-pass on the reverb, from 100 Hz to 16.4 kHz.",
+   "sound": "Lower values make the tail darker and softer; higher values keep it bright."
   }
  ],
  "track_parameters": []

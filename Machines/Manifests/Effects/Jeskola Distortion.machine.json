@@ -496,7 +496,9 @@
    "b": 3199.90234375,
    "unit": "%",
    "own_texts": false,
-   "description": "Input above it is clipped, in % of full scale (default 25%: −12 dBFS)."
+   "description": "Input above it is clipped, in % of full scale (default 25%: −12 dBFS).",
+   "how": "Sets the positive level above which the signal is cut, in percent of full scale.",
+   "sound": "Lower values cut more of every wave and make the fuzz harsher and denser."
   },
   {
    "index": 1,
@@ -513,7 +515,9 @@
    "b": 3199.90234375,
    "unit": "%",
    "own_texts": false,
-   "description": "Level a clipped sample is set to, % of full scale (default 200%: +6 dBFS)."
+   "description": "Level a clipped sample is set to, % of full scale (default 200%: +6 dBFS).",
+   "how": "Sets the level a cut positive peak is replaced with, in percent of full scale; the default is above full scale.",
+   "sound": "Higher clamps are louder and more square; keep it near 100 percent to stay inside full scale."
   },
   {
    "index": 2,
@@ -530,7 +534,9 @@
    "b": 3199.90234375,
    "unit": "%",
    "own_texts": false,
-   "description": "Input below minus this is clipped, % of full scale."
+   "description": "Input below minus this is clipped, % of full scale.",
+   "how": "Sets the negative level below which the signal is cut, in percent of full scale; it acts only when symmetric mode is off.",
+   "sound": "A different value from the positive threshold makes the clipping lopsided and adds even harmonics."
   },
   {
    "index": 3,
@@ -547,7 +553,9 @@
    "b": 3199.90234375,
    "unit": "%",
    "own_texts": false,
-   "description": "Level a clipped negative sample is set to, % of full scale."
+   "description": "Level a clipped negative sample is set to, % of full scale.",
+   "how": "Sets the level a cut negative peak is replaced with, in percent of full scale; it acts only when symmetric mode is off.",
+   "sound": "Raising it makes the negative half louder; unequal clamps add a rough, uneven edge."
   },
   {
    "index": 4,
@@ -564,7 +572,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "How much of a clipped sample is the clamp level (100%) rather than the input; 0% turns it off."
+   "description": "How much of a clipped sample is the clamp level (100%) rather than the input; 0% turns it off.",
+   "how": "Blends between the input (0 percent) and the clamped signal (100 percent) wherever a threshold is crossed.",
+   "sound": "At 100 percent the peaks are fully replaced and the sound is square and harsh; lower values keep some of the original."
   }
  ],
  "track_parameters": []

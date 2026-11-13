@@ -2,10 +2,20 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Jeskola Tracker",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
- "type": "generator (silent at its defaults)",
- "summary": "Generator (silent at its defaults) (profiled draft): no sound from a note at its defaults.",
+ "status": "curated",
+ "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
+ "type": "generator",
+ "summary": "A Buzz tracker machine with up to 16 tracks and a Subdiv parameter for row timing. The profile heard nothing from a note at its defaults, so what it plays is unverified here.",
+ "quirks": [
+  "No sound from a note at its defaults, as MIDI or in its tracks, even with a wave in slot 1.",
+  "Up to 16 tracks; Subdiv defaults to 6 ticks per row part.",
+  "How to make it play was not found: unverified.",
+  "Closed source: names come from its own descriptions and measurements, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-13) — no sound from a note at its defaults, even with a wave in slot 1"
+ ],
  "category": "Samplers",
  "tags": [
   "sampler"
@@ -44,6 +54,7 @@
    "index": 0,
    "id": "Subdiv",
    "name": "Subdiv",
+   "plain_name": "Row subdivision",
    "group": "",
    "min": 1,
    "max": 15,
@@ -52,7 +63,8 @@
    "a": 1.0,
    "b": 15.0,
    "description": "Tick subdivide (01-0F)",
-   "confidence": "values"
+   "how": "Sets how many parts each tick is divided into for its rows, 1 to 15, 6 by default.",
+   "sound": "Higher values give finer timing between rows; the machine plays nothing from a note at its defaults."
   }
  ],
  "track_parameters": []

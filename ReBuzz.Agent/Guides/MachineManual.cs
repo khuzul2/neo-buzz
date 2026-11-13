@@ -445,6 +445,7 @@ namespace ReBuzz.Agent.Guides
                 string kind = p.Mapping.Kind is MappingKind.Linear or MappingKind.Exp or MappingKind.Power or MappingKind.Int or MappingKind.Table
                     ? p.Mapping.Kind + p.Mapping.Unit : p.Mapping.Kind.ToString();
                 if (!seen.Add(kind)) continue;
+                if (p.Name.Contains('"') || p.Name.Contains('\\')) continue;   // a name with a quote (Jeskola Organ's 16") can't stand in a JSON example
                 int raw = p.Mapping.Kind is MappingKind.Enum or MappingKind.Switch ? p.Max : p.Min + (int)Math.Round((p.Max - p.Min) * 0.75);
                 if (p.SafeRange != null) raw = Math.Clamp(raw, p.SafeRange.Min, p.SafeRange.Max);
                 examples.Add($"{{\"param\": \"{p.Name}\", " + (track ? "\"track\": 0, " : "") + $"\"value\": \"{Format(p, raw)}\"}}");

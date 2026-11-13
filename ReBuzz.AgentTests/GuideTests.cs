@@ -298,7 +298,7 @@ namespace ReBuzz.AgentTests
                 Assert.That(curated, Does.StartWith("## How it sounds"), gear);
                 Assert.That(MachineManual.Curated(MachineManual.Slug(gear)), Is.EqualTo(curated), "found by its slug too");
             }
-            Assert.That(MachineManual.Curated("Jeskola Bass"), Is.Null);
+            Assert.That(MachineManual.Curated("FSM Infector"), Is.Null, "a curated machine of a family not done yet has no page");
             Assert.That(MachineManual.Slug("Neo FM6"), Is.EqualTo("neo-fm6"));
             Assert.That(MachineManual.UriFor("Neo Poly"), Is.EqualTo("rebuzz://machines/neo-poly/manual"));
             Assert.That(MachineManual.SlugOf("rebuzz://machines/Neo%20Poly/manual"), Is.EqualTo("neo-poly"));
@@ -707,9 +707,9 @@ namespace ReBuzz.AgentTests
             var server2 = new McpServer(new ServerInfo { Name = "t", Title = "t", Version = "1" }, gear);
             var listed = TestTools.CallTool(server2, "guide", new JsonObject()).Data["manuals"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
             Assert.That(listed, Is.SupersetOf(profiled.Keys).And.SupersetOf(NeoGear));
-            var draft = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "jeskola organ" });   // U7 made Noise Generator's from its source
+            var draft = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "bigyo wood one" });   // a draft: K2 batch b curated the Jeskola ones
             Assert.That(draft.Error, Is.False, draft.Text);
-            Assert.That(draft.Data["markdown"]!.GetValue<string>(), Does.StartWith("# Jeskola Organ manual").And.Contain("profiled draft"));
+            Assert.That(draft.Data["markdown"]!.GetValue<string>(), Does.StartWith("# Bigyo Wood One manual").And.Contain("profiled draft"));
             var sh101 = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "Pedal SH101" }).Data["markdown"]!.GetValue<string>();
             Assert.That(sh101, Does.Contain("**Filter cutoff** (`filter.cutoff`)").And.Contain("## Quirks"));
             var typo = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "Pedal SH-1O1" });
