@@ -6,7 +6,7 @@
 .DESCRIPTION
     Framework-dependent like the WPF app (it needs the .NET 10 runtime, which the Desktop runtime includes), with its
     own executable, NeoBuzzLiveStudio.exe, and beside it: its Gear (the Neo machines with their Avalonia editors, the
-    Modern Pattern Editor, the Pedal machines), PortAudio built from source (tools/build-portaudio.ps1) and libsndfile.
+    Modern Pattern Editor, the Pedal machines), libsndfile and PortAudio built from source (tools/build-portaudio.ps1).
     build.ps1 then adds what the package shares with the WPF app (the native machine hosts and DLLs) and puts the
     folder in the package as Studio\.
 
@@ -41,9 +41,6 @@ Invoke-Checked dotnet @('publish', [IO.Path]::Combine($Root, 'ReBuzz.Studio', 'R
 $apphost = [IO.Path]::Combine($Out, 'ReBuzz.Studio.exe')
 if (-not (Test-Path -LiteralPath $apphost)) { throw "ReBuzz.Studio.exe not published in $Out" }
 Move-Item -LiteralPath $apphost -Destination ([IO.Path]::Combine($Out, 'NeoBuzzLiveStudio.exe')) -Force
-
-# libsndfile (wave import, BuzzGUI.Common's binding): the x64 build the WPF app ships.
-Copy-Item -LiteralPath ([IO.Path]::Combine($Root, '3rdParty', 'libsndfile-1.dll')) -Destination $Out -Force
 
 if (-not $SkipPortAudio) {
     & ([IO.Path]::Combine($Root, 'tools', 'build-portaudio.ps1')) -Out $Out -Configuration $Configuration

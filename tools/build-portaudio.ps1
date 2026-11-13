@@ -50,7 +50,8 @@ Invoke-Checked cmake @(
     '-DBUILD_SHARED_LIBS=ON', '-DPA_BUILD_SHARED_LIBS=ON',
     '-DPA_BUILD_EXAMPLES=OFF', '-DPA_BUILD_TESTS=OFF',
     '-DPA_USE_WMME=ON', '-DPA_USE_DS=ON', '-DPA_USE_WASAPI=ON', '-DPA_USE_WDMKS=ON', '-DPA_USE_ASIO=OFF',
-    '-DCMAKE_POLICY_DEFAULT_CMP0091=NEW', '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded')
+    '-DCMAKE_POLICY_DEFAULT_CMP0091=NEW', '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded',
+    '-DCMAKE_POLICY_VERSION_MINIMUM=3.5')   # v19.7.0 asks for CMake 3.1, which CMake 4 refuses
 Invoke-Checked cmake @('--build', $bld, '--config', $Configuration, '--parallel')
 
 # What got built: the DLL (CMake names it portaudio_x64.dll for MSVC x64), and which host APIs are in it.

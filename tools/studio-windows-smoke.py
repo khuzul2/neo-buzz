@@ -25,6 +25,7 @@ import time
 import urllib.error
 import urllib.request
 
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")     # the runner's console is cp1252
 args = list(sys.argv[1:])
 
 
