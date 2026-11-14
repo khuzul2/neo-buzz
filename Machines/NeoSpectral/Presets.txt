@@ -1,0 +1,107 @@
+# Neo Spectral factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoSpectral
+machine "Neo Spectral"
+
+preset "Vocal — Gentle Resonance Control"
+comment "Light suppression of narrow resonances on a vocal; leaves the body and the air alone"
+Mode = Suppress
+Depth = 40
+Knee = 4
+Selectivity = 0.35
+Low = 150
+High = 12000
+
+preset "Vocal — Tame Harshness (2 - 8 kHz)"
+comment "Stronger suppression in the presence region only"
+Mode = Suppress
+Depth = 70
+Knee = 3
+Selectivity = 0.4
+Attack = 10
+Release = 120
+Low = 2000
+High = 8000
+
+preset "Vocal — Even Tone (Fills Dips)"
+comment "Suppresses peaks and lifts dips by up to 3 dB"
+Mode = Suppress
+Depth = 50
+Knee = 4
+Lift = 3
+Low = 150
+High = 10000
+
+preset "Guitar — Tame Boxiness"
+comment "Smooths a boxy resonance in the low mids"
+Mode = Suppress
+Depth = 60
+Knee = 3
+Selectivity = 0.5
+Smoothing = 3
+Release = 250
+Low = 150
+High = 900
+
+preset "Drums — Ringing Toms and Snare"
+comment "Fast attack catches a ring as it starts; the release follows the hit"
+Mode = Suppress
+Depth = 65
+Knee = 4
+Selectivity = 0.3
+Smoothing = 1
+Attack = 5
+Release = 80
+Low = 100
+High = 6000
+
+preset "Mix Bus — Subtle Smoothing"
+comment "A little resonance control over the whole mix"
+Mode = Suppress
+Depth = 30
+Knee = 5
+Selectivity = 0.5
+Release = 300
+Low = 120
+High = 16000
+
+preset "Master — Gentle Balance"
+comment "Moves the whole spectrum a quarter of the way toward a pink slope"
+Mode = Balance
+Depth = 25
+Selectivity = 0.5
+Attack = 50
+Release = 400
+Low = 100
+High = 16000
+
+preset "Master — Brighter Balance"
+comment "Balance with a tilt of +1.5 dB per octave above 300 Hz"
+Mode = Balance
+Depth = 30
+Tilt = 1.5
+Selectivity = 0.5
+Attack = 50
+Release = 400
+
+preset "Master — Warmer Balance"
+comment "Balance with a tilt of -1.5 dB per octave above 300 Hz"
+Mode = Balance
+Depth = 30
+Tilt = -1.5
+Selectivity = 0.5
+Attack = 50
+Release = 400
+
+preset "Mix Bus — Stabilize the Tone"
+comment "Pulls moments that stand out toward the long-term spectrum"
+Mode = Stabilize
+Depth = 40
+Knee = 3
+Attack = 30
+Release = 300
+
+preset "Hear What It Removes (Delta)"
+comment "Suppress with Delta on: only the resonances being taken out"
+Mode = Suppress
+Depth = 70
+Knee = 3
+Delta = On

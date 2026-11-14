@@ -107,7 +107,7 @@ namespace ReBuzz.Studio.Views.Session
         /// </summary>
         public bool AltBypassesGrid { get; set; }
 
-        Rect Visible => Viewport.Width > 0 && Viewport.Height > 0 ? Viewport : new Rect(0, 0, Math.Max(Bounds.Width, X(Length) + 40), 128 * RowHeight);
+        Rect Visible => Viewport.Width > 0 && Viewport.Height > 0 ? Viewport : new Rect(0, 0, Math.Max(Bounds.Width, X(Length) + 40), RowCount * RowHeight);
 
         double KeysLeft => Viewport.Width > 0 ? Viewport.X : 0;
 
@@ -137,17 +137,43 @@ namespace ReBuzz.Studio.Views.Session
 
         internal double X(int time) => KeysWidth + time / (double)ClipNotes.TimeBase * TickWidth;
 
-        internal double Y(int note) => (127 - note) * RowHeight;
+        // Fork (daw-modes.md AR2): a fold keeps some pitches only (rows, highest first); without one every pitch has a row.
+        int[] rows;
+
+        /// <summary>The pitches the rows show, highest first, or null for all 128 (folded: <see cref="Fold"/>).</summary>
+        internal IReadOnlyList<int> Rows => rows;
+
+        int RowCount => rows?.Length ?? 128;
+
+        int RowOf(int note)
+        {
+            if (rows == null) return 127 - Math.Clamp(note, 0, 127);
+            int best = 0, bestDistance = int.MaxValue;
+            for (int i = 0; i < rows.Length; i++)       // rows are descending: the nearest pitch (the higher of two)
+            {
+                int d = Math.Abs(rows[i] - note);
+                if (d < bestDistance) { best = i; bestDistance = d; }
+                if (rows[i] < note) break;
+            }
+            return best;
+        }
+
+        int NoteOfRow(int row) => rows == null ? 127 - Math.Clamp(row, 0, 127) : rows[Math.Clamp(row, 0, rows.Length - 1)];
+
+        internal double Y(int note) => RowOf(note) * RowHeight;
 
         internal int TimeAt(double x) => (int)Math.Round(Math.Max(0, x - KeysWidth) / TickWidth * ClipNotes.TimeBase);
 
-        int NoteAt(double y) => Math.Clamp(127 - (int)Math.Floor(y / RowHeight), 0, 127);
+        int NoteAt(double y) => NoteOfRow(Math.Max(0, (int)Math.Floor(y / RowHeight)));
+
+        /// <summary>Whether a pitch has a row of its own (always, unless folded).</summary>
+        bool HasRow(int note) => rows == null || Array.IndexOf(rows, note) >= 0;
 
         Rect RectOf(ClipNote n) =>
             new Rect(X(n.Time), Y(n.Note) + 1, Math.Max(3, n.Duration / (double)ClipNotes.TimeBase * TickWidth), RowHeight - 2);
 
         protected override Size MeasureOverride(Size availableSize) =>
-            new Size(X(Length) + 40, 128 * RowHeight);
+            new Size(X(Length) + 40, RowCount * RowHeight);
 
         /// <summary>Scrolls a viewer to the notes (or middle C).</summary>
         public double FocusOffset()
@@ -155,6 +181,130 @@ namespace ReBuzz.Studio.Views.Session
             int note = notes.Count > 0 ? (int)notes.Average(n => n.Note) : 60;
             return Math.Max(0, Y(note) - 160);
         }
+
+        // ------------------------------------------------------------------ Fork (daw-modes.md AR2): scale, fold, ghosts, step input
+
+        NoteScale scale;
+        FoldMode fold;
+
+        /// <summary>The key and scale whose rows are tinted (null: none).</summary>
+        public NoteScale Scale
+        {
+            get => scale;
+            set
+            {
+                scale = value;
+                RefreshRows();
+                InvalidateVisual();
+            }
+        }
+
+        /// <summary>Which rows show: all, the pitches used, or the scale's (and those used).</summary>
+        public FoldMode Fold
+        {
+            get => fold;
+            set
+            {
+                fold = value;
+                RefreshRows();
+                InvalidateMeasure();
+                InvalidateVisual();
+            }
+        }
+
+        /// <summary>New notes and moved ones land on the scale's pitches.</summary>
+        public bool SnapToScale { get; set; }
+
+        void RefreshRows()
+        {
+            rows = NoteScale.Rows(fold, notes.Select(n => n.Note), scale);
+            InvalidateMeasure();
+        }
+
+        List<ClipNote> ghosts = new List<ClipNote>();
+
+        /// <summary>Other clips' notes in this pattern's time, drawn faintly behind the notes (the host sets them).</summary>
+        internal IReadOnlyList<ClipNote> Ghosts
+        {
+            get => ghosts;
+            set
+            {
+                ghosts = value?.ToList() ?? new List<ClipNote>();
+                InvalidateVisual();
+            }
+        }
+
+        /// <summary>Step input: the keyboard's piano keys write notes at the step cursor and step on by the grid; held keys make a chord.</summary>
+        public bool StepInput
+        {
+            get => stepInput;
+            set
+            {
+                if (stepInput == value) return;
+                stepInput = value;
+                EndStepChord();
+                InvalidateVisual();
+            }
+        }
+
+        bool stepInput;
+        int stepTime;
+        int stepChordTime = -1;
+        readonly Dictionary<PhysicalKey, int> stepKeys = new Dictionary<PhysicalKey, int>();
+
+        /// <summary>Where the next step-input note goes (pattern time).</summary>
+        public int StepTime
+        {
+            get => stepTime;
+            set
+            {
+                stepTime = Math.Clamp(value, 0, Math.Max(0, Length - 1));
+                InvalidateVisual();
+            }
+        }
+
+        /// <summary>The octave of the keyboard's lowest piano key (Z): a pitch is 12 × octave + the key's place.</summary>
+        public int StepOctave { get; set; } = 4;
+
+        /// <summary>One step of the cursor: the grid, else a tick.</summary>
+        internal int StepSize => Grid > 1 ? Grid : ClipNotes.TimeBase;
+
+        /// <summary>The piano key at <paramref name="index"/> (0 = Z) goes down: a note at the cursor, the cursor staying while any key is held.</summary>
+        internal void StepNoteOn(PhysicalKey key, int index)
+        {
+            if (stepKeys.ContainsKey(key)) return;
+            int note = Math.Clamp(12 * StepOctave + index, 0, 127);
+            if (SnapToScale && scale != null) note = scale.Snap(note);
+            if (stepKeys.Count == 0) stepChordTime = stepTime;
+            stepKeys[key] = note;
+            var n = ClipNotes.Draw(stepChordTime, note, lastVelocity, 1, Length, StepSize);
+            Commit(Array.Empty<ClipNote>(), new[] { n });
+            Source.Preview(note, lastVelocity, true);
+        }
+
+        internal void StepNoteOff(PhysicalKey key)
+        {
+            if (!stepKeys.Remove(key, out int note)) return;
+            Source.Preview(note, 0, false);
+            if (stepKeys.Count == 0 && stepChordTime >= 0)
+            {
+                StepTime = Math.Min(stepChordTime + StepSize, Math.Max(0, Length - 1));
+                stepChordTime = -1;
+            }
+        }
+
+        void EndStepChord()
+        {
+            foreach (int note in stepKeys.Values) Source.Preview(note, 0, false);
+            stepKeys.Clear();
+            stepChordTime = -1;
+        }
+
+        /// <summary>Space or Right in step input: a rest, the cursor steps on.</summary>
+        internal void StepRest() => StepTime = stepTime + StepSize;
+
+        /// <summary>Backspace or Left in step input: the cursor steps back.</summary>
+        internal void StepBack() => StepTime = stepTime - StepSize;
 
         // ------------------------------------------------------------------ state
 
@@ -169,7 +319,7 @@ namespace ReBuzz.Studio.Views.Session
                 int i = notes.IndexOf(n);
                 if (i >= 0) selected.Add(i);
             }
-            InvalidateMeasure();
+            RefreshRows();
             InvalidateVisual();
             Changed?.Invoke();
         }
@@ -192,7 +342,7 @@ namespace ReBuzz.Studio.Views.Session
                 int i = notes.IndexOf(n);
                 if (i >= 0) selected.Add(i);
             }
-            InvalidateMeasure();
+            RefreshRows();
             InvalidateVisual();
             Changed?.Invoke();
         }
@@ -203,6 +353,7 @@ namespace ReBuzz.Studio.Views.Session
 
         internal void AddNote(int time, int note, int? grid = null)
         {
+            if (SnapToScale && scale != null) note = scale.Snap(note);
             var n = ClipNotes.Draw(time, note, lastVelocity, grid ?? Grid, Length, lastDuration);
             Commit(Array.Empty<ClipNote>(), new[] { n });
         }
@@ -368,6 +519,12 @@ namespace ReBuzz.Studio.Views.Session
         static readonly IPen NoteEdge = SessionPalette.PairPen("#101012", "#101012", 1);
         static readonly IPen BoxPen = SessionPalette.PairPen("#F0C24B", "#8F6200", 1, DashStyle.Dash);
         static readonly IPen PlayheadPen = SessionPalette.PairPen("#6FD98A", "#008A20", 1.5);
+        static readonly IBrush ScaleRow = SessionPalette.Pair("#2A2A3A", "#E4E6F6");
+        static readonly IBrush ScaleRoot = SessionPalette.Pair("#35355A", "#D2D6F2");
+        static readonly IBrush GhostFill = SessionPalette.Pair("#55E0457B", "#55C2185B");
+        static readonly IPen GhostEdge = SessionPalette.PairPen("#80E0457B", "#80C2185B", 1);
+        static readonly IPen StepPen = SessionPalette.PairPen("#6FD98A", "#008A20", 1.5);
+        static readonly IBrush StepFill = SessionPalette.Pair("#226FD98A", "#22008A20");
 
         static bool IsBlack(int note) => (note % 12) is 1 or 3 or 6 or 8 or 10;
 
@@ -376,20 +533,23 @@ namespace ReBuzz.Studio.Views.Session
             // Only what the viewer shows (P3b): rows, time lines and notes outside it cost nothing.
             var vis = Visible;
             double width = Math.Max(Bounds.Width, X(Length) + 40);
-            double height = 128 * RowHeight;
+            double height = RowCount * RowHeight;
             double left = Math.Max(0, vis.X), right = Math.Min(width, vis.Right), top = Math.Max(0, vis.Y), bottom = Math.Min(height, vis.Bottom);
             dc.FillRectangle(Back, new Rect(left, top, Math.Max(0, right - left), Math.Max(0, bottom - top)));
-            int noteHigh = Math.Clamp(127 - (int)Math.Floor(top / RowHeight), 0, 127);
-            int noteLow = Math.Clamp(127 - (int)Math.Floor((bottom - 0.01) / RowHeight), 0, 127);
+            int rowFirst = Math.Clamp((int)Math.Floor(top / RowHeight), 0, RowCount - 1);
+            int rowLast = Math.Clamp((int)Math.Floor((bottom - 0.01) / RowHeight), 0, RowCount - 1);
             double gridLeft = Math.Max(left, KeysWidth);
 
-            // Rows: black-key rows darker, a line under each C.
-            for (int note = noteLow; note <= noteHigh; note++)
+            // Rows: black-key rows darker, a line under each C; the scale's pitches lighter, its root marked.
+            for (int row = rowFirst; row <= rowLast; row++)
             {
-                double y = Y(note);
+                int note = NoteOfRow(row);
+                double y = row * RowHeight;
                 if (IsBlack(note))
                     dc.FillRectangle(BlackKeyRow, new Rect(gridLeft, y, Math.Max(0, right - gridLeft), RowHeight));
-                if (note % 12 == 0)
+                if (scale != null && scale.Contains(note))
+                    dc.FillRectangle(scale.IsRoot(note) ? ScaleRoot : ScaleRow, new Rect(gridLeft, y, Math.Max(0, right - gridLeft), RowHeight));
+                if (note % 12 == 0 || rows != null)
                     dc.DrawLine(RowLine, new Point(gridLeft, y + RowHeight), new Point(right, y + RowHeight));
             }
 
@@ -411,6 +571,13 @@ namespace ReBuzz.Studio.Views.Session
                 dc.DrawLine(pen, new Point(x, top), new Point(x, bottom));
             }
 
+            // The other clips' notes, faintly behind this one's.
+            foreach (var g in ghosts)
+            {
+                if (!HasRow(g.Note) || !InView(g, vis)) continue;
+                dc.DrawRectangle(GhostFill, GhostEdge, RectOf(g));
+            }
+
             // Notes: the drag's preview instead of what it moves.
             HashSet<int> hidden = dragTo != null && dragFrom != null ? new HashSet<int>(selected) : null;
             for (int i = 0; i < notes.Count; i++)
@@ -426,6 +593,14 @@ namespace ReBuzz.Studio.Views.Session
             if (box is Rect b)
                 dc.DrawRectangle(null, BoxPen, b.Normalize());
 
+            // The step input's cursor.
+            if (stepInput)
+            {
+                double sx = Math.Round(X(stepTime)) + 0.5;
+                dc.DrawLine(StepPen, new Point(sx, top), new Point(sx, bottom));
+                dc.DrawRectangle(StepFill, null, new Rect(sx, top, Math.Max(2, StepSize / (double)ClipNotes.TimeBase * TickWidth), bottom - top));
+            }
+
             // The play position, while the clip plays on its track.
             if (Track != null && Pattern != null && session.GetState(Track, Pattern) is ClipState.Playing or ClipState.Stopping)
             {
@@ -439,12 +614,13 @@ namespace ReBuzz.Studio.Views.Session
 
             // Keys, at the viewer's left edge.
             double keysX = KeysLeft;
-            for (int note = noteLow; note <= noteHigh; note++)
+            for (int row = rowFirst; row <= rowLast; row++)
             {
-                double y = Y(note);
+                int note = NoteOfRow(row);
+                double y = row * RowHeight;
                 bool black = IsBlack(note);
                 dc.DrawRectangle(black ? BlackKey : WhiteKey, NoteEdge, new Rect(keysX, y, KeysWidth, RowHeight));
-                if (note % 12 == 0 || note == keyNote)
+                if (note % 12 == 0 || note == keyNote || rows != null)
                 {
                     var text = new FormattedText(ClipNotes.Name(note), CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
                         Typeface.Default, Math.Min(10, RowHeight - 1), black ? WhiteKey : BlackKey);
@@ -576,6 +752,7 @@ namespace ReBuzz.Studio.Views.Session
                     {
                         int dt = TimeAt(p.X) - downTime;
                         int dn = NoteAt(p.Y) - downNote;
+                        if (SnapToScale && scale != null && dragFrom.Count > 0) dn = scale.Snap(dragFrom[0].Note + dn) - dragFrom[0].Note;
                         dragTo = ClipNotes.Move(dragFrom, dt, dn, GridFor(mods), Length);
                         int heard = dragTo.Count > 0 ? dragTo[0].Note : -1;
                         if (heard != keyNote && heard >= 0)
@@ -660,8 +837,46 @@ namespace ReBuzz.Studio.Views.Session
         protected override void OnKeyDown(KeyEventArgs e)
         {
             base.OnKeyDown(e);
+            if (stepInput && e.KeyModifiers == KeyModifiers.None)
+            {
+                int index = ReBuzz.Studio.Parameters.ParameterWindowView.PianoKeyIndex(e.PhysicalKey);
+                if (index >= 0)
+                {
+                    StepNoteOn(e.PhysicalKey, index);
+                    e.Handled = true;
+                    return;
+                }
+                // Space is the transport's in most windows, so the arrows rest and step back too.
+                if (e.Key is Key.Space or Key.Right) { StepRest(); e.Handled = true; return; }
+                if (e.Key is Key.Back or Key.Left) { StepBack(); e.Handled = true; return; }
+            }
             if (HandleKey(e.Key, SessionView.Normalize(e.KeyModifiers)))
                 e.Handled = true;
+        }
+
+        protected override void OnKeyUp(KeyEventArgs e)
+        {
+            base.OnKeyUp(e);
+            if (stepInput && stepKeys.ContainsKey(e.PhysicalKey))
+            {
+                StepNoteOff(e.PhysicalKey);
+                e.Handled = true;
+            }
+        }
+
+        protected override void OnTextInput(TextInputEventArgs e)
+        {
+            base.OnTextInput(e);
+            // As the machine's keyboard: * and / move the octave.
+            if (!stepInput) return;
+            if (e.Text == "*" && StepOctave < 9) { StepOctave++; e.Handled = true; }
+            else if (e.Text == "/" && StepOctave > 0) { StepOctave--; e.Handled = true; }
+        }
+
+        protected override void OnLostFocus(Avalonia.Input.FocusChangedEventArgs e)
+        {
+            base.OnLostFocus(e);
+            EndStepChord();
         }
 
         /// <summary>A key's command (Control is Command on macOS); returns whether it was used.</summary>

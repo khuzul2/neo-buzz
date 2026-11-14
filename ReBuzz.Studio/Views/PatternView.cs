@@ -243,8 +243,11 @@ namespace ReBuzz.Studio.Views
         /// <summary>The shown editor's undo stack and clipboard commands, or null.</summary>
         public IEditContext EditContext => EditorControl?.GetType().GetProperty("EditContext")?.GetValue(EditorControl) as IEditContext;
 
-        public bool CanUndo => EditContext?.ActionStack.CanUndo == true || (rollMode && rollView.CanUndoLoop);
-        public bool CanRedo => EditContext?.ActionStack.CanRedo == true || (rollMode && rollView.CanRedoLoop);
+        // Fork (daw-modes.md AR2): the roll on the song's notes edits the song's history, which the shell's Undo reaches when this says no.
+        bool SongHistory => rollMode && rollView.IsSongLane;
+
+        public bool CanUndo => !SongHistory && (EditContext?.ActionStack.CanUndo == true || (rollMode && rollView.CanUndoLoop));
+        public bool CanRedo => !SongHistory && (EditContext?.ActionStack.CanRedo == true || (rollMode && rollView.CanRedoLoop));
 
         /// <summary>Undoes the editor's last edit; false when it has none (the song's undo can have it).</summary>
         public bool Undo()

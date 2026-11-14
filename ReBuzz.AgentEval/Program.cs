@@ -11,6 +11,10 @@
 //            [--results agent-results.json]: scores the song an agent saved; appends to the results.
 //   report   --results agent-results.json [--title …]: the results as a markdown table.
 //   rebaseline --results eval-results.json [--baseline eval/baseline.json]
+//   gate     --results agent-results.json [--baseline eval/agent-baseline.json] [--task-margin 0.34] [--mean-margin 0.05] [--update-baseline] [--model NAME]
+//            The real-agent regression gate (AgentGate.cs): exits 1 when a task or the mean fell past its margin.
+//   calls    --exe NeoBuzzLive.exe --file calls.txt [--max 1500]: runs "tool {json}" lines in one session and prints each answer
+//            (for finding out what a tool answers when writing a task)
 //   tasks    the task names; brief NAME [--out dir] prints a brief
 //   selftest the client and the scorers on synthetic signals (no NeoBuzz Live; runs on Linux)
 
@@ -46,6 +50,8 @@ namespace ReBuzz.AgentEval
                     "rebaseline" => Rebaseline(a),
                     "tasks" => Tasks(),
                     "brief" => Brief(a),
+                    "calls" => Calls(a),
+                    "gate" => GateCommand(a),
                     "selftest" => SelfTest.Run(),
                     _ => Fail($"Unknown command \"{argv[0]}\".\n{Usage}"),
                 };
@@ -53,6 +59,11 @@ namespace ReBuzz.AgentEval
             catch (ArgumentException e)
             {
                 return Fail(e.Message);
+            }
+            catch (TaskSkipped e)
+            {
+                Console.Error.WriteLine("Task skipped: " + e.Message);
+                return 3;
             }
         }
 
@@ -63,6 +74,8 @@ namespace ReBuzz.AgentEval
             "  score --exe NeoBuzzLive.exe --task NAME [--out agent-eval] [--song FILE] [--transcript FILE] [--results FILE]\n" +
             "  report --results FILE [--title TEXT]\n" +
             "  rebaseline --results eval-out/eval-results.json [--baseline eval/baseline.json]\n" +
+            "  gate --results FILE [--baseline eval/agent-baseline.json] [--task-margin N] [--mean-margin N] [--update-baseline] [--model NAME]\n" +
+            "  calls --exe NeoBuzzLive.exe --file calls.txt [--max N]\n" +
             "  tasks | brief NAME [--out DIR] | selftest";
 
         static int Fail(string message)
@@ -131,7 +144,7 @@ namespace ReBuzz.AgentEval
                     run.Checks.Add(runner.RunCheck(def, env));
             if (!a.Flag("no-tasks"))
                 foreach (var task in EvalTask.All.Where(t => Wanted(t.Name)))
-                    run.Tasks.Add(runner.RunTask(task, outDir));
+                    { if (runner.RunTask(task, outDir) is { } done) run.Tasks.Add(done); }
             runner.Close();
             run.Server = runner.ServerVersion;
             run.Problems.AddRange(runner.Problems);
@@ -299,6 +312,55 @@ namespace ReBuzz.AgentEval
                     md.AppendLine($"- `{g.Key}` ×{g.Count()}: {g.First().Text.Replace("\n", " ")[..Math.Min(200, g.First().Text.Length)]}");
             }
             Summary(md.ToString());
+            return 0;
+        }
+
+        static int GateCommand(Args a)
+        {
+            var results = JsonNode.Parse(File.ReadAllText(a.Required("results"))) as JsonObject ?? throw new ArgumentException("Not a results file.");
+            string file = a["baseline"] ?? Path.Combine("eval", "agent-baseline.json");
+            double taskMargin = a["task-margin"] is string tm ? double.Parse(tm, J.C) : AgentGate.TaskMargin;
+            double meanMargin = a["mean-margin"] is string mm ? double.Parse(mm, J.C) : AgentGate.MeanMargin;
+            JsonObject baseline = File.Exists(file) ? JsonNode.Parse(File.ReadAllText(file)) as JsonObject : null;
+            if (baseline != null && a["task-margin"] == null) taskMargin = J.Num(baseline["task_margin"], taskMargin);
+            if (baseline != null && a["mean-margin"] == null) meanMargin = J.Num(baseline["mean_margin"], meanMargin);
+            var verdict = AgentGate.Check(results, baseline, taskMargin, meanMargin);
+            Summary(AgentGate.Markdown(results, baseline, verdict));
+            var fresh = AgentGate.Baseline(results, a["model"]);
+            if (a.Flag("update-baseline"))
+            {
+                File.WriteAllText(file, fresh.ToJsonString(EvalRun.Indented) + "\n");
+                Console.WriteLine($"baseline written to {Path.GetFullPath(file)}");
+                return 0;
+            }
+            if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true")
+            {
+                static string Esc(string s) => s.Replace("%", "%25").Replace("\r", "").Replace("\n", "%0A");
+                // The baseline this run would write (artifacts may be out of reach): commit it as eval/agent-baseline.json to accept the scores.
+                Console.WriteLine($"::notice title=Agent evaluation baseline (real agent)::{Esc(fresh.ToJsonString())}");
+                foreach (var b in verdict.Blocking.Take(8)) Console.WriteLine($"::error title=Agent evaluation gate::{Esc(b)}");
+            }
+            return verdict.Blocking.Count == 0 ? 0 : 1;
+        }
+
+        static int Calls(Args a)
+        {
+            string exe = Exe(a);
+            int max = a["max"] is string m ? int.Parse(m, J.C) : 1500;
+            using var runner = new Runner(exe, false);
+            var s = runner.Session("calls");
+            foreach (var raw in File.ReadLines(a.Required("file")))
+            {
+                string line = raw.Trim();
+                if (line.Length == 0 || line.StartsWith("#")) continue;
+                int sp = line.IndexOf(' ');
+                string tool = sp < 0 ? line : line[..sp];
+                var args = sp < 0 ? new JsonObject() : JsonNode.Parse(line[sp..]) as JsonObject;
+                var call = s.C.Call(tool, args);
+                string text = call.IsError ? call.Text : call.Data.ToJsonString();
+                Console.WriteLine($"> {line}\n{(call.IsError ? "ERROR " : "")}{(text.Length > max ? text[..max] + "…" : text)}\n");
+            }
+            runner.Close();
             return 0;
         }
 
