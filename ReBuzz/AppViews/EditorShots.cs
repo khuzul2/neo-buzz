@@ -138,7 +138,7 @@ namespace ReBuzz.AppViews
                 if (control is Knob knob)
                 {
                     knobs++;
-                    string text = ap.Info.Describe(ap.Parameter.GetValue(0));
+                    x
                     if (knob.ValueText != text) mismatches.Add($"{p.Label}: the knob shows \"{knob.ValueText}\", param_get \"{text}\"");
                     if ((p.SafeRange != null) != (knob.Safe != null)) mismatches.Add($"{p.Label}: its safe range {(p.SafeRange != null ? "isn't" : "is")} marked");
                 }
