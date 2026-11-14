@@ -192,5 +192,39 @@ namespace NeoBuzz.MachineTests
                 }
             }
         }
+
+        /// <summary>
+        /// Drive moved every 64 samples (a modulator, automation) re-runs the auto-gain probe at most once per 1024 samples, and the
+        /// last value is probed once the motion stops: the level ends exactly where a Drive that stood at that value from the
+        /// start puts it.
+        /// </summary>
+        [TestCase((int)DriveMode.Tape)]
+        [TestCase((int)DriveMode.Tube)]
+        [TestCase((int)DriveMode.Fold)]
+        public void AutoGainSettlesOnTheLastValueAfterMotion(int modeIndex)
+        {
+            var x = Measure.PinkNoise(48000, 0.125);
+            const double end = 20;
+            var (still, _) = Make(v => { v.Set(P.Mode, modeIndex); v.Set(P.Drive, DriveRaw(end)); });
+            var (moved, mv) = Make(v => { v.Set(P.Mode, modeIndex); v.Set(P.Drive, DriveRaw(0)); });
+            var l = new float[64];
+            var r = new float[64];
+            double sumStill = 0, sumMoved = 0;
+            int blocks = 60 + 128;
+            for (int b = 0; b < blocks; b++)
+            {
+                if (b < 60) mv.Set(P.Drive, DriveRaw(end * b / 59.0));
+                foreach (var (e, tail) in new[] { (still, false), (moved, true) })
+                {
+                    Array.Copy(x, b * 64, l, 0, 64);
+                    Array.Copy(x, b * 64, r, 0, 64);
+                    e.Process(l, r, 64);
+                    if (b >= blocks - 64)
+                        for (int i = 0; i < 64; i++) { if (tail) sumMoved += l[i] * l[i]; else sumStill += l[i] * l[i]; }
+                }
+            }
+            double diff = Measure.Db(Math.Sqrt(sumMoved / sumStill));
+            Assert.That(Math.Abs(diff), Is.LessThan(0.05), $"{(DriveMode)modeIndex}: the level after a sweep against a Drive that stood still");
+        }
     }
 }
