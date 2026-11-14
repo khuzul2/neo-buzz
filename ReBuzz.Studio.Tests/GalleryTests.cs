@@ -1303,10 +1303,10 @@ namespace ReBuzz.Studio.Tests
                 Try("339-keyboard-shortcuts-search", () => DialogOnOpen(window, () => ReBuzz.Studio.Shell.Commands.ShortcutsWindow.Open(window).Search = "delete",
                     "339-keyboard-shortcuts-search", "Keyboard Shortcuts searched for \"delete\": every key that deletes, in every view.", "Type in the window's search box."));
                 // P6b (ux-overhaul.md §9): ReBuzz.exe's tool windows, in the studio.
-                Try("340-cpu-monitor", () => DialogOnOpen(window, () => ReBuzz.Studio.Shell.Tools.CpuMonitorWindow.Open(Studio.Host, window),
-                    "340-cpu-monitor", "View ▸ CPU Monitor: each machine's share of the audio engine's time as a bar and a percentage, its cycles per sample and the longest it held the engine's lock; the engine's total and the overhead no machine accounts for.",
+                Try("530-cpu-monitor", () => DialogOnOpen(window, () => ReBuzz.Studio.Shell.Tools.CpuMonitorWindow.Open(Studio.Host, window),
+                    "530-cpu-monitor", "View ▸ CPU Monitor: each machine's share of the audio engine's time as a bar and a percentage, its cycles per sample and the longest it held the engine's lock; the engine's total and the overhead no machine accounts for.",
                     "View ▸ CPU Monitor."));
-                Try("341-signal-analysis", () => DialogOnOpen(window, () =>
+                Try("531-signal-analysis", () => DialogOnOpen(window, () =>
                 {
                     var master = Studio.Host.Core.SongCore.Machines.First(m => m.DLL.Info.Type == BuzzGUI.Interfaces.MachineType.Master);
                     var analysis = ReBuzz.Studio.Shell.Tools.SignalAnalysisWindow.Open(Studio.Host, master, window);
@@ -1320,34 +1320,34 @@ namespace ReBuzz.Studio.Tests
                     }
                     analysis.Tap.Add(tone, true);
                     analysis.Tick();
-                }, "341-signal-analysis", "Signal Analysis of the Master (a machine's menu ▸ Signal Analysis...): the spectrum on a log frequency axis with a window to choose and a peak line that falls slowly, the scope under it. Here fed a test tone.",
+                }, "531-signal-analysis", "Signal Analysis of the Master (a machine's menu ▸ Signal Analysis...): the spectrum on a log frequency axis with a window to choose and a peak line that falls slowly, the scope under it. Here fed a test tone.",
                     "Right click a machine ▸ Signal Analysis...."));
-                Try("342-hard-disk-recorder", () => DialogOnOpen(window, () => ReBuzz.Studio.Shell.Tools.HardDiskRecorderWindow.Open(Studio.Host, window),
-                    "342-hard-disk-recorder", "View ▸ Hard Disk Recorder: records the Master to a wave file as it plays (Record), or exactly over the song's loop (Record loop); the file is named after the song and numbered, the bit depth is a choice.",
+                Try("532-hard-disk-recorder", () => DialogOnOpen(window, () => ReBuzz.Studio.Shell.Tools.HardDiskRecorderWindow.Open(Studio.Host, window),
+                    "532-hard-disk-recorder", "View ▸ Hard Disk Recorder: records the Master to a wave file as it plays (Record), or exactly over the song's loop (Record loop); the file is named after the song and numbered, the bit depth is a choice.",
                     "View ▸ Hard Disk Recorder."));
-                Try("343-debug-console", () => DialogOnOpen(window, () =>
+                Try("533-debug-console", () => DialogOnOpen(window, () =>
                 {
                     Studio.Host.Core.DCWriteLine("Song loaded: " + GallerySong.Title);
                     Studio.Host.Core.DCWriteLine("Machine Neo Delay: latency 0 samples", BuzzGUI.Interfaces.DCLogLevel.Information);
                     Studio.Host.Core.DCWriteLine("Audio: the output was reopened at 48000 Hz", BuzzGUI.Interfaces.DCLogLevel.Warning);
                     ReBuzz.Studio.Shell.Tools.DebugConsoleWindow.Open(Studio.Host, window);
-                }, "343-debug-console", "View ▸ Debug Console: the engine's log, newest at the bottom, with a level filter, a text filter, Clear, Copy and Follow.",
+                }, "533-debug-console", "View ▸ Debug Console: the engine's log, newest at the bottom, with a level filter, a text filter, Clear, Copy and Follow.",
                     "View ▸ Debug Console."));
-                Try("344-midi-bindings", () => DialogOnOpen(window, () =>
+                Try("534-midi-bindings", () => DialogOnOpen(window, () =>
                 {
                     var backend = new ReBuzz.Agent.MidiBackend(Studio.Host.Core);
                     var machine = Studio.Host.Core.SongCore.MachinesList.FirstOrDefault(m => m.DLL.Info.Type == BuzzGUI.Interfaces.MachineType.Generator);
                     var parameter = machine?.ParameterGroups.SelectMany(g => g.Parameters).FirstOrDefault(p => p.Type != BuzzGUI.Interfaces.ParameterType.Note && p.Type != BuzzGUI.Interfaces.ParameterType.Internal && p.Group.Type == BuzzGUI.Interfaces.ParameterGroupType.Global);
                     if (machine != null && parameter != null) backend.Bind(machine.Name, parameter.Name, 0, 1, 74);
                     ReBuzz.Studio.Shell.Tools.MidiBindingsWindow.Open(Studio.Host, window);
-                }, "344-midi-bindings", "View ▸ MIDI Bindings: every parameter a MIDI controller drives, by machine, parameter and track, with its channel and controller, a filter and a Clear button per row.",
+                }, "534-midi-bindings", "View ▸ MIDI Bindings: every parameter a MIDI controller drives, by machine, parameter and track, with its channel and controller, a filter and a Clear button per row.",
                     "View ▸ MIDI Bindings."));
-                Try("345-latency", () => DialogOnOpen(window, () =>
+                Try("535-latency", () => DialogOnOpen(window, () =>
                     _ = ReBuzz.Studio.Shell.Tools.LatencyDialog.Ask(Studio.Host.Core.SongCore.MachinesList.First(m => m.DLL.Info.Type != BuzzGUI.Interfaces.MachineType.Master)),
-                    "345-latency", "Latency... on a machine's menu: the latency the machine reports and a switch to override it with a number of samples for the delay compensation.",
+                    "535-latency", "Latency... on a machine's menu: the latency the machine reports and a switch to override it with a number of samples for the delay compensation.",
                     "Right click a machine ▸ Latency...."));
-                Try("346-song-properties", () => DialogOnOpen(window, () => _ = ReBuzz.Studio.Shell.Tools.SongPropertiesDialog.Ask(Studio.Host.Core),
-                    "346-song-properties", "Edit ▸ Song Properties...: tempo, ticks per beat and playback speed of the song, checked as they are typed.",
+                Try("536-song-properties", () => DialogOnOpen(window, () => _ = ReBuzz.Studio.Shell.Tools.SongPropertiesDialog.Ask(Studio.Host.Core),
+                    "536-song-properties", "Edit ▸ Song Properties...: tempo, ticks per beat and playback speed of the song, checked as they are typed.",
                     "Edit ▸ Song Properties..."));
                 Try("332-save-changes", () =>
                 {
