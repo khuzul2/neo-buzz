@@ -181,10 +181,12 @@ for name, kind, plugin in machines:
     # change the first parameter that is not a choice, in raw terms, and keep what machine_describe says about it
     def wide(p):   # a continuous parameter: not a switch or a channel pick (a stepped one clamps a raw value of this size)
         try:
-            return not p.get("choices") and float(p["max"]) - float(p["min"]) > 12
+            return not p.get("choices") and not any(w in p["name"].lower() for w in ("channel", "input", "output", "mode", "bypass")) and float(p["max"]) - float(p["min"]) > 12
         except (KeyError, TypeError, ValueError):
             return False
-    pick = next((p for p in ps if wide(p)), next((p for p in ps if not p.get("choices")), ps[0] if ps else None))
+    def plain(p):
+        return not p.get("choices") and not any(w in p["name"].lower() for w in ("channel", "input", "output", "mode", "bypass"))
+    pick = next((p for p in ps if wide(p)), next((p for p in ps if plain(p)), next((p for p in ps if not p.get("choices")), ps[0] if ps else None)))
     if pick:
         want = 20000 if kind != "fx" else 42000   # an effect's first parameter is often a gain: stay audible
         ok, text, s = call("param_set", machine=name, changes=[{"param": pick["name"], "value": f"raw:{want}"}])

@@ -2509,7 +2509,8 @@ def main():
     baseline = baselines(c)
     only = [p for p in args.only.split(",") if p.strip()]
     skip = [p for p in args.skip.split(",") if p.strip()]
-    chosen = [g for g in gear if (not only or matches(g["name"], only)) and not matches(g["name"], skip)]
+    # A plug-in host (Neo Plug) is empty without a plug-in: what it plays is the plug-in's, not the machine's (tools/plugin-host-test.py).
+    chosen = [g for g in gear if "plugin_count" not in g and (not only or matches(g["name"], only)) and not matches(g["name"], skip)]
     print(f"profiling {len(chosen)} of {len(gear)} machines with {args.exe} ({plat}, server {c.server_version}) into {out}", flush=True)
     today = datetime.date.today().isoformat()
     summary = {"format": "rebuzz-machine-profile/1", "platform": plat, "date": today, "machines": {}}
