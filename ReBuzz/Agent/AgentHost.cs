@@ -70,6 +70,7 @@ namespace ReBuzz.Agent
             LiveTools.Register(tools, this);
             AppControl = new AppBackend(this, () => tools.All.Count);   // K3 (agent-knowledge.md §5): settings, MIDI, audio, view, export, app
             AppTools.Register(tools, AppControl);
+            PatchTools.Register(tools, new PatchBackend(this));   // NP3 (neo-patch.md §4.6): patch_describe, patch_add_node, patch_connect, … on a Neo Patch machine
             // Named after the app (Product: neobuzz-live, "NeoBuzz Live"), with the instructions an agent reads first.
             Server = new McpServer(GuideLibrary.AppServer(Version), tools, GuideLibrary.Prompts(), GuideLibrary.Resources().Concat(Manuals(core))
                 .Concat(new[] { MachineCatalog.Resource(() => Described(core).Select(x => x.Manifest).ToList()), ToolReference.Resource(tools) }));

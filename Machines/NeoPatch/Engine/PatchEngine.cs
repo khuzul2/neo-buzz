@@ -28,6 +28,9 @@ namespace NeoBuzz.Patch
         }
 
         public PatchRuntime Runtime => rt;
+        /// <summary>The patch's CPU, percent of one core (the editor's readout) and its recent peak.</summary>
+        public float CpuPercent => rt.CpuLoad * 100f;
+        public float CpuPeakPercent => rt.CpuPeak * 100f;
         public PatchGraph Graph => graph;
         /// <summary>The last compile's error (null: it compiled).</summary>
         public string Error => error;

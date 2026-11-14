@@ -35,6 +35,8 @@ namespace NeoBuzz.Patch
                 sb.Append(";w ").Append(w.FromNode).Append(' ').Append(w.FromPort).Append(' ').Append(w.ToNode).Append(' ').Append(w.ToPort).Append(' ').Append(F(w.Amount));
             foreach (var m in g.Macros)
                 sb.Append(";m ").Append(m.Macro).Append(' ').Append(m.NodeId).Append(' ').Append(m.Control).Append(' ').Append(F(m.Min)).Append(' ').Append(F(m.Max));
+            for (int i = 0; i < g.MacroLabels.Length; i++)
+                if (!string.IsNullOrEmpty(g.MacroLabels[i])) sb.Append(";l ").Append(i).Append(' ').Append(Uri.EscapeDataString(g.MacroLabels[i]));
             return sb.ToString();
         }
 
@@ -68,6 +70,9 @@ namespace NeoBuzz.Patch
                         }
                         case "w":
                             if (f.Length >= 6) wires.Add(new Wire(Int(f[1]), Int(f[2]), Int(f[3]), Int(f[4]), Num(f[5], 1f)));
+                            break;
+                        case "l":
+                            if (f.Length >= 3 && int.TryParse(f[1], out int li) && li >= 0 && li < g.MacroLabels.Length) g.MacroLabels[li] = Uri.UnescapeDataString(f[2]);
                             break;
                         case "m":
                             if (f.Length >= 6) g.Macros.Add(new MacroMapping(Int(f[1]), Int(f[2]), Int(f[3]), Num(f[4], 0), Num(f[5], 1)));

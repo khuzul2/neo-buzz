@@ -7,12 +7,16 @@ using System;
 
 namespace NeoBuzz.Patch
 {
-    internal static class PatchPresets
+    internal static partial class PatchPresets
     {
         public static readonly string[] Names =
         {
             "Init — Saw", "Bass — Sub Square", "Lead — FM Bell", "Pad — Wavetable Drift",
             "Pluck — Ladder", "Keys — Detuned Pair", "Texture — Noise Sweep", "FX — Echo After the Sum",
+            // NP3: the presets below the first eight are in PatchPresetsMore.cs.
+            "Bass — Reese Pair", "Bass — Pulse Walk", "Bass — Wobble Ladder", "Lead — Sync Sweep", "Lead — Folded Sine", "Lead — Ring Glass",
+            "Lead — Square Stack", "Keys — Electric Tine", "Keys — Four Op Chime", "Pad — Slow Strings", "Pad — Crossfade Glass",
+            "Pluck — Karplus String", "Pluck — Short Pulse", "Texture — Choir Loop", "FX — Metal Rain",
         };
 
         /// <summary>The macros each patch maps, for the preset's comment (in Presets.txt order).</summary>
@@ -26,6 +30,22 @@ namespace NeoBuzz.Patch
             "A triangle and a square a few cents apart, soft-clipped. Macro 1: drive. Macro 2: detune.",
             "Noise and a saw through a band-pass whose centre wanders on a random generator. Macro 1: wander rate. Macro 2: centre.",
             "Per voice: a saw and a VCA. After the Voice sum: one echo and one low-pass for all notes, with a global LFO on the cutoff. Macro 1: feedback. Macro 2: cutoff.",
+            // NP3 (PatchPresetsMore.cs): every macro is centred on the patch's own value, so the sound described is the one at the macros' 50 % default.
+            "Two saws an octave down, 14 cents apart either way, through a ladder low-pass that a slow LFO moves: the beating bass of drum and bass. Macro 1: cutoff. Macro 2: detune.",
+            "A square whose pulse width an LFO walks, through a low-pass with a short envelope: a hollow, moving bass. Macro 1: cutoff. Macro 2: walk rate.",
+            "A saw an octave down through a ladder low-pass whose cutoff a 3 Hz LFO sweeps, restarted on every note: a wobble bass. Macro 1: cutoff. Macro 2: wobble rate.",
+            "A saw restarted by a square on every cycle while an envelope sweeps its pitch down: the tearing lead of hard sync. Macro 1: slave tune. Macro 2: sweep decay.",
+            "A sine folded back on itself by a Shaper, its drive raised by an envelope on each note: bright at the attack, softer as it dies. Macro 1: drive. Macro 2: bias.",
+            "Two sines multiplied (ring modulation) for the bell-like sum and difference tones, with a little of the carrier. Macro 1: modulator tune. Macro 2: cutoff.",
+            "Three square waves a few cents apart, soft-clipped into a low-pass: a thick, buzzy lead. Macro 1: drive. Macro 2: cutoff.",
+            "A sine frequency-modulated by a sine at the same pitch, the modulation decaying faster than the note: a tine with a soft attack. Macro 1: FM index. Macro 2: decay.",
+            "Two FM pairs mixed: operator 2 modulates 1 and 4 modulates 3 at an inharmonic ratio, one envelope shaping both: a glassy chime. Macro 1: first index. Macro 2: second index.",
+            "Three detuned saws through a low-pass that a very slow LFO moves, with a slow attack: a string section. Macro 1: cutoff. Macro 2: attack.",
+            "Two wavetable oscillators crossfaded by a slow LFO through a low-pass: a pad that drifts between two timbres. Macro 1: crossfade. Macro 2: cutoff.",
+            "A burst of noise into a tuned delay whose feedback rings it as a string, then a low-pass body and a little feedback node: a plucked string. Macro 1: damping. Macro 2: sustain.",
+            "A narrow pulse into a low-pass with a short decay: a staccato, woody pluck. Macro 1: cutoff. Macro 2: pulse width.",
+            "A looped choir sample at the pitch of the keys through a low-pass that a smooth random generator wanders. Macro 1: cutoff. Macro 2: wander depth.",
+            "Noise and a saw an octave up through a resonant band-pass whose centre a stepped random generator jumps around: metallic drops. Macro 1: jump rate. Macro 2: centre.",
         };
 
         public static PatchGraph Build(int i)
@@ -33,13 +53,14 @@ namespace NeoBuzz.Patch
             var g = i switch
             {
                 0 => InitSaw(), 1 => SubSquare(), 2 => FmBell(), 3 => WavetableDrift(),
-                4 => Pluck(), 5 => DetunedPair(), 6 => NoiseSweep(), _ => EchoAfterSum(),
+                4 => Pluck(), 5 => DetunedPair(), 6 => NoiseSweep(), 7 => EchoAfterSum(),
+                _ => More(i),
             };
             g.Name = Names[i];
             return g;
         }
 
-        static Node Env(PatchGraph g, Node keys, float a, float d, float s, float r)
+        internal static Node Env(PatchGraph g, Node keys, float a, float d, float s, float r)
         {
             var e = g.Add(NodeKind.Envelope);
             e.Set(NodeInfo.EnvA, a); e.Set(NodeInfo.EnvD, d); e.Set(NodeInfo.EnvS, s); e.Set(NodeInfo.EnvR, r);
@@ -47,7 +68,7 @@ namespace NeoBuzz.Patch
             return e;
         }
 
-        static Node Osc(PatchGraph g, Node keys, int shape, float tune = 0f, float level = 1f, float fine = 0f)
+        internal static Node Osc(PatchGraph g, Node keys, int shape, float tune = 0f, float level = 1f, float fine = 0f)
         {
             var o = g.Add(NodeKind.Osc);
             o.Set(NodeInfo.OscShape, shape); o.Set(NodeInfo.OscTune, tune); o.Set(NodeInfo.OscLevel, level); o.Set(NodeInfo.OscFine, fine);
@@ -55,14 +76,14 @@ namespace NeoBuzz.Patch
             return o;
         }
 
-        static Node Filter(PatchGraph g, int mode, float cutoff, float reso, float mod)
+        internal static Node Filter(PatchGraph g, int mode, float cutoff, float reso, float mod)
         {
             var f = g.Add(NodeKind.Filter);
             f.Set(NodeInfo.FilterMode, mode); f.Set(NodeInfo.FilterCutoff, cutoff); f.Set(NodeInfo.FilterReso, reso); f.Set(NodeInfo.FilterMod, mod);
             return f;
         }
 
-        static Node Vca(PatchGraph g, Node audio, Node cv)
+        internal static Node Vca(PatchGraph g, Node audio, Node cv)
         {
             var v = g.Add(NodeKind.Vca);
             g.Connect(audio, 0, v, NodeInfo.VcaInAudio);
@@ -70,7 +91,7 @@ namespace NeoBuzz.Patch
             return v;
         }
 
-        static Node Out(PatchGraph g, Node from, float level = 1f)
+        internal static Node Out(PatchGraph g, Node from, float level = 1f)
         {
             var o = g.Add(NodeKind.Out); o.Set(NodeInfo.OutLevel, level);
             g.Connect(from, 0, o, 0);

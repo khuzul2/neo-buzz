@@ -1420,6 +1420,27 @@ namespace ReBuzz.Studio.Tests
                     });
                 }
 
+                // Neo Patch's editor (docs/specs/neo-patch.md §4.5): the empty patch, the 20-node patch, a selected node with the side panel, the node menu, a refused loop.
+                if (Core.MachineDLLs.ContainsKey("Neo Patch"))
+                {
+                    void PatchShot(string id, string kind, string what, string how)
+                    {
+                        Try(id, () =>
+                        {
+                            var m = Add("Neo Patch", "Patch " + kind);
+                            var editor = NeoPatchStudioTests.GalleryShot(kind, m);
+                            Wait(200);
+                            Shot(editor, id, what, how);
+                            Core.UiHost.CloseWindows(m);
+                        });
+                    }
+                    PatchShot("480-neo-patch-empty", "empty", "Neo Patch's editor on an empty patch: what to do next in three steps, and a button that makes a basic voice.", "Double-click a Neo Patch machine; Select all and Delete (or open a new patch).");
+                    PatchShot("481-neo-patch-twenty-nodes", "big20", "Neo Patch's editor on the 20-node patch: typed ports, coloured wires, per-voice nodes with a stacked edge, the macro strip below.", "Double-click a Neo Patch machine and load a patch; Fit shows all of it.");
+                    PatchShot("482-neo-patch-selected-node", "selected", "A selected node: its controls in real units in the side panel, with Explain How and Sound under them.", "Click a node.");
+                    PatchShot("483-neo-patch-node-menu", "menu", "The node menu: right-click the canvas, type to search.", "Right-click an empty part of the canvas.");
+                    PatchShot("484-neo-patch-refused-loop", "cycle", "A wire that would make a loop is refused: the banner names the loop and says to use a Feedback node; the loop is outlined in red.", "Drag a wire from an output back to an input upstream of it.");
+                }
+
                 // The generic parameter window: a Neo machine, a Pedal synth, a Pedal effect.
                 void Parameters(string id, MachineCore m, string what, string how)
                 {

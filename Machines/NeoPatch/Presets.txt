@@ -58,3 +58,78 @@ state Patch = neopatch 1;name FX%20%E2%80%94%20Echo%20After%20the%20Sum;n 1 Keys
 Macro 1 = 61
 Macro 2 = 26.3
 Volume = -7.7
+
+preset "Bass — Reese Pair"
+comment "Two saws an octave down, 14 cents apart either way, through a ladder low-pass that a slow LFO moves: the beating bass of drum and bass. Macro 1: cutoff. Macro 2: detune."
+state Patch = neopatch 1;name Bass%20%E2%80%94%20Reese%20Pair;n 1 Keys 0 0 0;n 2 Osc 0 0 0 0 -12 14 0 0.5 1 0 0;n 3 Osc 0 0 0 0 -12 -14 0 0.5 1 0 0;n 4 Mixer 0 0 0 0.6 0.6 1 1;n 5 Lfo 0 0 0 0 0.35 0.3 0 0 0 1;n 6 Filter 0 0 0 4 900 1.4 1.2;n 7 Envelope 0 0 0 0.004 0.3 0.85 0.2 0 0 0;n 8 Vca 0 0 0 1;n 9 Out 0 0 0 1 0 0 0 0 0;w 1 0 2 0 1;w 1 0 3 0 1;w 2 0 4 0 1;w 3 0 4 1 1;w 4 0 6 0 1;w 5 0 6 1 1;w 1 1 7 0 1;w 6 0 8 0 1;w 7 0 8 1 1;w 8 0 9 0 1;m 0 6 1 200 1600;m 1 2 2 0 28;m 1 3 2 -28 0
+Volume = -16.7
+
+preset "Bass — Pulse Walk"
+comment "A square whose pulse width an LFO walks, through a low-pass with a short envelope: a hollow, moving bass. Macro 1: cutoff. Macro 2: walk rate."
+state Patch = neopatch 1;name Bass%20%E2%80%94%20Pulse%20Walk;n 1 Keys 0 0 0;n 2 Osc 0 0 0 1 0 0 0 0.5 1 0 0;n 3 Lfo 0 0 0 0 0.7 0.3 0 0 0 1;n 4 Envelope 0 0 0 0.002 0.2 0.3 0.15 0 0 0;n 5 Filter 0 0 0 0 1600 1 2;n 6 Envelope 0 0 0 0.002 0.25 0.8 0.12 0 0 0;n 7 Vca 0 0 0 1;n 8 Out 0 0 0 1 0 0 0 0 0;w 1 0 2 0 1;w 3 0 2 4 1;w 1 1 4 0 1;w 2 0 5 0 1;w 4 0 5 1 1;w 1 1 6 0 1;w 5 0 7 0 1;w 6 0 7 1 1;w 7 0 8 0 1;m 0 5 1 200 3000;m 1 3 1 0.099999964 1.3
+Volume = -21.7
+
+preset "Bass — Wobble Ladder"
+comment "A saw an octave down through a ladder low-pass whose cutoff a 3 Hz LFO sweeps, restarted on every note: a wobble bass. Macro 1: cutoff. Macro 2: wobble rate."
+state Patch = neopatch 1;name Bass%20%E2%80%94%20Wobble%20Ladder;n 1 Keys 0 0 0;n 2 Osc 0 0 0 0 -12 0 0 0.5 1 0 0;n 3 Lfo 0 0 0 1 3 1 0 0 1 1;n 4 Filter 0 0 0 4 500 3 2.5;n 5 Envelope 0 0 0 0.003 0.2 0.9 0.15 0 0 0;n 6 Vca 0 0 0 1;n 7 Out 0 0 0 1 0 0 0 0 0;w 1 0 2 0 1;w 2 0 4 0 1;w 3 0 4 1 1;w 1 1 5 0 1;w 4 0 6 0 1;w 5 0 6 1 1;w 6 0 7 0 1;m 0 4 1 100 900;m 1 3 1 0.5 5.5
+Volume = -17.7
+
+preset "Lead — Sync Sweep"
+comment "A saw restarted by a square on every cycle while an envelope sweeps its pitch down: the tearing lead of hard sync. Macro 1: slave tune. Macro 2: sweep decay."
+state Patch = neopatch 1;name Lead%20%E2%80%94%20Sync%20Sweep;n 1 Keys 0 0 0;n 2 Osc 0 0 0 1 0 0 0 0.5 0 0 0;n 3 Osc 0 0 0 0 5 0 0 0.5 1 0 0;n 4 Envelope 0 0 0 0.001 0.6 0.3 0.3 0 0 0;n 5 Filter 0 0 0 0 4500 0.8 0;n 6 Envelope 0 0 0 0.002 0.3 0.85 0.2 0 0 0;n 7 Vca 0 0 0 1;n 8 Out 0 0 0 1 0 0 0 0 0;w 1 0 2 0 1;w 1 0 3 0 1;w 2 0 3 3 1;w 1 1 4 0 1;w 4 0 3 0 12;w 3 0 5 0 1;w 1 1 6 0 1;w 5 0 7 0 1;w 6 0 7 1 1;w 7 0 8 0 1;m 0 3 1 0 10;m 1 4 1 0.100000024 1.1;m 2 5 1 1350 7650
+Volume = -18.4
+
+preset "Lead — Folded Sine"
+comment "A sine folded back on itself by a Shaper, its drive raised by an envelope on each note: bright at the attack, softer as it dies. Macro 1: drive. Macro 2: bias."
+state Patch = neopatch 1;name Lead%20%E2%80%94%20Folded%20Sine;n 1 Keys 0 0 0;n 2 Osc 0 0 0 2 0 0 0 0.5 1 0 0;n 3 Envelope 0 0 0 0.002 0.5 0.2 0.3 0 0 0;n 4 Shaper 0 0 0 1 3.5 0 2 0.8;n 5 Filter 0 0 0 0 6000 0.8 0;n 6 Envelope 0 0 0 0.003 0.4 0.8 0.25 0 0 0;n 7 Vca 0 0 0 1;n 8 Out 0 0 0 1 0 0 0 0 0;w 1 0 2 0 1;w 1 1 3 0 1;w 2 0 4 0 1;w 3 0 4 1 5;w 1 0 4 2 1;w 4 0 5 0 1;w 1 1 6 0 1;w 5 0 7 0 1;w 6 0 7 1 1;w 7 0 8 0 1;m 0 4 1 1.05 5.95;m 1 4 2 -0.4 0.4;m 2 5 1 1800 10200
+Volume = -17.1
+
+preset "Lead — Ring Glass"
+comment "Two sines multiplied (ring modulation) for the bell-like sum and difference tones, with a little of the carrier. Macro 1: modulator tune. Macro 2: cutoff."
+state Patch = neopatch 1;name Lead%20%E2%80%94%20Ring%20Glass;n 1 Keys 0 0 0;n 2 Osc 0 0 0 2 0 0 0 0.5 1 0 0;n 3 Osc 0 0 0 2 7.3 0 0 0.5 1 0 0;n 4 Vca 0 0 0 1;n 5 Math 0 0 0 2 0.5 0.5;n 6 Vca 0 0 0 1;n 7 Crossfade 0 0 0 0.25 1;n 8 Filter 0 0 0 0 7000 0.8 0;n 9 Envelope 0 0 0 0.002 1.2 0 0.4 0 0 0;n 10 Vca 0 0 0 1;n 11 Out 0 0 0 1 0 0 0 0 0;w 1 0 2 0 1;w 1 0 3 0 1;w 2 0 4 0 1;w 3 0 4 1 1;w 3 0 5 0 1;w 2 0 6 0 1;w 5 0 6 1 1;w 4 0 7 0 1;w 6 0 7 1 1;w 7 0 8 0 1;w 1 1 9 0 1;w 8 0 10 0 1;w 9 0 10 1 1;w 10 0 11 0 1;m 0 7 0 0 0.5;m 1 3 1 0.3000002 14.3;m 2 8 1 2100 11900
+Volume = -19.9
+
+preset "Lead — Square Stack"
+comment "Three square waves a few cents apart, soft-clipped into a low-pass: a thick, buzzy lead. Macro 1: drive. Macro 2: cutoff."
+state Patch = neopatch 1;name Lead%20%E2%80%94%20Square%20Stack;n 1 Keys 0 0 0;n 2 Osc 0 0 0 1 0 -10 0 0.5 1 0 0;n 3 Osc 0 0 0 1 0 0 0 0.5 1 0 0;n 4 Osc 0 0 0 1 0 10 0 0.5 1 0 0;n 5 Mixer 0 0 0 0.5 0.5 0.5 1;n 6 Shaper 0 0 0 0 2.5 0 2 0.8;n 7 Filter 0 0 0 0 3800 0.8 0;n 8 Envelope 0 0 0 0.003 0.3 0.75 0.2 0 0 0;n 9 Vca 0 0 0 1;n 10 Out 0 0 0 1 0 0 0 0 0;w 1 0 2 0 1;w 1 0 3 0 1;w 1 0 4 0 1;w 2 0 5 0 1;w 3 0 5 1 1;w 4 0 5 2 1;w 5 0 6 0 1;w 6 0 7 0 1;w 1 1 8 0 1;w 7 0 9 0 1;w 8 0 9 1 1;w 9 0 10 0 1;m 0 6 1 1 4;m 1 7 1 800 6800
+Volume = -21.4
+
+preset "Keys — Electric Tine"
+comment "A sine frequency-modulated by a sine at the same pitch, the modulation decaying faster than the note: a tine with a soft attack. Macro 1: FM index. Macro 2: decay."
+state Patch = neopatch 1;name Keys%20%E2%80%94%20Electric%20Tine;n 1 Keys 0 0 0;n 2 Osc 0 0 0 2 0 0 1.3 0.5 1 0 0;n 3 Osc 0 0 0 2 0 0 0 0.5 1 0 0;n 4 Envelope 0 0 0 0.001 0.7 0 0.3 0 0 0;n 5 Vca 0 0 0 1;n 6 Envelope 0 0 0 0.001 1.2 0.1 0.5 0 0 0;n 7 Vca 0 0 0 1;n 8 Out 0 0 0 1 0 0 0 0 0;w 1 0 2 0 1;w 1 0 3 0 1;w 1 1 4 0 1;w 3 0 5 0 1;w 4 0 5 1 1;w 5 0 2 1 1;w 1 1 6 0 1;w 2 0 7 0 1;w 6 0 7 1 1;w 7 0 8 0 1;m 0 2 3 0 2.6;m 1 4 1 0.29999998 1.1;m 2 6 3 0.099999994 0.9
+Volume = -21.8
+
+preset "Keys — Four Op Chime"
+comment "Two FM pairs mixed: operator 2 modulates 1 and 4 modulates 3 at an inharmonic ratio, one envelope shaping both: a glassy chime. Macro 1: first index. Macro 2: second index."
+state Patch = neopatch 1;name Keys%20%E2%80%94%20Four%20Op%20Chime;n 1 Keys 0 0 0;n 2 Osc 0 0 0 2 0 0 1.1 0.5 1 0 0;n 3 Osc 0 0 0 2 0 0 0 0.5 1 0 0;n 4 Osc 0 0 0 2 19.02 0 2.1 0.5 1 0 0;n 5 Osc 0 0 0 2 12 0 0 0.5 1 0 0;n 6 Envelope 0 0 0 0.001 0.6 0 0.3 0 0 0;n 7 Vca 0 0 0 1;n 8 Vca 0 0 0 1;n 9 Mixer 0 0 0 0.7 0.4 1 1;n 10 Envelope 0 0 0 0.001 1.6 0 0.6 0 0 0;n 11 Vca 0 0 0 1;n 12 Out 0 0 0 1 0 0 0 0 0;w 1 0 2 0 1;w 1 0 3 0 1;w 1 0 4 0 1;w 1 0 5 0 1;w 1 1 6 0 1;w 3 0 7 0 1;w 6 0 7 1 1;w 7 0 2 1 1;w 5 0 8 0 1;w 6 0 8 1 1;w 8 0 4 1 1;w 2 0 9 0 1;w 4 0 9 1 1;w 1 1 10 0 1;w 9 0 11 0 1;w 10 0 11 1 1;w 11 0 12 0 1;m 0 2 3 0 2.2;m 1 4 3 0.099999905 4.1;m 2 10 1 0.48000002 2.72
+Volume = -20.0
+
+preset "Pad — Slow Strings"
+comment "Three detuned saws through a low-pass that a very slow LFO moves, with a slow attack: a string section. Macro 1: cutoff. Macro 2: attack."
+state Patch = neopatch 1;name Pad%20%E2%80%94%20Slow%20Strings;n 1 Keys 0 0 0;n 2 Osc 0 0 0 0 0 -11 0 0.5 1 0 0;n 3 Osc 0 0 0 0 0 0 0 0.5 1 0 0;n 4 Osc 0 0 0 0 0 11 0 0.5 1 0 0;n 5 Mixer 0 0 0 0.45 0.45 0.45 1;n 6 Lfo 0 0 0 0 0.18 0.25 0 0 0 1;n 7 Filter 0 0 0 0 2200 0.7 1;n 8 Envelope 0 0 0 0.8 0.6 0.85 1.2 0 0 0;n 9 Vca 0 0 0 1;n 10 Out 0 0 0 1 0 0 0 0 0;w 1 0 2 0 1;w 1 0 3 0 1;w 1 0 4 0 1;w 2 0 5 0 1;w 3 0 5 1 1;w 4 0 5 2 1;w 5 0 7 0 1;w 6 0 7 1 1;w 1 1 8 0 1;w 7 0 9 0 1;w 8 0 9 1 1;w 9 0 10 0 1;m 0 7 1 400 4000;m 1 8 0 0.100000024 1.5
+Volume = -15.9
+
+preset "Pad — Crossfade Glass"
+comment "Two wavetable oscillators crossfaded by a slow LFO through a low-pass: a pad that drifts between two timbres. Macro 1: crossfade. Macro 2: cutoff."
+state Patch = neopatch 1;name Pad%20%E2%80%94%20Crossfade%20Glass;n 1 Keys 0 0 0;n 2 WavetableOsc 0 0 0 2 0 6 0 0.4 1 0 0;n 3 WavetableOsc 0 0 0 6 0 -6 0 0.4 1 0 0;n 4 Crossfade 0 0 0 0.5 1;n 5 Lfo 0 0 0 0 0.12 0.45 0 0 0 1;n 6 Filter 0 0 0 0 5000 0.7 0;n 7 Envelope 0 0 0 0.5 0.8 0.9 1.5 0 0 0;n 8 Vca 0 0 0 1;n 9 Out 0 0 0 1 0 0 0 0 0;w 1 0 2 0 1;w 1 0 3 0 1;w 2 0 4 0 1;w 3 0 4 1 1;w 5 0 4 2 1;w 4 0 6 0 1;w 1 1 7 0 1;w 6 0 8 0 1;w 7 0 8 1 1;w 8 0 9 0 1;m 0 4 0 0 1;m 1 6 1 1000 9000
+Volume = -16.6
+
+preset "Pluck — Karplus String"
+comment "A burst of noise into a tuned delay whose feedback rings it as a string, then a low-pass body and a little feedback node: a plucked string. Macro 1: damping. Macro 2: sustain."
+state Patch = neopatch 1;name Pluck%20%E2%80%94%20Karplus%20String;n 1 Keys 0 0 0;n 2 Noise 0 0 0 0 1;n 3 Envelope 0 0 0 0.0005 0.006 0 0.01 0 0 0;n 4 Vca 0 0 0 1;n 5 Delay 0 0 0 122.3 0.97 5200 1 1;n 6 Filter 0 0 0 0 4800 0.7 0;n 7 Feedback 0 0 0 0.15;n 8 Envelope 0 0 0 0.001 2 0 0.4 0 0 0;n 9 Vca 0 0 0 1;n 10 Out 0 0 0 1 0 0 0 0 0;w 1 1 3 0 1;w 2 0 4 0 1;w 3 0 4 1 1;w 4 0 5 0 1;w 1 0 5 1 -0.083333336;w 5 0 6 0 1;w 6 0 7 0 1;w 7 0 5 0 1;w 1 1 8 0 1;w 6 0 9 0 1;w 8 0 9 1 1;w 9 0 10 0 1;m 0 5 2 200 10200;m 1 5 1 0.96000004 0.98;m 2 6 1 1440 8160
+Volume = -26.8
+
+preset "Pluck — Short Pulse"
+comment "A narrow pulse into a low-pass with a short decay: a staccato, woody pluck. Macro 1: cutoff. Macro 2: pulse width."
+state Patch = neopatch 1;name Pluck%20%E2%80%94%20Short%20Pulse;n 1 Keys 0 0 0;n 2 Osc 0 0 0 1 0 0 0 0.3 1 0 0;n 3 Envelope 0 0 0 0.001 0.15 0 0.1 0 0 0;n 4 Filter 0 0 0 0 1800 1.2 2.5;n 5 Envelope 0 0 0 0.001 0.18 0 0.12 0 0 0;n 6 Vca 0 0 0 1;n 7 Out 0 0 0 1 0 0 0 0 0;w 1 0 2 0 1;w 1 1 3 0 1;w 2 0 4 0 1;w 3 0 4 1 1;w 1 1 5 0 1;w 4 0 6 0 1;w 5 0 6 1 1;w 6 0 7 0 1;m 0 4 1 300 3300;m 1 2 4 0.050000012 0.55
+Volume = -10.0
+
+preset "Texture — Choir Loop"
+comment "A looped choir sample at the pitch of the keys through a low-pass that a smooth random generator wanders. Macro 1: cutoff. Macro 2: wander depth."
+state Patch = neopatch 1;name Texture%20%E2%80%94%20Choir%20Loop;n 1 Keys 0 0 0;n 2 Sample 0 0 0 0 0 1 1 0 1;n 3 Random 0 0 0 1.2 0.9 0.3 0;n 4 Filter 0 0 0 0 3000 0.8 1.5;n 5 Envelope 0 0 0 0.5 0.6 0.9 1.2 0 0 0;n 6 Vca 0 0 0 1;n 7 Out 0 0 0 1 0 0 0 0 0;w 1 0 2 0 1;w 1 1 2 1 1;w 2 0 4 0 1;w 3 0 4 1 1;w 1 1 5 0 1;w 4 0 6 0 1;w 5 0 6 1 1;w 6 0 7 0 1;m 0 4 1 500 5500;m 1 3 2 0 0.6
+Volume = -15.5
+
+preset "FX — Metal Rain"
+comment "Noise and a saw an octave up through a resonant band-pass whose centre a stepped random generator jumps around: metallic drops. Macro 1: jump rate. Macro 2: centre."
+state Patch = neopatch 1;name FX%20%E2%80%94%20Metal%20Rain;n 1 Keys 0 0 0;n 2 Noise 0 0 0 0 0.6;n 3 Osc 0 0 0 0 12 0 0 0.5 0.3 0 0;n 4 Mixer 0 0 0 1 1 1 1;n 5 Random 0 0 0 9 0 0.7 0;n 6 Filter 0 0 0 1 2500 8 3;n 7 Envelope 0 0 0 0.001 0.25 0.2 0.2 0 0 0;n 8 Vca 0 0 0 1;n 9 Out 0 0 0 1 0 0 0 0 0;w 1 0 3 0 1;w 2 0 4 0 1;w 3 0 4 1 1;w 4 0 6 0 1;w 5 0 6 1 1;w 1 1 7 0 1;w 6 0 8 0 1;w 7 0 8 1 1;w 8 0 9 0 1;m 0 5 0 1 17;m 1 6 1 500 4500
+Volume = 4.4
