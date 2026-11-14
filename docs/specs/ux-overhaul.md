@@ -61,7 +61,7 @@ Names: one name per thing. "Arrangement" (not Sequence), "Clip" in the Session V
 
 ### 3.1 Tokens
 
-One token set, dark by default, seeded by the Session View (the one screen already in a shared modern language). P1 added it to the studio and used the state, text and contrast parts; since P2a the table is the editor kit's toolkit-free `Machines/NeoBuzz.Editor/Core/Tokens.cs` (`NeoColor`s and constants, no toolkit), which every build of the kit compiles: the studio's `StudioTokens` gives it to Avalonia, the kit's `Palette` is made from it on Avalonia (the studio's editors), and machine editors read it through the kit. The classic WPF app keeps its own colours (§1: bug fixes only): `Palette` answers with the classic ones there, and so do `Identity(category, classic)`, `Partner(accent, classic)` and `Bands(classic)`.
+One token set, in a dark and a light version (§3.1.2, P4b; every token has both), dark by default, seeded by the Session View (the one screen already in a shared modern language). P1 added it to the studio and used the state, text and contrast parts; since P2a the table is the editor kit's toolkit-free `Machines/NeoBuzz.Editor/Core/Tokens.cs` (`NeoColor`s and constants, no toolkit), which every build of the kit compiles: the studio's `StudioTokens` gives it to Avalonia, the kit's `Palette` is made from it on Avalonia (the studio's editors), and machine editors read it through the kit. The classic WPF app keeps its own colours (§1: bug fixes only): `Palette` answers with the classic ones there, and so do `Identity(category, classic)`, `Partner(accent, classic)` and `Bands(classic)`.
 
 | Token | Value | Rule | Measured (WCAG) |
 |---|---|---|---|
@@ -102,6 +102,27 @@ One per category of the machine browser (P3d); `Tokens.Identity(category)`. Each
 | Utility | #A8B4C4 slate | Neo Utility, Neo Scope, Neo Analyzer, Pedal Gain, Pedal Gain Multi, Pedal Drum Matrix ("multi-effect") |
 | Control | #D1E181 lime | Pedal Chord, Pedal LFO (Pedal Peer Control once its manifest says "control") |
 
+#### 3.1.2 The Light set (P4b)
+
+`Tokens.Light` beside `Tokens.Dark` (`TokenSet`: every token is a field of both, and a test fails when one lacks a value). `Tokens.Set` is the one in use; every token property of `Tokens`, `Palette` and `StudioTokens` reads it when asked. The ramp turns over: the base is the deepest grey, a panel the lightest, and no token is pure white or black (those two stay what they are in both themes: text on a colour). Contrast is measured, not described: `TokensTests` (both sets), `UxP4bTests` (the canvases, the session palette, the machine boxes) and the gallery.
+
+| Token | Dark | Light | Light, measured (WCAG) |
+|---|---|---|---|
+| Surface base / view / panel / control / border | #141416 / #1B1B1E / #242428 / #2E2E34 / #37373F | #E8E8ED / #F4F4F7 / #FCFCFD / #E4E4EA / #C8C8D1 | – |
+| Text primary / secondary | #E8E8EC / #A0A0AA | #1B1B20 / #505059 | primary 15.6:1 on view, 13.5:1 on control; secondary 7.3:1, 6.3:1 |
+| Text placeholder / disabled | #8C8C96 / #6E6E78 | #626270 / #8E8E99 | placeholder 5.5:1 on view, 5.9:1 on panel; disabled 3.1:1 (not read) |
+| Accent | #4C8DF6 | #0064C7 | 4.5:1 or more on every surface |
+| Selection fill | #1F5FA8 | #2B6CC4 | 5.2:1 with white |
+| Play / record / override / warning | #34C759 / #FF453A / #E8823A / #FFB340 | #008A20 / #CE0018 / #A84700 / #7F6000 | play 4.1:1 on view (a UI part, 3:1), record 5.3:1, override 5.4:1, warning 5.4:1; the text on a fill is TextOn (play: black 4.7:1; the others white 5.8:1 or more) |
+| Meter normal / hot | #7BE495 / #FFC43D | #0A8F77 / #AB7C00 | 3.7:1 and 3.4:1 on the view (the meter well); ΔE 44 from play (dark 23) |
+| Grid line, control track | #2A2A30, #6E6E7A | #DCDCE3, #8A8A97 | track 3.1:1 on view |
+| Link, error text | #6CB4FF, #FF7A70 | #0A58B8, #B3261E | 6.2:1 and 6.0:1 on view; error text on the problem bar's ground 5.1:1 |
+| Problem bar severe / notice, banner | #4A1F22 / #3D3320 / #233A55 | #FBE3E1 / #FFF1CC / #DCE9FB | primary text 14:1 or more on each |
+| Identity (ten categories) | §3.1.1 | Synth #CD004D, Drums #895F00, Sampler #78589F, Dynamics #007461, EQ and filter #006CA7, Delay and reverb #5D54D6, Modulation #AE2BA1, Distortion #9F4F43, Utility #626773, Control #596F15 | each 5.2:1 on view (4.5:1 on every surface); 31.7 or more (ΔE) from each other (dark 37.2); 26.4 or more from the accent and the three state colours (24) |
+| Graph series | the dark order | the same order: sky, amber, teal, pink, lime, violet, salmon, orchid, as the light identities | ≥ ΔE 32 apart, ≥ 5.2:1 on view |
+
+**The rule is the same, the direction is not.** The identity colours keep their hue and turn darker; a lit wire or box gets stronger by going towards black instead of towards white (decision 107). A state colour is still never an identity, an accent or a clip colour.
+
 ### 3.2 Type, size, spacing
 
 | | Rule |
@@ -127,7 +148,7 @@ One per category of the machine browser (P3d); `Tokens.Identity(category)`. Each
 
 ### 3.3 Themes
 
-Dark (default); Light (P4); Classic Buzz, the beige machine canvas and brown arrangement, as an option. Chosen in Preferences ▸ Appearance (P2b), not a top-level menu. A theme is a token table; views never hard-code colours (P2 removes the 133 literal colours the studio has today, outside the code-drawn views' theme hooks).
+Dark (default); Light and System (P4b: System follows the operating system and changes with it); Classic Buzz, the beige machine canvas and brown arrangement, as an option. Chosen in Preferences ▸ Appearance (P2b, P4b), not a top-level menu, and applied to every open window at once. A theme is a token table; views never hard-code colours (P2 removes the 133 literal colours the studio has today, outside the code-drawn views' theme hooks).
 
 ### 3.4 Colours saved in songs
 
@@ -241,7 +262,7 @@ In this order, each its own PR:
 
 Exit per PR: the gallery's new shots for it, a usability script run headless (first sound from an empty song: steps counted, target 3 from the 7 the review counted), frame times on the big test song unchanged within 10 %.
 
-### P4: polish
+### P4: polish (done: P4a and P4b, §11)
 
 Consistency (one button, one menu, one dialog style), animation and timing (≤150 ms transitions, none on the audio-critical paths), focus order and keyboard reach to every control, accessibility names on every icon (`AutomationProperties.Name`), Light theme, every gallery screen re-checked against the review's findings with a table of before/after figures.
 
@@ -425,6 +446,14 @@ What WPF has that the studio needs before it replaces it on Windows: native (Win
 101. **One button, menu and dialog style (P4a).** See 3.2.1. Every local override of a button's height, font, padding or width (the pattern editor's small toggles, the inspector, the browser, the parameter window, the session and arrangement views, the kit dialogs) was replaced by the class; the dialogs (`Dialogs`, the export sheet, the arrangement and session prompts, the parameter dialogs, the kit dialogs) are built by `StudioDialog`. `UxP4aTests` walks every main view, the device page, every Preferences page, About, the export sheet, the dialog kinds and a parameter window and fails for a button off the four sizes, a dialog not built the same way, a menu row off the style, a transition over 150 ms or on the audio path, an unnamed icon, and a control Tab cannot reach.
 102. **Tab and focus (P4a).** A real Tab key walk (headless input) of each surface: every interactive control is a tab stop or has one inside it (a number box's text); the walk starts at the window's first control and each panel's children are visited in reading order. Side panels dock first and are visited before the main area (the inspector comes before the view; a dock panel's order is top, left, right, then the fill). `KeyboardNavigation.TabIndex` fixes the cases where the children were added in dock order (the pattern editor's Help toggle, the export sheet's Choose…, Preferences' footer, the detail bar). **Known limit:** the tracker keeps Tab for itself (the next column, Buzz's convention), so the Pattern view's tracker is not walked and the Song Notes text box takes tabs; the way out is the view switcher or F6/clicking. Knobs and graphs are not focusable (they have the keyboard through the parameter window and the machine's menu).
 
+103. **Two token sets, one in use (P4b).** `Machines/NeoBuzz.Editor/Core/Tokens.cs` holds `Tokens.Dark` and `Tokens.Light` (`TokenSet`); every colour token, `Palette` entry and `StudioTokens` colour is a property that reads `Tokens.Set` when asked (it was a static readonly field), so nothing caches the old theme by accident. `Tokens.SetLight(bool)` changes the set and raises `Tokens.Changed`; the classic WPF app never calls it and keeps its colours (§1.1). New tokens for what the dark theme had as literals: link, error text, the problem bar's and banner's grounds, the guard's red, the knob's face, the partner traces. `UxP4bTests` and `TokensTests` check that both sets define every token (and no pure white or black), that no value is in both sets (so a colour can be paired with its token) and every pair the studio draws together (§3.1.2).
+104. **Preferences ▸ Appearance: Dark, Light, System, Classic Buzz.** The setting `appearance.Theme` (`AppearanceTheme`, saved by name; Light and System are new values, Dark and Classic mean what they did) applies at once. **System** asks the platform (`PlatformSettings.GetColorValues`, `ColorValuesChanged`) and follows it live; the choice stays "System" in the settings. **Dark is the default until the user decides otherwise** (an open choice: System, or Light on a light-mode system, are one-line changes of the setting's default). Avalonia's own controls (scroll bars, text boxes, menus, buttons) follow through `RequestedThemeVariant`.
+105. **A switch redraws everything, live.** (a) The studio's token brushes are one mutable `SolidColorBrush` per token (`StudioTokens.Themed`) whose colour changes in place, so a view that keeps a brush follows; the code-drawn canvases' looks (`SequenceLook`, `MachineLook`) are rebuilt from the set in use; the Session View rebuilds its cells (their text colours were computed from the old brushes); the transport's lit buttons use themed brushes. (b) The kit: `AvaloniaCanvas` drops its brush and pen caches and the kit's kept brushes (`Theme.Panel`, `Theme.Brush(accent)`) are themed. (c) The pattern editor is a machine assembly that draws its own colours: it learns of the theme through `BuzzGUI.Common.StudioLook` (a tiny static both assemblies share) and keeps a light and a dark value for each of its brushes. (d) `App.RedrawAll` invalidates every visual of every open window. **No brush of the old theme is left:** `UxP4bTests.SwitchingTheTheme...` opens every surface (the main views, the device view, Preferences' pages, About, the export sheet, the dialog kinds, a parameter window), switches Dark to Light and back, and fails for a pixel of the old ramp (more than 60 of the five surfaces' exact colours) or a control that still holds a colour only the other set has.
+106. **A colour an editor chose for itself.** The Neo editors and the manifest editor keep their accent, band and surface colours as fields of their own (some are literals, 47 files). `Tokens.Resolve` turns any kit colour into the theme in use when the canvas draws it: a token of either set becomes the same token of the set in use; pure white and black stay; in Light, a neutral or dark tint turns its lightness over and a bright colour darkens until it is 3:1 on the light view; a colour listed with `Tokens.KeepAsIs` (the keyboard's ivory and ebony) stays. In Dark every colour is itself. So no editor changed and each reads in both themes; an editor that wants an exact light colour makes it a token.
+107. **Lit means stronger, in both themes (the P3j rule, turned).** In Light a lit wire's colour goes from the track grey towards the meter's colour lifted 30 % towards **black** (not white), and a lit box's veil is black (not white), capped at the same alpha: a level makes the wire and the box darker, which on a pale canvas is what draws the eye. Measured (UxP4bTests.ALitWireAndBoxStillShowTheLevelInLight): the test asserts a wire at -20 dB is more than 1.1 times as strong (silent luminance over lit) and a loud one more than 1.6 times; the dark theme's figures (decision 92) are unchanged.
+108. **What the Light gallery found, fixed.** See §11, P4b. Of note: the pattern editor's grid, toolbar and status bar stayed #333333 to #595959 (its own table); the Session View's track strips kept the dark identity colour after a switch (they were immutable brushes made once) and cells kept dark-theme text colours; the amp popup (a translucent black panel with white values) became a pale panel with dark values; the machine boxes' pastel tints and LEDs, the sequence's block colours, the piano roll's table, the parameter window's track shadows and the problem bar's grounds each got a light value. One finding was in Dark too: a label on the Session mixer's group header was 4.14:1 (#A0A0AA on #3D3D47); the header is #35353D (4.7:1).
+109. **Gallery in both themes.** `GalleryTests` draws in Light when `GALLERY_THEME=light`; Fork Mac's gallery job runs it twice, `headless` (Dark) and `headless-light` (Light), pushed to `ci-artifacts-mac`. Locally: `GALLERY_THEME=light GALLERY_DIR=<folder> dotnet test ReBuzz.Studio.Tests -c Release --filter TestCategory=Gallery`.
+
 ## 11. Progress
 
 ### P1: quick wins (`ux/overhaul-1-quick-wins`)
@@ -590,3 +619,21 @@ Built: decisions 99-102; P4a is done but the Light theme (P4b). Tests: `UxP4aTes
 | Neo Poly, FM6 and Wave, two renders in one process | differ from sample 56 of the data | identical bytes |
 
 Gallery: the review's findings on sizes, dialogs and names are covered by the checks above rather than by eye; the Mac gallery run of this branch is the visual check.
+
+### P4b: the Light theme (`ux/overhaul-4b`)
+
+Built as decisions 103 to 109 say: a Light `TokenSet` beside the dark one (every token in both; `TokensTests.EveryTokenIsDefinedInBothSets`), Preferences > Appearance with Dark, Light, System (and Classic), live switching across every surface, and contrast tests per theme (`UxP4bTests`). Default stays Dark (an open choice for the owner).
+
+What the first Light run showed, and what was fixed (before / after, by surface; shots from the gallery run in both themes):
+
+| Surface | Before (first Light pass) | After |
+|---|---|---|
+| Pattern editor (separate plugin assembly) | stayed dark (#333) in Light | themed brushes, updated on `StudioLook.Changed` |
+| Session track strips | kept the dark identity brush (immutable) | themed identity brush; the view rebuilds on a theme change |
+| Amp popup, parameter sliders | dark track and text | themed track, shadow, indicator; value text on the text token |
+| Lit transport buttons, meters, rulers, notes, problem bar | literal dark-theme colours | on tokens or themed brushes |
+| Session group header (Dark, found by the contrast test) | 4.14:1 | 4.69:1 (#35353D) |
+| Machine boxes in Light | dark veils, white lit veil | light veils, lit veil black (decision 107) |
+| Leaked old-theme colours after a switch | not checked | 0 (pixel and brush-tree scan over all surfaces) |
+
+Gallery: every studio screen is run in both themes (the Mac gallery job now has a Light step; shots in `headless/` and `headless-light/` of the `ci-artifacts-mac` branch).

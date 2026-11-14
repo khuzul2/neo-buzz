@@ -8,15 +8,16 @@ namespace NeoBuzz.Editor
 {
     internal static class Theme
     {
-        public static readonly IBrush Background = Brush(Palette.Background);
-        public static readonly IBrush Panel = Brush(Palette.Panel);
-        public static readonly IBrush PanelEdge = Brush(Palette.PanelEdge);
-        public static readonly IBrush Text = Brush(Palette.Text);
-        public static readonly IBrush DimText = Brush(Palette.DimText);
+        // Fork (ux-overhaul.md P4b): brushes that follow the theme (a view keeps them as its background or foreground).
+        public static readonly IBrush Background = AvaloniaCanvas.Themed(() => Palette.Background);
+        public static readonly IBrush Panel = AvaloniaCanvas.Themed(() => Palette.Panel);
+        public static readonly IBrush PanelEdge = AvaloniaCanvas.Themed(() => Palette.PanelEdge);
+        public static readonly IBrush Text = AvaloniaCanvas.Themed(() => Palette.Text);
+        public static readonly IBrush DimText = AvaloniaCanvas.Themed(() => Palette.DimText);
 
         public static readonly FontFamily FontFamily = AvaloniaCanvas.Font;
 
-        /// <summary>An immutable brush for a kit colour.</summary>
-        public static IBrush Brush(NeoColor c) => AvaloniaCanvas.Brush(c);
+        /// <summary>A brush for a kit colour a view keeps: it follows the theme.</summary>
+        public static IBrush Brush(NeoColor c) => AvaloniaCanvas.Themed(c);
     }
 }

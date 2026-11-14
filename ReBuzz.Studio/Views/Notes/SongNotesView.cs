@@ -55,9 +55,9 @@ namespace ReBuzz.Studio.Views.Notes
         static readonly IBrush BarBrush = StudioTokens.SurfacePanelBrush;
         static readonly IBrush TextBrush = StudioTokens.TextPrimaryBrush;
         static readonly IBrush DimBrush = StudioTokens.TextSecondaryBrush;
-        static readonly IBrush LinkBrush = StudioTokens.Brush(StudioTokens.Link);
+        static readonly IBrush LinkBrush = StudioTokens.Themed(() => StudioTokens.Link);
         static readonly IBrush CodeBrush = StudioTokens.SurfaceControlBrush;
-        static readonly IBrush BannerBrush = StudioTokens.Brush(StudioTokens.BannerBack);
+        static readonly IBrush BannerBrush = StudioTokens.Themed(() => StudioTokens.BannerBack);
         static Cursor hand;
         static Cursor Hand => hand ??= new Cursor(StandardCursorType.Hand);     // made once the platform runs
         static readonly FontFamily Mono = new FontFamily("Cascadia Mono, Menlo, Consolas, DejaVu Sans Mono, monospace");

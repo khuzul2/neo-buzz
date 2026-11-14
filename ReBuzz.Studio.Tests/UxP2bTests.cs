@@ -28,7 +28,7 @@ namespace ReBuzz.Studio.Tests
     {
         static ReBuzzCore Core => Studio.Host.Core;
 
-        sealed class Frame
+        internal sealed class Frame
         {
             public uint[] Pixels;
             public int Width, Height;
@@ -48,7 +48,7 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        static Frame Capture(Window window)
+        internal static Frame Capture(Window window)
         {
             Settle();
             var bitmap = window.CaptureRenderedFrame();
@@ -192,10 +192,10 @@ namespace ReBuzz.Studio.Tests
                 var combo = (ComboBox)page.SettingControl("appearance.Theme");
                 Settle();
                 var labels = combo.Items.Cast<ComboBoxItem>().Select(i => (string)i.Content!).ToArray();
-                Assert.That(labels, Is.EqualTo(new[] { "Dark", "Classic Buzz" }), "Dark and Classic Buzz, the other no third-party name");
+                Assert.That(labels, Is.EqualTo(new[] { "Dark", "Light", "System", "Classic Buzz" }), "Dark, Light, System and Classic Buzz, the other no third-party name");
                 Assert.That(combo.SelectedIndex, Is.EqualTo(0), "Dark is the default");
 
-                combo.SelectedIndex = 1;
+                combo.SelectedIndex = 3;
                 Assert.That(StudioTheme.Kind, Is.EqualTo(AppearanceTheme.Classic), "applies at once");
                 Assert.That(StudioTheme.Settings.Theme, Is.EqualTo(AppearanceTheme.Classic));
                 combo.SelectedIndex = 0;
@@ -211,10 +211,10 @@ namespace ReBuzz.Studio.Tests
 
         // ------------------------------------------------------------------ contrast of the dark canvases' text and buttons
 
-        [Test]
+        [AvaloniaTest]
         public void TheDarkSequenceMeetsTheContrastFloor()
         {
-            var look = SequenceLook.Dark;
+            var look = StudioTheme.Sequence;
             static Color C(IBrush b) => ((ISolidColorBrush)b).Color;
             Assert.That(StudioTokens.Contrast(C(look.RulerText), C(look.Ruler)), Is.GreaterThanOrEqualTo(4.5), "bar numbers on the ruler");
             Assert.That(StudioTokens.Contrast(C(look.HeaderText), C(look.Header)), Is.GreaterThanOrEqualTo(4.5), "machine names on the headers");
@@ -226,7 +226,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(StudioTokens.Contrast(Colors.Black, C(on)), Is.GreaterThanOrEqualTo(4.5).Or.GreaterThanOrEqualTo(3.0), "a lit button's glyph");
             foreach (var box in look.BoxColours)
                 Assert.That(StudioTokens.Contrast(StudioTokens.TextPrimary, box), Is.GreaterThanOrEqualTo(4.5), "a block's name on its colour");
-            var machines = MachineLook.Dark;
+            var machines = StudioTheme.Machines;
             Assert.That(StudioTokens.Contrast(machines.Colour("MV Machine Text")!.Value, machines.Colour("MV Generator")!.Value), Is.GreaterThanOrEqualTo(4.5), "a generator's name");
             Assert.That(StudioTokens.Contrast(machines.Colour("MV Machine Text")!.Value, machines.Colour("MV Effect")!.Value), Is.GreaterThanOrEqualTo(4.5), "an effect's name");
             Assert.That(StudioTokens.Contrast(machines.Colour("MV Machine Text")!.Value, machines.Colour("MV Master")!.Value), Is.GreaterThanOrEqualTo(4.5), "the master's name");

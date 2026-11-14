@@ -217,6 +217,9 @@ namespace NeoBuzz.Editor
         static readonly NeoColor Seam = NeoColor.FromArgb(0xB0, 0x15, 0x17, 0x1C);
         static readonly NeoColor LabelOnWhite = NeoColor.FromRgb(0x58, 0x5F, 0x6B), LabelOnBlack = NeoColor.FromRgb(0xC4, 0xC9, 0xD1);
 
+        // Fork (ux-overhaul.md P4b): ivory and ebony are ivory and ebony in either theme.
+        static KeyboardFace() => Tokens.KeepAsIs(WhiteTop, WhiteBottom, WhiteHover, WhiteOff, WhiteUnnamed, BlackTop, BlackBottom, BlackHover, BlackOff, Seam, LabelOnWhite, LabelOnBlack);
+
         public const double LabelSize = 9, DrumLabelSize = 8.5;
 
         /// <summary>

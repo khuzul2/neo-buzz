@@ -23,7 +23,7 @@ namespace ReBuzz.Studio.Shell
     internal sealed class MasterMeter : StackPanel
     {
         public static readonly IBrush ClipBrush = StudioTokens.RecordBrush;
-        static readonly IBrush LimitBrush = StudioTokens.Brush(StudioTokens.Warning);
+        static readonly IBrush LimitBrush = StudioTokens.WarningBrush;
         static readonly IBrush Off = StudioTokens.SurfaceBorderBrush;
         static readonly IBrush OffText = StudioTokens.TextSecondaryBrush;
 
@@ -118,9 +118,9 @@ namespace ReBuzz.Studio.Shell
             const double Floor = FloorDb, Top = TopDb, FallPerSecond = 60, BarHeight = 9;
             static readonly double[] Marks = { -60, -40, -20, -10, 0 };
             static readonly IBrush Back = StudioTokens.SurfaceViewBrush;
-            static readonly IBrush Green = StudioTokens.Brush(StudioTokens.Of(NeoBuzz.Editor.Tokens.MeterNormal));
-            static readonly IBrush Yellow = StudioTokens.Brush(StudioTokens.Of(NeoBuzz.Editor.Tokens.MeterHot));
-            static readonly IPen ZeroPen = new Pen(StudioTokens.Brush(StudioTokens.Of(NeoBuzz.Editor.Tokens.ControlTrack)), 1);
+            static readonly IBrush Green = StudioTokens.MeterNormalBrush;
+            static readonly IBrush Yellow = StudioTokens.MeterHotBrush;
+            static readonly IPen ZeroPen = new Pen(StudioTokens.ControlTrackBrush, 1);
             static readonly Typeface Face = new Typeface(new FontFamily("monospace"));
             double left = Floor, right = Floor;
 

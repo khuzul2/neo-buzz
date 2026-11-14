@@ -106,9 +106,9 @@ namespace ReBuzz.Studio.Views.Detail
 
         // ------------------------------------------------------------------ drawing
 
-        static readonly IPen BarPen = new ImmutablePen(StudioTokens.TextSecondary.ToUInt32(), 1);
-        static readonly IPen BeatPen = new ImmutablePen(StudioTokens.SurfaceBorder.ToUInt32(), 1);
-        static readonly IPen EdgePen = new ImmutablePen(StudioTokens.SurfaceBorder.ToUInt32(), 1);
+        static readonly IPen BarPen = new Pen(StudioTokens.TextSecondaryBrush, 1);
+        static readonly IPen BeatPen = new Pen(StudioTokens.SurfaceBorderBrush, 1);
+        static readonly IPen EdgePen = new Pen(StudioTokens.SurfaceBorderBrush, 1);
 
         public override void Render(DrawingContext dc)
         {
@@ -261,7 +261,7 @@ namespace ReBuzz.Studio.Views.Detail
     internal sealed class PlayheadLine : Control
     {
         static readonly IPen Edge = new ImmutablePen(Colors.Black.ToUInt32(), 4);
-        static readonly IPen Line = new ImmutablePen(StudioTokens.Play.ToUInt32(), 2);
+        static readonly IPen Line = new Pen(StudioTokens.PlayBrush, 2);
 
         public PlayheadLine()
         {
@@ -325,7 +325,7 @@ namespace ReBuzz.Studio.Views.Detail
 
         // ------------------------------------------------------------------ drawing
 
-        static readonly IPen GuidePen = new ImmutablePen(StudioTokens.SurfaceBorder.ToUInt32(), 1);
+        static readonly IPen GuidePen = new Pen(StudioTokens.SurfaceBorderBrush, 1);
 
         public override void Render(DrawingContext dc)
         {
