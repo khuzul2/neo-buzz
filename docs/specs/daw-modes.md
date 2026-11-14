@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Decided 2026-11-03: D1 A1 (§3.1), D2 B, D3 A, D4 B, D5 A, all as recommended. **AR0 built** (2026-11-03, §8.1): the song meter, clip ids, automation ramps and note sources. **AR1 built** (2026-11-14, §8.2): the Arrangement mode of the studio's Sequence tab. **AR2 built** (2026-11-14, §8.3): the piano roll in the arrangement and the Pattern tab, with velocity and CC lanes, scale and fold, step input and ghosts. **AR4 built** (2026-11-14, §8.4): automation lanes in the arrangement. AR3 (the tracker's note lanes) is built apart from it |
+| Status | Decided 2026-11-03: D1 A1 (§3.1), D2 B, D3 A, D4 B, D5 A, all as recommended. **AR0 built** (2026-11-03, §8.1): the song meter, clip ids, automation ramps and note sources. **AR1 built** (2026-11-14, §8.2): the Arrangement mode of the studio's Sequence tab. **AR2 built** (2026-11-14, §8.3): the piano roll in the arrangement and the Pattern tab, with velocity and CC lanes, scale and fold, step input and ghosts. **AR4 built** (2026-11-14, §8.4): automation lanes in the arrangement. **AR5 built** (2026-11-14, §8.5): MIDI recording, take lanes, comping and links between session and arrangement. AR3 (the tracker's note lanes) is built apart from it |
 | Date | 2026-11-03 |
 | Scope | One song and one machine graph, seen and edited in three modes that stay in sync: **tracker** (patterns with columns), **arrangement** (a horizontal timeline with clips, a piano roll and automation lanes) and **session** (clip launching). The model, the views, compatibility, engine seams and a phased plan |
 | Code baseline | fork `90b0850` (main, 2026-11-03). Branches `platform/p3-s4-sequence-editor` and `platform/p3-s6-pattern-editor` (not merged) read the same day |
@@ -516,6 +516,33 @@ Sizes as in session-view.md: S < 500 LOC, M 500–2,000, L 2,000–5,000.
 
 **Not in AR4:** MCP tools for lanes and automation clips (`arrangement_clip`-style calls), hiding automation and take lanes from the Session View (a lane's sequence is a session track as any, §4.1), curves other than ramps and steps (S3 plays only these), several selected points, a draggable lane height, touch and latch modes, writing a lane back to a tracker column.
 
+### 8.5 As built (AR5)
+
+**Recording** (engine: `ReBuzz/Core/Session/SessionCore.ArrangementRecording.cs`, `ReBuzz/Core/ArrangementRecorder.cs`; studio: the record row of the Sequence tab in Arrangement mode, an **R** arm button in each track header). S6 as designed: the take target is a pattern and an origin in song ticks, not a slot; `ArrangementRecorder` sits beside `SessionRecorder` and reuses the record windows, `TakeWriter` and `SessionLayout.Takes.cs`.
+- **Time is the MIDI thread's.** `Stamp()` maps each message's heard time (latency-compensated, session clock) to a pass and a song time through an `ArrangementWindow` while it holds the gate; the UI clock is never read. The session clock and the song position part by one loop length at each song-loop wrap, so `OnTick` publishes their difference. Inputs go to the shared ring tagged with their window and pass, and the session's drain and the arrangement's drain each take only their own. A note released in a later pass is written to the pass it began in (`TakeWriter.Holds`).
+- **One pass.** Arm a track, press *Record arrangement*, play, press it again (or stop the transport). At stop the pass becomes one undo step: a new pattern with a MIDI column, its notes, and a clip on the machine's main lane where recording began, ending where it stopped. The clip appears at stop; while recording a red band shows the span.
+- **Overdub.** With *Overdub* on and a main-lane clip under the start, the notes go into that clip's pattern at pattern time. If the pattern is also used by another clip, the status line says so ("... 2 places").
+- **Loop recording.** *Loop recording* turns the song loop on; each pass of the loop is a take: a pattern on a take lane (a new lane with `LaneRole.Take` under the machine's main lane, made by `AddTakeLaneAction` in the same undo step). Nothing is written to the main lane.
+- **Take lanes are not played in this fork.** `SequenceCore.TakeLane` is set from the role, and `WorkManager` skips such a lane, so a take is heard only once it is comped. Upstream ReBuzz would play every lane of a machine and so double it; that is a limit of opening the song there.
+
+**Comping.** `ClipEditor.Comp(take, from, to, main)` puts an event of the take's pattern on the main lane with `Offset`/`End`, `Loop` off and a new clip id; no notes are copied; whatever the main lane held there is overwritten (and comes back with undo). Gestures: Shift-drag over a take clip (beat snap), Shift-click (the bar), the key **C** (the bar at the cursor of the selected take), and the menu item *Comp to Main Lane*.
+
+**Links** (`ReBuzz/Core/ArrangementLinks.cs`).
+- *Launch in Session* (menu, on a selected clip) starts the clip's pattern on its machine's session track with the clip's region, using the clip's own settings; *Back to arrangement* (button and menu) gives the tracks back (`ISession.BackToArrangement`), taking effect on the next tick.
+- *Send to Session Slot* (arrangement clip menu) and *Send to Arrangement* (slot menu): the slot and the clip share the pattern. Each clip placed on a lane gets its own clip id (ids are never reused, §8.1). A slot sent to an empty lane lands at time 0, otherwise after the lane's last clip.
+
+**Exit tests** (`ReBuzz.Studio.Tests/ArrangementRecordingTests.cs`, 11 tests, headless, scripted MIDI through `Core.SendMIDIInput`, double clicks through `MachineViewTests.DoubleClick`):
+- Three loop passes recorded as three takes and one bar comped from each: the render is **bit for bit** that of the same notes written plain; the take lanes are silent; undo and redo restore it all.
+- A pass from the middle of the song; overdub; stamps use the heard time when the output has latency; overdub over a shared pattern says so; a recording of nothing changes nothing (no undo step, no arrangement subsection).
+- Comping by Shift-drag, menu and key, with undo; launching a clip in the session and returning; slot to arrangement and back keep the notes and give each place its own clip id.
+- Take lanes survive .bmx and .bmxml and stay unplayed; a song without any renders as before (null tests unchanged).
+- 0 bytes a buffer on the audio thread while recording, and the MIDI thread's stamping allocates nothing.
+- The record row is on the kit's button style, named, drawn in Light and Dark, with no leaked subscriptions (gallery shots `ar5-takes-comp`, `ar5-launched`).
+
+**Decisions taken from the spec's recommendations or open in it:** no count-in; loop recording does not fill the main lane by itself; dragging between the views is a pair of commands on the model API and in menus, because the Session and Arrangement views are never on screen together; the roles of a take lane deleted and then restored by undo are lost (the lane comes back as a main lane).
+
+**Not in AR5:** MCP tools for takes, hiding take lanes from the Session View (a lane's sequence is a session track as any), a count-in, auto-filling the main lane from the last take, pointer drags across the two views.
+
 ## 9. Phases
 
 Effort in person-weeks (pw), with coding agents doing most of the typing, as in the other specs. Each phase also updates the MCP tools for what it adds, within its pw.
@@ -527,7 +554,7 @@ Effort in person-weeks (pw), with coding agents doing most of the typing, as in 
 | **AR2 Piano roll everywhere** (built, §8.3) | after AR1; the Pattern tab toggle after S6 | `PianoRoll` in the arrangement panel and the Pattern tab; velocity and CC lanes; scale and fold; step input; context ghosts | A bass line drawn in the arrangement plays in its session clip. The Pattern tab's toggle edits the same notes. Undo is on the song's history | 1.5–2 | low–medium |
 | **AR3 The tracker sees the notes** | after S6 merges | S7: MPE's computed note lanes and the Note-column note source (D3 A) | A take recorded in the session shows in the tracker at once. Editing a row changes only that note. In a random round trip of 1,000 notes through tracker edits, untouched notes stay exact. Old songs' MPE data stays byte-equal | 3–4 | high |
 | **AR4 Automation** (built, §8.4) | after AR1 | Lanes for state parameters; clip automation stitched along the timeline; automation clips on automation lanes; S3 ramps drawn; knob moves recorded into lanes | A 16-bar filter sweep over a looped 1-bar clip renders as drawn. Tracker columns show as steps. Overlaps are marked | 2–3 | medium |
-| **AR5 Recording and links** | after AR2 | S6: MIDI recording into the arrangement; loop recording to take lanes; comping; launching from the arrangement; dragging between session and arrangement | Record 3 loop passes and comp one bar from each: the render equals the comp. Launch an arrangement clip in the session, then go back to the arrangement | 2–3 | medium |
+| **AR5 Recording and links** (built, §8.5) | after AR2 | S6: MIDI recording into the arrangement; loop recording to take lanes; comping; launching from the arrangement; dragging between session and arrangement | Record 3 loop passes and comp one bar from each: the render equals the comp. Launch an arrangement clip in the session, then go back to the arrangement | 2–3 | medium |
 | **AR6 Tracker mode** | with P4 | The canvas's vertical orientation (Buzz's default sequence view). WPF is retired, so its compatibility work ends | The WPF vertical editor's parity checklist | 1 | low |
 
 **Total: 12–18 pw** (AR0–AR6). P3 itself was planned at 10–15 pw.
