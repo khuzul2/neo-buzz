@@ -103,6 +103,7 @@ namespace ReBuzz.Core.SongHistory
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void Apply()
         {
+            int fade = Math.Max(1, ReBuzzCore.masterInfo.SamplesPerSec * 12 / 1000);       // 12 ms, in samples, whatever the engine's block sizes
             for (int i = 0; i < Flags.Length; i++)
             {
                 var f = Flags[i];
@@ -110,13 +111,13 @@ namespace ReBuzz.Core.SongHistory
                 if (!f.MuteChanges) continue;
                 if (f.Muted)
                 {
-                    for (int w = 0; w < f.Out.Length; w++) f.Out[w].Amp = 0;           // fades out over a few blocks; Finish sets the flag
+                    for (int w = 0; w < f.Out.Length; w++) f.Out[w].RampAmp(0, fade);  // fades out over 12 ms; Finish sets the flag
                 }
                 else
                 {
                     for (int w = 0; w < f.Out.Length; w++) { f.Out[w].Amp = 0; f.Out[w].SnapAmp(); }
                     f.Machine.SetMutedFromRestore(false);
-                    for (int w = 0; w < f.Out.Length; w++) f.Out[w].Amp = f.FinalAmps[w];   // and fades in from silence
+                    for (int w = 0; w < f.Out.Length; w++) f.Out[w].RampAmp(f.FinalAmps[w], fade);   // and fades in from silence over 12 ms
                 }
             }
             for (int i = 0; i < Columns.Length; i++)
@@ -131,7 +132,7 @@ namespace ReBuzz.Core.SongHistory
             }
             for (int i = 0; i < Wires.Length; i++)
             {
-                Wires[i].Wire.Amp = Wires[i].Amp;           // the connection ramps it over a few blocks
+                Wires[i].Wire.RampAmp(Wires[i].Amp, fade);  // the connection ramps it over 12 ms
                 Wires[i].Wire.Pan = Wires[i].Pan;
             }
             bool glide = false;
