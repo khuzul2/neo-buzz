@@ -35,6 +35,8 @@ namespace ReBuzz.AgentEval
             Signals();
             Scoring();
             GateRules();
+            AgentGateRules();
+            KnowledgeCoverage();
             Console.WriteLine($"selftest: {passes} passed, {failures} failed");
             return failures == 0 ? 0 : 1;
         }
@@ -198,13 +200,13 @@ namespace ReBuzz.AgentEval
             var chromatic = Enumerable.Range(48, 12).Select(p => (p, 1.0));
             Expect(EvalTask.ScaleFit(chromatic).Share < 0.65, "a chromatic run doesn't");
 
-            // Every task's scorer: the starting song's facts can't pass against themselves (empty facts score 0).
+            // Every task's scorer: the starting song's facts can't pass against themselves (empty facts score 0). The knowledge tasks' criteria come from their checks (their runs prove those).
             var empty = new Facts();
             foreach (var t in EvalTask.All)
             {
                 var ctx = new TaskContext(t.Name, Path.Combine(Path.GetTempPath(), "rebuzz-agenteval-selftest", t.Name));
                 var result = new TaskResult { Criteria = t.Score(empty, empty, ctx) };
-                Expect(result.Criteria.Count >= 4 && !result.Passed, $"{t.Name}: an empty song fails ({result.Total:F2})");
+                Expect((t is KnowledgeTask || result.Criteria.Count >= 4) && !result.Passed, $"{t.Name}: an empty song fails ({result.Total:F2})");
                 Expect(t.Brief(ctx).Contains("song_save(path=") && t.Brief(ctx).Contains("result.bmxml"), $"{t.Name}: the brief says where to save");
             }
         }
@@ -232,6 +234,55 @@ namespace ReBuzz.AgentEval
             var startPasses = RunWith(true, false, 0.95, 0.5);
             startPasses.Tasks[0].StartPassed = true;
             Expect(Gate.Check(startPasses, baseline, 0.05).Blocking.Count == 1, "a starting song that passes blocks");
+        }
+
+        // ---- K5: the real-agent gate and the knowledge tasks' coverage ----------------------------------
+
+        static void AgentGateRules()
+        {
+            var baseline = JsonNode.Parse("""{"task_margin":0.34,"mean_margin":0.05,"tasks":{"a":{"total":1,"passed":true},"b":{"total":0.75,"passed":false},"c":{"total":1,"passed":true},"d":{"total":1,"passed":true}}}""") as JsonObject;
+            JsonObject Results(double a, double b, double c, double d, bool allTasks = true)
+            {
+                var tasks = new JsonArray();
+                foreach (var (n, t) in new[] { ("a", a), ("b", b), ("c", c), ("d", d) })
+                    if (allTasks || n is "a" or "b") tasks.Add(new JsonObject { ["name"] = n, ["total"] = t, ["passed"] = t >= 0.85 });
+                return new JsonObject { ["tasks"] = tasks };
+            }
+            Expect(AgentGate.Check(Results(1, 0.75, 1, 1), baseline).Blocking.Count == 0, "the agent baseline itself passes the gate");
+            Expect(AgentGate.Check(Results(0.8, 0.75, 1, 1), baseline).Blocking.Count == 0, "one lost criterion on one task is noise: within both margins");
+            Expect(AgentGate.Check(Results(0.5, 0.75, 1, 1), baseline).Blocking.Count >= 1, "a task falling past the task margin blocks");
+            Expect(AgentGate.Check(Results(0.9, 0.7, 0.9, 0.9), baseline).Blocking.Count == 1, "many small drops block through the mean");
+            Expect(AgentGate.Check(Results(1, 0.9, 1, 1), baseline).Blocking.Count == 0, "an improvement doesn't block");
+            Expect(AgentGate.Check(Results(1, 0.75, 1, 1, allTasks: false), baseline).Blocking.Count == 0, "a partial run is gated on what it ran");
+            Expect(AgentGate.Check(Results(0.5, 0.2, 0.2, 0.2), null).Blocking.Count == 0, "no baseline: nothing to compare, nothing blocks");
+            var newTask = Results(1, 0.75, 1, 1);
+            ((JsonArray)newTask["tasks"]).Add(new JsonObject { ["name"] = "e", ["total"] = 0.0, ["passed"] = false });
+            var verdict = AgentGate.Check(newTask, baseline);
+            Expect(verdict.Blocking.Count == 0 && verdict.Info.Count == 1, "a task without a baseline entry is information");
+            Expect(AgentGate.Baseline(Results(1, 0.75, 1, 1), "m")["tasks"]?["b"]?["total"]?.GetValue<double>() == 0.75, "the baseline written from results reads back");
+        }
+
+        /// <summary>Every guide and every recipe has a task; the briefs don't name the guide; the recipes parse and replay.</summary>
+        static void KnowledgeCoverage()
+        {
+            var names = EvalTask.All.Select(t => t.Name).ToList();
+            Expect(names.Distinct().Count() == names.Count, "task names are unique");
+            foreach (var topic in ReBuzz.Agent.Guides.GuideLibrary.TopicNames)
+            {
+                bool covered = KnowledgeTasks.GuideCoverage.TryGetValue(topic, out var older) ? names.Contains(older) : names.Contains("guide_" + topic.Replace('-', '_'));
+                Expect(covered, $"guide {topic} has a task");
+            }
+            foreach (var kv in KnowledgeTasks.GuideCoverage) Expect(names.Contains(kv.Value), $"{kv.Key} is covered by {kv.Value}, which exists");
+            var recipes = K.RecipeIds();
+            Expect(recipes.Count >= 10, $"the recipes guide holds {recipes.Count} recipes");
+            foreach (var id in recipes) Expect(names.Contains("recipe_" + id.Replace('-', '_')), $"recipe {id} has a task");
+            foreach (var t in KnowledgeTasks.All)
+            {
+                string brief = t.Brief(new TaskContext(t.Name, Path.Combine(Path.GetTempPath(), "agent-eval-selftest", t.Name)));
+                Expect(!t.Covers.Contains('-') || !brief.Contains(t.Covers, StringComparison.OrdinalIgnoreCase), $"{t.Name}'s brief doesn't name the guide or recipe it exercises");
+                Expect(!brief.Contains("guide(", StringComparison.Ordinal), $"{t.Name}'s brief doesn't say which tool to read");
+                Expect(brief.Contains("song_save"), $"{t.Name}'s brief says where to save");
+            }
         }
     }
 }

@@ -108,6 +108,340 @@
         "no_clipping": 1,
         "balance_kept": 1
       }
+    },
+    "recipe_hear_a_bass": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "tempo": 1,
+        "synth": 1,
+        "preset": 1,
+        "notes_placed": 1,
+        "sounds": 1
+      }
+    },
+    "recipe_movement_from_a_modulator": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "modulated": 1,
+        "depth": 1,
+        "control_machine": 1,
+        "notes_kept": 1,
+        "sounds": 1
+      }
+    },
+    "recipe_safe_experiment": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "tried_noted": 1,
+        "cutoff_restored": 1,
+        "notes_kept": 1
+      }
+    },
+    "recipe_arrange_a_section": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "markers": 1,
+        "repeated": 1,
+        "sweep": 1,
+        "sounds": 1
+      }
+    },
+    "recipe_two_scenes": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "scene_names": 1,
+        "clip_intro": 1,
+        "clip_groove": 1,
+        "kick_notes": 1,
+        "bar_quantized": 1
+      }
+    },
+    "recipe_controller_for_the_cutoff": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "bound": 1,
+        "controller_74": 1,
+        "channel_1": 1,
+        "notes_kept": 1
+      }
+    },
+    "recipe_explain_a_control": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "machine": 1,
+        "depth": 1,
+        "explained": 1
+      }
+    },
+    "recipe_engine_swap": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "engine": 1,
+        "geometry": 1,
+        "exciter": 1,
+        "force": 1,
+        "note_a3": 1,
+        "sounds": 1
+      }
+    },
+    "recipe_replace_a_classic": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "replaced": 1,
+        "no_classic": 1,
+        "same_place": 1,
+        "sounds": 1
+      }
+    },
+    "recipe_check_the_load": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "heaviest_named": 1,
+        "figure": 1,
+        "nothing_removed": 1
+      }
+    },
+    "guide_app_control": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "file": 1,
+        "bit_depth": 1,
+        "audible": 1,
+        "noted": 1
+      }
+    },
+    "guide_build_a_synth": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "square": 1,
+        "wired": 1,
+        "sounds": 1
+      }
+    },
+    "guide_concepts": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "tempo": 1,
+        "ticks": 1,
+        "beats_per_bar": 1,
+        "machines": 1
+      }
+    },
+    "guide_dye_essence_analysis": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "engine": 1,
+        "import_partials": 1,
+        "import_ratios": 1
+      }
+    },
+    "guide_dye_essence_effects": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "type": 1,
+        "mix": 1,
+        "decay": 1,
+        "return": 1
+      }
+    },
+    "guide_dye_essence_in_depth": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "slot_a": 1,
+        "slot_b": 1,
+        "slot_c": 1,
+        "note_a3": 1,
+        "sounds": 1
+      }
+    },
+    "guide_dye_sound_design": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "preset_engine": 1,
+        "preset_geometry": 1,
+        "note_a3": 1,
+        "sounds": 1
+      }
+    },
+    "guide_fm_recipes": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "ratio_coarse": 1,
+        "ratio_fine": 1,
+        "modulator_level": 1,
+        "carrier_rings": 1,
+        "note_a4": 1,
+        "sounds": 1
+      }
+    },
+    "guide_live_performance": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "scene_names": 1,
+        "clips": 1,
+        "toggle": 1,
+        "bar": 1,
+        "controller": 1
+      }
+    },
+    "guide_migrating_songs": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "no_classics": 1,
+        "successors": 1,
+        "order": 1,
+        "sounds": 1
+      }
+    },
+    "guide_mixing_dynamics": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "after_bass": 1,
+        "mode": 1,
+        "ratio": 1,
+        "attack": 1,
+        "release": 1,
+        "knee": 1
+      }
+    },
+    "guide_neo_eq_in_depth": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "after_bass": 1,
+        "graphic": 1,
+        "scoop": 1,
+        "minimum_phase": 1,
+        "sounds": 1
+      }
+    },
+    "guide_performance": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "heaviest_removed": 1,
+        "rest_kept": 1,
+        "thread_setting": 1,
+        "sounds": 1
+      }
+    },
+    "guide_synth_recipes": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "mono": 1,
+        "sine": 1,
+        "filter_type": 1,
+        "cutoff": 1,
+        "release": 1,
+        "volume": 1,
+        "note_e1": 1
+      }
+    },
+    "guide_teaching": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "lesson": 1,
+        "control_restored": 1,
+        "nothing_placed": 1,
+        "notes_longer_than_a_line": 1
+      }
+    },
+    "ask_choose_reverb": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "fits_the_job": 1,
+        "in_the_chain": 1,
+        "sounds": 1
+      }
+    },
+    "ask_choose_compressor": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "fits_the_job": 1,
+        "in_the_chain": 1,
+        "sounds": 1
+      }
+    },
+    "ask_choose_limiter": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "fits_the_job": 1,
+        "in_the_chain": 1,
+        "sounds": 1
+      }
+    },
+    "ask_choose_bass_synth": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "fits_the_job": 1,
+        "low_note": 1,
+        "sounds": 1
+      }
+    },
+    "ask_units_synth": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "cutoff": 1,
+        "release": 1,
+        "volume": 1
+      }
+    },
+    "ask_units_compressor": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "threshold": 1,
+        "ratio": 1,
+        "attack": 1,
+        "release": 1
+      }
+    },
+    "ask_units_song": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "tempo": 1,
+        "ticks": 1,
+        "loop_length": 1,
+        "loop_on": 1
+      }
+    },
+    "ask_units_dye_effects": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "type": 1,
+        "mix": 1,
+        "return": 1
+      }
     }
   }
 }

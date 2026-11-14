@@ -6,7 +6,8 @@ name: Agent evaluation (real agent)
 # as the scripted suite. Transcripts, songs and scores are uploaded; the step summary has the table.
 #
 # Needs the repository secret ANTHROPIC_API_KEY (Settings → Secrets and variables → Actions). Without
-# it the run skips with a notice. Weekly, or by hand from the Actions tab.
+# it the run skips with a notice. Weekly, or by hand from the Actions tab. The last step is the regression
+# gate against eval/agent-baseline.json (K5; ReBuzz.AgentEval gate).
 #
 # Claude Code flags (checked against the CLI's own help, 2.1.316): -p (non-interactive), --bare
 # (no hooks, plugins, memory or CLAUDE.md discovery; auth strictly ANTHROPIC_API_KEY), --mcp-config
@@ -21,7 +22,7 @@ on:
   workflow_dispatch:
     inputs:
       tasks:
-        description: 'Tasks, comma-separated (empty = all: beat, sound_match, fix_the_mix, master, song)'
+        description: 'Tasks, comma-separated (empty = all: the song tasks beat, sound_match, fix_the_mix, master, song, master_match, master_loud, fix_harshness, and the knowledge tasks recipe_*, guide_*, ask_*; run ReBuzz.AgentEval tasks for the list)'
         type: string
         default: ''
       model:
@@ -33,9 +34,21 @@ on:
         type: string
         default: '80'
       max_budget_usd:
-        description: 'Spending cap per task, USD'
+        description: 'Spending cap per song task, USD'
         type: string
         default: '5'
+      knowledge_max_turns:
+        description: 'Turn cap per knowledge task (recipe_*, guide_*, ask_*: short tasks)'
+        type: string
+        default: '40'
+      knowledge_max_budget_usd:
+        description: 'Spending cap per knowledge task, USD'
+        type: string
+        default: '1'
+      gate:
+        description: 'Fail the run on a regression against eval/agent-baseline.json (the baseline is a run you accepted; without the file nothing is compared)'
+        type: boolean
+        default: true
       claude_code_version:
         description: 'npm version of @anthropic-ai/claude-code'
         type: string
@@ -125,6 +138,8 @@ jobs:
         MODEL: ${{ inputs.model }}
         MAX_TURNS: ${{ inputs.max_turns || '80' }}
         MAX_BUDGET: ${{ inputs.max_budget_usd || '5' }}
+        K_MAX_TURNS: ${{ inputs.knowledge_max_turns || '40' }}
+        K_MAX_BUDGET: ${{ inputs.knowledge_max_budget_usd || '1' }}
       run: |
         # Paths as D:/a/… : both bash and the Windows programs read them.
         EXE="$(cygpath -m "$(find "$PWD/bin" -name NeoBuzzLive.exe -not -path '*/obj/*' | head -n 1)")"
@@ -138,11 +153,16 @@ jobs:
           echo "::group::$t"
           $EVAL prepare --exe "$EXE" --task "$t" --out "$OUT" || { echo "::error title=Agent evaluation::prepare failed for $t"; echo "::endgroup::"; continue; }
           dir="$OUT/$t"
+          # The knowledge tasks (K5) are short: their own turn and spending caps.
+          case "$t" in
+            recipe_*|guide_*|ask_*) turns="$K_MAX_TURNS"; budget="$K_MAX_BUDGET" ;;
+            *) turns="$MAX_TURNS"; budget="$MAX_BUDGET" ;;
+          esac
           # The agent works in an empty folder: no repository context, only the brief and the tools.
           ( cd "$RUNNER_TEMP/agent-cwd" && claude -p "$(cat "$dir/brief.md")" \
               --bare --mcp-config "$dir/mcp.json" --strict-mcp-config \
               --tools "" --allowedTools "mcp__neobuzz-live__*" --permission-mode dontAsk \
-              --max-turns "$MAX_TURNS" --max-budget-usd "$MAX_BUDGET" \
+              --max-turns "$turns" --max-budget-usd "$budget" \
               --output-format stream-json --verbose --no-session-persistence "${MODEL_ARGS[@]}" \
               > "$dir/transcript.jsonl" 2> "$dir/claude-stderr.txt" ) || echo "::warning title=Agent evaluation::claude exited with $? on $t"
           $EVAL score --exe "$EXE" --task "$t" --out "$OUT" --transcript "$dir/transcript.jsonl" --results "$OUT/agent-results.json" \
@@ -152,6 +172,18 @@ jobs:
         if [ -f "$OUT/agent-results.json" ]; then
           $EVAL report --results "$OUT/agent-results.json" --title "Agent server evaluation (real agent${MODEL:+, $MODEL})"
         fi
+
+    # The regression gate (docs/specs/agent-knowledge.md, K5): the totals against eval/agent-baseline.json. A task that
+    # fell by more than 0.34, or a mean over the tasks run that fell by more than 0.05, fails the run. Without the
+    # baseline file it only prints the baseline this run would write (a notice): commit it to accept the scores.
+    - name: Regression gate
+      if: always() && (inputs.gate || github.event_name == 'schedule') && hashFiles('agent-eval/agent-results.json') != ''
+      shell: bash
+      env:
+        MODEL: ${{ inputs.model }}
+      run: |
+        dotnet ReBuzz.AgentEval/bin/Release/net10.0/ReBuzz.AgentEval.dll gate \
+          --results agent-eval/agent-results.json --baseline eval/agent-baseline.json --model "${MODEL:-default}"
 
     - name: Upload transcripts and scores
       if: always()

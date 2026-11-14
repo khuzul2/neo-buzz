@@ -57,6 +57,12 @@ namespace ReBuzz.AgentEval
         }
     }
 
+    /// <summary>A task's setup says this build lacks what the task needs (a classic machine the quick package leaves out): the task is left out of the run, not failed.</summary>
+    internal sealed class TaskSkipped : Exception
+    {
+        public TaskSkipped(string why) : base(why) { }
+    }
+
     internal abstract class EvalTask
     {
         public abstract string Name { get; }
@@ -77,7 +83,8 @@ namespace ReBuzz.AgentEval
         /// <summary>Criteria from what the result measured, against the starting song's measures.</summary>
         public abstract List<Criterion> Score(Facts start, Facts result, TaskContext ctx);
 
-        public static readonly EvalTask[] All = { new BeatTask(), new SoundMatchTask(), new FixTheMixTask(), new MasterTask(), new SongTask(), new MasterMatchTask(), new MasterLoudTask(), new FixHarshnessTask() };
+        public static readonly EvalTask[] All = new EvalTask[] { new BeatTask(), new SoundMatchTask(), new FixTheMixTask(), new MasterTask(), new SongTask(), new MasterMatchTask(), new MasterLoudTask(), new FixHarshnessTask() }
+            .Concat(KnowledgeTasks.All).ToArray();
 
         public static EvalTask Find(string name) =>
             All.FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase))

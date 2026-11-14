@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Decided 2026-11-03: D1 A1 (§3.1), D2 B, D3 A, D4 B, D5 A, all as recommended. **AR0 built** (2026-11-03, §8.1): the song meter, clip ids, automation ramps and note sources. **AR1 built** (2026-11-14, §8.2): the Arrangement mode of the studio's Sequence tab. AR2 next, after P3's exit, beside plugin-host H1 |
+| Status | Decided 2026-11-03: D1 A1 (§3.1), D2 B, D3 A, D4 B, D5 A, all as recommended. **AR0 built** (2026-11-03, §8.1): the song meter, clip ids, automation ramps and note sources. **AR1 built** (2026-11-14, §8.2): the Arrangement mode of the studio's Sequence tab. **AR2 built** (2026-11-14, §8.3): the piano roll in the arrangement and the Pattern tab, with velocity and CC lanes, scale and fold, step input and ghosts. AR3 next |
 | Date | 2026-11-03 |
 | Scope | One song and one machine graph, seen and edited in three modes that stay in sync: **tracker** (patterns with columns), **arrangement** (a horizontal timeline with clips, a piano roll and automation lanes) and **session** (clip launching). The model, the views, compatibility, engine seams and a phased plan |
 | Code baseline | fork `90b0850` (main, 2026-11-03). Branches `platform/p3-s4-sequence-editor` and `platform/p3-s6-pattern-editor` (not merged) read the same day |
@@ -458,6 +458,37 @@ Sizes as in session-view.md: S < 500 LOC, M 500–2,000, L 2,000–5,000.
 
 **Not in AR1:** MCP tools (§7.3's `arrangement_clip`, clip-aware `arrangement_place`, lane roles in `arrangement_get`), Launch in Session and slot drag (AR5), clips with several selected at once, left-trim past a pattern's start (looping backwards), clip settings (session) copied to an independent copy.
 
+### 8.3 As built (AR2)
+
+**One control, three hosts** (studio only: `ReBuzz.Studio/Views/Detail/TrackerRoll.cs`, `Views/Sequence/ArrangementRollPanel.cs`, `Views/Session/PianoRoll.cs`).
+- The Session View's roll (`PianoRoll`, on `SessionClipNotes`) is unchanged and is the one piece of drawing and editing code. The detail panel's roll (`TrackerRoll`, P3b: ruler, loop brace, playhead, velocity lane) wraps it for the other two hosts; there is no second piano roll.
+- **Arrangement:** a double click on a clip (or P, or *Piano Roll* in the clip menu) opens `ArrangementRollPanel` under the timeline: a `TrackerRoll` in its song-only form. The open roll follows the selected clip; closing it, or leaving the Arrangement mode, lets go of the pattern and its source. Return and *Edit Pattern* still go to the Pattern tab (so does the panel's *Pattern tab* button). The keys typed in the panel are the panel's: `SequenceView` no longer reads them as clip keys (S, J, Delete…).
+- **Pattern tab:** the Tracker | Piano roll toggle (P3b) is the host. Its roll got a third store beside the Tracker's Note column and MIDI lanes: *Song* (`TrackerLane.SongNotes`). Auto picks it when the Tracker holds no notes and the song does, so a bass line drawn in the arrangement is what the Pattern tab's roll shows; it can be picked from the lane box. An edit there is a step of the song's history, and the shell's Undo and Redo reach it (the page says no, so the song's history takes the command).
+
+**Where the notes go** (`ReBuzz/Core/Notes/SongNotes.cs`). `SongNotes.For(buzz, pattern)` gives the source the machine plays, by the keyboard's rule (`KeyboardRoute`: a managed machine with `MidiNote` takes MIDI whatever an older manifest says; a machine with a Note track parameter and no MIDI plays its tracks):
+- MIDI: `MidiColumnNotes`, the engine MIDI column, which is what the pattern's session clip plays;
+- tracks: `TrackerColumnNotes` (D3 A), the engine-played Note columns, a voice per track, refused with the reason when a chord needs more tracks than the machine has.
+- *Found:* the Pedal synths do take MIDI since §12.15 (U6), so they get the MIDI column; the machines that need the Note column are the native trackers and synths (and the test machine Keys Test, which the test uses).
+
+**Velocity and CC lanes.** The lane under the roll is a box: *Velocity* (as before) or one controller of the MIDI column: the mod wheel, volume, pan, expression, sustain, pitch bend and every other CC the column holds (`ControllerLane`, `MidiControllers`, `ControllerPoint`). A point is one event (control change, or pitch bend with 14 bits, 8192 the centre); a click adds one, a drag moves its value and time (on the grid), a double click deletes it, each one step of the song's history. A machine whose notes are in its tracks has no controller lanes.
+
+**Scale and fold** (`NoteScale`, pure). Key and scale (the agent's `Theory` scales) tint the rows, the root stronger; *Snap to scale* puts new notes and moved ones on the scale (the lower of two equally near); *Fold* shows all rows, only the pitches used, or the scale's and those used (`PianoRoll.Rows`, so a folded roll's keys, hit tests, box select and drag all work on the rows shown).
+
+**Step input** (`PianoRoll.StepInput`). The Toggle *Step*: the machine keyboard's piano keys (Z S X D C… as the parameter window plays them, `PianoKeyIndex`) write a note of one grid step at the cursor (velocity of the last note) and step on when released; keys held together are a chord at one time; Right (or Space) rests, Left (or Backspace) steps back, * and / change the octave. Each note is one undo step. A key preview plays while it is down.
+
+**Context ghosts** (`SongNotes.Ghosts`). Other clips' notes that overlap the pattern's length, placed where they lie in the song (the placement's offset, so a trimmed clip's notes land where they play) and cut to the pattern, drawn faintly behind the notes: *this track* (the machine's other lanes; the default in the arrangement's panel), *all tracks*, or off (the default in the Pattern tab). They are never edited.
+
+**Undo** is the song's history everywhere: `MidiColumnNotes` and `TrackerColumnNotes` do one `ColumnEventsAction` or tracker action an edit; the roll's own Ctrl+Z and the shell's reach the same stack.
+
+**Exit tests** (`ReBuzz.Studio.Tests/PianoRollEverywhereTests.cs`, headless; double clicks through `MachineViewTests.DoubleClick`):
+- A bass line drawn in the arrangement's roll with the mouse is the pattern's MIDI column; launched as a session clip it renders the same bits as the same notes written by the session (`EditNotes`), and not those of other notes.
+- A machine that takes notes in its tracks gets Buzz notes on its Note column, nothing in the MIDI column, and sounds.
+- The Pattern tab's roll shows and edits the same notes; undo and redo (Ctrl+Z, Ctrl+Y, ⇧⌘Z on macOS) are the song's; the keys in the roll leave the clips alone.
+- CC and pitch bend lanes, key/scale/fold/snap, step input with a chord, ghosts, the panel closing and letting go, the kit's button style and names, Light and Dark.
+- An old song's pattern and render are unchanged after the rolls were opened and closed without an edit. No engine audio code changed in AR2 (the studio's views and the note sources only), so the null tests and the 0 bytes a buffer of the audio path stand as they were.
+
+**Not in AR2:** per-note channel editing, split/glue/legato and the chord stamp (§5.3), real-time recording into the clip (AR5), drum names from a manifest, the Tracker's own Note columns as the store (AR3: until then the Tracker's data and the song's notes are two stores that the Pattern tab's roll offers separately), a draggable height for the panel, remembering the roll's key, scale and fold between sessions.
+
 ## 9. Phases
 
 Effort in person-weeks (pw), with coding agents doing most of the typing, as in the other specs. Each phase also updates the MCP tools for what it adds, within its pw.
@@ -466,7 +497,7 @@ Effort in person-weeks (pw), with coding agents doing most of the typing, as in 
 |---|---|---|---|---|---|
 | **AR0 Seams** (built, §8.1) | now, beside P3 | S1–S4; MCP reads clips and the meter | ReBuzzTests and studio tests green. A song with clips, loops, ramps and a meter round-trips in .bmx and .bmxml, core sections byte-equal. 0 bytes per buffer. Both piano rolls behave as before | 1.5–2 | low |
 | **AR1 Arrangement view** (built, §8.2) | after P3's exit (S9) | The Sequence tab's Arrangement mode: tracks with lanes; clips (draw, move, copy, split, join, trim, loop, make unique, shared badge); the meter grid; Master with tempo and markers; overridden lanes greyed; S5 | Build an 8-bar song with looped and trimmed clips by mouse (headless). It renders the same as the equivalent plain events, and the same as upstream's playback apart from trims | 2–3 | medium |
-| **AR2 Piano roll everywhere** | after AR1; the Pattern tab toggle after S6 | `PianoRoll` in the arrangement panel and the Pattern tab; velocity and CC lanes; scale and fold; step input; context ghosts | A bass line drawn in the arrangement plays in its session clip. The Pattern tab's toggle edits the same notes. Undo is on the song's history | 1.5–2 | low–medium |
+| **AR2 Piano roll everywhere** (built, §8.3) | after AR1; the Pattern tab toggle after S6 | `PianoRoll` in the arrangement panel and the Pattern tab; velocity and CC lanes; scale and fold; step input; context ghosts | A bass line drawn in the arrangement plays in its session clip. The Pattern tab's toggle edits the same notes. Undo is on the song's history | 1.5–2 | low–medium |
 | **AR3 The tracker sees the notes** | after S6 merges | S7: MPE's computed note lanes and the Note-column note source (D3 A) | A take recorded in the session shows in the tracker at once. Editing a row changes only that note. In a random round trip of 1,000 notes through tracker edits, untouched notes stay exact. Old songs' MPE data stays byte-equal | 3–4 | high |
 | **AR4 Automation** | after AR1 | Lanes for state parameters; clip automation stitched along the timeline; automation clips on automation lanes; S3 ramps drawn; knob moves recorded into lanes | A 16-bar filter sweep over a looped 1-bar clip renders as drawn. Tracker columns show as steps. Overlaps are marked | 2–3 | medium |
 | **AR5 Recording and links** | after AR2 | S6: MIDI recording into the arrangement; loop recording to take lanes; comping; launching from the arrangement; dragging between session and arrangement | Record 3 loop passes and comp one bar from each: the render equals the comp. Launch an arrangement clip in the session, then go back to the arrangement | 2–3 | medium |

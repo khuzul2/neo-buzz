@@ -85,6 +85,8 @@ namespace ReBuzz.Studio.Views.Sequence
         public event Action ViewChanged;
         public event Action SelectionChanged;
         public event Action<IPattern> PatternDoubleClicked;
+        /// <summary>Fork (daw-modes.md AR2): a clip was opened for its notes (a double click, P): the view's piano roll shows it.</summary>
+        public event Action<IPattern> ClipOpened;
         public event Action<Point> MenuRequested;
         public event Action StatusChanged;
 
@@ -804,7 +806,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 if (item != null)
                 {
                     Select(item);
-                    PatternDoubleClicked?.Invoke(item.Pattern);
+                    ClipOpened?.Invoke(item.Pattern);
                 }
                 else if (laneRow?.Lane != null)
                 {
@@ -1113,6 +1115,7 @@ namespace ReBuzz.Studio.Views.Sequence
                     case Key.L: return ToggleLoop();
                     case Key.U: return MakeUnique();
                     case Key.Return when selected != null: PatternDoubleClicked?.Invoke(selected.Pattern); return true;
+                    case Key.P when selected != null: ClipOpened?.Invoke(selected.Pattern); return true;
                     case Key.Escape: ClearSelection(); return true;
                     case Key.Right: MoveCursor(cursorTime + TicksPerBeat, null); return true;
                     case Key.Left: MoveCursor(cursorTime - TicksPerBeat, null); return true;

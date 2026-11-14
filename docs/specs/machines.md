@@ -55,6 +55,7 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Neo Tape | effect | Tape machine: record pre-emphasis into an oversampled, anti-aliased tape saturation with bias, the matching de-emphasis, a head bump and high-frequency loss that follow the tape speed, an even-harmonic electronics stage, hiss, wow and flutter. Mix, Delta, gain match. |
 | Neo De-esser | effect | De-esser: a band-pass detector (relative or absolute) takes the sibilance band down (minimum-phase or linear-phase split, dynamic shelf or bell) with lookahead, Listen and Delta. |
 | Neo Gate | effect | Successor of Pedal Gate: gate and downward expander with hysteresis, hold, range, key filters, an external sidechain, lookahead, Listen and Delta. |
+| Neo Spectral | effect | Resonance suppressor on a short-time spectrum (2048-point frames, 43 ms latency): Suppress (each bin against its neighbourhood), Balance (toward a pink slope with Tilt) or Stabilize (toward its own 4 s average); Depth, Knee, Selectivity, Smoothing, Lift, Attack and Release, a frequency region, Mix, Delta, gain match. |
 | Neo Strip | effect | Channel strip: gate, EQ (low cut, low shelf, two bells, high shelf, high cut), compressor, drive, clipper and limiter in that order, each the engine of the Neo machine of that name; a stage that is off passes the audio untouched; constant latency; Delta and Match (mastering-tools.md §5.10) |
 | Neo Analyzer | effect | Spectrum (FFT with peak hold, third-octave bars), loudness (momentary, short-term, integrated LUFS, range, true peak) and stereo (correlation, width, goniometer) with the analysis library's numbers; readings for agents; audio untouched |
 | Neo LFO | control | A low-frequency oscillator that moves up to 8 parameters of other machines (neo-patch.md §3): seven shapes, a free rate or a tempo length (straight, dotted, triplet), phase, retrigger on the beat, the bar or a note, smoothing; no audio, no undo steps. |
@@ -568,6 +569,23 @@ Shared block: `KeyDetector` (NeoBuzz.Dsp): the key through an optional second-or
 | Neo Tape | Latency | constant, reported | High 59 (58 + 1), Live 0, +250 with wow or flutter |
 | Neo Tape | Mix 0 | the input delayed | bit for bit |
 | Neo Tape | CPU | | High 44.7x, Live 123x (floors 32/22, 90/62) |
+
+### Neo Spectral (docs/specs/mastering-tools.md §5.16)
+
+Built on `Stft` after the gate of mastering-tools.md §8 ("M7 as measured"). Linked stereo, N = 2048 (4096 from 88.2 kHz), latency N − 1, reported; allocates nothing on the audio thread.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Null | unit mask <= −120 dB; Mix 0 % bit for bit | −138.2 dB; 0 samples differ |
+| Suppression | +12 dB, Q 20 within 1 dB | 0.88 / 0.89 / 0.91 dB (44.1 / 48 / 96 kHz) |
+| Plain pink | < 0.5 dB per third octave at the defaults | −0.29 dB (Depth 100 %: −0.55 dB) |
+| Pre-echo (click) | reported | −38 dB worst sample, −24 dB in energy against the click |
+| Time-domain aliasing | reported | −60.6 dB |
+| Spectral flux on pink | reported | +0.00 dB (50 %), +0.01 dB (100 %) |
+| Modes | Balance toward pink; Stabilize; Lift; Region | white noise −0.02 -> −2.89 dB/oct (Tilt +3: −0.05); a +10 dB step −3.7 dB (Stabilize) against −0.5 (Suppress); a dip raised 2.8 dB (Lift 12); the resonance untouched outside the region |
+| Blocks, allocation | same bits; 0 bytes | blocks of 256, 117 and 16 identical; 0 bytes with every control moving |
+| Modulation cost | under the guard's limit | 1.40x |
+| CPU | >= 20x | Linux x64 123 – 132 (Suppress 44.1 / 48 kHz), 64 (96 kHz), Balance 132, Stabilize 144; macOS arm64 89 – 96, 46, 95, 101 (floors 80/55 and 40/28 at 96 kHz) |
 
 ### Neo Analyzer (spectrum, loudness, stereo; MCP A4)
 
