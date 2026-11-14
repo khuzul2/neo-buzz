@@ -40,7 +40,7 @@ namespace ReBuzz.Core
         // value listeners for the last track only. Fork (engine hardening): preallocated bits, no
         // longer a ConcurrentDictionary that allocated on the audio thread for every change.
         internal ParameterChanges ParameterChanges { get; } = new ParameterChanges();
-        internal ConcurrentBag<int> wavesEventsPending = new ConcurrentBag<int>();
+        internal ConcurrentQueue<int> wavesEventsPending = new ConcurrentQueue<int>();   // fork (HS3): a queue; a ConcurrentBag allocated its thread list on the audio thread's first TryTake
 
         internal MachineDLL MachineDLL { get => machineDLL; set => machineDLL = value; }
 

@@ -1072,8 +1072,6 @@ namespace ReBuzzTests
                 Change();
                 RestoreResultHolder holder = new();
                 using var types = new AllocationTypes();
-                var probed = new System.Collections.Concurrent.ConcurrentQueue<string>();
-                ReBuzz.MachineManagement.MachineWorkInstance.StageProbe = (m, st, d) => probed.Enqueue($"{m.Name}[{st}] +{d}");
                 bool started = false;
                 var during = Read(buffers, () =>
                 {
@@ -1081,7 +1079,6 @@ namespace ReBuzzTests
                     snapshots.Pump();
                     Thread.Sleep(1);                         // the finish waits 100 ms of wall time for the fades; the reads alone run faster than real time
                 }, out double restoreStep, out long bytes);
-                ReBuzz.MachineManagement.MachineWorkInstance.StageProbe = null;
                 Assert.That(holder.Result!.Mode, Is.EqualTo("live"), holder.Result.Reason);
                 Assert.That(snapshots.LiveActive, Is.False, "it applied and finished within the stretch");
 
@@ -1092,7 +1089,6 @@ namespace ReBuzzTests
                     $"largest sample-to-sample step: baseline {baseStep:G4}, across the restore {restoreStep:G4} (level {levelNow:G4})");
 
                 if (bytes != 0) TestContext.Out.WriteLine("[notice] restore live test: allocation ticks inside the allocating buffers: " + string.Join("; ", types.Ticks.Where(k => windows.Any(w => k.Time >= w.From.AddMilliseconds(-2) && k.Time <= w.To.AddMilliseconds(2))).Select(k => k.Text)) + $" (of {types.Ticks.Count} ticks in all)");
-                if (bytes != 0) TestContext.Out.WriteLine("[notice] restore live test: machine stages that allocated: " + string.Join("; ", probed));
                 Assert.That(bytes, Is.EqualTo(0), "a restore must not allocate on the audio thread");
                 Assert.That(snapshots.Diff(snap, null), Is.Empty, "the song is what the snapshot holds");
                 Assert.That(rig.Core.SongCore.Machines.Count(m => m.DLL.Info.Type != BuzzGUI.Interfaces.MachineType.Master), Is.EqualTo(machines));

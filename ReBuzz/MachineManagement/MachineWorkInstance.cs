@@ -769,7 +769,7 @@ namespace ReBuzz.MachineManagement
                     Machine.updateWaveInfo = false;
 
                     // Wave structure updated. Now we can send wave events if machine has requested the event
-                    while (Machine.wavesEventsPending.TryTake(out int index))
+                    while (Machine.wavesEventsPending.TryDequeue(out int index))
                     {
                         // Need to find a machine that registers to this event
                         // buzz.MachineManager.SendWaveChangedEvents(Machine, index);

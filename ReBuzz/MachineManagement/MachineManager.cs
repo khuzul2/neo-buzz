@@ -1402,7 +1402,7 @@ namespace ReBuzz.MachineManagement
             foreach (var machineKV in nativeMachines)
             {
                 var machine = machineKV.Key;
-                machine.wavesEventsPending.Add(index);
+                machine.wavesEventsPending.Enqueue(index);
             }
         }
 
