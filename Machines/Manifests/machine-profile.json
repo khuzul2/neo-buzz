@@ -31093,6 +31093,415 @@
    "generated": true,
    "health": "ok"
   },
+  "Neo Spectral": {
+   "gear": "Neo Spectral",
+   "kind": "effect",
+   "load_seconds": 0.4,
+   "gear_info": {
+    "file": "Effects/Neo Spectral.NET.dll",
+    "managed": true,
+    "min_tracks": 0,
+    "max_tracks": 0,
+    "takes_midi": false
+   },
+   "parameters": 14,
+   "track_parameters": 0,
+   "inferred": 13,
+   "from_description": 1,
+   "inference_check": {
+    "agree": 14,
+    "of": 14
+   },
+   "effect": {
+    "gain_db": -0.46,
+    "latency_samples": 1613,
+    "latency_ms": 36.58,
+    "tail_seconds": 0.1,
+    "tail_hz": 8606.6,
+    "echoes": 0,
+    "output_correlation": 1.0,
+    "spectrum_spread_db": 4.1,
+    "tilt_db": -0.1,
+    "sine": {
+     "loud": {
+      "gain_db": -18.69,
+      "thd_percent": 1.96,
+      "thd_in_percent": 1.96,
+      "movement_db": 3.74
+     },
+     "quiet": {
+      "gain_db": -17.98,
+      "thd_percent": 2.22,
+      "thd_in_percent": 1.96,
+      "movement_db": 5.41
+     }
+    },
+    "traits": [
+     "modulation"
+    ],
+    "response": [
+     [
+      20.6,
+      -0.0
+     ],
+     [
+      23.1,
+      -0.0
+     ],
+     [
+      26.0,
+      -0.0
+     ],
+     [
+      29.1,
+      0.0
+     ],
+     [
+      32.7,
+      0.0
+     ],
+     [
+      36.7,
+      -0.0
+     ],
+     [
+      41.2,
+      -0.0
+     ],
+     [
+      46.2,
+      -0.01
+     ],
+     [
+      51.9,
+      -0.67
+     ],
+     [
+      58.3,
+      -0.47
+     ],
+     [
+      65.4,
+      -0.37
+     ],
+     [
+      73.4,
+      -0.82
+     ],
+     [
+      82.4,
+      -1.4
+     ],
+     [
+      92.5,
+      -2.28
+     ],
+     [
+      103.8,
+      -2.82
+     ],
+     [
+      116.5,
+      -2.55
+     ],
+     [
+      130.8,
+      -1.95
+     ],
+     [
+      146.8,
+      -2.2
+     ],
+     [
+      164.8,
+      -2.68
+     ],
+     [
+      185.0,
+      -3.01
+     ],
+     [
+      207.7,
+      -3.05
+     ],
+     [
+      233.1,
+      -2.97
+     ],
+     [
+      261.6,
+      -4.31
+     ],
+     [
+      293.7,
+      -5.08
+     ],
+     [
+      329.6,
+      -3.89
+     ],
+     [
+      370.0,
+      -3.52
+     ],
+     [
+      415.3,
+      -3.94
+     ],
+     [
+      466.2,
+      -4.86
+     ],
+     [
+      523.3,
+      -5.09
+     ],
+     [
+      587.3,
+      -6.11
+     ],
+     [
+      659.3,
+      -5.61
+     ],
+     [
+      740.0,
+      -5.16
+     ],
+     [
+      830.6,
+      -5.96
+     ],
+     [
+      932.3,
+      -6.46
+     ],
+     [
+      1046.5,
+      -8.1
+     ],
+     [
+      1174.7,
+      -8.42
+     ],
+     [
+      1318.5,
+      -8.73
+     ],
+     [
+      1480.0,
+      -9.26
+     ],
+     [
+      1661.2,
+      -10.04
+     ],
+     [
+      1864.7,
+      -10.79
+     ],
+     [
+      2093.0,
+      -11.36
+     ],
+     [
+      2349.3,
+      -12.52
+     ],
+     [
+      2637.0,
+      -12.85
+     ],
+     [
+      2960.0,
+      -13.96
+     ],
+     [
+      3322.4,
+      -13.72
+     ],
+     [
+      3729.3,
+      -15.05
+     ],
+     [
+      4186.0,
+      -14.54
+     ],
+     [
+      4698.6,
+      -15.4
+     ],
+     [
+      5274.0,
+      -15.65
+     ],
+     [
+      5919.9,
+      -16.99
+     ],
+     [
+      6644.9,
+      -17.3
+     ],
+     [
+      7458.6,
+      -18.68
+     ],
+     [
+      8372.0,
+      -18.31
+     ],
+     [
+      9397.3,
+      -18.24
+     ],
+     [
+      10548.1,
+      -19.69
+     ],
+     [
+      11839.8,
+      -20.6
+     ],
+     [
+      13289.8,
+      -20.76
+     ],
+     [
+      14917.2,
+      -20.87
+     ],
+     [
+      16744.0,
+      -0.0
+     ],
+     [
+      18794.5,
+      -0.0
+     ]
+    ],
+    "response_summary": {
+     "level_db": -5.27,
+     "spread_db": 20.87,
+     "centroid_oct": -2.689,
+     "max_db": -0.0,
+     "max_hz": 20.6,
+     "prominence_db": 0.0,
+     "low_corner_hz": 20.6,
+     "high_corner_hz": 164.8,
+     "width_oct": 3.0,
+     "tilt_db": -14.06,
+     "wobble_db": 0.42
+    },
+    "impulse": {
+     "latency_samples": 2047,
+     "direct_db": -3.66,
+     "early_db": -5.91,
+     "late_db": -72.81,
+     "t60_s": 0.027,
+     "t60_span_db": 20.0,
+     "ring_s": 0.018,
+     "rings_past_window": false,
+     "echoes": [],
+     "echoes_left": [],
+     "echoes_right": [],
+     "copy_s": null,
+     "late_onset_s": 0.003,
+     "tail_zcr_hz": 7440.3,
+     "tail_low_db": -34.35,
+     "balance_db": -0.0
+    },
+    "steps": {
+     "curve": [
+      [
+       -40.86,
+       -8.16
+      ],
+      [
+       -34.85,
+       -8.16
+      ],
+      [
+       -28.82,
+       -8.16
+      ],
+      [
+       -22.79,
+       -8.12
+      ],
+      [
+       -16.77,
+       -8.17
+      ],
+      [
+       -10.75,
+       -8.15
+      ],
+      [
+       -4.8,
+       -8.13
+      ]
+     ],
+     "compression_db": -0.02,
+     "top_slope": 1.003,
+     "knee_in_db": null,
+     "attack_s": 0.5,
+     "release_s": 0.7,
+     "attack_tau_s": null,
+     "release_tau_s": 0.005
+    },
+    "thd_percent": 2.67
+   },
+   "cpu_ms_per_s": 0.0,
+   "type": "modulation",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.51,
+     "growth_db": -0.42,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -33.22,
+      "growth_db": -0.15,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -11.18,
+      "growth_db": -11.67,
+      "verdict": "ok"
+     }
+    }
+   },
+   "denormal": {
+    "playing_ms_per_s": 6.66,
+    "silent_ms_per_s": 0.383,
+    "silent_worst_ms_per_s": 0.722,
+    "windows_ms_per_s": [
+     6.66,
+     0.722,
+     0.399,
+     0.382,
+     0.383,
+     0.505,
+     0.486,
+     0.373,
+     0.371,
+     0.378,
+     0.364
+    ]
+   },
+   "seconds": 2.1,
+   "platform": "linux",
+   "date": "2026-11-14",
+   "problems": [],
+   "warnings": [],
+   "hot": [],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "ok"
+  },
   "Neo Step": {
    "gear": "Neo Step",
    "kind": "generator",

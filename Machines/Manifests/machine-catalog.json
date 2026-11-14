@@ -1365,6 +1365,17 @@
     "automation"
    ],
    "use_for": "One knob that moves up to 8 parameters of other machines at once, for one-move performance changes."
+  },
+  "Neo Spectral": {
+   "category": "EQ & Filter",
+   "tags": [
+    "eq",
+    "clean",
+    "master",
+    "mix-bus",
+    "vocal"
+   ],
+   "use_for": "Smooth harsh resonances that move: a dynamic, spectrum-wide suppressor for vocals, guitars, buses and masters."
   }
  }
 }

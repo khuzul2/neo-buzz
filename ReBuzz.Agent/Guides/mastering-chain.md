@@ -82,6 +82,10 @@ Neo Strip puts a gate, an EQ, a compressor, a drive, a clipper and a limiter in 
 
 A bright or sibilant master (or vocal bus) goes through Neo De-esser before the limiter: `Detector` Absolute at 8 – 10 kHz with `Action` Bell for a bright master, Relative at 6.5 kHz with `Action` Split for a vocal; find the band with `Listen`, then read `reduction_db` (3 – 6 dB on the worst passages). Neo Tape before the clipper or limiter adds a little glue and warmth: start from "Mastering — Subtle Glue (15 ips)", match the loudness with `gain_match_db`, and compare with it bypassed. Neo Gate (the successor of Pedal Gate) belongs on tracks, not on the master.
 
+### 3g. Resonances that move (Neo Spectral, optional)
+
+A master or bus with a resonance that comes and goes (a ringing note, a harsh edge in a vocal, a boxy bump) goes through Neo Spectral before the limiter: `Mode` Suppress at `Depth` 30 %, `Knee` 4 dB, `Low limit` 120 Hz, then read `reduction_db` in `machine_readings` (3 – 6 dB on the worst passages) and listen with `Delta` on to hear that it takes resonance and not the body of the sound. `Mode` Balance at `Depth` 25 % evens out a tonal tilt toward a pink slope (`Tilt` moves the target). Its latency is one frame (2047 samples at 44.1 and 48 kHz), reported to the host.
+
 ### 4. Limiter
 
 Neo Limiter: `Ceiling` (dBTP), `Input gain` (how hard it is driven), `Auto release` or `Release`, `Lookahead` (default is fine), `Stereo link` 100 %. Set:

@@ -1090,6 +1090,54 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void ANeoSpectralWithEveryControlAllocatesNothing()
+        {
+            // mastering-tools.md §5.16: Neo Spectral (the mode switched, Depth, Lift, Smoothing and the region moved, Mix and Delta) over a pattern.
+            NewSong();
+            var m = AddPoly("Hygiene Spectral Poly");
+            m.CreatePattern("00", 16);
+            var pattern = (PatternCore)m.Patterns.First();
+            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 36 + (i * 5) % 24, 100)).ToArray());
+            Arrange(m, pattern);
+            var spectral = InsertAfter(m, "Neo Spectral", "Hygiene Spectral");
+            var sg = spectral.ParameterGroupsList.SelectMany(g => g.ParametersList).ToList();
+            var mode = sg.First(p => p.Name == "Mode");
+            var depth = sg.First(p => p.Name == "Depth");
+            var lift = sg.First(p => p.Name == "Lift");
+            var smoothing = sg.First(p => p.Name == "Smoothing");
+            var low = sg.First(p => p.Name == "Low limit");
+            var mix = sg.First(p => p.Name == "Mix");
+            var delta = sg.First(p => p.Name == "Delta");
+            try
+            {
+                int n = 0;
+                foreach (int algorithm in new[] { 0, 1, 2 })
+                {
+                    using var audio = new AudioThread(algorithm);
+                    lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                    var cost = Steady(audio, perBuffer: () =>
+                    {
+                        n++;
+                        if (n % 90 == 0) mode.SetValue(1 << 16, (n / 90) % 3);
+                        depth.SetValue(1 << 16, 300 + n % 600);
+                        if (n % 60 == 0) lift.SetValue(1 << 16, (n / 60 % 4) * 250);
+                        if (n % 70 == 0) smoothing.SetValue(1 << 16, (n / 70) % 7);
+                        low.SetValue(1 << 16, 100 + n % 400);
+                        if (n % 110 == 0) mix.SetValue(1 << 16, 500 + (n / 110 % 2) * 500);
+                        if (n % 130 == 0) delta.SetValue(1 << 16, (n / 130) % 2);
+                    });
+                    AssertNoAllocation(cost, $"a pattern through a Neo Spectral with every control (algorithm {algorithm})");
+                    lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                }
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                NewSong();
+            }
+        }
+
+        [AvaloniaTest]
         public void ANeoImagerANeoExciterANeoDitherAndANeoStripWithEveryControlAllocateNothing()
         {
             // mastering-tools.md §5.7 - §5.9: a pattern through Neo Imager (every band shaped, Recover on, a width moved every
