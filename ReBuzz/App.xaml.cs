@@ -24,6 +24,15 @@ namespace ReBuzz
         /// </summary>
         protected override void OnStartup(StartupEventArgs e)
         {
+            // Fork: a package that is still being unzipped (or was unzipped in part) lacks the themes the first window loads:
+            // say so once and quit, instead of the unhandled-exception dialog. The headless server loads no theme.
+            var missing = ReBuzz.Agent.HeadlessAgent.Requested(e.Args) ? new System.Collections.Generic.List<string>() : ReBuzz.Common.InstallCheck.Missing(AppContext.BaseDirectory);
+            if (missing.Count > 0)
+            {
+                MessageBox.Show(ReBuzz.Common.InstallCheck.Message, Product.Name, MessageBoxButton.OK, MessageBoxImage.Error);
+                Shutdown(1);
+                return;
+            }
             if (ReBuzz.Agent.HeadlessAgent.Requested(e.Args))
             {
                 base.OnStartup(e);
