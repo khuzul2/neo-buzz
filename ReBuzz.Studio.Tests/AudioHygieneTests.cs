@@ -51,6 +51,7 @@ using ReBuzz.Studio.Parameters;
 using ReBuzz.Studio.Platform;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -797,7 +798,7 @@ namespace ReBuzz.Studio.Tests
 
         static string SineWav(double hz, string name)
         {
-            var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), name + "-" + Guid.NewGuid().ToString("N") + ".wav");
+            var path = TestTemp.Path(name + "-" + Guid.NewGuid().ToString("N") + ".wav");
             int n = 48000;
             using var w = new System.IO.BinaryWriter(System.IO.File.Create(path));
             w.Write("RIFF"u8.ToArray()); w.Write(36 + n * 4); w.Write("WAVE"u8.ToArray());

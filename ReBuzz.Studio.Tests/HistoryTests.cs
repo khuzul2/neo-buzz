@@ -16,6 +16,7 @@ using NeoBuzz.Editor;
 using NUnit.Framework;
 using ReBuzz.Core;
 using ReBuzz.Core.Actions;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -500,7 +501,7 @@ namespace ReBuzz.Studio.Tests
         // A one-cycle WAV: 16-bit mono.
         static string Wav()
         {
-            string path = Path.Combine(Path.GetTempPath(), "history-" + Guid.NewGuid().ToString("N") + ".wav");
+            string path = TestTemp.Path("history-" + Guid.NewGuid().ToString("N") + ".wav");
             const int n = 2048;
             using var s = new MemoryStream();
             using var w = new BinaryWriter(s);

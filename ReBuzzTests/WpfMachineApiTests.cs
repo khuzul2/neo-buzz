@@ -141,7 +141,7 @@ namespace ReBuzzTests
         [Test]
         public void ThemeColFileOverridesTheDefaults()
         {
-            string root = Path.Combine(Path.GetTempPath(), "rebuzz-theme-" + Guid.NewGuid().ToString("N"));
+            string root = TestTemp.Path("rebuzz-theme-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(Path.Combine(root, "Themes"));
             try
             {

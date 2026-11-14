@@ -3,6 +3,7 @@ using System.IO;
 using NUnit.Framework;
 using ReBuzz.Agent.Audio;
 using ReBuzz.Agent.Mcp;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.AgentTests
 {
@@ -41,7 +42,7 @@ namespace ReBuzz.AgentTests
                     Assert.That(k, Is.EqualTo(Math.Round(k)));
                     Assert.That(k, Is.InRange(-scale, scale - 1));
                 }
-            string path = Path.Combine(Path.GetTempPath(), $"requantize-{bits}-{dither}-{Guid.NewGuid():N}.wav");
+            string path = TestTemp.Path($"requantize-{bits}-{dither}-{Guid.NewGuid():N}.wav");
             try
             {
                 var inter = new float[q.Frames * 2];

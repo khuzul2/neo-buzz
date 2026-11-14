@@ -37,6 +37,7 @@ using ReBuzz.Studio.Views;
 using ReBuzz.Studio.Views.Machines;
 using ReBuzz.Studio.Views.Sequence;
 using ReBuzz.Studio.Views.Session;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -365,7 +366,7 @@ namespace ReBuzz.Studio.Tests
         {
             get
             {
-                string dir = Path.Combine(Path.GetTempPath(), "rebuzz-gallery-" + System.Environment.ProcessId);
+                string dir = TestTemp.Path("rebuzz-gallery-" + System.Environment.ProcessId);
                 Directory.CreateDirectory(dir);
                 return dir;
             }
@@ -748,7 +749,7 @@ namespace ReBuzz.Studio.Tests
                 });
                 Try("348-export-audio-progress", () =>
                 {
-                    string file = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "gallery-export-" + System.Environment.ProcessId + ".wav");
+                    string file = TestTemp.Path("gallery-export-" + System.Environment.ProcessId + ".wav");
                     var sheet = new ReBuzz.Studio.Shell.ExportSheet(Core);
                     sheet.Show();
                     Settle();

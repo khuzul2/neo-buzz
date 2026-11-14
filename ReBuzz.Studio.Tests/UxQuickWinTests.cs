@@ -24,6 +24,7 @@ using ReBuzz.Studio.Shell.Design;
 using ReBuzz.Studio.Views.Machines;
 using ReBuzz.Studio.Views.Session;
 using static ReBuzz.Studio.Tests.MachineViewTests;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -458,7 +459,7 @@ namespace ReBuzz.Studio.Tests
             var window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
             window.Show();
             Settle();
-            string path = Path.Combine(Path.GetTempPath(), $"ux-revert-{Environment.ProcessId}.bmxml");
+            string path = TestTemp.Path($"ux-revert-{Environment.ProcessId}.bmxml");
             try
             {
                 Core.Modified = false;

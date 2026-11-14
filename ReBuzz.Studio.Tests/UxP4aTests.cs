@@ -17,6 +17,7 @@ using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Shell.Design;
 using ReBuzz.Studio.Shell.Preferences;
 using static ReBuzz.Studio.Tests.MachineViewTests;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -128,7 +129,7 @@ namespace ReBuzz.Studio.Tests
         public void TheExportRendersOnAWorkerThreadWhileTheUiKeepsRunningAndEditsAreBlocked()
         {
             var window = SongWith("Neo Poly", 32);
-            string folder = Path.Combine(Path.GetTempPath(), "ux-p4a-export-" + Environment.ProcessId);
+            string folder = TestTemp.Path("ux-p4a-export-" + Environment.ProcessId);
             using var restore = Studio.AfterTest(() => Restore(window, folder));
             Directory.CreateDirectory(folder);
             ExportSheet.FolderOpener = _ => { };

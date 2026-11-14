@@ -16,6 +16,7 @@ using BuzzGUI.Common;
 using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Shell.Preferences;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -31,7 +32,7 @@ namespace ReBuzz.Studio.Tests
         {
             get
             {
-                string dir = Path.Combine(Path.GetTempPath(), "rebuzz-studio-shell-" + System.Environment.ProcessId);
+                string dir = TestTemp.Path("rebuzz-studio-shell-" + System.Environment.ProcessId);
                 Directory.CreateDirectory(dir);
                 return dir;
             }

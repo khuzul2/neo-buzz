@@ -12,6 +12,7 @@ using NUnit.Framework;
 using ReBuzz.Core;
 using ReBuzz.Core.SongHistory;
 using ReBuzz.Studio.Views.Inspector;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -24,7 +25,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void TheSectionSavesListsRenamesDeletesAndDiffs()
         {
-            string root = Path.Combine(Path.GetTempPath(), "snapshot-panel-" + Environment.ProcessId);
+            string root = TestTemp.Path("snapshot-panel-" + Environment.ProcessId);
             string old = SongSnapshots.UntitledRoot;
             SongSnapshots.UntitledRoot = root;
             using var restore = Studio.AfterTest(() => { SongSnapshots.UntitledRoot = old; try { Directory.Delete(root, true); } catch (IOException) { } });
@@ -71,7 +72,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void RestoreWaitsForStopAndAbSwitchesBetweenTwoSnapshots()
         {
-            string root = Path.Combine(Path.GetTempPath(), "snapshot-panel-ab-" + Environment.ProcessId);
+            string root = TestTemp.Path("snapshot-panel-ab-" + Environment.ProcessId);
             string old = SongSnapshots.UntitledRoot;
             SongSnapshots.UntitledRoot = root;
             using var restore = Studio.AfterTest(() => { SongSnapshots.UntitledRoot = old; try { Directory.Delete(root, true); } catch (IOException) { } });

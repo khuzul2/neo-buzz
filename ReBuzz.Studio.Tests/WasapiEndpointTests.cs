@@ -4,6 +4,7 @@
 using ReBuzz.Audio;
 using ReBuzz.Host;
 using ReBuzz.Platform;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -21,7 +22,7 @@ namespace ReBuzz.Studio.Tests
 
         static readonly WasapiEndpoint Speakers = new("{0.0.0}.{aaa}", "Speakers (Realtek)"), Dac = new("{0.0.0}.{bbb}", "USB DAC (Topping)");
 
-        static JsonRegistry Settings() => new JsonRegistry(Path.Combine(Path.GetTempPath(), "neobuzz-wasapiep-" + Guid.NewGuid().ToString("N") + ".json"), @"Software\ReBuzz");
+        static JsonRegistry Settings() => new JsonRegistry(TestTemp.Path("neobuzz-wasapiep-" + Guid.NewGuid().ToString("N") + ".json"), @"Software\ReBuzz");
 
         static (WindowsHostAudioDriverFactory Factory, FakeEndpoints Source, JsonRegistry Registry) Make(params WasapiEndpoint[] endpoints)
         {

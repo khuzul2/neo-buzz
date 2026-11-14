@@ -16,6 +16,7 @@ using ReBuzz.Agent;
 using ReBuzz.Agent.Mcp;
 using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -256,7 +257,7 @@ namespace ReBuzz.Studio.Tests
         public void ExportAudioRendersTheRealSongToFilesAndNeverOverwrites()
         {
             var window = NewSong();
-            string folder = Path.Combine(Path.GetTempPath(), "app-control-export-" + Environment.ProcessId);
+            string folder = TestTemp.Path("app-control-export-" + Environment.ProcessId);
             using var restore = Studio.AfterTest(() =>
             {
                 Dialogs.Responder = null;
