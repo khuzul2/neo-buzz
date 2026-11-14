@@ -77,7 +77,8 @@ namespace ReBuzz.AgentEval
         /// <summary>Criteria from what the result measured, against the starting song's measures.</summary>
         public abstract List<Criterion> Score(Facts start, Facts result, TaskContext ctx);
 
-        public static readonly EvalTask[] All = { new BeatTask(), new SoundMatchTask(), new FixTheMixTask(), new MasterTask(), new SongTask(), new MasterMatchTask(), new MasterLoudTask(), new FixHarshnessTask() };
+        public static readonly EvalTask[] All = new EvalTask[] { new BeatTask(), new SoundMatchTask(), new FixTheMixTask(), new MasterTask(), new SongTask(), new MasterMatchTask(), new MasterLoudTask(), new FixHarshnessTask() }
+            .Concat(KnowledgeTasks.All).ToArray();
 
         public static EvalTask Find(string name) =>
             All.FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase))
