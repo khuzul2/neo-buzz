@@ -2,19 +2,36 @@
 using BuzzGUI.Common.Actions;
 using BuzzGUI.Common.Settings;
 using BuzzGUI.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 
 namespace ReBuzz.Core.Actions.GraphActions
 {
-    internal class DeleteMachinesAction : BuzzAction
+    internal class DeleteMachinesAction : BuzzAction, IHistoryAction
     {
         readonly List<MachineInfoRef> deleteMachineDatas = new List<MachineInfoRef>();
         // Fork (0.6.2): what was deleted, so the undo can report what stands for it now.
         // 0.6.3: with each pattern's engine columns (MIDI columns, session takes), which the undo puts back.
-        readonly Dictionary<MachineInfoRef, (IMachine Machine, Dictionary<string, IPattern> Patterns, Dictionary<int, ISequence> Sequences, Dictionary<string, EngineColumns> Columns)> deleted =
-            new Dictionary<MachineInfoRef, (IMachine, Dictionary<string, IPattern>, Dictionary<int, ISequence>, Dictionary<string, EngineColumns>)>();
+        // Fork (fix/long-session-slowdown): held weakly. The undo history keeps this action for as long as its cap allows,
+        // and it counts an action as 256 bytes: held strongly, every deleted machine (its buffers, its machine object, a
+        // Pedal machine's delay lines) stayed in memory with it, hundreds of MB over a long session. The undo makes the
+        // machine again from the saved data; the old objects are only the keys views remap their selections from, and a
+        // view that still holds one keeps it alive.
+        sealed class Gone
+        {
+            public WeakReference<IMachine> Machine;
+            public Dictionary<string, WeakReference<IPattern>> Patterns;
+            public Dictionary<int, WeakReference<ISequence>> Sequences;
+            public Dictionary<string, EngineColumns> Columns;
+        }
+
+        static WeakReference<T> Weak<T>(T target) where T : class => new WeakReference<T>(target);
+
+        static T Target<T>(WeakReference<T> weak) where T : class => weak.TryGetTarget(out var t) ? t : null;
+
+        readonly Dictionary<MachineInfoRef, Gone> deleted = new Dictionary<MachineInfoRef, Gone>();
 
         private readonly ReBuzzCore buzz;
         private readonly IUiDispatcher dispatcher;
@@ -57,6 +74,30 @@ namespace ReBuzz.Core.Actions.GraphActions
                         machineData.patternAssociations.Add(pattern.Name, colorIndex);
                     }
                 }
+            }
+        }
+
+        // Fork (fix/long-session-slowdown): what the history holds for this step. It counted every action as 256 bytes, but a
+        // deleted machine's saved parameters (a ParameterCore each, with its per-track value tables) are about 3.5 KB each
+        // (measured: a 95-parameter machine, 0.33 MB), so the history's cap of 256 MB held 100 times as much as it said.
+        const long BytesPerSavedParameter = 3600;
+
+        string IHistoryAction.HistoryName => null;
+
+        IEnumerable<KeyValuePair<object, long>> IHistoryAction.HistoryBlobs => null;
+
+        long IHistoryAction.HistoryBytes
+        {
+            get
+            {
+                long bytes = 256;
+                foreach (var d in deleteMachineDatas)
+                {
+                    bytes += (d.Data?.Length ?? 0) + (d.PatternEditorData?.Length ?? 0);
+                    foreach (var g in d.parameterGroups) bytes += g.ParametersList.Count * BytesPerSavedParameter;
+                    foreach (var seq in d.sequences.Values) bytes += seq.Count() * 64L;
+                }
+                return bytes;
             }
         }
 
@@ -104,10 +145,13 @@ namespace ReBuzz.Core.Actions.GraphActions
                     var machine = buzz.SongCore.MachinesList.FirstOrDefault(x => x.Name == machineData.Name);
                     if (machine == null) continue;
                     var patterns = machine.Patterns.GroupBy(p => p.Name).ToDictionary(g => g.Key, g => g.First());
-                    deleted[machineData] = (machine,
-                        patterns,
-                        buzz.SongCore.Sequences.Where(s => s.Machine == machine).ToDictionary(s => buzz.SongCore.Sequences.IndexOf(s), s => s),
-                        patterns.ToDictionary(p => p.Key, p => EngineColumns.Capture(p.Value)));
+                    deleted[machineData] = new Gone
+                    {
+                        Machine = Weak<IMachine>(machine),
+                        Columns = patterns.ToDictionary(p => p.Key, p => EngineColumns.Capture(p.Value)),
+                        Sequences = buzz.SongCore.Sequences.Where(s => s.Machine == machine).ToDictionary(s => buzz.SongCore.Sequences.IndexOf(s), s => Weak<ISequence>(s)),
+                        Patterns = patterns.ToDictionary(p => p.Key, p => Weak<IPattern>(p.Value)),
+                    };
                 }
 
                 // Remove machines
@@ -256,12 +300,20 @@ namespace ReBuzz.Core.Actions.GraphActions
             {
                 if (!deleted.TryGetValue(machineData, out var old)) continue;
                 if (!madeAgain.TryGetValue(machineData, out var now) || !buzz.SongCore.MachinesList.Contains(now)) continue;
-                BuzzGUI.Common.Actions.Restorations.Report(old.Machine, now);
+                // An object that was collected has no view holding it: nothing to remap.
+                var oldMachine = Target(old.Machine);
+                if (oldMachine != null) BuzzGUI.Common.Actions.Restorations.Report(oldMachine, now);
                 foreach (var p in old.Patterns)
-                    BuzzGUI.Common.Actions.Restorations.Report(p.Value, now.PatternsList.FirstOrDefault(x => x.Name == p.Key));
+                {
+                    var oldPattern = Target(p.Value);
+                    if (oldPattern != null) BuzzGUI.Common.Actions.Restorations.Report(oldPattern, now.PatternsList.FirstOrDefault(x => x.Name == p.Key));
+                }
                 foreach (var s in old.Sequences)
-                    if (s.Key < buzz.SongCore.SequencesList.Count && buzz.SongCore.SequencesList[s.Key].Machine == now)
-                        BuzzGUI.Common.Actions.Restorations.Report(s.Value, buzz.SongCore.SequencesList[s.Key]);
+                {
+                    var oldSequence = Target(s.Value);
+                    if (oldSequence != null && s.Key < buzz.SongCore.SequencesList.Count && buzz.SongCore.SequencesList[s.Key].Machine == now)
+                        BuzzGUI.Common.Actions.Restorations.Report(oldSequence, buzz.SongCore.SequencesList[s.Key]);
+                }
             }
             deleted.Clear();
         }

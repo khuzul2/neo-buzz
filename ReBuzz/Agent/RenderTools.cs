@@ -378,6 +378,7 @@ namespace ReBuzz.Agent
             // whatever the UI thread has got to, so renders are the same each time.
             if (core.LatencyPlanStale) core.UpdateMachineDelayCompensation();
 
+            WorkManager wm = null;
             lock (ReBuzzCore.AudioLock)
             {
                 try
@@ -394,7 +395,7 @@ namespace ReBuzz.Agent
 
                     // Fork (ux-overhaul.md P4a): every machine that can goes back to a new machine's state, so a render repeats within one process.
                     foreach (var m in machines) ResetForRender(m);
-                    var wm = new WorkManager(core, new WorkThreadEngine(1), 0, core.EngineSettings);
+                    wm = new WorkManager(core, new WorkThreadEngine(1), 0, core.EngineSettings);
                     var buffer = new float[512];
                     // A6: every render starts on a tick boundary, wherever the engine's tick phase was
                     // left, so its blocks (and so every machine's state when the first note plays) are
@@ -486,6 +487,7 @@ namespace ReBuzz.Agent
                 }
                 finally
                 {
+                    wm?.Stop();   // unsubscribes it from PrebuildWorkOrder: a leaked manager slowed every later topology change
                     foreach (var t in taps) t.Stop();
                     core.Playing = false;
                     // Fork (machine-safety.md §3.2): a machine whose guard tripped stays muted (unmuting resets it).

@@ -49,12 +49,16 @@ namespace ReBuzz.Core.Actions
             Attributes = machine.AttributesList.ToList();
 
             // Save parameter values
-            ParameterGroup pg = machine.ParameterGroupsList[0].Clone();
-            parameterGroups.Add(pg);
-            pg = machine.ParameterGroupsList[1].Clone();
-            parameterGroups.Add(pg);
-            pg = machine.ParameterGroupsList[2].Clone();
-            parameterGroups.Add(pg);
+            // Fork (fix/long-session-slowdown): the copies belong to no machine. A clone points at the machine (and, through
+            // its parameters, at the original group, so at the machine again): the undo history kept every deleted machine
+            // alive with its buffers. GetGroup gives a group its machine when an undo needs one.
+            for (int g = 0; g < 3; g++)
+            {
+                ParameterGroup pg = machine.ParameterGroupsList[g].Clone();
+                pg.Machine = null;
+                foreach (var p in pg.ParametersList) p.Group = pg;
+                parameterGroups.Add(pg);
+            }
 
             // Save Patterns
             foreach (var pattern in machine.PatternsList)

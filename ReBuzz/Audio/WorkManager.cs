@@ -1583,6 +1583,10 @@ namespace ReBuzz.Audio
         internal void Stop()
         {
             stopped = true;
+            // Fork (fix/long-session-slowdown): the manager no longer builds orders. A render makes one of its own, and left
+            // subscribed each one stayed alive with its cached order (and every machine in it, deleted ones too), and every
+            // topology change rebuilt the order of all of them: a long session slowed down and grew with each render.
+            buzzCore.PrebuildWorkOrder -= PrebuildOrder;
             workSet.Clear();
         }
 
