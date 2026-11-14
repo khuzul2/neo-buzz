@@ -714,7 +714,7 @@ namespace ReBuzzTests
             }
             string Wave(string name, double hz, int harmonics, int step)
             {
-                string path = Path.Combine(Path.GetTempPath(), $"neo-sampler-calibration-{name}-{Guid.NewGuid():N}.wav");
+                string path = TestTemp.Path($"neo-sampler-calibration-{name}-{Guid.NewGuid():N}.wav");
                 var x = new float[96000];
                 for (int i = 0; i < x.Length; i++)
                 {

@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using ReBuzz.Agent.Audio;
 using Rig = ReBuzzTests.AgentServerTests.Rig;
+using ReBuzzTests.Automation;
 
 namespace ReBuzzTests
 {
@@ -113,7 +114,7 @@ namespace ReBuzzTests
         public void WavesImportIntoSlotsAndUndo()
         {
             using var rig = new Rig();
-            string file = Path.Combine(Path.GetTempPath(), "ReBuzzAgentTests", Guid.NewGuid().ToString("N"), "tone.wav");
+            string file = TestTemp.Path("ReBuzzAgentTests", Guid.NewGuid().ToString("N"), "tone.wav");
             Directory.CreateDirectory(Path.GetDirectoryName(file)!);
             int frames = 22050;
             var x = new float[frames * 2];

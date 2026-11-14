@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using ReBuzz.Agent.Audio;
 using Rig = ReBuzzTests.AgentServerTests.Rig;
+using ReBuzzTests.Automation;
 
 namespace ReBuzzTests
 {
@@ -26,7 +27,7 @@ namespace ReBuzzTests
 
         static string TempFile(string name)
         {
-            string path = Path.Combine(Path.GetTempPath(), "ReBuzzAgentTests", Guid.NewGuid().ToString("N"), name);
+            string path = TestTemp.Path("ReBuzzAgentTests", Guid.NewGuid().ToString("N"), name);
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             return path;
         }

@@ -13,6 +13,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 using ReBuzz.Core.Notes;
+using ReBuzzTests.Automation;
 
 namespace ReBuzzTests
 {
@@ -221,7 +222,7 @@ namespace ReBuzzTests
 
         static string TempSong(string name)
         {
-            string dir = Path.Combine(Path.GetTempPath(), "ReBuzzSongNotesTests", Guid.NewGuid().ToString("N"));
+            string dir = TestTemp.Path("ReBuzzSongNotesTests", Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(dir);
             return Path.Combine(dir, name);
         }

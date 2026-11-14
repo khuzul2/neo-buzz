@@ -86,6 +86,21 @@ namespace ReBuzz.Core.SongHistory
         /// <summary>The list changed (a capture queued or stored, a delete, a rename, another song). Any thread.</summary>
         public event Action Changed;
 
+        /// <summary>
+        /// Tells the listeners (any thread). One that throws is noted in <see cref="LastError"/> and doesn't stop the others, nor the
+        /// caller: this runs inside the writer's cleanup and the prune's loop, where an escaping exception left the cap broken.
+        /// </summary>
+        void RaiseChanged()
+        {
+            var handlers = Changed;
+            if (handlers == null) return;
+            foreach (Action h in handlers.GetInvocationList())
+            {
+                try { h(); }
+                catch (Exception e) { LastError = "A listener of the snapshot list failed: " + e.Message; }
+            }
+        }
+
         internal SongSnapshots(ReBuzzCore core)
         {
             this.core = core;
@@ -135,7 +150,7 @@ namespace ReBuzz.Core.SongHistory
                 if (empty) ReadEmbedded(pendingEmbedded);
             }
             pendingEmbedded = null;
-            Changed?.Invoke();
+            RaiseChanged();
         }
 
         void Load()
@@ -214,6 +229,7 @@ namespace ReBuzz.Core.SongHistory
                 Task t;
                 lock (gate) t = queue;
                 t.Wait();
+                PruneAuto();                                    // nothing is pending now: the cap holds whenever Flush returns
                 lock (gate) if (ReferenceEquals(t, queue)) return;
             }
         }
@@ -251,10 +267,10 @@ namespace ReBuzz.Core.SongHistory
             var summary = SongSummary.Take(core);
             var live = LiveSong.Take(core);                      // HS3: what a live restore needs (machine data, events, wires, tracks)
             sections.Add((LiveSong.Magic, live.Write()));
-            var now = DateTime.UtcNow;
+            var now = Clock();
             var m = new SnapshotManifest
             {
-                Id = now.ToString("yyyyMMddHHmmssfff") + "-" + Interlocked.Increment(ref counter).ToString("x2"),
+                Id = now.ToString("yyyyMMddHHmmssfff") + "-" + Interlocked.Increment(ref counter).ToString("x8"),
                 Name = string.IsNullOrWhiteSpace(name) ? "Snapshot " + now.ToLocalTime().ToString("HH:mm:ss") : name.Trim(),
                 Time = now,
                 Trigger = trigger,
@@ -270,15 +286,25 @@ namespace ReBuzz.Core.SongHistory
             lock (gate) items.Add(m);
             changed = false;
             Enqueue(() => Write(st, m, sections));
-            Changed?.Invoke();
+            RaiseChanged();
             if (m.IsAuto) PruneAuto();
             return m;
         }
+
+        /// <summary>Tests: runs on the writer thread before a snapshot is stored (slows it to make races deterministic).</summary>
+        internal static Action<SnapshotManifest> BeforeWrite;
+
+        /// <summary>Tests: the clock captures are stamped with (Windows' ticks every ~15 ms, so a burst of captures shares one time).</summary>
+        internal static Func<DateTime> Clock = () => DateTime.UtcNow;
+
+        /// <summary>Tests: the next id's counter (the counter runs for the whole process, so it crosses 255 in some test).</summary>
+        internal int Counter { set => counter = value; }
 
         void Write(ChunkStore st, SnapshotManifest m, List<(uint Magic, byte[] Data)> sections)
         {
             try
             {
+                BeforeWrite?.Invoke(m);
                 var refs = new List<SnapshotManifest.SectionRef>();
                 foreach (var (magic, data) in sections)
                 {
@@ -303,8 +329,9 @@ namespace ReBuzz.Core.SongHistory
             {
                 m.Pending = false;
                 m.LiveMemory = null;
-                if (m.IsAuto) PruneAuto();
-                Changed?.Invoke();
+                try { if (m.IsAuto) PruneAuto(); }
+                catch (Exception e) { LastError = "Couldn't prune the automatic snapshots: " + e.Message; }
+                RaiseChanged();
             }
         }
 
@@ -345,7 +372,13 @@ namespace ReBuzz.Core.SongHistory
         {
             List<SnapshotManifest> drop;
             lock (gate) drop = items.Where(x => x.IsAuto && !pinned.Contains(x.Id)).OrderByDescending(x => x.Time).ThenByDescending(x => x.Id, StringComparer.Ordinal).Skip(MaxAuto).Where(x => !x.Pending).ToList();
-            foreach (var d in drop) Delete(d);
+            bool any = false;
+            foreach (var d in drop)
+            {
+                try { any |= Remove(d); }
+                catch (Exception e) { LastError = "Couldn't drop \"" + d.Name + "\": " + e.Message; }
+            }
+            if (any) RaiseChanged();                           // once, after the loop: a listener can't cut it short
         }
 
         // ---- Delete, rename ----
@@ -358,14 +391,21 @@ namespace ReBuzz.Core.SongHistory
 
         bool Delete(SnapshotManifest m)
         {
+            if (!Remove(m)) return false;
+            RaiseChanged();
+            return true;
+        }
+
+        /// <summary>Takes it out of the list now and its files off the queue (no notification).</summary>
+        bool Remove(SnapshotManifest m)
+        {
             lock (gate) if (!items.Remove(m)) return false;
             var st = store;
             Enqueue(() =>
             {
-                try { File.Delete(Path.Combine(st.Root, "manifests", m.Id + ".json")); } catch (IOException) { }
+                try { File.Delete(Path.Combine(st.Root, "manifests", m.Id + ".json")); } catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
                 CollectGarbage(st);
             });
-            Changed?.Invoke();
             return true;
         }
 
@@ -385,7 +425,7 @@ namespace ReBuzz.Core.SongHistory
             m.Name = newName.Trim();
             var st = store;
             Enqueue(() => { if (!m.Pending && m.Sections.Count > 0) WriteManifest(st, m); });
-            Changed?.Invoke();
+            RaiseChanged();
             return true;
         }
 
@@ -556,7 +596,7 @@ namespace ReBuzz.Core.SongHistory
             var result = new RestoreResult { Mode = "live", Waiting = true, Quantize = qName, Snapshot = m, WaitMs = WaitMs(plan.At) };
             result.Notes.Add(plan.Summary);
             result.Notes.Add("The Session View's clip grid and settings are not part of a live restore.");
-            Changed?.Invoke();
+            RaiseChanged();
             return result;
         }
 
@@ -574,7 +614,7 @@ namespace ReBuzz.Core.SongHistory
             deferredReason = reason;
             finisher ??= core.dispatcher.CreateTimer(TimeSpan.FromMilliseconds(25), () => Pump());
             finisher.Start();
-            Changed?.Invoke();
+            RaiseChanged();
             return new RestoreResult { Mode = "deferred", Reason = reason, Snapshot = m };
         }
 
@@ -590,7 +630,7 @@ namespace ReBuzz.Core.SongHistory
             deferred = null;
             deferredReason = null;
             if (active == null) finisher?.Stop();
-            Changed?.Invoke();
+            RaiseChanged();
         }
 
         /// <summary>Takes a plan that hasn't applied back (under AudioLock, so the audio thread isn't in the middle of it). False: it had applied.</summary>
@@ -616,7 +656,7 @@ namespace ReBuzz.Core.SongHistory
             active = null;
             changed = true;
             finisher?.Stop();
-            Changed?.Invoke();
+            RaiseChanged();
             RestoreFinished?.Invoke();
         }
 
@@ -662,7 +702,7 @@ namespace ReBuzz.Core.SongHistory
         {
             try { RestoreStopped(m, null, reason ?? "the transport stopped before the boundary"); }
             catch (InvalidOperationException e) { LastError = e.Message; }
-            Changed?.Invoke();
+            RaiseChanged();
             RestoreFinished?.Invoke();
         }
 

@@ -5,6 +5,7 @@ using ReBuzz.Agent.Guides;
 using ReBuzz.Agent.Mcp;
 using ReBuzz.Agent.Model;
 using V = ReBuzz.Agent.Model.ValueResolver;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.AgentTests
 {
@@ -186,7 +187,7 @@ namespace ReBuzz.AgentTests
         [Test]
         public void WavFilesRoundTrip()
         {
-            string path = Path.Combine(Path.GetTempPath(), $"agent-wav-{Guid.NewGuid():N}.wav");
+            string path = TestTemp.Path($"agent-wav-{Guid.NewGuid():N}.wav");
             try
             {
                 int frames = 4800;

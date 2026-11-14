@@ -5,6 +5,7 @@ using ReBuzz.Agent.Audio;
 using ReBuzz.Agent.Guides;
 using ReBuzz.Agent.Mcp;
 using static ReBuzz.Agent.Mcp.Schema;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.AgentTests
 {
@@ -134,7 +135,7 @@ namespace ReBuzz.AgentTests
 
         sealed class FakeApp : IAppServices
         {
-            public string Folder = Path.Combine(Path.GetTempPath(), "app-control-" + Guid.NewGuid().ToString("N"));
+            public string Folder = TestTemp.Path("app-control-" + Guid.NewGuid().ToString("N"));
             public Dictionary<string, string> Values = new() { ["general.PatternLength"] = "16", ["general.AutomaticBackups"] = "True", ["general.SequenceView"] = "ModernVertical",
                 ["advanced.Multithreading"] = "True", ["advanced.AudioBufferFillThread"] = "False", ["agent.AllowAgents"] = "True", ["agent.Port"] = "7481",
                 ["safety.SafetyLimiter"] = "True", ["audio.BufferSize"] = "256", ["sync.Link"] = "False", ["sync.MidiClockOut"] = "" };
@@ -539,7 +540,7 @@ namespace ReBuzz.AgentTests
         public void ExportAudioWritesTheMasterAndStemsAtTheBitDepthAndNeverOverwritesUnlessAsked()
         {
             var calls = new List<JsonObject>();
-            string work = Path.Combine(Path.GetTempPath(), "export-work-" + Guid.NewGuid().ToString("N"));
+            string work = TestTemp.Path("export-work-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(work);
             try
             {
@@ -590,7 +591,7 @@ namespace ReBuzz.AgentTests
         public void ExportAudioResamplesAndNormalisesTheMasterAndItsStemsTogether()
         {
             var calls = new List<JsonObject>();
-            string work = Path.Combine(Path.GetTempPath(), "export-rate-" + Guid.NewGuid().ToString("N"));
+            string work = TestTemp.Path("export-rate-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(work);
             try
             {
@@ -624,7 +625,7 @@ namespace ReBuzz.AgentTests
         public void ExportAudioChecksItsArgumentsBeforeRendering()
         {
             var calls = new List<JsonObject>();
-            string work = Path.Combine(Path.GetTempPath(), "export-args-" + Guid.NewGuid().ToString("N"));
+            string work = TestTemp.Path("export-args-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(work);
             try
             {

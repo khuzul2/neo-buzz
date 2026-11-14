@@ -3,6 +3,7 @@
 // editor's Explain strip and the studio inspector can explain any control. KnowledgePending lists the machines still to do:
 // they warn, everything else fails.
 using ReBuzz.Agent.Model;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.AgentTests
 {
@@ -85,7 +86,7 @@ namespace ReBuzz.AgentTests
         public void TheMissingCheckFindsAGap()
         {
             var json = System.Text.Json.Nodes.JsonNode.Parse("{\"format\":\"rebuzz-machine-manifest/1\",\"gear\":\"Neo X\",\"kind\":\"effect\",\"parameters\":[{\"index\":0,\"id\":\"a\",\"name\":\"A\",\"min\":0,\"max\":1,\"default\":0,\"kind\":\"linear\",\"how\":\"Does a thing.\",\"sound\":\"\"}]}")!.ToJsonString();
-            var path = Path.Combine(Path.GetTempPath(), "explaintext-" + Guid.NewGuid().ToString("N") + MachineManifest.Suffix);
+            var path = TestTemp.Path("explaintext-" + Guid.NewGuid().ToString("N") + MachineManifest.Suffix);
             try
             {
                 File.WriteAllText(path, json);

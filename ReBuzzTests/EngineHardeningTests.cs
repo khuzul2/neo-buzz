@@ -1045,9 +1045,9 @@ namespace ReBuzzTests
                         long t0 = Stopwatch.GetTimestamp();
                         reader.Read(256);
                         times[i] = (Stopwatch.GetTimestamp() - t0) * 1000.0 / Stopwatch.Frequency;
+                        long got = window.End();      // before the notice below: formatting it allocates about 470 bytes on this thread
                         if (times[i] > 3.0)
                             TestContext.Out.WriteLine($"[notice] restore live test: slow buffer {i} of {count}: {times[i]:F2} ms; GCs during it gen0 +{GC.CollectionCount(0) - gc0} gen1 +{GC.CollectionCount(1) - gc1} gen2 +{GC.CollectionCount(2) - gc2}; restore live before/after: {liveBefore}/{snapshots.LiveActive}");
-                        long got = window.End();
                         allocated += got;
                         if (got != 0) { TestContext.Out.WriteLine($"[notice] restore live test: buffer {i} allocated {got} bytes"); windows.Add((wall0, DateTime.UtcNow, i)); }
                         var b = reader.Buffer;

@@ -35,6 +35,7 @@ using ReBuzz.Studio.Views.Machines;
 using ReBuzz.Studio.Views.Sequence;
 using ReBuzz.Studio.Views.Session;
 using static ReBuzz.Studio.Tests.MachineViewTests;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -53,11 +54,12 @@ namespace ReBuzz.Studio.Tests
             Dialogs.Responder = null;
             Dialogs.TextResponder = null;
             SessionCore.Timestamp = Stopwatch.GetTimestamp;
+            TestTemp.Delete(TestTemp.Path($"rebuzz-studio-exit-{Environment.ProcessId}"));   // its songs and their histories: a few hundred MB per run
         }
 
         static string Folder(string name)
         {
-            string dir = Path.Combine(Path.GetTempPath(), $"rebuzz-studio-exit-{Environment.ProcessId}", name);
+            string dir = TestTemp.Path($"rebuzz-studio-exit-{Environment.ProcessId}", name);
             Directory.CreateDirectory(dir);
             return dir;
         }

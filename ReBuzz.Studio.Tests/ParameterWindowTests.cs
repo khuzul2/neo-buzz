@@ -16,6 +16,7 @@ using BuzzGUI.Interfaces;
 using ReBuzz.Core;
 using ReBuzz.Studio.Parameters;
 using ReBuzz.Studio.Platform;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -318,7 +319,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void EditModeHidesParametersLocksAndMorphs()
         {
-            string file = Path.Combine(Path.GetTempPath(), "rebuzz-studio-hidden-" + System.Environment.ProcessId + ".xml");
+            string file = TestTemp.Path("rebuzz-studio-hidden-" + System.Environment.ProcessId + ".xml");
             ParameterVisibility.FilePath = file;
             ParameterVisibility.Reset();
             var machine = Add("Pedal SH101", "Edit SH");
