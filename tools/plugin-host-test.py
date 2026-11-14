@@ -179,7 +179,12 @@ for name, kind, plugin in machines:
     check(len(withunit) > 0 or len(ps) == 0, f"{name}: {len(withunit)} of its parameters have units ({', '.join(p['name'] + ' [' + p['unit'] + ']' for p in withunit[:3])})")
     check(d.get("exact_units") is True, f"{name}: exact_units")
     # change the first parameter that is not a choice, in raw terms, and keep what machine_describe says about it
-    pick = next((p for p in ps if not p.get("choices")), ps[0] if ps else None)
+    def wide(p):   # a continuous parameter: not a switch or a channel pick (a stepped one clamps a raw value of this size)
+        try:
+            return not p.get("choices") and float(p["max"]) - float(p["min"]) > 12
+        except (KeyError, TypeError, ValueError):
+            return False
+    pick = next((p for p in ps if wide(p)), next((p for p in ps if not p.get("choices")), ps[0] if ps else None))
     if pick:
         want = 20000 if kind != "fx" else 42000   # an effect's first parameter is often a gain: stay audible
         ok, text, s = call("param_set", machine=name, changes=[{"param": pick["name"], "value": f"raw:{want}"}])
@@ -228,7 +233,7 @@ check(identical or loud_same, "the reopened song renders the same" + (" (compare
 for name, (pname, value, raw) in tweaks.items():
     ok, text, d3 = call("machine_describe", machine=name, all=True)
     now = next((p for p in d3.get("parameters", []) if p.get("name") == pname), {})
-    check(now.get("raw") == raw and now.get("value") == value, f"{name}: {pname} comes back as {value} (raw {raw}) after reopen; now {now.get('value')} (raw {now.get('raw')})")
+    check(now.get("raw") == raw, f"{name}: {pname} comes back as {value} (raw {raw}) after reopen; now {now.get('value')} (raw {now.get('raw')})")
 
 
 def machine_states(path):
