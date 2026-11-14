@@ -1302,6 +1302,53 @@ namespace ReBuzz.Studio.Tests
                     "Help ▸ Keyboard Shortcuts… (⌘/)."));
                 Try("339-keyboard-shortcuts-search", () => DialogOnOpen(window, () => ReBuzz.Studio.Shell.Commands.ShortcutsWindow.Open(window).Search = "delete",
                     "339-keyboard-shortcuts-search", "Keyboard Shortcuts searched for \"delete\": every key that deletes, in every view.", "Type in the window's search box."));
+                // P6b (ux-overhaul.md §9): ReBuzz.exe's tool windows, in the studio.
+                Try("340-cpu-monitor", () => DialogOnOpen(window, () => ReBuzz.Studio.Shell.Tools.CpuMonitorWindow.Open(Studio.Host, window),
+                    "340-cpu-monitor", "View ▸ CPU Monitor: each machine's share of the audio engine's time as a bar and a percentage, its cycles per sample and the longest it held the engine's lock; the engine's total and the overhead no machine accounts for.",
+                    "View ▸ CPU Monitor."));
+                Try("341-signal-analysis", () => DialogOnOpen(window, () =>
+                {
+                    var master = Studio.Host.Core.SongCore.Machines.First(m => m.DLL.Info.Type == BuzzGUI.Interfaces.MachineType.Master);
+                    var analysis = ReBuzz.Studio.Shell.Tools.SignalAnalysisWindow.Open(Studio.Host, master, window);
+                    int rate = System.Math.Max(1, Studio.Host.Core.SelectedAudioDriverSampleRate);
+                    var tone = new float[8192];
+                    for (int i = 0; i < tone.Length / 2; i++)
+                    {
+                        double t = i / (double)rate;
+                        tone[2 * i] = (float)(12000 * System.Math.Sin(2 * System.Math.PI * 220 * t) + 6000 * System.Math.Sin(2 * System.Math.PI * 1320 * t) + 2000 * System.Math.Sin(2 * System.Math.PI * 5280 * t));
+                        tone[2 * i + 1] = (float)(9000 * System.Math.Sin(2 * System.Math.PI * 330 * t) + 3000 * System.Math.Sin(2 * System.Math.PI * 2640 * t));
+                    }
+                    analysis.Tap.Add(tone, true);
+                    analysis.Tick();
+                }, "341-signal-analysis", "Signal Analysis of the Master (a machine's menu ▸ Signal Analysis...): the spectrum on a log frequency axis with a window to choose and a peak line that falls slowly, the scope under it. Here fed a test tone.",
+                    "Right click a machine ▸ Signal Analysis...."));
+                Try("342-hard-disk-recorder", () => DialogOnOpen(window, () => ReBuzz.Studio.Shell.Tools.HardDiskRecorderWindow.Open(Studio.Host, window),
+                    "342-hard-disk-recorder", "View ▸ Hard Disk Recorder: records the Master to a wave file as it plays (Record), or exactly over the song's loop (Record loop); the file is named after the song and numbered, the bit depth is a choice.",
+                    "View ▸ Hard Disk Recorder."));
+                Try("343-debug-console", () => DialogOnOpen(window, () =>
+                {
+                    Studio.Host.Core.DCWriteLine("Song loaded: " + GallerySong.Title);
+                    Studio.Host.Core.DCWriteLine("Machine Neo Delay: latency 0 samples", BuzzGUI.Interfaces.DCLogLevel.Information);
+                    Studio.Host.Core.DCWriteLine("Audio: the output was reopened at 48000 Hz", BuzzGUI.Interfaces.DCLogLevel.Warning);
+                    ReBuzz.Studio.Shell.Tools.DebugConsoleWindow.Open(Studio.Host, window);
+                }, "343-debug-console", "View ▸ Debug Console: the engine's log, newest at the bottom, with a level filter, a text filter, Clear, Copy and Follow.",
+                    "View ▸ Debug Console."));
+                Try("344-midi-bindings", () => DialogOnOpen(window, () =>
+                {
+                    var backend = new ReBuzz.Agent.MidiBackend(Studio.Host.Core);
+                    var machine = Studio.Host.Core.SongCore.MachinesList.FirstOrDefault(m => m.DLL.Info.Type == BuzzGUI.Interfaces.MachineType.Generator);
+                    var parameter = machine?.ParameterGroups.SelectMany(g => g.Parameters).FirstOrDefault(p => p.Type != BuzzGUI.Interfaces.ParameterType.Note && p.Type != BuzzGUI.Interfaces.ParameterType.Internal && p.Group.Type == BuzzGUI.Interfaces.ParameterGroupType.Global);
+                    if (machine != null && parameter != null) backend.Bind(machine.Name, parameter.Name, 0, 1, 74);
+                    ReBuzz.Studio.Shell.Tools.MidiBindingsWindow.Open(Studio.Host, window);
+                }, "344-midi-bindings", "View ▸ MIDI Bindings: every parameter a MIDI controller drives, by machine, parameter and track, with its channel and controller, a filter and a Clear button per row.",
+                    "View ▸ MIDI Bindings."));
+                Try("345-latency", () => DialogOnOpen(window, () =>
+                    _ = ReBuzz.Studio.Shell.Tools.LatencyDialog.Ask(Studio.Host.Core.SongCore.MachinesList.First(m => m.DLL.Info.Type != BuzzGUI.Interfaces.MachineType.Master)),
+                    "345-latency", "Latency... on a machine's menu: the latency the machine reports and a switch to override it with a number of samples for the delay compensation.",
+                    "Right click a machine ▸ Latency...."));
+                Try("346-song-properties", () => DialogOnOpen(window, () => _ = ReBuzz.Studio.Shell.Tools.SongPropertiesDialog.Ask(Studio.Host.Core),
+                    "346-song-properties", "Edit ▸ Song Properties...: tempo, ticks per beat and playback speed of the song, checked as they are typed.",
+                    "Edit ▸ Song Properties..."));
                 Try("332-save-changes", () =>
                 {
                     Core.SetModifiedFlag();

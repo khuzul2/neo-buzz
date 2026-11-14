@@ -168,6 +168,8 @@ namespace ReBuzz.Studio.Views.Machines
                 song.MachineRemoved -= OnMachineRemoved;
                 song.ConnectionAdded -= OnConnectionChanged;
                 song.ConnectionRemoved -= OnConnectionChanged;
+                song.MachineGroupAdded -= OnGroupChanged;
+                song.MachineGroupRemoved -= OnGroupChanged;
                 foreach (var m in watched) m.PropertyChanged -= OnMachineChanged;
                 watched.Clear();
             }
@@ -178,6 +180,8 @@ namespace ReBuzz.Studio.Views.Machines
                 song.MachineRemoved += OnMachineRemoved;
                 song.ConnectionAdded += OnConnectionChanged;
                 song.ConnectionRemoved += OnConnectionChanged;
+                song.MachineGroupAdded += OnGroupChanged;
+                song.MachineGroupRemoved += OnGroupChanged;
                 foreach (var m in song.Machines) WatchMachine(m);
             }
             Redraw();
@@ -191,6 +195,8 @@ namespace ReBuzz.Studio.Views.Machines
 
         /// <summary>P3d: the song's machines changed (the empty state follows).</summary>
         public event Action MachinesChanged;
+
+        void OnGroupChanged(IMachineGroup g) => Redraw();
 
         void OnMachineAdded(IMachine m)
         {
@@ -237,7 +243,7 @@ namespace ReBuzz.Studio.Views.Machines
             }
         }
 
-        void Redraw()
+        internal void Redraw()
         {
             if (Dispatcher.UIThread.CheckAccess()) InvalidateVisual();
             else Dispatcher.UIThread.Post(InvalidateVisual);
@@ -695,6 +701,7 @@ namespace ReBuzz.Studio.Views.Machines
             using (ctx.PushTransform(Matrix.CreateScale(Zoom, Zoom) * Matrix.CreateTranslation(-offset.X, -offset.Y)))
             {
                 var line = new Pen(colours["MV Line"], 1);
+                DrawGroups(ctx);
                 foreach (var c in Wires)
                     DrawWire(ctx, WireOf(c), colours, line, level: MetersShown ? WireLevel(c) : 0, track: colours.Colour("MV Line"));
 
@@ -716,6 +723,25 @@ namespace ReBuzz.Studio.Views.Machines
 
                 if (drag == Drag.Select)
                     ctx.DrawRectangle(BandFill, BandPen, band, 2, 2);
+            }
+        }
+
+        /// <summary>P6b: a frame round each machine group's members, with its name (BuzzGUI.MachineView's GroupControl, unfolded).</summary>
+        void DrawGroups(DrawingContext ctx)
+        {
+            var groups = core.SongCore?.MachineGroups;
+            if (groups == null || groups.Count == 0) return;
+            var edge = new Pen(Shell.Design.StudioTokens.AccentBrush, 1, new DashStyle(new double[] { 4, 3 }, 0));
+            foreach (var g in groups)
+            {
+                Rect? frame = null;
+                foreach (var m in g.Machines.ToList())
+                    frame = frame == null ? BoxOf(m) : frame.Value.Union(BoxOf(m));
+                if (frame == null) continue;
+                var r = frame.Value.Inflate(14);
+                ctx.DrawRectangle(Shell.Design.StudioTokens.BlockSelectionFill, edge, r, 6, 6);
+                var name = new FormattedText(g.Name ?? "", CultureInfo.InvariantCulture, FlowDirection.LeftToRight, PlainFace, 11, Shell.Design.StudioTokens.TextSecondaryBrush);
+                ctx.DrawText(name, new Point(r.X + 6, r.Y + 2));
             }
         }
 

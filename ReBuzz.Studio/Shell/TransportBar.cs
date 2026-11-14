@@ -102,8 +102,14 @@ namespace ReBuzz.Studio.Shell
                 new TextBlock { Text = "BPM", VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush }, tap));
             left.Children.Add(Pack(new Thickness(0, 2, 16, 2), position, minutes));
             left.Children.Add(meter);
+            // Fork (ux-overhaul.md P6b): ReBuzz.exe's MIDI-focus functions, last, so they wrap first.
+            MidiFocus = new Tools.MidiFocusBar(() => Core);
+            left.Children.Add(MidiFocus);
             Child = left;
         }
+
+        /// <summary>The MIDI focus machine, its lock and the MIDI light (P6b).</summary>
+        internal Tools.MidiFocusBar MidiFocus { get; }
 
         /// <summary>
         /// A button's lit look in a state colour: the Fluent theme's brushes for it (its checked or accent state), on this
@@ -175,6 +181,7 @@ namespace ReBuzz.Studio.Shell
         {
             var core = Core;
             if (core == null) return;
+            MidiFocus.Refresh();
             updating = true;
             try
             {

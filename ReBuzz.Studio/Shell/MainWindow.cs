@@ -441,6 +441,7 @@ namespace ReBuzz.Studio.Shell
             yield return Command("edit.deselect", mac, DeselectAll);
             yield return MenuEntry.Separator;
             yield return Command("edit.rename", mac, Rename);
+            yield return Command("edit.songproperties", mac, () => _ = Tools.SongPropertiesDialog.Ask(host.Core), () => host.Core?.SongCore != null);
             if (!mac)
             {
                 yield return MenuEntry.Separator;
@@ -502,6 +503,12 @@ namespace ReBuzz.Studio.Shell
             yield return Command("view.device", mac, ShowDevice, () => detail?.DevicePage != null, () => detail?.IsOpen == true && detail.IsDevice);
             yield return Command("device.find", mac, FindParameter, () => detail?.DevicePage != null);
             yield return Command("view.mixer", mac, ToggleSessionMixer, () => host.Core?.SessionLayout != null, () => host.Core?.SessionLayout?.Document?.ShowMixer == true);
+            // Fork (ux-overhaul.md P6b): ReBuzz.exe's tool windows.
+            yield return MenuEntry.Separator;
+            yield return Command("view.cpu", mac, () => Tools.CpuMonitorWindow.Open(host, this), () => host.Core?.SongCore != null, () => Tools.CpuMonitorWindow.Current != null);
+            yield return Command("view.recorder", mac, () => Tools.HardDiskRecorderWindow.Open(host, this), () => host.Core?.SongCore != null, () => Tools.HardDiskRecorderWindow.Current != null);
+            yield return Command("view.console", mac, () => Tools.DebugConsoleWindow.Open(host, this), null, () => Tools.DebugConsoleWindow.Current != null);
+            yield return Command("view.midibindings", mac, () => Tools.MidiBindingsWindow.Open(host, this), () => host.Core?.SongCore != null, () => Tools.MidiBindingsWindow.Current != null);
         }
 
         IEnumerable<MenuEntry> WindowItems(bool mac, Func<bool> running)
@@ -927,6 +934,9 @@ namespace ReBuzz.Studio.Shell
 
         /// <summary>The problem bar (tests).</summary>
         internal ProblemBar Problems => problems;
+
+        /// <summary>The MIDI focus controls at the right of the status line (tests).</summary>
+        internal Tools.MidiFocusBar MidiFocus => transport.MidiFocus;
 
         /// <summary>The audio-health badge (tests).</summary>
         internal AudioHealthBadge Health => health;
