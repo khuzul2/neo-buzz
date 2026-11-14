@@ -199,7 +199,7 @@ namespace NeoBuzz.Spectral
                     hz[k] = (float)(k * rate / N);
                     speed[k] = (float)(1.0 / Math.Sqrt(1.0 + hz[k] / 1000.0));
                     gain[k] = 1f;
-                    int b = (int)(Math.Log(Math.Max(hz[k], 1.0) / 30.0) / Math.Log(20000.0 / 30.0) * Bands);
+                    int b = (int)(PortableMath.Log(Math.Max(hz[k], 1.0) / 30.0) / PortableMath.Log(20000.0 / 30.0) * Bands);
                     bandOf[k] = Math.Clamp(b, 0, Bands - 1);
                 }
                 timeA = 0.35f;

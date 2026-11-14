@@ -505,7 +505,8 @@ namespace NeoBuzz.MachineTests
             const int Block = SpectralEngine.MaxBlock;
             int warm = rate;
             string[] names = { "Suppress", "Balance", "Stabilize" };
-            double x64 = 20, arm64 = 12;   // placeholder floors until the runners' figures are in
+            // CI: Linux x64 123 - 132 (44.1, 48 kHz), 64 (96 kHz), Balance 132, Stabilize 144; macOS arm64 89 - 96, 46, 95, 101. Locally 143 - 152, 76.
+            double x64 = rate > 66000 ? 40 : 80, arm64 = rate > 66000 ? 28 : 55;
             Throughput.Guard($"Neo Spectral CPU ({names[mode]}, {rate / 1000.0:0.#} kHz, resonant pink, Depth 100 %)", Throughput.Floor(x64, arm64), 2, rate, Block, () =>
             {
                 var (e, _) = Make(v => { Suppress(1)(v); Set(v, P.Mode, mode); Set(v, P.Lift, 6); }, rate);
