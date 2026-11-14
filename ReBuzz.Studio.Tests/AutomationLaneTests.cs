@@ -25,6 +25,7 @@ using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Shell.Design;
 using ReBuzz.Studio.Views;
 using ReBuzz.Studio.Views.Sequence;
+using static ReBuzz.Studio.Tests.AudioHygieneTests;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -641,6 +642,68 @@ namespace ReBuzz.Studio.Tests
             }
             finally { Core.Playing = false; Settle(); }
             Assert.That(rig.Read("Lead", Cutoff).Segments.Single().Points.Count, Is.EqualTo(3), "a disarmed lane takes nothing");
+        }
+
+        // ------------------------------------------------------------------ automation and the canvas modulators
+
+        [AvaloniaTest]
+        public void AnAutomationRampSetsTheBaseAndACanvasModulatorMovesAroundIt()
+        {
+            // neo-patch.md §3: the modulated value is base + depth x modulator, and what else writes the parameter is the base.
+            NewSong();
+            try
+            {
+                var poly = AddPoly("Auto Poly");
+                poly.CreatePattern("00", 16);
+                var notes = (PatternCore)poly.Patterns.First();
+                Core.SessionLayout.EditNotes(notes, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 48 + (i * 5) % 12, 60 + i * 4)).ToArray());
+                Arrange(poly, notes);
+                var filter = InsertFilter(poly, "Auto Filter");
+                var cutoff = filter.ParameterGroups[1].Parameters.First(p => p.Name == "Cutoff");
+                int span = cutoff.MaxValue - cutoff.MinValue;
+                int low = cutoff.MinValue + span / 5, high = cutoff.MinValue + span * 4 / 5;
+
+                // The ramp: an automation clip on a lane of the filter, low to high over the song's 16 ticks.
+                Core.SongCore.AddSequence(filter, Core.SongCore.Sequences.Count);
+                var lane = Core.SongCore.Sequences.Last();
+                Core.Arrangement.SetRole(lane, LaneRole.Automation);
+                filter.CreatePattern("Sweep", 16);
+                var sweep = filter.Patterns.First(p => p.Name == "Sweep");
+                var key = new ColumnKey(1, cutoff.IndexInGroup, 0);
+                SessionLayout.ColumnFor(sweep, key, create: true).SetEvents(new[] { new PatternEvent(0, low, 15 * TB), new PatternEvent(15 * TB, high) }, true);
+                lane.SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, sweep));
+
+                var lfo = ModulatorOf("Auto LFO");
+                var mod = ModulationBoard.Of(lfo);
+                lfo.ParameterGroups[1].Parameters.First(p => p.Name == "Rate").SetValue(1 << 16, 700);
+                Assert.That(mod.SetTarget(-1, filter, cutoff, 0, new ModulationInfo { Depth = 12, Bipolar = true }, out _), Is.Null);
+
+                var bases = new List<int>();
+                var seen = new List<int>();
+                using var audio = new AudioThread(1);
+                lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                audio.Read(20);
+                audio.Read(300, () => { seen.Add(cutoff.GetValue(0)); bases.Add(mod.Targets.Single().Base); });
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+
+                int third = bases.Count / 3;
+                double early = bases.Take(third).Average(), late = bases.Skip(2 * third).Average();
+                Assert.That(late - early, Is.GreaterThan(span * 0.25), $"the base follows the ramp upwards (early {early:0}, late {late:0})");
+                var around = seen.Zip(bases, (v, b) => v - b).ToList();
+                Assert.That(around.Any(d => d > span / 100) && around.Any(d => d < -span / 100), Is.True, "the modulator swings above and below the base the ramp sets");
+                Assert.That(seen.All(v => v >= cutoff.MinValue && v <= cutoff.MaxValue), Is.True);
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                NewSong();
+            }
+        }
+
+        static MachineCore ModulatorOf(string name)
+        {
+            Core.SongCore.CreateMachine("Neo LFO", null, name, null, null, null, -1, 0.5f, 0.5f);
+            return Core.SongCore.MachinesList.Last(m => m.Name == name);
         }
 
         // ------------------------------------------------------------------ old songs
