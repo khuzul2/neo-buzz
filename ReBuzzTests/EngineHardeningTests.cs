@@ -1027,6 +1027,7 @@ namespace ReBuzzTests
                     }
                 }
                 var windows = new List<(DateTime From, DateTime To, int Buffer)>();
+                string stepAt = "";
                 double[] Read(int count, Action? between, out double maxStep, out long allocated, bool tail = false)
                 {
                     var times = new double[count];
@@ -1053,7 +1054,11 @@ namespace ReBuzzTests
                         for (int k = 0; k < 256; k++)
                         {
                             float l = b[2 * k];
-                            if (!float.IsNaN(prev)) maxStep = Math.Max(maxStep, Math.Abs(l - prev));
+                            if (!float.IsNaN(prev) && Math.Abs(l - prev) > maxStep)
+                            {
+                                maxStep = Math.Abs(l - prev);
+                                stepAt = $"buffer {i}, sample {k}: {prev:G6} -> {l:G6}, restore live {snapshots.LiveActive}";
+                            }
                             prev = l;
                         }
                     }
@@ -1079,12 +1084,13 @@ namespace ReBuzzTests
                 bool started = false;
                 var during = Read(buffers, () =>
                 {
-                    if (!started) { started = true; holder.Result = snapshots.Restore(snap, ReBuzz.Core.SongHistory.RestoreQuantize.Beat); }
+                    if (!started) { started = true; TestContext.Out.WriteLine("[notice] restore live test: restore asked"); holder.Result = snapshots.Restore(snap, ReBuzz.Core.SongHistory.RestoreQuantize.Beat); }
                     snapshots.Pump();
                     Thread.Sleep(1);                         // the finish waits 100 ms of wall time for the fades; the reads alone run faster than real time
                 }, out double restoreStep, out long bytes);
                 Assert.That(holder.Result!.Mode, Is.EqualTo("live"), holder.Result.Reason);
                 Assert.That(snapshots.LiveActive, Is.False, "it applied and finished within the stretch");
+                TestContext.Out.WriteLine("[notice] restore live test: the largest step (last one read; the baseline's is 0) at " + stepAt);
 
                 double Median(double[] x) => x.OrderBy(v => v).ElementAt(x.Length / 2);
                 double levelNow = Math.Abs(reader.Buffer[0]);
