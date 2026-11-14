@@ -2,22 +2,35 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Joachims Hyperion",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
- "type": "utility",
- "summary": "Utility (profiled draft): traits: utility; tail 0.0 s; latency 0 samples; gain +0.0 dB at the defaults.",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
+ "type": "EQ",
+ "summary": "Thirty-band graphic equaliser with a band every third of an octave from 20 Hz to 20 kHz, plus or minus 18 dB each, a high-pass and a Bandwidth control for how wide the bands are; bands at 0 dB are switched off to save CPU. Neo EQ in graphic mode replaces it.",
  "category": "EQ & Filter",
  "tags": [
   "eq",
   "clean"
  ],
  "use_for": "Graphic EQ with a band for every third of an octave, for fine tonal correction.",
+ "quirks": [
+  "Bands do not compensate each other's overlap: at the default Bandwidth every band at +6 dB makes +43 dB at 3.2 kHz (measured for its successor mapping), so raise bands gently and lower Input gain.",
+  "Bandwidth is the octaves between a band's half-gain points at low frequencies, twice the number its text shows (1.0 at the default is 2.0 octaves); Highpass is a second-order Butterworth filter whose corner is about 1.28 times the number shown.",
+  "Hot: single bands at +18 dB peak up to +6.6 dBFS in the profile; every parameter at its top at once diverges.",
+  "Stereo, 0 dB at its defaults; its high bands move with the sample rate (measured at 44.1 kHz).",
+  "Enable is on by default; off bypasses the equaliser."
+ ],
+ "evidence": [
+  "Machines/Manifests/Successors/Joachims Hyperion to Neo EQ.successor.json - its measurements on windows (the bandwidth and high-pass tables, the overlap and the sample-rate remarks)",
+  "RunTime/Gear/Effects/Joachims Hyperion.html - its author's page (bands, bandwidth, high-pass)",
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - 0 dB at the defaults, hot bands"
+ ],
  "tracks": 0,
  "health": {
   "status": "warn",
   "problems": [
-   "hot (loud but steady) with 20000 Hz at its maximum (+18.0 dB): +3.8 dBFS peak; 15800 Hz at its maximum (+18.0 dB): +5.7 dBFS peak; 12400 Hz at its maximum (+18.0 dB): +6.6 dBFS peak;  9800 Hz at its maximum (+18.0 dB): +5.8 dBFS peak;  7700 Hz at its maximum (+18.0 dB): +5.6 dBFS peak;  6100 Hz at its maximum (+18.0 dB): +4.6 dBFS peak;  4800 Hz at its maximum (+18.0 dB): +4.3 dBFS peak;  3800 Hz at its maximum (+18.0 dB): +3.3 dBFS peak; and 5 more",
-   "every parameter at its maximum at once diverges (+225.6 dBFS: the engine's guard caught it), but no parameter alone does at its maximum"
+   "hot (loud but steady) with 20000 Hz at its maximum (+18.0 dB): +3.9 dBFS peak; 15800 Hz at its maximum (+18.0 dB): +5.6 dBFS peak; 12400 Hz at its maximum (+18.0 dB): +6.3 dBFS peak;  9800 Hz at its maximum (+18.0 dB): +5.6 dBFS peak;  7700 Hz at its maximum (+18.0 dB): +5.4 dBFS peak;  6100 Hz at its maximum (+18.0 dB): +4.7 dBFS peak;  4800 Hz at its maximum (+18.0 dB): +4.5 dBFS peak;  3800 Hz at its maximum (+18.0 dB): +3.7 dBFS peak; and 4 more",
+   "every parameter at its maximum at once diverges (+223.4 dBFS: the engine's guard caught it), but no parameter alone does at its maximum"
   ],
   "hot": true
  },
@@ -42,7 +55,7 @@
      "gain_db": 0.0,
      "thd_percent": 1.96,
      "thd_in_percent": 1.96,
-     "movement_db": 0.14
+     "movement_db": 0.13
     }
    },
    "traits": [
@@ -368,13 +381,13 @@
    },
    "all_at_once": {
     "min": {
-     "peak_dbfs": -9.15,
-     "growth_db": 0.23,
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
      "verdict": "ok"
     },
     "max": {
      "peak_dbfs": null,
-     "guard": "+225.6 dBFS",
+     "guard": "+223.4 dBFS",
      "verdict": "diverging"
     }
    },
@@ -387,8 +400,8 @@
   "sweeps": {
    "20000 Hz": {
     "max": {
-     "peak_dbfs": 3.8,
-     "growth_db": -0.2,
+     "peak_dbfs": 3.88,
+     "growth_db": -0.34,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -396,8 +409,8 @@
    },
    "15800 Hz": {
     "max": {
-     "peak_dbfs": 5.7,
-     "growth_db": -0.05,
+     "peak_dbfs": 5.64,
+     "growth_db": 0.53,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -405,8 +418,8 @@
    },
    "12400 Hz": {
     "max": {
-     "peak_dbfs": 6.58,
-     "growth_db": 0.77,
+     "peak_dbfs": 6.33,
+     "growth_db": -0.2,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -414,8 +427,8 @@
    },
    " 9800 Hz": {
     "max": {
-     "peak_dbfs": 5.8,
-     "growth_db": 0.0,
+     "peak_dbfs": 5.64,
+     "growth_db": -0.13,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -423,8 +436,8 @@
    },
    " 7700 Hz": {
     "max": {
-     "peak_dbfs": 5.59,
-     "growth_db": -0.39,
+     "peak_dbfs": 5.43,
+     "growth_db": -0.43,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -432,8 +445,8 @@
    },
    " 6100 Hz": {
     "max": {
-     "peak_dbfs": 4.62,
-     "growth_db": -0.48,
+     "peak_dbfs": 4.74,
+     "growth_db": -0.1,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -441,8 +454,8 @@
    },
    " 4800 Hz": {
     "max": {
-     "peak_dbfs": 4.32,
-     "growth_db": -0.08,
+     "peak_dbfs": 4.46,
+     "growth_db": 0.1,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -450,8 +463,8 @@
    },
    " 3800 Hz": {
     "max": {
-     "peak_dbfs": 3.27,
-     "growth_db": 0.44,
+     "peak_dbfs": 3.72,
+     "growth_db": -0.08,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -459,8 +472,8 @@
    },
    " 2970 Hz": {
     "max": {
-     "peak_dbfs": 3.54,
-     "growth_db": -0.19,
+     "peak_dbfs": 2.98,
+     "growth_db": -0.71,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -468,8 +481,8 @@
    },
    " 2340 Hz": {
     "max": {
-     "peak_dbfs": 2.51,
-     "growth_db": 0.5,
+     "peak_dbfs": 2.83,
+     "growth_db": -1.55,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -477,8 +490,8 @@
    },
    " 1850 Hz": {
     "max": {
-     "peak_dbfs": 1.95,
-     "growth_db": -0.6,
+     "peak_dbfs": 1.97,
+     "growth_db": -1.27,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -486,17 +499,8 @@
    },
    " 1460 Hz": {
     "max": {
-     "peak_dbfs": 0.56,
-     "growth_db": 0.2,
-     "verdict": "hot",
-     "raw": 255,
-     "text": "+18.0 dB"
-    }
-   },
-   " 1150 Hz": {
-    "max": {
-     "peak_dbfs": 0.09,
-     "growth_db": -0.47,
+     "peak_dbfs": 0.55,
+     "growth_db": -0.6,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -945,6 +949,7 @@
    "index": 0,
    "id": "Enable",
    "name": "Enable",
+   "plain_name": "Enable",
    "group": "",
    "min": 0,
    "max": 1,
@@ -955,12 +960,15 @@
     "ON"
    ],
    "description": "Enable or bypass effect",
-   "confidence": "values"
+   "how": "Switches the whole equaliser on or off.",
+   "sound": "Off leaves the sound untouched, so you can compare before and after."
   },
   {
    "index": 1,
    "id": "Input gain.",
    "name": "Input gain.",
+   "plain_name": "Input gain",
+   "role": "gain.input",
    "group": "",
    "min": 0,
    "max": 127,
@@ -968,6 +976,10 @@
    "kind": "table",
    "unit": "dB",
    "points": [
+    [
+     0,
+     "-inf"
+    ],
     [
      1,
      -118.7
@@ -1478,524 +1490,525 @@
     ]
    ],
    "description": "Input volume gain",
-   "confidence": "values",
-   "suggested_role": "level",
-   "role_evidence": "the level +0.0 → +7.6 dB, the response's shape unchanged"
+   "how": "Raises or lowers the level into the bands: a table from -118 dB to +7.6 dB, 0 dB at 95.",
+   "sound": "Use it to make room for boosts or to level-match after cuts."
   },
   {
    "index": 2,
    "id": "20000 Hz",
    "name": "20000 Hz",
+   "plain_name": "20000 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "",
-   "confidence": "values",
-   "suggested_role": "filter.cutoff",
-   "role_evidence": "the response's lower corner moves 23.1 Hz → 16.7 kHz"
+   "description": "Gain of the band around 20000 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 20000 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds air and sparkle; cutting dulls the top."
   },
   {
    "index": 3,
    "id": "15800 Hz",
    "name": "15800 Hz",
+   "plain_name": "15800 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "",
-   "confidence": "values",
-   "suggested_role": "filter.cutoff",
-   "role_evidence": "the response's lower corner moves 23.1 Hz → 11.8 kHz"
+   "description": "Gain of the band around 15800 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 15800 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds air and sparkle; cutting dulls the top."
   },
   {
    "index": 4,
    "id": "12400 Hz",
    "name": "12400 Hz",
+   "plain_name": "12400 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "",
-   "confidence": "values",
-   "suggested_role": "filter.cutoff",
-   "role_evidence": "the response's lower corner moves 23.1 Hz → 11.8 kHz"
+   "description": "Gain of the band around 12400 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 12400 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds air and sparkle; cutting dulls the top."
   },
   {
    "index": 5,
    "id": " 9800 Hz",
    "name": " 9800 Hz",
+   "plain_name": "9800 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "9800 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 8.37 kHz: its prominence +0 → +8 dB over the response"
+   "description": "Gain of the band around 9800 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 9800 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds air and sparkle; cutting dulls the top."
   },
   {
    "index": 6,
    "id": " 7700 Hz",
    "name": " 7700 Hz",
+   "plain_name": "7700 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "7700 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 8.37 kHz: its prominence +0 → +7 dB over the response"
+   "description": "Gain of the band around 7700 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 7700 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds bite and clarity; cutting softens harshness."
   },
   {
    "index": 7,
    "id": " 6100 Hz",
    "name": " 6100 Hz",
+   "plain_name": "6100 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "6100 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 5.92 kHz: its prominence +0 → +9 dB over the response"
+   "description": "Gain of the band around 6100 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 6100 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds bite and clarity; cutting softens harshness."
   },
   {
    "index": 8,
    "id": " 4800 Hz",
    "name": " 4800 Hz",
+   "plain_name": "4800 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "4800 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 4.19 kHz: its prominence +0 → +7 dB over the response"
+   "description": "Gain of the band around 4800 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 4800 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds bite and clarity; cutting softens harshness."
   },
   {
    "index": 9,
    "id": " 3800 Hz",
    "name": " 3800 Hz",
+   "plain_name": "3800 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "3800 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 4.19 kHz: its prominence +0 → +7 dB over the response"
+   "description": "Gain of the band around 3800 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 3800 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds bite and clarity; cutting softens harshness."
   },
   {
    "index": 10,
    "id": " 2970 Hz",
    "name": " 2970 Hz",
+   "plain_name": "2970 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "2970 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 2.96 kHz: its prominence +0 → +9 dB over the response"
+   "description": "Gain of the band around 2970 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 2970 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting brings the sound forward and makes it more vocal or nasal; cutting hollows it out."
   },
   {
    "index": 11,
    "id": " 2340 Hz",
    "name": " 2340 Hz",
+   "plain_name": "2340 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "2340 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 2.09 kHz: its prominence +0 → +7 dB over the response"
+   "description": "Gain of the band around 2340 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 2340 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting brings the sound forward and makes it more vocal or nasal; cutting hollows it out."
   },
   {
    "index": 12,
    "id": " 1850 Hz",
    "name": " 1850 Hz",
+   "plain_name": "1850 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "1850 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 2.09 kHz: its prominence +0 → +7 dB over the response"
+   "description": "Gain of the band around 1850 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 1850 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting brings the sound forward and makes it more vocal or nasal; cutting hollows it out."
   },
   {
    "index": 13,
    "id": " 1460 Hz",
    "name": " 1460 Hz",
+   "plain_name": "1460 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "1460 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 1.48 kHz: its prominence +0 → +9 dB over the response"
+   "description": "Gain of the band around 1460 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 1460 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting brings the sound forward and makes it more vocal or nasal; cutting hollows it out."
   },
   {
    "index": 14,
    "id": " 1150 Hz",
    "name": " 1150 Hz",
+   "plain_name": "1150 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "1150 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 1.05 kHz: its prominence +0 → +7 dB over the response"
+   "description": "Gain of the band around 1150 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 1150 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting brings the sound forward and makes it more vocal or nasal; cutting hollows it out."
   },
   {
    "index": 15,
    "id": "  900 Hz",
    "name": "  900 Hz",
+   "plain_name": "900 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "900 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 1.05 kHz: its prominence +0 → +6 dB over the response"
+   "description": "Gain of the band around 900 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 900 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting brings the sound forward and makes it more vocal or nasal; cutting hollows it out."
   },
   {
    "index": 16,
    "id": "  710 Hz",
    "name": "  710 Hz",
+   "plain_name": "710 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "710 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 740 Hz: its prominence +0 → +8 dB over the response"
+   "description": "Gain of the band around 710 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 710 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting brings the sound forward and makes it more vocal or nasal; cutting hollows it out."
   },
   {
    "index": 17,
    "id": "  560 Hz",
    "name": "  560 Hz",
+   "plain_name": "560 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "560 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 523 Hz: its prominence +0 → +8 dB over the response"
+   "description": "Gain of the band around 560 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 560 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting brings the sound forward and makes it more vocal or nasal; cutting hollows it out."
   },
   {
    "index": 18,
    "id": "  440 Hz",
    "name": "  440 Hz",
+   "plain_name": "440 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "440 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.cutoff",
-   "role_evidence": "the response's upper corner moves 16.7 kHz → 523 Hz"
+   "description": "Gain of the band around 440 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 440 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting brings the sound forward and makes it more vocal or nasal; cutting hollows it out."
   },
   {
    "index": 19,
    "id": "  350 Hz",
    "name": "  350 Hz",
+   "plain_name": "350 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "350 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 370 Hz: its prominence +0 → +8 dB over the response"
+   "description": "Gain of the band around 350 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 350 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds body and warmth; cutting thins the sound and clears boominess."
   },
   {
    "index": 20,
    "id": "  275 Hz",
    "name": "  275 Hz",
+   "plain_name": "275 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "275 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 262 Hz: its prominence +0 → +8 dB over the response"
+   "description": "Gain of the band around 275 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 275 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds body and warmth; cutting thins the sound and clears boominess."
   },
   {
    "index": 21,
    "id": "  217 Hz",
    "name": "  217 Hz",
+   "plain_name": "217 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "217 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.cutoff",
-   "role_evidence": "the response's upper corner moves 16.7 kHz → 262 Hz"
+   "description": "Gain of the band around 217 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 217 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds body and warmth; cutting thins the sound and clears boominess."
   },
   {
    "index": 22,
    "id": "  171 Hz",
    "name": "  171 Hz",
+   "plain_name": "171 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "171 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 185 Hz: its prominence +0 → +8 dB over the response"
+   "description": "Gain of the band around 171 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 171 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds body and warmth; cutting thins the sound and clears boominess."
   },
   {
    "index": 23,
    "id": "  134 Hz",
    "name": "  134 Hz",
+   "plain_name": "134 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "134 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 131 Hz: its prominence +0 → +9 dB over the response"
+   "description": "Gain of the band around 134 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 134 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds body and warmth; cutting thins the sound and clears boominess."
   },
   {
    "index": 24,
    "id": "  106 Hz",
    "name": "  106 Hz",
+   "plain_name": "106 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "106 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 92.5 Hz: its prominence +0 → +6 dB over the response"
+   "description": "Gain of the band around 106 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 106 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds body and warmth; cutting thins the sound and clears boominess."
   },
   {
    "index": 25,
    "id": "   84 Hz",
    "name": "   84 Hz",
+   "plain_name": "84 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "84 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 92.5 Hz: its prominence +0 → +7 dB over the response"
+   "description": "Gain of the band around 84 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 84 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds sub-bass weight and rumble; cutting cleans out low mud."
   },
   {
    "index": 26,
    "id": "   66 Hz",
    "name": "   66 Hz",
+   "plain_name": "66 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "66 Hz",
-   "confidence": "values",
-   "suggested_role": "mix.wet",
-   "role_evidence": "the late sound -52 → -34 dB, the direct sound unchanged"
+   "description": "Gain of the band around 66 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 66 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds sub-bass weight and rumble; cutting cleans out low mud."
   },
   {
    "index": 27,
    "id": "   52 Hz",
    "name": "   52 Hz",
+   "plain_name": "52 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "52 Hz",
-   "confidence": "values",
-   "suggested_role": "mix.wet",
-   "role_evidence": "the late sound -48 → -29 dB, the direct sound unchanged"
+   "description": "Gain of the band around 52 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 52 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds sub-bass weight and rumble; cutting cleans out low mud."
   },
   {
    "index": 28,
    "id": "   41 Hz",
    "name": "   41 Hz",
+   "plain_name": "41 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "41 Hz",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "the tail 0 ms → 104 ms (T60), a peak 0.0 → 7.04 dB"
+   "description": "Gain of the band around 41 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 41 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds sub-bass weight and rumble; cutting cleans out low mud."
   },
   {
    "index": 29,
    "id": "   32 Hz",
    "name": "   32 Hz",
+   "plain_name": "32 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "32 Hz",
-   "confidence": "values",
-   "suggested_role": "mix.wet",
-   "role_evidence": "the late sound -41 → -22 dB, the direct sound unchanged"
+   "description": "Gain of the band around 32 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 32 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds sub-bass weight and rumble; cutting cleans out low mud."
   },
   {
    "index": 30,
    "id": "   25 Hz",
    "name": "   25 Hz",
+   "plain_name": "25 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "25 Hz",
-   "confidence": "values",
-   "suggested_role": "mix.wet",
-   "role_evidence": "the late sound -40 → -20 dB, the direct sound unchanged"
+   "description": "Gain of the band around 25 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 25 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds sub-bass weight and rumble; cutting cleans out low mud."
   },
   {
    "index": 31,
    "id": "   20 Hz",
    "name": "   20 Hz",
+   "plain_name": "20 Hz band",
    "group": "",
    "min": 1,
    "max": 255,
    "default": 128,
    "kind": "db",
-   "a": -17.998566,
-   "b": 17.998566,
+   "a": -18.0,
+   "b": 18.0,
    "unit": "dB",
-   "description": "20 Hz",
-   "confidence": "values",
-   "suggested_role": "mix.wet",
-   "role_evidence": "the late sound -39 → -20 dB, the direct sound unchanged"
+   "description": "Gain of the band around 20 Hz, -18 to +18 dB (the middle step is 0 dB and switches the band off).",
+   "how": "Boosts or cuts the band around 20 Hz by up to 18 dB in 254 steps; the middle step is 0 dB and switches the band off to save CPU.",
+   "sound": "Boosting adds sub-bass weight and rumble; cutting cleans out low mud."
   },
   {
    "index": 32,
    "id": "Highpass",
    "name": "Highpass",
+   "plain_name": "Highpass",
+   "role": "filter.highpass",
    "group": "",
    "min": 0,
    "max": 127,
@@ -2003,6 +2016,10 @@
    "kind": "table",
    "unit": "Hz",
    "points": [
+    [
+     0,
+     0.0
+    ],
     [
      1,
      5.0
@@ -2513,14 +2530,15 @@
     ]
    ],
    "description": "Highpass filter / DC remover",
-   "confidence": "values",
-   "suggested_role": "filter.highpass",
-   "role_evidence": "the response's lower corner moves 23.1 Hz → 131 Hz"
+   "how": "Sets a 12 dB per octave high-pass that removes subsonic rumble and DC; raw 0 (the default) is off, and the corner sits about 1.28 times the number its text shows.",
+   "sound": "Higher values thin out the bottom; use a little to clean rumble without changing the tone."
   },
   {
    "index": 33,
    "id": "Bandwidth",
    "name": "Bandwidth",
+   "plain_name": "Band width",
+   "role": "filter.bandwidth",
    "group": "",
    "min": 0,
    "max": 15,
@@ -2594,7 +2612,8 @@
     ]
    ],
    "description": "Bandwidth of each frequency band",
-   "confidence": "values"
+   "how": "Sets how wide each band is, 16 steps from 0.2 to 2.3 as its text shows (measured: 0.37 to 4.5 octaves between half-gain points at the low end, twice the number shown).",
+   "sound": "Wide bands overlap and sound smooth but add up; narrow ones leave gaps and act more like a surgical graphic equaliser."
   }
  ],
  "track_parameters": []

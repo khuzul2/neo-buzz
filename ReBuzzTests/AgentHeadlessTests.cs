@@ -183,7 +183,7 @@ namespace ReBuzzTests
 
             var status = client.Tool("studio_status");
             Assert.That(status["mode"]!.GetValue<string>(), Is.EqualTo("headless"));
-            var gear = client.Tool("gear_list", new JsonObject { ["search"] = "Neo" });
+            var gear = client.Tool("gear_list", new JsonObject { ["search"] = "Neo", ["limit"] = 400 });
             Assert.That(gear["gear"]!.AsArray().Where(g => g!["exact_units"]!.GetValue<bool>()).Select(g => g!["name"]!.GetValue<string>()),
                 Is.SupersetOf(new[] { "Neo Poly", "Neo Verb" }), "the package's Neo machines come with manifests");
 

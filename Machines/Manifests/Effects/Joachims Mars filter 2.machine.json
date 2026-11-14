@@ -28,16 +28,17 @@
  "health": {
   "status": "warn",
   "problems": [
-   "hot (loud but steady) with PreGain at its maximum (+15.5 dB): +2.5 dBFS peak; Amount at its maximum (127): +0.8 dBFS peak"
+   "hot (loud but steady) with PreGain at its maximum (+15.5 dB): +1.1 dBFS peak"
   ],
   "hot": true
  },
  "profile": {
   "effect": {
-   "gain_db": 1.48,
+   "gain_db": 1.5,
    "latency_samples": 0,
    "latency_ms": 0.0,
-   "tail_seconds": 0.01,
+   "tail_seconds": 0.02,
+   "tail_hz": 30.1,
    "echoes": 0,
    "output_correlation": 1.0,
    "spectrum_spread_db": 32.4,
@@ -377,15 +378,15 @@
   },
   "level_test": {
    "defaults": {
-    "peak_dbfs": -4.47,
-    "growth_db": 0.19,
+    "peak_dbfs": -4.12,
+    "growth_db": -0.11,
     "over_seconds": 30,
     "verdict": "ok"
    },
    "all_at_once": {
     "min": {
-     "peak_dbfs": -9.14,
-     "growth_db": -0.13,
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
      "verdict": "ok"
     },
     "max": {
@@ -397,25 +398,16 @@
    "swept_because": [
     "an effect with PreGain"
    ],
-   "renders": 12
+   "renders": 13
   },
   "sweeps": {
    "PreGain": {
     "max": {
-     "peak_dbfs": 2.46,
-     "growth_db": -1.65,
+     "peak_dbfs": 1.05,
+     "growth_db": 0.19,
      "verdict": "hot",
      "raw": 128,
      "text": "+15.5 dB"
-    }
-   },
-   "Amount": {
-    "max": {
-     "peak_dbfs": 0.75,
-     "growth_db": 1.88,
-     "verdict": "hot",
-     "raw": 127,
-     "text": "127"
     }
    }
   },
@@ -539,7 +531,9 @@
     "Shatter",
     "Cannon"
    ],
-   "description": "0 bypass, 1 Red crust, 2 Phobos, 3 Deimos, 4 Cratered, 5 God of iron, 6 Battle axe, 7 Scarred, 8 Bruised, 9 Rusty, 10 Steel pain, 11 Crunch, 12 Shatter, 13 Cannon."
+   "description": "0 bypass, 1 Red crust, 2 Phobos, 3 Deimos, 4 Cratered, 5 God of iron, 6 Battle axe, 7 Scarred, 8 Bruised, 9 Rusty, 10 Steel pain, 11 Crunch, 12 Shatter, 13 Cannon.",
+   "how": "Chooses one of 13 distortion characters, or 0 for bypass: soft and round, tube-like, or ring-mod and FM mangling.",
+   "sound": "Each character has its own harmonics and aggression; 0 passes the sound so you can compare."
   },
   {
    "index": 1,
@@ -1067,7 +1061,9 @@
      15.5
     ]
    ],
-   "description": "Level into the distortion, −100 to +15.5 dB."
+   "description": "Level into the distortion, −100 to +15.5 dB.",
+   "how": "Sets the level into the distortion, a table from -100 dB to +15.5 dB (0 dB at 71).",
+   "sound": "Higher values drive it harder and make it louder and denser; the top can pass full scale."
   },
   {
    "index": 2,
@@ -1082,7 +1078,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "Intensity of the distortion (its meaning varies a little by mode)."
+   "description": "Intensity of the distortion (its meaning varies a little by mode).",
+   "how": "Sets how intense the distortion is, 0 to 127; its meaning shifts a little per mode.",
+   "sound": "More amount means more harmonics and harshness; in some modes it acts like PreGain."
   },
   {
    "index": 3,
@@ -1097,7 +1095,9 @@
    "kind": "linear",
    "a": -127.0,
    "b": 0.0,
-   "description": "0 (the top, its default) turns it off; lower values attenuate the treble (differs in Bruised mode)."
+   "description": "0 (the top, its default) turns it off; lower values attenuate the treble (differs in Bruised mode).",
+   "how": "Attenuates the treble after the distortion on a 0 to 127 scale; 127 (the top, its default) turns it off.",
+   "sound": "Lower values roll off the harsh top and make the fuzz warmer."
   },
   {
    "index": 4,
@@ -1112,7 +1112,9 @@
    "kind": "linear",
    "a": -127.0,
    "b": 0.0,
-   "description": "0 (the top, its default) turns it off; lower values high-pass the bass (differs in Cannon mode)."
+   "description": "0 (the top, its default) turns it off; lower values high-pass the bass (differs in Cannon mode).",
+   "how": "Takes the bass out of the distortion on a 0 to 127 scale; 127 (the top, its default) turns it off.",
+   "sound": "Lower values keep the bass cleaner and tighter while the rest is distorted."
   }
  ],
  "track_parameters": []

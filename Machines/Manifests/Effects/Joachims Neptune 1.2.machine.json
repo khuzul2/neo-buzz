@@ -2,22 +2,33 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Joachims Neptune 1.2",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
- "type": "delay",
- "summary": "Delay (profiled draft): traits: delay, filter or EQ; tail 0.18 s; latency 8191 samples; gain -1.8 dB at the defaults.",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
+ "type": "spectral",
+ "summary": "Spectral effects through an FFT: a rough pitch shifter, boosting and clipping of frequency bands, a cleaner that mutes weak bands and a phase scrambler, with a volume threshold and a selectable FFT size. Adds latency equal to the FFT size. For glitchy, vocoded and ghostly sounds.",
  "category": "Modulation",
  "tags": [
   "spectral",
   "pitch-shift"
  ],
  "use_for": "Spectral effects through an FFT: pitch shifting, bin scrambling and spectral boosting (adds latency).",
+ "quirks": [
+  "Latency: 8,191 samples at the default FFT size of 8,192 (profile), and it grows with the FFT size.",
+  "Threshold at its lowest step (-100 dB) diverges; the safe range is -97.7 dB to +15.5 dB (raw 2 to 128).",
+  "Spectral boost is hot at both ends: +9.6 and +10.0 dBFS peak in the profile.",
+  "Its pitch shifter is, in its own words, bad and messed up: rough by design.",
+  "Closed source: names and behaviour come from its own texts and documentation page and from measurements, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - 8,191 samples latency, 0.18 s tail, divergence at Threshold's minimum, hot Spectral boost"
+ ],
  "tracks": 0,
  "health": {
   "status": "unhealthy",
   "problems": [
    "Threshold diverges at its minimum (-100.0 dB: infinity: the engine's guard caught it); safe from -97.7 dB to +15.5 dB (raw 2–128)",
-   "hot (loud but steady) with Spec.Boost at its minimum (-100.0%): +9.6 dBFS peak; Spec.Boost at its maximum (+100.0%): +10.0 dBFS peak"
+   "hot (loud but steady) with Spec.Boost at its minimum (-100.0%): +10.0 dBFS peak; Spec.Boost at its maximum (+100.0%): +9.0 dBFS peak"
   ],
   "diverging": true,
   "hot": true
@@ -28,6 +39,7 @@
    "latency_samples": 8191,
    "latency_ms": 185.74,
    "tail_seconds": 0.18,
+   "tail_hz": 8570.7,
    "echoes": 1,
    "first_echo_seconds": 0.185,
    "gap_before_echo_db": -60.0,
@@ -37,15 +49,15 @@
    "sine": {
     "loud": {
      "gain_db": -0.56,
-     "thd_percent": 1.95,
+     "thd_percent": 1.99,
      "thd_in_percent": 1.96,
-     "movement_db": 124.21
+     "movement_db": 125.0
     },
     "quiet": {
-     "gain_db": -0.55,
-     "thd_percent": 2.06,
+     "gain_db": -0.56,
+     "thd_percent": 1.99,
      "thd_in_percent": 1.96,
-     "movement_db": 124.56
+     "movement_db": 123.77
     }
    },
    "traits": [
@@ -377,8 +389,8 @@
      "verdict": "diverging"
     },
     "max": {
-     "peak_dbfs": -54.44,
-     "growth_db": -1.97,
+     "peak_dbfs": -53.41,
+     "growth_db": 1.56,
      "over_seconds": 30,
      "verdict": "ok"
     }
@@ -400,43 +412,43 @@
       [
        2,
        "-97.7 dB",
-       -9.11,
+       -9.22,
        "ok"
       ],
       [
        3,
        "-89.3 dB",
-       -9.44,
+       -9.22,
        "ok"
       ],
       [
        4,
        "-80.8 dB",
-       -9.12,
+       -9.22,
        "ok"
       ],
       [
        6,
        "-68.3 dB",
-       -9.24,
+       -9.22,
        "ok"
       ],
       [
        10,
        "-53.2 dB",
-       -9.19,
+       -9.22,
        "ok"
       ],
       [
        19,
        "-35.2 dB",
-       -9.2,
+       -9.22,
        "ok"
       ],
       [
        36,
        "-18.0 dB",
-       -9.15,
+       -9.22,
        "ok"
       ]
      ]
@@ -444,15 +456,15 @@
    },
    "Spec.Boost": {
     "min": {
-     "peak_dbfs": 9.56,
-     "growth_db": 0.46,
+     "peak_dbfs": 10.0,
+     "growth_db": 0.23,
      "verdict": "hot",
      "raw": 0,
      "text": "-100.0%"
     },
     "max": {
-     "peak_dbfs": 10.0,
-     "growth_db": 0.51,
+     "peak_dbfs": 8.97,
+     "growth_db": 0.61,
      "verdict": "hot",
      "raw": 254,
      "text": "+100.0%"
@@ -465,6 +477,8 @@
    "index": 0,
    "id": "Threshold",
    "name": "Threshold",
+   "plain_name": "Threshold",
+   "role": "dyn.threshold",
    "group": "",
    "min": 1,
    "max": 128,
@@ -986,19 +1000,21 @@
     ]
    ],
    "description": "Volume threshold",
-   "confidence": "values",
    "safe_range": {
     "min": 2,
     "max": 128,
     "min_text": "-97.7 dB",
     "max_text": "+15.5 dB",
     "reason": "diverges at its minimum (-100.0 dB: infinity: the engine's guard caught it)"
-   }
+   },
+   "how": "Sets the level below which the spectrum is ignored, a table from -100 dB to +15.5 dB (0 dB at 71); the lowest step diverges.",
+   "sound": "Raising it removes quiet content and noise; keep it above about -97 dB."
   },
   {
    "index": 1,
    "id": "PitchShift",
    "name": "PitchShift",
+   "plain_name": "Pitch shift",
    "group": "",
    "min": 1,
    "max": 255,
@@ -1007,72 +1023,83 @@
    "a": -127.0,
    "b": 127.0,
    "description": "Bad and messed up pitch shifter",
-   "confidence": "values"
+   "how": "Shifts the pitch, -127 to +127 steps around 0 at 128 (its own text calls it a bad and messed up shifter).",
+   "sound": "Expect a rough, metallic, robotic shift rather than a clean one."
   },
   {
    "index": 2,
    "id": "Spec.Boost",
    "name": "Spec.Boost",
+   "plain_name": "Spectral boost",
+   "role": "fx.amount",
    "group": "",
    "min": 0,
    "max": 254,
    "default": 127,
    "kind": "linear",
-   "a": -100.002353,
-   "b": 100.002353,
+   "a": -100.0,
+   "b": 100.0,
    "unit": "%",
    "description": "Spectral boost - frequency band boost",
-   "confidence": "values"
+   "how": "Boosts or cuts frequency bands by their strength, -100 to +100 percent (0 at 127).",
+   "sound": "Positive values exaggerate strong bands for a harsh, vocoded sound; negative values do the reverse; both are loud."
   },
   {
    "index": 3,
    "id": "Spec.Dist",
    "name": "Spec.Dist",
+   "plain_name": "Spectral distortion",
    "group": "",
    "min": 0,
    "max": 128,
    "default": 0,
    "kind": "linear",
-   "a": 0.00353,
-   "b": 100.002671,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
    "description": "Spectral distortion - frequency band clipping",
-   "confidence": "values"
+   "how": "Clips frequency bands, 0 to 100 percent.",
+   "sound": "More adds a gritty, distorted digital character to the spectrum."
   },
   {
    "index": 4,
    "id": "Spec.Clean",
    "name": "Spec.Clean",
+   "plain_name": "Spectral clean",
    "group": "",
    "min": 0,
    "max": 128,
    "default": 0,
    "kind": "linear",
-   "a": 0.00353,
-   "b": 100.002671,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
    "description": "Spectral cleaner - mutes weak frequency bands",
-   "confidence": "values"
+   "how": "Mutes weak frequency bands, 0 to 100 percent.",
+   "sound": "More strips away the quiet parts of the spectrum and leaves a thin, ghostly sound."
   },
   {
    "index": 5,
    "id": "Scramble",
    "name": "Scramble",
+   "plain_name": "Phase scramble",
    "group": "",
    "min": 0,
    "max": 128,
    "default": 0,
    "kind": "linear",
-   "a": 0.00353,
-   "b": 100.002671,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
    "description": "Randomizes the phase information",
-   "confidence": "values"
+   "how": "Randomises the phase information, 0 to 100 percent.",
+   "sound": "More makes the sound smeared and noisy, like a whisper of the original."
   },
   {
    "index": 6,
    "id": "FFT size",
    "name": "FFT size",
+   "plain_name": "FFT size",
    "group": "",
    "min": 0,
    "max": 8,
@@ -1081,7 +1108,8 @@
    "a": 128.0,
    "b": 32768.0,
    "description": "Precision and size of FFT",
-   "confidence": "values"
+   "how": "Sets the size of the analysis, 128 to 32,768 samples (8,192 by default), which is also the delay it adds.",
+   "sound": "Bigger sizes are finer in pitch but smear transients and delay the sound more."
   }
  ],
  "track_parameters": []

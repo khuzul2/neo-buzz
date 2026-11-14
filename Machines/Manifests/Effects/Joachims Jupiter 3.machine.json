@@ -2,10 +2,10 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Joachims Jupiter 3",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
- "type": "effect (silent at defaults)",
- "summary": "Effect (silent at defaults) (profiled draft): silent at its defaults.",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
+ "type": "dynamics",
+ "summary": "Three-band compressor and limiter for the master: a phase-correct split into low, mid and high bands, a threshold, attack, release, output and tube-like saturation per band, one shared ratio, a narrower low band and a final limiter with four characters. Adds a long delay (the FFT size). Last effect before the output.",
  "category": "Dynamics",
  "tags": [
   "multiband",
@@ -13,11 +13,24 @@
   "master"
  ],
  "use_for": "Three-band compressor with stereo width and a beefing control, for mastering and bus work.",
+ "quirks": [
+  "It delays the sound by its FFT size, 32,768 samples (about 0.74 s) by default: the profile's short test window caught only silence, so its level and sound at the defaults are unverified. Its own page says to place it last before the master and not to use it for low latency.",
+  "At its defaults the thresholds are at 0 dB, so nothing is compressed until a threshold is lowered.",
+  "Mid and high Output and Beefyness carry the low band's texts in the machine (copy mistakes); the Split values are percent of an internal scale, not Hz.",
+  "Listen to defaults to Enabled; set it to Bypass to switch it out and to LOW, MID or HIGH to solo a band while setting it.",
+  "Closed source: names and behaviour come from its own texts and documentation page and from measurements, not from code."
+ ],
+ "evidence": [
+  "RunTime/Gear/Effects/Joachims Jupiter 3.html - its author's page (bands, delay, limiter, usage notes)",
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - silent at the defaults (the delay)"
+ ],
  "tracks": 0,
  "health": {
   "status": "warn",
   "problems": [
-   "silent with noise through it at the defaults (a gate closed, a wet mix at 0, or it needs setting up)"
+   "silent with noise through it at the defaults (a gate closed, a wet mix at 0, or it needs setting up)",
+   "every parameter at its maximum at once diverges (-60.0 dBFS peak over 30 s, growing +6 dB), but no parameter alone does at its maximum"
   ]
  },
  "profile": {
@@ -36,12 +49,18 @@
      "verdict": "silent"
     },
     "max": {
-     "peak_dbfs": -52.17,
-     "growth_db": -18.21,
-     "verdict": "ok"
+     "peak_dbfs": -59.98,
+     "growth_db": 6.05,
+     "over_seconds": 30,
+     "verdict": "diverging"
     }
-   }
+   },
+   "swept_because": [
+    "every parameter at its maximum at once: diverging"
+   ],
+   "renders": 50
   },
+  "sweeps": {},
   "denormal": {
    "slowdown": null
   }
@@ -51,6 +70,8 @@
    "index": 0,
    "id": "Input",
    "name": "Input",
+   "plain_name": "Input gain",
+   "role": "gain.input",
    "group": "",
    "min": 1,
    "max": 128,
@@ -572,72 +593,86 @@
     ]
    ],
    "description": "Input volume gain",
-   "confidence": "values"
+   "how": "Raises or lowers the level into the three bands: a table from -100 dB to +15.5 dB, 0 dB at 71.",
+   "sound": "Use it to drive the compressors harder or to make room."
   },
   {
    "index": 1,
    "id": "LowSplit",
    "name": "LowSplit",
+   "plain_name": "Low/mid split",
+   "role": "dyn.crossover",
    "group": "",
    "min": 0,
    "max": 128,
    "default": 35,
    "kind": "linear",
-   "a": -0.484198,
-   "b": 99.522958,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "Frequency that separates the low from the middle band",
-   "confidence": "values"
+   "description": "Split between the low and mid bands, 0 to 100 percent of its scale (not Hz: it depends on Steepness and FFT size).",
+   "how": "Sets where the low and mid bands meet, 0 to 100 percent of its scale; its own text says the frequency also depends on Steepness and FFT size, so use your ears.",
+   "sound": "Lower values make the low band narrower; higher ones give it more of the body."
   },
   {
    "index": 2,
    "id": "HighSplit",
    "name": "HighSplit",
+   "plain_name": "Mid/high split",
+   "role": "dyn.crossover",
    "group": "",
    "min": 0,
    "max": 128,
    "default": 75,
    "kind": "linear",
-   "a": -0.484198,
-   "b": 99.522958,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "Frequency that separates the middle from the high band",
-   "confidence": "values"
+   "description": "Split between the mid and high bands, 0 to 100 percent of its scale (not Hz).",
+   "how": "Sets where the mid and high bands meet, 0 to 100 percent of its scale (depends on Steepness and FFT size).",
+   "sound": "Lower values give the high band more of the mids; higher ones keep it to the very top."
   },
   {
    "index": 3,
    "id": "Steepness",
    "name": "Steepness",
+   "plain_name": "Split steepness",
    "group": "",
    "min": 0,
    "max": 128,
    "default": 60,
    "kind": "linear",
-   "a": -0.484198,
-   "b": 99.522958,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
    "description": "Filter slope steepness",
-   "confidence": "values"
+   "how": "Sets how sharp the band-splitting filters are, 0 to 100 percent.",
+   "sound": "Steeper splits separate the bands cleanly but can ring; gentler ones blend more smoothly."
   },
   {
    "index": 4,
    "id": "Stereo wid.low",
    "name": "Stereo wid.low",
+   "plain_name": "Low stereo width",
+   "role": "width",
    "group": "",
    "min": 0,
    "max": 128,
    "default": 64,
    "kind": "linear",
-   "a": -0.460823,
-   "b": 199.53059,
+   "a": 0.0,
+   "b": 200.0,
    "unit": "%",
    "description": "Low band stereo width",
-   "confidence": "values"
+   "how": "Sets the low band's stereo width from 0 to 200 percent (100 at 64).",
+   "sound": "Lower values narrow the bass toward the centre, as is usual on masters; higher ones widen it."
   },
   {
    "index": 5,
    "id": "Listen to",
    "name": "Listen to",
+   "plain_name": "Listen to",
+   "role": "solo",
    "group": "",
    "min": 0,
    "max": 4,
@@ -651,12 +686,15 @@
     "HIGH"
    ],
    "description": "Listen solo or bypass",
-   "confidence": "values"
+   "how": "Chooses what you hear: bypass, enabled, or only the low, mid or high band soloed.",
+   "sound": "Solo a band to set its compressor; bypass switches the whole machine out."
   },
   {
    "index": 6,
    "id": "Ratio, all bands",
    "name": "Ratio, all bands",
+   "plain_name": "Ratio",
+   "role": "dyn.ratio",
    "group": "",
    "min": 1,
    "max": 128,
@@ -1178,12 +1216,15 @@
     ]
    ],
    "description": "Compressor: ratio (works a bit like mix between wet/dry)",
-   "confidence": "values"
+   "how": "Sets one ratio for all three compressors, from 1:1 to 30:1 (30:1 by default); its own text says it works a little like a wet and dry mix.",
+   "sound": "Higher ratios squeeze more; 1:1 does nothing."
   },
   {
    "index": 7,
    "id": "LOW: Threshold",
    "name": "LOW: Threshold",
+   "plain_name": "Low threshold",
+   "role": "dyn.threshold",
    "group": "",
    "min": 1,
    "max": 128,
@@ -1705,12 +1746,15 @@
     ]
    ],
    "description": "Compressor: Low threshold level (compressor kicks in above this volume)",
-   "confidence": "values"
+   "how": "Sets the level above which the low band is compressed, a table from -100 dB to 0 dB; 0 dB (the default) compresses nothing.",
+   "sound": "Lower it until the band starts to be squeezed; louder passages are then held down toward the threshold."
   },
   {
    "index": 8,
    "id": "          Attack",
    "name": "          Attack",
+   "plain_name": "Low attack",
+   "role": "dyn.attack",
    "group": "",
    "min": 1,
    "max": 128,
@@ -1720,12 +1764,15 @@
    "b": 0.6018,
    "unit": "s",
    "description": "Compressor: Attack time (affects the clickyness)",
-   "confidence": "values"
+   "how": "Sets how fast the low compressor reacts, about 1 ms to 0.6 s.",
+   "sound": "Short values catch transients and can click; long ones let them through and keep the punch."
   },
   {
    "index": 9,
    "id": "          Release",
    "name": "          Release",
+   "plain_name": "Low release",
+   "role": "dyn.release",
    "group": "",
    "min": 1,
    "max": 128,
@@ -1735,12 +1782,15 @@
    "b": 7.77805,
    "unit": "s",
    "description": "Compressor: Release time (affects how instruments sustain / fade out)",
-   "confidence": "values"
+   "how": "Sets how fast the low compressor lets go, about 1 ms to 7.8 s.",
+   "sound": "Short values give a pumping, lively sound; long ones a smooth, sustained level."
   },
   {
    "index": 10,
    "id": "          Output",
    "name": "          Output",
+   "plain_name": "Low output",
+   "role": "dyn.makeup",
    "group": "",
    "min": 1,
    "max": 128,
@@ -2262,12 +2312,14 @@
     ]
    ],
    "description": "Compressor: Output volume gain Low",
-   "confidence": "values"
+   "how": "Sets the low band's output level, a table from -100 dB to +15.5 dB (0 dB at 71).",
+   "sound": "Use it to rebalance the three bands after compressing."
   },
   {
    "index": 11,
    "id": "          Beefyness",
    "name": "          Beefyness",
+   "plain_name": "Low beefyness",
    "group": "",
    "min": 0,
    "max": 128,
@@ -2788,13 +2840,16 @@
      100.0
     ]
    ],
-   "description": "Low: A simple tube valve simulator",
-   "confidence": "values"
+   "description": "Asymmetric tube-like saturation of the low band, -100 to +100 percent (0 at 64).",
+   "how": "Adds an asymmetric tube-like saturation to the low band: -100 to +100 percent, 0 (at 64) switches it off.",
+   "sound": "More adds a warm, fat edge; its own text says it is a simple valve simulator."
   },
   {
    "index": 12,
    "id": "MID: Threshold",
    "name": "MID: Threshold",
+   "plain_name": "Mid threshold",
+   "role": "dyn.threshold",
    "group": "",
    "min": 1,
    "max": 128,
@@ -3316,12 +3371,15 @@
     ]
    ],
    "description": "Compressor: Mid threshold level (compressor kicks in above this volume)",
-   "confidence": "values"
+   "how": "Sets the level above which the mid band is compressed, a table from -100 dB to 0 dB; 0 dB (the default) compresses nothing.",
+   "sound": "Lower it until the band starts to be squeezed; louder passages are then held down toward the threshold."
   },
   {
    "index": 13,
    "id": "          Attack",
    "name": "          Attack",
+   "plain_name": "Mid attack",
+   "role": "dyn.attack",
    "group": "",
    "min": 1,
    "max": 128,
@@ -3331,12 +3389,15 @@
    "b": 0.6018,
    "unit": "s",
    "description": "Compressor: Attack time (affects the clickyness)",
-   "confidence": "values"
+   "how": "Sets how fast the mid compressor reacts, about 1 ms to 0.6 s.",
+   "sound": "Short values catch transients and can click; long ones let them through and keep the punch."
   },
   {
    "index": 14,
    "id": "          Release",
    "name": "          Release",
+   "plain_name": "Mid release",
+   "role": "dyn.release",
    "group": "",
    "min": 1,
    "max": 128,
@@ -3346,12 +3407,15 @@
    "b": 7.77805,
    "unit": "s",
    "description": "Compressor: Release time (affects how instruments sustain / fade out)",
-   "confidence": "values"
+   "how": "Sets how fast the mid compressor lets go, about 1 ms to 7.8 s.",
+   "sound": "Short values give a pumping, lively sound; long ones a smooth, sustained level."
   },
   {
    "index": 15,
    "id": "          Output",
    "name": "          Output",
+   "plain_name": "Mid output",
+   "role": "dyn.makeup",
    "group": "",
    "min": 1,
    "max": 128,
@@ -3873,12 +3937,14 @@
     ]
    ],
    "description": "Compressor: Output volume gain Low",
-   "confidence": "values"
+   "how": "Sets the mid band's output level, a table from -100 dB to +15.5 dB (0 dB at 71).",
+   "sound": "Use it to rebalance the three bands after compressing."
   },
   {
    "index": 16,
    "id": "          Beefyness",
    "name": "          Beefyness",
+   "plain_name": "Mid beefyness",
    "group": "",
    "min": 0,
    "max": 128,
@@ -4399,13 +4465,16 @@
      100.0
     ]
    ],
-   "description": "Low: A simple tube valve simulator",
-   "confidence": "values"
+   "description": "Asymmetric tube-like saturation of the mid band, -100 to +100 percent (0 at 64). Its own text says low.",
+   "how": "Adds an asymmetric tube-like saturation to the mid band: -100 to +100 percent, 0 (at 64) switches it off.",
+   "sound": "More adds a warm, fat edge; its own text says it is a simple valve simulator."
   },
   {
    "index": 17,
    "id": "HIGH: Threshold",
    "name": "HIGH: Threshold",
+   "plain_name": "High threshold",
+   "role": "dyn.threshold",
    "group": "",
    "min": 1,
    "max": 128,
@@ -4927,12 +4996,15 @@
     ]
    ],
    "description": "Compressor: High threshold level (compressor kicks in above this volume)",
-   "confidence": "values"
+   "how": "Sets the level above which the high band is compressed, a table from -100 dB to 0 dB; 0 dB (the default) compresses nothing.",
+   "sound": "Lower it until the band starts to be squeezed; louder passages are then held down toward the threshold."
   },
   {
    "index": 18,
    "id": "          Attack",
    "name": "          Attack",
+   "plain_name": "High attack",
+   "role": "dyn.attack",
    "group": "",
    "min": 1,
    "max": 128,
@@ -4942,12 +5014,15 @@
    "b": 0.6018,
    "unit": "s",
    "description": "Compressor: Attack time (affects the clickyness)",
-   "confidence": "values"
+   "how": "Sets how fast the high compressor reacts, about 1 ms to 0.6 s.",
+   "sound": "Short values catch transients and can click; long ones let them through and keep the punch."
   },
   {
    "index": 19,
    "id": "          Release",
    "name": "          Release",
+   "plain_name": "High release",
+   "role": "dyn.release",
    "group": "",
    "min": 1,
    "max": 128,
@@ -4957,12 +5032,15 @@
    "b": 7.77805,
    "unit": "s",
    "description": "Compressor: Release time (affects how instruments sustain / fade out)",
-   "confidence": "values"
+   "how": "Sets how fast the high compressor lets go, about 1 ms to 7.8 s.",
+   "sound": "Short values give a pumping, lively sound; long ones a smooth, sustained level."
   },
   {
    "index": 20,
    "id": "          Output",
    "name": "          Output",
+   "plain_name": "High output",
+   "role": "dyn.makeup",
    "group": "",
    "min": 1,
    "max": 128,
@@ -5484,12 +5562,14 @@
     ]
    ],
    "description": "Compressor: Output volume gain Low",
-   "confidence": "values"
+   "how": "Sets the high band's output level, a table from -100 dB to +15.5 dB (0 dB at 71).",
+   "sound": "Use it to rebalance the three bands after compressing."
   },
   {
    "index": 21,
    "id": "          Beefyness",
    "name": "          Beefyness",
+   "plain_name": "High beefyness",
    "group": "",
    "min": 0,
    "max": 128,
@@ -6010,13 +6090,15 @@
      100.0
     ]
    ],
-   "description": "Low: A simple tube valve simulator",
-   "confidence": "values"
+   "description": "Asymmetric tube-like saturation of the high band, -100 to +100 percent (0 at 64). Its own text says low.",
+   "how": "Adds an asymmetric tube-like saturation to the high band: -100 to +100 percent, 0 (at 64) switches it off.",
+   "sound": "More adds a warm, fat edge; its own text says it is a simple valve simulator."
   },
   {
    "index": 22,
    "id": "Limit: Mode",
    "name": "Limit: Mode",
+   "plain_name": "Limiter mode",
    "group": "",
    "min": 0,
    "max": 4,
@@ -6030,12 +6112,14 @@
     "Old limiter"
    ],
    "description": "Limiter modes",
-   "confidence": "values"
+   "how": "Chooses the final limiter: off or one of four characters (smooth, boing, rusty, old).",
+   "sound": "The limiter catches peaks the compressors let through; each character has its own feel and distortion."
   },
   {
    "index": 23,
    "id": "Limit: Adjust",
    "name": "Limit: Adjust",
+   "plain_name": "Limiter adjust",
    "group": "",
    "min": 1,
    "max": 128,
@@ -6557,12 +6641,14 @@
     ]
    ],
    "description": "Release time or shape of limiter",
-   "confidence": "values"
+   "how": "Sets the limiter's release time or shape, a table from -100 dB to +15.5 dB (0 dB at 71; its own text says it is release time or shape).",
+   "sound": "It changes how the limiter lets go after a peak; unverified what the dB figures mean here."
   },
   {
    "index": 24,
    "id": "FFT size",
    "name": "FFT size",
+   "plain_name": "FFT size",
    "group": "",
    "min": 4,
    "max": 10,
@@ -6578,7 +6664,8 @@
     "65536 samples"
    ],
    "description": "Precision/size of FFT (and latency)",
-   "confidence": "values"
+   "how": "Chooses the size of the analysis, 1,024 to 65,536 samples (32,768 by default), which is also the delay it adds.",
+   "sound": "Bigger sizes split the bands more cleanly and delay the sound longer; at the default it is about 0.74 s at 44.1 kHz."
   }
  ],
  "track_parameters": []

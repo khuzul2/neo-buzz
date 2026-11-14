@@ -17,7 +17,8 @@
   "Stereo in and out; each track is a tap (4 at most).",
   "Lengths count in Delay unit: ticks (the default, so echoes follow the tempo), 1/256 ticks, samples or ms.",
   "The filter's coefficients assume 44.1 kHz (its source), so at other sample rates its cutoff moves with the rate.",
-  "FB Amp at its top (−0.1 dB) piles up: +10.5 dBFS after 30 s in the profile."
+  "FB Amp at its top (−0.1 dB) piles up: +10.5 dBFS after 30 s in the profile.",
+  "Its dry channel pans default hard left and hard right (raw 0 and 240): move both toward the centre for a mono dry signal."
  ],
  "evidence": [
   "ExternalMachines/source/buzztrax-buzzmachines/FSM/PanzerDelay/PanzerDelay.cpp — parameter table, DescribeValue (dB, pans, spread), TickTrack, the filter",
@@ -27,7 +28,7 @@
  "health": {
   "status": "warn",
   "problems": [
-   "hot (loud but steady) with Wet L Pan at its minimum (100% L): +0.3 dBFS peak; Wet R Pan at its maximum (100% R): +1.0 dBFS peak; FB Amp at its maximum (-0.1 dB): +10.5 dBFS peak over 30 s"
+   "hot (loud but steady) with Wet L Pan at its minimum (100% L): +0.6 dBFS peak; Wet R Pan at its maximum (100% R): +0.6 dBFS peak; FB Amp at its maximum (-0.1 dB): +11.0 dBFS peak over 30 s"
   ],
   "hot": true
  },
@@ -37,8 +38,8 @@
    "latency_samples": 0,
    "latency_ms": 0.0,
    "tail_seconds": 2.62,
-   "tail_hz": 8238.1,
-   "echoes": 6,
+   "tail_hz": 8570.7,
+   "echoes": 7,
    "first_echo_seconds": 0.375,
    "gap_before_echo_db": -60.0,
    "output_correlation": 1.0,
@@ -46,16 +47,16 @@
    "tilt_db": 0.0,
    "sine": {
     "loud": {
-     "gain_db": 2.41,
+     "gain_db": 2.42,
      "thd_percent": 1.86,
      "thd_in_percent": 1.96,
-     "movement_db": 6.15
+     "movement_db": 6.13
     },
     "quiet": {
      "gain_db": 2.42,
-     "thd_percent": 1.92,
+     "thd_percent": 1.86,
      "thd_in_percent": 1.96,
-     "movement_db": 6.11
+     "movement_db": 6.13
     }
    },
    "traits": [
@@ -459,13 +460,13 @@
    },
    "all_at_once": {
     "min": {
-     "peak_dbfs": -7.06,
-     "growth_db": 0.66,
+     "peak_dbfs": -7.28,
+     "growth_db": 0.03,
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": -2.12,
-     "growth_db": -0.19,
+     "peak_dbfs": -1.95,
+     "growth_db": -0.18,
      "verdict": "ok"
     }
    },
@@ -477,8 +478,8 @@
   "sweeps": {
    "Wet L Pan": {
     "min": {
-     "peak_dbfs": 0.32,
-     "growth_db": 0.2,
+     "peak_dbfs": 0.63,
+     "growth_db": 0.37,
      "verdict": "hot",
      "raw": 0,
      "text": "100% L"
@@ -486,8 +487,8 @@
    },
    "Wet R Pan": {
     "max": {
-     "peak_dbfs": 1.0,
-     "growth_db": 0.07,
+     "peak_dbfs": 0.63,
+     "growth_db": 0.37,
      "verdict": "hot",
      "raw": 240,
      "text": "100% R"
@@ -495,8 +496,8 @@
    },
    "FB Amp": {
     "max": {
-     "peak_dbfs": 10.48,
-     "growth_db": 0.52,
+     "peak_dbfs": 11.04,
+     "growth_db": 2.12,
      "over_seconds": 30,
      "verdict": "hot",
      "raw": 239,
@@ -557,7 +558,7 @@
     },
     "Dry L Pan": {
      "suggested_role": "drive",
-     "evidence": "harmonics 1.9 → 51.0 % on a sine",
+     "evidence": "harmonics 1.9 → 252.4 % on a sine",
      "min": {
       "raw": 0,
       "text": "100% L"
@@ -746,7 +747,9 @@
    "b": 0.0,
    "flag": true,
    "unit": "dB",
-   "description": "Level of the dry signal, −24 to 0 dB (raw 0: off)."
+   "description": "Level of the dry signal, −24 to 0 dB (raw 0: off).",
+   "how": "Sets the level of the dry signal from -24 dB to 0 dB; the lowest step switches it off.",
+   "sound": "Turn it down for a send with echoes only; at 0 dB the original stays at full level."
   },
   {
    "index": 1,
@@ -762,7 +765,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Where the dry left channel goes: −100% left to +100% right (raw 120: centre)."
+   "description": "Where the dry left channel goes: −100% left to +100% right (raw 120: centre).",
+   "how": "Places the dry left channel from 100 percent left to 100 percent right (centre at 120).",
+   "sound": "Moving it right narrows the dry sound toward the right speaker; at the default it stays hard left."
   },
   {
    "index": 2,
@@ -778,7 +783,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Where the dry right channel goes: −100% left to +100% right."
+   "description": "Where the dry right channel goes: −100% left to +100% right.",
+   "how": "Places the dry right channel from 100 percent left to 100 percent right (centre at 120).",
+   "sound": "Moving it left narrows the dry stereo image; at the default it stays hard right."
   },
   {
    "index": 3,
@@ -797,7 +804,9 @@
     "Samples",
     "milisecs"
    ],
-   "description": "Ticks, 1/256 ticks, samples or ms."
+   "description": "Ticks, 1/256 ticks, samples or ms.",
+   "how": "Chooses what the delay lengths count: ticks, 1/256 of a tick, samples or milliseconds.",
+   "sound": "Ticks keep the echoes in time with the tempo; samples and milliseconds give fixed times."
   },
   {
    "index": 4,
@@ -816,7 +825,9 @@
     "HP",
     "BP"
    ],
-   "description": "None, low-pass, high-pass or band-pass on the echoes."
+   "description": "None, low-pass, high-pass or band-pass on the echoes.",
+   "how": "Chooses a filter for the echoes: none, low-pass, high-pass or band-pass.",
+   "sound": "A low-pass makes each repeat darker, a high-pass thins it out, a band-pass makes a narrow, radio-like repeat."
   },
   {
    "index": 5,
@@ -833,7 +844,9 @@
    "b": 8000.0,
    "unit": "Hz",
    "own_texts": false,
-   "description": "440 Hz – 8 kHz exponential (at 44.1 kHz)."
+   "description": "440 Hz – 8 kHz exponential (at 44.1 kHz).",
+   "how": "Sets the echo filter's cutoff, 440 Hz to 8 kHz in an exponential scale (at 44.1 kHz).",
+   "sound": "Lower values darken or thin the repeats more strongly; the filter acts on every pass."
   },
   {
    "index": 6,
@@ -849,7 +862,9 @@
    "a": 0.01,
    "b": 1.0,
    "own_texts": false,
-   "description": "Filter Q, 0.01–1.0."
+   "description": "Filter Q, 0.01–1.0.",
+   "how": "Sets the echo filter's Q from 0.01 to 1.0.",
+   "sound": "Higher values sharpen the filter's peak and colour the repeats; the lowest give a soft slope."
   }
  ],
  "track_parameters": [
@@ -866,7 +881,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 20000.0,
-   "description": "In Delay unit (3 ticks by default)."
+   "description": "In Delay unit (3 ticks by default).",
+   "how": "Sets the left delay line's length, 1 to 20,000 in the Delay unit.",
+   "sound": "Different left and right lengths make the echoes bounce unevenly between the speakers."
   },
   {
    "index": 1,
@@ -881,7 +898,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 20000.0,
-   "description": "In Delay unit."
+   "description": "In Delay unit.",
+   "how": "Sets the right delay line's length, 1 to 20,000 in the Delay unit.",
+   "sound": "Equal lengths give a plain echo; unequal ones give a ping-pong feel."
   },
   {
    "index": 2,
@@ -898,7 +917,9 @@
    "b": 0.0,
    "flag": true,
    "unit": "dB",
-   "description": "Level of this tap, −24 to 0 dB (raw 0: off)."
+   "description": "Level of this tap, −24 to 0 dB (raw 0: off).",
+   "how": "Sets this tap's level from -24 dB to 0 dB; the lowest step silences it.",
+   "sound": "Use it to balance the taps against each other and the dry sound."
   },
   {
    "index": 3,
@@ -914,7 +935,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Where this tap's left echo goes, −100% left to +100% right."
+   "description": "Where this tap's left echo goes, −100% left to +100% right.",
+   "how": "Places the tap's left echo from 100 percent left to 100 percent right.",
+   "sound": "Moving it toward the right makes the echo cross the stereo field."
   },
   {
    "index": 4,
@@ -930,7 +953,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Where this tap's right echo goes, −100% left to +100% right."
+   "description": "Where this tap's right echo goes, −100% left to +100% right.",
+   "how": "Places the tap's right echo from 100 percent left to 100 percent right.",
+   "sound": "Moving it toward the left makes the echo cross the stereo field."
   },
   {
    "index": 5,
@@ -947,7 +972,9 @@
    "b": -0.1,
    "flag": true,
    "unit": "dB",
-   "description": "Echoes fed back, −24 to −0.1 dB (raw 0: none)."
+   "description": "Echoes fed back, −24 to −0.1 dB (raw 0: none).",
+   "how": "Sets how much of the echoes is fed back, from -24 dB to -0.1 dB; the lowest step gives no repeats.",
+   "sound": "More feedback means more repeats; near the top the echoes hardly die away and the level climbs."
   },
   {
    "index": 6,
@@ -960,7 +987,9 @@
    "max": 1,
    "default": 0,
    "kind": "switch",
-   "description": "Swaps left and right in the feedback."
+   "description": "Swaps left and right in the feedback.",
+   "how": "Swaps left and right in the feedback when on.",
+   "sound": "On makes each repeat jump to the other speaker, the classic ping-pong."
   },
   {
    "index": 7,
@@ -976,7 +1005,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Stereo spread in the feedback: negative narrows (inside), positive widens (outside); 0% at raw 120."
+   "description": "Stereo spread in the feedback: negative narrows (inside), positive widens (outside); 0% at raw 120.",
+   "how": "Widens or narrows the stereo image in the feedback, from -100 percent (inside) to +100 percent (outside), 0 at 120.",
+   "sound": "Positive values make the repeats drift outward with each pass; negative values pull them toward the middle."
   }
  ]
 }
