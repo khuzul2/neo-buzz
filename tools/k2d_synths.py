@@ -283,7 +283,7 @@ CURATE = {
 # Green Milk's time parameters (13 tables) have texts only for raw 0 to 128 (seconds, 0 to 2.672 s): above that the machine gives no text, though its range goes to
 # 254 and the LFO speed and delay default to 160 and 176. The table must run to the end of the range, so the last measured value is held to raw 254 and the four LFO
 # ones, whose defaults are in that region, are plain raw numbers; the page, the quirks and the Explain text say it is unverified.
-_TAIL = {"add_points": [(254, 2.672)]}
+_TAIL = {"add_points": [(97, 1.122), (254, 2.672)]}   # raw 97 reads 1122 ms (the table jumps between 96 and 98)
 _RAW = {"drop": ["points", "unit"], "kind": "linear", "a": 0.0, "b": 254.0}
 for _k in ("p4", "p5", "p9", "p10", "p11", "p13", "p18", "p19", "p21"):
     _p = CURATE["kibibu Green Milk"]["params"][_k]

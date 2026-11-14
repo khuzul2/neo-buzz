@@ -150,6 +150,7 @@ EXPLAIN = {
         "It makes no sound; the machine shows several patterns of the song together in its own window.")},
 }
 
+_INERTIA = {"add_points": [(16384, 1.0)]}   # the machine reads "1.00 Ticks" at raw 16384 (between two sampled points)
 CURATE = {
     "EasyRec": {
         "type": "utility",
@@ -165,8 +166,8 @@ CURATE = {
     "mixIO": {
         "type": "utility",
         "summary": "A multi-input mixer with per-track gain from silence to +12 dB, stereo width, mute and solo, and gliding times for each. Neo Utility covers a single stream's gain, width and polarity.",
-        "params": {"t0": ("Gain", "level", {"add_points": [(0, "-inf")]}), "t1": ("Stereo width", None, {"kind": "linear", "unit": "%", "a": 0.0, "b": 200.0}), "t2": ("Gain glide", None),
-                   "t3": ("Pan glide", None), "t4": ("Width glide", None), "t5": ("Mute and solo glide", None), "t6": ("Mute", "bypass"), "t7": ("Solo", None)},
+        "params": {"t0": ("Gain", "level", {"add_points": [(0, "-inf")], "own_texts": False}), "t1": ("Stereo width", None, {"kind": "linear", "unit": "%", "a": 0.0, "b": 200.0}), "t2": ("Gain glide", None, _INERTIA),
+                   "t3": ("Pan glide", None, _INERTIA), "t4": ("Width glide", None, _INERTIA), "t5": ("Mute and solo glide", None, _INERTIA), "t6": ("Mute", "bypass"), "t7": ("Solo", None)},
         "quirks": [
             "A pass-through with one clean input at its defaults (profile: 0 dB, no latency); at its gain maximum (+12 dB) it peaks above 0 dBFS (hot).",
             "Gain is a table: silence at 0, about 0 dB at 45,875 (the default), +12 dB at 65,534.",

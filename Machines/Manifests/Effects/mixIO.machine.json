@@ -1069,7 +1069,8 @@
    ],
    "description": "Gain (0000=Silence, B333=0dB, FFFE=+12dB)",
    "how": "Sets the gain of this track's input, a table from silence at 0 up to +12 dB at 65,534, with about 0 dB at 45,875 (the default).",
-   "sound": "A level control per channel: raise it to push one input forward, and note +12 dB can clip the mix."
+   "sound": "A level control per channel: raise it to push one input forward, and note +12 dB can clip the mix.",
+   "own_texts": false
   },
   {
    "index": 0,
@@ -1215,6 +1216,10 @@
     [
      16128,
      0.984
+    ],
+    [
+     16384,
+     1.0
     ],
     [
      16703,
@@ -1694,6 +1699,10 @@
      0.984
     ],
     [
+     16384,
+     1.0
+    ],
+    [
      16703,
      1.08
     ],
@@ -2171,6 +2180,10 @@
      0.984
     ],
     [
+     16384,
+     1.0
+    ],
+    [
      16703,
      1.08
     ],
@@ -2646,6 +2659,10 @@
     [
      16128,
      0.984
+    ],
+    [
+     16384,
+     1.0
     ],
     [
      16703,
