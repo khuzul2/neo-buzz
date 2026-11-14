@@ -139,6 +139,8 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Tape = new("Neo Tape", "Tape", false);
         internal static readonly NeoInfo DeEsser = new("Neo De-esser", "DeEsser", false);
         internal static readonly NeoInfo Gate = new("Neo Gate", "Gate", false);
+        // The resonance suppressor (docs/specs/mastering-tools.md §5.16).
+        internal static readonly NeoInfo Spectral = new("Neo Spectral", "Spectral", false);
         // The strip (docs/specs/mastering-tools.md §5.10).
         internal static readonly NeoInfo Strip = new("Neo Strip", "Strip", false);
 
@@ -1720,6 +1722,20 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void NeoSpectralReportsItsFrameAsLatencyAndShowsItsEditor()
+        {
+            using var rig = new Rig(Spectral);
+            rig.Play(0.5);
+            int frame = rig.Rate > 66000 ? 4095 : 2047;
+            Assert.That(rig.Effect.Latency, Is.EqualTo(frame), "one frame of the transform");
+            var instance = rig.Effect.ManagedMachine;
+            var readings = (System.Collections.Generic.IReadOnlyDictionary<string, double>)instance.GetType().GetProperty("Readings")!.GetValue(instance)!;
+            Assert.That(readings.ContainsKey("reduction_db"), Is.True);
+            Assert.That(readings["latency_samples"], Is.EqualTo(frame));
+            ShootEditor(rig.Effect, "neo-spectral-editor");
+        }
+
+        [Test]
         public void NeoGateReportsItsLookaheadAsLatencyAndShowsItsEditor()
         {
             using var rig = new Rig(Gate);
@@ -1823,7 +1839,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, LearnSub, LearnFm, LearnWt, LearnAdd, LearnGrain, LearnPhys, LearnString, LearnFormant, LearnFold, LearnPd, LearnVector, LearnSampler, LearnSpectral, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip, Tape, DeEsser, Gate, Patch })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, LearnSub, LearnFm, LearnWt, LearnAdd, LearnGrain, LearnPhys, LearnString, LearnFormant, LearnFold, LearnPd, LearnVector, LearnSampler, LearnSpectral, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip, Tape, DeEsser, Gate, Spectral, Patch })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");

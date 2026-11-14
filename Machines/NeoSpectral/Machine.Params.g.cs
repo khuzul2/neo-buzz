@@ -19,7 +19,7 @@ namespace NeoBuzz.Spectral
         [ParameterDecl(Name = "Selectivity", Description = "Half-width of the neighbourhood a bin is compared with, in octaves (Suppress, and the smoothing of Balance)", MinValue = 0, MaxValue = 1000, DefValue = 333)]
         public int Selectivity { get => Values[P.Selectivity]; set => Values.Set(P.Selectivity, value); }
 
-        [ParameterDecl(Name = "Smoothing", Description = "Widens the cut across neighbouring frequencies (each bin is 23 Hz at 48 kHz)", MinValue = 0, MaxValue = 1000, DefValue = 333)]
+        [ParameterDecl(Name = "Smoothing", Description = "Widens the cut across neighbouring frequencies (each bin is 23 Hz at 48 kHz)", MinValue = 0, MaxValue = 6, DefValue = 2)]
         public int Smoothing { get => Values[P.Smoothing]; set => Values.Set(P.Smoothing, value); }
 
         [ParameterDecl(Name = "Tilt", Description = "Balance only: slope added to the pink target above 300 Hz", MinValue = 0, MaxValue = 1000, DefValue = 500)]
