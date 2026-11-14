@@ -418,6 +418,9 @@ namespace ReBuzz.Studio.Tests
                 int Handlers() => ((Delegate)typeof(PatternColumnCore).GetField("EventsChanged", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)?.GetValue(column))?.GetInvocationList().Length ?? 0;
                 int shown = Handlers();
                 Assert.That(shown, Is.GreaterThan(0), "the lanes follow it");
+                Core.Modified = false;
+                s.Window.Close();
+                Pump();
                 Core.SongCore.DeleteMachines(new[] { s.Machine });
                 Pump();
                 Assert.That(Handlers(), Is.LessThan(shown), "no handler of the editor is left on a deleted machine's column");
@@ -425,9 +428,6 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 ValueDisplay.Base = ValueDisplay.Default;
-                Core.Modified = false;
-                s.Window.Close();
-                Pump();
             }
         }
     }

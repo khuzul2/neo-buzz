@@ -945,6 +945,8 @@ namespace ReBuzz.Studio.Tests
                     }
                     finally
                     {
+                        var other = lead.Patterns.FirstOrDefault(p => p != take);
+                        if (other != null) { PatternView.Edit(other); Wait(100); }
                         lead.DeletePattern(take);
                         Settle();
                     }
