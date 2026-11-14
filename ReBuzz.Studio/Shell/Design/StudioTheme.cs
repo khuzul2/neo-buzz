@@ -156,6 +156,9 @@ namespace ReBuzz.Studio.Shell.Design
         // the overlay
         public IBrush Cursor, CursorInactive, Selection, ResizeFill, Loop, SongEnd, Play, PlayEdge;
         public IPen SelectionBorder, ResizePen;
+        // daw-modes.md AR5: a track recording shows a band in the record colour
+        public IBrush Record;
+        public IPen RecordPen;
 
         // the pattern list and the corner
         public Color PatternList;
@@ -210,6 +213,8 @@ namespace ReBuzz.Studio.Shell.Design
             l.SelectionBorder = StudioTheme.Pen(S("#600000FF"));
             l.ResizeFill = S("#33000000");
             l.ResizePen = new ImmutablePen(S("#aa000000").ToImmutable(), 1, new ImmutableDashStyle(new double[] { 4, 4 }, 0));
+            l.Record = S("#44E02020");
+            l.RecordPen = StudioTheme.Pen(S("#CCC01010"));
             l.Loop = S("#FF6347");                  // tomato
             l.SongEnd = StudioTokens.Black;
             l.Play = S("#FFFF00");
@@ -272,6 +277,8 @@ namespace ReBuzz.Studio.Shell.Design
             l.SelectionBorder = StudioTheme.Pen(StudioTokens.AccentBrush, 1.5);
             l.ResizeFill = StudioTheme.Solid(StudioTokens.TextPrimary, 0x22);
             l.ResizePen = new ImmutablePen(StudioTheme.Solid(StudioTokens.TextPrimary, 0xCC).ToImmutable(), 1, new ImmutableDashStyle(new double[] { 4, 4 }, 0));
+            l.Record = StudioTheme.Solid(StudioTokens.Record, 0x44);
+            l.RecordPen = StudioTheme.Pen(StudioTheme.Solid(StudioTokens.Record, 0xE0));
             l.Loop = B(StudioTokens.Warning);
             l.SongEnd = B(t.Primary);
             l.Play = B(StudioTokens.Play);
