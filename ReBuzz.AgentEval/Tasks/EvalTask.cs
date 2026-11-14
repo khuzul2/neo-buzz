@@ -57,6 +57,12 @@ namespace ReBuzz.AgentEval
         }
     }
 
+    /// <summary>A task's setup says this build lacks what the task needs (a classic machine the quick package leaves out): the task is left out of the run, not failed.</summary>
+    internal sealed class TaskSkipped : Exception
+    {
+        public TaskSkipped(string why) : base(why) { }
+    }
+
     internal abstract class EvalTask
     {
         public abstract string Name { get; }

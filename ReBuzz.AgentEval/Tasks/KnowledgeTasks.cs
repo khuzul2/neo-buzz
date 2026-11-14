@@ -34,6 +34,14 @@ namespace ReBuzz.AgentEval
 
         // ---- shared setups and checks -------------------------------------------------------------------
 
+        /// <summary>Leaves the task out when this build lacks a classic machine (the quick package has no Pedal set).</summary>
+        static void Need(Studio s, params string[] gear)
+        {
+            var have = J.Objects(s.C.Ok("gear_list", new JsonObject { ["limit"] = 1000 })["gear"]).Select(g => J.Str(g["name"])).ToHashSet();
+            var missing = gear.Where(g => !have.Contains(g)).ToList();
+            if (missing.Count > 0) throw new TaskSkipped("not installed in this build: " + string.Join(", ", missing));
+        }
+
         static void BassSong(Studio s, TaskContext c) => K.Replay(s, "hear-a-bass");
 
         /// <summary>Bass still plays its two notes (C2 at 0, G2 at 2).</summary>
@@ -224,6 +232,7 @@ namespace ReBuzz.AgentEval
                 "The song has a Neo Poly called Bass and, after it, a classic Pedal Plate reverb called Room. Move Room onto its Neo successor: look at what the replacement would do first, then do it with the before-and-after comparison, and keep the new machine in the song in the same place in the chain.",
                 (s, c) =>
                 {
+                    Need(s, "Pedal Plate");
                     K.Replay(s, "hear-a-bass");
                     Recipes.Add(s, "Pedal Plate", "Room", 0, insertAfter: "Bass");
                 },
@@ -484,6 +493,7 @@ namespace ReBuzz.AgentEval
                 "An old song: a Neo Poly called Bass feeds a classic Pedal Comp called Squash, which feeds a classic Pedal Plate reverb called Room. Move every classic machine onto its Neo successor, one at a time, looking at each move first, so the chain keeps its order and the song still sounds.",
                 (s, c) =>
                 {
+                    Need(s, "Pedal Comp", "Pedal Plate");
                     K.Replay(s, "hear-a-bass");
                     Recipes.Add(s, "Pedal Comp", "Squash", 0, insertAfter: "Bass");
                     Recipes.Add(s, "Pedal Plate", "Room", 0, insertAfter: "Squash");
@@ -656,7 +666,9 @@ namespace ReBuzz.AgentEval
                 null,
                 (s, c) =>
                 {
-                    Recipes.Add(s, "Neo Poly", "Low", 0);
+                    // A competent agent asks the catalog: the first answer that is one of ours (it runs everywhere).
+                    string pick = Found(s, "bass", "generator").OrderBy(g => g).First(g => g.StartsWith("Neo "));
+                    Recipes.Add(s, pick, "Low", 0);
                     Pattern(s, "Low", "Note", 4, "C2");
                 },
                 (s, c, ck) =>

@@ -129,6 +129,11 @@ namespace ReBuzz.AgentEval
                 result.Facts = facts.ToJson();
                 result.Criteria = task.Score(start, facts, ctx);
             }
+            catch (TaskSkipped e)
+            {
+                Log($"  skipped: {e.Message}");
+                return null;
+            }
             catch (Exception e)
             {
                 result.Error = $"{e.GetType().Name}: {e.Message}";

@@ -60,6 +60,11 @@ namespace ReBuzz.AgentEval
             {
                 return Fail(e.Message);
             }
+            catch (TaskSkipped e)
+            {
+                Console.Error.WriteLine("Task skipped: " + e.Message);
+                return 3;
+            }
         }
 
         const string Usage =
@@ -139,7 +144,7 @@ namespace ReBuzz.AgentEval
                     run.Checks.Add(runner.RunCheck(def, env));
             if (!a.Flag("no-tasks"))
                 foreach (var task in EvalTask.All.Where(t => Wanted(t.Name)))
-                    run.Tasks.Add(runner.RunTask(task, outDir));
+                    { if (runner.RunTask(task, outDir) is { } done) run.Tasks.Add(done); }
             runner.Close();
             run.Server = runner.ServerVersion;
             run.Problems.AddRange(runner.Problems);
