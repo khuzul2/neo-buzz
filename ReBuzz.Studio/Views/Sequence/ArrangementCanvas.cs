@@ -24,7 +24,7 @@ namespace ReBuzz.Studio.Views.Sequence
 {
     using Control = Avalonia.Controls.Control;
 
-    internal sealed class ArrangementCanvas : Control
+    internal sealed partial class ArrangementCanvas : Control
     {
         /// <summary>A clip's edges: the left and right this many pixels (less on a narrow clip) trim.</summary>
         const double EdgeWidth = 7;
@@ -283,12 +283,15 @@ namespace ReBuzz.Studio.Views.Sequence
                 p.ColumnRemoved -= OnPatternContentChanged;
             }
             watchedPatterns.Clear();
+            UnwatchColumns();
             previews.Clear();
         }
 
         void OnPatternContentChanged(IPatternColumn c) => OnUi(() =>
         {
+            if (c != null) WatchColumn(c);
             previews.Clear();
+            RefreshLanes();
             InvalidateVisual();
         });
 
@@ -311,6 +314,8 @@ namespace ReBuzz.Studio.Views.Sequence
                 // The tracker mode is showing: hold nothing of the song (the mode switch reads it all again).
                 items.Clear();
                 uses.Clear();
+                lanes.Clear();
+                SelectPoint(null, -1);
                 rows = new List<ArrangementRow>();
                 selected = null;
                 clipboard = null;
@@ -332,6 +337,7 @@ namespace ReBuzz.Studio.Views.Sequence
                         if (Song.Machines.FirstOrDefault(m => m.Name == track.Machine)?.Patterns.FirstOrDefault(p => p.Name == name) is { } pattern)
                             uses[pattern] = uses.GetValueOrDefault(pattern) + 1;
             if (selected != null) selected = items.Values.SelectMany(l => l).FirstOrDefault(i => i.Equals(selected));
+            ReadLanes();
             if (cursorLane != null && !Song.Sequences.Contains(cursorLane)) cursorLane = null;
             cursorLane ??= Song.Sequences.FirstOrDefault();
             ClampScroll();
@@ -554,6 +560,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 {
                     case ArrangementRowKind.Tempo: DrawTempo(ctx, area, row, y); break;
                     case ArrangementRowKind.Markers: DrawMarkers(ctx, area, row, y); break;
+                    case ArrangementRowKind.Parameter: DrawParameter(ctx, area, row, y); break;
                     default:
                         if (row.Folded)
                         {
@@ -669,7 +676,8 @@ namespace ReBuzz.Studio.Views.Sequence
                 double sx = (s.Time - item.Time) * geo.TickWidth, sw = s.Length * geo.TickWidth;
                 if (r.X + sx > Bounds.Width || r.X + sx + sw < 0) continue;
                 if (i > 0) ctx.DrawLine(new Pen(shadow, 1, DashStyle.Dash), new Point(sx, 1), new Point(sx, h - 1));
-                DrawPreview(ctx, spec.Pattern, s, sx, sw, h);
+                if (core.Arrangement?.RoleOf(item.Sequence) == LaneRole.Automation) DrawAutomationLine(ctx, spec.Pattern, s, sx, sw, h);
+                else DrawPreview(ctx, spec.Pattern, s, sx, sw, h);
             }
 
             // The name, the loop and the shared badge, in a strip above the preview.
@@ -749,6 +757,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
         internal string TipAt(Point p)
         {
+            if (ParameterRowAt(p.Y) is { } prow && p.X >= SequenceGeometry.HeaderWidth) return ParameterTip(prow, p);
             var (item, part) = ClipAt(p);
             if (item == null) return SequenceGeometry.InRuler(p) ? $"{BarBeat(geo.TimeAt(p.X))}\nClick: move the play position here" : null;
             var s = item.Spec;
@@ -798,6 +807,12 @@ namespace ReBuzz.Studio.Views.Sequence
             }
             if (!SequenceGeometry.InTracks(p)) return;
 
+            if (ParameterRowAt(p.Y) is { } paramRow)
+            {
+                Select(null);
+                ParameterPressed(e, paramRow, p, mods);
+                return;
+            }
             var (item, part) = ClipAt(p);
             var laneRow = LaneRowAt(p.Y);
             bool fine = mods.HasFlag(KeyModifiers.Shift);
@@ -841,6 +856,7 @@ namespace ReBuzz.Studio.Views.Sequence
             base.OnPointerMoved(e);
             var p = e.GetPosition(this);
             var mods = e.KeyModifiers;
+            if (ParameterMoved(p, mods)) return;
             if (drag == Drag.None)
             {
                 string tip = TipAt(p);
@@ -891,7 +907,15 @@ namespace ReBuzz.Studio.Views.Sequence
             base.OnPointerReleased(e);
             var p = e.GetPosition(this);
             var button = e.InitialPressMouseButton;
-            bool macRight = OperatingSystem.IsMacOS() && button == MouseButton.Left && e.KeyModifiers.HasFlag(KeyModifiers.Control) && drag == Drag.None;
+            bool macRight = OperatingSystem.IsMacOS() && button == MouseButton.Left && e.KeyModifiers.HasFlag(KeyModifiers.Control) && drag == Drag.None && pdrag == PDrag.None;
+            if (pdrag != PDrag.None)
+            {
+                if (button != MouseButton.Left) return;
+                ParameterReleased(true);
+                e.Pointer.Capture(null);
+                e.Handled = true;
+                return;
+            }
             if (drag != Drag.None)
             {
                 if (button != MouseButton.Left) return;
@@ -910,6 +934,7 @@ namespace ReBuzz.Studio.Views.Sequence
         protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
         {
             base.OnPointerCaptureLost(e);
+            if (pdrag != PDrag.None) ParameterReleased(false);
             if (drag != Drag.None) EndDrag(false);
         }
 
@@ -1104,6 +1129,7 @@ namespace ReBuzz.Studio.Views.Sequence
         public bool HandleKey(Key key, KeyModifiers mods)
         {
             bool none = mods == KeyModifiers.None, ctrl = mods == KeyModifiers.Control;
+            if (PointKey(key, mods)) return true;
             if (none)
             {
                 switch (key)

@@ -209,7 +209,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 {
                     UpdatePad();
                     Scroller.UpdateLayout();
-                    if (Centered && Layout != null && PlayPosition == int.MinValue) CenterOn(Layout.GetFieldRect(pattern.CursorPosition));
+                    if (Centered && Layout != null && PlayPosition == int.MinValue && pattern.CursorPosition.ColumnSet < Layout.SetCount) CenterOn(Layout.GetFieldRect(pattern.CursorPosition));
                     else ScrollTo(Scroller.Offset.X, pattern.ScrollPosition);
                 });
         }

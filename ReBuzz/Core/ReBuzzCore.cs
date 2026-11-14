@@ -2547,6 +2547,7 @@ namespace ReBuzz.Core
         internal void RecordControlChange(ParameterCore parameter, int track, int value)
         {
             SessionCore.OnParameterChange(parameter, track, value);      // fork (0.7): session automation
+            Arrangement?.Recorder.OnParameterChange(parameter, track, value);      // fork (daw-modes.md AR4): knob moves into armed automation lanes
             var machine = parameter.Group.Machine as MachineCore;
             var peMachine = machine.EditorMachine;
             if (Recording && peMachine != null)

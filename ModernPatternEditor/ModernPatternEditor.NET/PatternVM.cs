@@ -23,6 +23,9 @@ namespace WDE.ModernPatternEditor
                     pattern.Machine.PropertyChanged -= Machine_PropertyChanged;
 
                     ReleaseColumnSets();
+#if !WINDOWS
+                    ReleaseNoteLanes();
+#endif
                 }
 
                 pattern = value;
@@ -36,6 +39,9 @@ namespace WDE.ModernPatternEditor
                     rowNumberColumnSet = new RowNumberColumnSet(DefaultRPB);
                     RowNumberColumnSet.BeatCount = BeatCount;
                     PatternData pd = new PatternData();
+#if !WINDOWS
+                    AttachNoteLanes();
+#endif
                     CreateColumnSets();
                 }
 
@@ -107,6 +113,7 @@ namespace WDE.ModernPatternEditor
             // Fork (ux-overhaul.md P3c): the sets with notes first, the empty automation columns hidden.
             BeginPlan();
             parameterSets = ColumnPlan.OrderSets(parameterSets);
+            AddNoteLaneSets();
 #endif
             foreach (var pSet in parameterSets)
             {
@@ -281,23 +288,87 @@ namespace WDE.ModernPatternEditor
         {
             IParameter parameter = null;
             int track = 0;
+            bool onLane = false;
             var at = columnSets != null && cursorPosition.ColumnSet < columnSets.Count ? columnSets[cursorPosition.ColumnSet] : null;
             if (at != null && cursorPosition.Column < at.Columns.Count && at.Columns[cursorPosition.Column] is ParameterColumn pc)
             {
                 parameter = pc.PatternColumn.Parameter;
                 track = pc.PatternColumn.Track;
+                onLane = pc is NoteLaneColumn;      // the Notes lanes share the editor's MIDI parameters and tracks
             }
             var old = cursorPosition;
             CreateColumnSets();
             if (parameter == null || columnSets == null) return;
             for (int s = 0; s < columnSets.Count; s++)
                 for (int c = 0; c < columnSets[s].Columns.Count; c++)
-                    if (columnSets[s].Columns[c] is ParameterColumn q && q.PatternColumn.Parameter == parameter && q.PatternColumn.Track == track)
+                    if (columnSets[s].Columns[c] is ParameterColumn q && q.PatternColumn.Parameter == parameter && q.PatternColumn.Track == track && (q is NoteLaneColumn) == onLane)
                     {
                         CursorPosition = new Digit(this, s, c, old.Beat, old.RowInBeat, old.Index).Constrained;
                         return;
                     }
         }
+#endif
+
+#if !WINDOWS
+        // ------------------------------------------------------------------ Fork (daw-modes.md AR3): the Notes lanes
+
+        NoteLaneHost noteLanes;
+        int noteSetCount;
+
+        void AttachNoteLanes()
+        {
+            noteLanes = new NoteLaneHost(this, pattern);
+            noteLanes.Changed += OnNoteLanesChanged;
+        }
+
+        void ReleaseNoteLanes()
+        {
+            if (noteLanes == null) return;
+            noteLanes.Changed -= OnNoteLanesChanged;
+            noteLanes.Dispose();
+            noteLanes = null;
+            noteSetCount = 0;
+        }
+
+        /// <summary>The voices of the Notes lanes go first: the pattern's notes are what the song plays.</summary>
+        void AddNoteLaneSets()
+        {
+            noteSetCount = 0;
+            if (noteLanes == null) return;
+            int voices = noteLanes.ShownVoices;
+            for (int v = 0; v < voices; v++)
+                columnSets.Add(new NoteLaneColumnSet(this, noteLanes, v) { BeatCount = this.BeatCount });
+            noteSetCount = voices;
+        }
+
+        /// <summary>The column of the MIDI column's notes is made again when the voices shown change, else drawn again.</summary>
+        void OnNoteLanesChanged()
+        {
+            if (pattern == null || columnSets == null || noteLanes == null) return;
+            if (noteLanes.ShownVoices != noteSetCount)
+                RebuildColumns();
+            else
+                foreach (var cs in columnSets.OfType<NoteLaneColumnSet>()) cs.InvalidateAll();
+        }
+
+        /// <summary>Whether the Notes lanes are shown.</summary>
+        public bool HasNoteLanes => noteSetCount > 0;
+
+        /// <summary>Shows the Notes lanes though the MIDI column holds no notes yet (the toolbar's Notes), or leaves it to the notes.</summary>
+        public bool ShowNoteLanes
+        {
+            get => noteLanes?.Forced ?? false;
+            set
+            {
+                if (noteLanes == null || noteLanes.Forced == value) return;
+                noteLanes.Forced = value;
+                OnNoteLanesChanged();
+                PropertyChanged.Raise(this, "ShowNoteLanes");
+            }
+        }
+
+        /// <summary>Whether the pattern's MIDI column holds notes (so the lanes show by themselves).</summary>
+        public bool HasMidiNotes => noteLanes != null && noteLanes.Lanes.NoteCount > 0;
 #endif
 
         public int BeatCount

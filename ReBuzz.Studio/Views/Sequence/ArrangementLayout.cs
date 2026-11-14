@@ -11,7 +11,7 @@ using ReBuzz.Core;
 
 namespace ReBuzz.Studio.Views.Sequence
 {
-    internal enum ArrangementRowKind { Tempo, Markers, Lane }
+    internal enum ArrangementRowKind { Tempo, Markers, Lane, Parameter }
 
     internal sealed class ArrangementRow
     {
@@ -28,11 +28,13 @@ namespace ReBuzz.Studio.Views.Sequence
         public double Height { get; init; }
         public double Bottom => Top + Height;
         public bool IsFirstLane => LaneNumber == 1;
+        /// <summary>For a parameter row (AR4): the state parameter whose automation it shows.</summary>
+        public AutoParam Param { get; init; }
     }
 
     internal static class ArrangementLayout
     {
-        public const double TempoHeight = 44, MarkersHeight = 22, LaneHeight = 64, FoldedHeight = 28;
+        public const double TempoHeight = 44, MarkersHeight = 22, LaneHeight = 64, FoldedHeight = 28, ParameterHeight = 72;
 
         /// <summary>The rows for the song's sequences, grouped by machine in the order of each machine's first sequence (the Master's first).</summary>
         public static List<ArrangementRow> Build(ISong song, ArrangementStore store)
@@ -55,6 +57,11 @@ namespace ReBuzz.Studio.Views.Sequence
                 }
                 for (int i = 0; i < lanes.Count; i++)
                     rows.Add(new ArrangementRow { Kind = ArrangementRowKind.Lane, Machine = g.Key, Lane = lanes[i], Lanes = lanes, LaneNumber = i + 1, Height = LaneHeight });
+                // AR4: the parameters chosen for this track, under its lanes.
+                if (store != null)
+                    foreach (var (machine, key) in store.ParameterLanes)
+                        if (machine == g.Key.Name && AutomationParams.Find(g.Key, key) is { } param)
+                            rows.Add(new ArrangementRow { Kind = ArrangementRowKind.Parameter, Machine = g.Key, Lanes = lanes, Param = param, Height = ParameterHeight });
             }
             double top = 0;
             foreach (var r in rows)

@@ -33,9 +33,9 @@ namespace ReBuzz.Studio.Tests
         /// <summary>Each Neo machine, its editor, its screenshot, and its WPF editor's size (CI's neo-*-editor.png).</summary>
         static readonly (string Machine, string Editor, string Shot, int WpfWidth, int WpfHeight)[] Editors =
         {
-            ("Neo Poly", "NeoPolyEditor", "neo-poly-editor", 950, 972),
+            ("Neo Poly", "NeoPolyEditor", "neo-poly-editor", 963, 703),   // P5a: two pages in the studio (the classic editor's one screen is 950 x 972)
             ("Neo Wave", "NeoWaveEditor", "neo-wave-editor", 994, 1006),
-            ("Neo FM6", "NeoFm6Editor", "neo-fm6-editor", 1276, 946),
+            ("Neo FM6", "NeoFm6Editor", "neo-fm6-editor", 1276, 725),   // P5a: an operator overview with one operator open (the classic editor shows all six: 1276 x 946)
             ("Neo Comp", "NeoCompEditor", "neo-comp-editor", 880, 294),
             ("Neo Drive", "NeoDriveEditor", "neo-drive-editor", 746, 322),
             ("Neo EQ", "NeoEqEditor", "neo-eq-editor", 892, 598),
@@ -48,7 +48,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Multiband", "NeoMultibandEditor", "neo-multiband-editor", 1170, 578),
             ("Neo Sampler", "NeoSamplerEditor", "neo-sampler-editor", 1144, 778),
             ("Neo Scope", "NeoScopeEditor", "neo-scope-editor", 1098, 458),
-            ("Neo Drums", "NeoDrumsEditor", "neo-drums-editor", 1232, 738),
+            ("Neo Drums", "NeoDrumsEditor", "neo-drums-editor", 1126, 484),   // P5a: the pads, the selected pad's panel and the mix strip (the classic editor is 1232 x 738)
             ("Neo Filter", "NeoFilterEditor", "neo-filter-editor", 802, 620),
             ("Dye Essence", "DyeEssenceEditor", "dye-essence-editor", 1299, 532),
             ("Neo Clipper", "NeoClipperEditor", "neo-clipper-editor", 956, 277),
@@ -1833,6 +1833,264 @@ namespace ReBuzz.Studio.Tests
                 Run(0.05);
                 MachineViewTests.DoubleClick(window, Centre(knob, window));
                 Assert.That(drive.GetValue(0), Is.EqualTo(100), "a knob's double-click resets it");
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+
+        // ------------------------------------------------------------------ P5a: Neo Drums around its pads, FM6 and Poly in pages (ux-overhaul.md)
+
+        static readonly string[] DrumVoices = { "Kick", "Snare", "Clap", "Rim", "Closed hat", "Open hat", "Low tom", "Mid tom", "High tom", "Cowbell", "Crash", "Ride" };
+
+        /// <summary>Global parameters the machine's editor never binds a control to (the classic layout neither): the hit columns, notes and the like.</summary>
+        static readonly Dictionary<string, string[]> NotShown = new()
+        {
+            ["Neo Drums"] = new string[0],
+            ["Neo Poly"] = new string[0],
+            ["Neo FM6"] = new string[0],
+        };
+
+        static void Press(Window window, PhysicalKey key)
+        {
+            window.KeyPressQwerty(key, RawInputModifiers.None);
+            window.KeyReleaseQwerty(key, RawInputModifiers.None);
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        /// <summary>The global parameters the window's knobs, choices and drop-downs are bound to (on any page, shown or not).</summary>
+        static SortedSet<string> BoundGlobals(Window window) =>
+            new(window.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name is "ParamKnob" or "ParamChoice" or "ParamDropdown")
+                .Select(c => (string)Get(Get(Get(c, "Binding"), "Def"), "Name")));
+
+        static SortedSet<string> GlobalsOf(IMachine m) =>
+            new(m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.Select(p => p.Name));
+
+        static Control Visible1(Window window, string type, string name) =>
+            Controls(window, type).Single(c => AutomationProperties.GetName(c) == name && c.IsEffectivelyVisible);
+
+        /// <summary>Every control that takes the pointer or the keyboard has a name for a screen reader.</summary>
+        static void AssertNamed(Window window, string machine)
+        {
+            var unnamed = window.GetVisualDescendants().OfType<Control>()
+                .Where(c => c.GetType().Name is "ParamKnob" or "ParamChoice" or "ParamDropdown" or "InteractiveGraph" or "PageTabs" or "ActionButton" or "Button" or "ToggleButton")
+                .Where(c => string.IsNullOrWhiteSpace(AutomationProperties.GetName(c))).Select(c => c.GetType().Name).Distinct().ToList();
+            Assert.That(unnamed, Is.Empty, $"{machine}: every control has a name");
+        }
+
+        [AvaloniaTest]
+        public void NeoDrumsPadSelectsOneVoicePanelAndTheMixStripHasEveryPadsLevelAndPan()
+        {
+            var m = Add("Neo Drums", "P5a Drums", 0, 0);
+            try
+            {
+                var window = OpenEditor(m);
+                var pads = Controls(window, "InteractiveGraph").Single(g => Math.Abs(g.Bounds.Width - 480) < 1);
+                double w = (480 - 12 - 5 * 6) / 6.0, h = (200 - 12 - 6) / 2.0;
+                Point Pad(int voice) => At(pads, window, 6 + voice % 6 * (w + 6) + w / 2, 6 + voice / 6 * (h + 6) + h / 2);
+
+                // One voice panel at a time, the one of the pad selected last; the kick's at the start.
+                for (int v = 0; v < 12; v++)
+                {
+                    if (v > 0) Click(window, Pad(v));
+                    Dispatcher.UIThread.RunJobs();
+                    var shown = Controls(window, "Section").Where(c => DrumVoices.Contains(AutomationProperties.GetName(c)) && c.IsEffectivelyVisible).Select(c => AutomationProperties.GetName(c)).ToList();
+                    Assert.That(shown, Is.EqualTo(new[] { DrumVoices[v] }), $"pad {v}: its panel alone");
+                    var panel = Controls(window, "Section").Single(c => AutomationProperties.GetName(c) == DrumVoices[v]);
+                    Assert.That(panel.GetVisualDescendants().OfType<Control>().Count(c => c.GetType().Name == "ParamKnob"), Is.GreaterThanOrEqualTo(2), $"{DrumVoices[v]}: its knobs");
+                    Studio.Screenshot(window, "neo-drums-p5a-" + DrumVoices[v].ToLowerInvariant().Replace(' ', '-'));
+                }
+
+                // The mix strip: a level and a pan for each of the twelve pads, named for them, whichever pad is selected.
+                var mix = Controls(window, "Section").Single(c => AutomationProperties.GetName(c) == "Mix");
+                var knobs = mix.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name == "ParamKnob").ToList();
+                Assert.That(knobs, Has.Count.EqualTo(24));
+                foreach (var v in DrumVoices)
+                    foreach (var kind in new[] { "level", "pan" })
+                        Assert.That(knobs.Count(k => k.IsEffectivelyVisible && AutomationProperties.GetName(k) == v + " " + kind), Is.EqualTo(1), $"{v} {kind} is in the strip");
+
+                // A level knob in the strip is the parameter: dragged, one undo step, and undo puts it back.
+                var level = Global(m, "Snare level");
+                int before = level.GetValue(0), steps = Core.SongCore.ActionStack.Actions.Count();
+                var knob = knobs.Single(k => AutomationProperties.GetName(k) == "Snare level");
+                var c = Centre(knob, window);
+                MachineViewTests.Drag(window, c, c - new Point(0, 40));
+                Assert.That(level.GetValue(0), Is.Not.EqualTo(before), "dragging the strip's snare level changes the snare's level");
+                Assert.That(Core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(steps + 1), "as one undo step");
+                Core.SongCore.Undo();
+                Assert.That(level.GetValue(0), Is.EqualTo(before));
+
+                // The names in the strip select the pad as the pads do.
+                var names = Controls(window, "InteractiveGraph").Single(g => AutomationProperties.GetName(g) == "Mix: pad names");
+                Click(window, At(names, window, 56 * 5 + 20, 10));
+                Assert.That(Visible1(window, "Section", "Open hat"), Is.Not.Null, "a click on the open hat's name selects its pad");
+                Studio.Screenshot(window, "neo-drums-p5a-mix");
+
+                // Nothing the classic layout had is lost: the same parameters are bound.
+                var bound = BoundGlobals(window);
+                Assert.That(GlobalsOf(m).Except(bound), Is.EquivalentTo(NotShown["Neo Drums"]), "every global parameter has its control, as before");
+                AssertNamed(window, "Neo Drums");
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+
+        [AvaloniaTest]
+        public void NeoDrumsPadsFlashOnAHitAndTheKeyboardSelectsAndPlaysThem()
+        {
+            var master = Core.SongCore.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+            var m = Add("Neo Drums", "P5a Flash", 0, 0);
+            try
+            {
+                Core.SongCore.ConnectMachines(m, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                var window = OpenEditor(m);
+                var pads = Controls(window, "InteractiveGraph").Single(g => Math.Abs(g.Bounds.Width - 480) < 1);
+                var names = Controls(window, "InteractiveGraph").Single(g => AutomationProperties.GetName(g) == "Mix: pad names");
+                var engine = m.ManagedMachine.GetType().GetProperty("Engine", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(m.ManagedMachine)!;
+                var peaks = (float[])engine.GetType().GetField("VoicePeak")!.GetValue(engine)!;
+                double w = (480 - 12 - 5 * 6) / 6.0, h = (200 - 12 - 6) / 2.0;
+                Rect PadArea(int v) => new Rect(At(pads, window, 6 + v % 6 * (w + 6), 6 + v / 6 * (h + 6)), new Size(w, h));
+                Rect NameArea(int v) => new Rect(At(names, window, 56 * v + 2, 1), new Size(52, 20));
+
+                // The keyboard: Tab-focus the grid, the arrows move the selection (one pad, then a row down), Enter plays the pad.
+                ((Control)pads).Focus(NavigationMethod.Tab);
+                Assert.That(pads.IsFocused && pads.Focusable, Is.True, "the pad grid takes the keyboard focus");
+                Press(window, PhysicalKey.ArrowRight);
+                Assert.That(Visible1(window, "Section", "Snare"), Is.Not.Null, "Right: the snare");
+                Press(window, PhysicalKey.ArrowDown);
+                Assert.That(Visible1(window, "Section", "Mid tom"), Is.Not.Null, "Down: a row on, the mid tom");
+                Press(window, PhysicalKey.ArrowRight);
+                Press(window, PhysicalKey.ArrowUp);
+                Assert.That(Visible1(window, "Section", "Clap"), Is.Not.Null, "Right, Up: the clap's pad above the high tom");
+                Press(window, PhysicalKey.Home);
+                Assert.That(Visible1(window, "Section", "Kick"), Is.Not.Null, "Home: the kick");
+
+                // A hit flashes its pad and its name in the strip (they read the voice's level now, on the UI thread).
+                Run(0.1);
+                var idle = Frame(window);
+                Press(window, PhysicalKey.Enter);
+                Run(0.05);
+                Assert.That(peaks[0], Is.GreaterThan(0.05f), "Enter plays the selected pad");
+                var hit = Frame(window, "neo-drums-p5a-flash");
+                Assert.That(Changed(idle, hit, PadArea(0)), Is.GreaterThan(400), "the kick's pad flashes");
+                Assert.That(Changed(idle, hit, NameArea(0)), Is.GreaterThan(100), "and its name in the mix strip");
+                Assert.That(Changed(idle, hit, PadArea(7)), Is.EqualTo(0), "no other pad does");
+                Run(2.5);
+                var quiet = Frame(window);
+                Assert.That(Changed(hit, quiet, PadArea(0)), Is.GreaterThan(400), "and it goes out when the hit has died away");
+                AssertNamed(window, "Neo Drums");
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+
+        [AvaloniaTest]
+        public void NeoPolysTwoPagesSwitchByPointerAndKeyboardAndKeepEveryControl()
+        {
+            var m = Add("Neo Poly", "P5a Poly", 0, 0);
+            Control pages = null;
+            try
+            {
+                var window = OpenEditor(m);
+                pages = Controls(window, "Pages").Single();
+                var tabs = Controls(window, "PageTabs").Single();
+                Assert.That((IReadOnlyList<string>)Get(pages, "Names"), Is.EqualTo(new[] { "Synth", "Modulation" }));
+                Assert.That(AutomationProperties.GetName(tabs), Is.EqualTo("Page tabs"));
+                int Shown() => (int)Get(pages, "Selected");
+                pages.GetType().GetProperty("Selected")!.SetValue(pages, 0);   // the page shown last comes back; start on Synth
+                Dispatcher.UIThread.RunJobs();
+                IEnumerable<string> Visible() => Controls(window, "ParamKnob").Where(k => k.IsEffectivelyVisible).Select(k => AutomationProperties.GetName(k));
+
+                Assert.That(Visible(), Does.Contain("F1 cutoff").And.Not.Contain("amount"), "the Synth page: the filter, not the matrix's amounts");
+                Studio.Screenshot(window, "neo-poly-p5a-synth");
+
+                // The pointer: the second tab.
+                Click(window, At(tabs, window, 120, 12));
+                Assert.That(Shown(), Is.EqualTo(1), "a click on Modulation");
+                Assert.That(Visible(), Does.Contain("amount").And.Contain("LFO1 rate").And.Not.Contain("F1 cutoff"), "the Modulation page: the LFOs and the matrix, not the filter");
+                Studio.Screenshot(window, "neo-poly-p5a-modulation");
+
+                // The keyboard: the tabs take the focus; Left and Right switch, Home and End go to the ends.
+                ((Control)tabs).Focus(NavigationMethod.Tab);
+                Assert.That(tabs.IsFocused && tabs.Focusable, Is.True, "the tabs are a tab stop");
+                Press(window, PhysicalKey.ArrowLeft);
+                Assert.That(Shown(), Is.EqualTo(0), "Left: Synth");
+                Press(window, PhysicalKey.ArrowRight);
+                Assert.That(Shown(), Is.EqualTo(1), "Right: Modulation");
+                Press(window, PhysicalKey.Home);
+                Assert.That(Shown(), Is.EqualTo(0), "Home");
+                Press(window, PhysicalKey.End);
+                Assert.That(Shown(), Is.EqualTo(1), "End");
+                Studio.Screenshot(window, "neo-poly-p5a-tabs-focus");
+
+                // Every parameter the classic layout had has its control, across the two pages, and the page change moves no value.
+                Assert.That(GlobalsOf(m).Except(BoundGlobals(window)), Is.EquivalentTo(NotShown["Neo Poly"]), "every global parameter has its control, as before");
+                AssertNamed(window, "Neo Poly");
+            }
+            finally
+            {
+                // The page shown last comes back in the next Neo Poly editor (a static in the kit): the other tests expect the Synth page.
+                pages?.GetType().GetProperty("Selected")!.SetValue(pages, 0);
+                Remove(m);
+            }
+        }
+
+        [AvaloniaTest]
+        public void NeoFm6ShowsAnOperatorOverviewWithOneOperatorOpen()
+        {
+            var master = Core.SongCore.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+            var m = Add("Neo FM6", "P5a FM6", 0, 0);
+            try
+            {
+                Core.SongCore.ConnectMachines(m, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                var window = OpenEditor(m);
+                var tiles = Controls(window, "InteractiveGraph").Single(g => AutomationProperties.GetName(g) == "Operator overview");
+                IEnumerable<string> Open() => Controls(window, "Section").Where(c => (AutomationProperties.GetName(c) ?? "").StartsWith("Operator ") && c.IsEffectivelyVisible).Select(c => AutomationProperties.GetName(c));
+                Point Tile(int op) => At(tiles, window, op * 196 + 98, 32);
+
+                Assert.That(Open(), Is.EqualTo(new[] { "Operator 1" }), "one operator open, the first");
+                Assert.That(tiles.Bounds.Width, Is.EqualTo(6 * 196).Within(1), "six tiles in a row");
+                for (int op = 0; op < 6; op++)
+                {
+                    Click(window, Tile(op));
+                    Assert.That(Open(), Is.EqualTo(new[] { "Operator " + (op + 1) }), $"a click on tile {op + 1}");
+                }
+                Studio.Screenshot(window, "neo-fm6-p5a-operator6");
+
+                // The keyboard: the tiles are a tab stop; arrows, Home, End and the digits choose.
+                ((Control)tiles).Focus(NavigationMethod.Tab);
+                Assert.That(tiles.IsFocused && tiles.Focusable, Is.True);
+                Press(window, PhysicalKey.ArrowLeft);
+                Assert.That(Open(), Is.EqualTo(new[] { "Operator 5" }), "Left");
+                Press(window, PhysicalKey.Home);
+                Assert.That(Open(), Is.EqualTo(new[] { "Operator 1" }), "Home");
+                Press(window, PhysicalKey.Digit4);
+                Assert.That(Open(), Is.EqualTo(new[] { "Operator 4" }), "the digit 4");
+                Press(window, PhysicalKey.ArrowRight);
+                Press(window, PhysicalKey.ArrowRight);
+                Press(window, PhysicalKey.ArrowRight);
+                Assert.That(Open(), Is.EqualTo(new[] { "Operator 6" }), "and it stops at the last");
+
+                // The open operator's controls are the machine's: operator 4's level changes through its knob (one undo step).
+                Press(window, PhysicalKey.Digit4);
+                var section = Controls(window, "Section").Single(c => AutomationProperties.GetName(c) == "Operator 4");
+                var level = section.GetVisualDescendants().OfType<Control>().Single(c => c.GetType().Name == "ParamKnob" && AutomationProperties.GetName(c) == "Level");
+                var param = Global(m, "Op4 level");
+                int before = param.GetValue(0), steps = Core.SongCore.ActionStack.Actions.Count();
+                var c = Centre(level, window);
+                MachineViewTests.Drag(window, c, c - new Point(0, 30));
+                Assert.That(param.GetValue(0), Is.Not.EqualTo(before), "operator 4's level moved");
+                Assert.That(Core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(steps + 1), "as one undo step");
+                Core.SongCore.Undo();
+
+                Assert.That(GlobalsOf(m).Except(BoundGlobals(window)), Is.EquivalentTo(NotShown["Neo FM6"]), "every global parameter has its control, as before");
+                AssertNamed(window, "Neo FM6");
+                Studio.Screenshot(window, "neo-fm6-p5a-overview");
             }
             finally
             {
