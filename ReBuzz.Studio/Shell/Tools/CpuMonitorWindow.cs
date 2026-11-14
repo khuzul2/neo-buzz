@@ -86,7 +86,7 @@ namespace ReBuzz.Studio.Shell.Tools
         public void Update(ReBuzzCore core)
         {
             core.TakePerformanceDataSnapshot();
-            var machines = core.SongCore.MachinesList.Select(m => new Entry(m, m.Name, m.PerformanceData)).ToList();
+            var machines = core.SongCore.MachinesList.Where(m => !m.Hidden).Select(m => new Entry(m, m.Name, m.PerformanceData)).ToList();
             Update(core.PerformanceData, machines);
         }
     }
@@ -115,7 +115,7 @@ namespace ReBuzz.Studio.Shell.Tools
             grid.ColumnDefinitions.Add(new ColumnDefinition(150, GridUnitType.Pixel));
             grid.ColumnDefinitions.Add(new ColumnDefinition(1, GridUnitType.Star));
             grid.ColumnDefinitions.Add(new ColumnDefinition(60, GridUnitType.Pixel));
-            grid.ColumnDefinitions.Add(new ColumnDefinition(90, GridUnitType.Pixel));
+            grid.ColumnDefinitions.Add(new ColumnDefinition(110, GridUnitType.Pixel));
             grid.ColumnDefinitions.Add(new ColumnDefinition(90, GridUnitType.Pixel));
             var reset = new Button { Content = "Reset lock times" };
             reset.Click += (s, e) => { model.ResetLocks(); Tick(); };
