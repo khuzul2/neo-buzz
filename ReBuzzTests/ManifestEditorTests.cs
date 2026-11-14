@@ -33,7 +33,7 @@ namespace ReBuzzTests
             string bin = File.ReadLines(TestAssemblyDirectory.Value.AddFileName("ReBuzzLocation.txt").ToString()).First();
             string exe = Path.Combine(bin, ReBuzz.Product.WindowsExe);
             if (!File.Exists(exe)) Assert.Inconclusive($"{ReBuzz.Product.WindowsExe} not built ({exe})");
-            string folder = Path.Combine(Path.GetTempPath(), "rebuzz-editor-shots-" + Environment.ProcessId);
+            string folder = TestTemp.Path("rebuzz-editor-shots-" + Environment.ProcessId);
             if (Directory.Exists(folder)) Directory.Delete(folder, true);
 
             var psi = new ProcessStartInfo(exe, $"--agent --editor-shots \"{folder}\"")
@@ -78,7 +78,7 @@ namespace ReBuzzTests
                                               $"response {r["response"]}, {r["envelopes"]} envelopes, {r["presets"]} presets, {r["width"]}×{r["height"]}");
                     Assert.That(r["quality"]!.GetValue<string>(), Is.EqualTo("curated"), Say("curated"));
                     Assert.That(r["editor_error"]!.GetValue<bool>(), Is.False, Say("the body built"));
-                    Assert.That(r["controls"]!.GetValue<int>(), Is.GreaterThan(0), Say("controls"));
+                    if (r["state_params"]!.GetValue<int>() > 0) Assert.That(r["controls"]!.GetValue<int>(), Is.GreaterThan(0), Say("controls"));
                     Assert.That(r["preset_bar"]!.GetValue<bool>(), Is.True, Say("the preset bar"));
                     Assert.That(r["mismatches"]!.AsArray(), Is.Empty, Say("every control shows the agent server's value"));
                     Assert.That(r["png"], Is.Not.Null, Say("drawn"));

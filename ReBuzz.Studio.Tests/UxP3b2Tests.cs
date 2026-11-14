@@ -20,6 +20,7 @@ using ReBuzz.Studio.Shell.Design;
 using ReBuzz.Studio.Views;
 using ReBuzz.Studio.Views.Detail;
 using ReBuzz.Studio.Views.Session;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -366,7 +367,7 @@ namespace ReBuzz.Studio.Tests
         public void LookingAtTheRulerThePlayheadAndTheLaneChangesNoByteOfTheSong()
         {
             using var r = new UxP3bTests.Rig(16);
-            string dir = Path.Combine(Path.GetTempPath(), $"rebuzz-p3b2-{Environment.ProcessId}");
+            string dir = TestTemp.Path($"rebuzz-p3b2-{Environment.ProcessId}");
             Directory.CreateDirectory(dir);
             var pattern = (PatternCore)r.Pattern;
             try

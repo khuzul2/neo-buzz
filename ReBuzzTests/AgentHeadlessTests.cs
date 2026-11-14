@@ -203,7 +203,7 @@ namespace ReBuzzTests
             Assert.That(render["measure"]!["silent"]!.GetValue<bool>(), Is.False, "the chord is heard");
             Assert.That(File.Exists(render["file"]!.GetValue<string>()), Is.True);
 
-            string song = Path.Combine(Path.GetTempPath(), "ReBuzzAgentTests", Guid.NewGuid().ToString("N"), "headless.bmxml");
+            string song = TestTemp.Path("ReBuzzAgentTests", Guid.NewGuid().ToString("N"), "headless.bmxml");
             client.Tool("song_save", new JsonObject { ["path"] = song });
             Assert.That(new FileInfo(song).Length, Is.GreaterThan(0));
 

@@ -25,6 +25,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import machine_catalog as mc  # noqa: E402  (category, tags and use_for for every manifest)
+import k2c_knowledge as k2c  # noqa: E402  (K2 batch d: ReBuzz's own machines curated, and their Explain text)
 import pedal_knowledge as pk  # noqa: E402  (K2: the nine Pedal manifests curated from their source, and every Pedal parameter's Explain text)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -650,6 +651,8 @@ def generate(spec, existing):
         m[group] = entries
     pk.curate(m)     # K2 batch a: the Pedal machines promoted from generated to curated (plain names, roles, quirks, evidence)
     pk.explain(m)
+    k2c.curate(m)    # K2 batch d: ReBuzz's own machines promoted from generated to curated
+    k2c.explain(m)
     return mc.apply(m)
 
 

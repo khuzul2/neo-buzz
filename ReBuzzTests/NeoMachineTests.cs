@@ -1313,7 +1313,7 @@ namespace ReBuzzTests
                 for (int i = 0; i < 2048; i++)
                     for (int h = 1; h <= 1 + 4 * f; h++) frames[f * 2048 + i] += (float)(Math.Sin(2 * Math.PI * h * i / 2048) / h);
             var wav = (byte[])asm.GetType("NeoBuzz.Wave.WavReader")!.GetMethod("Write")!.Invoke(null, new object[] { frames, 48000, 2048 })!;
-            var path = Path.Combine(Path.GetTempPath(), "Neo Wave test table.wav");
+            var path = TestTemp.Path("Neo Wave test table.wav");
             File.WriteAllBytes(path, wav);
             machine.GetType().GetMethod("LoadUserTable", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(machine, new object[] { path });
             var stateProperty = machine.GetType().GetProperty("MachineState")!;
@@ -1355,7 +1355,7 @@ namespace ReBuzzTests
                 for (int i = 0; i < 2048; i++)
                     for (int h = 1; h <= 1 + 4 * f; h++) frames[f * 2048 + i] += (float)(Math.Sin(2 * Math.PI * h * i / 2048) / h);
             var wav = (byte[])asm.GetType("NeoBuzz.Wave.WavReader")!.GetMethod("Write")!.Invoke(null, new object[] { frames, 48000, 2048 })!;
-            var path = Path.Combine(Path.GetTempPath(), "Dye Essence test table.wav");
+            var path = TestTemp.Path("Dye Essence test table.wav");
             File.WriteAllBytes(path, wav);
             machine.GetType().GetMethod("LoadUserTable", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(machine, new object[] { 1, path });
             var stateProperty = machine.GetType().GetProperty("MachineState")!;
@@ -1402,7 +1402,7 @@ namespace ReBuzzTests
             var list = (System.Collections.IList)Activator.CreateInstance(typeof(System.Collections.Generic.List<>).MakeGenericType(voiceType))!;
             list.Add(Activator.CreateInstance(voiceType, "INIT VOICE", init));
             var bank = (byte[])sysex.GetMethod("WriteBank")!.Invoke(null, new object[] { list })!;
-            var path = Path.Combine(Path.GetTempPath(), "Neo FM6 test bank.syx");
+            var path = TestTemp.Path("Neo FM6 test bank.syx");
             File.WriteAllBytes(path, bank);
             machine.GetType().GetMethod("LoadBank", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(machine, new object[] { path });
 

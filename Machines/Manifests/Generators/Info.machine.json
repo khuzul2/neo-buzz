@@ -2,15 +2,25 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Info",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c or d) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
  "type": "control",
- "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "summary": "A control machine that holds a rich text note in the song, edited in its own window. Its one parameter does nothing measurable.",
  "category": "Control",
  "tags": [
   "notes"
  ],
  "use_for": "Holds free text about the song in its own window; it does nothing to the sound.",
+ "quirks": [
+  "It makes no sound and sends nothing; the note is its window's text, saved with the song.",
+  "For notes about the song as a whole, song_notes_write is the app's own place.",
+  "Closed source (a prebuilt DLL): names come from its own texts, its DLL's type names and the profile, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "RunTime/Themes/Default/Gear/Info/RTFBoxInfo.xaml — the machine's rich text box in the theme",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - a control machine, no sound"
+ ],
  "tracks": 0,
  "health": {
   "status": "ok",
@@ -22,6 +32,7 @@
    "index": 0,
    "id": "Dummy",
    "name": "Dummy",
+   "plain_name": "Unused value",
    "group": "",
    "min": 0,
    "max": 1,
@@ -29,8 +40,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 1.0,
-   "description": "",
-   "confidence": "values"
+   "description": "Does nothing measurable: its one parameter is 0 or 1 (0 by default) and was not found to change anything.",
+   "how": "Does nothing measurable: its one parameter is 0 or 1 (0 by default) and was not found to change anything.",
+   "sound": "It makes no sound; the machine holds a text note."
   }
  ],
  "track_parameters": []

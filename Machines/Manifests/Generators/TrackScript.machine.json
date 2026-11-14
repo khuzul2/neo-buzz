@@ -2,15 +2,25 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "TrackScript",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c or d) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
  "type": "control",
- "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "summary": "A control machine from the same author as the Block machines that edits a text script for a track in its own window. Its one parameter does nothing measurable. It makes no sound.",
  "category": "Control",
  "tags": [
   "automation"
  ],
  "use_for": "A scripting helper that drives other machines from code in its own window; it makes no sound.",
+ "quirks": [
+  "It makes no sound itself; its DLL's names show a script canvas and pattern text changes. What the script language is was not found: unverified.",
+  "It needs its own window: a prebuilt managed machine that references Windows presentation code, so the Studio does not show it.",
+  "Closed source (a prebuilt DLL): names come from its own texts, its DLL's type names and the profile, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "RunTime/Gear/Generators/TrackScript.NET.dll — type and member names read from the DLL (TrackScriptCanvas and pattern text members)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - a control machine, no sound"
+ ],
  "tracks": 0,
  "health": {
   "status": "ok",
@@ -22,6 +32,7 @@
    "index": 0,
    "id": "Dummy",
    "name": "Dummy",
+   "plain_name": "Unused value",
    "group": "",
    "min": 0,
    "max": 1,
@@ -29,8 +40,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 1.0,
-   "description": "",
-   "confidence": "values"
+   "description": "Does nothing measurable: its one parameter is 0 or 1 (0 by default).",
+   "how": "Does nothing measurable: its one parameter is 0 or 1 (0 by default).",
+   "sound": "It makes no sound; the machine edits a text script for a track in its own window."
   }
  ],
  "track_parameters": []

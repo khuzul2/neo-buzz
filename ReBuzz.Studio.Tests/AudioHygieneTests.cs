@@ -51,6 +51,7 @@ using ReBuzz.Studio.Parameters;
 using ReBuzz.Studio.Platform;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -717,7 +718,21 @@ namespace ReBuzz.Studio.Tests
         /// Neo Verb 1.5 MB, Analyzer 950 KB): reported, not asserted.
         /// </summary>
         [AvaloniaTest]
-        public void TheFirstPlayOfEveryNeoMachineAllocatesNothing()
+        public void TheFirstPlayOfEveryNeoMachineAllocatesNothing() => FirstPlayCycle();
+
+        /// <summary>
+        /// The first play and stop again and again, every time on a new song of freshly made machines (what is made at the first use of
+        /// a machine or of the engine happens once per process; what is made by a race or a timing shows over the repeats): the first
+        /// stop buffer allocated 6.5 KB once on macOS. NEO_FIRST_PLAY_CYCLES raises the count for a local hunt.
+        /// </summary>
+        [AvaloniaTest]
+        public void TheFirstStopOfEveryNeoMachineAllocatesNothingEveryTime()
+        {
+            int cycles = int.TryParse(Environment.GetEnvironmentVariable("NEO_FIRST_PLAY_CYCLES"), out int n) ? n : 3;
+            for (int i = 0; i < cycles; i++) FirstPlayCycle();
+        }
+
+        static void FirstPlayCycle()
         {
             _ = Studio.Host;
             Assert.That(AudioWarmUp.Wait(), Is.True, "the warm-up finishes");
@@ -797,7 +812,7 @@ namespace ReBuzz.Studio.Tests
 
         static string SineWav(double hz, string name)
         {
-            var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), name + "-" + Guid.NewGuid().ToString("N") + ".wav");
+            var path = TestTemp.Path(name + "-" + Guid.NewGuid().ToString("N") + ".wav");
             int n = 48000;
             using var w = new System.IO.BinaryWriter(System.IO.File.Create(path));
             w.Write("RIFF"u8.ToArray()); w.Write(36 + n * 4); w.Write("WAVE"u8.ToArray());

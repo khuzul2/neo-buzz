@@ -32,14 +32,15 @@ namespace ReBuzz.AgentTests
             "FSM Chorus2", "FSM PhatMan", "FSM Philthy", "FSM WahMan", "FSM WahManPro", "FSM WahPro2",
             "Polac Audio In", "Polac Audio Out", "Polac MIDI Bus II", "Polac MIDI In", "Polac Out", "Polac Out II", "Polac VST 1.1", "Polac VSTi 1.1",
             "Joachims Chopper 2", "Joachims Enceladus Tube EQ v1", "Joachims Hyperion", "Joachims Jupiter 3", "Joachims Neptune 1.2", "Joachims Saturn 1.4",
+            // K2 batch d: the last 26: ReBuzz's own machines (ten generated from source), the synths and samplers, and the utility and control machines
+            "AudioBlock", "Connection Mixer Console", "EnvelopeBlock", "QuickNote", "ReBuzz Audio In", "ReBuzz Audio Out", "ReBuzz Groove", "ReBuzz Midi Output",
+            "Session Clip Player", "ManagedMultiIOEffect", "Bigyo Wood One", "kibibu Green Milk", "KrimZon AY-3-8910", "Intoxicat ACloud15", "Matilde Tracker2",
+            "EasyRec", "mixIO", "SpectrumBlock", "BTDSys PeerChord", "DAWControl", "GuitarChordBox", "Info", "JumpLoop", "Modern Sequence Editor", "TrackScript",
+            "Yitten Mongoose",
         };
 
         /// <summary>U6: the manifests generated from source (tools/source_manifests.py's list) and still marked generated; K2 batch a curated the Pedal ones.</summary>
-        static readonly string[] TheFromSource =
-        {
-            "AudioBlock", "Connection Mixer Console", "EnvelopeBlock",
-            "QuickNote", "ReBuzz Audio In", "ReBuzz Audio Out", "ReBuzz Groove", "ReBuzz Midi Output", "Session Clip Player", "ManagedMultiIOEffect",
-        };
+        static readonly string[] TheFromSource = System.Array.Empty<string>();
 
         internal static string Root()
         {
@@ -90,19 +91,19 @@ namespace ReBuzz.AgentTests
             Assert.That(profiled.Keys.Concat(generated.Keys).Except(summary.Select(kv => kv.Key)), Is.Empty, "manifests of machines the package doesn't have");
             Assert.That(summary.Count, Is.GreaterThanOrEqualTo(108));
 
-            Assert.That(Curated().Keys, Is.EquivalentTo(TheCurated), "72 curated (25, K2 batch a's nine Pedal machines, batch b's eighteen Jeskola ones and batch c's twenty)");
-            Assert.That(profiled.Values.Where(m => m.IsGeneratedFromSource).Select(m => m.Gear), Is.EquivalentTo(TheFromSource), "10 from source (U6); K2 batches b and c curated every native generated from source (U7)");
-            Assert.That(profiled.Values.Where(m => !m.IsCurated && !m.IsGeneratedFromSource).All(m => m.IsDraft), Is.True, "the rest drafts");
+            Assert.That(Curated().Keys, Is.EquivalentTo(TheCurated), "98 curated: every packaged machine but the Neo ones (25, K2 batch a's nine Pedal machines, batch b's eighteen Jeskola ones, batch c's twenty and batch d's twenty-six)");
+            Assert.That(profiled.Values.Where(m => m.IsGeneratedFromSource).Select(m => m.Gear), Is.EquivalentTo(TheFromSource), "none left only generated from source: K2 batches b, c and d curated them all");
+            Assert.That(profiled.Values.Where(m => !m.IsCurated && !m.IsGeneratedFromSource).All(m => m.IsDraft), Is.True, "no drafts left: every machine is curated (K2)");
             Assert.That(generated.Values.All(m => m.Quality == "generated"), Is.True);
         }
 
         [Test]
-        public void EveryMachineOfAFinishedFamilyIsCurated()
+        public void EveryPackagedMachineIsCurated()
         {
-            // K2 (agent-knowledge.md): the families in KnowledgeFamilies have a curated manifest for every machine the package has.
+            // K2 (agent-knowledge.md): every packaged machine but the Neo ones and Dye Essence (KnowledgeFamilies) has a curated manifest.
             var profiled = Profiled();
             var family = profiled.Keys.Where(KnowledgeFamilies.Covers).OrderBy(g => g).ToList();
-            Assert.That(family.Count, Is.GreaterThanOrEqualTo(19), "the Pedal machines are found");
+            Assert.That(family.Count, Is.GreaterThanOrEqualTo(98), "every packaged machine but the Neo ones is found");
             var notCurated = family.Where(g => !profiled[g].IsCurated).ToList();
             Assert.That(notCurated, Is.Empty, "machines of a finished family that are not curated: " + string.Join(", ", notCurated));
             Assert.That(Curated().Keys.Where(KnowledgeFamilies.Covers), Is.EquivalentTo(family));

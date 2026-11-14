@@ -2,16 +2,28 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "KrimZon AY-3-8910",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c or d) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
  "type": "polysynth",
- "summary": "Polysynth (profiled draft): pitched, plays 13 semitones high (corrected by its pitch offset); 3 voices; takes notes in its tracks; one note at the defaults -22 LUFS.",
+ "summary": "A three-voice chip synth in the style of a classic sound chip: square-wave tone and noise per voice, a 16-level volume, a hardware-style envelope, sub-note arpeggios, glide and vibrato.",
  "category": "Synths",
  "tags": [
   "chiptune",
   "polyphonic"
  ],
  "use_for": "Raw three-voice retro sound-chip tones, with arpeggio-style sub-notes per track.",
+ "quirks": [
+  "Three voices (three tracks): a chord needs notes on all three tracks.",
+  "Notes sound 13 semitones too high as written (profile: pitch offset -13): write them an octave and a semitone lower than you want, or use Tune.",
+  "Voice content decides what you hear: None is silent, Noise has no pitch.",
+  "Volume is the chip's 16 steps (0 to 15), 15 by default; one note A4 at velocity 100 measures about -21.5 LUFS (profile).",
+  "Final amp and Tune are 0 to 2 times and 0.5 to 2 times (raw 512 is 1x); unverified: how Sub-note length and Envelope time map to ticks or seconds.",
+  "Closed source: names come from its own texts and measurements, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - three voices, 13 semitones high, -21.5 LUFS for one note"
+ ],
  "tracks": 3,
  "notes": {
   "input": "tracks",
@@ -228,6 +240,8 @@
    "index": 0,
    "id": "FinalAmp",
    "name": "FinalAmp",
+   "plain_name": "Final amp",
+   "role": "level",
    "group": "",
    "min": 0,
    "max": 1024,
@@ -236,14 +250,15 @@
    "a": 4.2e-05,
    "b": 2.000037,
    "description": "Final Amp",
-   "confidence": "values",
-   "suggested_role": "level",
-   "role_evidence": "silent at its minimum, sounding at the other end"
+   "how": "Sets the final output level, 0 to 2 times (1 at the default, raw 512).",
+   "sound": "It scales the whole sound; above 1 it can overload the output."
   },
   {
    "index": 1,
    "id": "Tune",
    "name": "Tune",
+   "plain_name": "Tune",
+   "role": "pitch.fine",
    "group": "",
    "min": 256,
    "max": 1024,
@@ -251,10 +266,9 @@
    "kind": "linear",
    "a": 0.500042,
    "b": 2.000036,
-   "description": "",
-   "confidence": "values",
-   "suggested_role": "env.decay",
-   "role_evidence": "the level falls half way in 60 ms → 10 ms (the default 25 ms) to the same held level (with Glide a third of the way up)"
+   "description": "Tunes the machine, 0.5 to 2 times the pitch (1, in tune, at the default raw 512).",
+   "how": "Tunes the machine, 0.5 to 2 times the pitch (1, in tune, at the default raw 512).",
+   "sound": "It shifts every channel together, an octave down at 0.5 and an octave up at 2."
   }
  ],
  "track_parameters": [
@@ -262,6 +276,7 @@
    "index": 0,
    "id": "NumSubNotes",
    "name": "NumSubNotes",
+   "plain_name": "Sub-notes",
    "group": "",
    "min": 1,
    "max": 16,
@@ -270,14 +285,14 @@
    "a": 1.0,
    "b": 16.0,
    "description": "Num Subnotes",
-   "confidence": "values",
-   "suggested_role": "env.decay",
-   "role_evidence": "the level falls half way to its held level in 395 ms → 10 ms"
+   "how": "Sets how many sub-notes one written note plays, 1 to 16 (1 by default).",
+   "sound": "More sub-notes turn a note into a short chip-style arpeggio; with 1 it plays one note."
   },
   {
    "index": 0,
    "id": "Repeat",
    "name": "Repeat",
+   "plain_name": "Repeat sub-notes",
    "group": "",
    "min": 0,
    "max": 1,
@@ -287,13 +302,15 @@
     "No",
     "Yes"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Chooses whether the sub-notes repeat: No or Yes (Yes by default).",
+   "how": "Chooses whether the sub-notes repeat: No or Yes (Yes by default).",
+   "sound": "Yes loops the sub-notes for as long as the note lasts; No plays them once."
   },
   {
    "index": 0,
    "id": "SubLength",
    "name": "SubLength",
+   "plain_name": "Sub-note length",
    "group": "",
    "min": 1,
    "max": 255,
@@ -302,14 +319,15 @@
    "a": 1.0,
    "b": 255.0,
    "description": "Subnote Length",
-   "confidence": "values",
-   "suggested_role": "env.decay",
-   "role_evidence": "the level falls half way in 30 ms → 20 ms (the default 55 ms) to the same held level (with Glide a third of the way up)"
+   "how": "Sets the length of each sub-note, 1 to 255 (32 by default).",
+   "sound": "Shorter sub-notes run the arpeggio faster."
   },
   {
    "index": 0,
    "id": "Glide",
    "name": "Glide",
+   "plain_name": "Glide",
+   "role": "pitch.glide",
    "group": "",
    "min": 0,
    "max": 254,
@@ -318,14 +336,14 @@
    "a": 0.0,
    "b": 254.0,
    "description": "Glide Length",
-   "confidence": "values",
-   "suggested_role": "filter.cutoff",
-   "role_evidence": "the brightness (centroid) 5.32 kHz → 3.03 kHz"
+   "how": "Sets how long a slide to a new note takes, 0 to 254 (0 by default, no glide).",
+   "sound": "A larger value glides longer between notes."
   },
   {
    "index": 0,
    "id": "Vibrato",
    "name": "Vibrato",
+   "plain_name": "Vibrato",
    "group": "",
    "min": 0,
    "max": 254,
@@ -334,12 +352,15 @@
    "a": 0.0,
    "b": 254.0,
    "description": "Vibrato Amount",
-   "confidence": "values"
+   "how": "Sets the vibrato depth, 0 to 254 (0 by default).",
+   "sound": "More vibrato wobbles the pitch more."
   },
   {
    "index": 0,
    "id": "EnvMode",
    "name": "EnvMode",
+   "plain_name": "Envelope shape",
+   "role": "env.mode",
    "group": "",
    "min": 0,
    "max": 7,
@@ -356,12 +377,14 @@
     "7: \\/\\/\\/"
    ],
    "description": "Envelope Mode",
-   "confidence": "values"
+   "how": "Chooses the shape of the chip's hardware envelope, one of eight falling and rising ramps and triangles (0, a single fall, by default).",
+   "sound": "The shape gives each note a decay, a swell or a buzzy repeating saw or triangle."
   },
   {
    "index": 0,
    "id": "EnvTime",
    "name": "EnvTime",
+   "plain_name": "Envelope time",
    "group": "",
    "min": 1,
    "max": 65534,
@@ -370,14 +393,14 @@
    "a": 1.0,
    "b": 65534.0,
    "description": "Envelope Time",
-   "confidence": "values",
-   "suggested_role": "level",
-   "role_evidence": "the level +6 dB, the sound otherwise alike"
+   "how": "Sets the period of the hardware envelope, 1 to 65,534 (512 by default).",
+   "sound": "A shorter period runs the envelope faster and, with a repeating shape, raises its buzz in pitch."
   },
   {
    "index": 0,
    "id": "Tone",
    "name": "Tone",
+   "plain_name": "Voice content",
    "group": "",
    "min": 0,
    "max": 3,
@@ -389,13 +412,16 @@
     "Noise",
     "Tone+Noise"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Chooses what the channel plays: None, Tone, Noise or Tone+Noise (Tone by default).",
+   "how": "Chooses what the channel plays: None, Tone, Noise or Tone+Noise (Tone by default).",
+   "sound": "Tone is the square wave voice, noise the hiss for drums and effects, and both mixed give a rough tone."
   },
   {
    "index": 0,
    "id": "Volume",
    "name": "Volume",
+   "plain_name": "Volume",
+   "role": "level",
    "group": "",
    "min": 0,
    "max": 15,
@@ -403,10 +429,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 15.0,
-   "description": "",
-   "confidence": "values",
-   "suggested_role": "level",
-   "role_evidence": "silent at its minimum, sounding at the other end"
+   "description": "Sets the channel's volume, 0 to 15 (15 by default).",
+   "how": "Sets the channel's volume, 0 to 15 (15 by default).",
+   "sound": "Lower values are quieter, in the chip's own 16 steps."
   }
  ]
 }

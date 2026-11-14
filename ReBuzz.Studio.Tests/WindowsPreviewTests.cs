@@ -7,6 +7,7 @@ using ReBuzz.Host;
 using ReBuzz.Platform;
 using ReBuzz.Midi;
 using ReBuzz.Studio.Shell;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -52,7 +53,7 @@ namespace ReBuzz.Studio.Tests
 
         // ---- Windows audio (ux-overhaul.md P6, decision 3: the user's choice, 2026-11-13) ----------------------------------------
 
-        static JsonRegistry Settings() => new JsonRegistry(Path.Combine(Path.GetTempPath(), "neobuzz-winaudio-" + Guid.NewGuid().ToString("N") + ".json"), @"Software\ReBuzz");
+        static JsonRegistry Settings() => new JsonRegistry(TestTemp.Path("neobuzz-winaudio-" + Guid.NewGuid().ToString("N") + ".json"), @"Software\ReBuzz");
 
         static string Default(WindowsHostAudioDriverFactory factory, string saved = "WASAPI") =>
             new AudioDeviceService(new ConsoleUserMessages(), factory).ResolveDevice(saved).Name;

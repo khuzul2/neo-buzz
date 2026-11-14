@@ -3,6 +3,7 @@
 // editor's Explain strip and the studio inspector can explain any control. KnowledgePending lists the machines still to do:
 // they warn, everything else fails.
 using ReBuzz.Agent.Model;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.AgentTests
 {
@@ -62,7 +63,7 @@ namespace ReBuzz.AgentTests
         [Test]
         public void EveryParameterOfAFinishedFamilyHasHowAndSound()
         {
-            // K2: the machines of the families in KnowledgeFamilies (the Pedal machines), global and track parameters alike.
+            // K2: every packaged machine but the Neo ones and Dye Essence (KnowledgeFamilies), global and track parameters alike.
             var problems = new List<string>();
             int machines = 0;
             foreach (var m in CuratedManifestTests.Profiled().Values.Where(m => KnowledgeFamilies.Covers(m.Gear)))
@@ -77,7 +78,7 @@ namespace ReBuzz.AgentTests
                         else if (!(t.EndsWith('.') || t.EndsWith(')'))) problems.Add($"{m.Gear}/{p.Id} {what}: does not end in a full stop");
                     }
             }
-            Assert.That(machines, Is.GreaterThanOrEqualTo(19));
+            Assert.That(machines, Is.GreaterThanOrEqualTo(98));
             Assert.That(problems, Is.Empty, string.Join("\n", problems.Take(30)));
         }
 
@@ -85,7 +86,7 @@ namespace ReBuzz.AgentTests
         public void TheMissingCheckFindsAGap()
         {
             var json = System.Text.Json.Nodes.JsonNode.Parse("{\"format\":\"rebuzz-machine-manifest/1\",\"gear\":\"Neo X\",\"kind\":\"effect\",\"parameters\":[{\"index\":0,\"id\":\"a\",\"name\":\"A\",\"min\":0,\"max\":1,\"default\":0,\"kind\":\"linear\",\"how\":\"Does a thing.\",\"sound\":\"\"}]}")!.ToJsonString();
-            var path = Path.Combine(Path.GetTempPath(), "explaintext-" + Guid.NewGuid().ToString("N") + MachineManifest.Suffix);
+            var path = TestTemp.Path("explaintext-" + Guid.NewGuid().ToString("N") + MachineManifest.Suffix);
             try
             {
                 File.WriteAllText(path, json);

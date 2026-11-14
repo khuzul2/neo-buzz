@@ -83,7 +83,7 @@ namespace ReBuzz.Core.SongHistory
 
         public void Delete(string hash)
         {
-            try { File.Delete(PathOf(hash)); } catch (IOException) { }
+            try { File.Delete(PathOf(hash)); } catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
         }
 
         public long Bytes()

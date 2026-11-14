@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using ReBuzz.Agent.Model;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.AgentTests
 {
@@ -98,7 +99,7 @@ namespace ReBuzz.AgentTests
         {
             // A machine with no Explain text (every Neo machine and Dye Essence have it now): a hand-made manifest.
             var json = JsonNode.Parse("{\"format\":\"rebuzz-machine-manifest/1\",\"gear\":\"Neo X\",\"kind\":\"effect\",\"parameters\":[{\"index\":0,\"id\":\"a\",\"name\":\"A\",\"min\":0,\"max\":1,\"default\":0,\"kind\":\"linear\"}]}")!.ToJsonString();
-            var path = Path.Combine(Path.GetTempPath(), "explainfields-" + Guid.NewGuid().ToString("N") + MachineManifest.Suffix);
+            var path = TestTemp.Path("explainfields-" + Guid.NewGuid().ToString("N") + MachineManifest.Suffix);
             var o = new JsonObject();
             try
             {

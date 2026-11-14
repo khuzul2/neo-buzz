@@ -18,6 +18,7 @@ using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
 using ReBuzz.Studio.Platform;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -503,7 +504,7 @@ namespace ReBuzz.Studio.Tests
         public void AnImpulseResponseAndAModulatorImportIntoTheStateAndSetTheirSlots()
         {
             var m = Add("Import Dye");
-            string dir = Path.Combine(Path.GetTempPath(), "dye-import-" + Guid.NewGuid().ToString("N"));
+            string dir = TestTemp.Path("dye-import-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(dir);
             try
             {

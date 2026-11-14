@@ -3,6 +3,7 @@ using NeoBuzz.Analysis;
 using NeoBuzz.Eq;
 using ReBuzz.Agent.Audio;
 using static ReBuzz.AgentTests.Signals;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.AgentTests
 {
@@ -243,7 +244,7 @@ namespace ReBuzz.AgentTests
             Assert.That(t.LdrDb.Length, Is.EqualTo(4));
             Assert.That(t.SideToMidDb.Select(s => s.Mean), Has.All.EqualTo(double.NegativeInfinity), "mono references: no side");
 
-            string file = Path.Combine(Path.GetTempPath(), "neobuzz-mastering-tests", Guid.NewGuid().ToString("N"), "style" + MasteringReport.TargetExtension);
+            string file = TestTemp.Path("neobuzz-mastering-tests", Guid.NewGuid().ToString("N"), "style" + MasteringReport.TargetExtension);
             try
             {
                 target.Save(file);
