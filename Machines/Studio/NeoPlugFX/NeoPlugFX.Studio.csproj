@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Plug FX, studio flavour (docs/specs/plugin-host.md H1): no editor yet, so the plain build (../../Portable/NeoPlug.targets). -->
+  <PropertyGroup>
+    <NeoName>Neo Plug FX</NeoName>
+    <NeoKind>Effects</NeoKind>
+    <DefineConstants>$(DefineConstants);FX</DefineConstants>
+  </PropertyGroup>
+  <Import Project="../../Portable/NeoPlug.targets" />
+</Project>

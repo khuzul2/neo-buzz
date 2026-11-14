@@ -297,6 +297,49 @@ if (-not $SkipCore) {
     }
 }
 
+# ---------------------------------------------------------------- 3b2. Plug-in host (fork, plugin-host.md H1)
+
+# Neo Plug and Neo Plug FX host CLAP and VST3 plug-ins through neoplug (PluginHost\, C++ over the VST3 SDK, MIT, and the CLAP
+# headers, MIT): the native library and its scanner go to Gear\NeoPlug, the two managed machines (plain net10.0) to Gear.
+# The SDKs are cloned into build\PluginHost-deps unless NEOPLUG_VST3_SDK and NEOPLUG_CLAP name a copy.
+if (-not $SkipCore) {
+    $npSrc = [IO.Path]::Combine($Root, 'PluginHost')
+    $npDeps = [IO.Path]::Combine($Root, 'build', 'PluginHost-deps')
+    $npBuild = [IO.Path]::Combine($Root, 'build', 'PluginHost')
+    $vstSdk = $env:NEOPLUG_VST3_SDK
+    $clapSdk = $env:NEOPLUG_CLAP
+    if ((Test-Path -LiteralPath $npSrc) -and (Get-Command cmake -ErrorAction SilentlyContinue)) {
+        Write-Step 'Building the plug-in host (neoplug.dll, neoplug-scan.exe) and Neo Plug'
+        if (-not $vstSdk) {
+            $vstSdk = [IO.Path]::Combine($npDeps, 'vst3sdk')
+            if (-not (Test-Path -LiteralPath $vstSdk)) {
+                Invoke-Checked git @('clone', '-q', '--depth', '1', '--branch', 'v3.8.1_build_84', 'https://github.com/steinbergmedia/vst3sdk', $vstSdk)
+                Invoke-Checked git @('-C', $vstSdk, '-c', 'advice.detachedHead=false', 'submodule', 'update', '-q', '--init', '--depth', '1', 'base', 'pluginterfaces', 'public.sdk', 'cmake')
+            }
+        }
+        if (-not $clapSdk) {
+            $clapSdk = [IO.Path]::Combine($npDeps, 'clap')
+            if (-not (Test-Path -LiteralPath $clapSdk)) {
+                Invoke-Checked git @('-c', 'advice.detachedHead=false', 'clone', '-q', '--depth', '1', '--branch', '1.2.10', 'https://github.com/free-audio/clap', $clapSdk)
+            }
+        }
+        Invoke-Checked cmake @('-S', $npSrc, '-B', $npBuild, '-A', 'x64', '-DNEOPLUG_FIXTURES=OFF', "-DNEOPLUG_VST3_SDK=$vstSdk", "-DNEOPLUG_CLAP=$clapSdk")
+        Invoke-Checked cmake @('--build', $npBuild, '--config', $Configuration, '--target', 'neoplug', 'neoplug-scan')
+        $npGear = [IO.Path]::Combine($OutDir, 'Gear', 'NeoPlug')
+        New-Dir $npGear
+        foreach ($f in 'neoplug.dll', 'neoplug-scan.exe') {
+            Copy-Item -LiteralPath ([IO.Path]::Combine($npBuild, 'bin', $f)) -Destination $npGear -Force
+        }
+        $gearOut = [IO.Path]::Combine($OutDir, 'Gear') + [IO.Path]::DirectorySeparatorChar
+        foreach ($p in 'NeoPlug\NeoPlug.Portable.csproj', 'NeoPlugFX\NeoPlugFX.Portable.csproj') {
+            Invoke-Checked dotnet @('build', [IO.Path]::Combine($Root, 'Machines', 'Portable', $p), '-c', $Configuration, '-nologo', '-v:q', "-p:GearDir=$gearOut")
+        }
+        Write-Host "Neo Plug, Neo Plug FX and Gear\NeoPlug -> $OutDir"
+    } else {
+        Write-Warning 'PluginHost or cmake is missing: Neo Plug is left out of this package.'
+    }
+}
+
 # ---------------------------------------------------------------- 3c. NeoBuzz Live Studio (preview, fork)
 
 # The studio (ReBuzz.Studio, Avalonia; docs/specs/ux-overhaul.md P6) published for win-x64 with PortAudio built from source
@@ -855,6 +898,9 @@ foreach ($c in $components) {
 }
 if (Test-Path -LiteralPath ([IO.Path]::Combine($pkgDir, 'Studio', 'portaudio.dll'))) {
     $notice.Add('  NeoBuzz Live Studio (preview), Studio\: Avalonia, SkiaSharp and HarfBuzzSharp (MIT), the Inter typeface (SIL OFL 1.1), from their NuGet packages')
+}
+if (Test-Path -LiteralPath ([IO.Path]::Combine($pkgDir, 'Gear', 'NeoPlug', 'neoplug.dll'))) {
+    $notice.Add('  Gear\NeoPlug (the plug-in host behind Neo Plug): the VST3 SDK 3.8 (MIT) and the CLAP headers (MIT), statically; plug-ins are the user''s own and are not shipped')
 }
 if (Test-Path -LiteralPath ([IO.Path]::Combine($pkgDir, 'LinkHelper', 'Link-LICENSE.md'))) {
     $notice.Add('  ReBuzzLink.exe (Ableton Link): GPL-2.0-or-later; text and source: LinkHelper\ (Link-LICENSE.md, Link-GNU-GPL-v2.0.md, main.cpp)')

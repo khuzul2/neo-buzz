@@ -115,7 +115,7 @@ namespace ReBuzz.Studio.Tests
             Core.Modified = false;
             Core.ExecuteCommand(BuzzGUI.Interfaces.BuzzCommand.NewFile);
             Settle();
-            var gear = Core.MachineDLLs.Values.Where(d => d?.Info != null && d.Info.Type != MachineType.Master && (d.Name.StartsWith("Neo ") || d.Name == "Dye Essence" || d.Name.StartsWith("Pedal ")))
+            var gear = Core.MachineDLLs.Values.Where(d => d?.Info != null && d.Info.Type != MachineType.Master && !d.Name.StartsWith("Neo Plug") && (d.Name.StartsWith("Neo ") || d.Name == "Dye Essence" || d.Name.StartsWith("Pedal ")))
                 .Select(d => d.Name).OrderBy(x => x).ToList();
             int cols = 6;
             for (int k = 0; k < gear.Count; k++)

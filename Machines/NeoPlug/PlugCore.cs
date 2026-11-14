@@ -31,6 +31,7 @@ namespace NeoBuzz.Plug
     {
         public const int Slots = 64, Chunk = 256, MaxTracks = 16;
         public const int RawMax = 65534;
+        static readonly bool DebugMidi = Environment.GetEnvironmentVariable("NEOPLUG_DEBUG") == "1";
         public static readonly HashSet<PlugCore> Live = new();
 
         public readonly object Gate = new();
@@ -514,6 +515,7 @@ namespace NeoBuzz.Plug
         /// <summary>A render starts: the plug-in is told it's offline, and forgets what rang before.</summary>
         public void BeginRender()
         {
+            UpdateMidiTarget();   // a render starts in a moment: the pump may not have found the MIDI target yet
             if (Missing || plugin == IntPtr.Zero) return;
             try
             {
@@ -786,6 +788,7 @@ namespace NeoBuzz.Plug
                             output[off + i].R = r;
                             if (l != 0 || r != 0) any = true;
                         }
+                        if (outCount > 0 && DebugMidi) Console.Error.WriteLine($"[neoplug] {outCount} events out, target {(target == null ? "none" : target.Name)} ({midiTargetName})");
                         if (target != null && outCount > 0)
                             for (int k = 0; k < outCount; k++)
                             {

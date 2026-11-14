@@ -59,6 +59,7 @@ if args.lib:
 if args.scan:
     env["NEOPLUG_SCAN"] = os.path.abspath(args.scan)
 env["REBUZZ_NATIVE_MACHINES"] = "off"
+env.setdefault("NEOPLUG_DEBUG", "")
 env["XDG_CONFIG_HOME"] = os.path.join(work, "config")
 env["APPDATA"] = os.path.join(work, "appdata")
 proc = subprocess.Popen([args.exe, "--agent", "--settings", os.path.join(work, "settings")], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -257,23 +258,72 @@ check(set(s1) >= set(names), f"the song holds every machine's state ({sorted(s1)
 for n in names:
     check(n in s1 and n in s2 and s1[n] == s2[n], f"{n}: the saved state is identical after reopen and save ({len(s1.get(n, b''))} bytes)")
 
-# A missing plug-in: point one machine at a path that doesn't exist, open, save: its state survives.
+def edit_state(src, dst, victim, fn):
+    """Writes dst: src with the victim machine's PlugState XML run through fn. Returns (old state bytes, new state bytes)."""
+    text = open(src, encoding="utf-8").read()
+    states = machine_states(src)
+    raw = states[victim]
+    # Data is a version byte, a 32-bit length, then the MachineState XML.
+    body = fn(raw[5:].decode("utf-8")).encode("utf-8")
+    changed = raw[:1] + len(body).to_bytes(4, "little") + body
+    open(dst, "w", encoding="utf-8").write(text.replace(base64.b64encode(raw).decode(), base64.b64encode(changed).decode()))
+    return raw, changed
+
+
+# A missing plug-in: make one machine's plug-in unknown (path, id and name), open, save: its state survives.
 if names and names[0] in s1:
     victim = names[0]
-    text = open(song, encoding="utf-8").read()
-    raw = s1[victim]
-    state_xml = raw[5:].decode("utf-8", errors="replace")
-    path_now = re.search(r"<Path>(.*?)</Path>", state_xml)
-    if path_now:
-        # Data is a version byte, a 32-bit length, then the MachineState XML.
-        body = state_xml.replace(path_now.group(0), "<Path>/nowhere/missing-plugin.vst3</Path>").replace("<Display>", "<Display>").encode("utf-8")
-        changed = raw[:1] + len(body).to_bytes(4, "little") + body
-        missing_song = os.path.join(work, "h1-missing.bmxml")
-        open(missing_song, "w", encoding="utf-8").write(text.replace(base64.b64encode(raw).decode(), base64.b64encode(changed).decode()))
-        # the library knows the plug-in by id, so the machine would find it again; make the id unknown too
-        check(call("song_open", path=missing_song, discard_unsaved=True)[0], "song_open with a missing plug-in's path")
-    else:
-        check(False, "no <Path> in the machine state")
+
+    def unknown(xml):
+        for tag, value in (("Path", "/nowhere/missing-plugin.vst3"), ("Id", "no-such-plugin"), ("Name", "No Such Plugin")):
+            xml = re.sub(rf"<{tag}>.*?</{tag}>", f"<{tag}>{value}</{tag}>", xml)
+        return xml
+
+    _, changed = edit_state(song, os.path.join(work, "h1-missing.bmxml"), victim, unknown)
+    check(call("song_open", path=os.path.join(work, "h1-missing.bmxml"), discard_unsaved=True)[0], "song_open with a missing plug-in")
+    resaved = os.path.join(work, "h1-missing-resaved.bmxml")
+    check(call("song_save", path=resaved, overwrite=True)[0], "song_save with a missing plug-in")
+    check(machine_states(resaved).get(victim) == changed, f"{victim}: a missing plug-in's state is saved back unchanged")
+    check("plug-in not found" in "\n".join(stderr_lines()), "the machine reports the plug-in missing")
+
+if args.fixtures:
+    # --- A sidechain: Test Duck ducks the synth while the second input has sound -------------------------------------------
+    call("song_open", path=song, discard_unsaved=True)
+    ok, _, _ = call("machine_add", gear="Neo Plug", plugin=resolve("Test Synth", gen_names, "instrument"), name="Pad", tracks=2)
+    call("pattern_create", machine="Pad", name="A", length_beats=8)
+    call("notes_write", machine="Pad", pattern="A", notes=[{"pitch": "C3", "start": 0, "length": 8}, {"pitch": "G3", "start": 0, "length": 8}])
+    call("arrangement_place", machine="Pad", pattern="A", at=[0])
+    call("machine_add", gear="Neo Poly", name="Kick")
+    call("pattern_create", machine="Kick", name="A", length_beats=8)
+    call("notes_write", machine="Kick", pattern="A", notes=[{"pitch": "C2", "start": b, "length": 0.5} for b in range(8)])
+    call("arrangement_place", machine="Kick", pattern="A", at=[0])
+    ok, _, _ = call("machine_add", gear="Neo Plug FX", plugin=resolve("Test Duck", fx_names, "effect"), name="Duck", insert_after="Pad")
+    check(ok, "machine_add Duck after Pad")
+    check(call("connect", **{"from": "Kick", "to": "Duck", "input": "Sidechain", "gain_db": 0})[0], "the Kick feeds Duck's sidechain")
+    call("connection_set", **{"from": "Kick", "to": "Master", "gain_db": -60}) if False else None
+    ok, _, quiet = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": ["Duck"], "mute": ["Kick"], "name": "no-key"})
+    ok, _, keyed = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": ["Duck"], "name": "keyed"})
+    la, lb = probe_levels(quiet).get("Duck", (None, None))[0], probe_levels(keyed).get("Duck", (None, None))[0]
+    check(la is not None and lb is not None and la - lb > 2.0, f"the sidechain ducks the pad: {la} LUFS without the kick, {lb} with it")
+    check("latency 64" in "\n".join(stderr_lines()), "a plug-in's latency (64 samples) is read")
+
+    # --- MIDI out: Test Octaver plays a note an octave up on the machine it is sent to --------------------------------
+    call("song_new", discard_unsaved=True)
+    call("song_set", tempo_bpm=120, song_end_beats=8)
+    call("machine_add", gear="Neo Plug", plugin=resolve("Test Synth", gen_names, "instrument"), name="Voice", tracks=1)
+    call("machine_add", gear="Neo Plug", plugin=resolve("Test Octaver", gen_names, "instrument"), name="Octaver", tracks=1)
+    call("pattern_create", machine="Octaver", name="A", length_beats=8)
+    call("notes_write", machine="Octaver", pattern="A", notes=[{"pitch": "C4", "start": 0, "length": 4}])
+    call("arrangement_place", machine="Octaver", pattern="A", at=[0])
+    ok, _, r0 = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": ["Voice"], "name": "midi-off"})
+    check(probe_levels(r0).get("Voice", (None, True))[1] is True, "Voice is silent while the Octaver's MIDI goes nowhere")
+    midi_song = os.path.join(work, "midi.bmxml")
+    call("song_save", path=midi_song, overwrite=True)
+    edit_state(midi_song, midi_song, "Octaver", lambda xml: xml.replace("</PlugState>", "<MidiOut>Voice</MidiOut></PlugState>") if "<MidiOut" not in xml else re.sub(r"<MidiOut\s*/>|<MidiOut>.*?</MidiOut>", "<MidiOut>Voice</MidiOut>", xml))
+    call("song_open", path=midi_song, discard_unsaved=True)
+    ok, _, r1m = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": ["Voice"], "name": "midi-on"})
+    lvl = probe_levels(r1m).get("Voice", (None, True))
+    check(lvl[1] is False, f"Voice plays what the Octaver sends it ({lvl[0]} LUFS)")
 
 proc.stdin.close()
 try:
