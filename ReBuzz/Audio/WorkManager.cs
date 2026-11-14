@@ -1210,7 +1210,17 @@ namespace ReBuzz.Audio
         internal void PrebuildOrder()
         {
             if (!engineSettings.UseCachedWorkOrder) return;
-            lock (ReBuzzCore.AudioLock) GetOrBuildOrder();
+            lock (ReBuzzCore.AudioLock)
+            {
+                var order = GetOrBuildOrder();
+                // The work instances (a few dozen KB of buffers each, made on first use) and the
+                // dependency graph the audio thread would otherwise build on its first buffer.
+                var machines = buzzCore.SongCore.MachinesList;
+                for (int i = 0; i < machines.Count; i++)
+                    buzzCore.MachineManager.GetMachineWorkInstance(machines[i]);
+                if (multiThreadingEnabled && algorithm == 2 && b2Enabled)
+                    B2EnsureGraph(order);
+            }
         }
 
         private CachedWorkOrder GetOrBuildOrder()

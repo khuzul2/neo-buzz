@@ -1227,6 +1227,10 @@ namespace ReBuzz.Core
             var buzz = graph.Buzz as ReBuzzCore;
             buzz.TopologyGeneration++; // #107: invalidate cached work order
             buzz.LatencyGraphChanged(); // fork (mastering-tools.md §4.1): the compensation's plan follows
+            // Fork (history-snapshots.md HS3): a machine joining the graph while the song plays gets its
+            // work instance (its buffers) made here, not by the audio thread on its next buffer.
+            buzz.MachineManager.PrepareWorkInstance(this);
+            buzz.MachineManager.PrepareWorkInstance(mcc.Source as MachineCore);
             //if (mcc.Source.DLL.Info.Flags.HasFlag(MachineInfoFlags.DOES_INPUT_MIXING))
             buzz.MachineManager.AddInput(this, mcc.Source, true);
         }

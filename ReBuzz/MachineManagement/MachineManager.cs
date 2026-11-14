@@ -1051,6 +1051,16 @@ namespace ReBuzz.MachineManagement
             }
         }
 
+        /// <summary>
+        /// Fork (history-snapshots.md HS3): makes the machine's work instance now (UI thread) if its host is
+        /// registered (the instance keeps the host it finds), so the audio thread never makes it.
+        /// </summary>
+        internal void PrepareWorkInstance(MachineCore machine)
+        {
+            if (machine != null && (managedMachines.ContainsKey(machine) || nativeMachines.ContainsKey(machine)))
+                GetMachineWorkInstance(machine);
+        }
+
         internal MachineWorkInstance GetMachineWorkInstance(MachineCore machine)
         {
             if (workInstances.TryGetValue(machine, out MachineWorkInstance wi))
