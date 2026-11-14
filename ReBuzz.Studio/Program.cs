@@ -1,6 +1,7 @@
 // Fork (docs/specs/studio-mvp.md, P3): the studio's entry point.
 //
 //   ReBuzz.Studio [song] [--settings <folder>] [--no-audio] [--smoke] [--agent-port <port> [--agent-token <token>]]
+//   ReBuzz.Studio --list-devices      (the audio and MIDI devices it finds, on the console, then quits)
 //
 // --smoke starts the engine, shows the window, and quits with 0 once it has drawn (CI's check
 // that the app runs on macOS). --agent-port allows agents on that port for this run, with the
@@ -10,6 +11,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Avalonia;
+using ReBuzz.Host;
 using ReBuzz.Studio.Shell;
 
 namespace ReBuzz.Studio
@@ -28,6 +30,11 @@ namespace ReBuzz.Studio
             {
                 int i = Array.FindIndex(a, x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase));
                 return i >= 0 && i + 1 < a.Length ? a[i + 1] : null;
+            }
+            if (args.Contains("--list-devices"))
+            {
+                EngineHost.PrepareProcess(m => Console.Error.WriteLine(m));
+                return EngineHost.ListDevices(Console.Out, Console.Error);
             }
             Smoke = args.Contains("--smoke");
             string settings = Option(args, "--settings");

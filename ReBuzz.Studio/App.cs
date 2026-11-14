@@ -109,6 +109,8 @@ namespace ReBuzz.Studio
             try
             {
                 var clock = System.Diagnostics.Stopwatch.StartNew();
+                // Windows: the main window is the parent the native machine hosts ask for (EngineHost step 2).
+                host.Services.ParentWindow = () => window.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
                 host.Start(step =>
                 {
                     host.Log($"{clock.Elapsed.TotalSeconds:F1} s: {step}");

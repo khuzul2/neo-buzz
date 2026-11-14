@@ -41,9 +41,21 @@ namespace ReBuzz.Studio.Shell
             if (Current != null) return Current;
             EngineHost.PrepareProcess(m => Current?.Log(m));
             ReBuzzCore.DefaultUiHost = new StudioMachineUiHost();     // machine windows (studio-mvp.md §3.4)
-            Current = new StudioHost(settingsFolder ?? JsonRegistry.SettingsFolder, openAudio);
+            Current = new StudioHost(settingsFolder ?? DefaultSettingsFolder, openAudio);
             return Current;
         }
+
+        /// <summary>
+        /// Where the settings live unless --settings says otherwise: the host's folder for this OS, but on Windows %APPDATA%\NeoBuzz Live,
+        /// not %APPDATA%\ReBuzz, which the WPF app keeps its own machine cache and settings in (the preview doesn't share them).
+        /// </summary>
+        public static string DefaultSettingsFolder =>
+            OperatingSystem.IsWindows()
+                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Product.Name)
+                : JsonRegistry.SettingsFolder;
+
+        /// <summary>The window title's app name: on Windows the studio is a preview beside the WPF app (ux-overhaul.md P6).</summary>
+        public static string AppTitle => OperatingSystem.IsWindows() ? Product.Name + " Studio (preview)" : Product.Name;
 
         public string SettingsFolder { get; }
         public bool OpenAudio { get; }

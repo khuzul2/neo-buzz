@@ -1,5 +1,4 @@
-﻿using BuzzDotNet.Audio;
-using BuzzGUI.Common.Settings;
+﻿using BuzzGUI.Common.Settings;
 using NAudio.Wave;
 using ReBuzz.Audio.Engine;
 using ReBuzz.Common;
@@ -118,11 +117,12 @@ namespace ReBuzz.Audio
                         asioDevice.Capabilities.BufferPreferredSize + ").\n\n" + ex.Message,
                         BuzzGUI.Interfaces.DCLogLevel.Error);
 
-                    BespokeFusion.MessageBoxWindow.ShowOkWindow(
-                        "ASIO Error",
+                    // Fork (ux-overhaul.md P6): through the app's messages (a message box in ReBuzz.exe, a dialog in the studio), so this
+                    // file builds in ReBuzz.Host too, which links it for the studio's ASIO (WindowsHostAudioDriverFactory).
+                    buzzCore.UserMessages.Error(
                         "Can't initialize ASIO using preferred buffer size (" +
                         asioDevice.Capabilities.BufferPreferredSize + ").\n\n" + ex.Message,
-                        false);
+                        "ASIO Error", ex);
                 }
             }
         }

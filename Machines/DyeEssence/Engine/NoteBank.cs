@@ -94,6 +94,13 @@ namespace NeoBuzz.DyeEssence
         public bool PdOn;
         public float LevelExt = 1f;
         public float StrPick = 0.3f, StrDamp = 0.3f, StrHard = 0.5f, StrDecay = 3f, StrStiff, StrSymp, FoldDrive, FoldSym;
+        /// <summary>
+        /// The Spectral engine (§4.12): the sample's model (null: nothing to play yet); Speed (× the sample's own, 0 frozen), Key tracking (0 … 1 of the
+        /// key's pitch), Formant keep, Harmonic snap, Tonal/Noise (0 noise only, 0.5 as analysed, 1 tonal only), Blur, Tilt (dB an octave), Stretch (−1 … 1), partials sounding.
+        /// </summary>
+        public SpectralModel Spectrum;
+        public float SpSpeed = 1f, SpKey = 1f, SpFormant, SpSnap, SpBalance = 0.5f, SpBlur, SpTilt, SpStretch;
+        public int SpPartials = 48;
     }
 
     internal sealed class SourceSettings
@@ -203,7 +210,7 @@ namespace NeoBuzz.DyeEssence
         public readonly BankSettings S = new BankSettings();
 
         /// <summary>The engines, by <see cref="SlotType"/> (Off has none).</summary>
-        public readonly IEngine[] Engines = { null, new WavetableEngine(), new AnalogEngine(), new SampleEngine(), new GranularEngine(), new HarmonicEngine(), new ModalEngine(), new StringEngine() };
+        public readonly IEngine[] Engines = { null, new WavetableEngine(), new AnalogEngine(), new SampleEngine(), new GranularEngine(), new HarmonicEngine(), new ModalEngine(), new SpectralEngine(), new StringEngine() };
         public AnalogEngine Analog => (AnalogEngine)Engines[(int)SlotType.Analog];
 
         IEngine EngineOf(OscSettings os) => (int)os.Type < Engines.Length ? Engines[(int)os.Type] : null;
@@ -447,6 +454,7 @@ namespace NeoBuzz.DyeEssence
         public void SetSampleRate(float sr)
         {
             sampleRate = sr;
+            SpecPrepare(sr);
             fadeStep = ControlRate / Math.Max(1f, FadeSeconds * sr);
             smoothK = (float)(1.0 - PortableMath.Exp(-ControlRate / (SmoothSeconds * sr)));
         }

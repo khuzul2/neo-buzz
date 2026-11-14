@@ -71,5 +71,6 @@
     </ItemGroup>
     <Copy SourceFiles="@(_GearFiles)" DestinationFiles="@(_GearFiles->'$(PublishDir)Gear/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
     <Copy SourceFiles="$(OutDir)ReBuzzLink" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" Condition="Exists('$(OutDir)ReBuzzLink')" />
+    <Copy SourceFiles="$(OutDir)ReBuzzLink.exe" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" Condition="Exists('$(OutDir)ReBuzzLink.exe')" />
   </Target>
 </Project>
