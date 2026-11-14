@@ -3,8 +3,10 @@
 // write); the Tracker can hold both. The roll shows one at a time: the one that has notes when only one has, else the one the machine
 // takes (its manifest's note input; a machine without a manifest takes its Note column), and the user can pick the other.
 // Fork (daw-modes.md AR2): a third store, SongNotes: the notes the song keeps in the engine's columns (what the Session View's clip
-// plays and the arrangement's piano roll edits). The Tracker's own stores are not converted into it before AR3; the roll shows it
+// plays and the arrangement's piano roll edits). The Tracker's own stores are not converted into it; the roll shows it
 // when the Tracker holds no notes and the song does, and offers it beside the others.
+// Fork (daw-modes.md AR3): the Tracker shows the MIDI column's notes in lanes of its own, so for a machine that plays that column
+// the song's notes are the roll's default whenever the editor's own stores hold none.
 
 using System;
 using BuzzGUI.Interfaces;
@@ -44,7 +46,10 @@ namespace ReBuzz.Core.Notes
                      : TakesNotesInItsTracks(pattern.Machine as MachineCore) ? TrackerLane.NoteColumn : TrackerLane.MidiLanes;
             }
             // Auto: the Tracker holds no notes and the song does (drawn in the arrangement's piano roll, a session take, the agent): those.
-            if (want == TrackerLane.Auto && song != null && song.Notes().Count > 0
+            // Fork (daw-modes.md AR3): a machine that plays the MIDI column gets them while the song has none yet too: the Tracker's
+            // Notes lanes show that column, so a note drawn in the roll is a row in the tracker, and the editor's own MIDI lanes
+            // (an old song's) are the store only when they hold notes.
+            if (want == TrackerLane.Auto && song != null && (song.Notes().Count > 0 || SongNotes.IsMidi(song))
                 && (column == null || column.Notes().Count == 0) && (lanes == null || lanes.Notes().Count == 0))
                 lane = TrackerLane.SongNotes;
             if (want == TrackerLane.SongNotes && song != null) lane = TrackerLane.SongNotes;

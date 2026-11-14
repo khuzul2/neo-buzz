@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Decided 2026-11-03: D1 A1 (§3.1), D2 B, D3 A, D4 B, D5 A, all as recommended. **AR0 built** (2026-11-03, §8.1): the song meter, clip ids, automation ramps and note sources. **AR1 built** (2026-11-14, §8.2): the Arrangement mode of the studio's Sequence tab. **AR2 built** (2026-11-14, §8.3): the piano roll in the arrangement and the Pattern tab, with velocity and CC lanes, scale and fold, step input and ghosts. AR3 next |
+| Status | Decided 2026-11-03: D1 A1 (§3.1), D2 B, D3 A, D4 B, D5 A, all as recommended. **AR0 built** (2026-11-03, §8.1): the song meter, clip ids, automation ramps and note sources. **AR1 built** (2026-11-14, §8.2): the Arrangement mode of the studio's Sequence tab. **AR2 built** (2026-11-14, §8.3): the piano roll in the arrangement and the Pattern tab, with velocity and CC lanes, scale and fold, step input and ghosts. **AR3 built** (2026-11-14, §8.4): the tracker shows the engine MIDI column as Notes lanes and edits it note by note. |
 | Date | 2026-11-03 |
 | Scope | One song and one machine graph, seen and edited in three modes that stay in sync: **tracker** (patterns with columns), **arrangement** (a horizontal timeline with clips, a piano roll and automation lanes) and **session** (clip launching). The model, the views, compatibility, engine seams and a phased plan |
 | Code baseline | fork `90b0850` (main, 2026-11-03). Branches `platform/p3-s4-sequence-editor` and `platform/p3-s6-pattern-editor` (not merged) read the same day |
@@ -489,6 +489,37 @@ Sizes as in session-view.md: S < 500 LOC, M 500–2,000, L 2,000–5,000.
 
 **Not in AR2:** per-note channel editing, split/glue/legato and the chord stamp (§5.3), real-time recording into the clip (AR5), drum names from a manifest, the Tracker's own Note columns as the store (AR3: until then the Tracker's data and the song's notes are two stores that the Pattern tab's roll offers separately), a draggable height for the panel, remembering the roll's key, scale and fold between sessions.
 
+### 8.4 As built (AR3)
+
+**The Notes lanes** (the editor's shared sources, `ModernPatternEditor.NET/NoteLaneColumns.cs`, built for the studio and `rebuzz-headless`, not for WPF; the pure part is `BuzzGUI.Common/NoteLanes.cs`, linked by `ReBuzz.SessionTests`).
+- When a pattern's engine MIDI column holds notes, or the toolbar's *Notes* button is on, the Pattern tab's editor shows column sets in front of the machine's own: *Notes / Voice 1*, *Voice 2*… each with Note, Vel, Dly and Cut, and one free voice after the last. A take recorded in the session, a roll's note, the agent's and an undo show in them at once (the editor follows the column's `EventsChanged`, on its own thread). The sets appear and go by themselves; the button only asks for them on an empty column (not saved).
+- *Computed, display only.* `NoteLanes` lays the column's notes out with `TrackerNotes.ToRows` (one voice for each overlapping note; delay and cut in 1/95 of a row; the rows are the pattern's rows per beat). The lanes are not `MPEPatternColumn`s: the editor doesn't save them, play them or hand them to `PatternEditorMachineEvents`, and the actions that count columns by index never see them. Notes above B-7 (Buzz's range) or past the pattern's end are not shown and are never touched. The editor's own MIDI lanes (old songs) stay as they are, beside these; the Tracker's data is byte for byte what it was.
+- *Edits change the notes they name, nothing else.* The decision that matters: `TrackerNotes.FromRows` rounds every note to 1/95 of a row, so turning the edited lanes back into notes would move all of them. Instead each key becomes the edit of one note (`NoteLaneEdit`: events removed, events added) and the column is written with just that. A note keeps its channel, and an untouched note keeps its time and length to the tick. `ToRowsIndexed` (the same code as `ToRows`) says which note each row came from.
+
+| In a cell | Does |
+|---|---|
+| a note key, on an empty cell | a note from the row to the voice's next note (or the pattern's end), velocity 100; a note of that voice still ringing is cut where this one starts, as a tracker's next note does |
+| a note key, on a note | the same note with another pitch (time, length, velocity and channel kept); octave digit: as the Note column's |
+| an off, on an empty cell | ends the voice's ringing note at the row; on a note: removes it |
+| `.` on a note / on an off | removes the note / lets the note before it ring on to the voice's next note |
+| velocity | that note's velocity (clearing: 100) |
+| delay | the note starts later and ends where it did (an off: the end of the note before it moves) |
+| cut | the note ends there (cleared: at the voice's next note) |
+| Shift/Ctrl+Shift + and − | transposes the notes in the selection (one step) |
+| anything the cell already shows | nothing (a typed 24 over a delay of 24 doesn't re-round the note) |
+
+- *Undo is the song's.* A key in a lane is not an action of the editor's own stack: `NoteLaneAction` writes a `NotesEditAction` on the song's history (`IMachine.Graph.Do`, as the piano rolls do), so Ctrl+Z (Cmd on macOS; redo Ctrl+Y, ⇧⌘Z on macOS) is the song's, the page passes it on when the editor has nothing of its own to undo, and the history shows "Edit notes". Each key is a step (a velocity of two digits is two).
+- *Not in the lanes yet* (the status bar says so; nothing changes): cut, copy, paste, interpolate, randomize, rotate, write state, insert and delete rows, beat subdivisions: they work on the editor's own columns. A selection that reaches over a lane is refused for them. Use the piano roll (the same notes) for those.
+- *The Pattern tab's roll* (`TrackerNoteSources`): for a machine that plays the MIDI column, *Auto* now picks *Song* (the MIDI column) whenever the editor's own stores hold no notes, not only when the song has some, so what is drawn in the roll is a row in the tracker. The editor's MIDI lanes win only when an old song put notes in them. Both rolls and the lanes are one store.
+- A voice is where `ToRows` puts a note: the first with no note ringing. So a note typed in voice 2 where voice 1 is free moves to voice 1 when the lanes are drawn again (the cursor stays on the cell). Up to 32 voices are shown.
+
+**Exit tests.**
+- `ReBuzz.SessionTests/NoteLanesTests.cs` (pure): every edit's removed and added events; typing what a cell shows changes nothing; hidden notes and controller events stay; and the seeded round trip: 1,000 off-grid, overlapping notes with controllers, 300 random edits (three seeds), each takes away at most one event and adds at most two, every untouched event is in the column exactly at the end.
+- `ReBuzz.Studio.Tests/TrackerNotesViewTests.cs` (headless): a take written to the MIDI column as a session ends it shows in the lanes without asking (voices, notes, velocity, delay), and more notes after it too; typing in a row changes only that note, one history step, undo and redo from the keys; the editor's data (`GetMachineData`) and `PatternEditorMachineEvents` are unchanged by lanes and edits, and a song with lanes saved and opened as .bmx and .bmxml keeps the editor data byte for byte and the MIDI column's events exactly; the same 1,000 notes through 45 seeded keyboard edits; Transpose; the Notes button in the kit's style with its name, Light and Dark; a deleted machine's column keeps no handler of the editor. Gallery: `054-pattern-notes-lanes`.
+- No engine audio code changed (the editor, the note sources and a pure helper only), so the null tests and the 0 bytes a buffer stand as they were.
+
+**Not in AR3:** the Note-column bridge of S7 (`ExportTrackerNotes`/`ImportTrackerNotes`): the Note columns of native trackers are the editor's own data, which the roll reads and edits as in AR2 (`EditorTrackerNotes`), and the lanes are for the machines that play MIDI. Also: copy and paste of lane rows, per-lane subdivisions, a lane's channel, chord stamping, remembering the *Notes* button, and the song-history merge of the digits of one value.
+
 ## 9. Phases
 
 Effort in person-weeks (pw), with coding agents doing most of the typing, as in the other specs. Each phase also updates the MCP tools for what it adds, within its pw.
@@ -498,7 +529,7 @@ Effort in person-weeks (pw), with coding agents doing most of the typing, as in 
 | **AR0 Seams** (built, §8.1) | now, beside P3 | S1–S4; MCP reads clips and the meter | ReBuzzTests and studio tests green. A song with clips, loops, ramps and a meter round-trips in .bmx and .bmxml, core sections byte-equal. 0 bytes per buffer. Both piano rolls behave as before | 1.5–2 | low |
 | **AR1 Arrangement view** (built, §8.2) | after P3's exit (S9) | The Sequence tab's Arrangement mode: tracks with lanes; clips (draw, move, copy, split, join, trim, loop, make unique, shared badge); the meter grid; Master with tempo and markers; overridden lanes greyed; S5 | Build an 8-bar song with looped and trimmed clips by mouse (headless). It renders the same as the equivalent plain events, and the same as upstream's playback apart from trims | 2–3 | medium |
 | **AR2 Piano roll everywhere** (built, §8.3) | after AR1; the Pattern tab toggle after S6 | `PianoRoll` in the arrangement panel and the Pattern tab; velocity and CC lanes; scale and fold; step input; context ghosts | A bass line drawn in the arrangement plays in its session clip. The Pattern tab's toggle edits the same notes. Undo is on the song's history | 1.5–2 | low–medium |
-| **AR3 The tracker sees the notes** | after S6 merges | S7: MPE's computed note lanes and the Note-column note source (D3 A) | A take recorded in the session shows in the tracker at once. Editing a row changes only that note. In a random round trip of 1,000 notes through tracker edits, untouched notes stay exact. Old songs' MPE data stays byte-equal | 3–4 | high |
+| **AR3 The tracker sees the notes** (built, §8.4) | after S6 merges | S7: MPE's computed note lanes and the Note-column note source (D3 A) | A take recorded in the session shows in the tracker at once. Editing a row changes only that note. In a random round trip of 1,000 notes through tracker edits, untouched notes stay exact. Old songs' MPE data stays byte-equal | 3–4 | high |
 | **AR4 Automation** | after AR1 | Lanes for state parameters; clip automation stitched along the timeline; automation clips on automation lanes; S3 ramps drawn; knob moves recorded into lanes | A 16-bar filter sweep over a looped 1-bar clip renders as drawn. Tracker columns show as steps. Overlaps are marked | 2–3 | medium |
 | **AR5 Recording and links** | after AR2 | S6: MIDI recording into the arrangement; loop recording to take lanes; comping; launching from the arrangement; dragging between session and arrangement | Record 3 loop passes and comp one bar from each: the render equals the comp. Launch an arrangement clip in the session, then go back to the arrangement | 2–3 | medium |
 | **AR6 Tracker mode** | with P4 | The canvas's vertical orientation (Buzz's default sequence view). WPF is retired, so its compatibility work ends | The WPF vertical editor's parity checklist | 1 | low |

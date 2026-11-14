@@ -51,6 +51,8 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         readonly Button automationButton = KeepFocus(new Button { Content = "+ Automation", Margin = new Thickness(8, 4, 0, 4), VerticalAlignment = VerticalAlignment.Center });
         readonly ToggleButton hexToggle = SmallToggle("Hex", "Show and type values in hex, as Buzz does (Preferences > General > Pattern values)");
         readonly ToggleButton centreToggle = SmallToggle("Centre", "Keep the cursor row in the middle of the view (the play row while it plays)");
+        // Fork (daw-modes.md AR3): the MIDI column's notes as lanes of their own.
+        readonly ToggleButton notesToggle = SmallToggle("Notes", "Show the Notes lanes: the notes of the pattern's MIDI column, which the engine plays, as rows (shown by themselves when it has notes)");
         readonly TextBox automationFilter = new TextBox { Watermark = "Filter parameters", Width = 240 };
         readonly ListBox automationList = new ListBox { Width = 240, MaxHeight = 320 };
         readonly Button automationAll = new Button { Content = "Show all", Margin = new Thickness(0, 4, 0, 0), HorizontalAlignment = HorizontalAlignment.Right };
@@ -96,7 +98,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 Label("Base Octave:"), octaveBox, mappingToggle,
             });
             toolbar.Children.AddRange(mappingControls);
-            toolbar.Children.AddRange(new Control[] { playNotesToggle, zoom, automationButton, hexToggle, centreToggle });
+            toolbar.Children.AddRange(new Control[] { playNotesToggle, zoom, automationButton, hexToggle, centreToggle, notesToggle });
             ToolTip.SetTip(automationButton, "Show columns for parameters this pattern has no data for");
             automationButton.Flyout = MakeAutomationFlyout();
 
@@ -167,6 +169,11 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             {
                 if (updating) return;
                 PatternEditor.Settings.Set("CenteredScrolling", centreToggle.IsChecked == true);
+            };
+            notesToggle.IsCheckedChanged += (s, e) =>
+            {
+                if (updating || pattern == null) return;
+                pattern.ShowNoteLanes = notesToggle.IsChecked == true;
             };
             Follow(editor.SelectedMachine);
             UpdateAll();
@@ -251,6 +258,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         public Button AutomationButton => automationButton;
         public ToggleButton HexToggle => hexToggle;
         public ToggleButton CentreToggle => centreToggle;
+        public ToggleButton NotesToggle => notesToggle;
         public bool EmptyHintShown => emptyHint.IsVisible;
 
         public void Dispose()
@@ -424,6 +432,8 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 ToolTip.SetTip(automationButton, hidden > 0 ? "Show columns for the " + hidden + " parameters this pattern has no data for" : "Every parameter's column is shown");
                 hexToggle.IsChecked = ValueDisplay.IsHex;
                 centreToggle.IsChecked = PatternEditor.Settings.CenteredScrolling;
+                notesToggle.IsEnabled = hasPattern;
+                notesToggle.IsChecked = pattern?.HasNoteLanes == true;
                 emptyHint.IsVisible = hasPattern && (pattern.ColumnSets == null || pattern.ColumnSets.Count == 0);
                 status1.Text = editor.StatusBarItem1;
                 status2.Text = editor.StatusBarItem2;
