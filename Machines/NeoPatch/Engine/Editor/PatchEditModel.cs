@@ -75,14 +75,14 @@ namespace NeoBuzz.Patch
         {
             if (c.Max <= c.Min) return 0;
             v = Math.Clamp(v, c.Min, c.Max);
-            if (IsLog(c)) return Math.Log(v / c.Min) / Math.Log(c.Max / c.Min);
+            if (IsLog(c)) return NeoBuzz.Dsp.PortableMath.Log(v / c.Min) / NeoBuzz.Dsp.PortableMath.Log(c.Max / c.Min);
             return (v - c.Min) / (c.Max - c.Min);
         }
 
         public static float FromUnit(ControlInfo c, double t)
         {
             t = Math.Clamp(t, 0, 1);
-            double v = IsLog(c) ? c.Min * Math.Pow(c.Max / c.Min, t) : c.Min + t * (c.Max - c.Min);
+            double v = IsLog(c) ? c.Min * NeoBuzz.Dsp.PortableMath.Pow(c.Max / c.Min, t) : c.Min + t * (c.Max - c.Min);
             if (c.Choices != null) v = Math.Round(v);
             return (float)Math.Clamp(v, c.Min, c.Max);
         }
