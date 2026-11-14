@@ -49,6 +49,8 @@ namespace ReBuzz.Audio
         {
             var devices = GetOutputDevices();
             var device = devices.FirstOrDefault(x => x.Name == audioDriverName);
+            if (device == null && drivers != null && drivers.FallbackDevice(audioDriverName) is string fallback)
+                device = devices.FirstOrDefault(x => x.Name == fallback);
             return device ?? devices.FirstOrDefault();
         }
     }

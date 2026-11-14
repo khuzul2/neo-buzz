@@ -6,7 +6,7 @@
     PortAudio (MIT licence) is the studio's audio on every OS (ReBuzz/Platform/PortAudio.cs). On Windows this builds
     it as portaudio.dll for x64 with the host APIs MME (WMME), DirectSound, WASAPI and WDM-KS, and NOT ASIO: the ASIO
     SDK's licence doesn't allow redistributing a build that includes it. ASIO in the studio is the WPF app's driver (NAudio.Asio). The CRT is linked statically, so the DLL needs
-    no Visual C++ redistributable. The source is a pinned release tag, cloned shallow into build\portaudio\src.
+    no Visual C++ redistributable. The source is a pinned release tag, cloned shallow into build\portaudio\src, and its commit must equal the pinned SHA (-Commit) or the build fails.
 
     Out gets portaudio.dll, PortAudio-LICENSE.txt (PortAudio's own licence text, from its source) and
     PortAudio-BUILD.txt (what was built).
@@ -16,6 +16,8 @@
 param(
     [Parameter(Mandatory)][string]$Out,
     [string]$Tag = 'v19.7.0',
+    # The commit the tag must resolve to (the tag alone can be moved; docs/specs/ux-overhaul.md P6a-6). Changing the tag means changing this.
+    [string]$Commit = '147dd722548358763a8b649b3e4b41dfffbcfbb6',
     [string]$Source,
     [string]$Configuration = 'Release'
 )
@@ -43,6 +45,9 @@ if (-not (Test-Path -LiteralPath ([IO.Path]::Combine($src, 'CMakeLists.txt')))) 
 }
 $commit = (& git -C $src rev-parse HEAD 2>$null)
 Write-Host "PortAudio $Tag ($commit)"
+# Pinned by commit as well as tag: a tag that now points elsewhere, or a -Source checkout of another commit, stops the build.
+if (-not $Commit) { throw 'No pinned commit for PortAudio (-Commit).' }
+if ($commit -ne $Commit) { throw "PortAudio $Tag is at $commit, not the pinned commit $Commit" }
 
 if (Test-Path -LiteralPath $bld) { Remove-Item -LiteralPath $bld -Recurse -Force }
 Invoke-Checked cmake @(

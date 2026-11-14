@@ -182,12 +182,20 @@ namespace ReBuzz.Agent
 
         const string AudioDriverUse = "Use audio_set: it opens the device and puts the old one back if no audio flows.";
 
+        /// <summary>The devices audio_devices lists (null: none known), so settings_get shows the same choices as audio_set takes.</summary>
+        string[] DeviceNames()
+        {
+            var names = new AudioBackend(core).Devices().Select(d => d.Name).ToArray();
+            return names.Length == 0 ? null : names;
+        }
+
         IEnumerable<SettingEntry> AudioEntries()
         {
             var reg = core.SettingsRegistry;
             string[] algorithms = { "Recursive Task Groups", "Recursive Tasks", "Threads" };
             yield return new SettingEntry { Key = "audio.Device", Section = "audio", Name = "Device", Kind = SettingKind.Text, Default = "", UseInstead = AudioDriverUse,
-                Description = "The audio output device the app opens.", Get = () => reg.Read("AudioDriver", "", "Settings") ?? "", Set = _ => { } };
+                Description = "The audio output device the app opens. The choices are the list audio_devices gives (on Windows, each WASAPI mode on the system default and on every active output).",
+                Options = DeviceNames(), Get = () => reg.Read("AudioDriver", "", "Settings") ?? "", Set = _ => { } };
             yield return new SettingEntry { Key = "audio.BufferSize", Section = "audio", Name = "BufferSize", Kind = SettingKind.Int, Min = 16, Max = 4096, Default = "256", UseInstead = AudioDriverUse,
                 Description = "Frames per audio buffer (PortAudio drivers): smaller is lower latency and riskier.", Get = () => reg.Read("BufferSize", 256, PortAudioDriver.Section).ToString(CultureInfo.InvariantCulture), Set = _ => { } };
             yield return new SettingEntry { Key = "audio.SampleRate", Section = "audio", Name = "SampleRate", Kind = SettingKind.Int, Min = 0, Max = 384000, Default = "0", UseInstead = AudioDriverUse,

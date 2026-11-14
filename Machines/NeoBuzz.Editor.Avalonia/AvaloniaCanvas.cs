@@ -37,7 +37,52 @@ namespace NeoBuzz.Editor
 
         // ------------------------------------------------------------ conversions and caches
 
-        public static Color ToAvalonia(NeoColor c) => Color.FromArgb(c.A, c.R, c.G, c.B);
+        /// <summary>A kit colour as the theme in use draws it (<see cref="Tokens.Resolve"/>).</summary>
+        public static Color ToAvalonia(NeoColor c)
+        {
+            c = Tokens.Resolve(c);
+            return Color.FromArgb(c.A, c.R, c.G, c.B);
+        }
+
+        // Fork (ux-overhaul.md P4b): a theme change drops the brushes and pens made in the old one, and the brushes a view holds
+        // (Themed) take the new colour in place, so nothing of the old theme stays on screen.
+        static readonly List<(Func<NeoColor> Source, SolidColorBrush Brush)> themed = new List<(Func<NeoColor>, SolidColorBrush)>();
+        static readonly Dictionary<NeoColor, SolidColorBrush> themedByColour = new Dictionary<NeoColor, SolidColorBrush>();
+
+        static AvaloniaCanvas()
+        {
+            Tokens.Changed += () =>
+            {
+                brushes.Clear();
+                pens.Clear();
+                lock (themed)
+                    foreach (var (source, brush) in themed) brush.Color = ToAvalonia(source());
+            };
+        }
+
+        /// <summary>
+        /// A brush a view may keep (a background, a foreground): it follows the theme. <paramref name="source"/> answers the colour
+        /// in the theme in use (a Palette entry, which is already the set's).
+        /// </summary>
+        public static IBrush Themed(Func<NeoColor> source)
+        {
+            var brush = new SolidColorBrush(ToAvalonia(source()));
+            lock (themed) themed.Add((source, brush));
+            return brush;
+        }
+
+        /// <summary>A brush for a colour a view keeps (an editor's accent): one per colour, following the theme.</summary>
+        public static IBrush Themed(NeoColor colour)
+        {
+            lock (themed)
+            {
+                if (themedByColour.TryGetValue(colour, out var known)) return known;
+                var brush = new SolidColorBrush(ToAvalonia(colour));
+                themedByColour[colour] = brush;
+                themed.Add((() => colour, brush));
+                return brush;
+            }
+        }
 
         /// <summary>An immutable brush for a fill (null for none), made once.</summary>
         public static IImmutableBrush Brush(NeoFill fill)

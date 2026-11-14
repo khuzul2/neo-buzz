@@ -14,49 +14,49 @@ namespace ReBuzz.Studio.Views.Session
 {
     internal static class SessionPalette
     {
-        public static readonly IBrush Window = Make("#1B1B1E");
-        public static readonly IBrush Bar = Make("#242428");
-        public static readonly IBrush Header = Make("#2E2E34");
-        public static readonly IBrush Empty = Make("#26262B");
-        public static readonly IBrush EmptyHover = Make("#33333A");
-        public static readonly IBrush Clip = Make("#3B5878");
+        public static readonly IBrush Window = StudioTokens.SurfaceViewBrush;
+        public static readonly IBrush Bar = StudioTokens.SurfacePanelBrush;
+        public static readonly IBrush Header = StudioTokens.SurfaceControlBrush;
+        public static readonly IBrush Empty = Pair("#26262B", "#EBEBF0");
+        public static readonly IBrush EmptyHover = Pair("#33333A", "#DDDDE4");
+        public static readonly IBrush Clip = Pair("#3B5878", "#8FB0D8");
         /// <summary>Playing: the ▶, the outline and the progress bar of the slot that plays (a clip keeps its own fill).</summary>
         public static readonly IBrush Playing = StudioTokens.PlayBrush;
         public static readonly IBrush Progress = StudioTokens.PlayBrush;
         /// <summary>The dark chip under a slot's ▶ or ● while it has a state, so the state colour reads on any clip colour.</summary>
-        public static readonly IBrush StateChip = StudioTokens.Brush(StudioTokens.SurfaceBase);
-        public static readonly IBrush Scene = Make("#37373F");
-        public static readonly IBrush SceneHover = Make("#45454F");
-        public static readonly IBrush Text = Make("#E8E8EC");
+        public static readonly IBrush StateChip = StudioTokens.SurfaceBaseBrush;
+        public static readonly IBrush Scene = Pair("#37373F", "#D4D4DC");
+        public static readonly IBrush SceneHover = Pair("#45454F", "#C4C4CE");
+        public static readonly IBrush Text = StudioTokens.TextPrimaryBrush;
         public static readonly IBrush DarkText = Make("#17171A");
-        public static readonly IBrush DimText = Make("#8C8C96");
+        public static readonly IBrush DimText = StudioTokens.TextPlaceholderBrush;
         /// <summary>Labels on control surfaces (the header's chips, #37373F): 4.6:1 where DimText was 3.5:1.</summary>
         public static readonly IBrush LabelText = StudioTokens.TextSecondaryBrush;
-        public static readonly IBrush Selection = Make("#F0C24B");
-        public static readonly IBrush Learn = Make("#FF8C2A");
-        public static readonly IBrush Ring = Make("#E0457B");
+        public static readonly IBrush Selection = Pair("#F0C24B", "#8F6200");
+        public static readonly IBrush Learn = Pair("#FF8C2A", "#B85200");
+        public static readonly IBrush Ring = Pair("#E0457B", "#C2185B");
         public static readonly IBrush Record = StudioTokens.RecordBrush;
         public static readonly IBrush Override = StudioTokens.OverrideBrush;
-        public static readonly IBrush Mute = Make("#D08A2E");
-        public static readonly IBrush Solo = Make("#3F8FD8");
+        public static readonly IBrush Mute = Pair("#D08A2E", "#A86200");
+        public static readonly IBrush Solo = Pair("#3F8FD8", "#1F6FC0");
         public static readonly IBrush Transparent = Brushes.Transparent;
 
         // Mixer (0.4)
-        public static readonly IBrush Groove = Make("#141417");
-        public static readonly IBrush Fader = Make("#7FA7D9");
-        public static readonly IBrush Send = Make("#B48BE0");
-        public static readonly IBrush Pan = Make("#D9B45B");
-        public static readonly IBrush Cue = Make("#4BB8C8");
-        public static readonly IBrush CrossA = Make("#E8A33A");    // crossfader sides (0.6), Live's colours
-        public static readonly IBrush CrossB = Make("#5AA0E0");
-        public static readonly IBrush Thumb = Make("#D5D5DC");
-        public static readonly IBrush MeterLow = Make("#43C463");
-        public static readonly IBrush MeterMid = Make("#E8CD3A");
-        public static readonly IBrush MeterHigh = Make("#F0473C");
-        public static readonly IBrush GroupHeader = Make("#3D3D47");
-        public static readonly IBrush ReturnHeader = Make("#33303D");
-        public static readonly IBrush MixerBack = Make("#202024");
-        public static readonly IBrush ControllerRing = Make("#E8473C");   // a controller's session ring (0.8)
+        public static readonly IBrush Groove = Pair("#141417", "#B8B8C2");
+        public static readonly IBrush Fader = Pair("#7FA7D9", "#2F6EB5");
+        public static readonly IBrush Send = Pair("#B48BE0", "#7A4FB5");
+        public static readonly IBrush Pan = Pair("#D9B45B", "#8A6800");
+        public static readonly IBrush Cue = Pair("#4BB8C8", "#1D7F8E");
+        public static readonly IBrush CrossA = Pair("#E8A33A", "#B06D00");    // crossfader sides (0.6), Live's colours
+        public static readonly IBrush CrossB = Pair("#5AA0E0", "#1F6FC0");
+        public static readonly IBrush Thumb = Pair("#D5D5DC", "#FAFAFC");
+        public static readonly IBrush MeterLow = Pair("#43C463", "#1E9A44");
+        public static readonly IBrush MeterMid = Pair("#E8CD3A", "#A88200");
+        public static readonly IBrush MeterHigh = Pair("#F0473C", "#D0281E");
+        public static readonly IBrush GroupHeader = Pair("#35353D", "#CFCFD8");
+        public static readonly IBrush ReturnHeader = Pair("#33303D", "#D8D2E2");
+        public static readonly IBrush MixerBack = Pair("#202024", "#EDEDF2");
+        public static readonly IBrush ControllerRing = Pair("#E8473C", "#CE2A20");   // a controller's session ring (0.8)
 
         static readonly Dictionary<Color, IBrush> brushes = new Dictionary<Color, IBrush>();
 
@@ -97,7 +97,7 @@ namespace ReBuzz.Studio.Views.Session
         }
 
         /// <summary>A machine's identity colour as a brush (P3h), or null for a machine with none (the Master, a return).</summary>
-        public static IBrush IdentityBrush(BuzzGUI.Interfaces.IMachine machine) => MachineIdentity.ColourOf(machine) is { } c ? BrushOf(c) : null;
+        public static IBrush IdentityBrush(BuzzGUI.Interfaces.IMachine machine) => MachineIdentity.CategoryOf(machine) is { } c ? StudioTokens.IdentityBrush(c) : null;
 
         /// <summary>The fill of a clip that has no colour of its own: its machine's identity colour, else the neutral clip blue.</summary>
         public static IBrush DefaultFill(BuzzGUI.Interfaces.IMachine machine) => IdentityBrush(machine) ?? Clip;
@@ -123,6 +123,12 @@ namespace ReBuzz.Studio.Views.Session
             byte L(byte v) => (byte)Math.Round(v + (255 - v) * amount);
             return BrushOf(Color.FromRgb(L(s.Color.R), L(s.Color.G), L(s.Color.B)));
         }
+
+        /// <summary>A brush of the dark theme's colour or the light theme's, following the theme (P4b).</summary>
+        internal static IBrush Pair(string dark, string lightHex) => StudioTokens.Themed(() => Color.Parse(NeoBuzz.Editor.Tokens.IsLight ? lightHex : dark));
+
+        /// <summary>A pen of the dark theme's colour or the light theme's, following the theme (P4b).</summary>
+        internal static IPen PairPen(string dark, string lightHex, double thickness, IDashStyle dash = null) => new Pen(Pair(dark, lightHex), thickness) { DashStyle = dash };
 
         public static IBrush Make(string hex) => new ImmutableSolidColorBrush(Color.Parse(hex));
     }

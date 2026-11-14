@@ -102,6 +102,7 @@ namespace ReBuzz.Core
         /// <summary>Fork: jumps to the current amp without a ramp (for a new connection).</summary>
         internal void SnapAmp()
         {
+            rampLength = 0;
             interpolatorAmp.SetTarget(amp, 0);
             clipGain = Source is MachineCore source ? source.ClipGain * source.CrossfadeGain : 1f;   // fork (0.5): no fade-in either
         }
@@ -109,6 +110,30 @@ namespace ReBuzz.Core
         // Fork (engine hardening): Destination.Inputs.IndexOf(this) without building Inputs (automation
         // of an input's amp or pan sets it on the audio thread).
         int InputIndex() => Destination is MachineCore destination ? destination.VisibleInputIndexOf(this) : Destination.Inputs.IndexOf(this);
+
+        // Fork (HS3): the amp ramp of a live restore. The engine's own ramp is four steps, one for each time the
+        // machines are worked, and a block is cut into pieces at every tick and subtick, so its length in
+        // samples depends on where the cuts fall (16-sample pieces made a fade-in of 64 samples: a click).
+        // This ramp is a fixed number of samples, however the block is cut.
+        float rampFrom, rampTo;
+        int rampLength, rampPos;
+
+        float RampValue(int pos) => pos >= rampLength ? rampTo : rampFrom + (rampTo - rampFrom) * pos / rampLength;
+
+        /// <summary>Audio thread (AudioLock held): sets the amp and moves to it linearly over <paramref name="samples"/>, whatever the block sizes.</summary>
+        internal void RampAmp(int value, int samples)
+        {
+            float from = rampLength > 0 ? RampValue(rampPos) : interpolatorAmp.Value;
+            Amp = value;
+            if (samples > 0 && from != value)
+            {
+                rampFrom = from;
+                rampTo = value;
+                rampPos = 0;
+                rampLength = samples;
+            }
+            else rampLength = 0;
+        }
 
         int amp = 0x4000;
         public int Amp
@@ -121,6 +146,7 @@ namespace ReBuzz.Core
             {
                 if (amp != value)
                 {
+                    if (rampLength > 0) { interpolatorAmp.Value = RampValue(rampPos); rampLength = 0; }     // a change of its own takes over from where the ramp is
                     amp = value;
                     interpolatorAmp.SetTarget(value, 4); // 4 "steps"
 
@@ -226,6 +252,13 @@ namespace ReBuzz.Core
             clipGain = Source is MachineCore source ? source.ClipGain * source.CrossfadeGain : 1f;   // 0.6: and the crossfader
             ampStart = interpolatorAmp.Value / 0x4000 * gainStart;
             ampCurrent = interpolatorAmp.Tick() / 0x4000 * clipGain;
+            if (rampLength > 0)
+            {
+                ampStart = RampValue(rampPos) / 0x4000 * gainStart;
+                rampPos += nSamples;
+                ampCurrent = RampValue(rampPos) / 0x4000 * clipGain;
+                if (rampPos >= rampLength) { rampLength = 0; interpolatorAmp.Value = rampTo; }
+            }
             // Fork: ramp from the block's start amp to its end amp. Upstream had the difference
             // the wrong way round, so during an amp change each block ramped away from the target
             // and the next one jumped back: a click per block while a fader moves

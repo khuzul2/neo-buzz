@@ -251,7 +251,9 @@
    "b": 4224.0,
    "unit": "Hz",
    "own_texts": false,
-   "description": "Pitch the sweep starts at, 34 Hz – 4.2 kHz exponential."
+   "description": "Pitch the sweep starts at, 34 Hz – 4.2 kHz exponential.",
+   "how": "Sets the pitch the sweep starts at, 33 Hz x 128^(v/240): about 34 Hz to 4.2 kHz.",
+   "sound": "Higher starts give a bigger, more clicky beater sweep; low starts give a soft thump."
   },
   {
    "index": 3,
@@ -268,7 +270,9 @@
    "b": 528.0,
    "unit": "Hz",
    "own_texts": false,
-   "description": "Pitch the sweep heads for, 33 – 528 Hz exponential (the note sets the floor)."
+   "description": "Pitch the sweep heads for, 33 – 528 Hz exponential (the note sets the floor).",
+   "how": "Sets the pitch the sweep heads for, 33 Hz x 16^(v/240): about 33 Hz to 528 Hz; the note sets a floor under it.",
+   "sound": "Lower values give a deep sub body; higher values a tonal, tuned kick."
   },
   {
    "index": 4,
@@ -285,7 +289,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Level of the buzz layer."
+   "description": "Level of the buzz layer.",
+   "how": "Sets the level of the buzz layer, 0 to 100 percent.",
+   "sound": "More buzz adds a gritty, fizzy body to the kick."
   },
   {
    "index": 5,
@@ -302,7 +308,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Level of the click layer."
+   "description": "Level of the click layer.",
+   "how": "Sets the level of the click layer, 0 to 100 percent.",
+   "sound": "More click gives a sharper attack, like a beater hitting a skin."
   },
   {
    "index": 6,
@@ -319,7 +327,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Level of the punch layer."
+   "description": "Level of the punch layer.",
+   "how": "Sets how much the pitch is pushed up at the start of the hit, 0 to 100 percent.",
+   "sound": "More punch gives a stronger, snappier front to the kick."
   },
   {
    "index": 7,
@@ -334,7 +344,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 240.0,
-   "description": "How fast the pitch falls."
+   "description": "How fast the pitch falls.",
+   "how": "Sets how fast the pitch falls from Start to End, 1 to 240 on a linear scale.",
+   "sound": "Low values give a long slow sweep; high values a short snap."
   },
   {
    "index": 8,
@@ -349,7 +361,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 240.0,
-   "description": "Curve of the pitch fall."
+   "description": "Curve of the pitch fall.",
+   "how": "Bends the pitch fall's curve, 1 to 240: the fall follows time to the power of twice this fraction.",
+   "sound": "Low values drop the pitch early and then hold; high values keep it up and drop late."
   },
   {
    "index": 9,
@@ -364,7 +378,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 240.0,
-   "description": "How fast the buzz layer fades."
+   "description": "How fast the buzz layer fades.",
+   "how": "Sets how fast the buzz layer fades, 1 to 240.",
+   "sound": "Higher values make the buzz vanish quickly; low values let it ring on through the hit."
   },
   {
    "index": 10,
@@ -379,7 +395,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 240.0,
-   "description": "How fast click and punch fade."
+   "description": "How fast click and punch fade.",
+   "how": "Sets how fast the click and punch layers fade, 1 to 240.",
+   "sound": "Higher values keep the attack very short; low values leave it audible for longer."
   },
   {
    "index": 11,
@@ -394,7 +412,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 240.0,
-   "description": "Steepness of the amplitude decay."
+   "description": "Steepness of the amplitude decay.",
+   "how": "Sets how steeply the level falls (in a straight line) during the decay time, 1 to 240; the slope grows exponentially with the value.",
+   "sound": "Low values fall slowly and keep the body long; high values cut the level quickly."
   },
   {
    "index": 12,
@@ -410,7 +430,9 @@
    "a": 0.004166666666666667,
    "b": 1.0,
    "unit": "s",
-   "description": "Time before the release begins, 4 ms – 1 s."
+   "description": "Time before the release begins, 4 ms – 1 s.",
+   "how": "Sets how long the decay stage lasts before the release begins, from 4 ms to 1 s.",
+   "sound": "Short values make a tight kick; long ones a sustained boom."
   },
   {
    "index": 13,
@@ -425,7 +447,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 240.0,
-   "description": "Steepness of the release after the decay time."
+   "description": "Steepness of the release after the decay time.",
+   "how": "Sets how steeply the level falls once the decay time has passed, 1 to 240.",
+   "sound": "Low values leave a long fade-out; high values end the hit abruptly."
   }
  ]
 }

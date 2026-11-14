@@ -120,7 +120,7 @@ namespace ReBuzz.Studio.Tests
 
         // Its ▶ in the play colour on the dark chip (the outline too, unless the slot is selected: then it has the selection's).
         /// <summary>An uncoloured clip of a Neo Poly track (P3h): the Synth identity colour.</summary>
-        static readonly Avalonia.Media.IBrush Identity = SessionPalette.BrushOf(ReBuzz.Studio.Shell.Design.StudioTokens.Identity(NeoBuzz.Editor.MachineCategory.Synth));
+        static readonly Avalonia.Media.IBrush Identity = ReBuzz.Studio.Shell.Design.StudioTokens.IdentityBrush(NeoBuzz.Editor.MachineCategory.Synth);
 
         static bool LitAsPlaying(SessionView.SlotCell cell) =>
             cell.ShownState == "playing" && ReferenceEquals(cell.GlyphColour, SessionPalette.Playing) && ReferenceEquals(cell.ChipColour, SessionPalette.StateChip);

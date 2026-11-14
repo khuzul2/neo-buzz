@@ -40,7 +40,7 @@ namespace ReBuzz.Core
         // value listeners for the last track only. Fork (engine hardening): preallocated bits, no
         // longer a ConcurrentDictionary that allocated on the audio thread for every change.
         internal ParameterChanges ParameterChanges { get; } = new ParameterChanges();
-        internal ConcurrentBag<int> wavesEventsPending = new ConcurrentBag<int>();
+        internal ConcurrentQueue<int> wavesEventsPending = new ConcurrentQueue<int>();   // fork (HS3): a queue; a ConcurrentBag allocated its thread list on the audio thread's first TryTake
 
         internal MachineDLL MachineDLL { get => machineDLL; set => machineDLL = value; }
 
@@ -292,6 +292,20 @@ namespace ReBuzz.Core
                 if (reset) PropertyChanged.Raise(this, "IsDiverged");
                 graph.Buzz.SetModifiedFlag();
             }
+        }
+
+        /// <summary>Fork (history-snapshots.md HS3): a live restore's mute, from the audio thread at the boundary: the flag only (nothing is raised, nothing allocates); the UI thread reports it afterwards with <see cref="ReportRestoredFlags"/>.</summary>
+        internal void SetMutedFromRestore(bool value) => muted = value;
+
+        /// <summary>Fork (HS3): as <see cref="SetMutedFromRestore"/>, for bypass (the bypass amount ramps by itself).</summary>
+        internal void SetBypassedFromRestore(bool value) => bypassed = value;
+
+        /// <summary>Fork (HS3): UI thread, after a live restore changed the flags.</summary>
+        internal void ReportRestoredFlags()
+        {
+            PropertyChanged.Raise(this, "IsMuted");
+            PropertyChanged.Raise(this, "IsBypassed");
+            (graph.Buzz as ReBuzzCore)?.UpdateMachineDelayCompensation();
         }
 
         // Fork (machine-safety.md §3.2): the guard's state. The audio thread writes the details,
@@ -1213,6 +1227,10 @@ namespace ReBuzz.Core
             var buzz = graph.Buzz as ReBuzzCore;
             buzz.TopologyGeneration++; // #107: invalidate cached work order
             buzz.LatencyGraphChanged(); // fork (mastering-tools.md §4.1): the compensation's plan follows
+            // Fork (history-snapshots.md HS3): a machine joining the graph while the song plays gets its
+            // work instance (its buffers) made here, not by the audio thread on its next buffer.
+            buzz.MachineManager.PrepareWorkInstance(this);
+            buzz.MachineManager.PrepareWorkInstance(mcc.Source as MachineCore);
             //if (mcc.Source.DLL.Info.Flags.HasFlag(MachineInfoFlags.DOES_INPUT_MIXING))
             buzz.MachineManager.AddInput(this, mcc.Source, true);
         }

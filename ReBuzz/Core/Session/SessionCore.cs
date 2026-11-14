@@ -589,6 +589,20 @@ namespace ReBuzz.Core.Session
         double SamplesSinceRender(int rate) =>
             (Timestamp() - renderedAt) * (double)rate / System.Diagnostics.Stopwatch.Frequency;
 
+        /// <summary>
+        /// Fork (history-snapshots.md HS3): the tick a live restore requested now applies on, on the launch grid of <paramref name="quantization"/>
+        /// (the first grid point after what the listener hears, as a launch's), or the next tick for None. -1 while the clock isn't running.
+        /// Any thread.
+        /// </summary>
+        internal long PlanRestoreBoundary(LaunchQuantization quantization)
+        {
+            lock (gate)
+            {
+                if (scheduler.Clock < 0) return -1;
+                return scheduler.Plan(GetQuantizationTicks(quantization), HeardClock()).At;
+            }
+        }
+
         /// <summary>Output latency used for compensation, in milliseconds (0 when unknown or off).</summary>
         internal double CompensatedLatencyMs
         {
@@ -684,6 +698,7 @@ namespace ReBuzz.Core.Session
                 buzz.SetBPMFromEngine(tempo);                        // the engine picks it up on the next block
             if (beatsChanged)
                 RaisePropertyChangedOnUi(nameof(BeatsPerBar));
+            buzz.ActiveRestore?.OnTick(scheduler.Clock);             // fork (history-snapshots.md HS3): a live restore's boundary
             RecordTick(songPosition);
             ResolveGains(songPosition);
             if (tickChanges.Count == 0) return;

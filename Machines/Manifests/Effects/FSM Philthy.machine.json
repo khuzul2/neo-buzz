@@ -2,16 +2,27 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "FSM Philthy",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-05; not curated",
- "type": "filter or EQ",
- "summary": "Filter or eq (profiled draft): traits: filter or EQ; tail 0.0 s; latency 10 samples; gain -7.4 dB at the defaults.",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
+ "type": "filter",
+ "summary": "Resonant filter with 17 filter types (six-, four- and two-pole low-passes, a notch, a high-pass, a band-pass and mixed ones) and an LFO with 17 shapes on the cutoff, with inertia and a left-right phase offset. For sweeps and rhythmic filter movement.",
  "category": "EQ & Filter",
  "tags": [
   "filter",
   "lfo"
  ],
  "use_for": "Resonant filter with its own LFO for sweeps and rhythmic filter movement.",
+ "quirks": [
+  "Closed source here: its sibling FSM Philta has the same parameters and filters in the Buzztrax sources, and the descriptions below are read against that code; Philthy's own build was not checked against it. Unverified: Cutoff's Hz scale (Philta: 132 Hz x 64^(v/240)), the LFO phase scales, and whether Resonance reduction is Philta's Theviderness factor on a track.",
+  "All ten parameters are track parameters of its one track.",
+  "Mono: NeoBuzz Live feeds it left + right summed; -7.4 dB at its defaults and 10 samples of latency in the profile.",
+  "The filter list matches Infector's, without its No Filter."
+ ],
+ "evidence": [
+  "ExternalMachines/source/buzztrax-buzzmachines/FSM/Philta/Philta.cpp and Filters.cpp - the sibling's parameters, filter list, LFO shapes and inertia (not this machine's own code)",
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - filter traits, -7.4 dB at the defaults, 10 samples latency"
+ ],
  "tracks": 1,
  "health": {
   "status": "ok",
@@ -32,13 +43,13 @@
      "gain_db": 3.98,
      "thd_percent": 0.35,
      "thd_in_percent": 1.96,
-     "movement_db": 0.32
+     "movement_db": 0.31
     },
     "quiet": {
      "gain_db": 3.08,
      "thd_percent": 0.65,
      "thd_in_percent": 1.96,
-     "movement_db": 0.49
+     "movement_db": 0.47
     }
    },
    "traits": [
@@ -366,7 +377,7 @@
    "swept_because": [
     "an effect with Resonance"
    ],
-   "renders": 21
+   "renders": 20
   },
   "sweeps": {},
   "roles": {
@@ -525,6 +536,8 @@
    "index": 0,
    "id": "Cutoff",
    "name": "Cutoff",
+   "plain_name": "Cutoff",
+   "role": "filter.cutoff",
    "group": "",
    "min": 0,
    "max": 240,
@@ -533,14 +546,15 @@
    "a": 0.0,
    "b": 240.0,
    "description": "Cutoff frequency",
-   "confidence": "values",
-   "suggested_role": "filter.cutoff",
-   "role_evidence": "the response's lower corner moves 23.1 Hz → 8.37 kHz"
+   "how": "Sets the filter's cutoff on a 0 to 240 scale; its sibling Philta's source maps it exponentially, about 132 Hz to 8.4 kHz, unverified for this build.",
+   "sound": "Raise it to open the sound and lower it to darken; the LFO moves it around this point."
   },
   {
    "index": 0,
    "id": "Resonance",
    "name": "Resonance",
+   "plain_name": "Resonance",
+   "role": "filter.resonance",
    "group": "",
    "min": 0,
    "max": 240,
@@ -548,15 +562,15 @@
    "kind": "linear",
    "a": 0.0,
    "b": 240.0,
-   "description": "",
-   "confidence": "values",
-   "suggested_role": "filter.cutoff",
-   "role_evidence": "the response's lower corner moves 23.1 Hz → 1.05 kHz"
+   "description": "Resonance of the filter, 0 to 240; what it does depends on the filter type.",
+   "how": "Sets the filter's resonance on a 0 to 240 scale; what it does depends on the chosen filter.",
+   "sound": "More resonance sharpens the peak at the cutoff; the extreme settings ring and get loud."
   },
   {
    "index": 0,
    "id": "ThevFactor",
    "name": "ThevFactor",
+   "plain_name": "Resonance reduction",
    "group": "",
    "min": 0,
    "max": 240,
@@ -564,15 +578,16 @@
    "kind": "linear",
    "a": 0.0,
    "b": 240.0,
-   "description": "Resonance reduction for low cutoff values",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 1.48 kHz: its prominence +6 → +0 dB over the response"
+   "description": "Resonance reduction for low cutoff values (its own text).",
+   "how": "Scales resonance down at low cutoffs on a 0 to 240 scale: a higher value takes away more of the peak as the cutoff falls.",
+   "sound": "Use it to stop low settings of a resonant filter from booming; at 0 the resonance is the same at every cutoff."
   },
   {
    "index": 0,
    "id": "Filter",
    "name": "Filter",
+   "plain_name": "Filter type",
+   "role": "filter.type",
    "group": "",
    "min": 0,
    "max": 16,
@@ -598,14 +613,15 @@
     "6X Vocal2"
    ],
    "description": "Filter type",
-   "confidence": "values",
-   "suggested_role": "filter.type",
-   "role_evidence": "its choices change the response's shape (up to 99 dB), corners 262 Hz–523 Hz → 2.09 kHz–2.09 kHz"
+   "how": "Chooses one of 17 six-, four- and two-pole filters: low-pass variants, a notch, a high-pass, a band-pass and three mixed ones.",
+   "sound": "The six-pole low-passes are steep and clean, the four- and two-pole ones gentler and each with its own resonant character; the mixed ones sound vowel-like."
   },
   {
    "index": 0,
    "id": "LFO rate",
    "name": "LFO rate",
+   "plain_name": "LFO rate",
+   "role": "lfo.rate",
    "group": "",
    "min": 0,
    "max": 254,
@@ -615,12 +631,15 @@
    "b": 38.9693,
    "unit": "Hz",
    "description": "LFO rate [Hz]",
-   "confidence": "values"
+   "how": "Sets the LFO speed from 0.05 Hz to about 39 Hz in an exponential scale, the top 15 steps locking it to the tempo (unverified: read from its profile, not from code).",
+   "sound": "Slow rates give long sweeps; fast rates give a warble."
   },
   {
    "index": 0,
    "id": "LFO mod",
    "name": "LFO mod",
+   "plain_name": "LFO depth",
+   "role": "lfo.depth",
    "group": "",
    "min": 0,
    "max": 240,
@@ -629,14 +648,15 @@
    "a": 0.0,
    "b": 240.0,
    "description": "LFO Modulation depth",
-   "confidence": "values",
-   "suggested_role": "filter.cutoff",
-   "role_evidence": "the response's lower corner moves 23.1 Hz → 2.96 kHz"
+   "how": "Sets how far the LFO moves the cutoff, on a 0 to 240 scale of cutoff steps.",
+   "sound": "Low values give a gentle wobble; high values a wide sweep; 0 leaves the cutoff still."
   },
   {
    "index": 0,
    "id": "LFO Shape",
    "name": "LFO Shape",
+   "plain_name": "LFO shape",
+   "role": "lfo.wave",
    "group": "",
    "min": 0,
    "max": 16,
@@ -661,45 +681,52 @@
     "S'n'H 1",
     "S'n'H 2"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Wave of the LFO: sine, saws, square, triangle, odd blends, steps and random steps (17).",
+   "how": "Chooses the LFO wave from 17: sine, saws, square, triangle, four odd blends, stepped waves and two random ones.",
+   "sound": "A sine sweeps smoothly, a saw sweeps then snaps back, a square jumps, and the random ones wobble unpredictably."
   },
   {
    "index": 0,
    "id": "Inertia",
    "name": "Inertia",
+   "plain_name": "Inertia",
+   "role": "filter.inertia",
    "group": "",
    "min": 0,
    "max": 60,
    "default": 10,
    "kind": "linear",
-   "a": -0.452142,
-   "b": 24.550502,
+   "a": 0.0,
+   "b": 25.0,
    "unit": "%",
    "description": "Cutoff frequency inertia",
-   "confidence": "values"
+   "how": "Sets how slowly the cutoff chases its target, from 0 to 25 percent of the scale: higher values glide more.",
+   "sound": "Low values follow the LFO exactly; high values round off its edges."
   },
   {
    "index": 0,
    "id": "L-R phasing",
    "name": "L-R phasing",
+   "plain_name": "Left-right phasing",
+   "role": "lfo.phase",
    "group": "",
    "min": 0,
    "max": 240,
    "default": 0,
    "kind": "linear",
-   "a": -0.456774,
-   "b": 99.543911,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
    "description": "Left-right channel phase difference",
-   "confidence": "values",
-   "suggested_role": "filter.bandwidth",
-   "role_evidence": "the band's width 2.5 → 2.0 octaves"
+   "how": "Sets how far the right channel's LFO is offset from the left's, from 0 to 100 percent of a half cycle (unverified scale).",
+   "sound": "At 0 both channels sweep together; higher values make the sweep move across the stereo field."
   },
   {
    "index": 0,
    "id": "Set phase",
    "name": "Set phase",
+   "plain_name": "Set LFO phase",
+   "role": "lfo.phase",
    "group": "",
    "min": 0,
    "max": 127,
@@ -708,9 +735,8 @@
    "a": 0.0,
    "b": 127.0,
    "description": "Set LFO phase",
-   "confidence": "values",
-   "suggested_role": "filter.bandwidth",
-   "role_evidence": "the band's width 2.5 → 2.0 octaves"
+   "how": "Writing a value sets the LFO's position in its cycle, 0 to 127 (255 means not written; the exact angle was not checked).",
+   "sound": "Use it to start the sweep from the same place each time."
   }
  ]
 }

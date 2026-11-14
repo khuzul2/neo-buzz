@@ -43,13 +43,13 @@
      "gain_db": -0.58,
      "thd_percent": 1.85,
      "thd_in_percent": 1.96,
-     "movement_db": 0.14
+     "movement_db": 0.13
     },
     "quiet": {
      "gain_db": -0.68,
      "thd_percent": 1.6,
      "thd_in_percent": 1.96,
-     "movement_db": 0.14
+     "movement_db": 0.13
     }
    },
    "traits": [
@@ -375,13 +375,13 @@
    },
    "all_at_once": {
     "min": {
-     "peak_dbfs": -9.15,
-     "growth_db": 0.23,
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": -9.18,
-     "growth_db": 0.22,
+     "peak_dbfs": -9.19,
+     "growth_db": -0.16,
      "verdict": "ok"
     }
    }
@@ -425,11 +425,11 @@
      "evidence": "the response's lower corner moves 2.96 kHz → 23.1 Hz",
      "min": {
       "raw": 1,
-      "text": "30 Hz"
+      "text": "30.2 Hz"
      },
      "max": {
       "raw": 239,
-      "text": "6990 Hz"
+      "text": "6.99 kHz"
      }
     },
     "Post Cut": {
@@ -437,11 +437,11 @@
      "evidence": "the response's lower corner moves 4.19 kHz → 23.1 Hz",
      "min": {
       "raw": 1,
-      "text": "30 Hz"
+      "text": "30.2 Hz"
      },
      "max": {
       "raw": 239,
-      "text": "6990 Hz"
+      "text": "6.99 kHz"
      }
     },
     "Amount": {
@@ -479,7 +479,9 @@
    "b": 2.0,
    "unit": "×",
    "own_texts": false,
-   "description": "Gain into the shaper, 0.008× to 2× (1× at raw 120)."
+   "description": "Gain into the shaper, 0.008× to 2× (1× at raw 120).",
+   "how": "Sets the gain into the shaper, 0.008 times to 2 times (1 times at 120).",
+   "sound": "More drive creates more harmonics from the high-passed signal; too much sounds fizzy."
   },
   {
    "index": 1,
@@ -496,7 +498,9 @@
    "b": 6990.483495,
    "unit": "Hz",
    "own_texts": false,
-   "description": "High-pass before the shaper, about 30 Hz – 7 kHz."
+   "description": "High-pass before the shaper, about 30 Hz – 7 kHz.",
+   "how": "Sets a high-pass before the shaper, about 30 Hz to 7 kHz (its own estimate at 44.1 kHz).",
+   "sound": "Higher values send only the top of the sound to be excited, so the added harmonics sit higher and the bass is left alone."
   },
   {
    "index": 2,
@@ -513,7 +517,9 @@
    "b": 6990.483495,
    "unit": "Hz",
    "own_texts": false,
-   "description": "High-pass after the shaper."
+   "description": "High-pass after the shaper.",
+   "how": "Sets a high-pass after the shaper, about 30 Hz to 7 kHz (its own estimate at 44.1 kHz).",
+   "sound": "Higher values remove the shaper's lows so only bright harmonics are added back."
   },
   {
    "index": 3,
@@ -1493,7 +1499,9 @@
      6.02
     ]
    ],
-   "description": "Level of the excited signal added to the dry, −inf to +6 dB."
+   "description": "Level of the excited signal added to the dry, −inf to +6 dB.",
+   "how": "Sets the level of the excited signal added to the dry sound, from silence to +6 dB.",
+   "sound": "More amount adds more sparkle and presence; the output grows louder as it rises."
   }
  ],
  "track_parameters": []

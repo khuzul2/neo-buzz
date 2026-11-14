@@ -75,10 +75,10 @@ namespace ReBuzz.Studio.Shell
             ToolTip.SetTip(loop, StudioKeymap.Tip("transport.loop"));
             ToolTip.SetTip(metronome, StudioKeymap.Tip("transport.metronome"));
             ToolTip.SetTip(position, "Where the song is: bar.beat.tick");
-            Lit(play, "AccentButton", StudioTokens.Play);
-            Lit(record, "ToggleButton", StudioTokens.Record, checkedOnly: true);
-            Lit(loop, "ToggleButton", StudioTokens.TextPrimary, checkedOnly: true);
-            Lit(metronome, "ToggleButton", StudioTokens.TextPrimary, checkedOnly: true);
+            Lit(play, "AccentButton", () => StudioTokens.Play);
+            Lit(record, "ToggleButton", () => StudioTokens.Record, checkedOnly: true);
+            Lit(loop, "ToggleButton", () => StudioTokens.TextPrimary, checkedOnly: true);
+            Lit(metronome, "ToggleButton", () => StudioTokens.TextPrimary, checkedOnly: true);
             start.Click += (s, e) => GoToStart();
             play.Click += (s, e) => Play();
             stop.Click += (s, e) => Stop();
@@ -109,11 +109,12 @@ namespace ReBuzz.Studio.Shell
         /// A button's lit look in a state colour: the Fluent theme's brushes for it (its checked or accent state), on this
         /// control only. The glyph is black or white, whichever reads better on the colour.
         /// </summary>
-        static void Lit(Avalonia.Controls.Control c, string kind, Color colour, bool checkedOnly = false)
+        static void Lit(Avalonia.Controls.Control c, string kind, Func<Color> colour, bool checkedOnly = false)
         {
-            var fill = StudioTokens.Brush(colour);
-            var hover = StudioTokens.Brush(Lighten(colour, 0.12));
-            var text = StudioTokens.TextOnBrush(colour);
+            // The brushes follow the theme (the colour is the token's in the set in use; the glyph reads on it).
+            var fill = StudioTokens.Themed(colour);
+            var hover = StudioTokens.Themed(() => Lighten(colour(), 0.12));
+            var text = StudioTokens.Themed(() => StudioTokens.TextOn(colour()));
             string state = checkedOnly ? "Checked" : "";
             c.Resources[$"{kind}Background{state}"] = fill;
             c.Resources[$"{kind}Background{state}PointerOver"] = hover;

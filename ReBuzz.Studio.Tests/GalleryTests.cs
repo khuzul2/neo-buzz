@@ -76,6 +76,9 @@ namespace ReBuzz.Studio.Tests
         {
             if (installed) return;
             installed = true;
+            // Fork (ux-overhaul.md P4b): GALLERY_THEME=light draws every screen in the Light theme (the dark theme is the default).
+            if (System.Environment.GetEnvironmentVariable("GALLERY_THEME") is { } theme && theme.Equals("light", System.StringComparison.OrdinalIgnoreCase))
+                ReBuzz.Studio.Shell.Design.StudioTheme.Kind = ReBuzz.Studio.Shell.Design.AppearanceTheme.Light;
             Window.WindowOpenedEvent.AddClassHandler<Window>((w, e) =>
             {
                 opened.RemoveAll(x => !x.IsVisible);

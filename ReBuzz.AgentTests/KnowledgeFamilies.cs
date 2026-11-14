@@ -7,11 +7,15 @@ namespace ReBuzz.AgentTests
 {
     internal static class KnowledgeFamilies
     {
-        /// <summary>Gear name prefixes of the families done so far (K2 batch a: the Pedal machines; batch b: the Jeskola machines).</summary>
+        /// <summary>Gear name prefixes of the families done so far (K2 batch a: the Pedal machines; batch b: the Jeskola machines; batch c: the FSM, Oomek, Polac and Joachims machines).</summary>
         public static readonly string[] Prefixes =
         {
             "Pedal ",
             "Jeskola ",
+            "FSM ",
+            "Oomek ",
+            "Polac ",
+            "Joachims ",
         };
 
         /// <summary>Whether a machine belongs to a family that is done.</summary>

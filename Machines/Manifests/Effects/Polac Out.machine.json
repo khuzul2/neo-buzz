@@ -2,16 +2,26 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Polac Out",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
  "type": "utility",
- "summary": "Utility (profiled draft): traits: utility; tail 0.0 s; latency 0 samples; gain +0.0 dB at the defaults.",
+ "summary": "Output stage with a volume control from silence to +12 dB and a panning control, a pass-through at its defaults. Neo Utility does the same with width and polarity.",
  "category": "Utility",
  "tags": [
   "audio-io",
   "gain"
  ],
  "use_for": "Output stage with volume and panning to the audio device (older routing machine).",
+ "quirks": [
+  "Pass-through at 0 dB at its defaults (profile): output equals input.",
+  "Volume is a table: silence at 0, 0 dB at 100 (the default), +12 dB at 400.",
+  "Unverified: the unit of Panning (its text shows -64 to +64) and what it does to the sound; the profile did not move it.",
+  "Closed source: names come from its own texts and measurements, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - 0 dB at the defaults, no latency"
+ ],
  "tracks": 0,
  "health": {
   "status": "ok",
@@ -38,7 +48,7 @@
      "gain_db": 0.0,
      "thd_percent": 1.96,
      "thd_in_percent": 1.96,
-     "movement_db": 0.14
+     "movement_db": 0.13
     }
    },
    "traits": [
@@ -364,13 +374,13 @@
    },
    "all_at_once": {
     "min": {
-     "peak_dbfs": -9.15,
-     "growth_db": 0.23,
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": -9.2,
-     "growth_db": 0.21,
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
      "verdict": "ok"
     }
    }
@@ -457,6 +467,8 @@
    "index": 0,
    "id": "Volume",
    "name": "Volume",
+   "plain_name": "Volume",
+   "role": "level",
    "group": "",
    "min": 0,
    "max": 400,
@@ -469,40 +481,160 @@
      "-inf"
     ],
     [
+     1,
+     -40.0
+    ],
+    [
+     2,
+     -34.0
+    ],
+    [
+     3,
+     -30.5
+    ],
+    [
      4,
      -28.0
+    ],
+    [
+     5,
+     -26.0
+    ],
+    [
+     6,
+     -24.4
+    ],
+    [
+     7,
+     -23.1
     ],
     [
      8,
      -21.9
     ],
     [
+     9,
+     -20.9
+    ],
+    [
+     10,
+     -20.0
+    ],
+    [
+     11,
+     -19.2
+    ],
+    [
      12,
      -18.4
+    ],
+    [
+     13,
+     -17.7
+    ],
+    [
+     14,
+     -17.1
+    ],
+    [
+     15,
+     -16.5
     ],
     [
      16,
      -15.9
     ],
     [
+     17,
+     -15.4
+    ],
+    [
+     18,
+     -14.9
+    ],
+    [
+     19,
+     -14.4
+    ],
+    [
      20,
      -14.0
+    ],
+    [
+     21,
+     -13.6
+    ],
+    [
+     22,
+     -13.2
+    ],
+    [
+     23,
+     -12.8
     ],
     [
      24,
      -12.4
     ],
     [
+     25,
+     -12.0
+    ],
+    [
+     26,
+     -11.7
+    ],
+    [
+     27,
+     -11.4
+    ],
+    [
      28,
      -11.1
+    ],
+    [
+     29,
+     -10.8
+    ],
+    [
+     30,
+     -10.5
+    ],
+    [
+     31,
+     -10.2
     ],
     [
      32,
      -9.9
     ],
     [
+     33,
+     -9.6
+    ],
+    [
+     34,
+     -9.4
+    ],
+    [
+     35,
+     -9.1
+    ],
+    [
      36,
      -8.9
+    ],
+    [
+     37,
+     -8.6
+    ],
+    [
+     38,
+     -8.4
+    ],
+    [
+     39,
+     -8.2
     ],
     [
      40,
@@ -869,13 +1001,16 @@
      12.0
     ]
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Output level, silence at 0, 0 dB at 100 (the default) and +12 dB at 400.",
+   "how": "Sets the output level, a table from silence to +12 dB, with 0 dB at 100 (the default) and +12 dB at 400.",
+   "sound": "At the default the sound passes at the same level; higher values boost it and can clip."
   },
   {
    "index": 1,
    "id": "Panning",
    "name": "Panning",
+   "plain_name": "Pan",
+   "role": "pan",
    "group": "",
    "min": 0,
    "max": 128,
@@ -884,8 +1019,9 @@
    "a": -64.0,
    "b": 64.0,
    "unit": "%",
-   "description": "",
-   "confidence": "values"
+   "description": "Panning from -64 (left) to +64 (right), 0 at 64; the unit was not measured.",
+   "how": "Pans the output from -64 (left) to +64 (right), 0 at 64 (the default); the unit and its audible effect were not measured.",
+   "sound": "Moving it away from the middle places the signal toward one side."
   }
  ],
  "track_parameters": []

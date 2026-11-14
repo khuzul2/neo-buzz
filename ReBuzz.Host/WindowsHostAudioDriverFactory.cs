@@ -42,13 +42,50 @@ namespace ReBuzz.Host
         readonly PortAudioDriverFactory portAudio = new PortAudioDriverFactory();
         readonly IRegistryEx registry;
         readonly Func<IEnumerable<string>> asioNames;
+        readonly IWasapiEndpointSource endpoints;
 
         /// <param name="registry">The settings (the two switches).</param>
         /// <param name="asioNames">Tests: the installed ASIO drivers, instead of the system's.</param>
-        public WindowsHostAudioDriverFactory(IRegistryEx registry, Func<IEnumerable<string>> asioNames = null)
+        /// <param name="endpoints">The render endpoints WASAPI can play through (MmWasapiEndpointSource on Windows; tests: a fake); null: the system default only.</param>
+        internal WindowsHostAudioDriverFactory(IRegistryEx registry, Func<IEnumerable<string>> asioNames = null, IWasapiEndpointSource endpoints = null)
         {
             this.registry = registry;
             this.asioNames = asioNames;
+            this.endpoints = endpoints;
+        }
+
+        /// <summary>The factory with the system's endpoints (Windows) behind the WASAPI modes.</summary>
+        public static WindowsHostAudioDriverFactory ForSystem(IRegistryEx registry) =>
+            new WindowsHostAudioDriverFactory(registry, null, OperatingSystem.IsWindows() ? new MmWasapiEndpointSource() : null);
+
+        internal IWasapiEndpointSource Endpoints => endpoints;
+
+        IReadOnlyList<WasapiEndpoint> ActiveEndpoints()
+        {
+            if (endpoints == null) return Array.Empty<WasapiEndpoint>();
+            try { return endpoints.Active(); }
+            catch (Exception) { return Array.Empty<WasapiEndpoint>(); }
+        }
+
+        IEnumerable<AudioEngine.AudioOutDevice> WasapiDevices(string mode, IReadOnlyList<(WasapiEndpoint Endpoint, string Display)> named)
+        {
+            // The system default first (the bare mode name: what was saved before endpoints, and it follows Windows), then every active endpoint.
+            yield return new AudioEngine.AudioOutDevice { Name = mode, Type = AudioEngine.AudioOutType.Wasapi };
+            foreach (var n in named)
+                yield return new AudioEngine.AudioOutDevice { Name = WasapiChoice.Name(mode, n.Display), Type = AudioEngine.AudioOutType.Wasapi };
+        }
+
+        /// <summary>
+        /// The device that plays when the saved WASAPI endpoint is not in the list: the endpoint under its new name (the ID says it is the same one),
+        /// else the same mode on the system default. Null: not a WASAPI endpoint choice, or its mode isn't offered.
+        /// </summary>
+        public string FallbackDevice(string saved)
+        {
+            if (!WasapiChoice.TryParse(saved, out var mode, out var endpoint) || endpoint == null) return null;
+            bool exclusive = Switch(ExclusiveKey);
+            if ((mode == WasapiModes.Exclusive) != exclusive) return null;
+            var r = WasapiChoice.Resolve(saved, registry?.Read("DeviceID", "", "WASAPI"), registry?.Read("DeviceName", "", "WASAPI"), ActiveEndpoints());
+            return WasapiChoice.Name(mode, r.Display);
         }
 
         bool Switch(string key)
@@ -80,12 +117,13 @@ namespace ReBuzz.Host
             if (AsioSupported)
                 foreach (var name in AsioDriverNames())
                     devices.Add(new AudioEngine.AudioOutDevice { Name = name, Type = AudioEngine.AudioOutType.ASIO });
+            var named = WasapiChoice.Named(ActiveEndpoints());
             if (Switch(ExclusiveKey))
-                devices.Add(new AudioEngine.AudioOutDevice { Name = WasapiModes.Exclusive, Type = AudioEngine.AudioOutType.Wasapi });
+                devices.AddRange(WasapiDevices(WasapiModes.Exclusive, named));
             else
             {
-                devices.Add(new AudioEngine.AudioOutDevice { Name = WasapiModes.SharedLowLatency, Type = AudioEngine.AudioOutType.Wasapi });
-                devices.Add(new AudioEngine.AudioOutDevice { Name = WasapiModes.Shared, Type = AudioEngine.AudioOutType.Wasapi });
+                devices.AddRange(WasapiDevices(WasapiModes.SharedLowLatency, named));
+                devices.AddRange(WasapiDevices(WasapiModes.Shared, named));
             }
             if (Switch(AdvancedKey) && PortAudio.Available)
             {
@@ -110,12 +148,16 @@ namespace ReBuzz.Host
                 case AudioEngine.AudioOutType.ASIO:
                     return new AsioAudioDriver(deviceName, buzzCore, settings, registryEx);
                 case AudioEngine.AudioOutType.Wasapi:
-                    // The driver's own settings (WasapiConfigWindow's keys), from the mode the name says: the system's default output.
-                    registryEx.Write("Mode", deviceName == WasapiModes.Exclusive ? 1 : 0, "WASAPI");
-                    registryEx.Write("LowLatencyMode", deviceName == WasapiModes.SharedLowLatency ? 1 : 0, "WASAPI");
+                    // The driver's own settings (WasapiConfigWindow's keys), from the mode and endpoint the name says. The endpoint is
+                    // saved by its ID with its name beside it (the name finds it again if the ID is not there); an endpoint that is
+                    // gone (unplugged since the list was made) plays through the system default, which the empty ID asks for.
+                    var r = WasapiChoice.Resolve(deviceName, registryEx.Read("DeviceID", "", "WASAPI"), registryEx.Read("DeviceName", "", "WASAPI"), ActiveEndpoints());
+                    registryEx.Write("Mode", r.Mode == WasapiModes.Exclusive ? 1 : 0, "WASAPI");
+                    registryEx.Write("LowLatencyMode", r.Mode == WasapiModes.SharedLowLatency ? 1 : 0, "WASAPI");
                     registryEx.Write("Poll", 0, "WASAPI");                 // event-driven
                     registryEx.Write("RawMode", 0, "WASAPI");
-                    registryEx.Write("DeviceID", "", "WASAPI");
+                    registryEx.Write("DeviceID", r.Endpoint?.Id ?? "", "WASAPI");
+                    registryEx.Write("DeviceName", r.Display ?? "", "WASAPI");
                     return new WasapiAudioDriver(deviceName, buzzCore, settings, registryEx);
                 default:
                     return portAudio.Create(type, deviceName, buzzCore, settings, registryEx);

@@ -44,7 +44,7 @@
      "gain_db": -1.0,
      "thd_percent": 1.96,
      "thd_in_percent": 1.96,
-     "movement_db": 0.13
+     "movement_db": 0.14
     },
     "quiet": {
      "gain_db": -1.0,
@@ -376,13 +376,13 @@
    },
    "all_at_once": {
     "min": {
-     "peak_dbfs": -9.15,
-     "growth_db": 0.23,
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": -0.9,
-     "growth_db": 0.01,
+     "peak_dbfs": -0.92,
+     "growth_db": 0.0,
      "verdict": "ok"
     }
    },
@@ -419,7 +419,7 @@
    "params": {
     "Input gain": {
      "suggested_role": "mix.wet",
-     "evidence": "at its minimum the effect passes the signal unchanged; at the other end compression (23.63 dB); half way less of the same",
+     "evidence": "at its minimum the effect passes the signal unchanged; at the other end compression (23.62 dB); half way less of the same",
      "min": {
       "raw": 0,
       "text": "-inf dB"
@@ -431,7 +431,7 @@
     },
     "Treshold Lo": {
      "suggested_role": "filter.cutoff",
-     "evidence": "the response's upper corner moves 16.7 kHz → 131 Hz",
+     "evidence": "the response's upper corner moves 16.7 kHz → 185 Hz",
      "min": {
       "raw": 0,
       "text": "-inf dB"
@@ -466,8 +466,8 @@
      }
     },
     "Decay Lo": {
-     "suggested_role": null,
-     "evidence": "no measurable change between its ends with the others at their defaults",
+     "suggested_role": "filter.highpass",
+     "evidence": "the response's lower corner moves 23.1 Hz → 523 Hz (with the effect switched on: #0 raw:168)",
      "min": {
       "raw": 10,
       "text": "40 ms"
@@ -478,8 +478,8 @@
      }
     },
     "Decay Mid": {
-     "suggested_role": null,
-     "evidence": "no measurable change between its ends with the others at their defaults",
+     "suggested_role": "filter.highpass",
+     "evidence": "the response's lower corner moves 23.1 Hz → 740 Hz (with the effect switched on: #0 raw:168)",
      "min": {
       "raw": 10,
       "text": "40 ms"
@@ -490,8 +490,8 @@
      }
     },
     "Decay Hi": {
-     "suggested_role": null,
-     "evidence": "no measurable change between its ends with the others at their defaults",
+     "suggested_role": "filter.highpass",
+     "evidence": "the response's lower corner moves 740 Hz → 23.1 Hz (with the effect switched on: #0 raw:168)",
      "min": {
       "raw": 10,
       "text": "40 ms"
@@ -506,7 +506,7 @@
      "evidence": "no measurable change between its ends with the others at their defaults",
      "min": {
       "raw": 2,
-      "text": "16 Hz"
+      "text": "15.6 Hz"
      },
      "max": {
       "raw": 112,
@@ -514,15 +514,15 @@
      }
     },
     "Mid | Hi Split": {
-     "suggested_role": "dyn.release",
-     "evidence": "the gain recovers 63 % of the way in 35 ms → 15 ms after the jump down",
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
      "min": {
       "raw": 0,
-      "text": "1024 Hz"
+      "text": "1.02 kHz"
      },
      "max": {
       "raw": 240,
-      "text": "8042 Hz"
+      "text": "8.04 kHz"
      }
     },
     "Knee": {
@@ -530,15 +530,15 @@
      "evidence": "a choice: its texts say what it is; no role measured",
      "min": {
       "raw": 0,
-      "text": "s o f t -- 00 -- h a r d"
+      "text": "0"
      },
      "max": {
       "raw": 32,
-      "text": "32 -- h a r d"
+      "text": "32"
      }
     }
    },
-   "renders": 46
+   "renders": 43
   },
   "denormal": {
    "slowdown": null
@@ -1523,7 +1523,9 @@
      24.08
     ]
    ],
-   "description": "Gain into the limiters, −inf to +24 dB (square-law)."
+   "description": "Gain into the limiters, −inf to +24 dB (square-law).",
+   "how": "Sets the gain into the limiters, from silence to +24 dB (a square-law scale).",
+   "sound": "Raising it drives the limiters harder for more loudness; the output rises until the thresholds hold it."
   },
   {
    "index": 1,
@@ -2503,7 +2505,9 @@
      6.02
     ]
    ],
-   "description": "Limit for the low band, −inf to +6 dB."
+   "description": "Limit for the low band, −inf to +6 dB.",
+   "how": "Sets the low band's limit, from silence to +6 dB.",
+   "sound": "Lower values limit the bass harder and keep it tight; at the top it hardly acts."
   },
   {
    "index": 2,
@@ -3483,7 +3487,9 @@
      6.02
     ]
    ],
-   "description": "Limit for the mid band, −inf to +6 dB."
+   "description": "Limit for the mid band, −inf to +6 dB.",
+   "how": "Sets the mid band's limit, from silence to +6 dB.",
+   "sound": "Lower values hold the mids down; they decide how forward the body of the mix sounds."
   },
   {
    "index": 3,
@@ -4463,7 +4469,9 @@
      6.02
     ]
    ],
-   "description": "Limit for the high band, −inf to +6 dB."
+   "description": "Limit for the high band, −inf to +6 dB.",
+   "how": "Sets the high band's limit, from silence to +6 dB.",
+   "sound": "Lower values hold the top down and tame harsh or sizzling highs."
   },
   {
    "index": 4,
@@ -4479,7 +4487,9 @@
    "a": 0.04,
    "b": 0.96,
    "unit": "s",
-   "description": "40–960 ms."
+   "description": "40–960 ms.",
+   "how": "Sets how long the low band's limiter takes to let go, 40 to 960 ms.",
+   "sound": "Short values pump with the bass; long ones give a steadier, smoother low end."
   },
   {
    "index": 5,
@@ -4495,7 +4505,9 @@
    "a": 0.04,
    "b": 0.96,
    "unit": "s",
-   "description": "40–960 ms."
+   "description": "40–960 ms.",
+   "how": "Sets how long the mid band's limiter takes to let go, 40 to 960 ms.",
+   "sound": "Short values sound more active; long ones are smoother."
   },
   {
    "index": 6,
@@ -4511,7 +4523,9 @@
    "a": 0.04,
    "b": 0.96,
    "unit": "s",
-   "description": "40–960 ms."
+   "description": "40–960 ms.",
+   "how": "Sets how long the high band's limiter takes to let go, 40 to 960 ms.",
+   "sound": "Short values keep the top lively; long ones are smoother."
   },
   {
    "index": 7,
@@ -4528,7 +4542,9 @@
    "b": 819.851574,
    "unit": "Hz",
    "own_texts": false,
-   "description": "About 16–820 Hz (its own estimate at 44.1 kHz)."
+   "description": "About 16–820 Hz (its own estimate at 44.1 kHz).",
+   "how": "Sets the crossover between the low and mid bands, about 16 to 820 Hz (its own estimate at 44.1 kHz).",
+   "sound": "Lower values give the low band only the deepest bass; higher ones put more body in it."
   },
   {
    "index": 8,
@@ -4545,7 +4561,9 @@
    "b": 8042.29249,
    "unit": "Hz",
    "own_texts": false,
-   "description": "About 1–8 kHz (its own estimate at 44.1 kHz)."
+   "description": "About 1–8 kHz (its own estimate at 44.1 kHz).",
+   "how": "Sets the crossover between the mid and high bands, about 1 to 8 kHz (its own estimate at 44.1 kHz).",
+   "sound": "Lower values give the high band more of the mids; higher ones keep it to the very top."
   },
   {
    "index": 9,
@@ -4560,7 +4578,9 @@
    "kind": "int",
    "a": 0,
    "own_texts": false,
-   "description": "0 soft to 32 hard."
+   "description": "0 soft to 32 hard.",
+   "how": "Sets the limiters' knee from 0 (soft) to 32 (hard).",
+   "sound": "A soft knee starts limiting gently and sounds more natural; a hard one is stricter and more obvious."
   }
  ],
  "track_parameters": []

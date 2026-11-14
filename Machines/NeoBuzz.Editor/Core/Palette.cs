@@ -10,20 +10,21 @@ namespace NeoBuzz.Editor
     internal static class Palette
     {
 #if AVALONIA
-        // Fork (ux-overhaul.md P2a): the studio's editors on the design tokens (Core/Tokens.cs).
-        public static readonly NeoColor Background = Tokens.SurfaceBase;
-        public static readonly NeoColor Panel = Tokens.SurfaceView;
-        public static readonly NeoColor PanelEdge = Tokens.SurfaceControl;
-        public static readonly NeoColor Track = Tokens.SurfaceBorder;
+        // Fork (ux-overhaul.md P2a, P4b): the studio's editors on the design tokens (Core/Tokens.cs), read when drawn so a
+        // theme change shows at once.
+        public static NeoColor Background => Tokens.SurfaceBase;
+        public static NeoColor Panel => Tokens.SurfaceView;
+        public static NeoColor PanelEdge => Tokens.SurfaceControl;
+        public static NeoColor Track => Tokens.SurfaceBorder;
         /// <summary>A knob's unfilled track: 3:1 against the panel, as WCAG asks of a control's parts.</summary>
-        public static readonly NeoColor KnobTrack = Tokens.ControlTrack;
-        public static readonly NeoColor Text = Tokens.TextPrimary;
-        public static readonly NeoColor DimText = Tokens.TextSecondary;
-        public static readonly NeoColor KnobTop = NeoColor.FromRgb(0x34, 0x34, 0x3A);
-        public static readonly NeoColor KnobBottom = NeoColor.FromRgb(0x24, 0x24, 0x28);
-        public static readonly NeoColor Grid = Tokens.GridLine;
+        public static NeoColor KnobTrack => Tokens.ControlTrack;
+        public static NeoColor Text => Tokens.TextPrimary;
+        public static NeoColor DimText => Tokens.TextSecondary;
+        public static NeoColor KnobTop => Tokens.Set.KnobTop;
+        public static NeoColor KnobBottom => Tokens.Set.KnobBottom;
+        public static NeoColor Grid => Tokens.GridLine;
         /// <summary>A level meter above 0 dB.</summary>
-        public static readonly NeoColor Over = Tokens.MeterOver;
+        public static NeoColor Over => Tokens.MeterOver;
 #else
         // The classic (WPF) app keeps its look (ux-overhaul.md §1).
         public static readonly NeoColor Background = NeoColor.FromRgb(0x15, 0x17, 0x1C);
@@ -44,7 +45,7 @@ namespace NeoBuzz.Editor
         public static readonly NeoColor Over = NeoColor.FromRgb(0xFF, 0x4D, 0x4D);
 #endif
 
-        public static readonly NeoFill KnobBody = NeoFill.Vertical(KnobTop, KnobBottom);
+        public static NeoFill KnobBody => NeoFill.Vertical(KnobTop, KnobBottom);
 
 #if AVALONIA
         /// <summary>The kit's font: the tokens' (Inter, which the studio bundles); backends map it to what the platform has.</summary>

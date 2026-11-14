@@ -10,14 +10,21 @@ using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using BuzzGUI.Common.Settings;
+using NeoBuzz.Editor;
 
 namespace ReBuzz.Studio.Shell.Design
 {
-    /// <summary>The choices of Preferences ▸ Appearance ▸ Theme (the setting's values, saved by name).</summary>
+    /// <summary>The choices of Preferences ▸ Appearance ▸ Theme (the setting's values, saved by name; new ones are only added).</summary>
     public enum AppearanceTheme
     {
         [Description("Dark")]
         Dark,
+
+        [Description("Light")]
+        Light,
+
+        [Description("System")]
+        System,
 
         [Description("Classic Buzz")]
         Classic,
@@ -26,7 +33,7 @@ namespace ReBuzz.Studio.Shell.Design
     /// <summary>The studio's own settings (not the classic app's: they are not in its Settings window).</summary>
     public sealed class AppearanceSettings : Settings
     {
-        [BuzzSetting(AppearanceTheme.Dark, Description = "Dark is the studio's look. Classic Buzz draws the machine view on beige and the sequence on brown, as Buzz always has; every other view stays dark.")]
+        [BuzzSetting(AppearanceTheme.Dark, Description = "Dark is the studio's look, Light its light twin, System follows the operating system's choice and changes with it. Classic Buzz draws the machine view on beige and the sequence on brown, as Buzz always has; every other view stays dark.")]
         public AppearanceTheme Theme { get => StudioTheme.Kind; set => StudioTheme.Kind = value; }
     }
 
@@ -34,9 +41,10 @@ namespace ReBuzz.Studio.Shell.Design
     internal static class StudioTheme
     {
         static AppearanceTheme kind = AppearanceTheme.Dark;
+        static AppearanceTheme effective = AppearanceTheme.Dark;
         static AppearanceSettings settings;
 
-        /// <summary>The theme every view draws in; the Appearance setting sets it (from the saved setting, and when it changes).</summary>
+        /// <summary>The choice (Dark, Light, System, Classic); the Appearance setting sets it (from the saved setting, and when it changes).</summary>
         public static AppearanceTheme Kind
         {
             get => kind;
@@ -44,15 +52,65 @@ namespace ReBuzz.Studio.Shell.Design
             {
                 if (!Enum.IsDefined(typeof(AppearanceTheme), value) || value == kind) return;
                 kind = value;
-                look = null;
-                machineLook = null;
-                Changed?.Invoke();
+                Refresh();
             }
         }
 
-        public static bool IsClassic => kind == AppearanceTheme.Classic;
+        /// <summary>
+        /// Whether the operating system asks for light (what System follows). The app sets it from the platform's colour values and
+        /// calls <see cref="Refresh"/> when they change; a test sets it to stand for the system.
+        /// </summary>
+        public static Func<bool> SystemIsLight { get; set; } = () => false;
 
-        /// <summary>After <see cref="Kind"/> changes: views that drew in the old theme draw again.</summary>
+        /// <summary>The theme every view draws in: Dark, Light or Classic (System is whichever the system asks for).</summary>
+        public static AppearanceTheme Effective => effective;
+
+        public static bool IsClassic => effective == AppearanceTheme.Classic;
+
+        public static bool IsLight => effective == AppearanceTheme.Light;
+
+        /// <summary>Works out the theme in use again (the choice or the system's changed); when it differs, the tokens and the views follow.</summary>
+        public static void Refresh()
+        {
+            bool systemLight = false;
+            try { systemLight = SystemIsLight(); } catch (Exception) { }
+            var now = kind == AppearanceTheme.System ? (systemLight ? AppearanceTheme.Light : AppearanceTheme.Dark) : kind;
+            if (now == effective) return;
+            effective = now;
+            NeoBuzz.Editor.Tokens.SetLight(now == AppearanceTheme.Light);       // the brushes and caches made from tokens follow
+            BuzzGUI.Common.StudioLook.Light = now == AppearanceTheme.Light;     // so does the pattern editor, which draws its own colours
+            TellTheMachines();
+            look = null;
+            machineLook = null;
+            Changed?.Invoke();
+        }
+
+        // Each Neo machine in Gear compiles its own copy of the editor kit, so each has a Tokens of its own: they are told
+        // too, those loaded now and those loaded later (an editor opened after the switch).
+        static bool watchingLoads;
+
+        static void TellTheMachines()
+        {
+            if (!watchingLoads)
+            {
+                watchingLoads = true;
+                AppDomain.CurrentDomain.AssemblyLoad += (_, e) => { if (effective == AppearanceTheme.Light) Tell(e.LoadedAssembly); };
+            }
+            foreach (var a in AppDomain.CurrentDomain.GetAssemblies()) Tell(a);
+        }
+
+        static void Tell(System.Reflection.Assembly a)
+        {
+            try
+            {
+                if (a == typeof(NeoBuzz.Editor.Tokens).Assembly || a.IsDynamic) return;
+                var t = a.GetType("NeoBuzz.Editor.Tokens", false);
+                t?.GetMethod("SetLight", new[] { typeof(bool) })?.Invoke(null, new object[] { effective == AppearanceTheme.Light });
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>After the theme in use changes: views that drew in the old theme draw again.</summary>
         public static event Action Changed;
 
         /// <summary>The saved setting, read once (it sets <see cref="Kind"/> as it loads).</summary>
@@ -62,10 +120,10 @@ namespace ReBuzz.Studio.Shell.Design
         static MachineLook machineLook;
 
         /// <summary>The Sequence view's colours in this theme.</summary>
-        public static SequenceLook Sequence => look ??= IsClassic ? SequenceLook.Classic : SequenceLook.Dark;
+        public static SequenceLook Sequence => look ??= IsClassic ? SequenceLook.Classic : SequenceLook.MakeDark();
 
         /// <summary>The Machine view's colours in this theme.</summary>
-        public static MachineLook Machines => machineLook ??= IsClassic ? MachineLook.Classic : MachineLook.Dark;
+        public static MachineLook Machines => machineLook ??= IsClassic ? MachineLook.Classic : MachineLook.MakeDark();
 
         internal static IBrush Solid(string argb) => new ImmutableSolidColorBrush(Color.Parse(argb));
 
@@ -170,10 +228,8 @@ namespace ReBuzz.Studio.Shell.Design
             return l;
         }
 
-        /// <summary>The tokens': a dark ramp, the accent for the selection, the state colours for play and the buttons.</summary>
-        public static readonly SequenceLook Dark = MakeDark();
-
-        static SequenceLook MakeDark()
+        /// <summary>The tokens' (the set in use, dark or light): its ramp, the accent for the selection, the state colours for play and the buttons.</summary>
+        public static SequenceLook MakeDark()
         {
             IBrush B(Color c) => StudioTheme.Solid(c);
             var t = new
@@ -186,30 +242,30 @@ namespace ReBuzz.Studio.Shell.Design
             l.Ruler = l.Header = B(t.Panel);
             l.HeaderSelected = StudioTheme.Solid(StudioTokens.Accent, 0x33);
             l.Border = StudioTheme.Pen(B(t.Border));
-            l.Line = B(StudioTokens.Of(NeoBuzz.Editor.Tokens.ControlTrack));
+            l.Line = B(StudioTokens.Of(Tokens.ControlTrack));
             l.TrackLine = B(t.Border);
-            l.BarLine = B(StudioTokens.Of(NeoBuzz.Editor.Tokens.GridLine));
+            l.BarLine = B(StudioTokens.Of(Tokens.GridLine));
             l.RulerText = B(t.Secondary);
             l.HeaderText = B(t.Primary);
             l.BlockText = B(t.Primary);
             l.NameBack = StudioTheme.Solid(StudioTokens.SurfaceBase, 0xD0);
             l.NameBackPen = StudioTheme.Pen(StudioTheme.Solid(t.Border, 0xA0));
             l.EventBorder = StudioTheme.Pen(StudioTokens.Black);
-            l.Note = B(StudioTokens.Of(NeoBuzz.Editor.Tokens.MeterNormal));
+            l.Note = B(StudioTokens.Of(Tokens.MeterNormal));
             l.Off = B(t.Secondary);
             l.Param = B(StudioTokens.Warning);
             l.ButtonOff = B(t.Control);
             l.MuteOn = B(StudioTokens.Override);
             l.SoloOn = B(StudioTokens.Play);
-            l.DisableOn = B(StudioTokens.Of(NeoBuzz.Editor.Tokens.ControlTrack));
-            l.ButtonBorder = StudioTheme.Pen(B(StudioTokens.Of(NeoBuzz.Editor.Tokens.ControlTrack)));
+            l.DisableOn = B(StudioTokens.Of(Tokens.ControlTrack));
+            l.ButtonBorder = StudioTheme.Pen(B(StudioTokens.Of(Tokens.ControlTrack)));
             l.MuteIconOff = B(t.Secondary);
-            l.MuteIconOn = StudioTokens.Black;
+            l.MuteIconOn = StudioTokens.TextOnBrush(StudioTokens.Override);
             l.SoloTextOff = B(t.Secondary);
-            l.SoloTextOn = StudioTokens.Black;
+            l.SoloTextOn = StudioTokens.TextOnBrush(StudioTokens.Play);
             l.DisableTextOff = B(t.Secondary);
-            l.DisableTextOn = StudioTokens.Black;
-            l.MuteStrike = StudioTokens.Black;
+            l.DisableTextOn = StudioTokens.TextOnBrush(StudioTokens.ControlTrack);
+            l.MuteStrike = StudioTokens.TextOnBrush(StudioTokens.Override);
             l.Cursor = StudioTheme.Solid(StudioTokens.TextPrimary, 0x24);
             l.CursorInactive = StudioTheme.Solid(StudioTokens.TextPrimary, 0x12);
             l.Selection = StudioTokens.BlockSelectionFill;
@@ -232,7 +288,9 @@ namespace ReBuzz.Studio.Shell.Design
             l.ControlText = B(t.Primary);
             l.ControlBorder = B(t.Border);
             // Blocks that name no pattern colour: a pattern with none, a break, a mute (or thru), a stop.
-            l.BoxColours = new[] { Color.Parse("#3B5878"), Color.Parse("#4A4A55"), Color.Parse("#6B3F3F"), Color.Parse("#3A3A44") };
+            l.BoxColours = Tokens.IsLight
+                ? new[] { Color.Parse("#A9C4E8"), Color.Parse("#D5D5DE"), Color.Parse("#E3B4B4"), Color.Parse("#E4E4EA") }
+                : new[] { Color.Parse("#3B5878"), Color.Parse("#4A4A55"), Color.Parse("#6B3F3F"), Color.Parse("#3A3A44") };
             return l;
         }
     }
@@ -261,39 +319,39 @@ namespace ReBuzz.Studio.Shell.Design
 
         public static MachineLook Classic => Classic_;
 
-        public static readonly MachineLook Dark = MakeDark();
-
-        static MachineLook MakeDark()
+        /// <summary>The tokens' (the set in use, dark or light).</summary>
+        public static MachineLook MakeDark()
         {
             var l = new MachineLook
             {
                 IsClassic = false,
                 DeleteX = StudioTokens.TextSecondaryBrush,
-                DeleteXHot = StudioTokens.White,
-                Error = StudioTokens.Brush(StudioTokens.Warning),
+                DeleteXHot = StudioTokens.TextPrimaryBrush,
+                Error = StudioTokens.Brush(StudioTokens.Warning),   // the look is rebuilt when the theme changes
                 DivergedText = StudioTokens.White,
                 Selection = StudioTheme.Solid(StudioTokens.Accent, 0x40),
                 SelectionBorder = StudioTokens.AccentBrush,
             };
-            void Set(string name, string hex) => l.table[name] = Color.Parse(hex);
+            bool light = Tokens.IsLight;
+            void Set(string name, string hex, string lightHex) => l.table[name] = Color.Parse(light ? lightHex : hex);
             void Tok(string name, Color c) => l.table[name] = c;
             Tok("MV Background", StudioTokens.SurfaceView);
-            Tok("MV Line", StudioTokens.Of(NeoBuzz.Editor.Tokens.ControlTrack));
+            Tok("MV Line", StudioTokens.Of(Tokens.ControlTrack));
             Tok("MV Arrow", StudioTokens.TextSecondary);
             Tok("MV Machine Text", StudioTokens.TextPrimary);
-            Tok("MV Machine Border", StudioTokens.Of(NeoBuzz.Editor.Tokens.ControlTrack));
-            Set("MV Control", "#4A4636");
-            Set("MV Master", "#4A4A55");
-            Set("MV Generator", "#2F4570");
-            Set("MV Generator Mute", "#262B3A");
-            Set("MV Effect", "#4E3355");
-            Set("MV Effect Mute", "#2E2433");
-            Set("MV Generator LED On", "#7AA8FF");
-            Set("MV Generator LED Off", "#1B2744");
-            Set("MV Effect LED On", "#FF8A8A");
-            Set("MV Effect LED Off", "#4A2228");
-            Set("MV Master LED On", "#E8E8C1");
-            Set("MV Master LED Off", "#595922");
+            Tok("MV Machine Border", StudioTokens.Of(Tokens.ControlTrack));
+            Set("MV Control", "#4A4636", "#E6DEB8");
+            Set("MV Master", "#4A4A55", "#D0D0D9");
+            Set("MV Generator", "#2F4570", "#BCD0F2");
+            Set("MV Generator Mute", "#262B3A", "#DCE3F2");
+            Set("MV Effect", "#4E3355", "#E4C9EA");
+            Set("MV Effect Mute", "#2E2433", "#F0E4F4");
+            Set("MV Generator LED On", "#7AA8FF", "#1F5FD0");
+            Set("MV Generator LED Off", "#1B2744", "#A9BBE0");
+            Set("MV Effect LED On", "#FF8A8A", "#C42828");
+            Set("MV Effect LED Off", "#4A2228", "#E4B8BC");
+            Set("MV Master LED On", "#E8E8C1", "#6A6A00");
+            Set("MV Master LED Off", "#595922", "#C4C49A");
             return l;
         }
     }

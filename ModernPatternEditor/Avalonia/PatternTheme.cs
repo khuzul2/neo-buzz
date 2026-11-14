@@ -15,40 +15,62 @@ namespace WDE.ModernPatternEditor.AvaloniaView
 
     internal static class PatternTheme
     {
-        static ImmutableSolidColorBrush B(uint argb) => new ImmutableSolidColorBrush(argb);
+        // Fork (ux-overhaul.md P4b): each colour has a dark value (the WPF editor's, as before) and a light one; the brushes are kept
+        // (a view holds them as its background) and take the theme's colour in place when it changes (BuzzGUI.Common.StudioLook).
+        static readonly System.Collections.Generic.List<(SolidColorBrush Brush, uint Dark, uint Light)> table = new();
 
-        public static readonly ImmutableSolidColorBrush Background = B(0xFF333333);            // PatEdBackgroundBrush
-        public static readonly ImmutableSolidColorBrush ElementBackground = B(0xFF444444);     // PatEdElementBackgroundSolidColorBrush
-        public static readonly ImmutableSolidColorBrush ElementBorder = B(0x88000000);         // PatEdBorderBrush (#8000)
-        public static readonly ImmutableSolidColorBrush ToolbarBackground = B(0xFF595959);     // ToolbarBackgroundBrush
-        public static readonly ImmutableSolidColorBrush BeatDark = B(0x50000000);              // ThemeColorOverride_PE_BG_Dark
-        public static readonly ImmutableSolidColorBrush Beat = B(0x30000000);                  // ThemeColorOverride_PE_BG
-        public static readonly ImmutableSolidColorBrush Text = B(0xFFDDDDDD);                  // ThemeColorOverride_PE_Text
-        public static readonly ImmutableSolidColorBrush TextShadow = B(0xFF000000);            // TextDropShadowBrush
-        public static readonly ImmutableSolidColorBrush NoValue = B(0x66CCCCCC);               // NoValueBrush (#6CCC)
-        public static readonly ImmutableSolidColorBrush RowNumber = B(0xFFAAAAAA);             // RowNumberBrush
-        public static readonly ImmutableSolidColorBrush RowNumberShadow = B(0xFF000000);       // RowNumberDropShadowBrush
-        public static readonly ImmutableSolidColorBrush Cursor = B(0x22FFFFFF);                // CursorBrush (#2FFF)
-        public static readonly ImmutableSolidColorBrush CursorBorder = B(0x88FFFFFF);          // CursorBorderBrush (#8FFF)
-        public static readonly ImmutableSolidColorBrush CursorInactive = B(0x22000055);        // CursorInactiveBrush (#2005)
-        public static readonly ImmutableSolidColorBrush CursorLine = B(0x2200FF00);            // CursorLineBrush (#20F0)
-        public static readonly ImmutableSolidColorBrush ColumnSetLabel = B(0xFFCCCCCC);        // ColumnSetLabelBrush
-        public static readonly ImmutableSolidColorBrush ColumnSetLabelMuted = B(0x4DCCCCCC);   // the same at 0.3 opacity
-        public static readonly ImmutableSolidColorBrush ColumnLabel = B(0xFFCCCCCC);           // ColumnLabelBrush
+        static SolidColorBrush B(uint dark, uint light)
+        {
+            var brush = new SolidColorBrush(Color.FromUInt32(BuzzGUI.Common.StudioLook.Light ? light : dark));
+            lock (table) table.Add((brush, dark, light));
+            return brush;
+        }
+
+        static SolidColorBrush B(uint argb) => B(argb, argb);
+
+        static PatternTheme()
+        {
+            BuzzGUI.Common.StudioLook.Changed += () =>
+            {
+                bool light = BuzzGUI.Common.StudioLook.Light;
+                lock (table)
+                    foreach (var (brush, dark, lightValue) in table) brush.Color = Color.FromUInt32(light ? lightValue : dark);
+                for (int i = 0; i < NoteBrushes.Length; i++) ((SolidColorBrush)NoteBrushes[i]).Color = Hspa(0.916667 * i / 11.0, 0.7, light ? 0.40 : 0.6);
+            };
+        }
+
+        public static readonly SolidColorBrush Background = B(0xFF333333, 0xFFECECF0);            // PatEdBackgroundBrush
+        public static readonly SolidColorBrush ElementBackground = B(0xFF444444, 0xFFF8F8FB);     // PatEdElementBackgroundSolidColorBrush
+        public static readonly SolidColorBrush ElementBorder = B(0x88000000, 0x88000000);         // PatEdBorderBrush (#8000)
+        public static readonly SolidColorBrush ToolbarBackground = B(0xFF595959, 0xFFE4E4EA);     // ToolbarBackgroundBrush
+        public static readonly SolidColorBrush BeatDark = B(0x50000000, 0x16000000);              // ThemeColorOverride_PE_BG_Dark
+        public static readonly SolidColorBrush Beat = B(0x30000000, 0x0A000000);                  // ThemeColorOverride_PE_BG
+        public static readonly SolidColorBrush Text = B(0xFFDDDDDD, 0xFF1B1B20);                  // ThemeColorOverride_PE_Text
+        public static readonly SolidColorBrush TextShadow = B(0xFF000000, 0x00000000);            // TextDropShadowBrush (no shadow on light)
+        public static readonly SolidColorBrush NoValue = B(0x66CCCCCC, 0x998A8A97);               // NoValueBrush (#6CCC)
+        public static readonly SolidColorBrush RowNumber = B(0xFFAAAAAA, 0xFF505059);             // RowNumberBrush
+        public static readonly SolidColorBrush RowNumberShadow = B(0xFF000000, 0x00000000);       // RowNumberDropShadowBrush
+        public static readonly SolidColorBrush Cursor = B(0x22FFFFFF, 0x261F5FA8);                // CursorBrush (#2FFF)
+        public static readonly SolidColorBrush CursorBorder = B(0x88FFFFFF, 0xCC1F5FA8);          // CursorBorderBrush (#8FFF)
+        public static readonly SolidColorBrush CursorInactive = B(0x22000055, 0x22000055);        // CursorInactiveBrush (#2005)
+        public static readonly SolidColorBrush CursorLine = B(0x2200FF00, 0x28008A20);            // CursorLineBrush (#20F0)
+        public static readonly SolidColorBrush ColumnSetLabel = B(0xFFCCCCCC, 0xFF3A3A44);        // ColumnSetLabelBrush
+        public static readonly SolidColorBrush ColumnSetLabelMuted = B(0x4DCCCCCC, 0x4D3A3A44);   // the same at 0.3 opacity
+        public static readonly SolidColorBrush ColumnLabel = B(0xFFCCCCCC, 0xFF3A3A44);           // ColumnLabelBrush
         // Fork (ux-overhaul.md P3c): the beat and bar rules, 3.4:1 and 7.4:1 against the lighter of the two beat shades (#373737).
-        public static readonly ImmutableSolidColorBrush BeatRule = B(0xFF888888);
-        public static readonly ImmutableSolidColorBrush BarRule = B(0xFFCCCCCC);
-        public static readonly ImmutableSolidColorBrush LabelHover = B(0x28000000);            // PatternControl's highlight
-        public static readonly ImmutableSolidColorBrush PlayPosition = B(0x40000000);          // playPosRectangle
+        public static readonly SolidColorBrush BeatRule = B(0xFF888888, 0xFF8A8A97);
+        public static readonly SolidColorBrush BarRule = B(0xFFCCCCCC, 0xFF3A3A44);
+        public static readonly SolidColorBrush LabelHover = B(0x28000000, 0x1E000000);            // PatternControl's highlight
+        public static readonly SolidColorBrush PlayPosition = B(0x40000000, 0x1E000000);          // playPosRectangle
         // Fork (ux-overhaul.md §3.1, UX review mac-052): the block selection in the studio's accent at 35 % with an accent
         // outline. WPF's SelectionRectangleStyle (#20400000, a 1.06:1 tint) couldn't be seen on the dark grid.
-        public static readonly ImmutableSolidColorBrush SelectionFill = B(0x594C8DF6);
-        public static readonly IPen SelectionStroke = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromRgb(0x4C, 0x8D, 0xF6)), 1.5);
-        public static readonly ImmutableSolidColorBrush StatusText = B(0xFFF0F0F0);
+        public static readonly SolidColorBrush SelectionFill = B(0x594C8DF6, 0x590064C7);
+        public static readonly IPen SelectionStroke = new Pen(B(0xFF4C8DF6, 0xFF0064C7), 1.5);
+        public static readonly SolidColorBrush StatusText = B(0xFFF0F0F0, 0xFF1B1B20);
 
-        /// <summary>The note colours (PatternNoteColors: 12 colours, hue 0 → 0.916667, saturation 0.7, perceived brightness 0.6).</summary>
+        /// <summary>The note colours (PatternNoteColors: 12 colours, hue 0 → 0.916667, saturation 0.7, perceived brightness 0.6; 0.4 on the light theme).</summary>
         public static readonly IBrush[] NoteBrushes = Enumerable.Range(0, 12)
-            .Select(i => (IBrush)new ImmutableSolidColorBrush(Hspa(0.916667 * i / 11.0, 0.7, 0.6))).ToArray();
+            .Select(i => (IBrush)new SolidColorBrush(Hspa(0.916667 * i / 11.0, 0.7, BuzzGUI.Common.StudioLook.Light ? 0.40 : 0.6))).ToArray();
 
         /// <summary>BuzzGUI.Common.HSPA.ToColor: hue, saturation and perceived brightness to RGB.</summary>
         static Color Hspa(double h, double s, double p)

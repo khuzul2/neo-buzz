@@ -15,6 +15,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
 
 namespace ReBuzz.Core.SongHistory
@@ -49,6 +50,9 @@ namespace ReBuzz.Core.SongHistory
 
         [System.Text.Json.Serialization.JsonIgnore]
         public bool Pending { get; set; }
+        /// <summary>The live-restore data while the snapshot is still being stored (afterwards it is read back from the store).</summary>
+        [System.Text.Json.Serialization.JsonIgnore]
+        internal LiveSong LiveMemory { get; set; }
         [System.Text.Json.Serialization.JsonIgnore]
         public bool IsAuto => Trigger == "auto";
     }
@@ -110,6 +114,10 @@ namespace ReBuzz.Core.SongHistory
         public void Bind(string songName)
         {
             Flush();
+            core.ActiveRestore = null;                  // HS3: a restore waiting for the old song has nothing to apply to
+            active = null; deferred = null; deferredReason = null;
+            finisher?.Stop();
+            lock (gate) pinned.Clear();
             lock (gate)
             {
                 items.Clear();
@@ -201,9 +209,13 @@ namespace ReBuzz.Core.SongHistory
         /// <summary>Waits until everything queued is stored.</summary>
         public void Flush()
         {
-            Task t;
-            lock (gate) t = queue;
-            t.Wait();
+            while (true)
+            {
+                Task t;
+                lock (gate) t = queue;
+                t.Wait();
+                lock (gate) if (ReferenceEquals(t, queue)) return;
+            }
         }
 
         // ---- List ----
@@ -237,6 +249,8 @@ namespace ReBuzz.Core.SongHistory
             if (store == null) Bind(core.SongCore.SongName);
             var sections = core.CaptureSongSections();
             var summary = SongSummary.Take(core);
+            var live = LiveSong.Take(core);                      // HS3: what a live restore needs (machine data, events, wires, tracks)
+            sections.Add((LiveSong.Magic, live.Write()));
             var now = DateTime.UtcNow;
             var m = new SnapshotManifest
             {
@@ -250,6 +264,7 @@ namespace ReBuzz.Core.SongHistory
                 Summary = summary,
                 Bytes = sections.Sum(s => (long)s.Data.Length),
                 Pending = true,
+                LiveMemory = live,
             };
             var st = store;
             lock (gate) items.Add(m);
@@ -287,6 +302,8 @@ namespace ReBuzz.Core.SongHistory
             finally
             {
                 m.Pending = false;
+                m.LiveMemory = null;
+                if (m.IsAuto) PruneAuto();
                 Changed?.Invoke();
             }
         }
@@ -327,7 +344,7 @@ namespace ReBuzz.Core.SongHistory
         void PruneAuto()
         {
             List<SnapshotManifest> drop;
-            lock (gate) drop = items.Where(x => x.IsAuto).OrderByDescending(x => x.Time).ThenByDescending(x => x.Id, StringComparer.Ordinal).Skip(MaxAuto).Where(x => !x.Pending).ToList();
+            lock (gate) drop = items.Where(x => x.IsAuto && !pinned.Contains(x.Id)).OrderByDescending(x => x.Time).ThenByDescending(x => x.Id, StringComparer.Ordinal).Skip(MaxAuto).Where(x => !x.Pending).ToList();
             foreach (var d in drop) Delete(d);
         }
 
@@ -391,6 +408,7 @@ namespace ReBuzz.Core.SongHistory
             var parts = new List<(uint, byte[])>();
             foreach (var s in m.Sections)
             {
+                if (s.Magic == LiveSong.Magic) continue;       // the live-restore section isn't part of a song file
                 var ms = new MemoryStream();
                 foreach (var c in s.Chunks)
                 {
@@ -403,28 +421,280 @@ namespace ReBuzz.Core.SongHistory
         }
 
         /// <summary>
-        /// UI thread, transport stopped. Takes an auto snapshot of the song as it is, then replaces the song with
-        /// the snapshot's (as opening a file does: the undo history starts again; the auto snapshot is the way back).
-        /// Throws <see cref="InvalidOperationException"/> with the reason when it can't.
+        /// UI thread. Puts the song back as a snapshot had it, as one step of the song's history (undo returns to the song as it was).
+        /// Transport stopped: the song is replaced as opening a file does (its history stays). Playing: applied live at the next
+        /// <paramref name="quantize"/> boundary (default a bar) without a click (<see cref="LiveRestorePlan"/>), or, when a part can't be
+        /// prepared safely while playing, deferred until the transport stops. Throws <see cref="InvalidOperationException"/> with the reason when it can't.
         /// </summary>
-        public void Restore(SnapshotManifest m)
+        public RestoreResult Restore(SnapshotManifest m, RestoreQuantize quantize = RestoreQuantize.Auto) => RestoreCore(m, quantize, null);
+
+        /// <summary>A restore the history asks for (undo or redo of a restore step): no new step, no new auto snapshot.</summary>
+        RestoreResult RestoreFromHistory(SnapshotManifest m) => RestoreCore(m, RestoreQuantize.Auto, new RestoreOrigin());
+
+        sealed class RestoreOrigin { }
+
+        public const string Unsupported = "This snapshot was taken before live restore existed, so it can only be restored while the transport is stopped.";
+
+        RestoreResult RestoreCore(SnapshotManifest m, RestoreQuantize quantize, RestoreOrigin history)
         {
-            if (core.PlayRequested)
-                throw new InvalidOperationException(RestoreWhilePlaying);
+            if (m == null) throw new ArgumentNullException(nameof(m));
             if (m.Pending) Flush();
+            CancelPending();
+            if (!core.PlayRequested)
+                return RestoreStopped(m, history, null);
+            return RestoreLive(m, quantize, history);
+        }
+
+        string RestoreName(SnapshotManifest m) => "Restore \"" + m.Name + "\"";
+
+        RestoreResult RestoreStopped(SnapshotManifest m, RestoreOrigin history, string waited)
+        {
             byte[] bytes;
             try { bytes = Assemble(m); }
             catch (Exception e) when (e is IOException or InvalidDataException)
             {
                 throw new InvalidOperationException("Snapshot \"" + m.Name + "\" can't be read: " + e.Message);
             }
-            Auto("before restoring " + m.Name);
-            if (!core.RestoreSongBytes(bytes, core.SongCore.SongName))
+            var before = history == null ? Auto("before restoring " + m.Name) : null;
+            // The song's history is kept across the load (a load starts a new one): the restore is one step on it. The load's own edits
+            // (it centres the master first) go on a stack of their own, which is dropped.
+            var stack = core.SongCore.ActionStack;
+            bool ok;
+            try
+            {
+                core.SongCore.ActionStack = HistorySettings.NewStack();
+                ok = core.RestoreSongBytes(bytes, core.SongCore.SongName);
+            }
+            finally { core.SongCore.ActionStack = stack; }
+            if (!ok)
                 throw new InvalidOperationException("The song couldn't be restored from \"" + m.Name + "\". It is unchanged or partly loaded; the auto snapshot \"before restoring\" holds it.");
             changed = true;
+            if (history == null) RecordStep(stack, m, before, waited);
+            var done = new RestoreResult { Mode = "applied", Snapshot = m };
+            if (waited != null) done.Notes.Add("It waited for the transport to stop: " + waited);
+            return done;
         }
 
-        public const string RestoreWhilePlaying = "Stop to restore (glitch-free restore while playing comes next).";
+        void RecordStep(ManagedActionStack stack, SnapshotManifest target, SnapshotManifest before, string waited)
+        {
+            if (before == null) return;                      // no way back was kept: the auto snapshot failed
+            stack.Record(new RestoreAction(this, target.Id, before.Id, RestoreName(target) + (waited != null ? " (waited for stop)" : "")));
+            lock (gate) { pinned.Add(target.Id); pinned.Add(before.Id); }
+        }
+
+        /// <summary>Snapshots a restore step of the history needs kept (an auto one is never pruned while a step holds it).</summary>
+        readonly HashSet<string> pinned = new();
+
+        // ---- Live restore ----
+
+        LiveRestorePlan active;
+        IUiTimer finisher;
+        SnapshotManifest deferred;
+
+        /// <summary>The restore waiting for the transport to stop, if any (name and reason), for the UI line.</summary>
+        public (string Name, string Reason)? Deferred { get { var d = deferred; return d == null ? null : (d.Name, deferredReason); } }
+        string deferredReason;
+
+        /// <summary>Whether a live restore is waiting for its boundary or finishing.</summary>
+        public bool LiveActive => active != null;
+
+        /// <summary>Raised (any thread) when a live restore was applied and finished, or a deferred one ran.</summary>
+        public event Action RestoreFinished;
+
+        LiveSong LoadLive(SnapshotManifest m)
+        {
+            if (m.LiveMemory != null) return m.LiveMemory;
+            var sec = m.Sections.FirstOrDefault(s => s.Magic == LiveSong.Magic);
+            if (sec == null) return null;
+            try
+            {
+                var ms = new MemoryStream();
+                foreach (var c in sec.Chunks)
+                {
+                    var bytes = store.Get(c.Hash);
+                    ms.Write(bytes, 0, bytes.Length);
+                }
+                return LiveSong.Read(ms.ToArray());
+            }
+            catch (Exception e) when (e is IOException or InvalidDataException) { return null; }
+        }
+
+        RestoreResult RestoreLive(SnapshotManifest m, RestoreQuantize quantize, RestoreOrigin history)
+        {
+            var target = LoadLive(m);
+            if (target == null)
+                return Defer(m, Unsupported, history);
+            var before = history == null ? Auto("before restoring " + m.Name) : null;
+            var outcome = LiveRestorePlanner.Build(core, m, target, m.Summary, before?.LiveMemory);
+            if (outcome.DeferReason != null)
+                return Defer(m, outcome.DeferReason, history, before);
+            var plan = outcome.Plan;
+            var q = quantize switch
+            {
+                RestoreQuantize.Now => BuzzGUI.Interfaces.LaunchQuantization.None,
+                RestoreQuantize.Beat => BuzzGUI.Interfaces.LaunchQuantization.Beat,
+                _ => BuzzGUI.Interfaces.LaunchQuantization.Bar,
+            };
+            string qName = quantize switch { RestoreQuantize.Now => "tick", RestoreQuantize.Beat => "beat", _ => "bar" };
+            if (plan.IsEmpty)
+            {
+                core.ActiveRestore = null;
+                if (history == null && before != null) RecordStep(core.SongCore.ActionStack, m, before, null);
+                return new RestoreResult { Mode = "live", Waiting = false, Quantize = qName, Snapshot = m, Notes = { "Nothing differs from the song as it is." } };
+            }
+            plan.At = core.SessionCore.PlanRestoreBoundary(q);
+            if (plan.At < 0)
+            {
+                LiveRestorePlanner.Discard(core, plan, plan.AllNewMachines());
+                return Defer(m, "the transport hasn't started its first tick", history, before);
+            }
+            active = plan;
+            core.ActiveRestore = plan;
+            finisher ??= core.dispatcher.CreateTimer(TimeSpan.FromMilliseconds(25), () => Pump());
+            finisher.Start();
+            if (history == null) RecordStep(core.SongCore.ActionStack, m, before, null);
+            var result = new RestoreResult { Mode = "live", Waiting = true, Quantize = qName, Snapshot = m, WaitMs = WaitMs(plan.At) };
+            result.Notes.Add(plan.Summary);
+            result.Notes.Add("The Session View's clip grid and settings are not part of a live restore.");
+            Changed?.Invoke();
+            return result;
+        }
+
+        double WaitMs(long at)
+        {
+            long clock = core.SessionCore.Clock;
+            int rate = ReBuzzCore.masterInfo.SamplesPerSec;
+            if (clock < 0 || rate <= 0) return 0;
+            return Math.Max(0, (at - clock) * (double)Math.Max(1, ReBuzzCore.masterInfo.SamplesPerTick) * 1000.0 / rate);
+        }
+
+        RestoreResult Defer(SnapshotManifest m, string reason, RestoreOrigin history, SnapshotManifest before = null)
+        {
+            deferred = m;
+            deferredReason = reason;
+            finisher ??= core.dispatcher.CreateTimer(TimeSpan.FromMilliseconds(25), () => Pump());
+            finisher.Start();
+            Changed?.Invoke();
+            return new RestoreResult { Mode = "deferred", Reason = reason, Snapshot = m };
+        }
+
+        /// <summary>
+        /// A live restore or a deferred one waits no more (another restore replaced it, the song changed, the user cancelled). A live restore
+        /// that hasn't reached its boundary is taken back; one that has is finished at once.
+        /// </summary>
+        public void CancelPending()
+        {
+            var plan = active;
+            if (plan != null && !TakeBack(plan))
+                FinishNow(plan);
+            deferred = null;
+            deferredReason = null;
+            if (active == null) finisher?.Stop();
+            Changed?.Invoke();
+        }
+
+        /// <summary>Takes a plan that hasn't applied back (under AudioLock, so the audio thread isn't in the middle of it). False: it had applied.</summary>
+        bool TakeBack(LiveRestorePlan plan)
+        {
+            lock (ReBuzzCore.AudioLock)
+            {
+                core.ActiveRestore = null;
+                if (plan.State != LiveRestorePlan.Waiting) return false;
+                plan.State = LiveRestorePlan.Cancelled;
+            }
+            LiveRestorePlanner.Discard(core, plan, plan.AllNewMachines());
+            active = null;
+            return true;
+        }
+
+        /// <summary>UI thread: finishes an applied plan now (the old machines go, the new ones are shown), without waiting for the glide or the fades.</summary>
+        void FinishNow(LiveRestorePlan plan)
+        {
+            lock (ReBuzzCore.AudioLock) core.ActiveRestore = null;
+            LiveRestorePlanner.Finish(core, plan);
+            plan.State = LiveRestorePlan.Finished;
+            active = null;
+            changed = true;
+            finisher?.Stop();
+            Changed?.Invoke();
+            RestoreFinished?.Invoke();
+        }
+
+        /// <summary>
+        /// UI thread, every 25 ms while something waits (a timer; tests call it too): finishes an applied live restore once its glide is done,
+        /// and runs a deferred restore when the transport has stopped.
+        /// </summary>
+        public void Pump()
+        {
+            var plan = active;
+            if (plan != null)
+            {
+                bool playing = core.PlayRequested;
+                if (plan.State == LiveRestorePlan.Waiting && !playing)
+                {
+                    // The transport stopped before the boundary: what was prepared is taken back and the restore waits for the stopped path.
+                    if (TakeBack(plan)) RestoreStoppedNow(plan.Target);
+                }
+                else if (plan.State == LiveRestorePlan.GlideDone || (plan.State == LiveRestorePlan.Applied && !playing))
+                {
+                    if (plan.AppliedAt == 0) plan.AppliedAt = System.Diagnostics.Stopwatch.GetTimestamp();
+                    // The fades take a few blocks; give them time before the old machines go.
+                    double ms = (System.Diagnostics.Stopwatch.GetTimestamp() - plan.AppliedAt) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+                    if (ms >= 100 || !playing) FinishNow(plan);
+                }
+                else if (plan.State == LiveRestorePlan.Applied && plan.AppliedAt == 0)
+                    plan.AppliedAt = System.Diagnostics.Stopwatch.GetTimestamp();
+                return;
+            }
+            var d = deferred;
+            if (d != null && !core.PlayRequested)
+            {
+                string reason = deferredReason;
+                deferred = null;
+                deferredReason = null;
+                finisher?.Stop();
+                RestoreStoppedNow(d, reason);
+            }
+            else if (d == null) finisher?.Stop();
+        }
+
+        void RestoreStoppedNow(SnapshotManifest m, string reason = null)
+        {
+            try { RestoreStopped(m, null, reason ?? "the transport stopped before the boundary"); }
+            catch (InvalidOperationException e) { LastError = e.Message; }
+            Changed?.Invoke();
+            RestoreFinished?.Invoke();
+        }
+
+        sealed class RestoreAction : BuzzGUI.Interfaces.IAction, BuzzGUI.Common.IHistoryAction
+        {
+            readonly SongSnapshots owner;
+            readonly string target, before, name;
+
+            public RestoreAction(SongSnapshots owner, string target, string before, string name)
+            {
+                this.owner = owner; this.target = target; this.before = before; this.name = name;
+            }
+
+            public string HistoryName => name;
+            public long HistoryBytes => 0;
+            public IEnumerable<KeyValuePair<object, long>> HistoryBlobs => null;
+
+            public void Do() => Run(target, "redo");
+            public void Undo() => Run(before, "undo");
+
+            void Run(string id, string what)
+            {
+                var m = owner.Find(id);
+                if (m == null)
+                {
+                    owner.LastError = "Can't " + what + " the restore: its snapshot was deleted.";
+                    return;
+                }
+                try { owner.RestoreFromHistory(m); }
+                catch (InvalidOperationException e) { owner.LastError = e.Message; }
+            }
+        }
 
         // ---- Embedding ----
 

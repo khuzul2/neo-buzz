@@ -641,7 +641,7 @@ namespace ReBuzz.Studio.Tests
 
         // ------------------------------------------------------------------ the pattern editor's block selection
 
-        [Test]
+        [AvaloniaTest]
         public void ThePatternEditorsBlockSelectionIsTheAccent()
         {
             // UX review mac-052: the block selection was a 1.06:1 tint. The editor's view is in the editor machine's

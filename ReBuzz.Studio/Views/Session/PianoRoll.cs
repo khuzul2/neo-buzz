@@ -353,20 +353,21 @@ namespace ReBuzz.Studio.Views.Session
 
         // ------------------------------------------------------------------ drawing
 
-        static readonly IBrush Back = SessionPalette.Make("#1E1E22");
-        static readonly IBrush BlackKeyRow = SessionPalette.Make("#19191C");
-        static readonly IBrush WhiteKey = SessionPalette.Make("#D9D9DE");
-        static readonly IBrush BlackKey = SessionPalette.Make("#2A2A30");
-        internal static readonly IBrush NoteFill = SessionPalette.Make("#E0457B");
-        internal static readonly IBrush NoteSelected = SessionPalette.Make("#F0C24B");
-        static readonly IBrush OutOfClip = SessionPalette.Make("#141417");
-        static readonly IPen RowLine = new ImmutablePen(Color.Parse("#26262B").ToUInt32(), 1);
-        static readonly IPen TickLine = new ImmutablePen(Color.Parse("#24242A").ToUInt32(), 1);
-        static readonly IPen BeatLine = new ImmutablePen(Color.Parse("#34343C").ToUInt32(), 1);
-        static readonly IPen BarLine = new ImmutablePen(Color.Parse("#55555F").ToUInt32(), 1);
-        static readonly IPen NoteEdge = new ImmutablePen(Color.Parse("#101012").ToUInt32(), 1);
-        static readonly IPen BoxPen = new ImmutablePen(Color.Parse("#F0C24B").ToUInt32(), 1, (ImmutableDashStyle)DashStyle.Dash.ToImmutable());
-        static readonly IPen PlayheadPen = new ImmutablePen(Color.Parse("#6FD98A").ToUInt32(), 1.5);
+        // Fork (ux-overhaul.md P4b): the roll's own table, a dark and a light colour each; the brushes and pens follow the theme.
+        static readonly IBrush Back = SessionPalette.Pair("#1E1E22", "#F8F8FB");
+        static readonly IBrush BlackKeyRow = SessionPalette.Pair("#19191C", "#EDEDF2");
+        static readonly IBrush WhiteKey = SessionPalette.Pair("#D9D9DE", "#FAFAFC");
+        static readonly IBrush BlackKey = SessionPalette.Pair("#2A2A30", "#2A2A30");
+        internal static readonly IBrush NoteFill = SessionPalette.Pair("#E0457B", "#C2185B");
+        internal static readonly IBrush NoteSelected = SessionPalette.Pair("#F0C24B", "#8F6200");
+        static readonly IBrush OutOfClip = SessionPalette.Pair("#141417", "#D8D8E0");
+        static readonly IPen RowLine = SessionPalette.PairPen("#26262B", "#E8E8EE", 1);
+        static readonly IPen TickLine = SessionPalette.PairPen("#24242A", "#ECECF1", 1);
+        static readonly IPen BeatLine = SessionPalette.PairPen("#34343C", "#DCDCE3", 1);
+        static readonly IPen BarLine = SessionPalette.PairPen("#55555F", "#B4B4BF", 1);
+        static readonly IPen NoteEdge = SessionPalette.PairPen("#101012", "#101012", 1);
+        static readonly IPen BoxPen = SessionPalette.PairPen("#F0C24B", "#8F6200", 1, DashStyle.Dash);
+        static readonly IPen PlayheadPen = SessionPalette.PairPen("#6FD98A", "#008A20", 1.5);
 
         static bool IsBlack(int note) => (note % 12) is 1 or 3 or 6 or 8 or 10;
 

@@ -2,15 +2,27 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Polac VSTi 1.1",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
- "type": "generator (silent at its defaults)",
- "summary": "Generator (silent at its defaults) (profiled draft): no sound from a note at its defaults.",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
+ "type": "plugin host",
+ "summary": "Hosts an instrument plugin in the graph: a level, a pan, a program number, a global command with a value, and for each of its tracks a plugin parameter number and value and a MIDI channel. An older 32-bit-era host.",
  "category": "Utility",
  "tags": [
   "plugin-host"
  ],
  "use_for": "Host a 32-bit instrument plugin in the graph (older host; Windows only).",
+ "quirks": [
+  "Hosts nothing until a plugin is loaded in its window, so the profile measured the empty host: a pass-through at 0 dB (effect) or silence (instrument); what a loaded plugin does was not tested.",
+  "MIDI input goes to it with a conversion for its format when it has the keyboard focus (the host's own handling).",
+  "Up to 128 tracks; each track's three columns steer one plugin parameter on one MIDI channel.",
+  "Unverified: which plugins it can load in this build, the numbering behind Plugin parameter, and the pan unit.",
+  "Closed source: names come from its own texts and measurements, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "ReBuzz/Core/ReBuzzCore.cs - MIDI input reaches a focused Polac VST or VSTi host with a conversion for its format",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - an empty host is silent from a note"
+ ],
  "tracks": 128,
  "notes": {
   "input": "none"
@@ -45,6 +57,8 @@
    "index": 0,
    "id": "Wet Out",
    "name": "Wet Out",
+   "plain_name": "Wet level",
+   "role": "level",
    "group": "",
    "min": 0,
    "max": 400,
@@ -57,40 +71,160 @@
      "-inf"
     ],
     [
+     1,
+     -40.0
+    ],
+    [
+     2,
+     -34.0
+    ],
+    [
+     3,
+     -30.5
+    ],
+    [
      4,
      -28.0
+    ],
+    [
+     5,
+     -26.0
+    ],
+    [
+     6,
+     -24.4
+    ],
+    [
+     7,
+     -23.1
     ],
     [
      8,
      -21.9
     ],
     [
+     9,
+     -20.9
+    ],
+    [
+     10,
+     -20.0
+    ],
+    [
+     11,
+     -19.2
+    ],
+    [
      12,
      -18.4
+    ],
+    [
+     13,
+     -17.7
+    ],
+    [
+     14,
+     -17.1
+    ],
+    [
+     15,
+     -16.5
     ],
     [
      16,
      -15.9
     ],
     [
+     17,
+     -15.4
+    ],
+    [
+     18,
+     -14.9
+    ],
+    [
+     19,
+     -14.4
+    ],
+    [
      20,
      -14.0
+    ],
+    [
+     21,
+     -13.6
+    ],
+    [
+     22,
+     -13.2
+    ],
+    [
+     23,
+     -12.8
     ],
     [
      24,
      -12.4
     ],
     [
+     25,
+     -12.0
+    ],
+    [
+     26,
+     -11.7
+    ],
+    [
+     27,
+     -11.4
+    ],
+    [
      28,
      -11.1
+    ],
+    [
+     29,
+     -10.8
+    ],
+    [
+     30,
+     -10.5
+    ],
+    [
+     31,
+     -10.2
     ],
     [
      32,
      -9.9
     ],
     [
+     33,
+     -9.6
+    ],
+    [
+     34,
+     -9.4
+    ],
+    [
+     35,
+     -9.1
+    ],
+    [
      36,
      -8.9
+    ],
+    [
+     37,
+     -8.6
+    ],
+    [
+     38,
+     -8.4
+    ],
+    [
+     39,
+     -8.2
     ],
     [
      40,
@@ -457,13 +591,16 @@
      12.0
     ]
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Level of the plugin's output, silence at 0, 0 dB at 100 (the default) and +12 dB at 400.",
+   "how": "Sets the level of the plugin's output, a table from silence to +12 dB (0 dB at 100, the default).",
+   "sound": "It sets how loud the instrument is in the song."
   },
   {
    "index": 1,
    "id": "Panning",
    "name": "Panning",
+   "plain_name": "Pan",
+   "role": "pan",
    "group": "",
    "min": 0,
    "max": 128,
@@ -472,13 +609,15 @@
    "a": -64.0,
    "b": 64.0,
    "unit": "%",
-   "description": "",
-   "confidence": "values"
+   "description": "Panning from -64 (left) to +64 (right), 0 at 64; the unit was not measured.",
+   "how": "Pans the output from -64 (left) to +64 (right), 0 at 64; the unit and its audible effect were not measured.",
+   "sound": "Moving it away from the middle places the instrument toward one side."
   },
   {
    "index": 2,
    "id": "Global Command",
    "name": "Global Command",
+   "plain_name": "Global command",
    "group": "",
    "min": 0,
    "max": 17,
@@ -504,13 +643,15 @@
     "Time Sig",
     "Autom. Delay"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "A global command of the host: transpose, tempo sync, bypass, morph, automation slope and others (18).",
+   "how": "Chooses a global command, from a list of 18 including transpose, tempo sync, trigger sequencing, bypass, morph between two programs, automation slope and delay, velocity and delay commands, mute all tracks, system exclusive, rows per beat and time signature.",
+   "sound": "It does not sound by itself; it sets how the host behaves, with the value in Global Command Value."
   },
   {
    "index": 3,
    "id": "Global Command Value",
    "name": "Global Command Value",
+   "plain_name": "Global command value",
    "group": "",
    "min": 0,
    "max": 65534,
@@ -518,13 +659,15 @@
    "kind": "linear",
    "a": 0.0,
    "b": 65534.0,
-   "description": "",
-   "confidence": "values"
+   "description": "Value of the global command, 0 to 65,534 (its own default, 65,535, is out of range and means not written; NeoBuzz Live takes 65,534).",
+   "how": "Holds the value for the chosen global command, 0 to 65,534 (its own default, 65,535, is one past the range and means not written).",
+   "sound": "Its effect depends on the command; write it with the command."
   },
   {
    "index": 4,
    "id": "Program",
    "name": "Program",
+   "plain_name": "Program",
    "group": "",
    "min": 0,
    "max": 65534,
@@ -532,8 +675,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 65534.0,
-   "description": "",
-   "confidence": "values"
+   "description": "The plugin's program (patch) number, 0 to 65,534.",
+   "how": "Chooses the plugin's program (patch) number, 0 to 65,534.",
+   "sound": "Changing it loads a different preset in the hosted plugin."
   }
  ],
  "track_parameters": [
@@ -541,6 +685,7 @@
    "index": 0,
    "id": "Param",
    "name": "Param",
+   "plain_name": "Plugin parameter",
    "group": "",
    "min": 0,
    "max": 12543,
@@ -549,27 +694,31 @@
    "a": 0.0,
    "b": 12543.0,
    "description": "Track Parameter",
-   "confidence": "values"
+   "how": "Chooses which plugin parameter this track's Param Val sets, 0 to 12,543 (the numbering was not checked).",
+   "sound": "Each track steers one plugin parameter, so a pattern can automate the plugin from the tracker."
   },
   {
    "index": 0,
    "id": "Param Val",
    "name": "Param Val",
+   "plain_name": "Plugin parameter value",
    "group": "",
    "min": 0,
    "max": 32767,
    "default": 0,
    "kind": "linear",
-   "a": 4.8e-05,
-   "b": 99.999929,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
    "description": "Track Parameter Value",
-   "confidence": "values"
+   "how": "Sets the value of the chosen plugin parameter, 0 to 100 percent of its range.",
+   "sound": "It moves the plugin's control from nothing to full; what that sounds like depends on the plugin."
   },
   {
    "index": 0,
    "id": "MIDI Cha",
    "name": "MIDI Cha",
+   "plain_name": "MIDI channel",
    "group": "",
    "min": 1,
    "max": 16,
@@ -578,7 +727,8 @@
    "a": 1.0,
    "b": 16.0,
    "description": "MIDI Channel",
-   "confidence": "values"
+   "how": "Sets the MIDI channel this track's notes go out on, 1 to 16.",
+   "sound": "Use different channels to drive separate parts of a multi-timbral plugin."
   }
  ]
 }

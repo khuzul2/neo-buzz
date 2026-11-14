@@ -232,7 +232,9 @@
     "Saw",
     "Square"
    ],
-   "description": "Saw or square."
+   "description": "Saw or square.",
+   "how": "Chooses the oscillator wave: saw or square.",
+   "sound": "The saw is bright and buzzy; the square is hollow and rounder, the classic two acid timbres."
   },
   {
    "index": 1,
@@ -247,7 +249,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 240.0,
-   "description": "Low-pass cutoff before the envelope (0–240, square-law inside)."
+   "description": "Low-pass cutoff before the envelope (0–240, square-law inside).",
+   "how": "Sets the low-pass filter's cutoff before the envelope, 0 to 240 (square-law inside).",
+   "sound": "Low values are dark and muffled; high values open the sound. The envelope adds to it on every note."
   },
   {
    "index": 2,
@@ -262,7 +266,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 128.0,
-   "description": "Resonance (0–128)."
+   "description": "Resonance (0–128).",
+   "how": "Sets the filter's resonance, 0 to 128.",
+   "sound": "More resonance gives the squelchy, vowel-like acid peak; the top makes it whistle."
   },
   {
    "index": 3,
@@ -279,7 +285,9 @@
    "b": 100.0,
    "unit": "%",
    "own_texts": false,
-   "description": "Envelope to cutoff."
+   "description": "Envelope to cutoff.",
+   "how": "Sets how far the envelope opens the filter on each note, 0 to 100 percent.",
+   "sound": "More gives a stronger squelch sweep on every note; 0 leaves the filter where Cutoff puts it."
   },
   {
    "index": 4,
@@ -294,7 +302,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 128.0,
-   "description": "Decay of the filter envelope (0–128)."
+   "description": "Decay of the filter envelope (0–128).",
+   "how": "Sets how fast the filter envelope falls, 0 to 128.",
+   "sound": "Short decays give plucky, bubbling notes; long ones give open, sweeping ones."
   },
   {
    "index": 5,
@@ -311,7 +321,9 @@
    "b": 200.0,
    "unit": "%",
    "own_texts": false,
-   "description": "How strongly accented notes open the filter and the level, 0–200%."
+   "description": "How strongly accented notes open the filter and the level, 0–200%.",
+   "how": "Sets how strongly an accented note opens the filter and raises the level, 0 to 200 percent.",
+   "sound": "Higher values make accented notes jump out; 0 makes the accent do nothing."
   },
   {
    "index": 6,
@@ -327,7 +339,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "±100 cents."
+   "description": "±100 cents.",
+   "how": "Tunes the oscillator, plus or minus 100 cents.",
+   "sound": "Small values detune against other instruments; use it to tune the bass to the song."
   },
   {
    "index": 7,
@@ -343,7 +357,9 @@
    "a": 0.0,
    "b": 200.0,
    "unit": "%",
-   "description": "Output level, 0–200%."
+   "description": "Output level, 0–200%.",
+   "how": "Sets the output level, 0 to 200 percent (100 is unity).",
+   "sound": "Above 100 percent it gets hot and can pass full scale."
   }
  ],
  "track_parameters": []
