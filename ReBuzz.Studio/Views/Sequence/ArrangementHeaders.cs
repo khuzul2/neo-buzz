@@ -16,6 +16,7 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
+using ReBuzz.Core.Session;
 using ReBuzz.Studio.Shell.Design;
 
 namespace ReBuzz.Studio.Views.Sequence
@@ -28,6 +29,7 @@ namespace ReBuzz.Studio.Views.Sequence
         readonly ArrangementCanvas timeline;
         readonly List<(ArrangementRow Row, Control Cell)> cells = new();
         readonly Dictionary<IMachine, (ToggleButton Mute, ToggleButton Solo)> switches = new();
+        readonly List<(string Machine, ColumnKey Key, ToggleButton Record)> recorders = new();
         bool building;
 
         public ArrangementHeaders(ReBuzzCore core, ArrangementCanvas timeline)
@@ -43,6 +45,7 @@ namespace ReBuzz.Studio.Views.Sequence
         void OnSessionChanged() => Avalonia.Threading.Dispatcher.UIThread.Post(Highlight);
         void OnTrackState(ISequence s) => OnSessionChanged();
         void OnSessionProperty(object sender, System.ComponentModel.PropertyChangedEventArgs e) => OnSessionChanged();
+        void OnRecorderChanged() => Avalonia.Threading.Dispatcher.UIThread.Post(Highlight);
         void OnThemeChanged() => Avalonia.Threading.Dispatcher.UIThread.Post(Rebuild);
 
         // The engine's events and the theme's are listened to while the window shows the view (a closed window lets go of them).
@@ -50,6 +53,7 @@ namespace ReBuzz.Studio.Views.Sequence
         {
             base.OnAttachedToVisualTree(e);
             StudioTheme.Changed += OnThemeChanged;
+            if (core.Arrangement?.Recorder is { } recorder) recorder.Changed += OnRecorderChanged;
             if (core.SessionCore is { } session)
             {
                 session.TrackStateChanged += OnTrackState;
@@ -60,6 +64,7 @@ namespace ReBuzz.Studio.Views.Sequence
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
             StudioTheme.Changed -= OnThemeChanged;
+            if (core.Arrangement?.Recorder is { } recorder) recorder.Changed -= OnRecorderChanged;
             if (core.SessionCore is { } session)
             {
                 session.TrackStateChanged -= OnTrackState;
@@ -88,6 +93,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 Children.Clear();
                 cells.Clear();
                 switches.Clear();
+                recorders.Clear();
                 var look = StudioTheme.Sequence;
                 foreach (var row in timeline.Rows)
                 {
@@ -136,11 +142,13 @@ namespace ReBuzz.Studio.Views.Sequence
                 mute.IsChecked = machine.IsMuted;
                 solo.IsChecked = machine.IsSoloed;
             }
+            foreach (var (machine, key, record) in recorders)
+                record.IsChecked = core.Arrangement?.Recorder.IsArmed(machine, key) == true;
         }
 
         static ToggleButton Toggle(string content, string name, string tip)
         {
-            var b = new ToggleButton { Content = content, Width = 24, Height = 24, Padding = new Thickness(0), HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center, FontSize = 12 };
+            var b = new ToggleButton { Content = content, Width = 24, Height = 24, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
             AutomationProperties.SetName(b, name);
             ToolTip.SetTip(b, tip);
             b.Classes.Add("icon");
@@ -149,7 +157,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
         static Button PlainButton(string content, string name, string tip)
         {
-            var b = new Button { Content = content, Width = 24, Height = 24, Padding = new Thickness(0), HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center, FontSize = 12 };
+            var b = new Button { Content = content, Width = 24, Height = 24, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
             AutomationProperties.SetName(b, name);
             ToolTip.SetTip(b, tip);
             b.Classes.Add("icon");
@@ -164,6 +172,50 @@ namespace ReBuzz.Studio.Views.Sequence
             c.BorderThickness = new Thickness(1);
         }
 
+        /// <summary>The picker of the last "A" button pressed (the Add automation lane flyout's content; tests drive it).</summary>
+        public ParameterPicker LastPicker { get; private set; }
+
+        Flyout AutomateFlyout(IMachine machine, Button anchor)
+        {
+            var flyout = new Flyout { Placement = PlacementMode.RightEdgeAlignedTop };
+            flyout.Opening += (s, e) =>
+            {
+                var picker = new ParameterPicker(machine);
+                picker.Chosen += param =>
+                {
+                    core.Arrangement?.AddParameterLane(machine.Name, param.Key);
+                    flyout.Hide();
+                };
+                LastPicker = picker;
+                flyout.Content = picker;
+            };
+            return flyout;
+        }
+
+        /// <summary>A parameter lane's header: its name, the record switch (knob moves go into the lane while the song plays) and a button that takes the lane away.</summary>
+        Control ParameterCell(ArrangementRow row, SequenceLook look, Func<string, bool, TextBlock> label)
+        {
+            var machine = row.Machine;
+            var param = row.Param;
+            var name = label(param.Name, false);
+            name.MaxWidth = SequenceGeometry.HeaderWidth - 40;
+            name.Margin = new Thickness(28, 0, 0, 0);
+            var record = Toggle("●", $"Record {param.Name} of {machine.Name}", "Record: while the song plays, moves of this knob are written into the lane");
+            var remove = PlainButton("×", $"Remove lane {param.Name} of {machine.Name}", "Take this lane away (the automation stays)");
+            foreach (var b in new TemplatedControl[] { record, remove }) Style(b, look);
+            record.IsChecked = core.Arrangement?.Recorder.IsArmed(machine.Name, param.Key) == true;
+            record.Click += (s, e) => { if (!building) core.Arrangement?.Recorder.SetArmed(machine.Name, param.Key, record.IsChecked == true); };
+            remove.Click += (s, e) => core.Arrangement?.RemoveParameterLane(machine.Name, param.Key);
+            recorders.Add((machine.Name, param.Key, record));
+            var grid = new Grid { Margin = new Thickness(4, 2), RowDefinitions = new RowDefinitions("*,*") };
+            Grid.SetRow(name, 0);
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(24, 0, 0, 0), Children = { record, remove } };
+            Grid.SetRow(buttons, 1);
+            grid.Children.Add(name);
+            grid.Children.Add(buttons);
+            return grid;
+        }
+
         Control Cell(ArrangementRow row, SequenceLook look)
         {
             var border = new Border { Background = look.Header, BorderBrush = look.TrackLine.ToImmutable(), BorderThickness = new Thickness(0, 0, 0, 1), Width = SequenceGeometry.HeaderWidth, Height = row.Height };
@@ -175,6 +227,9 @@ namespace ReBuzz.Studio.Views.Sequence
                     return border;
                 case ArrangementRowKind.Markers:
                     border.Child = label("Markers", false);
+                    return border;
+                case ArrangementRowKind.Parameter:
+                    border.Child = ParameterCell(row, look, label);
                     return border;
             }
 
@@ -198,12 +253,14 @@ namespace ReBuzz.Studio.Views.Sequence
                     var mute = Toggle("M", $"Mute {machine.Name}", "Mute this machine");
                     var solo = Toggle("S", $"Solo {machine.Name}", "Solo this machine");
                     var add = PlainButton("+", $"Add lane for {machine.Name}", "Add a lane: another sequence for this machine");
-                    foreach (var b in new TemplatedControl[] { mute, solo, add }) Style(b, look);
+                    var auto = PlainButton("A", $"Add automation lane for {machine.Name}", "Add an automation lane: a parameter of this machine");
+                    auto.Flyout = AutomateFlyout(machine, auto);
+                    foreach (var b in new TemplatedControl[] { mute, solo, add, auto }) Style(b, look);
                     mute.Click += (s, e) => { if (!building) machine.IsMuted = mute.IsChecked == true; };
                     solo.Click += (s, e) => { if (!building) machine.IsSoloed = solo.IsChecked == true; };
                     add.Click += (s, e) => AddLaneRequested?.Invoke(machine);
                     switches[machine] = (mute, solo);
-                    var bottom = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, 0), Children = { mute, solo, add } };
+                    var bottom = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, 0), Children = { mute, solo, add, auto } };
                     Grid.SetRow(bottom, 1);
                     grid.Children.Add(bottom);
                 }
