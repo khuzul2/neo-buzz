@@ -71,6 +71,12 @@ namespace ReBuzz.Studio.Views.Sequence
         // Fork (daw-modes.md AR1): the mode switch (tracker: one row a sequence, edges set the pattern's length; arrangement: tracks with lanes and clips).
         readonly ToggleButton trackerMode = new ToggleButton { Content = "Tracker", Width = 64, IsChecked = true };
         readonly ToggleButton arrangementMode = new ToggleButton { Content = "Arrange", Width = 64 };
+        // Fork (daw-modes.md AR5): recording and the way back from the Session View. Shown in the arrangement mode.
+        readonly ToggleButton record = new ToggleButton { Content = "● Rec", Width = 58 };
+        readonly ToggleButton loopRecord = new ToggleButton { Content = "Loop rec", Width = 58 };
+        readonly ToggleButton overdub = new ToggleButton { Content = "Overdub", Width = 58 };
+        readonly Button backToArrangement = new Button { Content = "Back to Arr.", Width = 58 };
+        StackPanel recordRows;
         readonly TextBlock status = new TextBlock { FontSize = 12, Margin = new Thickness(8, 2), TextTrimming = TextTrimming.CharacterEllipsis, IsVisible = false };
         ArrangementHeaders headers;
         readonly ArrangementRollPanel rollPanel;
@@ -93,7 +99,7 @@ namespace ReBuzz.Studio.Views.Sequence
             patternList.Foreground = look.ListText;
             patternList.BorderBrush = look.ListBorder;
             status.Foreground = look.HeaderText;
-            foreach (var c in new TemplatedControl[] { addTrack, steps, follow, trackerMode, arrangementMode })
+            foreach (var c in new TemplatedControl[] { addTrack, steps, follow, trackerMode, arrangementMode, record, loopRecord, overdub, backToArrangement })
             {
                 c.Background = look.ControlBack;
                 c.Foreground = look.ControlText;
@@ -139,7 +145,7 @@ namespace ReBuzz.Studio.Views.Sequence
             if (isArrangement == on) return;
             isArrangement = on;
             Canvas.IsVisible = Canvas.Overlay.IsVisible = !on;
-            Arrangement.IsVisible = Arrangement.Overlay.IsVisible = headers.IsVisible = on;
+            Arrangement.IsVisible = Arrangement.Overlay.IsVisible = headers.IsVisible = recordRows.IsVisible = on;
             status.IsVisible = on;
             if (!on) rollPanel.Close();
             if (on)
@@ -158,6 +164,31 @@ namespace ReBuzz.Studio.Views.Sequence
             RefreshPatternList();
             UpdateEmpty();
         }
+
+        /// <summary>The Record button: starts recording on the armed tracks (looped as takes with Loop rec), or stops and writes it.</summary>
+        void ToggleRecording()
+        {
+            var takes = core.Arrangement?.Takes;
+            if (takes == null) return;
+            string why = takes.IsRecording ? takes.Stop() : takes.Start(loopRecord.IsChecked == true);
+            Arrangement.ShowStatus(why ?? takes.Status);
+            SyncRecordButtons();
+        }
+
+        void SyncRecordButtons()
+        {
+            var takes = core.Arrangement?.Takes;
+            record.IsChecked = takes?.IsRecording == true;
+            if (takes != null) overdub.IsChecked = takes.Overdub;
+        }
+
+        void OnRecordingChanged() => Dispatcher.UIThread.Post(() =>
+        {
+            SyncRecordButtons();
+            var takes = core.Arrangement?.Takes;
+            if (takes != null && !takes.IsRecording && !string.IsNullOrEmpty(takes.Status)) Arrangement.ShowStatus(takes.Status);
+            Arrangement.Changed();
+        });
 
         void OnThemeChanged() => Dispatcher.UIThread.Post(() => { if (root != null) ApplyLook(); });
 
@@ -211,6 +242,28 @@ namespace ReBuzz.Studio.Views.Sequence
             var modeRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2), HorizontalAlignment = HorizontalAlignment.Center, Spacing = 2, Children = { trackerMode, arrangementMode } };
             DockPanel.SetDock(modeRow, Dock.Top);
             right.Children.Add(modeRow);
+            foreach (var (b, name, tip) in new (Control, string, string)[]
+            {
+                (record, "Record arrangement", "Record: the armed tracks (R in a track's header) write what you play at the play position into a new clip; stop to finish"),
+                (loopRecord, "Loop recording", "Loop recording: each pass of the song's loop is a take on a take lane; Shift-drag or C on a take comps it onto the main lane"),
+                (overdub, "Overdub", "Overdub: recording over a clip adds the notes to its pattern instead of making a new clip"),
+                (backToArrangement, "Back to arrangement", "Back to Arrangement: the tracks the Session View took over play the arrangement again"),
+            })
+            {
+                Avalonia.Automation.AutomationProperties.SetName(b, name);
+                ToolTip.SetTip(b, tip);
+            }
+            recordRows = new StackPanel
+            {
+                Margin = new Thickness(0, 0, 0, 2), HorizontalAlignment = HorizontalAlignment.Center, Spacing = 2, IsVisible = false,
+                Children =
+                {
+                    new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { record, loopRecord } },
+                    new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { overdub, backToArrangement } },
+                },
+            };
+            DockPanel.SetDock(recordRows, Dock.Top);
+            right.Children.Add(recordRows);
             Avalonia.Automation.AutomationProperties.SetName(trackerMode, "Tracker mode");
             Avalonia.Automation.AutomationProperties.SetName(arrangementMode, "Arrangement mode");
             ToolTip.SetTip(trackerMode, "Tracker: a row for each sequence; a block's edges set its pattern's length");
@@ -241,6 +294,9 @@ namespace ReBuzz.Studio.Views.Sequence
             zoom.ValueChanged += (s, e) => { if (syncing) return; if (isArrangement) Arrangement.SetZoom(e.NewValue, null); else Canvas.SetZoom(e.NewValue, null); };
             trackerMode.Click += (s, e) => SetArrangementMode(false);
             arrangementMode.Click += (s, e) => SetArrangementMode(true);
+            record.Click += (s, e) => ToggleRecording();
+            overdub.Click += (s, e) => { if (core.Arrangement != null) core.Arrangement.Takes.Overdub = overdub.IsChecked == true; };
+            backToArrangement.Click += (s, e) => core.Arrangement?.Links.BackToArrangement();
             Arrangement.ViewChanged += Sync;
             Arrangement.ViewChanged += UpdateEmpty;
             Arrangement.SelectionChanged += OnArrangementSelection;
@@ -302,6 +358,7 @@ namespace ReBuzz.Studio.Views.Sequence
             base.OnAttachedToVisualTree(e);
             attached = true;
             StudioTheme.Changed += OnThemeChanged;
+            if (core.Arrangement?.Takes is { } takes) takes.Changed += OnRecordingChanged;
             StudioSelection.For(core).Changed += FollowSelection;
             FollowSelection(null);                  // shown again: on the selection the other views made meanwhile
             ApplyLook();
@@ -318,6 +375,7 @@ namespace ReBuzz.Studio.Views.Sequence
         {
             attached = false;
             StudioTheme.Changed -= OnThemeChanged;
+            if (core.Arrangement?.Takes is { } takes) takes.Changed -= OnRecordingChanged;
             StudioSelection.For(core).Changed -= FollowSelection;
             state.Changed -= OnStateChanged;
             emptyTimer.Stop();
@@ -845,6 +903,11 @@ namespace ReBuzz.Studio.Views.Sequence
                     Item("Join with Next", () => a.JoinWithNext(), new KeyGesture(Key.J), clip),
                     Item(clip && a.Selected.Spec.Loop ? "Loop Off" : "Loop On", () => a.ToggleLoop(), new KeyGesture(Key.L), clip),
                     Item(clip && a.UsesOf(a.Selected.Pattern) > 1 ? $"Make Unique ({a.UsesOf(a.Selected.Pattern)} places use it)" : "Make Unique", () => a.MakeUnique(), new KeyGesture(Key.U), clip),
+                    new Separator(),
+                    Item("Comp to Main Lane", () => a.CompAtCursor(), new KeyGesture(Key.C), clip && core.Arrangement.RoleOf(a.Selected.Sequence) == LaneRole.Take),
+                    Item("Launch in Session", () => a.LaunchSelected(), null, clip),
+                    Item("Send to Session Slot", () => a.SendSelectedToSession(), null, clip),
+                    Item("Back to Arrangement", () => core.Arrangement.Links.BackToArrangement(), null, core.Arrangement?.Links.AnyLaunched == true),
                     new Separator(),
                     Item("Duplicate", () => a.DuplicateSelected(), Gesture(Key.D), clip),
                     Item("Cut", () => Cut(), Gesture(Key.X), clip),

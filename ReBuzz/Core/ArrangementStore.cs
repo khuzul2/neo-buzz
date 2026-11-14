@@ -35,7 +35,15 @@ namespace ReBuzz.Core
             buzz.SaveSong += OnSaveSong;
             buzz.OpenSong += OnOpenSong;
             Recorder = new AutomationRecorder(buzz);
+            Takes = new ArrangementRecorder(buzz);
+            Links = new ArrangementLinks(buzz);
         }
+
+        /// <summary>MIDI recorded into the arrangement, loop recording into take lanes (daw-modes.md AR5).</summary>
+        public ArrangementRecorder Takes { get; }
+
+        /// <summary>Launching arrangement clips in the session, and clips between slots and lanes (daw-modes.md AR5).</summary>
+        public ArrangementLinks Links { get; }
 
         /// <summary>Knob moves recorded into automation lanes (daw-modes.md AR4).</summary>
         public AutomationRecorder Recorder { get; }
@@ -73,6 +81,7 @@ namespace ReBuzz.Core
             if (lane == null || RoleOf(lane) == role) return;
             if (role == LaneRole.Main) roles.Remove(lane);
             else roles[lane] = role;
+            if (lane is SequenceCore seq) seq.TakeLane = role == LaneRole.Take;      // the engine skips take lanes (AR5)
             Changed?.Invoke();
         }
 
@@ -88,11 +97,19 @@ namespace ReBuzz.Core
         public void Clear()
         {
             Recorder.Clear();
+            Takes.Reset();
             if (roles.Count == 0 && folded.Count == 0 && lanes.Count == 0) return;
-            roles.Clear();
+            ClearRoles();
             folded.Clear();
             lanes.Clear();
             Changed?.Invoke();
+        }
+
+        void ClearRoles()
+        {
+            foreach (var lane in roles.Keys)
+                if (lane is SequenceCore seq) seq.TakeLane = false;
+            roles.Clear();
         }
 
         /// <summary>The "Arrangement" subsection's content, or null when everything is as by default.</summary>
@@ -116,17 +133,21 @@ namespace ReBuzz.Core
 
         internal void Apply(XElement root)
         {
-            roles.Clear();
+            ClearRoles();
             folded.Clear();
             lanes.Clear();
             Recorder.Clear();
+            Takes.Reset();
             if (root == null || root.Name.LocalName != "Arrangement") return;
             var sequences = buzz.SongCore.Sequences;
             foreach (var x in root.Elements("Lane"))
             {
                 if (!int.TryParse((string)x.Attribute("index"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int index) || index < 0 || index >= sequences.Count) continue;
                 if (Enum.TryParse<LaneRole>((string)x.Attribute("role"), true, out var role) && role != LaneRole.Main)
+                {
                     roles[sequences[index]] = role;
+                    if (sequences[index] is SequenceCore seq) seq.TakeLane = role == LaneRole.Take;
+                }
             }
             foreach (var x in root.Elements("Folded"))
                 if ((string)x.Attribute("machine") is { Length: > 0 } name) folded.Add(name);

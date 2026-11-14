@@ -30,6 +30,7 @@ namespace ReBuzz.Studio.Views.Sequence
         readonly List<(ArrangementRow Row, Control Cell)> cells = new();
         readonly Dictionary<IMachine, (ToggleButton Mute, ToggleButton Solo)> switches = new();
         readonly List<(string Machine, ColumnKey Key, ToggleButton Record)> recorders = new();
+        readonly Dictionary<IMachine, ToggleButton> arms = new();
         bool building;
 
         public ArrangementHeaders(ReBuzzCore core, ArrangementCanvas timeline)
@@ -54,6 +55,7 @@ namespace ReBuzz.Studio.Views.Sequence
             base.OnAttachedToVisualTree(e);
             StudioTheme.Changed += OnThemeChanged;
             if (core.Arrangement?.Recorder is { } recorder) recorder.Changed += OnRecorderChanged;
+            if (core.Arrangement?.Takes is { } takes) takes.Changed += OnRecorderChanged;
             if (core.SessionCore is { } session)
             {
                 session.TrackStateChanged += OnTrackState;
@@ -65,6 +67,7 @@ namespace ReBuzz.Studio.Views.Sequence
         {
             StudioTheme.Changed -= OnThemeChanged;
             if (core.Arrangement?.Recorder is { } recorder) recorder.Changed -= OnRecorderChanged;
+            if (core.Arrangement?.Takes is { } takes) takes.Changed -= OnRecorderChanged;
             if (core.SessionCore is { } session)
             {
                 session.TrackStateChanged -= OnTrackState;
@@ -94,6 +97,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 cells.Clear();
                 switches.Clear();
                 recorders.Clear();
+                arms.Clear();
                 var look = StudioTheme.Sequence;
                 foreach (var row in timeline.Rows)
                 {
@@ -144,6 +148,8 @@ namespace ReBuzz.Studio.Views.Sequence
             }
             foreach (var (machine, key, record) in recorders)
                 record.IsChecked = core.Arrangement?.Recorder.IsArmed(machine, key) == true;
+            foreach (var (machine, arm) in arms)
+                arm.IsChecked = core.Arrangement?.Takes.IsArmed(machine) == true;
         }
 
         static ToggleButton Toggle(string content, string name, string tip)
@@ -243,9 +249,15 @@ namespace ReBuzz.Studio.Views.Sequence
                 fold.Click += (s, e) => { if (!building) core.Arrangement?.SetFolded(machine.Name, fold.IsChecked == true); };
                 var top = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Children = { fold } };
                 var name = label(machine.Name, true);
-                name.MaxWidth = SequenceGeometry.HeaderWidth - 48;
+                name.MaxWidth = SequenceGeometry.HeaderWidth - 76;
                 name.Margin = new Thickness(4, 0, 0, 0);
                 top.Children.Add(name);
+                var arm = Toggle("R", $"Arm {machine.Name} for recording", "Arm for recording: the machine plays the keyboard, and Record writes what is played into this track (daw-modes.md AR5)");
+                Style(arm, look);
+                arm.IsChecked = core.Arrangement?.Takes.IsArmed(machine) == true;
+                arm.Click += (s, e) => { if (!building) core.Arrangement?.Takes.SetArmed(machine, arm.IsChecked == true); };
+                arms[machine] = arm;
+                top.Children.Add(arm);
                 Grid.SetRow(top, 0);
                 grid.Children.Add(top);
                 if (!row.Folded)

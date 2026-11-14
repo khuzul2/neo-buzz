@@ -568,7 +568,8 @@ namespace ReBuzz.Audio
                 {
                     var seq = sequences[s];
                     // An overridden track ignores its arrangement.
-                    if (session.IsArrangementOverridden(seq))
+                    // Fork (daw-modes.md AR5): a take lane holds a loop recording's passes; it is never played.
+                    if (seq.TakeLane || session.IsArrangementOverridden(seq))
                         continue;
 
                     // Fork (0.4.1): the event at the song position by binary search over a sorted

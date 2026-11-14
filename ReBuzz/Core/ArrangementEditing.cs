@@ -554,6 +554,26 @@ namespace ReBuzz.Core
             return null;
         }
 
+        /// <summary>
+        /// Comping (daw-modes.md §4.4, AR5): the range of a take lane's clip goes on a main lane as an event of the take's pattern,
+        /// trimmed to the range (<c>Offset</c>/<c>End</c>): no notes are copied. What the main lane held there is cut away.
+        /// </summary>
+        public string Comp(ISequence take, int from, int to, ISequence main)
+        {
+            if (take?.Machine == null || main?.Machine == null || take.Machine != main.Machine) return "Comp from a take lane to a lane of the same machine.";
+            if (ReferenceEquals(take, main)) return "Comp from a take lane onto another lane.";
+            var item = Read(take).FirstOrDefault(i => i.Time <= from && from < i.End);
+            if (item == null) return "There's no take at the start of the range.";
+            to = Math.Min(to, item.End);
+            if (to <= from) return "Pick a range inside the take.";
+            var spec = new ClipSpec(0, item.Pattern, from, to - from, item.Spec.PatternPositionAt(from) ?? 0, 0, 0, false, item.Spec.Gain);
+            var plan = new Plan(this);
+            plan.Overwrite(main, from, to);
+            plan.Write(main, spec, newId: true);
+            Commit(plan);
+            return null;
+        }
+
         /// <summary>A copy of a clip right after it, with a pattern of its own.</summary>
         public string Duplicate(ClipItem item) => Move(item, item.Sequence, item.End, CopyMode.Independent);
 
