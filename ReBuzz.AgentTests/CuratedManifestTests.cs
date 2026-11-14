@@ -28,6 +28,10 @@ namespace ReBuzz.AgentTests
             "Jeskola Chorus", "Jeskola Filter 2", "Jeskola Flanger", "Jeskola Gain", "Jeskola Raverb", "Jeskola Stereo Reverb", "Jeskola Wave Shaper",
             "Jeskola Bass", "Jeskola Bass 2", "Jeskola Live", "Jeskola Loop Recorder", "Jeskola Note Matrix", "Jeskola Organ", "Jeskola Relativion",
             "Jeskola Tracker", "Jeskola NiNjA dElaY", "Jeskola Noise Generator", "Jeskola Trilok",
+            // K2 batch c: the other twenty machines of the FSM, Oomek, Polac and Joachims families (drafts, and the five natives generated from source)
+            "FSM Chorus2", "FSM PhatMan", "FSM Philthy", "FSM WahMan", "FSM WahManPro", "FSM WahPro2",
+            "Polac Audio In", "Polac Audio Out", "Polac MIDI Bus II", "Polac MIDI In", "Polac Out", "Polac Out II", "Polac VST 1.1", "Polac VSTi 1.1",
+            "Joachims Chopper 2", "Joachims Enceladus Tube EQ v1", "Joachims Hyperion", "Joachims Jupiter 3", "Joachims Neptune 1.2", "Joachims Saturn 1.4",
         };
 
         /// <summary>U6: the manifests generated from source (tools/source_manifests.py's list) and still marked generated; K2 batch a curated the Pedal ones.</summary>
@@ -35,8 +39,6 @@ namespace ReBuzz.AgentTests
         {
             "AudioBlock", "Connection Mixer Console", "EnvelopeBlock",
             "QuickNote", "ReBuzz Audio In", "ReBuzz Audio Out", "ReBuzz Groove", "ReBuzz Midi Output", "Session Clip Player", "ManagedMultiIOEffect",
-            // U7: the natives (tools/native_manifests.py)
-            "FSM WahMan", "FSM WahManPro", "FSM WahPro2", "FSM Chorus2", "FSM PhatMan",
         };
 
         internal static string Root()
@@ -88,8 +90,8 @@ namespace ReBuzz.AgentTests
             Assert.That(profiled.Keys.Concat(generated.Keys).Except(summary.Select(kv => kv.Key)), Is.Empty, "manifests of machines the package doesn't have");
             Assert.That(summary.Count, Is.GreaterThanOrEqualTo(108));
 
-            Assert.That(Curated().Keys, Is.EquivalentTo(TheCurated), "52 curated (25, K2 batch a's nine Pedal machines and batch b's eighteen Jeskola ones)");
-            Assert.That(profiled.Values.Where(m => m.IsGeneratedFromSource).Select(m => m.Gear), Is.EquivalentTo(TheFromSource), "10 from source (U6), 5 natives (U7; batch b curated the three Jeskola ones)");
+            Assert.That(Curated().Keys, Is.EquivalentTo(TheCurated), "72 curated (25, K2 batch a's nine Pedal machines, batch b's eighteen Jeskola ones and batch c's twenty)");
+            Assert.That(profiled.Values.Where(m => m.IsGeneratedFromSource).Select(m => m.Gear), Is.EquivalentTo(TheFromSource), "10 from source (U6); K2 batches b and c curated every native generated from source (U7)");
             Assert.That(profiled.Values.Where(m => !m.IsCurated && !m.IsGeneratedFromSource).All(m => m.IsDraft), Is.True, "the rest drafts");
             Assert.That(generated.Values.All(m => m.Quality == "generated"), Is.True);
         }

@@ -2,15 +2,24 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Polac Audio Out",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
- "type": "control",
- "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
+ "type": "utility",
+ "summary": "Routing machine that sends its input to an output of the audio device, with one Volume control. An older machine for people who route outputs by hand; the audio device settings and the master do this now.",
  "category": "Utility",
  "tags": [
   "audio-io"
  ],
  "use_for": "Send audio to an output of the audio device (older routing machine).",
+ "quirks": [
+  "The profile has no measurement for it (it has no input or output the test could use), so which device output it uses and what it does to the signal are unverified.",
+  "Volume is a table: silence at 0, about 0 dB at 24,576 (the default) and +12 dB at 32,768.",
+  "Closed source: names come from its own texts and measurements, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - no signal measured through it"
+ ],
  "tracks": 0,
  "health": {
   "status": "ok",
@@ -22,6 +31,8 @@
    "index": 0,
    "id": "Volume",
    "name": "Volume",
+   "plain_name": "Output volume",
+   "role": "level",
    "group": "",
    "min": 0,
    "max": 32768,
@@ -374,6 +385,10 @@
      -0.1
     ],
     [
+     24576,
+     0.0
+    ],
+    [
      24768,
      0.3
     ],
@@ -490,8 +505,9 @@
      12.0
     ]
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Level sent to the audio device, silence at 0 and +12 dB at 32,768 (about 0 dB at the default 24,576).",
+   "how": "Sets the level sent to the audio device, a table from silence up to +12 dB, with 0 dB at about raw 24,576 (the default).",
+   "sound": "Use it to trim what reaches that output; above 0 dB it can overload the device."
   }
  ],
  "track_parameters": []

@@ -129,10 +129,11 @@ None.
 
 What moving each parameter alone changes, as a role (`suggested_role` in the drafts, `machine_describe` shows it). Curated manifests keep their own roles: for their filter, time and mix parameters, the profile's suggestion is listed beside the curated role, and a disagreement is a note here, never a change to the manifest.
 
-Curated filter, time and mix parameters: 104 of 186 suggestions agree.
+Curated filter, time and mix parameters: 113 of 221 suggestions agree.
 
 | Machine | Parameter | Kind | Curated | Suggested | Agrees | Evidence |
 |---|---|---|---|---|---|---|
+| FSM Chorus2 | track Min Delay | time | `mod.delay` | `mod.delay` | yes | the delayed copy moves 10 ms → 27 ms |
 | FSM PanzerDelay | Dry amp | mix | `mix.dry` | — | no | no measurable change between its ends with the others at their defaults |
 | FSM PanzerDelay | Delay unit | time | `delay.unit` | `delay.unit` | yes | a choice of units: the first echo at 375 ms at one setting, within the click at the other |
 | FSM PanzerDelay | Filter type | filter | `filter.type` | — | no | a choice: its texts say what it is; no role measured |
@@ -142,6 +143,24 @@ Curated filter, time and mix parameters: 104 of 186 suggestions agree.
 | FSM PanzerDelay | track R Delay Len | time | `delay.time_right` | `delay.time_left` | yes | the left echo moves 125 ms → 1.49 s, the right stays |
 | FSM PanzerDelay | track Tap Amp | mix | `mix.wet` | `mix.wet` | yes | at its minimum the effect passes the signal unchanged; at the other end echoes from 375 ms; half way less of the same |
 | FSM PanzerDelay | track FB Amp | time | `delay.feedback` | `delay.feedback` | yes | the echoes fade 3 → 27 dB per second, the echo time unchanged |
+| FSM PhatMan | Dry out | mix | `mix.dry` | `filter.cutoff` | no | the response's lower corner moves 23.1 Hz → 1.05 kHz |
+| FSM PhatMan | track Minimum delay | time | `mod.delay` | `filter.cutoff` | no | the response's upper corner moves 523 Hz → 92.5 Hz |
+| FSM PhatMan | track Wet out | mix | `mix.wet` | `filter.cutoff` | no | the response's lower corner moves 23.1 Hz → 1.05 kHz |
+| FSM Philthy | track Cutoff | filter | `filter.cutoff` | `filter.cutoff` | yes | the response's lower corner moves 23.1 Hz → 8.37 kHz |
+| FSM Philthy | track Resonance | filter | `filter.resonance` | `filter.cutoff` | no | the response's lower corner moves 23.1 Hz → 1.05 kHz |
+| FSM Philthy | track Filter | filter | `filter.type` | `filter.type` | yes | its choices change the response's shape (up to 99 dB), corners 262 Hz–523 Hz → 2.09 kHz–2.09 kHz |
+| FSM Philthy | track Inertia | filter | `filter.inertia` | — | no | no measurable change between its ends with the others at their defaults |
+| FSM WahMan | track Cutoff | filter | `filter.cutoff` | `filter.resonance` | no | a peak at 370 Hz: its prominence +18 → +0 dB over the response |
+| FSM WahMan | track Resonance | filter | `filter.resonance` | `mix.wet` | no | the late sound -120 → -29 dB, the direct sound unchanged |
+| FSM WahMan | track Inertia | filter | `filter.inertia` | `filter.cutoff` | no | the response's upper corner moves 2.09 kHz → 262 Hz |
+| FSM WahManPro | track Cutoff | filter | `filter.cutoff` | `filter.cutoff` | yes | the response's upper corner moves 131 Hz → 4.19 kHz |
+| FSM WahManPro | track Resonance | filter | `filter.resonance` | `filter.resonance` | yes | a peak at 740 Hz: its prominence +0 → +21 dB over the response |
+| FSM WahManPro | track Filter | filter | `filter.type` | `filter.type` | yes | its choices change the response's shape (up to 59 dB), corners 740 Hz–740 Hz → 523 Hz–740 Hz |
+| FSM WahManPro | track Inertia | filter | `filter.inertia` | — | no | no measurable change between its ends with the others at their defaults |
+| FSM WahPro2 | track Cutoff | filter | `filter.cutoff` | — | no | no measurable change between its ends with the others at their defaults |
+| FSM WahPro2 | track Resonance | filter | `filter.resonance` | — | no | no measurable change between its ends with the others at their defaults |
+| FSM WahPro2 | track Filter | filter | `filter.type` | `filter.type` | yes | its choices change the response's shape (up to 44 dB), corners 2.09 kHz–2.09 kHz → 1.48 kHz–1.48 kHz |
+| FSM WahPro2 | track Inertia | filter | `filter.inertia` | — | no | no measurable change between its ends with the others at their defaults |
 | Jeskola Chorus | min. delay | time | `mod.delay` | `mod.delay` | yes | the delayed copy moves 30 ms → 55 ms |
 | Jeskola Chorus | dry out | mix | `mix.dry` | `mix.wet` | no | the late sound -120 → -4 dB, the direct sound unchanged |
 | Jeskola Chorus | wet out | mix | `mix.wet` | `mix.wet` | yes | the late sound -120 → -4 dB, the direct sound unchanged |
@@ -191,6 +210,20 @@ Curated filter, time and mix parameters: 104 of 186 suggestions agree.
 | Jeskola Stereo Reverb | ER Out | mix | `reverb.early` | `reverb.early` | yes | reflections from 20 ms come in ahead of the reverb's own at 40 ms, the early sound +2 → +3 dB |
 | Jeskola Stereo Reverb | Rev Time | time | `reverb.decay` | `reverb.decay` | yes | the tail 492 ms → 3.71 s (T60) |
 | Jeskola Stereo Reverb | Pre-Delay | time | `reverb.predelay` | — | no | no measurable change between its ends with the others at their defaults |
+| Joachims Chopper 2 | Dry/wet mix | mix | `mix.wet` | — | no | no measurable change between its ends with the others at their defaults |
+| Joachims Chopper 2 | Frequency | filter | `filter.cutoff` | — | no | no measurable change between its ends with the others at their defaults |
+| Joachims Chopper 2 | Bandwidth | filter | `filter.bandwidth` | — | no | no measurable change between its ends with the others at their defaults |
+| Joachims Chopper 2 | Attack | time | `env.attack` | — | no | no measurable change between its ends with the others at their defaults |
+| Joachims Hyperion | Highpass | filter | `filter.highpass` | `filter.highpass` | yes | the response's lower corner moves 23.1 Hz → 131 Hz |
+| Joachims Hyperion | Bandwidth | filter | `filter.bandwidth` | — | no | no measurable change between its ends with the others at their defaults |
+| Joachims Jupiter 3 |           Attack #8 | time | `dyn.attack` | — | no | not swept on this platform |
+| Joachims Jupiter 3 |           Release #9 | time | `dyn.release` | — | no | not swept on this platform |
+| Joachims Jupiter 3 |           Attack #13 | time | `dyn.attack` | — | no | not swept on this platform |
+| Joachims Jupiter 3 |           Release #14 | time | `dyn.release` | — | no | not swept on this platform |
+| Joachims Jupiter 3 |           Attack #18 | time | `dyn.attack` | — | no | not swept on this platform |
+| Joachims Jupiter 3 |           Release #19 | time | `dyn.release` | — | no | not swept on this platform |
+| Joachims Saturn 1.4 | Room Level | mix | `mix.wet` | `filter.highpass` | no | the response's lower corner moves 23.1 Hz → 8.37 kHz |
+| Joachims Saturn 1.4 | Highpass | filter | `filter.highpass` | `filter.highpass` | yes | the response's lower corner moves 23.1 Hz → 262 Hz |
 | Oomek Exciter | Pre Cut | filter | `filter.highpass` | `filter.cutoff` | yes | the response's lower corner moves 2.96 kHz → 23.1 Hz |
 | Oomek Exciter | Post Cut | filter | `filter.highpass` | `filter.cutoff` | yes | the response's lower corner moves 4.19 kHz → 23.1 Hz |
 | Oomek Masterizer | Decay Lo | time | `dyn.release` | — | no | no measurable change between its ends with the others at their defaults |
@@ -238,6 +271,8 @@ Curated filter, time and mix parameters: 104 of 186 suggestions agree.
 | Pedal Plate | PreDelayMs | time | `reverb.predelay` | `reverb.predelay` | yes | the reverb starts 165 ms → 665 ms after the sound, its tail alike |
 | Pedal Plate | Decay | time | `reverb.decay` | `reverb.decay` | yes | the tail 453 ms → 3.44 s (T60) |
 | Pedal Shaper | Mix | mix | `mix.wet` | — | no | no measurable change between its ends with the others at their defaults |
+| Polac VST 1.1 | Dry Out | mix | `mix.dry` | — | no | no measurable change between its ends with the others at their defaults |
+| Polac VST 1.1 | Wet Out | mix | `mix.wet` | — | no | no measurable change between its ends with the others at their defaults |
 | FSM Infector | Flt Type | filter | `filter.type` | — | no | a choice: its texts say what it is; no role measured |
 | FSM Infector |  - Cutoff | filter | `filter.cutoff` | `filter.cutoff` | yes | the brightness (centroid) 39 Hz → 1.19 kHz |
 | FSM Infector |  - Reso | filter | `filter.resonance` | `filter.resonance` | yes | a peak at 250 Hz stands -18 → -1 dB over the spectrum an octave either side |
@@ -324,10 +359,7 @@ Drafts:
 
 | Machine | Suggested roles |
 |---|---|
-| FSM Philthy | track Cutoff: `filter.cutoff`; track Resonance: `filter.cutoff`; track ThevFactor: `filter.resonance`; track Filter: `filter.type`; track LFO mod: `filter.cutoff`; track L-R phasing: `filter.bandwidth`; track Set phase: `filter.bandwidth` |
 | Joachims Enceladus Tube EQ v1 | 1. Boost: `eq.low.gain`;     Freq #2: `eq.high.freq`;     Bandwidth #3: `eq.high.freq`; 2. Boost: `eq.mid.gain`; 3. Boost: `eq.high.gain`;     Freq #12: `eq.high.freq`;     Bandwidth #13: `eq.high.q` |
-| Joachims Hyperion | Input gain.: `level`; 20000 Hz: `filter.cutoff`; 15800 Hz: `filter.cutoff`; 12400 Hz: `filter.cutoff`;  9800 Hz: `filter.resonance`;  7700 Hz: `filter.resonance`;  6100 Hz: `filter.resonance`;  4800 Hz: `filter.resonance`;  3800 Hz: `filter.resonance`;  2970 Hz: `filter.resonance`;  2340 Hz: `filter.resonance`;  1850 Hz: `filter.resonance`;  1460 Hz: `filter.resonance`;  1150 Hz: `filter.resonance`;   900 Hz: `filter.resonance`;   710 Hz: `filter.resonance`;   560 Hz: `filter.resonance`;   440 Hz: `filter.cutoff`;   350 Hz: `filter.resonance`;   275 Hz: `filter.resonance`;   217 Hz: `filter.cutoff`;   171 Hz: `filter.resonance`;   134 Hz: `filter.resonance`;   106 Hz: `filter.resonance`;    84 Hz: `filter.resonance`;    66 Hz: `mix.wet`;    52 Hz: `mix.wet`;    41 Hz: `filter.resonance`;    32 Hz: `mix.wet`;    25 Hz: `mix.wet`;    20 Hz: `mix.wet`; Highpass: `filter.highpass` |
-| Joachims Saturn 1.4 | Temp. Input: `mix.dry`; Noise type: `mix.dry`; Noise amount: `delay.feedback`; Room Level: `filter.highpass`; Samplerate: `mix.wet`; Antique: `filter.resonance`; Detune Amount: `filter.cutoff`; Detune Speed: `lfo.depth`; Ring Mix: `filter.resonance`; Tube Drive: `drive`; Temp. Output: `mix.dry`; Highpass: `filter.highpass` |
 | mixIO | track Gain: `level`; track Mute: `bypass` |
 | Bigyo Wood One | Noise Time: `filter.cutoff`; Pulse Color: `filter.env_amount`; Inharmonicity: `pitch.coarse`; Damping: `pitch.fine`; Brightness: `filter.env_amount`; Resonator F: `env.decay`; Resonator Q: `env.decay`; Resonator G: `level`; Decay: `filter.cutoff`; Release: `env.release` |
 | kibibu Green Milk | Unison Depth: `env.decay`; Unison Min S: `env.attack`; Unison Max S: `env.attack`; Oscillators: `level`; Glide: `env.attack`; Amp A: `env.attack`; Amp D: `filter.env_amount`; Amp S: `env.decay`; Amp R: `env.release`; Filt Cut: `filter.resonance`; Filt Res: `lfo.filter`; Filt Env: `filter.env_amount`; Filt A: `filter.cutoff`; Filt D: `filter.env.decay`; Filt S: `filter.cutoff`; Length Scale: `env.release`; PreF Dist: `filter.env.decay`; PostF Dist: `filter.cutoff`; TLFO1 Speed: `env.attack`; TLFO1 Delay: `env.attack`; TLFO1->Cut: `lfo.filter`; TLFO1->Res: `lfo.filter`; TLFO2 Speed: `env.attack`; TLFO2 Delay: `env.decay`; TLFO2->Cut: `filter.env_amount`; TLFO2->Res: `filter.env.decay`; TLFO2->Pitch: `env.attack` |

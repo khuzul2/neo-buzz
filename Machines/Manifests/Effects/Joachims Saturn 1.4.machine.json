@@ -2,10 +2,10 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Joachims Saturn 1.4",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
- "type": "utility",
- "summary": "Utility (profiled draft): traits: utility; tail 0.05 s; latency 0 samples; gain -0.0 dB at the defaults.",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
+ "type": "distortion",
+ "summary": "All-purpose vintage degrader: input and output tone tilt, record noise, a small room, bit-depth and sample-rate reduction, an antique frequency response, pitch wobble, ring modulation, tube-style overdrive and a high-pass. For lo-fi character.",
  "category": "Distortion",
  "tags": [
   "bitcrush",
@@ -14,6 +14,18 @@
   "vintage"
  ],
  "use_for": "Lo-fi character in one: noise, bit and sample-rate reduction, detune, ring modulation and tube drive.",
+ "quirks": [
+  "Noise needs its sample files (Joachims Saturn 1.4.raw and 01 to 06 beside the DLL); the package ships them.",
+  "The two tilt controls are hot at their top: +18.9 dBFS peak in the profile; Noise amount at its top is +1.6 dBFS.",
+  "Unverified: what each Noise type is (its page speaks of vinyl scratches at 33 rpm and says the noise is optimised for a 96 kHz sample rate) and the Detune speed text repeats the amount's.",
+  "Stereo, 0 dB at its defaults; a tail of 0.05 s from the room.",
+  "Closed source: names and behaviour come from its own texts and documentation page and from measurements, not from code."
+ ],
+ "evidence": [
+  "RunTime/Gear/Effects/Joachims Saturn 1.4.html - its author's page (each stage described)",
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - 0 dB at the defaults, hot at the tilts' tops"
+ ],
  "tracks": 0,
  "health": {
   "status": "warn",
@@ -644,6 +656,7 @@
    "index": 0,
    "id": "Temp. Input",
    "name": "Temp. Input",
+   "plain_name": "Input tilt",
    "group": "",
    "min": 0,
    "max": 254,
@@ -652,14 +665,14 @@
    "a": -127.0,
    "b": 127.0,
    "description": "Temperature (soft/sharp) on input signal",
-   "confidence": "values",
-   "suggested_role": "mix.dry",
-   "role_evidence": "the direct sound -45 → +25 dB while the tail stays (-44 → -41 dB)"
+   "how": "Tilts the tone at the start of the chain, -127 to +127 (0 at 127; soft to sharp).",
+   "sound": "Negative values soften and darken; positive ones sharpen; the extremes get very loud."
   },
   {
    "index": 1,
    "id": "Noise type",
    "name": "Noise type",
+   "plain_name": "Noise type",
    "group": "",
    "min": 0,
    "max": 15,
@@ -667,14 +680,14 @@
    "kind": "int",
    "a": 0,
    "description": "Type of noise to add",
-   "confidence": "values",
-   "suggested_role": "mix.dry",
-   "role_evidence": "the direct sound -205 → -120 dB while the tail stays (-45 → -43 dB) (with Detune Amount half way)"
+   "how": "Chooses a type of noise to add, 0 to 15 (what each number is was not identified).",
+   "sound": "Different numbers give different noise textures; check them by ear."
   },
   {
    "index": 2,
    "id": "Noise amount",
    "name": "Noise amount",
+   "plain_name": "Noise amount",
    "group": "",
    "min": 0,
    "max": 127,
@@ -682,6 +695,10 @@
    "kind": "table",
    "unit": "dB",
    "points": [
+    [
+     0,
+     "-inf"
+    ],
     [
      1,
      -125.8
@@ -1192,14 +1209,15 @@
     ]
    ],
    "description": "How much of the above noise type to add",
-   "confidence": "values",
-   "suggested_role": "delay.feedback",
-   "role_evidence": "the tail 0 ms → 3.22 s (T60)"
+   "how": "Sets how much of the chosen noise is added, a table from silence to 0 dB.",
+   "sound": "A little adds vinyl crackle or hiss, like an old record; full is very loud."
   },
   {
    "index": 3,
    "id": "Room Level",
    "name": "Room Level",
+   "plain_name": "Room level",
+   "role": "mix.wet",
    "group": "",
    "min": 0,
    "max": 127,
@@ -1207,6 +1225,10 @@
    "kind": "table",
    "unit": "dB",
    "points": [
+    [
+     0,
+     "-inf"
+    ],
     [
      1,
      -125.8
@@ -1717,14 +1739,15 @@
     ]
    ],
    "description": "Room level",
-   "confidence": "values",
-   "suggested_role": "filter.highpass",
-   "role_evidence": "the response's lower corner moves 23.1 Hz → 8.37 kHz"
+   "how": "Sets the level of added room reverb, a table from silence to 0 dB.",
+   "sound": "A little makes the sound feel recorded at a distance, which suits retro tones."
   },
   {
    "index": 4,
    "id": "Room Size",
    "name": "Room Size",
+   "plain_name": "Room size",
+   "role": "reverb.size",
    "group": "",
    "min": 0,
    "max": 127,
@@ -1733,12 +1756,14 @@
    "a": 0.0,
    "b": 127.0,
    "description": "Room size",
-   "confidence": "values"
+   "how": "Sets the size of that room, 0 to 127 (30 by default); it also fades the noise out.",
+   "sound": "Larger rooms give a longer, more distant tail."
   },
   {
    "index": 5,
    "id": "Bits",
    "name": "Bits",
+   "plain_name": "Bit depth",
    "group": "",
    "min": 0,
    "max": 4,
@@ -1752,12 +1777,14 @@
     "1-bit"
    ],
    "description": "Bit degrader",
-   "confidence": "values"
+   "how": "Limits the bit depth: off, 8, 4, 2 or 1 bit.",
+   "sound": "Lower depths add steps and hiss in the style of old digital gear; 1 bit is a harsh buzz."
   },
   {
    "index": 6,
    "id": "Samplerate",
    "name": "Samplerate",
+   "plain_name": "Sample rate",
    "group": "",
    "min": 1,
    "max": 255,
@@ -1767,14 +1794,14 @@
    "b": 22031.2,
    "unit": "Hz",
    "description": "Samplerate degrader",
-   "confidence": "values",
-   "suggested_role": "mix.wet",
-   "role_evidence": "the late sound -27 → -41 dB, the direct sound unchanged"
+   "how": "Lowers the sample rate, about 410 Hz to 22 kHz, with no anti-alias filter.",
+   "sound": "Lower values add aliasing and a gritty, dull, lo-fi sound."
   },
   {
    "index": 7,
    "id": "Antique",
    "name": "Antique",
+   "plain_name": "Antique",
    "group": "",
    "min": 0,
    "max": 127,
@@ -1783,14 +1810,14 @@
    "a": 0.0,
    "b": 127.0,
    "description": "Old-style frequency response",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 1.05 kHz: its prominence +0 → +7 dB over the response"
+   "how": "Changes the frequency response in a way that sounds like old, rusty gear, 0 to 127.",
+   "sound": "More makes the sound thinner and more telephone-like, with its level kept up."
   },
   {
    "index": 8,
    "id": "Detune Amount",
    "name": "Detune Amount",
+   "plain_name": "Detune amount",
    "group": "",
    "min": 0,
    "max": 127,
@@ -1799,14 +1826,14 @@
    "a": 0.0,
    "b": 127.0,
    "description": "Detuning amount",
-   "confidence": "values",
-   "suggested_role": "filter.cutoff",
-   "role_evidence": "the response's upper corner moves 16.7 kHz → 1.48 kHz"
+   "how": "Sets how much the pitch wobbles, 0 to 127.",
+   "sound": "More gives the pitch drift of a worn record or tape."
   },
   {
    "index": 9,
    "id": "Detune Speed",
    "name": "Detune Speed",
+   "plain_name": "Detune speed",
    "group": "",
    "min": 1,
    "max": 127,
@@ -1815,14 +1842,14 @@
    "a": 1.0,
    "b": 127.0,
    "description": "Detuning amount",
-   "confidence": "values",
-   "suggested_role": "lfo.depth",
-   "role_evidence": "the gain moves 0.1 → 8.9 dB within each tone (with Detune Amount half way)"
+   "how": "Sets how fast the pitch wobbles, 1 to 127 (its own text repeats the amount's description).",
+   "sound": "Low values drift slowly; high values warble."
   },
   {
    "index": 10,
    "id": "Ring Mod.",
    "name": "Ring Mod.",
+   "plain_name": "Ring mod frequency",
    "group": "",
    "min": 1,
    "max": 32767,
@@ -2292,29 +2319,32 @@
     ]
    ],
    "description": "Ring modulation frequency",
-   "confidence": "values"
+   "how": "Sets the ring modulator's frequency, 20 Hz to 22 kHz as a table.",
+   "sound": "Lower values give a tremolo; higher ones add metallic, bell-like sidebands."
   },
   {
    "index": 11,
    "id": "Ring Mix",
    "name": "Ring Mix",
+   "plain_name": "Ring mod mix",
    "group": "",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
-   "a": -0.499273,
-   "b": 99.514898,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
    "description": "Ring modulation wet-dry",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 185 Hz: its prominence +0 → +11 dB over the response"
+   "how": "Sets the mix of the ring modulation, 0 to 100 percent.",
+   "sound": "More gives a more robotic, metallic sound; 0 leaves it off."
   },
   {
    "index": 12,
    "id": "Tube Drive",
    "name": "Tube Drive",
+   "plain_name": "Tube drive",
+   "role": "drive",
    "group": "",
    "min": 0,
    "max": 127,
@@ -2323,14 +2353,14 @@
    "a": 0.0,
    "b": 127.0,
    "description": "Tube overdrive",
-   "confidence": "values",
-   "suggested_role": "drive",
-   "role_evidence": "harmonics 1.8 → 34.6 % on a sine"
+   "how": "Sets the overdrive's amount, 0 to 127.",
+   "sound": "More adds a gradual, retro-gear style saturation."
   },
   {
    "index": 13,
    "id": "Tube Shape",
    "name": "Tube Shape",
+   "plain_name": "Tube shape",
    "group": "",
    "min": 0,
    "max": 254,
@@ -2339,12 +2369,14 @@
    "a": -127.0,
    "b": 127.0,
    "description": "Tube overdrive shape",
-   "confidence": "values"
+   "how": "Sets the overdrive's shape, -127 to +127 (0 at 127); its own text says 0 gives transistor-like clipping and other values tube-like.",
+   "sound": "It changes the harmonic character of the drive between harder and softer clipping."
   },
   {
    "index": 14,
    "id": "Temp. Output",
    "name": "Temp. Output",
+   "plain_name": "Output tilt",
    "group": "",
    "min": 0,
    "max": 254,
@@ -2353,26 +2385,26 @@
    "a": -127.0,
    "b": 127.0,
    "description": "Temperature (soft/sharp) on output signal",
-   "confidence": "values",
-   "suggested_role": "mix.dry",
-   "role_evidence": "the direct sound -45 → +25 dB while the tail stays (-44 → -41 dB)"
+   "how": "Tilts the tone at the end of the chain, -127 to +127 (0 at 127).",
+   "sound": "Negative values soften and darken; positive ones sharpen; the extremes get very loud."
   },
   {
    "index": 15,
    "id": "Highpass",
    "name": "Highpass",
+   "plain_name": "Highpass",
+   "role": "filter.highpass",
    "group": "",
    "min": 0,
    "max": 127,
    "default": 24,
    "kind": "freq",
-   "a": 5.00072,
-   "b": 200.011,
+   "a": 5.0,
+   "b": 200.0,
    "unit": "Hz",
    "description": "Highpass / DC remover",
-   "confidence": "values",
-   "suggested_role": "filter.highpass",
-   "role_evidence": "the response's lower corner moves 23.1 Hz → 262 Hz"
+   "how": "Sets a 12 dB per octave high-pass, 5 Hz to 200 Hz (about 24 raw gives 40 Hz); it is also a DC remover.",
+   "sound": "Higher values thin the bass; low ones only remove subsonic rumble."
   }
  ],
  "track_parameters": []

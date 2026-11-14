@@ -1523,7 +1523,9 @@
      24.08
     ]
    ],
-   "description": "Gain into the limiters, −inf to +24 dB (square-law)."
+   "description": "Gain into the limiters, −inf to +24 dB (square-law).",
+   "how": "Sets the gain into the limiters, from silence to +24 dB (a square-law scale).",
+   "sound": "Raising it drives the limiters harder for more loudness; the output rises until the thresholds hold it."
   },
   {
    "index": 1,
@@ -2503,7 +2505,9 @@
      6.02
     ]
    ],
-   "description": "Limit for the low band, −inf to +6 dB."
+   "description": "Limit for the low band, −inf to +6 dB.",
+   "how": "Sets the low band's limit, from silence to +6 dB.",
+   "sound": "Lower values limit the bass harder and keep it tight; at the top it hardly acts."
   },
   {
    "index": 2,
@@ -3483,7 +3487,9 @@
      6.02
     ]
    ],
-   "description": "Limit for the mid band, −inf to +6 dB."
+   "description": "Limit for the mid band, −inf to +6 dB.",
+   "how": "Sets the mid band's limit, from silence to +6 dB.",
+   "sound": "Lower values hold the mids down; they decide how forward the body of the mix sounds."
   },
   {
    "index": 3,
@@ -4463,7 +4469,9 @@
      6.02
     ]
    ],
-   "description": "Limit for the high band, −inf to +6 dB."
+   "description": "Limit for the high band, −inf to +6 dB.",
+   "how": "Sets the high band's limit, from silence to +6 dB.",
+   "sound": "Lower values hold the top down and tame harsh or sizzling highs."
   },
   {
    "index": 4,
@@ -4479,7 +4487,9 @@
    "a": 0.04,
    "b": 0.96,
    "unit": "s",
-   "description": "40–960 ms."
+   "description": "40–960 ms.",
+   "how": "Sets how long the low band's limiter takes to let go, 40 to 960 ms.",
+   "sound": "Short values pump with the bass; long ones give a steadier, smoother low end."
   },
   {
    "index": 5,
@@ -4495,7 +4505,9 @@
    "a": 0.04,
    "b": 0.96,
    "unit": "s",
-   "description": "40–960 ms."
+   "description": "40–960 ms.",
+   "how": "Sets how long the mid band's limiter takes to let go, 40 to 960 ms.",
+   "sound": "Short values sound more active; long ones are smoother."
   },
   {
    "index": 6,
@@ -4511,7 +4523,9 @@
    "a": 0.04,
    "b": 0.96,
    "unit": "s",
-   "description": "40–960 ms."
+   "description": "40–960 ms.",
+   "how": "Sets how long the high band's limiter takes to let go, 40 to 960 ms.",
+   "sound": "Short values keep the top lively; long ones are smoother."
   },
   {
    "index": 7,
@@ -4528,7 +4542,9 @@
    "b": 819.851574,
    "unit": "Hz",
    "own_texts": false,
-   "description": "About 16–820 Hz (its own estimate at 44.1 kHz)."
+   "description": "About 16–820 Hz (its own estimate at 44.1 kHz).",
+   "how": "Sets the crossover between the low and mid bands, about 16 to 820 Hz (its own estimate at 44.1 kHz).",
+   "sound": "Lower values give the low band only the deepest bass; higher ones put more body in it."
   },
   {
    "index": 8,
@@ -4545,7 +4561,9 @@
    "b": 8042.29249,
    "unit": "Hz",
    "own_texts": false,
-   "description": "About 1–8 kHz (its own estimate at 44.1 kHz)."
+   "description": "About 1–8 kHz (its own estimate at 44.1 kHz).",
+   "how": "Sets the crossover between the mid and high bands, about 1 to 8 kHz (its own estimate at 44.1 kHz).",
+   "sound": "Lower values give the high band more of the mids; higher ones keep it to the very top."
   },
   {
    "index": 9,
@@ -4560,7 +4578,9 @@
    "kind": "int",
    "a": 0,
    "own_texts": false,
-   "description": "0 soft to 32 hard."
+   "description": "0 soft to 32 hard.",
+   "how": "Sets the limiters' knee from 0 (soft) to 32 (hard).",
+   "sound": "A soft knee starts limiting gently and sounds more natural; a hard one is stricter and more obvious."
   }
  ],
  "track_parameters": []

@@ -479,7 +479,9 @@
    "b": 2.0,
    "unit": "×",
    "own_texts": false,
-   "description": "Gain into the shaper, 0.008× to 2× (1× at raw 120)."
+   "description": "Gain into the shaper, 0.008× to 2× (1× at raw 120).",
+   "how": "Sets the gain into the shaper, 0.008 times to 2 times (1 times at 120).",
+   "sound": "More drive creates more harmonics from the high-passed signal; too much sounds fizzy."
   },
   {
    "index": 1,
@@ -496,7 +498,9 @@
    "b": 6990.483495,
    "unit": "Hz",
    "own_texts": false,
-   "description": "High-pass before the shaper, about 30 Hz – 7 kHz."
+   "description": "High-pass before the shaper, about 30 Hz – 7 kHz.",
+   "how": "Sets a high-pass before the shaper, about 30 Hz to 7 kHz (its own estimate at 44.1 kHz).",
+   "sound": "Higher values send only the top of the sound to be excited, so the added harmonics sit higher and the bass is left alone."
   },
   {
    "index": 2,
@@ -513,7 +517,9 @@
    "b": 6990.483495,
    "unit": "Hz",
    "own_texts": false,
-   "description": "High-pass after the shaper."
+   "description": "High-pass after the shaper.",
+   "how": "Sets a high-pass after the shaper, about 30 Hz to 7 kHz (its own estimate at 44.1 kHz).",
+   "sound": "Higher values remove the shaper's lows so only bright harmonics are added back."
   },
   {
    "index": 3,
@@ -1493,7 +1499,9 @@
      6.02
     ]
    ],
-   "description": "Level of the excited signal added to the dry, −inf to +6 dB."
+   "description": "Level of the excited signal added to the dry, −inf to +6 dB.",
+   "how": "Sets the level of the excited signal added to the dry sound, from silence to +6 dB.",
+   "sound": "More amount adds more sparkle and presence; the output grows louder as it rises."
   }
  ],
  "track_parameters": []

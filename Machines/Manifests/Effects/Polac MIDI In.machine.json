@@ -2,15 +2,23 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Polac MIDI In",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
  "type": "control",
- "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "summary": "Control machine that receives MIDI from a device into the song, with no parameters of its own. An older routing machine; the app's MIDI settings and bindings cover this now.",
  "category": "Control",
  "tags": [
   "midi"
  ],
  "use_for": "Receive MIDI from a device into the song (older routing machine).",
+ "quirks": [
+  "It has no parameters and makes no sound; what it forwards, and to which machines, was not measured: unverified.",
+  "Closed source: names come from its own texts and measurements, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled) - none: it has no parameters",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - a control machine, no sound"
+ ],
  "tracks": 0,
  "health": {
   "status": "ok",

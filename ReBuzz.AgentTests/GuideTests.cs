@@ -298,7 +298,7 @@ namespace ReBuzz.AgentTests
                 Assert.That(curated, Does.StartWith("## How it sounds"), gear);
                 Assert.That(MachineManual.Curated(MachineManual.Slug(gear)), Is.EqualTo(curated), "found by its slug too");
             }
-            Assert.That(MachineManual.Curated("FSM Infector"), Is.Null, "a curated machine of a family not done yet has no page");
+            Assert.That(MachineManual.Curated("Rout 909"), Is.Null, "a curated machine of a family not done yet has no page");
             Assert.That(MachineManual.Slug("Neo FM6"), Is.EqualTo("neo-fm6"));
             Assert.That(MachineManual.UriFor("Neo Poly"), Is.EqualTo("rebuzz://machines/neo-poly/manual"));
             Assert.That(MachineManual.SlugOf("rebuzz://machines/Neo%20Poly/manual"), Is.EqualTo("neo-poly"));

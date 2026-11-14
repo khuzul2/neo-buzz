@@ -2,15 +2,24 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Polac Audio In",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
- "type": "generator (silent at its defaults)",
- "summary": "Generator (silent at its defaults) (profiled draft): no sound from a note at its defaults.",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
+ "type": "generator",
+ "summary": "Routing machine that brings an input of the audio device into the song as a source, with one Gain control. An older machine; the Studio and the master record inputs another way.",
  "category": "Utility",
  "tags": [
   "audio-io"
  ],
  "use_for": "Bring an audio input into the song as a source (older routing machine).",
+ "quirks": [
+  "A note does nothing: it is a source of live input; with no input signal in the profile it was silent, so which device input it takes is unverified.",
+  "Gain is a table: silence at 0, about 0 dB at 24,576 (the default) and +12 dB at 32,768.",
+  "Closed source: names come from its own texts and measurements, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - silent with no device input"
+ ],
  "tracks": 0,
  "notes": {
   "input": "none"
@@ -44,6 +53,8 @@
    "index": 0,
    "id": "Gain",
    "name": "Gain",
+   "plain_name": "Input gain",
+   "role": "gain.input",
    "group": "",
    "min": 0,
    "max": 32768,
@@ -396,6 +407,10 @@
      -0.1
     ],
     [
+     24576,
+     0.0
+    ],
+    [
      24768,
      0.3
     ],
@@ -512,8 +527,9 @@
      12.0
     ]
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Gain of the input brought into the song, silence at 0 and +12 dB at 32,768 (about 0 dB at the default 24,576).",
+   "how": "Sets the gain of the audio input brought into the song, a table from silence up to +12 dB, with 0 dB at about raw 24,576 (the default).",
+   "sound": "Turn it up for a quiet source and down for a hot one; no sound arrives unless the device input has a signal."
   }
  ],
  "track_parameters": []

@@ -2,16 +2,28 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Joachims Chopper 2",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
- "type": "utility",
- "summary": "Utility (profiled draft): traits: utility; tail 0.0 s; latency 0 samples; gain -0.8 dB at the defaults.",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
+ "type": "gate",
+ "summary": "Gapper: cuts the sound into rhythmic chops fired by writing Trigger, with a band-pass filter on each gap, a de-clicking attack, a time-travel control that plays earlier sound, an internal random pattern and commands to control it. Version 2.2. For stutter and rhythmic gating.",
  "category": "Modulation",
  "tags": [
   "filter",
   "rhythmic"
  ],
  "use_for": "Triggered band-pass sweeps for stuttering, chopped filter moves.",
+ "quirks": [
+  "A played machine: nothing chops until Trigger is written (a pattern column, so use automation_write); at the defaults the profile measured -0.8 dB, so it passes the sound.",
+  "Command and Value work as a pair: Command picks what to change (1 reset the random pattern, 5 filter steepness, 11 gate or ducking mode, 16 what Assignable does) and Value is its amount.",
+  "Attributes Rows per beat (leave at 4 unless the pattern editor differs) and Filter steepness are set on the machine.",
+  "Unverified: the Trigger step labels read 'short' for every value, so the decay each step gives was not measured.",
+  "Closed source: names and behaviour come from its own texts and documentation page and from measurements, not from code."
+ ],
+ "evidence": [
+  "RunTime/Gear/Effects/Joachims Chopper 2.html - its author's documentation page (the parameters, commands and attributes)",
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - -0.8 dB at the defaults"
+ ],
  "tracks": 0,
  "health": {
   "status": "ok",
@@ -518,21 +530,25 @@
    "index": 0,
    "id": "Dry/wet mix",
    "name": "Dry/wet mix",
+   "plain_name": "Dry/wet mix",
+   "role": "mix.wet",
    "group": "",
    "min": 0,
    "max": 128,
    "default": 128,
    "kind": "linear",
-   "a": 0.023375,
-   "b": 100.007633,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "",
-   "confidence": "values"
+   "description": "Mix between the dry signal and the chopped signal, 0 to 100 percent.",
+   "how": "Sets the mix between the dry signal and the chopped signal, 0 to 100 percent.",
+   "sound": "At 100 percent you hear only the gaps; lower values blend the untouched sound back in."
   },
   {
    "index": 1,
    "id": "Trigger",
    "name": "Trigger",
+   "plain_name": "Gap trigger",
    "group": "",
    "min": 1,
    "max": 128,
@@ -669,12 +685,15 @@
     "128 (long)"
    ],
    "description": "Trigger, decay curve shape",
-   "confidence": "values"
+   "how": "Writing a value fires a gap; large values keep the sound open for a whole tick and shorter ones decay faster along a logarithmic curve (the steps are labelled short).",
+   "sound": "Each write is one chop: write it on beats to make rhythmic gating and stutter."
   },
   {
    "index": 2,
    "id": "Assignable",
    "name": "Assignable",
+   "plain_name": "Assignable (pan)",
+   "role": "pan",
    "group": "",
    "min": 0,
    "max": 128,
@@ -812,12 +831,15 @@
     "Pan +100%"
    ],
    "description": "Customizable control (default pan)",
-   "confidence": "values"
+   "how": "Holds a customisable control that defaults to the gap's pan, -100 to +100 percent in steps of about 1.6 (what it controls is set with command 10).",
+   "sound": "As pan it places each chop in the stereo field, which makes a stuttering ping-pong."
   },
   {
    "index": 3,
    "id": "Frequency",
    "name": "Frequency",
+   "plain_name": "Gap filter frequency",
+   "role": "filter.cutoff",
    "group": "",
    "min": 1,
    "max": 128,
@@ -827,12 +849,15 @@
    "b": 10022.7,
    "unit": "Hz",
    "description": "Butterworth bandpass middle frequency",
-   "confidence": "values"
+   "how": "Sets the centre of the band-pass filter on the current gap, about 40 Hz to 10 kHz on an exponential scale; no effect while Bandwidth is at its maximum (off).",
+   "sound": "Different values per gap make each chop sound at a different pitch or brightness."
   },
   {
    "index": 4,
    "id": "Bandwidth",
    "name": "Bandwidth",
+   "plain_name": "Gap filter bandwidth",
+   "role": "filter.bandwidth",
    "group": "",
    "min": 1,
    "max": 128,
@@ -841,12 +866,15 @@
    "a": 1.0,
    "b": 128.0,
    "description": "Butterworth bandpass bandwidth",
-   "confidence": "values"
+   "how": "Sets the band-pass filter's width, 1 to 128: the smaller, the narrower; 128 (the default) bypasses it.",
+   "sound": "Narrow bands give thin, pitched blips; wide ones keep the full sound."
   },
   {
    "index": 5,
    "id": "Attack",
    "name": "Attack",
+   "plain_name": "Attack",
+   "role": "env.attack",
    "group": "",
    "min": 0,
    "max": 200,
@@ -857,12 +885,14 @@
    "exponent": 2.001,
    "unit": "s",
    "description": "Attack time (ms/100)",
-   "confidence": "values"
+   "how": "Sets the fade-in time of a chop, 0 to 50 ms.",
+   "sound": "Short values keep the click of a hard gate; longer ones round it off but make the attack dull."
   },
   {
    "index": 6,
    "id": "Travel back",
    "name": "Travel back",
+   "plain_name": "Travel back",
    "group": "",
    "min": 0,
    "max": 128,
@@ -872,12 +902,14 @@
    "b": 128.0,
    "unit": "ticks",
    "description": "Number of ticks to go back in time",
-   "confidence": "values"
+   "how": "Plays sound from earlier in time instead of the current sound: 0 to 128 ticks back.",
+   "sound": "It makes a chop repeat something that already played, which gives glitchy rearrangements."
   },
   {
    "index": 7,
    "id": "Command",
    "name": "Command",
+   "plain_name": "Command",
    "group": "",
    "min": 1,
    "max": 255,
@@ -886,12 +918,14 @@
    "a": 1.0,
    "b": 255.0,
    "description": "Command to control",
-   "confidence": "values"
+   "how": "Chooses a command, 1 to 255: reset or randomise the internal random pattern, set filter steepness, set how much the pattern affects decay, filter or pan, set mutation speed, choose gate or ducking mode, or choose what Assignable controls.",
+   "sound": "Commands change how the machine behaves from then on; the next parameter is their value."
   },
   {
    "index": 8,
    "id": "Value",
    "name": "Value",
+   "plain_name": "Command value",
    "group": "",
    "min": 0,
    "max": 65534,
@@ -900,7 +934,8 @@
    "a": 0.0,
    "b": 65534.0,
    "description": "Value of the current or last command",
-   "confidence": "values"
+   "how": "Holds the value of the current or last command, 0 to 65,534.",
+   "sound": "It has no sound of its own; it sets the amount or seed that the command uses."
   }
  ],
  "track_parameters": []

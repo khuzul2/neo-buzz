@@ -22,6 +22,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import source_manifests as sm  # noqa: E402
+import k2c_knowledge as k2c  # noqa: E402  (K2 batch c: the five generated FSM manifests curated, and every FSM, Oomek, Polac and Joachims parameter's Explain text)
 import jeskola_knowledge as jk  # noqa: E402  (K2 batch b: the three generated Jeskola manifests curated, and every Jeskola parameter's Explain text)
 
 ROOT = sm.ROOT
@@ -315,6 +316,8 @@ def generate(spec, existing):
         m[group] = out
     jk.curate(m)
     jk.explain(m)
+    k2c.curate(m)
+    k2c.explain(m)
     return sm.mc.apply(m), sub
 
 

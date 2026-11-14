@@ -623,7 +623,9 @@
     "User CC'",
     "User D"
    ],
-   "description": "Waveform: sine, triangle, SuperSaw, PWM square and more, or user waves A–D."
+   "description": "Waveform: sine, triangle, SuperSaw, PWM square and more, or user waves A–D.",
+   "how": "Chooses oscillator 1's waveform: sine, triangle, a stack of detuned saws, pulse and odd shapes, a saw, or one of the user waves.",
+   "sound": "Sine is pure, the stacked saws give the big supersaw sound, and the odd shapes give hollow or vocal colours."
   },
   {
    "index": 1,
@@ -638,7 +640,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 239.0,
-   "description": "Speed of oscillator 1's pulse-width LFO."
+   "description": "Speed of oscillator 1's pulse-width LFO.",
+   "how": "Sets the speed of oscillator 1's pulse-width movement, 0 to 239.",
+   "sound": "Slow movement gives a gentle chorus-like animation; fast movement gives a buzzing shimmer."
   },
   {
    "index": 2,
@@ -653,7 +657,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 239.0,
-   "description": "Depth of oscillator 1's pulse-width modulation."
+   "description": "Depth of oscillator 1's pulse-width modulation.",
+   "how": "Sets how far oscillator 1's pulse width moves, 0 to 239.",
+   "sound": "More depth makes the tone thicker and more animated; 0 leaves the shape still."
   },
   {
    "index": 3,
@@ -669,7 +675,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Centre pulse width, −100% to +100%."
+   "description": "Centre pulse width, −100% to +100%.",
+   "how": "Sets oscillator 1's centre pulse width, -100 to +100 percent.",
+   "sound": "Moving it away from the middle thins the pulse and makes it more nasal."
   },
   {
    "index": 4,
@@ -707,7 +715,9 @@
     "User CC'",
     "User D"
    ],
-   "description": "Waveform of oscillator 2."
+   "description": "Waveform of oscillator 2.",
+   "how": "Chooses oscillator 2's waveform from the same list as oscillator 1.",
+   "sound": "Different waves in the two oscillators make a fuller, more complex tone."
   },
   {
    "index": 5,
@@ -722,7 +732,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 239.0,
-   "description": "Speed of oscillator 2's pulse-width LFO."
+   "description": "Speed of oscillator 2's pulse-width LFO.",
+   "how": "Sets the speed of oscillator 2's pulse-width movement, 0 to 239.",
+   "sound": "Different rates for the two oscillators make the sound drift against itself."
   },
   {
    "index": 6,
@@ -737,7 +749,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 239.0,
-   "description": "Depth of oscillator 2's pulse-width modulation."
+   "description": "Depth of oscillator 2's pulse-width modulation.",
+   "how": "Sets how far oscillator 2's pulse width moves, 0 to 239.",
+   "sound": "More depth makes the second voice move more; 0 leaves it still."
   },
   {
    "index": 7,
@@ -753,7 +767,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Centre pulse width, −100% to +100%."
+   "description": "Centre pulse width, −100% to +100%.",
+   "how": "Sets oscillator 2's centre pulse width, -100 to +100 percent.",
+   "sound": "Moving it away from the middle thins the second voice."
   },
   {
    "index": 8,
@@ -769,7 +785,9 @@
    "a": -36.0,
    "b": 36.0,
    "unit": "st",
-   "description": "Semitones from oscillator 1, −36 to +36."
+   "description": "Semitones from oscillator 1, −36 to +36.",
+   "how": "Sets oscillator 2's pitch against oscillator 1, -36 to +36 semitones.",
+   "sound": "A fifth or an octave gives power chords and thickness; other values give stacked intervals."
   },
   {
    "index": 9,
@@ -785,7 +803,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "Cents above oscillator 1, 0–100."
+   "description": "Cents above oscillator 1, 0–100.",
+   "how": "Detunes oscillator 2 above oscillator 1, 0 to 100 cents.",
+   "sound": "A few cents give a fat, beating sound; large values sound out of tune."
   },
   {
    "index": 10,
@@ -801,7 +821,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Share of oscillator 2 in the mix: 0% oscillator 1 only, 100% oscillator 2 only."
+   "description": "Share of oscillator 2 in the mix: 0% oscillator 1 only, 100% oscillator 2 only.",
+   "how": "Sets the balance between the two oscillators: 0 is oscillator 1 only, 100 percent oscillator 2 only.",
+   "sound": "The middle mixes both for the full detuned sound."
   },
   {
    "index": 11,
@@ -837,7 +859,9 @@
     "User D",
     "User D'"
    ],
-   "description": "Waveform of the sub-oscillator, an octave below."
+   "description": "Waveform of the sub-oscillator, an octave below.",
+   "how": "Chooses the sub-oscillator's waveform, which sounds an octave below the note.",
+   "sound": "A sine sub adds clean weight; saws and squares add a harder, buzzier bottom."
   },
   {
    "index": 12,
@@ -853,7 +877,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Level of the sub-oscillator."
+   "description": "Level of the sub-oscillator.",
+   "how": "Sets the sub-oscillator's level, 0 to 100 percent.",
+   "sound": "Raise it for more bass weight; at 0 it is off."
   },
   {
    "index": 13,
@@ -869,7 +895,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "How smoothly the pitch moves between notes."
+   "description": "How smoothly the pitch moves between notes.",
+   "how": "Sets how smoothly the pitch moves between notes, 0 to 100 percent.",
+   "sound": "Higher values give a slide between notes, like a monosynth's portamento."
   },
   {
    "index": 14,
@@ -902,7 +930,9 @@
     "6X Vocal2",
     "No Filter"
    ],
-   "description": "6-pole lowpass variants (36 dB/oct), 4- and 2-pole lowpasses, notches, highpass, bandpass, mixed."
+   "description": "6-pole lowpass variants (36 dB/oct), 4- and 2-pole lowpasses, notches, highpass, bandpass, mixed.",
+   "how": "Chooses the filter: six-, four- and two-pole low-passes in several voicings, a notch, a high-pass, a band-pass, mixed vocal filters, or none.",
+   "sound": "Low-passes darken the sound at different slopes; the mixed ones give vowel-like tones; none leaves the oscillators bare."
   },
   {
    "index": 15,
@@ -918,7 +948,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Cutoff before modulation, 0–100%."
+   "description": "Cutoff before modulation, 0–100%.",
+   "how": "Sets the filter's cutoff before modulation, 0 to 100 percent.",
+   "sound": "Low values are dark and muffled; high values are bright. The envelope and LFOs move it from here."
   },
   {
    "index": 16,
@@ -934,7 +966,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Resonance (its meaning varies with the filter type)."
+   "description": "Resonance (its meaning varies with the filter type).",
+   "how": "Sets the filter's resonance, 0 to 100 percent; its meaning varies with the filter type.",
+   "sound": "More resonance emphasises the cutoff with a ringing peak; very high settings whistle."
   },
   {
    "index": 17,
@@ -950,7 +984,9 @@
    "a": -200.0,
    "b": 200.0,
    "unit": "%",
-   "description": "Envelope to cutoff, −200% to +200%."
+   "description": "Envelope to cutoff, −200% to +200%.",
+   "how": "Sets how far the filter envelope moves the cutoff, -200 to +200 percent.",
+   "sound": "Positive values open the filter on each note and then close it; negative values do the reverse."
   },
   {
    "index": 18,
@@ -966,7 +1002,9 @@
    "a": 0.005,
    "b": 12.0,
    "unit": "s",
-   "description": "5 ms – 12 s exponential."
+   "description": "5 ms – 12 s exponential.",
+   "how": "Sets the filter envelope's attack, 5 ms to 12 s (exponential).",
+   "sound": "Short values open the filter at once; long ones make a slow swell."
   },
   {
    "index": 19,
@@ -982,7 +1020,9 @@
    "a": 0.08,
    "b": 12.0,
    "unit": "s",
-   "description": "80 ms – 12 s exponential."
+   "description": "80 ms – 12 s exponential.",
+   "how": "Sets the filter envelope's decay, 80 ms to 12 s (exponential).",
+   "sound": "Short values give a plucky pluck; long ones make the sweep last."
   },
   {
    "index": 20,
@@ -998,7 +1038,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Sustain level."
+   "description": "Sustain level.",
+   "how": "Sets the filter envelope's sustain level, 0 to 100 percent.",
+   "sound": "Higher values keep the filter open while a note is held."
   },
   {
    "index": 21,
@@ -1014,7 +1056,9 @@
    "a": 0.08,
    "b": 12.0,
    "unit": "s",
-   "description": "80 ms – 12 s exponential."
+   "description": "80 ms – 12 s exponential.",
+   "how": "Sets the filter envelope's release, 80 ms to 12 s (exponential).",
+   "sound": "Longer values let the filter close slowly after the note ends."
   },
   {
    "index": 22,
@@ -1030,7 +1074,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Bends the envelope's curve one way or the other."
+   "description": "Bends the envelope's curve one way or the other.",
+   "how": "Bends the filter envelope's curve one way or the other, 0 to 100 percent.",
+   "sound": "It changes whether the sweep falls quickly at first or lingers, without changing its length."
   },
   {
    "index": 23,
@@ -1045,7 +1091,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 240.0,
-   "description": "Smoothing of manual cutoff changes."
+   "description": "Smoothing of manual cutoff changes.",
+   "how": "Smooths manual cutoff changes, 0 to 240.",
+   "sound": "Higher values turn jumps in the cutoff into glides and stop zipper noise."
   },
   {
    "index": 24,
@@ -1061,7 +1109,9 @@
    "a": -200.0,
    "b": 200.0,
    "unit": "ct",
-   "description": "Cutoff follows the note: 100 ct is an octave per octave, −200 to +200 ct."
+   "description": "Cutoff follows the note: 100 ct is an octave per octave, −200 to +200 ct.",
+   "how": "Sets how far the cutoff follows the note's pitch, -200 to +200 cents per octave (100 is a full octave per octave).",
+   "sound": "At 100 the tone stays equally bright across the keyboard; 0 makes high notes duller."
   },
   {
    "index": 25,
@@ -1077,7 +1127,9 @@
    "a": 0.03,
    "b": 26.141549614352204,
    "unit": "Hz",
-   "description": "0.03–21 Hz exponential up to raw 239; 240–254 lock to the tempo (1 to 128 ticks per cycle, as its text says)."
+   "description": "0.03–21 Hz exponential up to raw 239; 240–254 lock to the tempo (1 to 128 ticks per cycle, as its text says).",
+   "how": "Sets LFO 1's speed: 0.03 to 21 Hz exponential up to 239; 240 to 254 lock it to the tempo at 1 to 128 ticks a cycle.",
+   "sound": "Slow rates give a long sweep; locked values keep it in time."
   },
   {
    "index": 26,
@@ -1093,7 +1145,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "−100% to +100%."
+   "description": "−100% to +100%.",
+   "how": "Sets how far LFO 1 moves the cutoff, -100 to +100 percent.",
+   "sound": "Positive values wobble the brightness; negative ones invert the motion."
   },
   {
    "index": 27,
@@ -1109,7 +1163,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "−100% to +100%."
+   "description": "−100% to +100%.",
+   "how": "Sets how far LFO 1 moves the filter envelope's amount, -100 to +100 percent.",
+   "sound": "It makes the envelope's depth swell and shrink over time."
   },
   {
    "index": 28,
@@ -1141,7 +1197,9 @@
     "S'n'H 1",
     "S'n'H 2"
    ],
-   "description": "Sine, saws, square, triangle, steps, sample and hold…"
+   "description": "Sine, saws, square, triangle, steps, sample and hold…",
+   "how": "Chooses LFO 1's wave: sine, saws, square, triangle, odd blends, steps and random steps.",
+   "sound": "A sine is smooth, a square jumps between two values, the random ones are unpredictable."
   },
   {
    "index": 29,
@@ -1157,7 +1215,9 @@
    "a": 0.03,
    "b": 26.141549614352204,
    "unit": "Hz",
-   "description": "As LFO 1 rate."
+   "description": "As LFO 1 rate.",
+   "how": "Sets LFO 2's speed, on the same scale as LFO 1.",
+   "sound": "Slow rates give a long sweep; locked values keep it in time."
   },
   {
    "index": 30,
@@ -1173,7 +1233,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "−100% to +100%."
+   "description": "−100% to +100%.",
+   "how": "Sets how far LFO 2 moves the cutoff, -100 to +100 percent.",
+   "sound": "Positive values wobble the brightness; negative ones invert the motion."
   },
   {
    "index": 31,
@@ -1189,7 +1251,9 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "%",
-   "description": "−100% to +100%."
+   "description": "−100% to +100%.",
+   "how": "Sets how far LFO 2 moves the filter's resonance, -100 to +100 percent.",
+   "sound": "The peak at the cutoff swells and fades with the LFO, giving a more vocal movement."
   },
   {
    "index": 32,
@@ -1221,7 +1285,9 @@
     "S'n'H 1",
     "S'n'H 2"
    ],
-   "description": "As LFO 1 wave."
+   "description": "As LFO 1 wave.",
+   "how": "Chooses LFO 2's wave, from the same list as LFO 1.",
+   "sound": "A sine is smooth, a square jumps between two values, the random ones are unpredictable."
   },
   {
    "index": 33,
@@ -1237,7 +1303,9 @@
    "a": 0.005,
    "b": 12.0,
    "unit": "s",
-   "description": "Amp envelope, 5 ms – 12 s exponential."
+   "description": "Amp envelope, 5 ms – 12 s exponential.",
+   "how": "Sets the amplitude envelope's attack, 5 ms to 12 s (exponential).",
+   "sound": "Short values start the note at once; long ones fade it in."
   },
   {
    "index": 34,
@@ -1253,7 +1321,9 @@
    "a": 0.08,
    "b": 12.0,
    "unit": "s",
-   "description": "Amp envelope, 80 ms – 12 s exponential."
+   "description": "Amp envelope, 80 ms – 12 s exponential.",
+   "how": "Sets the amplitude envelope's decay, 80 ms to 12 s (exponential).",
+   "sound": "It sets how quickly the level falls to the sustain."
   },
   {
    "index": 35,
@@ -1269,7 +1339,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Amp envelope sustain level."
+   "description": "Amp envelope sustain level.",
+   "how": "Sets the amplitude envelope's sustain level, 0 to 100 percent.",
+   "sound": "Higher values hold the note loud; 0 makes a pluck that dies away."
   },
   {
    "index": 36,
@@ -1285,7 +1357,9 @@
    "a": 0.08,
    "b": 12.0,
    "unit": "s",
-   "description": "Amp envelope, 80 ms – 12 s exponential."
+   "description": "Amp envelope, 80 ms – 12 s exponential.",
+   "how": "Sets the amplitude envelope's release, 80 ms to 12 s (exponential).",
+   "sound": "Longer values let a note fade out slowly after it ends."
   },
   {
    "index": 37,
@@ -1298,7 +1372,9 @@
    "default": 0,
    "kind": "int",
    "a": 0,
-   "description": "Sum of: 1 restart LFO 1 per note (L1), 2 restart LFO 2 (L2), 4 filter legato (FE), 8 amp legato (AE), 16 pitch quantize (PQ), 32 mono for MIDI (MM), 64 key-track inertia (IK)."
+   "description": "Sum of: 1 restart LFO 1 per note (L1), 2 restart LFO 2 (L2), 4 filter legato (FE), 8 amp legato (AE), 16 pitch quantize (PQ), 32 mono for MIDI (MM), 64 key-track inertia (IK).",
+   "how": "A sum of switches, 0 to 127: 1 restart LFO 1 on each note, 2 restart LFO 2, 4 filter legato, 8 amp legato, 16 pitch quantize, 32 mono for MIDI, 64 inertia for keytrack.",
+   "sound": "It does not change the sound by itself; it changes how notes retrigger the LFOs and envelopes, so repeated notes sound alike or flow into each other."
   }
  ],
  "track_parameters": [
@@ -1315,7 +1391,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 240.0,
-   "description": "Note velocity, 0–240 (224 by default)."
+   "description": "Note velocity, 0–240 (224 by default).",
+   "how": "Sets the note's velocity, 0 to 240 (224 by default).",
+   "sound": "Higher values play louder."
   },
   {
    "index": 2,
@@ -1331,7 +1409,9 @@
    "a": 0.0,
    "b": 15.0,
    "unit": "ticks",
-   "description": "Ticks until the note ends on its own, 0–15 (240 raw: held)."
+   "description": "Ticks until the note ends on its own, 0–15 (240 raw: held).",
+   "how": "Sets how many ticks the note sounds before it ends on its own, 0 to 15 (the top step holds it).",
+   "sound": "Short values give staccato notes without writing note-offs."
   }
  ]
 }

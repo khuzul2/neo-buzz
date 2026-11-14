@@ -539,7 +539,9 @@
     "Shatter",
     "Cannon"
    ],
-   "description": "0 bypass, 1 Red crust, 2 Phobos, 3 Deimos, 4 Cratered, 5 God of iron, 6 Battle axe, 7 Scarred, 8 Bruised, 9 Rusty, 10 Steel pain, 11 Crunch, 12 Shatter, 13 Cannon."
+   "description": "0 bypass, 1 Red crust, 2 Phobos, 3 Deimos, 4 Cratered, 5 God of iron, 6 Battle axe, 7 Scarred, 8 Bruised, 9 Rusty, 10 Steel pain, 11 Crunch, 12 Shatter, 13 Cannon.",
+   "how": "Chooses one of 13 distortion characters, or 0 for bypass: soft and round, tube-like, or ring-mod and FM mangling.",
+   "sound": "Each character has its own harmonics and aggression; 0 passes the sound so you can compare."
   },
   {
    "index": 1,
@@ -1067,7 +1069,9 @@
      15.5
     ]
    ],
-   "description": "Level into the distortion, −100 to +15.5 dB."
+   "description": "Level into the distortion, −100 to +15.5 dB.",
+   "how": "Sets the level into the distortion, a table from -100 dB to +15.5 dB (0 dB at 71).",
+   "sound": "Higher values drive it harder and make it louder and denser; the top can pass full scale."
   },
   {
    "index": 2,
@@ -1082,7 +1086,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "Intensity of the distortion (its meaning varies a little by mode)."
+   "description": "Intensity of the distortion (its meaning varies a little by mode).",
+   "how": "Sets how intense the distortion is, 0 to 127; its meaning shifts a little per mode.",
+   "sound": "More amount means more harmonics and harshness; in some modes it acts like PreGain."
   },
   {
    "index": 3,
@@ -1097,7 +1103,9 @@
    "kind": "linear",
    "a": -127.0,
    "b": 0.0,
-   "description": "0 (the top, its default) turns it off; lower values attenuate the treble (differs in Bruised mode)."
+   "description": "0 (the top, its default) turns it off; lower values attenuate the treble (differs in Bruised mode).",
+   "how": "Attenuates the treble after the distortion on a 0 to 127 scale; 127 (the top, its default) turns it off.",
+   "sound": "Lower values roll off the harsh top and make the fuzz warmer."
   },
   {
    "index": 4,
@@ -1112,7 +1120,9 @@
    "kind": "linear",
    "a": -127.0,
    "b": 0.0,
-   "description": "0 (the top, its default) turns it off; lower values high-pass the bass (differs in Cannon mode)."
+   "description": "0 (the top, its default) turns it off; lower values high-pass the bass (differs in Cannon mode).",
+   "how": "Takes the bass out of the distortion on a 0 to 127 scale; 127 (the top, its default) turns it off.",
+   "sound": "Lower values keep the bass cleaner and tighter while the rest is distorted."
   }
  ],
  "track_parameters": []
