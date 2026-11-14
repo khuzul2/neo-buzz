@@ -15,12 +15,13 @@ using ReBuzz.Audio;
 using ReBuzz.Core;
 using ReBuzz.Core.SongHistory;
 using ReBuzz.FileOps;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
     public class SnapshotTests
     {
-        internal static string Temp(string what) => Path.Combine(Path.GetTempPath(), "snapshot-tests-" + Environment.ProcessId + "-" + what + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
+        internal static string Temp(string what) => TestTemp.Path("snapshot-tests-" + Environment.ProcessId + "-" + what + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
 
         /// <summary>Points untitled songs' history at a folder of this test.</summary>
         internal static IDisposable Untitled(out string root)
@@ -352,22 +353,54 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void AutoSnapshotsAreLabelledAndTheOldestDropPastTheCapButManualOnesStay()
+        public void AutoSnapshotsAreLabelledAndTheOldestDropPastTheCapButManualOnesStay() => AutoCap(0);
+
+        [AvaloniaTest]
+        public void TheAutoCapHoldsWhenTheWriterIsSlow() => AutoCap(4);
+
+        [AvaloniaTest]
+        public void TheAutoCapHoldsWhenTheWriterStallsOnSomeSnapshots() => AutoCap(-1);
+
+        [AvaloniaTest]
+        public void TheAutoCapHoldsWhenAChangedHandlerThrowsOnTheWriterThread() => AutoCap(-2);
+
+        [AvaloniaTest]
+        public void TheAutoCapHoldsWhenAWholeBurstSharesOneClockTickAndTheCounterCrosses255() => AutoCap(-3);
+
+        static void AutoCap(int writerDelayMs)
         {
             using var untitled = Untitled(out _);
             using var rig = Song("Lead");
             var core = rig.Core;
             core.Snapshots.Bind(null);
-            var keep = core.Snapshots.Capture("mine");
-            for (int i = 0; i < SongSnapshots.MaxAuto + 5; i++)
-                core.Snapshots.Auto("before thing " + i);
-            core.Snapshots.Flush();
-            var list = core.Snapshots.List();
-            Assert.That(list.Count(s => s.IsAuto), Is.EqualTo(SongSnapshots.MaxAuto));
-            Assert.That(list.Select(s => s.Name), Does.Contain("mine"));
-            Assert.That(list.Where(s => s.IsAuto).All(s => s.Name.StartsWith("Auto: ")));
-            Assert.That(list.Any(s => s.Reason == "before thing 0"), Is.False, "the oldest went");
-            Assert.That(list.Any(s => s.Reason == "before thing " + (SongSnapshots.MaxAuto + 4)));
+            var rnd = new Random(7);
+            if (writerDelayMs == -3)
+            {
+                var tick = DateTime.UtcNow;
+                SongSnapshots.Clock = () => tick;
+                core.Snapshots.Counter = 250;
+            }
+            if (writerDelayMs > 0) SongSnapshots.BeforeWrite = _ => System.Threading.Thread.Sleep(writerDelayMs);
+            else if (writerDelayMs is -2 or -3) SongSnapshots.BeforeWrite = _ => System.Threading.Thread.Sleep(4);
+            else if (writerDelayMs == -1) SongSnapshots.BeforeWrite = _ => { int d; lock (rnd) d = rnd.Next(0, 4) == 0 ? rnd.Next(5, 30) : 0; System.Threading.Thread.Sleep(d); };
+            int ui = Environment.CurrentManagedThreadId;
+            Action thrower = () => { if (Environment.CurrentManagedThreadId != ui) throw new InvalidOperationException("a listener failed"); };
+            if (writerDelayMs is -2 or -3) core.Snapshots.Changed += thrower;     // the list's listeners are the UI's: one that throws mustn't leave the cap broken
+            try
+            {
+                var keep = core.Snapshots.Capture("mine");
+                for (int i = 0; i < SongSnapshots.MaxAuto + 5; i++)
+                    core.Snapshots.Auto("before thing " + i);
+                core.Snapshots.Flush();
+                var list = core.Snapshots.List();
+                string why = " (LastError: " + (core.Snapshots.LastError ?? "none") + ")";
+                Assert.That(list.Count(s => s.IsAuto), Is.EqualTo(SongSnapshots.MaxAuto), "auto snapshots after Flush" + why);
+                Assert.That(list.Select(s => s.Name), Does.Contain("mine"));
+                Assert.That(list.Where(s => s.IsAuto).All(s => s.Name.StartsWith("Auto: ")));
+                Assert.That(list.Any(s => s.Reason == "before thing 0"), Is.False, "the oldest went" + why);
+                Assert.That(list.Any(s => s.Reason == "before thing " + (SongSnapshots.MaxAuto + 4)));
+            }
+            finally { SongSnapshots.BeforeWrite = null; SongSnapshots.Clock = () => DateTime.UtcNow; core.Snapshots.Changed -= thrower; }
         }
 
         [AvaloniaTest]

@@ -16,6 +16,7 @@ using ReBuzz.Agent;
 using ReBuzz.Agent.Mcp;
 using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -119,6 +120,28 @@ namespace ReBuzz.Studio.Tests
             Call("settings_reset", Args(("key", "safety.LimiterCeilingDb")));
             Assert.That(core.SafeMaster.CeilingDb, Is.EqualTo(0));
             Assert.That(Try("settings_set", Args(("key", "audio.BufferSize"), ("value", 128))).Text, Does.Contain("audio_set"));
+        }
+
+        // K4 found it: machine_add's default connection (Master) failed for machines with no audio output.
+        [AvaloniaTest]
+        public void AModulatorAddedWithoutConnectToStaysUnconnectedButANamedTargetStillFails()
+        {
+            var window = NewSong();
+            using var restore = Studio.AfterTest(() =>
+            {
+                Dialogs.Responder = null;
+                window.Close();
+            });
+            Call("machine_add", Args(("gear", "Neo LFO"), ("name", "Wobble")));
+            Settle(window);
+            var lfo = Host.Core.SongCore.MachinesList.Single(m => m.Name == "Wobble");
+            Assert.That(lfo.Outputs, Is.Empty, "no audio output, so no connection");
+            var refused = Try("machine_add", Args(("gear", "Neo LFO"), ("name", "Wobble 2"), ("connect_to", "Master")));
+            Assert.That(refused.Error, Is.True, "connect_to named on purpose still fails");
+            Assert.That(refused.Text, Does.Contain("can't connect to Master"));
+            Call("machine_add", Args(("gear", "Neo Poly"), ("name", "Still Wired")));
+            Settle(window);
+            Assert.That(Host.Core.SongCore.MachinesList.Single(m => m.Name == "Still Wired").Outputs.Select(o => o.Destination.Name), Does.Contain("Master"));
         }
 
         [AvaloniaTest]
@@ -256,7 +279,7 @@ namespace ReBuzz.Studio.Tests
         public void ExportAudioRendersTheRealSongToFilesAndNeverOverwrites()
         {
             var window = NewSong();
-            string folder = Path.Combine(Path.GetTempPath(), "app-control-export-" + Environment.ProcessId);
+            string folder = TestTemp.Path("app-control-export-" + Environment.ProcessId);
             using var restore = Studio.AfterTest(() =>
             {
                 Dialogs.Responder = null;

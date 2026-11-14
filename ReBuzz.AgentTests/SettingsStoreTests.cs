@@ -1,4 +1,5 @@
 using ReBuzz.Core.Settings;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.AgentTests
 {
@@ -9,7 +10,7 @@ namespace ReBuzz.AgentTests
         [Test]
         public void ValuesPersistAcrossInstancesAndSurviveADamagedFile()
         {
-            string dir = Path.Combine(Path.GetTempPath(), "rebuzz-settings-" + Guid.NewGuid().ToString("N"));
+            string dir = TestTemp.Path("rebuzz-settings-" + Guid.NewGuid().ToString("N"));
             string path = Path.Combine(dir, "settings.json");
             var a = new JsonSettingsStore(path);
             Assert.That(a.Get("agent", "token"), Is.Null);

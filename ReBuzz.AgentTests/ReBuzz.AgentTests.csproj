@@ -21,6 +21,7 @@
     <ProjectReference Include="..\ReBuzz.Agent\ReBuzz.Agent.csproj" />
     <!-- Pure engine files the agent relies on (docs/specs/cross-platform.md P0). -->
     <Compile Include="..\ReBuzz\Core\Settings\SettingsStore.cs" Link="Linked\SettingsStore.cs" />
+    <Compile Include="..\ReBuzzTests\Automation\TestTemp.cs" Link="Automation\TestTemp.cs" />
   </ItemGroup>
 
   <ItemGroup>

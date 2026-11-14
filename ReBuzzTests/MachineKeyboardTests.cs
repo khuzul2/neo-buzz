@@ -39,7 +39,7 @@ namespace ReBuzzTests
             string bin = File.ReadLines(TestAssemblyDirectory.Value.AddFileName("ReBuzzLocation.txt").ToString()).First();
             string exe = Path.Combine(bin, ReBuzz.Product.WindowsExe);
             if (!File.Exists(exe)) Assert.Inconclusive($"{ReBuzz.Product.WindowsExe} not built ({exe})");
-            folder = Path.Combine(Path.GetTempPath(), "rebuzz-keyboard-check-" + Environment.ProcessId);
+            folder = TestTemp.Path("rebuzz-keyboard-check-" + Environment.ProcessId);
             if (Directory.Exists(folder)) Directory.Delete(folder, true);
             var psi = new ProcessStartInfo(exe, $"--agent --keyboard-check \"{folder}\"")
             {

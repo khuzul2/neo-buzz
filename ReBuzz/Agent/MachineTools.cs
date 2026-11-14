@@ -183,7 +183,7 @@ namespace ReBuzz.Agent
                 Input = Object(null,
                     Req("gear", String("The gear name, from gear_list")),
                     Opt("name", String("Its name in the song (unique); default: from the gear")),
-                    Opt("connect_to", String("Machine its output goes to (default \"Master\"; \"none\" leaves it unconnected)")),
+                    Opt("connect_to", String("Machine its output goes to (default \"Master\", or unconnected for a machine with no audio output; \"none\" leaves it unconnected)")),
                     Opt("insert_after", String("For effects: put it after this machine, between it and everything it fed")),
                     Opt("gain_db", Db("Gain of its output connection in dB (default 0)")),
                     Opt("tracks", Integer("Tracks (voices for tracker-played generators)", 1, 256))),
@@ -251,8 +251,11 @@ namespace ReBuzz.Agent
                         }
                         else if (target != null)
                         {
-                            if (!core.SongCore.CanConnectMachines(made, target)) throw new ToolError($"{made.Name} can't connect to {target.Name}.");
-                            core.SongCore.ConnectMachines(made, target, new[] { 0 }, new[] { 0 }, amp, Levels.PanCenter);
+                            // The default (Master) skips machines with no audio output (the canvas modulators: Neo LFO, Envelope, Step, Macro);
+                            // a connect_to named on purpose still fails loudly.
+                            bool unconnectable = !core.SongCore.CanConnectMachines(made, target);
+                            if (unconnectable && connectTo != null) throw new ToolError($"{made.Name} can't connect to {target.Name}.");
+                            if (!unconnectable) core.SongCore.ConnectMachines(made, target, new[] { 0 }, new[] { 0 }, amp, Levels.PanCenter);
                         }
                         var ps = SongModel.Params(made);
                         var groups = ps.Where(p => p.Group == 1).Select(p => p.Info.Group).Where(g => g.Length > 0).Distinct().ToList();

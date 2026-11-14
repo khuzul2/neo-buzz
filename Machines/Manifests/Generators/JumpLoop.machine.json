@@ -2,15 +2,25 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "JumpLoop",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c or d) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
  "type": "control",
- "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "summary": "A loop and jump control: when playback reaches it, it jumps to a target position (in ticks, beats or patterns) a set number of times, optionally holding for some ticks first. It makes no sound.",
  "category": "Control",
  "tags": [
   "sequencer"
  ],
  "use_for": "Jump or loop the song position from a pattern, for live arrangement tricks.",
+ "quirks": [
+  "It acts on playback position, not on sound; a count of 0 means jump without end, so the song then loops until it is stopped.",
+  "The count restarts when play is pressed.",
+  "Unverified: exactly where in the song the jump is triggered (by its own position in the sequence, as the page says) and how Reset count behaves at zero.",
+  "Closed source (a prebuilt DLL): names come from its own texts, its DLL's type names and the profile, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - a control machine, no sound"
+ ],
  "tracks": 0,
  "health": {
   "status": "ok",
@@ -22,6 +32,7 @@
    "index": 0,
    "id": "Type",
    "name": "Type",
+   "plain_name": "Target unit",
    "group": "",
    "min": 0,
    "max": 2,
@@ -33,12 +44,14 @@
     "Pattern"
    ],
    "description": "Define how jump target is calculated (Tick, Beat, Pattern)",
-   "confidence": "values"
+   "how": "Chooses the unit of the jump target: Tick, Beat or Pattern (Tick by default).",
+   "sound": "It decides whether Target counts ticks, beats or patterns."
   },
   {
    "index": 1,
    "id": "Jump",
    "name": "Jump",
+   "plain_name": "Jump count",
    "group": "",
    "min": 0,
    "max": 2000,
@@ -47,12 +60,14 @@
    "a": 0.0,
    "b": 2000.0,
    "description": "How many times to jump. Resets when play is pressed. If not set or 0 then jump infinitely.",
-   "confidence": "values"
+   "how": "Sets how many times the jump happens, 0 to 2,000; 0 (the default) jumps without end. The count restarts when play is pressed.",
+   "sound": "A count gives a limited repeat of a section; 0 loops it for as long as the song plays."
   },
   {
    "index": 2,
    "id": "Reset",
    "name": "Reset",
+   "plain_name": "Reset count",
    "group": "",
    "min": 0,
    "max": 1,
@@ -63,12 +78,14 @@
     "Yes"
    ],
    "description": "Reset counter when zero?",
-   "confidence": "values"
+   "how": "Chooses whether the jump counter starts again once it reaches zero: No or Yes (Yes by default).",
+   "sound": "Yes lets the loop run again after finishing its count; No lets the song go on."
   },
   {
    "index": 3,
    "id": "Target",
    "name": "Target",
+   "plain_name": "Jump target",
    "group": "",
    "min": 0,
    "max": 32767,
@@ -77,12 +94,14 @@
    "a": 0.0,
    "b": 32767.0,
    "description": "Jump target",
-   "confidence": "values"
+   "how": "Sets the position the song jumps to, 0 to 32,767 in the chosen unit (0 by default).",
+   "sound": "It sets where the repeat returns to, such as the start of a section."
   },
   {
    "index": 4,
    "id": "Hold",
    "name": "Hold",
+   "plain_name": "Hold ticks",
    "group": "",
    "min": 0,
    "max": 20000,
@@ -91,7 +110,8 @@
    "a": 0.0,
    "b": 20000.0,
    "description": "Hold x ticks.",
-   "confidence": "values"
+   "how": "Holds playback for this many ticks before the jump, 0 to 20,000 (0 by default).",
+   "sound": "A hold lets a section ring on before the song goes back."
   }
  ],
  "track_parameters": []

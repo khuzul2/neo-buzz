@@ -5,6 +5,7 @@ using System.IO;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using ReBuzz.Studio.Shell;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -18,7 +19,7 @@ namespace ReBuzz.Studio.Tests
             get
             {
                 if (host != null) return host;
-                string settings = Path.Combine(Path.GetTempPath(), "rebuzz-studio-tests-" + System.Environment.ProcessId);
+                string settings = TestTemp.Path("rebuzz-studio-tests-" + System.Environment.ProcessId);
                 host = StudioHost.Create(settings, openAudio: false);
                 host.Start(_ => { });
                 return host;

@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using ReBuzz.Agent.Mcp;
 using static ReBuzz.AgentTests.TestTools;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.AgentTests
 {
@@ -158,7 +159,7 @@ namespace ReBuzz.AgentTests
             await Send(s, new McpSession(), Call(23, "refuse"));
             Assert.That(calls.Select(c => (c.Tool, c.IsError)).ToArray(), Is.EqualTo(new[] { ("song_set", false), ("refuse", true) }));
 
-            string dir = Path.Combine(Path.GetTempPath(), "rebuzz-agent-log-" + Guid.NewGuid().ToString("N"));
+            string dir = TestTemp.Path("rebuzz-agent-log-" + Guid.NewGuid().ToString("N"));
             var log = new ReBuzz.Agent.AgentLog(dir, "test");
             foreach (var c in calls) log.Write(c);
             var lines = File.ReadAllLines(log.FilePath);

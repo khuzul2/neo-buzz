@@ -26,6 +26,7 @@ using ReBuzz.Studio.Shell.Design;
 using ReBuzz.Studio.Views;
 using ReBuzz.Studio.Views.Machines;
 using static ReBuzz.Studio.Tests.MachineViewTests;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -176,7 +177,7 @@ namespace ReBuzz.Studio.Tests
             return window;
         }
 
-        static string TempFolder(string name) => Path.Combine(Path.GetTempPath(), "ux-p3j-" + name + "-" + Environment.ProcessId);
+        static string TempFolder(string name) => TestTemp.Path("ux-p3j-" + name + "-" + Environment.ProcessId);
 
         static void Run(Task task) => Wait(task);
 

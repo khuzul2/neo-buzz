@@ -129,7 +129,7 @@ None.
 
 What moving each parameter alone changes, as a role (`suggested_role` in the drafts, `machine_describe` shows it). Curated manifests keep their own roles: for their filter, time and mix parameters, the profile's suggestion is listed beside the curated role, and a disagreement is a note here, never a change to the manifest.
 
-Curated filter, time and mix parameters: 113 of 221 suggestions agree.
+Curated filter, time and mix parameters: 118 of 236 suggestions agree.
 
 | Machine | Parameter | Kind | Curated | Suggested | Agrees | Evidence |
 |---|---|---|---|---|---|---|
@@ -224,6 +224,8 @@ Curated filter, time and mix parameters: 113 of 221 suggestions agree.
 | Joachims Jupiter 3 |           Release #19 | time | `dyn.release` | — | no | not swept on this platform |
 | Joachims Saturn 1.4 | Room Level | mix | `mix.wet` | `filter.highpass` | no | the response's lower corner moves 23.1 Hz → 8.37 kHz |
 | Joachims Saturn 1.4 | Highpass | filter | `filter.highpass` | `filter.highpass` | yes | the response's lower corner moves 23.1 Hz → 262 Hz |
+| ManagedMultiIOEffect | Delay Time | time | `delay.time` | — | no | no measurable change between its ends with the others at their defaults |
+| ManagedMultiIOEffect | Delay Feedback | time | `delay.feedback` | — | no | no measurable change between its ends with the others at their defaults |
 | Oomek Exciter | Pre Cut | filter | `filter.highpass` | `filter.cutoff` | yes | the response's lower corner moves 2.96 kHz → 23.1 Hz |
 | Oomek Exciter | Post Cut | filter | `filter.highpass` | `filter.cutoff` | yes | the response's lower corner moves 4.19 kHz → 23.1 Hz |
 | Oomek Masterizer | Decay Lo | time | `dyn.release` | `filter.highpass` | no | the response's lower corner moves 23.1 Hz → 523 Hz (with the effect switched on: #0 raw:168) |
@@ -273,6 +275,8 @@ Curated filter, time and mix parameters: 113 of 221 suggestions agree.
 | Pedal Shaper | Mix | mix | `mix.wet` | — | no | no measurable change between its ends with the others at their defaults |
 | Polac VST 1.1 | Dry Out | mix | `mix.dry` | — | no | no measurable change between its ends with the others at their defaults |
 | Polac VST 1.1 | Wet Out | mix | `mix.wet` | — | no | no measurable change between its ends with the others at their defaults |
+| Bigyo Wood One | Decay | time | `env.decay` | `filter.cutoff` | no | the brightness (centroid) 41 Hz → 496 Hz |
+| Bigyo Wood One | Release | time | `env.release` | `env.release` | yes | the release 15 ms → 315 ms |
 | FSM Infector | Flt Type | filter | `filter.type` | — | no | a choice: its texts say what it is; no role measured |
 | FSM Infector |  - Cutoff | filter | `filter.cutoff` | `filter.cutoff` | yes | the brightness (centroid) 39 Hz → 1.19 kHz |
 | FSM Infector |  - Reso | filter | `filter.resonance` | `filter.resonance` | yes | a peak at 250 Hz stands -18 → -1 dB over the spectrum an octave either side |
@@ -304,6 +308,17 @@ Curated filter, time and mix parameters: 113 of 221 suggestions agree.
 | Jeskola Organ | Attack | time | `env.attack` | `env.attack` | yes | the attack 15 ms → 875 ms |
 | Jeskola Organ | Release | time | `env.release` | `env.release` | yes | the release 10 ms → 255 ms |
 | Jeskola Trilok | BD Decay | time | `drum.decay` | `drum.decay` | yes | the level falls half way in 20 ms → 470 ms (the default 150 ms) to the same held level |
+| kibibu Green Milk | Amp A | time | `env.attack` | `env.attack` | yes | the attack 10 ms → 875 ms |
+| kibibu Green Milk | Amp D | time | `env.decay` | `filter.env_amount` | no | the start's brightness 179 Hz → 124 Hz (RMS frequency), the held part's 150 Hz → 126 Hz |
+| kibibu Green Milk | Amp R | time | `env.release` | `env.release` | yes | the release 10 ms → 255 ms |
+| kibibu Green Milk | Filt Cut | filter | `filter.cutoff` | `filter.resonance` | no | a peak at 630 Hz stands -17 → +2 dB over the spectrum an octave either side |
+| kibibu Green Milk | Filt Res | filter | `filter.resonance` | `lfo.filter` | no | the held note's brightness moves 0% → 170% of its mean (with Filt A a third of the way up) |
+| kibibu Green Milk | Filt Env | filter | `filter.env_amount` | `filter.env_amount` | yes | the start's brightness 51.2 Hz → 441 Hz (RMS frequency), the held part's 139 Hz → 278 Hz |
+| kibibu Green Milk | Filt Mode | filter | `filter.type` | — | no | a choice: its texts say what it is; no role measured |
+| kibibu Green Milk | Filt A | time | `filter.env.attack` | `filter.cutoff` | no | the brightness (centroid) 513 Hz → 206 Hz |
+| kibibu Green Milk | Filt D | time | `filter.env.decay` | `filter.env.decay` | yes | the brightness 150–250 ms in 87.2 Hz → 194 Hz (RMS frequency), the start alike (124 Hz → 159 Hz) |
+| kibibu Green Milk | Filt R | time | `filter.env.release` | — | no | no measurable change between its ends with the others at their defaults |
+| Matilde Tracker2 | Ampl.Decay | time | `env.decay` | `level` | no | silent at its maximum, sounding at the other end |
 | Oomek Aggressor 303 | Cutoff | filter | `filter.cutoff` | `filter.cutoff` | yes | the brightness (centroid) 433 Hz → 2.72 kHz |
 | Oomek Aggressor 303 | Res | filter | `filter.resonance` | `filter.resonance` | yes | a peak at 2.5 kHz stands -4 → +17 dB over the spectrum an octave either side |
 | Oomek Aggressor 303 | Env.Mod | filter | `filter.env_amount` | `filter.cutoff` | no | the brightness (centroid) 426 Hz → 1.69 kHz |
@@ -360,18 +375,13 @@ Drafts:
 | Machine | Suggested roles |
 |---|---|
 | Joachims Enceladus Tube EQ v1 | 1. Boost: `eq.low.gain`;     Freq #2: `eq.high.freq`;     Bandwidth #3: `eq.high.freq`; 2. Boost: `eq.mid.gain`; 3. Boost: `eq.high.gain`;     Freq #12: `eq.high.freq`;     Bandwidth #13: `eq.high.q` |
-| mixIO | track Gain: `level`; track Mute: `bypass` |
-| Bigyo Wood One | Noise Time: `filter.cutoff`; Pulse Color: `filter.env_amount`; Inharmonicity: `pitch.coarse`; Damping: `pitch.fine`; Brightness: `filter.env_amount`; Resonator F: `env.decay`; Resonator Q: `env.decay`; Resonator G: `level`; Decay: `filter.cutoff`; Release: `env.release` |
-| kibibu Green Milk | Unison Depth: `env.decay`; Unison Min S: `env.attack`; Unison Max S: `env.attack`; Oscillators: `level`; Glide: `env.attack`; Amp A: `env.attack`; Amp D: `filter.env_amount`; Amp S: `env.decay`; Amp R: `env.release`; Filt Cut: `filter.resonance`; Filt Res: `lfo.filter`; Filt Env: `filter.env_amount`; Filt A: `filter.cutoff`; Filt D: `filter.env.decay`; Filt S: `filter.cutoff`; Length Scale: `env.release`; PreF Dist: `filter.env.decay`; PostF Dist: `filter.cutoff`; TLFO1 Speed: `env.attack`; TLFO1 Delay: `env.attack`; TLFO1->Cut: `lfo.filter`; TLFO1->Res: `lfo.filter`; TLFO2 Speed: `env.attack`; TLFO2 Delay: `env.decay`; TLFO2->Cut: `filter.env_amount`; TLFO2->Res: `filter.env.decay`; TLFO2->Pitch: `env.attack` |
-| KrimZon AY-3-8910 | FinalAmp: `level`; Tune: `env.decay`; track NumSubNotes: `env.decay`; track SubLength: `env.decay`; track Glide: `filter.cutoff`; track EnvTime: `level`; track Volume: `level` |
-| Matilde Tracker2 | Ampl.Decay: `level`; Offset: `level`; track Volume: `level` |
 
 ## Generators
 
 | Machine | Type | Notes in | Pitch offset | Voices | Level (LUFS, one note) | Velocity (dB per doubling) | Attack / release / length | CPU ms/s | After silence ms/s | Health |
 |---|---|---|---|---|---|---|---|---|---|---|
 | AudioBlock | generator (silent at its defaults) | none |  |  |  |  |  |  |  | warn |
-| Bigyo Wood One | monosynth | tracks | +0 (+8 ct) | 1 | -28.1 | 8.39 | 5 ms / — / 1.36 s | 3.4 | 5.175 | ok |
+| Bigyo Wood One | monosynth | tracks | +0 (+8 ct) | 1 | -28.1 | 8.39 | 5 ms / — / 1.36 s | 14.6 | 10.384 | ok |
 | BTDSys PeerChord | control |  |  |  |  |  |  |  |  | ok |
 | Connection Mixer Console | control |  |  |  |  |  |  |  |  | ok |
 | DAWControl | control |  |  |  |  |  |  |  |  | ok |
@@ -394,9 +404,9 @@ Drafts:
 | Jeskola Tracker | generator (silent at its defaults) | none |  |  |  |  |  |  |  | warn |
 | Jeskola Trilok | triggered | none (trigger: BD Trigger) |  |  | -11.9 |  | 5 ms / — / 160 ms |  | 9.63 | hot |
 | JumpLoop | control |  |  |  |  |  |  |  |  | ok |
-| kibibu Green Milk | monosynth | tracks | +12 (+4 ct) | 1 | -9 | 2.59 | 710 ms / 125 ms / — | 4.9 | 5.314 | ok |
-| KrimZon AY-3-8910 | polysynth | tracks | -13 (-1 ct) | 3 | -21.5 | 0.0 | 0 ms / — / 410 ms | 2.9 | 5.197 | ok |
-| Matilde Tracker2 | monosynth | tracks | +0 | 1 | -15.3 | 0.0 | 0 ms / 5 ms / — | 3.4 | 5.489 | ok |
+| kibibu Green Milk | monosynth | tracks | +12 (+4 ct) | 1 | -9 | 2.59 | 710 ms / 125 ms / — | 16.9 | 11.953 | ok |
+| KrimZon AY-3-8910 | polysynth | tracks | -13 (-1 ct) | 3 | -21.5 | 0.0 | 0 ms / — / 410 ms | 14.4 | 10.248 | ok |
+| Matilde Tracker2 | monosynth | tracks | +0 | 1 | -15.3 | 0.0 | 0 ms / 5 ms / — | 14.4 | 11.265 | ok |
 | Modern Sequence Editor | control |  |  |  |  |  |  |  |  | ok |
 | Neo Drums | unpitched | midi on C2 |  |  | -25.6 | 8.4 | 0 ms / — / 250 ms | 0.0 | 0.312 | hot |
 | Neo Envelope | control |  |  |  |  |  |  |  |  | ok |
@@ -437,7 +447,7 @@ Drafts:
 | ReBuzz Audio In | generator (silent at its defaults) | none |  |  |  |  |  |  |  | warn |
 | ReBuzz Groove | control |  |  |  |  |  |  |  |  | ok |
 | ReBuzz Midi Output | generator (silent at its defaults) | none |  |  |  |  |  |  |  | warn |
-| Rout 909 | triggered | none (trigger: BD Trigger) |  |  | -23.9 |  | 0 ms / — / 445 ms |  | 5.134 | hot |
+| Rout 909 | triggered | none (trigger: BD Trigger) |  |  | -23.9 |  | 0 ms / — / 445 ms |  | 10.128 | hot |
 | SpectrumBlock | control |  |  |  |  |  |  |  |  | ok |
 | TrackScript | control |  |  |  |  |  |  |  |  | ok |
 | Yitten Mongoose | control |  |  |  |  |  |  |  |  | ok |
@@ -446,7 +456,7 @@ Drafts:
 
 | Machine | Type (traits) | Gain dB | Latency (samples) | Tail s | T60 (click) | First echo | Response −3 dB band | CPU ms/s | After silence ms/s | Health |
 |---|---|---|---|---|---|---|---|---|---|---|
-| EasyRec | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.407 | ok |
+| EasyRec | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.508 | ok |
 | FSM Chorus2 | modulation, filter or EQ | -5.47 | 0 | 0.01 |  |  | 82 Hz – 0.1 kHz | 20.3 | 17.07 | ok |
 | FSM PanzerDelay | delay | 0.77 | 0 | 2.62 | 3.31 s | 375 ms | 26 Hz – 0.0 kHz | 12.4 | 13.664 | hot |
 | FSM PhatMan | filter or EQ | 2.44 | 0 | 0.0 |  |  | 370 Hz – 0.6 kHz | 13.2 | 12.505 | hot |
@@ -475,8 +485,8 @@ Drafts:
 | Joachims Mars filter 2 | distortion, dynamics, filter or EQ | 1.5 | 0 | 0.02 | 37 ms |  | 21 Hz – 0.1 kHz | 21.0 | 14.527 | hot |
 | Joachims Neptune 1.2 | delay, filter or EQ | -1.79 | 8191 | 0.18 | 246 ms |  | 21 Hz – 18.8 kHz | 21.1 |  | diverging |
 | Joachims Saturn 1.4 | utility | -0.0 | 0 | 0.06 | 189 ms |  | 21 Hz – 18.8 kHz | 19.8 | 16.774 | hot |
-| ManagedMultiIOEffect | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.709 | ok |
-| mixIO | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 3.8 | 7.308 | hot |
+| ManagedMultiIOEffect | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 4.0 | 0.807 | ok |
+| mixIO | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 23.1 | 14.01 | hot |
 | Neo Analyzer | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 1.1 | 5.339 | ok |
 | Neo Clipper | utility | -0.14 | 343 | 0.01 |  |  | 21 Hz – 18.8 kHz | 3.2 | 0.516 | hot |
 | Neo Comp | dynamics | -2.54 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.645 | hot |
@@ -517,8 +527,8 @@ Drafts:
 | Polac Out | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 14.2 | 9.741 | ok |
 | Polac Out II | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 13.2 | 11.522 | ok |
 | Polac VST 1.1 | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 18.3 | 12.175 | ok |
-| ReBuzz Audio Out | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.36 | ok |
-| Session Clip Player | effect (silent at defaults) |  |  |  |  |  |  | 0.0 | 0.415 | warn |
+| ReBuzz Audio Out | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.499 | ok |
+| Session Clip Player | effect (silent at defaults) |  |  |  |  |  |  | 3.4 | 0.598 | warn |
 
 ## Not measured yet
 

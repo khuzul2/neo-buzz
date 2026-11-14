@@ -21,7 +21,7 @@ namespace ReBuzzTests
     [Apartment(ApartmentState.STA)]
     public class AgentServerTests
     {
-        static readonly string LogDir = Path.Combine(Path.GetTempPath(), "ReBuzzAgentTestLogs");
+        static readonly string LogDir = TestTemp.Path("ReBuzzAgentTestLogs");
 
         internal sealed class Rig : IDisposable
         {
@@ -85,7 +85,7 @@ namespace ReBuzzTests
             }
         }
 
-        static string TempSong(string name) => Path.Combine(Path.GetTempPath(), "ReBuzzAgentTests", Guid.NewGuid().ToString("N"), name);
+        static string TempSong(string name) => TestTemp.Path("ReBuzzAgentTests", Guid.NewGuid().ToString("N"), name);
 
         [Test]
         public void StatusDescribesTheStudio()

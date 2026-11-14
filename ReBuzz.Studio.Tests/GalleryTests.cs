@@ -37,6 +37,7 @@ using ReBuzz.Studio.Views;
 using ReBuzz.Studio.Views.Machines;
 using ReBuzz.Studio.Views.Sequence;
 using ReBuzz.Studio.Views.Session;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -365,7 +366,7 @@ namespace ReBuzz.Studio.Tests
         {
             get
             {
-                string dir = Path.Combine(Path.GetTempPath(), "rebuzz-gallery-" + System.Environment.ProcessId);
+                string dir = TestTemp.Path("rebuzz-gallery-" + System.Environment.ProcessId);
                 Directory.CreateDirectory(dir);
                 return dir;
             }
@@ -706,6 +707,13 @@ namespace ReBuzz.Studio.Tests
                     Click(window, seq.Canvas.TranslatePoint(new Point(geo.XOf(8 * 16) + 6, geo.YOf(2) + geo.TrackHeight * 0.6), window)!.Value);
                     Shot(window, "031-sequence-cursor", "Sequence with the cursor on Lead's Hook at bar 9 (selected pattern, the pattern list follows).", "Click a pattern box.");
                 });
+                Try("032-sequence-arrangement", () =>
+                {
+                    var seq = Tab<SequenceView>(window, "Arrangement");
+                    seq.SetArrangementMode(true);
+                    Shot(window, "032-sequence-arrangement", "Sequence in Arrangement mode (daw-modes.md AR1): the Master's tempo and markers on top, a track for each machine with its lanes, clips with their previews, loop repeats and shared badges, the meter grid.", "The Sequence tab, then Arrange.");
+                    seq.SetArrangementMode(false);
+                });
 
                 Try("040-session", () =>
                 {
@@ -748,7 +756,7 @@ namespace ReBuzz.Studio.Tests
                 });
                 Try("348-export-audio-progress", () =>
                 {
-                    string file = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "gallery-export-" + System.Environment.ProcessId + ".wav");
+                    string file = TestTemp.Path("gallery-export-" + System.Environment.ProcessId + ".wav");
                     var sheet = new ReBuzz.Studio.Shell.ExportSheet(Core);
                     sheet.Show();
                     Settle();

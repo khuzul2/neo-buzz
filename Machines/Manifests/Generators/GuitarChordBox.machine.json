@@ -2,16 +2,27 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "GuitarChordBox",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c or d) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
  "type": "control",
- "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "summary": "A guitar chord box: it sends the notes of a chord, shaped as a strum with a delay per string, to target machines on a MIDI channel. It makes no sound itself.",
  "category": "Control",
  "tags": [
   "chords",
   "midi"
  ],
  "use_for": "Strum guitar-style chords from single notes, with per-string delays and humanising.",
+ "quirks": [
+  "It is a control machine with a window that picks the chord: the chord grid and the target machines are chosen there, not through parameters, so nothing plays until a person picks them.",
+  "String delays are in milliseconds up to 2,000 and each string has its own timer; MIDI channel is 0-based (raw 0 is channel 1); Transpose is raw 12 for none.",
+  "Unverified: which machines receive the notes by default, and the chord shapes it offers.",
+  "Closed source (a prebuilt DLL): names come from its own texts, its DLL's type names and the profile, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "RunTime/Gear/Generators/GuitarChordBox.NET.dll — type and member names read from the DLL (per-string timers, chord grid and sending of notes to target machines)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - a control machine, no sound"
+ ],
  "tracks": 1,
  "health": {
   "status": "ok",
@@ -23,6 +34,7 @@
    "index": 0,
    "id": "SendNotes",
    "name": "SendNotes",
+   "plain_name": "Send notes",
    "group": "",
    "min": 0,
    "max": 1,
@@ -33,12 +45,14 @@
     "Yes"
    ],
    "description": "Enable/Disable sending notes.",
-   "confidence": "values"
+   "how": "Switches the sending of notes off or on: No (the default) or Yes.",
+   "sound": "At Yes the chord you pick in its window plays on the target machines; at No it stays silent."
   },
   {
    "index": 1,
    "id": "MIDIChannel",
    "name": "MIDIChannel",
+   "plain_name": "MIDI channel",
    "group": "",
    "min": 0,
    "max": 15,
@@ -47,12 +61,15 @@
    "a": 0.0,
    "b": 15.0,
    "description": "Send MIDI Note Channel",
-   "confidence": "values"
+   "how": "Chooses the MIDI channel the notes are sent on, 0 to 15 (0 by default, which is channel 1).",
+   "sound": "Use it to address one part of a multi-timbral device."
   },
   {
    "index": 2,
    "id": "SendVelocity",
    "name": "SendVelocity",
+   "plain_name": "Send velocity",
+   "role": "velocity",
    "group": "",
    "min": 0,
    "max": 127,
@@ -61,12 +78,14 @@
    "a": 0.0,
    "b": 127.0,
    "description": "Send Velocity",
-   "confidence": "values"
+   "how": "Sets the velocity of the sent notes, 0 to 127 (60 by default).",
+   "sound": "Higher values strike the notes harder."
   },
   {
    "index": 3,
    "id": "VolRandom",
    "name": "VolRandom",
+   "plain_name": "Volume randomness",
    "group": "",
    "min": 0,
    "max": 127,
@@ -75,12 +94,14 @@
    "a": 0.0,
    "b": 127.0,
    "description": "Randomize Volume",
-   "confidence": "values"
+   "how": "Sets how much random variation is added to the note volumes, 0 to 127 (0 by default).",
+   "sound": "More variation makes the chord sound played by hand rather than by machine."
   },
   {
    "index": 4,
    "id": "DelayRandom",
    "name": "DelayRandom",
+   "plain_name": "Delay randomness",
    "group": "",
    "min": 0,
    "max": 2000,
@@ -89,12 +110,14 @@
    "a": 0.0,
    "b": 2000.0,
    "description": "Randomize Delay",
-   "confidence": "values"
+   "how": "Sets how much random delay is added to the notes, 0 to 2,000 ms (0 by default).",
+   "sound": "More delay loosens the timing of the chord into a rough strum."
   },
   {
    "index": 5,
    "id": "StringEDelay",
    "name": "StringEDelay",
+   "plain_name": "Low E delay",
    "group": "",
    "min": 0,
    "max": 2000,
@@ -104,12 +127,14 @@
    "b": 2.0,
    "unit": "s",
    "description": "E Delay (ms)",
-   "confidence": "description"
+   "how": "Sets the delay of the low E string's note, 0 to 2 s (0 by default).",
+   "sound": "Staggering the strings produces a strum."
   },
   {
    "index": 6,
    "id": "StringADelay",
    "name": "StringADelay",
+   "plain_name": "A string delay",
    "group": "",
    "min": 0,
    "max": 2000,
@@ -119,12 +144,14 @@
    "b": 2.0,
    "unit": "s",
    "description": "A Delay (ms)",
-   "confidence": "description"
+   "how": "Sets the delay of the A string's note, 0 to 2 s (0 by default).",
+   "sound": "Staggering the strings produces a strum."
   },
   {
    "index": 7,
    "id": "StringDDelay",
    "name": "StringDDelay",
+   "plain_name": "D string delay",
    "group": "",
    "min": 0,
    "max": 2000,
@@ -134,12 +161,14 @@
    "b": 2.0,
    "unit": "s",
    "description": "D Delay (ms)",
-   "confidence": "description"
+   "how": "Sets the delay of the D string's note, 0 to 2 s (0 by default).",
+   "sound": "Staggering the strings produces a strum."
   },
   {
    "index": 8,
    "id": "StringGDelay",
    "name": "StringGDelay",
+   "plain_name": "G string delay",
    "group": "",
    "min": 0,
    "max": 2000,
@@ -149,12 +178,14 @@
    "b": 2.0,
    "unit": "s",
    "description": "G Delay (ms)",
-   "confidence": "description"
+   "how": "Sets the delay of the G string's note, 0 to 2 s (0 by default).",
+   "sound": "Staggering the strings produces a strum."
   },
   {
    "index": 9,
    "id": "StringBDelay",
    "name": "StringBDelay",
+   "plain_name": "B string delay",
    "group": "",
    "min": 0,
    "max": 2000,
@@ -164,12 +195,14 @@
    "b": 2.0,
    "unit": "s",
    "description": "B Delay (ms)",
-   "confidence": "description"
+   "how": "Sets the delay of the B string's note, 0 to 2 s (0 by default).",
+   "sound": "Staggering the strings produces a strum."
   },
   {
    "index": 10,
    "id": "StringE2Delay",
    "name": "StringE2Delay",
+   "plain_name": "High E delay",
    "group": "",
    "min": 0,
    "max": 2000,
@@ -179,12 +212,15 @@
    "b": 2.0,
    "unit": "s",
    "description": "E2 Delay (ms)",
-   "confidence": "description"
+   "how": "Sets the delay of the high E string's note, 0 to 2 s (0 by default).",
+   "sound": "Staggering the strings produces a strum."
   },
   {
    "index": 11,
    "id": "Transpose",
    "name": "Transpose",
+   "plain_name": "Transpose",
+   "role": "pitch.coarse",
    "group": "",
    "min": 0,
    "max": 24,
@@ -192,8 +228,9 @@
    "kind": "linear",
    "a": -12.0,
    "b": 12.0,
-   "description": "",
-   "confidence": "values"
+   "description": "Transposes the notes by -12 to +12 semitones (raw 12 is none, the default).",
+   "how": "Transposes the notes by -12 to +12 semitones (raw 12 is none, the default).",
+   "sound": "Moves the whole chord up or down in pitch."
   }
  ],
  "track_parameters": []

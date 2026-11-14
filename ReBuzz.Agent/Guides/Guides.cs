@@ -56,6 +56,12 @@ namespace ReBuzz.Agent.Guides
             ("neo-eq-in-depth", "Neo EQ in depth", "Neo EQ's graphic mode, linear phase and curve layer, and the map of its factory presets."),
             ("build-a-synth", "Build a synth", "Learn Neo Patch one node at a time: the empty patch with sound in three steps, then the templates (subtractive, FM, ring and AM, wavefolder, sync lead, plucked string, vector crossfade, sample loop) with the call that builds each and what to listen for."),
             ("app-control", "App control", "Settings and their audit log, the audio device with auto-revert, MIDI bindings and learn, the studio window (views, panels, selection), export to WAV with stems, and app status: what each tool does, where it works and the care it needs."),
+            ("live-performance", "Live performance", "Playing the Session View live: scenes and clips with launch quantization, playing and recording, controllers and modulators on the knobs, a safe live restore, watching levels, and what to avoid while the audience hears you."),
+            ("dye-sound-design", "Dye Essence sound design", "Sound design per Dye Essence engine (Wavetable, Analog, Sample, Granular, Harmonic, Modal, Spectral): what each is for, the parameters to move first, a preset to start from, what to measure, and combinations of slots."),
+            ("migrating-songs", "Migrating old songs to Neo", "Moving a song's classic machines onto their Neo successors with machine_replace: which pairs exist, dry run, the render comparison and its tolerance, what has no counterpart, undo, and how to deal with the rest by ear."),
+            ("teaching", "Teaching sound design", "Explaining sound design to a person with the machines' Explain text (how a control changes the sound, what you will hear), the Neo Learn machines as one-idea lessons, and a lesson loop of hear, change, hear again."),
+            ("performance", "Performance and latency", "Dropouts, latency and CPU: the audio drivers (ASIO, WASAPI modes, PortAudio), buffer sizes and what they cost, reading the CPU meter, each machine's CPU, and a ladder of fixes."),
+            ("recipes", "Recipes", "Short step lists of real tool calls, each run in a test: a bass you can measure, modulator movement, a safe experiment, a section arranged, Session View scenes, a controller binding, explaining a control, a Dye engine swap, replacing a classic machine and checking the load."),
             ("troubleshooting", "Troubleshooting", "Silence, clipping, phase, latency, CPU, missing machines, machines that ignore notes, hanging notes, and a render that differs from the last one."),
         };
 
@@ -112,7 +118,7 @@ namespace ReBuzz.Agent.Guides
                 Description =
                     "Returns a guide as markdown: 'workflow' (how to work here; read it first), 'concepts' (machines, patterns, the arrangement, " +
                     "beats, pitches, levels), then by craft: 'composition', 'genres', 'sound-design', 'synth-recipes', 'fm-recipes', 'mixing', 'mixing-dynamics', " +
-                    "'mastering', 'mastering-chain', 'app-control' (preferences, audio device, MIDI, the window, export), 'troubleshooting', and the machine deep dives 'dye-essence-in-depth', 'dye-essence-analysis', 'dye-essence-effects' 'neo-eq-in-depth', and 'build-a-synth' (learn Neo Patch node by node). machine gives a gear's manual " +
+                    "'mastering', 'mastering-chain', 'app-control' (preferences, audio device, MIDI, the window, export), 'live-performance', 'dye-sound-design', 'migrating-songs', 'teaching', 'performance' (drivers, latency, CPU), 'recipes' (short checked step lists), 'troubleshooting', and the machine deep dives 'dye-essence-in-depth', 'dye-essence-analysis', 'dye-essence-effects' 'neo-eq-in-depth', and 'build-a-synth' (learn Neo Patch node by node). machine gives a gear's manual " +
                     "(every parameter, how to use it, presets). Without arguments, lists the topics. Read-only. " +
                     "Example: guide(topic=\"mixing\"), guide(machine=\"Neo Poly\").",
                 Input = Object(null,

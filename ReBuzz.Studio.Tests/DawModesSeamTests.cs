@@ -20,6 +20,7 @@ using ReBuzz.Core.Notes;
 using ReBuzz.Core.Session;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views.Sequence;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -29,7 +30,7 @@ namespace ReBuzz.Studio.Tests
 
         static string Work(string name)
         {
-            string dir = Path.Combine(Path.GetTempPath(), $"rebuzz-daw-modes-{Environment.ProcessId}");
+            string dir = TestTemp.Path($"rebuzz-daw-modes-{Environment.ProcessId}");
             Directory.CreateDirectory(dir);
             return Path.Combine(dir, name);
         }
