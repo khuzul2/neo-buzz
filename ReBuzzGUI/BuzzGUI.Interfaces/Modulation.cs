@@ -38,9 +38,53 @@ namespace BuzzGUI.Interfaces
         void RemoveTarget(int slot);
     }
 
+    /// <summary>
+    /// A control that a modulator can be dropped on (ux-overhaul.md P5b, drag-to-modulate): a knob, a slider, a row of the device view.
+    /// The studio finds the one under the pointer when a drag from a modulator's output handle ends; coordinates are the control's own.
+    /// </summary>
+    public interface IModulationDropSurface
+    {
+        /// <summary>The parameter at (x, y), or false when nothing there takes a modulation.</summary>
+        bool ModulationTargetAt(double x, double y, out IMachine machine, out IParameter parameter, out int track);
+    }
+
     /// <summary>The live modulators, the safe-range hook and the change notice.</summary>
     public static class ModulationBoard
     {
+        /// <summary>The modulator whose output handle is being dragged (the drop surfaces light up while it is set); null: no drag.</summary>
+        public static IModulator Dragging { get; private set; }
+
+        /// <summary>Raised when a drag starts or ends.</summary>
+        public static event Action DragChanged;
+
+        /// <summary>The host's: what happens when a drag from <c>source</c>'s handle ends at a screen point (pixels): it finds the surface there and adds the target. Returns the refusal, or null.</summary>
+        public static Func<IModulator, double, double, string> DropHook { get; set; }
+
+        /// <summary>The last drop's outcome: null when it added a target (or nothing was dropped), else why not.</summary>
+        public static string LastDropMessage { get; private set; }
+
+        /// <summary>The host's: opens the modulation matrix with this source chosen (the keyboard's way to add a target).</summary>
+        public static Action<IModulator> MatrixHook { get; set; }
+
+        public static void BeginDrag(IModulator source)
+        {
+            Dragging = source;
+            DragChanged?.Invoke();
+        }
+
+        /// <summary>Ends the drag; at a screen point (pixels) it is dropped there, with null it is cancelled.</summary>
+        public static void EndDrag((double X, double Y)? at)
+        {
+            var source = Dragging;
+            Dragging = null;
+            LastDropMessage = null;
+            try
+            {
+                if (at is { } p && source != null && DropHook != null) LastDropMessage = DropHook(source, p.X, p.Y);
+            }
+            finally { DragChanged?.Invoke(); }
+        }
+
         /// <summary>The most targets a modulator has.</summary>
         public const int MaxTargets = 8;
 

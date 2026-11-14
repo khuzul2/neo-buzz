@@ -20,6 +20,7 @@ namespace ReBuzz.Studio.Shell
         StudioHost(string settingsFolder, bool openAudio)
         {
             SettingsFolder = Path.GetFullPath(settingsFolder);
+            Views.Modulation.ModulationDrop.Install();     // drag-to-modulate (ux-overhaul.md P5b): where a drag from a modulator's handle lands
             OpenAudio = openAudio;
             Registry = EngineHost.UseSettings(SettingsFolder);
             EngineHost.UseAudio(Registry, null);    // the settings' device (Preferences picks it)

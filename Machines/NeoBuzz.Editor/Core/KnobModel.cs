@@ -96,9 +96,21 @@ namespace NeoBuzz.Editor
         public (double From, double To)? Safe { get; set; }
 
         /// <summary>The colour of the marks outside the safe range.</summary>
+        /// <summary>The Control identity colour: modulation's (rings, wires).</summary>
+        public static NeoColor ModulationRing => Tokens.Identity(MachineCategory.Control, NeoColor.FromRgb(0xD1, 0xE1, 0x81));
+
         public static readonly NeoColor Unsafe = NeoColor.FromRgb(0xE5, 0x48, 0x48);
 
         /// <summary>True when the value is outside the safe range.</summary>
+        /// <summary>
+        /// Where a modulation reaches (ux-overhaul.md P5b): positions 0 … 1 of its low and high end and of the value you set; drawn as a ring
+        /// outside the track in the Control identity colour. Null: the knob is not modulated.
+        /// </summary>
+        public (double Low, double High, double Base)? Modulated { get; set; }
+
+        /// <summary>A modulator is being dragged and this knob takes it: drawn with an outline.</summary>
+        public bool DropReady { get; set; }
+
         public bool OutsideSafe => Safe is (double lo, double hi) && (Value < lo - 1e-9 || Value > hi + 1e-9);
 
         /// <summary>0 … 1.</summary>
@@ -187,6 +199,17 @@ namespace NeoBuzz.Editor
                     c.Line(NeoGeometry.Polar(centre, r - 5, aHi), NeoGeometry.Polar(centre, r + 3, aHi), new NeoStroke(Unsafe, 1.5));
                 }
             }
+
+            if (Modulated is (double mlo, double mhi, double mbase))
+            {
+                var ring = new NeoStroke(ModulationRing, 3);
+                double aLo = -Sweep + 2 * Sweep * Math.Clamp(mlo, 0, 1), aHi = -Sweep + 2 * Sweep * Math.Clamp(mhi, 0, 1);
+                if (aHi - aLo < 2) { aLo -= 1; aHi += 1; }   // a hairline range stays visible
+                c.Arc(centre, r + 4.5, aLo, aHi, ring);
+                double aBase = -Sweep + 2 * Sweep * Math.Clamp(mbase, 0, 1);
+                c.Line(NeoGeometry.Polar(centre, r + 1, aBase), NeoGeometry.Polar(centre, r + 8, aBase), new NeoStroke(ModulationRing, 1.5));
+            }
+            if (DropReady) c.Ellipse(centre, r + 3, r + 3, NeoFill.None, new NeoStroke(ModulationRing, 1.5));
 
             // Body and pointer.
             double body = r - 8;

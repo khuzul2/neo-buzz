@@ -78,59 +78,8 @@ namespace ReBuzz.Agent
                     int? root = c.Arguments["root_note"] != null ? NoteList.ParsePitch(c.Arguments["root_note"], "root_note") : null;
                     var r = await host.Engine("wave_import", true, messages =>
                     {
-                        var table = core.SongCore.Wavetable;
-                        int index = c.Int("slot") is int s ? s - 1 : FreeSlot(core);
-                        if (index < 0 || index >= table.Waves.Count) throw new ToolError($"slot: the wavetable has slots 1–{table.Waves.Count}.");
-                        var old = table.Waves[index];
-                        string backup = null, oldName = old?.Name;
-                        bool layer = c.Bool("layer") == true && old != null && old.Layers.Count > 0;
-                        if (c.Bool("layer") == true && c.Bool("replace") == true) throw new ToolError("Pass layer or replace, not both.");
-                        if (old != null && !layer)
-                        {
-                            if (c.Bool("replace") != true)
-                                throw new ToolError($"Slot {index + 1} holds \"{old.Name}\". Pass replace=true, layer=true to add another layer, or leave slot out for the first empty one (slot {FreeSlot(core) + 1}).");
-                            if (old.Layers.Count != 1) throw new ToolError($"Slot {index + 1} has {old.Layers.Count} layers; replacing it couldn't be undone. Use another slot.");
-                            backup = Path.Combine(Path.GetTempPath(), "ReBuzzAgent", $"wave-{Guid.NewGuid():N}.wav");
-                            Save(old.Layers[0], backup);
-                        }
-                        string name = layer ? oldName : c.String("name")?.Trim() is { Length: > 0 } n ? n : Path.GetFileNameWithoutExtension(path);
-                        var layerBefore = old?.Layers[0];
-                        int oldRoot = layerBefore?.RootNote ?? 0, oldLoopStart = layerBefore?.LoopStart ?? 0, oldLoopEnd = layerBefore?.LoopEnd ?? 0;
-                        int layersBefore = old?.Layers.Count ?? 0;
-                        void Load()
-                        {
-                            table.LoadWave(index, path, name, layer);
-                            var layers = table.Waves[index]?.Layers;
-                            if (root is int midi && layers?.Count > 0) layers[layer ? layers.Count - 1 : 0].RootNote = Pitch.ToBuzz(midi);
-                        }
-                        void Restore()
-                        {
-                            if (layer)
-                            {
-                                // The added layer goes (the slot's others stay as they are).
-                                lock (ReBuzzCore.AudioLock)
-                                {
-                                    var w = core.SongCore.WavetableCore.WavesList[index];
-                                    while (w != null && w.LayersList.Count > layersBefore)
-                                    {
-                                        var added = w.LayersList[^1];
-                                        w.LayersList.RemoveAt(w.LayersList.Count - 1);
-                                        added.Release();
-                                    }
-                                    w?.Invalidate();
-                                }
-                                return;
-                            }
-                            if (backup == null) { table.LoadWave(index, null, null, false); return; }
-                            table.LoadWave(index, backup, oldName, false);
-                            var restored = table.Waves[index]?.Layers.FirstOrDefault();
-                            if (restored != null) { restored.RootNote = oldRoot; restored.LoopStart = oldLoopStart; restored.LoopEnd = oldLoopEnd; }
-                        }
-                        try { AgentActions.Do(core, new DelegateAction(Load, Restore)); }
-                        catch (Exception e) { throw new ToolError($"Couldn't load {Path.GetFileName(path)}: {e.Message}"); }
-                        var wave = table.Waves[index] ?? throw new ToolError($"{Product.Name} didn't load {Path.GetFileName(path)}." + (messages.Count > 0 ? " " + string.Join(" | ", messages) : ""));
-                        if (layer && wave.Layers.Count <= layersBefore) throw new ToolError($"{Product.Name} didn't add {Path.GetFileName(path)} as a layer." + (messages.Count > 0 ? " " + string.Join(" | ", messages) : ""));
-                        return new JsonObject { ["wave"] = WaveJson(wave, index), ["replaced"] = layer ? null : oldName, ["layered"] = layer };
+                        var done = Import(core, path, c.Int("slot"), c.String("name"), root, c.Bool("replace") == true, c.Bool("layer") == true, messages);
+                        return new JsonObject { ["wave"] = WaveJson(done.Wave, done.Index), ["replaced"] = done.Replaced, ["layered"] = done.Layered };
                     }, c.Cancellation);
                     var w = r["wave"]!;
                     if ((bool?)r["layered"] == true)
@@ -141,7 +90,70 @@ namespace ReBuzz.Agent
             });
         }
 
-        static int FreeSlot(ReBuzzCore core)
+
+        /// <summary>
+        /// Loads a file into a slot (index from 1 in <paramref name="slotArg"/>, else the first empty) as one undo step: the agent's wave_import and
+        /// the studio's Samples view share it. Throws ToolError with the reason where it can't.
+        /// </summary>
+        internal static (IWave Wave, int Index, string Replaced, bool Layered) Import(ReBuzzCore core, string path, int? slotArg, string nameArg, int? root, bool wantReplace, bool wantLayer,
+                                                                                       System.Collections.Generic.IReadOnlyList<string> messages)
+        {
+            var table = core.SongCore.Wavetable;
+            int index = slotArg is int s ? s - 1 : FreeSlot(core);
+            if (index < 0 || index >= table.Waves.Count) throw new ToolError($"slot: the wavetable has slots 1–{table.Waves.Count}.");
+            var old = table.Waves[index];
+            string backup = null, oldName = old?.Name;
+            bool layer = wantLayer && old != null && old.Layers.Count > 0;
+            if (wantLayer && wantReplace) throw new ToolError("Pass layer or replace, not both.");
+            if (old != null && !layer)
+            {
+                if (!wantReplace)
+                    throw new ToolError($"Slot {index + 1} holds \"{old.Name}\". Pass replace=true, layer=true to add another layer, or leave slot out for the first empty one (slot {FreeSlot(core) + 1}).");
+                if (old.Layers.Count != 1) throw new ToolError($"Slot {index + 1} has {old.Layers.Count} layers; replacing it couldn't be undone. Use another slot.");
+                backup = Path.Combine(Path.GetTempPath(), "ReBuzzAgent", $"wave-{Guid.NewGuid():N}.wav");
+                Save(old.Layers[0], backup);
+            }
+            string name = layer ? oldName : nameArg?.Trim() is { Length: > 0 } n ? n : Path.GetFileNameWithoutExtension(path);
+            var layerBefore = old?.Layers[0];
+            int oldRoot = layerBefore?.RootNote ?? 0, oldLoopStart = layerBefore?.LoopStart ?? 0, oldLoopEnd = layerBefore?.LoopEnd ?? 0;
+            int layersBefore = old?.Layers.Count ?? 0;
+            void Load()
+            {
+                table.LoadWave(index, path, name, layer);
+                var layers = table.Waves[index]?.Layers;
+                if (root is int midi && layers?.Count > 0) layers[layer ? layers.Count - 1 : 0].RootNote = Pitch.ToBuzz(midi);
+            }
+            void Restore()
+            {
+                if (layer)
+                {
+                    // The added layer goes (the slot's others stay as they are).
+                    lock (ReBuzzCore.AudioLock)
+                    {
+                        var w = core.SongCore.WavetableCore.WavesList[index];
+                        while (w != null && w.LayersList.Count > layersBefore)
+                        {
+                            var added = w.LayersList[^1];
+                            w.LayersList.RemoveAt(w.LayersList.Count - 1);
+                            added.Release();
+                        }
+                        w?.Invalidate();
+                    }
+                    return;
+                }
+                if (backup == null) { table.LoadWave(index, null, null, false); return; }
+                table.LoadWave(index, backup, oldName, false);
+                var restored = table.Waves[index]?.Layers.FirstOrDefault();
+                if (restored != null) { restored.RootNote = oldRoot; restored.LoopStart = oldLoopStart; restored.LoopEnd = oldLoopEnd; }
+            }
+            try { AgentActions.Do(core, new DelegateAction(Load, Restore)); }
+            catch (Exception e) { throw new ToolError($"Couldn't load {Path.GetFileName(path)}: {e.Message}"); }
+            var wave = table.Waves[index] ?? throw new ToolError($"{Product.Name} didn't load {Path.GetFileName(path)}." + (messages.Count > 0 ? " " + string.Join(" | ", messages) : ""));
+            if (layer && wave.Layers.Count <= layersBefore) throw new ToolError($"{Product.Name} didn't add {Path.GetFileName(path)} as a layer." + (messages.Count > 0 ? " " + string.Join(" | ", messages) : ""));
+            return (wave, index, layer ? null : oldName, layer);
+        }
+
+        internal static int FreeSlot(ReBuzzCore core)
         {
             var waves = core.SongCore.Wavetable.Waves;
             for (int i = 0; i < waves.Count; i++) if (waves[i] == null) return i;
@@ -172,7 +184,7 @@ namespace ReBuzz.Agent
         }
 
         /// <summary>A layer as a float WAV (for undo of a replace).</summary>
-        static void Save(IWaveLayer layer, string path)
+        internal static void Save(IWaveLayer layer, string path)
         {
             int n = layer.SampleCount, ch = Math.Max(1, layer.ChannelCount);
             var l = new float[n];

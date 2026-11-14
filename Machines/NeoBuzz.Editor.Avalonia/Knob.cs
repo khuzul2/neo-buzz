@@ -4,13 +4,18 @@
 // (Core/KnobModel.cs). A drag, a reset or a run of wheel turns is one undo step (EditGesture).
 
 using System;
+using System.Linq;
 using Avalonia.Automation;
+using Avalonia.Threading;
+using BuzzGUI.Interfaces;
 using Avalonia.Input;
+using Avalonia;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 
 namespace NeoBuzz.Editor
 {
-    internal class Knob : NeoElement
+    internal class Knob : NeoElement, IModulationDropSurface
     {
         readonly KnobModel model;
         readonly AvaloniaCanvas canvas;
@@ -59,6 +64,89 @@ namespace NeoBuzz.Editor
 
         /// <summary>The label's lines as drawn.</summary>
         public string[] LabelLines => model.LabelLines;
+
+        // ---- drag-to-modulate (ux-overhaul.md P5b): the knob takes a modulator dropped on it and shows where a modulation reaches.
+        IMachine modMachine;
+        IParameter modParameter;
+        int modTrack;
+        Func<int, double> modNormalize;
+        bool modHooked;
+
+        /// <summary>The parameter this knob is: a modulator dropped on it modulates that, and a ring shows where the modulations on it reach.</summary>
+        public void BindModulation(IMachine machine, IParameter parameter, int track, Func<int, double> normalize)
+        {
+            modMachine = machine;
+            modParameter = parameter;
+            modTrack = track;
+            modNormalize = normalize;
+            if (IsAttachedToVisualTree()) HookModulation();
+            RefreshModulation();
+        }
+
+        /// <summary>Whether a ring is drawn (tests).</summary>
+        public bool ShowsModulationRing => model.Modulated != null;
+
+        /// <summary>Whether it lights up as a drop target (tests).</summary>
+        public bool IsDropReady => model.DropReady;
+
+        bool IsAttachedToVisualTree() => Avalonia.Controls.TopLevel.GetTopLevel(this) != null;
+
+        void HookModulation()
+        {
+            if (modHooked || modMachine == null) return;
+            modHooked = true;
+            ModulationBoard.Changed += OnModulationChanged;
+            ModulationBoard.DragChanged += OnModulationChanged;
+        }
+
+        void UnhookModulation()
+        {
+            if (!modHooked) return;
+            modHooked = false;
+            ModulationBoard.Changed -= OnModulationChanged;
+            ModulationBoard.DragChanged -= OnModulationChanged;
+        }
+
+        void OnModulationChanged()
+        {
+            if (Dispatcher.UIThread.CheckAccess()) RefreshModulation();
+            else Dispatcher.UIThread.Post(RefreshModulation);
+        }
+
+        /// <summary>Reads the modulations on this parameter and the drag in progress.</summary>
+        public void RefreshModulation()
+        {
+            if (modMachine == null || modParameter == null) return;
+            bool track = modParameter.Group?.Type == ParameterGroupType.Track;
+            var found = ModulationBoard.Incoming(modMachine).FirstOrDefault(i => i.Param == modParameter.Name && i.IsTrack == track && (!track || i.Track == modTrack));
+            (double, double, double)? ring = found == null ? null : (modNormalize(found.Low), modNormalize(found.High), modNormalize(found.Base));
+            bool ready = ModulationBoard.Dragging != null;
+            if (ring.Equals(model.Modulated) && ready == model.DropReady) return;
+            model.Modulated = ring;
+            model.DropReady = ready;
+            InvalidateVisual();
+        }
+
+        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnAttachedToVisualTree(e);
+            HookModulation();
+            RefreshModulation();
+        }
+
+        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            UnhookModulation();
+            base.OnDetachedFromVisualTree(e);
+        }
+
+        bool IModulationDropSurface.ModulationTargetAt(double x, double y, out IMachine machine, out IParameter parameter, out int track)
+        {
+            machine = modMachine;
+            parameter = modParameter;
+            track = modTrack;
+            return modMachine != null && modParameter != null && modParameter.Type != ParameterType.Note;
+        }
 
         void Fit()
         {

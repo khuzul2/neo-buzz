@@ -227,6 +227,15 @@ namespace ReBuzz.Studio.Tests
                 Settle();
                 yield return new Surface("dialog/" + name, ask);
             }
+            // P5b: the Samples view and the modulation matrix are surfaces too.
+            var samples = ReBuzz.Studio.Views.Samples.SamplesWindow.Open();
+            opened.Add(samples);
+            Settle();
+            yield return new Surface("samples", samples);
+            var matrix = ReBuzz.Studio.Views.Modulation.ModulationMatrixWindow.Open();
+            opened.Add(matrix);
+            Settle();
+            yield return new Surface("modulation", matrix);
             Call("machine_add", Args(("gear", "Pedal Gain"), ("name", "Plain")));
             Core.UiHost.OpenParameterWindow(Core.SongCore.MachinesList.First(m => m.Name == "Plain"), null);
             var parameters = ReBuzz.Studio.Platform.StudioMachineUiHost.ParameterWindowOf(Core.SongCore.MachinesList.First(m => m.Name == "Plain"));

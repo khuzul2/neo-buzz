@@ -116,6 +116,8 @@ namespace ReBuzz.Studio.Shell.Commands
             C("view.device", "View", "D_evice", "Ctrl+Alt+5", "Alt+Cmd+5", help: "The detail panel's Device page: the selected machine's parameters, grouped and searchable, its editor, and the piano keyboard under it"),
             C("device.find", "View", "_Find Parameter", "Cmd+F", help: "Searches the parameters of the Device page"),
             C("view.addmachine", "View", "Add _Machine…", "Shift+Cmd+N", help: "Opens the machine browser on the Machine View, to search and add a machine (a double click on empty canvas does too)"),
+            C("view.samples", "View", "Samp_les", help: "The song's wavetable: the slots (hex, as Buzz shows them), their names, loops and waveforms; load, replace, clear, play"),
+            C("view.modulation", "View", "Mod_ulation Matrix", help: "Every modulation in the song as a table, with + Add; the keyboard's way to drag-to-modulate"),
             C("view.mixer", "View", "Session Mi_xer", "Ctrl+Alt+M", "Alt+Cmd+M", help: "Shows or hides the mixer under the Session View's grid"),
 
             C("window.minimize", "Window", "_Minimize", null, "Cmd+M"),

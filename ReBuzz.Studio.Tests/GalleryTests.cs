@@ -1478,6 +1478,67 @@ namespace ReBuzz.Studio.Tests
                         Core.UiHost.CloseWindows(m);
                     });
                 }
+                // P5b (ux-overhaul.md): drag-to-modulate and the Samples view.
+                Try("493-modulation-ring-and-drop-targets", () =>
+                {
+                    var lfo = Add("Neo LFO", "LFO");
+                    var filter = Add("Neo Filter", "Filter");
+                    var mod = ModulationBoard.Of(lfo)!;
+                    Assert.That(ReBuzz.Agent.ModulationEdits.Add(Core, mod, filter, filter.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == "Cutoff"), 0, 60), Is.Null);
+                    Core.UiHost.OpenGui(filter, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(filter)!;
+                    ModulationBoard.BeginDrag(mod);          // a drag in progress: every knob that takes a modulator is outlined
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor, "493-modulation-ring-and-drop-targets", "Neo Filter's editor while a modulator is dragged (P5b): every knob is outlined as a drop target, and Cutoff carries the ring of the modulation already on it (the arc is where it reaches, the tick the value you set).", "Press a modulator's output handle (in its editor, its device view or on its box on the canvas) and drag it over a knob.");
+                    ModulationBoard.EndDrag(null);
+                    Core.UiHost.CloseWindows(filter);
+                });
+                Try("494-modulation-matrix", () =>
+                {
+                    var lfo = Core.SongCore.MachinesList.First(m => m.Name == "LFO");
+                    var filter = Core.SongCore.MachinesList.First(m => m.Name == "Filter");
+                    var mod = ModulationBoard.Of(lfo)!;
+                    ReBuzz.Agent.ModulationEdits.Add(Core, mod, filter, filter.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == "Resonance"), 0, -35);
+                    var w = ReBuzz.Studio.Views.Modulation.ModulationMatrixWindow.Open(mod);
+                    Settle();
+                    w.Choose("LFO", "Filter", "Cutoff");
+                    Settle();
+                    Shot(w, "494-modulation-matrix", "The modulation matrix (P5b): every modulation in the song as a row (source, machine, parameter, depth, polarity, Remove) and, above, + Add with a source, a machine and a parameter chosen from lists.", "View ▸ Modulation Matrix.");
+                    w.Close();
+                    foreach (var m in new[] { lfo, filter }) Core.UiHost.ReleaseMachine(m);
+                    Core.SongCore.DeleteMachines(new[] { lfo, filter });
+                });
+                Try("495-samples-view", () =>
+                {
+                    string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "gallery-samples-" + System.Guid.NewGuid().ToString("N"));
+                    System.IO.Directory.CreateDirectory(dir);
+                    try
+                    {
+                        string[] names = { "Kick", "Snare", "Pad A3" };
+                        for (int n = 0; n < names.Length; n++)
+                        {
+                            const int rate = 22050;
+                            int frames = rate * (n + 1) / 2;
+                            var data = new float[frames * 2];
+                            for (int i = 0; i < frames; i++) data[2 * i] = data[2 * i + 1] = (float)(0.7 * System.Math.Sin(i * 2 * System.Math.PI * (110 + 55 * n) / rate) * System.Math.Exp(-3.0 * i / frames));
+                            string path = System.IO.Path.Combine(dir, names[n] + ".wav");
+                            ReBuzz.Agent.Audio.Wav.WriteStereoFloat(path, data, frames, rate);
+                            Assert.That(ReBuzz.Agent.WaveEdits.Load(Core, path, n == 2 ? 9 : n, null, true, out _), Is.Null);
+                        }
+                        ReBuzz.Agent.WaveEdits.SetLoop(Core, 2, true, 2000, 9000);
+                        var w = ReBuzz.Studio.Views.Samples.SamplesWindow.Open();
+                        Settle();
+                        w.Selected = 2;
+                        Settle();
+                        w.Selected = 9;
+                        Settle();
+                        Shot(w, "495-samples-view", "The Samples view (P5b): the song's wavetable with slots in hex as Buzz shows them (01 … C8) and their names; the chosen wave's name, length, rate, root note, loop points, waveform with the loop shaded, and Replace, Clear, Play.", "View ▸ Samples; drag an audio file into the window to load it.");
+                        w.Close();
+                        for (int n = 0; n < 10; n++) if (Core.SongCore.Wavetable.Waves[n] != null) Core.SongCore.Wavetable.LoadWave(n, null, null, false);
+                    }
+                    finally { try { System.IO.Directory.Delete(dir, true); } catch (System.IO.IOException) { } }
+                });
                 Control EditorPart(Window w, string type, string name) =>
                     w.GetVisualDescendants().OfType<Control>().First(c => c.GetType().Name == type && Avalonia.Automation.AutomationProperties.GetName(c) == name);
                 void ClickIn(Window w, Control c, double x, double y)

@@ -83,6 +83,7 @@ namespace NeoBuzz.Editor
             Binding = ctx.Bind(index, Show);
             Default = Binding.Normalized(def.Default);
             UserChanged += t => Binding.Set(Binding.RawFromNormalized(t));
+            BindModulation(ctx.Machine, Binding.Parameter, Binding.Track, Binding.Normalized);
             ToolTip = def.Description;
             // Explain (neo-learn.md §5.3): hovering and dragging the knob show it in the strip.
             if (ctx.Explain is { } explain)

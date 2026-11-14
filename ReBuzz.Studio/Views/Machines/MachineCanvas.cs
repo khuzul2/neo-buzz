@@ -39,7 +39,9 @@ namespace ReBuzz.Studio.Views.Machines
         Vector offset;          // scroll offset, in zoomed pixels
         double wheelZoom;       // wheel notches (or pinch) not yet turned into a level
 
-        enum Drag { None, Move, Connect, Select, Pan }
+        enum Drag { None, Move, Connect, Select, Pan, Modulate }
+        IModulator modSource;                   // P5b: the modulator whose handle is dragged
+        (double X, double Y)? modDropAt;
         Drag drag;
         Point dragOrigin, dragLast;             // logical canvas pixels (Pan: view pixels)
         Vector panStart;
@@ -109,6 +111,18 @@ namespace ReBuzz.Studio.Views.Machines
             var list = Ordered();
             for (int i = list.Count - 1; i >= 0; i--)
                 if (HasOutput(list[i]) && MachineGeometry.Near(MachineGeometry.OutPort(BoxOf(list[i])), p)) return list[i];
+            return null;
+        }
+
+        /// <summary>The canvas point of a modulator's output handle (tests).</summary>
+        public Point ModHandleOf(IMachine m) => MachineGeometry.OutPort(BoxOf(m));
+
+        /// <summary>The modulator whose output handle (drag-to-modulate, ux-overhaul.md P5b) is at the point, or null.</summary>
+        IModulator ModHandleAt(Point p)
+        {
+            var list = Ordered();
+            for (int i = list.Count - 1; i >= 0; i--)
+                if (ModulationBoard.Of(list[i]) is { } mod && MachineGeometry.Near(MachineGeometry.OutPort(BoxOf(list[i])), p)) return mod;
             return null;
         }
 
@@ -737,6 +751,13 @@ namespace ReBuzz.Studio.Views.Machines
                     bool hot = hoverPort == m && MachineGeometry.Near(MachineGeometry.OutPort(box), lastLogical) || (drag == Drag.Connect && connectFrom == m);
                     ctx.DrawEllipse(accent, new Pen(ring, 1.5), MachineGeometry.OutPort(box), hot ? r + 2 : r, hot ? r + 2 : r);
                 }
+                if (ModulationBoard.Of(m) != null)
+                {
+                    // A modulator's output handle: drag it onto a knob (P5b); it lights while a modulator is dragged.
+                    var control = new SolidColorBrush(Shell.Design.StudioTokens.Identity(NeoBuzz.Editor.MachineCategory.Control));
+                    bool hot = (drag == Drag.Modulate && modSource?.Machine == m) || MachineGeometry.Near(MachineGeometry.OutPort(box), lastLogical);
+                    ctx.DrawEllipse(control, new Pen(ring, 1.5), MachineGeometry.OutPort(box), hot ? r + 2 : r, hot ? r + 2 : r);
+                }
                 if (HasInput(m) && PortShown(m, true))
                 {
                     bool valid = drag == Drag.Connect && m != connectFrom && core.SongCore.CanConnectMachines(connectFrom, m);
@@ -1041,6 +1062,16 @@ namespace ReBuzz.Studio.Views.Machines
 
             if (kind != PointerUpdateKind.LeftButtonPressed) return;
 
+            if (mods == KeyModifiers.None && ModHandleAt(p) is { } handle)
+            {
+                modSource = handle;
+                drag = Drag.Modulate;
+                Cursor = new Cursor(StandardCursorType.Cross);
+                ModulationBoard.BeginDrag(handle);
+                e.Pointer.Capture(this);
+                return;
+            }
+
             if (outPort != null)
             {
                 // P3d: a drag from the output dot connects, as Shift-drag does from anywhere on the box.
@@ -1182,6 +1213,11 @@ namespace ReBuzz.Studio.Views.Machines
             {
                 if (kind != dragButton) return;
                 if (drag == Drag.Move || drag == Drag.Connect) DragMoveOrConnect(p);
+                if (drag == Drag.Modulate)
+                {
+                    var screen = this.PointToScreen(view);
+                    modDropAt = (screen.X, screen.Y);
+                }
                 EndDrag(commit: true);
                 e.Pointer.Capture(null);
                 e.Handled = true;
@@ -1349,6 +1385,13 @@ namespace ReBuzz.Studio.Views.Machines
                 else if (moveDelta.X != 0 || moveDelta.Y != 0)
                     MachineEdits.Move(core, moved);
                 dragPositions.Clear();
+            }
+            else if (was == Drag.Modulate)
+            {
+                var at = commit ? modDropAt : null;
+                modSource = null;
+                modDropAt = null;
+                ModulationBoard.EndDrag(at);
             }
             else if (was == Drag.Connect)
             {

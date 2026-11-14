@@ -104,6 +104,14 @@ namespace ReBuzz.Studio.Parameters
 
         int TotalWidth => (int)Bounds.Width;
 
+        /// <summary>Where a modulation reaches (ux-overhaul.md P5b): raw low, high and the value you set; null: not modulated.</summary>
+        public (int Low, int High, int Base)? Modulated { get => modulated; set { modulated = value; InvalidateVisual(); } }
+        (int, int, int)? modulated;
+
+        /// <summary>A modulator is being dragged: the track is outlined as a drop target.</summary>
+        public bool DropReady { get => dropReady; set { dropReady = value; InvalidateVisual(); } }
+        bool dropReady;
+
         (int X, int Width) ThumbNow => ParameterSliderGeometry.Thumb(value, minimum, maximum, TotalWidth, MinimumThumbWidth);
 
         /// <summary>Where the thumb is (for tests and the value editor's placement).</summary>
@@ -128,6 +136,16 @@ namespace ReBuzz.Studio.Parameters
             context.FillRectangle(ParameterTheme.TrackShadow, new Rect(0, 0, 1, b.Height));
             context.FillRectangle(ParameterTheme.TrackLight, new Rect(0, b.Height - 1, b.Width, 1));
             context.FillRectangle(ParameterTheme.TrackLight, new Rect(b.Width - 1, 0, 1, b.Height));
+            if (modulated is (int mlo, int mhi, int mbase) && maximum > minimum)
+            {
+                double span = maximum - minimum;
+                double x0 = (mlo - minimum) / span * b.Width, x1 = (mhi - minimum) / span * b.Width, xb = (mbase - minimum) / span * b.Width;
+                var colour = StudioTokens.Identity(NeoBuzz.Editor.MachineCategory.Control);
+                var band = new Rect(Math.Max(0, x0 - 1), 0, Math.Max(3, x1 - x0 + 2), b.Height);
+                context.DrawRectangle(new SolidColorBrush(colour, 0.3), new Pen(new SolidColorBrush(colour), 1.5), band, 2, 2);
+                context.FillRectangle(new SolidColorBrush(colour), new Rect(Math.Clamp(xb, 0, b.Width - 1), 0, 1, b.Height));
+            }
+            if (dropReady) context.DrawRectangle(null, new Pen(new SolidColorBrush(StudioTokens.Identity(NeoBuzz.Editor.MachineCategory.Control)), 1.5, dashStyle: DashStyle.Dash), b, 2, 2);
             var (x, w) = ThumbNow;
             var thumb = new Rect(x + 1, 1, Math.Max(1, w - 2), Math.Max(1, b.Height - 2));
             context.DrawRectangle(IsFocused ? ParameterTheme.ThumbFocused : ParameterTheme.Thumb, null, new RoundedRect(thumb, 3));
