@@ -18,6 +18,7 @@ using BuzzGUI.Interfaces;
 using NUnit.Framework;
 using ReBuzz.Audio;
 using ReBuzz.Core;
+using ReBuzzTests.Automation;
 using ReBuzz.Core.Session;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views.Sequence;
@@ -185,7 +186,7 @@ namespace ReBuzz.Studio.Tests
             var lane = rig.Lane("Lead", 1);
             Core.Arrangement.SetRole(lane, LaneRole.Take);
             Core.Arrangement.SetFolded("Bass", true);
-            string path = Path.Combine(Path.GetTempPath(), $"rebuzz-ar1-{Environment.ProcessId}{extension}");
+            string path = TestTemp.Path($"rebuzz-ar1-{Environment.ProcessId}{extension}");   // the song's .history folder lands there too
             try
             {
                 Core.SaveSongCopy(path);
