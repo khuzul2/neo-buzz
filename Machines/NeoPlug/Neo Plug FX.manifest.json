@@ -5,7 +5,7 @@
  "status": "generated",
  "source": "hand-written; each machine instance describes the loaded plug-in itself (IBuzzMachineManifest)",
  "summary": "Hosts a CLAP or VST3 effect plug-in. Pick the plug-in from the Gear menu (or machine_add with plugin=...); its first 64 automatable parameters appear as slots, named and shown in the plug-in's own units.",
- "category": "Plug-in effect",
+ "category": "Utility",
  "tags": [
   "plug-in",
   "clap",

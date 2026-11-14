@@ -181,12 +181,13 @@ for name, kind, plugin in machines:
     # change the first parameter that is not a choice, in raw terms, and keep what machine_describe says about it
     pick = next((p for p in ps if not p.get("choices")), ps[0] if ps else None)
     if pick:
-        ok, text, s = call("param_set", machine=name, changes=[{"param": pick["name"], "value": "raw:20000"}])
-        check(ok, f"{name}: param_set {pick['name']} = raw:20000")
+        want = 20000 if kind != "fx" else 42000   # an effect's first parameter is often a gain: stay audible
+        ok, text, s = call("param_set", machine=name, changes=[{"param": pick["name"], "value": f"raw:{want}"}])
+        check(ok, f"{name}: param_set {pick['name']} = raw:{want}")
         ok, text, d2 = call("machine_describe", machine=name, all=True)
         now = next((p for p in d2.get("parameters", []) if p.get("name") == pick["name"]), {})
         tweaks[name] = (pick["name"], now.get("value"), now.get("raw"))
-        check(now.get("raw") == 20000, f"{name}: {pick['name']} reads {now.get('value')} (raw {now.get('raw')})")
+        check(now.get("raw") == want, f"{name}: {pick['name']} reads {now.get('value')} (raw {now.get('raw')})")
 
 
 def probe_levels(data):

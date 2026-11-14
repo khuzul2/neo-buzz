@@ -29,7 +29,7 @@ echo "::group::neoplug, neoplug-scan, neoplug-test.clap and the SDK's examples"
 case "$RUNNER_OS" in
   Windows) gen=(-A x64) ;;
   Linux) gen=(-G Ninja) ;;
-  *) gen=() ;;
+  *) gen=(-DCMAKE_OSX_ARCHITECTURES=arm64) ;;   # (never an empty array: macOS's bash 3.2 calls it unbound under set -u)
 esac
 cmake -S PluginHost -B "$B" "${gen[@]}" -DCMAKE_BUILD_TYPE=Release -DNEOPLUG_VST3_SDK="$T/vst3sdk" -DNEOPLUG_CLAP="$T/clap"
 cmake --build "$B" --config Release -j 4
@@ -43,8 +43,8 @@ echo "::endgroup::"
 echo "::group::rebuzz-headless with the Neo Plug machines"
 git submodule update --init --depth 1 3rdParty/serilog/serilog
 # On Windows the projects' restore hack needs SolutionDir and ReBuzzCleanBuild, as fork-ci's core-build.
-win=(); [ "$RUNNER_OS" = Windows ] && win=("-p:SolutionDir=$W/" -p:ReBuzzCleanBuild=true)
-dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q "${win[@]}"
+win=(-nologo); [ "$RUNNER_OS" = Windows ] && win+=("-p:SolutionDir=$W/" -p:ReBuzzCleanBuild=true)
+dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -v:q "${win[@]}"
 ls ReBuzz.Headless/bin/Release/net10.0/Gear/NeoPlug
 echo "::endgroup::"
 

@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
@@ -55,6 +56,8 @@ namespace NeoBuzz.Plug
         readonly int[] ssteps = new int[Slots];
         readonly string[] sname = new string[Slots], sunits = new string[Slots], smodule = new string[Slots];
         readonly int[] mirror = new int[Slots];
+        readonly int[] defRaw = new int[Slots];   // the value a slot has when the plug-in is opened: its default for the engine (the engine sets new machines to their defaults)
+        readonly int[] toController = new int[Slots];   // 1: the pump tells the plug-in's controller about the engine's write
         readonly int[] pending = new int[Slots];
         readonly long[] wroteAt = new long[Slots];
         IParameter[] slotParams;
@@ -248,11 +251,18 @@ namespace NeoBuzz.Plug
             var ids = new string[Slots];
             for (int i = 0; i < Slots; i++) ids[i] = bound[i] ? slotId[i].ToString() : "";
             State.SlotIds = string.Join(",", ids);
-            for (int i = 0; i < Slots; i++) mirror[i] = bound[i] ? ToRaw(i, PlugNative.np_param_get(plugin, slotId[i])) : 0;
+            for (int i = 0; i < Slots; i++)
+            {
+                mirror[i] = bound[i] ? ToRaw(i, PlugNative.np_param_get(plugin, slotId[i])) : 0;
+                defRaw[i] = mirror[i];
+                toController[i] = 0;
+            }
         }
 
         void Assign(int i, PlugNative.ParamInfo pi)
         {
+            string unit = PlugNative.Str(pi.module);
+            bool numeric = unit.Length > 0 && unit.All(char.IsDigit);   // a VST3 unit id, not a name
             bound[i] = true;
             slotId[i] = pi.id;
             smin[i] = pi.min;
@@ -261,7 +271,7 @@ namespace NeoBuzz.Plug
             ssteps[i] = pi.flags != 0 && (pi.flags & PlugNative.ParamStepped) != 0 && pi.steps > 0 ? pi.steps : 0;
             sname[i] = PlugNative.Str(pi.name);
             sunits[i] = PlugNative.Str(pi.units);
-            smodule[i] = PlugNative.Str(pi.module);
+            smodule[i] = numeric ? "" : unit;
         }
 
         public int SlotMax(int i) => bound[i] && ssteps[i] > 0 ? ssteps[i] : RawMax;
@@ -292,7 +302,7 @@ namespace NeoBuzz.Plug
                     list.Add(new SlotBinding
                     {
                         Slot = i, Id = slotId[i], Name = sname[i], Units = sunits[i], Module = smodule[i], Steps = ssteps[i], Max = SlotMax(i),
-                        Min = smin[i], MaxValue = smax[i], DefValue = sdef[i], Default = ToRaw(i, sdef[i]),
+                        Min = smin[i], MaxValue = smax[i], DefValue = sdef[i], Default = defRaw[i],
                     });
             return list;
         }
@@ -304,7 +314,11 @@ namespace NeoBuzz.Plug
             if (raw == Volatile.Read(ref mirror[i])) return;
             Volatile.Write(ref mirror[i], raw);
             Volatile.Write(ref wroteAt[i], Environment.TickCount64);
-            if (bound[i]) Volatile.Write(ref pending[i], raw);
+            if (bound[i])
+            {
+                Volatile.Write(ref pending[i], raw);
+                Volatile.Write(ref toController[i], 1);
+            }
         }
 
         /// <summary>The text of a slot value as the plug-in shows it ("-6.0 dB", "Saw").</summary>
@@ -357,7 +371,7 @@ namespace NeoBuzz.Plug
                 {
                     string desc = smodule[i].Length > 0 ? $"{sname[i]} ({smodule[i]})" : sname[i];
                     if (sunits[i].Length > 0) desc += " [" + sunits[i] + "]";
-                    runtime.SetGlobalParameterInfo(i, sname[i], desc, 0, SlotMax(i), ToRaw(i, sdef[i]), true);
+                    runtime.SetGlobalParameterInfo(i, sname[i], desc, 0, SlotMax(i), defRaw[i], true);
                 }
                 else runtime.SetGlobalParameterInfo(i, "Slot " + (i + 1), "Unused", 0, RawMax, 0, false);
             }
@@ -388,6 +402,12 @@ namespace NeoBuzz.Plug
                 for (int i = 0; i < Slots; i++)
                 {
                     if (!bound[i]) continue;
+                    // The engine wrote this slot: the processor gets it as an event; a VST3 controller needs to be told too.
+                    if (Volatile.Read(ref toController[i]) == 1 && Volatile.Read(ref pending[i]) < 0)
+                    {
+                        Volatile.Write(ref toController[i], 0);
+                        PlugNative.np_param_set(plugin, slotId[i], ToValue(i, Volatile.Read(ref mirror[i])));
+                    }
                     if (now - Volatile.Read(ref wroteAt[i]) < 150 || Volatile.Read(ref pending[i]) >= 0) continue;
                     int raw = ToRaw(i, PlugNative.np_param_get(plugin, slotId[i]));
                     if (raw == Volatile.Read(ref mirror[i])) continue;

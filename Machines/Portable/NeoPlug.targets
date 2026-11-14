@@ -24,7 +24,7 @@
 
   <ItemGroup>
     <Compile Include="$(M)NeoPlug\*.cs" />
-    <None Include="$(M)NeoPlug\$(NeoName).machine.json" Link="$(NeoName).machine.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(M)NeoPlug\$(NeoName).manifest.json" Link="$(NeoName).machine.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
