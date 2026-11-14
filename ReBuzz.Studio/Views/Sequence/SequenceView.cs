@@ -68,6 +68,12 @@ namespace ReBuzz.Studio.Views.Sequence
         {
             FontSize = 12, BorderThickness = new Thickness(1),
         };
+        // Fork (daw-modes.md AR1): the mode switch (tracker: one row a sequence, edges set the pattern's length; arrangement: tracks with lanes and clips).
+        readonly ToggleButton trackerMode = new ToggleButton { Content = "Tracker", Width = 64, IsChecked = true };
+        readonly ToggleButton arrangementMode = new ToggleButton { Content = "Arrange", Width = 64 };
+        readonly TextBlock status = new TextBlock { FontSize = 12, Margin = new Thickness(8, 2), TextTrimming = TextTrimming.CharacterEllipsis, IsVisible = false };
+        ArrangementHeaders headers;
+        bool isArrangement;
         readonly List<(char Char, IPattern Pattern)> patterns = new List<(char, IPattern)>();
         bool syncing;
         bool attached;
@@ -85,7 +91,8 @@ namespace ReBuzz.Studio.Views.Sequence
             patternList.Background = Shell.Design.StudioTheme.Solid(look.PatternList);
             patternList.Foreground = look.ListText;
             patternList.BorderBrush = look.ListBorder;
-            foreach (var c in new TemplatedControl[] { addTrack, steps, follow })
+            status.Foreground = look.HeaderText;
+            foreach (var c in new TemplatedControl[] { addTrack, steps, follow, trackerMode, arrangementMode })
             {
                 c.Background = look.ControlBack;
                 c.Foreground = look.ControlText;
@@ -108,7 +115,45 @@ namespace ReBuzz.Studio.Views.Sequence
         void FollowSelection(object source)
         {
             if (source == this) return;
-            if (StudioSelection.For(core).Machine is { } machine) Canvas.FollowTrackOf(machine);
+            if (StudioSelection.For(core).Machine is not { } machine) return;
+            Canvas.FollowTrackOf(machine);
+            if (Arrangement.CursorLane?.Machine != machine && core.Song.Sequences.FirstOrDefault(s => s.Machine == machine) is { } lane)
+                Arrangement.MoveCursor(Arrangement.CursorTime, lane);
+        }
+
+        /// <summary>The arrangement's selected clip or lane is the studio's selection (its machine, and its pattern).</summary>
+        void OnArrangementSelection()
+        {
+            RefreshPatternList();
+            var lane = Arrangement.Selected?.Sequence ?? Arrangement.CursorLane;
+            if (lane?.Machine is { } machine) StudioSelection.For(core).Set(machine, Arrangement.Selected?.Pattern, this);
+        }
+
+        /// <summary>Tracker or arrangement mode (daw-modes.md AR1): the same song, drawn as rows of blocks or as tracks of clips.</summary>
+        public void SetArrangementMode(bool on)
+        {
+            trackerMode.IsChecked = !on;
+            arrangementMode.IsChecked = on;
+            if (isArrangement == on) return;
+            isArrangement = on;
+            Canvas.IsVisible = Canvas.Overlay.IsVisible = !on;
+            Arrangement.IsVisible = Arrangement.Overlay.IsVisible = headers.IsVisible = on;
+            status.IsVisible = on;
+            if (on)
+            {
+                Arrangement.Changed();
+                headers.Rebuild();
+                Arrangement.Focus();
+            }
+            else
+            {
+                Arrangement.Changed();      // hidden: lets go of the song's clips
+                Canvas.Changed();
+                Canvas.Focus();
+            }
+            Sync();
+            RefreshPatternList();
+            UpdateEmpty();
         }
 
         void OnThemeChanged() => Dispatcher.UIThread.Post(() => { if (root != null) ApplyLook(); });
@@ -118,6 +163,9 @@ namespace ReBuzz.Studio.Views.Sequence
             this.core = core;
             state = SequenceSongState.For(core);
             Canvas = new SequenceCanvas(core, state);
+            Arrangement = new ArrangementCanvas(core, state) { IsVisible = false };
+            Arrangement.Overlay.IsVisible = false;
+            headers = new ArrangementHeaders(core, Arrangement) { IsVisible = false, HorizontalAlignment = HorizontalAlignment.Left };
             Focusable = true;
 
             patternList.Styles.Add(new Style(x => x.OfType<ListBoxItem>())
@@ -148,16 +196,26 @@ namespace ReBuzz.Studio.Views.Sequence
                 Children = { addTrack, steps, follow },
             };
             emptyState = new Shell.EmptyState(core) { Margin = new Thickness(SequenceGeometry.HeaderWidth, SequenceGeometry.RulerHeight, 0, 0) };
-            var timeline = new Panel { Children = { Canvas, Canvas.Overlay, emptyState, horizontal, vertical, corner } };
+            var timeline = new Panel { Children = { Canvas, Canvas.Overlay, Arrangement, Arrangement.Overlay, headers, emptyState, horizontal, vertical, corner } };
+            headers.Margin = new Thickness(0, 0, 0, 0);
 
             right = new DockPanel { Width = 120 };
             var zoomRow = new Border { Height = SequenceGeometry.RulerHeight, Child = zoom };
             DockPanel.SetDock(zoomRow, Dock.Top);
             right.Children.Add(zoomRow);
+            var modeRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2), HorizontalAlignment = HorizontalAlignment.Center, Spacing = 2, Children = { trackerMode, arrangementMode } };
+            DockPanel.SetDock(modeRow, Dock.Top);
+            right.Children.Add(modeRow);
+            Avalonia.Automation.AutomationProperties.SetName(trackerMode, "Tracker mode");
+            Avalonia.Automation.AutomationProperties.SetName(arrangementMode, "Arrangement mode");
+            ToolTip.SetTip(trackerMode, "Tracker: a row for each sequence; a block's edges set its pattern's length");
+            ToolTip.SetTip(arrangementMode, "Arrangement: a track for each machine with lanes; clips you draw, move, copy, trim, loop, split and join");
             right.Children.Add(patternList);
 
             root = new DockPanel();
             DockPanel.SetDock(right, Dock.Right);
+            DockPanel.SetDock(status, Dock.Bottom);
+            root.Children.Add(status);
             root.Children.Add(right);
             root.Children.Add(timeline);
             Content = root;
@@ -171,15 +229,26 @@ namespace ReBuzz.Studio.Views.Sequence
             emptyTimer.Tick += (s, e) => UpdateEmpty();
             Canvas.PatternDoubleClicked += p => ChoosePattern(p, true);
             Canvas.MenuRequested += p => OpenContextMenu(Canvas);
-            horizontal.ValueChanged += (s, e) => { if (!syncing) Canvas.ScrollTo(e.NewValue, Canvas.Geometry.ScrollY); };
-            vertical.ValueChanged += (s, e) => { if (!syncing) Canvas.ScrollTo(Canvas.Geometry.ScrollX, e.NewValue); };
-            zoom.ValueChanged += (s, e) => { if (!syncing) Canvas.SetZoom(e.NewValue, null); };
+            horizontal.ValueChanged += (s, e) => { if (syncing) return; if (isArrangement) Arrangement.ScrollTo(e.NewValue, Arrangement.Geometry.ScrollY); else Canvas.ScrollTo(e.NewValue, Canvas.Geometry.ScrollY); };
+            vertical.ValueChanged += (s, e) => { if (syncing) return; if (isArrangement) Arrangement.ScrollTo(Arrangement.Geometry.ScrollX, e.NewValue); else Canvas.ScrollTo(Canvas.Geometry.ScrollX, e.NewValue); };
+            zoom.ValueChanged += (s, e) => { if (syncing) return; if (isArrangement) Arrangement.SetZoom(e.NewValue, null); else Canvas.SetZoom(e.NewValue, null); };
+            trackerMode.Click += (s, e) => SetArrangementMode(false);
+            arrangementMode.Click += (s, e) => SetArrangementMode(true);
+            Arrangement.ViewChanged += Sync;
+            Arrangement.ViewChanged += UpdateEmpty;
+            Arrangement.SelectionChanged += OnArrangementSelection;
+            Arrangement.PatternDoubleClicked += p => ChoosePattern(p, true);
+            Arrangement.MenuRequested += p => OpenArrangementMenu(Arrangement);
+            Arrangement.StatusChanged += () => { status.Text = Arrangement.Status ?? ""; };
+            headers.LaneChosen += lane => { Arrangement.MoveCursor(Arrangement.CursorTime, lane); Arrangement.Focus(); };
+            headers.AddLaneRequested += machine => Canvas.Edits.AddTrack(machine);
             zoom.AddHandler(PointerPressedEvent, (s, e) =>
             {
                 // A right click puts the zoom back (WPF: zoomSlider.Value = 2).
                 if (e.GetCurrentPoint(zoom).Properties.IsRightButtonPressed)
                 {
-                    Canvas.SetZoom(SequenceGeometry.DefaultTickWidth, null);
+                    if (isArrangement) Arrangement.SetZoom(SequenceGeometry.DefaultTickWidth, null);
+                    else Canvas.SetZoom(SequenceGeometry.DefaultTickWidth, null);
                     e.Handled = true;
                 }
             }, RoutingStrategies.Tunnel);
@@ -189,7 +258,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 Canvas.Edits.SetTimeSignature(0, step);
                 Canvas.Focus();
             };
-            follow.IsCheckedChanged += (s, e) => Canvas.Follow = follow.IsChecked == true;
+            follow.IsCheckedChanged += (s, e) => Canvas.Follow = Arrangement.Follow = follow.IsChecked == true;
             addTrack.Click += (s, e) => OpenAddTrackMenu();
             patternList.DoubleTapped += (s, e) => PlaceListedPattern();
 
@@ -198,6 +267,13 @@ namespace ReBuzz.Studio.Views.Sequence
         }
 
         public SequenceCanvas Canvas { get; }
+        /// <summary>The arrangement mode's canvas (daw-modes.md AR1).</summary>
+        public ArrangementCanvas Arrangement { get; }
+        public ToggleButton TrackerModeButton => trackerMode;
+        public ToggleButton ArrangementModeButton => arrangementMode;
+        public ArrangementHeaders Headers => headers;
+        public bool IsArrangementMode => isArrangement;
+        public TextBlock StatusLine => status;
         public Slider ZoomSlider => zoom;
         public ComboBox StepsBox => steps;
         public ListBox PatternList => patternList;
@@ -256,6 +332,13 @@ namespace ReBuzz.Studio.Views.Sequence
                 return;
             }
             bool arranged = sequences.Any(s => s.Events.Count > 0);
+            if (isArrangement)
+            {
+                emptyState.Update(!arranged, "arrange", "Nothing is arranged yet",
+                    "Double-click a lane to draw a clip, or double-click a pattern in the list on the right to place it. Or launch clips in the Session View.",
+                    new (string, Action)[] { ("New clip here", () => { if (Arrangement.CursorLane != null) Arrangement.DrawAt(Arrangement.CursorLane, 0); Arrangement.Focus(); }) }, false);
+                return;
+            }
             emptyState.Update(!arranged, "arrange", "Nothing is arranged yet",
                 "Put a pattern on a track: pick a row and press the pattern's key, or double-click it in the list on the right. Or launch clips in the Session View.",
                 new (string, Action)[] { ("New pattern here", () => { Canvas.Edits.CreatePatterns(Math.Max(0, Canvas.CursorRow), Math.Max(0, Canvas.CursorTime), 1, SequenceCanvas.NewPatternLength, false); Canvas.Focus(); }) }, false);
@@ -281,8 +364,8 @@ namespace ReBuzz.Studio.Views.Sequence
             syncing = true;
             try
             {
-                var geo = Canvas.Geometry;
-                var extent = Canvas.Extent;
+                var geo = isArrangement ? Arrangement.Geometry : Canvas.Geometry;
+                var extent = isArrangement ? Arrangement.Extent : Canvas.Extent;
                 double vw = Math.Max(1, Canvas.Bounds.Width - SequenceGeometry.HeaderWidth), vh = Math.Max(1, Canvas.Bounds.Height - SequenceGeometry.RulerHeight);
                 horizontal.Maximum = Math.Max(0, extent.Width - vw);
                 horizontal.ViewportSize = vw;
@@ -334,7 +417,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
         void RefreshPatternList()
         {
-            var machine = Canvas.CursorSequence?.Machine;
+            var machine = isArrangement ? (Arrangement.Selected?.Sequence ?? Arrangement.CursorLane)?.Machine : Canvas.CursorSequence?.Machine;
             var now = machine?.Patterns.OrderBy(p => p.Name, StringComparer.Ordinal).Select((p, i) => (KeyOf(i), p)).ToList() ?? new List<(char, IPattern)>();
             if (!now.SequenceEqual(patterns))
             {
@@ -342,7 +425,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 patterns.AddRange(now);
                 patternList.ItemsSource = patterns.Select(x => $"{x.Char}. {x.Pattern.Name}").ToList();
             }
-            int index = patterns.FindIndex(x => x.Pattern == Canvas.CursorPattern);
+            int index = patterns.FindIndex(x => x.Pattern == (isArrangement ? Arrangement.Selected?.Pattern : Canvas.CursorPattern));
             if (patternList.SelectedIndex != index) patternList.SelectedIndex = index;
         }
 
@@ -358,6 +441,11 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>Places a pattern at the cursor and moves past it (typing its key).</summary>
         public void Place(IPattern p)
         {
+            if (isArrangement)
+            {
+                if (p != null) Arrangement.PlaceAtCursor(p);
+                return;
+            }
             if (p == null || Canvas.CursorSequence == null) return;
             Canvas.Edits.PlacePattern(Canvas.CursorRow, Canvas.CursorTime, p);
             Canvas.MoveCursor(Canvas.CursorTime + Math.Max(1, p.Length), Canvas.CursorRow);
@@ -385,6 +473,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
         public bool Cut()
         {
+            if (isArrangement) return Arrangement.HandleKey(Key.X, KeyModifiers.Control);
             if (Target() is not { } r) return false;
             Canvas.Edits.Cut(r);
             Canvas.Selection.Kill();
@@ -394,6 +483,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
         public bool Copy()
         {
+            if (isArrangement) return Arrangement.CopySelected();
             if (Target() is not { } r) return false;
             Canvas.Edits.Copy(r);
             return true;
@@ -401,6 +491,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
         public bool Paste()
         {
+            if (isArrangement) return Arrangement.PasteAtCursor();
             var edits = Canvas.Edits;
             if (!edits.CanPaste || Canvas.CursorSequence == null) return false;
             edits.Paste(Canvas.CursorTime, Canvas.CursorRow);
@@ -412,6 +503,7 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>Clears the selection (or the block under the cursor).</summary>
         public bool Delete()
         {
+            if (isArrangement) return Arrangement.DeleteSelected();
             if (Target() is not { } r) return false;
             Canvas.Edits.Clear(r);
             Canvas.Selection.Kill();
@@ -422,6 +514,7 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>Duplicate (⌘D): the selection (or the block under the cursor) again right after itself; the selection follows it.</summary>
         public bool Duplicate()
         {
+            if (isArrangement) return Arrangement.DuplicateSelected();
             if (Target() is not { } r) return false;
             Canvas.Edits.Duplicate(r);
             if (Canvas.Selection.NotEmpty) Canvas.Selection.Kill();
@@ -433,6 +526,12 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>Deselect All (⇧⌘A, Esc).</summary>
         public bool DeselectAll()
         {
+            if (isArrangement)
+            {
+                if (Arrangement.Selected == null) return false;
+                Arrangement.ClearSelection();
+                return true;
+            }
             if (!Canvas.Selection.NotEmpty) return false;
             Canvas.Selection.Kill();
             Canvas.Changed();
@@ -442,7 +541,7 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>Rename (⌘R): the track's machine.</summary>
         public bool Rename()
         {
-            if (Canvas.CursorSequence?.Machine == null) return false;
+            if ((isArrangement ? Arrangement.CursorLane : Canvas.CursorSequence)?.Machine == null) return false;
             RenameMachine();
             return true;
         }
@@ -467,9 +566,14 @@ namespace ReBuzz.Studio.Views.Sequence
             SequenceTab.RaisePatternChosen(p);
         }
 
-        public void SetLoopStart() => Canvas.Edits.SetLoopStart(Canvas.CursorTime);
+        public void SetLoopStart() => Canvas.Edits.SetLoopStart(isArrangement ? state.TimeSignatures.Snap(Arrangement.CursorTime, int.MaxValue) : Canvas.CursorTime);
 
-        public void SetEnd() => Canvas.Edits.SetEnd(Canvas.CursorBottomTime);
+        public void SetEnd()
+        {
+            if (!isArrangement) { Canvas.Edits.SetEnd(Canvas.CursorBottomTime); return; }
+            int start = state.TimeSignatures.Snap(Arrangement.CursorTime, int.MaxValue);
+            Canvas.Edits.SetEnd(start + state.TimeSignatures.GetBarLengthAt(start));
+        }
 
         public void InsertAll() => Canvas.Edits.InsertOrDeleteAll(Canvas.CursorTime, Canvas.CursorSpan, true);
 
@@ -501,13 +605,14 @@ namespace ReBuzz.Studio.Views.Sequence
         /// </summary>
         public async Task AskTimeSignature()
         {
-            int time = Canvas.CursorTime;
+            int time = isArrangement ? state.TimeSignatures.Snap(Arrangement.CursorTime, int.MaxValue) : Canvas.CursorTime;
+            int span = state.TimeSignatures.GetBarLengthAt(time);
             int tpb = Math.Max(1, core.TPB);
-            string answer = await Dialogs.AskText("Set Time Signature", TimeSignatureText(Canvas.CursorSpan, tpb),
+            string answer = await Dialogs.AskText("Set Time Signature", TimeSignatureText(span, tpb),
                 $"The bar's length from the cursor on: beats/note (4/4, 3/4, 7/8) or in ticks ({tpb} ticks a beat).",
                 text => ParseBarLength(text, tpb, out _));
             if (answer != null && ParseBarLength(answer, tpb, out int step) == null) Canvas.Edits.SetTimeSignature(time, step);
-            Canvas.Focus();
+            if (isArrangement) Arrangement.Focus(); else Canvas.Focus();
         }
 
         /// <summary>A bar length as a time signature where it is one (16 ticks at 4 a beat: "4/4"), else in ticks.</summary>
@@ -547,7 +652,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
         void RenameMachine()
         {
-            var m = Canvas.CursorSequence?.Machine;
+            var m = (isArrangement ? Arrangement.CursorLane : Canvas.CursorSequence)?.Machine;
             m?.ShowDialog(MachineDialog.Rename, 0, 0);
         }
 
@@ -579,6 +684,7 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>The editor's keys (SequenceEditor.xaml.cs PreviewKeyDown and InputBindings); Control is Command on a Mac.</summary>
         public bool HandleKey(Key key, KeyModifiers mods)
         {
+            if (isArrangement) return HandleArrangementKey(key, mods);
             var c = Canvas;
             bool none = mods == KeyModifiers.None, shift = mods == KeyModifiers.Shift, ctrl = mods == KeyModifiers.Control;
             if (c.CursorSequence == null) return ctrl && key == Key.Return && OpenContextMenu(c);
@@ -671,6 +777,66 @@ namespace ReBuzz.Studio.Views.Sequence
         }
 
         ISong Song => core.Song;
+
+        /// <summary>The arrangement's keys: the clip commands, then the song-wide ones the tracker mode has too.</summary>
+        bool HandleArrangementKey(Key key, KeyModifiers mods)
+        {
+            if (Arrangement.HandleKey(key, mods)) return true;
+            bool ctrl = mods == KeyModifiers.Control;
+            if (!ctrl) return false;
+            var machine = Arrangement.CursorLane?.Machine;
+            switch (key)
+            {
+                case Key.M: if (machine != null) machine.IsMuted ^= true; return machine != null;
+                case Key.L: if (machine != null) machine.IsSoloed ^= true; return machine != null;
+                case Key.Return: return OpenArrangementMenu(Arrangement);
+                case Key.B: SetLoopStart(); return true;
+                case Key.E: SetEnd(); return true;
+                case Key.T: _ = AskTimeSignature(); return true;
+                case Key.R: return Rename();
+            }
+            return false;
+        }
+
+        /// <summary>The arrangement's context menu: the clip commands (each also a key), the loop, and Add Lane.</summary>
+        bool OpenArrangementMenu(Control at)
+        {
+            var a = Arrangement;
+            bool clip = a.Selected != null;
+            bool inside = clip && a.CursorTime > a.Selected.Time && a.CursorTime < a.Selected.End;
+            var lane = new MenuItem { Header = "Add Lane", IsEnabled = a.CursorLane?.Machine != null };
+            var add = new MenuItem { Header = "Add Track" };
+            foreach (var i in MachineItems()) add.Items.Add(i);
+            var menu = new ContextMenu
+            {
+                Items =
+                {
+                    Item("Edit Pattern", () => ChoosePattern(a.Selected?.Pattern, true), new KeyGesture(Key.Return), clip),
+                    new Separator(),
+                    Item("Split at Cursor", () => a.SplitAtCursor(), new KeyGesture(Key.S), inside),
+                    Item("Join with Next", () => a.JoinWithNext(), new KeyGesture(Key.J), clip),
+                    Item(clip && a.Selected.Spec.Loop ? "Loop Off" : "Loop On", () => a.ToggleLoop(), new KeyGesture(Key.L), clip),
+                    Item(clip && a.UsesOf(a.Selected.Pattern) > 1 ? $"Make Unique ({a.UsesOf(a.Selected.Pattern)} places use it)" : "Make Unique", () => a.MakeUnique(), new KeyGesture(Key.U), clip),
+                    new Separator(),
+                    Item("Duplicate", () => a.DuplicateSelected(), Gesture(Key.D), clip),
+                    Item("Cut", () => Cut(), Gesture(Key.X), clip),
+                    Item("Copy", () => Copy(), Gesture(Key.C), clip),
+                    Item("Paste", () => Paste(), Gesture(Key.V), a.HasClipboard),
+                    Item("Delete", () => a.DeleteSelected(), new KeyGesture(Key.Delete), clip),
+                    new Separator(),
+                    Item("Set Start", SetLoopStart, Gesture(Key.B)),
+                    Item("Set End", SetEnd, Gesture(Key.E)),
+                    Item("Set Time Signature...", () => _ = AskTimeSignature(), Gesture(Key.T)),
+                    new Separator(),
+                    add,
+                    Item("Add Lane", () => { if (a.CursorLane?.Machine is { } m) Canvas.Edits.AddTrack(m); }, null, a.CursorLane?.Machine != null),
+                    Item("Rename Machine...", RenameMachine, Gesture(Key.R), a.CursorLane?.Machine != null),
+                },
+            };
+            OpenMenu = menu;
+            menu.Open(at);
+            return true;
+        }
 
         void OnTextInput(object sender, TextInputEventArgs e)
         {

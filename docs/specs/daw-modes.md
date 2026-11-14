@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Decided 2026-11-03: D1 A1 (§3.1), D2 B, D3 A, D4 B, D5 A, all as recommended. **AR0 built** (2026-11-03, §8.1): the song meter, clip ids, automation ramps and note sources. AR1–AR2 next, after P3's exit, beside plugin-host H1 |
+| Status | Decided 2026-11-03: D1 A1 (§3.1), D2 B, D3 A, D4 B, D5 A, all as recommended. **AR0 built** (2026-11-03, §8.1): the song meter, clip ids, automation ramps and note sources. **AR1 built** (2026-11-14, §8.2): the Arrangement mode of the studio's Sequence tab. AR2 next, after P3's exit, beside plugin-host H1 |
 | Date | 2026-11-03 |
 | Scope | One song and one machine graph, seen and edited in three modes that stay in sync: **tracker** (patterns with columns), **arrangement** (a horizontal timeline with clips, a piano roll and automation lanes) and **session** (clip launching). The model, the views, compatibility, engine seams and a phased plan |
 | Code baseline | fork `90b0850` (main, 2026-11-03). Branches `platform/p3-s4-sequence-editor` and `platform/p3-s6-pattern-editor` (not merged) read the same day |
@@ -438,6 +438,26 @@ Sizes as in session-view.md: S < 500 LOC, M 500–2,000, L 2,000–5,000.
 - `ReBuzz.Studio.Tests/DawModesSeamTests.cs` (Linux CI): the meter, clip ids through edits, undo and both formats, the recorder and scene insert, ramp values against steps, each note source, both rolls on a source. And the song: clips, loops, a ramp and a meter. It round-trips in .bmx (A and B the same bytes) and .bmxml (the same but for the stamps), and `song-roundtrip.py --compare` passes for both. Its core sections are byte-equal to those of the same song without clip ids and meter; only the subsections differ.
 - `ReBuzzTests/DawModesSeamTests.cs` (Windows, release build): computing and setting ramps allocates 0 bytes (playing them whole is reported; `EngineHardeningTests.ParameterChangesAllocateNothing` asserts 0 bytes for it); ramps move on subticks; the WPF editors' bars mirror the engine's; without a sequence editor the engine keeps the bars in both formats; the WPF roll on a source. The piano rolls' own tests (`PianoRollTests`, the studio's `SessionViewTests`) pass unchanged.
 
+### 8.2 As built (AR1)
+
+**The view** (`ReBuzz.Studio/Views/Sequence/Arrangement*.cs`, studio only).
+- The Sequence tab has a mode switch beside the pattern list: *Tracker* (as before) and *Arrange*. Tracker is the default; the mode isn't saved.
+- `ArrangementCanvas` is a canvas of its own beside the tracker's `SequenceCanvas` (not one canvas with an orientation, §4.5: the two share the geometry, theme look, zoom, meter and preview code, not the rows). Rows (`ArrangementLayout`): the Master's tempo row (BPM changes read from the Master patterns' BPM column) and markers row (song markers, loop, song end), then a track for each machine, its lanes under it; a folded track is one row.
+- `ArrangementHeaders` are real controls (fold, mute, solo, add lane, each with an `AutomationProperties.Name`), in the `SequenceLook` colours, so Light (Classic) and Dark follow the theme. Lanes the Session View has taken over are greyed (canvas and header).
+- The grid is the song meter: a line at each bar, a fainter one at each beat when a beat is 14 px wide. Clips snap to the beat; Shift snaps to the tick.
+- Gestures: double click on an empty lane draws a clip (a new pattern of the session's clip length, shorter where the next clip starts); double click on a clip edits its pattern. Drag moves it, within the machine's lanes. Ctrl (Cmd on macOS) while dropping makes an independent copy (a new pattern, "Bass 2"), Alt a linked one (the same pattern); each copy has its own clip id. Edges: left trims the start (what plays then plays on); right trims the end, or with the loop on repeats the region. Keys and menu: S split at the cursor (the clicked beat), J join with the next clip, L loop on/off, U make unique, Ctrl+D duplicate, Ctrl+C/V/X, Delete. The shared badge counts the clips and session slots using the pattern.
+- Edits are one `ClipEditAction` each on the song's history, with the song end extended to cover the clip (a group for the edits that also make a pattern).
+
+**The model** (`ReBuzz/Core/ArrangementEditing.cs`, engine, so the agent can use it later).
+- `ClipSpec` (start, length, start in the pattern, loop region, loop on, gain) writes the events (`Segments`, `Events`): first from the start, repeats from the loop start, the last cut with `End`. `ClipEditor` reads a lane's clips (a run that isn't exactly what a spec would write is read event by event, so it is never rewritten wrongly), plans each edit on copies of the events and commits it.
+- A clip that doesn't loop plays its region once: its right edge can't pass it. New clips take the loop from the pattern's session clip settings (loop on by default).
+- Whenever a clip's loop record changes it gets a new id, so undo needs no loop history.
+- *S5* (`ArrangementStore`, "Arrangement" subsection, written only when something differs): the role of each lane (main, take, automation, by sequence index) and the folded tracks. Roles are data only for now: nothing makes take or automation lanes yet (AR4, AR5), and the Session View still lists every sequence.
+
+**Exit test** (`ReBuzz.Studio.Tests/ArrangementViewTests.cs`): an 8-bar song of two Neo Poly tracks built with mouse (double clicks through `MachineViewTests.DoubleClick`, drags, a copy-drag, keys): looped, copied and trimmed clips. It renders bit-identical to the same events written plain, and Lead (no trims) bit-identical to upstream's playback (no `Offset`/`End`); Bass, with trims, differs.
+
+**Not in AR1:** MCP tools (§7.3's `arrangement_clip`, clip-aware `arrangement_place`, lane roles in `arrangement_get`), Launch in Session and slot drag (AR5), clips with several selected at once, left-trim past a pattern's start (looping backwards), clip settings (session) copied to an independent copy.
+
 ## 9. Phases
 
 Effort in person-weeks (pw), with coding agents doing most of the typing, as in the other specs. Each phase also updates the MCP tools for what it adds, within its pw.
@@ -445,7 +465,7 @@ Effort in person-weeks (pw), with coding agents doing most of the typing, as in 
 | Phase | When | Delivers | Exit check | pw | Risk |
 |---|---|---|---|---|---|
 | **AR0 Seams** (built, §8.1) | now, beside P3 | S1–S4; MCP reads clips and the meter | ReBuzzTests and studio tests green. A song with clips, loops, ramps and a meter round-trips in .bmx and .bmxml, core sections byte-equal. 0 bytes per buffer. Both piano rolls behave as before | 1.5–2 | low |
-| **AR1 Arrangement view** | after P3's exit (S9) | The Sequence tab's Arrangement mode: tracks with lanes; clips (draw, move, copy, split, join, trim, loop, make unique, shared badge); the meter grid; Master with tempo and markers; overridden lanes greyed; S5 | Build an 8-bar song with looped and trimmed clips by mouse (headless). It renders the same as the equivalent plain events, and the same as upstream's playback apart from trims | 2–3 | medium |
+| **AR1 Arrangement view** (built, §8.2) | after P3's exit (S9) | The Sequence tab's Arrangement mode: tracks with lanes; clips (draw, move, copy, split, join, trim, loop, make unique, shared badge); the meter grid; Master with tempo and markers; overridden lanes greyed; S5 | Build an 8-bar song with looped and trimmed clips by mouse (headless). It renders the same as the equivalent plain events, and the same as upstream's playback apart from trims | 2–3 | medium |
 | **AR2 Piano roll everywhere** | after AR1; the Pattern tab toggle after S6 | `PianoRoll` in the arrangement panel and the Pattern tab; velocity and CC lanes; scale and fold; step input; context ghosts | A bass line drawn in the arrangement plays in its session clip. The Pattern tab's toggle edits the same notes. Undo is on the song's history | 1.5–2 | low–medium |
 | **AR3 The tracker sees the notes** | after S6 merges | S7: MPE's computed note lanes and the Note-column note source (D3 A) | A take recorded in the session shows in the tracker at once. Editing a row changes only that note. In a random round trip of 1,000 notes through tracker edits, untouched notes stay exact. Old songs' MPE data stays byte-equal | 3–4 | high |
 | **AR4 Automation** | after AR1 | Lanes for state parameters; clip automation stitched along the timeline; automation clips on automation lanes; S3 ramps drawn; knob moves recorded into lanes | A 16-bar filter sweep over a looped 1-bar clip renders as drawn. Tracker columns show as steps. Overlaps are marked | 2–3 | medium |
