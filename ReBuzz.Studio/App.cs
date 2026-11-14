@@ -64,9 +64,25 @@ namespace ReBuzz.Studio
                 // Fork (ux-overhaul.md §3.3): Preferences ▸ Appearance names another theme: every window draws again.
                 Shell.Design.StudioTheme.Changed += () => Dispatcher.UIThread.Post(RedrawAll);
             }
+            WatchSystemTheme();
         }
 
         static bool namingWatched;
+
+        /// <summary>
+        /// Fork (ux-overhaul.md P4b): Preferences ▸ Appearance ▸ System follows the operating system's light or dark choice, and the
+        /// theme variant Avalonia's own controls (scroll bars, text boxes, menus, buttons) draw in follows the theme in use.
+        /// </summary>
+        void WatchSystemTheme()
+        {
+            var platform = PlatformSettings;
+            Shell.Design.StudioTheme.SystemIsLight = () => (PlatformSettings?.GetColorValues().ThemeVariant ?? Avalonia.Platform.PlatformThemeVariant.Dark) == Avalonia.Platform.PlatformThemeVariant.Light;
+            if (platform != null) platform.ColorValuesChanged += (s, e) => Dispatcher.UIThread.Post(Shell.Design.StudioTheme.Refresh);
+            Shell.Design.StudioTheme.Changed += ApplyVariant;
+            ApplyVariant();
+        }
+
+        void ApplyVariant() => RequestedThemeVariant = Shell.Design.StudioTheme.IsLight ? ThemeVariant.Light : ThemeVariant.Dark;
 
         /// <summary>Every open window's controls draw themselves again (the names they draw changed).</summary>
         internal static void RedrawAll()

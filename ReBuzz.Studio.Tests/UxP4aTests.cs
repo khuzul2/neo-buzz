@@ -50,14 +50,14 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        static JsonObject Call(string tool, JsonObject args = null)
+        internal static JsonObject Call(string tool, JsonObject args = null)
         {
             var r = Try(tool, args);
             Assert.That(r.Error, Is.False, $"{tool}: {r.Text}");
             return r.Data;
         }
 
-        static JsonObject Args(params (string Name, JsonNode Value)[] pairs)
+        internal static JsonObject Args(params (string Name, JsonNode Value)[] pairs)
         {
             var o = new JsonObject();
             foreach (var (n, v) in pairs) o[n] = v;
@@ -65,7 +65,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>A fresh song with one instrument playing a few notes over a few bars.</summary>
-        static MainWindow SongWith(string gear, int beats = 16)
+        internal static MainWindow SongWith(string gear, int beats = 16)
         {
             Dialogs.Responder = (m, c, b) => UserAnswer.No;
             SongFiles.New().Wait();
@@ -86,7 +86,7 @@ namespace ReBuzz.Studio.Tests
             return window;
         }
 
-        static void Restore(MainWindow window, string folder)
+        internal static void Restore(MainWindow window, string folder)
         {
             ExportSheet.FolderOpener = null;
             ExportSheet.Chooser = null;
@@ -178,9 +178,9 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ the audits: every surface
 
         /// <summary>One screen of the studio: its name and the root whose controls are audited.</summary>
-        sealed record Surface(string Name, Avalonia.Controls.Control Root);
+        internal sealed record Surface(string Name, Avalonia.Controls.Control Root);
 
-        static IEnumerable<Surface> Surfaces(MainWindow window, List<Avalonia.Controls.Window> opened)
+        internal static IEnumerable<Surface> Surfaces(MainWindow window, List<Avalonia.Controls.Window> opened)
         {
             window.Width = 1500; window.Height = 950;
             foreach (var view in new[] { "Machines", "Arrangement", "Session", "Pattern", "Song Notes" })

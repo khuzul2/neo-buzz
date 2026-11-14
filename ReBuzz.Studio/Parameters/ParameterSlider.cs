@@ -280,12 +280,12 @@ namespace ReBuzz.Studio.Parameters
         public static readonly IBrush Text = StudioTokens.TextPrimaryBrush;
         public static readonly IBrush ValueText = StudioTokens.TextSecondaryBrush;
         public static readonly IBrush DimText = StudioTokens.TextPlaceholderBrush;
-        public static readonly IBrush Track = StudioTokens.Brush(StudioTokens.SurfaceBase);
-        public static readonly IBrush TrackShadow = new SolidColorBrush(Color.FromArgb(0xA0, 0, 0, 0));
-        public static readonly IBrush TrackLight = StudioTheme.Solid(Colors.White, 0x40);
+        public static readonly IBrush Track = StudioTokens.SurfaceBaseBrush;
+        public static readonly IBrush TrackShadow = StudioTokens.Themed(() => Color.FromArgb(NeoBuzz.Editor.Tokens.IsLight ? (byte)0x40 : (byte)0xA0, 0, 0, 0));
+        public static readonly IBrush TrackLight = StudioTokens.Themed(() => Color.FromArgb(NeoBuzz.Editor.Tokens.IsLight ? (byte)0xD0 : (byte)0x40, 255, 255, 255));
         public static readonly IBrush Thumb = StudioTokens.TextSecondaryBrush;
         public static readonly IBrush ThumbFocused = StudioTokens.TextPrimaryBrush;
-        public static readonly IBrush Indicator = StudioTheme.Solid(Colors.White, 0x60);
+        public static readonly IBrush Indicator = StudioTokens.Themed(() => Color.FromArgb(0x90, StudioTokens.TextPrimary.R, StudioTokens.TextPrimary.G, StudioTokens.TextPrimary.B));
         public static readonly IBrush Separator = StudioTokens.SurfaceBorderBrush;
         public static readonly IBrush Lock = StudioTokens.AccentBrush;
     }

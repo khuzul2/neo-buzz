@@ -6,6 +6,7 @@
 // SessionView.Actions.cs, the cells in SessionCells.cs, groups, returns and the mixer in
 // SessionMixerView.cs, the clip panel in SessionClipPanel.cs.
 
+using ReBuzz.Studio.Shell.Design;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -391,6 +392,7 @@ namespace ReBuzz.Studio.Views.Session
             // Hidden views (another tab) don't follow the song: they rebuild when shown (0.6.3).
             layout.Changed += RebuildWhenSeen;
             layout.RecordingChanged += OnRecordingChanged;
+            StudioTheme.Changed += RebuildWhenSeen;       // P4b: the cells took their text colours from the old theme
             if (midi != null)
             {
                 midi.Changed += RebuildWhenSeen;
@@ -412,6 +414,7 @@ namespace ReBuzz.Studio.Views.Session
             timer.Stop();
             layout.Changed -= RebuildWhenSeen;
             layout.RecordingChanged -= OnRecordingChanged;
+            StudioTheme.Changed -= RebuildWhenSeen;
             if (midi != null)
             {
                 midi.Changed -= RebuildWhenSeen;

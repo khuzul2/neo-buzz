@@ -335,8 +335,9 @@ namespace ReBuzz.Studio.Views.Machines
         /// <summary>A box's level now, 0 to 1 (tests).</summary>
         internal double BoxLevel(IMachine m) => boxLevels.TryGetValue(m, out double v) ? v : 0;
 
-        static readonly Color MeterGreen = Shell.Design.StudioTokens.Of(NeoBuzz.Editor.Tokens.MeterNormal);
-        static readonly Color MeterYellow = Shell.Design.StudioTokens.Of(NeoBuzz.Editor.Tokens.MeterHot);
+        // Fork (ux-overhaul.md P4b): the meter's colours are the set in use's, read when drawn.
+        static Color MeterGreen => Shell.Design.StudioTokens.MeterNormal;
+        static Color MeterYellow => Shell.Design.StudioTokens.MeterHot;
 
         /// <summary>The meter's colour at a level: green, yellow from -6 dB.</summary>
         static Color MeterColour(double level) => level > 0.9 ? MeterYellow : MeterGreen;
@@ -356,13 +357,14 @@ namespace ReBuzz.Studio.Views.Machines
         static (IPen Pen, IBrush Fill, IPen Edge) LitWire(double level, Color track, Color arrow)
         {
             int step = Math.Clamp((int)Math.Round(Glow(level) * 16), 1, 16);
-            var key = (step, track.ToUInt32(), arrow.ToUInt32());
+            var key = (step + (NeoBuzz.Editor.Tokens.IsLight ? 100 : 0), track.ToUInt32(), arrow.ToUInt32());
             if (!litWires.TryGetValue(key, out var lit))
             {
                 double g = step / 16.0;
                 // P3j: the lit colour is the meter's colour lifted towards white as the level rises, so a loud wire is about 1.8 times as
-                // bright (relative luminance) as a silent one, not only another hue (UxP3jTests).
-                var meter = Mix(MeterColour(Math.Sqrt(g)), Colors.White, LitLift * g);
+                // bright (relative luminance) as a silent one, not only another hue (UxP3jTests). P4b: on the light canvas the lift goes
+                // towards black, so a loud wire is the darker, stronger one (decision 103).
+                var meter = Mix(MeterColour(Math.Sqrt(g)), NeoBuzz.Editor.Tokens.IsLight ? Colors.Black : Colors.White, LitLift * g);
                 double t = 0.12 + 0.88 * g;
                 var brush = new SolidColorBrush(Mix(track, meter, t)).ToImmutable();
                 var fill = new SolidColorBrush(Mix(arrow, meter, t)).ToImmutable();
@@ -384,9 +386,12 @@ namespace ReBuzz.Studio.Views.Machines
         /// <summary>The white veil over a box at a full level, as an alpha out of 255 (the machine's name stays 4.5:1 on it: UxP3jTests).</summary>
         internal const int VeilAlpha = 34;
 
-        static readonly IBrush[] Veils = Enumerable.Range(0, 17).Select(i => (IBrush)new SolidColorBrush(Color.FromArgb((byte)(VeilAlpha * i / 16), 255, 255, 255)).ToImmutable()).ToArray();
-        static readonly IBrush StripGreen = new SolidColorBrush(MeterGreen).ToImmutable();
-        static readonly IBrush StripYellow = new SolidColorBrush(MeterYellow).ToImmutable();
+        static readonly IBrush[] DarkVeils = Enumerable.Range(0, 17).Select(i => (IBrush)new SolidColorBrush(Color.FromArgb((byte)(VeilAlpha * i / 16), 255, 255, 255)).ToImmutable()).ToArray();
+        /// <summary>On the light canvas the veil is black (a lit box is the darker one), as strong.</summary>
+        static readonly IBrush[] LightVeils = Enumerable.Range(0, 17).Select(i => (IBrush)new SolidColorBrush(Color.FromArgb((byte)(VeilAlpha * i / 16), 0, 0, 0)).ToImmutable()).ToArray();
+        static IBrush[] Veils => NeoBuzz.Editor.Tokens.IsLight ? LightVeils : DarkVeils;
+        static IBrush StripGreen => Shell.Design.StudioTokens.MeterNormalBrush;
+        static IBrush StripYellow => Shell.Design.StudioTokens.MeterHotBrush;
 
         static Color Mix(Color a, Color b, double t)
         {
@@ -874,7 +879,7 @@ namespace ReBuzz.Studio.Views.Machines
         static bool IsDiverged(IMachine m) => (m as MachineCore)?.IsDiverged == true;
 
         /// <summary>A diverged machine's red.</summary>
-        public static readonly Color DivergedColour = Shell.Design.StudioTokens.Diverged;
+        public static Color DivergedColour => Shell.Design.StudioTokens.Diverged;
 
         /// <summary>IMachine.GetThemeColor (BuzzGUI.Common): by type, darker when muted; red when diverged (fork).</summary>
         static Color BackgroundOf(IMachine m, Palette colours)

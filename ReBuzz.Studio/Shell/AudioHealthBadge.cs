@@ -24,7 +24,7 @@ namespace ReBuzz.Studio.Shell
         internal enum State { NoOutput, Dropouts, Good }
 
         static readonly IBrush Good = StudioTokens.PlayBrush;
-        static readonly IBrush Warn = StudioTokens.Brush(StudioTokens.Warning);
+        static readonly IBrush Warn = StudioTokens.WarningBrush;
         static readonly IBrush Bad = StudioTokens.RecordBrush;
 
         readonly Func<ReBuzzCore> core;

@@ -22,7 +22,7 @@ namespace ReBuzz.Studio.Shell.Preferences
     internal abstract class PrefsPage : ScrollViewer
     {
         public static readonly IBrush Dim = ReBuzz.Studio.Shell.Design.StudioTokens.TextSecondaryBrush;
-        public static readonly IBrush Problem = ReBuzz.Studio.Shell.Design.StudioTokens.Brush(ReBuzz.Studio.Shell.Design.StudioTokens.Warning);
+        public static readonly IBrush Problem = ReBuzz.Studio.Shell.Design.StudioTokens.WarningBrush;
 
         protected readonly StackPanel Body = new StackPanel { Margin = new Thickness(24, 16, 24, 24), Spacing = 8 };
         readonly List<Action> settingRefreshes = new List<Action>();

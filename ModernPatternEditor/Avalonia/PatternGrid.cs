@@ -640,7 +640,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             bool active = grid.Controller.IsKeyboardFocused;
             dc.FillRectangle(active ? PatternTheme.Cursor : PatternTheme.CursorInactive, r);
             if (active)
-                dc.DrawRectangle(new ImmutablePen(PatternTheme.CursorBorder, 1), r.Deflate(0.5));
+                dc.DrawRectangle(new Pen(PatternTheme.CursorBorder, 1), r.Deflate(0.5));
 
             if (grid.PlayPosition != int.MinValue)
                 PlayRow(dc, grid, layout, width);

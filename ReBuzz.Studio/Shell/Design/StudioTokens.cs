@@ -12,50 +12,92 @@ namespace ReBuzz.Studio.Shell.Design
 {
     internal static class StudioTokens
     {
-        /// <summary>A token's colour on Avalonia.</summary>
-        public static Color Of(NeoColor c) => Color.FromArgb(c.A, c.R, c.G, c.B);
+        /// <summary>A token's colour on Avalonia, as the theme in use draws it (<see cref="Tokens.Resolve"/>).</summary>
+        public static Color Of(NeoColor c)
+        {
+            c = Tokens.Resolve(c);
+            return Color.FromArgb(c.A, c.R, c.G, c.B);
+        }
 
-        // ---- surfaces (dark ramp; ux-overhaul.md §3.1)
-        public static readonly Color SurfaceBase = Of(Tokens.SurfaceBase);
-        public static readonly Color SurfaceView = Of(Tokens.SurfaceView);
-        public static readonly Color SurfacePanel = Of(Tokens.SurfacePanel);
-        public static readonly Color SurfaceControl = Of(Tokens.SurfaceControl);
-        public static readonly Color SurfaceBorder = Of(Tokens.SurfaceBorder);
+        // Fork (ux-overhaul.md P4b): the colours are the theme in use's (a property reads the token's set when asked), and the
+        // brushes are the studio's themed ones: one object per token, its colour changed in place when the theme changes, so a
+        // view that keeps a brush (a background, a pen's brush) is never left in the old theme.
+        static readonly System.Collections.Generic.List<(Func<Color> Source, SolidColorBrush Brush)> themed = new System.Collections.Generic.List<(Func<Color>, SolidColorBrush)>();
+
+        static StudioTokens()
+        {
+            Tokens.Changed += () =>
+            {
+                foreach (var (source, brush) in themed.ToArray()) brush.Color = source();
+            };
+        }
+
+        /// <summary>A brush that follows the theme: <paramref name="source"/> answers the colour in the theme in use.</summary>
+        public static IBrush Themed(Func<Color> source)
+        {
+            var brush = new SolidColorBrush(source());
+            lock (themed) themed.Add((source, brush));
+            return brush;
+        }
+
+        /// <summary>A brush for a token of the set in use, following the theme; <paramref name="alpha"/> is its opacity.</summary>
+        public static IBrush Themed(Func<NeoColor> token, byte alpha = 0xFF) => Themed(() =>
+        {
+            var c = Of(token());
+            return Color.FromArgb(alpha, c.R, c.G, c.B);
+        });
+
+        // ---- surfaces (the ramp of the theme in use; ux-overhaul.md §3.1)
+        public static Color SurfaceBase => Of(Tokens.SurfaceBase);
+        public static Color SurfaceView => Of(Tokens.SurfaceView);
+        public static Color SurfacePanel => Of(Tokens.SurfacePanel);
+        public static Color SurfaceControl => Of(Tokens.SurfaceControl);
+        public static Color SurfaceBorder => Of(Tokens.SurfaceBorder);
+        public static Color GridLine => Of(Tokens.GridLine);
+        public static Color ControlTrack => Of(Tokens.ControlTrack);
 
         // ---- text
-        public static readonly Color TextPrimary = Of(Tokens.TextPrimary);
-        public static readonly Color TextSecondary = Of(Tokens.TextSecondary);
-        public static readonly Color TextPlaceholder = Of(Tokens.TextPlaceholder);
-        public static readonly Color TextDisabled = Of(Tokens.TextDisabled);
+        public static Color TextPrimary => Of(Tokens.TextPrimary);
+        public static Color TextSecondary => Of(Tokens.TextSecondary);
+        public static Color TextPlaceholder => Of(Tokens.TextPlaceholder);
+        public static Color TextDisabled => Of(Tokens.TextDisabled);
 
         // ---- the one accent (focus and selection, never a state)
-        public static readonly Color Accent = Of(Tokens.Accent);
-        public static readonly Color SelectionFill = Of(Tokens.SelectionFill);
+        public static Color Accent => Of(Tokens.Accent);
+        public static Color SelectionFill => Of(Tokens.SelectionFill);
 
-        // ---- the few colours the tokens' table has no entry for (§3.1: text on the dark ramp)
-        public static readonly Color Link = Color.Parse("#6CB4FF");                // links in notes: 8:1 on the view
-        public static readonly Color ErrorText = Color.Parse("#FF7A70");           // a problem's text: 6.4:1 on the panel
-        public static readonly Color SevereBack = Color.Parse("#4A1F22");          // the problem bar's grounds
-        public static readonly Color NoticeBack = Color.Parse("#3D3320");
-        public static readonly Color BannerBack = Color.Parse("#233A55");          // the notes' banner
+        // ---- the colours of the problem bar and the notes' banner, links, the guard's muted box
+        public static Color Link => Of(Tokens.Set.Link);
+        public static Color ErrorText => Of(Tokens.Set.ErrorText);
+        public static Color SevereBack => Of(Tokens.Set.SevereBack);
+        public static Color NoticeBack => Of(Tokens.Set.NoticeBack);
+        public static Color BannerBack => Of(Tokens.Set.BannerBack);
+        public static Color Diverged => Of(Tokens.Set.Diverged);
 
         public static readonly Color Glass = Color.Parse("#F5F5F5");               // Classic Buzz's selection glass
-        public static readonly Color Diverged = Color.Parse("#C03030");            // a machine the guard muted: its box
 
         // ---- reserved state colours: never offered as clip, track or scene colours
-        public static readonly Color Play = Of(Tokens.Play);
-        public static readonly Color Record = Of(Tokens.Record);
-        public static readonly Color Override = Of(Tokens.Override);
-        public static readonly Color Warning = Of(Tokens.Warning);
+        public static Color Play => Of(Tokens.Play);
+        public static Color Record => Of(Tokens.Record);
+        public static Color Override => Of(Tokens.Override);
+        public static Color Warning => Of(Tokens.Warning);
+        public static Color MeterNormal => Of(Tokens.MeterNormal);
+        public static Color MeterHot => Of(Tokens.MeterHot);
 
         /// <summary>The state colours, in the order the palette check compares them.</summary>
-        public static readonly Color[] StateColours = { Play, Record, Override };
+        public static Color[] StateColours => new[] { Play, Record, Override };
 
         /// <summary>A palette colour this close (ΔE, CIE76) to a state colour isn't offered as a clip colour.</summary>
         public const double ReservedDistance = Tokens.ReservedDistance;
 
         /// <summary>A machine category's identity colour (its editor's accent).</summary>
         public static Color Identity(MachineCategory category) => Of(Tokens.Identity(category));
+
+        static readonly IBrush[] identityBrushes = new IBrush[Enum.GetValues(typeof(MachineCategory)).Length];
+
+        /// <summary>A category's identity colour as a brush a view may keep: it follows the theme.</summary>
+        public static IBrush IdentityBrush(MachineCategory category) =>
+            identityBrushes[(int)category] ??= Themed(() => Tokens.Identity(category));
 
         // ---- type: Inter (bundled: Avalonia.Fonts.Inter), one scale
         /// <summary>The UI's font family: the bundled Inter, then the platform's.</summary>
@@ -73,27 +115,33 @@ namespace ReBuzz.Studio.Shell.Design
         public const double Grid = Tokens.Grid;
         public const double HalfGrid = Tokens.HalfGrid;
 
-        // ---- brushes
-        public static readonly IBrush SurfaceBaseBrush = Brush(SurfaceBase);
-        public static readonly IBrush SurfaceViewBrush = Brush(SurfaceView);
-        public static readonly IBrush SurfacePanelBrush = Brush(SurfacePanel);
-        public static readonly IBrush SurfaceControlBrush = Brush(SurfaceControl);
-        public static readonly IBrush SurfaceBorderBrush = Brush(SurfaceBorder);
-        public static readonly IBrush TextPrimaryBrush = Brush(TextPrimary);
-        public static readonly IBrush TextSecondaryBrush = Brush(TextSecondary);
-        public static readonly IBrush TextPlaceholderBrush = Brush(TextPlaceholder);
-        public static readonly IBrush ErrorTextBrush = Brush(ErrorText);
-        public static readonly IBrush AccentBrush = Brush(Accent);
-        public static readonly IBrush SelectionFillBrush = Brush(SelectionFill);
-        public static readonly IBrush PlayBrush = Brush(Play);
-        public static readonly IBrush RecordBrush = Brush(Record);
-        public static readonly IBrush OverrideBrush = Brush(Override);
+        // ---- brushes (themed: they follow the theme in place)
+        public static readonly IBrush SurfaceBaseBrush = Themed(() => Tokens.SurfaceBase);
+        public static readonly IBrush SurfaceViewBrush = Themed(() => Tokens.SurfaceView);
+        public static readonly IBrush SurfacePanelBrush = Themed(() => Tokens.SurfacePanel);
+        public static readonly IBrush SurfaceControlBrush = Themed(() => Tokens.SurfaceControl);
+        public static readonly IBrush SurfaceBorderBrush = Themed(() => Tokens.SurfaceBorder);
+        public static readonly IBrush TextPrimaryBrush = Themed(() => Tokens.TextPrimary);
+        public static readonly IBrush TextSecondaryBrush = Themed(() => Tokens.TextSecondary);
+        public static readonly IBrush TextPlaceholderBrush = Themed(() => Tokens.TextPlaceholder);
+        public static readonly IBrush ErrorTextBrush = Themed(() => Tokens.Set.ErrorText);
+        public static readonly IBrush AccentBrush = Themed(() => Tokens.Accent);
+        public static readonly IBrush SelectionFillBrush = Themed(() => Tokens.SelectionFill);
+        public static readonly IBrush PlayBrush = Themed(() => Tokens.Play);
+        public static readonly IBrush RecordBrush = Themed(() => Tokens.Record);
+        public static readonly IBrush OverrideBrush = Themed(() => Tokens.Override);
+        public static readonly IBrush WarningBrush = Themed(() => Tokens.Warning);
+        public static readonly IBrush MeterNormalBrush = Themed(() => Tokens.MeterNormal);
+        public static readonly IBrush MeterHotBrush = Themed(() => Tokens.MeterHot);
+        public static readonly IBrush ControlTrackBrush = Themed(() => Tokens.ControlTrack);
+        public static readonly IBrush GridLineBrush = Themed(() => Tokens.GridLine);
         public static readonly IBrush White = Brush(Colors.White);
         public static readonly IBrush Black = Brush(Colors.Black);
 
         /// <summary>The block selection of the grids: the accent at 35 %.</summary>
-        public static readonly IBrush BlockSelectionFill = Brush(Color.FromArgb(0x59, Accent.R, Accent.G, Accent.B));
+        public static readonly IBrush BlockSelectionFill = Themed(() => Tokens.Accent, 0x59);
 
+        /// <summary>An immutable brush of a fixed colour (a clip's, a pattern's: not a token).</summary>
         public static IBrush Brush(Color c) => new ImmutableSolidColorBrush(c);
 
         // ---- WCAG 2.2

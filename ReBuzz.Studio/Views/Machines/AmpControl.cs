@@ -12,6 +12,7 @@ using Avalonia.Media;
 using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
+using ReBuzz.Studio.Shell.Design;
 
 namespace ReBuzz.Studio.Views.Machines
 {
@@ -277,7 +278,12 @@ namespace ReBuzz.Studio.Views.Machines
 
         #region Drawing
 
-        static readonly IBrush Background = new LinearGradientBrush
+        // Fork (ux-overhaul.md P4b): translucent black under white values on a dark canvas; a pale veil under dark values on the light one.
+        static IBrush Background => NeoBuzz.Editor.Tokens.IsLight ? LightBack : DarkBack;
+
+        static readonly IBrush LightBack = new SolidColorBrush(Color.FromArgb(0xF0, 0xF4, 0xF4, 0xF7));
+
+        static readonly IBrush DarkBack = new LinearGradientBrush
         {
             StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
             EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
@@ -326,10 +332,10 @@ namespace ReBuzz.Studio.Views.Machines
             ctx.DrawLine(pen, c, new Point(c.X + Math.Sin(angle) * r.Width / 2, c.Y - Math.Cos(angle) * r.Height / 2));
         }
 
-        /// <summary>The value in white, stretched to 50 px wide or 16 px high (a Viewbox).</summary>
+        /// <summary>The value in the primary text colour, stretched to 50 px wide or 16 px high (a Viewbox).</summary>
         static void DrawValue(DrawingContext ctx, Rect r, string text)
         {
-            var ft = new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Face, 12, Brushes.White);
+            var ft = new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Face, 12, StudioTokens.TextPrimaryBrush);
             double scale = Math.Min(50 / Math.Max(1, ft.Width), 16 / Math.Max(1, ft.Height));
             var c = r.Center;
             using (ctx.PushTransform(Matrix.CreateTranslation(-c.X, -c.Y) * Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(c.X, c.Y)))
