@@ -44,6 +44,7 @@ namespace ReBuzz.MachineManagement
         internal bool WorkMachine(int nSamples)
         {
             bool isActive = false;
+            Stage("before work (wave info, control-change tick)");
             long dtStart = Stopwatch.GetTimestamp();
             Machine.EngineThreadId = Thread.CurrentThread.ManagedThreadId;
 
@@ -682,8 +683,10 @@ namespace ReBuzz.MachineManagement
                 if (Machine.Ready && manageMachineHost != null)
                 {
                     changed = changes.Take(Machine.ParameterGroupsList);
+                    Stage("tick: take changes");
                     // Do we need to "tick" for managed machines if SetValue is called immediately?
                     manageMachineHost.Tick(Machine);
+                    Stage("tick: host tick");
                 }
                 else if (Machine.Ready && nativeMachineHost != null)
                 {
@@ -716,6 +719,7 @@ namespace ReBuzz.MachineManagement
                     // change together under machine.workLock, and RefreshMachineParams (the
                     // only other pval writer) records it too — so the changes cover every dirty
                     // pval. Release clears all tracks of each parameter changed.
+                    Stage("tick: events");
                     changes.Release();
                 }
 
