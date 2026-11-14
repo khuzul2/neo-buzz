@@ -1454,6 +1454,9 @@ namespace ReBuzz.Studio.Tests
                         Dispatcher.UIThread.RunJobs();
                         Wait(200);
                         Shot(editor!, id, what + KeyboardUnder(m), how);
+                        // The page shown last comes back in the next editor of the machine: put Synth back for the later shots.
+                        foreach (var pages in editor!.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name == "Pages"))
+                            pages.GetType().GetProperty("Selected")!.SetValue(pages, 0);
                         Core.UiHost.CloseWindows(m);
                     });
                 }
