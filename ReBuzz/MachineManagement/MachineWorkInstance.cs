@@ -741,9 +741,10 @@ namespace ReBuzz.MachineManagement
 
         internal void TickAndWork(int nSamples, bool resetToNoValue = false)
         {
+            if (StageProbe != null) stageMark = System.GC.GetAllocatedBytesForCurrentThread();
             var probe = AllocationProbe;
             if (probe == null) { TickAndWorkCore(nSamples, resetToNoValue); return; }
-            long before = stageMark = System.GC.GetAllocatedBytesForCurrentThread();
+            long before = System.GC.GetAllocatedBytesForCurrentThread();
             TickAndWorkCore(nSamples, resetToNoValue);
             long delta = System.GC.GetAllocatedBytesForCurrentThread() - before;
             if (delta != 0) probe(Machine, delta);
