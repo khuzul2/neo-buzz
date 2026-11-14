@@ -94,6 +94,15 @@ namespace NeoBuzz.MachineTests
             ["Neo Learn Wavefolder"] = (NeoBuzz.LearnFold.Params.Table, v => Learn(new NeoBuzz.Learn.WavefolderMap(NeoBuzz.LearnFold.Params.Table), v)),
             ["Neo Learn Phase Distortion"] = (NeoBuzz.LearnPd.Params.Table, v => Learn(new NeoBuzz.Learn.PhaseDistortionMap(NeoBuzz.LearnPd.Params.Table), v)),
             ["Neo Learn Vector"] = (NeoBuzz.LearnVector.Params.Table, v => Learn(new NeoBuzz.Learn.VectorMap(NeoBuzz.LearnVector.Params.Table), v)),
+            ["Neo Learn Spectral"] = (NeoBuzz.LearnSpectral.Params.Table, v => Learn(new NeoBuzz.Learn.SpectralMap(NeoBuzz.LearnSpectral.Params.Table), v)),
+            // Neo Patch (neo-patch.md): the 20-node template, so that the walked macros and voice controls reach real nodes.
+            ["Neo Patch"] = (NeoBuzz.Patch.Params.Table, v =>
+            {
+                for (int i = 0; i < NeoBuzz.DyeEssence.TableBank.Count; i++) NeoBuzz.DyeEssence.TableBank.GetNow(i);
+                var e = new NeoBuzz.Patch.PatchEngine(v, Measure.Rate);
+                e.SetGraph(NeoBuzz.Patch.PatchTemplates.Big20());
+                return Synth(e, (s, l, r, n) => ((NeoBuzz.Patch.PatchEngine)s).Process(l, r, n));
+            }),
             ["Neo Learn Sampler"] = (NeoBuzz.LearnSampler.Params.Table, v => Learn(new NeoBuzz.Learn.SamplerMap(NeoBuzz.LearnSampler.Params.Table), v)),
             ["Neo Learn Subtractive"] = (NeoBuzz.LearnSub.Params.Table, v => Learn(new NeoBuzz.Learn.SubtractiveMap(NeoBuzz.LearnSub.Params.Table), v)),
         };
