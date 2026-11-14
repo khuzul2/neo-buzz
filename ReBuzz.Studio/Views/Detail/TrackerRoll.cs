@@ -261,9 +261,13 @@ namespace ReBuzz.Studio.Views.Detail
                 return;
             }
             settingLane = true;
-            laneBox.Items.Clear();
-            foreach (var l in choice.Available ?? new[] { choice.Lane })
-                laneBox.Items.Add(l switch { TrackerLane.NoteColumn => "Notes: Note column", TrackerLane.MidiLanes => "Notes: MIDI lanes", _ => "Notes: Song" });
+            var labels = (choice.Available ?? new[] { choice.Lane })
+                .Select(l => l switch { TrackerLane.NoteColumn => "Notes: Note column", TrackerLane.MidiLanes => "Notes: MIDI lanes", _ => "Notes: Song" }).ToList();
+            if (!laneBox.Items.Cast<object>().SequenceEqual(labels))      // (not while the box itself is choosing)
+            {
+                laneBox.Items.Clear();
+                foreach (var label in labels) laneBox.Items.Add(label);
+            }
             laneBox.IsVisible = choice.BothAvailable && !songOnly;
             laneBox.SelectedIndex = Math.Max(0, (choice.Available ?? new[] { choice.Lane }).ToList().IndexOf(choice.Lane));
             settingLane = false;

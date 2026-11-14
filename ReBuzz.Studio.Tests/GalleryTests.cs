@@ -713,6 +713,16 @@ namespace ReBuzz.Studio.Tests
                     Shot(window, "032-sequence-arrangement", "Sequence in Arrangement mode (daw-modes.md AR1): the Master's tempo and markers on top, a track for each machine with its lanes, clips with their previews, loop repeats and shared badges, the meter grid.", "The Sequence tab, then Arrange.");
                     seq.SetArrangementMode(false);
                 });
+                Try("033-arrangement-piano-roll", () =>
+                {
+                    var seq = Tab<SequenceView>(window, "Arrangement");
+                    seq.SetArrangementMode(true);
+                    var hook = Studio.Host.Core.Song.Machines.First(m => m.Name == "Lead").Patterns.First(p => p.Name == "Hook");
+                    seq.OpenPianoRoll(hook);
+                    Shot(window, "033-arrangement-piano-roll", "A clip opened in the Arrangement mode (daw-modes.md AR2): its notes in the piano roll under the timeline, with the velocity lane (or a CC or pitch bend lane), key and scale, fold, step input and the ghosts of other clips.", "Double-click a clip, or P.");
+                    seq.RollPanel.Close();
+                    seq.SetArrangementMode(false);
+                });
 
                 Try("040-session", () =>
                 {
