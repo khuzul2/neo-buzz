@@ -43,7 +43,16 @@ namespace NeoBuzz.Patch
         internal PatchEngine Engine { get; }
 
         /// <summary>Agent server (mcp-server.md A3): true while a table or sample the patch plays is still being built. Offline renders wait for it.</summary>
-        public bool Busy => Engine.Busy;
+        public bool Busy
+        {
+            get
+            {
+                // Before the first block the host's sample rate and Voices have not reached the engine, and the recompile they ask for would run in the background
+                // while the render's first blocks play (it lands at a block that thread timing picks). Asked for here, the render waits for it.
+                if (rate == 0) { rate = SampleRate; Engine.SetSampleRate(rate); Engine.Prepare(); }
+                return Engine.Busy;
+            }
+        }
 
         /// <summary>Agent server (machine_readings): what the output measures, and the notes sounding.</summary>
         public IReadOnlyDictionary<string, double> Readings => Engine.Readings();

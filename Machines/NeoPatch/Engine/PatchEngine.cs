@@ -73,6 +73,9 @@ namespace NeoBuzz.Patch
             return true;
         }
 
+        /// <summary>The parameters (Voices above the compiled slots asks for a background compile) taken now, before any block has run.</summary>
+        public void Prepare() => ApplyParameters();
+
         void ApplyParameters()
         {
             double vol = values.Value(P.Volume);
@@ -88,6 +91,7 @@ namespace NeoBuzz.Patch
         {
             get
             {
+                if (rt.Compiling) return true;
                 foreach (var n in graph.Nodes)
                 {
                     if (n.Kind == NodeKind.WavetableOsc && TableBank.Get((int)(n.Controls[NodeInfo.WtTable] + 0.5f)) == null) return true;

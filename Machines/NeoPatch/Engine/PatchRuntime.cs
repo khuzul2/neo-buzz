@@ -136,7 +136,7 @@ namespace NeoBuzz.Patch
 
         // Compiling in the background (the Voices setting or the sample rate changed under a compiled patch).
         readonly AutoResetEvent wake = new AutoResetEvent(false);
-        volatile bool wantRecompile, stopWorker;
+        volatile bool wantRecompile, compiling, stopWorker;
         Thread worker;
         public readonly object GraphLock = new object();
 
@@ -233,6 +233,13 @@ namespace NeoBuzz.Patch
         /// <summary>Compiles the graph again (a node setting that only a compile applies, or after the graph was edited); false when there is none.</summary>
         public string Recompile() => lastGraph == null ? null : SetGraph(lastGraph);
 
+        /// <summary>True from the request of a background compile (the sample rate or the Voices setting changed under a compiled patch) until its patch is
+        /// published. An offline render waits for it (<see cref="PatchEngine.Busy"/>): a patch that lands at some block of the render, by thread timing, moves the samples.</summary>
+        /// <summary>Tests only: the background compile waits this long first (a slow machine).</summary>
+        internal int TestCompileDelayMs;
+
+        public bool Compiling => wantRecompile || compiling;
+
         void RequestRecompile()
         {
             if (worker == null)
@@ -251,8 +258,10 @@ namespace NeoBuzz.Patch
                 wake.WaitOne();
                 if (stopWorker) return;
                 if (!wantRecompile) continue;
+                compiling = true;
                 wantRecompile = false;
-                try { Recompile(); } catch (Exception) { }
+                try { if (TestCompileDelayMs > 0) Thread.Sleep(TestCompileDelayMs); Recompile(); } catch (Exception) { }
+                finally { compiling = false; }
             }
         }
 
