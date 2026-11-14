@@ -52,6 +52,7 @@ namespace ReBuzz.MachineManagement
                 Machine.SetTrackCount(tracks);
             }
             Machine.setMachineTrackCountList.Clear();
+            Stage("track counts");
 
             // Some machines expect Tick() before Work()
             bypassLatent = false;
@@ -94,6 +95,7 @@ namespace ReBuzz.MachineManagement
                     isActive = WorkMachineNative(nSamples);
                 }
             }
+            Stage("work done");
             long dtEnd = Stopwatch.GetTimestamp();
             long timeDelta = dtEnd - dtStart;
             Machine.PerformanceDataCurrent.PerformanceCount += timeDelta;
@@ -375,6 +377,7 @@ namespace ReBuzz.MachineManagement
             {
                 Sample[] samples = Machine.GetStereoSamples(nSamples);
                 if (bypassLatent) Machine.BypassCapture(samples, nSamples);
+                Stage("stereo samples");
 
                 if (type == MachineType.Generator)
                 {
@@ -384,9 +387,11 @@ namespace ReBuzz.MachineManagement
                 {
                     isActive = machineHost.Work(samples, nSamples, WorkModes.WM_READWRITE);
                 }
+                Stage("host work");
 
                 // Fork (machine-safety.md §3.2): the guard, before the output reaches any input.
                 if (!MachineGuard.Check(Machine, samples, nSamples)) isActive = false;
+                Stage("guard");
 
                 // For muted machines, call Work() but send empty buffer
                 if (Machine.IsMuted || Machine.IsSeqMute || (buzz.SongCore.SoloMode && !Machine.IsSoloed && Machine.DLL.Info.Type == MachineType.Generator))
@@ -404,12 +409,14 @@ namespace ReBuzz.MachineManagement
                 {
                     if (bypassLatent) samples = Machine.BypassMix(samples, nSamples);
                     Machine.UpdateOutputs(samples, nSamples);
+                    Stage("update outputs");
 
                     foreach (var output in Machine.AllOutputs)
                     {
                         if (output.Destination.InputChannelCount == 0 || (output.Destination as MachineCore).Hidden) continue;
                         (output as MachineConnectionCore).DoTap(samples, nSamples, true, buzz);
                     }
+                    Stage("taps");
                 }
             }
 
@@ -719,11 +726,24 @@ namespace ReBuzz.MachineManagement
         /// <summary>Diagnosis only (tests): told which machine's block allocated on this thread, and how much. Null in normal use.</summary>
         internal static System.Action<MachineCore, long> AllocationProbe;
 
+        /// <summary>Diagnosis only (tests): told which stage of a machine's block allocated on this thread, and how much. Null in normal use (a stage costs one static read).</summary>
+        internal static System.Action<MachineCore, string, long> StageProbe;
+        long stageMark;
+
+        void Stage(string stage)
+        {
+            var p = StageProbe;
+            if (p == null) return;
+            long now = System.GC.GetAllocatedBytesForCurrentThread();
+            if (now != stageMark) p(Machine, stage, now - stageMark);
+            stageMark = System.GC.GetAllocatedBytesForCurrentThread();     // what the callback itself allocates doesn't count
+        }
+
         internal void TickAndWork(int nSamples, bool resetToNoValue = false)
         {
             var probe = AllocationProbe;
             if (probe == null) { TickAndWorkCore(nSamples, resetToNoValue); return; }
-            long before = System.GC.GetAllocatedBytesForCurrentThread();
+            long before = stageMark = System.GC.GetAllocatedBytesForCurrentThread();
             TickAndWorkCore(nSamples, resetToNoValue);
             long delta = System.GC.GetAllocatedBytesForCurrentThread() - before;
             if (delta != 0) probe(Machine, delta);
