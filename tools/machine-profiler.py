@@ -87,6 +87,7 @@ class Client:
         self.exe, self.work, self.timeout = exe, work, timeout
         self.proc = None
         self.starts = 0
+        self.stats = {}   # tool -> [calls, seconds]: where a slow machine's time goes
         self.start()
 
     def start(self):
@@ -149,7 +150,13 @@ class Client:
 
     def call(self, tool, timeout=None, **args):
         """The tool's structured result; raises ToolFailed on a tool error (the server is fine)."""
-        r = self.request("tools/call", {"name": tool, "arguments": args}, timeout)
+        t0 = time.time()
+        try:
+            r = self.request("tools/call", {"name": tool, "arguments": args}, timeout)
+        finally:
+            st = self.stats.setdefault(tool, [0, 0.0])
+            st[0] += 1
+            st[1] += time.time() - t0
         res = r.get("result") or {}
         text = (res.get("content") or [{}])[0].get("text", "") if res else json.dumps(r.get("error"))
         if "error" in r or res.get("isError", True):
@@ -2558,6 +2565,10 @@ def main():
         said = prof.problems + prof.hot + prof.warnings + ([f"needs a window: {prof.window}"] if prof.window else [])
         print(f"[{i + 1}/{len(chosen)}] {flag} {name:<32} {e.get('type', ''):<22} {time.time() - t:5.1f} s"
               + (f"  {'; '.join(said)[:220]}" if said else ""), flush=True)
+        if time.time() - t > 30:
+            top = sorted(c.stats.items(), key=lambda kv: -kv[1][1])[:4]
+            print("        calls: " + ", ".join(f"{k} {v[0]}x {v[1]:.0f} s" for k, v in top), flush=True)
+        c.stats = {}
     c.close()
     write_json(os.path.join(out, "machine-profile.json"), summary)
     with open(os.path.join(out, "machine-health.md"), "w", encoding="utf-8", newline="\n") as f:
