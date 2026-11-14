@@ -1441,6 +1441,46 @@ namespace ReBuzz.Studio.Tests
                     PatchShot("484-neo-patch-refused-loop", "cycle", "A wire that would make a loop is refused: the banner names the loop and says to use a Feedback node; the loop is outlined in red.", "Drag a wire from an output back to an input upstream of it.");
                 }
 
+                // P5a (ux-overhaul.md): the pages and the open panels of the three editors that gained them, in the states the default shots don't show.
+                void P5aShot(string id, string gear, System.Action<Window, MachineCore> arrange, string what, string how)
+                {
+                    Try(id, () =>
+                    {
+                        var m = demo.Generators.FirstOrDefault(x => x?.DLL.Name == gear) ?? Add(gear, gear.Replace("Neo ", ""));
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        arrange(editor!, m);
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, what + KeyboardUnder(m), how);
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                Control EditorPart(Window w, string type, string name) =>
+                    w.GetVisualDescendants().OfType<Control>().First(c => c.GetType().Name == type && Avalonia.Automation.AutomationProperties.GetName(c) == name);
+                void ClickIn(Window w, Control c, double x, double y)
+                {
+                    var p = c.TranslatePoint(new Point(x, y), w)!.Value;
+                    w.MouseDown(p, MouseButton.Left);
+                    w.MouseUp(p, MouseButton.Left);
+                }
+                P5aShot("490-editor-neo-poly-modulation", "Neo Poly", (w, m) =>
+                {
+                    var tabs = EditorPart(w, "PageTabs", "Page tabs");
+                    ClickIn(w, tabs, 120, 12);
+                }, "Neo Poly's editor on its Modulation page (P5a): the mod envelope, the two LFOs and the modulation matrix; Synth is the other page.", "Double-click Neo Poly, then the Modulation tab (or Right on the tabs).");
+                P5aShot("491-editor-neo-fm6-operator-4", "Neo FM6", (w, m) =>
+                {
+                    var tiles = EditorPart(w, "InteractiveGraph", "Operator overview");
+                    ClickIn(w, tiles, 3 * 196 + 98, 32);
+                }, "Neo FM6's editor with operator 4 open (P5a): the six operators as tiles (role in the algorithm, frequency, level now), one open below.", "Double-click Neo FM6, then a tile (or the digits 1 to 6).");
+                P5aShot("492-editor-neo-drums-snare", "Neo Drums", (w, m) =>
+                {
+                    var pads = w.GetVisualDescendants().OfType<Control>().First(c => c.GetType().Name == "InteractiveGraph" && System.Math.Abs(c.Bounds.Width - 480) < 1);
+                    ClickIn(w, pads, 6 + 1 * (((480 - 12 - 5 * 6) / 6.0) + 6) + 10, 20);
+                }, "Neo Drums' editor with the snare's pad selected (P5a): its panel alone, the mix strip with every pad's level and pan, the pad lit by the hit it played.", "Double-click Neo Drums, then click the snare's pad.");
+
                 // The generic parameter window: a Neo machine, a Pedal synth, a Pedal effect.
                 void Parameters(string id, MachineCore m, string what, string how)
                 {

@@ -6,6 +6,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Rendering;
 using Avalonia.VisualTree;
@@ -71,6 +72,31 @@ namespace NeoBuzz.Editor
 
         /// <summary>The undo history of the editor this control is in (null outside one).</summary>
         internal ParamEdits Edits => this.FindAncestorOfType<NeoEditor>()?.Context?.Edits;
+
+        bool keyFocus;
+
+        /// <summary>True while the control has the focus because the keyboard (Tab, arrows) gave it, not the pointer (as :focus-visible).</summary>
+        protected bool HasKeyFocus => keyFocus && IsFocused;
+
+        protected override void OnGotFocus(FocusChangedEventArgs e)
+        {
+            base.OnGotFocus(e);
+            keyFocus = e.NavigationMethod is NavigationMethod.Tab or NavigationMethod.Directional;
+            InvalidateVisual();
+        }
+
+        protected override void OnLostFocus(FocusChangedEventArgs e)
+        {
+            base.OnLostFocus(e);
+            keyFocus = false;
+            InvalidateVisual();
+        }
+
+        /// <summary>The ring a control with the keyboard focus draws inside <paramref name="area"/> (P5a).</summary>
+        protected void DrawFocusRing(DrawingContext dc, Rect area)
+        {
+            if (HasKeyFocus) dc.DrawRectangle(null, new Pen(NeoBuzz.Editor.Theme.Text, 2), area.Deflate(1), 4, 4);
+        }
 
         protected override void OnPointerEntered(PointerEventArgs e)
         {

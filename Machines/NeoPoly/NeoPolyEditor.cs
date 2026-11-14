@@ -78,15 +78,35 @@ namespace NeoBuzz.Poly
 
             var meter = new Meter("Output", () => machine?.Engine.OutMeter.Peak ?? 0, AccentColor, 150);
 
+            var ampEnv = MakeEnv("Amp envelope", P.AmpA, P.AmpD, P.AmpS, P.AmpR);
+            var fltEnv = MakeEnv("Filter envelope", P.FltA, P.FltD, P.FltS, P.FltR);
+            var modEnv = MakeEnv("Mod envelope", P.ModA, P.ModD, P.ModS, P.ModR);
+            var lfo1 = MakeLfo("LFO 1", P.L1Shape, P.L1Rate, P.L1Sync, P.L1Retrig, P.L1Fade);
+            var lfo2 = MakeLfo("LFO 2", P.L2Shape, P.L2Rate, P.L2Sync, P.L2Retrig, P.L2Fade);
+#if AVALONIA
+            // ux-overhaul.md P5a: two pages in the studio, Synth (the sound's path) | Modulation (what moves it). The same controls,
+            // parameters and order as the classic layout below; only where they sit differs. The classic app keeps its one screen.
+            var synth = Layout.Column(
+                Layout.Row(osc1, osc2, osc3),
+                Layout.Row(f1, f2, voice, S("Out", meter)),
+                Layout.Row(ampEnv, fltEnv));
+            var modulation = Layout.Column(
+                Layout.Row(modEnv, lfo1, lfo2),
+                Layout.Row(S("Modulation matrix", matrix)));
+            synth.Measure(Avalonia.Size.Infinity);
+            modulation.Measure(Avalonia.Size.Infinity);
+            var pages = new Pages(AccentColor, System.Math.Ceiling(System.Math.Max(synth.DesiredSize.Width, modulation.DesiredSize.Width)),
+                System.Math.Ceiling(System.Math.Max(synth.DesiredSize.Height, modulation.DesiredSize.Height)), "Neo Poly");
+            pages.Add("Synth", synth);
+            pages.Add("Modulation", modulation);
+            return pages;
+#else
             return Layout.Column(
                 Layout.Row(osc1, osc2, osc3),
                 Layout.Row(f1, f2, voice, S("Out", meter)),
-                Layout.Row(MakeEnv("Amp envelope", P.AmpA, P.AmpD, P.AmpS, P.AmpR),
-                           MakeEnv("Filter envelope", P.FltA, P.FltD, P.FltS, P.FltR),
-                           MakeEnv("Mod envelope", P.ModA, P.ModD, P.ModS, P.ModR)),
-                Layout.Row(MakeLfo("LFO 1", P.L1Shape, P.L1Rate, P.L1Sync, P.L1Retrig, P.L1Fade),
-                           MakeLfo("LFO 2", P.L2Shape, P.L2Rate, P.L2Sync, P.L2Retrig, P.L2Fade),
-                           S("Modulation matrix", matrix)));
+                Layout.Row(ampEnv, fltEnv, modEnv),
+                Layout.Row(lfo1, lfo2, S("Modulation matrix", matrix)));
+#endif
         }
     }
 }

@@ -105,6 +105,9 @@ namespace NeoBuzz.Drums
                 return r;
             }
 
+#if AVALONIA
+            return StudioBody(ctx, machine, view, pads, padView, hitView, kit);
+#else
             var kick = Voice(ctx,
                 Row((P.KickTune, "Tune"), (P.KickSweep, "Sweep"), (P.KickSweepT, "Sweep time"), (P.KickDecay, "Decay"), (P.KickPunch, "Punch")),
                 Row((P.KickClick, "Click"), (P.KickDrive, "Drive"), (P.KickLevel, "Level"), (P.KickPan, "Pan")));
@@ -146,6 +149,116 @@ namespace NeoBuzz.Drums
                     new Section("Hats", AccentColor, hats),
                     new Section("Toms", AccentColor, toms),
                     new Section("Cymbals", AccentColor, cymbals)));
+#endif
         }
+
+#if AVALONIA
+        /// <summary>
+        /// ux-overhaul.md P5a, the studio's layout: the pads (a click or the arrow keys select one; each lights as it plays), the
+        /// selected pad's panel alone (its tune, decay and tone; the kick its sweep, click and drive), and a mix strip with
+        /// every pad's level and pan under its name (the closed hat chokes the open hat, which the machine does itself and has no
+        /// control for; it has no sends). The same parameters, in the same order, as the classic layout; only where they sit differs.
+        /// </summary>
+        UIElement StudioBody(EditorContext ctx, NeoDrumsMachine machine, View view, DrumPads pads, UIElement padView, UIElement hitView, UIElement kit)
+        {
+            // (parameter, label) knobs of each voice's panel, in rows; level and pan are in the mix strip.
+            var rows = new (int, string)[][][]
+            {
+                new[] { Row((P.KickTune, "Tune"), (P.KickSweep, "Sweep"), (P.KickSweepT, "Sweep time"), (P.KickDecay, "Decay"), (P.KickPunch, "Punch")),
+                        Row((P.KickClick, "Click"), (P.KickDrive, "Drive")) },
+                new[] { Row((P.SnareTune, "Tune"), (P.SnareTone, "Tone"), (P.SnareSnap, "Snap"), (P.SnareDecay, "Decay")) },
+                new[] { Row((P.ClapTune, "Tune"), (P.ClapSpread, "Spread"), (P.ClapDecay, "Decay")) },
+                new[] { Row((P.RimTune, "Tune"), (P.RimDecay, "Decay")) },
+                new[] { Row((P.ChTune, "Tune"), (P.ChTone, "Tone"), (P.ChDecay, "Decay")) },
+                new[] { Row((P.OhTune, "Tune"), (P.OhTone, "Tone"), (P.OhDecay, "Decay")) },
+                new[] { Row((P.LtTune, "Tune"), (P.LtDecay, "Decay"), (P.LtTone, "Tone")) },
+                new[] { Row((P.MtTune, "Tune"), (P.MtDecay, "Decay"), (P.MtTone, "Tone")) },
+                new[] { Row((P.HtTune, "Tune"), (P.HtDecay, "Decay"), (P.HtTone, "Tone")) },
+                new[] { Row((P.CbTune, "Tune"), (P.CbDecay, "Decay")) },
+                new[] { Row((P.CcTune, "Tune"), (P.CcTone, "Tone"), (P.CcDecay, "Decay")) },
+                new[] { Row((P.RcTune, "Tune"), (P.RcTone, "Tone"), (P.RcDecay, "Decay")) },
+            };
+            int[] level = { P.KickLevel, P.SnareLevel, P.ClapLevel, P.RimLevel, P.ChLevel, P.OhLevel, P.LtLevel, P.MtLevel, P.HtLevel, P.CbLevel, P.CcLevel, P.RcLevel };
+            int[] pan = { P.KickPan, P.SnarePan, P.ClapPan, P.RimPan, P.ChPan, P.OhPan, P.LtPan, P.MtPan, P.HtPan, P.CbPan, P.CcPan, P.RcPan };
+
+            var panels = new Section[DrumsEngine.VoiceCount];
+            var host = new Grid { HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
+            for (int v = 0; v < panels.Length; v++)
+            {
+                var content = Voice(ctx, rows[v]);
+                if (v == 4 || v == 5)
+                    ((Avalonia.Controls.StackPanel)content).Children.Add(new TextBlock
+                    {
+                        Text = v == 4 ? "Chokes the open hat." : "Choked by the closed hat.",
+                        FontFamily = Theme.FontFamily,
+                        FontSize = 11,
+                        Foreground = Theme.Brush(Palette.DimText),
+                        Margin = new Thickness(0, 4, 0, 0),
+                    });
+                panels[v] = new Section(DrumsEngine.Names[v], AccentColor, content) { IsVisible = v == pads.Selected };
+                host.Children.Add(panels[v]);
+            }
+            // The panels share the kick's size (the tallest), so the window doesn't move from pad to pad.
+            panels[0].IsVisible = true;
+            panels[0].Measure(Avalonia.Size.Infinity);
+            host.MinWidth = panels[0].DesiredSize.Width;
+            host.MinHeight = panels[0].DesiredSize.Height;
+            for (int v = 0; v < panels.Length; v++) panels[v].IsVisible = v == pads.Selected;
+
+            Avalonia.Automation.AutomationProperties.SetName(padView, "Pad grid");
+            var strip = new MixStrip(ctx, view, pads, AccentColor, level, pan);
+            Avalonia.Controls.Control mix = new Section("Mix", AccentColor, strip);
+
+            pads.SelectedChanged += v =>
+            {
+                for (int i = 0; i < panels.Length; i++) panels[i].IsVisible = i == v;
+                strip.Redraw();
+            };
+
+            return Layout.Column(
+                Layout.Row(
+                    new Section("Pads", AccentColor, padView),
+                    new Section("Hit", AccentColor, hitView),
+                    new Section("Kit", AccentColor, kit)),
+                Layout.Row(host, mix));
+        }
+
+        /// <summary>
+        /// Every pad's level and pan in a column under its name: the name lights as the pad does and a click on it selects the pad
+        /// (the same selection as the pads'); the selected pad's column is outlined.
+        /// </summary>
+        sealed class MixStrip : Avalonia.Controls.StackPanel
+        {
+            public const double Column = 56, Header = 22;
+            readonly InteractiveGraph names;
+
+            public MixStrip(EditorContext ctx, IDrumsView view, DrumPads pads, NeoColor accent, int[] level, int[] pan)
+            {
+                var input = new MixNames(view, pads, Column, Header);
+                names = new InteractiveGraph(Column * DrumsEngine.VoiceCount, Header, (g, r) => input.Draw(g, r, accent), input, animate: true)
+                {
+                    ToolTip = "Each pad's level and pan. A name lights as its pad plays; click one to select the pad. The closed hat chokes the open hat.",
+                };
+                Avalonia.Automation.AutomationProperties.SetName(names, "Mix: pad names");
+                var levels = Layout.Row();
+                var pans = Layout.Row();
+                for (int v = 0; v < DrumsEngine.VoiceCount; v++)
+                {
+                    var l = new ParamKnob(ctx, level[v], "Level", 30) { Width = Column };
+                    var p = new ParamKnob(ctx, pan[v], "Pan", 30) { Width = Column };
+                    Avalonia.Automation.AutomationProperties.SetName(l, DrumsEngine.Names[v] + " level");
+                    Avalonia.Automation.AutomationProperties.SetName(p, DrumsEngine.Names[v] + " pan");
+                    levels.Children.Add(l);
+                    pans.Children.Add(p);
+                }
+                Orientation = Avalonia.Layout.Orientation.Vertical;
+                Children.Add(names);
+                Children.Add(levels);
+                Children.Add(pans);
+            }
+
+            public void Redraw() => names.InvalidateVisual();
+        }
+#endif
     }
 }
