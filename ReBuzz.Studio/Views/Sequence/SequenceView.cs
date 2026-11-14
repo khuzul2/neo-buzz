@@ -73,6 +73,7 @@ namespace ReBuzz.Studio.Views.Sequence
         readonly ToggleButton arrangementMode = new ToggleButton { Content = "Arrange", Width = 64 };
         readonly TextBlock status = new TextBlock { FontSize = 12, Margin = new Thickness(8, 2), TextTrimming = TextTrimming.CharacterEllipsis, IsVisible = false };
         ArrangementHeaders headers;
+        readonly ArrangementRollPanel rollPanel;
         bool isArrangement;
         readonly List<(char Char, IPattern Pattern)> patterns = new List<(char, IPattern)>();
         bool syncing;
@@ -127,6 +128,7 @@ namespace ReBuzz.Studio.Views.Sequence
             RefreshPatternList();
             var lane = Arrangement.Selected?.Sequence ?? Arrangement.CursorLane;
             if (lane?.Machine is { } machine) StudioSelection.For(core).Set(machine, Arrangement.Selected?.Pattern, this);
+            if (rollPanel.IsVisible && Arrangement.Selected?.Pattern is { } shown && shown != rollPanel.Pattern) rollPanel.Open(shown);      // the open roll follows the selected clip
         }
 
         /// <summary>Tracker or arrangement mode (daw-modes.md AR1): the same song, drawn as rows of blocks or as tracks of clips.</summary>
@@ -139,6 +141,7 @@ namespace ReBuzz.Studio.Views.Sequence
             Canvas.IsVisible = Canvas.Overlay.IsVisible = !on;
             Arrangement.IsVisible = Arrangement.Overlay.IsVisible = headers.IsVisible = on;
             status.IsVisible = on;
+            if (!on) rollPanel.Close();
             if (on)
             {
                 Arrangement.Changed();
@@ -166,6 +169,8 @@ namespace ReBuzz.Studio.Views.Sequence
             Arrangement = new ArrangementCanvas(core, state) { IsVisible = false };
             Arrangement.Overlay.IsVisible = false;
             headers = new ArrangementHeaders(core, Arrangement) { IsVisible = false, HorizontalAlignment = HorizontalAlignment.Left };
+            rollPanel = new ArrangementRollPanel(core) { IsVisible = false };
+            rollPanel.PatternEditorRequested += p => ChoosePattern(p, true);
             Focusable = true;
 
             patternList.Styles.Add(new Style(x => x.OfType<ListBoxItem>())
@@ -216,6 +221,8 @@ namespace ReBuzz.Studio.Views.Sequence
             DockPanel.SetDock(right, Dock.Right);
             DockPanel.SetDock(status, Dock.Bottom);
             root.Children.Add(status);
+            DockPanel.SetDock(rollPanel, Dock.Bottom);
+            root.Children.Add(rollPanel);
             root.Children.Add(right);
             root.Children.Add(timeline);
             Content = root;
@@ -238,6 +245,7 @@ namespace ReBuzz.Studio.Views.Sequence
             Arrangement.ViewChanged += UpdateEmpty;
             Arrangement.SelectionChanged += OnArrangementSelection;
             Arrangement.PatternDoubleClicked += p => ChoosePattern(p, true);
+            Arrangement.ClipOpened += OpenPianoRoll;
             Arrangement.MenuRequested += p => OpenArrangementMenu(Arrangement);
             Arrangement.StatusChanged += () => { status.Text = Arrangement.Status ?? ""; };
             headers.LaneChosen += lane => { Arrangement.MoveCursor(Arrangement.CursorTime, lane); Arrangement.Focus(); };
@@ -272,6 +280,8 @@ namespace ReBuzz.Studio.Views.Sequence
         public ToggleButton TrackerModeButton => trackerMode;
         public ToggleButton ArrangementModeButton => arrangementMode;
         public ArrangementHeaders Headers => headers;
+        /// <summary>The piano roll under the arrangement (daw-modes.md AR2): a clip opened shows its notes here.</summary>
+        public ArrangementRollPanel RollPanel => rollPanel;
         public bool IsArrangementMode => isArrangement;
         public TextBlock StatusLine => status;
         public Slider ZoomSlider => zoom;
@@ -566,6 +576,21 @@ namespace ReBuzz.Studio.Views.Sequence
             SequenceTab.RaisePatternChosen(p);
         }
 
+        /// <summary>Opens the piano roll under the arrangement on a clip's pattern (a double click on the clip, P): its notes as the machine plays them.</summary>
+        public void OpenPianoRoll(IPattern p)
+        {
+            if (p == null) return;
+            try
+            {
+                core.SetPatternEditorPattern(p);
+            }
+            catch (Exception e)
+            {
+                core.DCWriteLine("Sequence editor: " + e.Message);
+            }
+            rollPanel.Open(p);
+        }
+
         public void SetLoopStart() => Canvas.Edits.SetLoopStart(isArrangement ? state.TimeSignatures.Snap(Arrangement.CursorTime, int.MaxValue) : Canvas.CursorTime);
 
         public void SetEnd()
@@ -667,7 +692,9 @@ namespace ReBuzz.Studio.Views.Sequence
             return mods;
         }
 
-        bool TypingInBox(object source) => source is Visual v && (Find<TextBox>(v) != null || Find<ComboBox>(v) is ComboBox { IsDropDownOpen: true });
+        // Fork (daw-modes.md AR2): the keys typed in the piano roll under the timeline are the roll's (Delete, S, J, the piano keys of step
+        // input…), not the clips'.
+        bool TypingInBox(object source) => source is Visual v && (Find<TextBox>(v) != null || Find<ComboBox>(v) is ComboBox { IsDropDownOpen: true } || Find<ArrangementRollPanel>(v) != null);
 
         static T Find<T>(Visual v) where T : class
         {
@@ -811,6 +838,7 @@ namespace ReBuzz.Studio.Views.Sequence
             {
                 Items =
                 {
+                    Item("Piano Roll", () => OpenPianoRoll(a.Selected?.Pattern), new KeyGesture(Key.P), clip),
                     Item("Edit Pattern", () => ChoosePattern(a.Selected?.Pattern, true), new KeyGesture(Key.Return), clip),
                     new Separator(),
                     Item("Split at Cursor", () => a.SplitAtCursor(), new KeyGesture(Key.S), inside),

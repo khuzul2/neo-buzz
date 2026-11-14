@@ -2,6 +2,11 @@
 // pattern: this one shows the notes of the pattern's Note columns in the Tracker (Core/Notes/EditorTrackerNotes) and edits them
 // through the editor, one undo step a gesture, on the history the Tracker has. The pattern is the Tracker's: the page that holds
 // both (PatternPage) hands it over, and the studio's selection follows it. A machine without a Note column gets a message.
+//
+// Fork (daw-modes.md AR2): the same control is the arrangement's piano roll panel (songOnly: the notes the song keeps for the
+// machine, SongNotes, on the song's history, as the Session View's clip plays them) and the Pattern tab's roll can show them too
+// (the Tracker's own stores are not converted before AR3). Both get a velocity lane or a controller lane (CC, pitch bend) under the
+// roll, key and scale (highlight, snap, fold), step input and the ghosts of the other clips.
 
 using System;
 using System.Linq;
@@ -15,6 +20,7 @@ using Avalonia.Layout;
 using Avalonia.Threading;
 using BuzzGUI.Common.Actions.SongActions;
 using BuzzGUI.Interfaces;
+using ReBuzz.Agent.Model;
 using ReBuzz.Core;
 using ReBuzz.Core.Notes;
 using ReBuzz.Core.Session;
@@ -47,15 +53,25 @@ namespace ReBuzz.Studio.Views.Detail
         TrackerLane wanted = TrackerLane.Auto;
         readonly ComboBox laneBox;
         bool settingLane;
+        readonly bool songOnly;
+        readonly ComboBox keyBox, scaleBox, foldBox, ghostBox, lowerBox;
+        readonly ToggleButton stepBox, snapBox;
+        ControllerLane ctrl;
+        MidiControllers controllers;
+        int lowerController = -1;                 // -1: the velocity lane; else the controller the lane under the roll shows
+        bool settingLower;
+        (int, int, long) ghostSeen;
+        (int Count, long Sum) ctrlSeen;
         IPattern pattern;
         (int Count, long Sum) seen;
         int rowTime = ClipNotes.TimeBase;
 
-        public TrackerRoll(ReBuzzCore core)
+        public TrackerRoll(ReBuzzCore core, bool songOnly = false)
         {
             this.core = core;
+            this.songOnly = songOnly;
             Background = StudioTokens.SurfaceViewBrush;
-            AutomationProperties.SetName(this, "Piano roll");
+            AutomationProperties.SetName(this, songOnly ? "Arrangement piano roll" : "Piano roll");
 
             gridBox = new ComboBox { Width = 120, Margin = new Thickness(0, 0, 8, 0), FontSize = StudioTokens.FontBody };
             AutomationProperties.SetName(gridBox, "Grid");
@@ -65,12 +81,10 @@ namespace ReBuzz.Studio.Views.Detail
 
             laneBox = new ComboBox { Width = 150, Margin = new Thickness(0, 0, 8, 0), FontSize = StudioTokens.FontBody, IsVisible = false };
             AutomationProperties.SetName(laneBox, "Notes of");
-            laneBox.Items.Add("Notes: Note column");
-            laneBox.Items.Add("Notes: MIDI lanes");
             laneBox.SelectionChanged += (s, e) =>
             {
-                if (settingLane || laneBox.SelectedIndex < 0) return;
-                wanted = laneBox.SelectedIndex == 0 ? TrackerLane.NoteColumn : TrackerLane.MidiLanes;
+                if (settingLane || laneBox.SelectedIndex < 0 || choice?.Available == null || laneBox.SelectedIndex >= choice.Available.Count) return;
+                wanted = choice.Available[laneBox.SelectedIndex];
                 Reopen();
                 roll?.Focus();
             };
@@ -91,6 +105,35 @@ namespace ReBuzz.Studio.Views.Detail
             tools.Children.Add(Tool("−", $"Zoom out ({mod}+wheel)", () => Zoom(0.8)));
             tools.Children.Add(Tool("+", $"Zoom in ({mod}+wheel)", () => Zoom(1.25)));
             tools.Children.Add(summary);
+
+            // Fork (AR2): the second row, the roll's help for the notes: key and scale, fold, step input, ghosts, the lane under the roll.
+            keyBox = Combo("Key", 96, "Key: off", "Key: C", "Key: C#", "Key: D", "Key: D#", "Key: E", "Key: F", "Key: F#", "Key: G", "Key: G#", "Key: A", "Key: A#", "Key: B");
+            scaleBox = Combo("Scale", 150, Scale.All.Select(sc => sc.Name).ToArray());
+            scaleBox.SelectedIndex = 0;
+            foldBox = Combo("Fold", 110, "Fold: off", "Fold: used", "Fold: scale");
+            snapBox = StudioButtons.KeepFocus(new ToggleButton { Content = "Snap to scale", Margin = new Thickness(0, 0, 6, 0) });
+            ToolTip.SetTip(snapBox, "New notes and moved ones land on the scale's pitches (needs a key)");
+            AutomationProperties.SetName(snapBox, "Snap to scale");
+            stepBox = StudioButtons.KeepFocus(new ToggleButton { Content = "Step", Margin = new Thickness(0, 0, 6, 0) });
+            ToolTip.SetTip(stepBox, "Step input: the piano keys (Z S X D C…) write notes at the cursor and step on by the grid; hold keys for a chord, Right (or Space) rests, Left (or Backspace) steps back, * and / change the octave");
+            AutomationProperties.SetName(stepBox, "Step input");
+            ghostBox = Combo("Ghosts", 130, "Ghosts: off", "Ghosts: this track", "Ghosts: all tracks");
+            ghostBox.SelectedIndex = songOnly ? 1 : 0;
+            lowerBox = Combo("Lane under the roll", 150, "Velocity");
+            keyBox.SelectionChanged += (s, e) => ApplyScale();
+            scaleBox.SelectionChanged += (s, e) => ApplyScale();
+            foldBox.SelectionChanged += (s, e) => ApplyScale();
+            snapBox.IsCheckedChanged += (s, e) => { if (roll != null) roll.SnapToScale = snapBox.IsChecked == true; };
+            stepBox.IsCheckedChanged += (s, e) => { if (roll != null) roll.StepInput = stepBox.IsChecked == true; roll?.Focus(); };
+            ghostBox.SelectionChanged += (s, e) => { RefreshGhosts(force: true); roll?.Focus(); };
+            lowerBox.SelectionChanged += (s, e) => { if (!settingLower) ChooseLower(); roll?.Focus(); };
+            tools.Children.Add(keyBox);
+            tools.Children.Add(scaleBox);
+            tools.Children.Add(foldBox);
+            tools.Children.Add(snapBox);
+            tools.Children.Add(stepBox);
+            tools.Children.Add(ghostBox);
+            tools.Children.Add(lowerBox);
             SetDock(tools, Dock.Top);
             Children.Add(tools);
 
@@ -132,6 +175,15 @@ namespace ReBuzz.Studio.Views.Detail
         }
 
         static readonly string[] GridLabels = { "Grid: row", "Grid: beat", "Grid: bar", "Grid: off" };
+
+        ComboBox Combo(string name, double width, params string[] items)
+        {
+            var box = new ComboBox { Width = width, Margin = new Thickness(0, 0, 8, 0), FontSize = StudioTokens.FontBody };
+            AutomationProperties.SetName(box, name);
+            foreach (var item in items) box.Items.Add(item);
+            box.SelectedIndex = 0;
+            return box;
+        }
 
         Button Tool(string label, string tip, Action action)
         {
@@ -193,27 +245,44 @@ namespace ReBuzz.Studio.Views.Detail
                 Say("No pattern. Choose one above, or make one with New pattern.");
                 return;
             }
-            choice = TrackerNoteSources.Open(core, p, wanted);
+            choice = TrackerNoteSources.Open(core, p, wanted, songOnly);
             source = choice?.Source;
             if (choice == null)
             {
                 laneBox.IsVisible = false;
+                if (songOnly)
+                {
+                    Say($"{p.Machine?.Name} takes no notes, so there is no piano roll for its patterns.");
+                    return;
+                }
                 Say(p.Machine is MachineCore { DLL: { } } m && !core.MachineManager.HasTrackerEditor(m) && !core.MachineManager.HasClipNoteEditor(m)
                     ? $"{p.Machine.Name}'s pattern editor can't share its notes with the piano roll."
                     : $"{p.Machine?.Name} has no Note column in the Tracker, so there are no notes to draw here. Its pattern still plays what the Tracker holds.");
                 return;
             }
             settingLane = true;
-            laneBox.IsVisible = choice.BothAvailable;
-            laneBox.SelectedIndex = choice.Lane == TrackerLane.NoteColumn ? 0 : 1;
+            var labels = (choice.Available ?? new[] { choice.Lane })
+                .Select(l => l switch { TrackerLane.NoteColumn => "Notes: Note column", TrackerLane.MidiLanes => "Notes: MIDI lanes", _ => "Notes: Song" }).ToList();
+            if (!laneBox.Items.Cast<object>().SequenceEqual(labels))      // (not while the box itself is choosing)
+            {
+                laneBox.Items.Clear();
+                foreach (var label in labels) laneBox.Items.Add(label);
+            }
+            laneBox.IsVisible = choice.BothAvailable && !songOnly;
+            laneBox.SelectedIndex = Math.Max(0, (choice.Available ?? new[] { choice.Lane }).ToList().IndexOf(choice.Lane));
             settingLane = false;
             message.IsVisible = false;
             scroll.IsVisible = true;
             rowTime = choice.RowTime ?? ClipNotes.TimeBase;
             roll = new PianoRoll(core, source, null) { Grid = rowTime, AltBypassesGrid = true, RowHeight = 13 };
-            AutomationProperties.SetName(roll, "Piano roll");
+            AutomationProperties.SetName(roll, songOnly ? "Arrangement piano roll notes" : "Piano roll");
             roll.Changed += UpdateSummary;
+            roll.StepOctave = Math.Clamp(p.Machine?.BaseOctave ?? 4, 0, 9);
+            roll.SnapToScale = snapBox.IsChecked == true;
+            roll.StepInput = stepBox.IsChecked == true;
+            controllers = SongNotes.IsMidi(source) ? new MidiControllers(core, p) : null;
             scroll.Content = roll;
+            ApplyScale();
             BuildFurniture();
             RefreshBars();
             ApplyGrid();
@@ -221,6 +290,106 @@ namespace ReBuzz.Studio.Views.Detail
             seen = Signature();
             scroll.Offset = new Vector(0, Math.Max(0, roll.FocusOffset()));
             UpdateViewport();
+            RefreshGhosts(force: true);
+        }
+
+        /// <summary>The key and scale the boxes name, and the fold, applied to the roll.</summary>
+        void ApplyScale()
+        {
+            if (roll == null) return;
+            roll.Scale = keyBox.SelectedIndex <= 0 || scaleBox.SelectedIndex < 0 ? null : new NoteScale(keyBox.SelectedIndex - 1, Scale.All[scaleBox.SelectedIndex]);
+            roll.Fold = (FoldMode)Math.Max(0, foldBox.SelectedIndex);
+            roll.InvalidateVisual();
+            scroll.Offset = new Vector(scroll.Offset.X, Math.Max(0, Math.Min(scroll.Offset.Y, Math.Max(0, roll.Rows == null ? 128 * roll.RowHeight : roll.Rows.Count * roll.RowHeight))));
+            UpdateViewport();
+        }
+
+        /// <summary>The key and scale, the fold, step input and snap (tests set them as the boxes do).</summary>
+        public ComboBox KeyBox => keyBox;
+        public ComboBox ScaleBox => scaleBox;
+        public ComboBox FoldBox => foldBox;
+        public ComboBox GhostBox => ghostBox;
+        public ComboBox LowerBox => lowerBox;
+        public ToggleButton StepBox => stepBox;
+        public ToggleButton SnapBox => snapBox;
+
+        /// <summary>Whether the roll shows the notes the song keeps (what the Session View's clip plays) and edits them on the song's history.</summary>
+        public bool IsSongLane => choice?.Lane == TrackerLane.SongNotes;
+
+        public ControllerLane Controller => ctrl;
+
+        /// <summary>The other clips' notes the roll shows faintly now.</summary>
+        internal System.Collections.Generic.IReadOnlyList<ClipNote> Ghosts => roll?.Ghosts;
+
+        void RefreshGhosts(bool force = false)
+        {
+            if (roll == null || (!force && ghostBox.SelectedIndex == 0)) return;
+            var stack = core.SongCore?.ActionStack;
+            int? anchor = ghostBox.SelectedIndex > 0 ? Anchor() : null;
+            var key = (stack?.Actions.Count() ?? 0, (stack?.CanRedo == true ? 1 : 0) + 2 * (ghostBox.SelectedIndex), (long)(anchor ?? int.MinValue));
+            if (!force && key == ghostSeen) return;
+            ghostSeen = key;
+            roll.Ghosts = anchor == null ? null : SongNotes.Ghosts(core, pattern, anchor.Value, otherTracks: ghostBox.SelectedIndex == 2);
+        }
+
+        // The lane under the roll: the velocity of the notes, or one controller of the MIDI column (a machine whose notes are in its tracks has none).
+        void FillLower()
+        {
+            settingLower = true;
+            lowerBox.Items.Clear();
+            lowerBox.Items.Add("Velocity");
+            if (controllers != null)
+            {
+                var ids = controllers.Present().Union(ControllerPoint.Usual).OrderBy(c => c == ControllerPoint.PitchBend ? 999 : c).ToList();
+                foreach (int c in ids) lowerBox.Items.Add(ControllerPoint.NameOf(c));
+                lowerIds = ids;
+            }
+            else
+                lowerIds = new System.Collections.Generic.List<int>();
+            int at = lowerController < 0 ? 0 : lowerIds.IndexOf(lowerController) + 1;
+            lowerBox.SelectedIndex = at > 0 ? at : 0;
+            if (at <= 0) lowerController = -1;
+            settingLower = false;
+        }
+
+        System.Collections.Generic.List<int> lowerIds = new System.Collections.Generic.List<int>();
+
+        void ChooseLower()
+        {
+            int i = lowerBox.SelectedIndex;
+            lowerController = i <= 0 || i - 1 >= lowerIds.Count ? -1 : lowerIds[i - 1];
+            ShowLower();
+        }
+
+        void ShowLower()
+        {
+            if (ctrl != null) { ctrl.Edited -= OnControllerEdited; rollGrid.Children.Remove(ctrl); ctrl = null; }
+            if (roll == null) return;
+            if (lowerController >= 0 && controllers != null)
+            {
+                ctrl = new ControllerLane(roll, controllers, lowerController) { OffsetX = scroll.Offset.X };
+                Grid.SetRow(ctrl, 2);
+                rollGrid.Children.Add(ctrl);
+                ctrl.Edited += OnControllerEdited;
+            }
+            if (lane != null) lane.IsVisible = ctrl == null;
+            ctrlSeen = ControllerSignature();
+        }
+
+        void OnControllerEdited()
+        {
+            loopUndoable = loopRedoable = false;
+            ctrlSeen = ControllerSignature();
+            UpdateSummary();
+        }
+
+        (int Count, long Sum) ControllerSignature()
+        {
+            if (controllers == null) return (0, 0);
+            var points = controllers.Points();
+            long sum = 0;
+            foreach (var q in points) sum = sum * 31 + q.Time * 7 + q.Controller * 131 + q.Value;
+            return (points.Count, sum);
         }
 
         void DropRoll()
@@ -263,6 +432,7 @@ namespace ReBuzz.Studio.Views.Detail
             UpdateViewport();
             ruler?.InvalidateVisual();
             lane?.InvalidateVisual();
+            ctrl?.InvalidateVisual();
             PlaceHead();
         }
 
@@ -273,6 +443,7 @@ namespace ReBuzz.Studio.Views.Detail
             roll.InvalidateVisual();
             if (ruler != null) { ruler.OffsetX = scroll.Offset.X; ruler.InvalidateVisual(); }
             if (lane != null) lane.OffsetX = scroll.Offset.X;
+            if (ctrl != null) ctrl.OffsetX = scroll.Offset.X;
             PlaceHead();
         }
 
@@ -292,6 +463,17 @@ namespace ReBuzz.Studio.Views.Detail
                 roll.Reload();
                 loopUndoable = loopRedoable = false;
             }
+            if (controllers != null)
+            {
+                var c = ControllerSignature();
+                if (c != ctrlSeen)
+                {
+                    ctrlSeen = c;
+                    ctrl?.Reload();
+                    loopUndoable = loopRedoable = false;
+                }
+            }
+            RefreshGhosts();
             RefreshBars();
         }
 
@@ -314,6 +496,7 @@ namespace ReBuzz.Studio.Views.Detail
                 : $"{sel} of {count} selected" + (sel == 1 ? $" · {ClipNotes.Name(roll.Notes[roll.Selection.First()].Note)}, velocity {roll.Notes[roll.Selection.First()].Velocity}" : "");
             seen = Signature();
             lane?.InvalidateVisual();
+            if (stepBox.IsChecked == true) roll.InvalidateVisual();
         }
 
         // The Edit commands, when the keyboard is in the roll.
@@ -343,20 +526,25 @@ namespace ReBuzz.Studio.Views.Detail
             rollGrid.Children.Add(lane);
             source.Changed += OnSourceEdited;
             shownPlay = int.MinValue;
+            FillLower();
+            ShowLower();
         }
 
         void ClearFurniture()
         {
             if (ruler != null) { ruler.LoopSet -= SetLoop; rollGrid.Children.Remove(ruler); }
             if (lane != null) rollGrid.Children.Remove(lane);
+            if (ctrl != null) { ctrl.Edited -= OnControllerEdited; rollGrid.Children.Remove(ctrl); }
             ruler = null;
             lane = null;
+            ctrl = null;
+            controllers = null;
             playhead.LineX = -1;
             loopUndoable = loopRedoable = false;
         }
 
         // An edit of the notes ends the song-loop undo the roll was holding (the notes' undo comes first again).
-        void OnSourceEdited() { loopUndoable = false; loopRedoable = false; }
+        void OnSourceEdited() { loopUndoable = false; loopRedoable = false; RefreshGhosts(force: true); }
 
         /// <summary>The song's tick where this pattern's first tick lies: its event that plays now, else its first in the song; null if it isn't in the song.</summary>
         internal int? Anchor() => AnchorOf(core, pattern);
