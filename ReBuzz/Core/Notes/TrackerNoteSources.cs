@@ -58,13 +58,13 @@ namespace ReBuzz.Core.Notes
 
         /// <summary>Whether notes as MIDI mean anything to the machine: a generator, or one whose manifest has a note input.</summary>
         static bool TakesMidi(MachineCore machine) =>
-            machine?.DLL?.Info?.Type == MachineType.Generator || SongModel.Manifest(machine?.DLL)?.Notes != null;
+            machine?.DLL?.Info?.Type == MachineType.Generator || SongModel.Manifest(machine)?.Notes != null;
 
         /// <summary>Whether the machine takes notes in its Note track parameter (its manifest says so, or it has no manifest to say MIDI).</summary>
         static bool TakesNotesInItsTracks(MachineCore machine)
         {
             if (machine == null) return true;
-            var manifest = SongModel.Manifest(machine.DLL);
+            var manifest = SongModel.Manifest(machine);
             return manifest == null || manifest.Notes?.Input == "tracks";
         }
     }

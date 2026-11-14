@@ -13,7 +13,7 @@ using System.Xml.Serialization;
 
 namespace ReBuzz.ManagedMachine
 {
-    internal class ManagedMachineHost : IBuzzMachineHost
+    internal class ManagedMachineHost : IBuzzMachineHost, IBuzzMachineHostRuntime
     {
         private ManagedMachineDLL dll;
 
@@ -186,6 +186,15 @@ namespace ReBuzz.ManagedMachine
         public SubTickInfo SubTickInfo { get; private set; }
 
         public IBuzzMachine ManagedMachine => machine;
+
+        // Fork (plugin-host.md §3.1): IBuzzMachineHostRuntime.
+        public void SetGlobalParameterInfo(int index, string name, string description, int min, int max, int def, bool visible)
+        {
+            if (Machine is not MachineCore mc || mc.ParameterGroupsList.Count < 2) return;
+            var list = mc.ParameterGroupsList[1].ParametersList;
+            if (index < 0 || index >= list.Count) return;
+            list[index].SetRuntimeInfo(name, description, min, max, def, !visible);
+        }
 
         public ManagedMachineHost(ManagedMachineDLL dll)
         {

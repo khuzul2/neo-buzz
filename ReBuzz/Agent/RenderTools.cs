@@ -488,6 +488,7 @@ namespace ReBuzz.Agent
                 {
                     foreach (var t in taps) t.Stop();
                     core.Playing = false;
+                    foreach (var m in machines) EndRender(m);
                     // Fork (machine-safety.md §3.2): a machine whose guard tripped stays muted (unmuting resets it).
                     foreach (var m in machines.Where(m => m.IsDiverged && !mutedBefore[m]))
                         warnings.Add($"{m.Name} diverged ({m.DivergedReason}) at beat {Math.Round(m.DivergedPosition / (double)Math.Max(1, core.TPB), 2)}: " +
@@ -562,6 +563,18 @@ namespace ReBuzz.Agent
             var target = m.ManagedMachine;
             if (target == null) return;
             try { target.GetType().GetMethod("ResetForRender", Type.EmptyTypes)?.Invoke(target, null); }
+            catch (Exception) { }
+        }
+
+        /// <summary>
+        /// A machine's own end-of-render call (a public void EndRender() on its managed machine), if it has one: ResetForRender starts
+        /// an offline render, this ends it (the plugin host puts plug-ins in offline mode in between, plugin-host.md §3.6).
+        /// </summary>
+        static void EndRender(MachineCore m)
+        {
+            var target = m.ManagedMachine;
+            if (target == null) return;
+            try { target.GetType().GetMethod("EndRender", Type.EmptyTypes)?.Invoke(target, null); }
             catch (Exception) { }
         }
 

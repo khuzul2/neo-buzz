@@ -24,7 +24,7 @@ namespace ReBuzz.Agent
 
         static (int Min, int Max)? Lookup(IMachine machine, IParameter parameter)
         {
-            var manifest = SongModel.Manifest(machine.DLL);
+            var manifest = SongModel.Manifest(machine);
             var entry = manifest?.FindAt(parameter.Group?.Type == ParameterGroupType.Track, parameter.IndexInGroup, parameter.Name);
             if (entry?.SafeRange is not { } range) return null;
             if (entry.Min != parameter.MinValue || entry.Max != parameter.MaxValue) return null;   // a stale manifest: trust the machine

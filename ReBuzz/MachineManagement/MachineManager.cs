@@ -117,7 +117,7 @@ namespace ReBuzz.MachineManagement
 
                 if (mDll.IsManaged)
                 {
-                    CreateManagedMachine(machine, trackCount, data);
+                    CreateManagedMachine(machine, trackCount, data, instrument);
                 }
                 else
                 {
@@ -133,7 +133,7 @@ namespace ReBuzz.MachineManagement
             }
         }
 
-        public void CreateManagedMachine(MachineCore machine, int trackcount, byte[] data)
+        public void CreateManagedMachine(MachineCore machine, int trackcount, byte[] data, string instrument = null)
         {
             ManagedMachineDLL managedMachineDLL = new ManagedMachineDLL(dispatcher);
             managedMachineDLL.LoadManagedMachine(machine.MachineDLL.Path);
@@ -150,6 +150,13 @@ namespace ReBuzz.MachineManagement
 
             machine.TrackCount = trackcount;
             machine.MachineDLL.ManagedDLL = managedMachineDLL;
+
+            // Fork (plugin-host.md §3.1): a machine that stands for many things is told which one, before its state is set.
+            if (!string.IsNullOrEmpty(instrument) && machine.ManagedMachine is Buzz.MachineInterface.IBuzzMachineInstrument loader)
+            {
+                try { loader.SetInstrument(instrument); }
+                catch (Exception ex) { buzz.DCWriteLine("Instrument " + instrument + " of " + machine.DLL.Name + ": " + (ex.InnerException ?? ex).Message, DCLogLevel.Error); }
+            }
 
             lock (ReBuzzCore.AudioLock)
             {

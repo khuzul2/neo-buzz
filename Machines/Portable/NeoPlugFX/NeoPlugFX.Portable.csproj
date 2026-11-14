@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Plug FX, portable (docs/specs/plugin-host.md H1): see ../NeoPlug.targets. -->
+  <PropertyGroup>
+    <NeoName>Neo Plug FX</NeoName>
+    <NeoKind>Effects</NeoKind>
+    <DefineConstants>$(DefineConstants);FX</DefineConstants>
+  </PropertyGroup>
+  <Import Project="../NeoPlug.targets" />
+</Project>

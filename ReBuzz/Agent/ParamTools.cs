@@ -100,7 +100,7 @@ namespace ReBuzz.Agent
                             }
                         }
                         var o = new JsonObject { ["machine"] = SongModel.MachineJson(core, m) };
-                        var manifest = SongModel.Manifest(m.DLL);
+                        var manifest = SongModel.Manifest(m);
                         if (!string.IsNullOrEmpty(manifest?.Summary)) o["summary"] = manifest.Summary;
                         if (manifest != null) o["manifest"] = manifest.Quality;
                         if (manifest?.Health is { Status: not "ok" } health)
@@ -254,7 +254,7 @@ namespace ReBuzz.Agent
                                       refusal != null ? $"outside its safe range, {p.Info.SafeRange.Text(p.Info.Describe)}: {p.Info.SafeRange.Reason}" : null));
                         }
                         foreach (var (p, track, raw, _, _) in plan) AgentActions.SetParameter(core, m, p.Parameter, track, raw);
-                        bool draft = SongModel.Manifest(m.DLL)?.IsDraft == true;
+                        bool draft = SongModel.Manifest(m)?.IsDraft == true;
                         var changed = new JsonArray();
                         foreach (var (p, track, raw, was, unsafeWhy) in plan)
                         {
@@ -310,7 +310,7 @@ namespace ReBuzz.Agent
                             values.Add(o);
                         }
                         var o2 = new JsonObject { ["machine"] = m.Name, ["values"] = values };
-                        if (SongModel.Manifest(m.DLL)?.IsDraft == true) o2["manifest"] = "draft";
+                        if (SongModel.Manifest(m)?.IsDraft == true) o2["manifest"] = "draft";
                         return o2;
                     }, c.Cancellation);
                     return ToolResult.Ok($"{r["machine"]}: " + string.Join("; ", r["values"]!.AsArray().Take(60).Select(x => $"{x!["param"]} = {x["value"]}")) + DraftNote(r), r);
