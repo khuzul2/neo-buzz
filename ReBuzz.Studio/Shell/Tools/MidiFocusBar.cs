@@ -22,7 +22,7 @@ namespace ReBuzz.Studio.Shell.Tools
     {
         readonly Func<ReBuzzCore> core;
         readonly Ellipse light = new Ellipse { Width = 8, Height = 8, VerticalAlignment = VerticalAlignment.Center };
-        internal readonly ComboBox Machines = new ComboBox { MinWidth = 130, MaxWidth = 200, FontSize = 12, Padding = new Thickness(6, 0), MinHeight = 22, VerticalAlignment = VerticalAlignment.Center };
+        internal readonly ComboBox Machines = new ComboBox { MinWidth = 84, MaxWidth = 110, FontSize = 12, Padding = new Thickness(6, 0), MinHeight = 22, VerticalAlignment = VerticalAlignment.Center };
         internal readonly ToggleButton Lock = new ToggleButton { Content = "Lock" };
         List<IMachine> listed = new List<IMachine>();
         bool updating;
@@ -31,11 +31,10 @@ namespace ReBuzz.Studio.Shell.Tools
         {
             this.core = core;
             Orientation = Orientation.Horizontal;
-            Spacing = 6;
-            Margin = new Thickness(8, 1);
-            var label = new TextBlock { Text = "MIDI", FontSize = 12, Foreground = StudioTokens.TextSecondaryBrush, VerticalAlignment = VerticalAlignment.Center };
+            Spacing = 4;
+            Margin = new Thickness(4, 1);
             Children.Add(light);
-            Children.Add(label);
+            // the "MIDI" word is the tooltip and the automation name, not a label (the first row must not wrap)
             Children.Add(Machines);
             Children.Add(Lock);
             AutomationProperties.SetName(Machines, "MIDI focus machine");
