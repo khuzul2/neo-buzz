@@ -923,6 +923,32 @@ namespace ReBuzz.Studio.Tests
                     Wait(150);
                     Shot(window, "053-pattern-long-scrolled", "Pattern: Lead's 8-bar Arp (128 rows), scrolled down with the cursor past the middle.", "Page Down in a long pattern.");
                 });
+                Try("054-pattern-notes-lanes", () =>
+                {
+                    // A take as a session records it: notes in the pattern's MIDI column, seen in the tracker as lanes (daw-modes.md AR3).
+                    var lead = (MachineCore)Studio.Host.Core.Song.Machines.First(m => m.Name == "Lead");
+                    lead.CreatePattern("Take", 16);
+                    var take = lead.Patterns.First(p => p.Name == "Take");
+                    PatternEvent N(int row, int rows, int midi, int vel, int shift = 0) => new PatternEvent(row * 240 + shift, 0x90 | (midi << 8) | (vel << 16), rows * 240);
+                    ReBuzz.Core.Session.SessionLayout.EnsureMidiColumn(take).SetEvents(new[]
+                    {
+                        N(0, 2, 60, 100), N(0, 4, 64, 90, 0), N(2, 2, 67, 100, 61), N(4, 4, 62, 80), N(4, 4, 65, 70), N(4, 4, 69, 60), N(8, 3, 60, 110), N(10, 6, 55, 95), N(12, 2, 72, 127, 100),
+                    }, true);
+                    try
+                    {
+                        PatternView.Edit(take);
+                        Wait(200);
+                        dynamic v = PatternView.Page.EditorControl;
+                        ((Control)v.TrackerGrid.Body).Focus();
+                        Settle();
+                        Shot(window, "054-pattern-notes-lanes", "Pattern: a take recorded in the session shows in the tracker at once (daw-modes.md AR3): the pattern's MIDI column as Notes lanes, a voice for each overlapping note with its note, velocity, delay and cut, edited with the keys as a step of the song's history.", "Record a take in the Session View, or draw notes in a piano roll, then open the pattern in the Tracker.");
+                    }
+                    finally
+                    {
+                        lead.DeletePattern(take);
+                        Settle();
+                    }
+                });
 
                 Control Grid() => (Control)((dynamic)PatternView.Page.EditorControl).TrackerGrid.Body;
                 ContextMenu GridMenu()

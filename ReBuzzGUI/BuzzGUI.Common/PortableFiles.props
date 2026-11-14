@@ -82,6 +82,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)SimpleCommand.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TemporaryWave.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TrackerNotes.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NoteLanes.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)VUMeter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WaveCommandHelpers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)libsndfile\SoundFile.cs" />
