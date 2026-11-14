@@ -733,11 +733,12 @@ namespace ReBuzz.MachineManagement
         /// <summary>Diagnosis only (tests): told which stage of a machine's block allocated on this thread, and how much. Null in normal use (a stage costs one static read).</summary>
         internal static System.Action<MachineCore, string, long> StageProbe;
         long stageMark;
+        bool inBlock;
 
         void Stage(string stage)
         {
             var p = StageProbe;
-            if (p == null) return;
+            if (p == null || !inBlock) return;
             long now = System.GC.GetAllocatedBytesForCurrentThread();
             if (now != stageMark) p(Machine, stage, now - stageMark);
             stageMark = System.GC.GetAllocatedBytesForCurrentThread();     // what the callback itself allocates doesn't count
@@ -745,9 +746,9 @@ namespace ReBuzz.MachineManagement
 
         internal void TickAndWork(int nSamples, bool resetToNoValue = false)
         {
-            if (StageProbe != null) stageMark = System.GC.GetAllocatedBytesForCurrentThread();
+            if (StageProbe != null) { stageMark = System.GC.GetAllocatedBytesForCurrentThread(); inBlock = true; }
             var probe = AllocationProbe;
-            if (probe == null) { TickAndWorkCore(nSamples, resetToNoValue); return; }
+            if (probe == null) { TickAndWorkCore(nSamples, resetToNoValue); inBlock = false; return; }
             long before = System.GC.GetAllocatedBytesForCurrentThread();
             TickAndWorkCore(nSamples, resetToNoValue);
             long delta = System.GC.GetAllocatedBytesForCurrentThread() - before;
