@@ -444,27 +444,95 @@ namespace NeoBuzz.DyeEssence
                 int k = vb + v;
                 if (!svOn[k]) continue;
                 int blocks = hBlocks[k], pb = k * MaxPartials;
+                // Blocks go through in groups of four with the running sum held in a register, adding in the same order as one block
+                // at a time (the same bits), so the sum is read and written once a group and the four rotations overlap.
+                int b = 0;
                 Array.Clear(acc, 0, count);
-                for (int b = 0; b < blocks; b++)
+                for (; b + 4 <= blocks; b += 4)
                 {
-                    int at = pb + 4 * b;
-                    var c = Vector128.LoadUnsafe(ref hC[at]);
-                    var s = Vector128.LoadUnsafe(ref hS[at]);
-                    var a = Vector128.LoadUnsafe(ref hA[at]);
-                    var da = Vector128.LoadUnsafe(ref hDA[at]);
-                    var rc = Vector128.LoadUnsafe(ref hRC[at]);
-                    var rs = Vector128.LoadUnsafe(ref hRS[at]);
+                    var c0 = Vector128.LoadUnsafe(ref hC[pb + 4 * (b + 0)]);
+                    var s0 = Vector128.LoadUnsafe(ref hS[pb + 4 * (b + 0)]);
+                    var a0 = Vector128.LoadUnsafe(ref hA[pb + 4 * (b + 0)]);
+                    var da0 = Vector128.LoadUnsafe(ref hDA[pb + 4 * (b + 0)]);
+                    var rc0 = Vector128.LoadUnsafe(ref hRC[pb + 4 * (b + 0)]);
+                    var rs0 = Vector128.LoadUnsafe(ref hRS[pb + 4 * (b + 0)]);
+                    var c1 = Vector128.LoadUnsafe(ref hC[pb + 4 * (b + 1)]);
+                    var s1 = Vector128.LoadUnsafe(ref hS[pb + 4 * (b + 1)]);
+                    var a1 = Vector128.LoadUnsafe(ref hA[pb + 4 * (b + 1)]);
+                    var da1 = Vector128.LoadUnsafe(ref hDA[pb + 4 * (b + 1)]);
+                    var rc1 = Vector128.LoadUnsafe(ref hRC[pb + 4 * (b + 1)]);
+                    var rs1 = Vector128.LoadUnsafe(ref hRS[pb + 4 * (b + 1)]);
+                    var c2 = Vector128.LoadUnsafe(ref hC[pb + 4 * (b + 2)]);
+                    var s2 = Vector128.LoadUnsafe(ref hS[pb + 4 * (b + 2)]);
+                    var a2 = Vector128.LoadUnsafe(ref hA[pb + 4 * (b + 2)]);
+                    var da2 = Vector128.LoadUnsafe(ref hDA[pb + 4 * (b + 2)]);
+                    var rc2 = Vector128.LoadUnsafe(ref hRC[pb + 4 * (b + 2)]);
+                    var rs2 = Vector128.LoadUnsafe(ref hRS[pb + 4 * (b + 2)]);
+                    var c3 = Vector128.LoadUnsafe(ref hC[pb + 4 * (b + 3)]);
+                    var s3 = Vector128.LoadUnsafe(ref hS[pb + 4 * (b + 3)]);
+                    var a3 = Vector128.LoadUnsafe(ref hA[pb + 4 * (b + 3)]);
+                    var da3 = Vector128.LoadUnsafe(ref hDA[pb + 4 * (b + 3)]);
+                    var rc3 = Vector128.LoadUnsafe(ref hRC[pb + 4 * (b + 3)]);
+                    var rs3 = Vector128.LoadUnsafe(ref hRS[pb + 4 * (b + 3)]);
                     for (int i = 0; i < count; i++)
                     {
-                        acc[i] += a * s;
-                        var nc = c * rc - s * rs;
-                        s = s * rc + c * rs;
-                        c = nc;
-                        a += da;
+                        var t = acc[i];
+                        t += a0 * s0;
+                        var nc0 = c0 * rc0 - s0 * rs0;
+                        s0 = s0 * rc0 + c0 * rs0;
+                        c0 = nc0;
+                        a0 += da0;
+                        t += a1 * s1;
+                        var nc1 = c1 * rc1 - s1 * rs1;
+                        s1 = s1 * rc1 + c1 * rs1;
+                        c1 = nc1;
+                        a1 += da1;
+                        t += a2 * s2;
+                        var nc2 = c2 * rc2 - s2 * rs2;
+                        s2 = s2 * rc2 + c2 * rs2;
+                        c2 = nc2;
+                        a2 += da2;
+                        t += a3 * s3;
+                        var nc3 = c3 * rc3 - s3 * rs3;
+                        s3 = s3 * rc3 + c3 * rs3;
+                        c3 = nc3;
+                        a3 += da3;
+                        acc[i] = t;
                     }
-                    c.StoreUnsafe(ref hC[at]);
-                    s.StoreUnsafe(ref hS[at]);
-                    a.StoreUnsafe(ref hA[at]);
+                    c0.StoreUnsafe(ref hC[pb + 4 * (b + 0)]);
+                    s0.StoreUnsafe(ref hS[pb + 4 * (b + 0)]);
+                    a0.StoreUnsafe(ref hA[pb + 4 * (b + 0)]);
+                    c1.StoreUnsafe(ref hC[pb + 4 * (b + 1)]);
+                    s1.StoreUnsafe(ref hS[pb + 4 * (b + 1)]);
+                    a1.StoreUnsafe(ref hA[pb + 4 * (b + 1)]);
+                    c2.StoreUnsafe(ref hC[pb + 4 * (b + 2)]);
+                    s2.StoreUnsafe(ref hS[pb + 4 * (b + 2)]);
+                    a2.StoreUnsafe(ref hA[pb + 4 * (b + 2)]);
+                    c3.StoreUnsafe(ref hC[pb + 4 * (b + 3)]);
+                    s3.StoreUnsafe(ref hS[pb + 4 * (b + 3)]);
+                    a3.StoreUnsafe(ref hA[pb + 4 * (b + 3)]);
+                }
+                for (; b < blocks; b++)
+                {
+                    var c0 = Vector128.LoadUnsafe(ref hC[pb + 4 * (b + 0)]);
+                    var s0 = Vector128.LoadUnsafe(ref hS[pb + 4 * (b + 0)]);
+                    var a0 = Vector128.LoadUnsafe(ref hA[pb + 4 * (b + 0)]);
+                    var da0 = Vector128.LoadUnsafe(ref hDA[pb + 4 * (b + 0)]);
+                    var rc0 = Vector128.LoadUnsafe(ref hRC[pb + 4 * (b + 0)]);
+                    var rs0 = Vector128.LoadUnsafe(ref hRS[pb + 4 * (b + 0)]);
+                    for (int i = 0; i < count; i++)
+                    {
+                        var t = acc[i];
+                        t += a0 * s0;
+                        var nc0 = c0 * rc0 - s0 * rs0;
+                        s0 = s0 * rc0 + c0 * rs0;
+                        c0 = nc0;
+                        a0 += da0;
+                        acc[i] = t;
+                    }
+                    c0.StoreUnsafe(ref hC[pb + 4 * (b + 0)]);
+                    s0.StoreUnsafe(ref hS[pb + 4 * (b + 0)]);
+                    a0.StoreUnsafe(ref hA[pb + 4 * (b + 0)]);
                 }
                 float gl = svGL[k], gr = svGR[k], sl = svDL[k], sr = svDR[k];
                 for (int i = 0; i < count; i++)
