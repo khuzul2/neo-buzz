@@ -5,7 +5,7 @@
  "status": "curated",
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
  "type": "drums",
- "summary": "TR-909 drum machine (bass drum, snare, toms, rim shot, clap, hi-hats, crash and ride) with per-voice level, tune and decay, and shuffle.",
+ "summary": "Analog-style drum machine (bass drum, snare, toms, rim shot, clap, hi-hats, crash and ride) with per-voice level, tune and decay, and shuffle.",
  "category": "Drums",
  "tags": [
   "drums",
@@ -18,13 +18,15 @@
   "It plays from trigger columns, not notes: each track has BD Trigger … RC Trigger switches (a 1 hits that drum). notes_write can't play it, and param_set can't set the triggers; songs that use it carry their own patterns.",
   "Silent at its defaults until a trigger fires (profile).",
   "Tune and decay are bare 0–63 scales; levels go to about 200%.",
-  "Closed source: names and units come from its own descriptions and texts; the trigger columns from the repo songs' saved parameter tables."
+  "Closed source: names and units come from its own descriptions and texts; the trigger columns from the repo songs' saved parameter tables.",
+  "Neo Drums is its successor: machine_replace carries the eleven drums over (see the page)."
  ],
  "evidence": [
   "its parameter descriptions and value texts (machine_describe, as profiled)",
   "ExternalMachines/source/buzztrax-buzzmachines/Oomek/Exciter/test.bmx — a repo song using it (six do); its saved parameter table lists the 11 trigger columns",
   "ExternalMachines/source/buzztrax-buzzmachines/Oomek/Exciter/909.bmx — another",
-  "profile (tools/machine-profiler.py, windows 2026-11-03) — silent from a note: no Note parameter"
+  "profile (tools/machine-profiler.py, windows 2026-11-03) — silent from a note: no Note parameter",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - re-measured in K2 batch d"
  ],
  "tracks": 1,
  "notes": {
@@ -498,7 +500,9 @@
    "a": 0.0,
    "b": 198.4375,
    "unit": "%",
-   "description": "Level of the bass drum, 0–198% (100% at raw 128)."
+   "description": "Level of the bass drum, 0–198% (100% at raw 128).",
+   "how": "Sets the level of the bass drum, 0 to 198 percent (100 percent at raw 128, the default).",
+   "sound": "Louder or quieter bass drum against the other drums; above 100 percent it can overload the mix."
   },
   {
    "index": 1,
@@ -514,7 +518,9 @@
    "a": 0.0,
    "b": 198.4375,
    "unit": "%",
-   "description": "Level of the snare, 0–198% (100% at raw 128)."
+   "description": "Level of the snare, 0–198% (100% at raw 128).",
+   "how": "Sets the level of the snare, 0 to 198 percent (100 percent at raw 128, the default).",
+   "sound": "Louder or quieter snare against the other drums; above 100 percent it can overload the mix."
   },
   {
    "index": 2,
@@ -530,7 +536,9 @@
    "a": 0.0,
    "b": 198.4375,
    "unit": "%",
-   "description": "Level of the low tom, 0–198% (100% at raw 128)."
+   "description": "Level of the low tom, 0–198% (100% at raw 128).",
+   "how": "Sets the level of the low tom, 0 to 198 percent (100 percent at raw 128, the default).",
+   "sound": "Louder or quieter low tom against the other drums; above 100 percent it can overload the mix."
   },
   {
    "index": 3,
@@ -546,7 +554,9 @@
    "a": 0.0,
    "b": 198.4375,
    "unit": "%",
-   "description": "Level of the mid tom, 0–198% (100% at raw 128)."
+   "description": "Level of the mid tom, 0–198% (100% at raw 128).",
+   "how": "Sets the level of the mid tom, 0 to 198 percent (100 percent at raw 128, the default).",
+   "sound": "Louder or quieter mid tom against the other drums; above 100 percent it can overload the mix."
   },
   {
    "index": 4,
@@ -562,7 +572,9 @@
    "a": 0.0,
    "b": 198.4375,
    "unit": "%",
-   "description": "Level of the high tom, 0–198% (100% at raw 128)."
+   "description": "Level of the high tom, 0–198% (100% at raw 128).",
+   "how": "Sets the level of the high tom, 0 to 198 percent (100 percent at raw 128, the default).",
+   "sound": "Louder or quieter high tom against the other drums; above 100 percent it can overload the mix."
   },
   {
    "index": 5,
@@ -578,7 +590,9 @@
    "a": 0.0,
    "b": 198.4375,
    "unit": "%",
-   "description": "Level of the rim shot, 0–198% (100% at raw 128)."
+   "description": "Level of the rim shot, 0–198% (100% at raw 128).",
+   "how": "Sets the level of the rim shot, 0 to 198 percent (100 percent at raw 128, the default).",
+   "sound": "Louder or quieter rim shot against the other drums; above 100 percent it can overload the mix."
   },
   {
    "index": 6,
@@ -594,7 +608,9 @@
    "a": 0.0,
    "b": 198.4375,
    "unit": "%",
-   "description": "Level of the hand clap, 0–198% (100% at raw 128)."
+   "description": "Level of the hand clap, 0–198% (100% at raw 128).",
+   "how": "Sets the level of the hand clap, 0 to 198 percent (100 percent at raw 128, the default).",
+   "sound": "Louder or quieter hand clap against the other drums; above 100 percent it can overload the mix."
   },
   {
    "index": 7,
@@ -610,7 +626,9 @@
    "a": 0.0,
    "b": 198.4375,
    "unit": "%",
-   "description": "Level of the closed hi-hat, 0–198% (100% at raw 128)."
+   "description": "Level of the closed hi-hat, 0–198% (100% at raw 128).",
+   "how": "Sets the level of the closed hi-hat, 0 to 198 percent (100 percent at raw 128, the default).",
+   "sound": "Louder or quieter closed hi-hat against the other drums; above 100 percent it can overload the mix."
   },
   {
    "index": 8,
@@ -626,7 +644,9 @@
    "a": 0.0,
    "b": 198.4375,
    "unit": "%",
-   "description": "Level of the open hi-hat, 0–198% (100% at raw 128)."
+   "description": "Level of the open hi-hat, 0–198% (100% at raw 128).",
+   "how": "Sets the level of the open hi-hat, 0 to 198 percent (100 percent at raw 128, the default).",
+   "sound": "Louder or quieter open hi-hat against the other drums; above 100 percent it can overload the mix."
   },
   {
    "index": 9,
@@ -642,7 +662,9 @@
    "a": 0.0,
    "b": 198.4375,
    "unit": "%",
-   "description": "Level of the crash cymbal, 0–198% (100% at raw 128)."
+   "description": "Level of the crash cymbal, 0–198% (100% at raw 128).",
+   "how": "Sets the level of the crash cymbal, 0 to 198 percent (100 percent at raw 128, the default).",
+   "sound": "Louder or quieter crash cymbal against the other drums; above 100 percent it can overload the mix."
   },
   {
    "index": 10,
@@ -658,7 +680,9 @@
    "a": 0.0,
    "b": 198.4375,
    "unit": "%",
-   "description": "Level of the ride cymbal, 0–198% (100% at raw 128)."
+   "description": "Level of the ride cymbal, 0–198% (100% at raw 128).",
+   "how": "Sets the level of the ride cymbal, 0 to 198 percent (100 percent at raw 128, the default).",
+   "sound": "Louder or quieter ride cymbal against the other drums; above 100 percent it can overload the mix."
   },
   {
    "index": 11,
@@ -673,7 +697,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 63.0,
-   "description": "Pitch of the bass drum, 0–63 (no unit in its texts)."
+   "description": "Pitch of the bass drum, 0–63 (no unit in its texts).",
+   "how": "Sets the pitch of the bass drum, 0 to 63 (32 by default; the machine's texts give no unit).",
+   "sound": "A lower value is a deeper thud, a higher one a tighter, higher kick."
   },
   {
    "index": 12,
@@ -688,7 +714,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 63.0,
-   "description": "Click of the bass drum's attack, 0–63."
+   "description": "Click of the bass drum's attack, 0–63.",
+   "how": "Sets the click at the start of the bass drum, 0 to 63 (32 by default; the machine's texts give no unit).",
+   "sound": "A higher value gives a harder, clicking beater; lower is rounder."
   },
   {
    "index": 13,
@@ -703,7 +731,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 63.0,
-   "description": "Decay of the bass drum, 0–63."
+   "description": "Decay of the bass drum, 0–63.",
+   "how": "Sets the decay of the bass drum, 0 to 63 (32 by default; the machine's texts give no unit).",
+   "sound": "A higher value rings longer; lower is a short punch."
   },
   {
    "index": 14,
@@ -718,7 +748,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 63.0,
-   "description": "Pitch of the snare, 0–63 (no unit in its texts)."
+   "description": "Pitch of the snare, 0–63 (no unit in its texts).",
+   "how": "Sets the pitch of the snare, 0 to 63 (32 by default; the machine's texts give no unit).",
+   "sound": "Raises or lowers the snare's body tone."
   },
   {
    "index": 15,
@@ -733,7 +765,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 63.0,
-   "description": "Tone of the snare, 0–63."
+   "description": "Tone of the snare, 0–63.",
+   "how": "Sets the tone of the snare, 0 to 63 (32 by default; the machine's texts give no unit).",
+   "sound": "Moves the snare between a darker and a brighter character."
   },
   {
    "index": 16,
@@ -748,7 +782,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 63.0,
-   "description": "Snappy noise of the snare, 0–63."
+   "description": "Snappy noise of the snare, 0–63.",
+   "how": "Sets the amount of snappy noise in the snare, 0 to 63 (32 by default; the machine's texts give no unit).",
+   "sound": "A higher value adds more rattle and bite; lower is a duller drum."
   },
   {
    "index": 17,
@@ -763,7 +799,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 63.0,
-   "description": "Pitch of the low tom, 0–63 (no unit in its texts)."
+   "description": "Pitch of the low tom, 0–63 (no unit in its texts).",
+   "how": "Sets the pitch of the low tom, 0 to 63 (32 by default; the machine's texts give no unit).",
+   "sound": "Raises or lowers the low tom."
   },
   {
    "index": 18,
@@ -778,7 +816,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 63.0,
-   "description": "Decay of the low tom, 0–63."
+   "description": "Decay of the low tom, 0–63.",
+   "how": "Sets the decay of the low tom, 0 to 63 (32 by default; the machine's texts give no unit).",
+   "sound": "Longer values ring out; shorter are dry thumps."
   },
   {
    "index": 19,
@@ -793,7 +833,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 63.0,
-   "description": "Pitch of the mid tom, 0–63 (no unit in its texts)."
+   "description": "Pitch of the mid tom, 0–63 (no unit in its texts).",
+   "how": "Sets the pitch of the mid tom, 0 to 63 (32 by default; the machine's texts give no unit).",
+   "sound": "Raises or lowers the mid tom."
   },
   {
    "index": 20,
@@ -808,7 +850,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 63.0,
-   "description": "Decay of the mid tom, 0–63."
+   "description": "Decay of the mid tom, 0–63.",
+   "how": "Sets the decay of the mid tom, 0 to 63 (32 by default; the machine's texts give no unit).",
+   "sound": "Longer values ring out; shorter are dry thumps."
   },
   {
    "index": 21,
@@ -823,7 +867,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 63.0,
-   "description": "Pitch of the high tom, 0–63 (no unit in its texts)."
+   "description": "Pitch of the high tom, 0–63 (no unit in its texts).",
+   "how": "Sets the pitch of the high tom, 0 to 63 (32 by default; the machine's texts give no unit).",
+   "sound": "Raises or lowers the high tom."
   },
   {
    "index": 22,
@@ -838,7 +884,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 63.0,
-   "description": "Decay of the high tom, 0–63."
+   "description": "Decay of the high tom, 0–63.",
+   "how": "Sets the decay of the high tom, 0 to 63 (32 by default; the machine's texts give no unit).",
+   "sound": "Longer values ring out; shorter are dry thumps."
   },
   {
    "index": 23,
@@ -853,7 +901,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 63.0,
-   "description": "Decay of the closed hi-hat, 0–63."
+   "description": "Decay of the closed hi-hat, 0–63.",
+   "how": "Sets the decay of the closed hi-hat, 0 to 63 (32 by default; the machine's texts give no unit).",
+   "sound": "A higher value lets the closed hat ring longer; lower is a tight tick."
   },
   {
    "index": 24,
@@ -868,7 +918,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 63.0,
-   "description": "Decay of the open hi-hat, 0–63."
+   "description": "Decay of the open hi-hat, 0–63.",
+   "how": "Sets the decay of the open hi-hat, 0 to 63 (32 by default; the machine's texts give no unit).",
+   "sound": "A higher value is a longer open hat; lower chokes it short."
   },
   {
    "index": 25,
@@ -883,7 +935,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 63.0,
-   "description": "Pitch of the crash cymbal, 0–63 (no unit in its texts)."
+   "description": "Pitch of the crash cymbal, 0–63 (no unit in its texts).",
+   "how": "Sets the pitch of the crash cymbal, 0 to 63 (32 by default; the machine's texts give no unit).",
+   "sound": "Shifts the crash brighter or darker."
   },
   {
    "index": 26,
@@ -898,7 +952,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 63.0,
-   "description": "Pitch of the ride cymbal, 0–63 (no unit in its texts)."
+   "description": "Pitch of the ride cymbal, 0–63 (no unit in its texts).",
+   "how": "Sets the pitch of the ride cymbal, 0 to 63 (32 by default; the machine's texts give no unit).",
+   "sound": "Shifts the ride brighter or darker."
   },
   {
    "index": 27,
@@ -914,7 +970,9 @@
    "a": 0.0,
    "b": 0.5,
    "unit": "ticks",
-   "description": "Delays every other step, 0 to 0.5 tick (about 0.25 tick at raw 128), as its texts read."
+   "description": "Delays every other step, 0 to 0.5 tick (about 0.25 tick at raw 128), as its texts read.",
+   "how": "Delays every other step by 0 to 0.5 tick (about 0.25 tick at raw 128); 0 is off, the default.",
+   "sound": "A little delay gives the pattern a swung, shuffled feel; none leaves it straight."
   },
   {
    "index": 28,
@@ -929,7 +987,9 @@
    "kind": "linear",
    "a": 2.0,
    "b": 32.0,
-   "description": "Which steps the shuffle delays, 2–32."
+   "description": "Which steps the shuffle delays, 2–32.",
+   "how": "Chooses which steps the shuffle delays, from every 2nd to every 32nd step, 2 by default.",
+   "sound": "Wider spacing swings only some of the steps, so the shuffle is felt over longer groups."
   }
  ],
  "track_parameters": []

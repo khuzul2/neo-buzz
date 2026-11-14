@@ -2,10 +2,10 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Bigyo Wood One",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c or d) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
  "type": "monosynth",
- "summary": "Monosynth (profiled draft): pitched, plays A4 at 440 Hz as written; monophonic; takes notes in its tracks; one note at the defaults -28 LUFS.",
+ "summary": "A monophonic plucked and struck-wood synth: a noise and pulse burst excites a tuned resonator, with controls for the strike, harmonics, damping, the resonator and the envelope.",
  "category": "Synths",
  "tags": [
   "physical-model",
@@ -14,6 +14,17 @@
   "monophonic"
  ],
  "use_for": "Wooden, mallet-like plucks and tuned percussion from a resonator struck by a noise or pulse burst.",
+ "quirks": [
+  "Quiet at its defaults: one note A4 at velocity 100 measures about -28 LUFS (profile), so raise the master or Resonator gain.",
+  "It plays A4 at 440 Hz as written and is monophonic (the profile).",
+  "Noise to pulse and Even to odd are 255-step choices that read as percentage pairs (127 is 50 / 50); several others are value tables: time, frequency and dB at their stated ends.",
+  "Unverified: what Pulse colour's ratio and Inharmonicity's 0 to 5 mean in the signal path; the roles are guessed from names and texts.",
+  "Closed source: names come from its own texts and measurements, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - monophonic, A4 at 440 Hz, -28 LUFS for one note"
+ ],
  "tracks": 16,
  "notes": {
   "input": "tracks",
@@ -249,6 +260,8 @@
    "index": 0,
    "id": "Noise / Pulse",
    "name": "Noise / Pulse",
+   "plain_name": "Noise to pulse mix",
+   "role": "osc.mix",
    "group": "",
    "min": 0,
    "max": 254,
@@ -512,12 +525,14 @@
     "0.0 / 100.0 %"
    ],
    "description": "Noise / Pulse (00 = 100/0%, 7F = 50/50%, FE =0/100%) default: 7F",
-   "confidence": "values"
+   "how": "Mixes the noise and pulse excitation that strikes the resonator, from all noise at 0 through an even mix at 127 (the default) to all pulse at 254.",
+   "sound": "More noise is a breathy, hissy strike; more pulse is a clicky, pitched one."
   },
   {
    "index": 1,
    "id": "Noise Time",
    "name": "Noise Time",
+   "plain_name": "Noise time",
    "group": "",
    "min": 0,
    "max": 254,
@@ -1039,14 +1054,14 @@
     ]
    ],
    "description": "Noise Time (00 = 0.001s, 7F = 0.313s, FE = 10s) default: 10",
-   "confidence": "values",
-   "suggested_role": "filter.cutoff",
-   "role_evidence": "the brightness (centroid) 502 Hz → 2.86 kHz"
+   "how": "Sets the length of the noise burst, from 1 ms through about 4.5 ms at the default to 10 s (a table).",
+   "sound": "A short burst is a sharp tick; a long one is a sustained scrape that keeps feeding the resonator."
   },
   {
    "index": 2,
    "id": "Pulse Color",
    "name": "Pulse Color",
+   "plain_name": "Pulse colour",
    "group": "",
    "min": 0,
    "max": 254,
@@ -1567,14 +1582,14 @@
     ]
    ],
    "description": "Pulse Color (00-FE) default: 7F",
-   "confidence": "values",
-   "suggested_role": "filter.env_amount",
-   "role_evidence": "the start's brightness 380 Hz → 1.49 kHz (RMS frequency), the held part's 228 Hz → 448 Hz"
+   "how": "Sets the colour of the pulse excitation as a ratio, about 2 at 0 up to 20 at 254 (about 4 at the default).",
+   "sound": "It moves the pulse from a duller to a brighter click; the exact meaning of the number was not measured."
   },
   {
    "index": 3,
    "id": "Even / Odd",
    "name": "Even / Odd",
+   "plain_name": "Even to odd harmonics",
    "group": "",
    "min": 0,
    "max": 254,
@@ -1838,12 +1853,14 @@
     "0.0 / 100.0 %"
    ],
    "description": "Even / Odd Harmonics (00 = 100/0%, 7F = 50/50%, FE = 0/100%) default: 7F",
-   "confidence": "values"
+   "how": "Mixes even and odd harmonics, all even at 0, equal at 127 (the default), all odd at 254.",
+   "sound": "Even harmonics sound fuller and rounder; odd ones hollow and woody, like a clarinet."
   },
   {
    "index": 4,
    "id": "Inharmonicity",
    "name": "Inharmonicity",
+   "plain_name": "Inharmonicity",
    "group": "",
    "min": 0,
    "max": 254,
@@ -2363,15 +2380,15 @@
      5.0
     ]
    ],
-   "description": "",
-   "confidence": "values",
-   "suggested_role": "pitch.coarse",
-   "role_evidence": "the pitch moves +21.7 semitones"
+   "description": "Stretches the partials away from exact multiples of the pitch, from 0 (none, the default) up to 5 at 254.",
+   "how": "Stretches the partials away from exact multiples of the pitch, from 0 (none, the default) up to 5 at 254.",
+   "sound": "Small amounts add a bell- or wood-block-like colour; larger ones turn the pitch clangorous."
   },
   {
    "index": 5,
    "id": "Damping",
    "name": "Damping",
+   "plain_name": "Damping frequency",
    "group": "",
    "min": 0,
    "max": 254,
@@ -2893,14 +2910,14 @@
     ]
    ],
    "description": "Damping (00 = 250Hz, 7F = 6kHz, FE = 22kHz) default: 7F",
-   "confidence": "values",
-   "suggested_role": "pitch.fine",
-   "role_evidence": "the pitch moves -90 cents"
+   "how": "Sets the frequency above which the ringing is damped, from 250 Hz at 0 through about 5.9 kHz at the default to 22 kHz at 254.",
+   "sound": "A lower value mutes the highs quickly for a dull, dead wood; a higher one lets them ring."
   },
   {
    "index": 6,
    "id": "Brightness",
    "name": "Brightness",
+   "plain_name": "Brightness",
    "group": "",
    "min": 0,
    "max": 254,
@@ -3422,14 +3439,14 @@
     ]
    ],
    "description": "Brightness (00-FE) default: 7F",
-   "confidence": "values",
-   "suggested_role": "filter.env_amount",
-   "role_evidence": "the start's brightness 152 Hz → 2.3 kHz (RMS frequency), the held part's 186 Hz → 305 Hz"
+   "how": "Sets the brightness of the strike, from 100 Hz at 0 through about 1 kHz at the default to 10 kHz at 254.",
+   "sound": "A higher value is a brighter attack; a lower one a soft, muffled mallet."
   },
   {
    "index": 7,
    "id": "Resonator F",
    "name": "Resonator F",
+   "plain_name": "Resonator frequency",
    "group": "",
    "min": 0,
    "max": 254,
@@ -3951,14 +3968,14 @@
     ]
    ],
    "description": "Resonator Freq (00 = 20Hz, 7F = 640Hz, FE = 20kHz) default: 7F",
-   "confidence": "values",
-   "suggested_role": "env.decay",
-   "role_evidence": "the level falls half way in 5 ms → 5 ms (the default 10 ms) to the same held level"
+   "how": "Sets the centre frequency of the resonator, from 20 Hz at 0 through about 620 Hz at the default to 20 kHz at 254.",
+   "sound": "It tunes the body that colours the note: low is a boomy box, high a thin tick."
   },
   {
    "index": 8,
    "id": "Resonator Q",
    "name": "Resonator Q",
+   "plain_name": "Resonator Q",
    "group": "",
    "min": 0,
    "max": 254,
@@ -4479,14 +4496,14 @@
     ]
    ],
    "description": "Resonator Q (00 = 0.0625, 7F = 1.0, FE = 16) default: 7F",
-   "confidence": "values",
-   "suggested_role": "env.decay",
-   "role_evidence": "the level falls half way in 5 ms → 10 ms (the default 10 ms) to the same held level"
+   "how": "Sets the resonator's Q, from 0.0625 at 0 through about 1 at the default to 16 at 254.",
+   "sound": "A higher Q rings and whistles at the resonator frequency; a low one is broad and gentle."
   },
   {
    "index": 9,
    "id": "Resonator G",
    "name": "Resonator G",
+   "plain_name": "Resonator gain",
    "group": "",
    "min": 0,
    "max": 254,
@@ -5008,14 +5025,15 @@
     ]
    ],
    "description": "Resonator Gain (00 = -40dB, 7F = 0dB, FE = 40dB) default: 7F",
-   "confidence": "values",
-   "suggested_role": "level",
-   "role_evidence": "the level +29 dB, the sound otherwise alike"
+   "how": "Sets the resonator's gain, from -40 dB at 0 through about 0 dB at the default to +40 dB at 254.",
+   "sound": "More gain makes the body louder against the dry strike; at the top it can overload the output."
   },
   {
    "index": 10,
    "id": "Decay",
    "name": "Decay",
+   "plain_name": "Decay",
+   "role": "env.decay",
    "group": "",
    "min": 0,
    "max": 254,
@@ -5537,14 +5555,15 @@
     ]
    ],
    "description": "Decay Time (00 = 0.001s, 7F = 2.5s, FE = 10s) default: 7F",
-   "confidence": "values",
-   "suggested_role": "filter.cutoff",
-   "role_evidence": "the brightness (centroid) 41 Hz → 496 Hz"
+   "how": "Sets how long the sound takes to fade after the strike, from 1 ms at 0 through about 2.5 s at the default to 10 s at 254.",
+   "sound": "A short decay is a muted block; a long one is a ringing bar or string."
   },
   {
    "index": 11,
    "id": "Release",
    "name": "Release",
+   "plain_name": "Release",
+   "role": "env.release",
    "group": "",
    "min": 0,
    "max": 254,
@@ -6066,9 +6085,8 @@
     ]
    ],
    "description": "Release Time (00 = 0.001s, 7F = 0.25s, FE = 2.5s) default: 50",
-   "confidence": "values",
-   "suggested_role": "env.release",
-   "role_evidence": "the release 15 ms → 315 ms"
+   "how": "Sets how long the sound takes to die after the note ends, from 1 ms at 0 through about 87 ms at the default (80) to 2.5 s at 254.",
+   "sound": "A short release stops the note abruptly; a long one lets it tail away."
   }
  ],
  "track_parameters": []

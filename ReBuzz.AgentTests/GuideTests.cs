@@ -305,9 +305,9 @@ namespace ReBuzz.AgentTests
         [Test]
         public void EveryNeoMachineHasACuratedPageAndAManual()
         {
-            // K2: and every machine of a finished family (KnowledgeFamilies: the Pedal machines), which has a curated manifest too.
+            // K2: and every other packaged machine but Dye Essence (KnowledgeFamilies), each with a curated manifest too.
             var family = CuratedManifestTests.Curated().Keys.Where(KnowledgeFamilies.Covers).ToArray();
-            Assert.That(family.Length, Is.GreaterThanOrEqualTo(19));
+            Assert.That(family.Length, Is.GreaterThanOrEqualTo(98));
             var pages = NeoGear.Concat(family).ToArray();
             Assert.That(MachineManual.CuratedGear, Is.EquivalentTo(pages));
             Assert.That(Manifests().Keys, Is.EquivalentTo(NeoGear));
@@ -317,7 +317,7 @@ namespace ReBuzz.AgentTests
                 Assert.That(curated, Does.StartWith("## How it sounds"), gear);
                 Assert.That(MachineManual.Curated(MachineManual.Slug(gear)), Is.EqualTo(curated), "found by its slug too");
             }
-            Assert.That(MachineManual.Curated("Rout 909"), Is.Null, "a curated machine of a family not done yet has no page");
+            Assert.That(MachineManual.Curated("No Such Machine"), Is.Null, "a machine that is not there has no page");
             Assert.That(MachineManual.Slug("Neo FM6"), Is.EqualTo("neo-fm6"));
             Assert.That(MachineManual.UriFor("Neo Poly"), Is.EqualTo("rebuzz://machines/neo-poly/manual"));
             Assert.That(MachineManual.SlugOf("rebuzz://machines/Neo%20Poly/manual"), Is.EqualTo("neo-poly"));
@@ -777,7 +777,7 @@ namespace ReBuzz.AgentTests
             var both = TestTools.CallTool(server, "guide", new JsonObject { ["machine"] = "Neo Verb", ["topic"] = "mixing" });
             Assert.That(both.Error, Is.True);
             var list = TestTools.CallTool(server, "guide", new JsonObject());
-            Assert.That(list.Data["manuals"]!.AsArray().Count, Is.EqualTo(NeoGear.Length + CuratedManifestTests.Curated().Keys.Count(KnowledgeFamilies.Covers)), "a page per Neo machine and per machine of a finished family");
+            Assert.That(list.Data["manuals"]!.AsArray().Count, Is.EqualTo(NeoGear.Length + CuratedManifestTests.Curated().Keys.Count(KnowledgeFamilies.Covers)), "a page per Neo machine and per other packaged machine");
             Assert.That(TestTools.CallTool(server, "guide", new JsonObject { ["topic"] = "mastering" }).Data["markdown"]!.GetValue<string>(), Does.StartWith("# Mastering"));
 
             // With the ReBuzz side's provider, the full manual (manifest and presets) is served.
@@ -796,9 +796,9 @@ namespace ReBuzz.AgentTests
             var server2 = new McpServer(new ServerInfo { Name = "t", Title = "t", Version = "1" }, gear);
             var listed = TestTools.CallTool(server2, "guide", new JsonObject()).Data["manuals"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
             Assert.That(listed, Is.SupersetOf(profiled.Keys).And.SupersetOf(NeoGear));
-            var draft = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "bigyo wood one" });   // a draft: K2 batch b curated the Jeskola ones
+            var draft = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "bigyo wood one" });   // a draft: none left, K2 batch d curated the last
             Assert.That(draft.Error, Is.False, draft.Text);
-            Assert.That(draft.Data["markdown"]!.GetValue<string>(), Does.StartWith("# Bigyo Wood One manual").And.Contain("profiled draft"));
+            Assert.That(draft.Data["markdown"]!.GetValue<string>(), Does.StartWith("# Bigyo Wood One manual").And.Contain("exact units from a curated manifest"));
             var sh101 = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "Pedal SH101" }).Data["markdown"]!.GetValue<string>();
             Assert.That(sh101, Does.Contain("**Filter cutoff** (`filter.cutoff`)").And.Contain("## Quirks"));
             var typo = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "Pedal SH-1O1" });
