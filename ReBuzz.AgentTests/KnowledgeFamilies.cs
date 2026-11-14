@@ -1,24 +1,18 @@
-// Fork (docs/specs/agent-knowledge.md, K2): the machine families whose knowledge is done, so that every machine in them is
-// held to the same standard as the Neo machines: a curated manifest (exact mappings, plain names, quirks, evidence), Explain text
-// (How and Sound) on every parameter, and a page on the §4 template. The later batches of K2 add their family here (Jeskola,
-// FSM and Oomek, Polac and Joachims, ReBuzz's own machines and the rest); a machine of a family that has no page or no curated
-// manifest fails CuratedManifestTests, GuideTests, ExplainTextTests and KnowledgeBudgetTests.
+// Fork (docs/specs/agent-knowledge.md, K2): K2 is done, so every packaged machine except the Neo machines and Dye Essence (whose
+// manifests live beside their sources and whose pages K1 and the Neo work wrote) is held to the same standard: a curated manifest
+// (exact mappings, plain names, quirks, evidence), Explain text (How and Sound) on every parameter, and a page on the §4 template.
+// K2's batches covered the Pedal, Jeskola, FSM, Oomek, Polac and Joachims families, ReBuzz's own machines, Rout 909 and the single-machine
+// families (batch d). A machine that has no page or no curated manifest fails CuratedManifestTests, GuideTests, ExplainTextTests and
+// KnowledgeBudgetTests; a machine added later that is not a Neo machine needs the same.
 namespace ReBuzz.AgentTests
 {
     internal static class KnowledgeFamilies
     {
-        /// <summary>Gear name prefixes of the families done so far (K2 batch a: the Pedal machines; batch b: the Jeskola machines; batch c: the FSM, Oomek, Polac and Joachims machines).</summary>
-        public static readonly string[] Prefixes =
-        {
-            "Pedal ",
-            "Jeskola ",
-            "FSM ",
-            "Oomek ",
-            "Polac ",
-            "Joachims ",
-        };
+        /// <summary>The machines that are not held to the packaged-machine standard here: the Neo machines (Neo ...) and Dye Essence.</summary>
+        public static bool IsNeoOrDye(string gear) =>
+            gear.StartsWith("Neo ", StringComparison.OrdinalIgnoreCase) || string.Equals(gear, "Dye Essence", StringComparison.OrdinalIgnoreCase);
 
-        /// <summary>Whether a machine belongs to a family that is done.</summary>
-        public static bool Covers(string gear) => Prefixes.Any(p => gear.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+        /// <summary>Whether a machine is a packaged machine that is not Neo or Dye: all of them are done (K2).</summary>
+        public static bool Covers(string gear) => !IsNeoOrDye(gear);
     }
 }

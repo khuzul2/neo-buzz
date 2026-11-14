@@ -2,10 +2,10 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "mixIO",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c or d) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
  "type": "utility",
- "summary": "Utility (profiled draft): traits: utility; tail 0.0 s; latency 0 samples; gain +0.0 dB at the defaults.",
+ "summary": "A multi-input mixer with per-track gain from silence to +12 dB, stereo width, mute and solo, and gliding times for each. Neo Utility covers a single stream's gain, width and polarity.",
  "category": "Utility",
  "tags": [
   "mixing",
@@ -13,6 +13,17 @@
   "stereo-width"
  ],
  "use_for": "Per-track gain, width, mute and solo for balancing several inputs.",
+ "quirks": [
+  "A pass-through with one clean input at its defaults (profile: 0 dB, no latency); at its gain maximum (+12 dB) it peaks above 0 dBFS (hot).",
+  "Gain is a table: silence at 0, about 0 dB at 45,875 (the default), +12 dB at 65,534.",
+  "The glide times are in ticks, 16,384 raw being one tick; the profile found no Pan parameter, though one glide time is named for it.",
+  "Unverified: how its 32 tracks map onto several connected inputs (the profile fed one input).",
+  "Closed source (a prebuilt DLL): names come from its own texts, its DLL's type names and the profile, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - 0 dB at the defaults, no latency; hot at the maximum gain"
+ ],
  "tracks": 32,
  "health": {
   "status": "warn",
@@ -29,7 +40,7 @@
    "tail_seconds": 0.0,
    "echoes": 0,
    "output_correlation": 1.0,
-   "spectrum_spread_db": 0.0,
+   "spectrum_spread_db": 0.1,
    "tilt_db": 0.0,
    "sine": {
     "loud": {
@@ -42,7 +53,7 @@
      "gain_db": 0.0,
      "thd_percent": 1.96,
      "thd_in_percent": 1.96,
-     "movement_db": 0.14
+     "movement_db": 0.13
     }
    },
    "traits": [
@@ -375,8 +386,8 @@
   "sweeps": {
    "Gain": {
     "max": {
-     "peak_dbfs": 2.8,
-     "growth_db": 0.21,
+     "peak_dbfs": 2.78,
+     "growth_db": -0.15,
      "verdict": "hot",
      "raw": 65534,
      "text": "+12.00 dB"
@@ -526,6 +537,8 @@
    "index": 0,
    "id": "Gain",
    "name": "Gain",
+   "plain_name": "Gain",
+   "role": "level",
    "group": "",
    "min": 0,
    "max": 65534,
@@ -533,6 +546,10 @@
    "kind": "table",
    "unit": "dB",
    "points": [
+    [
+     0,
+     "-inf"
+    ],
     [
      64,
      -221.2
@@ -1051,28 +1068,31 @@
     ]
    ],
    "description": "Gain (0000=Silence, B333=0dB, FFFE=+12dB)",
-   "confidence": "values",
-   "suggested_role": "level",
-   "role_evidence": "silent at one end, the level -120 → +12 dB"
+   "how": "Sets the gain of this track's input, a table from silence at 0 up to +12 dB at 65,534, with about 0 dB at 45,875 (the default).",
+   "sound": "A level control per channel: raise it to push one input forward, and note +12 dB can clip the mix."
   },
   {
    "index": 0,
    "id": "Stereo Width",
    "name": "Stereo Width",
+   "plain_name": "Stereo width",
    "group": "",
    "min": 0,
    "max": 65534,
    "default": 32768,
    "kind": "linear",
-   "a": 1.3e-05,
-   "b": 1.99994,
+   "a": 0.0,
+   "b": 200.0,
    "description": "Stereo Width (0000=Mono, 8000=Stereo, FFFE=Very Wide)",
-   "confidence": "values"
+   "unit": "%",
+   "how": "Sets the stereo width of this track's input, from mono at 0 through unchanged at 32,768 (the default) to twice as wide at 65,534.",
+   "sound": "Narrower collapses the input toward the centre; wider spreads its sides apart."
   },
   {
    "index": 0,
    "id": "Inertia Gain",
    "name": "Inertia Gain",
+   "plain_name": "Gain glide",
    "group": "",
    "min": 0,
    "max": 65534,
@@ -1542,12 +1562,14 @@
     ]
    ],
    "description": "Inertia Gain (4000 = 1 Tick)",
-   "confidence": "values"
+   "how": "Sets how long a gain change takes to glide, from 0 up to about 7,700 ticks, with 16,384 meaning one tick (the default).",
+   "sound": "A longer time turns an abrupt gain change into a smooth fade; 0 jumps."
   },
   {
    "index": 0,
    "id": "Inertia Pan",
    "name": "Inertia Pan",
+   "plain_name": "Pan glide",
    "group": "",
    "min": 0,
    "max": 65534,
@@ -2017,12 +2039,14 @@
     ]
    ],
    "description": "Inertia Pan (4000 = 1 Tick)",
-   "confidence": "values"
+   "how": "Sets how long a pan change takes to glide, from 0 up to about 7,700 ticks, 16,384 being one tick (the default).",
+   "sound": "It smooths pan moves; the profile found no pan parameter on the machine, so what it smooths was not measured."
   },
   {
    "index": 0,
    "id": "Inertia Width",
    "name": "Inertia Width",
+   "plain_name": "Width glide",
    "group": "",
    "min": 0,
    "max": 65534,
@@ -2492,12 +2516,14 @@
     ]
    ],
    "description": "Inertia Width (4000 = 1 Tick)",
-   "confidence": "values"
+   "how": "Sets how long a width change takes to glide, from 0 up to about 7,700 ticks, 16,384 being one tick (the default).",
+   "sound": "A longer time lets the stereo image open and close smoothly."
   },
   {
    "index": 0,
    "id": "Inertia Mute",
    "name": "Inertia Mute",
+   "plain_name": "Mute and solo glide",
    "group": "",
    "min": 0,
    "max": 65534,
@@ -2967,12 +2993,15 @@
     ]
    ],
    "description": "Inertia Mute / Solo (4000 = 1 Tick)",
-   "confidence": "values"
+   "how": "Sets how long a mute or solo change takes to fade, from 0 up to about 7,700 ticks, 16,384 being one tick (the default).",
+   "sound": "It removes the click of cutting an input in or out."
   },
   {
    "index": 0,
    "id": "Mute",
    "name": "Mute",
+   "plain_name": "Mute",
+   "role": "bypass",
    "group": "",
    "min": 0,
    "max": 1,
@@ -2983,14 +3012,14 @@
     "ON"
    ],
    "description": "Mute (0 = Unmute, 1=Mute)",
-   "confidence": "values",
-   "suggested_role": "bypass",
-   "role_evidence": "one setting passes the signal unchanged (its minimum)"
+   "how": "Mutes this track's input: OFF (the default) or ON.",
+   "sound": "At ON that input goes silent in the mix."
   },
   {
    "index": 0,
    "id": "Solo",
    "name": "Solo",
+   "plain_name": "Solo",
    "group": "",
    "min": 0,
    "max": 1,
@@ -3001,7 +3030,8 @@
     "ON"
    ],
    "description": "Solo (0 = No Solo, 1=Solo)",
-   "confidence": "values"
+   "how": "Solos this track's input: OFF (the default) or ON.",
+   "sound": "At ON the soloed inputs are heard and the others are silenced."
   }
  ]
 }

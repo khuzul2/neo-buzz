@@ -2,15 +2,26 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Yitten Mongoose",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c or d) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
  "type": "control",
- "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "summary": "A control machine with a window that works on several patterns together and a Bar length from 1 to 128. It makes no sound. It cannot open its own window in this host.",
  "category": "Control",
  "tags": [
   "sequencer"
  ],
  "use_for": "An older control machine steered by a Bar control; it makes no sound of its own.",
+ "quirks": [
+  "It makes no sound. Its DLL names a multi-pattern view and 'play all patterns'; its Bar parameter is the same shape as the one on Jeskola Live. What each does was not measured: unverified.",
+  "Its window subscribes to sequence events that this host changed, so its own window cannot load here (ReBuzzTests PrebuiltMachineBindingTests lists it as a known break); its parameter is still usable.",
+  "Closed source (a prebuilt DLL): names come from its own texts, its DLL's type names and the profile, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "RunTime/Gear/Generators/Yitten Mongoose.NET.dll — type and member names read from the DLL (multi-pattern view, play all patterns and bar change)",
+  "ReBuzzTests/PrebuiltMachineBindingTests.cs — the known break of its sequence events",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - a control machine, no sound"
+ ],
  "tracks": 0,
  "health": {
   "status": "ok",
@@ -22,6 +33,7 @@
    "index": 0,
    "id": "Bar",
    "name": "Bar",
+   "plain_name": "Bar length",
    "group": "",
    "min": 1,
    "max": 128,
@@ -29,8 +41,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 128.0,
-   "description": "",
-   "confidence": "values"
+   "description": "Sets a bar length, 1 to 128 (16 by default); what it measures in this machine was not found.",
+   "how": "Sets a bar length, 1 to 128 (16 by default); what it measures in this machine was not found.",
+   "sound": "It makes no sound; the machine shows several patterns of the song together in its own window."
   }
  ],
  "track_parameters": []

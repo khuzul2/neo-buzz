@@ -4,7 +4,7 @@
   "AudioBlock": {
    "gear": "AudioBlock",
    "kind": "generator",
-   "load_seconds": 0.07,
+   "load_seconds": 0.11,
    "gear_info": {
     "file": "Generators/AudioBlock.NET.dll",
     "managed": true,
@@ -38,9 +38,9 @@
      }
     }
    },
-   "seconds": 0.3,
+   "seconds": 0.6,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [
     "no sound from a MIDI note at its defaults (it has no Note track parameter)"
@@ -92,7 +92,7 @@
     "sample_peak_dbfs": -13.84,
     "true_peak_dbtp": -13.75
    },
-   "cpu_ms_per_s": 3.4,
+   "cpu_ms_per_s": 14.6,
    "type": "monosynth",
    "level_test": {
     "defaults": {
@@ -303,26 +303,26 @@
     "renders": 29
    },
    "denormal": {
-    "playing_ms_per_s": 11.442,
-    "silent_ms_per_s": 5.175,
-    "silent_worst_ms_per_s": 5.701,
+    "playing_ms_per_s": 19.055,
+    "silent_ms_per_s": 10.384,
+    "silent_worst_ms_per_s": 11.018,
     "windows_ms_per_s": [
-     11.442,
-     5.701,
-     5.274,
-     5.185,
-     5.175,
-     5.112,
-     5.141,
-     5.139,
-     5.142,
-     5.179,
-     5.151
+     19.055,
+     11.018,
+     10.206,
+     10.471,
+     10.404,
+     10.383,
+     10.292,
+     10.384,
+     10.604,
+     10.269,
+     10.253
     ]
    },
-   "seconds": 4.5,
+   "seconds": 8.0,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -334,7 +334,7 @@
    "gear": "BTDSys PeerChord",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.03,
+   "load_seconds": 0.05,
    "gear_info": {
     "file": "Generators/BTDSys PeerChord.x64.dll",
     "managed": false,
@@ -348,9 +348,9 @@
    "inferred": 20,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.2,
+   "seconds": 0.4,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -365,7 +365,7 @@
    "gear": "Connection Mixer Console",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.06,
+   "load_seconds": 0.07,
    "gear_info": {
     "file": "Generators/Connection Mixer Console.NET.dll",
     "managed": true,
@@ -379,9 +379,9 @@
    "inferred": 32,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.3,
+   "seconds": 0.5,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -410,9 +410,9 @@
    "inferred": 1,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.0,
+   "seconds": 0.1,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -565,7 +565,7 @@
       "gain_db": 0.0,
       "thd_percent": 1.96,
       "thd_in_percent": 1.96,
-      "movement_db": 0.14
+      "movement_db": 0.13
      }
     },
     "traits": [
@@ -893,13 +893,13 @@
     },
     "all_at_once": {
      "min": {
-      "peak_dbfs": -9.15,
-      "growth_db": 0.23,
+      "peak_dbfs": -9.22,
+      "growth_db": -0.15,
       "verdict": "ok"
      },
      "max": {
-      "peak_dbfs": -9.2,
-      "growth_db": 0.21,
+      "peak_dbfs": -9.22,
+      "growth_db": -0.15,
       "verdict": "ok"
      }
     }
@@ -978,26 +978,26 @@
     "renders": 10
    },
    "denormal": {
-    "playing_ms_per_s": 0.353,
-    "silent_ms_per_s": 0.407,
-    "silent_worst_ms_per_s": 0.411,
+    "playing_ms_per_s": 0.436,
+    "silent_ms_per_s": 0.508,
+    "silent_worst_ms_per_s": 0.572,
     "windows_ms_per_s": [
-     0.353,
-     0.399,
-     0.411,
-     0.405,
-     0.407,
-     0.395,
-     0.399,
-     0.407,
-     0.393,
-     0.409,
-     0.409
+     0.436,
+     0.485,
+     0.547,
+     0.572,
+     0.496,
+     0.492,
+     0.508,
+     0.505,
+     0.564,
+     0.501,
+     0.516
     ]
    },
-   "seconds": 3.9,
+   "seconds": 6.5,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -1009,7 +1009,7 @@
    "gear": "EnvelopeBlock",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.02,
+   "load_seconds": 0.06,
    "gear_info": {
     "file": "Generators/EnvelopeBlock.NET.dll",
     "managed": true,
@@ -1023,9 +1023,9 @@
    "inferred": 1,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.0,
+   "seconds": 0.1,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -5983,7 +5983,7 @@
    "gear": "GuitarChordBox",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.01,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Generators/GuitarChordBox.NET.dll",
     "managed": true,
@@ -5998,9 +5998,9 @@
    "inferred": 12,
    "from_description": 6,
    "type": "control",
-   "seconds": 0.1,
+   "seconds": 0.2,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -6015,7 +6015,7 @@
    "gear": "Info",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.05,
+   "load_seconds": 0.06,
    "gear_info": {
     "file": "Generators/Info.NET.dll",
     "managed": true,
@@ -6029,9 +6029,9 @@
    "inferred": 1,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.1,
+   "seconds": 0.2,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -6045,7 +6045,7 @@
   "Intoxicat ACloud15": {
    "gear": "Intoxicat ACloud15",
    "kind": "generator",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Generators/Intoxicat ACloud15.dll",
     "managed": false,
@@ -6078,9 +6078,9 @@
      }
     }
    },
-   "seconds": 5.8,
+   "seconds": 11.0,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [
     "no sound from a MIDI note at its defaults (it has no Note track parameter)"
@@ -19296,9 +19296,9 @@
    "inferred": 5,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.1,
+   "seconds": 0.2,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -19312,7 +19312,7 @@
   "kibibu Green Milk": {
    "gear": "kibibu Green Milk",
    "kind": "generator",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Generators/kibibu Green Milk.dll",
     "managed": false,
@@ -19351,7 +19351,7 @@
     "sample_peak_dbfs": -1.85,
     "true_peak_dbtp": -1.84
    },
-   "cpu_ms_per_s": 4.9,
+   "cpu_ms_per_s": 16.9,
    "type": "monosynth",
    "level_test": {
     "defaults": {
@@ -19877,26 +19877,26 @@
     "renders": 105
    },
    "denormal": {
-    "playing_ms_per_s": 18.111,
-    "silent_ms_per_s": 5.314,
-    "silent_worst_ms_per_s": 9.981,
+    "playing_ms_per_s": 27.834,
+    "silent_ms_per_s": 11.953,
+    "silent_worst_ms_per_s": 13.124,
     "windows_ms_per_s": [
-     18.111,
-     5.314,
-     8.721,
-     9.981,
-     6.211,
-     5.164,
-     5.155,
-     5.247,
-     5.145,
-     5.509,
-     5.173
+     27.834,
+     12.134,
+     11.542,
+     11.909,
+     11.723,
+     13.108,
+     13.124,
+     11.953,
+     11.81,
+     12.066,
+     11.917
     ]
    },
-   "seconds": 13.7,
+   "seconds": 21.7,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -19945,7 +19945,7 @@
     "sample_peak_dbfs": -9.03,
     "true_peak_dbtp": -7.95
    },
-   "cpu_ms_per_s": 2.9,
+   "cpu_ms_per_s": 14.4,
    "type": "polysynth",
    "level_test": {
     "defaults": {
@@ -20137,26 +20137,26 @@
     "renders": 27
    },
    "denormal": {
-    "playing_ms_per_s": 6.218,
-    "silent_ms_per_s": 5.197,
-    "silent_worst_ms_per_s": 5.473,
+    "playing_ms_per_s": 12.741,
+    "silent_ms_per_s": 10.248,
+    "silent_worst_ms_per_s": 13.042,
     "windows_ms_per_s": [
-     6.218,
-     5.183,
-     5.219,
-     5.237,
-     5.022,
-     5.473,
-     5.241,
-     5.06,
-     5.073,
-     5.197,
-     5.116
+     12.741,
+     13.042,
+     11.657,
+     10.149,
+     10.569,
+     10.383,
+     10.242,
+     10.137,
+     10.248,
+     10.173,
+     10.108
     ]
    },
-   "seconds": 4.1,
+   "seconds": 7.8,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -20199,7 +20199,7 @@
       "gain_db": 0.0,
       "thd_percent": 1.96,
       "thd_in_percent": 1.96,
-      "movement_db": 0.14
+      "movement_db": 0.13
      }
     },
     "traits": [
@@ -20517,7 +20517,7 @@
     },
     "thd_percent": 2.38
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 4.0,
    "type": "utility",
    "level_test": {
     "defaults": {
@@ -20527,13 +20527,13 @@
     },
     "all_at_once": {
      "min": {
-      "peak_dbfs": -9.15,
-      "growth_db": 0.23,
+      "peak_dbfs": -9.22,
+      "growth_db": -0.15,
       "verdict": "ok"
      },
      "max": {
-      "peak_dbfs": -9.2,
-      "growth_db": 0.21,
+      "peak_dbfs": -9.22,
+      "growth_db": -0.15,
       "verdict": "ok"
      }
     },
@@ -20570,11 +20570,11 @@
       "evidence": "no measurable change between its ends with the others at their defaults",
       "min": {
        "raw": 100,
-       "text": "100"
+       "text": "100 ms"
       },
       "max": {
        "raw": 2000,
-       "text": "2000"
+       "text": "2 s"
       }
      },
      "Delay Feedback": {
@@ -20582,11 +20582,11 @@
       "evidence": "no measurable change between its ends with the others at their defaults",
       "min": {
        "raw": 0,
-       "text": "0"
+       "text": "0%"
       },
       "max": {
        "raw": 100,
-       "text": "100"
+       "text": "100%"
       }
      },
      "Noise Volume": {
@@ -20594,37 +20594,37 @@
       "evidence": "no measurable change between its ends with the others at their defaults",
       "min": {
        "raw": 0,
-       "text": "0"
+       "text": "0%"
       },
       "max": {
        "raw": 100,
-       "text": "100"
+       "text": "100%"
       }
      }
     },
     "renders": 14
    },
    "denormal": {
-    "playing_ms_per_s": 0.613,
-    "silent_ms_per_s": 0.709,
-    "silent_worst_ms_per_s": 0.725,
+    "playing_ms_per_s": 0.66,
+    "silent_ms_per_s": 0.807,
+    "silent_worst_ms_per_s": 0.958,
     "windows_ms_per_s": [
-     0.613,
-     0.679,
-     0.722,
-     0.693,
-     0.711,
-     0.714,
-     0.709,
-     0.703,
-     0.725,
-     0.678,
-     0.681
+     0.66,
+     0.818,
+     0.776,
+     0.794,
+     0.765,
+     0.807,
+     0.803,
+     0.77,
+     0.832,
+     0.844,
+     0.958
     ]
    },
-   "seconds": 5.0,
+   "seconds": 9.6,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -20635,7 +20635,7 @@
   "Matilde Tracker2": {
    "gear": "Matilde Tracker2",
    "kind": "generator",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Generators/Matilde Tracker2.dll",
     "managed": false,
@@ -20675,7 +20675,7 @@
     "sample_peak_dbfs": -10.78,
     "true_peak_dbtp": -10.78
    },
-   "cpu_ms_per_s": 3.4,
+   "cpu_ms_per_s": 14.4,
    "type": "monosynth",
    "level_test": {
     "defaults": {
@@ -20813,26 +20813,26 @@
     "renders": 8
    },
    "denormal": {
-    "playing_ms_per_s": 10.677,
-    "silent_ms_per_s": 5.489,
-    "silent_worst_ms_per_s": 5.714,
+    "playing_ms_per_s": 19.645,
+    "silent_ms_per_s": 11.265,
+    "silent_worst_ms_per_s": 13.787,
     "windows_ms_per_s": [
-     10.677,
-     5.492,
-     5.356,
-     5.473,
-     5.393,
-     5.588,
-     5.422,
-     5.489,
-     5.714,
-     5.516,
-     5.411
+     19.645,
+     11.265,
+     11.139,
+     11.359,
+     11.462,
+     11.23,
+     13.787,
+     12.174,
+     10.733,
+     11.182,
+     10.505
     ]
    },
-   "seconds": 2.7,
+   "seconds": 5.9,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -20845,7 +20845,7 @@
   "mixIO": {
    "gear": "mixIO",
    "kind": "effect",
-   "load_seconds": 0.03,
+   "load_seconds": 0.04,
    "gear_info": {
     "file": "Effects/mixIO.dll",
     "managed": false,
@@ -20863,7 +20863,7 @@
     "tail_seconds": 0.0,
     "echoes": 0,
     "output_correlation": 1.0,
-    "spectrum_spread_db": 0.0,
+    "spectrum_spread_db": 0.1,
     "tilt_db": 0.0,
     "sine": {
      "loud": {
@@ -20876,7 +20876,7 @@
       "gain_db": 0.0,
       "thd_percent": 1.96,
       "thd_in_percent": 1.96,
-      "movement_db": 0.14
+      "movement_db": 0.13
      }
     },
     "traits": [
@@ -21194,7 +21194,7 @@
     },
     "thd_percent": 2.38
    },
-   "cpu_ms_per_s": 3.8,
+   "cpu_ms_per_s": 23.1,
    "type": "utility",
    "level_test": {
     "defaults": {
@@ -21211,8 +21211,8 @@
    "sweeps": {
     "Gain": {
      "max": {
-      "peak_dbfs": 2.8,
-      "growth_db": 0.21,
+      "peak_dbfs": 2.78,
+      "growth_db": -0.15,
       "verdict": "hot",
       "raw": 65534,
       "text": "+12.00 dB"
@@ -21353,26 +21353,26 @@
     "renders": 31
    },
    "denormal": {
-    "playing_ms_per_s": 9.022,
-    "silent_ms_per_s": 7.308,
-    "silent_worst_ms_per_s": 9.047,
+    "playing_ms_per_s": 17.203,
+    "silent_ms_per_s": 14.01,
+    "silent_worst_ms_per_s": 14.178,
     "windows_ms_per_s": [
-     9.022,
-     7.274,
-     7.198,
-     7.178,
-     7.26,
-     7.331,
-     7.212,
-     7.317,
-     7.308,
-     7.713,
-     9.047
+     17.203,
+     13.863,
+     14.031,
+     14.01,
+     13.907,
+     13.925,
+     12.921,
+     14.178,
+     13.95,
+     14.176,
+     14.135
     ]
    },
-   "seconds": 21.5,
+   "seconds": 38.5,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -21386,7 +21386,7 @@
    "gear": "Modern Sequence Editor",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.03,
+   "load_seconds": 0.07,
    "gear_info": {
     "file": "Generators/Modern Sequence Editor.NET.dll",
     "managed": true,
@@ -21400,9 +21400,9 @@
    "inferred": 1,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.1,
+   "seconds": 0.3,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -46201,9 +46201,9 @@
    "inferred": 1,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.0,
+   "seconds": 0.1,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -46251,9 +46251,9 @@
      }
     }
    },
-   "seconds": 0.2,
+   "seconds": 0.5,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [
     "no sound from a MIDI note at its defaults (it has no Note track parameter)"
@@ -46266,7 +46266,7 @@
   "ReBuzz Audio Out": {
    "gear": "ReBuzz Audio Out",
    "kind": "effect",
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Effects/ReBuzz Audio Out.NET.dll",
     "managed": true,
@@ -46298,7 +46298,7 @@
       "gain_db": 0.0,
       "thd_percent": 1.96,
       "thd_in_percent": 1.96,
-      "movement_db": 0.14
+      "movement_db": 0.13
      }
     },
     "traits": [
@@ -46626,13 +46626,13 @@
     },
     "all_at_once": {
      "min": {
-      "peak_dbfs": -9.15,
-      "growth_db": 0.23,
+      "peak_dbfs": -9.22,
+      "growth_db": -0.15,
       "verdict": "ok"
      },
      "max": {
-      "peak_dbfs": -9.2,
-      "growth_db": 0.21,
+      "peak_dbfs": -9.22,
+      "growth_db": -0.15,
       "verdict": "ok"
      }
     }
@@ -46668,33 +46668,33 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      }
     },
     "renders": 4
    },
    "denormal": {
-    "playing_ms_per_s": 0.328,
-    "silent_ms_per_s": 0.36,
-    "silent_worst_ms_per_s": 0.371,
+    "playing_ms_per_s": 0.396,
+    "silent_ms_per_s": 0.499,
+    "silent_worst_ms_per_s": 0.561,
     "windows_ms_per_s": [
-     0.328,
-     0.362,
-     0.354,
-     0.344,
-     0.363,
-     0.36,
-     0.354,
-     0.351,
-     0.36,
-     0.363,
-     0.371
+     0.396,
+     0.461,
+     0.453,
+     0.445,
+     0.516,
+     0.485,
+     0.499,
+     0.501,
+     0.485,
+     0.517,
+     0.561
     ]
    },
-   "seconds": 2.7,
+   "seconds": 4.6,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -46706,7 +46706,7 @@
    "gear": "ReBuzz Groove",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Generators/ReBuzz Groove.NET.dll",
     "managed": true,
@@ -46720,9 +46720,9 @@
    "inferred": 9,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.0,
+   "seconds": 0.1,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -46762,22 +46762,24 @@
     },
     "all_at_once": {}
    },
-   "seconds": 0.3,
+   "seconds": 1.0,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [
     "no sound from a note at its defaults, as MIDI or in its tracks, even with a wave in slot 1"
    ],
    "hot": [],
-   "notes_profiler": [],
+   "notes_profiler": [
+    "no trigger made it sound: Volume silent; Delay silent; Cut silent"
+   ],
    "generated": false,
    "health": "warn"
   },
   "Rout 909": {
    "gear": "Rout 909",
    "kind": "generator",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Generators/Rout 909.dll",
     "managed": false,
@@ -47236,26 +47238,26 @@
     "renders": 11
    },
    "denormal": {
-    "playing_ms_per_s": 9.103,
-    "silent_ms_per_s": 5.134,
-    "silent_worst_ms_per_s": 5.83,
+    "playing_ms_per_s": 12.244,
+    "silent_ms_per_s": 10.128,
+    "silent_worst_ms_per_s": 10.624,
     "windows_ms_per_s": [
-     9.103,
-     5.83,
-     5.122,
-     5.161,
-     5.134,
-     5.096,
-     5.109,
-     5.111,
-     5.145,
-     5.177,
-     5.118
+     12.244,
+     10.624,
+     10.254,
+     10.128,
+     9.794,
+     10.052,
+     9.732,
+     10.161,
+     9.914,
+     10.377,
+     10.099
     ]
    },
-   "seconds": 11.7,
+   "seconds": 23.0,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -47270,7 +47272,7 @@
   "Session Clip Player": {
    "gear": "Session Clip Player",
    "kind": "effect",
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Effects/Session Clip Player.NET.dll",
     "managed": true,
@@ -47285,7 +47287,7 @@
    "effect": {
     "silent": true
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 3.4,
    "type": "effect (silent at defaults)",
    "level_test": {
     "defaults": {
@@ -47304,26 +47306,26 @@
     }
    },
    "denormal": {
-    "playing_ms_per_s": 0.349,
-    "silent_ms_per_s": 0.415,
-    "silent_worst_ms_per_s": 0.444,
+    "playing_ms_per_s": 0.547,
+    "silent_ms_per_s": 0.598,
+    "silent_worst_ms_per_s": 0.705,
     "windows_ms_per_s": [
-     0.349,
-     0.395,
-     0.392,
-     0.418,
-     0.393,
-     0.404,
-     0.409,
-     0.419,
-     0.444,
-     0.426,
-     0.415
+     0.547,
+     0.635,
+     0.578,
+     0.568,
+     0.581,
+     0.596,
+     0.608,
+     0.56,
+     0.598,
+     0.619,
+     0.705
     ]
    },
-   "seconds": 0.8,
+   "seconds": 1.3,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [
     "silent with noise through it at the defaults (a gate closed, a wet mix at 0, or it needs setting up)"
@@ -47337,7 +47339,7 @@
    "gear": "SpectrumBlock",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.01,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Generators/SpectrumBlock.NET.dll",
     "managed": true,
@@ -47351,9 +47353,9 @@
    "inferred": 12,
    "from_description": 3,
    "type": "control",
-   "seconds": 0.0,
+   "seconds": 0.3,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -47382,9 +47384,9 @@
    "inferred": 1,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.0,
+   "seconds": 0.2,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -47399,7 +47401,7 @@
    "gear": "Yitten Mongoose",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.02,
+   "load_seconds": 0.04,
    "gear_info": {
     "file": "Generators/Yitten Mongoose.NET.dll",
     "managed": true,
@@ -47413,9 +47415,9 @@
    "inferred": 1,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.0,
+   "seconds": 0.3,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-14",
    "problems": [],
    "warnings": [],
    "hot": [],

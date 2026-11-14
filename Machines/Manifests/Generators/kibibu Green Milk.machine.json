@@ -2,10 +2,10 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "kibibu Green Milk",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c or d) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
  "type": "monosynth",
- "summary": "Monosynth (profiled draft): pitched, plays 12 semitones low (corrected by its pitch offset); monophonic; takes notes in its tracks; one note at the defaults -9 LUFS.",
+ "summary": "A multi-oscillator subtractive synth: up to 16 unison oscillators with pitch LFOs and chord shapes, a dual filter with 39 modes, pre and post distortion, two per-track LFOs and exponential envelopes.",
  "category": "Synths",
  "tags": [
   "subtractive",
@@ -14,6 +14,20 @@
   "bright"
  ],
  "use_for": "Unison saw stacks and chord-shaped leads and pads with an envelope-driven filter.",
+ "quirks": [
+  "Loud at its defaults: one note A4 at velocity 100 measures about -9 LUFS with a peak near -1.9 dBFS (profile).",
+  "It sounds an octave low: the profile found notes play 12 semitones below what is written (pitch offset +12), so write notes an octave higher or use the LFO to pitch controls.",
+  "Its envelopes are exponential, not linear; the time parameters are tables read from its own texts.",
+  "More oscillators cost more CPU: the 12 at the default is the main load (the profile found 4.9 ms per second).",
+  "Its LFOs are updated every 32 samples, so very fast speeds sound rough (its help page).",
+  "Its time parameters read as seconds only for raw 0 to 128 (0 to 2.672 s): above that the machine gives no text, so the manifest holds the last value there, and the four LFO speed and delay parameters (defaults 160 and 176) are plain raw numbers: unverified.",
+  "Closed source: names come from its own texts and measurements, not from code. Its own help page (RunTime/Gear/Generators/kibibu Green Milk.html) was read and is put in our words."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "RunTime/Gear/Generators/kibibu Green Milk.html — the machine's own help page, read and put in our words (nothing copied)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - monophonic, 12 semitones low, -9 LUFS for one note"
+ ],
  "tracks": 16,
  "notes": {
   "input": "tracks",
@@ -564,6 +578,8 @@
    "index": 0,
    "id": "Wave1",
    "name": "Wave1",
+   "plain_name": "Wave set 1",
+   "role": "osc.wave",
    "group": "",
    "min": 0,
    "max": 5,
@@ -578,12 +594,14 @@
     "Tri³"
    ],
    "description": "Waveform 1",
-   "confidence": "values"
+   "how": "Chooses the wave of oscillators 1, 4, 7, 10, 13 and 16: sine, saw, square, triangle, cubed saw or cubed triangle (saw by default).",
+   "sound": "It sets the basic colour of the first set of voices."
   },
   {
    "index": 1,
    "id": "Wave2",
    "name": "Wave2",
+   "plain_name": "Wave set 2",
    "group": "",
    "min": 0,
    "max": 5,
@@ -598,12 +616,14 @@
     "Tri³"
    ],
    "description": "Waveform 2",
-   "confidence": "values"
+   "how": "Chooses the wave of oscillators 2, 5, 8, 11 and 14 from the same six (square by default).",
+   "sound": "It sets the colour of the second set of voices."
   },
   {
    "index": 2,
    "id": "Wave3",
    "name": "Wave3",
+   "plain_name": "Wave set 3",
    "group": "",
    "min": 0,
    "max": 5,
@@ -618,12 +638,14 @@
     "Tri³"
    ],
    "description": "Waveform 3",
-   "confidence": "values"
+   "how": "Chooses the wave of oscillators 3, 6, 9, 12 and 15 from the same six (cubed saw by default).",
+   "sound": "It sets the colour of the third set of voices."
   },
   {
    "index": 3,
    "id": "Unison Depth",
    "name": "Unison Depth",
+   "plain_name": "Unison depth",
    "group": "",
    "min": 0,
    "max": 254,
@@ -633,15 +655,15 @@
    "b": 100.0,
    "exponent": 3.0,
    "unit": "%",
-   "description": "",
-   "confidence": "values",
-   "suggested_role": "env.decay",
-   "role_evidence": "the level falls half way in 5 ms → 5 ms (the default 10 ms) to the same held level (with Filt A a third of the way up)"
+   "description": "Sets how far each oscillator's own pitch LFO moves its frequency, 0 to 100 percent (about 19 by default); small values act strongest.",
+   "how": "Sets how far each oscillator's own pitch LFO moves its frequency, 0 to 100 percent (about 19 by default); small values act strongest.",
+   "sound": "More depth spreads the voices apart in pitch for a wider, chorused unison."
   },
   {
    "index": 4,
    "id": "Unison Min S",
    "name": "Unison Min S",
+   "plain_name": "Unison LFO speed first",
    "group": "",
    "min": 0,
    "max": 254,
@@ -908,17 +930,21 @@
     [
      128,
      2.672
+    ],
+    [
+     254,
+     2.672
     ]
    ],
-   "description": "",
-   "confidence": "values",
-   "suggested_role": "env.attack",
-   "role_evidence": "the attack 5 ms → 145 ms"
+   "description": "Sets the speed of the first oscillator's pitch LFO, a time table.",
+   "how": "Sets the speed of the first oscillator's pitch LFO, a time table.",
+   "sound": "Together with Unison Max S it sets how fast the voices drift against each other."
   },
   {
    "index": 5,
    "id": "Unison Max S",
    "name": "Unison Max S",
+   "plain_name": "Unison LFO speed last",
    "group": "",
    "min": 0,
    "max": 254,
@@ -1185,17 +1211,21 @@
     [
      128,
      2.672
+    ],
+    [
+     254,
+     2.672
     ]
    ],
-   "description": "",
-   "confidence": "values",
-   "suggested_role": "env.attack",
-   "role_evidence": "the attack 65 ms → 385 ms"
+   "description": "Sets the speed of the last oscillator's pitch LFO, a time table; the others are spread between it and Unison Min S.",
+   "how": "Sets the speed of the last oscillator's pitch LFO, a time table; the others are spread between it and Unison Min S.",
+   "sound": "Different speeds across the voices give a thick, slowly shifting unison."
   },
   {
    "index": 6,
    "id": "Unison Wave",
    "name": "Unison Wave",
+   "plain_name": "Unison LFO wave",
    "group": "",
    "min": 0,
    "max": 8,
@@ -1213,12 +1243,14 @@
     "Plateau"
    ],
    "description": "Unison Waveform",
-   "confidence": "values"
+   "how": "Chooses the wave shape of the pitch LFOs for all oscillators: sine, saw, square, triangle, cubed sine, two sample-and-hold types, odd and plateau (sine by default).",
+   "sound": "Smooth shapes drift gently; stepped ones wobble in jumps."
   },
   {
    "index": 7,
    "id": "Oscillators",
    "name": "Oscillators",
+   "plain_name": "Oscillator count",
    "group": "",
    "min": 1,
    "max": 16,
@@ -1226,15 +1258,15 @@
    "kind": "linear",
    "a": 1.0,
    "b": 16.0,
-   "description": "",
-   "confidence": "values",
-   "suggested_role": "level",
-   "role_evidence": "the level +16 dB, the sound otherwise alike"
+   "description": "Sets how many oscillators play, 1 to 16 (12 by default).",
+   "how": "Sets how many oscillators play, 1 to 16 (12 by default).",
+   "sound": "More voices give a thicker sound but cost more CPU."
   },
   {
    "index": 8,
    "id": "Chord Shape",
    "name": "Chord Shape",
+   "plain_name": "Chord shape",
    "group": "",
    "min": 0,
    "max": 29,
@@ -1262,8 +1294,8 @@
     "J-m7",
     "J-Maj7",
     "J-MinM7",
-    "J-Jimi-M",
-    "J-Jimi-m",
+    "J-Jimi-Maj",
+    "J-Jimi-Min",
     "Dim",
     "Love",
     "Hate",
@@ -1272,13 +1304,17 @@
     "Split",
     "Splat"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Chooses a chord or unison shape that offsets each oscillator's pitch, from 30 choices including straight, phat, fifths, rich, major, minor, sevenths and just-intonation shapes (Phat by default).",
+   "own_texts": false,
+   "how": "Chooses a chord or unison shape that offsets each oscillator's pitch, from 30 choices including straight, phat, fifths, rich, major, minor, sevenths and just-intonation shapes (Phat by default).",
+   "sound": "It turns the unison into a chord or a stack of octaves and fifths."
   },
   {
    "index": 9,
    "id": "Glide",
    "name": "Glide",
+   "plain_name": "Glide",
+   "role": "pitch.glide",
    "group": "",
    "min": 0,
    "max": 254,
@@ -1545,17 +1581,22 @@
     [
      128,
      2.672
+    ],
+    [
+     254,
+     2.672
     ]
    ],
-   "description": "",
-   "confidence": "values",
-   "suggested_role": "env.attack",
-   "role_evidence": "the attack 460 ms → 30 ms"
+   "description": "Sets the time a note takes to slide to the next, a time table (0 by default, no glide).",
+   "how": "Sets the time a note takes to slide to the next, a time table (0 by default, no glide).",
+   "sound": "A longer glide makes notes slur into each other."
   },
   {
    "index": 10,
    "id": "Amp A",
    "name": "Amp A",
+   "plain_name": "Amp attack",
+   "role": "env.attack",
    "group": "",
    "min": 0,
    "max": 254,
@@ -1822,17 +1863,22 @@
     [
      128,
      2.672
+    ],
+    [
+     254,
+     2.672
     ]
    ],
    "description": "Amp Attack",
-   "confidence": "values",
-   "suggested_role": "env.attack",
-   "role_evidence": "the attack 10 ms → 875 ms"
+   "how": "Sets the attack time of the amplitude envelope, a time table (about 4 ms by default).",
+   "sound": "A longer attack fades the note in; a short one is immediate."
   },
   {
    "index": 11,
    "id": "Amp D",
    "name": "Amp D",
+   "plain_name": "Amp decay",
+   "role": "env.decay",
    "group": "",
    "min": 0,
    "max": 254,
@@ -2099,17 +2145,22 @@
     [
      128,
      2.672
+    ],
+    [
+     254,
+     2.672
     ]
    ],
    "description": "Amp Decay",
-   "confidence": "values",
-   "suggested_role": "filter.env_amount",
-   "role_evidence": "the start's brightness 179 Hz → 124 Hz (RMS frequency), the held part's 150 Hz → 126 Hz"
+   "how": "Sets the decay time of the amplitude envelope, a time table (about 20 ms by default).",
+   "sound": "It sets how fast the note falls from its peak to the sustain level."
   },
   {
    "index": 12,
    "id": "Amp S",
    "name": "Amp S",
+   "plain_name": "Amp sustain",
+   "role": "env.sustain",
    "group": "",
    "min": 0,
    "max": 254,
@@ -2119,14 +2170,15 @@
    "b": 100.000059,
    "unit": "%",
    "description": "Amp Sustain Level",
-   "confidence": "values",
-   "suggested_role": "env.decay",
-   "role_evidence": "the level falls half way to its held level in 80 ms → 5 ms"
+   "how": "Sets the sustain level of the amplitude envelope, 0 to 100 percent (about 50 by default).",
+   "sound": "It is the level the note holds while the key is down."
   },
   {
    "index": 13,
    "id": "Amp R",
    "name": "Amp R",
+   "plain_name": "Amp release",
+   "role": "env.release",
    "group": "",
    "min": 0,
    "max": 254,
@@ -2393,17 +2445,22 @@
     [
      128,
      2.672
+    ],
+    [
+     254,
+     2.672
     ]
    ],
    "description": "Amp Release",
-   "confidence": "values",
-   "suggested_role": "env.release",
-   "role_evidence": "the release 10 ms → 255 ms"
+   "how": "Sets the release time of the amplitude envelope, a time table (about 52 ms by default).",
+   "sound": "A longer release lets the note fade after it ends."
   },
   {
    "index": 14,
    "id": "Filt Cut",
    "name": "Filt Cut",
+   "plain_name": "Cutoff",
+   "role": "filter.cutoff",
    "group": "",
    "min": 0,
    "max": 254,
@@ -2413,14 +2470,15 @@
    "b": 100.000059,
    "unit": "%",
    "description": "Filter Cutoff",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 630 Hz stands -17 → +2 dB over the spectrum an octave either side"
+   "how": "Sets the filter cutoff, 0 to 100 percent (about 25 by default).",
+   "sound": "Lower values darken the sound; higher ones open it."
   },
   {
    "index": 15,
    "id": "Filt Res",
    "name": "Filt Res",
+   "plain_name": "Resonance",
+   "role": "filter.resonance",
    "group": "",
    "min": 0,
    "max": 254,
@@ -2430,14 +2488,15 @@
    "b": 96.946228,
    "unit": "%",
    "description": "Filter Res",
-   "confidence": "values",
-   "suggested_role": "lfo.filter",
-   "role_evidence": "the held note's brightness moves 0% → 170% of its mean (with Filt A a third of the way up)"
+   "how": "Sets the filter resonance, 0 to about 97 percent (about 4 by default).",
+   "sound": "More resonance makes the filter whistle around the cutoff."
   },
   {
    "index": 16,
    "id": "Filt Env",
    "name": "Filt Env",
+   "plain_name": "Filter envelope amount",
+   "role": "filter.env_amount",
    "group": "",
    "min": 0,
    "max": 254,
@@ -2447,14 +2506,15 @@
    "b": 100.000048,
    "unit": "%",
    "description": "Filter Env",
-   "confidence": "values",
-   "suggested_role": "filter.env_amount",
-   "role_evidence": "the start's brightness 51.2 Hz → 441 Hz (RMS frequency), the held part's 139 Hz → 278 Hz"
+   "how": "Sets how far the filter envelope moves the cutoff, -100 to +100 percent (about +26 by default).",
+   "sound": "Positive opens the filter on each note; negative closes it."
   },
   {
    "index": 17,
    "id": "Filt Mode",
    "name": "Filt Mode",
+   "plain_name": "Filter mode",
+   "role": "filter.type",
    "group": "",
    "min": 0,
    "max": 38,
@@ -2502,12 +2562,15 @@
     "None"
    ],
    "description": "Filter Mode",
-   "confidence": "values"
+   "how": "Chooses the filter type from 39 modes: single low, high, band or notch, and serial, parallel, separate and wide pairs of those (LP by default).",
+   "sound": "Lowpass darkens; highpass thins; band and notch carve the middle; pairs give steeper or twin-peaked filters."
   },
   {
    "index": 18,
    "id": "Filt A",
    "name": "Filt A",
+   "plain_name": "Filter attack",
+   "role": "filter.env.attack",
    "group": "",
    "min": 0,
    "max": 254,
@@ -2774,17 +2837,22 @@
     [
      128,
      2.672
+    ],
+    [
+     254,
+     2.672
     ]
    ],
    "description": "Filter Attack",
-   "confidence": "values",
-   "suggested_role": "filter.cutoff",
-   "role_evidence": "the brightness (centroid) 513 Hz → 206 Hz"
+   "how": "Sets the attack time of the filter envelope, a time table (about 33 ms by default).",
+   "sound": "A longer attack makes the filter open slowly after the note starts."
   },
   {
    "index": 19,
    "id": "Filt D",
    "name": "Filt D",
+   "plain_name": "Filter decay",
+   "role": "filter.env.decay",
    "group": "",
    "min": 0,
    "max": 254,
@@ -3051,17 +3119,22 @@
     [
      128,
      2.672
+    ],
+    [
+     254,
+     2.672
     ]
    ],
    "description": "Filter Decay",
-   "confidence": "values",
-   "suggested_role": "filter.env.decay",
-   "role_evidence": "the brightness 150–250 ms in 87.2 Hz → 194 Hz (RMS frequency), the start alike (124 Hz → 159 Hz)"
+   "how": "Sets the decay time of the filter envelope, a time table (about 4 ms by default).",
+   "sound": "It sets how fast the filter falls back toward its sustain."
   },
   {
    "index": 20,
    "id": "Filt S",
    "name": "Filt S",
+   "plain_name": "Filter sustain",
+   "role": "filter.env.sustain",
    "group": "",
    "min": 0,
    "max": 254,
@@ -3071,14 +3144,15 @@
    "b": 100.000059,
    "unit": "%",
    "description": "Filter Sustain Level",
-   "confidence": "values",
-   "suggested_role": "filter.cutoff",
-   "role_evidence": "the brightness (centroid) 254 Hz → 1.08 kHz"
+   "how": "Sets the sustain level of the filter envelope, 0 to 100 percent (about 50 by default).",
+   "sound": "It is where the cutoff rests while the key is down."
   },
   {
    "index": 21,
    "id": "Filt R",
    "name": "Filt R",
+   "plain_name": "Filter release",
+   "role": "filter.env.release",
    "group": "",
    "min": 0,
    "max": 254,
@@ -3345,15 +3419,21 @@
     [
      128,
      2.672
+    ],
+    [
+     254,
+     2.672
     ]
    ],
    "description": "Filter Release",
-   "confidence": "values"
+   "how": "Sets the release time of the filter envelope, a time table (about 4 ms by default).",
+   "sound": "A longer release lets the filter close slowly after the note ends."
   },
   {
    "index": 22,
    "id": "Length Scale",
    "name": "Length Scale",
+   "plain_name": "Envelope length scale",
    "group": "",
    "min": 0,
    "max": 224,
@@ -3362,15 +3442,16 @@
    "a": 0.002489,
    "b": 700.002489,
    "unit": "%",
-   "description": "",
-   "confidence": "values",
-   "suggested_role": "env.release",
-   "role_evidence": "the release 5 ms → 255 ms"
+   "description": "Scales the length of the amplitude and filter envelopes, about 0 to 700 percent (about 100 by default); the LFOs are not scaled.",
+   "how": "Scales the length of the amplitude and filter envelopes, about 0 to 700 percent (about 100 by default); the LFOs are not scaled.",
+   "sound": "Below 100 percent all envelopes run faster; above, slower."
   },
   {
    "index": 23,
    "id": "PreF Dist",
    "name": "PreF Dist",
+   "plain_name": "Pre-filter distortion",
+   "role": "drive",
    "group": "",
    "min": 0,
    "max": 254,
@@ -3381,14 +3462,14 @@
    "exponent": 3.0,
    "unit": "%",
    "description": "Pre-filter Dist",
-   "confidence": "values",
-   "suggested_role": "filter.env.decay",
-   "role_evidence": "the brightness 150–250 ms in 150 Hz → 84.9 Hz (RMS frequency), the start alike (184 Hz → 139 Hz)"
+   "how": "Sets the amount of saturating distortion before the filter, 0 to 100 percent (a low value by default).",
+   "sound": "More drive gives a fatter, harsher tone that the filter then shapes."
   },
   {
    "index": 24,
    "id": "PostF Dist",
    "name": "PostF Dist",
+   "plain_name": "Post-filter distortion",
    "group": "",
    "min": 0,
    "max": 254,
@@ -3399,568 +3480,49 @@
    "exponent": 3.0,
    "unit": "%",
    "description": "Post-filter Dist",
-   "confidence": "values",
-   "suggested_role": "filter.cutoff",
-   "role_evidence": "the brightness (centroid) 553 Hz → 1.27 kHz"
+   "how": "Sets the amount of saturating distortion after the filter, 0 to 100 percent (a low value by default).",
+   "sound": "More drive adds grit after the filter and is a little cleaner than the pre-filter stage."
   },
   {
    "index": 25,
    "id": "TLFO1 Speed",
    "name": "TLFO1 Speed",
+   "plain_name": "LFO 1 speed",
+   "role": "lfo.rate",
    "group": "",
    "min": 0,
    "max": 254,
    "default": 160,
-   "kind": "table",
-   "unit": "s",
-   "points": [
-    [
-     0,
-     0.0
-    ],
-    [
-     2,
-     0.002
-    ],
-    [
-     4,
-     0.004
-    ],
-    [
-     6,
-     0.006
-    ],
-    [
-     8,
-     0.008
-    ],
-    [
-     10,
-     0.01
-    ],
-    [
-     12,
-     0.012
-    ],
-    [
-     14,
-     0.014
-    ],
-    [
-     16,
-     0.016
-    ],
-    [
-     18,
-     0.02
-    ],
-    [
-     20,
-     0.024
-    ],
-    [
-     22,
-     0.028
-    ],
-    [
-     24,
-     0.032
-    ],
-    [
-     26,
-     0.036
-    ],
-    [
-     28,
-     0.04
-    ],
-    [
-     30,
-     0.044
-    ],
-    [
-     32,
-     0.048
-    ],
-    [
-     34,
-     0.058
-    ],
-    [
-     36,
-     0.068
-    ],
-    [
-     38,
-     0.078
-    ],
-    [
-     40,
-     0.088
-    ],
-    [
-     42,
-     0.098
-    ],
-    [
-     44,
-     0.108
-    ],
-    [
-     46,
-     0.118
-    ],
-    [
-     48,
-     0.128
-    ],
-    [
-     50,
-     0.138
-    ],
-    [
-     52,
-     0.148
-    ],
-    [
-     54,
-     0.158
-    ],
-    [
-     56,
-     0.168
-    ],
-    [
-     58,
-     0.178
-    ],
-    [
-     60,
-     0.188
-    ],
-    [
-     62,
-     0.198
-    ],
-    [
-     64,
-     0.208
-    ],
-    [
-     66,
-     0.248
-    ],
-    [
-     68,
-     0.288
-    ],
-    [
-     70,
-     0.328
-    ],
-    [
-     72,
-     0.368
-    ],
-    [
-     74,
-     0.408
-    ],
-    [
-     76,
-     0.448
-    ],
-    [
-     78,
-     0.488
-    ],
-    [
-     80,
-     0.528
-    ],
-    [
-     82,
-     0.568
-    ],
-    [
-     84,
-     0.608
-    ],
-    [
-     86,
-     0.648
-    ],
-    [
-     88,
-     0.688
-    ],
-    [
-     90,
-     0.728
-    ],
-    [
-     92,
-     0.768
-    ],
-    [
-     94,
-     0.808
-    ],
-    [
-     96,
-     0.848
-    ],
-    [
-     98,
-     1.172
-    ],
-    [
-     100,
-     1.272
-    ],
-    [
-     102,
-     1.372
-    ],
-    [
-     104,
-     1.472
-    ],
-    [
-     106,
-     1.572
-    ],
-    [
-     108,
-     1.672
-    ],
-    [
-     110,
-     1.772
-    ],
-    [
-     112,
-     1.872
-    ],
-    [
-     114,
-     1.972
-    ],
-    [
-     116,
-     2.072
-    ],
-    [
-     118,
-     2.172
-    ],
-    [
-     120,
-     2.272
-    ],
-    [
-     122,
-     2.372
-    ],
-    [
-     124,
-     2.472
-    ],
-    [
-     126,
-     2.572
-    ],
-    [
-     128,
-     2.672
-    ]
-   ],
+   "kind": "linear",
    "description": "LFO 1 Speed",
-   "confidence": "values",
-   "suggested_role": "env.attack",
-   "role_evidence": "the attack 125 ms → 35 ms"
+   "a": 0.0,
+   "b": 254.0,
+   "how": "Sets the speed of per-track LFO 1, 0 to 254 (160 by default); the machine gives no unit, so it is a raw number here.",
+   "sound": "A faster LFO wobbles the pitch, cutoff or resonance quicker; at the slow end it is a drift."
   },
   {
    "index": 26,
    "id": "TLFO1 Delay",
    "name": "TLFO1 Delay",
+   "plain_name": "LFO 1 delay",
+   "role": "lfo.delay",
    "group": "",
    "min": 0,
    "max": 254,
    "default": 176,
-   "kind": "table",
-   "unit": "s",
-   "points": [
-    [
-     0,
-     0.0
-    ],
-    [
-     2,
-     0.002
-    ],
-    [
-     4,
-     0.004
-    ],
-    [
-     6,
-     0.006
-    ],
-    [
-     8,
-     0.008
-    ],
-    [
-     10,
-     0.01
-    ],
-    [
-     12,
-     0.012
-    ],
-    [
-     14,
-     0.014
-    ],
-    [
-     16,
-     0.016
-    ],
-    [
-     18,
-     0.02
-    ],
-    [
-     20,
-     0.024
-    ],
-    [
-     22,
-     0.028
-    ],
-    [
-     24,
-     0.032
-    ],
-    [
-     26,
-     0.036
-    ],
-    [
-     28,
-     0.04
-    ],
-    [
-     30,
-     0.044
-    ],
-    [
-     32,
-     0.048
-    ],
-    [
-     34,
-     0.058
-    ],
-    [
-     36,
-     0.068
-    ],
-    [
-     38,
-     0.078
-    ],
-    [
-     40,
-     0.088
-    ],
-    [
-     42,
-     0.098
-    ],
-    [
-     44,
-     0.108
-    ],
-    [
-     46,
-     0.118
-    ],
-    [
-     48,
-     0.128
-    ],
-    [
-     50,
-     0.138
-    ],
-    [
-     52,
-     0.148
-    ],
-    [
-     54,
-     0.158
-    ],
-    [
-     56,
-     0.168
-    ],
-    [
-     58,
-     0.178
-    ],
-    [
-     60,
-     0.188
-    ],
-    [
-     62,
-     0.198
-    ],
-    [
-     64,
-     0.208
-    ],
-    [
-     66,
-     0.248
-    ],
-    [
-     68,
-     0.288
-    ],
-    [
-     70,
-     0.328
-    ],
-    [
-     72,
-     0.368
-    ],
-    [
-     74,
-     0.408
-    ],
-    [
-     76,
-     0.448
-    ],
-    [
-     78,
-     0.488
-    ],
-    [
-     80,
-     0.528
-    ],
-    [
-     82,
-     0.568
-    ],
-    [
-     84,
-     0.608
-    ],
-    [
-     86,
-     0.648
-    ],
-    [
-     88,
-     0.688
-    ],
-    [
-     90,
-     0.728
-    ],
-    [
-     92,
-     0.768
-    ],
-    [
-     94,
-     0.808
-    ],
-    [
-     96,
-     0.848
-    ],
-    [
-     98,
-     1.172
-    ],
-    [
-     100,
-     1.272
-    ],
-    [
-     102,
-     1.372
-    ],
-    [
-     104,
-     1.472
-    ],
-    [
-     106,
-     1.572
-    ],
-    [
-     108,
-     1.672
-    ],
-    [
-     110,
-     1.772
-    ],
-    [
-     112,
-     1.872
-    ],
-    [
-     114,
-     1.972
-    ],
-    [
-     116,
-     2.072
-    ],
-    [
-     118,
-     2.172
-    ],
-    [
-     120,
-     2.272
-    ],
-    [
-     122,
-     2.372
-    ],
-    [
-     124,
-     2.472
-    ],
-    [
-     126,
-     2.572
-    ],
-    [
-     128,
-     2.672
-    ]
-   ],
+   "kind": "linear",
    "description": "LFO 1 Delay",
-   "confidence": "values",
-   "suggested_role": "env.attack",
-   "role_evidence": "the attack 45 ms → 315 ms (with Filt A a third of the way up)"
+   "a": 0.0,
+   "b": 254.0,
+   "how": "Sets how long after a note starts LFO 1 waits before it begins, 0 to 254 (176 by default); the machine gives no unit, so it is a raw number here.",
+   "sound": "A delay lets a note start clean and then fade the vibrato or filter motion in."
   },
   {
    "index": 27,
    "id": "TLFO1 Shape",
    "name": "TLFO1 Shape",
+   "plain_name": "LFO 1 shape",
+   "role": "lfo.wave",
    "group": "",
    "min": 0,
    "max": 97,
@@ -4067,12 +3629,14 @@
     "arp 88"
    ],
    "description": "LFO 1 Shape",
-   "confidence": "values"
+   "how": "Chooses LFO 1's wave shape from 98 choices: sine, saw, square, triangle, sample-and-hold, steps and arpeggio shapes.",
+   "sound": "The shape sets the character of the motion: smooth for a sine, stepped for sample-and-hold, melodic for the arpeggio shapes."
   },
   {
    "index": 28,
    "id": "TLFO1->Cut",
    "name": "TLFO1->Cut",
+   "plain_name": "LFO 1 to cutoff",
    "group": "",
    "min": 0,
    "max": 254,
@@ -4082,14 +3646,14 @@
    "b": 100.000048,
    "unit": "%",
    "description": "LFO 1 to Cutoff",
-   "confidence": "values",
-   "suggested_role": "lfo.filter",
-   "role_evidence": "the held note's brightness moves 0% → 50% of its mean"
+   "how": "Sets how far LFO 1 moves the filter cutoff, -100 to +100 percent (0 at the middle, the default).",
+   "sound": "Positive and negative values sweep the cutoff in opposite directions; the middle leaves it still."
   },
   {
    "index": 29,
    "id": "TLFO1->Res",
    "name": "TLFO1->Res",
+   "plain_name": "LFO 1 to resonance",
    "group": "",
    "min": 0,
    "max": 254,
@@ -4099,14 +3663,14 @@
    "b": 100.000048,
    "unit": "%",
    "description": "LFO 1 to Res",
-   "confidence": "values",
-   "suggested_role": "lfo.filter",
-   "role_evidence": "the held note's brightness moves 0% → 33% of its mean (with Filt A a third of the way up)"
+   "how": "Sets how far LFO 1 moves the filter resonance, -100 to +100 percent (0 at the middle, the default).",
+   "sound": "It makes the resonance pulse or sweep in time with the LFO."
   },
   {
    "index": 30,
    "id": "TLFO1->Pitch",
    "name": "TLFO1->Pitch",
+   "plain_name": "LFO 1 to pitch",
    "group": "",
    "min": 0,
    "max": 254,
@@ -4116,566 +3680,46 @@
    "b": 12.6,
    "unit": "st",
    "description": "LFO 1 to Pitch",
-   "confidence": "values"
+   "how": "Sets how far LFO 1 bends the pitch of every oscillator, about -12.8 to +12.6 semitones (0 at the middle, the default).",
+   "sound": "Small amounts are vibrato; plus or minus 12 gives octave jumps with the arpeggio shapes."
   },
   {
    "index": 31,
    "id": "TLFO2 Speed",
    "name": "TLFO2 Speed",
+   "plain_name": "LFO 2 speed",
    "group": "",
    "min": 0,
    "max": 254,
    "default": 160,
-   "kind": "table",
-   "unit": "s",
-   "points": [
-    [
-     0,
-     0.0
-    ],
-    [
-     2,
-     0.002
-    ],
-    [
-     4,
-     0.004
-    ],
-    [
-     6,
-     0.006
-    ],
-    [
-     8,
-     0.008
-    ],
-    [
-     10,
-     0.01
-    ],
-    [
-     12,
-     0.012
-    ],
-    [
-     14,
-     0.014
-    ],
-    [
-     16,
-     0.016
-    ],
-    [
-     18,
-     0.02
-    ],
-    [
-     20,
-     0.024
-    ],
-    [
-     22,
-     0.028
-    ],
-    [
-     24,
-     0.032
-    ],
-    [
-     26,
-     0.036
-    ],
-    [
-     28,
-     0.04
-    ],
-    [
-     30,
-     0.044
-    ],
-    [
-     32,
-     0.048
-    ],
-    [
-     34,
-     0.058
-    ],
-    [
-     36,
-     0.068
-    ],
-    [
-     38,
-     0.078
-    ],
-    [
-     40,
-     0.088
-    ],
-    [
-     42,
-     0.098
-    ],
-    [
-     44,
-     0.108
-    ],
-    [
-     46,
-     0.118
-    ],
-    [
-     48,
-     0.128
-    ],
-    [
-     50,
-     0.138
-    ],
-    [
-     52,
-     0.148
-    ],
-    [
-     54,
-     0.158
-    ],
-    [
-     56,
-     0.168
-    ],
-    [
-     58,
-     0.178
-    ],
-    [
-     60,
-     0.188
-    ],
-    [
-     62,
-     0.198
-    ],
-    [
-     64,
-     0.208
-    ],
-    [
-     66,
-     0.248
-    ],
-    [
-     68,
-     0.288
-    ],
-    [
-     70,
-     0.328
-    ],
-    [
-     72,
-     0.368
-    ],
-    [
-     74,
-     0.408
-    ],
-    [
-     76,
-     0.448
-    ],
-    [
-     78,
-     0.488
-    ],
-    [
-     80,
-     0.528
-    ],
-    [
-     82,
-     0.568
-    ],
-    [
-     84,
-     0.608
-    ],
-    [
-     86,
-     0.648
-    ],
-    [
-     88,
-     0.688
-    ],
-    [
-     90,
-     0.728
-    ],
-    [
-     92,
-     0.768
-    ],
-    [
-     94,
-     0.808
-    ],
-    [
-     96,
-     0.848
-    ],
-    [
-     98,
-     1.172
-    ],
-    [
-     100,
-     1.272
-    ],
-    [
-     102,
-     1.372
-    ],
-    [
-     104,
-     1.472
-    ],
-    [
-     106,
-     1.572
-    ],
-    [
-     108,
-     1.672
-    ],
-    [
-     110,
-     1.772
-    ],
-    [
-     112,
-     1.872
-    ],
-    [
-     114,
-     1.972
-    ],
-    [
-     116,
-     2.072
-    ],
-    [
-     118,
-     2.172
-    ],
-    [
-     120,
-     2.272
-    ],
-    [
-     122,
-     2.372
-    ],
-    [
-     124,
-     2.472
-    ],
-    [
-     126,
-     2.572
-    ],
-    [
-     128,
-     2.672
-    ]
-   ],
+   "kind": "linear",
    "description": "LFO 2 Speed",
-   "confidence": "values",
-   "suggested_role": "env.attack",
-   "role_evidence": "the attack 5 ms → 120 ms"
+   "a": 0.0,
+   "b": 254.0,
+   "how": "Sets the speed of per-track LFO 2, 0 to 254 (160 by default); the machine gives no unit, so it is a raw number here.",
+   "sound": "A faster LFO wobbles the pitch, cutoff or resonance quicker; at the slow end it is a drift."
   },
   {
    "index": 32,
    "id": "TLFO2 Delay",
    "name": "TLFO2 Delay",
+   "plain_name": "LFO 2 delay",
    "group": "",
    "min": 0,
    "max": 254,
    "default": 176,
-   "kind": "table",
-   "unit": "s",
-   "points": [
-    [
-     0,
-     0.0
-    ],
-    [
-     2,
-     0.002
-    ],
-    [
-     4,
-     0.004
-    ],
-    [
-     6,
-     0.006
-    ],
-    [
-     8,
-     0.008
-    ],
-    [
-     10,
-     0.01
-    ],
-    [
-     12,
-     0.012
-    ],
-    [
-     14,
-     0.014
-    ],
-    [
-     16,
-     0.016
-    ],
-    [
-     18,
-     0.02
-    ],
-    [
-     20,
-     0.024
-    ],
-    [
-     22,
-     0.028
-    ],
-    [
-     24,
-     0.032
-    ],
-    [
-     26,
-     0.036
-    ],
-    [
-     28,
-     0.04
-    ],
-    [
-     30,
-     0.044
-    ],
-    [
-     32,
-     0.048
-    ],
-    [
-     34,
-     0.058
-    ],
-    [
-     36,
-     0.068
-    ],
-    [
-     38,
-     0.078
-    ],
-    [
-     40,
-     0.088
-    ],
-    [
-     42,
-     0.098
-    ],
-    [
-     44,
-     0.108
-    ],
-    [
-     46,
-     0.118
-    ],
-    [
-     48,
-     0.128
-    ],
-    [
-     50,
-     0.138
-    ],
-    [
-     52,
-     0.148
-    ],
-    [
-     54,
-     0.158
-    ],
-    [
-     56,
-     0.168
-    ],
-    [
-     58,
-     0.178
-    ],
-    [
-     60,
-     0.188
-    ],
-    [
-     62,
-     0.198
-    ],
-    [
-     64,
-     0.208
-    ],
-    [
-     66,
-     0.248
-    ],
-    [
-     68,
-     0.288
-    ],
-    [
-     70,
-     0.328
-    ],
-    [
-     72,
-     0.368
-    ],
-    [
-     74,
-     0.408
-    ],
-    [
-     76,
-     0.448
-    ],
-    [
-     78,
-     0.488
-    ],
-    [
-     80,
-     0.528
-    ],
-    [
-     82,
-     0.568
-    ],
-    [
-     84,
-     0.608
-    ],
-    [
-     86,
-     0.648
-    ],
-    [
-     88,
-     0.688
-    ],
-    [
-     90,
-     0.728
-    ],
-    [
-     92,
-     0.768
-    ],
-    [
-     94,
-     0.808
-    ],
-    [
-     96,
-     0.848
-    ],
-    [
-     98,
-     1.172
-    ],
-    [
-     100,
-     1.272
-    ],
-    [
-     102,
-     1.372
-    ],
-    [
-     104,
-     1.472
-    ],
-    [
-     106,
-     1.572
-    ],
-    [
-     108,
-     1.672
-    ],
-    [
-     110,
-     1.772
-    ],
-    [
-     112,
-     1.872
-    ],
-    [
-     114,
-     1.972
-    ],
-    [
-     116,
-     2.072
-    ],
-    [
-     118,
-     2.172
-    ],
-    [
-     120,
-     2.272
-    ],
-    [
-     122,
-     2.372
-    ],
-    [
-     124,
-     2.472
-    ],
-    [
-     126,
-     2.572
-    ],
-    [
-     128,
-     2.672
-    ]
-   ],
+   "kind": "linear",
    "description": "LFO 2 Delay",
-   "confidence": "values",
-   "suggested_role": "env.decay",
-   "role_evidence": "the level falls half way in 10 ms → 5 ms (the default 5 ms) to the same held level"
+   "a": 0.0,
+   "b": 254.0,
+   "how": "Sets how long after a note starts LFO 2 waits before it begins, 0 to 254 (176 by default); the machine gives no unit, so it is a raw number here.",
+   "sound": "A delay lets a note start clean and then fade the vibrato or filter motion in."
   },
   {
    "index": 33,
    "id": "TLFO2 Shape",
    "name": "TLFO2 Shape",
+   "plain_name": "LFO 2 shape",
    "group": "",
    "min": 0,
    "max": 97,
@@ -4782,12 +3826,14 @@
     "arp 88"
    ],
    "description": "LFO 2 Shape",
-   "confidence": "values"
+   "how": "Chooses LFO 2's wave shape from 98 choices: sine, saw, square, triangle, sample-and-hold, steps and arpeggio shapes.",
+   "sound": "The shape sets the character of the motion: smooth for a sine, stepped for sample-and-hold, melodic for the arpeggio shapes."
   },
   {
    "index": 34,
    "id": "TLFO2->Cut",
    "name": "TLFO2->Cut",
+   "plain_name": "LFO 2 to cutoff",
    "group": "",
    "min": 0,
    "max": 254,
@@ -4797,14 +3843,14 @@
    "b": 100.000048,
    "unit": "%",
    "description": "LFO 2 to Cutoff",
-   "confidence": "values",
-   "suggested_role": "filter.env_amount",
-   "role_evidence": "the start's brightness 41 Hz → 223 Hz (RMS frequency), the held part's 154 Hz → 222 Hz"
+   "how": "Sets how far LFO 2 moves the filter cutoff, -100 to +100 percent (0 at the middle, the default).",
+   "sound": "Positive and negative values sweep the cutoff in opposite directions; the middle leaves it still."
   },
   {
    "index": 35,
    "id": "TLFO2->Res",
    "name": "TLFO2->Res",
+   "plain_name": "LFO 2 to resonance",
    "group": "",
    "min": 0,
    "max": 254,
@@ -4814,14 +3860,14 @@
    "b": 100.000048,
    "unit": "%",
    "description": "LFO 2 to Res",
-   "confidence": "values",
-   "suggested_role": "filter.env.decay",
-   "role_evidence": "the brightness 150–250 ms in 240 Hz → 146 Hz (RMS frequency), the start alike (161 Hz → 126 Hz)"
+   "how": "Sets how far LFO 2 moves the filter resonance, -100 to +100 percent (0 at the middle, the default).",
+   "sound": "It makes the resonance pulse or sweep in time with the LFO."
   },
   {
    "index": 36,
    "id": "TLFO2->Pitch",
    "name": "TLFO2->Pitch",
+   "plain_name": "LFO 2 to pitch",
    "group": "",
    "min": 0,
    "max": 254,
@@ -4831,14 +3877,14 @@
    "b": 12.6,
    "unit": "st",
    "description": "LFO 2 to Pitch",
-   "confidence": "values",
-   "suggested_role": "env.attack",
-   "role_evidence": "the attack 120 ms → 765 ms"
+   "how": "Sets how far LFO 2 bends the pitch of every oscillator, about -12.8 to +12.6 semitones (0 at the middle, the default).",
+   "sound": "Small amounts are vibrato; plus or minus 12 gives octave jumps with the arpeggio shapes."
   },
   {
    "index": 37,
    "id": "Retrig Mode",
    "name": "Retrig Mode",
+   "plain_name": "LFO retrigger",
    "group": "",
    "min": 0,
    "max": 3,
@@ -4851,7 +3897,8 @@
     "Both"
    ],
    "description": "Retrigger Mode",
-   "confidence": "values"
+   "how": "Chooses which LFOs restart when a new note starts: No Retrig, LFO1, LFO2 or Both (LFO1 by default).",
+   "sound": "Restarting keeps every note's modulation identical; not restarting lets it run free."
   }
  ],
  "track_parameters": []

@@ -62,7 +62,7 @@ namespace ReBuzz.AgentTests
         [Test]
         public void EveryParameterOfAFinishedFamilyHasHowAndSound()
         {
-            // K2: the machines of the families in KnowledgeFamilies (the Pedal machines), global and track parameters alike.
+            // K2: every packaged machine but the Neo ones and Dye Essence (KnowledgeFamilies), global and track parameters alike.
             var problems = new List<string>();
             int machines = 0;
             foreach (var m in CuratedManifestTests.Profiled().Values.Where(m => KnowledgeFamilies.Covers(m.Gear)))
@@ -77,7 +77,7 @@ namespace ReBuzz.AgentTests
                         else if (!(t.EndsWith('.') || t.EndsWith(')'))) problems.Add($"{m.Gear}/{p.Id} {what}: does not end in a full stop");
                     }
             }
-            Assert.That(machines, Is.GreaterThanOrEqualTo(19));
+            Assert.That(machines, Is.GreaterThanOrEqualTo(98));
             Assert.That(problems, Is.Empty, string.Join("\n", problems.Take(30)));
         }
 

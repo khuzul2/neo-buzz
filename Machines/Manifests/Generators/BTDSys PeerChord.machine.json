@@ -2,16 +2,29 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "BTDSys PeerChord",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c or d) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
  "type": "control",
- "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "summary": "Turns each note written to its track into a chord or an arpeggio on a target (peer) machine: 54 chord types, strum and delay modes, note cut, arpeggio modes and an octave spread. It makes no sound itself.",
  "category": "Control",
  "tags": [
   "chords",
   "arpeggio"
  ],
  "use_for": "Turn single notes into chords and arpeggios played on other machines.",
+ "quirks": [
+  "It is a control machine: nothing is heard until a target machine is chosen and plays the notes it sends; choosing the target is done in the machine's own window and no tool sets it (the same as Pedal Chord).",
+  "A chord needs up to six consecutive free tracks on the target, starting at First target track.",
+  "Velocity maps from the target's lowest to its highest velocity (raw 0 to 65,534), not to a fixed 0 to 127.",
+  "The octave pairs are packed: each value holds two octave shifts, -8 to +7 (raw 136 is both 0).",
+  "Custom note offsets are 0 to 47 semitones; raw 48 means off.",
+  "Pedal Chord is the repo's own chord and arpeggio machine, with a source and a page.",
+  "Closed source (a prebuilt DLL): names come from its own texts, its DLL's type names and the profile, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - a control machine, no sound"
+ ],
  "tracks": 16,
  "health": {
   "status": "ok",
@@ -24,6 +37,7 @@
    "index": 0,
    "id": "Chord Type",
    "name": "Chord Type",
+   "plain_name": "Chord type",
    "group": "",
    "min": 0,
    "max": 53,
@@ -85,13 +99,16 @@
     "maj9sus4",
     "custom"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Chooses the chord built on each note written to this track, one of 54 including major, minor, suspended, augmented, diminished, sixth, seventh, ninth and eleventh types, and custom; none (the default) sends the note alone.",
+   "how": "Chooses the chord built on each note written to this track, one of 54 including major, minor, suspended, augmented, diminished, sixth, seventh, ninth and eleventh types, and custom; none (the default) sends the note alone.",
+   "sound": "The one note written here becomes a whole chord on the target machine."
   },
   {
    "index": 0,
    "id": "Velocity",
    "name": "Velocity",
+   "plain_name": "Velocity",
+   "role": "velocity",
    "group": "",
    "min": 0,
    "max": 65534,
@@ -101,12 +118,14 @@
    "b": 99.998798,
    "unit": "%",
    "description": "Velocity (0=peer's min, FFFE=peer's max)",
-   "confidence": "values"
+   "how": "Sets the velocity sent, from the target's lowest to its highest, 0 to 65,534 (about half way by default).",
+   "sound": "It sets how hard the chord notes strike, if the target responds to velocity."
   },
   {
    "index": 0,
    "id": "Delay Mode",
    "name": "Delay Mode",
+   "plain_name": "Strum mode",
    "group": "",
    "min": 0,
    "max": 4,
@@ -120,12 +139,14 @@
     "Strum Up"
    ],
    "description": "Note Delay Mode (0=off, 1=simple, 2=random, 3=strum down, 4=strum up)",
-   "confidence": "values"
+   "how": "Chooses how the chord notes are spread in time: Off (the default), Simple, Random, Strum Dn or Strum Up.",
+   "sound": "Strumming staggers the notes like a guitar; Random scatters them; Off plays them together."
   },
   {
    "index": 0,
    "id": "Delay Len",
    "name": "Delay Len",
+   "plain_name": "Strum delay",
    "group": "",
    "min": 1,
    "max": 128,
@@ -262,12 +283,15 @@
     "128/128 ticks"
    ],
    "description": "Note Delay Length (in tick/128)",
-   "confidence": "values"
+   "how": "Sets the delay between chord notes, 1 to 128 in 128ths of a tick (32 by default).",
+   "sound": "A larger delay is a slower strum or a looser spread."
   },
   {
    "index": 0,
    "id": "Note Cut",
    "name": "Note Cut",
+   "plain_name": "Note cut",
+   "role": "note.length",
    "group": "",
    "min": 0,
    "max": 254,
@@ -531,12 +555,14 @@
     "127 ticks"
    ],
    "description": "Note Cut (0=infinite, 01-7F in tick/128, 80-FE = 1-127 ticks)",
-   "confidence": "values"
+   "how": "Sets when the chord notes are cut: Infinite (the default), or 1/128 of a tick up to 127 ticks.",
+   "sound": "A short cut makes the chord staccato; Infinite lets the target decide how long they ring."
   },
   {
    "index": 0,
    "id": "Arp Mode",
    "name": "Arp Mode",
+   "plain_name": "Arpeggio mode",
    "group": "",
    "min": 0,
    "max": 6,
@@ -552,12 +578,14 @@
     "'Brownian'"
    ],
    "description": "Arpeggio Mode (0=off, 1=up, 2=down, 3=up/down, 4=down/up, 5=random, 6='Brownian')",
-   "confidence": "values"
+   "how": "Chooses an arpeggio over the chord: Off (the default), Up, Down, Up/Down, Down/Up, Random or Brownian.",
+   "sound": "The chord notes come one after another instead of together, in the pattern chosen."
   },
   {
    "index": 0,
    "id": "Arp Steps",
    "name": "Arp Steps",
+   "plain_name": "Arpeggio steps",
    "group": "",
    "min": 2,
    "max": 16,
@@ -566,12 +594,14 @@
    "a": 2.0,
    "b": 16.0,
    "description": "Number Of Arpeggio Steps",
-   "confidence": "values"
+   "how": "Sets how many steps the arpeggio uses, 2 to 16 (4 by default).",
+   "sound": "More steps make a longer arpeggio before it repeats."
   },
   {
    "index": 0,
    "id": "Step Len",
    "name": "Step Len",
+   "plain_name": "Arpeggio step length",
    "group": "",
    "min": 16,
    "max": 255,
@@ -820,12 +850,14 @@
     "128 ticks"
    ],
    "description": "Arpeggio Step Length (10-7F in tick/128, 80-FF = 1-128 ticks)",
-   "confidence": "values"
+   "how": "Sets the length of each arpeggio step, from 16/128 of a tick up to 128 ticks (128/128, one tick, by default).",
+   "sound": "Shorter steps run the arpeggio faster."
   },
   {
    "index": 0,
    "id": "Arp Reset",
    "name": "Arp Reset",
+   "plain_name": "Arpeggio reset",
    "group": "",
    "min": 0,
    "max": 1,
@@ -836,12 +868,14 @@
     "Yes"
    ],
    "description": "Arpeggio Reset on note on (1=yes 0=no)",
-   "confidence": "values"
+   "how": "Chooses whether the arpeggio restarts on each new note: No or Yes (Yes by default).",
+   "sound": "Yes makes every note begin the pattern from its first step; No lets it carry on."
   },
   {
    "index": 0,
    "id": "ArpShuf Step",
    "name": "ArpShuf Step",
+   "plain_name": "Arpeggio shuffle step",
    "group": "",
    "min": 0,
    "max": 32,
@@ -883,12 +917,14 @@
     "32 ticks"
    ],
    "description": "Arpeggio Shuffle Step (in ticks, 0=off)",
-   "confidence": "values"
+   "how": "Sets the step size of the arpeggio shuffle, Off or 1 to 32 ticks (Off by default).",
+   "sound": "It picks which arpeggio steps get delayed to give a swing."
   },
   {
    "index": 0,
    "id": "ArpShuf Len",
    "name": "ArpShuf Len",
+   "plain_name": "Arpeggio shuffle length",
    "group": "",
    "min": 0,
    "max": 128,
@@ -898,12 +934,14 @@
    "b": 1.000036,
    "unit": "ticks",
    "description": "Arpeggio Shuffle Length (0=0.00 tick, 40=0.50 tick, 80=1.00 tick)",
-   "confidence": "values"
+   "how": "Sets how far the shuffled steps are delayed, 0 to 128 as 0 up to 1 tick (0 by default).",
+   "sound": "More delay gives a looser, more swung arpeggio."
   },
   {
    "index": 0,
    "id": "Octave R,2",
    "name": "Octave R,2",
+   "plain_name": "Octave of notes 1 and 2",
    "group": "",
    "min": 0,
    "max": 254,
@@ -1167,12 +1205,14 @@
     "+7, +6"
    ],
    "description": "Octave Root, 2 (xy : 8=+0, F=+7, 0=-8)",
-   "confidence": "values"
+   "how": "Sets the octave shift of the root and second chord note, each -8 to +7 (both 0 at the default).",
+   "sound": "It spreads the chord over octaves: positive lifts a note, negative drops it."
   },
   {
    "index": 0,
    "id": "Octave 3,4",
    "name": "Octave 3,4",
+   "plain_name": "Octave of notes 3 and 4",
    "group": "",
    "min": 0,
    "max": 254,
@@ -1436,12 +1476,14 @@
     "+7, +6"
    ],
    "description": "Octave 3, 4 (xy : 8=+0, F=+7, 0=-8)",
-   "confidence": "values"
+   "how": "Sets the octave shift of the third and fourth chord notes, each -8 to +7 (both 0 by default).",
+   "sound": "It spreads the chord's middle notes over octaves."
   },
   {
    "index": 0,
    "id": "Octave 5,6",
    "name": "Octave 5,6",
+   "plain_name": "Octave of notes 5 and 6",
    "group": "",
    "min": 0,
    "max": 254,
@@ -1705,12 +1747,14 @@
     "+7, +6"
    ],
    "description": "Octave 5, 6 (xy : 8=+0, F=+7, 0=-8)",
-   "confidence": "values"
+   "how": "Sets the octave shift of the fifth and sixth chord notes, each -8 to +7 (both 0 by default).",
+   "sound": "It spreads the chord's upper notes over octaves."
   },
   {
    "index": 0,
    "id": "First Track",
    "name": "First Track",
+   "plain_name": "First target track",
    "group": "",
    "min": 0,
    "max": 254,
@@ -1719,12 +1763,14 @@
    "a": 0.0,
    "b": 254.0,
    "description": "First Track to use (max of 6 consecutive tracks needed)",
-   "confidence": "values"
+   "how": "Chooses the first track of the target machine that the chord uses, 0 to 254 (0 by default); up to six consecutive tracks are needed.",
+   "sound": "It decides which of the target's tracks play the chord notes, so they must exist and be free."
   },
   {
    "index": 0,
    "id": "Custom 2",
    "name": "Custom 2",
+   "plain_name": "Custom note 2",
    "group": "",
    "min": 0,
    "max": 48,
@@ -1782,12 +1828,14 @@
     "Off"
    ],
    "description": "Custom Chord note 2 (offset in semitones or 30=off)",
-   "confidence": "values"
+   "how": "Sets the second note of a custom chord as a semitone offset from the root, 0 to 47, or Off (Off by default).",
+   "sound": "It adds that note to the custom chord; Off leaves it out."
   },
   {
    "index": 0,
    "id": "Custom 3",
    "name": "Custom 3",
+   "plain_name": "Custom note 3",
    "group": "",
    "min": 0,
    "max": 48,
@@ -1845,12 +1893,14 @@
     "Off"
    ],
    "description": "Custom Chord note 3 (offset in semitones or 30=off)",
-   "confidence": "values"
+   "how": "Sets the third note of a custom chord as a semitone offset from the root, 0 to 47, or Off (Off by default).",
+   "sound": "It adds that note to the custom chord; Off leaves it out."
   },
   {
    "index": 0,
    "id": "Custom 4",
    "name": "Custom 4",
+   "plain_name": "Custom note 4",
    "group": "",
    "min": 0,
    "max": 48,
@@ -1908,12 +1958,14 @@
     "Off"
    ],
    "description": "Custom Chord note 4 (offset in semitones or 30=off)",
-   "confidence": "values"
+   "how": "Sets the fourth note of a custom chord as a semitone offset from the root, 0 to 47, or Off (Off by default).",
+   "sound": "It adds that note to the custom chord; Off leaves it out."
   },
   {
    "index": 0,
    "id": "Custom 5",
    "name": "Custom 5",
+   "plain_name": "Custom note 5",
    "group": "",
    "min": 0,
    "max": 48,
@@ -1971,12 +2023,14 @@
     "Off"
    ],
    "description": "Custom Chord note 5 (offset in semitones or 30=off)",
-   "confidence": "values"
+   "how": "Sets the fifth note of a custom chord as a semitone offset from the root, 0 to 47, or Off (Off by default).",
+   "sound": "It adds that note to the custom chord; Off leaves it out."
   },
   {
    "index": 0,
    "id": "Custom 6",
    "name": "Custom 6",
+   "plain_name": "Custom note 6",
    "group": "",
    "min": 0,
    "max": 48,
@@ -2034,7 +2088,8 @@
     "Off"
    ],
    "description": "Custom Chord note 6 (offset in semitones or 30=off)",
-   "confidence": "values"
+   "how": "Sets the sixth note of a custom chord as a semitone offset from the root, 0 to 47, or Off (Off by default).",
+   "sound": "It adds that note to the custom chord; Off leaves it out."
   }
  ]
 }

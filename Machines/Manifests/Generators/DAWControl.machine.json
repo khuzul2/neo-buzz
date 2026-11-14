@@ -2,15 +2,25 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "DAWControl",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c or d) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
  "type": "control",
- "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "summary": "A control machine with a Bypass switch and its own window that reacts to MIDI notes and controller changes as a DAW controller. What it controls was not measured.",
  "category": "Control",
  "tags": [
   "automation"
  ],
  "use_for": "A control-only helper with a single bypass switch; it makes no sound of its own.",
+ "quirks": [
+  "It makes no sound. Its DLL names MIDI note and control-change handling and a DAW control type; the app's preferences have a DAW controllers list: whether the machine acts on those assignments is unverified.",
+  "Transport and bindings are covered here by the transport, midi_bind and midi_learn tools.",
+  "Closed source (a prebuilt DLL): names come from its own texts, its DLL's type names and the profile, not from code."
+ ],
+ "evidence": [
+  "RunTime/Gear/Generators/DAWControl.NET.dll — type and member names read from the DLL (MIDI note, control change and DAW control type)",
+  "ReBuzz/Midi/MidiControllerAssignments.cs — the app's own DAW controller assignments, stored by id",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - a control machine, no sound"
+ ],
  "tracks": 0,
  "health": {
   "status": "ok",
@@ -22,6 +32,8 @@
    "index": 0,
    "id": "Bypass",
    "name": "Bypass",
+   "plain_name": "Bypass",
+   "role": "bypass",
    "group": "",
    "min": 0,
    "max": 1,
@@ -31,8 +43,9 @@
     "no",
     "yes"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Switches the machine off: no (the default) or yes; what it does while on was not measured.",
+   "how": "Switches the machine off: no (the default) or yes; what it does while on was not measured.",
+   "sound": "It makes no sound; bypass only stops it acting on what it controls."
   }
  ],
  "track_parameters": []
