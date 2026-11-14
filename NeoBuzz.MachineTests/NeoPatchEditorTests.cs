@@ -89,6 +89,31 @@ namespace NeoBuzz.MachineTests
         // ------------------------------------------------------------------ the model
 
         [Test]
+        public void TheTemplatesButtonListsEveryLessonAndPickingOneLoadsItAsOneStep()
+        {
+            var rig = new Rig();
+            var b = rig.Surface.Buttons().Single(x => x.Id == "templates");
+            rig.Click(b.Rect.X + 10, b.Rect.Y + 8);
+            Assert.That(rig.Surface.Menu, Is.Not.Null);
+            Assert.That(rig.Surface.Menu.Visible.Select(x => x.Label), Is.EqualTo(PatchLessons.Titles));
+            rig.Surface.Menu.Visible[PatchLessons.Find("fm-2op")].Pick();
+            Assert.That(rig.G.Nodes.Count, Is.GreaterThan(5));
+            Assert.That(rig.G.Name, Is.EqualTo(PatchLessons.Titles[PatchLessons.Find("fm-2op")]));
+            Assert.That(Enumerable.Range(0, 16).All(m => rig.Host.Macros[m] == 0.5f), Is.True, "macros at 50 %, where the template is as built");
+            Assert.That(rig.Model.Undo(), Is.True);
+            Assert.That(rig.G.Nodes, Is.Empty, "the load was one step");
+            Assert.That(rig.Model.Undo(), Is.False);
+        }
+
+        [Test]
+        public void AnEmptyPatchOffersTheTemplatesAndTheTemplatesButtonDrawsInsideTheToolbar()
+        {
+            var rig = new Rig();
+            Assert.That(rig.Texts(), Has.Some.Contains("template"));
+            foreach (var b in rig.Surface.Buttons()) Assert.That(b.Rect.Right, Is.LessThanOrEqualTo(PatchSurface.Width), b.Id);
+        }
+
+        [Test]
         public void AddConnectDisconnectUndoAndRedoAreOneStepEach()
         {
             var rig = new Rig();

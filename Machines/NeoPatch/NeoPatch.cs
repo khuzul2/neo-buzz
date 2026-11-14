@@ -29,7 +29,7 @@ namespace NeoBuzz.Patch
     }
 
     [MachineDecl(Name = "Neo Patch", ShortName = "Patch", Author = "neo-buzz", MaxTracks = 16, InputCount = 0, OutputCount = 1)]
-    public partial class NeoPatchMachine : NeoSynthBase, IBuzzMachine
+    public partial class NeoPatchMachine : NeoSynthBase, IBuzzMachine, IPatchAgent
     {
         readonly float[] left = new float[PatchEngine.MaxBlock], right = new float[PatchEngine.MaxBlock];
         int rate;
@@ -56,6 +56,24 @@ namespace NeoBuzz.Patch
             Engine.SetPatch(text);
             state.Patch = Engine.Text();
             PatchReplaced?.Invoke();
+        }
+
+        PatchAgentApi agentApi;
+
+        /// <summary>
+        /// Agent server (neo-patch.md §4.6, the patch_* tools): one operation on the patch, through the model the inner canvas uses, with the song's history
+        /// behind it (one undo step each). The open canvas redraws from PatchReplaced.
+        /// </summary>
+        public string Invoke(string op, string argsJson)
+        {
+            agentApi ??= new PatchAgentApi(Engine, new SongHistory(host?.Machine));
+            string reply = agentApi.Invoke(op, argsJson);
+            if (agentApi.Edited)
+            {
+                state.Patch = Engine.Text();
+                PatchReplaced?.Invoke();
+            }
+            return reply;
         }
 
         /// <summary>Agent server (mcp-server.md A3): true while a table or sample the patch plays is still being built. Offline renders wait for it.</summary>

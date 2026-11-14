@@ -48,6 +48,7 @@ namespace NeoBuzz.Patch
             yield return new Button("zoomin", new NeoRect(x + 122, y, 26, 24), "+");
             yield return new Button("learn", new NeoRect(x + 158, y, 64, 24), "Learn");
             yield return new Button("tidy", new NeoRect(x + 228, y, 44, 24), "Tidy");
+            yield return new Button("templates", new NeoRect(x + 278, y, 68, 24), "Templates");
         }
 
         public NeoRect NameRect => new NeoRect(8, 6, 214, 24);
@@ -65,10 +66,34 @@ namespace NeoBuzz.Patch
                     case "zoomin": ZoomBy(1.25, CanvasRect.X + CanvasRect.Width / 2, CanvasRect.Y + CanvasRect.Height / 2); break;
                     case "learn": Learn = !Learn; break;
                     case "tidy": if (model.AutoLayout(NodeHeight)) Fit(); break;
+                    case "templates": OpenTemplates(b.Rect.X, b.Rect.Bottom + 2); break;
                 }
                 return true;
             }
             return true;
+        }
+
+        /// <summary>The templates menu (NP3, neo-patch.md §4.7): one patch for each lesson of the "build-a-synth" guide.</summary>
+        public void OpenTemplates(double x, double y)
+        {
+            var items = new List<MenuItemModel>();
+            for (int i = 0; i < PatchLessons.Count; i++)
+            {
+                int k = i;
+                items.Add(new MenuItemModel { Label = PatchLessons.Titles[i], Pick = () => LoadTemplate(k) });
+            }
+            Menu = new PatchMenu("Templates", items, false, x, y);
+        }
+
+        /// <summary>Replaces the patch with a template (one undo step), puts the macros at 50 % (the level the templates are set for) and fits the view.</summary>
+        public void LoadTemplate(int index)
+        {
+            if (index < 0 || index >= PatchLessons.Count) return;
+            if (!model.LoadGraph(PatchLessons.Build(index), "Load template " + PatchLessons.Titles[index])) return;
+            host.BeginMacro();
+            for (int m = 0; m < 16; m++) host.SetMacro(m, 0.5f);
+            host.EndMacro();
+            Fit();
         }
 
         void OpenRename()
@@ -246,6 +271,7 @@ namespace NeoBuzz.Patch
                 case "rename": OpenRename(); break;
                 case "renamemacro": OpenMacroRename(model.SelectedMacro); break;
                 case "starter": AddStarter(); break;
+                case "templates": OpenTemplates(PanelRect.X + 12, PanelRect.Y + 120); break;
             }
         }
 
@@ -430,7 +456,11 @@ namespace NeoBuzz.Patch
             y += 8;
             Btn("rename", "Name the patch…", x0, wi);
             y += 30;
-            if (g.Nodes.Count == 0) { Btn("starter", "Add a basic voice", x0, wi); y += 30; }
+            if (g.Nodes.Count == 0)
+            {
+                Btn("starter", "Add a basic voice", x0, wi); y += 30;
+                Btn("templates", "Start from a template…", x0, wi); y += 30;
+            }
         }
 
         void NodePanel(INeoCanvas cv, Node n, ref double y, double x0, double wi, BtnFn Btn)

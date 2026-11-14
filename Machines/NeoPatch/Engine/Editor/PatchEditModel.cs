@@ -325,6 +325,35 @@ namespace NeoBuzz.Patch
             return false;
         }
 
+        /// <summary>Deletes one node by id (with its wires and macro mappings): the agent's patch_remove; one history step.</summary>
+        public bool DeleteNode(int id)
+        {
+            var n = Graph.Find(id);
+            if (n == null) return false;
+            bool did = Run("Delete " + n.Info.Name, () => Structural(g => { g.Remove(id); return true; }));
+            if (did) { selection.Remove(id); if (Primary == id) Primary = 0; Changed?.Invoke(); }
+            return did;
+        }
+
+        /// <summary>
+        /// Replaces the whole patch with another (a template; the agent's patch_load_template): one history step. The new graph is compiled off the audio
+        /// thread and swapped in at a block start; nodes with the same id keep their state. False (the patch as it was) when it does not compile.
+        /// </summary>
+        public bool LoadGraph(PatchGraph graph, string label)
+        {
+            var old = engine.Graph;
+            bool did = Run(label, () =>
+            {
+                string error = engine.SetGraph(graph);
+                if (error == null) return true;
+                engine.SetGraph(old);
+                SayNotice("That patch was refused: " + error);
+                return false;
+            });
+            if (did) { selection.Clear(); SelectedWire = null; Primary = 0; Changed?.Invoke(); }
+            return did;
+        }
+
         public bool SetGlobal(int id, bool global)
         {
             var n = Graph.Find(id);

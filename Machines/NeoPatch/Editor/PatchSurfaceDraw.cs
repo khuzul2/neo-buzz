@@ -290,7 +290,7 @@ namespace NeoBuzz.Patch
                 if (b.Id == "zoomout") cv.Text(Math.Round(Zoom * 100) + "%", b.Rect.Right + 22, b.Rect.Y + 5, 11, Palette.DimText, align: NeoAlign.Center);
             }
             // The port types.
-            double x = 560;
+            double x = 584;
             foreach (PortType pt in new[] { PortType.Audio, PortType.Control, PortType.Gate, PortType.Pitch })
             {
                 cv.Ellipse(new NeoPoint(x, 18), 5, 5, PortColour(pt), NeoStroke.None);

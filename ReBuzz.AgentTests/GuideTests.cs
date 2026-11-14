@@ -17,7 +17,7 @@ namespace ReBuzz.AgentTests
     [TestFixture]
     public class GuideTests
     {
-        internal static readonly string[] Topics = { "workflow", "concepts", "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain", "dye-essence-in-depth", "dye-essence-analysis", "dye-essence-effects", "neo-eq-in-depth", "app-control", "troubleshooting" };
+        internal static readonly string[] Topics = { "workflow", "concepts", "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain", "dye-essence-in-depth", "dye-essence-analysis", "dye-essence-effects", "neo-eq-in-depth", "build-a-synth", "app-control", "troubleshooting" };
         static readonly string[] NeoGear = { "Neo Analyzer", "Neo Clipper", "Neo Comp", "Neo De-esser", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo Envelope", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Gate", "Neo Imager", "Neo Limiter", "Neo LFO", "Neo Low End", "Neo Macro", "Neo Multiband", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Step", "Neo Strip", "Neo Tape", "Neo Transient", "Neo Utility", "Neo Verb", "Neo Wave", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
 
         /// <summary>Neo gear being built in parallel (phase A4): parameter names aren't final, so guides give them moves in units and say to read the names with machine_describe.</summary>
@@ -83,6 +83,17 @@ namespace ReBuzz.AgentTests
             ["analyze_mix"] = new[] { "from", "to", "section", "machines" },
             ["compare"] = new[] { "a", "b", "from_seconds", "to_seconds" },
             ["plot"] = new[] { "kind", "sources", "title", "from_seconds", "to_seconds" },
+            // Neo Patch NP3 (ReBuzz.Agent/App/PatchTools.cs)
+            ["patch_describe"] = new[] { "machine", "catalog" },
+            ["patch_add_node"] = new[] { "kind", "controls", "global", "x", "y", "machine" },
+            ["patch_connect"] = new[] { "from_node", "to_node", "to_port", "from_port", "amount", "machine" },
+            ["patch_disconnect"] = new[] { "from_node", "to_node", "to_port", "from_port", "node", "all", "machine" },
+            ["patch_set"] = new[] { "node", "control", "value", "global", "changes", "machine" },
+            ["patch_remove"] = new[] { "node", "nodes", "machine" },
+            ["patch_macro_map"] = new[] { "macro", "node", "control", "low", "high", "label", "unmap", "machine" },
+            ["patch_load_template"] = new[] { "template", "machine" },
+            ["patch_save_preset"] = new[] { "name", "comment", "overwrite", "machine" },
+
             ["preset_list"] = new[] { "machine", "search", "category", "limit", "offset" },
             ["preset_load"] = new[] { "machine", "preset" },
             ["preset_save"] = new[] { "machine", "name", "comment", "overwrite" },
@@ -145,7 +156,7 @@ namespace ReBuzz.AgentTests
         static readonly string[] TransformOps = { "transpose", "quantize", "humanize", "velocity", "shift", "stretch", "reverse", "invert", "legato", "staccato" };
 
         /// <summary>Tool areas: a backticked snake_case word starting with one of these must be a tool.</summary>
-        static readonly string[] Areas = { "studio", "song", "gear", "machine", "connection", "param", "preset", "snapshot", "pattern", "notes", "automation", "arrangement", "session", "wave", "theory", "render", "analyze", "guide", "target", "eq", "settings", "midi", "audio", "export", "view", "panel", "window" };
+        static readonly string[] Areas = { "studio", "song", "gear", "machine", "connection", "param", "preset", "snapshot", "pattern", "notes", "automation", "arrangement", "session", "wave", "theory", "render", "analyze", "guide", "target", "eq", "settings", "midi", "audio", "export", "view", "panel", "window", "patch" };
 
         // ---- the repository -------------------------------------------------------------------
 

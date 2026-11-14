@@ -122,6 +122,26 @@ namespace ReBuzz.Agent
             return i > 0 ? name.Substring(0, i) : "";
         }
 
+        /// <summary>Saves a machine's current sound as a preset of its gear (preset_save, and patch_save_preset for Neo Patch); on the engine's queue.</summary>
+        internal static JsonObject SavePreset(MachineCore m, string name, string comment, bool overwrite)
+        {
+            if (SongModel.IsMaster(m)) throw new ToolError("Master has no presets.");
+            if (name.Length == 0 || name == "<default>") throw new ToolError("name: give the preset a name.");
+            var pd = Presets(m);
+            if (pd.ContainsKey(name) && !overwrite)
+                throw new ToolError($"{m.DLL.Name} already has a preset \"{name}\". Pass overwrite=true to replace it, or choose another name.");
+            var preset = new Preset(m, false, true) { Comment = comment ?? "" };
+            pd[name] = preset;
+            try { pd.Save(); }
+            catch (Exception e)
+            {
+                pd.Remove(name);
+                throw new ToolError($"Couldn't write {pd.Filename}: {e.Message}. The gear folder may be read-only (install {Product.Name} somewhere writable).");
+            }
+            presetFiles.TryRemove(pd.Filename, out var stale);
+            return new JsonObject { ["machine"] = m.Name, ["preset"] = name, ["file"] = pd.Filename };
+        }
+
         public static void Register(ToolRegistry tools, AgentHost host)
         {
             var core = host.Core;
@@ -256,25 +276,7 @@ namespace ReBuzz.Agent
                 Handler = async c =>
                 {
                     var r = await host.Engine("preset_save", false, _ =>
-                    {
-                        var m = SongModel.Machine(core, c.RequiredString("machine"));
-                        if (SongModel.IsMaster(m)) throw new ToolError("Master has no presets.");
-                        string name = c.RequiredString("name").Trim();
-                        if (name.Length == 0 || name == "<default>") throw new ToolError("name: give the preset a name.");
-                        var pd = Presets(m);
-                        if (pd.ContainsKey(name) && c.Bool("overwrite") != true)
-                            throw new ToolError($"{m.DLL.Name} already has a preset \"{name}\". Pass overwrite=true to replace it, or choose another name.");
-                        var preset = new Preset(m, false, true) { Comment = c.String("comment") ?? "" };
-                        pd[name] = preset;
-                        try { pd.Save(); }
-                        catch (Exception e)
-                        {
-                            pd.Remove(name);
-                            throw new ToolError($"Couldn't write {pd.Filename}: {e.Message}. The gear folder may be read-only (install {Product.Name} somewhere writable).");
-                        }
-                        presetFiles.TryRemove(pd.Filename, out var stale);
-                        return new JsonObject { ["machine"] = m.Name, ["preset"] = name, ["file"] = pd.Filename };
-                    }, c.Cancellation);
+                        SavePreset(SongModel.Machine(core, c.RequiredString("machine")), c.RequiredString("name").Trim(), c.String("comment"), c.Bool("overwrite") == true), c.Cancellation);
                     return ToolResult.Ok($"Saved {r["machine"]}'s sound as \"{r["preset"]}\" in {r["file"]}.", r);
                 },
             });

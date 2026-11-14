@@ -251,6 +251,7 @@ Phases (§9) are marked A1 … A7.
 | `preset_list`, `preset_load`, `preset_save` | A2 | ReBuzz presets (the factory `.prs.xml` files and the user's own) |
 | `snapshot_save`, `snapshot_restore`, `snapshot_diff` | A2 | Named whole-song parameter snapshots (all machines, connections, mutes) for A/B comparison of mixes and sounds |
 | `machine_data_import` | A3 | Machine-specific data: a wavetable WAV for Neo Wave, a DX7 bank for Neo FM6, a sample for a sampler. Typed per machine through the Neo manifest; never through dialog commands |
+| `patch_describe`, `patch_add_node`, `patch_connect`, `patch_disconnect`, `patch_set`, `patch_remove`, `patch_macro_map`, `patch_load_template`, `patch_save_preset` | NP3 | Build and edit the patch inside a Neo Patch machine (neo-patch.md §4.6). Nodes are addressed by id (from `patch_describe`), kinds, ports and controls by name or number, values in real units (`"1.5 kHz"`, `"250 ms"`, a choice's name); out-of-range values and unknown names are refused with the range or the closest names. A refused cycle names the cycle and suggests a Feedback node. Each editing call validates first (a refusal changes nothing) and is one undo step on the song's stack, the same stack and the same model as the canvas editor. `patch_load_template` takes `start`, `subtractive`, `fm-2op`, `fm-4op`, `am-ring`, `wavefolder`, `sync-lead`, `plucked-string`, `vector-crossfade` or `sample-loop`; `patch_save_preset` stores the patch as a factory-style user preset (`Group — Name`). Guide: `build-a-synth` |
 
 ### 5.5 Composition
 

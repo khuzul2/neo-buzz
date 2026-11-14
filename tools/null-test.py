@@ -203,6 +203,13 @@ CASES = [
     gen("patch-wavetable-drift", "Neo Patch", "Pad — Wavetable Drift", [], CHORDS),
     gen("patch-pluck-ladder", "Neo Patch", "Pluck — Ladder", [], KEYS),
     gen("patch-echo-after-sum", "Neo Patch", "FX — Echo After the Sum", [], LEAD),
+    # Neo Patch NP3: five of the new presets (the templates' sounds): Reese pair, sync sweep, plucked string, electric tine, crossfade glass.
+    gen("patch-reese-pair", "Neo Patch", "Bass — Reese Pair", [], BASS),
+    gen("patch-sync-sweep", "Neo Patch", "Lead — Sync Sweep", [], LEAD),
+    gen("patch-karplus-string", "Neo Patch", "Pluck — Karplus String", [], KEYS),
+    gen("patch-electric-tine", "Neo Patch", "Keys — Electric Tine", [], KEYS),
+    gen("patch-crossfade-glass", "Neo Patch", "Pad — Crossfade Glass", [], CHORDS),
+
     # Dye Essence P2: the Sample engine (looped, eight-voice unison, one-shot, reversed, two slots) and the
     # Granular engine (frozen, scanning, a spray of pitched grains with reversed ones); the grain clouds and
     # the sample recipes are built from the portable maths, so every platform renders the same.
