@@ -104,10 +104,10 @@ namespace BuzzGUI.Common
         /// <summary>Delays and cuts count in 1/95 of a row (the Modern Pattern Editor's 0x5f).</summary>
         public const int Fraction = 95;
 
-        static int ToFraction(int offset, int rowLength) =>
+        public static int ToFraction(int offset, int rowLength) =>
             Math.Clamp((int)Math.Round(offset * (double)Fraction / rowLength), 0, Fraction);
 
-        static int FromFraction(int fraction, int rowLength) =>
+        public static int FromFraction(int fraction, int rowLength) =>
             (int)Math.Round(fraction * (double)rowLength / Fraction);
 
         /// <summary>
@@ -118,15 +118,24 @@ namespace BuzzGUI.Common
         /// note-off (delayed into its row). Notes needing more than <paramref name="maxTracks"/>
         /// tracks, above <paramref name="maxNote"/>, or starting past the pattern, are left out.
         /// </summary>
-        public static List<TrackerRow> ToRows(IEnumerable<TrackerNote> notes, RowGrid grid, int length, int maxTracks, out int tracks, out int dropped, int maxNote = 127)
+        public static List<TrackerRow> ToRows(IEnumerable<TrackerNote> notes, RowGrid grid, int length, int maxTracks, out int tracks, out int dropped, int maxNote = 127) =>
+            ToRowsIndexed(notes, grid, length, maxTracks, out tracks, out dropped, out _, maxNote);
+
+        /// <summary>
+        /// <see cref="ToRows"/>, and for each row where it came from: <paramref name="sources"/> (one a row) holds the index in
+        /// <paramref name="notes"/> of the note a row starts, and for a note-off row the complement (~index) of the note it ends.
+        /// Daw-modes.md AR3: the Notes lanes of the tracker keep to the very notes they show.
+        /// </summary>
+        public static List<TrackerRow> ToRowsIndexed(IEnumerable<TrackerNote> notes, RowGrid grid, int length, int maxTracks, out int tracks, out int dropped, out List<int> sources, int maxNote = 127)
         {
-            var ordered = notes.Where(n => n.Time >= 0).OrderBy(n => n.Time).ThenBy(n => n.Midi).ToList();
+            var ordered = notes.Select((n, i) => (n, i)).Where(x => x.n.Time >= 0).OrderBy(x => x.n.Time).ThenBy(x => x.n.Midi).ToList();
             var ends = new List<int>();                       // per track: when its last note ends
             var lastRows = new List<int>();                   // and where its row starts
-            var lanes = new List<List<TrackerNote>>();
+            var lanes = new List<List<(TrackerNote n, int i)>>();
             dropped = 0;
-            foreach (var n in ordered)
+            foreach (var x in ordered)
             {
+                var n = x.n;
                 if (n.Time >= length || n.Midi < 0 || n.Midi > maxNote) { dropped++; continue; }
                 int rowStart = grid.Start(grid.RowAt(n.Time));
                 int t = -1;
@@ -138,21 +147,21 @@ namespace BuzzGUI.Common
                     t = ends.Count;
                     ends.Add(0);
                     lastRows.Add(0);
-                    lanes.Add(new List<TrackerNote>());
+                    lanes.Add(new List<(TrackerNote, int)>());
                 }
                 ends[t] = n.Time + Math.Max(1, n.Duration);
                 lastRows[t] = rowStart;
-                lanes[t].Add(n);
+                lanes[t].Add(x);
             }
             tracks = lanes.Count;
 
-            var rows = new List<TrackerRow>();
+            var rows = new List<(TrackerRow Row, int Source)>();
             for (int t = 0; t < lanes.Count; t++)
             {
                 var lane = lanes[t];
                 for (int i = 0; i < lane.Count; i++)
                 {
-                    var n = lane[i];
+                    var n = lane[i].n;
                     int row = grid.RowAt(n.Time);
                     int start = grid.Start(row), rowLength = grid.Length(row);
                     int delay = ToFraction(n.Time - start, rowLength);
@@ -161,14 +170,16 @@ namespace BuzzGUI.Common
                     int cut = 0;
                     if (endRow == row)
                         cut = Math.Min(Fraction, Math.Max(delay + 1, ToFraction(end - start, rowLength)));
-                    rows.Add(new TrackerRow(t, start, rowLength, Math.Clamp(n.Midi, 0, 127), Math.Clamp(n.Velocity, 1, 127), delay, cut));
-                    bool endedByNext = i + 1 < lane.Count && lane[i + 1].Time == end;
+                    rows.Add((new TrackerRow(t, start, rowLength, Math.Clamp(n.Midi, 0, 127), Math.Clamp(n.Velocity, 1, 127), delay, cut), lane[i].i));
+                    bool endedByNext = i + 1 < lane.Count && lane[i + 1].n.Time == end;
                     if (cut > 0 || endedByNext || end >= length) continue;
                     int offStart = grid.Start(endRow), offLength = grid.Length(endRow);
-                    rows.Add(new TrackerRow(t, offStart, offLength, -1, 0, ToFraction(end - offStart, offLength), 0));
+                    rows.Add((new TrackerRow(t, offStart, offLength, -1, 0, ToFraction(end - offStart, offLength), 0), ~lane[i].i));
                 }
             }
-            return rows.OrderBy(r => r.Track).ThenBy(r => r.Time).ToList();
+            var sorted = rows.OrderBy(r => r.Row.Track).ThenBy(r => r.Row.Time).ToList();
+            sources = sorted.Select(r => r.Source).ToList();
+            return sorted.Select(r => r.Row).ToList();
         }
 
         /// <summary>

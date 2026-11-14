@@ -67,11 +67,144 @@ namespace NeoBuzz.Fm6
             var ops = new UIElement[6];
             for (int op = 0; op < 6; op++) ops[op] = Operator(ctx, machine, op);
 
+#if AVALONIA
+            // ux-overhaul.md P5a: in the studio the six operators are an overview (one tile each: role, frequency, level now) with one
+            // operator open below it. The same controls and parameters as the classic layout; only where they sit differs.
+            var overview = new OperatorOverview(ctx, machine);
+            var host = new Grid { HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
+            for (int op = 0; op < 6; op++)
+            {
+                ops[op].IsVisible = op == overview.Selected;
+                host.Children.Add(ops[op]);
+            }
+            overview.SelectedChanged += op =>
+            {
+                for (int i = 0; i < ops.Length; i++) ops[i].IsVisible = i == op;
+            };
+            var tiles = new InteractiveGraph(OperatorOverview.TileWidth * 6, OperatorOverview.TileHeight,
+                (g, r) => overview.Draw(g, r, AccentColor), overview, animate: true)
+            {
+                ToolTip = "The six operators: click one (or use the arrow keys, or 1 to 6) to open it below. A tile shows its role in the algorithm, its frequency and its level now.",
+            };
+            Avalonia.Automation.AutomationProperties.SetName(tiles, "Operator overview");
+            overview.SelectedChanged += _ => tiles.InvalidateVisual();
+            ctx.Changed += tiles.InvalidateVisual;
+            return Layout.Column(
+                Layout.Row(algorithm, peg, lfo, voice, output, bank),
+                S("Operators", tiles),
+                host);
+#else
             return Layout.Column(
                 Layout.Row(algorithm, peg, lfo, voice, output, bank),
                 Layout.Row(ops[0], ops[1], ops[2]),
                 Layout.Row(ops[3], ops[4], ops[5]));
+#endif
         }
+
+#if AVALONIA
+        /// <summary>
+        /// The operator overview (P5a): six tiles. Each names its operator and its role in the algorithm now (carrier or modulator),
+        /// gives its frequency and shows its level now, dimmed while the operator is off. One tile is open (outlined); a click, the
+        /// arrow keys, Home, End or the digits 1 to 6 choose it. It reads the engine's operator levels on the UI thread, as the
+        /// operator's own meter does.
+        /// </summary>
+        sealed class OperatorOverview : IGraphInputPlus
+        {
+            public const double TileWidth = 196, TileHeight = 64;
+            readonly EditorContext ctx;
+            readonly NeoFm6Machine machine;
+            int hover = -1;
+
+            public OperatorOverview(EditorContext ctx, NeoFm6Machine machine)
+            {
+                this.ctx = ctx;
+                this.machine = machine;
+            }
+
+            public int Selected { get; private set; }
+            public event Action<int> SelectedChanged;
+            public bool Capturing => false;
+            public bool WantsText => false;
+
+            public void Select(int op)
+            {
+                op = Math.Clamp(op, 0, 5);
+                if (op == Selected) return;
+                Selected = op;
+                SelectedChanged?.Invoke(op);
+            }
+
+            public NeoRect Tile(int op) => new NeoRect(op * TileWidth + 2, 1, TileWidth - 4, TileHeight - 2);
+
+            public void Draw(INeoCanvas c, NeoRect r, NeoColor accent)
+            {
+                var alg = Algorithms.Get(ctx.Raw(P.Algorithm) + 1);
+                for (int op = 0; op < 6; op++)
+                {
+                    var t = Tile(op);
+                    bool on = ctx.Raw(Op(op, P.O1On)) != 0;
+                    var dim = on ? Palette.Text : Palette.DimText;
+                    c.Rect(t, Palette.Panel, new NeoStroke(op == Selected ? accent : op == hover ? Palette.DimText : Palette.PanelEdge, op == Selected ? 2 : 1), 5);
+                    c.Text("Operator " + (op + 1), t.X + 8, t.Y + 6, 12, dim, bold: true);
+                    c.Text(on ? (alg.IsCarrier(op) ? "Carrier" : "Modulator") : "Off", t.Right - 74, t.Y + 7, 11, Palette.DimText);
+                    c.Text(FmText.Frequency(ctx.Raw(Op(op, P.O1Mode)) == 1, ctx.Raw(Op(op, P.O1Coarse)), ctx.Raw(Op(op, P.O1Fine)), ctx.Raw(Op(op, P.O1Detune))),
+                        t.X + 8, t.Y + 24, 13, on ? accent : Palette.DimText, bold: true, maxWidth: t.Width - 16);
+                    // The level now, over the operator's set level (a thin track).
+                    var track = new NeoRect(t.X + 8, t.Bottom - 12, t.Width - 16, 5);
+                    c.Rect(track, Palette.Track, NeoStroke.None, 2);
+                    float g = on ? machine?.Engine.OpLevel(op) ?? 0 : 0;
+                    double db = DspMath.GainToDb(Math.Max(1e-9f, g / 2f));
+                    double w = Math.Clamp((db + 60) / 60, 0, 1) * track.Width;
+                    if (w > 0.5) c.Rect(new NeoRect(track.X, track.Y, w, track.Height), accent, NeoStroke.None, 2);
+                }
+            }
+
+            public bool Down(double x, double y, int clicks, bool fine)
+            {
+                int op = (int)(x / TileWidth);
+                if (x < 0 || y < 0 || op > 5) return false;
+                Select(op);
+                return true;
+            }
+
+            public bool Move(double x, double y, bool fine)
+            {
+                int op = x < 0 || y < 0 || y >= TileHeight ? -1 : Math.Min(5, (int)(x / TileWidth));
+                if (op == hover) return false;
+                hover = op;
+                return true;
+            }
+
+            public bool Up() => false;
+
+            public bool Wheel(double x, double y, int delta, bool fine) => false;
+
+            public bool Leave()
+            {
+                if (hover < 0) return false;
+                hover = -1;
+                return true;
+            }
+
+            public bool RightDown(double x, double y) => false;
+
+            public bool Text(string text) => false;
+
+            public bool Key(string key, bool ctrl, bool shift)
+            {
+                switch (key)
+                {
+                    case "Left": case "Up": Select(Selected - 1); return true;
+                    case "Right": case "Down": Select(Selected + 1); return true;
+                    case "Home": Select(0); return true;
+                    case "End": Select(5); return true;
+                }
+                if (key.Length == 2 && key[0] == 'D' && key[1] >= '1' && key[1] <= '6') { Select(key[1] - '1'); return true; }
+                if (key.Length == 7 && key.StartsWith("NumPad") && key[6] >= '1' && key[6] <= '6') { Select(key[6] - '1'); return true; }
+                return false;
+            }
+        }
+#endif
 
         /// <summary>Small knobs with short labels, <paramref name="columns"/> to a row: (parameter, label) pairs.</summary>
         static UniformGrid Compact(EditorContext ctx, int columns, params object[] pairs) => CompactW(ctx, columns, SmallWidth, pairs);

@@ -178,6 +178,7 @@ namespace WDE.ModernPatternEditor
                 CanExecuteDelegate = x => pattern != null && pattern.Selection.Active,
                 ExecuteDelegate = x =>
                 {
+                    if (RefuseInNoteLanes("Cut")) return;
                     Selection selection = pattern.Selection;
                     if (!selection.Active)
                         selection = Selection.Start(pattern.CursorPosition).SetEnd(pattern.CursorPosition);
@@ -191,6 +192,7 @@ namespace WDE.ModernPatternEditor
                 CanExecuteDelegate = x => pattern != null && pattern.Selection.Active,
                 ExecuteDelegate = x =>
                 {
+                    if (RefuseInNoteLanes("Copy")) return;
                     Selection selection = pattern.Selection;
                     if (!selection.Active)
                         selection = Selection.Start(pattern.CursorPosition).SetEnd(pattern.CursorPosition);
@@ -205,6 +207,7 @@ namespace WDE.ModernPatternEditor
                 CanExecuteDelegate = x => HasColumns && PatternEditor.clipboard.ContainsData,
                 ExecuteDelegate = x =>
                 {
+                    if (RefuseInNoteLanes("Paste")) return;
                     Selection selection = pattern.Selection;
                     if (!selection.Active)
                         selection = Selection.Start(pattern.CursorPosition).SetEnd(pattern.CursorPosition);
@@ -636,6 +639,7 @@ namespace WDE.ModernPatternEditor
 
         private void WriteState()
         {
+            if (RefuseInNoteLanes("Write state")) return;
             Selection s = this.pattern.Selection;
 
             if (!s.Active)
@@ -671,6 +675,7 @@ namespace WDE.ModernPatternEditor
 
         private void RollSelection(bool down)
         {
+            if (RefuseInNoteLanes("Rotate")) return;
             Selection s = this.pattern.Selection;
 
             if (!s.Active || s.Bounds.Item1.ParameterColumn.GetDigitTime(s.Bounds.Item1) >= s.Bounds.Item2.ParameterColumn.GetDigitTime(s.Bounds.Item2))
@@ -683,6 +688,11 @@ namespace WDE.ModernPatternEditor
         /// <summary>Transposes notes, or adds to values, in the selection (or at the cursor).</summary>
         internal void ShiftValues(int delta)
         {
+            if (InNoteLanes())
+            {
+                ShiftNoteLanes(delta);
+                return;
+            }
             Selection s = this.pattern.Selection;
 
             if (!s.Active)
@@ -694,6 +704,7 @@ namespace WDE.ModernPatternEditor
 
         private void RamdomizeSelection()
         {
+            if (RefuseInNoteLanes("Randomize")) return;
             Selection s = this.pattern.Selection;
 
             if (!s.Active)
@@ -759,6 +770,7 @@ namespace WDE.ModernPatternEditor
         /// <summary>Fills the rows between the selection's first and last values of each column.</summary>
         internal void InterpolateSelection(InterpolationMethod method)
         {
+            if (RefuseInNoteLanes("Interpolate")) return;
             Selection s = this.pattern.Selection;
 
             if (!s.Active)
@@ -817,6 +829,7 @@ namespace WDE.ModernPatternEditor
 
         private void InsertOrDelete(bool row, bool delete)
         {
+            if (RefuseInNoteLanes(delete ? "Delete" : "Insert")) return;
             var cursorPos = pattern.CursorPosition;
             if (!row)
             {
@@ -842,6 +855,7 @@ namespace WDE.ModernPatternEditor
 
         void SetBeatSubdivision(int n)
         {
+            if (RefuseInNoteLanes("Beat subdivision")) return;
             var cb = pattern.Selection.ColumnsAndBeats;
             if (!cb.Any()) cb = LinqExtensions.Return(pattern.CursorPosition.ColumnAndBeat);
 
@@ -1055,6 +1069,7 @@ namespace WDE.ModernPatternEditor
 
         public void DoActions(IEnumerable<BuzzAction> actions)
         {
+            if (RunNoteLaneActions(actions)) return;
             using (new ActionGroup(Editor.EditContext.ActionStack))
             {
                 foreach (var a in actions)
@@ -1064,6 +1079,18 @@ namespace WDE.ModernPatternEditor
 
         void DoEditActions(IEnumerable<BuzzAction> actions, bool editWasClear)
         {
+            if (RunNoteLaneActions(actions))
+            {
+                // The edit went to the song's history; the cursor moves as it does after a typed value, without a step of the editor's own.
+                var lanePc = pattern.GetColumn(pattern.CursorPosition) as ParameterColumn;
+                if (PatternEditor.Settings.EditStayOnRow && lanePc != null && lanePc.Type != ColumnRenderer.ColumnType.Note && !editWasClear)
+                    MoveCursor(!pattern.CursorPosition.IsLastIndex
+                        ? pattern.CursorPosition.Offset(1, 0)
+                        : pattern.CursorPosition.FirstIndex.Offset(Editor.SelectedStepsRight, Editor.SelectedStepsDown, true));
+                else
+                    MoveCursor(GetMoveCursorNewPos());
+                return;
+            }
             using (new ActionGroup(Editor.EditContext.ActionStack))
             {
                 foreach (var a in actions)
@@ -1084,6 +1111,86 @@ namespace WDE.ModernPatternEditor
                     Editor.EditContext.ActionStack.Do(new Actions.MoveCursorAction(pattern, pos));
                 }
             }
+        }
+
+        // ------------------------------------------------------------------ the Notes lanes (docs/specs/daw-modes.md AR3)
+
+        /// <summary>
+        /// Runs the actions that are edits of the Notes lanes on the song's history (not the editor's own), true when there were
+        /// any. The others in the list, if any, go to the editor's stack as before.
+        /// </summary>
+        bool RunNoteLaneActions(IEnumerable<BuzzAction> actions)
+        {
+            if (actions == null) return false;
+            var list = actions as IList<BuzzAction> ?? actions.ToList();
+            if (!list.Any(a => a is NoteLaneAction)) return false;
+            foreach (var a in list)
+                if (a is NoteLaneAction lane) lane.RunOnSong();
+            var others = list.Where(a => a is not NoteLaneAction).ToList();
+            if (others.Count > 0)
+                using (new ActionGroup(Editor.EditContext.ActionStack))
+                    foreach (var a in others) Editor.EditContext.ActionStack.Do(a);
+            return true;
+        }
+
+        /// <summary>Whether the cursor, or the selection, is in or reaches over a Notes lane.</summary>
+        bool InNoteLanes()
+        {
+            if (pattern == null || !HasColumns) return false;
+            int a, b;
+            if (pattern.Selection.Active)
+            {
+                var bounds = pattern.Selection.Bounds;
+                a = bounds.Item1.ColumnSet;
+                b = bounds.Item2.ColumnSet;
+            }
+            else
+                a = b = pattern.CursorPosition.ColumnSet;
+            for (int i = Math.Max(0, a); i <= b && i < pattern.ColumnSets.Count; i++)
+                if (pattern.ColumnSets[i] is NoteLaneColumnSet) return true;
+            return false;
+        }
+
+        /// <summary>For the commands the lanes don't have yet (they act on the editor's own columns): says so, true when it did.</summary>
+        bool RefuseInNoteLanes(string what)
+        {
+            if (!InNoteLanes()) return false;
+            Global.Buzz.DCWriteLine("{statusbar}" + what + " isn't in the Notes lanes yet: they are the MIDI column's notes, which the piano roll edits too.");
+            return true;
+        }
+
+        /// <summary>Transposes the notes in the selection (or at the cursor) of the Notes lanes: one step of the song's history.</summary>
+        void ShiftNoteLanes(int delta)
+        {
+            Selection s = pattern.Selection;
+            if (!s.Active)
+                s = Selection.Start(pattern.CursorPosition).SetEnd(pattern.CursorPosition);
+            var (tl, br) = s.Bounds;
+            int rpb = Math.Max(1, pattern.DefaultRPB);
+            NoteLaneHost host = null;
+            var removed = new List<LaneEvent>();
+            var added = new List<LaneEvent>();
+            for (int set = tl.ColumnSet; set <= br.ColumnSet; set++)
+            {
+                if (pattern.ColumnSets[set] is not NoteLaneColumnSet lanes)
+                {
+                    Global.Buzz.DCWriteLine("{statusbar}Transpose: select Notes lanes only, or none.");
+                    return;
+                }
+                host = lanes.Host;
+                int firstColumn = set == tl.ColumnSet ? tl.Column : 0, lastColumn = set == br.ColumnSet ? br.Column : lanes.Columns.Count - 1;
+                if (firstColumn > 0 || lastColumn < 0) continue;       // the Note column isn't in the selection
+                int firstRow = tl.Beat * rpb + tl.RowInBeat, lastRow = br.Beat * rpb + br.RowInBeat;
+                for (int row = firstRow; row <= lastRow; row++)
+                {
+                    var edit = host.Lanes.Transpose(lanes.Voice, row, delta);
+                    removed.AddRange(edit.Removed);
+                    added.AddRange(edit.Added);
+                }
+            }
+            if (host == null) return;
+            string why = host.Apply(new NoteLaneEdit(removed, added, null));
+            if (why != null) Global.Buzz.DCWriteLine("{statusbar}" + why);
         }
 
         void PlayColumnSet(Digit d)

@@ -21,7 +21,7 @@ namespace NeoBuzz.Drums
     }
 
     /// <summary>Twelve pads, two rows of six, in the voices' order.</summary>
-    internal sealed class DrumPads : IGraphInput
+    internal sealed partial class DrumPads : IGraphInput
     {
         public const int Columns = 6, Rows = 2;
         const double Gap = 6;
@@ -127,6 +127,92 @@ namespace NeoBuzz.Drums
             hover = -1;
             return true;
         }
+    }
+
+#if AVALONIA
+    // ux-overhaul.md P5a: the pads take the keyboard in the studio (Tab reaches the grid; the classic app's pads stay as they were).
+    internal sealed partial class DrumPads : IGraphInputPlus
+    {
+        public bool WantsText => false;
+
+        public bool RightDown(double x, double y) => false;
+
+        public bool Text(string text) => false;
+
+        /// <summary>The arrow keys move the selection one pad (the grid's six columns), Home and End go to the first and last, and
+        /// Enter or Space plays the selected pad at velocity 100.</summary>
+        public bool Key(string key, bool ctrl, bool shift)
+        {
+            int v = Selected;
+            switch (key)
+            {
+                case "Left": v = Math.Max(0, v - 1); break;
+                case "Right": v = Math.Min(DrumsEngine.VoiceCount - 1, v + 1); break;
+                case "Up": if (v >= Columns) v -= Columns; break;
+                case "Down": if (v + Columns < DrumsEngine.VoiceCount) v += Columns; break;
+                case "Home": v = 0; break;
+                case "End": v = DrumsEngine.VoiceCount - 1; break;
+                case "Return":
+                case "Enter":
+                case "Space":
+                    LastPlayed = (v, 100);
+                    view.Audition(v, 100);
+                    return true;
+                default: return false;
+            }
+            Select(v);
+            return true;
+        }
+    }
+#endif
+
+    /// <summary>
+    /// The names over the mix strip (ux-overhaul.md P5a), one cell per pad above its level and pan: lit as the pad is, the selected
+    /// pad's outlined; a click selects the pad. Level and pan are the parameters' own knobs under it.
+    /// </summary>
+    internal sealed class MixNames : IGraphInput
+    {
+        readonly IDrumsView view;
+        readonly DrumPads pads;
+        readonly double column, height;
+
+        public MixNames(IDrumsView view, DrumPads pads, double column, double height)
+        {
+            this.view = view;
+            this.pads = pads;
+            this.column = column;
+            this.height = height;
+        }
+
+        public bool Capturing => false;
+
+        public void Draw(INeoCanvas c, NeoRect r, NeoColor accent)
+        {
+            for (int v = 0; v < DrumsEngine.VoiceCount; v++)
+            {
+                var cell = new NeoRect(r.X + v * column + 2, r.Y + 1, column - 4, r.Height - 2);
+                double db = DspMath.GainToDb(Math.Max(1e-9f, view.Peak(v)));
+                double lit = Math.Clamp((db + 48) / 48, 0, 1);
+                c.Rect(cell, lit > 0 ? accent.WithAlpha((byte)(0x18 + 0xA0 * lit)) : Palette.Panel, new NeoStroke(v == pads.Selected ? accent : Palette.PanelEdge, v == pads.Selected ? 2 : 1), 4);
+                c.Text(DrumsEngine.Short[v], cell.X + 6, cell.Y + 3, 11, lit > 0.6 ? Palette.Background : Palette.Text, bold: true, maxWidth: cell.Width - 8);
+            }
+        }
+
+        public bool Down(double x, double y, int clicks, bool fine)
+        {
+            int v = (int)(x / column);
+            if (x < 0 || v < 0 || v >= DrumsEngine.VoiceCount) return false;
+            pads.Select(v);
+            return true;
+        }
+
+        public bool Move(double x, double y, bool fine) => false;
+
+        public bool Up() => false;
+
+        public bool Wheel(double x, double y, int delta, bool fine) => false;
+
+        public bool Leave() => false;
     }
 
     /// <summary>

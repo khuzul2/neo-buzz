@@ -194,7 +194,7 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        public ColumnRenderer.ColumnType Type
+        public virtual ColumnRenderer.ColumnType Type
         {
             get
             {
@@ -223,7 +223,7 @@ namespace WDE.ModernPatternEditor
         }
 
         /// <summary>Whether the column shows its values in decimal now (and takes decimal digits).</summary>
-        internal bool IsDecimal
+        internal virtual bool IsDecimal
         {
             get
             {
@@ -249,7 +249,7 @@ namespace WDE.ModernPatternEditor
         }
 #endif
 
-        public int DigitCount
+        public virtual int DigitCount
         {
             get
             {
@@ -266,7 +266,7 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        public bool TiedToNext
+        public virtual bool TiedToNext
         {
             get
             {
@@ -274,9 +274,20 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        public string Label { get { return PatternColumn.Parameter.Name; } }
-        public string Description { get { return PatternColumn.Parameter.Description; } }
-        public ColumnRenderer.IBeat FetchBeat(int index) { return new Beat(this, index); }
+        public virtual string Label { get { return PatternColumn.Parameter.Name; } }
+        public virtual string Description { get { return PatternColumn.Parameter.Description; } }
+        public virtual ColumnRenderer.IBeat FetchBeat(int index) { return new Beat(this, index); }
+
+#if !WINDOWS
+        /// <summary>Fork (daw-modes.md AR3): a column that isn't one of the editor's own (the Notes lanes, NoteLaneColumn): no editor column behind it.</summary>
+        protected ParameterColumn(ParameterColumnSet set, IPatternColumn pc, int track)
+        {
+            BeatDuration = 4 * PatternEvent.TimeBase;
+            this.Set = set;
+            this.PatternColumn = pc;
+            this.track = track;
+        }
+#endif
 
         public ParameterColumn(ParameterColumnSet set, IPatternColumn pc, int track, int rpb)
         {
@@ -290,7 +301,7 @@ namespace WDE.ModernPatternEditor
             pc.BeatSubdivisionChanged += pc_BeatSubdivisionChanged;
         }
 
-        public void Release()
+        public virtual void Release()
         {
             // PatternColumn.EventsChanged -= pc_EventsChanged;
             mpeColumn.EventsChanged -= pc_EventsChanged;
@@ -314,13 +325,13 @@ namespace WDE.ModernPatternEditor
             Set.Pattern.CursorPosition = Set.Pattern.CursorPosition.Constrained;
         }
 
-        public int GetDigitTime(Digit d)
+        public virtual int GetDigitTime(Digit d)
         {
             var beat = FetchBeat(d.Beat) as Beat;
             return beat.GetRowTime(d.RowInBeat);
         }
 
-        public IEnumerable<BuzzAction> EditDigit(Digit d, int newvalue)
+        public virtual IEnumerable<BuzzAction> EditDigit(Digit d, int newvalue)
         {
             var beat = FetchBeat(d.Beat) as Beat;
 
@@ -384,7 +395,7 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        public IEnumerable<BuzzAction> EditValue(Digit d, int newvalue)
+        public virtual IEnumerable<BuzzAction> EditValue(Digit d, int newvalue)
         {
             var beat = FetchBeat(d.Beat) as Beat;
 
@@ -394,7 +405,7 @@ namespace WDE.ModernPatternEditor
                 return LinqExtensions.Return(beat.SetValue(d.RowInBeat, newvalue));
         }
 
-        public void SendCCAtTime(int time)
+        public virtual void SendCCAtTime(int time)
         {
             int ibeat = time / BeatDuration;
             if (ibeat < 0 || ibeat >= Set.BeatCount) return;
@@ -402,7 +413,7 @@ namespace WDE.ModernPatternEditor
             beat.SendCCAtTime(time % BeatDuration);
         }
 
-        public Digit GetDigitAtTime(int time)
+        public virtual Digit GetDigitAtTime(int time)
         {
             Digit digit = new Digit(Set.Pattern, Set.Pattern.ColumnSets.IndexOf(Set), this.Set.Columns.IndexOf(this), 0, 0, 0);
             int ibeat = time / BeatDuration;

@@ -29,9 +29,19 @@ namespace WDE.ModernPatternEditor
         public Color Color { get { return Pattern.Pattern.Machine.GetThemeColor(); } }
 
         public readonly PatternVM Pattern;
-        readonly ParameterColumn[] columns;
-        readonly int track;
+        protected ParameterColumn[] columns;
+        protected readonly int track;
         public IList<ColumnRenderer.IColumn> Columns { get { return columns; } }
+
+#if !WINDOWS
+        /// <summary>Fork (daw-modes.md AR3): a set whose columns the subclass makes (the Notes lanes).</summary>
+        protected ParameterColumnSet(PatternVM pattern, int track)
+        {
+            this.Pattern = pattern;
+            this.track = track;
+            columns = new ParameterColumn[0];
+        }
+#endif
 
         public ParameterColumnSet(PatternVM pattern, IEnumerable<IPatternColumn> ic, int track)
         {
@@ -40,7 +50,7 @@ namespace WDE.ModernPatternEditor
             columns = ic.Select(c => new ParameterColumn(this, c, track, pattern.DefaultRPB)).ToArray();
         }
 
-        public void Release()
+        public virtual void Release()
         {
             foreach (var c in columns) c.Release();
         }
@@ -50,7 +60,7 @@ namespace WDE.ModernPatternEditor
             if (BeatsInvalidated != null) BeatsInvalidated(beats);
         }
 
-        public void SendCCsAtTime(int time)
+        public virtual void SendCCsAtTime(int time)
         {
             foreach (var c in columns)
             {

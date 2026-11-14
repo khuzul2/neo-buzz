@@ -27,12 +27,38 @@ namespace ReBuzz.Core
         readonly ReBuzzCore buzz;
         readonly Dictionary<ISequence, LaneRole> roles = new Dictionary<ISequence, LaneRole>();
         readonly HashSet<string> folded = new HashSet<string>(StringComparer.Ordinal);
+        readonly List<(string Machine, Session.ColumnKey Key)> lanes = new List<(string, Session.ColumnKey)>();
 
         internal ArrangementStore(ReBuzzCore buzz)
         {
             this.buzz = buzz;
             buzz.SaveSong += OnSaveSong;
             buzz.OpenSong += OnOpenSong;
+            Recorder = new AutomationRecorder(buzz);
+        }
+
+        /// <summary>Knob moves recorded into automation lanes (daw-modes.md AR4).</summary>
+        public AutomationRecorder Recorder { get; }
+
+        /// <summary>The parameter lanes shown under tracks (AR4): a machine and one of its state parameters (and track), in the order added.</summary>
+        public IReadOnlyList<(string Machine, Session.ColumnKey Key)> ParameterLanes => lanes;
+
+        public bool HasParameterLane(string machine, Session.ColumnKey key) => lanes.Contains((machine, key));
+
+        public void AddParameterLane(string machine, Session.ColumnKey key)
+        {
+            if (machine == null || HasParameterLane(machine, key)) return;
+            lanes.Add((machine, key));
+            Changed?.Invoke();
+        }
+
+        public void RemoveParameterLane(string machine, Session.ColumnKey key)
+        {
+            if (lanes.Remove((machine, key)))
+            {
+                Recorder.Disarm(machine, key);
+                Changed?.Invoke();
+            }
         }
 
         /// <summary>A role or a fold changed (views redraw).</summary>
@@ -61,9 +87,11 @@ namespace ReBuzz.Core
         /// <summary>A new song: every lane main, nothing folded.</summary>
         public void Clear()
         {
-            if (roles.Count == 0 && folded.Count == 0) return;
+            Recorder.Clear();
+            if (roles.Count == 0 && folded.Count == 0 && lanes.Count == 0) return;
             roles.Clear();
             folded.Clear();
+            lanes.Clear();
             Changed?.Invoke();
         }
 
@@ -76,8 +104,13 @@ namespace ReBuzz.Core
                 if (roles.TryGetValue(sequences[i], out var role) && role != LaneRole.Main)
                     root.Add(new XElement("Lane", new XAttribute("index", i), new XAttribute("role", role.ToString().ToLowerInvariant())));
             var present = new HashSet<string>(sequences.Select(s => s.Machine?.Name ?? ""));
+            var machines = new HashSet<string>(buzz.SongCore.MachinesList.Select(m => m.Name));
             foreach (var name in folded.Where(present.Contains).OrderBy(n => n, StringComparer.Ordinal))
                 root.Add(new XElement("Folded", new XAttribute("machine", name)));
+            var seen = new HashSet<(string, Session.ColumnKey)>();
+            foreach (var (machine, key) in lanes)
+                if (machines.Contains(machine) && seen.Add((machine, key)))
+                    root.Add(new XElement("Param", new XAttribute("machine", machine), new XAttribute("group", key.Group), new XAttribute("index", key.Index), new XAttribute("track", key.Track)));
             return root.HasElements ? root : null;
         }
 
@@ -85,6 +118,8 @@ namespace ReBuzz.Core
         {
             roles.Clear();
             folded.Clear();
+            lanes.Clear();
+            Recorder.Clear();
             if (root == null || root.Name.LocalName != "Arrangement") return;
             var sequences = buzz.SongCore.Sequences;
             foreach (var x in root.Elements("Lane"))
@@ -95,6 +130,13 @@ namespace ReBuzz.Core
             }
             foreach (var x in root.Elements("Folded"))
                 if ((string)x.Attribute("machine") is { Length: > 0 } name) folded.Add(name);
+            foreach (var x in root.Elements("Param"))
+            {
+                int Num(string a) => int.TryParse((string)x.Attribute(a), NumberStyles.Integer, CultureInfo.InvariantCulture, out int n) ? n : -1;
+                if ((string)x.Attribute("machine") is { Length: > 0 } name && Num("group") >= 0 && Num("index") >= 0 && Num("track") >= 0
+                    && !lanes.Contains((name, new Session.ColumnKey(Num("group"), Num("index"), Num("track")))))
+                    lanes.Add((name, new Session.ColumnKey(Num("group"), Num("index"), Num("track"))));
+            }
         }
 
         void OnSaveSong(ISaveSong save)

@@ -924,6 +924,34 @@ namespace ReBuzz.Studio.Tests
                     Wait(150);
                     Shot(window, "053-pattern-long-scrolled", "Pattern: Lead's 8-bar Arp (128 rows), scrolled down with the cursor past the middle.", "Page Down in a long pattern.");
                 });
+                Try("054-pattern-notes-lanes", () =>
+                {
+                    // A take as a session records it: notes in the pattern's MIDI column, seen in the tracker as lanes (daw-modes.md AR3).
+                    var lead = (MachineCore)Studio.Host.Core.Song.Machines.First(m => m.Name == "Lead");
+                    lead.CreatePattern("Take", 16);
+                    var take = lead.Patterns.First(p => p.Name == "Take");
+                    PatternEvent N(int row, int rows, int midi, int vel, int shift = 0) => new PatternEvent(row * 240 + shift, 0x90 | (midi << 8) | (vel << 16), rows * 240);
+                    ReBuzz.Core.Session.SessionLayout.EnsureMidiColumn(take).SetEvents(new[]
+                    {
+                        N(0, 2, 60, 100), N(0, 4, 64, 90, 0), N(2, 2, 67, 100, 61), N(4, 4, 62, 80), N(4, 4, 65, 70), N(4, 4, 69, 60), N(8, 3, 60, 110), N(10, 6, 55, 95), N(12, 2, 72, 127, 100),
+                    }, true);
+                    try
+                    {
+                        PatternView.Edit(take);
+                        Wait(200);
+                        dynamic v = PatternView.Page.EditorControl;
+                        ((Control)v.TrackerGrid.Body).Focus();
+                        Settle();
+                        Shot(window, "054-pattern-notes-lanes", "Pattern: a take recorded in the session shows in the tracker at once (daw-modes.md AR3): the pattern's MIDI column as Notes lanes, a voice for each overlapping note with its note, velocity, delay and cut, edited with the keys as a step of the song's history.", "Record a take in the Session View, or draw notes in a piano roll, then open the pattern in the Tracker.");
+                    }
+                    finally
+                    {
+                        var other = lead.Patterns.FirstOrDefault(p => p != take);
+                        if (other != null) { PatternView.Edit(other); Wait(100); }
+                        lead.DeletePattern(take);
+                        Settle();
+                    }
+                });
 
                 Control Grid() => (Control)((dynamic)PatternView.Page.EditorControl).TrackerGrid.Body;
                 ContextMenu GridMenu()
@@ -1458,6 +1486,49 @@ namespace ReBuzz.Studio.Tests
                     PatchShot("483-neo-patch-node-menu", "menu", "The node menu: right-click the canvas, type to search.", "Right-click an empty part of the canvas.");
                     PatchShot("484-neo-patch-refused-loop", "cycle", "A wire that would make a loop is refused: the banner names the loop and says to use a Feedback node; the loop is outlined in red.", "Drag a wire from an output back to an input upstream of it.");
                 }
+
+                // P5a (ux-overhaul.md): the pages and the open panels of the three editors that gained them, in the states the default shots don't show.
+                void P5aShot(string id, string gear, System.Action<Window, MachineCore> arrange, string what, string how)
+                {
+                    Try(id, () =>
+                    {
+                        var m = demo.Generators.FirstOrDefault(x => x?.DLL.Name == gear) ?? Add(gear, gear.Replace("Neo ", ""));
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        arrange(editor!, m);
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, what + KeyboardUnder(m), how);
+                        // The page shown last comes back in the next editor of the machine: put Synth back for the later shots.
+                        foreach (var pages in editor!.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name == "Pages"))
+                            pages.GetType().GetProperty("Selected")!.SetValue(pages, 0);
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                Control EditorPart(Window w, string type, string name) =>
+                    w.GetVisualDescendants().OfType<Control>().First(c => c.GetType().Name == type && Avalonia.Automation.AutomationProperties.GetName(c) == name);
+                void ClickIn(Window w, Control c, double x, double y)
+                {
+                    var p = c.TranslatePoint(new Point(x, y), w)!.Value;
+                    w.MouseDown(p, MouseButton.Left);
+                    w.MouseUp(p, MouseButton.Left);
+                }
+                P5aShot("490-editor-neo-poly-modulation", "Neo Poly", (w, m) =>
+                {
+                    var tabs = EditorPart(w, "PageTabs", "Page tabs");
+                    ClickIn(w, tabs, 120, 12);
+                }, "Neo Poly's editor on its Modulation page (P5a): the mod envelope, the two LFOs and the modulation matrix; Synth is the other page.", "Double-click Neo Poly, then the Modulation tab (or Right on the tabs).");
+                P5aShot("491-editor-neo-fm6-operator-4", "Neo FM6", (w, m) =>
+                {
+                    var tiles = EditorPart(w, "InteractiveGraph", "Operator overview");
+                    ClickIn(w, tiles, 3 * 196 + 98, 32);
+                }, "Neo FM6's editor with operator 4 open (P5a): the six operators as tiles (role in the algorithm, frequency, level now), one open below.", "Double-click Neo FM6, then a tile (or the digits 1 to 6).");
+                P5aShot("492-editor-neo-drums-snare", "Neo Drums", (w, m) =>
+                {
+                    var pads = w.GetVisualDescendants().OfType<Control>().First(c => c.GetType().Name == "InteractiveGraph" && System.Math.Abs(c.Bounds.Width - 480) < 1);
+                    ClickIn(w, pads, 6 + 1 * (((480 - 12 - 5 * 6) / 6.0) + 6) + 10, 20);
+                }, "Neo Drums' editor with the snare's pad selected (P5a): its panel alone, the mix strip with every pad's level and pan, the pad lit by the hit it played.", "Double-click Neo Drums, then click the snare's pad.");
 
                 // The generic parameter window: a Neo machine, a Pedal synth, a Pedal effect.
                 void Parameters(string id, MachineCore m, string what, string how)
