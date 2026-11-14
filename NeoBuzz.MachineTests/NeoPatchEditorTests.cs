@@ -959,13 +959,18 @@ namespace NeoBuzz.MachineTests
             });
             for (int n = 0; n < 4; n++) rt.NoteOn(n, 48 + 4 * n, 0.8f);
             ui.Start();
-            var (bytes, why) = AllocationCheck.Run(2500, b =>
+            // Rounds of blocks until the editing thread has made enough rounds (a fast machine gets through 2500 blocks in a few ms).
+            long bytes = 0; string why = null;
+            for (int round = 0; round < 400 && (edits < 8 || round < 2); round++)
             {
-                rt.ProcessBlock(l, r);
-            });
+                var (b, w) = AllocationCheck.Run(2500, k => rt.ProcessBlock(l, r));
+                bytes += b;
+                if (b != 0) why = w;
+                Thread.Sleep(1);
+            }
             stop = true;
             ui.Join();
-            Measure.Report($"Neo Patch editor: audio thread, 2500 blocks while the editor made {edits} rounds of add, connect, set, move and undo: {bytes} bytes");
+            Measure.Report($"Neo Patch editor: audio thread, blocks while the editor made {edits} rounds of add, connect, set, move and undo: {bytes} bytes");
             Assert.That(edits, Is.GreaterThan(5), "the editing thread ran");
             Assert.That(bytes, Is.EqualTo(0), why);
         }
