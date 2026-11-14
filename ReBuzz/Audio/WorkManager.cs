@@ -77,6 +77,7 @@ namespace ReBuzz.Audio
             this.workEngine = workEngine;
             this.algorithm = algorithm;
             engineSettings = settings;
+            buzzCore.PrebuildWorkOrder += PrebuildOrder;       // every work manager the song has had builds its own order
 
             workOneList = WorkOneList;
             workOneGroups = WorkOneGroups;
@@ -141,6 +142,18 @@ namespace ReBuzz.Audio
 
         internal int workBufferOffset;
         // Avoid new object creation to minimize GC.
+        /// <summary>Diagnosis only (tests): told which stage of a block allocated on the audio thread, and how much. Null in normal use.</summary>
+        internal static Action<string, long> StageProbe;
+        long markBase;
+        void Mark(string stage)
+        {
+            var p = StageProbe;
+            if (p == null) return;
+            long now = GC.GetAllocatedBytesForCurrentThread();
+            if (now != markBase) p(stage, now - markBase);
+            markBase = now;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public int MainAudioFillBuffer(float[] buffer, int offset, int count)
         {
@@ -209,6 +222,7 @@ namespace ReBuzz.Audio
                         masterInfo.SamplesPerTick = samples;
                     }
 
+                    if (StageProbe != null) markBase = GC.GetAllocatedBytesForCurrentThread();
                     UpdateMasterParams();
 
                     // Initiate master info for Audio Messages
@@ -239,14 +253,23 @@ namespace ReBuzz.Audio
                             return 0;
                     }
 
+                    // Fork (history-snapshots.md HS3): a live restore's parameter glide moves where machines take values.
+                    var restore = buzzCore.ActiveRestore;
+                    if (restore != null)
+                        restore.OnBlock(framesToProcess, masterInfo.PosInTick == 0 || (engineSettings.SubTickTiming && subTickInfo.PosInSubTick == 0));
+
+                    Mark("tick setup");
                     // Call Pattern Column Events
                     UpdatePatternColumnEvents(framesToProcess);
+                    Mark("pattern column events");
 
                     // Update Managed Machine host info
                     buzzCore.MachineManager.UpdateMasterAndSubTickInfoToHost();
 
                     // Tick all machines first and then call tick again if sendcontrolchanges flag set?
+                    Mark("master info to host");
                     CallTick();
+                    Mark("CallTick");
 
                     // Fork (docs/specs/mastering-tools.md §4.1): a latency a machine reported at its tick reaches the
                     // delay compensation before this block's work (the same samples every run).
@@ -254,6 +277,7 @@ namespace ReBuzz.Audio
 
                     // Call work
                     ReadWork(buffer, workBufferOffset, framesToProcess);
+                    Mark("ReadWork");
 
                     // Mix waves playing from wavetable 
                     if (buzzCore.SongCore.WavetableCore.IsPlayingWave())
@@ -288,7 +312,9 @@ namespace ReBuzz.Audio
                     global::ReBuzz.Core.Session.SessionClipEngine.AfterMix(buzzCore, buffer, workBufferOffset, framesToProcess);
 
                     // Session View (fork, 0.7): the metronome, after the tap (heard, not recorded).
+                    Mark("wave, taps, clip engine");
                     buzzCore.SessionCore.MixMetronome(buffer, workBufferOffset, framesToProcess);
+                    Mark("metronome");
 
                     workBufferOffset += framesToProcess * 2;
                     reminingBuffer -= framesToProcess * 2;
@@ -330,8 +356,10 @@ namespace ReBuzz.Audio
                         }
                     }
 
+                    Mark("tick end (position, session OnTick)");
                     // Update position info in patterns
                     UpdatePatternPositions(framesToProcess);
+                    Mark("pattern positions");
 
                     // Update frame count
                     unchecked { ReBuzzCore.GlobalState.AudioFrame += framesToProcess; }
@@ -806,8 +834,10 @@ namespace ReBuzz.Audio
 
             // Fork (audio hygiene): a job for every dispatch this buffer can make (each machine
             // once, each input once), made once and reused (RenderJobs).
+            Mark("ReadWork: work flags");
             if (multiThreadingEnabled)
                 renderJobs.BeginBuffer(RenderCapacity());
+            Mark("ReadWork: render jobs");
 
             if (!multiThreadingEnabled)
             {
@@ -838,6 +868,7 @@ namespace ReBuzz.Audio
                     HandleWorkAlgorithm2(master, workSamplesCount);
             }
 
+            Mark("ReadWork: algorithm");
             // Mix all to single L + R signal
             Sample[] samples = master.GetStereoSamples(workSamplesCount);
             for (int i = 0; i < workSamplesCount; i++)
@@ -846,6 +877,7 @@ namespace ReBuzz.Audio
                 buffer[offset + i * 2 + 1] = samples[i].R * (float)buzzCore.MasterVolume;
             }
 
+            Mark("ReadWork: master mix");
             master.UpdateIsActive();
 
             return workSamplesCount;
@@ -1174,6 +1206,23 @@ namespace ReBuzz.Audio
         // Runs on the audio thread under AudioLock (held for the whole buffer),
         // so the rebuild can never race a topology mutation. Rebuild is lazy:
         // at most one rebuild per buffer, and only when the topology changed.
+        /// <summary>UI thread: builds the cached order after a topology change (under AudioLock), so the audio thread's next buffer doesn't allocate it.</summary>
+        internal void PrebuildOrder()
+        {
+            if (!engineSettings.UseCachedWorkOrder) return;
+            lock (ReBuzzCore.AudioLock)
+            {
+                var order = GetOrBuildOrder();
+                // The work instances (a few dozen KB of buffers each, made on first use) and the
+                // dependency graph the audio thread would otherwise build on its first buffer.
+                var machines = buzzCore.SongCore.MachinesList;
+                for (int i = 0; i < machines.Count; i++)
+                    buzzCore.MachineManager.GetMachineWorkInstance(machines[i]);
+                if (multiThreadingEnabled && algorithm == 2 && b2Enabled)
+                    B2EnsureGraph(order);
+            }
+        }
+
         private CachedWorkOrder GetOrBuildOrder()
         {
             var song = buzzCore.SongCore;

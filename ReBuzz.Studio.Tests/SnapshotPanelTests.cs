@@ -96,15 +96,17 @@ namespace ReBuzz.Studio.Tests
                 try
                 {
                     section.Refresh();
-                    Assert.That(section.RestoreButton.IsEnabled, Is.False, "not while playing");
-                    Assert.That(section.StatusText, Is.EqualTo("Stop to restore (glitch-free restore while playing comes next)."));
-                    Assert.That(section.Restore(one.Id), Is.False);
-                    Assert.That(core.SongCore.MachinesList.Any(m => m.Name == "Two"), "the song is untouched");
+                    Assert.That(section.RestoreButton.IsEnabled, Is.True, "restore works while playing (HS3)");
+                    // No engine ticks run in this test, so there is no launch clock to apply on: the restore waits for the stop and says so.
+                    Assert.That(section.Restore(one.Id), Is.True);
+                    Assert.That(section.StatusText, Does.Contain("waits for the transport to stop"));
+                    Assert.That(core.SongCore.MachinesList.Any(m => m.Name == "Two"), "the song is untouched while it plays");
                 }
                 finally { core.Playing = false; Settle(); }
+                core.Snapshots.Pump();
+                Assert.That(core.SongCore.MachinesList.Any(m => m.Name == "Two"), Is.False, "applied at the stop");
                 section.Refresh();
                 Assert.That(section.RestoreButton.IsEnabled, Is.True);
-                Assert.That(section.StatusText, Is.Empty);
 
                 // A/B: A is "one" (no Two), B is "two" (with it); the toggle goes to A first, then back and forth.
                 section.MarkA(one.Id);

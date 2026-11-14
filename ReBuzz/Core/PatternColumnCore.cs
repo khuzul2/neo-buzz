@@ -23,7 +23,7 @@ namespace ReBuzz.Core
 
         public int Track { get; set; }
 
-        readonly List<PatternEvent> patternEvents = new List<PatternEvent>();
+        List<PatternEvent> patternEvents = new List<PatternEvent>();   // fork (history-snapshots.md HS3): swapped whole by a live restore (SwapEvents)
 
         readonly Dictionary<int, int> beatSubdivision;
         public ReadOnlyDictionary<int, int> BeatSubdivision { get => IDictionaryExtensions.AsReadOnly(beatSubdivision); }
@@ -111,6 +111,29 @@ namespace ReBuzz.Core
                         dest.Add(pe);
                 }
             }
+        }
+
+        /// <summary>
+        /// Fork (history-snapshots.md HS3): a live restore's events for the column, built beforehand on the UI thread. The audio thread
+        /// swaps the list under the events lock (a reference swap, no allocation) and gets the old list back to hand to the UI thread
+        /// (nothing is raised here). The list must not be touched by the caller afterwards.
+        /// </summary>
+        internal List<PatternEvent> SwapEvents(List<PatternEvent> events, bool ramps)
+        {
+            lock (patternEventsLock)
+            {
+                var old = patternEvents;
+                patternEvents = events;
+                hasRamps = ramps;
+                return old;
+            }
+        }
+
+        /// <summary>Fork (HS3): a copy of the events, for a live restore's plan (any thread).</summary>
+        internal List<PatternEvent> CopyEvents()
+        {
+            lock (patternEventsLock)
+                return new List<PatternEvent>(patternEvents);
         }
 
         public void SetBeatSubdivision(int beatindex, int subdiv)

@@ -349,12 +349,19 @@ namespace ReBuzz.Agent
                 Name = "snapshot_restore",
                 Title = "Restore a snapshot",
                 Description =
-                    "Puts the whole song back as a full snapshot had it (name or id from snapshot_list). Destructive: the song is replaced as opening a file does, so the undo history starts again; " +
-                    "first it takes an auto snapshot of the song as it is (\"Auto: before restoring …\"), which is the way back. Only while the transport is stopped " +
-                    "(glitch-free restore while playing comes next). kind=\"parameters\" instead puts every machine's parameters, mutes and connection gains back (machines added since are left alone; removed ones are reported; one undo step). " +
-                    "Example: snapshot_restore(name=\"mix A\").",
-                Input = Object(null, Req("name", String("Snapshot name, or id")), Opt("kind", String("full or parameters (default: the full snapshot of that name, else the parameter one)", "full", "parameters"))),
-                Output = Object(null, Req("kind", String("full or parameters")), Req("changed", Integer("Differences put back (full: listed by snapshot_diff)")), Opt("missing", Array(String("Machine"), "Machines no longer in the song (parameters)"))),
+                    "Puts the whole song back as a full snapshot had it (name or id from snapshot_list). One undo step: undo returns the song to how it was (it also keeps an \"Auto: before restoring …\" snapshot). " +
+                    "Transport stopped: the song is replaced as opening a file does (mode \"applied\"). While the song plays it is glitch-free: parameters glide and patterns, tracks, mutes and wire levels change together at the next boundary " +
+                    "(quantize: now, beat or bar, default bar), and machines that differ are built beside the playing ones and crossfaded in, so nothing clicks (mode \"live\": the result says it is waiting for the boundary, applies_in_ms estimates it). " +
+                    "A restore that can't be prepared safely while playing (a native machine whose state differs, a pattern editor's data, different waves, a different tick rate) waits until the transport stops (mode \"deferred\", with the reason); " +
+                    "the song is unchanged until then, and it applies on its own at the stop. The Session View's clip grid is not part of a live restore. " +
+                    "kind=\"parameters\" instead puts every machine's parameters, mutes and connection gains back at once (machines added since are left alone; removed ones are reported; one undo step). " +
+                    "Example: snapshot_restore(name=\"mix A\", quantize=\"bar\").",
+                Input = Object(null, Req("name", String("Snapshot name, or id")), Opt("kind", String("full or parameters (default: the full snapshot of that name, else the parameter one)", "full", "parameters")),
+                    Opt("quantize", String("While the song plays: when the restore applies (default bar)", "now", "beat", "bar"))),
+                Output = Object(null, Req("kind", String("full or parameters")), Req("changed", Integer("Differences put back (full: listed by snapshot_diff)")), Opt("missing", Array(String("Machine"), "Machines no longer in the song (parameters)")),
+                    Opt("mode", String("full: applied (song replaced, transport stopped), live (applied or waiting for its boundary, see waiting) or deferred (waits for the transport to stop)", "applied", "live", "deferred")),
+                    Opt("waiting", Boolean("live: the boundary hasn't come yet")), Opt("quantize", String("live: the boundary used")), Opt("applies_in_ms", Integer("live: about how long until the boundary")),
+                    Opt("reason", String("deferred: why it waits")), Opt("plan", String("live: what it changes"))),
                 Annotations = new ToolAnnotations(Destructive: true, Idempotent: true),
                 Handler = async c =>
                 {
@@ -368,11 +375,23 @@ namespace ReBuzz.Agent
                         var r = await host.Engine("snapshot_restore", false, _ =>
                         {
                             int changes = core.Snapshots.Diff(m, null).Count;
-                            try { core.Snapshots.Restore(m); }
+                            var q = c.String("quantize") switch { "now" => ReBuzz.Core.SongHistory.RestoreQuantize.Now, "beat" => ReBuzz.Core.SongHistory.RestoreQuantize.Beat, "bar" => ReBuzz.Core.SongHistory.RestoreQuantize.Bar, _ => ReBuzz.Core.SongHistory.RestoreQuantize.Auto };
+                            ReBuzz.Core.SongHistory.RestoreResult res;
+                            try { res = core.Snapshots.Restore(m, q); }
                             catch (InvalidOperationException e) { throw new ToolError(e.Message); }
-                            return new JsonObject { ["kind"] = "full", ["name"] = m.Name, ["changed"] = changes };
+                            var o = new JsonObject { ["kind"] = "full", ["name"] = m.Name, ["changed"] = changes, ["mode"] = res.Mode };
+                            if (res.Mode == "live") { o["waiting"] = res.Waiting; o["quantize"] = res.Quantize; if (res.Waiting) o["applies_in_ms"] = (int)res.WaitMs; if (res.Notes.Count > 0) o["plan"] = res.Notes[0]; }
+                            if (res.Mode == "deferred") o["reason"] = res.Reason;
+                            return o;
                         }, c.Cancellation);
-                        return ToolResult.Ok($"Restored \"{m.Name}\" ({r["changed"]} differences from the song before). The undo history starts again; \"Auto: before restoring {m.Name}\" holds the song as it was.", r);
+                        string mode = r["mode"]!.GetValue<string>();
+                        return ToolResult.Ok(mode switch
+                        {
+                            "live" when r["waiting"]!.GetValue<bool>() => $"Restoring \"{m.Name}\" live ({r["changed"]} differences): it applies at the next {r["quantize"]} (in about {r["applies_in_ms"]} ms) with glides and crossfades, so nothing clicks. Undo takes it back." + (r["plan"] != null ? " Changes: " + r["plan"] + "." : ""),
+                            "live" => $"\"{m.Name}\" is already how the song is: nothing differs.",
+                            "deferred" => $"The restore of \"{m.Name}\" waits until the transport stops: {r["reason"]}. The song is unchanged until then; it applies on its own at the stop (and is one undo step).",
+                            _ => $"Restored \"{m.Name}\" ({r["changed"]} differences from the song before). Undo returns the song to how it was.",
+                        }, r);
                     }
                     var s = Find(host, name);
                     var pr = await host.Engine("snapshot_restore", true, _ =>
