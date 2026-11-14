@@ -37,6 +37,21 @@ namespace ReBuzz.Core
             Recorder = new AutomationRecorder(buzz);
             Takes = new ArrangementRecorder(buzz);
             Links = new ArrangementLinks(buzz);
+            BuzzGUI.Common.Actions.Restorations.Restored += OnRestored;
+        }
+
+        /// <summary>Off the static restoration bus (the core is released).</summary>
+        internal void Detach() => BuzzGUI.Common.Actions.Restorations.Restored -= OnRestored;
+
+        /// <summary>An undo brought a deleted lane back as a new sequence: the role follows it (AR6 follow-up to AR5).</summary>
+        void OnRestored(object previous, object restored)
+        {
+            if (previous is not ISequence old || restored is not ISequence now || !roles.TryGetValue(old, out var role)) return;
+            if (!buzz.SongCore.Sequences.Contains(now)) return;
+            roles.Remove(old);
+            if (old is SequenceCore oldSeq) oldSeq.TakeLane = false;
+            SetRole(now, role);
+            Changed?.Invoke();
         }
 
         /// <summary>MIDI recorded into the arrangement, loop recording into take lanes (daw-modes.md AR5).</summary>

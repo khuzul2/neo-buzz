@@ -61,6 +61,27 @@ namespace ReBuzz.Studio.Views.Sequence
         }
 
         public SequenceOverlay Overlay { get; }
+
+        /// <summary>
+        /// Fork (daw-modes.md AR6): Buzz's default orientation, time down the page and the tracks as columns, with the ruler on
+        /// the left and the headers on top. Cursor, selection, edits and keys are in ticks and track rows either way.
+        /// </summary>
+        public bool Vertical
+        {
+            get => geo.Vertical;
+            set
+            {
+                if (geo.Vertical == value) return;
+                double ticks = geo.TimeScroll / geo.PxPerTick, rows = geo.RowScroll / geo.RowSize;
+                drag = Drag.None;
+                geo.Vertical = value;
+                geo.SetScroll(ticks * geo.PxPerTick, rows * geo.RowSize);
+                ClampScroll();
+                BringCursorIntoView();
+                shownTip = null;
+                Changed();
+            }
+        }
         public SequenceGeometry Geometry => geo;
         public SequenceSelection Selection => selection;
         public ISong Song => core.Song;
@@ -408,7 +429,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 core.MIDIFocusMachine = m;
         }
 
-        Size Viewport => new Size(Math.Max(1, Bounds.Width - SequenceGeometry.HeaderWidth), Math.Max(1, Bounds.Height - SequenceGeometry.RulerHeight));
+        Size Viewport => new Size(Math.Max(1, Bounds.Width - geo.LeadX), Math.Max(1, Bounds.Height - geo.LeadY));
 
         /// <summary>The scrollable size of the tracks: past the song end (and the cursor and blocks) by half a view.</summary>
         public Size Extent
@@ -421,7 +442,9 @@ namespace ReBuzz.Studio.Views.Sequence
                     var last = s.Events.LastOrDefault();
                     if (last.Value != null) end = Math.Max(end, last.Key + SequenceGeometry.SpanOf(last.Value));
                 }
-                return new Size(end * geo.TickWidth + Viewport.Width / 2, Rows * geo.TrackHeight + 1);
+                return geo.Vertical
+                    ? new Size(Rows * geo.TrackWidth + 1, end * geo.PxPerTick + Viewport.Height / 2)
+                    : new Size(end * geo.PxPerTick + Viewport.Width / 2, Rows * geo.TrackHeight + 1);
             }
         }
 
@@ -443,36 +466,41 @@ namespace ReBuzz.Studio.Views.Sequence
         void BringCursorIntoView()
         {
             var view = Viewport;
-            double x = cursorTime * geo.TickWidth, w = CursorSpan * geo.TickWidth;
-            double y = cursorRow * geo.TrackHeight;
-            if (x < geo.ScrollX) geo.ScrollX = x;
-            else if (x + w > geo.ScrollX + view.Width) geo.ScrollX = x + w - view.Width;
-            if (y < geo.ScrollY) geo.ScrollY = y;
-            else if (y + geo.TrackHeight > geo.ScrollY + view.Height) geo.ScrollY = y + geo.TrackHeight - view.Height;
+            double along = geo.Vertical ? view.Height : view.Width, across = geo.Vertical ? view.Width : view.Height;
+            double x = cursorTime * geo.PxPerTick, w = CursorSpan * geo.PxPerTick;
+            double y = cursorRow * geo.RowSize;
+            double time = geo.TimeScroll, rows = geo.RowScroll;
+            if (x < time) time = x;
+            else if (x + w > time + along) time = x + w - along;
+            if (y < rows) rows = y;
+            else if (y + geo.RowSize > rows + across) rows = y + geo.RowSize - across;
+            geo.SetScroll(time, rows);
         }
 
         void FollowPlayPosition()
         {
             if (!Follow || !core.PlayRequested) return;
-            double x = Song.PlayPosition * geo.TickWidth;
+            double x = Song.PlayPosition * geo.PxPerTick;
             var view = Viewport;
-            if (x < geo.ScrollX || x > geo.ScrollX + view.Width - 2)
+            double along = geo.Vertical ? view.Height : view.Width;
+            if (x < geo.TimeScroll || x > geo.TimeScroll + along - 2)
             {
-                geo.ScrollX = Math.Max(0, x - view.Width * 0.05);
+                geo.SetScroll(Math.Max(0, x - along * 0.05), geo.RowScroll);
                 ClampScroll();
                 InvalidateVisual();
                 ViewChanged?.Invoke();
             }
         }
 
-        /// <summary>Sets the zoom (pixels per tick), keeping the tick under <paramref name="anchorX"/> (or the view's left edge) in place.</summary>
-        public void SetZoom(double tickWidth, double? anchorX)
+        /// <summary>Sets the zoom (pixels per tick), keeping the tick under <paramref name="anchor"/> (a position along the time axis; or the view's start) in place.</summary>
+        public void SetZoom(double tickWidth, double? anchor)
         {
             tickWidth = SequenceGeometry.ClampTickWidth(tickWidth);
-            double ax = anchorX ?? SequenceGeometry.HeaderWidth;
-            double tick = (ax - SequenceGeometry.HeaderWidth + geo.ScrollX) / geo.TickWidth;
+            double lead = geo.Vertical ? geo.LeadY : geo.LeadX;
+            double ax = anchor ?? lead;
+            double tick = (ax - lead + geo.TimeScroll) / geo.PxPerTick;
             geo.TickWidth = tickWidth;
-            geo.ScrollX = tick * tickWidth - (ax - SequenceGeometry.HeaderWidth);
+            geo.SetScroll(tick * geo.PxPerTick - (ax - lead), geo.RowScroll);
             state.Zoom = tickWidth;
             Changed();
         }
@@ -545,14 +573,13 @@ namespace ReBuzz.Studio.Views.Sequence
             var size = Bounds.Size;
             ctx.FillRectangle(BackgroundBrush, new Rect(size));
             if (song == null) return;
-            double hw = SequenceGeometry.HeaderWidth, rh = SequenceGeometry.RulerHeight;
-            var tracksArea = new Rect(hw, rh, Math.Max(0, size.Width - hw), Math.Max(0, size.Height - rh));
-            var rulerArea = new Rect(hw, 0, Math.Max(0, size.Width - hw), rh);
-            var headerArea = new Rect(0, rh, hw, Math.Max(0, size.Height - rh));
+            var tracksArea = geo.TracksArea(size);
+            var rulerArea = geo.RulerArea(size);
+            var headerArea = geo.HeaderArea(size);
 
             var tsl = state.TimeSignatures;
-            int firstTick = geo.TimeAt(hw);
-            int lastTick = geo.TimeAt(size.Width) + 1;
+            int firstTick = geo.TimeAtPoint(new Point(geo.LeadX, geo.LeadY));
+            int lastTick = geo.TimeAtPoint(new Point(size.Width, size.Height)) + 1;
             var bars = tsl.GetBars(Math.Max(lastTick, 1) + 1).Where(b => b.Start + b.Length >= firstTick).ToList();
 
             DrawRuler(ctx, rulerArea, bars);
@@ -589,16 +616,26 @@ namespace ReBuzz.Studio.Views.Sequence
             foreach (var bar in bars)
             {
                 number++;
-                double x = geo.XOf(bar.Start);
-                if (bar.Start > 0) ctx.FillRectangle(LineBrush, new Rect(Math.Floor(x), 0, 1, area.Height));
+                double x = geo.TimePos(bar.Start);
+                if (bar.Start > 0)
+                    ctx.FillRectangle(LineBrush, geo.Vertical ? new Rect(0, Math.Floor(x), area.Width, 1) : new Rect(Math.Floor(x), 0, 1, area.Height));
                 if (x + 3 < lastLabelEnd) continue;
                 var ft = new FormattedText(number.ToString(CultureInfo.InvariantCulture), Culture, FlowDirection.LeftToRight,
                     tsl.TimeSignatureChangesAt(bar.Start) ? BoldFont : Font, 12, Look.RulerText);
-                ctx.DrawText(ft, new Point(x + 3, 3));
-                lastLabelEnd = x + 3 + ft.Width + 4;
+                if (geo.Vertical)
+                {
+                    // The vertical's ruler: the number right-aligned beside its line (the bars run down).
+                    ctx.DrawText(ft, new Point(Math.Max(2, area.Width - 4 - ft.Width), x + 2));
+                    lastLabelEnd = x + 2 + ft.Height + 2;
+                }
+                else
+                {
+                    ctx.DrawText(ft, new Point(x + 3, 3));
+                    lastLabelEnd = x + 3 + ft.Width + 4;
+                }
             }
-            double end = Math.Floor(geo.XOf(Song.SongEnd));
-            ctx.FillRectangle(LineBrush, new Rect(end, 0, 1, area.Height));
+            double end = Math.Floor(geo.TimePos(Song.SongEnd));
+            ctx.FillRectangle(LineBrush, geo.Vertical ? new Rect(0, end, area.Width, 1) : new Rect(end, 0, 1, area.Height));
         }
 
         void DrawTracks(DrawingContext ctx, Rect area, List<(int Start, int Length)> bars)
@@ -608,20 +645,20 @@ namespace ReBuzz.Studio.Views.Sequence
 
             foreach (var bar in bars)
             {
-                double x = Math.Floor(geo.XOf(bar.Start));
-                if (bar.Start > 0) ctx.FillRectangle(BarLineBrush, new Rect(x, area.Y, 1, area.Height));
+                double x = Math.Floor(geo.TimePos(bar.Start));
+                if (bar.Start > 0) ctx.FillRectangle(BarLineBrush, geo.Vertical ? new Rect(area.X, x, area.Width, 1) : new Rect(x, area.Y, 1, area.Height));
             }
 
             int rows = Rows;
-            int first = Math.Max(0, geo.RawRowAt(area.Y));
-            int last = Math.Min(rows - 1, geo.RawRowAt(area.Bottom));
+            int first = Math.Max(0, geo.RawRowAtPoint(area.TopLeft));
+            int last = Math.Min(rows - 1, geo.RawRowAtPoint(area.BottomRight));
             for (int row = first; row <= last; row++)
             {
                 var seq = Song.Sequences[row];
                 foreach (var e in seq.Events)
                 {
                     var r = geo.BlockRect(e.Key, row, e.Value);
-                    if (r.Right < area.X || r.X > area.Right) continue;
+                    if (geo.Vertical ? r.Bottom < area.Y || r.Y > area.Bottom : r.Right < area.X || r.X > area.Right) continue;
                     DrawBlock(ctx, r, e.Key, seq, e.Value);
                 }
             }
@@ -629,8 +666,8 @@ namespace ReBuzz.Studio.Views.Sequence
             // Lines between the tracks (VerticalBackgroundMarker).
             for (int row = first; row <= last + 1; row++)
             {
-                double y = Math.Floor(geo.YOf(row));
-                if (row > 0) ctx.FillRectangle(TrackLineBrush, new Rect(area.X, y, area.Width, 1));
+                double y = Math.Floor(geo.RowPos(row));
+                if (row > 0) ctx.FillRectangle(TrackLineBrush, geo.Vertical ? new Rect(y, area.Y, 1, area.Height) : new Rect(area.X, y, area.Width, 1));
             }
         }
 
@@ -676,11 +713,20 @@ namespace ReBuzz.Studio.Views.Sequence
             }
             else
             {
-                // The other kinds: their name turned upright in a strip on the left.
-                ctx.DrawRectangle(NameBackBrush, NameBackPen, new Rect(2.5, 2.5, 16, Math.Max(0, h - 4)));
                 var ft = new FormattedText(text, Culture, FlowDirection.LeftToRight, Font, 12, textBrush);
-                using (ctx.PushTransform(Matrix.CreateRotation(-Math.PI / 2) * Matrix.CreateTranslation(2 + (16 - ft.Height) / 2, h - 4)))
-                    ctx.DrawText(ft, new Point(0, 0));
+                if (geo.Vertical)
+                {
+                    // The vertical: the name reads across a strip at the top of the block.
+                    ctx.DrawRectangle(NameBackBrush, NameBackPen, new Rect(2.5, 2.5, Math.Max(0, w - 5), 16));
+                    ctx.DrawText(ft, new Point(2 + Math.Max(0, (w - 4 - ft.Width) / 2), 2.5 + (16 - ft.Height) / 2));
+                }
+                else
+                {
+                    // The other kinds: their name turned upright in a strip on the left.
+                    ctx.DrawRectangle(NameBackBrush, NameBackPen, new Rect(2.5, 2.5, 16, Math.Max(0, h - 4)));
+                    using (ctx.PushTransform(Matrix.CreateRotation(-Math.PI / 2) * Matrix.CreateTranslation(2 + (16 - ft.Height) / 2, h - 4)))
+                        ctx.DrawText(ft, new Point(0, 0));
+                }
             }
         }
 
@@ -714,16 +760,19 @@ namespace ReBuzz.Studio.Views.Sequence
 
             var area = new Rect(1, 17, Math.Max(0, w - 2), Math.Max(0, h - 18));
             using var clip = ctx.PushClip(area);
-            double drawWidth = p.Length * geo.TickWidth;
+            bool vert = geo.Vertical;       // fork (AR6): time runs down, the lanes across
+            double alongStart = vert ? area.Y : area.X, alongEnd = vert ? area.Bottom : area.Right;
+            double acrossStart = vert ? area.X : area.Y, acrossSize = vert ? area.Width : area.Height;
+            double drawWidth = p.Length * geo.PxPerTick;
             // WPF sizes the lanes to the whole track height and clips the lowest; here they fit the area below the name.
-            double drawHeight = area.Height * 0.9;
-            double marginTop = area.Height * 0.05;
+            double drawHeight = acrossSize * 0.9;
+            double marginTop = acrossSize * 0.05;
             double lineWidth = Math.Max(drawWidth / p.Length, 6);       // PatternEventWidth
-            double shift = -e.PlayedOffset * geo.TickWidth;              // fork (0.5.1): an event that starts partway
+            double shift = -e.PlayedOffset * geo.PxPerTick;              // fork (0.5.1): an event that starts partway
             foreach (var m in marks)
             {
-                double x = area.X + shift + m.X * drawWidth - 1;
-                if (x > area.Right || x + Math.Max(lineWidth, m.Length * drawWidth) < area.X) continue;
+                double x = alongStart + shift + m.X * drawWidth - 1;
+                if (x > alongEnd || x + Math.Max(lineWidth, m.Length * drawWidth) < alongStart) continue;
                 double laneHeight, y;
                 if (m.FixedHeight)
                 {
@@ -738,7 +787,10 @@ namespace ReBuzz.Studio.Views.Sequence
                 }
                 var brush = m.Kind switch { PreviewKind.Off => OffBrush, PreviewKind.Parameter => ParamBrush, _ => NoteBrush };
                 double width = m.Length > 0 ? Math.Max(3, m.Length * drawWidth) : lineWidth;
-                ctx.DrawRectangle(brush, EventBorderPen, new Rect(Math.Round(x) + 0.5, Math.Round(area.Y + y) + 0.5, width, Math.Max(1, laneHeight)));
+                double across = Math.Round(acrossStart + y) + 0.5, acrossLen = Math.Max(1, laneHeight);
+                ctx.DrawRectangle(brush, EventBorderPen, vert
+                    ? new Rect(across, Math.Round(x) + 0.5, acrossLen, width)
+                    : new Rect(Math.Round(x) + 0.5, across, width, acrossLen));
             }
         }
 
@@ -746,27 +798,33 @@ namespace ReBuzz.Studio.Views.Sequence
         {
             using var clip = ctx.PushClip(area);
             ctx.FillRectangle(HeaderViewBrush, area);
+            bool vert = geo.Vertical;
             int rows = Rows;
-            int first = Math.Max(0, geo.RawRowAt(area.Y));
-            int last = Math.Min(rows - 1, geo.RawRowAt(area.Bottom));
+            int first = Math.Max(0, geo.RawRowAtPoint(area.TopLeft));
+            int last = Math.Min(rows - 1, geo.RawRowAtPoint(area.BottomRight));
             for (int row = first; row <= last; row++)
             {
                 var seq = Song.Sequences[row];
-                double y = geo.YOf(row);
-                var r = new Rect(0, y, area.Width, geo.TrackHeight);
+                double y = geo.RowPos(row);
+                var r = vert ? new Rect(y, 0, geo.TrackWidth, area.Height) : new Rect(0, y, area.Width, geo.TrackHeight);
                 if (row == cursorRow) ctx.FillRectangle(HeaderSelectedBrush, r);
-                // P3h: the track's machine's identity colour, a strip at the header's left edge.
+                // P3h: the track's machine's identity colour, a strip at the header's left edge (the vertical's: its top edge).
                 if (!Look.IsClassic && MachineIdentity.ColourOf(seq.Machine) is { } identity)
-                    ctx.FillRectangle(ReBuzz.Studio.Views.Session.SessionPalette.BrushOf(identity), new Rect(0, Math.Floor(y) + 1, 4, Math.Max(1, geo.TrackHeight - 1)));
+                    ctx.FillRectangle(ReBuzz.Studio.Views.Session.SessionPalette.BrushOf(identity),
+                        vert ? new Rect(Math.Floor(y) + 1, 0, Math.Max(1, geo.TrackWidth - 1), 4) : new Rect(0, Math.Floor(y) + 1, 4, Math.Max(1, geo.TrackHeight - 1)));
                 // The machine's name, centred above the buttons.
+                double room = (vert ? geo.TrackWidth : area.Width) - 8;
                 var name = new FormattedText(seq.Machine?.Name ?? "", Culture, FlowDirection.LeftToRight, Font, 12, Look.HeaderText)
-                { MaxTextWidth = area.Width - 8, MaxLineCount = 1, Trimming = TextTrimming.CharacterEllipsis };
-                ctx.DrawText(name, new Point(4 + (area.Width - 8 - name.Width) / 2, y + 4 + (geo.TrackHeight - SequenceGeometry.HeaderButtonSize - 4 - name.Height) / 2));
+                { MaxTextWidth = Math.Max(1, room), MaxLineCount = 1, Trimming = TextTrimming.CharacterEllipsis };
+                if (vert)
+                    ctx.DrawText(name, new Point(y + 4 + (room - name.Width) / 2, 6 + (area.Height - SequenceGeometry.HeaderButtonSize - 10 - name.Height) / 2));
+                else
+                    ctx.DrawText(name, new Point(4 + (room - name.Width) / 2, y + 4 + (geo.TrackHeight - SequenceGeometry.HeaderButtonSize - 4 - name.Height) / 2));
 
                 DrawMute(ctx, HeaderButton(row, 0), seq.Machine?.IsMuted == true);
                 DrawSolo(ctx, HeaderButton(row, 1), seq.Machine?.IsSoloed == true);
                 DrawDisable(ctx, HeaderButton(row, 2), seq.IsDisabled);
-                if (row > 0) ctx.FillRectangle(TrackLineBrush, new Rect(0, Math.Floor(y), area.Width, 1));
+                if (row > 0) ctx.FillRectangle(TrackLineBrush, vert ? new Rect(Math.Floor(y), 0, 1, area.Height) : new Rect(0, Math.Floor(y), area.Width, 1));
             }
         }
 
@@ -774,6 +832,8 @@ namespace ReBuzz.Studio.Views.Sequence
         public Rect HeaderButton(int row, int index)
         {
             double s = SequenceGeometry.HeaderButtonSize;
+            if (geo.Vertical)
+                return new Rect(geo.RowPos(row) + geo.TrackWidth - 6 - (3 - index) * (s + 2), geo.LeadY - s - 2, s, s);
             return new Rect(SequenceGeometry.HeaderWidth - 6 - (3 - index) * (s + 2), geo.YOf(row) + geo.TrackHeight - s - 2, s, s);
         }
 
@@ -834,7 +894,7 @@ namespace ReBuzz.Studio.Views.Sequence
                         return (geo.BlockRect(ghostTime, dragRow, dragEvent), false, dragEvent);
                     case Drag.ResizeLeft:
                     case Drag.ResizeRight:
-                        return (new Rect(geo.XOf(ghostTime), geo.YOf(dragRow), ghostLength * geo.TickWidth, geo.TrackHeight), true, null);
+                        return (geo.TickRect(ghostTime, ghostLength, dragRow), true, null);
                     default:
                         return null;
                 }
@@ -842,7 +902,10 @@ namespace ReBuzz.Studio.Views.Sequence
         }
 
         /// <summary>The play position's x (tests check it follows playback).</summary>
-        public double PlayMarkerX => geo.XOf(Song.PlayPosition);
+        public double PlayMarkerX => geo.TimePos(Song.PlayPosition);
+
+        /// <summary>The play position along the time axis (x; the vertical's y): same as <see cref="PlayMarkerX"/>.</summary>
+        public double PlayMarkerPos => PlayMarkerX;
 
         internal void DrawGhostBlock(DrawingContext ctx, Rect r, SequenceEvent e)
         {
@@ -857,20 +920,21 @@ namespace ReBuzz.Studio.Views.Sequence
         static KeyModifiers CommandKey => OperatingSystem.IsMacOS() ? KeyModifiers.Meta : KeyModifiers.Control;
 
         static readonly Cursor ResizeCursor = new Cursor(StandardCursorType.SizeWestEast);
+        static readonly Cursor ResizeCursorVertical = new Cursor(StandardCursorType.SizeNorthSouth);
         static readonly Cursor MoveCursorShape = new Cursor(StandardCursorType.Hand);
 
         /// <summary>The block and its part under a point: its row, start, event and part.</summary>
         public (int Row, int Time, SequenceEvent Event, BlockPart Part) BlockAt(Point p)
         {
-            if (!SequenceGeometry.InTracks(p)) return (-1, -1, null, BlockPart.None);
-            int row = geo.RawRowAt(p.Y);
+            if (!geo.OverTracks(p)) return (-1, -1, null, BlockPart.None);
+            int row = geo.RawRowAtPoint(p);
             var seq = SequenceAt(row);
             if (seq == null) return (-1, -1, null, BlockPart.None);
             // Later blocks are drawn over earlier ones: the last that holds the point.
             foreach (var e in seq.Events.Reverse())
             {
                 var r = geo.BlockRect(e.Key, row, e.Value);
-                var part = SequenceGeometry.PartAt(r, p, e.Value.Type == SequenceEventType.PlayPattern && e.Value.Pattern != null);
+                var part = geo.PartAtBlock(r, p, e.Value.Type == SequenceEventType.PlayPattern && e.Value.Pattern != null);
                 if (part != BlockPart.None) return (row, e.Key, e.Value, part);
             }
             return (row, -1, null, BlockPart.None);
@@ -892,28 +956,28 @@ namespace ReBuzz.Studio.Views.Sequence
             if (kind == PointerUpdateKind.RightButtonPressed)
             {
                 // The cursor goes where the menu is for (the ruler: the time only); the menu opens on release.
-                if (SequenceGeometry.InTracks(p)) MoveCursor(geo.TimeAt(p.X), geo.RowAt(p.Y, Rows));
-                else if (SequenceGeometry.InHeaders(p)) MoveCursor(cursorTime, geo.RowAt(p.Y, Rows));
-                else if (SequenceGeometry.InRuler(p)) MoveCursor(geo.TimeAt(p.X), cursorRow);
+                if (geo.OverTracks(p)) MoveCursor(geo.TimeAtPoint(p), geo.RowAtPoint(p, Rows));
+                else if (geo.OverHeaders(p)) MoveCursor(cursorTime, geo.RowAtPoint(p, Rows));
+                else if (geo.OverRuler(p)) MoveCursor(geo.TimeAtPoint(p), cursorRow);
                 return;
             }
             if (kind != PointerUpdateKind.LeftButtonPressed) return;
 
-            if (SequenceGeometry.InRuler(p))
+            if (geo.OverRuler(p))
             {
                 // A click on the ruler moves the play position there.
-                Song.PlayPosition = state.TimeSignatures.Snap(geo.TimeAt(p.X), int.MaxValue);
+                Song.PlayPosition = state.TimeSignatures.Snap(geo.TimeAtPoint(p), int.MaxValue);
                 return;
             }
-            if (SequenceGeometry.InHeaders(p))
+            if (geo.OverHeaders(p))
             {
                 PressHeader(p, e.ClickCount);
                 return;
             }
-            if (!SequenceGeometry.InTracks(p) || Rows == 0) return;
+            if (!geo.OverTracks(p) || Rows == 0) return;
 
-            int time = geo.TimeAt(p.X);
-            int row = geo.RowAt(p.Y, Rows);
+            int time = geo.TimeAtPoint(p);
+            int row = geo.RowAtPoint(p, Rows);
             var (brow, btime, ev, part) = BlockAt(p);
 
             if (e.ClickCount == 2 && !mods.HasFlag(KeyModifiers.Shift) && !mods.HasFlag(CommandKey))
@@ -995,7 +1059,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
         void PressHeader(Point p, int clicks)
         {
-            int row = geo.RawRowAt(p.Y);
+            int row = geo.RawRowAtPoint(p);
             var seq = SequenceAt(row);
             if (seq == null) return;
             for (int i = 0; i < 3; i++)
@@ -1019,9 +1083,9 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>What the pointer's tooltip says where it is (ux-overhaul.md P1): the ruler's bar and tick, the M, S, D buttons.</summary>
         internal string TipAt(Point p)
         {
-            if (SequenceGeometry.InRuler(p)) return RulerTip(Math.Max(0, geo.TimeAt(p.X)));
-            if (!SequenceGeometry.InHeaders(p)) return null;
-            int row = geo.RawRowAt(p.Y);
+            if (geo.OverRuler(p)) return RulerTip(Math.Max(0, geo.TimeAtPoint(p)));
+            if (!geo.OverHeaders(p)) return null;
+            int row = geo.RawRowAtPoint(p);
             if (row < 0 || row >= Rows) return null;
             for (int i = 0; i < 3; i++)
                 if (HeaderButton(row, i).Contains(p))
@@ -1057,23 +1121,23 @@ namespace ReBuzz.Studio.Views.Sequence
                     goto case Drag.Move;
                 case Drag.Move:
                     AutoScroll(p);
-                    ghostTime = state.TimeSignatures.Snap(Math.Max(0, geo.TimeAt(p.X) - grabOffset), int.MaxValue);
+                    ghostTime = state.TimeSignatures.Snap(Math.Max(0, geo.TimeAtPoint(p) - grabOffset), int.MaxValue);
                     Overlay.InvalidateVisual();
                     return;
                 case Drag.ResizeRight:
                     AutoScroll(p);
                     ghostTime = dragTime;
-                    ghostLength = SequenceGeometry.ResizeRightLength(dragTime, geo.TimeAt(p.X), ResizeSnap);
+                    ghostLength = SequenceGeometry.ResizeRightLength(dragTime, geo.TimeAtPoint(p), ResizeSnap);
                     Overlay.InvalidateVisual();
                     return;
                 case Drag.ResizeLeft:
                     AutoScroll(p);
-                    (ghostTime, ghostLength) = SequenceGeometry.ResizeLeft(dragTime, SequenceGeometry.SpanOf(dragEvent), geo.TimeAt(p.X), ResizeSnap);
+                    (ghostTime, ghostLength) = SequenceGeometry.ResizeLeft(dragTime, SequenceGeometry.SpanOf(dragEvent), geo.TimeAtPoint(p), ResizeSnap);
                     Overlay.InvalidateVisual();
                     return;
                 case Drag.Select:
                     AutoScroll(p);
-                    int t = geo.TimeAt(p.X), r = geo.RowAt(p.Y, Rows);
+                    int t = geo.TimeAtPoint(p), r = geo.RowAtPoint(p, Rows);
                     if (selection.NotEmpty || Math.Abs(p.X - pressPoint.X) >= 3 || Math.Abs(p.Y - pressPoint.Y) >= 3)
                     {
                         selection.Update(t, r);
@@ -1083,17 +1147,18 @@ namespace ReBuzz.Studio.Views.Sequence
             }
             // Hovering: the edges of pattern blocks resize.
             var (_, _, ev, part) = BlockAt(p);
-            Cursor = part == BlockPart.LeftEdge || part == BlockPart.RightEdge ? ResizeCursor : ev != null ? MoveCursorShape : Cursor.Default;
+            Cursor = part == BlockPart.LeftEdge || part == BlockPart.RightEdge ? (geo.Vertical ? ResizeCursorVertical : ResizeCursor) : ev != null ? MoveCursorShape : Cursor.Default;
         }
 
         /// <summary>A drag past the tracks' edges scrolls them.</summary>
         void AutoScroll(Point p)
         {
             double dx = 0, dy = 0;
-            if (p.X < SequenceGeometry.HeaderWidth) dx = -20;
-            else if (p.X > Bounds.Width) dx = 20;
-            if (p.Y < SequenceGeometry.RulerHeight) dy = -geo.TrackHeight / 4;
-            else if (p.Y > Bounds.Height) dy = geo.TrackHeight / 4;
+            double sx = geo.Vertical ? geo.TrackWidth / 4 : 20, sy = geo.Vertical ? 20 : geo.TrackHeight / 4;
+            if (p.X < geo.LeadX) dx = -sx;
+            else if (p.X > Bounds.Width) dx = sx;
+            if (p.Y < geo.LeadY) dy = -sy;
+            else if (p.Y > Bounds.Height) dy = sy;
             if (dx != 0 || dy != 0) ScrollTo(geo.ScrollX + dx, geo.ScrollY + dy);
         }
 
@@ -1172,7 +1237,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 if (steps != 0)
                 {
                     wheelZoom -= steps * SequenceGeometry.TickWidthStep;
-                    SetZoom(geo.TickWidth + steps * SequenceGeometry.TickWidthStep, Math.Max(SequenceGeometry.HeaderWidth, p.X));
+                    SetZoom(geo.TickWidth + steps * SequenceGeometry.TickWidthStep, geo.Vertical ? Math.Max(geo.LeadY, p.Y) : Math.Max(geo.LeadX, p.X));
                 }
             }
             else
@@ -1180,7 +1245,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 // The wheel scrolls the tracks; Shift turns it sideways; a trackpad scrolls both ways.
                 var d = e.Delta;
                 if (e.KeyModifiers.HasFlag(KeyModifiers.Shift) && d.X == 0) d = new Vector(d.Y, 0);
-                ScrollTo(geo.ScrollX - d.X * 50, geo.ScrollY - d.Y * geo.TrackHeight / 2);
+                ScrollTo(geo.ScrollX - d.X * 50, geo.ScrollY - d.Y * (geo.Vertical ? 48 : geo.TrackHeight / 2));
             }
             e.Handled = true;
         }
@@ -1188,7 +1253,8 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>A trackpad pinch zooms around the pointer.</summary>
         void OnPinch(object sender, PointerDeltaEventArgs e)
         {
-            SetZoom(geo.TickWidth * (1 + e.Delta.X), Math.Max(SequenceGeometry.HeaderWidth, e.GetPosition(this).X));
+            var at = e.GetPosition(this);
+            SetZoom(geo.TickWidth * (1 + e.Delta.X), geo.Vertical ? Math.Max(geo.LeadY, at.Y) : Math.Max(geo.LeadX, at.X));
             e.Handled = true;
         }
 
@@ -1226,9 +1292,9 @@ namespace ReBuzz.Studio.Views.Sequence
             if (song == null) return;
             var geo = canvas.Geometry;
             var size = Bounds.Size;
-            double hw = SequenceGeometry.HeaderWidth, rh = SequenceGeometry.RulerHeight;
-            var tracks = new Rect(hw, rh, Math.Max(0, size.Width - hw), Math.Max(0, size.Height - rh));
-            var timeline = new Rect(hw, 0, Math.Max(0, size.Width - hw), size.Height);
+            var tracks = geo.TracksArea(size);
+            // The ruler and the tracks: the markers run across both.
+            var timeline = geo.Vertical ? new Rect(0, geo.LeadY, size.Width, Math.Max(0, size.Height - geo.LeadY)) : new Rect(geo.LeadX, 0, Math.Max(0, size.Width - geo.LeadX), size.Height);
 
             using (ctx.PushClip(tracks))
             {
@@ -1236,8 +1302,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 if (canvas.Selection.NotEmpty)
                 {
                     var s = canvas.Selection.Rect(tsl);
-                    var r = new Rect(geo.XOf(s.Time), geo.YOf(s.Row), s.Span * geo.TickWidth + 1, s.Rows * geo.TrackHeight + 1);
-                    ctx.DrawRectangle(SelectionBrush, SelectionPen, r.Deflate(0.5));
+                    ctx.DrawRectangle(SelectionBrush, SelectionPen, geo.SpanRect(s.Time, s.Span, s.Row, s.Rows).Deflate(0.5));
                 }
                 if (canvas.Rows > 0)
                     ctx.FillRectangle(canvas.IsActive ? CursorBrush : CursorInactiveBrush, geo.CellRect(canvas.CursorTime, canvas.CursorRow, canvas.CursorSpan));
@@ -1251,45 +1316,49 @@ namespace ReBuzz.Studio.Views.Sequence
             using (ctx.PushClip(timeline))
             {
                 // MarkerControl: 1 px lines over the ruler and the tracks; small flags in the ruler mark them.
-                if (song.LoopStart != 0) Marker(ctx, geo.XOf(song.LoopStart), LoopBrush, size.Height, +1);
-                Marker(ctx, geo.XOf(song.LoopEnd), LoopBrush, size.Height, -1);
-                Marker(ctx, geo.XOf(song.SongEnd), SongEndBrush, size.Height, 0);
-                Marker(ctx, canvas.PlayMarkerX, PlayBrush, size.Height, 0, flag: false);
+                double length = geo.Vertical ? size.Width : size.Height;
+                if (song.LoopStart != 0) Marker(ctx, geo, geo.TimePos(song.LoopStart), LoopBrush, length, +1);
+                Marker(ctx, geo, geo.TimePos(song.LoopEnd), LoopBrush, length, -1);
+                Marker(ctx, geo, geo.TimePos(song.SongEnd), SongEndBrush, length, 0);
+                Marker(ctx, geo, canvas.PlayMarkerX, PlayBrush, length, 0, flag: false);
             }
         }
 
         static IBrush PlayEdge => Look.PlayEdge;
 
-        static void Marker(DrawingContext ctx, double x, IBrush brush, double height, int side, bool flag = true)
+        static void Marker(DrawingContext ctx, SequenceGeometry geo, double x, IBrush brush, double length, int side, bool flag = true)
         {
+            bool vert = geo.Vertical;       // the vertical's markers are horizontal lines, flagged in the left ruler
             x = Math.Floor(x);
             if (ReferenceEquals(brush, PlayBrush))
             {
                 // Fork (ux-overhaul.md §3.2): the playhead 2 pt wide with a dark edge, readable on any lane (1 px yellow on
                 // tan was 2.76:1, gallery mac-071).
-                ctx.FillRectangle(PlayEdge, new Rect(x - 1, 0, 4, height));
-                ctx.FillRectangle(brush, new Rect(x, 0, 2, height));
+                ctx.FillRectangle(PlayEdge, vert ? new Rect(0, x - 1, length, 4) : new Rect(x - 1, 0, 4, length));
+                ctx.FillRectangle(brush, vert ? new Rect(0, x, length, 2) : new Rect(x, 0, 2, length));
             }
             else
             {
-                ctx.FillRectangle(brush, new Rect(x, 0, 1, height));
+                ctx.FillRectangle(brush, vert ? new Rect(0, x, length, 1) : new Rect(x, 0, 1, length));
             }
             if (!flag) return;
             var g = new StreamGeometry();
             using (var gc = g.Open())
             {
-                double y = SequenceGeometry.RulerHeight;
+                double y = vert ? geo.LeadX : geo.LeadY;      // the flag points at the line from the ruler's inner edge
+                // Along the time axis (a) and across it (c): the horizontal's (x, y) swapped for the vertical.
+                Point P(double a, double c) => vert ? new Point(y - c, a) : new Point(a, y - c);
                 if (side == 0)
                 {
-                    gc.BeginFigure(new Point(x - 4, y - 7), true);
-                    gc.LineTo(new Point(x + 5, y - 7));
-                    gc.LineTo(new Point(x + 0.5, y - 1));
+                    gc.BeginFigure(P(x - 4, 7), true);
+                    gc.LineTo(P(x + 5, 7));
+                    gc.LineTo(P(x + 0.5, 1));
                 }
                 else
                 {
-                    gc.BeginFigure(new Point(x + 0.5, y - 9), true);
-                    gc.LineTo(new Point(x + 0.5 + side * 7, y - 5));
-                    gc.LineTo(new Point(x + 0.5, y - 1));
+                    gc.BeginFigure(P(x + 0.5, 9), true);
+                    gc.LineTo(P(x + 0.5 + side * 7, 5));
+                    gc.LineTo(P(x + 0.5, 1));
                 }
                 gc.EndFigure(true);
             }

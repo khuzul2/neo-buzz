@@ -71,6 +71,11 @@ namespace ReBuzz.Studio.Views.Sequence
         // Fork (daw-modes.md AR1): the mode switch (tracker: one row a sequence, edges set the pattern's length; arrangement: tracks with lanes and clips).
         readonly ToggleButton trackerMode = new ToggleButton { Content = "Tracker", Width = 64, IsChecked = true };
         readonly ToggleButton arrangementMode = new ToggleButton { Content = "Arrange", Width = 64 };
+        // Fork (daw-modes.md AR6): the tracker's vertical orientation (Buzz's default sequence view: time down, tracks as columns), remembered per user.
+        readonly ToggleButton verticalMode = new ToggleButton { Content = "Vertical", Width = 80 };
+        const string OrientationKey = "SequenceVertical", OrientationSection = "Studio";
+        StackPanel cornerRow, orientationRow;
+        StackPanel corner;
         // Fork (daw-modes.md AR5): recording and the way back from the Session View. Shown in the arrangement mode.
         readonly ToggleButton record = new ToggleButton { Content = "● Rec", Width = 58 };
         readonly ToggleButton loopRecord = new ToggleButton { Content = "Loop rec", Width = 58 };
@@ -99,7 +104,7 @@ namespace ReBuzz.Studio.Views.Sequence
             patternList.Foreground = look.ListText;
             patternList.BorderBrush = look.ListBorder;
             status.Foreground = look.HeaderText;
-            foreach (var c in new TemplatedControl[] { addTrack, steps, follow, trackerMode, arrangementMode, record, loopRecord, overdub, backToArrangement })
+            foreach (var c in new TemplatedControl[] { addTrack, steps, follow, trackerMode, arrangementMode, verticalMode, record, loopRecord, overdub, backToArrangement })
             {
                 c.Background = look.ControlBack;
                 c.Foreground = look.ControlText;
@@ -137,6 +142,58 @@ namespace ReBuzz.Studio.Views.Sequence
             if (rollPanel.IsVisible && Arrangement.Selected?.Pattern is { } shown && shown != rollPanel.Pattern) rollPanel.Open(shown);      // the open roll follows the selected clip
         }
 
+        /// <summary>The remembered orientation of the tracker.</summary>
+        static bool StoredVertical
+        {
+            get
+            {
+                try { return StudioHost.Current?.Registry?.Read(OrientationKey, false, OrientationSection) ?? false; }
+                catch (Exception) { return false; }
+            }
+        }
+
+        /// <summary>The tracker's orientation (daw-modes.md AR6); <paramref name="remember"/> keeps it for the next session.</summary>
+        public void SetVertical(bool on, bool remember)
+        {
+            verticalMode.IsChecked = on;
+            if (remember)
+            {
+                try { StudioHost.Current?.Registry?.Write(OrientationKey, on, OrientationSection); }
+                catch (Exception) { /* a registry that can't be written: the choice lasts this session */ }
+            }
+            Canvas.Vertical = on;
+            ApplyOrientation();
+        }
+
+        /// <summary>Where the corner's controls, the scroll bars and the empty-state card sit: by the tracker's orientation (the arrangement is always horizontal).</summary>
+        void ApplyOrientation()
+        {
+            bool on = Canvas.Vertical && !isArrangement;
+            var geo = Canvas.Geometry;
+            double leadX = on ? geo.LeadX : SequenceGeometry.HeaderWidth, leadY = on ? geo.LeadY : SequenceGeometry.RulerHeight;
+            horizontal.Margin = new Thickness(leadX, 0, 0, 0);
+            vertical.Margin = new Thickness(0, leadY, 0, 0);
+            emptyState.Margin = new Thickness(leadX, leadY, 0, 0);
+            // The corner's three controls: above the headers, or (in the vertical) in a row of the right panel.
+            var holder = on ? cornerRow : corner;
+            if (!holder.Children.Contains(addTrack))
+            {
+                (on ? corner : cornerRow).Children.Clear();
+                holder.Children.Add(addTrack);
+                holder.Children.Add(steps);
+                holder.Children.Add(follow);
+            }
+            corner.IsVisible = !on;
+            cornerRow.IsVisible = on;
+            orientationRow.IsVisible = !isArrangement;
+            right.Width = on ? 168 : 120;
+            Sync();
+        }
+
+        public bool IsVertical => Canvas.Vertical;
+        public ToggleButton VerticalButton => verticalMode;
+        public ScrollBar PageScrollBar => vertical;
+
         /// <summary>Tracker or arrangement mode (daw-modes.md AR1): the same song, drawn as rows of blocks or as tracks of clips.</summary>
         public void SetArrangementMode(bool on)
         {
@@ -160,7 +217,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 Canvas.Changed();
                 Canvas.Focus();
             }
-            Sync();
+            ApplyOrientation();
             RefreshPatternList();
             UpdateEmpty();
         }
@@ -223,7 +280,7 @@ namespace ReBuzz.Studio.Views.Sequence
             ToolTip.SetTip(zoom, "Zoom (Ctrl/Command + wheel)");
 
             // The corner above the track headers: add track, the bar length, follow.
-            var corner = new StackPanel
+            corner = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
                 HorizontalAlignment = HorizontalAlignment.Left,
@@ -233,6 +290,8 @@ namespace ReBuzz.Studio.Views.Sequence
                 Children = { addTrack, steps, follow },
             };
             emptyState = new Shell.EmptyState(core) { Margin = new Thickness(SequenceGeometry.HeaderWidth, SequenceGeometry.RulerHeight, 0, 0) };
+            // The vertical orientation has no room for them above its headers: they sit in the right panel, in a row of their own.
+            cornerRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 2), HorizontalAlignment = HorizontalAlignment.Center, IsVisible = false };
             var timeline = new Panel { Children = { Canvas, Canvas.Overlay, Arrangement, Arrangement.Overlay, headers, emptyState, horizontal, vertical, corner } };
             headers.Margin = new Thickness(0, 0, 0, 0);
 
@@ -243,6 +302,11 @@ namespace ReBuzz.Studio.Views.Sequence
             var modeRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2), HorizontalAlignment = HorizontalAlignment.Center, Spacing = 2, Children = { trackerMode, arrangementMode } };
             DockPanel.SetDock(modeRow, Dock.Top);
             right.Children.Add(modeRow);
+            orientationRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 2), HorizontalAlignment = HorizontalAlignment.Center, Spacing = 2, Children = { verticalMode } };
+            DockPanel.SetDock(orientationRow, Dock.Top);
+            right.Children.Add(orientationRow);
+            DockPanel.SetDock(cornerRow, Dock.Top);
+            right.Children.Add(cornerRow);
             foreach (var (b, name, tip) in new (Control, string, string)[]
             {
                 (record, "Record arrangement", "Record: the armed tracks (R in a track's header) write what you play at the play position into a new clip; stop to finish"),
@@ -267,6 +331,8 @@ namespace ReBuzz.Studio.Views.Sequence
             right.Children.Add(recordRows);
             Avalonia.Automation.AutomationProperties.SetName(trackerMode, "Tracker mode");
             Avalonia.Automation.AutomationProperties.SetName(arrangementMode, "Arrangement mode");
+            Avalonia.Automation.AutomationProperties.SetName(verticalMode, "Vertical tracks");
+            ToolTip.SetTip(verticalMode, "Vertical: time runs down the page and the tracks are columns, as in Buzz. Remembered");
             ToolTip.SetTip(trackerMode, "Tracker: a row for each sequence; a block's edges set its pattern's length");
             ToolTip.SetTip(arrangementMode, "Arrangement: a track for each machine with lanes; clips you draw, move, copy, trim, loop, split and join");
             right.Children.Add(patternList);
@@ -281,6 +347,7 @@ namespace ReBuzz.Studio.Views.Sequence
             root.Children.Add(timeline);
             Content = root;
             ApplyLook();
+            SetVertical(StoredVertical, false);
 
             zoom.Value = state.Zoom;
             Canvas.ViewChanged += Sync;
@@ -293,6 +360,7 @@ namespace ReBuzz.Studio.Views.Sequence
             horizontal.ValueChanged += (s, e) => { if (syncing) return; if (isArrangement) Arrangement.ScrollTo(e.NewValue, Arrangement.Geometry.ScrollY); else Canvas.ScrollTo(e.NewValue, Canvas.Geometry.ScrollY); };
             vertical.ValueChanged += (s, e) => { if (syncing) return; if (isArrangement) Arrangement.ScrollTo(Arrangement.Geometry.ScrollX, e.NewValue); else Canvas.ScrollTo(Canvas.Geometry.ScrollX, e.NewValue); };
             zoom.ValueChanged += (s, e) => { if (syncing) return; if (isArrangement) Arrangement.SetZoom(e.NewValue, null); else Canvas.SetZoom(e.NewValue, null); };
+            verticalMode.Click += (s, e) => SetVertical(verticalMode.IsChecked == true, true);
             trackerMode.Click += (s, e) => SetArrangementMode(false);
             arrangementMode.Click += (s, e) => SetArrangementMode(true);
             record.Click += (s, e) => ToggleRecording();
@@ -435,7 +503,8 @@ namespace ReBuzz.Studio.Views.Sequence
             {
                 var geo = isArrangement ? Arrangement.Geometry : Canvas.Geometry;
                 var extent = isArrangement ? Arrangement.Extent : Canvas.Extent;
-                double vw = Math.Max(1, Canvas.Bounds.Width - SequenceGeometry.HeaderWidth), vh = Math.Max(1, Canvas.Bounds.Height - SequenceGeometry.RulerHeight);
+                bool vert = Canvas.Vertical && !isArrangement;
+                double vw = Math.Max(1, Canvas.Bounds.Width - (vert ? Canvas.Geometry.LeadX : SequenceGeometry.HeaderWidth)), vh = Math.Max(1, Canvas.Bounds.Height - (vert ? Canvas.Geometry.LeadY : SequenceGeometry.RulerHeight));
                 horizontal.Maximum = Math.Max(0, extent.Width - vw);
                 horizontal.ViewportSize = vw;
                 horizontal.Value = geo.ScrollX;
@@ -777,22 +846,27 @@ namespace ReBuzz.Studio.Views.Sequence
 
             if (none || shift)
             {
+                // Fork (AR6): in the vertical, Down and Up go through time and Right and Left across the tracks.
+                bool v = c.Vertical;
+                void Step(int time, int track, int maxTime = int.MaxValue) => c.MoveCursorDelta(time, track, maxTime, shift);
                 switch (key)
                 {
-                    case Key.Right: c.MoveCursorDelta(1, 0, int.MaxValue, shift); return true;
-                    case Key.Left: c.MoveCursorDelta(-1, 0, int.MaxValue, shift); return true;
-                    case Key.Down: c.MoveCursorDelta(0, 1, int.MaxValue, shift); return true;
-                    case Key.Up: c.MoveCursorDelta(0, -1, int.MaxValue, shift); return true;
-                    case Key.PageDown: c.MoveCursorDelta(0, 16, int.MaxValue, shift); return true;
-                    case Key.PageUp: c.MoveCursorDelta(0, -16, int.MaxValue, shift); return true;
+                    case Key.Right: if (v) Step(0, 1); else Step(1, 0); return true;
+                    case Key.Left: if (v) Step(0, -1); else Step(-1, 0); return true;
+                    case Key.Down: if (v) Step(1, 0); else Step(0, 1); return true;
+                    case Key.Up: if (v) Step(-1, 0); else Step(0, -1); return true;
+                    case Key.PageDown: if (v) Step(16, 0); else Step(0, 16); return true;
+                    case Key.PageUp: if (v) Step(-16, 0); else Step(0, -16); return true;
                     case Key.Home:
-                        if (c.CursorRow > 0) c.MoveCursorDelta(0, -int.MaxValue, int.MaxValue, shift);
-                        else c.MoveCursorDelta(-int.MaxValue, 0, int.MaxValue, shift);
+                        // The first track, then (from there) the start of time; the vertical's first stop is the top.
+                        if (v ? c.CursorTime > 0 : c.CursorRow > 0) { if (v) Step(-int.MaxValue, 0); else Step(0, -int.MaxValue); }
+                        else if (v) Step(0, -int.MaxValue);
+                        else Step(-int.MaxValue, 0);
                         return true;
                     case Key.End:
                         int last = state.TimeSignatures.Snap(int.MaxValue, Song.SongEnd);
-                        if (c.CursorTime != last) c.MoveCursorDelta(int.MaxValue, 0, Song.SongEnd, shift);
-                        else c.MoveCursorDelta(0, int.MaxValue, Song.SongEnd, shift);
+                        if (c.CursorTime != last) Step(int.MaxValue, 0, Song.SongEnd);
+                        else Step(0, int.MaxValue, Song.SongEnd);
                         return true;
                 }
             }
@@ -842,8 +916,10 @@ namespace ReBuzz.Studio.Views.Sequence
                     case Key.M: if (c.CursorSequence.Machine != null) c.CursorSequence.Machine.IsMuted ^= true; c.Changed(); return true;
                     case Key.L: if (c.CursorSequence.Machine != null) c.CursorSequence.Machine.IsSoloed ^= true; c.Changed(); return true;
                     case Key.Return: return OpenContextMenu(c);
-                    case Key.Up: MoveTrack(-1); return true;
-                    case Key.Down: MoveTrack(1); return true;
+                    case Key.Up when !c.Vertical: MoveTrack(-1); return true;
+                    case Key.Down when !c.Vertical: MoveTrack(1); return true;
+                    case Key.Left when c.Vertical: MoveTrack(-1); return true;
+                    case Key.Right when c.Vertical: MoveTrack(1); return true;
                     case Key.Delete: DeleteTrack(); return true;
                     case Key.B: SetLoopStart(); return true;
                     case Key.E: SetEnd(); return true;
@@ -1023,8 +1099,8 @@ namespace ReBuzz.Studio.Views.Sequence
                 {
                     add,
                     Item("Delete Track", DeleteTrack, Gesture(Key.Delete), hasTrack),
-                    Item("Move Track Up", () => MoveTrack(-1), Gesture(Key.Up), hasTrack && c.CursorRow > 0),
-                    Item("Move Track Down", () => MoveTrack(1), Gesture(Key.Down), hasTrack && c.CursorRow < c.Rows - 1),
+                    Item(c.Vertical ? "Move Track Left" : "Move Track Up", () => MoveTrack(-1), Gesture(c.Vertical ? Key.Left : Key.Up), hasTrack && c.CursorRow > 0),
+                    Item(c.Vertical ? "Move Track Right" : "Move Track Down", () => MoveTrack(1), Gesture(c.Vertical ? Key.Right : Key.Down), hasTrack && c.CursorRow < c.Rows - 1),
                     new Separator(),
                     Item("Set Start", SetLoopStart, Gesture(Key.B)),
                     Item("Set End", SetEnd, Gesture(Key.E)),

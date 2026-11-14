@@ -830,6 +830,44 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        // ------------------------------------------------------------------ AR6 follow-up: a take lane keeps its role through delete and undo
+
+        [AvaloniaTest]
+        public void ATakeLaneDeletedAndRestoredByUndoKeepsItsRoleAndStaysUnplayedThroughRedoAndSave()
+        {
+            using var rig = new Rig("Lead");
+            var lead = rig.Lane("Lead");
+            SongLength(48);
+            var deleters = new Func<ISequence, IAction>[]
+            {
+                lane => new ReBuzz.Studio.Views.Sequence.DeleteSequenceAction(lane),      // (the WPF editors' twin reports the same way; it builds with WPF only)
+            };
+            foreach (var delete in deleters)
+            {
+                var take = MakeTake(lead.Machine, "Take" + Core.Song.Sequences.Count, 32, 40);
+                Assert.That(Core.Arrangement.RoleOf(take), Is.EqualTo(LaneRole.Take));
+                int index = Core.Song.Sequences.IndexOf(take);
+                int count = Core.Song.Sequences.Count;
+
+                Core.SongCore.ActionStack.Do(delete(take));
+                Assert.That(Core.Song.Sequences.Count, Is.EqualTo(count - 1));
+                Core.SongCore.ActionStack.Undo();
+                var back = Core.Song.Sequences[index];
+                Assert.That(back, Is.Not.SameAs(take), "undo makes a new sequence");
+                Assert.That(Core.Arrangement.RoleOf(back), Is.EqualTo(LaneRole.Take), "the role came back with the lane");
+                Assert.That(((SequenceCore)back).TakeLane, Is.True, "and the engine skips it again");
+                Assert.That(back.Events.Count, Is.EqualTo(1), "with its take");
+                Assert.That(rig.TakeLanes("Lead"), Does.Contain(back));
+
+                Core.SongCore.ActionStack.Redo();
+                Assert.That(Core.Song.Sequences.Count, Is.EqualTo(count - 1));
+                Core.SongCore.ActionStack.Undo();
+                Assert.That(Core.Arrangement.RoleOf(Core.Song.Sequences[index]), Is.EqualTo(LaneRole.Take), "and again after redo and undo");
+                Assert.That(Core.Arrangement.RoleOf(take), Is.EqualTo(LaneRole.Main), "the old sequence holds no role any more");
+                Assert.That(Core.Arrangement.ToXml()?.Elements("Lane").Any(x => (string)x.Attribute("index") == index.ToString()), Is.True, "a save writes it");
+            }
+        }
+
         static int Listeners(object owner, string eventName)
         {
             var field = owner.GetType().GetField(eventName, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);

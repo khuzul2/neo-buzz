@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Decided 2026-11-03: D1 A1 (§3.1), D2 B, D3 A, D4 B, D5 A, all as recommended. **AR0 built** (2026-11-03, §8.1): the song meter, clip ids, automation ramps and note sources. **AR1 built** (2026-11-14, §8.2): the Arrangement mode of the studio's Sequence tab. **AR2 built** (2026-11-14, §8.3): the piano roll in the arrangement and the Pattern tab, with velocity and CC lanes, scale and fold, step input and ghosts. **AR3 built** (2026-11-14, §8.4): the tracker shows the engine MIDI column as Notes lanes and edits it note by note. **AR4 built** (2026-11-14, §8.5): automation lanes in the arrangement. **AR5 built** (2026-11-14, §8.6): MIDI recording, take lanes, comping and links between session and arrangement. |
+| Status | Decided 2026-11-03: D1 A1 (§3.1), D2 B, D3 A, D4 B, D5 A, all as recommended. **AR0 built** (2026-11-03, §8.1): the song meter, clip ids, automation ramps and note sources. **AR1 built** (2026-11-14, §8.2): the Arrangement mode of the studio's Sequence tab. **AR2 built** (2026-11-14, §8.3): the piano roll in the arrangement and the Pattern tab, with velocity and CC lanes, scale and fold, step input and ghosts. **AR3 built** (2026-11-14, §8.4): the tracker shows the engine MIDI column as Notes lanes and edits it note by note. **AR4 built** (2026-11-14, §8.5): automation lanes in the arrangement. **AR5 built** (2026-11-14, §8.6): MIDI recording, take lanes, comping and links between session and arrangement. **AR6 built** (2026-11-14, §8.7): the tracker's vertical orientation. |
 | Date | 2026-11-03 |
 | Scope | One song and one machine graph, seen and edited in three modes that stay in sync: **tracker** (patterns with columns), **arrangement** (a horizontal timeline with clips, a piano roll and automation lanes) and **session** (clip launching). The model, the views, compatibility, engine seams and a phased plan |
 | Code baseline | fork `90b0850` (main, 2026-11-03). Branches `platform/p3-s4-sequence-editor` and `platform/p3-s6-pattern-editor` (not merged) read the same day |
@@ -263,7 +263,7 @@ Today automation lives in two places:
 - Add a mode switch:
   - **Tracker** keeps Buzz's rules: one row per sequence, edges set the pattern's length, vertical in P4.
   - **Arrangement** adds clips, lanes, automation and the piano roll panel.
-- Use one canvas with an orientation, not WPF's two near-copies. The vertical orientation is P4's (studio-mvp.md §3.5).
+- Use one canvas with an orientation, not WPF's two near-copies. The vertical orientation is P4's (studio-mvp.md §3.5). As built (AR1, AR6): the Arrangement is its own control (always horizontal); the tracker canvas (`SequenceCanvas`) has the orientation (§8.7).
 - **WPF gets no arrangement view.** Its editors keep the new fork fields on copy and paste, as 0.5.1 did for `Offset`/`End`/`Gain`.
 
 ## 5. The piano roll
@@ -323,7 +323,7 @@ Today automation lives in two places:
   - Upstream doesn't play engine automation columns, so it doesn't play automation. It keeps them, since TAP2 writes every column with its events, durations and metadata.
 - **Upstream loses:**
   - trims: it plays from the pattern's start (0.5.1's known limit);
-  - `Gain`, clip ids and lane roles;
+  - `Gain`, clip ids and lane roles (so upstream plays every take lane of a song with loop recordings, doubling the notes; §8.7 lists the options);
   - the meaning of ramps;
   - subsections, when upstream saves (session-view.md 0.6.1).
 - **Tests:** as in 0.5.1 and S6. Every phase round-trips songs in .bmx and .bmxml with their core sections byte-equal (`tools/song-roundtrip.py`, `SessionArrangementTests`).
@@ -569,9 +569,48 @@ Sizes as in session-view.md: S < 500 LOC, M 500–2,000, L 2,000–5,000.
 - 0 bytes a buffer on the audio thread while recording, and the MIDI thread's stamping allocates nothing.
 - The record row is on the kit's button style, named, drawn in Light and Dark, with no leaked subscriptions (gallery shots `ar5-takes-comp`, `ar5-launched`).
 
-**Decisions taken from the spec's recommendations or open in it:** no count-in; loop recording does not fill the main lane by itself; dragging between the views is a pair of commands on the model API and in menus, because the Session and Arrangement views are never on screen together; the roles of a take lane deleted and then restored by undo are lost (the lane comes back as a main lane).
+**Decisions taken from the spec's recommendations or open in it:** no count-in; loop recording does not fill the main lane by itself; dragging between the views is a pair of commands on the model API and in menus, because the Session and Arrangement views are never on screen together; the role of a take lane deleted and then restored by undo was lost (the lane came back as a main lane): fixed in AR6 (§8.7).
 
 **Not in AR5:** MCP tools for takes, hiding take lanes from the Session View (a lane's sequence is a session track as any), a count-in, auto-filling the main lane from the last take, pointer drags across the two views.
+
+### 8.7 As built (AR6)
+
+**The vertical tracker** (`ReBuzz.Studio/Views/Sequence/`: `SequenceGeometry`, `SequenceCanvas`, `SequenceView`). One canvas with an orientation, as §4.5 asked for the tracker: `SequenceGeometry.Vertical` turns time down the page and the tracks into columns (ruler on the left, headers on top); the cursor, selection, edits (`SequenceEdits`) and drags are in ticks and track rows either way, so no edit logic is duplicated. The geometry answers in either orientation (`TimePos`, `RowPos`, `TimeAtPoint`, `RawRowAtPoint`, `BlockRect`, `SpanRect`, `PartAtBlock`); the horizontal's `XOf`/`YOf` are as they were, so the horizontal draws and hit-tests exactly as before. A tick is drawn twice as tall as it is wide (`VerticalScale`), a track column is 104 px (WPF: a setting, not ported). The **Arrangement** mode stays horizontal; the toggle is offered only in the tracker.
+- **Toggle:** *Vertical* in the Sequence tab's right panel (tracker mode), named "Vertical tracks", on the kit's button style. The choice is a user preference (`Studio/SequenceVertical` in the settings registry; default off), not song data. In the vertical, the corner's add-track, bar length and Follow controls move to a row of the right panel (there is no room over a 44 px ruler).
+
+**Parity checklist** (from the WPF vertical editor, `ModernSequenceEditor`, against its horizontal twin: everything but the orientation is the same code). Each item is a step of `VerticalSequenceTests`:
+
+| # | WPF vertical editor | Studio | Test |
+|---|---|---|---|
+| 1 | Time runs down, tracks are columns, headers on top, bar numbers on the left | yes | toggle |
+| 2 | Blocks: name, pattern preview (notes across, time down), colours, break/mute/thru/stop blocks | yes (the name of the other kinds reads across the top, not upright) | toggle |
+| 3 | Header: name, M, S, D; a click chooses the track; double click opens the machine | yes (the double click is the horizontal's code, not asserted here) | toggle |
+| 4 | Click on the ruler sets the play position (to its bar) | yes | toggle |
+| 5 | Click selects a block; empty space: cursor, drag selects a rectangle of bars and tracks | yes | arrange |
+| 6 | Double click on a pattern chooses it for editing; on an empty cell makes a pattern | yes | arrange |
+| 7 | A pattern's key places it and the cursor moves down; the pattern list's double click places it | yes | arrange |
+| 8 | Drag moves a block down or across; Alt (Ctrl/Shift by setting in WPF) copies | yes; the clone key is Alt/Ctrl, as the horizontal's here | arrange |
+| 9 | Resize at the top and bottom edges (snap 16) | yes | arrange |
+| 10 | Cut, copy, paste, delete, undo, redo | yes | arrange |
+| 11 | Down, Up: one bar of time; Right, Left: one track; Page Down, Page Up: 16 bars; Shift extends the selection | yes | keys |
+| 12 | Home: the top, then the first track; End: the last cell of the song, then the last track | yes | keys |
+| 13 | Insert, Delete, Back (the bar above the cursor); Shift+, (stop) | yes | keys |
+| 14 | Ctrl+Left, Ctrl+Right move the track; the menu says Move Track Left/Right | yes | keys |
+| 15 | Ctrl+B, Ctrl+E set the loop; the markers and the song end are lines across the columns, flagged in the ruler | yes | playback |
+| 16 | The play position is a line across the columns; Follow scrolls down the page | yes | playback |
+| 17 | The wheel scrolls time, Shift+wheel sideways, Ctrl+wheel zooms around the pointer; scroll bars; zoom slider | yes | playback |
+| 18 | Quick Create Patterns, Rename Machine, Color, Insert/Delete (All Tracks) from the context menu | yes (the same menu) | keys |
+| 19 | Not ported (as in the horizontal): VU meters in headers and their target menu, MIDI export, the settings window (track width), click-to-play patterns | | |
+
+**Exit tests** (`ReBuzz.Studio.Tests/VerticalSequenceTests.cs`, 5 tests, headless, double clicks through `MachineViewTests.DoubleClick`): the toggle and its remembered choice across windows; the arrangement exercise of the horizontal's test (keys, list, double clicks, move, copy, both edge resizes, delete, rubber band, copy, cut, paste, 8 undo steps and a redo) with identical results; the keys; loop, playback, follow, wheel and zoom; the kit (button style, names, Light and Dark, the arrangement unaffected, no leaked subscriptions). The existing horizontal tests (`SequenceEditorTests`, `UxP2bTests`, the arrangement tests) pass unchanged. No engine or song-format code changed for the vertical: old songs load and render as before, and the null tests stand. Gallery shots `ar6-vertical-tracks`, `-headers`, `-arranged`, `-selecting`, `-keys`, `-loop`, `-playing`, `-Light`, `-Dark`.
+
+**Two AR5 follow-ups.**
+- *A take lane's role survives undo.* `ArrangementStore` listens to the restoration bus (`Restorations.Restored`, session-view.md 0.6.2), which `DeleteSequenceAction` (and the deleted-machine undo) already report on: the restored sequence takes the old one's role, and the engine skips it again. Test: `ATakeLaneDeletedAndRestoredByUndo...` in `ArrangementRecordingTests`. The WPF editors' own `DeleteSequenceAction` reports the same way (WPF-only code, not built here).
+- *Take lanes in upstream ReBuzz.* §7.1 does not ask upstream to stay sane about takes (it lists lane roles among what upstream loses), so nothing in the saved core data changed: a song with loop recordings still plays every take lane in upstream (doubled notes) until the takes are comped and the lanes deleted. Options, if wanted: (a) **write take lanes' events to the core SEQU empty** and keep them in the Arrangement subsection (upstream plays nothing from takes, but loses them on its next save, as it loses all subsections; changes the saved core data only of songs with take lanes; touches both song writers); (b) **a marker in the core data**: SEQU has no per-sequence mute or disable, so this would be an event trick (say a Break at time 0 of each take lane) whose effect on upstream would have to be checked there, and the studio would drop it on load; (c) **leave it**, and have *Comp* offer to delete the take lanes once the comp is made. Not taken: (a) and (b) change saved core data and want a product choice; (c) is the cheapest.
+
+**Decisions taken from the spec's recommendations or open in it:** one canvas with an orientation (§4.5) for the tracker, kept apart from the Arrangement control; the orientation is a user preference, not song data; the Arrangement stays horizontal; ticks are drawn twice as tall as wide in the vertical; WPF's track-width setting is a constant (104 px).
+
+**Not in AR6:** a vertical Arrangement, the track-width setting, VU meters in headers, MIDI export.
 
 ## 9. Phases
 
@@ -585,7 +624,7 @@ Effort in person-weeks (pw), with coding agents doing most of the typing, as in 
 | **AR3 The tracker sees the notes** (built, §8.4) | after S6 merges | S7: MPE's computed note lanes and the Note-column note source (D3 A) | A take recorded in the session shows in the tracker at once. Editing a row changes only that note. In a random round trip of 1,000 notes through tracker edits, untouched notes stay exact. Old songs' MPE data stays byte-equal | 3–4 | high |
 | **AR4 Automation** (built, §8.5) | after AR1 | Lanes for state parameters; clip automation stitched along the timeline; automation clips on automation lanes; S3 ramps drawn; knob moves recorded into lanes | A 16-bar filter sweep over a looped 1-bar clip renders as drawn. Tracker columns show as steps. Overlaps are marked | 2–3 | medium |
 | **AR5 Recording and links** (built, §8.6) | after AR2 | S6: MIDI recording into the arrangement; loop recording to take lanes; comping; launching from the arrangement; dragging between session and arrangement | Record 3 loop passes and comp one bar from each: the render equals the comp. Launch an arrangement clip in the session, then go back to the arrangement | 2–3 | medium |
-| **AR6 Tracker mode** | with P4 | The canvas's vertical orientation (Buzz's default sequence view). WPF is retired, so its compatibility work ends | The WPF vertical editor's parity checklist | 1 | low |
+| **AR6 Tracker mode** (built, §8.7) | with P4 | The canvas's vertical orientation (Buzz's default sequence view). WPF is retired, so its compatibility work ends | The WPF vertical editor's parity checklist | 1 | low |
 
 **Total: 12–18 pw** (AR0–AR6). P3 itself was planned at 10–15 pw.
 
