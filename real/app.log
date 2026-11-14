@@ -1,0 +1,13 @@
+[NeoBuzz Live] 0.0 s: starting on Unix (osx-arm64)
+[NeoBuzz Live] MIDI NeoBuzz Live: connected
+[NeoBuzz Live] 0.7 s: engine step 1
+[NeoBuzz Live] 0.7 s: engine step 2
+[NeoBuzz Live] 0.7 s: engine step 3 (gear scan)
+[NeoBuzz Live] 0.9 s: engine step 4 (machine database)
+[NeoBuzz Live] 1.4 s: engine step 5
+[NeoBuzz Live] 1.4 s: engine step 6 (audio device)
+[NeoBuzz Live] 2.1 s: playing through PortAudio: default at 48000 Hz
+[NeoBuzz Live] 2.1 s: MIDI in: none; out: none; clock out: none
+[NeoBuzz Live] Agent: off
+[NeoBuzz Live] Preferences: made in 56 ms, drawn at 148 ms
+[NeoBuzz Live] Preferences: Audio filled at 163 ms (3 ms)
