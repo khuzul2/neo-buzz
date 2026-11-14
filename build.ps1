@@ -332,7 +332,7 @@ if (-not $SkipCore) {
         }
         $gearOut = [IO.Path]::Combine($OutDir, 'Gear') + [IO.Path]::DirectorySeparatorChar
         foreach ($p in 'NeoPlug\NeoPlug.Portable.csproj', 'NeoPlugFX\NeoPlugFX.Portable.csproj') {
-            Invoke-Checked dotnet @('build', [IO.Path]::Combine($Root, 'Machines', 'Portable', $p), '-c', $Configuration, '-nologo', '-v:q', "-p:GearDir=$gearOut")
+            Invoke-Checked dotnet @('build', [IO.Path]::Combine($Root, 'Machines', 'Portable', $p), '-c', $Configuration, '-nologo', '-v:q', "-p:GearDir=$gearOut", '-p:ReBuzzCleanBuild=true', "-p:SolutionDir=$Root/")
         }
         Write-Host "Neo Plug, Neo Plug FX and Gear\NeoPlug -> $OutDir"
     } else {
