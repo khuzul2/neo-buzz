@@ -10,6 +10,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 
@@ -106,6 +107,7 @@ namespace NeoBuzz.Editor
                 Cursor = Cursors.Hand;
                 ToolTip = "Pages";
                 AutomationProperties.SetName(this, "Page tabs");
+                Focusable = true;   // P5a: Tab reaches the tabs, Left and Right (Home, End) change the page
                 strip = new PageStrip(Array.Empty<string>(), canvas);
                 Rebuild();
             }
@@ -121,6 +123,23 @@ namespace NeoBuzz.Editor
                 var p = e.GetPosition(this);
                 int i = strip.TabAt(p.X, p.Y);
                 if (i >= 0) owner.Selected = i;
+                Focus();
+                e.Handled = true;
+            }
+
+            protected override void OnKeyDown(KeyEventArgs e)
+            {
+                base.OnKeyDown(e);
+                int last = owner.pages.Count - 1, to = owner.selected;
+                switch (e.Key)
+                {
+                    case Key.Left: to = Math.Max(0, to - 1); break;
+                    case Key.Right: to = Math.Min(last, to + 1); break;
+                    case Key.Home: to = 0; break;
+                    case Key.End: to = last; break;
+                    default: return;
+                }
+                owner.Selected = to;
                 e.Handled = true;
             }
 
@@ -139,8 +158,15 @@ namespace NeoBuzz.Editor
                 InvalidateVisual();
             }
 
-            protected override void OnRender(DrawingContext dc) =>
+            protected override void OnRender(DrawingContext dc)
+            {
                 strip.Draw(canvas.On(dc), Bounds.Width > 0 ? Bounds.Width : Width, owner.selected, hover, accent);
+                if (owner.selected >= 0 && owner.selected < strip.Count)
+                {
+                    var t = strip.Tab(owner.selected);
+                    DrawFocusRing(dc, new Rect(t.X, t.Y, t.Width, t.Height));
+                }
+            }
         }
     }
 }

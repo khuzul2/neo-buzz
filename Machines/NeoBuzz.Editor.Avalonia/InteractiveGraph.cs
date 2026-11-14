@@ -68,6 +68,12 @@ namespace NeoBuzz.Editor
             }
         }
 
+        protected override void OnRender(Avalonia.Media.DrawingContext dc)
+        {
+            base.OnRender(dc);
+            if (plus != null) DrawFocusRing(dc, new Avalonia.Rect(Bounds.Size));
+        }
+
         protected override void OnTextInput(TextInputEventArgs e)
         {
             base.OnTextInput(e);
