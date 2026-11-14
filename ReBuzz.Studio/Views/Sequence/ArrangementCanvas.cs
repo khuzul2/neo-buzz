@@ -196,6 +196,7 @@ namespace ReBuzz.Studio.Views.Sequence
         void OnSequencesChanged(int index, ISequence s) => OnUi(() =>
         {
             WatchSequences();
+            if (index < 0 || !Song.Sequences.Contains(s)) clipboard = null;
             UnwatchPatterns();
             Changed();
         });
@@ -303,6 +304,17 @@ namespace ReBuzz.Studio.Views.Sequence
         public void Changed()
         {
             if (song == null) return;
+            if (!IsVisible)
+            {
+                // The tracker mode is showing: hold nothing of the song (the mode switch reads it all again).
+                items.Clear();
+                uses.Clear();
+                rows = new List<ArrangementRow>();
+                selected = null;
+                clipboard = null;
+                UnwatchPatterns();
+                return;
+            }
             rows = ArrangementLayout.Build(Song, core.Arrangement);
             items.Clear();
             uses.Clear();

@@ -38,11 +38,34 @@ namespace ReBuzz.Studio.Views.Sequence
             Width = SequenceGeometry.HeaderWidth;
             timeline.ViewChanged += Reposition;
             timeline.SelectionChanged += Highlight;
+        }
+
+        void OnSessionChanged() => Avalonia.Threading.Dispatcher.UIThread.Post(Highlight);
+        void OnTrackState(ISequence s) => OnSessionChanged();
+        void OnSessionProperty(object sender, System.ComponentModel.PropertyChangedEventArgs e) => OnSessionChanged();
+        void OnThemeChanged() => Avalonia.Threading.Dispatcher.UIThread.Post(Rebuild);
+
+        // The engine's events and the theme's are listened to while the window shows the view (a closed window lets go of them).
+        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnAttachedToVisualTree(e);
+            StudioTheme.Changed += OnThemeChanged;
             if (core.SessionCore is { } session)
             {
-                session.TrackStateChanged += s => Avalonia.Threading.Dispatcher.UIThread.Post(Highlight);
-                session.PropertyChanged += (s, e) => Avalonia.Threading.Dispatcher.UIThread.Post(Highlight);
+                session.TrackStateChanged += OnTrackState;
+                session.PropertyChanged += OnSessionProperty;
             }
+        }
+
+        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            StudioTheme.Changed -= OnThemeChanged;
+            if (core.SessionCore is { } session)
+            {
+                session.TrackStateChanged -= OnTrackState;
+                session.PropertyChanged -= OnSessionProperty;
+            }
+            base.OnDetachedFromVisualTree(e);
         }
 
         /// <summary>A track's lane was chosen with its header (the view publishes the machine as the studio's selection).</summary>

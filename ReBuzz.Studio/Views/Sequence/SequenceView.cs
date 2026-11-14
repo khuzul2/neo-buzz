@@ -69,8 +69,8 @@ namespace ReBuzz.Studio.Views.Sequence
             FontSize = 12, BorderThickness = new Thickness(1),
         };
         // Fork (daw-modes.md AR1): the mode switch (tracker: one row a sequence, edges set the pattern's length; arrangement: tracks with lanes and clips).
-        readonly ToggleButton trackerMode = new ToggleButton { Content = "Tracker", Width = 56, Height = 24, Padding = new Thickness(0), HorizontalContentAlignment = HorizontalAlignment.Center, IsChecked = true };
-        readonly ToggleButton arrangementMode = new ToggleButton { Content = "Arrange", Width = 60, Height = 24, Padding = new Thickness(0), HorizontalContentAlignment = HorizontalAlignment.Center };
+        readonly ToggleButton trackerMode = new ToggleButton { Content = "Tracker", Width = 64, IsChecked = true };
+        readonly ToggleButton arrangementMode = new ToggleButton { Content = "Arrange", Width = 64 };
         readonly TextBlock status = new TextBlock { FontSize = 12, Margin = new Thickness(8, 2), TextTrimming = TextTrimming.CharacterEllipsis, IsVisible = false };
         ArrangementHeaders headers;
         bool isArrangement;
@@ -147,6 +147,7 @@ namespace ReBuzz.Studio.Views.Sequence
             }
             else
             {
+                Arrangement.Changed();      // hidden: lets go of the song's clips
                 Canvas.Changed();
                 Canvas.Focus();
             }

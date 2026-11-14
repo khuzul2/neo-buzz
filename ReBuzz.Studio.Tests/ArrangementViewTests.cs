@@ -225,7 +225,8 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Events(lane), Is.EqualTo("0:00[0,0] 16:00[0,0] 32:00[0,8]"));
             rig.Key(PhysicalKey.Z, Cmd);
             Assert.That(Events(lane), Is.EqualTo("0:00[0,0] 16:00[0,0] 32:00[0,0]"));
-            rig.Key(PhysicalKey.Y, Cmd);
+            if (OperatingSystem.IsMacOS()) rig.Key(PhysicalKey.Z, Cmd | RawInputModifiers.Shift);
+            else rig.Key(PhysicalKey.Y, Cmd);
             Assert.That(Events(lane), Is.EqualTo("0:00[0,0] 16:00[0,0] 32:00[0,8]"), "redo");
         }
 
