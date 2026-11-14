@@ -36,6 +36,7 @@ namespace ReBuzz.Studio.Tests
         {
             string guide = GuideLibrary.Get("recipes");
             Assert.That(guide, Is.Not.Null, "the recipes guide is embedded");
+            guide = guide.Replace("\r\n", "\n");   // a Windows checkout may have CRLF
             var list = new List<Recipe>();
             foreach (Match m in Regex.Matches(guide, @"^### (\S+)\n(.*?)(?=^### |^## )", RegexOptions.Multiline | RegexOptions.Singleline))
             {

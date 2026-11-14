@@ -694,7 +694,7 @@ namespace ReBuzz.AgentTests
         [Test]
         public void TheMigrationGuidesPairsAreTheSuccessorMappings()
         {
-            string guide = GuideLibrary.Get("migrating-songs")!;
+            string guide = GuideLibrary.Get("migrating-songs")!.Replace("\r\n", "\n");
             string table = guide.Substring(guide.IndexOf("## The pairs", StringComparison.Ordinal));
             table = table.Substring(0, table.IndexOf("\n## ", 5, StringComparison.Ordinal));
             var named = new HashSet<(string From, string To)>();
@@ -709,7 +709,7 @@ namespace ReBuzz.AgentTests
         [Test]
         public void EveryRecipeHasStepsAndAResult()
         {
-            string guide = GuideLibrary.Get("recipes")!;
+            string guide = GuideLibrary.Get("recipes")!.Replace("\r\n", "\n");
             var recipes = Regex.Matches(guide, @"^### (\S+)\n(.*?)(?=^### |^## )", RegexOptions.Multiline | RegexOptions.Singleline).ToList();
             Assert.That(recipes.Count, Is.GreaterThanOrEqualTo(8));
             foreach (var r in recipes)
