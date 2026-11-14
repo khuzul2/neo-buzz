@@ -26,7 +26,7 @@ namespace ReBuzzTests
             using var rig = new Rig(NeoMachineTests.Poly);
 
             var prompts = Request(rig, "prompts/list")["prompts"]!.AsArray().Select(p => p!["name"]!.GetValue<string>()).ToList();
-            Assert.That(prompts, Is.SupersetOf(new[] { "compose", "design-sound", "mix", "master", "critique" }));
+            Assert.That(prompts, Is.SupersetOf(new[] { "compose", "design-sound", "mix", "master", "critique", "arrange", "perform", "teach", "migrate" }));
             var compose = Request(rig, "prompts/get", new JsonObject { ["name"] = "compose", ["arguments"] = new JsonObject { ["genre"] = "synthwave" } });
             Assert.That(compose["messages"]!.AsArray().Count, Is.GreaterThan(0));
 

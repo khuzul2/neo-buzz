@@ -121,6 +121,8 @@ namespace ReBuzz.AppViews
             r["quality"] = face.Quality;
             r["sections"] = face.Sections.Count;
             r["controls"] = editor.Controls.Count;
+            // Machines whose parameters are all actions (no State flag: JumpLoop, Connection Mixer Console) have nothing to turn.
+            r["state_params"] = m.ParameterGroups.Where(g => g.Type is ParameterGroupType.Global or ParameterGroupType.Track).SelectMany(g => g.Parameters).Count(sp => (sp.Flags & ParameterFlags.State) != 0);
             r["response"] = face.Response == null ? "none" : face.Response.Computed ? "computed" : "markers";
             r["envelopes"] = face.Sections.Sum(s => s.Envelopes.Count);
             r["preset_bar"] = Descendants(editor).Any(e => e.GetType().Name == "PresetBar");

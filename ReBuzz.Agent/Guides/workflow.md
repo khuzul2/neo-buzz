@@ -10,6 +10,8 @@ Build, listen, measure, adjust. Never claim a result you haven't rendered and me
 
 ## Build
 - **Sound sources:** `machine_find(intent="warm bass synth")` ranks the installed machines for what you want (the resource rebuzz://catalog lists them all by category, with what each is for); `gear_list(kind="generator")` lists them plainly. Then `machine_add(gear=…, name="Bass")`. Name machines by role ("Kick", "Pad", "Lead"), not by gear. New machines connect to Master unless you say otherwise.
+- **Where to build a sound:** the Neo synths (Neo Poly, Neo Wave, Neo FM6, Neo Drums, Neo Sampler), Dye Essence (three engine slots: `guide(topic="dye-sound-design")`), Neo Patch (a synth you build node by node with the `patch_*` tools: `guide(topic="build-a-synth")`) and the Neo Learn machines (small synths with twelve controls, made for explaining: `guide(topic="teaching")`).
+- **Movement:** the canvas modulators Neo LFO, Neo Envelope, Neo Step and Neo Macro have no audio of their own: `machine_add(gear="Neo LFO", name="Wobble", connect_to="none")`, then `modulate(source="Wobble", target_machine="Bass", param="F1 cutoff", depth=30)` moves any machine's parameter (`guide(topic="sound-design")`).
 - **Effects:** `machine_add(gear="Neo Verb", name="Room", connect_to=…)` or `machine_add(gear=…, insert_after="Bass")` for an insert, then `connect`/`disconnect` to route. A send: connect the source to both Master and the effect, set the effect 100% wet.
 - **Sound:** start from a preset (`preset_list(machine=…)`, `preset_load(machine=…, preset=…)`): the Neo machines and the curated classic ones (Pedal, Jeskola, FSM, Oomek…) have factory presets named for what they do ("Echo — Dotted Eighth"), ours levelled to peak below −1 dBFS (a machine's own bank, such as Pedal Juno106's, can run hotter: render and check); then `machine_describe(machine)` lists every parameter with its value in units. `param_set` takes values in those units ("800 Hz", "-6 dB", "35%", "Saw"), relative changes (`by: "+3 dB"`) or factors (`times: 2`). Extreme values are rarely right.
 - **Notes:** `pattern_create(machine, length_beats)` then `notes_write(machine, pattern, notes)`. Pitches are MIDI numbers or names (60 = "C4"); times are in beats from the pattern start. Chords are notes with the same start. `theory` gives exact chord and scale pitches; `notes_transform` edits notes already written.
@@ -53,9 +55,15 @@ Read the one for the job with `guide(topic=…)` (or the resource rebuzz://guide
 | `dye-essence-in-depth`, `dye-essence-analysis`, `dye-essence-effects`, `neo-eq-in-depth` | the parts of those two machines that their pages leave out |
 | `build-a-synth` | learning Neo Patch: the empty patch to sound in three steps, then each template node by node |
 | `app-control` | preferences, the audio device, MIDI bindings, the studio window, export to WAV |
+| `live-performance` | the Session View played live: scenes, clips, controllers, levels, a safe restore |
+| `dye-sound-design` | Dye Essence's seven engines: which for what, what to move, what to measure |
+| `migrating-songs` | classic machines onto their Neo successors with `machine_replace` |
+| `teaching` | explaining sound design with the machines' Explain text and the Neo Learn machines |
+| `performance` | dropouts, latency, audio drivers, buffers, CPU per machine |
+| `recipes` | short step lists of real tool calls, each run in a test |
 | `troubleshooting` | silence, clipping, phase, CPU, notes that hang or don't play |
 
-Machine manuals: `guide(machine="Neo Poly")` (every parameter, how to use it, presets). The resource rebuzz://reference/tools lists every tool with its inputs and units, generated from the tools themselves, so it is always current. Prompts give a whole plan: compose, design-sound, mix, master, critique.
+Machine manuals: `guide(machine="Neo Poly")` (every parameter, how to use it, presets). The resource rebuzz://reference/tools lists every tool with its inputs and units, generated from the tools themselves, so it is always current. Prompts give a whole plan: compose, design-sound, mix, master, critique, arrange, perform, teach, migrate.
 
 ## Undo
 Each changing call is one undo step: `undo` reverts your last call whole. In studio mode the user's own edits share the same history, so check `studio_status`'s `next_undo` before undoing. `history_list(limit=10)` shows the steps (name, source, time); `history_jump(step=…)` goes back or forward to one: it can undo several steps, the user's too, so list first.

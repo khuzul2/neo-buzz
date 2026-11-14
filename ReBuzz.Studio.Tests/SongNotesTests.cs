@@ -32,6 +32,7 @@ using ReBuzz.Core.Notes;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views.Notes;
 using static ReBuzz.Studio.Tests.MachineViewTests;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -63,7 +64,7 @@ namespace ReBuzz.Studio.Tests
 
         static string Folder(string name)
         {
-            string dir = Path.Combine(Path.GetTempPath(), $"rebuzz-studio-notes-{Environment.ProcessId}", name);
+            string dir = TestTemp.Path($"rebuzz-studio-notes-{Environment.ProcessId}", name);
             Directory.CreateDirectory(dir);
             return dir;
         }

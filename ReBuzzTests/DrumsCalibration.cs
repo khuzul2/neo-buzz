@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
+using ReBuzzTests.Automation;
 
 namespace ReBuzzTests
 {
@@ -40,7 +41,7 @@ namespace ReBuzzTests
             if (!File.Exists(template)) Assert.Inconclusive($"{template} not found");
             var song = DrumHits.WithTrackRows(File.ReadAllBytes(template), "909 ", "00",
                 (row, track, column) => track == 0 && hits.Any(h => h.Row == row && h.Column == column) ? 1 : 255);
-            string path = Path.Combine(Path.GetTempPath(), $"neo-drums-calibration-{label}-{Guid.NewGuid():N}.bmx");
+            string path = TestTemp.Path($"neo-drums-calibration-{label}-{Guid.NewGuid():N}.bmx");
             File.WriteAllBytes(path, song);
             return path;
         }

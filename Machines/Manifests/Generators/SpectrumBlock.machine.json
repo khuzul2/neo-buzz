@@ -2,15 +2,25 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "SpectrumBlock",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c or d) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
  "type": "control",
- "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "summary": "A spectrum and level display: it analyses the audio (left, right or mix) with a chosen FFT window and shows low, mid and high bands, volume, balance and correlation in its own window.",
  "category": "Utility",
  "tags": [
   "metering"
  ],
  "use_for": "A spectrum and level display with its own window.",
+ "quirks": [
+  "It is a display: it makes no sound and changes nothing; its numbers are for looking at, in its own Windows window. analyze_mix and meters_read give the same readings through the tools.",
+  "Unverified: what Display scale scales, and which audio it listens to when nothing is connected to it.",
+  "Closed source (a prebuilt DLL): names come from its own texts, its DLL's type names and the profile, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "RunTime/Gear/Generators/SpectrumBlock.NET.dll — type and member names read from the DLL (the analyser window)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - a control machine, no sound"
+ ],
  "tracks": 0,
  "health": {
   "status": "ok",
@@ -22,6 +32,7 @@
    "index": 0,
    "id": "Channel",
    "name": "Channel",
+   "plain_name": "Analysed channel",
    "group": "",
    "min": 0,
    "max": 2,
@@ -32,13 +43,15 @@
     "Right",
     "Mix"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Chooses which channel is analysed: Left, Right or Mix (the default).",
+   "how": "Chooses which channel is analysed: Left, Right or Mix (the default).",
+   "sound": "It decides which side of the audio the spectrum and level displays show."
   },
   {
    "index": 1,
    "id": "Window",
    "name": "Window",
+   "plain_name": "FFT window",
    "group": "",
    "min": 0,
    "max": 8,
@@ -56,12 +69,14 @@
     "Cosine"
    ],
    "description": "Apply windowing to the audio prior to FFT analysis.",
-   "confidence": "values"
+   "how": "Chooses the window applied to the audio before its spectrum is analysed: None, Hanning, Hamming, Blackman, Blackman exact, Blackman-Harris, flat top, Bartlett or Cosine; None is the default.",
+   "sound": "A smoother window gives a cleaner spectrum with less leakage between bands; None shows the raw frame."
   },
   {
    "index": 2,
    "id": "Low (Hz)",
    "name": "Low (Hz)",
+   "plain_name": "Low band ceiling",
    "group": "",
    "min": 0,
    "max": 22050,
@@ -71,12 +86,14 @@
    "b": 22050.0,
    "unit": "Hz",
    "description": "Spectrum frequency low range ceiling Hz.",
-   "confidence": "description"
+   "how": "Sets the ceiling of the low band for the display, 0 to 22,050 Hz (300 Hz by default).",
+   "sound": "It sets where the low-frequency meter stops and the mid band begins."
   },
   {
    "index": 3,
    "id": "High (Hz)",
    "name": "High (Hz)",
+   "plain_name": "High band floor",
    "group": "",
    "min": 0,
    "max": 22050,
@@ -86,12 +103,14 @@
    "b": 22050.0,
    "unit": "Hz",
    "description": "Spectrum frequency high range floor Hz.",
-   "confidence": "description"
+   "how": "Sets the floor of the high band for the display, 0 to 22,050 Hz (2,400 Hz by default).",
+   "sound": "It sets where the high-frequency meter begins; the mid band is between the two."
   },
   {
    "index": 4,
    "id": "LowVisible",
    "name": "LowVisible",
+   "plain_name": "Show low band",
    "group": "",
    "min": 0,
    "max": 1,
@@ -101,13 +120,15 @@
     "No",
     "Yes"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Shows or hides the low band meter, No or Yes (Yes by default).",
+   "how": "Shows or hides the low band meter, No or Yes (Yes by default).",
+   "sound": "It changes the display only, not the sound."
   },
   {
    "index": 5,
    "id": "MidVisible",
    "name": "MidVisible",
+   "plain_name": "Show mid band",
    "group": "",
    "min": 0,
    "max": 1,
@@ -117,13 +138,15 @@
     "No",
     "Yes"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Shows or hides the mid band meter, No or Yes (Yes by default).",
+   "how": "Shows or hides the mid band meter, No or Yes (Yes by default).",
+   "sound": "It changes the display only, not the sound."
   },
   {
    "index": 6,
    "id": "HighVisible",
    "name": "HighVisible",
+   "plain_name": "Show high band",
    "group": "",
    "min": 0,
    "max": 1,
@@ -133,13 +156,15 @@
     "No",
     "Yes"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Shows or hides the high band meter, No or Yes (Yes by default).",
+   "how": "Shows or hides the high band meter, No or Yes (Yes by default).",
+   "sound": "It changes the display only, not the sound."
   },
   {
    "index": 7,
    "id": "VolumeVisible",
    "name": "VolumeVisible",
+   "plain_name": "Show volume",
    "group": "",
    "min": 0,
    "max": 1,
@@ -149,13 +174,15 @@
     "No",
     "Yes"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Shows or hides the volume graph, No or Yes (Yes by default).",
+   "how": "Shows or hides the volume graph, No or Yes (Yes by default).",
+   "sound": "It changes the display only, not the sound."
   },
   {
    "index": 8,
    "id": "BalanceVisible",
    "name": "BalanceVisible",
+   "plain_name": "Show balance",
    "group": "",
    "min": 0,
    "max": 1,
@@ -166,12 +193,14 @@
     "Yes"
    ],
    "description": "Show Stereo Balance",
-   "confidence": "values"
+   "how": "Shows or hides the stereo balance display, No or Yes (Yes by default).",
+   "sound": "It changes the display only, not the sound."
   },
   {
    "index": 9,
    "id": "CorrCoeVisible",
    "name": "CorrCoeVisible",
+   "plain_name": "Show correlation",
    "group": "",
    "min": 0,
    "max": 1,
@@ -182,12 +211,14 @@
     "Yes"
    ],
    "description": "Show Correlation Coefficient",
-   "confidence": "values"
+   "how": "Shows or hides the correlation coefficient display, No or Yes (Yes by default).",
+   "sound": "It changes the display only, not the sound."
   },
   {
    "index": 10,
    "id": "VolSmooth (ms)",
    "name": "VolSmooth (ms)",
+   "plain_name": "Volume smoothing",
    "group": "",
    "min": 1,
    "max": 100,
@@ -197,12 +228,14 @@
    "b": 0.1,
    "unit": "s",
    "description": "Volume graph buffer length (ms)",
-   "confidence": "description"
+   "how": "Sets the length of the volume graph's smoothing buffer, 1 to 100 ms (10 ms by default).",
+   "sound": "A longer buffer gives a calmer volume trace; a short one follows every peak."
   },
   {
    "index": 11,
    "id": "Scale",
    "name": "Scale",
+   "plain_name": "Display scale",
    "group": "",
    "min": 1,
    "max": 100,
@@ -210,8 +243,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 100.0,
-   "description": "",
-   "confidence": "values"
+   "description": "Sets the display scale, 1 to 100 (10 by default); what it scales was not measured.",
+   "how": "Sets the display scale, 1 to 100 (10 by default); what it scales was not measured.",
+   "sound": "It changes the display only, not the sound."
   }
  ],
  "track_parameters": []

@@ -22,6 +22,7 @@ using ReBuzz.Core;
 using ReBuzz.Core.Session;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views.Sequence;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -705,7 +706,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void SaveAndReopenKeepTheArrangementColoursBarsAndZoom()
         {
-            string dir = Path.Combine(Path.GetTempPath(), "rebuzz-studio-sequence-" + Environment.ProcessId);
+            string dir = TestTemp.Path("rebuzz-studio-sequence-" + Environment.ProcessId);
             Directory.CreateDirectory(dir);
             string path = Path.Combine(dir, "arranged.bmxml");
             using var rig = new Rig();
@@ -790,7 +791,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(rig.Canvas.TimeSignatures.Entries, Is.EqualTo(new System.Collections.Generic.Dictionary<int, int> { [0] = 16 }), "no editor data: the default bars");
             rig.Screenshot("sequence-15-old-song");
 
-            string copy = Path.Combine(Path.GetTempPath(), "rebuzz-studio-sequence-" + Environment.ProcessId, "infector.bmxml");
+            string copy = TestTemp.Path("rebuzz-studio-sequence-" + Environment.ProcessId, "infector.bmxml");
             Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
             SongFiles.Picker = save => copy;
             Assert.That(SongFiles.SaveAs().Result, Is.True);

@@ -23,6 +23,7 @@ using ReBuzz.Studio.Shell.Design;
 using ReBuzz.Studio.Views;
 using ReBuzz.Studio.Views.Detail;
 using ReBuzz.Studio.Views.Session;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -495,7 +496,7 @@ namespace ReBuzz.Studio.Tests
         public void NothingEditedSavesTheSameBytesAndAnEditSavesWhatTheTrackerShows()
         {
             using var r = new Rig();
-            string dir = Path.Combine(Path.GetTempPath(), $"rebuzz-p3b-{Environment.ProcessId}");
+            string dir = TestTemp.Path($"rebuzz-p3b-{Environment.ProcessId}");
             Directory.CreateDirectory(dir);
             try
             {

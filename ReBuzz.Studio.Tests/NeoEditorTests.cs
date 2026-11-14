@@ -21,6 +21,7 @@ using NeoBuzz.Editor;
 using ReBuzz.Audio;
 using ReBuzz.Core;
 using ReBuzz.Studio.Platform;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -962,7 +963,7 @@ namespace ReBuzz.Studio.Tests
             // A sine in the song's wavetable (slot 1, ReBuzz's default root C-4), played by the default zone on C-4. The wave
             // view draws it in zone 1's colour with its voice; dragging S moves Z1 start as one undo step; zone 2's tab shows
             // its controls, and its wave picker steps from Off to the song's wave.
-            var path = Path.Combine(Path.GetTempPath(), "neo-sampler-editor-" + Guid.NewGuid().ToString("N") + ".wav");
+            var path = TestTemp.Path("neo-sampler-editor-" + Guid.NewGuid().ToString("N") + ".wav");
             using (var w = new BinaryWriter(File.Create(path)))
             {
                 int n = 48000;

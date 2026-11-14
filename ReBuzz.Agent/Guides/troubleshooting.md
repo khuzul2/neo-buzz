@@ -48,12 +48,16 @@ Reproduce, measure, isolate, fix one thing, measure again. Each section: what yo
 
 ## Latency
 
+For live playing the audio drivers, buffer sizes and what they cost are in `guide(topic="performance")`; this section is about machine latency.
+
 - Neo Drive adds 62 samples at every quality; Neo Comp adds its `Lookahead` (0–5 ms), Neo Limiter its `Lookahead` plus 11 samples, Neo Multiband in linear phase about 96 ms. Each tells NeoBuzz Live, whose machine delay compensation (on by default) delays the other paths to match, so renders stay aligned.
 - A latency that changes while playing (a lookahead moved) moves the other paths' delays by a 10 ms crossfade, in the same block; a bypassed effect keeps its latency (its input delayed by it), so bypassing doesn't shift the mix. If two routes still comb, check that the compensation wasn't turned off (Preferences ▸ Engine on Windows, Preferences ▸ General in the studio).
 - Live playing in studio mode adds the audio buffer; renders don't.
 - Two routes with different latency meeting again cause phase problems (above).
 
 ## CPU and slow renders
+
+`render(cpu=true)` names the machine that costs the time; the ladder of fixes for dropouts is in `guide(topic="performance")`.
 
 - Renders over about 2 s report progress. One render is at most 600 s; render long songs in parts with from and to.
 - Heavy: voices (polyphony × unison; Neo Poly has a 32-voice pool), Neo FM6 (6 operators at 2× oversampling), Neo Wave (2× oversampling, two tables), Neo Drive at `Quality` 8×, long reverb tails.

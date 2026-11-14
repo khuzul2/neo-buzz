@@ -2,15 +2,25 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "EasyRec",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-14, agent-knowledge.md K2 batch c or d) with tools/k2c_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-14 and the evidence listed",
  "type": "utility",
- "summary": "Utility (profiled draft): traits: utility; tail 0.0 s; latency 0 samples; gain +0.0 dB at the defaults.",
+ "summary": "Records the audio connected to it into a wavetable slot, with a Stop and Record mode, auto-stop and overwrite switches. A pass-through while it runs.",
  "category": "Utility",
  "tags": [
   "recording"
  ],
  "use_for": "Record the audio passing through it into a wave slot, to resample a part or capture a take.",
+ "quirks": [
+  "It passes its input unchanged (profile: 0 dB, no latency) while it records into the slot.",
+  "Mode is a switch the person or a pattern sets; wave_list shows the slot afterwards. Unverified: the conditions on which Auto stop ends a take, and whether it records in the Studio.",
+  "Closed source (a prebuilt DLL): names come from its own texts, its DLL's type names and the profile, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "RunTime/Gear/Generators/EasyRec.NET.dll — type and member names read from the DLL (the wavetable slot, overwrite and recording members)",
+  "profile (tools/machine-profiler.py, windows 2026-11-14) - a pass-through at 0 dB"
+ ],
  "tracks": 0,
  "health": {
   "status": "ok",
@@ -37,7 +47,7 @@
      "gain_db": 0.0,
      "thd_percent": 1.96,
      "thd_in_percent": 1.96,
-     "movement_db": 0.14
+     "movement_db": 0.13
     }
    },
    "traits": [
@@ -363,13 +373,13 @@
    },
    "all_at_once": {
     "min": {
-     "peak_dbfs": -9.15,
-     "growth_db": 0.23,
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": -9.2,
-     "growth_db": 0.21,
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
      "verdict": "ok"
     }
    }
@@ -456,6 +466,7 @@
    "index": 0,
    "id": "Mode",
    "name": "Mode",
+   "plain_name": "Recording mode",
    "group": "",
    "min": 0,
    "max": 1,
@@ -465,13 +476,15 @@
     "Stop",
     "Record"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Starts and stops the recording: Stop (the default) or Record.",
+   "how": "Starts and stops the recording: Stop (the default) or Record.",
+   "sound": "Nothing changes in the sound while it records; the machine passes its input through and keeps a copy for the slot."
   },
   {
    "index": 1,
    "id": "AutoStop",
    "name": "AutoStop",
+   "plain_name": "Auto stop",
    "group": "",
    "min": 0,
    "max": 1,
@@ -481,13 +494,15 @@
     "Disabled",
     "Enabled"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Chooses whether recording stops by itself, Disabled or Enabled (Enabled is the default); the condition that ends it was not measured.",
+   "how": "Chooses whether recording stops by itself, Disabled or Enabled (Enabled is the default); the condition that ends it was not measured.",
+   "sound": "Enabled saves you from stopping the take by hand; disabled keeps recording until Mode returns to Stop."
   },
   {
    "index": 2,
    "id": "WavetableSlot",
    "name": "WavetableSlot",
+   "plain_name": "Wavetable slot",
    "group": "",
    "min": 1,
    "max": 200,
@@ -495,13 +510,15 @@
    "kind": "linear",
    "a": 1.0,
    "b": 200.0,
-   "description": "",
-   "confidence": "values"
+   "description": "Chooses the wavetable slot the take is saved to, 1 to 200 (1 by default).",
+   "how": "Chooses the wavetable slot the take is saved to, 1 to 200 (1 by default).",
+   "sound": "The recorded sound appears in that slot, where samplers and trackers can play it."
   },
   {
    "index": 3,
    "id": "Overwrite",
    "name": "Overwrite",
+   "plain_name": "Overwrite existing",
    "group": "",
    "min": 0,
    "max": 1,
@@ -511,8 +528,9 @@
     "No",
     "Yes"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Chooses whether a take may replace a slot that already holds a wave: Yes (the default) or No.",
+   "how": "Chooses whether a take may replace a slot that already holds a wave: Yes (the default) or No.",
+   "sound": "Yes can erase the earlier sound in that slot; No protects it."
   }
  ],
  "track_parameters": []

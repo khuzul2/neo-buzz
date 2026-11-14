@@ -16,6 +16,7 @@ using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Shell.Design;
 using ReBuzz.Studio.Views;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -184,7 +185,7 @@ namespace ReBuzz.Studio.Tests
                 // Data in it, saved and opened again (a new editor, nothing asked for): it shows, the others still wait.
                 GoTo(s, "Uni detune");
                 Key(s, PhysicalKey.Digit3);
-                string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "rebuzz-studio-p3c-" + Environment.ProcessId);
+                string dir = TestTemp.Path("rebuzz-studio-p3c-" + Environment.ProcessId);
                 System.IO.Directory.CreateDirectory(dir);
                 string path = System.IO.Path.Combine(dir, "auto.bmxml");
                 try

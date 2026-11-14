@@ -18,6 +18,7 @@ using ReBuzz.Audio;
 using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -562,7 +563,7 @@ namespace ReBuzz.Studio.Tests
         {
             var s = Open("PE Song");
             var core = Studio.Host.Core;
-            string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "rebuzz-studio-pe-" + System.Environment.ProcessId);
+            string dir = TestTemp.Path("rebuzz-studio-pe-" + System.Environment.ProcessId);
             System.IO.Directory.CreateDirectory(dir);
             try
             {

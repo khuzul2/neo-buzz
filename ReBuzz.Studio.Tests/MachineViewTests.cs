@@ -17,6 +17,7 @@ using ReBuzz.Core;
 using ReBuzz.Studio.Platform;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views.Machines;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -402,7 +403,7 @@ namespace ReBuzz.Studio.Tests
         public void AnOpenedSongIsLaidOutAtItsStoredPositions()
         {
             var (window, view) = OpenEmpty();
-            string dir = Path.Combine(Path.GetTempPath(), "rebuzz-studio-machines-" + System.Environment.ProcessId);
+            string dir = TestTemp.Path("rebuzz-studio-machines-" + System.Environment.ProcessId);
             Directory.CreateDirectory(dir);
             string path = Path.Combine(dir, "layout.bmxml");
             try

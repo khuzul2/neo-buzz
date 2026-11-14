@@ -109,7 +109,7 @@ namespace ReBuzzTests
             // A song with Buzz's info text and no notes: the text comes in as an imported note.
             core.SongNotes.Clear();
             core.InfoText = "Made with Buzz\r\ngreetings to the crew";
-            string path = Path.Combine(Path.GetTempPath(), "neo-buzz-notes-" + Environment.ProcessId, "info-text.bmx");
+            string path = TestTemp.Path("neo-buzz-notes-" + Environment.ProcessId, "info-text.bmx");
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             (error, text, _) = rig.Call("song_save", new JsonObject { ["path"] = path });
             Assert.That(error, Is.False, text);
@@ -144,7 +144,7 @@ namespace ReBuzzTests
         {
             using var driver = new Driver();
             driver.Start();
-            string broken = Path.Combine(Path.GetTempPath(), "neo-buzz-open-" + Environment.ProcessId, "Broken song.bmx");
+            string broken = TestTemp.Path("neo-buzz-open-" + Environment.ProcessId, "Broken song.bmx");
             Directory.CreateDirectory(Path.GetDirectoryName(broken)!);
             File.WriteAllBytes(broken, System.Text.Encoding.ASCII.GetBytes("Buzz\0not a song at all"));
             Assert.That(driver.Core.TryOpenSongFile(broken), Is.False);

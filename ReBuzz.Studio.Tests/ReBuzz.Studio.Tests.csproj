@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="..\ReBuzzTests\Automation\GuardPolicy.cs" Link="Automation\GuardPolicy.cs" />
     <Compile Include="..\ReBuzzTests\Automation\AllocationWindow.cs" Link="Automation\AllocationWindow.cs" />
+    <Compile Include="..\ReBuzzTests\Automation\TestTemp.cs" Link="Automation\TestTemp.cs" />
   </ItemGroup>
 
   <!-- The UI gallery's demo song (docs/specs/ui-gallery.md), shared with ReBuzz.exe (its ui-shots switch). -->

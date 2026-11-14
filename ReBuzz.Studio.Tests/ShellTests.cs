@@ -8,6 +8,7 @@ using Avalonia.Headless.NUnit;
 using Avalonia.Input;
 using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
+using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -52,7 +53,7 @@ namespace ReBuzz.Studio.Tests
         {
             var host = Studio.Host;
             var core = host.Core;
-            string dir = Path.Combine(Path.GetTempPath(), "rebuzz-studio-songs-" + System.Environment.ProcessId);
+            string dir = TestTemp.Path("rebuzz-studio-songs-" + System.Environment.ProcessId);
             Directory.CreateDirectory(dir);
             string path = Path.Combine(dir, "round trip.bmxml");
             var window = Open();
