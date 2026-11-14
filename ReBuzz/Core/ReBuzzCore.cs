@@ -132,6 +132,9 @@ namespace ReBuzz.Core
         // Fork (mcp-server.md A3): named sections of the song, saved in song files.
         internal SongMarkerStore MarkerStore { get; set; }
 
+        // Fork (daw-modes.md S5): the arrangement's lane roles and folds, saved in song files.
+        internal ArrangementStore Arrangement { get; set; }
+
         // Fork (daw-modes.md S2): the arrangement's clip ids and loops (saved by ArrangementEvents).
         internal ArrangementClips Clips { get; } = new ArrangementClips();
 
@@ -2584,6 +2587,7 @@ namespace ReBuzz.Core
             Playing = false;
             SessionLayout?.Reset();             // fork (0.6.1): no launches from the old song's map while it closes
             MarkerStore?.Clear();               // fork (mcp-server.md A3)
+            Arrangement?.Clear();               // fork (daw-modes.md S5)
             Clips.Reset();                      // fork (daw-modes.md S2)
             SongMeter.Reset();                  // fork (daw-modes.md S1)
             SongNotes?.Clear();                 // fork (machine-safety.md §3.5)

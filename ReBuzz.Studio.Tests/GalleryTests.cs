@@ -706,6 +706,13 @@ namespace ReBuzz.Studio.Tests
                     Click(window, seq.Canvas.TranslatePoint(new Point(geo.XOf(8 * 16) + 6, geo.YOf(2) + geo.TrackHeight * 0.6), window)!.Value);
                     Shot(window, "031-sequence-cursor", "Sequence with the cursor on Lead's Hook at bar 9 (selected pattern, the pattern list follows).", "Click a pattern box.");
                 });
+                Try("032-sequence-arrangement", () =>
+                {
+                    var seq = Tab<SequenceView>(window, "Arrangement");
+                    seq.SetArrangementMode(true);
+                    Shot(window, "032-sequence-arrangement", "Sequence in Arrangement mode (daw-modes.md AR1): the Master's tempo and markers on top, a track for each machine with its lanes, clips with their previews, loop repeats and shared badges, the meter grid.", "The Sequence tab, then Arrange.");
+                    seq.SetArrangementMode(false);
+                });
 
                 Try("040-session", () =>
                 {
