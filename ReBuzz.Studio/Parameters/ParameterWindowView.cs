@@ -34,6 +34,7 @@ using BuzzGUI.Common.Presets;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
+using ReBuzz.Studio.Shell.Design;
 
 namespace ReBuzz.Studio.Parameters
 {
@@ -53,8 +54,8 @@ namespace ReBuzz.Studio.Parameters
         readonly ComboBox presetB = Compact(new ComboBox { Margin = new Thickness(0, 8, 0, 0) });
         readonly ComboBox function = Compact(new ComboBox { Margin = new Thickness(6, 8, 0, 0) });
         readonly ComboBox trackBox = Compact(new ComboBox { MinWidth = 110 });
-        readonly Button undo = Compact(new Button { Margin = new Thickness(4, 0, 0, 0), Padding = new Thickness(4, 0) });
-        readonly Button redo = Compact(new Button { Margin = new Thickness(4, 0, 0, 0), Padding = new Thickness(4, 0) });
+        readonly Button undo = Compact(new Button { Margin = new Thickness(4, 0, 0, 0) });
+        readonly Button redo = Compact(new Button { Margin = new Thickness(4, 0, 0, 0) });
         readonly Button presets = Compact(new Button { Content = "Presets...", Margin = new Thickness(4, 0, 0, 0) });
         readonly Button help = Compact(new Button { Content = "Help", Margin = new Thickness(4, 0, 0, 0) });
         readonly Button edit = Compact(new Button { Content = "Edit >>", Margin = new Thickness(4, 0, 0, 0) });
@@ -77,6 +78,10 @@ namespace ReBuzz.Studio.Parameters
 
             undo.Content = Icon(undoArrow: true);
             redo.Content = Icon(undoArrow: false);
+            undo.Classes.Add("icon");
+            redo.Classes.Add("icon");
+            Avalonia.Automation.AutomationProperties.SetName(undo, "Undo");
+            Avalonia.Automation.AutomationProperties.SetName(redo, "Redo");
             ToolTip.SetTip(presetA, "Preset A");
             ToolTip.SetTip(presetB, "Preset B");
             ToolTip.SetTip(function, "Edit Function");
@@ -158,25 +163,18 @@ namespace ReBuzz.Studio.Parameters
 
         ManagedActionStack Stack => Core?.SongCore?.ActionStack;
 
-        /// <summary>The WPF window's small controls (23 pixels, 10–11 point) instead of Fluent's.</summary>
+        /// <summary>The WPF window's rows of controls: the studio's one height (24 pt), stretched to the row, in place of Fluent's 32.</summary>
         static T Compact<T>(T c) where T : TemplatedControl
         {
-            c.FontSize = 11;
-            c.MinHeight = 0;
-            c.Height = 23;
+            c.Height = StudioStyles.ControlHeight;
             c.VerticalAlignment = VerticalAlignment.Stretch;
             c.HorizontalAlignment = HorizontalAlignment.Stretch;
             if (c is ContentControl content)
             {
                 content.VerticalContentAlignment = VerticalAlignment.Center;
                 content.HorizontalContentAlignment = HorizontalAlignment.Center;
-                if (content.Padding == default) content.Padding = new Thickness(6, 0);
             }
-            if (c is ComboBox combo)
-            {
-                combo.VerticalContentAlignment = VerticalAlignment.Center;
-                combo.Padding = new Thickness(6, 0, 2, 0);
-            }
+            if (c is ComboBox combo) combo.VerticalContentAlignment = VerticalAlignment.Center;
             return c;
         }
 

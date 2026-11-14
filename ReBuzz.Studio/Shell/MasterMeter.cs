@@ -29,7 +29,7 @@ namespace ReBuzz.Studio.Shell
 
         readonly Func<ReBuzzCore> core;
         readonly Bars bars = new Bars { Width = 200, Height = 36, VerticalAlignment = VerticalAlignment.Center };
-        readonly Button clip = new Button { MinWidth = 64, Padding = new Thickness(6, 1), FontSize = 11, VerticalAlignment = VerticalAlignment.Center, HorizontalContentAlignment = HorizontalAlignment.Center };
+        readonly Button clip = new Button { MinWidth = 64, VerticalAlignment = VerticalAlignment.Center, HorizontalContentAlignment = HorizontalAlignment.Center };
         readonly DispatcherTimer timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };
         readonly Stopwatch clock = Stopwatch.StartNew();
         double lastSeconds;

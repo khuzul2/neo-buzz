@@ -5,7 +5,7 @@
  "status": "curated",
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
  "type": "monosynth",
- "summary": "Classic Buzz bass synth (TB-303 flavoured): one oscillator (sine, saw, pulse, triangle, noise or a 303 saw) into a resonant filter with an envelope, per track. For basses and acid lines in Buzz songs.",
+ "summary": "Classic Buzz bass synth (acid flavoured): one oscillator (sine, saw, pulse, triangle, noise or an acid saw) into a resonant filter with an envelope, per track. For basses and acid lines in Buzz songs.",
  "category": "Synths",
  "tags": [
   "bass",
@@ -170,7 +170,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "0–100% (fully open by default)."
+   "description": "0–100% (fully open by default).",
+   "how": "Sets the filter's corner, from 0 to 100 percent; fully open is the default.",
+   "sound": "Lower values close the filter and make the note duller."
   },
   {
    "index": 1,
@@ -186,7 +188,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "0–100%."
+   "description": "0–100%.",
+   "how": "Sets the emphasis at the cutoff, from 0 to 100 percent.",
+   "sound": "Higher values add a squelchy peak that gives the acid sound."
   },
   {
    "index": 2,
@@ -202,7 +206,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Envelope to cutoff, 0–100%."
+   "description": "Envelope to cutoff, 0–100%.",
+   "how": "Sets how far the envelope opens the filter on each note, from 0 to 100 percent.",
+   "sound": "More makes each note start brighter and settle."
   },
   {
    "index": 3,
@@ -218,7 +224,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "0–100%."
+   "description": "0–100%.",
+   "how": "Sets how fast the filter envelope falls, from 0 to 100 percent.",
+   "sound": "Longer decays keep the note brighter for longer."
   },
   {
    "index": 4,
@@ -239,7 +247,9 @@
     "noise",
     "303 saw"
    ],
-   "description": "Sine, sawtooth, pulse, triangle, noise or the TB-303 sawtooth."
+   "description": "Sine, sawtooth, pulse, triangle, noise or the acid sawtooth.",
+   "how": "Chooses the oscillator: sine, sawtooth, pulse, triangle, noise or the machine's special acid sawtooth.",
+   "sound": "Sine is pure, saw buzzy, pulse hollow, triangle soft, noise unpitched; the last is the classic acid saw."
   }
  ]
 }

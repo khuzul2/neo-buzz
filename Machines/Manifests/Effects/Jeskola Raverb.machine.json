@@ -2,15 +2,26 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Jeskola Raverb",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "reverb",
- "summary": "Reverb (profiled draft): traits: reverb; tail 3.48 s; latency 0 samples; gain +6.1 dB at the defaults.",
+ "summary": "A small Buzz reverb with a reverb time, high-frequency damping and separate reverb and dry levels in decibels. For quick ambience; Neo Verb is the better reverb.",
  "category": "Delay & Reverb",
  "tags": [
   "reverb"
  ],
  "use_for": "Simple reverb with a time and high-frequency damping.",
+ "quirks": [
+  "Rev Time is a bare 0 to 127 scale: measured, the tail grows from about 0.4 s to about 4 s (T60), 100 by default.",
+  "Rev Out and Dry Out run from -60 to 0 dB; the defaults are about -22.6 dB reverb and 0 dB dry.",
+  "HF Damp's effect was not isolated by the measurement; its meaning is from its name and description.",
+  "A long tail: 3.5 s at the defaults, so renders need a tail.",
+  "Closed source: names come from its own descriptions and measurements, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-13) — tail 3.5 s and T60 about 8.5 s at the defaults, +6.1 dB, Rev Time 0.4 s to 4 s"
+ ],
  "tracks": 0,
  "health": {
   "status": "ok",
@@ -23,6 +34,7 @@
    "latency_ms": 0.0,
    "tail_seconds": 3.48,
    "tail_seconds_note": "rings longer than the 3 s rendered",
+   "tail_hz": 2872.8,
    "echoes": 0,
    "output_correlation": 0.99,
    "spectrum_spread_db": 1.3,
@@ -513,6 +525,8 @@
    "index": 0,
    "id": "Rev Time",
    "name": "Rev Time",
+   "plain_name": "Reverb time",
+   "role": "reverb.decay",
    "group": "",
    "min": 0,
    "max": 127,
@@ -521,14 +535,15 @@
    "a": 0.0,
    "b": 127.0,
    "description": "Reverberation time",
-   "confidence": "values",
-   "suggested_role": "reverb.decay",
-   "role_evidence": "the tail 381 ms → 4.03 s (T60)"
+   "how": "Sets the length of the reverb tail on a 0 to 127 scale.",
+   "sound": "Higher values give a longer tail; measured, it grows from about 0.4 s to about 4 s."
   },
   {
    "index": 1,
    "id": "HF Damp",
    "name": "HF Damp",
+   "plain_name": "High damping",
+   "role": "reverb.damping",
    "group": "",
    "min": 0,
    "max": 127,
@@ -537,14 +552,15 @@
    "a": 0.0,
    "b": 127.0,
    "description": "High frequency damping",
-   "confidence": "values",
-   "suggested_role": "mix.wet",
-   "role_evidence": "at its maximum the effect passes the signal unchanged; at the other end echoes from 55 ms; half way less of the same"
+   "how": "Sets how strongly the highs of the tail are damped, 0 to 127; the measurement did not isolate its effect.",
+   "sound": "Its audible effect is unverified here; by its name, more damping gives a darker, softer tail."
   },
   {
    "index": 2,
    "id": "Rev Out",
    "name": "Rev Out",
+   "plain_name": "Reverb level",
+   "role": "mix.wet",
    "group": "",
    "min": 0,
    "max": 127,
@@ -555,14 +571,15 @@
    "flag": true,
    "unit": "dB",
    "description": "Reverb output level",
-   "confidence": "values",
-   "suggested_role": "mix.wet",
-   "role_evidence": "at its minimum the effect passes the signal unchanged; at the other end echoes from 55 ms; half way less of the same"
+   "how": "Sets the reverb's output level, from -60 dB to 0 dB.",
+   "sound": "Higher is a wetter, more distant sound."
   },
   {
    "index": 3,
    "id": "Dry Out",
    "name": "Dry Out",
+   "plain_name": "Dry level",
+   "role": "mix.dry",
    "group": "",
    "min": 0,
    "max": 127,
@@ -573,7 +590,8 @@
    "flag": true,
    "unit": "dB",
    "description": "Dry output level",
-   "confidence": "values"
+   "how": "Sets the unprocessed signal's level, from -60 dB to 0 dB.",
+   "sound": "Lower it for a more distant sound; the default passes the dry signal at full level."
   }
  ],
  "track_parameters": []

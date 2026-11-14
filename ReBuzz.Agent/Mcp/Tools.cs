@@ -46,6 +46,12 @@ namespace ReBuzz.Agent.Mcp
         public JsonObject Arguments { get; }
         public CancellationToken Cancellation { get; }
 
+        /// <summary>
+        /// Fork (ux-overhaul.md P4a): the caller keeps its own thread free (the studio's Export Audio sheet): a tool that can, runs its long
+        /// work on a worker thread of its own instead of the engine thread. The song is then not safe to edit meanwhile: the caller blocks edits.
+        /// </summary>
+        public bool Background { get; init; }
+
         /// <summary>Reports progress when the client asked for it (a progress token); otherwise does nothing.</summary>
         public void Progress(double done, double? total = null, string? message = null) => progress?.Invoke(done, total, message);
 

@@ -32,7 +32,9 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Neo Learn Wavefolder | generator | Teaching synth (box name Learn Fold): one Dye Essence patch behind 12 controls (wavefold, symmetry, fold stages 1 to 6, timbre FM, low-pass gate, gate strike, ADSR, unison, output) at High quality with an Explain strip |
 | Neo Learn Phase Distortion | generator | Teaching synth (box name Learn PD): one Dye Essence patch behind 12 controls (phase bend, resonance, PD wave, bend decay, ring mod, chorus, ADSR, unison, output) at Standard quality with an Explain strip |
 | Neo Learn Vector | generator | Teaching synth (box name Learn Vector): one Dye Essence patch behind 12 controls (a cursor on a four-corner diamond, four palettes, an orbit generator, ADSR, unison, output) with an Explain strip |
+| Neo Learn Spectral | generator | Teaching spectral resynthesiser (box name Learn Spectral): one Dye Essence patch behind 12 controls (stretch, time smear, freeze, source, partial gate, tone / noise, ADSR, unison, output) over a built-in sample or the user's WAV, analysed once into partials and noise, with a spectrogram and an Explain strip |
 | Neo Learn Sampler | generator | Teaching synth (box name Learn Sampler): one Dye Essence patch behind 12 controls (start offset, tone, source, loop, vintage grit, room, ADSR, unison, output) over a built-in sample or the user's WAV, with an Explain strip |
+| Neo Patch | generator | Modular synth (box name Patch; docs/specs/neo-patch.md, neo-patch-engine.md): a patch of up to 128 nodes (band-limited and wavetable oscillators, sample, noise, envelopes, LFO, random, slew, sample and hold, SVF and ladder filters, shaper, delay, mixer, math, crossfade, macro, Voice sum) wired in a graph, per-voice or global nodes, 16 voices, MPE, 16 macros; the patch is the machine state (one line of text), presets carry it; the device view is the generic parameters until the canvas editor (NP2) |
 | Neo Learn Additive | generator | Teaching synth (box name Learn Add): one Dye Essence patch behind 12 controls (tilt, odd/even, partial count, inharmonicity, spectral comb, partial shimmer, ADSR, unison, output) with an Explain strip |
 | Neo Wave | generator | Wavetable synth: 2 morphing oscillators with warp modes, table import, mod matrix |
 | Neo FM6 | generator | 6-operator FM: the 32 DX7 algorithms, DX7 envelopes, DX7 SysEx import |
@@ -55,6 +57,10 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Neo Gate | effect | Successor of Pedal Gate: gate and downward expander with hysteresis, hold, range, key filters, an external sidechain, lookahead, Listen and Delta. |
 | Neo Strip | effect | Channel strip: gate, EQ (low cut, low shelf, two bells, high shelf, high cut), compressor, drive, clipper and limiter in that order, each the engine of the Neo machine of that name; a stage that is off passes the audio untouched; constant latency; Delta and Match (mastering-tools.md §5.10) |
 | Neo Analyzer | effect | Spectrum (FFT with peak hold, third-octave bars), loudness (momentary, short-term, integrated LUFS, range, true peak) and stereo (correlation, width, goniometer) with the analysis library's numbers; readings for agents; audio untouched |
+| Neo LFO | control | A low-frequency oscillator that moves up to 8 parameters of other machines (neo-patch.md §3): seven shapes, a free rate or a tempo length (straight, dotted, triplet), phase, retrigger on the beat, the bar or a note, smoothing; no audio, no undo steps. |
+| Neo Envelope | control | An ADSR started by the notes of a chosen machine (or its Gate switch), or a follower of a machine's output level; moves up to 8 parameters. |
+| Neo Step | control | A 1 to 32 step value sequencer at a synced rate with swing, glide and a random amount; moves up to 8 parameters. |
+| Neo Macro | control | One knob (a parameter: automatable, bindable) that moves up to 8 parameters at once, each by its own depth, range and curve. |
 
 **Third batch (successors: machine-safety.md §4)**
 

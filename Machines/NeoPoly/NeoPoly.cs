@@ -23,7 +23,13 @@ namespace NeoBuzz.Poly
             Engine = new PolyEngine(Values);
         }
 
-        internal PolyEngine Engine { get; }
+        internal PolyEngine Engine { get; private set; }
+
+        internal override void Restart()
+        {
+            Engine = new PolyEngine(Values);
+            rate = 0;
+        }
 
         public bool Work(Sample[] output, int n, WorkModes mode)
         {

@@ -1691,6 +1691,7 @@ namespace ReBuzz.Studio.Tests
         [TestCase("Neo Learn Phase Distortion", "NeoLearnPhaseDistortionEditor", "neo-learn-phase-distortion-editor", "Phase Bend")]
         [TestCase("Neo Learn Vector", "NeoLearnVectorEditor", "neo-learn-vector-editor", "Corner Palette")]
         [TestCase("Neo Learn Sampler", "NeoLearnSamplerEditor", "neo-learn-sampler-editor", "Start Offset")]
+        [TestCase("Neo Learn Spectral", "NeoLearnSpectralEditor", "neo-learn-spectral-editor", "Time Smear")]
         public void NeoLearnL1EditorsHaveTheTemplatesZonesFitAndExplainTheirKnobs(string gear, string editor, string shot, string knobName)
         {
             var m = Add(gear, "Learn L1");

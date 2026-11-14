@@ -23,7 +23,7 @@ namespace ReBuzz.Studio.Shell.Preferences
     {
         readonly TabControl tabs = new TabControl { Padding = new Thickness(0, 6, 0, 0), TabStripPlacement = Dock.Left };
         readonly TextBlock restartNote = new TextBlock { VerticalAlignment = VerticalAlignment.Center, TextWrapping = Avalonia.Media.TextWrapping.Wrap, FontSize = Design.StudioTokens.FontBody, IsVisible = false };
-        readonly Button restore = new Button { Content = "Restore Defaults", MinHeight = 28, Padding = new Thickness(12, 3) };
+        readonly Button restore = new Button { Content = "Restore Defaults" };
         readonly PrefsModel model;
         readonly Dictionary<string, string> restartFrom = new Dictionary<string, string>();
         readonly List<PrefsPage> pages = new List<PrefsPage>();
@@ -74,6 +74,11 @@ namespace ReBuzz.Studio.Shell.Preferences
             DockPanel.SetDock(rule, Dock.Bottom);
             root.Children.Add(rule);
             root.Children.Add(tabs);
+            // Fork (ux-overhaul.md P4a): Tab reads the window as it is seen: the pages' list and the page, then the footer (the footer is
+            // added first, for its dock), and Tab goes on from the list into the page.
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(tabs, 0);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(rule, 1);
+            Avalonia.Input.KeyboardNavigation.SetTabNavigation(tabs, Avalonia.Input.KeyboardNavigationMode.Continue);
             Content = root;
 
             var cmd = OperatingSystem.IsMacOS() ? KeyModifiers.Meta : KeyModifiers.Control;

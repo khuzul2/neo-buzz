@@ -46,7 +46,7 @@
     <Preset Machine="Jeskola EQ-3">
       <Parameters>
         <Parameter Name="Low Gain" Group="1" Index="0" Track="0" Value="0" />
-        <Parameter Name="Mid Gain" Group="1" Index="1" Track="0" Value="4096" />
+        <Parameter Name="Mid Gain" Group="1" Index="1" Track="0" Value="3925" />
         <Parameter Name="High Gain" Group="1" Index="2" Track="0" Value="0" />
         <Parameter Name="Low Cutoff" Group="1" Index="3" Track="0" Value="500" />
         <Parameter Name="High Cutoff" Group="1" Index="4" Track="0" Value="3000" />

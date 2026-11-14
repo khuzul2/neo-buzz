@@ -44,6 +44,8 @@
     <Compile Include="..\ReBuzzTests\Automation\GuardPolicy.cs" Link="Automation\GuardPolicy.cs" />
     <!-- Explain (neo-learn.md §5.3): the cross-assembly parameter-source marks and the strip's board. -->
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Interfaces\ExplainBoard.cs" Link="Explain\ExplainBoard.cs" />
+    <!-- Canvas modulators (neo-patch.md §3): the plain data the modulation tables and tests read. -->
+    <Compile Include="..\ReBuzzGUI\BuzzGUI.Interfaces\ModulationInfo.cs" Link="Explain\ModulationInfo.cs" />
     <Compile Include="..\ReBuzzTests\Automation\AllocationWindow.cs" Link="Automation\AllocationWindow.cs" />
     <!-- The throughput guards time a render against a reference workload in the same run (Throughput.cs; machines.md §6). -->
     <Compile Include="..\ReBuzzTests\Automation\Throughput.cs" Link="Automation\Throughput.cs" />

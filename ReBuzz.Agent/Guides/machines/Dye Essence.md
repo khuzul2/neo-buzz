@@ -2,7 +2,7 @@
 
 A hybrid synth with three engine slots (A, B, C). Each slot plays one of: a morphing wavetable (64 frames), a classic analog wave, a sample (built-in or your own), grains of a sample, up to 128 additive sine partials, a resonating body of up to 64 modes struck, plucked or bowed, or the resynthesis of a sample from its partials and noise (the Spectral engine: speed, pitch and timbre move apart). Each slot has up to 16 unison voices and two warps in series (bend, sync, FM, PM, AM, ring and more); a sub and a noise sit beside them. Every note passes two filters (ladder, state-variable, comb) from serial to parallel, then a ten-slot effects rack. Voices run at Standard 2× (default) or High 4×: at 2× a plain saw's alias floor is -92 dB or lower. Wavetable and Analog slots are the lightest; Harmonic, Modal, Spectral and Granular cost more.
 
-Full signal flow, every engine, modulation, arpeggiator, sequencer and imports: `guide(topic="dye-essence-in-depth")`. The effects rack (Trio and Duo chains, twelve types): `guide(topic="dye-essence-effects")`.
+Full signal flow, every engine, modulation, arpeggiator, sequencer and imports: `guide(topic="dye-essence-in-depth")`. The Spectral engine and the sample imports (partials into Harmonic, an impulse response into Modal): `guide(topic="dye-essence-analysis")`. The effects rack (Trio and Duo chains, twelve types): `guide(topic="dye-essence-effects")`.
 
 ## Use it for
 

@@ -131,6 +131,14 @@ namespace ReBuzz.Studio.Tests
             });
         }
 
+        [Test]
+        public void TheCuratedEditorWinsADoubleClickOnlyWhereThereIsNoGuiOfItsOwn()
+        {
+            Assert.That(ManifestEditorSettings.DefaultFor(curated: true, hasOwnGui: false), Is.True, "curated, no GUI: the manifest editor");
+            Assert.That(ManifestEditorSettings.DefaultFor(curated: true, hasOwnGui: true), Is.False, "curated with a GUI (Pedal LFO, Chord, Peer Control, Tracker): its own GUI");
+            Assert.That(ManifestEditorSettings.DefaultFor(curated: false, hasOwnGui: false), Is.False, "not curated: the parameter list");
+        }
+
         [AvaloniaTest]
         public void ADoubleClickInTheMachineViewOpensTheEditorAndTheMenuKeepsTheList()
         {
@@ -139,6 +147,7 @@ namespace ReBuzz.Studio.Tests
             {
                 var bass = (MachineCore)Add("Pedal SH101", "Bass", -0.5f, 0);
                 Settle();
+                Assert.That(ManifestEditorSettings.HasOwnGui(bass.DLL), Is.False, "SH101 has no GUI of its own in the studio");
                 DoubleClick(window, view.PointOf(bass, window));
                 var editorWindow = StudioMachineUiHost.EditorWindowOf(bass);
                 Assert.That(editorWindow?.IsVisible, Is.True, "a double click opens SH101's manifest editor");

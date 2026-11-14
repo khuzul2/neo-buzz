@@ -87,9 +87,22 @@ namespace ReBuzz.AppViews
             // A double click, as people open it: the manifest editor, where the machine has no GUI of its own. A native
             // machine that handles double clicks itself (its own dialog) would wait for someone here: "Editor..." instead.
             r["opens_editor"] = ManifestEditorSettings.OpensEditor(m.DLL);
+            r["has_own_gui"] = ManifestEditorSettings.HasOwnGui(m.DLL);
             bool ownDoubleClick = !m.DLL.IsManaged && m.CMachineEventType.Any(e => e.Type == BEventType.DoubleClickMachine && e.Event_Handler != IntPtr.Zero);
             r["own_double_click"] = ownDoubleClick;
-            if (!ownDoubleClick) m.DoubleClick();
+            if (!ownDoubleClick)
+            {
+                try
+                {
+                    m.DoubleClick();
+                }
+                catch (Exception e)
+                {
+                    // A machine's own GUI that can't load here (Jeskola Live's old GUI needs a Buzz interface member ReBuzz lacks):
+                    // its double click fails as it always did; the editor is still checked through "Editor...".
+                    r["double_click_error"] = e.GetType().Name + ": " + e.Message;
+                }
+            }
             Window window = WpfMachineUiHost.EditorWindowOf(m);
             r["opened_by"] = window != null ? "double click" : "Editor...";
             if (window == null)

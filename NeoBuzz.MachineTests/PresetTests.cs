@@ -63,9 +63,18 @@ namespace NeoBuzz.MachineTests
             ["Neo Learn Formant"] = (NeoBuzz.LearnFormant.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.FormantMap(NeoBuzz.LearnFormant.Params.Table), v, x.Length)),
             ["Neo Learn Wavefolder"] = (NeoBuzz.LearnFold.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.WavefolderMap(NeoBuzz.LearnFold.Params.Table), v, x.Length)),
             // docs/specs/neo-learn.md L2b: Neo Learn Phase Distortion, Vector and Sampler.
+            // docs/specs/neo-patch.md NP1: a patch (the preset's machine state) played through the engine.
+            ["Neo Patch"] = (NeoBuzz.Patch.Params.Table, (v, x) =>
+            {
+                for (int t = 0; t < NeoBuzz.DyeEssence.TableBank.Count; t++) NeoBuzz.DyeEssence.TableBank.GetNow(t);
+                var e = new NeoBuzz.Patch.PatchEngine(v);
+                if (dyeState != null) e.SetPatch((string)dyeState.Element("Patch") ?? "");
+                return RenderSynth(e, (en, l, r, n) => ((NeoBuzz.Patch.PatchEngine)en).Process(l, r, n), x.Length);
+            }),
             ["Neo Learn Phase Distortion"] = (NeoBuzz.LearnPd.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.PhaseDistortionMap(NeoBuzz.LearnPd.Params.Table), v, x.Length)),
             ["Neo Learn Vector"] = (NeoBuzz.LearnVector.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.VectorMap(NeoBuzz.LearnVector.Params.Table), v, x.Length)),
             ["Neo Learn Sampler"] = (NeoBuzz.LearnSampler.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.SamplerMap(NeoBuzz.LearnSampler.Params.Table), v, x.Length)),
+            ["Neo Learn Spectral"] = (NeoBuzz.LearnSpectral.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.SpectralMap(NeoBuzz.LearnSpectral.Params.Table), v, x.Length)),
             // mastering-tools.md §5.1: the clipper.
             ["Neo Clipper"] = (NeoBuzz.Clipper.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Clipper.ClipperEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             // mastering-tools.md §5.4, §5.5: the transient shaper and the low-end shaper.
@@ -86,6 +95,8 @@ namespace NeoBuzz.MachineTests
         static float[] RenderLearn(NeoBuzz.Learn.MacroMap map, ParamValues v, int length)
         {
             for (int i = 0; i < NeoBuzz.DyeEssence.TableBank.Count; i++) NeoBuzz.DyeEssence.TableBank.GetNow(i);
+            for (int i = 0; i < NeoBuzz.DyeEssence.SampleSources.Count; i++) NeoBuzz.DyeEssence.SampleSources.GetNow(i);
+            for (int i = 0; i < NeoBuzz.DyeEssence.SpectralSources.Count; i++) NeoBuzz.DyeEssence.SpectralSources.GetNow(i);
             var host = new NeoBuzz.Learn.LearnHost(map, v);
             return RenderSynth(host.Engine, (e, l, r, n) => host.Process(l, r, n), length);
         }
@@ -106,7 +117,7 @@ namespace NeoBuzz.MachineTests
             return (T)e;
         }
 
-        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler" };
+        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
 
         /// <summary>
         /// Neo Sampler: the song's slots 1–16 hold the built-in drums and the sine (the presets that
@@ -358,7 +369,7 @@ namespace NeoBuzz.MachineTests
             foreach (var (file, machine, name, values) in AllPresets())
             {
                 var (table, render) = Machines[machine];
-                dyeState = machine == "Dye Essence" ? PresetState(file, name) : null;
+                dyeState = machine == "Dye Essence" || machine == "Neo Patch" ? PresetState(file, name) : null;
                 var v = new ParamValues(table);
                 foreach (var kv in values) if (kv.Key >= 0) v.Set(kv.Key, kv.Value);
                 var y = render(v, x);

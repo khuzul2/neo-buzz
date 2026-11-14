@@ -39,7 +39,15 @@ namespace NeoBuzz.Wave
             for (int i = 0; i < Tables.Names.Length; i++) Tables.Get(i);
         }
 
-        internal WaveEngine Engine { get; }
+        internal WaveEngine Engine { get; private set; }
+
+        internal override void Restart()
+        {
+            var user = Engine.UserTable;
+            Engine = new WaveEngine(Values);
+            Engine.SetUserTable(user);
+            rate = 0;
+        }
 
         /// <summary>The user table's name ("" when none is loaded).</summary>
         internal string UserTableName => state.UserTableName;

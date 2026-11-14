@@ -44,6 +44,7 @@ namespace ReBuzz.AgentTests
         [TestCase("NeoLearnPhaseDistortion", "Neo Learn Phase Distortion", "phase_bend,resonance,pd_wave_shape,bend_decay,ring_mod,chorus")]
         [TestCase("NeoLearnVector", "Neo Learn Vector", "vector_x,vector_y,corner_palette,orbit_speed,orbit_radius,orbit_shape")]
         [TestCase("NeoLearnSampler", "Neo Learn Sampler", "sample_offset,timbre_tilt,source,loop,vintage_dac,room_space")]
+        [TestCase("NeoLearnSpectral", "Neo Learn Spectral", "spectral_shift,spectral_blur,spectral_freeze,spectral_source,bin_gate,tonal_noise")]
         public void TheOtherLearnManifestsCarryTwelveControlsWithIdsHowAndSound(string folder, string gear, string core)
         {
             var m = MachineManifest.Load(Path.Combine(RepoRoot(), "Machines", folder, gear + MachineManifest.Suffix))!;
@@ -56,6 +57,17 @@ namespace ReBuzz.AgentTests
             ExplainFields.Add(o, m.Parameters[0]);
             Assert.That((string)o["id"]!, Is.EqualTo(core.Split(',')[0]));
             Assert.That((string)o["how"]!, Is.Not.Empty);
+        }
+
+        [Test]
+        public void NeoPatchCarriesTwentyControlsWithIdsHowAndSound()
+        {
+            // docs/specs/neo-patch.md §4.1: Volume, Voices, Glide, the audio-rate switch and macros 1 to 16.
+            var m = MachineManifest.Load(Path.Combine(RepoRoot(), "Machines", "NeoPatch", "Neo Patch" + MachineManifest.Suffix))!;
+            Assert.That(m.Parameters.Count, Is.EqualTo(20));
+            Assert.That(m.Parameters.Select(p => p.Id).Take(4), Is.EqualTo(new[] { "volume", "voices", "glide", "audio_mod" }));
+            Assert.That(m.Parameters.Skip(4).Select(p => p.Id), Is.EqualTo(Enumerable.Range(1, 16).Select(i => "macro_" + i)));
+            Assert.That(m.Parameters, Has.All.Matches<ManifestParameter>(p => p.How.Length > 0 && p.Sound.Length > 0));
         }
 
         [Test]

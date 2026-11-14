@@ -1,0 +1,15 @@
+# Neo Macro parameters (docs/specs/neo-patch.md §3). The order is permanent: songs and presets store values by position.
+# Regenerate: python3 tools/gen-machine-params.py Machines/NeoMacro
+namespace NeoBuzz.MacroMachine
+class NeoMacroMachine
+summary One knob that moves up to 8 parameters of other machines at once, each with its own depth, polarity, range and curve. The Value is a parameter, so a pattern can automate it, the agent can set it and a MIDI controller can be bound to it. Use it for one-knob performance moves: a "tension" control that opens a filter, raises a delay's feedback and a drive at once.
+
+group Macro
+Value     "Value"       0 1000 0 pct                           | The knob: 0 … 100 %, spread over every target by its depth, range and curve
+    id value
+    how Moves every target at once, from 0 % to 100 % of its own range and depth.
+    sound All the targets sweep together, so one move changes several things in the sound.
+Glide     "Write glide" 0 1000 408 time 0.001 1                | Time a target takes to cross its whole range: no write moves further than this allows
+    id glide
+    how Limits how fast a target may move: it takes at least this long to cross its whole range.
+    sound A short glide follows the knob closely; a long one lets the targets trail behind it.

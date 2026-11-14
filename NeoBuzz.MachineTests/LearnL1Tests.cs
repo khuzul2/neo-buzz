@@ -14,6 +14,7 @@ using XP = NeoBuzz.LearnFold.P;
 using YP = NeoBuzz.LearnPd.P;
 using ZP = NeoBuzz.LearnVector.P;
 using QP = NeoBuzz.LearnSampler.P;
+using LS = NeoBuzz.LearnSpectral.P;
 
 namespace NeoBuzz.MachineTests
 {
@@ -252,12 +253,30 @@ namespace NeoBuzz.MachineTests
             Heaviest = x => { x.Set(QP.UnisonDetune, 1000); x.Set(QP.Loop, 1000); x.Set(QP.VintageDac, 1000); x.Set(QP.RoomSpace, 1000); x.Set(QP.Source, 4); },
         };
 
-        internal static IEnumerable<M> All => new[] { Fm, Wt, Add, Grain, Phys, Str, Vox, Fold, Pd, Vec, Smp };
+        internal static readonly M Spc = new()
+        {
+            Gear = "Neo Learn Spectral",
+            Table = NeoBuzz.LearnSpectral.Params.Table,
+            Map = () => new SpectralMap(NeoBuzz.LearnSpectral.Params.Table),
+            Ids = new[] { "spectral_shift", "spectral_blur", "spectral_freeze", "spectral_source", "bin_gate", "tonal_noise" }.Concat(GlobalIds).ToArray(),
+            Detents = Unison((DyeP.ASmpSrc, "Source: which sample; a choice"), (DyeP.ASpPartials, "Partial Gate: a count of partials")),
+            Patches = new()
+            {
+                ["init"] = null,
+                ["frozen-choir"] = x => { x.Set(LS.SpectralFreeze, 1000); x.Set(LS.SpectralBlur, 400); x.Set(LS.EnvAttack, 500); x.Set(LS.EnvSustain, 1000); },
+                ["bell-gated"] = x => { x.Set(LS.Source, 2); x.Set(LS.PartialGate, 700); x.Set(LS.SpectralShift, 450); x.Set(LS.ToneNoise, 850); },
+                ["texture-ghost"] = x => { x.Set(LS.Source, 4); x.Set(LS.ToneNoise, 150); x.Set(LS.SpectralFreeze, 400); x.Set(LS.UnisonDetune, 500); },
+            },
+            Heaviest = x => { x.Set(LS.UnisonDetune, 1000); x.Set(LS.PartialGate, 0); x.Set(LS.SpectralBlur, 1000); x.Set(LS.SpectralShift, 1000); x.Set(LS.Source, 4); },
+        };
+
+        internal static IEnumerable<M> All => new[] { Fm, Wt, Add, Grain, Phys, Str, Vox, Fold, Pd, Vec, Smp, Spc };
 
         static void Tables()
         {
             for (int i = 0; i < TableBank.Count; i++) TableBank.GetNow(i);
             for (int i = 0; i < SampleSources.Count; i++) SampleSources.GetNow(i);
+            for (int i = 0; i < SpectralSources.Count; i++) SpectralSources.GetNow(i);
         }
 
         static (LearnHost Host, ParamValues Values) Make(M m, Action<ParamValues> tweak = null)
@@ -313,8 +332,8 @@ namespace NeoBuzz.MachineTests
                 if (d.Kind is not (MapKind.Enum or MapKind.Int or MapKind.Switch))
                     Assert.That(d.Max - d.Min, Is.GreaterThanOrEqualTo(1000), d.Id + ": at least 1000 raw steps");
                 else
-                    Assert.That(d.Max - d.Min, Is.GreaterThanOrEqualTo(d.Id switch { "fold_stages" or "pd_wave_shape" or "source" => 5, "corner_palette" or "orbit_shape" => 3, _ => 10 }),
-                        d.Id + ": a count or a choice (Fold Stages is 1 to 6, the PD Wave six geometries, Source six samples, Palette and Orbit Shape four: steps by nature)");
+                    Assert.That(d.Max - d.Min, Is.GreaterThanOrEqualTo(d.Id switch { "fold_stages" or "pd_wave_shape" or "source" or "spectral_source" => 5, "corner_palette" or "orbit_shape" => 3, _ => 10 }),
+                        d.Id + ": a count or a choice (Fold Stages is 1 to 6, the PD Wave six geometries, Source six samples (Spectral too), Palette and Orbit Shape four: steps by nature)");
             }
             var t = m.Table;
             Assert.That(t[6].Value(t[6].Min), Is.EqualTo(0.0005).Within(1e-12));
@@ -531,6 +550,10 @@ namespace NeoBuzz.MachineTests
             [("Neo Learn Sampler", "init")] = 0x51879498562C8087UL,
             [("Neo Learn Sampler", "strings-loop")] = 0x9C0020512F1BDAC7UL,
             [("Neo Learn Sampler", "texture-room")] = 0x3D3A137BF81903F2UL,
+            [("Neo Learn Spectral", "bell-gated")] = 0x5CFAB6C7FF46C43AUL,
+            [("Neo Learn Spectral", "frozen-choir")] = 0x73021C578E7B7B82UL,
+            [("Neo Learn Spectral", "init")] = 0xD36E5E4B424A0C08UL,
+            [("Neo Learn Spectral", "texture-ghost")] = 0x30866E5B1930E3E7UL,
             [("Neo Learn Vector", "cyber-eight")] = 0x0718A197A7BE4C84UL,
             [("Neo Learn Vector", "init")] = 0xC25FE09F9A3F2F62UL,
             [("Neo Learn Vector", "orbit-circle")] = 0x4A1D59F2DBF4FAB4UL,

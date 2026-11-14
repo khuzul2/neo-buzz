@@ -28,7 +28,6 @@ namespace ReBuzz.Studio.Views.Session
             lengthBars = Math.Max(1, lengthBars);
             if (Responder != null) return Responder(sceneName, startBar, lengthBars);
 
-            var owner = Dialogs.Owner;
             var bar = new TextBox { Width = 72, Text = startBar.ToString(CultureInfo.InvariantCulture) };
             var bars = new TextBox { Width = 72, Text = lengthBars.ToString(CultureInfo.InvariantCulture) };
             var overwrite = new RadioButton { Content = "Overwrite: replace what the scene's tracks have there", IsChecked = true, GroupName = "mode" };
@@ -49,16 +48,9 @@ namespace ReBuzz.Studio.Views.Session
             Row(0, "At bar", bar);
             Row(1, "Length (bars)", bars);
 
-            var window = new Window
-            {
-                Title = "Insert scene into arrangement",
-                SizeToContent = SizeToContent.WidthAndHeight,
-                CanResize = false,
-                WindowStartupLocation = owner != null ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen,
-                ShowInTaskbar = false,
-            };
-            var ok = new Button { Content = "Insert", MinWidth = 76, IsDefault = true };
-            var cancel = new Button { Content = "Cancel", MinWidth = 76, IsCancel = true };
+            var window = ReBuzz.Studio.Shell.Design.StudioDialog.Create("Insert scene into arrangement");
+            var ok = ReBuzz.Studio.Shell.Design.StudioDialog.Primary("Insert");
+            var cancel = ReBuzz.Studio.Shell.Design.StudioDialog.Secondary();
             ok.Click += (s, e) =>
             {
                 if (!int.TryParse(bar.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out int b) || b < 1 ||
@@ -71,33 +63,19 @@ namespace ReBuzz.Studio.Views.Session
                 window.Close();
             };
             cancel.Click += (s, e) => window.Close();
-            window.Content = new StackPanel
-            {
-                Margin = new Thickness(16),
-                Spacing = 10,
-                Children =
+            window.Content = ReBuzz.Studio.Shell.Design.StudioDialog.Body(
+                new TextBlock
                 {
-                    new TextBlock
-                    {
-                        Text = $"Writes the clips of {sceneName} into their tracks' sequences, repeated to fill the length. Undo with ↶ in the Session View.",
-                        TextWrapping = TextWrapping.Wrap,
-                        MaxWidth = 380
-                    },
-                    form,
-                    new StackPanel { Spacing = 4, Children = { overwrite, insert } },
-                    problem,
-                    new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Children = { ok, cancel } },
+                    Text = $"Writes the clips of {sceneName} into their tracks' sequences, repeated to fill the length. Undo with ↶ in the Session View.",
+                    TextWrapping = TextWrapping.Wrap,
+                    MaxWidth = 380
                 },
-            };
+                form,
+                new StackPanel { Spacing = 4, Children = { overwrite, insert } },
+                problem,
+                ReBuzz.Studio.Shell.Design.StudioDialog.Buttons(ok, cancel));
             window.Opened += (s, e) => { bar.Focus(); bar.SelectAll(); };
-            if (owner != null) await window.ShowDialog(owner);
-            else
-            {
-                var closed = new TaskCompletionSource();
-                window.Closed += (s, e) => closed.TrySetResult();
-                window.Show();
-                await closed.Task;
-            }
+            await ReBuzz.Studio.Shell.Design.StudioDialog.Run(window);
             return answer;
         }
     }

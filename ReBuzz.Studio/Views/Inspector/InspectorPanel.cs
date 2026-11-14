@@ -497,16 +497,7 @@ namespace ReBuzz.Studio.Views.Inspector
 
         Button TabButton(string name)
         {
-            var b = new Button
-            {
-                Content = name,
-                FontSize = 12,
-                Padding = new Thickness(10, 4, 10, 4),
-                MinHeight = 24,
-                Focusable = false,
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(4),
-            };
+            var b = StudioButtons.KeepFocus(new Button { Content = name, BorderThickness = new Thickness(1) });
             AutomationProperties.SetName(b, name);
             b.Click += (s, e) => ShowTab(name, focus: name == SongTab);
             return b;
@@ -521,16 +512,14 @@ namespace ReBuzz.Studio.Views.Inspector
 
         static Button IconButton(string glyph, string tip, string name, Action run)
         {
-            var b = new Button { Content = glyph, FontSize = 15, Padding = new Thickness(6, 0, 6, 2), MinWidth = 24, MinHeight = 24, Focusable = false, Background = Brushes.Transparent };
-            ToolTip.SetTip(b, tip);
-            AutomationProperties.SetName(b, name);
+            var b = StudioButtons.KeepFocus(StudioButtons.Icon(new Button { Content = glyph }, name, tip));
             b.Click += (s, e) => run();
             return b;
         }
 
         static Button ActionButton(string text, string tip, Action run)
         {
-            var b = new Button { Content = text, FontSize = 12, Margin = new Thickness(0, 8, 0, 0), HorizontalAlignment = HorizontalAlignment.Left, Focusable = false };
+            var b = StudioButtons.KeepFocus(new Button { Content = text, Margin = new Thickness(0, 8, 0, 0), HorizontalAlignment = HorizontalAlignment.Left });
             ToolTip.SetTip(b, tip);
             b.Click += (s, e) => run();
             return b;

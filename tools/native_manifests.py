@@ -22,6 +22,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import source_manifests as sm  # noqa: E402
+import jeskola_knowledge as jk  # noqa: E402  (K2 batch b: the three generated Jeskola manifests curated, and every Jeskola parameter's Explain text)
 
 ROOT = sm.ROOT
 BT = "ExternalMachines/source/buzztrax-buzzmachines/"
@@ -312,6 +313,8 @@ def generate(spec, existing):
                 e["safe_range"] = old["safe_range"]
             out.append(e)
         m[group] = out
+    jk.curate(m)
+    jk.explain(m)
     return sm.mc.apply(m), sub
 
 

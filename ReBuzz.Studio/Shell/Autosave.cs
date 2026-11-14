@@ -58,7 +58,8 @@ namespace ReBuzz.Studio.Shell
         {
             if (timer != null) return;
             timer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
-            timer.Tick += (s, e) => { core.Autosave?.Tick(DateTime.Now); core.Snapshots?.Tick(DateTime.UtcNow); };
+            // Not while Export Audio renders: the render has the song's loop, mutes and position (ux-overhaul.md P4a).
+            timer.Tick += (s, e) => { if (ExportSheet.Rendering) return; core.Autosave?.Tick(DateTime.Now); core.Snapshots?.Tick(DateTime.UtcNow); };
             timer.Start();
         }
     }

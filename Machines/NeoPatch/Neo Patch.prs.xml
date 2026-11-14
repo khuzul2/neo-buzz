@@ -1,0 +1,235 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Init — Saw">
+    <Preset Machine="Neo Patch">
+      <Parameters>
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="474" />
+        <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Macro 1" Group="1" Index="4" Track="0" Value="237" />
+        <Parameter Name="Macro 2" Group="1" Index="5" Track="0" Value="154" />
+        <Parameter Name="Macro 3" Group="1" Index="6" Track="0" Value="500" />
+        <Parameter Name="Macro 4" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Macro 5" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Macro 6" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Macro 7" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Macro 8" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Macro 9" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Macro 10" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Macro 11" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Macro 12" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Macro 13" Group="1" Index="16" Track="0" Value="500" />
+        <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
+        <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>A saw through a low-pass and a VCA, each with its own envelope. Macro 1: cutoff. Macro 2: release.</Comment>
+      <Data>AtYBAAA8P3htbCB2ZXJzaW9uPSIxLjAiIGVuY29kaW5nPSJ1dGYtOCI/Pgo8TmVvUGF0Y2hTdGF0ZT48UGF0Y2g+bmVvcGF0Y2ggMTtuYW1lIEluaXQlMjAlRTIlODAlOTQlMjBTYXc7biAxIEtleXMgMCAwIDA7biAyIE9zYyAwIDAgMCAwIDAgMCAwIDAuNSAxIDAgMDtuIDMgRW52ZWxvcGUgMCAwIDAgMC4wMDUgMC40IDAuNSAwLjQgMCAwIDA7biA0IEZpbHRlciAwIDAgMCAwIDI5OTYuNTk4OSAwLjkgMS41O24gNSBFbnZlbG9wZSAwIDAgMCAwLjAwMyAwLjMgMC44IDAuMzUwMjk5OCAwIDAgMDtuIDYgVmNhIDAgMCAwIDE7biA3IE91dCAwIDAgMCAxIDAgMCAwIDAgMDt3IDEgMCAyIDAgMTt3IDEgMSAzIDAgMTt3IDIgMCA0IDAgMTt3IDMgMCA0IDEgMTt3IDEgMSA1IDAgMTt3IDQgMCA2IDAgMTt3IDUgMCA2IDEgMTt3IDYgMCA3IDAgMTttIDAgNCAxIDIwMCAxMjAwMDttIDEgNSAzIDAuMDUgMjwvUGF0Y2g+PC9OZW9QYXRjaFN0YXRlPg==</Data>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Sub Square">
+    <Preset Machine="Neo Patch">
+      <Parameters>
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="459" />
+        <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Macro 1" Group="1" Index="4" Track="0" Value="132" />
+        <Parameter Name="Macro 2" Group="1" Index="5" Track="0" Value="247" />
+        <Parameter Name="Macro 3" Group="1" Index="6" Track="0" Value="500" />
+        <Parameter Name="Macro 4" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Macro 5" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Macro 6" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Macro 7" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Macro 8" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Macro 9" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Macro 10" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Macro 11" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Macro 12" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Macro 13" Group="1" Index="16" Track="0" Value="500" />
+        <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
+        <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>A square and a saw an octave down through a 24 dB ladder low-pass; the filter envelope bites on each note. Macro 1: cutoff. Macro 2: resonance.</Comment>
+      <Data>AkQCAAA8P3htbCB2ZXJzaW9uPSIxLjAiIGVuY29kaW5nPSJ1dGYtOCI/Pgo8TmVvUGF0Y2hTdGF0ZT48UGF0Y2g+bmVvcGF0Y2ggMTtuYW1lIEJhc3MlMjAlRTIlODAlOTQlMjBTdWIlMjBTcXVhcmU7biAxIEtleXMgMCAwIDA7biAyIE9zYyAwIDAgMCAxIC0xMiAwIDAgMC41IDEgMCAwO24gMyBPc2MgMCAwIDAgMCAtMjQgNiAwIDAuNSAwLjggMCAwO24gNCBNaXhlciAwIDAgMCAwLjYgMC44IDEgMTtuIDUgRW52ZWxvcGUgMCAwIDAgMC4wMDIgMC4yNSAwLjIgMC4yIDAgMCAwO24gNiBGaWx0ZXIgMCAwIDAgNCA1MDAuMTU5NyAyLjUwMzA5OTIgMi41O24gNyBFbnZlbG9wZSAwIDAgMCAwLjAwMiAwLjIgMC45IDAuMTUgMCAwIDA7biA4IFZjYSAwIDAgMCAxO24gOSBPdXQgMCAwIDAgMSAwIDAgMCAwIDA7dyAxIDAgMiAwIDE7dyAxIDAgMyAwIDE7dyAyIDAgNCAwIDE7dyAzIDAgNCAxIDE7dyAxIDEgNSAwIDE7dyA0IDAgNiAwIDE7dyA1IDAgNiAxIDE7dyAxIDEgNyAwIDE7dyA2IDAgOCAwIDE7dyA3IDAgOCAxIDE7dyA4IDAgOSAwIDE7bSAwIDYgMSAxMjAgMzAwMDttIDEgNiAyIDAuNyA4PC9QYXRjaD48L05lb1BhdGNoU3RhdGU+</Data>
+    </Preset>
+  </Item>
+  <Item Key="Lead — FM Bell">
+    <Preset Machine="Neo Patch">
+      <Parameters>
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="426" />
+        <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Macro 1" Group="1" Index="4" Track="0" Value="440" />
+        <Parameter Name="Macro 2" Group="1" Index="5" Track="0" Value="368" />
+        <Parameter Name="Macro 3" Group="1" Index="6" Track="0" Value="500" />
+        <Parameter Name="Macro 4" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Macro 5" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Macro 6" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Macro 7" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Macro 8" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Macro 9" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Macro 10" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Macro 11" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Macro 12" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Macro 13" Group="1" Index="16" Track="0" Value="500" />
+        <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
+        <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>Two sines, the second frequency-modulating the first through its own envelope: a bell that rings out. Macro 1: modulation depth. Macro 2: decay.</Comment>
+      <Data>AgACAAA8P3htbCB2ZXJzaW9uPSIxLjAiIGVuY29kaW5nPSJ1dGYtOCI/Pgo8TmVvUGF0Y2hTdGF0ZT48UGF0Y2g+bmVvcGF0Y2ggMTtuYW1lIExlYWQlMjAlRTIlODAlOTQlMjBGTSUyMEJlbGw7biAxIEtleXMgMCAwIDA7biAyIE9zYyAwIDAgMCAyIDAgMCAyLjE5OTk5ODkgMC41IDEgMCAwO24gMyBPc2MgMCAwIDAgMiAxOS4wMiAwIDAgMC41IDEgMCAwO24gNCBFbnZlbG9wZSAwIDAgMCAwLjAwMSAwLjYgMCAwLjQgMCAwIDA7biA1IFZjYSAwIDAgMCAxO24gNiBFbnZlbG9wZSAwIDAgMCAwLjAwMSAxLjU5ODM5OTMgMCAwLjggMCAwIDA7biA3IFZjYSAwIDAgMCAxO24gOCBPdXQgMCAwIDAgMSAwIDAgMCAwIDA7dyAxIDAgMiAwIDE7dyAxIDAgMyAwIDE7dyAxIDEgNCAwIDE7dyAzIDAgNSAwIDE7dyA0IDAgNSAxIDE7dyA1IDAgMiAxIDE7dyAxIDEgNiAwIDE7dyAyIDAgNyAwIDE7dyA2IDAgNyAxIDE7dyA3IDAgOCAwIDE7bSAwIDIgMyAwIDU7bSAxIDYgMSAwLjIgNDwvUGF0Y2g+PC9OZW9QYXRjaFN0YXRlPg==</Data>
+    </Preset>
+  </Item>
+  <Item Key="Pad — Wavetable Drift">
+    <Preset Machine="Neo Patch">
+      <Parameters>
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="585" />
+        <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Macro 1" Group="1" Index="4" Track="0" Value="450" />
+        <Parameter Name="Macro 2" Group="1" Index="5" Track="0" Value="287" />
+        <Parameter Name="Macro 3" Group="1" Index="6" Track="0" Value="500" />
+        <Parameter Name="Macro 4" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Macro 5" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Macro 6" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Macro 7" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Macro 8" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Macro 9" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Macro 10" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Macro 11" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Macro 12" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Macro 13" Group="1" Index="16" Track="0" Value="500" />
+        <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
+        <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>Two wavetable oscillators on the Formants table, detuned, their position drifting on a slow LFO, into a low-pass. Macro 1: table position. Macro 2: cutoff.</Comment>
+      <Data>AlkCAAA8P3htbCB2ZXJzaW9uPSIxLjAiIGVuY29kaW5nPSJ1dGYtOCI/Pgo8TmVvUGF0Y2hTdGF0ZT48UGF0Y2g+bmVvcGF0Y2ggMTtuYW1lIFBhZCUyMCVFMiU4MCU5NCUyMFdhdmV0YWJsZSUyMERyaWZ0O24gMSBLZXlzIDAgMCAwO24gMiBMZm8gMCAwIDAgMCAwLjIzIDAuNSAwIDAgMCAxO24gMyBXYXZldGFibGVPc2MgMCAwIDAgMyAwIDcgMCAwLjQ0OTk5OTc4IDEgMCAwO24gNCBXYXZldGFibGVPc2MgMCAwIDAgMyAwIC05IDAgMC40NDk5OTk3OCAxIDAgMDtuIDUgTWl4ZXIgMCAwIDAgMC42IDAuNiAxIDE7biA2IEZpbHRlciAwIDAgMCAwIDI3OTYuODk4MiAwLjggMDtuIDcgRW52ZWxvcGUgMCAwIDAgMC42IDAuOCAwLjg1IDEuNCAwIDAgMDtuIDggVmNhIDAgMCAwIDE7biA5IE91dCAwIDAgMCAxIDAgMCAwIDAgMDt3IDEgMCAzIDAgMTt3IDIgMCAzIDQgMTt3IDEgMCA0IDAgMTt3IDIgMCA0IDQgMTt3IDMgMCA1IDAgMTt3IDQgMCA1IDEgMTt3IDUgMCA2IDAgMTt3IDEgMSA3IDAgMTt3IDYgMCA4IDAgMTt3IDcgMCA4IDEgMTt3IDggMCA5IDAgMTttIDAgMyA0IDAgMTttIDAgNCA0IDAgMTttIDEgNiAxIDMwMCA5MDAwPC9QYXRjaD48L05lb1BhdGNoU3RhdGU+</Data>
+    </Preset>
+  </Item>
+  <Item Key="Pluck — Ladder">
+    <Preset Machine="Neo Patch">
+      <Parameters>
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="550" />
+        <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Macro 1" Group="1" Index="4" Track="0" Value="143" />
+        <Parameter Name="Macro 2" Group="1" Index="5" Track="0" Value="151" />
+        <Parameter Name="Macro 3" Group="1" Index="6" Track="0" Value="500" />
+        <Parameter Name="Macro 4" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Macro 5" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Macro 6" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Macro 7" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Macro 8" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Macro 9" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Macro 10" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Macro 11" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Macro 12" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Macro 13" Group="1" Index="16" Track="0" Value="500" />
+        <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
+        <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>A saw into a ladder low-pass whose envelope snaps shut: a plucked bass-guitar or harp sound. Macro 1: cutoff. Macro 2: resonance.</Comment>
+      <Data>AtQBAAA8P3htbCB2ZXJzaW9uPSIxLjAiIGVuY29kaW5nPSJ1dGYtOCI/Pgo8TmVvUGF0Y2hTdGF0ZT48UGF0Y2g+bmVvcGF0Y2ggMTtuYW1lIFBsdWNrJTIwJUUyJTgwJTk0JTIwTGFkZGVyO24gMSBLZXlzIDAgMCAwO24gMiBPc2MgMCAwIDAgMCAwIDAgMCAwLjUgMSAwIDA7biAzIEVudmVsb3BlIDAgMCAwIDAuMDAxIDAuMjggMCAwLjIgMCAwIDA7biA0IEZpbHRlciAwIDAgMCA0IDcwMC41NDk2IDEuODAyMjk5MyAzLjI7biA1IEVudmVsb3BlIDAgMCAwIDAuMDAxIDAuNyAwIDAuMyAwIDAgMDtuIDYgVmNhIDAgMCAwIDE7biA3IE91dCAwIDAgMCAxIDAgMCAwIDAgMDt3IDEgMCAyIDAgMTt3IDEgMSAzIDAgMTt3IDIgMCA0IDAgMTt3IDMgMCA0IDEgMTt3IDEgMSA1IDAgMTt3IDQgMCA2IDAgMTt3IDUgMCA2IDEgMTt3IDYgMCA3IDAgMTttIDAgNCAxIDE1MCA0MDAwO20gMSA0IDIgMC43IDg8L1BhdGNoPjwvTmVvUGF0Y2hTdGF0ZT4=</Data>
+    </Preset>
+  </Item>
+  <Item Key="Keys — Detuned Pair">
+    <Preset Machine="Neo Patch">
+      <Parameters>
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="450" />
+        <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Macro 1" Group="1" Index="4" Track="0" Value="222" />
+        <Parameter Name="Macro 2" Group="1" Index="5" Track="0" Value="267" />
+        <Parameter Name="Macro 3" Group="1" Index="6" Track="0" Value="500" />
+        <Parameter Name="Macro 4" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Macro 5" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Macro 6" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Macro 7" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Macro 8" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Macro 9" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Macro 10" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Macro 11" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Macro 12" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Macro 13" Group="1" Index="16" Track="0" Value="500" />
+        <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
+        <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>A triangle and a square a few cents apart, soft-clipped. Macro 1: drive. Macro 2: detune.</Comment>
+      <Data>AjoCAAA8P3htbCB2ZXJzaW9uPSIxLjAiIGVuY29kaW5nPSJ1dGYtOCI/Pgo8TmVvUGF0Y2hTdGF0ZT48UGF0Y2g+bmVvcGF0Y2ggMTtuYW1lIEtleXMlMjAlRTIlODAlOTQlMjBEZXR1bmVkJTIwUGFpcjtuIDEgS2V5cyAwIDAgMDtuIDIgT3NjIDAgMCAwIDMgMCA4LjAwOTk5NCAwIDAuNSAxIDAgMDtuIDMgT3NjIDAgMCAwIDEgMCAtOC4wMDk5OTQgMCAwLjUgMC41IDAgMDtuIDQgTWl4ZXIgMCAwIDAgMC44IDAuNiAxIDE7biA1IFNoYXBlciAwIDAgMCAwIDIuOTk3OTk5MiAwIDIgMC44O24gNiBGaWx0ZXIgMCAwIDAgMCA0NTAwIDAuOCAwO24gNyBFbnZlbG9wZSAwIDAgMCAwLjAwNCAwLjUgMC43IDAuMyAwIDAgMDtuIDggVmNhIDAgMCAwIDE7biA5IE91dCAwIDAgMCAxIDAgMCAwIDAgMDt3IDEgMCAyIDAgMTt3IDEgMCAzIDAgMTt3IDIgMCA0IDAgMTt3IDMgMCA0IDEgMTt3IDQgMCA1IDAgMTt3IDUgMCA2IDAgMTt3IDEgMSA3IDAgMTt3IDYgMCA4IDAgMTt3IDcgMCA4IDEgMTt3IDggMCA5IDAgMTttIDAgNSAxIDEgMTA7bSAxIDIgMiAwIDMwO20gMSAzIDIgMCAtMzA8L1BhdGNoPjwvTmVvUGF0Y2hTdGF0ZT4=</Data>
+    </Preset>
+  </Item>
+  <Item Key="Texture — Noise Sweep">
+    <Preset Machine="Neo Patch">
+      <Parameters>
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="759" />
+        <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Macro 1" Group="1" Index="4" Track="0" Value="230" />
+        <Parameter Name="Macro 2" Group="1" Index="5" Track="0" Value="243" />
+        <Parameter Name="Macro 3" Group="1" Index="6" Track="0" Value="500" />
+        <Parameter Name="Macro 4" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Macro 5" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Macro 6" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Macro 7" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Macro 8" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Macro 9" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Macro 10" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Macro 11" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Macro 12" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Macro 13" Group="1" Index="16" Track="0" Value="500" />
+        <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
+        <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>Noise and a saw through a band-pass whose centre wanders on a random generator. Macro 1: wander rate. Macro 2: centre.</Comment>
+      <Data>AgwCAAA8P3htbCB2ZXJzaW9uPSIxLjAiIGVuY29kaW5nPSJ1dGYtOCI/Pgo8TmVvUGF0Y2hTdGF0ZT48UGF0Y2g+bmVvcGF0Y2ggMTtuYW1lIFRleHR1cmUlMjAlRTIlODAlOTQlMjBOb2lzZSUyMFN3ZWVwO24gMSBLZXlzIDAgMCAwO24gMiBOb2lzZSAwIDAgMCAxIDAuNztuIDMgT3NjIDAgMCAwIDAgLTEyIDAgMCAwLjUgMC41IDAgMDtuIDQgTWl4ZXIgMCAwIDAgMSAxIDEgMTtuIDUgUmFuZG9tIDAgMCAwIDIuOTkwOTk4NyAwLjggMC45IDA7biA2IEZpbHRlciAwIDAgMCAxIDExOTkuMDk5NiA0IDM7biA3IEVudmVsb3BlIDAgMCAwIDEuMiAxIDAuOSAyIDAgMCAwO24gOCBWY2EgMCAwIDAgMTtuIDkgT3V0IDAgMCAwIDEuNCAwIDAgMCAwIDA7dyAxIDAgMyAwIDE7dyAyIDAgNCAwIDE7dyAzIDAgNCAxIDE7dyA0IDAgNiAwIDE7dyA1IDAgNiAxIDE7dyAxIDEgNyAwIDE7dyA2IDAgOCAwIDE7dyA3IDAgOCAxIDE7dyA4IDAgOSAwIDE7bSAwIDUgMCAwLjMgMTI7bSAxIDYgMSAzMDAgNDAwMDwvUGF0Y2g+PC9OZW9QYXRjaFN0YXRlPg==</Data>
+    </Preset>
+  </Item>
+  <Item Key="FX — Echo After the Sum">
+    <Preset Machine="Neo Patch">
+      <Parameters>
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="702" />
+        <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Macro 1" Group="1" Index="4" Track="0" Value="610" />
+        <Parameter Name="Macro 2" Group="1" Index="5" Track="0" Value="263" />
+        <Parameter Name="Macro 3" Group="1" Index="6" Track="0" Value="500" />
+        <Parameter Name="Macro 4" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Macro 5" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Macro 6" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Macro 7" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Macro 8" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Macro 9" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Macro 10" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Macro 11" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Macro 12" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Macro 13" Group="1" Index="16" Track="0" Value="500" />
+        <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
+        <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>Per voice: a saw and a VCA. After the Voice sum: one echo and one low-pass for all notes, with a global LFO on the cutoff. Macro 1: feedback. Macro 2: cutoff.</Comment>
+      <Data>AhwCAAA8P3htbCB2ZXJzaW9uPSIxLjAiIGVuY29kaW5nPSJ1dGYtOCI/Pgo8TmVvUGF0Y2hTdGF0ZT48UGF0Y2g+bmVvcGF0Y2ggMTtuYW1lIEZYJTIwJUUyJTgwJTk0JTIwRWNobyUyMEFmdGVyJTIwdGhlJTIwU3VtO24gMSBLZXlzIDAgMCAwO24gMiBPc2MgMCAwIDAgMCAwIDAgMCAwLjUgMSAwIDA7biAzIEVudmVsb3BlIDAgMCAwIDAuMDAyIDAuMTUgMCAwLjE1IDAgMCAwO24gNCBWY2EgMCAwIDAgMTtuIDUgVm9pY2VTdW0gMCAwIDA7biA2IERlbGF5IDAgMCAwIDM3NSAwLjU0ODk5OTYgNTAwMCAwLjYgMTtuIDcgTGZvIDEgMCAwIDAgMC4zIDAuNCAwIDAgMCAxO24gOCBGaWx0ZXIgMSAwIDAgMCAyMzk4Ljc5ODMgMS4xIDI7biA5IE91dCAwIDAgMCAxIDAgMCAwIDAgMDt3IDEgMCAyIDAgMTt3IDEgMSAzIDAgMTt3IDIgMCA0IDAgMTt3IDMgMCA0IDEgMTt3IDQgMCA1IDAgMTt3IDUgMCA2IDAgMTt3IDYgMCA4IDAgMTt3IDcgMCA4IDEgMTt3IDggMCA5IDAgMTttIDAgNiAxIDAgMC45O20gMSA4IDEgNDAwIDgwMDA8L1BhdGNoPjwvTmVvUGF0Y2hTdGF0ZT4=</Data>
+    </Preset>
+  </Item>
+</PresetDictionary>

@@ -185,6 +185,8 @@ Every Neo Learn machine has these 6 controls on the right of the control deck:
 ---
 
 ### A2.12 Neo Learn Spectral
+
+*As built (neo-learn.md §9, L3): the six core controls are Stretch (`spectral_shift`), Time Smear (`spectral_blur`), Freeze (`spectral_freeze`), Source (`spectral_source`: Choir, Strings, Bell, Pluck, Texture, User), Partial Gate (`bin_gate`: the loudest partials kept) and Tone / Noise (`tonal_noise`, in place of Phase Scatter). The table below is the draft; the Explain text of the machine is in `Machines/NeoLearnSpectral/Params.def`.*
 * **Category:** Sample
 * **Visualizer:** Real-time scrolling waterfall spectrogram with an active freeze/gate overlay (X = `spectral_shift`, Y = `spectral_blur`).
 

@@ -2,10 +2,10 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Jeskola Bass",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "polysynth",
- "summary": "Polysynth (profiled draft): pitched, plays A4 at 440 Hz as written; 4 voices; takes notes in its tracks; one note at the defaults -9 LUFS.",
+ "summary": "An early Buzz bass synth: four voices of saw, pulse or triangle into a resonant filter, with slides between notes. For simple basses in old Buzz songs; Neo Poly is the modern one.",
  "category": "Synths",
  "tags": [
   "bass",
@@ -13,6 +13,17 @@
   "polyphonic"
  ],
  "use_for": "Simple four-voice analog-style bass with a resonant filter and note slides.",
+ "quirks": [
+  "Four voices (the profile's note count), notes as written (no pitch offset).",
+  "Resonance near its top is very hot: +16 dBFS peak in the profile.",
+  "Volume and Slide lenght are pattern columns: Volume 128 is 100 percent, 254 about 198 percent; the profile found no level change from them with the others at their defaults.",
+  "Velocity does not change its level.",
+  "Closed source: names come from its own descriptions and measurements, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-13) — four voices, -9 LUFS for a note, hot with Resonance at its top"
+ ],
  "tracks": 4,
  "notes": {
   "input": "tracks",
@@ -174,6 +185,8 @@
    "index": 0,
    "id": "Cutoff",
    "name": "Cutoff",
+   "plain_name": "Filter cutoff",
+   "role": "filter.cutoff",
    "group": "",
    "min": 0,
    "max": 128,
@@ -182,14 +195,15 @@
    "a": 0.0,
    "b": 128.0,
    "description": "Cutoff frequency (0-80)",
-   "confidence": "values",
-   "suggested_role": "level",
-   "role_evidence": "silent at its minimum, sounding at the other end"
+   "how": "Sets the filter's corner on a 0 to 128 scale; 128 is fully open.",
+   "sound": "Lower values close the filter and make the bass duller and quieter."
   },
   {
    "index": 1,
    "id": "Resonance",
    "name": "Resonance",
+   "plain_name": "Filter resonance",
+   "role": "filter.resonance",
    "group": "",
    "min": 0,
    "max": 128,
@@ -198,9 +212,8 @@
    "a": 0.0,
    "b": 128.0,
    "description": "Resonance (0-80)",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 8 kHz stands -2 → +60 dB over the spectrum an octave either side"
+   "how": "Sets the emphasis at the cutoff on a 0 to 128 scale.",
+   "sound": "Higher values add a squelchy peak; near the top it gets very loud, so check the level."
   }
  ],
  "track_parameters": [
@@ -208,6 +221,8 @@
    "index": 0,
    "id": "Waveform",
    "name": "Waveform",
+   "plain_name": "Oscillator wave",
+   "role": "osc.wave",
    "group": "",
    "min": 1,
    "max": 3,
@@ -216,12 +231,15 @@
    "a": 1.0,
    "b": 3.0,
    "description": "Waveform (1=sawtooth, 2=pulse, 3=triangle)",
-   "confidence": "values"
+   "how": "Chooses the oscillator: 1 sawtooth, 2 pulse, 3 triangle.",
+   "sound": "Saw is bright and buzzy, pulse hollow, triangle soft and round."
   },
   {
    "index": 0,
    "id": "Volume",
    "name": "Volume",
+   "plain_name": "Volume",
+   "role": "level",
    "group": "",
    "min": 0,
    "max": 254,
@@ -230,12 +248,15 @@
    "a": 0.0,
    "b": 254.0,
    "description": "Volume (0=0%, 80=100%, FE=~198%)",
-   "confidence": "values"
+   "how": "Sets a note's loudness on a 0 to 254 scale; 128 is 100 percent. It is a pattern column.",
+   "sound": "Higher is louder; the measurement found no level change from it with the others at their defaults."
   },
   {
    "index": 0,
    "id": "Slide lenght",
    "name": "Slide lenght",
+   "plain_name": "Slide length",
+   "role": "pitch.glide",
    "group": "",
    "min": 1,
    "max": 255,
@@ -245,7 +266,8 @@
    "b": 255.0,
    "unit": "ticks",
    "description": "Length of slide in ticks",
-   "confidence": "description"
+   "how": "Sets how many ticks a slide to the next note takes, 1 to 255 (the machine's own spelling of length).",
+   "sound": "Longer slides glide the pitch more slowly between notes."
   }
  ]
 }

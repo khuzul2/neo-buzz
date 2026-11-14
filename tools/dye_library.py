@@ -728,6 +728,28 @@ base('Cinematic', 'time_smear', 'Time Smear', 'the strings sample at a quarter o
      n=1, fxs=_CIN_FX, no=('slow', 'snappy', 'tight', 'muted', 'bright'))
 
 
+# ---- Harmonic and Modal imports (P5b): a sample's partials as the partial table, an impulse response's modes as the body.
+def HI(s='A', sample='Choir', frm=50, span=0, ratio=100, parts=32, tilt=0, damp=0, uni=1, det=8, spr=70, oct=0, lvl=100):
+    return (HM(s, 'Saw', 'Saw', 0, parts, tilt, 0, 0, damp, uni, det, spr, oct, lvl) + f";{s} sample={sample};{s} import partials=Sample;"
+            f"{s} import from={frm};{s} import span={span};{s} import ratios={ratio}")
+
+
+def MI(s='A', sample='Bell', start=0, length=0.5, decay=100, exc='Plucked', force=55, pos=25, modes=16, uni=1, det=6, spr=60, oct=0, lvl=100):
+    return (MD(s, 'Bell', exc, force, pos, modes, 50, 1.0, 35, 50, uni, det, spr, oct, lvl) + f";{s} sample={sample};{s} mode table=Impulse response;"
+            f"{s} ir start={start};{s} ir length={length};{s} ir decay={decay}")
+
+
+base('Pad', 'imported_choir', 'Imported Choir Pad', 'the choir sample\'s partials, read from its middle, as a clean organ-like partial table in three voices',
+     HI('A', 'Choir', 50, 30, 0, 40, -2, 0, 3, 10, 85) + ';' + FLT(6500, 10, 0.4) + ';' + ENV(0.4, 1.0, 100, 1.4),
+     n=1, fxs=_GEN_FX_PADS, no=('slow', 'snappy', 'tight', 'muted'))
+base('Keys', 'imported_pluck', 'Imported Pluck Keys', 'the pluck sample\'s own partials, spaced as it was recorded, held as a clean ringing string',
+     HI('A', 'Pluck', 10, 30, 100, 24, -2, 25, 1, 6, 60) + ';' + FLT(9000, 8, 0.3) + ';' + ENV(0.002, 1.5, 0, 0.8),
+     n=1, fxs=_GEN_FX_KEYS, no=('slow', 'pad', 'mono'))
+base('Bell', 'impulse_bell', 'Impulse Bell Body', 'the modes found in the bell sample read as an impulse response, struck by a pluck',
+     MI('A', 'Bell', 5, 0.8, 100, 'Plucked', 60, 25, 16, 1, 6, 60) + ';' + FLT(9000, 8, 0.3) + ';' + ENV(0.002, 2.5, 0, 1.4),
+     n=1, fxs=_GEN_FX_BELL, no=('slow', 'mono', 'pad'))
+
+
 def bases():
     return list(_BASES)
 

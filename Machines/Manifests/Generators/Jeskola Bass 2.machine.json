@@ -2,10 +2,10 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Jeskola Bass 2",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "monosynth",
- "summary": "Monosynth (profiled draft): pitched, plays A4 at 440 Hz as written; monophonic; takes notes in its tracks; one note at the defaults -10 LUFS.",
+ "summary": "A Buzz bass synth, one voice per track: sine, saw, pulse, triangle or noise into a resonant filter with an envelope. For basses in old Buzz songs; Neo Poly is the modern one.",
  "category": "Synths",
  "tags": [
   "bass",
@@ -13,6 +13,17 @@
   "monophonic"
  ],
  "use_for": "Monophonic bass with a resonant filter, envelope modulation and decay per track.",
+ "quirks": [
+  "Each track is its own monophonic voice (8 at most); notes play as written.",
+  "All five controls are track parameters, on 0 to 100 percent (Waveform is a choice).",
+  "Cutoff swings the level by about 50 dB, so a closed filter is much quieter.",
+  "Velocity does not change its level.",
+  "Closed source: names come from its own descriptions and measurements, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-13) — -10 LUFS for a note, monophonic, filter and envelope controls measured"
+ ],
  "tracks": 8,
  "notes": {
   "input": "tracks",
@@ -147,74 +158,80 @@
    "index": 0,
    "id": "Cutoff",
    "name": "Cutoff",
+   "plain_name": "Filter cutoff",
+   "role": "filter.cutoff",
    "group": "",
    "min": 0,
    "max": 128,
    "default": 128,
    "kind": "linear",
-   "a": 0.00353,
-   "b": 100.002671,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
    "description": "Cutoff frequency (0-80)",
-   "confidence": "values",
-   "suggested_role": "level",
-   "role_evidence": "the level +53 dB, the sound otherwise alike"
+   "how": "Sets the filter's corner, from 0 to 100 percent; fully open is the default.",
+   "sound": "Lower values close the filter and make the note duller; measured, it also changes the level by about 50 dB."
   },
   {
    "index": 0,
    "id": "Resonance",
    "name": "Resonance",
+   "plain_name": "Filter resonance",
+   "role": "filter.resonance",
    "group": "",
    "min": 0,
    "max": 128,
    "default": 0,
    "kind": "linear",
-   "a": 0.00353,
-   "b": 100.002671,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
    "description": "Resonance (0-80)",
-   "confidence": "values",
-   "suggested_role": "filter.resonance",
-   "role_evidence": "a peak at 8 kHz stands -3 → +17 dB over the spectrum an octave either side"
+   "how": "Sets the emphasis at the cutoff, from 0 to 100 percent.",
+   "sound": "Higher values add a peak around 8 kHz that stands out clearly from the rest of the sound."
   },
   {
    "index": 0,
    "id": "Envmod",
    "name": "Envmod",
+   "plain_name": "Filter envelope amount",
+   "role": "filter.env_amount",
    "group": "",
    "min": 0,
    "max": 128,
    "default": 0,
    "kind": "linear",
-   "a": 0.00353,
-   "b": 100.002671,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
    "description": "Cutoff envelope modulation (0-80)",
-   "confidence": "values",
-   "suggested_role": "env.decay",
-   "role_evidence": "the level falls half way to its held level in 45 ms → 15 ms"
+   "how": "Sets how far the envelope opens the filter on each note, from 0 to 100 percent.",
+   "sound": "More makes each note start brighter and settle; measured, it also shortens the note's fall."
   },
   {
    "index": 0,
    "id": "Decay",
    "name": "Decay",
+   "plain_name": "Filter envelope decay",
+   "role": "env.decay",
    "group": "",
    "min": 0,
    "max": 128,
    "default": 64,
    "kind": "linear",
-   "a": 0.00353,
-   "b": 100.002671,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
    "description": "Cutoff envelope decay (0-80)",
-   "confidence": "values",
-   "suggested_role": "env.decay",
-   "role_evidence": "the level falls half way in 85 ms → 65 ms (the default 45 ms) to the same held level"
+   "how": "Sets how fast the filter envelope falls, from 0 to 100 percent.",
+   "sound": "Longer decays keep the note brighter for longer."
   },
   {
    "index": 0,
    "id": "Waveform",
    "name": "Waveform",
+   "plain_name": "Oscillator wave",
+   "role": "osc.wave",
    "group": "",
    "min": 0,
    "max": 4,
@@ -228,7 +245,8 @@
     "noise"
    ],
    "description": "Waveform (0=sine, 1=sawtooth, 2=pulse, 3=triangle, 4=noise)",
-   "confidence": "values"
+   "how": "Chooses the oscillator: sine, sawtooth, pulse, triangle or noise.",
+   "sound": "Sine is pure, saw buzzy, pulse hollow, triangle soft, noise unpitched."
   }
  ]
 }

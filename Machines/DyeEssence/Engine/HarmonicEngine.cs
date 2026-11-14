@@ -101,6 +101,9 @@ namespace NeoBuzz.DyeEssence
         /// <summary>Partial <paramref name="k"/>'s pitch as a multiple of the note's, for a stretch of −1 … 1.</summary>
         public static float Ratio(int k, float stretch) => stretch == 0f ? k : (float)PortableMath.Pow(k, 1.0 + 0.5 * stretch);
 
+        /// <summary>The same for a pitch that is not a whole multiple (an imported partial's).</summary>
+        public static float RatioOf(float r, float stretch) => stretch == 0f ? r : (float)PortableMath.Pow(Math.Max(r, 1e-3f), 1.0 + 0.5 * stretch);
+
         /// <summary>Neo Learn's inharmonicity: partial <paramref name="k"/> at k · √(1 + B k²) (a stiff string's), on top of the stretch. Basic operations only (the square root is exact).</summary>
         public static float RatioStiff(int k, float stretch, float b) => Ratio(k, stretch) * (float)Math.Sqrt(1.0 + (double)b * k * k);
 
@@ -179,7 +182,38 @@ namespace NeoBuzz.DyeEssence
         readonly int[] hRotBlocks = new int[Notes * MaxLanes];
         // Per slot: the shape its settings give the partials (levels, spacing, decay per tick), and the key it was made for.
         readonly float[] hBase = new float[Oscillators * MaxPartials], hRatio = new float[Oscillators * MaxPartials], hStep = new float[Oscillators * MaxPartials];
-        readonly float[] hKey = new float[Oscillators * 9];
+        readonly float[] hKey = new float[Oscillators * 10];
+        // P5b: a slot's imported partial table (from a sample's analysis), the model, range and version it was made from.
+        readonly ImportedPartials[] hImp = MakeImports();
+        readonly SpectralModel[] hImpModel = new SpectralModel[Oscillators];
+        readonly float[] hImpFrom = new float[Oscillators], hImpSpan = new float[Oscillators];
+        readonly int[] hImpVer = new int[Oscillators], hImpShape = new int[Oscillators], hImpSeen = new int[Notes * MaxLanes];
+        readonly bool[] hImpOn = new bool[Oscillators];
+
+        static ImportedPartials[] MakeImports()
+        {
+            var a = new ImportedPartials[Oscillators];
+            for (int i = 0; i < a.Length; i++) a[i] = new ImportedPartials();
+            return a;
+        }
+
+        /// <summary>Slot <paramref name="o"/>'s imported partial table for this tick's settings (made again only when its model or its range moved); false when the slot does not import.</summary>
+        bool ImpPrepare(int o, OscSettings os)
+        {
+            bool on = os.ImpOn && os.Spectrum != null;
+            hImpOn[o] = on;
+            if (!on) return false;
+            float from = Math.Clamp(os.ImpFrom, 0f, 1f), span = Math.Clamp(os.ImpSpan, 0f, 1f);
+            if (!ReferenceEquals(hImpModel[o], os.Spectrum) || hImpFrom[o] != from || hImpSpan[o] != span)
+            {
+                hImp[o].Make(os.Spectrum, from, span);
+                hImpModel[o] = os.Spectrum;
+                hImpFrom[o] = from;
+                hImpSpan[o] = span;
+                hImpVer[o]++;
+            }
+            return true;
+        }
         readonly bool[] hShimOn = new bool[Notes * MaxLanes];
         // Shimmer moves at 2 Hz at most, so each voice works its partials' sines out every fourth tick (staggered by voice) and holds them between.
         readonly int[] hShimN = new int[Notes * MaxLanes];
@@ -218,17 +252,28 @@ namespace NeoBuzz.DyeEssence
             int n = Math.Clamp(os.Partials, 1, MaxPartials);
             float tilt = Math.Clamp(os.Tilt, -24f, 24f), oddEven = Math.Clamp(os.OddEven, -1f, 1f), stretch = Math.Clamp(os.Stretch, -1f, 1f), damp = Math.Clamp(os.Damp, 0f, 1f);
             float comb = Math.Clamp(os.Comb, 0f, 1f), period = Math.Max(2f, os.CombPeriod), inharm = Math.Max(0f, os.Inharm);
-            int kb = o * 9;
+            int kb = o * 10;
+            bool impOn = hImpOn[o];
+            float impRatio = Math.Clamp(os.ImpRatio, 0f, 1f), impVer = impOn ? hImpVer[o] : -1f;
             if (hKey[kb] == n && hKey[kb + 1] == tilt && hKey[kb + 2] == oddEven && hKey[kb + 3] == stretch && hKey[kb + 4] == damp
-                && hKey[kb + 5] == comb && hKey[kb + 6] == period && hKey[kb + 7] == inharm && hKeyDt[o] == tickDt) return;
+                && hKey[kb + 5] == comb && hKey[kb + 6] == period && hKey[kb + 7] == inharm && hKey[kb + 8] == impVer && hKey[kb + 9] == impRatio && hKeyDt[o] == tickDt) return;
+            // The imported table or its spacing moved (or the import was switched): every voice turns its partials anew, though its pitch did not move.
+            if (hKey[kb + 8] != impVer || hKey[kb + 9] != impRatio) hImpShape[o]++;
             hKey[kb] = n; hKey[kb + 1] = tilt; hKey[kb + 2] = oddEven; hKey[kb + 3] = stretch; hKey[kb + 4] = damp;
-            hKey[kb + 5] = comb; hKey[kb + 6] = period; hKey[kb + 7] = inharm;
+            hKey[kb + 5] = comb; hKey[kb + 6] = period; hKey[kb + 7] = inharm; hKey[kb + 8] = impVer; hKey[kb + 9] = impRatio;
             hKeyDt[o] = tickDt;
             for (int j = 0; j < MaxPartials; j++)
             {
                 int k = j + 1, at = o * MaxPartials + j;
                 hBase[at] = HarmonicSets.Base(k, n, tilt, oddEven);
                 if (comb > 0f) hBase[at] *= HarmonicSets.CombMask(k, comb, period);
+                if (impOn)
+                {
+                    // P5b: row j sits where the analysis put it (against the reference pitch), blended in octaves with the whole multiple k.
+                    float r = impRatio >= 1f ? hImp[o].Ratio[j] : (float)PortableMath.Exp2(PortableMath.Log2(k) + impRatio * (PortableMath.Log2(Math.Max(hImp[o].Ratio[j], 1e-3f)) - PortableMath.Log2(k)));
+                    hRatio[at] = HarmonicSets.RatioOf(r, stretch) * (inharm > 0f ? (float)Math.Sqrt(1.0 + (double)inharm * k * k) : 1f);
+                }
+                else
                 hRatio[at] = inharm > 0f ? HarmonicSets.RatioStiff(k, stretch, inharm) : HarmonicSets.Ratio(k, stretch);
                 // Upper partials die away: partial k's level falls by e^(−damp · (k − 1) / 2) a second.
                 hStep[at] = damp == 0f ? 1f : (float)PortableMath.Exp(-damp * 0.5 * j * tickDt);
@@ -264,9 +309,11 @@ namespace NeoBuzz.DyeEssence
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void HarmControl(int note, int o, int no, OscSettings os, int u, double inc0, float invCount)
         {
+            bool imp = ImpPrepare(o, os);
             HarmShape(o, os);
             int sb = o * MaxPartials;
             int n = Math.Clamp(os.Partials, 1, MaxPartials);
+            if (imp) n = Math.Max(1, Math.Min(n, hImp[o].Count));   // rows past the table are silent: not rendered
             int per = Math.Min(n, Math.Max(HarmFloor, HarmBudget / u));
             per = (per + 3) & ~3;
             hPer[no] = per;
@@ -275,8 +322,8 @@ namespace NeoBuzz.DyeEssence
             if (damp) for (int j = 0; j < per; j++) hDecay[db + j] *= hStep[sb + j];
             hDamp[no] = damp;
             float m = Math.Clamp(OscPosition(o) + Md(note, RouteDest.APosition + o), 0f, 1f);
-            var sa = os.SetA ?? HarmonicSets.Get(0);
-            var sb2 = os.SetB ?? HarmonicSets.Get(1);
+            var sa = imp ? hImp[o].Level : os.SetA ?? HarmonicSets.Get(0);
+            var sb2 = imp ? hImp[o].Level : os.SetB ?? HarmonicSets.Get(1);
             // The levels before the voices' own limits, scaled so a set's loudness is the same whatever its shape.
             float e = 0;
             for (int j = 0; j < per; j++)
@@ -321,8 +368,9 @@ namespace NeoBuzz.DyeEssence
                             hShimP[pb + j] = ShimmerSine(j, age, voiceSeed, true);
                             hShimL[pb + j] = ShimmerSine(j, age, voiceSeed, false);
                         }
-                    if (due || shim != hShimOn[k] || inc != hInc[k] || hRotBlocks[k] < blocks)
+                    if (due || shim != hShimOn[k] || inc != hInc[k] || hRotBlocks[k] < blocks || hImpSeen[k] != hImpShape[o])
                     {
+                        hImpSeen[k] = hImpShape[o];
                         hShimOn[k] = shim;
                         hInc[k] = inc;
                         hRotBlocks[k] = blocks;

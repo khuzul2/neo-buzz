@@ -545,7 +545,9 @@
     "bandpass"
    ],
    "own_texts": false,
-   "description": "Low-pass, high-pass or band-pass (its description: 0, 1, 2)."
+   "description": "Low-pass, high-pass or band-pass (its description: 0, 1, 2).",
+   "how": "Chooses low-pass, high-pass or band-pass.",
+   "sound": "Low-pass darkens, high-pass thins, band-pass leaves a narrow band."
   },
   {
    "index": 1,
@@ -560,7 +562,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 128.0,
-   "description": "0–128 (128, the default, is fully open for the low-pass)."
+   "description": "0–128 (128, the default, is fully open for the low-pass).",
+   "how": "Sets the filter's corner on a 0 to 128 scale; 128 is fully open for the low-pass.",
+   "sound": "Lower values close a low-pass and darken the sound; the sweeps are what classic Buzz songs use it for."
   },
   {
    "index": 2,
@@ -582,7 +586,9 @@
     "min_text": "0",
     "max_text": "118",
     "reason": "rings at its maximum (128: +53.8 dBFS peak over 30 s, 57 dB over its level at the default; the edge is where it passes 24 dB over it)"
-   }
+   },
+   "how": "Sets the emphasis at the corner on a 0 to 128 scale.",
+   "sound": "Higher values add a whistling peak at the cutoff; near the top it rings loudly, so keep it below 118."
   },
   {
    "index": 3,
@@ -597,7 +603,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 128.0,
-   "description": "0–128."
+   "description": "0–128.",
+   "how": "Sets a width on a 0 to 128 scale; no measurement showed a change with the others at their defaults.",
+   "sound": "Its audible effect is unverified here; leave it at 0 unless a song uses it."
   }
  ],
  "track_parameters": []

@@ -714,7 +714,9 @@
     "On"
    ],
    "own_texts": false,
-   "description": "Passes the input through as well (on by default)."
+   "description": "Passes the input through as well (on by default).",
+   "how": "Switches the unprocessed input on or off in the output beside the echoes.",
+   "sound": "On keeps the original sound with the echoes behind it; off leaves only the echoes."
   }
  ],
  "track_parameters": [
@@ -731,7 +733,9 @@
    "kind": "linear",
    "a": 1.0,
    "b": 32768.0,
-   "description": "Delay time in Length unit (3 ticks by default)."
+   "description": "Delay time in Length unit (3 ticks by default).",
+   "how": "Sets this track's delay time, 1 to 32768 in the Length unit.",
+   "sound": "Longer values space the echoes further apart; several tracks with different lengths make a multi-tap rhythm."
   },
   {
    "index": 1,
@@ -750,7 +754,9 @@
     "sample",
     "tick/256"
    ],
-   "description": "What the length counts: ticks (the default: it follows the tempo), ms, samples or 1/256 ticks."
+   "description": "What the length counts: ticks (the default: it follows the tempo), ms, samples or 1/256 ticks.",
+   "how": "Chooses what the length counts: ticks, milliseconds, samples or 1/256 of a tick.",
+   "sound": "Ticks keep the echoes in time with the tempo; milliseconds and samples give fixed times."
   },
   {
    "index": 2,
@@ -773,7 +779,9 @@
     "min_text": "-98.4%",
     "max_text": "98.4%",
     "reason": "never decays at its minimum (-100.0%: +30.4 dBFS peak over 30 s, never decays) and rings at its maximum (100.0%: +31.3 dBFS peak, 31 dB over its level at the default; the edge is where it passes 24 dB over it)"
-   }
+   },
+   "how": "Sets how much of the output is fed back in, from -100 to +100 percent (64 is none); the safe range stops short of the ends.",
+   "sound": "More feedback means more repeats; negative values flip each repeat; at the very ends the echoes never die away."
   },
   {
    "index": 3,
@@ -789,7 +797,9 @@
    "a": 0.0,
    "b": 100.0,
    "unit": "%",
-   "description": "Level of this track's echoes, 0–100%."
+   "description": "Level of this track's echoes, 0–100%.",
+   "how": "Sets this track's echo level, from 0 to 100 percent.",
+   "sound": "Raises or lowers how loud the echoes are against the dry signal."
   }
  ]
 }

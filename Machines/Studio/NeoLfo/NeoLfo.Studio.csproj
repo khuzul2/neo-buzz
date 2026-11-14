@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo LFO, studio flavour (docs/specs/studio-mvp.md S1): see ../NeoStudio.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoLfo</NeoFolder>
+    <NeoName>Neo LFO</NeoName>
+    <NeoKind>Generators</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoStudio.targets" />
+  <ItemGroup>
+    <!-- The canvas modulators' editor template (shared by all four). -->
+    <Compile Include="$(M)NeoModulator\*Editor.cs" Link="Shared\Modulator\%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

@@ -39,7 +39,7 @@ namespace ReBuzz.Agent
         /// Runs <paramref name="work"/> on the engine thread after any call before it. A call that
         /// waits or runs too long fails with a message saying so (the work itself can't be aborted).
         /// </summary>
-        public async Task<T> Run<T>(string what, Func<T> work, CancellationToken cancellation = default)
+        public async Task<T> Run<T>(string what, Func<T> work, CancellationToken cancellation = default, bool background = false)
         {
             if (!await gate.WaitAsync(Timeout, cancellation).ConfigureAwait(false))
                 throw new ToolError($"{Product.Name} is still busy with {current ?? "another call"} after {Timeout.TotalSeconds:F0} s; try again shortly.");
@@ -47,6 +47,19 @@ namespace ReBuzz.Agent
             {
                 current = what;
                 CurrentChanged?.Invoke(what);
+                if (background)
+                {
+                    // Fork (ux-overhaul.md P4a): a long job (an export's render) on a worker thread of its own, below the UI's priority, still one
+                    // at a time with every other call (the gate is held), and with no time limit but its cancellation.
+                    var tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+                    var worker = new Thread(() =>
+                    {
+                        try { tcs.SetResult(work()); }
+                        catch (Exception e) { tcs.SetException(e); }
+                    }) { IsBackground = true, Name = Product.Name + " background render", Priority = ThreadPriority.BelowNormal };
+                    worker.Start();
+                    return await tcs.Task.ConfigureAwait(false);
+                }
                 var task = thread.InvokeAsync(work);
                 var finished = await Task.WhenAny(task, Task.Delay(Timeout, cancellation)).ConfigureAwait(false);
                 if (finished != task)

@@ -12,7 +12,7 @@ using System.Threading;
 
 namespace ReBuzz.Core
 {
-    internal class MachineConnectionCore : IMachineConnection
+    internal class MachineConnectionCore : IMachineConnection, IBlockLevel
     {
         private static IntPtr connectionHandleCounter = 100;
 
@@ -274,6 +274,29 @@ namespace ReBuzz.Core
 
             if (Volatile.Read(ref peakMeterUsers) > 0)
                 MeasurePeak(nSamples);
+
+            // Fork (neo-patch.md §3): the Neo Envelope's follower reads the level of the block just delivered, while one runs.
+            if (ModulationBoard.Followers > 0)
+                MeasureBlockPeak(nSamples);
+        }
+
+        float blockPeak;
+
+        /// <summary>The peak of the last block this connection delivered (full scale 1.0); measured only while a follower runs.</summary>
+        public float BlockPeak => Volatile.Read(ref blockPeak);
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveOptimization)]
+        void MeasureBlockPeak(int nSamples)
+        {
+            float peak = 0;
+            for (int i = 0; i < nSamples; i++)
+            {
+                float a = Math.Abs(buffer[i].L);
+                if (a > peak) peak = a;
+                a = Math.Abs(buffer[i].R);
+                if (a > peak) peak = a;
+            }
+            Volatile.Write(ref blockPeak, peak * (1f / 32768f));
         }
 
         // Fork addition (docs/specs/session-view.md 0.4): post-fader peak of what this

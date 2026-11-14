@@ -123,6 +123,14 @@ def fx(name, gear, preset, params=(), tail=1.0, extra=(), source=SOURCE, beats=4
             "auto": list(auto)}
 
 
+def mods(case, *modulators):
+    """Canvas modulators (docs/specs/neo-patch.md §3) on a case: each (gear, name, params, targets, listen) is added after the
+    chain; targets: [(machine, param, depth, polarity)] through the modulate tool, listen: the machine its notes or level it listens to.
+    The base values are the ones the case set; the modulation is written by the modulator's Work as the render runs."""
+    case["mods"] = list(modulators)
+    return case
+
+
 CASES = [
     # Neo Poly: oscillators (blep saw, pulse, sync, FM, ring), ladder and SVF filters, unison, drift, noise.
     gen("poly-default", "Neo Poly", None, [], CHORDS),                     # drift on: per-voice random
@@ -187,6 +195,14 @@ CASES = [
     gen("learn-vector-diamond-steps", "Neo Learn Vector", "Seq — Diamond Steps", [], BASS),
     gen("learn-sampler-choir-loop", "Neo Learn Sampler", "Pad — Choir Loop", [], CHORDS),
     gen("learn-sampler-lofi-keys", "Neo Learn Sampler", "Pluck — Lo-fi Keys", [], KEYS),
+    # Neo Patch NP1: the modular synth's patches (docs/specs/neo-patch-engine.md): band-limited oscillators, ladder and state-variable filters, FM between
+    # oscillators, the wavetable oscillator, per-voice envelopes, and a global delay and filter after the Voice sum.
+    gen("patch-init-saw", "Neo Patch", "Init — Saw", [], CHORDS),
+    gen("patch-sub-square", "Neo Patch", "Bass — Sub Square", [], BASS),
+    gen("patch-fm-bell", "Neo Patch", "Lead — FM Bell", [], BELLS),
+    gen("patch-wavetable-drift", "Neo Patch", "Pad — Wavetable Drift", [], CHORDS),
+    gen("patch-pluck-ladder", "Neo Patch", "Pluck — Ladder", [], KEYS),
+    gen("patch-echo-after-sum", "Neo Patch", "FX — Echo After the Sum", [], LEAD),
     # Dye Essence P2: the Sample engine (looped, eight-voice unison, one-shot, reversed, two slots) and the
     # Granular engine (frozen, scanning, a spray of pitched grains with reversed ones); the grain clouds and
     # the sample recipes are built from the portable maths, so every platform renders the same.
@@ -227,6 +243,15 @@ CASES = [
     gen("dye-spec-snapped", "Dye Essence", "Keys — Snapped Pluck Keys", [], KEYS),
     gen("dye-spec-lead", "Dye Essence", "Lead — Singing Strings Lead", [], LEAD),
     gen("dye-spec-pluckbell", "Dye Essence", "Bell — Stretched Pluck Bell", [], BELLS),
+    # P5b: the Harmonic engine's partial table and the Modal engine's mode table taken from a sample (from the same deterministic analysis).
+    gen("dye-import-choir", "Dye Essence", "Pad — Imported Choir Pad", [], CHORDS),
+    gen("dye-import-pluck", "Dye Essence", "Keys — Imported Pluck Keys", [], KEYS),
+    gen("dye-import-modes", "Dye Essence", "Bell — Impulse Bell Body", [], BELLS),
+    # Neo Learn L3: Spectral (stretch, smear, freeze, gate, tone and noise over the analysed model).
+    gen("learn-spectral-frozen-choir", "Neo Learn Spectral", "Pad — Frozen Choir", [], CHORDS),
+    gen("learn-spectral-slowed-strings", "Neo Learn Spectral", "Pad — Slowed Strings", [], CHORDS),
+    gen("learn-spectral-gated-bell", "Neo Learn Spectral", "Keys — Gated Bell", [], KEYS),
+    gen("learn-spectral-noise-ghost", "Neo Learn Spectral", "Texture — Noise Ghost", [], CHORDS),
     # P4a (docs/specs/dye-essence.md §4.9): the arpeggiator and the sequencer follow the song's position; the notes land on exact samples.
     gen("dye-arp-pluck", "Dye Essence", "Arp — Glass Pluck Up", [], CHORDS),
     gen("dye-arp-saw", "Dye Essence", "Arp — Saw Up Down", [], CHORDS),
@@ -503,6 +528,18 @@ CASES = [
     gen("long-sampler", "Neo Sampler", "Pad — Vox Aah (Looped)", [("Z2 wave", 221), ("Z2 tune", 12)], LONG, beats=32),
     fx("long-filter", "Neo Filter", "LFO — Stereo Sweep (1/2, 90°)", [("LFO retrig", "Free"), ("LFO sync", "Free"), ("LFO rate", "0.23 Hz"), ("LFO shape", "Smooth random")],
        tail=1.0, beats=32, source=("Neo FM6", "Keys — Tine Piano", [], [n(p, b, 0.5, 100) for b in range(0, 32, 2) for p in ("C4", "E4", "G4")])),
+    # The canvas modulators (neo-patch.md §3): a Neo LFO, Neo Step and Neo Macro writing a Neo Filter's parameters, and a follower envelope
+    # moving a filter by the level of the source. The song position drives them, so every render is the same.
+    mods(fx("mod-lfo-filter", "Neo Filter", None, [("Type", "SVF LP"), ("Cutoff", "900 Hz"), ("Resonance", "40%")]),
+         ("Neo LFO", "Mod", [("Shape", "Triangle"), ("Sync", "1/4"), ("Write glide", "50 ms")], [("Fx1", "Cutoff", 50, "bi")], None)),
+    mods(fx("mod-step-filter", "Neo Filter", None, [("Type", "SVF LP"), ("Cutoff", "600 Hz"), ("Resonance", "30%")]),
+         ("Neo Step", "Mod", [("Steps", 4), ("Rate", "1/8"), ("Step 1", "100%"), ("Step 2", "20%"), ("Step 3", "70%"), ("Step 4", "0%"), ("Write glide", "40 ms")],
+          [("Fx1", "Cutoff", 60, "uni")], None)),
+    mods(fx("mod-macro-filter", "Neo Filter", None, [("Type", "SVF LP"), ("Cutoff", "500 Hz")]),
+         ("Neo Macro", "Mod", [("Value", "65%"), ("Write glide", "30 ms")], [("Fx1", "Cutoff", 70, "uni"), ("Fx1", "Resonance", 40, "uni")], None)),
+    mods(fx("mod-follower-filter", "Neo Filter", None, [("Type", "SVF LP"), ("Cutoff", "400 Hz")]),
+         ("Neo Envelope", "Mod", [("Mode", "Follower"), ("Threshold", "-40 dB"), ("Attack", "5 ms"), ("Release", "120 ms"), ("Write glide", "40 ms")],
+          [("Fx1", "Cutoff", 70, "uni")], "Src")),
 ]
 
 
@@ -625,6 +662,13 @@ def render_case(exe, case, out_dir, work):
                            points=[{"at": at, "value": v} for at, v in points])
                 c.call("arrangement_place", machine=name, pattern="A", at=[0])
             last = name
+        for mgear, mname, mparams, targets, listen in case.get("mods", []):
+            c.call("machine_add", gear=mgear, name=mname, connect_to="none")
+            set_params(c, mname, mparams)
+            if listen:
+                c.call("modulate", source=mname, listen_machine=listen)
+            for target, param, depth, polarity in targets:
+                c.call("modulate", source=mname, target_machine=target, param=param, depth=depth, polarity=polarity)
         r = c.call("render", **{"from": 0, "to": case["beats"], "tail_seconds": case["tail"], "name": case["name"]})
         os.makedirs(out_dir, exist_ok=True)
         shutil.copyfile(r["file"], os.path.join(out_dir, case["name"] + ".wav"))

@@ -84,7 +84,7 @@ namespace ReBuzz.Studio.Views.Detail
             tools.Children.Add(Tool("Vel −", $"Softer ({mod}+Down)", () => roll?.ChangeVelocity(-8)));
             tools.Children.Add(Tool("Vel +", $"Louder ({mod}+Up)", () => roll?.ChangeVelocity(8)));
             tools.Children.Add(Tool("Delete", "Delete the selected notes (Delete)", () => roll?.DeleteSelected()));
-            followBox = new ToggleButton { Content = "Follow", IsChecked = true, Padding = new Thickness(8, 2), MinHeight = 24, Margin = new Thickness(0, 0, 6, 0), FontSize = StudioTokens.FontBody, Focusable = false };
+            followBox = StudioButtons.KeepFocus(new ToggleButton { Content = "Follow", IsChecked = true, Margin = new Thickness(0, 0, 6, 0) });
             ToolTip.SetTip(followBox, "Scroll with the playhead while the pattern plays");
             Avalonia.Automation.AutomationProperties.SetName(followBox, "Follow playhead");
             tools.Children.Add(followBox);
@@ -135,9 +135,9 @@ namespace ReBuzz.Studio.Views.Detail
 
         Button Tool(string label, string tip, Action action)
         {
-            var b = new Button { Content = label, Padding = new Thickness(8, 2), MinHeight = 24, Margin = new Thickness(0, 0, 6, 0), FontSize = StudioTokens.FontBody, Focusable = false };
+            var b = StudioButtons.KeepFocus(new Button { Content = label, Margin = new Thickness(0, 0, 6, 0) });
             ToolTip.SetTip(b, tip);
-            AutomationProperties.SetName(b, label);
+            AutomationProperties.SetName(b, label == "−" ? "Zoom out" : label == "+" ? "Zoom in" : label);
             b.Click += (s, e) => { action(); roll?.Focus(); };
             return b;
         }

@@ -61,9 +61,9 @@ namespace ReBuzz.Studio.Views.Sequence
             Minimum = SequenceGeometry.MinTickWidth, Maximum = SequenceGeometry.MaxTickWidth, TickFrequency = SequenceGeometry.TickWidthStep,
             IsSnapToTickEnabled = true, Margin = new Thickness(6, 0), VerticalAlignment = VerticalAlignment.Center,
         };
-        readonly ComboBox steps = new ComboBox { Width = 58, Height = 24, MinHeight = 0, FontSize = 12, Padding = new Thickness(6, 0, 0, 0), Margin = new Thickness(2, 0), VerticalAlignment = VerticalAlignment.Center };
-        readonly Button addTrack = new Button { Content = "+", Width = 24, Height = 24, MinHeight = 0, Padding = new Thickness(0), FontSize = StudioTokens.FontTitle, Margin = new Thickness(2, 0), VerticalAlignment = VerticalAlignment.Center, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
-        readonly ToggleButton follow = new ToggleButton { Content = "Follow", Height = 24, MinHeight = 0, FontSize = 11, Padding = new Thickness(5, 0), Margin = new Thickness(2, 0), VerticalAlignment = VerticalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center, IsChecked = true };
+        readonly ComboBox steps = new ComboBox { Width = 58, Margin = new Thickness(2, 0), VerticalAlignment = VerticalAlignment.Center };
+        readonly Button addTrack = new Button { Content = "+", Margin = new Thickness(2, 0), VerticalAlignment = VerticalAlignment.Center };
+        readonly ToggleButton follow = new ToggleButton { Content = "Follow", Margin = new Thickness(2, 0), VerticalAlignment = VerticalAlignment.Center, IsChecked = true };
         readonly ListBox patternList = new ListBox
         {
             FontSize = 12, BorderThickness = new Thickness(1),
@@ -132,6 +132,8 @@ namespace ReBuzz.Studio.Views.Sequence
             steps.SelectedItem = state.TimeSignatures.GetBarLengthAt(0);
             ToolTip.SetTip(steps, "Bar length (ticks): the cursor's and the selection's step");
             ToolTip.SetTip(addTrack, "Add a track");
+            addTrack.Classes.Add("icon");
+            Avalonia.Automation.AutomationProperties.SetName(addTrack, "Add track");
             ToolTip.SetTip(follow, "Follow the play position");
             ToolTip.SetTip(zoom, "Zoom (Ctrl/Command + wheel)");
 

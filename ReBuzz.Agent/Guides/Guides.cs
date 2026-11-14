@@ -43,7 +43,7 @@ namespace ReBuzz.Agent.Guides
             ("concepts", Product.Name + " in five minutes","Machines and the graph, parameters and tracks, patterns, the arrangement and the session grid, beats, pitches and levels."),
             ("composition", "Composition", "Time and grid math, harmony and voice leading, melody, drum grids with swing and humanizing, and arrangement energy, with the calls that write them."),
             ("genres", "Genres and moods", "Forms by genre, the mood table, and templates (tempo, key, structure) for house, techno, DnB, synthwave, hip-hop, ambient, pop and lo-fi."),
-            ("sound-design", "Sound design", "Reading a sound (envelope, spectrum, movement, space), the build-measure loop, and Neo Drive, Comp, Verb, Ensemble (chorus, flanger, phaser), Delay (tempo, dub and tape echoes) and Filter as sound tools."),
+            ("sound-design", "Sound design", "Reading a sound (envelope, spectrum, movement, space), the build-measure loop, and Neo Drive, Comp, Verb, Ensemble (chorus, flanger, phaser), Delay (tempo, dub and tape echoes) and Filter as sound tools, and the canvas modulators (Neo LFO, Envelope, Step, Macro) that move any parameter."),
             ("synth-recipes", "Synth recipes: Neo Poly and Neo Wave", "Recipes with exact values: pads, basses, leads, plucks, chords, drums and risers on Neo Poly; wavetable sweeps, wobble and talking leads on Neo Wave."),
             ("fm-recipes", "FM recipes: Neo FM6", "Electric piano, bell, FM bass, metallic percussion, brass swell and organ from Neo FM6's init patch, with exact values."),
             ("mixing", "Mixing", "Gain staging targets, balance by reference, frequency slots per instrument, EQ starting points by source, sends and pre-delay against tempo, mono lows, and the checks with render probes and analyze."),
@@ -51,6 +51,7 @@ namespace ReBuzz.Agent.Guides
             ("mastering", "Mastering", "Loudness and true-peak targets (streaming, club, broadcast), the flow, matching a reference, measuring after every change, and what not to do."),
             ("mastering-chain", "Mastering chain", "The chain stage by stage with settings: corrective EQ, glue compression, saturation, clipping, low end, stereo image, tape, limiter and dither."),
             ("dye-essence-in-depth", "Dye Essence in depth", "Dye Essence's signal flow (engines, filters, modulation, arpeggiator and sequencer, effects, imports) and how to use it, with recipes."),
+            ("dye-essence-analysis", "Dye Essence analysis", "Dye Essence's Spectral engine and the sample imports: partials into the Harmonic engine and an impulse response into the Modal engine."),
             ("dye-essence-effects", "Dye Essence effects", "Dye Essence's effects rack: ten slots, the Trio and Duo chains, the six hosted engines and what each slot's ten parameters mean."),
             ("neo-eq-in-depth", "Neo EQ in depth", "Neo EQ's graphic mode, linear phase and curve layer, and the map of its factory presets."),
             ("app-control", "App control", "Settings and their audit log, the audio device with auto-revert, MIDI bindings and learn, the studio window (views, panels, selection), export to WAV with stems, and app status: what each tool does, where it works and the care it needs."),
@@ -110,7 +111,7 @@ namespace ReBuzz.Agent.Guides
                 Description =
                     "Returns a guide as markdown: 'workflow' (how to work here; read it first), 'concepts' (machines, patterns, the arrangement, " +
                     "beats, pitches, levels), then by craft: 'composition', 'genres', 'sound-design', 'synth-recipes', 'fm-recipes', 'mixing', 'mixing-dynamics', " +
-                    "'mastering', 'mastering-chain', 'app-control' (preferences, audio device, MIDI, the window, export), 'troubleshooting', and the machine deep dives 'dye-essence-in-depth', 'dye-essence-effects' and 'neo-eq-in-depth'. machine gives a gear's manual " +
+                    "'mastering', 'mastering-chain', 'app-control' (preferences, audio device, MIDI, the window, export), 'troubleshooting', and the machine deep dives 'dye-essence-in-depth', 'dye-essence-analysis', 'dye-essence-effects' and 'neo-eq-in-depth'. machine gives a gear's manual " +
                     "(every parameter, how to use it, presets). Without arguments, lists the topics. Read-only. " +
                     "Example: guide(topic=\"mixing\"), guide(machine=\"Neo Poly\").",
                 Input = Object(null,

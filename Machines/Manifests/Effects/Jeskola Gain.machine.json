@@ -2,15 +2,25 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Jeskola Gain",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-13, agent-knowledge.md K2 batch b) with tools/jeskola_knowledge.py, from the profile by tools/machine-profiler.py on windows, 2026-11-13 and the evidence listed",
  "type": "utility",
- "summary": "Utility (profiled draft): traits: utility; tail 0.0 s; latency 0 samples; gain +0.0 dB at the defaults.",
+ "summary": "A plain gain stage with a bypass: level from silence through 0 dB (at 80) to +12 dB. For trims and level automation; Neo Utility adds pan, width and polarity.",
  "category": "Utility",
  "tags": [
   "gain"
  ],
  "use_for": "Plain gain trim between machines.",
+ "quirks": [
+  "Gain is a table, not a formula: 0 is silence, 80 is 0 dB and 127 is +12 dB, about 0.3 dB per step near unity.",
+  "It has one track parameter, ATrackParam, that no measurement found any effect from.",
+  "Hot at its top: +12 dB pushes a normal signal above full scale (+2.8 dBFS peak in the profile).",
+  "Closed source: names come from its own descriptions and measurements, not from code."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "profile (tools/machine-profiler.py, windows 2026-11-13) — +0.0 dB at the defaults, silent at Gain 0, +12 dB at 127"
+ ],
  "tracks": 8,
  "health": {
   "status": "warn",
@@ -461,6 +471,8 @@
    "index": 0,
    "id": "Gain",
    "name": "Gain",
+   "plain_name": "Gain",
+   "role": "level",
    "group": "",
    "min": 0,
    "max": 127,
@@ -981,15 +993,16 @@
      12.0
     ]
    ],
-   "description": "",
-   "confidence": "values",
-   "suggested_role": "level",
-   "role_evidence": "silent at one end, the level -120 → +12 dB"
+   "description": "Level from silence (0) through 0 dB (80) to +12 dB (127).",
+   "how": "Sets the level from silence through 0 dB at 80 up to +12 dB at 127.",
+   "sound": "Lower is quieter; it only changes loudness and does not colour the sound."
   },
   {
    "index": 1,
    "id": "Bypass",
    "name": "Bypass",
+   "plain_name": "Bypass",
+   "role": "bypass",
    "group": "",
    "min": 0,
    "max": 1,
@@ -999,8 +1012,9 @@
     "no",
     "yes"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "Passes the signal unchanged when on (yes).",
+   "how": "Switches the machine's processing off (yes) or on (no).",
+   "sound": "When bypassed the signal passes unchanged."
   }
  ],
  "track_parameters": [
@@ -1008,6 +1022,7 @@
    "index": 0,
    "id": "ATrackParam",
    "name": "ATrackParam",
+   "plain_name": "Placeholder track parameter",
    "group": "",
    "min": 0,
    "max": 127,
@@ -1015,8 +1030,9 @@
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "description": "A placeholder track parameter, 0 to 127, with no measured effect.",
+   "how": "A placeholder track parameter, 0 to 127; no measurement found any change from it.",
+   "sound": "No audible effect."
   }
  ]
 }

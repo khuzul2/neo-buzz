@@ -1,0 +1,64 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Pedal LFO",
+  "to": "Neo LFO",
+  "summary": "The wave and the phase carry over. Pedal LFO's target, period in ticks, depth, centre and start switch do not: Neo LFO points at up to 8 parameters itself (modulate, or the target picker in its editor), each with its own depth, and rides on the value the target already has.",
+  "set": {},
+  "rules": [
+    {
+      "kind": "choice",
+      "from": "Shape",
+      "to": "Shape",
+      "map": {
+        "Sine": "Sine",
+        "Triangle": "Triangle",
+        "Square": "Square",
+        "Saw Up": "Saw up",
+        "Saw Down": "Saw down",
+        "S&H": "Sample and hold"
+      },
+      "why": "the same six waves; Neo LFO adds a smooth random wave"
+    },
+    {
+      "kind": "unit",
+      "from": "Phase",
+      "to": "Phase"
+    }
+  ],
+  "unmapped": [
+    {
+      "param": "Period",
+      "why": "Neo LFO's Rate is in Hz or a tempo length (Sync); Pedal LFO's period is in ticks, which is a different time at every tempo and tracks-per-beat: set Rate or Sync again"
+    },
+    {
+      "param": "Depth",
+      "why": "depth is per target in Neo LFO (−100 … +100 %, polarity, range): Pedal LFO's one depth and its target are not carried; re-point it with modulate"
+    },
+    {
+      "param": "Center",
+      "why": "Neo LFO swings around the value the target parameter already has (its base), not around a centre of its own"
+    },
+    {
+      "param": "Sync",
+      "why": "Pedal LFO's divisions (1/1 … 1/16, triplets) are Neo LFO's Sync with Feel, which pick the cycle together: set them again"
+    },
+    {
+      "param": "Bypass",
+      "why": "remove the targets (modulation_remove) or mute the machine: the target goes back to its base"
+    },
+    {
+      "param": "Start",
+      "why": "Neo LFO runs always; Retrigger restarts it on the beat, the bar or a note"
+    }
+  ],
+  "remarks": [
+    "Pedal LFO drives its target through the host by wiring set in the song; Neo LFO has its own targets, so after machine_replace point it again with modulate(source=…, target_machine=…, param=…)."
+  ],
+  "tolerance": {
+    "why_not": "A control machine makes no sound: what carries over is the wave and the phase, and the target and its depth are set again with modulate."
+  },
+  "evidence": [
+    "Machines/Manifests/Generators/Pedal LFO.machine.json (the shapes, the phase in degrees)",
+    "Machines/NeoLfo/Params.def (Shape, Phase)"
+  ]
+}

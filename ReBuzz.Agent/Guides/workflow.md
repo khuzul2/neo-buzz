@@ -50,7 +50,7 @@ Read the one for the job with `guide(topic=…)` (or the resource rebuzz://guide
 | `mixing-dynamics` | compression starting points and sidechain |
 | `mastering` | loudness targets, matching a reference, what not to do |
 | `mastering-chain` | the chain stage by stage with settings |
-| `dye-essence-in-depth`, `dye-essence-effects`, `neo-eq-in-depth` | the parts of those two machines that their pages leave out |
+| `dye-essence-in-depth`, `dye-essence-analysis`, `dye-essence-effects`, `neo-eq-in-depth` | the parts of those two machines that their pages leave out |
 | `app-control` | preferences, the audio device, MIDI bindings, the studio window, export to WAV |
 | `troubleshooting` | silence, clipping, phase, CPU, notes that hang or don't play |
 

@@ -1,0 +1,41 @@
+# Neo LFO parameters (docs/specs/neo-patch.md §3). The order is permanent: songs and presets store values by position.
+# Regenerate: python3 tools/gen-machine-params.py Machines/NeoLfo
+namespace NeoBuzz.LfoMachine
+class NeoLfoMachine
+summary A low-frequency oscillator that moves other machines' parameters: up to 8 targets (any parameter of any machine), each with its own depth, polarity, range and curve, written smoothly and never as an undo step. Seven shapes, a free rate in Hz or a tempo-synced one from 8 bars to 1/64 (straight, dotted or triplet), a phase offset, retrigger on the beat, the bar or a note of a machine, and smoothing. Use it for wobble, filter sweeps, tremolo, vibrato and slow movement on any machine, effects included.
+
+group Wave
+Shape     "Shape"       0 6 0    enum Sine Triangle Saw_up Saw_down Square Smooth_random Sample_and_hold | The wave: sine, triangle, saw up, saw down, square, smooth random or sample and hold
+    id shape
+    how Chooses the wave the modulation follows; the two random shapes pick a new value every cycle, gliding to it or holding it.
+    sound Sine and triangle sway smoothly, saws ramp, square flips between two values, smooth random drifts, sample and hold steps.
+Rate      "Rate"        0 1000 515 freq 0.02 40                | Cycles per second when Sync is Free
+    id rate
+    how Sets how fast the wave repeats, from 0.02 to 40 Hz, while Sync is Free.
+    sound A low rate is a slow drift, around 5 Hz is a wobble or vibrato, higher is a fast flutter.
+Sync      "Sync"        0 10 0   enum Free 8_bars 4_bars 2_bars 1_bar 1/2 1/4 1/8 1/16 1/32 1/64 | Free: Rate in Hz. Otherwise one cycle lasts this long at the song's tempo
+    id sync
+    how Locks one cycle to a length of the song's tempo, from 8 bars down to 1/64; Free uses Rate in Hz.
+    sound Synced movement stays in time with the music and lines up with the beat.
+Feel      "Feel"        0 2 0    enum Straight Dotted Triplet  | Straight, dotted (1.5 times longer) or triplet (two thirds as long) when Sync is on
+    id feel
+    how Stretches a synced cycle to 1.5 times (dotted) or shrinks it to two thirds (triplet); it only counts while Sync is on.
+    sound Dotted and triplet cycles give the movement a lilting, off-grid pulse against the beat.
+Phase     "Phase"       0 360 0  lin 0 360 ° 0                 | Where in the cycle it starts, and the offset when locked to the song
+    id phase
+    how Shifts the wave forward by 0 to 360 degrees of a cycle.
+    sound Two LFOs at different phases peak at different moments, so their targets move apart.
+
+group Behaviour
+Retrigger "Retrigger"   0 3 0    enum Free Beat Bar Note       | Free: runs on. Beat or Bar: restarts the cycle each beat or bar. Note: restarts when the listened machine plays a note
+    id retrigger
+    how Restarts the cycle each beat, each bar or on each note of the machine it listens to; Free lets it run on.
+    sound Retriggered movement starts from the same point every time, so every note or bar gets the same sweep.
+Smooth    "Smooth"      0 1000 0 pct                           | Rounds the corners of the output (a one-pole of up to half a second)
+    id smooth
+    how Rounds off the wave's corners with a lag of up to half a second.
+    sound Square and random shapes glide between their values instead of jumping; a high setting also shrinks fast waves.
+Glide     "Write glide" 0 1000 492 time 0.001 1                | Time a target takes to cross its whole range: no write moves further than this allows
+    id glide
+    how Limits how fast a target may move: it takes at least this long to cross its whole range.
+    sound A short glide keeps fast modulation clean; a long one smooths it into a slow drift and blunts fast waves.

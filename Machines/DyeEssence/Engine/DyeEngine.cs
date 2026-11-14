@@ -39,6 +39,8 @@ namespace NeoBuzz.DyeEssence
         static readonly int[] HarmBase = { P.AHSet, P.BHSet, P.CHSet };
         static readonly int[] ModalBase = { P.AMExc, P.BMExc, P.CMExc };
         static readonly int[] SpecBase = { P.ASpSpeed, P.BSpSpeed, P.CSpSpeed };
+        static readonly int[] ImpBase = { P.AHImp, P.BHImp, P.CHImp };
+        static readonly int[] ModeBase = { P.AMImp, P.BMImp, P.CMImp };
         readonly SampleLayer[] requestedSample = new SampleLayer[NoteBank.Oscillators];
         readonly SampleLayer[] userSample = new SampleLayer[NoteBank.Oscillators];
         readonly string[] sampleName = { "", "", "" };
@@ -255,7 +257,16 @@ namespace NeoBuzz.DyeEssence
                 os.Stretch = values.F(h + (P.AHStretch - P.AHSet)) / 100f;
                 os.Damp = values.F(h + (P.AHDamp - P.AHSet));
                 int sp = SpecBase[o];
-                if (os.Type == SlotType.Spectral)
+                int ib = ImpBase[o], mb = ModeBase[o];
+                os.ImpOn = values.Choice(ib) == 1;
+                os.ImpFrom = values.F(ib + (P.AHImpFrom - P.AHImp));
+                os.ImpSpan = values.F(ib + (P.AHImpSpan - P.AHImp));
+                os.ImpRatio = values.F(ib + (P.AHImpRatio - P.AHImp));
+                os.ModeOn = values.Choice(mb) == 1;
+                os.ModeStart = values.F(mb + (P.AMImpStart - P.AMImp));
+                os.ModeLen = values.F(mb + (P.AMImpLen - P.AMImp));
+                os.ModeDecay = values.F(mb + (P.AMImpDecay - P.AMImp)) / 100f;
+                if (os.Type == SlotType.Spectral || os.Type == SlotType.Harmonic && os.ImpOn || os.Type == SlotType.Modal && os.ModeOn)
                 {
                     int src = values.Choice(m);
                     var model = src >= SampleSources.Count ? userModel[o] : SpectralSources.Get(src);

@@ -17,8 +17,8 @@ namespace ReBuzz.Studio.Views.Browser
     internal sealed class FilterBar : DockPanel
     {
         const string All = "All categories";
-        readonly ComboBox category = new ComboBox { FontSize = 12, MinHeight = 26, HorizontalAlignment = HorizontalAlignment.Stretch, Padding = new Thickness(8, 2) };
-        readonly ToggleButton favourites = new ToggleButton { Content = "★", FontSize = 13, MinHeight = 26, MinWidth = 28, Padding = new Thickness(6, 0), Margin = new Thickness(4, 0, 0, 0), Focusable = false };
+        readonly ComboBox category = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
+        readonly ToggleButton favourites = StudioButtons.KeepFocus(new ToggleButton { Content = "★", Margin = new Thickness(4, 0, 0, 0) });
 
         public FilterBar()
         {
@@ -67,20 +67,12 @@ namespace ReBuzz.Studio.Views.Browser
             if (detail && e.UseFor.Length > 0) stack.Children.Add(Small(e.UseFor));
 
             bool fav = model.IsFavourite(e);
-            var star = new Button
+            var star = StudioButtons.KeepFocus(StudioButtons.Icon(new Button
             {
                 Content = fav ? "★" : "☆",
-                FontSize = 13,
-                Padding = new Thickness(4, 0),
-                MinWidth = 24,
-                MinHeight = 24,
-                Focusable = false,
-                Background = Brushes.Transparent,
                 Foreground = fav ? StudioTokens.AccentBrush : StudioTokens.TextSecondaryBrush,
                 VerticalAlignment = VerticalAlignment.Top,
-            };
-            ToolTip.SetTip(star, fav ? "Remove from favourites" : "Add to favourites");
-            AutomationProperties.SetName(star, (fav ? "Unfavourite " : "Favourite ") + e.Name);
+            }, (fav ? "Unfavourite " : "Favourite ") + e.Name, fav ? "Remove from favourites" : "Add to favourites"));
             star.Click += (s, a) => model.ToggleFavourite(e);
             DockPanel.SetDock(star, Dock.Right);
 

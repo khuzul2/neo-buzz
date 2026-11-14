@@ -17,8 +17,8 @@ namespace ReBuzz.AgentTests
     [TestFixture]
     public class GuideTests
     {
-        internal static readonly string[] Topics = { "workflow", "concepts", "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain", "dye-essence-in-depth", "dye-essence-effects", "neo-eq-in-depth", "app-control", "troubleshooting" };
-        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Clipper", "Neo Comp", "Neo De-esser", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Gate", "Neo Imager", "Neo Limiter", "Neo Low End", "Neo Multiband", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Strip", "Neo Tape", "Neo Transient", "Neo Utility", "Neo Verb", "Neo Wave", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler" };
+        internal static readonly string[] Topics = { "workflow", "concepts", "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain", "dye-essence-in-depth", "dye-essence-analysis", "dye-essence-effects", "neo-eq-in-depth", "app-control", "troubleshooting" };
+        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Clipper", "Neo Comp", "Neo De-esser", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo Envelope", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Gate", "Neo Imager", "Neo Limiter", "Neo LFO", "Neo Low End", "Neo Macro", "Neo Multiband", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Step", "Neo Strip", "Neo Tape", "Neo Transient", "Neo Utility", "Neo Verb", "Neo Wave", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
 
         /// <summary>Neo gear being built in parallel (phase A4): parameter names aren't final, so guides give them moves in units and say to read the names with machine_describe.</summary>
         static readonly string[] PendingGear = System.Array.Empty<string>();
@@ -63,6 +63,10 @@ namespace ReBuzz.AgentTests
             ["machine_describe"] = new[] { "machine", "group", "value_table", "table_points" },
             ["param_set"] = new[] { "machine", "changes", "allow_unsafe" },
             ["param_get"] = new[] { "machine", "params", "track" },
+            // neo-patch.md §3 (ReBuzz/Agent/ModulationTools.cs): the canvas modulators.
+            ["modulate"] = new[] { "source", "target_machine", "param", "depth", "polarity", "range", "curve", "track", "slot", "listen_machine", "listen_track" },
+            ["modulation_list"] = new[] { "machine" },
+            ["modulation_remove"] = new[] { "source", "slot", "target_machine", "param", "all" },
             ["pattern_list"] = new[] { "machine" },
             ["pattern_create"] = new[] { "machine", "name", "length_beats" },
             ["pattern_delete"] = new[] { "machine", "pattern" },
@@ -294,7 +298,7 @@ namespace ReBuzz.AgentTests
                 Assert.That(curated, Does.StartWith("## How it sounds"), gear);
                 Assert.That(MachineManual.Curated(MachineManual.Slug(gear)), Is.EqualTo(curated), "found by its slug too");
             }
-            Assert.That(MachineManual.Curated("Jeskola Bass"), Is.Null);
+            Assert.That(MachineManual.Curated("FSM Infector"), Is.Null, "a curated machine of a family not done yet has no page");
             Assert.That(MachineManual.Slug("Neo FM6"), Is.EqualTo("neo-fm6"));
             Assert.That(MachineManual.UriFor("Neo Poly"), Is.EqualTo("rebuzz://machines/neo-poly/manual"));
             Assert.That(MachineManual.SlugOf("rebuzz://machines/Neo%20Poly/manual"), Is.EqualTo("neo-poly"));
@@ -312,7 +316,8 @@ namespace ReBuzz.AgentTests
                 if (!text.StartsWith($"# {m.Gear} manual\n")) problems.Add($"{m.Gear}: title");
                 if (!text.Contains(m.Summary)) problems.Add($"{m.Gear}: summary");
                 if (!text.Contains("## How it sounds")) problems.Add($"{m.Gear}: curated page");
-                if (names.Count == 0) problems.Add($"{m.Gear}: no presets found");
+                // The canvas modulators (neo-patch.md §3) have no presets: their setup is the targets, which a song holds.
+                if (names.Count == 0 && !m.Gear.StartsWith("Neo LFO") && m.Gear is not ("Neo Envelope" or "Neo Step" or "Neo Macro")) problems.Add($"{m.Gear}: no presets found");
                 foreach (var p in names)
                     if (!text.Contains("\n- " + p + "\n")) problems.Add($"{m.Gear}: preset {p} not listed");
                 // Every group appears, as its own section or inside a family heading ("Operator 1 … Operator 6").
@@ -702,9 +707,9 @@ namespace ReBuzz.AgentTests
             var server2 = new McpServer(new ServerInfo { Name = "t", Title = "t", Version = "1" }, gear);
             var listed = TestTools.CallTool(server2, "guide", new JsonObject()).Data["manuals"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
             Assert.That(listed, Is.SupersetOf(profiled.Keys).And.SupersetOf(NeoGear));
-            var draft = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "jeskola organ" });   // U7 made Noise Generator's from its source
+            var draft = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "bigyo wood one" });   // a draft: K2 batch b curated the Jeskola ones
             Assert.That(draft.Error, Is.False, draft.Text);
-            Assert.That(draft.Data["markdown"]!.GetValue<string>(), Does.StartWith("# Jeskola Organ manual").And.Contain("profiled draft"));
+            Assert.That(draft.Data["markdown"]!.GetValue<string>(), Does.StartWith("# Bigyo Wood One manual").And.Contain("profiled draft"));
             var sh101 = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "Pedal SH101" }).Data["markdown"]!.GetValue<string>();
             Assert.That(sh101, Does.Contain("**Filter cutoff** (`filter.cutoff`)").And.Contain("## Quirks"));
             var typo = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "Pedal SH-1O1" });

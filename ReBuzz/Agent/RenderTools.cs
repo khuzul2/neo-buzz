@@ -204,7 +204,7 @@ namespace ReBuzz.Agent
                         if (diverged.Count > 0) result["diverged"] = diverged;
                         if (meter != null) result["cpu"] = meter.Json();
                         return result;
-                    }, c.Cancellation);
+                    }, c.Cancellation, c.Background);
                     // Fork (mastering-tools.md §5.15): the Opus preview, off the engine thread: the song is back as it was by now.
                     string opusLine = "";
                     if (opusKbps != null)
@@ -392,6 +392,8 @@ namespace ReBuzz.Agent
                     song.LoopStart = from;
                     song.PlayPosition = from;
 
+                    // Fork (ux-overhaul.md P4a): every machine that can goes back to a new machine's state, so a render repeats within one process.
+                    foreach (var m in machines) ResetForRender(m);
                     var wm = new WorkManager(core, new WorkThreadEngine(1), 0, core.EngineSettings);
                     var buffer = new float[512];
                     // A6: every render starts on a tick boundary, wherever the engine's tick phase was
@@ -552,6 +554,15 @@ namespace ReBuzz.Agent
             public void Stop() { on = false; connection.Tap -= handler; }
 
             public StereoAudio Audio(int rate) => new() { Left = left.ToArray(), Right = right.ToArray(), Rate = rate };
+        }
+
+        /// <summary>A machine's own offline-render reset (a public void ResetForRender() on its managed machine), if it has one.</summary>
+        static void ResetForRender(MachineCore m)
+        {
+            var target = m.ManagedMachine;
+            if (target == null) return;
+            try { target.GetType().GetMethod("ResetForRender", Type.EmptyTypes)?.Invoke(target, null); }
+            catch (Exception) { }
         }
 
         /// <summary>A machine's own "still preparing" flag (a public bool Busy on its managed machine), if it has one.</summary>

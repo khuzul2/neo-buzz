@@ -31,7 +31,7 @@ Mid/high crossover = 3000 Hz
 preset "Mid — Telephone"
 comment "Only the mids: lows and highs removed"
 Low gain = -24 dB
-Mid gain = 0 dB
+Mid gain = -1 dB
 High gain = -24 dB
 Low/mid crossover = 500 Hz
 Mid/high crossover = 3000 Hz

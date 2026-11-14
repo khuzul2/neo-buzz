@@ -315,17 +315,22 @@ namespace NeoBuzz.Editor
             CanResize = false;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             Background = KitTheme.Panel;
-            var stack = new StackPanel { Margin = new Thickness(12) };
-            stack.Children.Add(new TextBlock { Text = "Name (\"Group — Name\" files it in a group)", Foreground = KitTheme.Text, Margin = new Thickness(0, 0, 0, 6) });
-            box = new TextBox { Text = initial ?? "", Margin = new Thickness(0, 0, 0, 10) };
+            ShowInTaskbar = false;
+            // The studio's dialog (ReBuzz.Studio's StudioDialog; the kit doesn't reference it): the same classes, margin and rhythm.
+            var stack = new StackPanel { Margin = new Thickness(20), Spacing = 12 };
+            stack.Children.Add(new TextBlock { Text = "Name (\"Group — Name\" files it in a group)", Foreground = KitTheme.Text });
+            box = new TextBox { Text = initial ?? "" };
             stack.Children.Add(box);
-            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-            var ok = new Button { Content = "Save", Width = 70, IsDefault = true, Margin = new Thickness(0, 0, 6, 0) };
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8 };
+            var ok = new Button { Content = "Save", IsDefault = true };
+            ok.Classes.Add("dialog");
+            ok.Classes.Add("accent");
             ok.Click += (s, e) => { result = box.Text; Close(); };
-            var cancel = new Button { Content = "Cancel", Width = 70, IsCancel = true };
+            var cancel = new Button { Content = "Cancel", IsCancel = true };
+            cancel.Classes.Add("dialog");
             cancel.Click += (s, e) => Close();
-            buttons.Children.Add(ok);
-            buttons.Children.Add(cancel);
+            if (OperatingSystem.IsMacOS()) { buttons.Children.Add(cancel); buttons.Children.Add(ok); }
+            else { buttons.Children.Add(ok); buttons.Children.Add(cancel); }
             stack.Children.Add(buttons);
             Content = stack;
             Opened += (s, e) => { box.Focus(); box.SelectAll(); };
