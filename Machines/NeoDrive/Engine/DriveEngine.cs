@@ -4,6 +4,7 @@
 // the same latency. Pure: tested by NeoBuzz.MachineTests.
 
 using System;
+using System.Runtime.CompilerServices;
 using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Drive
@@ -24,6 +25,22 @@ namespace NeoBuzz.Drive
         float sag;                // tube sag depth
         double emphasisDb;        // tape
         float autoGain = 1;
+
+        // The auto-gain probe (4096 samples of shaper) costs ~50x a block, so it runs only when an input it depends on changed
+        // (drive gain, bias, curve, emphasis), never for Mix / Output / filters. An isolated change probes at once (static
+        // renders and one-off edits are exactly as before). A change that follows another within ProbeInterval samples is
+        // motion (automation, a modulator writing every sub-block): probes then run at most once per ProbeInterval samples of
+        // audio, counted in samples so offline renders stay deterministic, the output glide covers the step, and the last
+        // value is probed as soon as the interval ends. No clock, no allocation.
+        const long ProbeInterval = 1024;
+        long sampleCount;                         // samples processed
+        long lastProbeAt = long.MinValue / 2;     // sampleCount at the last probe
+        long lastChangeAt = long.MinValue / 2;    // sampleCount at the last change of a probe input
+        bool probeValid, probePending;
+        bool keyAuto;
+        DriveMode keyMode;
+        double keyHard, keyNeg, keyEmph, keyDrive, keyBias;
+        float outputGain = 1;                     // the Output parameter's gain (before auto-gain)
 
         // Deterministic pink noise (RMS 1, Gaussian) for the auto-gain estimate.
         static readonly float[] Probe = MakeProbe();
@@ -124,10 +141,11 @@ namespace NeoBuzz.Drive
 
             float driveGain = (float)DspMath.DbToGain(values.Value(P.Drive));
             float b = values.F(P.Bias) * 0.6f;
-            autoGain = values.On(P.AutoGain) ? EstimateCompensation(shaper, driveGain, b) : 1f;
+            outputGain = (float)DspMath.DbToGain(values.Value(P.Output));
+            UpdateCompensation(driveGain, b, force);
             drive.Target = driveGain;
             bias.Target = b;
-            output.Target = (float)DspMath.DbToGain(values.Value(P.Output)) * autoGain;
+            output.Target = outputGain * autoGain;
             mix.Target = values.F(P.Mix);
             if (force)
             {
@@ -137,6 +155,47 @@ namespace NeoBuzz.Drive
                 mix.Reset(mix.Target);
             }
             values.Clean();
+        }
+
+        /// <summary>
+        /// Brings autoGain up to date for the probe's inputs (see ProbeInterval): unchanged inputs keep the last answer; a
+        /// change in motion that falls inside the interval is left pending (ResolvePending runs it).
+        /// </summary>
+        void UpdateCompensation(float driveGain, float b, bool force)
+        {
+            bool on = values.On(P.AutoGain);
+            if (!on)
+            {
+                autoGain = 1f;
+                probeValid = false;
+                probePending = false;
+                return;
+            }
+            if (probeValid && !force && keyAuto && keyHard == shaper.Hardness && keyNeg == shaper.NegLevel
+                && keyEmph == emphasisDb && keyDrive == driveGain && keyBias == b && keyMode == shaper.Mode)
+                return;                                // Mix, Output, filters, Quality: nothing the probe depends on
+            keyAuto = true; keyMode = shaper.Mode; keyHard = shaper.Hardness; keyNeg = shaper.NegLevel;
+            keyEmph = emphasisDb; keyDrive = driveGain; keyBias = b;
+            bool inMotion = sampleCount - lastChangeAt < ProbeInterval;
+            lastChangeAt = sampleCount;
+            if (force || !probeValid || !inMotion || sampleCount - lastProbeAt >= ProbeInterval)
+            {
+                autoGain = EstimateCompensation(shaper, driveGain, b);
+                lastProbeAt = sampleCount;
+                probeValid = true;
+                probePending = false;
+            }
+            else probePending = true;
+        }
+
+        /// <summary>Runs the probe a motion left pending, once ProbeInterval samples have passed since the last one.</summary>
+        void ResolvePending()
+        {
+            if (!probePending || sampleCount - lastProbeAt < ProbeInterval) return;
+            autoGain = EstimateCompensation(shaper, (float)keyDrive, (float)keyBias);
+            lastProbeAt = sampleCount;
+            probePending = false;
+            output.Target = outputGain * autoGain;
         }
 
         static float[] MakeProbe()
@@ -159,6 +218,7 @@ namespace NeoBuzz.Drive
         /// The output gain that keeps a −18 dBFS RMS pink-noise level through emphasis, drive,
         /// curve and de-emphasis (run on a probe whenever those change; no allocation).
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         float EstimateCompensation(Shaper s, float driveGain, float bias)
         {
             const double level = 0.125;
@@ -211,6 +271,7 @@ namespace NeoBuzz.Drive
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);
+            ResolvePending();
             InMeter.Feed(left, right, n);
             int pad = Latency - FirOversampler.LatencyFor(factor);
 
@@ -275,6 +336,7 @@ namespace NeoBuzz.Drive
                 c.LowCut.Flush(); c.PreEmphasis.Flush(); c.DeEmphasis.Flush();
                 c.TiltLow.Flush(); c.TiltHigh.Flush(); c.HighCut.Flush();
             }
+            sampleCount += n;
             OutMeter.Feed(left, right, n);
         }
     }
