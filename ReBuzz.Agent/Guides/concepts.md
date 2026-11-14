@@ -3,16 +3,21 @@
 ## Machines and the graph
 - A song is a graph of **machines**. **Generators** make sound (synths, samplers, drum machines). **Effects** process the sound fed into them. **Master** is the output; whatever reaches it is heard.
 - **Connections** carry audio from one machine's output to another's input, each with its own gain (dB) and pan. A machine can feed several others (sends) and take several inputs (they mix). Some effects have a second input, such as Neo Comp's "Sidechain" (`connect(…, input="Sidechain")`).
+- **Control machines** (Neo LFO, Neo Envelope, Neo Step, Neo Macro) have no audio: they move other machines' parameters (`modulate`) and are added unconnected (`connect_to="none"`). **Neo Patch** is a synth built from nodes you wire (`patch_*` tools); **Neo Learn** machines are small synths with twelve controls, made for learning; **Dye Essence** has three engine slots, each one of seven engines.
 - Machine names are unique in a song; tools address machines by name. Gear is the machine type ("Neo Poly"); a song can hold many machines of one gear.
 
 ## Parameters
 - **Global parameters** shape the whole machine (cutoff, decay, mix). **Track parameters** belong to each of the machine's tracks (Note and Velocity on Neo synths: one track per voice played from a pattern). Tools take `track` for those.
-- Values are written in the parameter's unit. Neo machines publish exact units; older machines are read through the text they show for each value.
+- Values are written in the parameter's unit. Neo machines publish exact units; older machines are read through the text they show for each value. Neo and Dye Essence controls also carry a `how` and a `sound` sentence (`machine_describe`): how the control changes the sound and what you will hear.
+- Older machines have Neo successors for the common ones (`machine_replace`: `guide(topic="migrating-songs")`).
 
 ## Patterns, the arrangement and the session grid
 - A **pattern** belongs to one machine and holds its notes and automation (a parameter's movement, played whenever the pattern plays). Its length is in beats.
 - The **arrangement** (sequence) places patterns on a timeline, one lane per machine. A pattern placed at beat 16 plays from there until it ends or the lane's next pattern starts. The song plays from 0 to its end; the loop range is what plays on repeat. **Markers** name its sections ("Verse", "Drop").
 - The **Session View** grid launches patterns as clips, in time, a scene (a row) or a clip at a time: `session_get`, `session_clip_set`, `session_scene_set`. Renders play the arrangement, so a finished song lives there.
+
+## Undo, history and snapshots
+- Every changing call is one undo step (`undo`, `history_list`); `snapshot_save` keeps the whole song under a name and `snapshot_restore` puts it back, glitch-free while it plays. The user's edits share the same history.
 
 ## Time
 - Tools speak **beats** from the song start (0 = the start), or "bar.beat" text ("17.1" = bar 17, beat 1; bars and beats count from 1). Inside a pattern, times count from the pattern's start.
@@ -30,7 +35,7 @@
 
 ## Headless and studio
 - **Headless** (`NeoBuzzLive.exe --agent`, or `rebuzz-headless --agent`): no window and no audio device. You hear only through `render`.
-- **Studio**: the user's NeoBuzz Live with its window open; they see every change and share the undo history. Rendering pauses their audio output for its duration.
+- **Studio**: the user's NeoBuzz Live with its window open; they see every change and share the undo history. Rendering pauses their audio output for its duration. The live tools (`transport`, `session_launch`, `meters_read`) play with them: `guide(topic="live-performance")`; if the sound drops out, `guide(topic="performance")`.
 
 ## Checklist
 - [ ] You know the tempo, beats per bar and ticks per beat: `studio_status`.

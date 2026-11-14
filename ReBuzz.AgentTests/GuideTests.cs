@@ -17,7 +17,7 @@ namespace ReBuzz.AgentTests
     [TestFixture]
     public class GuideTests
     {
-        internal static readonly string[] Topics = { "workflow", "concepts", "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain", "dye-essence-in-depth", "dye-essence-analysis", "dye-essence-effects", "neo-eq-in-depth", "build-a-synth", "app-control", "troubleshooting" };
+        internal static readonly string[] Topics = { "workflow", "concepts", "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain", "dye-essence-in-depth", "dye-essence-analysis", "dye-essence-effects", "neo-eq-in-depth", "build-a-synth", "app-control", "live-performance", "dye-sound-design", "migrating-songs", "teaching", "performance", "recipes", "troubleshooting" };
         static readonly string[] NeoGear = { "Neo Analyzer", "Neo Clipper", "Neo Comp", "Neo De-esser", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo Envelope", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Gate", "Neo Imager", "Neo Limiter", "Neo LFO", "Neo Low End", "Neo Macro", "Neo Multiband", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Step", "Neo Strip", "Neo Tape", "Neo Transient", "Neo Utility", "Neo Verb", "Neo Wave", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
 
         /// <summary>Neo gear being built in parallel (phase A4): parameter names aren't final, so guides give them moves in units and say to read the names with machine_describe.</summary>
@@ -265,6 +265,14 @@ namespace ReBuzz.AgentTests
             ("master", new Dictionary<string, string>()),
             ("critique", new Dictionary<string, string>()),
             ("critique", new Dictionary<string, string> { ["scope"] = "Drop" }),
+            ("arrange", new Dictionary<string, string> { ["form"] = "house", ["goals"] = "a long build into the drop" }),
+            ("arrange", new Dictionary<string, string>()),
+            ("perform", new Dictionary<string, string> { ["set"] = "intro, groove, drop", ["controller"] = "knob 1 on the bass cutoff" }),
+            ("perform", new Dictionary<string, string>()),
+            ("teach", new Dictionary<string, string> { ["topic"] = "FM depth", ["machine"] = "Neo Learn FM", ["level"] = "beginner" }),
+            ("teach", new Dictionary<string, string> { ["topic"] = "filter resonance" }),
+            ("migrate", new Dictionary<string, string> { ["machines"] = "Reverb, Bass", ["keep_old"] = "yes" }),
+            ("migrate", new Dictionary<string, string>()),
         };
 
         static string Render(string prompt, IReadOnlyDictionary<string, string> args) =>
@@ -615,7 +623,7 @@ namespace ReBuzz.AgentTests
         public void PromptsRenderWithTheirArguments()
         {
             var prompts = GuideLibrary.Prompts();
-            Assert.That(prompts.Select(p => p.Name).ToList(), Is.EquivalentTo(new[] { "compose", "design-sound", "mix", "master", "critique" }));
+            Assert.That(prompts.Select(p => p.Name).ToList(), Is.EquivalentTo(new[] { "compose", "design-sound", "mix", "master", "critique", "arrange", "perform", "teach", "migrate" }));
 
             string compose = Render("compose", new Dictionary<string, string> { ["genre"] = "synthwave", ["mood"] = "melancholic", ["tempo"] = "92", ["length"] = "2 minutes" });
             Assert.That(compose, Does.StartWith("Compose a melancholic synthwave track in NeoBuzz Live at 92 BPM, 2 minutes long."));
@@ -653,6 +661,76 @@ namespace ReBuzz.AgentTests
                 Assert.That(critique, Does.Contain($"guide(topic=\"{t}\")"), "every checklist comes with it");
             Assert.That(Render("critique", new Dictionary<string, string> { ["scope"] = "Drop" }), Does.Contain("render(section=\"Drop\")"));
             Assert.That(!Render("critique", new Dictionary<string, string> { ["scope"] = "mix" }).Contains("guide(topic=\"mastering\")"), "a scope picks its checklists");
+
+            // K4: arrange, perform, teach and migrate.
+            string arrange = Render("arrange", new Dictionary<string, string> { ["form"] = "house", ["goals"] = "a long build into the drop" });
+            Assert.That(arrange, Does.StartWith("Arrange the current song in NeoBuzz Live to the House form, with these goals: a long build into the drop."));
+            Assert.That(arrange, Does.Contain("# Composition").And.Contain("# Recipes"), "the guides come with it");
+            Assert.That(Render("arrange", new Dictionary<string, string> { ["form"] = "intro, verse, chorus" }), Does.Contain("with this form: intro, verse, chorus"));
+            Assert.That(Render("arrange", new Dictionary<string, string>()), Does.Contain("the song's own genre template"));
+
+            string perform = Render("perform", new Dictionary<string, string> { ["set"] = "intro, groove, drop", ["controller"] = "knob 1 on the bass cutoff" });
+            Assert.That(perform, Does.StartWith("Prepare and play the current song live in NeoBuzz Live: intro, groove, drop, with the controller: knob 1 on the bass cutoff."));
+            Assert.That(perform, Does.Contain("# Live performance").And.Contain("# Performance and latency"));
+            Assert.That(perform, Does.Contain("`midi_learn(machine=…"));
+            Assert.That(Render("perform", new Dictionary<string, string>()), Does.Contain("ask whether a controller is connected"));
+
+            string teach = Render("teach", new Dictionary<string, string> { ["topic"] = "FM depth", ["machine"] = "Neo Learn FM", ["level"] = "intermediate" });
+            Assert.That(teach, Does.StartWith("Teach this idea in sound design, at intermediate level: \"FM depth\", on Neo Learn FM."));
+            Assert.That(teach, Does.Contain("# Teaching sound design"));
+            Assert.That(teach, Does.Contain("rebuzz://machines/neo-learn-fm/manual"), "the machine's page comes with it");
+            Assert.That(Render("teach", new Dictionary<string, string> { ["topic"] = "filter resonance" }), Does.Contain("at beginner level").And.Contain("choose the Neo Learn machine for the idea"));
+
+            string migrate = Render("migrate", new Dictionary<string, string> { ["machines"] = "Reverb, Bass", ["keep_old"] = "yes" });
+            Assert.That(migrate, Does.StartWith("Move the current song's classic machines onto their Neo successors in NeoBuzz Live: Reverb, Bass."));
+            Assert.That(migrate, Does.Contain("Each old machine is left muted").And.Contain("# Migrating old songs to Neo"));
+            string migrateAll = Render("migrate", new Dictionary<string, string>());
+            Assert.That(migrateAll, Does.Contain("every machine that has one").And.Not.Contain("Each old machine is left muted"));
+            foreach (var p in prompts.Where(p => p.Arguments.Any(a => a.Required)))
+                Assert.That(p.Name is "compose" or "design-sound" or "teach", Is.True, $"{p.Name} has a required argument");
+        }
+
+        /// <summary>Gear named in the migration guide's pairs table: "Neo Verb" row, "Jeskola Reverb, Pedal Plate" cell.</summary>
+        [Test]
+        public void TheMigrationGuidesPairsAreTheSuccessorMappings()
+        {
+            string guide = GuideLibrary.Get("migrating-songs")!.Replace("\r\n", "\n");
+            string table = guide.Substring(guide.IndexOf("## The pairs", StringComparison.Ordinal));
+            table = table.Substring(0, table.IndexOf("\n## ", 5, StringComparison.Ordinal));
+            var named = new HashSet<(string From, string To)>();
+            foreach (Match row in Regex.Matches(table, @"^\| (Neo [^|]+?) \| ([^|]+) \|$", RegexOptions.Multiline).Where(r => r.Groups[1].Value != "Neo successor"))
+                foreach (var machine in row.Groups[2].Value.Split(", ").Select(m => Regex.Replace(m, @" \(.*\)$", "").Trim()))
+                    named.Add((machine, row.Groups[1].Value));
+            var actual = ReBuzz.Agent.Model.SuccessorLibrary.All.Select(m => (m.From, m.To)).ToHashSet();
+            Assert.That(named.Except(actual).ToList(), Is.Empty, "pairs the guide names that have no mapping");
+            Assert.That(actual.Except(named).ToList(), Is.Empty, "mappings the guide's table lacks");
+        }
+
+        [Test]
+        public void EveryRecipeHasStepsAndAResult()
+        {
+            string guide = GuideLibrary.Get("recipes")!.Replace("\r\n", "\n");
+            var recipes = Regex.Matches(guide, @"^### (\S+)\n(.*?)(?=^### |^## )", RegexOptions.Multiline | RegexOptions.Singleline).ToList();
+            Assert.That(recipes.Count, Is.GreaterThanOrEqualTo(8));
+            foreach (var r in recipes)
+            {
+                string body = r.Groups[2].Value;
+                var steps = Regex.Matches(body, @"^\d+\. `([a-z_]+)\(.*\)`$", RegexOptions.Multiline).ToList();
+                Assert.That(steps.Count, Is.GreaterThanOrEqualTo(3), r.Groups[1].Value);
+                Assert.That(body, Does.Contain("\nResult: "), r.Groups[1].Value + " says what to check");
+                Assert.That(Regex.Matches(body, @"^\d+\. ", RegexOptions.Multiline).Count, Is.EqualTo(steps.Count), r.Groups[1].Value + ": every step is one backticked call (RecipeTests runs them)");
+                foreach (var s in steps) Assert.That(KnownTools.ContainsKey(s.Groups[1].Value), Is.True, $"{r.Groups[1].Value}: {s.Groups[1].Value}");
+            }
+        }
+
+        [Test]
+        public void TheWorkflowGuideListsEveryGuideAndPrompt()
+        {
+            string workflow = GuideLibrary.Get("workflow")!;
+            foreach (var t in Topics.Where(t => t != "workflow"))
+                Assert.That(workflow, Does.Contain($"`{t}`"), $"workflow's guide table names {t}");
+            foreach (var p in GuideLibrary.Prompts())
+                Assert.That(workflow, Does.Contain(p.Name), $"workflow names the {p.Name} prompt");
         }
 
         [Test]

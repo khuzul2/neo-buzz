@@ -1,6 +1,6 @@
 #nullable disable
-// Agent server (docs/specs/mcp-server.md §6, phase A5): the prompts (slash commands in Claude
-// Code): compose, design-sound, mix, master, critique. Each expands to a step plan built from the
+// Agent server (docs/specs/mcp-server.md §6, phase A5; K4 added arrange, perform, teach and migrate): the prompts (slash commands in Claude
+// Code): compose, design-sound, mix, master, critique, arrange, perform, teach, migrate. Each expands to a step plan built from the
 // tools, with the brief's numbers worked out (bars from a length, a loudness target from a
 // platform), followed by the relevant guides in full.
 
@@ -32,7 +32,7 @@ namespace ReBuzz.Agent.Guides
             (new[] { "lo-fi", "lofi", "lo fi", "chillhop" }, "Lo-fi", 80, "70–90"),
         };
 
-        /// <summary>The five prompts. The ReBuzz side passes them to McpServer (prompts: GuideLibrary.Prompts()).</summary>
+        /// <summary>The prompts. The ReBuzz side passes them to McpServer (prompts: GuideLibrary.Prompts()).</summary>
         public static IReadOnlyList<PromptDef> Prompts() => new[]
         {
             new PromptDef
@@ -94,6 +94,55 @@ namespace ReBuzz.Agent.Guides
                     new PromptArgument { Name = "scope", Description = "all (default), composition, sound, mix, master, or a section (marker) or machine name" },
                 },
                 Render = RenderCritique,
+            },
+            new PromptDef
+            {
+                Name = "arrange",
+                Title = "Arrange the song",
+                Description = "Turns the song's patterns into a form: named sections, patterns placed per section with energy changes, builds and transitions, each section rendered and its loudness read as a curve. Includes the composition and genres guides and the recipes.",
+                Arguments = new[]
+                {
+                    new PromptArgument { Name = "form", Description = "The sections, e.g. \"intro, verse, chorus, verse, chorus, outro\", or a genre whose template to follow (default: the song's own genre template)" },
+                    new PromptArgument { Name = "goals", Description = "e.g. \"a long build into the drop at bar 33, then strip back for the outro\"" },
+                },
+                Render = RenderArrange,
+            },
+            new PromptDef
+            {
+                Name = "perform",
+                Title = "Perform the song live",
+                Description = "Prepares and plays the song live in the Session View: scenes and clips with launch quantization, controllers and macros bound, a snapshot as the way back, a rehearsal, then the set with levels watched. Studio or live mode. Includes the live-performance and performance guides.",
+                Arguments = new[]
+                {
+                    new PromptArgument { Name = "set", Description = "What to play, e.g. \"intro, groove, drop, breakdown, drop, outro\" (default: the song's sections)" },
+                    new PromptArgument { Name = "controller", Description = "A MIDI controller to bind and what it should move, e.g. \"knob 1 on the bass cutoff, knob 2 on the reverb\"" },
+                },
+                Render = RenderPerform,
+            },
+            new PromptDef
+            {
+                Name = "teach",
+                Title = "Teach a sound-design idea",
+                Description = "Explains one idea in sound design to the person with a small machine, the machines' own Explain text, a lesson loop of hear, change and hear again, and measurements. Includes the teaching guide and the machine's page.",
+                Arguments = new[]
+                {
+                    new PromptArgument { Name = "topic", Description = "The idea, e.g. \"filter resonance\", \"FM depth\", \"granular clouds\", \"what a compressor does\"", Required = true },
+                    new PromptArgument { Name = "machine", Description = "A machine to teach on (\"Neo Learn FM\"); default: the agent picks the Neo Learn machine for the idea" },
+                    new PromptArgument { Name = "level", Description = "beginner (default), intermediate or advanced" },
+                },
+                Render = RenderTeach,
+            },
+            new PromptDef
+            {
+                Name = "migrate",
+                Title = "Migrate a song to Neo machines",
+                Description = "Moves the song's classic machines onto their Neo successors one at a time: a dry run, the move with a before-and-after comparison, a decision with the person, and a whole-song check. Includes the migrating-songs guide.",
+                Arguments = new[]
+                {
+                    new PromptArgument { Name = "machines", Description = "Which machines to move, e.g. \"Reverb, Bass\" (default: every machine that has a Neo successor)" },
+                    new PromptArgument { Name = "keep_old", Description = "yes: keep each old machine muted beside its successor for an A/B (default: replace it; undo brings it back)" },
+                },
+                Render = RenderMigrate,
             },
         };
 
@@ -292,6 +341,137 @@ Plan.
                 sb.Append("\n### ").Append(Title(t)).Append(" (guide(topic=\"").Append(t).Append("\") has the details)\n\n")
                   .Append(Regex.Replace(list, @"^## Checklist\s*", "")).Append('\n');
             }
+            return sb.ToString();
+        }
+
+        // ---- arrange ---------------------------------------------------------------------------
+
+        static string RenderArrange(IReadOnlyDictionary<string, string> args)
+        {
+            string form = Arg(args, "form");
+            string goals = Arg(args, "goals");
+            (string[] Names, string Template, int Bpm, string Range) g = form == null ? default : Genres.FirstOrDefault(x => x.Names.Any(n => string.Equals(n, form, StringComparison.OrdinalIgnoreCase)));
+            var sb = new StringBuilder();
+            sb.Append($"Arrange the current song in {Product.Name}");
+            if (form != null) sb.Append(g.Names != null ? $" to the {g.Template} form" : $" with this form: {form}");
+            if (goals != null) sb.Append($", with these goals: {goals}");
+            sb.Append(".\n\n");
+            sb.Append(g.Names != null ? $"Form: the \"{g.Template}\" template in the genres guide below (tempo {g.Range} BPM).\n" :
+                form != null ? "Form: the sections as given; use the genres guide's nearest template for their lengths and energy.\n" :
+                "Form: the song's own genre template in the genres guide below; if the genre isn't clear, ask which.\n");
+            sb.Append(@"
+Plan. Arrange with what exists: write new patterns only where a section has nothing to play. Render each section before moving on.
+1. Inventory: `studio_status`, `machine_list`, `pattern_list(machine=…)` for each source, `arrangement_get` and `session_get` (what is already placed or launched). Keep what the person placed; ask before clearing.
+2. Back-up: `snapshot_save(name=""arrange 0"")`.
+3. Sections: `arrangement_markers(set=[…])`, each section at its bar (""9.1"" is bar 9), lengths in 4- and 8-bar phrases, from the form.
+4. Layers per section from the genre's energy table: which machine plays where. `arrangement_place(machine=…, pattern=…, at=[…])` for each; add or remove a layer every 8 bars; keep the drums and bass present through the high-energy sections, and strip them for breakdowns.
+5. Transitions: a build before each drop (a filter or reverb-send rise with `automation_write`, or one Neo Macro moving several parameters: `modulate`), a fill in the last bar before a change (`notes_write` into a fill pattern), a break (a bar of silence or a reverse tail) before the biggest hit.
+6. Check every section as you go: `render(section=…)` then `analyze(source=…, metrics=[""loudness"", ""peaks""])`. At the end `render()` the whole song and `plot(kind=""loudness"", sources=[…])`: the energy curve should rise and fall as the form says, the loudest part where the form puts its peak.
+7. Fix what the curve shows: a section that is too loud (remove a layer, lower a connection gain with `connection_set`) or too flat (add a layer or an automation lift).
+8. `song_save`. Report the form (sections and bars), the layers per section, and the measured loudness per section.
+");
+            AppendGuides(sb, "composition", "genres", "recipes");
+            return sb.ToString();
+        }
+
+        // ---- perform ---------------------------------------------------------------------------
+
+        static string RenderPerform(IReadOnlyDictionary<string, string> args)
+        {
+            string set = Arg(args, "set");
+            string controller = Arg(args, "controller");
+            var sb = new StringBuilder();
+            sb.Append($"Prepare and play the current song live in {Product.Name}");
+            if (set != null) sb.Append($": {set}");
+            if (controller != null) sb.Append($", with the controller: {controller}");
+            sb.Append(".\n\n");
+            sb.Append(@"This is for studio or live mode, with the person listening: `studio_status` says the mode. Headless, you cannot play live: tell them, and rehearse by rendering each scene instead (`render(section=…)`).
+Plan. Say each move before you make it; read every answer; never surprise the person.
+1. Orient: `studio_status` (mode, tempo), `session_get` (the grid), `audio_status` (device, buffer, `dropouts`).
+2. Back-up: `snapshot_save(name=""start of set"")`.
+3. Grid: ");
+            sb.Append(set != null ? $"one scene per part of the set (\"{set}\"): " : "one scene per section of the song: ");
+            sb.Append(@"`session_scene_set(scene=…, name=…, tempo_bpm=…)` and `session_clip_set(machine=…, scene=…, pattern=…, quantization=""Bar"")`, a bar-long pattern or longer in every slot that should play, `legato` for variations that should continue a phrase.
+4. Hands: ");
+            sb.Append(controller != null ? "`midi_learn(machine=…, parameter=…, timeout_seconds=20)` for each control (tell the person to move the knob, then call it), and read the result back with `midi_bindings_list`. For one knob that moves several things, a Neo Macro (`modulate`) with the controller bound to its `Value`." :
+                "ask whether a controller is connected; if so, bind it with `midi_learn` and read it back with `midi_bindings_list`; a Neo Macro (`modulate`) can put several parameters on one knob.");
+            sb.Append(@"
+5. Levels: `meters_read(machines=[…], window_seconds=2)` for each scene as it plays: the master's true peak below -1 dBTP and no clipped samples; fix levels with `connection_set` before the show.
+6. Rehearse with the person: launch each scene (`session_launch(scene=…)`), read the answer, let it land on its boundary. Agree the order and the moves.
+7. Play: one move, read the answer, next move. Between moves `transport(action=""status"")` shows what plays and what waits. If it goes wrong: `session_launch(stop=true, immediate=true)`, or `snapshot_restore(name=""start of set"")` (glitch-free while playing).
+8. Afterwards: `session_launch(back_to_arrangement=true)`, check `audio_status` `dropouts`, and `song_save` if the grid should stay.
+Do not render, export, change the audio device or the engine settings while the person is playing or listening. Report what you set up, the levels measured per scene and any dropouts.
+");
+            AppendGuides(sb, "live-performance", "performance");
+            return sb.ToString();
+        }
+
+        // ---- teach -----------------------------------------------------------------------------
+
+        static string RenderTeach(IReadOnlyDictionary<string, string> args)
+        {
+            string topic = Arg(args, "topic") ?? "an idea of your choice";
+            string machine = Arg(args, "machine");
+            string level = Arg(args, "level") ?? "beginner";
+            string gear = machine == null ? null : MachineManual.CuratedGear.FirstOrDefault(c =>
+                MachineManual.Slug(c) == MachineManual.Slug(machine) || machine.IndexOf(c, StringComparison.OrdinalIgnoreCase) >= 0);
+            var sb = new StringBuilder();
+            sb.Append($"Teach this idea in sound design, at {level} level: \"{topic}\"");
+            sb.Append(machine == null ? ".\n\n" : gear != null ? $", on {gear}.\n\n" : $", on the machine \"{machine}\".\n\n");
+            sb.Append(@"Teach with sound, not with a lecture: one idea, one control at a time, always something to hear. Use the machines' own Explain text (`how` and `sound`) for the controls, then add what it leaves out.
+Plan.
+1. Orient: `studio_status` (studio: the person listens live and sees the editor's Explain strip; headless: you will render and give them the file). Ask nothing the song or the topic already answers.
+2. Machine: ");
+            if (gear != null) sb.Append($"`machine_add(gear=\"{gear}\", name=\"Teacher\")` (or the song's machine of that gear). ");
+            else if (machine != null) sb.Append($"use \"{machine}\" if the song has it (`machine_list`); if it is a gear, `machine_add(gear=\"{machine}\", name=\"Teacher\")`. ");
+            else sb.Append("choose the Neo Learn machine for the idea (the teaching guide's table; `machine_find(intent=…)` if none fits) and `machine_add(gear=…, name=\"Teacher\")`. ");
+            sb.Append(@"Add it apart from the person's song or leave the song as you found it: remove it at the end.
+3. Read the controls: `machine_describe(machine=""Teacher"")`: the `how`, `sound`, `unit` and range of the controls the idea needs. Pick one to three.
+4. A sound to hear: `preset_load` a plain preset, a held note or a short phrase (`midi_play` in studio mode; otherwise a pattern with `notes_write`, placed with `arrangement_place`).
+5. The lesson loop, for each control: say what will happen (from `how` and `sound`), change it in steps with `param_set` while the person listens (studio: `select` and `machine_open_editor` show the Explain strip), ask what they heard, then show a number (`render` two settings, `compare`, or `plot(kind=""spectrum"", …)`).
+6. Put it back (`undo` or `preset_load`), name the idea in one sentence, and offer the next step: a neighbouring control, a second machine (`guide(topic=""build-a-synth"")`), or the idea in a mix.
+7. Clean up: remove the Teacher machine and any audition pattern (`machine_remove`, `arrangement_clear`) unless the person wants to keep them.
+At beginner level use plain words and no numbers beyond the ones you play; at intermediate add units and ranges; at advanced add the curve and why the range is spread as it is. Report what you taught and what they heard.
+");
+            AppendGuides(sb, "teaching");
+            if (gear != null)
+            {
+                string curated = MachineManual.Curated(gear);
+                if (curated != null)
+                    sb.Append("\n\n---\n\n<!-- machine page: ").Append(gear).Append(" (").Append(MachineManual.UriFor(gear)).Append(") -->\n\n# ")
+                      .Append(gear).Append("\n\n").Append(curated.Trim()).Append('\n');
+            }
+            return sb.ToString();
+        }
+
+        // ---- migrate ---------------------------------------------------------------------------
+
+        static string RenderMigrate(IReadOnlyDictionary<string, string> args)
+        {
+            string machines = Arg(args, "machines");
+            bool keepOld = string.Equals(Arg(args, "keep_old"), "yes", StringComparison.OrdinalIgnoreCase) || string.Equals(Arg(args, "keep_old"), "true", StringComparison.OrdinalIgnoreCase);
+            var sb = new StringBuilder();
+            sb.Append($"Move the current song's classic machines onto their Neo successors in {Product.Name}");
+            sb.Append(machines != null ? $": {machines}.\n\n" : ", every machine that has one.\n\n");
+            sb.Append(@"A successor sounds like itself, not like the original. Tell the person what you will move before you move it, and let them decide on anything that changes the sound beyond its tolerance.
+Plan.
+1. Inventory: `studio_status`, `machine_list`; ");
+            sb.Append(machines != null ? $"find the machines named (\"{machines}\") and check each has a successor: `gear_list(search=…)` rows carry `successor`." : "`gear_list(search=…)` rows carry `successor` for the gear that has one; list which machines can move and which cannot (those stay as they are).");
+            sb.Append(@"
+2. Reference: `render()` the song and keep its id; `snapshot_save(name=""before migration"")`.
+3. In signal order, sources first and the master chain last, for each machine:
+   a. `machine_replace(machine=…, dry_run=true)`: read the mapping, the tolerance and what has no counterpart.
+   b. `machine_replace(machine=…");
+            sb.Append(keepOld ? ", keep_old=true" : "");
+            sb.Append(@")`: read the `comparison` and the `notes`.
+   c. If it is outside its tolerance or the notes name something lost: tell the person, then keep it, retune the successor with `param_set`, or `undo`.
+4. Machines with no successor stay; say which, and name the Neo machine to build the sound on by ear if the person wants it (`guide(machine=…)` has the note).
+5. Whole song: `render()` again and `compare(a=<reference>, b=<new render>)`; `analyze(source=…, metrics=[""loudness"", ""peaks""])`: the master's true peak must not have moved by more than the comparison allows.
+6. `song_save(path=…)` under a new name; the original file stays as it was.
+");
+            if (keepOld) sb.Append("Each old machine is left muted beside its successor: listen to both, then remove the one the person does not want (`machine_remove`).\n");
+            sb.Append("Report each move with its comparison result, what stayed, and the whole-song check.\n");
+            AppendGuides(sb, "migrating-songs");
             return sb.ToString();
         }
 
