@@ -815,6 +815,100 @@ namespace NeoBuzz.MachineTests
             if (PinnedBig20 != 0) Assert.That(first, Is.EqualTo(PinnedBig20), "the render's bits, the same on every platform");
         }
 
+        // ------------------------------------------------------------------ determinism (a render is the same bytes wherever it runs)
+
+        static List<NoteEvent> Staggered()
+        {
+            // Notes starting at different blocks and across the lane groups (a lane unprimed while its neighbours play), some released early.
+            var e = new List<NoteEvent>();
+            int[] at = { 0, 0, 64, 192, 200, 1000, 1300, 4000, 9000, 9100 };
+            for (int n = 0; n < at.Length; n++) e.Add(new NoteEvent(at[n], 40 + 5 * n, 0.4f + 0.06f * n));
+            for (int n = 0; n < at.Length; n += 3) e.Add(new NoteEvent(at[n] + 6000, 40 + 5 * n, 0));
+            e.Sort((a, b) => a.Sample.CompareTo(b.Sample));
+            return e;
+        }
+
+        [Test]
+        public void EveryLaneKindGivesTheSameBitsWithPortModulationAndStaggeredNotes()
+        {
+            // The presets run an envelope into the filter's cutoff port (sampled per control tick while it moves, every lane of a group
+            // recomputed when one is unprimed): none of it may depend on the lane width, 8 on x64 and 4 on arm64.
+            for (int preset = 0; preset < PatchPresets.Names.Length; preset++)
+            {
+                float[] first = null;
+                foreach (var kind in Kinds)
+                foreach (int tick in new[] { 16 })
+                {
+                    var host = new PatchHost(PatchPresets.Build(preset), 8, Rate, kind, tick);
+                    var (l, r) = host.Render(Staggered(), 24000);
+                    var both = l.Concat(r).ToArray();
+                    Assert.That(both.Max(Math.Abs), Is.GreaterThan(0.001f), $"{PatchPresets.Names[preset]} sounds");
+                    if (first == null) first = both;
+                    else Assert.That(both.SequenceEqual(first), Is.True, $"{PatchPresets.Names[preset]}: {kind} against the scalar reference");
+                }
+            }
+        }
+
+        [Test]
+        public void ARenderDoesNotDependOnWhenABackgroundCompileFinishes()
+        {
+            // The machine is built at 48 kHz; the host says 44.1 kHz at the first block, which asks for a compile in the background.
+            // Before the fix that patch was published at whatever block the thread timing picked (a one-block correction and a state
+            // take-over in the middle of the render, up to -78 dBFS on macOS arm64). Now the render waits for it (Busy).
+            float[] Render(int delayMs, bool wait = true)
+            {
+                var rt = new PatchRuntime(48000f, LaneKind.Auto, 16) { Voices = 8, Volume = 1f, TestCompileDelayMs = delayMs };
+                rt.SetGraph(PatchPresets.Build(4));
+                rt.SetSampleRate(44100f);
+                var sw = Stopwatch.StartNew();
+                while (wait && rt.Compiling && sw.ElapsedMilliseconds < 30000) Thread.Sleep(1);
+                if (wait) Assert.That(rt.Compiling, Is.False, "the compile finished");
+                // Notes through the runtime that waited.
+                var l = new float[24000];
+                var r = new float[24000];
+                var bl = new float[PatchRuntime.Block];
+                var br = new float[PatchRuntime.Block];
+                var ev = Staggered();
+                int e = 0;
+                for (int pos = 0; pos < l.Length; pos += PatchRuntime.Block)
+                {
+                    while (e < ev.Count && ev[e].Sample <= pos)
+                    {
+                        if (ev[e].Velocity > 0f) rt.NoteOn(ev[e].Key, ev[e].Key, ev[e].Velocity); else rt.NoteOff(ev[e].Key);
+                        e++;
+                    }
+                    rt.ProcessBlock(bl, br);
+                    if (!wait && pos < 64 * 40) Thread.Sleep(2);     // blocks that take a while: the compile lands among them
+                    Array.Copy(bl, 0, l, pos, Math.Min(PatchRuntime.Block, l.Length - pos));
+                }
+                return l;
+            }
+            var a = Render(0);
+            var b = Render(150);
+            Assert.That(b.SequenceEqual(a), Is.True, "the same bytes however long the compile took");
+            // The exposure itself: a render that does not wait picks the patch up mid-way when the compile is slow.
+            Assert.That(Render(40, wait: false).SequenceEqual(a), Is.False, "(a slow compile that is not waited for does move the samples)");
+            // And the same as a runtime that was built at the host's rate to begin with.
+            var direct = new PatchHost(PatchPresets.Build(4), 8, 44100f).Render(Staggered(), 24000).L;
+            Assert.That(a.SequenceEqual(direct), Is.True, "a rate change before the first block equals building at that rate");
+        }
+
+        [Test]
+        public void TheMachinesBusyCoversTheRecompileTheHostsRateAsksFor()
+        {
+            var rt = new PatchRuntime(48000f, LaneKind.Auto, 16) { Voices = 8 };
+            rt.SetGraph(PatchPresets.Build(4));
+            Assert.That(rt.Compiling, Is.False);
+            rt.SetSampleRate(44100f);
+            var sw = Stopwatch.StartNew();
+            while (rt.Compiling && sw.ElapsedMilliseconds < 30000) Thread.Sleep(1);
+            Assert.That(rt.Compiling, Is.False);
+            rt.Voices = 12;
+            var sw2 = Stopwatch.StartNew();
+            while (rt.Compiling && sw2.ElapsedMilliseconds < 30000) Thread.Sleep(1);
+            Assert.That(rt.Compiling, Is.False);
+        }
+
         [Test]
         public void TheHostsBlockSizeDoesNotChangeTheSamples()
         {

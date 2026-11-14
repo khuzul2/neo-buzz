@@ -98,7 +98,12 @@ namespace NeoBuzz.DyeEssence
         readonly float[] spTurns = new float[Notes * MaxLanes * SpecSlots];
         // This tick's slots for the slot being worked on: the output, a tap's two frames, the sums over taps, the envelope.
         readonly float[] spAmp = new float[SpecSlots], spFreq = new float[SpecSlots];
-        readonly float[] spAmpA = new float[SpecSlots], spFreqA = new float[SpecSlots], spAmpB = new float[SpecSlots], spFreqB = new float[SpecSlots];
+        // A frame's slots are worked out again only when the frame or a control changes (a frame lasts tens of ticks): per note and slot, five taps of two
+        // frames each (the pair a tap reads moves up by one frame at a time), with the frame and the controls it was made for.
+        const int SpecTaps = 5, SpecEntries = SpecTaps * 2;
+        readonly float[] spCacheAmp = new float[Notes * Oscillators * SpecEntries * SpecSlots], spCacheFreq = new float[Notes * Oscillators * SpecEntries * SpecSlots];
+        readonly int[] spCacheFrame = new int[Notes * Oscillators * SpecEntries];
+        readonly float[] spCacheKey = new float[Notes * Oscillators * SpecEntries * 6];
         readonly float[] spSumA = new float[SpecSlots], spSumF = new float[SpecSlots];
         readonly float[] spEnv = new float[SpecSlots];
         readonly float[] spNoise = new float[SpecBands], spNoiseTarget = new float[SpecBands];
@@ -169,6 +174,27 @@ namespace NeoBuzz.DyeEssence
             return p * 1.41421356f * BitConverter.Int32BitsToSingle(((int)fl + 127) << 23);
         }
 
+        /// <summary>
+        /// <see cref="SinCosTurns"/> for four phases at once: the same operations in the same order on each lane, so the same bits as the scalar one.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static void SinCosTurns4(Vector128<float> turns, out Vector128<float> sin, out Vector128<float> cos)
+        {
+            var t = turns - Vector128.Floor(turns);
+            var x = t * Vector128.Create(4f);
+            var q = Vector128.ConvertToInt32(x);
+            var th = (x - Vector128.ConvertToSingle(q)) * Vector128.Create(1.57079637f);
+            var th2 = th * th;
+            var s = th * (Vector128.Create(1f) + th2 * (Vector128.Create(-1f / 6f) + th2 * (Vector128.Create(1f / 120f) + th2 * (Vector128.Create(-1f / 5040f) + th2 * (Vector128.Create(1f / 362880f) + th2 * Vector128.Create(-1f / 39916800f))))));
+            var c = Vector128.Create(1f) + th2 * (Vector128.Create(-0.5f) + th2 * (Vector128.Create(1f / 24f) + th2 * (Vector128.Create(-1f / 720f) + th2 * (Vector128.Create(1f / 40320f) + th2 * (Vector128.Create(-1f / 3628800f) + th2 * Vector128.Create(1f / 479001600f))))));
+            var qq = q & Vector128.Create(3);
+            var m0 = Vector128.Equals(qq, Vector128<int>.Zero).AsSingle();
+            var m1 = Vector128.Equals(qq, Vector128.Create(1)).AsSingle();
+            var m2 = Vector128.Equals(qq, Vector128.Create(2)).AsSingle();
+            sin = Vector128.ConditionalSelect(m0, s, Vector128.ConditionalSelect(m1, c, Vector128.ConditionalSelect(m2, -s, -c)));
+            cos = Vector128.ConditionalSelect(m0, c, Vector128.ConditionalSelect(m1, -s, Vector128.ConditionalSelect(m2, -c, s)));
+        }
+
         void SpecInit(int note, int o, int no)
         {
             var os = S.Osc[o];
@@ -184,6 +210,7 @@ namespace NeoBuzz.DyeEssence
                 spRngV[zb + g] = Vector128.Create(b0 | 1u, (b0 * 2654435761u) | 1u, (b0 * 40503u + 12345u) | 1u, (b0 * 2246822519u + 7u) | 1u);
             }
             hPer[no] = SpecSlots;
+            for (int e = 0; e < SpecEntries; e++) spCacheFrame[no * SpecEntries + e] = int.MinValue;
         }
 
         /// <summary>
@@ -216,10 +243,10 @@ namespace NeoBuzz.DyeEssence
         /// (and Harmonic snap and Stretch before it), Formant keep (the amplitude the frame's own envelope has at the new place), Tilt.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        void SpecFrame(SpectralModel m, int f, float[] amp, float[] freq, float l2r, float r, OscSettings os)
+        void SpecFrame(SpectralModel m, int f, float[] amp, float[] freq, int off, float l2r, float r, OscSettings os)
         {
-            Array.Clear(amp, 0, SpecSlots);
-            Array.Clear(freq, 0, SpecSlots);
+            Array.Clear(amp, off, SpecSlots);
+            Array.Clear(freq, off, SpecSlots);
             if ((uint)f >= (uint)m.Frames) return;
             int a0 = m.Start[f], a1 = m.Start[f + 1];
             if (a1 == a0) return;
@@ -277,9 +304,29 @@ namespace NeoBuzz.DyeEssence
                     shape = true;
                 }
                 if (shape) a *= Exp2F(l2a);
-                amp[s] = a;
-                freq[s] = fi * r;
+                amp[off + s] = a;
+                freq[off + s] = fi * r;
             }
+        }
+
+        /// <summary>The entry (0 or 1 of a tap's pair) holding frame <paramref name="f"/> under the present controls, made when none does; not <paramref name="avoid"/>.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        int SpecCached(int no, int tap, int f, int avoid, SpectralModel m, float l2r, float r, OscSettings os)
+        {
+            int eb = no * SpecEntries + tap * 2;
+            float fo = os.SpFormant, sn = os.SpSnap, st = os.SpStretch, ti = os.SpTilt;
+            for (int e = 0; e < 2; e++)
+            {
+                int ke = (eb + e) * 6;
+                if (spCacheFrame[eb + e] == f && spCacheKey[ke] == r && spCacheKey[ke + 1] == l2r && spCacheKey[ke + 2] == fo && spCacheKey[ke + 3] == sn
+                    && spCacheKey[ke + 4] == st && spCacheKey[ke + 5] == ti) return e;
+            }
+            int v = avoid == 0 ? 1 : avoid == 1 ? 0 : (spCacheFrame[eb] <= spCacheFrame[eb + 1] ? 0 : 1);
+            int kv = (eb + v) * 6;
+            spCacheFrame[eb + v] = f;
+            spCacheKey[kv] = r; spCacheKey[kv + 1] = l2r; spCacheKey[kv + 2] = fo; spCacheKey[kv + 3] = sn; spCacheKey[kv + 4] = st; spCacheKey[kv + 5] = ti;
+            SpecFrame(m, f, spCacheAmp, spCacheFreq, (eb + v) * SpecSlots, l2r, r, os);
+            return v;
         }
 
         /// <summary>This tick's partials and noise of a note's Spectral slot, then each voice's rotations and level steps.</summary>
@@ -324,25 +371,48 @@ namespace NeoBuzz.DyeEssence
                     int f0 = (int)Math.Floor(fpos);
                     float phi = (float)(fpos - f0);
                     if (f0 < 0) { f0 = 0; phi = 0f; }
-                    SpecFrame(m, f0, spAmpA, spFreqA, l2r, r, os);
-                    SpecFrame(m, f0 + 1, spAmpB, spFreqB, l2r, r, os);
+                    int eA = SpecCached(no, tp, f0, -1, m, l2r, r, os);
+                    int eB = SpecCached(no, tp, f0 + 1, eA, m, l2r, r, os);
+                    int oA = (no * SpecEntries + tp * 2 + eA) * SpecSlots, oB = (no * SpecEntries + tp * 2 + eB) * SpecSlots;
                     float wA = 1f - phi, wB = phi;
-                    for (int s = 0; s < SpecSlots; s++)
+                    // The two frames blended four slots at a time (lane masks for the branches: the same operations, the same bits).
+                    var vwA = Vector128.Create(wA); var vwB = Vector128.Create(wB); var vwt = Vector128.Create(wt);
+                    var vz = Vector128<float>.Zero;
+                    for (int s = 0; s < SpecSlots; s += 4)
                     {
-                        float aa = spAmpA[s], ab = spAmpB[s];
-                        float a = wA * aa + wB * ab;
-                        if (a == 0f) continue;
-                        float fr = aa > 0f && ab > 0f ? wA * spFreqA[s] + wB * spFreqB[s] : aa > 0f ? spFreqA[s] : spFreqB[s];
-                        if (taps == 1) { spAmp[s] = a; spFreq[s] = fr; }
-                        else { spSumA[s] += wt * a; spSumF[s] += wt * a * fr; }
+                        var aa = Vector128.LoadUnsafe(ref spCacheAmp[oA + s]);
+                        var ab = Vector128.LoadUnsafe(ref spCacheAmp[oB + s]);
+                        var fa = Vector128.LoadUnsafe(ref spCacheFreq[oA + s]);
+                        var fb = Vector128.LoadUnsafe(ref spCacheFreq[oB + s]);
+                        var a = vwA * aa + vwB * ab;
+                        var nz = ~Vector128.Equals(a, vz);
+                        var ga = Vector128.GreaterThan(aa, vz);
+                        var fr = Vector128.ConditionalSelect(ga & Vector128.GreaterThan(ab, vz), vwA * fa + vwB * fb, Vector128.ConditionalSelect(ga, fa, fb));
+                        if (taps == 1)
+                        {
+                            Vector128.ConditionalSelect(nz, a, vz).StoreUnsafe(ref spAmp[s]);
+                            Vector128.ConditionalSelect(nz, fr, vz).StoreUnsafe(ref spFreq[s]);
+                        }
+                        else
+                        {
+                            var wa = vwt * a;
+                            (Vector128.LoadUnsafe(ref spSumA[s]) + Vector128.ConditionalSelect(nz, wa, vz)).StoreUnsafe(ref spSumA[s]);
+                            (Vector128.LoadUnsafe(ref spSumF[s]) + Vector128.ConditionalSelect(nz, wa * fr, vz)).StoreUnsafe(ref spSumF[s]);
+                        }
                     }
                     // The residual's bands between the two frames.
                     int nb0 = f0 * SpecBands, nb1 = (f0 + 1) * SpecBands;
-                    for (int b = 0; b < SpecBands; b++)
+                    if (f0 + 1 < m.Frames)
                     {
-                        float na = f0 < m.Frames ? m.Noise[nb0 + b] : 0f, nbv = f0 + 1 < m.Frames ? m.Noise[nb1 + b] : 0f;
-                        spNoise[b] += wt * (wA * na + wB * nbv);
+                        for (int b = 0; b < SpecBands; b += 4)
+                            (Vector128.LoadUnsafe(ref spNoise[b]) + vwt * (vwA * Vector128.LoadUnsafe(ref m.Noise[nb0 + b]) + vwB * Vector128.LoadUnsafe(ref m.Noise[nb1 + b]))).StoreUnsafe(ref spNoise[b]);
                     }
+                    else
+                        for (int b = 0; b < SpecBands; b++)
+                        {
+                            float na = f0 < m.Frames ? m.Noise[nb0 + b] : 0f, nbv = f0 + 1 < m.Frames ? m.Noise[nb1 + b] : 0f;
+                            spNoise[b] += wt * (wA * na + wB * nbv);
+                        }
                 }
                 if (taps > 1)
                     for (int s = 0; s < SpecSlots; s++)
@@ -368,36 +438,54 @@ namespace NeoBuzz.DyeEssence
                     if (fresh) SpecStart(note, o, l, k);
                     float vr_ = ratio_(o, l);
                     int top = 0;
-                    for (int j = 0; j < per; j++)
+                    // Four partials at a time, every branch of the one-at-a-time version made a lane mask (the same operations, so the same bits).
+                    var vVr = Vector128.Create(vr_);
+                    var vVrf = Vector128.Create((float)vr);
+                    var vHi = Vector128.Create(hi);
+                    var vFade = Vector128.Create(fadeWidth);
+                    var vTonal = Vector128.Create(tonalGain);
+                    var vInv = Vector128.Create(invCount);
+                    var zero = Vector128<float>.Zero;
+                    var one = Vector128.Create(1f);
+                    var eight = Vector128.Create(8f);
+                    var tiny = Vector128.Create(1e-9f);
+                    var abs = Vector128.Create(0x7FFFFFFF).AsSingle();
+                    for (int j = 0; j < per; j += 4)
                     {
-                        float a = spAmp[j];
-                        float target = 0f;
-                        if (a > 0f)
+                        var amp = Vector128.LoadUnsafe(ref spAmp[j]);
+                        var turns = Vector128.LoadUnsafe(ref spFreq[j]) * vVr / vVrf;
+                        SinCosTurns4(turns, out var sv, out var cv);
+                        var x = (vHi - turns) / vFade;
+                        var nyq = Vector128.ConditionalSelect(Vector128.LessThan(x, zero), zero, Vector128.ConditionalSelect(Vector128.GreaterThan(x, one), one, x));
+                        var active = Vector128.GreaterThan(amp, zero) & Vector128.GreaterThan(nyq, zero);
+                        var target = amp * vTonal * nyq;
+                        target = Vector128.ConditionalSelect(Vector128.LessThan(target, eight), target,
+                            Vector128.ConditionalSelect(Vector128.Equals(target, target), eight, zero));
+                        target = Vector128.ConditionalSelect(active, target, zero);
+                        var oldTurns = Vector128.LoadUnsafe(ref spTurns[tb + j]);
+                        var upd = active & ~Vector128.Equals(turns, oldTurns);
+                        Vector128.ConditionalSelect(upd, turns, oldTurns).StoreUnsafe(ref spTurns[tb + j]);
+                        Vector128.ConditionalSelect(upd, sv, Vector128.LoadUnsafe(ref hRS[pb + j])).StoreUnsafe(ref hRS[pb + j]);
+                        Vector128.ConditionalSelect(upd, cv, Vector128.LoadUnsafe(ref hRC[pb + j])).StoreUnsafe(ref hRC[pb + j]);
+                        var ha = Vector128.LoadUnsafe(ref hA[pb + j]);
+                        Vector128<float> da;
+                        if (fresh) { ha = zero; da = target * vInv; }
+                        else
                         {
-                            float turns = spFreq[j] * vr_ / (float)vr;
-                            float nyq = Math.Clamp((hi - turns) / fadeWidth, 0f, 1f);
-                            if (nyq > 0f)
-                            {
-                                target = a * tonalGain * nyq;
-                                if (!(target < 8f)) target = float.IsNaN(target) ? 0f : 8f;
-                                if (turns != spTurns[tb + j])
-                                {
-                                    spTurns[tb + j] = turns;
-                                    SinCosTurns(turns, out float rs, out float rc);
-                                    hRS[pb + j] = rs;
-                                    hRC[pb + j] = rc;
-                                }
-                            }
+                            var rundown = Vector128.Equals(target, zero) & Vector128.LessThan(ha.AsInt32().AsSingle() & abs, tiny);
+                            da = Vector128.ConditionalSelect(rundown, zero, (target - ha) * vInv);
+                            ha = Vector128.ConditionalSelect(rundown, zero, ha);
                         }
-                        if (fresh) { hA[pb + j] = 0f; hDA[pb + j] = target * invCount; }
-                        else if (target == 0f && MathF.Abs(hA[pb + j]) < 1e-9f) hA[pb + j] = hDA[pb + j] = 0f;   // run down: exact silence, no denormal tail
-                        else hDA[pb + j] = (target - hA[pb + j]) * invCount;
-                        if (target != 0f || hA[pb + j] != 0f) top = j + 1;
+                        ha.StoreUnsafe(ref hA[pb + j]);
+                        da.StoreUnsafe(ref hDA[pb + j]);
+                        uint live_ = (~Vector128.Equals(target, zero) | ~Vector128.Equals(ha, zero)).ExtractMostSignificantBits();
+                        if (live_ != 0) top = Math.Max(top, j + 1 + System.Numerics.BitOperations.Log2(live_));
                         // Keep the phasor on the unit circle (one Newton step each tick).
-                        float c = hC[pb + j], sn = hS[pb + j];
-                        float fct = 1.5f - 0.5f * (c * c + sn * sn);
-                        hC[pb + j] = c * fct;
-                        hS[pb + j] = sn * fct;
+                        var c = Vector128.LoadUnsafe(ref hC[pb + j]);
+                        var sn = Vector128.LoadUnsafe(ref hS[pb + j]);
+                        var fct = Vector128.Create(1.5f) - Vector128.Create(0.5f) * (c * c + sn * sn);
+                        (c * fct).StoreUnsafe(ref hC[pb + j]);
+                        (sn * fct).StoreUnsafe(ref hS[pb + j]);
                     }
                     for (int j = per; j < SpecSlots; j++) { hDA[pb + j] = hA[pb + j] == 0f ? 0f : -hA[pb + j] * invCount; if (hA[pb + j] != 0f) top = j + 1; }
                     hBlocks[k] = (top + 3) >> 2;
@@ -476,35 +564,37 @@ namespace NeoBuzz.DyeEssence
             int ob = OvIndex(oversample) * SpecGroups;
             float pl = spPanL[no], pr = spPanR[no];
             const float scale = 1.7320508f / 2147483648f;
+            ref var rngR = ref spRngV[gb];
+            ref var z1R = ref spZ1[gb]; ref var z2R = ref spZ2[gb]; ref var z3R = ref spZ3[gb]; ref var z4R = ref spZ4[gb];
+            ref var gR = ref spG[gb]; ref var dgR = ref spDG[gb];
+            ref var b0R = ref spB0[ob]; ref var b2R = ref spB2[ob]; ref var a1R = ref spA1[ob]; ref var a2R = ref spA2[ob];
+            ref float lR = ref exL[0]; ref float rR = ref exR[0];
+            if ((uint)count > (uint)exL.Length || (uint)count > (uint)exR.Length) throw new ArgumentOutOfRangeException(nameof(count));
             for (int i = 0; i < count; i++)
             {
                 var acc = Vector128<float>.Zero;
                 for (int g = 0; g < SpecGroups; g++)
                 {
-                    var rv = spRngV[gb + g];
+                    var rv = Unsafe.Add(ref rngR, g);
                     rv ^= Vector128.ShiftLeft(rv, 13);
                     rv ^= Vector128.ShiftRightLogical(rv, 17);
                     rv ^= Vector128.ShiftLeft(rv, 5);
-                    spRngV[gb + g] = rv;
+                    Unsafe.Add(ref rngR, g) = rv;
                     var vx = Vector128.ConvertToSingle(rv.AsInt32()) * Vector128.Create(scale);
-                    var z1 = spZ1[gb + g];
-                    var z2 = spZ2[gb + g];
-                    var y = spB0[ob + g] * vx + z1;
-                    spZ1[gb + g] = z2 - spA1[ob + g] * y;
-                    spZ2[gb + g] = spB2[ob + g] * vx - spA2[ob + g] * y;
-                    var z3 = spZ3[gb + g];
-                    var z4 = spZ4[gb + g];
-                    var w = spB0[ob + g] * y + z3;
-                    spZ3[gb + g] = z4 - spA1[ob + g] * w;
-                    spZ4[gb + g] = spB2[ob + g] * y - spA2[ob + g] * w;
-                    y = w;
-                    var gain = spG[gb + g] + spDG[gb + g];
-                    spG[gb + g] = gain;
-                    acc += gain * y;
+                    var b0 = Unsafe.Add(ref b0R, g); var b2 = Unsafe.Add(ref b2R, g); var a1 = Unsafe.Add(ref a1R, g); var a2 = Unsafe.Add(ref a2R, g);
+                    var y = b0 * vx + Unsafe.Add(ref z1R, g);
+                    Unsafe.Add(ref z1R, g) = Unsafe.Add(ref z2R, g) - a1 * y;
+                    Unsafe.Add(ref z2R, g) = b2 * vx - a2 * y;
+                    var w = b0 * y + Unsafe.Add(ref z3R, g);
+                    Unsafe.Add(ref z3R, g) = Unsafe.Add(ref z4R, g) - a1 * w;
+                    Unsafe.Add(ref z4R, g) = b2 * y - a2 * w;
+                    var gain = Unsafe.Add(ref gR, g) + Unsafe.Add(ref dgR, g);
+                    Unsafe.Add(ref gR, g) = gain;
+                    acc += gain * w;
                 }
                 float s = ((acc.GetElement(0) + acc.GetElement(1)) + acc.GetElement(2)) + acc.GetElement(3);
-                exL[i] += pl * s;
-                exR[i] += pr * s;
+                Unsafe.Add(ref lR, i) += pl * s;
+                Unsafe.Add(ref rR, i) += pr * s;
             }
             // A filter ringing down to nothing leaves denormals: flush the states that are negligible.
             var tiny = Vector128.Create(1e-20f);

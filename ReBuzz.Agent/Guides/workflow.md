@@ -51,6 +51,7 @@ Read the one for the job with `guide(topic=…)` (or the resource rebuzz://guide
 | `mastering` | loudness targets, matching a reference, what not to do |
 | `mastering-chain` | the chain stage by stage with settings |
 | `dye-essence-in-depth`, `dye-essence-analysis`, `dye-essence-effects`, `neo-eq-in-depth` | the parts of those two machines that their pages leave out |
+| `build-a-synth` | learning Neo Patch: the empty patch to sound in three steps, then each template node by node |
 | `app-control` | preferences, the audio device, MIDI bindings, the studio window, export to WAV |
 | `troubleshooting` | silence, clipping, phase, CPU, notes that hang or don't play |
 

@@ -28,6 +28,9 @@ namespace NeoBuzz.Patch
         }
 
         public PatchRuntime Runtime => rt;
+        /// <summary>The patch's CPU, percent of one core (the editor's readout) and its recent peak.</summary>
+        public float CpuPercent => rt.CpuLoad * 100f;
+        public float CpuPeakPercent => rt.CpuPeak * 100f;
         public PatchGraph Graph => graph;
         /// <summary>The last compile's error (null: it compiled).</summary>
         public string Error => error;
@@ -73,6 +76,9 @@ namespace NeoBuzz.Patch
             return true;
         }
 
+        /// <summary>The parameters (Voices above the compiled slots asks for a background compile) taken now, before any block has run.</summary>
+        public void Prepare() => ApplyParameters();
+
         void ApplyParameters()
         {
             double vol = values.Value(P.Volume);
@@ -88,6 +94,7 @@ namespace NeoBuzz.Patch
         {
             get
             {
+                if (rt.Compiling) return true;
                 foreach (var n in graph.Nodes)
                 {
                     if (n.Kind == NodeKind.WavetableOsc && TableBank.Get((int)(n.Controls[NodeInfo.WtTable] + 0.5f)) == null) return true;

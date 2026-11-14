@@ -271,6 +271,8 @@ namespace NeoBuzz.Patch
         public readonly List<Wire> Wires = new List<Wire>();
         public readonly List<MacroMapping> Macros = new List<MacroMapping>();
         public string Name = "";
+        /// <summary>The user's name for each macro ("" : none; the editor shows the first target's control, or "Macro n").</summary>
+        public readonly string[] MacroLabels = { "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" };
         int nextId = 1;
 
         /// <summary>A new node, or null at the node cap (<see cref="NodeInfo.Cap"/>).</summary>

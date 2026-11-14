@@ -34,6 +34,8 @@ namespace NeoBuzz.Patch
         public Dictionary<int, Job> ByKey;
         /// <summary>How many nodes took over their state from the patch before.</summary>
         public int Adopted;
+        /// <summary>The nodes that lead to an Out (the others are not heard), each with whether it runs once (global) or for each voice. The editor draws from it.</summary>
+        public Dictionary<int, bool> Scope;
     }
 
     internal readonly struct CompileResult
@@ -202,7 +204,7 @@ namespace NeoBuzz.Patch
             {
                 var role = (Role)roleInt;
                 bool global = n.Kind == NodeKind.Out ? false : ScopeOf(n, role);
-                if (n.Kind != NodeKind.Out) scope[n.Id] = global;
+                scope[n.Id] = n.Kind == NodeKind.Out || global;      // Out runs once for the whole patch
                 float[] ctl = n.Controls;
                 switch (n.Kind)
                 {
@@ -409,6 +411,7 @@ namespace NeoBuzz.Patch
                 MacroMaps = maps.ToArray(),
                 ByKey = byKey,
                 Adopted = adopted,
+                Scope = new Dictionary<int, bool>(scope),
                 Order = string.Join(" ", order.Select(o => o.Node.Kind + "#" + o.Node.Id + (o.Role == 1 ? ".read" : o.Role == 2 ? ".write" : ""))),
             }, null);
         }
