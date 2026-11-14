@@ -90,7 +90,7 @@ namespace NeoBuzz.MachineTests
             foreach (var g in all.GroupBy(e => e.Category)) Assert.That(g.Count(), Is.LessThanOrEqualTo(40), $"{g.Key}: a submenu of a usable size");
         }
 
-        static readonly string[] EngineNames = { "Off", "Wavetable", "Analog", "Sample", "Granular", "Harmonic", "Modal" };
+        static readonly string[] EngineNames = { "Off", "Wavetable", "Analog", "Sample", "Granular", "Harmonic", "Modal", "Spectral" };
         static readonly string[] FxNames = { "Off", "EQ", "Filter", "Comp", "Clipper", "Delay", "Verb", "Dimension", "Bitcrusher", "Freq shift", "Pitch delay", "Convolution", "Vocoder" };
 
         static IEnumerable<string> EnginesOf(Entry e)

@@ -218,6 +218,15 @@ CASES = [
     gen("dye-modal-skin", "Dye Essence", "Bass — Skin Drum", [], BASS),
     gen("dye-modal-plate", "Dye Essence", "Keys — Steel Plate", [], KEYS),
     gen("dye-modal-bellpipe", "Dye Essence", "Pad — Bowed Bell and Pipe", [], CHORDS),
+    # P5a: the Spectral engine (the analysis is deterministic, so the model and the render are the same on every platform).
+    gen("dye-spec-choir", "Dye Essence", "Pad — Frozen Choir Pad", [], CHORDS),
+    gen("dye-spec-strings", "Dye Essence", "Pad — Slow Strings Pad", [], CHORDS),
+    gen("dye-spec-wash", "Dye Essence", "Texture — Stretched Bell Wash", [], CHORDS),
+    gen("dye-spec-noise", "Dye Essence", "Texture — Noise Ghost", [], CHORDS),
+    gen("dye-spec-formant", "Dye Essence", "Vocal — Formant Choir", [], KEYS),
+    gen("dye-spec-snapped", "Dye Essence", "Keys — Snapped Pluck Keys", [], KEYS),
+    gen("dye-spec-lead", "Dye Essence", "Lead — Singing Strings Lead", [], LEAD),
+    gen("dye-spec-pluckbell", "Dye Essence", "Bell — Stretched Pluck Bell", [], BELLS),
     # P4a (docs/specs/dye-essence.md §4.9): the arpeggiator and the sequencer follow the song's position; the notes land on exact samples.
     gen("dye-arp-pluck", "Dye Essence", "Arp — Glass Pluck Up", [], CHORDS),
     gen("dye-arp-saw", "Dye Essence", "Arp — Saw Up Down", [], CHORDS),

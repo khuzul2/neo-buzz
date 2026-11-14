@@ -128,7 +128,7 @@ namespace ReBuzz.AgentTests
             ["select"] = new[] { "machine", "pattern", "scene", "clear" },
             ["panel_set"] = new[] { "panel", "open", "size", "tab", "maximised" },
             ["window_layout"] = new[] { "width", "height", "maximised" },
-            ["export_audio"] = new[] { "path", "range", "from", "to", "section", "tail_seconds", "bits", "dither", "stems", "machines", "overwrite" },
+            ["export_audio"] = new[] { "path", "range", "from", "to", "section", "tail_seconds", "bits", "dither", "stems", "machines", "sample_rate", "normalize_db", "overwrite" },
             ["app_status"] = new string[0],
             ["song_recent"] = new[] { "limit" },
         };

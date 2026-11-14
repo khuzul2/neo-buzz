@@ -453,7 +453,7 @@ namespace ReBuzz.Agent
                             nextMark += Math.Max(1, (long)Math.Round(cpu.WindowSeconds * rate));
                         }
                     }
-                    long nextReport = 5L * rate;
+                    long nextReport = rate;
                     int last = song.PlayPosition;
                     // Until the engine stops at the range's end (or the position wraps, if something keeps it going).
                     while (core.Playing && left.Count < cap)
@@ -467,7 +467,7 @@ namespace ReBuzz.Agent
                         if (left.Count >= nextReport)
                         {
                             progress?.Invoke(left.Count / (double)rate, (expected + tailFrames) / (double)rate, "seconds rendered");
-                            nextReport += 5L * rate;
+                            nextReport += rate;
                         }
                     }
                     core.Playing = false;   // the tail rings out stopped (note-offs go out in its first block)

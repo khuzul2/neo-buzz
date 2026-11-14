@@ -327,5 +327,24 @@ class NativeCompareCasesTests(unittest.TestCase):
         self.assertLess(max(starts), min(ends))
 
 
+class UpstreamReadsTests(unittest.TestCase):
+    """A machine whose upstream binary reads past an array (FSM Infector) is held to the closest of its instances."""
+
+    def test_the_closest_instance_is_the_reference(self):
+        same, off, far = [True, float("-inf"), None], [False, -87.1, 0.5], [False, -60.0, 0.5]
+        self.assertEqual(nc.best_upstream([off, same, far, far]), same)
+        self.assertEqual(nc.best_upstream([far, off, far, far]), off)      # none the same: the smallest difference
+        self.assertEqual(nc.best_upstream([[False, -140.0, 1.0], off]), [False, -140.0, 1.0])
+        self.assertIsNone(nc.best_upstream([]))
+
+    def test_a_real_difference_is_in_every_instance(self):
+        far = [False, -60.0, 0.5]
+        self.assertGreater(nc.best_upstream([far] * 4)[1], nc.TOLERANCE_DBFS)
+
+    def test_infector_is_marked_as_reading_past_its_tracks(self):
+        infector = next(s for s in nc.natives() if s["gear"] == "FSM Infector")
+        self.assertTrue(infector.get("upstreamReads"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -324,10 +324,10 @@ namespace ReBuzz.Studio.Tests
             {
                 NewSong();
                 window.RefreshNow();
-                Assert.That(window.Title, Is.EqualTo("Untitled — NeoBuzz Live"));
+                Assert.That(window.Title, Is.EqualTo("Untitled — " + StudioHost.AppTitle));
                 Core.Modified = true;
                 window.RefreshNow();
-                Assert.That(window.Title, Is.EqualTo("Untitled • — NeoBuzz Live"), "modified");
+                Assert.That(window.Title, Is.EqualTo("Untitled • — " + StudioHost.AppTitle), "modified");
 
                 var appMenu = AppMenu.ToNativeMenu(window.AppMenuModel());
                 Assert.That(appMenu.Items.OfType<NativeMenuItem>().First().Header, Is.EqualTo("About NeoBuzz Live"), "the macOS app menu");
@@ -385,7 +385,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(bar.Items.OfType<NativeMenuItem>().Select(i => i.Header), Is.EqualTo(new[] { "File", "Edit", "Transport", "View", "Window", "Help" }));
                 var fileMenu = bar.Items.OfType<NativeMenuItem>().First().Menu;
                 Assert.That(fileMenu.Items.OfType<NativeMenuItem>().Where(i => i is not NativeMenuItemSeparator).Select(i => i.Header),
-                    Is.EqualTo(new[] { "New", "Open…", "Open Recent", "Close Song", "Save", "Save As…", "Revert to Saved" }), "Close (⌘W) and Revert (UX review mac-real-101)");
+                    Is.EqualTo(new[] { "New", "Open…", "Open Recent", "Close Song", "Save", "Save As…", "Export Audio…", "Revert to Saved" }), "Close (⌘W) and Revert (UX review mac-real-101)");
                 Assert.That(fileMenu.Items[3], Is.InstanceOf<NativeMenuItemSeparator>());
                 Assert.That(fileMenu.Items.OfType<NativeMenuItem>().Single(i => i.Header == "Open Recent").Menu, Is.Not.Null);
                 var viewMenu = bar.Items.OfType<NativeMenuItem>().Single(i => i.Header == "View").Menu;

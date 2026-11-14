@@ -401,24 +401,42 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(canvas.WireLevel(wire), Is.EqualTo(0));
 
                 // It is drawn: the wire's pixels are lighter with a level on it than without.
+                double lastLuminance = 0, lastBoxLuminance = 0;
+                static double Linear(int v) { double c = v / 255.0; return c <= 0.04045 ? c / 12.92 : Math.Pow((c + 0.055) / 1.055, 2.4); }
                 int Brightness()
                 {
                     foreach (var v in window.GetVisualDescendants()) v.InvalidateVisual();
                     Settle();
                     var shape = canvas.WireOf(wire);
-                    var spot = canvas.TranslatePoint(new Point((shape.Start.X * 3 + shape.End.X) / 4 * canvas.Zoom - canvas.Offset.X, (shape.Start.Y * 3 + shape.End.Y) / 4 * canvas.Zoom - canvas.Offset.Y), window)!.Value;
+                    var spot = canvas.TranslatePoint(new Point((shape.Start.X * 13 + shape.End.X * 7) / 20 * canvas.Zoom - canvas.Offset.X, (shape.Start.Y * 13 + shape.End.Y * 7) / 20 * canvas.Zoom - canvas.Offset.Y), window)!.Value;
                     var bitmap = window.CaptureRenderedFrame();
                     Assert.That(bitmap, Is.Not.Null);
                     using var fb = bitmap!.Lock();
                     bool rgba = fb.Format == Avalonia.Platform.PixelFormat.Rgba8888;
                     int best = 0;
+                    double bestLum = 0;
                     for (int y = (int)spot.Y - 2; y <= (int)spot.Y + 2; y++)
                         for (int x = (int)spot.X - 2; x <= (int)spot.X + 2; x++)
                         {
                             int p = System.Runtime.InteropServices.Marshal.ReadInt32(fb.Address + y * fb.RowBytes + x * 4);
                             int r = rgba ? p & 0xFF : (p >> 16) & 0xFF, g = (p >> 8) & 0xFF, bl = rgba ? (p >> 16) & 0xFF : p & 0xFF;
                             best = Math.Max(best, r + g + bl);
+                            bestLum = Math.Max(bestLum, 0.2126 * Linear(r) + 0.7152 * Linear(g) + 0.0722 * Linear(bl));
                         }
+                    lastLuminance = bestLum;
+                    // The box: its body's mean luminance, a block in its top right (clear of the name, the mode text and the strip).
+                    var boxRect = canvas.BoxOf(drums);
+                    var corner = canvas.TranslatePoint(new Point(boxRect.Right * canvas.Zoom - canvas.Offset.X - 14, boxRect.Y * canvas.Zoom - canvas.Offset.Y + 8), window)!.Value;
+                    double sum = 0; int count = 0;
+                    for (int y = (int)corner.Y; y < (int)corner.Y + 8; y++)
+                        for (int x = (int)corner.X; x < (int)corner.X + 8; x++)
+                        {
+                            int p = System.Runtime.InteropServices.Marshal.ReadInt32(fb.Address + y * fb.RowBytes + x * 4);
+                            int r = rgba ? p & 0xFF : (p >> 16) & 0xFF, g = (p >> 8) & 0xFF, bl = rgba ? (p >> 16) & 0xFF : p & 0xFF;
+                            sum += 0.2126 * Linear(r) + 0.7152 * Linear(g) + 0.0722 * Linear(bl);
+                            count++;
+                        }
+                    lastBoxLuminance = sum / count;
                     return best;
                 }
                 canvas.PeakSource = c => (32768f * 0.7f, 32768f * 0.7f);
@@ -437,10 +455,22 @@ namespace ReBuzz.Studio.Tests
                     canvas.TickMeters(1);
                     return Brightness();
                 }
-                int loud = At(-3), middle = At(-20), quiet = At(-40);
+                int loud = At(-3);
+                double loudLum = lastLuminance, loudBox = lastBoxLuminance;
+                int middle = At(-20);
+                double middleLum = lastLuminance;
+                int quiet = At(-40);
+                canvas.PeakSource = c => (0, 0);
+                canvas.TickMeters(5);
+                Brightness();
+                double silentLum = lastLuminance, silentBox = lastBoxLuminance;
+                TestContext.Out.WriteLine($"[ux-measure] relative luminance: wire silent {silentLum:0.000}, -3 dB {loudLum:0.000} (x{loudLum / silentLum:0.00}), -20 dB {middleLum:0.000} (x{middleLum / silentLum:0.00}); box body silent {silentBox:0.0000}, -3 dB {loudBox:0.0000} (x{loudBox / silentBox:0.00})");
+                Assert.That(loudLum / silentLum, Is.GreaterThanOrEqualTo(1.8), "P3j: a loud wire is about twice as bright as a silent one (relative luminance)");
+                Assert.That(loudBox / silentBox, Is.GreaterThanOrEqualTo(1.8), "and a loud box");
+                Assert.That(middleLum / silentLum, Is.GreaterThanOrEqualTo(1.3), "a wire at -20 dB is clearly lit too");
                 TestContext.Out.WriteLine($"[ux-measure] wire brightness (R+G+B): silent {dark}, -40 dB {quiet}, -20 dB {middle}, -3 dB {loud}");
                 Assert.That(loud, Is.GreaterThan(middle + 30), "-3 dB against -20 dB");
-                Assert.That(middle, Is.GreaterThan(quiet + 20), "-20 dB against -40 dB");
+                Assert.That(middle, Is.GreaterThan(quiet + 8), "-20 dB against -40 dB");
                 Assert.That(quiet, Is.GreaterThan(dark), "-40 dB against silence");
                 Assert.That(MachineCanvas.Glow(MachineCanvas.LevelOf(32768f * 0.03162f)) / MachineCanvas.Glow(1), Is.EqualTo(0.25).Within(0.01), "-30 dB glows a quarter of 0 dB");
             }

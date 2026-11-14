@@ -1,6 +1,4 @@
-﻿using BespokeFusion;
-using BuzzGUI.Common.Settings;
-using Helios.Concurrency;
+﻿using BuzzGUI.Common.Settings;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using ReBuzz.Audio.Engine;
@@ -10,6 +8,8 @@ using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 
+// Fork (ux-overhaul.md P6): its errors go through the app's messages (a message box in ReBuzz.exe, a dialog in the studio), so
+// this file builds in ReBuzz.Host too, which links it for the studio's WASAPI (WindowsHostAudioDriverFactory).
 namespace ReBuzz.Audio
 {
     internal sealed class WasapiAudioDriver : IAudioDriver
@@ -90,10 +90,9 @@ namespace ReBuzz.Audio
                 var format = wasapiPlayer.GetSupportedExclusiveFormat(wasapiPlayer.OutputWaveFormat);
                 if (format == null)
                 {
-                    MessageBoxWindow.ShowOkWindow(
-                        "WASAPI Error",
+                    buzzCore.UserMessages.Error(
                         "No supported exclusive format found for this device.",
-                        false);
+                        "WASAPI Error", null);
                 }
             }
 
@@ -161,10 +160,9 @@ namespace ReBuzz.Audio
                 }
                 catch (Exception ex)
                 {
-                    MessageBoxWindow.ShowOkWindow(
-                        "WASAPI Error",
+                    buzzCore.UserMessages.Error(
                         "WASAPI initialization failed, changing to defaults:\n\n" + ex.Message,
-                        false);
+                        "WASAPI Error", ex);
 
                     player.Dispose();
                     audioProvider.Stop();
@@ -224,10 +222,9 @@ namespace ReBuzz.Audio
             }
             catch (Exception ex)
             {
-                MessageBoxWindow.ShowOkWindow(
-                    "WASAPI Error",
+                buzzCore.UserMessages.Error(
                     "WASAPI Recorder initialization failed:\n\n" + ex.Message,
-                    false);
+                    "WASAPI Error", ex);
 
                 buzzCore.DCWriteLine(ex.Message);
                 wasapiRecorder = null;
