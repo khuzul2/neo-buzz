@@ -135,7 +135,7 @@ namespace ReBuzz.Studio.Shell.Preferences
                 outputs = listed.ToList();
                 if (!outputs.Contains(saved)) outputs.Add(saved);
                 // "Not connected" only once the devices have been listed (the window draws before it lists them).
-                output.ItemsSource = outputs.Select(n => listed.Contains(n) || !devicesListed ? n : n + " (not connected)").ToList();
+                output.ItemsSource = outputs.Select(n => WasapiChoice.Label(n) + (listed.Contains(n) || !devicesListed ? "" : " (not connected)")).ToList();
                 output.SelectedIndex = outputs.IndexOf(saved);
 
                 string savedInput = registry.Read("Input", "", PortAudioDriver.Section) ?? "";
@@ -159,7 +159,10 @@ namespace ReBuzz.Studio.Shell.Preferences
 
                 exclusive.IsChecked = registry.Read(WindowsHostAudioDriverFactory.ExclusiveKey, 0, "Settings") == 1;
                 advanced.IsChecked = registry.Read(WindowsHostAudioDriverFactory.AdvancedKey, 0, "Settings") == 1;
-                status.Text = note == null ? DeviceStatus(core) : note + " " + DeviceStatus(core);
+                // A WASAPI endpoint that is unplugged: the system default plays instead, and the page says so (it plays on the endpoint again once plugged in).
+                string gone = devicesListed ? WasapiChoice.MissingNote(saved, listed) : null;
+                string notice = note ?? (gone != null ? gone : WasapiChoice.Notice);
+                status.Text = notice == null ? DeviceStatus(core) : notice + " " + DeviceStatus(core);
                 if (asioPanel != null) asioPanel.IsVisible = core.AudioEngine?.SelectedOutDevice?.Type == Audio.Engine.AudioEngine.AudioOutType.ASIO;
             }
             finally
@@ -267,7 +270,7 @@ namespace ReBuzz.Studio.Shell.Preferences
         {
             try
             {
-                return core.AudioEngine?.AudioDevices().Where(d => d.Type == Audio.Engine.AudioEngine.AudioOutType.PortAudio || d.Type == Audio.Engine.AudioEngine.AudioOutType.ASIO).Select(d => d.Name).ToList()
+                return core.AudioEngine?.AudioDevices().Select(d => d.Name).ToList()     // the same list audio_devices gives (every type, WASAPI endpoints included)
                        ?? new List<string>();
             }
             catch (Exception)

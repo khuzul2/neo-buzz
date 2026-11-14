@@ -26,6 +26,12 @@ namespace ReBuzz.Audio
             return devices;
         }
 
+        /// <summary>
+        /// The device to open instead when a saved name is not in the list (null: the first device, the usual rule). Windows: a WASAPI
+        /// endpoint that is unplugged plays through the system default of its mode.
+        /// </summary>
+        string FallbackDevice(string savedName) => null;
+
         /// <summary>Whether ASIO drivers can be used here.</summary>
         bool AsioSupported { get; }
 

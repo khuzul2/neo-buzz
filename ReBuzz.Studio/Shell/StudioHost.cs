@@ -105,11 +105,40 @@ namespace ReBuzz.Studio.Shell
             {
                 Log("The agent server couldn't start: " + e.Message);
             }
+            StartWasapiFollower();
             Started?.Invoke();
+        }
+
+        WasapiFollower wasapiFollower;
+
+        /// <summary>
+        /// Windows: keeps WASAPI on the right output as endpoints come and go (an unplugged one falls back to the system default, and
+        /// returns when plugged in; "System default" follows Windows' default). A change opens the device with the way back AudioSwitch gives,
+        /// and the chosen device stays what the settings hold, so the choice survives the unplugging.
+        /// </summary>
+        void StartWasapiFollower()
+        {
+            if (!OperatingSystem.IsWindows() || Run == null || ReBuzzCore.DefaultAudioDriverFactory is not WindowsHostAudioDriverFactory factory || factory.Endpoints == null) return;
+            var core = Run.Core;
+            string Saved() => Registry.Read("AudioDriver", "", "Settings");
+            wasapiFollower = new WasapiFollower(factory.Endpoints, factory, Saved, () => core.AudioEngine?.SelectedOutDevice?.Name,
+                (device, reason) => Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+                {
+                    string saved = Saved();
+                    var audio = new ReBuzz.Agent.AudioBackend(core);
+                    var previous = audio.Current();
+                    var done = await ReBuzz.Agent.App.AudioSwitch.Apply(audio, (work, ct) => System.Threading.Tasks.Task.FromResult(work()), previous,
+                        new ReBuzz.Agent.App.AudioConfig(device, previous.BufferFrames, previous.SampleRate), default);
+                    Registry.Write("AudioDriver", saved, "Settings");      // the choice stays, whatever plays for now
+                    WasapiChoice.Notice = done.Applied ? reason : $"Not applied: {done.Reason} {previous.Device} is back." + done.RevertNote;
+                    wasapiFollower?.Opened();
+                    Log(WasapiChoice.Notice ?? device);
+                }));
         }
 
         public void Shutdown()
         {
+            wasapiFollower?.Dispose();
             Agent?.Dispose();
             Run?.Shutdown();
         }
