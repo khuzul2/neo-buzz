@@ -138,7 +138,8 @@ namespace ReBuzz.AppViews
                 if (control is Knob knob)
                 {
                     knobs++;
-                    x
+                    // A value outside the range (a machine's own "no value" default, e.g. 255 on a 0..127 byte) is shown by the knob at its end.
+                    string text = ap.Info.Describe(Math.Clamp(ap.Parameter.GetValue(0), ap.Parameter.MinValue, ap.Parameter.MaxValue));
                     if (knob.ValueText != text) mismatches.Add($"{p.Label}: the knob shows \"{knob.ValueText}\", param_get \"{text}\"");
                     if ((p.SafeRange != null) != (knob.Safe != null)) mismatches.Add($"{p.Label}: its safe range {(p.SafeRange != null ? "isn't" : "is")} marked");
                 }
