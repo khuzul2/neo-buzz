@@ -30,7 +30,7 @@
  "health": {
   "status": "warn",
   "problems": [
-   "hot (loud but steady) with Temp. Input at its maximum (+127): +18.9 dBFS peak; Noise amount at its maximum (-0.0 dB): +1.6 dBFS peak; Temp. Output at its maximum (+127): +18.8 dBFS peak"
+   "hot (loud but steady) with Temp. Input at its maximum (+127): +18.7 dBFS peak; Noise amount at its maximum (-0.0 dB): +1.8 dBFS peak; Temp. Output at its maximum (+127): +18.7 dBFS peak"
   ],
   "hot": true
  },
@@ -39,7 +39,8 @@
    "gain_db": -0.0,
    "latency_samples": 0,
    "latency_ms": 0.0,
-   "tail_seconds": 0.05,
+   "tail_seconds": 0.06,
+   "tail_hz": 24.4,
    "echoes": 0,
    "output_correlation": 1.0,
    "spectrum_spread_db": 0.1,
@@ -49,13 +50,13 @@
      "gain_db": -0.0,
      "thd_percent": 1.96,
      "thd_in_percent": 1.96,
-     "movement_db": 0.14
+     "movement_db": 0.13
     },
     "quiet": {
      "gain_db": -0.0,
      "thd_percent": 1.96,
      "thd_in_percent": 1.96,
-     "movement_db": 0.14
+     "movement_db": 0.13
     }
    },
    "traits": [
@@ -383,13 +384,13 @@
    },
    "all_at_once": {
     "min": {
-     "peak_dbfs": -41.46,
-     "growth_db": 1.28,
+     "peak_dbfs": -41.06,
+     "growth_db": 1.74,
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": 15.07,
-     "growth_db": 0.02,
+     "peak_dbfs": 15.09,
+     "growth_db": -0.03,
      "verdict": "hot"
     }
    },
@@ -401,8 +402,8 @@
   "sweeps": {
    "Temp. Input": {
     "max": {
-     "peak_dbfs": 18.89,
-     "growth_db": 0.15,
+     "peak_dbfs": 18.73,
+     "growth_db": -0.23,
      "verdict": "hot",
      "raw": 254,
      "text": "+127"
@@ -410,8 +411,8 @@
    },
    "Noise amount": {
     "max": {
-     "peak_dbfs": 1.61,
-     "growth_db": 1.73,
+     "peak_dbfs": 1.76,
+     "growth_db": 1.93,
      "verdict": "hot",
      "raw": 127,
      "text": "-0.0 dB"
@@ -419,8 +420,8 @@
    },
    "Temp. Output": {
     "max": {
-     "peak_dbfs": 18.75,
-     "growth_db": -0.27,
+     "peak_dbfs": 18.73,
+     "growth_db": -0.23,
      "verdict": "hot",
      "raw": 254,
      "text": "+127"
@@ -453,8 +454,8 @@
    "type_from_click": "utility",
    "params": {
     "Temp. Input": {
-     "suggested_role": "mix.dry",
-     "evidence": "the direct sound -45 → +25 dB while the tail stays (-44 → -41 dB)",
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's lower corner moves 23.1 Hz → 11.8 kHz",
      "min": {
       "raw": 0,
       "text": "-127"
@@ -465,8 +466,8 @@
      }
     },
     "Noise type": {
-     "suggested_role": "mix.dry",
-     "evidence": "the direct sound -205 → -120 dB while the tail stays (-45 → -43 dB) (with Detune Amount half way)",
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
      "min": {
       "raw": 0,
       "text": "dark brown"
@@ -477,8 +478,8 @@
      }
     },
     "Noise amount": {
-     "suggested_role": "delay.feedback",
-     "evidence": "the tail 0 ms → 3.22 s (T60)",
+     "suggested_role": "filter.bandwidth",
+     "evidence": "the band's width 9.5 → 9.0 octaves",
      "min": {
       "raw": 0,
       "text": "OFF"
@@ -561,8 +562,8 @@
      }
     },
     "Detune Speed": {
-     "suggested_role": "lfo.depth",
-     "evidence": "the gain moves 0.1 → 8.9 dB within each tone (with Detune Amount half way)",
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
      "min": {
       "raw": 1,
       "text": "1"
@@ -621,8 +622,8 @@
      }
     },
     "Temp. Output": {
-     "suggested_role": "mix.dry",
-     "evidence": "the direct sound -45 → +25 dB while the tail stays (-44 → -41 dB)",
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's lower corner moves 23.1 Hz → 11.8 kHz",
      "min": {
       "raw": 0,
       "text": "-127"
@@ -645,7 +646,7 @@
      }
     }
    },
-   "renders": 70
+   "renders": 75
   },
   "denormal": {
    "slowdown": null

@@ -50,7 +50,7 @@
      "gain_db": 0.0,
      "thd_percent": 1.96,
      "thd_in_percent": 1.96,
-     "movement_db": 0.14
+     "movement_db": 0.13
     }
    },
    "traits": [
@@ -376,13 +376,13 @@
    },
    "all_at_once": {
     "min": {
-     "peak_dbfs": -9.15,
-     "growth_db": 0.23,
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": -9.2,
-     "growth_db": 0.21,
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
      "verdict": "ok"
     }
    }

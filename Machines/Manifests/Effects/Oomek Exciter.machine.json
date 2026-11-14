@@ -43,13 +43,13 @@
      "gain_db": -0.58,
      "thd_percent": 1.85,
      "thd_in_percent": 1.96,
-     "movement_db": 0.14
+     "movement_db": 0.13
     },
     "quiet": {
      "gain_db": -0.68,
      "thd_percent": 1.6,
      "thd_in_percent": 1.96,
-     "movement_db": 0.14
+     "movement_db": 0.13
     }
    },
    "traits": [
@@ -375,13 +375,13 @@
    },
    "all_at_once": {
     "min": {
-     "peak_dbfs": -9.15,
-     "growth_db": 0.23,
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": -9.18,
-     "growth_db": 0.22,
+     "peak_dbfs": -9.19,
+     "growth_db": -0.16,
      "verdict": "ok"
     }
    }
@@ -425,11 +425,11 @@
      "evidence": "the response's lower corner moves 2.96 kHz → 23.1 Hz",
      "min": {
       "raw": 1,
-      "text": "30 Hz"
+      "text": "30.2 Hz"
      },
      "max": {
       "raw": 239,
-      "text": "6990 Hz"
+      "text": "6.99 kHz"
      }
     },
     "Post Cut": {
@@ -437,11 +437,11 @@
      "evidence": "the response's lower corner moves 4.19 kHz → 23.1 Hz",
      "min": {
       "raw": 1,
-      "text": "30 Hz"
+      "text": "30.2 Hz"
      },
      "max": {
       "raw": 239,
-      "text": "6990 Hz"
+      "text": "6.99 kHz"
      }
     },
     "Amount": {

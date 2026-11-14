@@ -25,7 +25,7 @@ A 30-band graphic equaliser with a band every third of an octave from 20 Hz to 2
 ## Pitfalls
 
 - Bands overlap and add: at the default width every band at +6 dB makes +43 dB at 3.2 kHz, so lower `Input gain` as you boost.
-- Single bands at +18 dB peak up to +6.6 dBFS in the profile.
+- Single bands at +18 dB peak above full scale in the profile (+3.9 dBFS and more).
 - Band width and Highpass use the machine's own scales: Band width is twice the octaves its text shows; the Highpass corner is about 1.28 times the number shown.
 - Many bands cost CPU.
 

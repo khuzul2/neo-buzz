@@ -44,7 +44,7 @@
      "gain_db": -1.0,
      "thd_percent": 1.96,
      "thd_in_percent": 1.96,
-     "movement_db": 0.13
+     "movement_db": 0.14
     },
     "quiet": {
      "gain_db": -1.0,
@@ -376,13 +376,13 @@
    },
    "all_at_once": {
     "min": {
-     "peak_dbfs": -9.15,
-     "growth_db": 0.23,
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": -0.9,
-     "growth_db": 0.01,
+     "peak_dbfs": -0.92,
+     "growth_db": 0.0,
      "verdict": "ok"
     }
    },
@@ -419,7 +419,7 @@
    "params": {
     "Input gain": {
      "suggested_role": "mix.wet",
-     "evidence": "at its minimum the effect passes the signal unchanged; at the other end compression (23.63 dB); half way less of the same",
+     "evidence": "at its minimum the effect passes the signal unchanged; at the other end compression (23.62 dB); half way less of the same",
      "min": {
       "raw": 0,
       "text": "-inf dB"
@@ -431,7 +431,7 @@
     },
     "Treshold Lo": {
      "suggested_role": "filter.cutoff",
-     "evidence": "the response's upper corner moves 16.7 kHz → 131 Hz",
+     "evidence": "the response's upper corner moves 16.7 kHz → 185 Hz",
      "min": {
       "raw": 0,
       "text": "-inf dB"
@@ -466,8 +466,8 @@
      }
     },
     "Decay Lo": {
-     "suggested_role": null,
-     "evidence": "no measurable change between its ends with the others at their defaults",
+     "suggested_role": "filter.highpass",
+     "evidence": "the response's lower corner moves 23.1 Hz → 523 Hz (with the effect switched on: #0 raw:168)",
      "min": {
       "raw": 10,
       "text": "40 ms"
@@ -478,8 +478,8 @@
      }
     },
     "Decay Mid": {
-     "suggested_role": null,
-     "evidence": "no measurable change between its ends with the others at their defaults",
+     "suggested_role": "filter.highpass",
+     "evidence": "the response's lower corner moves 23.1 Hz → 740 Hz (with the effect switched on: #0 raw:168)",
      "min": {
       "raw": 10,
       "text": "40 ms"
@@ -490,8 +490,8 @@
      }
     },
     "Decay Hi": {
-     "suggested_role": null,
-     "evidence": "no measurable change between its ends with the others at their defaults",
+     "suggested_role": "filter.highpass",
+     "evidence": "the response's lower corner moves 740 Hz → 23.1 Hz (with the effect switched on: #0 raw:168)",
      "min": {
       "raw": 10,
       "text": "40 ms"
@@ -506,7 +506,7 @@
      "evidence": "no measurable change between its ends with the others at their defaults",
      "min": {
       "raw": 2,
-      "text": "16 Hz"
+      "text": "15.6 Hz"
      },
      "max": {
       "raw": 112,
@@ -514,15 +514,15 @@
      }
     },
     "Mid | Hi Split": {
-     "suggested_role": "dyn.release",
-     "evidence": "the gain recovers 63 % of the way in 35 ms → 15 ms after the jump down",
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
      "min": {
       "raw": 0,
-      "text": "1024 Hz"
+      "text": "1.02 kHz"
      },
      "max": {
       "raw": 240,
-      "text": "8042 Hz"
+      "text": "8.04 kHz"
      }
     },
     "Knee": {
@@ -530,15 +530,15 @@
      "evidence": "a choice: its texts say what it is; no role measured",
      "min": {
       "raw": 0,
-      "text": "s o f t -- 00 -- h a r d"
+      "text": "0"
      },
      "max": {
       "raw": 32,
-      "text": "32 -- h a r d"
+      "text": "32"
      }
     }
    },
-   "renders": 46
+   "renders": 43
   },
   "denormal": {
    "slowdown": null

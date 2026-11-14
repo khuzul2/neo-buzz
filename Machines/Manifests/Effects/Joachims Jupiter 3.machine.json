@@ -29,7 +29,8 @@
  "health": {
   "status": "warn",
   "problems": [
-   "silent with noise through it at the defaults (a gate closed, a wet mix at 0, or it needs setting up)"
+   "silent with noise through it at the defaults (a gate closed, a wet mix at 0, or it needs setting up)",
+   "every parameter at its maximum at once diverges (-60.0 dBFS peak over 30 s, growing +6 dB), but no parameter alone does at its maximum"
   ]
  },
  "profile": {
@@ -48,12 +49,18 @@
      "verdict": "silent"
     },
     "max": {
-     "peak_dbfs": -52.17,
-     "growth_db": -18.21,
-     "verdict": "ok"
+     "peak_dbfs": -59.98,
+     "growth_db": 6.05,
+     "over_seconds": 30,
+     "verdict": "diverging"
     }
-   }
+   },
+   "swept_because": [
+    "every parameter at its maximum at once: diverging"
+   ],
+   "renders": 50
   },
+  "sweeps": {},
   "denormal": {
    "slowdown": null
   }

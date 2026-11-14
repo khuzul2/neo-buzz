@@ -51,7 +51,7 @@
      "gain_db": 0.0,
      "thd_percent": 1.96,
      "thd_in_percent": 1.96,
-     "movement_db": 0.14
+     "movement_db": 0.13
     }
    },
    "traits": [
@@ -377,13 +377,13 @@
    },
    "all_at_once": {
     "min": {
-     "peak_dbfs": -9.15,
-     "growth_db": 0.23,
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": -9.2,
-     "growth_db": 0.21,
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
      "verdict": "ok"
     }
    }
@@ -1434,8 +1434,8 @@
    "kind": "linear",
    "a": 0.0,
    "b": 65534.0,
-   "description": "Value of the global command, 0 to 65,534 (65,534 = not written).",
-   "how": "Holds the value for the chosen global command, 0 to 65,534 (65,534, the default, means not written).",
+   "description": "Value of the global command, 0 to 65,534 (its own default, 65,535, is out of range and means not written; NeoBuzz Live takes 65,534).",
+   "how": "Holds the value for the chosen global command, 0 to 65,534 (its own default, 65,535, is one past the range and means not written).",
    "sound": "Its effect depends on the command; write it with the command."
   },
   {

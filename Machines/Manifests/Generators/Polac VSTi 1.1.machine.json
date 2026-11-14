@@ -539,8 +539,8 @@
    "kind": "linear",
    "a": 0.0,
    "b": 65534.0,
-   "description": "Value of the global command, 0 to 65,534 (65,534 = not written).",
-   "how": "Holds the value for the chosen global command, 0 to 65,534 (65,534, the default, means not written).",
+   "description": "Value of the global command, 0 to 65,534 (its own default, 65,535, is out of range and means not written; NeoBuzz Live takes 65,534).",
+   "how": "Holds the value for the chosen global command, 0 to 65,534 (its own default, 65,535, is one past the range and means not written).",
    "sound": "Its effect depends on the command; write it with the command."
   },
   {

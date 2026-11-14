@@ -29,8 +29,8 @@
  "health": {
   "status": "warn",
   "problems": [
-   "hot (loud but steady) with 20000 Hz at its maximum (+18.0 dB): +3.8 dBFS peak; 15800 Hz at its maximum (+18.0 dB): +5.7 dBFS peak; 12400 Hz at its maximum (+18.0 dB): +6.6 dBFS peak;  9800 Hz at its maximum (+18.0 dB): +5.8 dBFS peak;  7700 Hz at its maximum (+18.0 dB): +5.6 dBFS peak;  6100 Hz at its maximum (+18.0 dB): +4.6 dBFS peak;  4800 Hz at its maximum (+18.0 dB): +4.3 dBFS peak;  3800 Hz at its maximum (+18.0 dB): +3.3 dBFS peak; and 5 more",
-   "every parameter at its maximum at once diverges (+225.6 dBFS: the engine's guard caught it), but no parameter alone does at its maximum"
+   "hot (loud but steady) with 20000 Hz at its maximum (+18.0 dB): +3.9 dBFS peak; 15800 Hz at its maximum (+18.0 dB): +5.6 dBFS peak; 12400 Hz at its maximum (+18.0 dB): +6.3 dBFS peak;  9800 Hz at its maximum (+18.0 dB): +5.6 dBFS peak;  7700 Hz at its maximum (+18.0 dB): +5.4 dBFS peak;  6100 Hz at its maximum (+18.0 dB): +4.7 dBFS peak;  4800 Hz at its maximum (+18.0 dB): +4.5 dBFS peak;  3800 Hz at its maximum (+18.0 dB): +3.7 dBFS peak; and 4 more",
+   "every parameter at its maximum at once diverges (+223.4 dBFS: the engine's guard caught it), but no parameter alone does at its maximum"
   ],
   "hot": true
  },
@@ -55,7 +55,7 @@
      "gain_db": 0.0,
      "thd_percent": 1.96,
      "thd_in_percent": 1.96,
-     "movement_db": 0.14
+     "movement_db": 0.13
     }
    },
    "traits": [
@@ -381,13 +381,13 @@
    },
    "all_at_once": {
     "min": {
-     "peak_dbfs": -9.15,
-     "growth_db": 0.23,
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
      "verdict": "ok"
     },
     "max": {
      "peak_dbfs": null,
-     "guard": "+225.6 dBFS",
+     "guard": "+223.4 dBFS",
      "verdict": "diverging"
     }
    },
@@ -400,8 +400,8 @@
   "sweeps": {
    "20000 Hz": {
     "max": {
-     "peak_dbfs": 3.8,
-     "growth_db": -0.2,
+     "peak_dbfs": 3.88,
+     "growth_db": -0.34,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -409,8 +409,8 @@
    },
    "15800 Hz": {
     "max": {
-     "peak_dbfs": 5.7,
-     "growth_db": -0.05,
+     "peak_dbfs": 5.64,
+     "growth_db": 0.53,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -418,8 +418,8 @@
    },
    "12400 Hz": {
     "max": {
-     "peak_dbfs": 6.58,
-     "growth_db": 0.77,
+     "peak_dbfs": 6.33,
+     "growth_db": -0.2,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -427,8 +427,8 @@
    },
    " 9800 Hz": {
     "max": {
-     "peak_dbfs": 5.8,
-     "growth_db": 0.0,
+     "peak_dbfs": 5.64,
+     "growth_db": -0.13,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -436,8 +436,8 @@
    },
    " 7700 Hz": {
     "max": {
-     "peak_dbfs": 5.59,
-     "growth_db": -0.39,
+     "peak_dbfs": 5.43,
+     "growth_db": -0.43,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -445,8 +445,8 @@
    },
    " 6100 Hz": {
     "max": {
-     "peak_dbfs": 4.62,
-     "growth_db": -0.48,
+     "peak_dbfs": 4.74,
+     "growth_db": -0.1,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -454,8 +454,8 @@
    },
    " 4800 Hz": {
     "max": {
-     "peak_dbfs": 4.32,
-     "growth_db": -0.08,
+     "peak_dbfs": 4.46,
+     "growth_db": 0.1,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -463,8 +463,8 @@
    },
    " 3800 Hz": {
     "max": {
-     "peak_dbfs": 3.27,
-     "growth_db": 0.44,
+     "peak_dbfs": 3.72,
+     "growth_db": -0.08,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -472,8 +472,8 @@
    },
    " 2970 Hz": {
     "max": {
-     "peak_dbfs": 3.54,
-     "growth_db": -0.19,
+     "peak_dbfs": 2.98,
+     "growth_db": -0.71,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -481,8 +481,8 @@
    },
    " 2340 Hz": {
     "max": {
-     "peak_dbfs": 2.51,
-     "growth_db": 0.5,
+     "peak_dbfs": 2.83,
+     "growth_db": -1.55,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -490,8 +490,8 @@
    },
    " 1850 Hz": {
     "max": {
-     "peak_dbfs": 1.95,
-     "growth_db": -0.6,
+     "peak_dbfs": 1.97,
+     "growth_db": -1.27,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"
@@ -499,17 +499,8 @@
    },
    " 1460 Hz": {
     "max": {
-     "peak_dbfs": 0.56,
-     "growth_db": 0.2,
-     "verdict": "hot",
-     "raw": 255,
-     "text": "+18.0 dB"
-    }
-   },
-   " 1150 Hz": {
-    "max": {
-     "peak_dbfs": 0.09,
-     "growth_db": -0.47,
+     "peak_dbfs": 0.55,
+     "growth_db": -0.6,
      "verdict": "hot",
      "raw": 255,
      "text": "+18.0 dB"

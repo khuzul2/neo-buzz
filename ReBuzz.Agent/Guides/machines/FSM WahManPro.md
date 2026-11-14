@@ -24,7 +24,7 @@ An auto-wah with a choice of five filters (two- and four-pole low-passes and pea
 
 ## Pitfalls
 
-- Hot: +10 dB at its defaults, +4.3 dBFS peak, and Resonance at its top reaches +13.7 dBFS over 30 s.
+- Hot: +10 dB at its defaults, +4.3 dBFS peak, and Resonance at its top reaches +12.5 dBFS.
 - It is mono: NeoBuzz Live feeds it left + right summed.
 - This build starts the LFO phase at 0 (upstream's started wherever its memory held).
 - Set LFO phase has an out-of-range default in the machine (255); NeoBuzz Live takes 127.

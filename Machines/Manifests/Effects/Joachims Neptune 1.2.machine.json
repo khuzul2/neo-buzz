@@ -28,7 +28,7 @@
   "status": "unhealthy",
   "problems": [
    "Threshold diverges at its minimum (-100.0 dB: infinity: the engine's guard caught it); safe from -97.7 dB to +15.5 dB (raw 2–128)",
-   "hot (loud but steady) with Spec.Boost at its minimum (-100.0%): +9.6 dBFS peak; Spec.Boost at its maximum (+100.0%): +10.0 dBFS peak"
+   "hot (loud but steady) with Spec.Boost at its minimum (-100.0%): +10.0 dBFS peak; Spec.Boost at its maximum (+100.0%): +9.0 dBFS peak"
   ],
   "diverging": true,
   "hot": true
@@ -39,6 +39,7 @@
    "latency_samples": 8191,
    "latency_ms": 185.74,
    "tail_seconds": 0.18,
+   "tail_hz": 8570.7,
    "echoes": 1,
    "first_echo_seconds": 0.185,
    "gap_before_echo_db": -60.0,
@@ -48,15 +49,15 @@
    "sine": {
     "loud": {
      "gain_db": -0.56,
-     "thd_percent": 1.95,
+     "thd_percent": 1.99,
      "thd_in_percent": 1.96,
-     "movement_db": 124.21
+     "movement_db": 125.0
     },
     "quiet": {
-     "gain_db": -0.55,
-     "thd_percent": 2.06,
+     "gain_db": -0.56,
+     "thd_percent": 1.99,
      "thd_in_percent": 1.96,
-     "movement_db": 124.56
+     "movement_db": 123.77
     }
    },
    "traits": [
@@ -388,8 +389,8 @@
      "verdict": "diverging"
     },
     "max": {
-     "peak_dbfs": -54.44,
-     "growth_db": -1.97,
+     "peak_dbfs": -53.41,
+     "growth_db": 1.56,
      "over_seconds": 30,
      "verdict": "ok"
     }
@@ -411,43 +412,43 @@
       [
        2,
        "-97.7 dB",
-       -9.11,
+       -9.22,
        "ok"
       ],
       [
        3,
        "-89.3 dB",
-       -9.44,
+       -9.22,
        "ok"
       ],
       [
        4,
        "-80.8 dB",
-       -9.12,
+       -9.22,
        "ok"
       ],
       [
        6,
        "-68.3 dB",
-       -9.24,
+       -9.22,
        "ok"
       ],
       [
        10,
        "-53.2 dB",
-       -9.19,
+       -9.22,
        "ok"
       ],
       [
        19,
        "-35.2 dB",
-       -9.2,
+       -9.22,
        "ok"
       ],
       [
        36,
        "-18.0 dB",
-       -9.15,
+       -9.22,
        "ok"
       ]
      ]
@@ -455,15 +456,15 @@
    },
    "Spec.Boost": {
     "min": {
-     "peak_dbfs": 9.56,
-     "growth_db": 0.46,
+     "peak_dbfs": 10.0,
+     "growth_db": 0.23,
      "verdict": "hot",
      "raw": 0,
      "text": "-100.0%"
     },
     "max": {
-     "peak_dbfs": 10.0,
-     "growth_db": 0.51,
+     "peak_dbfs": 8.97,
+     "growth_db": 0.61,
      "verdict": "hot",
      "raw": 254,
      "text": "+100.0%"

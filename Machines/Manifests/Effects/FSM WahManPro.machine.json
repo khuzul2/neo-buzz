@@ -14,7 +14,7 @@
  ],
  "use_for": "Auto-wah with a choice of filter types and LFO shapes for more varied sweeps.",
  "quirks": [
-  "Mono, one track: NeoBuzz Live feeds it left + right summed. Hot: +10 dB at its defaults, +4.3 dBFS peak; Resonance at its top is +13.7 dBFS over 30 s.",
+  "Mono, one track: NeoBuzz Live feeds it left + right summed. Hot: +10 dB at its defaults, +4.3 dBFS peak; Resonance at its top is +12.5 dBFS.",
   "Cutoff is 264 Hz x 32^(v/240) (264 Hz to 8.4 kHz, a step 1/48 octave); LFO depth is in those steps, plus or minus half the value.",
   "Its own default for Set LFO phase (255) is out of range and NeoBuzz Live takes 127; this build starts the LFO phase and the cutoff glide at 0, where upstream's started wherever its memory happened to hold.",
   "The Theviderness factor attribute (0 by default) scales resonance down at low cutoffs."
@@ -28,18 +28,18 @@
   "status": "warn",
   "problems": [
    "hot at its defaults (+4.3 dBFS peak)",
-   "hot (loud but steady) with Cutoff at its minimum (0): +1.3 dBFS peak; Cutoff at its maximum (240): +11.2 dBFS peak; Resonance at its maximum (240): +13.7 dBFS peak over 30 s; Filter at its minimum (2pole LP): +1.0 dBFS peak; Filter at its maximum (4pole Peak): +7.5 dBFS peak; LFO rate at its minimum (0.050 Hz): +2.8 dBFS peak; LFO rate at its maximum (26.995 Hz): +7.3 dBFS peak; LFO mod at its minimum (0): +7.3 dBFS peak; and 6 more",
+   "hot (loud but steady) with Cutoff at its minimum (0): +2.7 dBFS peak over 30 s; Cutoff at its maximum (240): +12.0 dBFS peak; Resonance at its maximum (240): +12.5 dBFS peak; Filter at its maximum (4pole Peak): +8.2 dBFS peak; LFO rate at its minimum (0.050 Hz): +3.3 dBFS peak; LFO rate at its maximum (26.995 Hz): +8.9 dBFS peak; LFO mod at its minimum (0): +6.9 dBFS peak; LFO mod at its maximum (240): +11.4 dBFS peak over 30 s; and 5 more",
    "Set phase: its own default (raw 255) is outside its range (0…127)"
   ],
   "hot": true
  },
  "profile": {
   "effect": {
-   "gain_db": 10.09,
+   "gain_db": 10.08,
    "latency_samples": 0,
    "latency_ms": 0.0,
    "tail_seconds": 0.01,
-   "tail_hz": 1013.2,
+   "tail_hz": 964.5,
    "echoes": 0,
    "output_correlation": 1.0,
    "spectrum_spread_db": 21.5,
@@ -49,13 +49,13 @@
      "gain_db": 6.55,
      "thd_percent": 3.73,
      "thd_in_percent": 1.96,
-     "movement_db": 0.17
+     "movement_db": 0.16
     },
     "quiet": {
      "gain_db": 28.1,
-     "thd_percent": 0.2,
+     "thd_percent": 0.18,
      "thd_in_percent": 1.96,
-     "movement_db": 3.96
+     "movement_db": 4.0
     }
    },
    "traits": [
@@ -392,15 +392,16 @@
   "sweeps": {
    "Cutoff": {
     "min": {
-     "peak_dbfs": 1.33,
-     "growth_db": 0.25,
+     "peak_dbfs": 2.69,
+     "growth_db": -0.66,
+     "over_seconds": 30,
      "verdict": "hot",
      "raw": 0,
      "text": "0"
     },
     "max": {
-     "peak_dbfs": 11.17,
-     "growth_db": 0.66,
+     "peak_dbfs": 12.02,
+     "growth_db": 0.92,
      "verdict": "hot",
      "raw": 240,
      "text": "240"
@@ -408,25 +409,17 @@
    },
    "Resonance": {
     "max": {
-     "peak_dbfs": 13.73,
-     "growth_db": 0.14,
-     "over_seconds": 30,
+     "peak_dbfs": 12.52,
+     "growth_db": 1.62,
      "verdict": "hot",
      "raw": 240,
      "text": "240"
     }
    },
    "Filter": {
-    "min": {
-     "peak_dbfs": 1.03,
-     "growth_db": 1.74,
-     "verdict": "hot",
-     "raw": 0,
-     "text": "2pole LP"
-    },
     "max": {
-     "peak_dbfs": 7.47,
-     "growth_db": 0.93,
+     "peak_dbfs": 8.17,
+     "growth_db": 0.83,
      "verdict": "hot",
      "raw": 4,
      "text": "4pole Peak"
@@ -434,15 +427,15 @@
    },
    "LFO rate": {
     "min": {
-     "peak_dbfs": 2.81,
-     "growth_db": 0.67,
+     "peak_dbfs": 3.3,
+     "growth_db": 0.94,
      "verdict": "hot",
      "raw": 0,
      "text": "0.050 Hz"
     },
     "max": {
-     "peak_dbfs": 7.28,
-     "growth_db": 1.37,
+     "peak_dbfs": 8.94,
+     "growth_db": -1.38,
      "verdict": "hot",
      "raw": 240,
      "text": "26.995 Hz"
@@ -450,15 +443,15 @@
    },
    "LFO mod": {
     "min": {
-     "peak_dbfs": 7.27,
-     "growth_db": 1.27,
+     "peak_dbfs": 6.92,
+     "growth_db": -1.18,
      "verdict": "hot",
      "raw": 0,
      "text": "0"
     },
     "max": {
-     "peak_dbfs": 11.52,
-     "growth_db": 0.59,
+     "peak_dbfs": 11.38,
+     "growth_db": 0.76,
      "over_seconds": 30,
      "verdict": "hot",
      "raw": 240,
@@ -467,15 +460,15 @@
    },
    "LFO Shape": {
     "min": {
-     "peak_dbfs": 7.66,
-     "growth_db": -0.03,
+     "peak_dbfs": 8.31,
+     "growth_db": -1.54,
      "verdict": "hot",
      "raw": 0,
      "text": "sine"
     },
     "max": {
-     "peak_dbfs": 9.23,
-     "growth_db": 0.56,
+     "peak_dbfs": 6.87,
+     "growth_db": 1.54,
      "verdict": "hot",
      "raw": 8,
      "text": "weird 4"
@@ -483,15 +476,15 @@
    },
    "Inertia": {
     "min": {
-     "peak_dbfs": 4.31,
-     "growth_db": 1.5,
+     "peak_dbfs": 4.23,
+     "growth_db": 0.58,
      "verdict": "hot",
      "raw": 0,
      "text": "0"
     },
     "max": {
-     "peak_dbfs": 7.3,
-     "growth_db": 0.41,
+     "peak_dbfs": 7.43,
+     "growth_db": -4.89,
      "verdict": "hot",
      "raw": 60,
      "text": "60"
@@ -499,8 +492,8 @@
    },
    "Set phase": {
     "min": {
-     "peak_dbfs": 4.69,
-     "growth_db": -0.08,
+     "peak_dbfs": 4.01,
+     "growth_db": 0.65,
      "verdict": "hot",
      "raw": 0,
      "text": "0"

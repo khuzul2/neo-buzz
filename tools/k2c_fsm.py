@@ -282,7 +282,7 @@ CURATE = {
         "quirks": [
             "Each track is its own modulated delay line (up to 8) with its own settings; write a track's columns to use it, an unwritten track keeps its defaults.",
             "Feedback is (v - 64) / 64; the tracks' absolute feedbacks together are limited to 99.5 percent, so adding tracks with high feedback turns all of them down.",
-            "Feedback at either end is hot: +6.1 and +8.4 dBFS peak over 30 s in the profile.",
+            "Feedback at either end is hot: +3.2 dBFS peak at -100 percent and +10.4 dBFS over 30 s at +100 percent in the profile.",
             "An LFO Shape attribute (0 sine, 1 triangle, 2 and 3 saw, 4 default, 5 to 7 odd) is set on the machine, not in the pattern; it is not in the manifest.",
             "+2.4 dB at its defaults on the profile's test signal.",
         ],
@@ -328,7 +328,7 @@ CURATE = {
                    "t3": ("LFO rate", "lfo.rate"), "t4": ("LFO depth", "lfo.filter"), "t5": ("LFO shape", "lfo.wave"),
                    "t6": ("Inertia", "filter.inertia"), "t7": ("Set LFO phase", "lfo.phase")},
         "quirks": [
-            "Mono, one track: NeoBuzz Live feeds it left + right summed. Hot: +10 dB at its defaults, +4.3 dBFS peak; Resonance at its top is +13.7 dBFS over 30 s.",
+            "Mono, one track: NeoBuzz Live feeds it left + right summed. Hot: +10 dB at its defaults, +4.3 dBFS peak; Resonance at its top is +12.5 dBFS.",
             "Cutoff is 264 Hz x 32^(v/240) (264 Hz to 8.4 kHz, a step 1/48 octave); LFO depth is in those steps, plus or minus half the value.",
             "Its own default for Set LFO phase (255) is out of range and NeoBuzz Live takes 127; this build starts the LFO phase and the cutoff glide at 0, where upstream's started wherever its memory happened to hold.",
             "The Theviderness factor attribute (0 by default) scales resonance down at low cutoffs.",

@@ -41,15 +41,15 @@
    "sine": {
     "loud": {
      "gain_db": -10.46,
-     "thd_percent": 1.98,
+     "thd_percent": 1.99,
      "thd_in_percent": 1.96,
-     "movement_db": 13.63
+     "movement_db": 13.64
     },
     "quiet": {
      "gain_db": -5.34,
      "thd_percent": 1.0,
      "thd_in_percent": 1.96,
-     "movement_db": 9.98
+     "movement_db": 9.95
     }
    },
    "traits": [

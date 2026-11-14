@@ -29,7 +29,7 @@
  "health": {
   "status": "warn",
   "problems": [
-   "hot (loud but steady) with 3. Boost at its maximum (+16.0 dB): +4.7 dBFS peak"
+   "hot (loud but steady) with 3. Boost at its maximum (+16.0 dB): +5.0 dBFS peak"
   ],
   "hot": true
  },
@@ -54,7 +54,7 @@
      "gain_db": 0.0,
      "thd_percent": 1.96,
      "thd_in_percent": 1.96,
-     "movement_db": 0.14
+     "movement_db": 0.13
     }
    },
    "traits": [
@@ -380,13 +380,13 @@
    },
    "all_at_once": {
     "min": {
-     "peak_dbfs": -9.14,
-     "growth_db": 0.35,
+     "peak_dbfs": -9.24,
+     "growth_db": -0.16,
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": 10.21,
-     "growth_db": -0.06,
+     "peak_dbfs": 10.26,
+     "growth_db": 0.11,
      "verdict": "hot"
     }
    },
@@ -398,8 +398,8 @@
   "sweeps": {
    "3. Boost": {
     "max": {
-     "peak_dbfs": 4.74,
-     "growth_db": -0.24,
+     "peak_dbfs": 5.03,
+     "growth_db": -0.21,
      "verdict": "hot",
      "raw": 64,
      "text": "+16.0 dB"

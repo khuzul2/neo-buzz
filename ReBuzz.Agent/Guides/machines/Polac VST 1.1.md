@@ -16,7 +16,7 @@ Hosts an effect plugin in the graph. It has a level, a pan, a program number, a 
 | Pan | 0 | -64 to +64; unit unverified |
 | Program | 0 | the plugin's patch number, 0 to 65,534 |
 | Global command | Transpose | one of 18 host commands |
-| Global command value | 65534 | its value; 65534 means not written |
+| Global command value | 65534 | its value; its own default, 65,535, means not written (NeoBuzz Live takes 65534) |
 
 ## Starting points
 

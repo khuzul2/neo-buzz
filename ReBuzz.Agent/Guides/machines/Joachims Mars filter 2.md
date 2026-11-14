@@ -23,7 +23,7 @@ A distortion with 13 characters, from soft and round (Red crust, Deimos) through
 
 ## Pitfalls
 
-- `Input gain` at its top (+15.5 dB) or `Amount` at its top peaks above 0 dBFS: +2.5 and +0.8 dBFS in the profile.
+- `Input gain` at its top (+15.5 dB) or `Amount` at its top peaks above 0 dBFS: +1.1 dBFS for Input gain in the latest profile (+2.5 and +0.8 dBFS for both in an earlier one).
 - Amount means something different per character; in Steel pain it does the same as Input gain.
 - In Cannon the bass control keeps bass out of the distortion; Crunch adds a slight delay.
 - Character 0 bypasses it, which is good for comparing.

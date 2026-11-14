@@ -28,7 +28,7 @@
  "health": {
   "status": "warn",
   "problems": [
-   "hot (loud but steady) with Wet L Pan at its minimum (100% L): +0.3 dBFS peak; Wet R Pan at its maximum (100% R): +1.0 dBFS peak; FB Amp at its maximum (-0.1 dB): +10.5 dBFS peak over 30 s"
+   "hot (loud but steady) with Wet L Pan at its minimum (100% L): +0.6 dBFS peak; Wet R Pan at its maximum (100% R): +0.6 dBFS peak; FB Amp at its maximum (-0.1 dB): +11.0 dBFS peak over 30 s"
   ],
   "hot": true
  },
@@ -38,8 +38,8 @@
    "latency_samples": 0,
    "latency_ms": 0.0,
    "tail_seconds": 2.62,
-   "tail_hz": 8238.1,
-   "echoes": 6,
+   "tail_hz": 8570.7,
+   "echoes": 7,
    "first_echo_seconds": 0.375,
    "gap_before_echo_db": -60.0,
    "output_correlation": 1.0,
@@ -47,16 +47,16 @@
    "tilt_db": 0.0,
    "sine": {
     "loud": {
-     "gain_db": 2.41,
+     "gain_db": 2.42,
      "thd_percent": 1.86,
      "thd_in_percent": 1.96,
-     "movement_db": 6.15
+     "movement_db": 6.13
     },
     "quiet": {
      "gain_db": 2.42,
-     "thd_percent": 1.92,
+     "thd_percent": 1.86,
      "thd_in_percent": 1.96,
-     "movement_db": 6.11
+     "movement_db": 6.13
     }
    },
    "traits": [
@@ -460,13 +460,13 @@
    },
    "all_at_once": {
     "min": {
-     "peak_dbfs": -7.06,
-     "growth_db": 0.66,
+     "peak_dbfs": -7.28,
+     "growth_db": 0.03,
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": -2.12,
-     "growth_db": -0.19,
+     "peak_dbfs": -1.95,
+     "growth_db": -0.18,
      "verdict": "ok"
     }
    },
@@ -478,8 +478,8 @@
   "sweeps": {
    "Wet L Pan": {
     "min": {
-     "peak_dbfs": 0.32,
-     "growth_db": 0.2,
+     "peak_dbfs": 0.63,
+     "growth_db": 0.37,
      "verdict": "hot",
      "raw": 0,
      "text": "100% L"
@@ -487,8 +487,8 @@
    },
    "Wet R Pan": {
     "max": {
-     "peak_dbfs": 1.0,
-     "growth_db": 0.07,
+     "peak_dbfs": 0.63,
+     "growth_db": 0.37,
      "verdict": "hot",
      "raw": 240,
      "text": "100% R"
@@ -496,8 +496,8 @@
    },
    "FB Amp": {
     "max": {
-     "peak_dbfs": 10.48,
-     "growth_db": 0.52,
+     "peak_dbfs": 11.04,
+     "growth_db": 2.12,
      "over_seconds": 30,
      "verdict": "hot",
      "raw": 239,
@@ -558,7 +558,7 @@
     },
     "Dry L Pan": {
      "suggested_role": "drive",
-     "evidence": "harmonics 1.9 → 51.0 % on a sine",
+     "evidence": "harmonics 1.9 → 252.4 % on a sine",
      "min": {
       "raw": 0,
       "text": "100% L"

@@ -43,13 +43,13 @@
      "gain_db": 3.98,
      "thd_percent": 0.35,
      "thd_in_percent": 1.96,
-     "movement_db": 0.32
+     "movement_db": 0.31
     },
     "quiet": {
      "gain_db": 3.08,
      "thd_percent": 0.65,
      "thd_in_percent": 1.96,
-     "movement_db": 0.49
+     "movement_db": 0.47
     }
    },
    "traits": [
@@ -377,7 +377,7 @@
    "swept_because": [
     "an effect with Resonance"
    ],
-   "renders": 21
+   "renders": 20
   },
   "sweeps": {},
   "roles": {

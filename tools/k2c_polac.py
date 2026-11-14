@@ -20,7 +20,7 @@ VST_TRACK = {
 VST_GLOBAL = {
     "gc": ("Chooses a global command, from a list of 18 including transpose, tempo sync, trigger sequencing, bypass, morph between two programs, automation slope and delay, velocity and delay commands, mute all tracks, system exclusive, rows per beat and time signature.",
            "It does not sound by itself; it sets how the host behaves, with the value in Global Command Value."),
-    "gv": ("Holds the value for the chosen global command, 0 to 65,534 (65,534, the default, means not written).",
+    "gv": ("Holds the value for the chosen global command, 0 to 65,534 (its own default, 65,535, is one past the range and means not written).",
            "Its effect depends on the command; write it with the command."),
     "pr": ("Chooses the plugin's program (patch) number, 0 to 65,534.",
            "Changing it loads a different preset in the hosted plugin."),
@@ -136,7 +136,7 @@ CURATE = {
     "Polac VST 1.1": {
         "type": "plugin host",
         "summary": "Hosts an effect plugin in the graph: a dry and a wet level, a pan, a program number, a global command with a value, and for each of its tracks a plugin parameter number and value and a MIDI channel. An older 32-bit-era host.",
-        "params": {"p0": ("Dry level", "mix.dry", {"description": "Level of the untouched input in the output, silence at 0 (the default) to +12 dB at 400."}), "p1": ("Wet level", "mix.wet", {"description": "Level of the plugin's output, silence at 0, 0 dB at 100 (the default) and +12 dB at 400."}), "p2": ("Pan", "pan", {"description": "Panning from -64 (left) to +64 (right), 0 at 64; the unit was not measured."}), "p3": ("Global command", "", {"description": "A global command of the host: transpose, tempo sync, bypass, morph, automation slope and others (18)."}), "p4": ("Global command value", "", {"description": "Value of the global command, 0 to 65,534 (65,534 = not written)."}),
+        "params": {"p0": ("Dry level", "mix.dry", {"description": "Level of the untouched input in the output, silence at 0 (the default) to +12 dB at 400."}), "p1": ("Wet level", "mix.wet", {"description": "Level of the plugin's output, silence at 0, 0 dB at 100 (the default) and +12 dB at 400."}), "p2": ("Pan", "pan", {"description": "Panning from -64 (left) to +64 (right), 0 at 64; the unit was not measured."}), "p3": ("Global command", "", {"description": "A global command of the host: transpose, tempo sync, bypass, morph, automation slope and others (18)."}), "p4": ("Global command value", "", {"description": "Value of the global command, 0 to 65,534 (its own default, 65,535, is out of range and means not written; NeoBuzz Live takes 65,534)."}),
                    "p5": ("Program", "", {"description": "The plugin's program (patch) number, 0 to 65,534."}), "t0": ("Plugin parameter", ""), "t1": ("Plugin parameter value", "", PCT), "t2": ("MIDI channel", "")},
         "quirks": [
             NOPLUG,
@@ -150,7 +150,7 @@ CURATE = {
     "Polac VSTi 1.1": {
         "type": "plugin host",
         "summary": "Hosts an instrument plugin in the graph: a level, a pan, a program number, a global command with a value, and for each of its tracks a plugin parameter number and value and a MIDI channel. An older 32-bit-era host.",
-        "params": {"p0": ("Wet level", "level", {"description": "Level of the plugin's output, silence at 0, 0 dB at 100 (the default) and +12 dB at 400."}), "p1": ("Pan", "pan", {"description": "Panning from -64 (left) to +64 (right), 0 at 64; the unit was not measured."}), "p2": ("Global command", "", {"description": "A global command of the host: transpose, tempo sync, bypass, morph, automation slope and others (18)."}), "p3": ("Global command value", "", {"description": "Value of the global command, 0 to 65,534 (65,534 = not written)."}),
+        "params": {"p0": ("Wet level", "level", {"description": "Level of the plugin's output, silence at 0, 0 dB at 100 (the default) and +12 dB at 400."}), "p1": ("Pan", "pan", {"description": "Panning from -64 (left) to +64 (right), 0 at 64; the unit was not measured."}), "p2": ("Global command", "", {"description": "A global command of the host: transpose, tempo sync, bypass, morph, automation slope and others (18)."}), "p3": ("Global command value", "", {"description": "Value of the global command, 0 to 65,534 (its own default, 65,535, is out of range and means not written; NeoBuzz Live takes 65,534)."}),
                    "p4": ("Program", "", {"description": "The plugin's program (patch) number, 0 to 65,534."}), "t0": ("Plugin parameter", ""), "t1": ("Plugin parameter value", "", PCT), "t2": ("MIDI channel", "")},
         "quirks": [
             NOPLUG,

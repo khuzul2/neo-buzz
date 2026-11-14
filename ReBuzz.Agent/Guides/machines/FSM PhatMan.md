@@ -25,7 +25,7 @@ A chorus and flanger built from up to eight delay lines, one per track. Each lin
 
 ## Pitfalls
 
-- Feedback at either end is hot: +6.1 and +8.4 dBFS peak over 30 s in the profile; all tracks' feedbacks together are held under 99.5 percent.
+- Feedback at either end is hot: +3.2 dBFS at -100 percent and +10.4 dBFS over 30 s at +100 percent in the profile; all tracks' feedbacks together are held under 99.5 percent.
 - Each track is a separate line: an unwritten track keeps its defaults.
 - Its LFO shape (sine, triangle, saws and more) is a machine attribute, not a parameter.
 - It is +2.4 dB louder than its input at the defaults.

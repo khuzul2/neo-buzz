@@ -24,7 +24,7 @@ A three-band equaliser with tube-style drive: each band has a boost or cut of pl
 
 ## Pitfalls
 
-- Band 3's boost at its top is hot: +4.7 dBFS peak in the profile.
+- Band 3's boost at its top is hot: +5.0 dBFS peak in the profile.
 - Bands 2 and 3 carry band 1's descriptions in the machine's own texts (a copy mistake); they are separate bands.
 - It is 0 dB at the defaults.
 

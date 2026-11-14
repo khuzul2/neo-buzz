@@ -27,17 +27,17 @@
  "health": {
   "status": "warn",
   "problems": [
-   "hot (loud but steady) with Cutoff at its maximum (240): +3.1 dBFS peak; Filter at its minimum (2pole LP): +4.2 dBFS peak; LFO mod at its maximum (240): +0.7 dBFS peak"
+   "hot (loud but steady) with Cutoff at its maximum (240): +3.4 dBFS peak; Filter at its minimum (2pole LP): +4.0 dBFS peak; LFO mod at its maximum (240): +3.0 dBFS peak"
   ],
   "hot": true
  },
  "profile": {
   "effect": {
-   "gain_db": 3.29,
+   "gain_db": 3.3,
    "latency_samples": 1,
    "latency_ms": 0.02,
    "tail_seconds": 0.01,
-   "tail_hz": 425.7,
+   "tail_hz": 414.5,
    "echoes": 0,
    "output_correlation": 1.0,
    "spectrum_spread_db": 26.7,
@@ -51,9 +51,9 @@
     },
     "quiet": {
      "gain_db": 17.21,
-     "thd_percent": 0.33,
+     "thd_percent": 0.34,
      "thd_in_percent": 1.96,
-     "movement_db": 1.37
+     "movement_db": 1.35
     }
    },
    "traits": [
@@ -387,8 +387,8 @@
   "sweeps": {
    "Cutoff": {
     "max": {
-     "peak_dbfs": 3.14,
-     "growth_db": -1.85,
+     "peak_dbfs": 3.38,
+     "growth_db": -2.42,
      "verdict": "hot",
      "raw": 240,
      "text": "240"
@@ -396,8 +396,8 @@
    },
    "Filter": {
     "min": {
-     "peak_dbfs": 4.22,
-     "growth_db": -0.11,
+     "peak_dbfs": 3.97,
+     "growth_db": 0.54,
      "verdict": "hot",
      "raw": 0,
      "text": "2pole LP"
@@ -405,8 +405,8 @@
    },
    "LFO mod": {
     "max": {
-     "peak_dbfs": 0.74,
-     "growth_db": -5.31,
+     "peak_dbfs": 2.98,
+     "growth_db": -9.17,
      "verdict": "hot",
      "raw": 240,
      "text": "240"

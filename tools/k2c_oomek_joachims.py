@@ -300,7 +300,7 @@ CURATE = {
         "quirks": [
             "Bands 2 and 3 carry band 1's descriptions in the machine's own texts (a copy mistake in the machine); the names Band 1, 2, 3 here follow their order.",
             "The bands default to 0 dB boost, 25 percent drive and centres near 60 Hz, 630 Hz and 6.3 kHz (read from the measured mapping).",
-            "Boost at its maximum is hot: +4.7 dBFS peak for band 3 at +16 dB on the profile's signal.",
+            "Boost at its maximum is hot: +5.0 dBFS peak for band 3 at +16 dB on the profile's signal.",
             "Level is 0 dB at the defaults; stereo.",
             CLOSED,
         ],
@@ -313,7 +313,7 @@ CURATE = {
         "quirks": [
             "Bands do not compensate each other's overlap: at the default Bandwidth every band at +6 dB makes +43 dB at 3.2 kHz (measured for its successor mapping), so raise bands gently and lower Input gain.",
             "Bandwidth is the octaves between a band's half-gain points at low frequencies, twice the number its text shows (1.0 at the default is 2.0 octaves); Highpass is a second-order Butterworth filter whose corner is about 1.28 times the number shown.",
-            "Hot: single bands at +18 dB peak up to +6.6 dBFS in the profile; every parameter at its top at once diverges.",
+            "Hot: single bands at +18 dB peak above full scale (+3.9 dBFS and more in the profile); every parameter at its top at once diverges. Unverified: the text at Input gain raw 0 was not a number in the profile, so it is entered as silence.",
             "Stereo, 0 dB at its defaults; its high bands move with the sample rate (measured at 44.1 kHz).",
             "Enable is on by default; off bypasses the equaliser.",
         ],
@@ -356,7 +356,7 @@ CURATE = {
                    "p14": ("Output tilt", ""), "p15": ("Highpass", "filter.highpass", {"a": 5.0, "b": 200.0})},
         "quirks": [
             "Noise needs its sample files (Joachims Saturn 1.4.raw and 01 to 06 beside the DLL); the package ships them.",
-            "The two tilt controls are hot at their top: +18.9 dBFS peak in the profile; Noise amount at its top is +1.6 dBFS.",
+            "The two tilt controls are hot at their top: +18.7 dBFS peak in the profile; Noise amount at its top is +1.8 dBFS.",
             "Unverified: what each Noise type is (its page speaks of vinyl scratches at 33 rpm and says the noise is optimised for a 96 kHz sample rate) and the Detune speed text repeats the amount's.",
             "Stereo, 0 dB at its defaults; a tail of 0.05 s from the room.",
             CLOSED,

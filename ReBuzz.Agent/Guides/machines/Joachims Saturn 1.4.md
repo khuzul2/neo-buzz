@@ -24,7 +24,7 @@ An all-purpose vintage degrader: input and output tone tilt, record noise, a sma
 
 ## Pitfalls
 
-- The tilt controls are hot at their top: +18.9 dBFS peak in the profile.
+- The tilt controls are hot at their top: +18.7 dBFS peak in the profile.
 - Noise needs its sample files beside the DLL; the package ships them.
 - Unverified: what each Noise type is, and Detune speed's own text repeats the amount's.
 - It is 0 dB at the defaults.

@@ -28,16 +28,17 @@
  "health": {
   "status": "warn",
   "problems": [
-   "hot (loud but steady) with PreGain at its maximum (+15.5 dB): +2.5 dBFS peak; Amount at its maximum (127): +0.8 dBFS peak"
+   "hot (loud but steady) with PreGain at its maximum (+15.5 dB): +1.1 dBFS peak"
   ],
   "hot": true
  },
  "profile": {
   "effect": {
-   "gain_db": 1.48,
+   "gain_db": 1.5,
    "latency_samples": 0,
    "latency_ms": 0.0,
-   "tail_seconds": 0.01,
+   "tail_seconds": 0.02,
+   "tail_hz": 30.1,
    "echoes": 0,
    "output_correlation": 1.0,
    "spectrum_spread_db": 32.4,
@@ -377,15 +378,15 @@
   },
   "level_test": {
    "defaults": {
-    "peak_dbfs": -4.47,
-    "growth_db": 0.19,
+    "peak_dbfs": -4.12,
+    "growth_db": -0.11,
     "over_seconds": 30,
     "verdict": "ok"
    },
    "all_at_once": {
     "min": {
-     "peak_dbfs": -9.14,
-     "growth_db": -0.13,
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
      "verdict": "ok"
     },
     "max": {
@@ -397,25 +398,16 @@
    "swept_because": [
     "an effect with PreGain"
    ],
-   "renders": 12
+   "renders": 13
   },
   "sweeps": {
    "PreGain": {
     "max": {
-     "peak_dbfs": 2.46,
-     "growth_db": -1.65,
+     "peak_dbfs": 1.05,
+     "growth_db": 0.19,
      "verdict": "hot",
      "raw": 128,
      "text": "+15.5 dB"
-    }
-   },
-   "Amount": {
-    "max": {
-     "peak_dbfs": 0.75,
-     "growth_db": 1.88,
-     "verdict": "hot",
-     "raw": 127,
-     "text": "127"
     }
    }
   },
