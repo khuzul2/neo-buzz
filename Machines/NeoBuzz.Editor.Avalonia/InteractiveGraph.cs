@@ -10,6 +10,7 @@ namespace NeoBuzz.Editor
     internal sealed class InteractiveGraph : GraphView
     {
         readonly IGraphInput input;
+        readonly IGraphInputPlus plus;
         readonly EditGesture gesture;
         bool dragging;
 
@@ -18,7 +19,9 @@ namespace NeoBuzz.Editor
         {
             this.input = input;
             gesture = new EditGesture(this);
-            Focusable = false;
+            // A surface that also takes the right button, keys and text (Neo Patch's inner canvas) is focusable; the others stay out of the tab order.
+            plus = input as IGraphInputPlus;
+            Focusable = plus != null;
         }
 
         static bool Fine(MouseEventArgs e) => (e.KeyModifiers & KeyModifiers.Shift) != 0;
@@ -26,6 +29,7 @@ namespace NeoBuzz.Editor
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             var p = e.GetPosition(this);
+            if (plus != null) Focus();
             gesture.Begin();
             if (input.Down(p.X, p.Y, e.ClickCount, Fine(e)))
             {
@@ -38,6 +42,41 @@ namespace NeoBuzz.Editor
                 e.Handled = true;
             }
             if (!dragging) gesture.End();   // a click (a double-click toggles a band): its step is done
+        }
+
+        protected override void OnMouseRightButtonDown(MouseButtonEventArgs e)
+        {
+            if (plus == null) return;
+            var p = e.GetPosition(this);
+            Focus();
+            if (plus.RightDown(p.X, p.Y))
+            {
+                InvalidateVisual();
+                e.Handled = true;
+            }
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            if (plus == null) return;
+            bool ctrl = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Meta)) != 0, shift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
+            if (plus.Key(e.Key.ToString(), ctrl, shift))
+            {
+                InvalidateVisual();
+                e.Handled = true;
+            }
+        }
+
+        protected override void OnTextInput(TextInputEventArgs e)
+        {
+            base.OnTextInput(e);
+            if (plus == null || !plus.WantsText) return;
+            if (plus.Text(e.Text))
+            {
+                InvalidateVisual();
+                e.Handled = true;
+            }
         }
 
         protected override void OnMouseMove(MouseEventArgs e)

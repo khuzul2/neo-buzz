@@ -185,6 +185,12 @@ namespace NeoBuzz.Patch
         public int LastAdopted => lastPublished?.Adopted ?? 0;
         public CompiledPatch Current => lastPublished;
 
+        // The CPU readout (the editor's): the time a block took against the time it lasts, smoothed over about a second (no allocation: a timestamp each side).
+        float cpuLoad, cpuPeak;
+        /// <summary>The share of one core the patch uses, 0 … 1 and over (the time a block takes against its length, smoothed), and the peak with a slow decay.</summary>
+        public float CpuLoad => cpuLoad;
+        public float CpuPeak => cpuPeak;
+
         public void SetSampleRate(float sr)
         {
             if (sr == sampleRate) return;
@@ -346,6 +352,15 @@ namespace NeoBuzz.Patch
         }
 
         public void ProcessBlock(float[] left, float[] right)
+        {
+            long t0 = Stopwatch.GetTimestamp();
+            ProcessBlockInner(left, right);
+            float load = (float)((Stopwatch.GetTimestamp() - t0) / (double)Stopwatch.Frequency * sampleRate / Block);
+            cpuLoad += (load - cpuLoad) * 0.02f;
+            cpuPeak = load > cpuPeak ? load : cpuPeak * 0.999f;
+        }
+
+        void ProcessBlockInner(float[] left, float[] right)
         {
             var p = Interlocked.Exchange(ref pending, null);
             if (p != null) { ramp = cur != null; cur = p; }

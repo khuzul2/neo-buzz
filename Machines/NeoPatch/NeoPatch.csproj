@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Fork addition (neo-buzz, docs/specs/neo-patch.md): Neo Patch, a Neo-family modular synth. Shared DSP and Buzz glue are linked as source; the engine reuses Dye Essence's lane kernels, wavetable arena and samples. The inner canvas editor is NP2: until then no editor, the generic parameter view. -->
+  <!-- Fork addition (neo-buzz, docs/specs/neo-patch.md): Neo Patch, a Neo-family modular synth. Shared DSP and Buzz glue are linked as source; the engine reuses Dye Essence's lane kernels, wavetable arena and samples. The inner canvas editor (NP2) is NeoPatchEditor.cs and Editor/, on the Neo editor kit. -->
   <PropertyGroup>
     <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
     <Nullable>disable</Nullable>
@@ -20,6 +20,7 @@
   <ItemGroup>
     <Compile Include="..\NeoBuzz.Dsp\**\*.cs" Link="Shared\Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\NeoBuzz.Machine\**\*.cs" Link="Shared\Machine\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\NeoBuzz.Editor\**\*.cs" Link="Shared\Editor\%(RecursiveDir)%(Filename)%(Extension)" />
     <!-- Dye Essence's lane kernels, table arena (the band-limited mip levels), built-in tables and samples, and note envelope. -->
     <Compile Include="..\DyeEssence\Engine\Lanes.cs;..\DyeEssence\Engine\NoteEnvelope.cs;..\DyeEssence\Engine\TableArena.cs;..\DyeEssence\Engine\TableBank.cs;..\DyeEssence\Engine\SampleSources.cs" Link="Shared\DyeEssence\%(Filename)%(Extension)" />
     <!-- Neo Wave's table recipes, Neo Sampler's sample layer (octave-down copies) and band-limited read. -->

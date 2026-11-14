@@ -2,7 +2,7 @@
 // Neo Patch (docs/specs/neo-patch.md, docs/specs/neo-patch-engine.md): a modular synth inside one machine. The patch (nodes, wires, node
 // settings, macro mappings and a name) is the machine's state, kept as one line of text, so songs and presets carry it. 16 tracks of Note and
 // Velocity, plus MIDI and MPE. Parameters (Volume, Voices, Glide, the audio-rate switch, 16 macros) are generated from Params.def. The inner canvas
-// editor is NP2; until then the machine shows its parameters, and a patch is built from code, an imported text file or a preset.
+// editor is NP2 (NeoPatchEditor.cs and Editor/, on the Neo editor kit): a patch is built there, or from an imported text file, a preset or an agent.
 
 using System;
 using System.Collections.Generic;
@@ -24,6 +24,8 @@ namespace NeoBuzz.Patch
         public int SampleRate { get; set; }
         public bool SampleStereo { get; set; }
         public string SampleData { get; set; } = "";
+        /// <summary>The inner canvas's view (zoom and pan), so a song reopens as it was left. The nodes' places and the macros' names are in <see cref="Patch"/>.</summary>
+        public string View { get; set; } = "";
     }
 
     [MachineDecl(Name = "Neo Patch", ShortName = "Patch", Author = "neo-buzz", MaxTracks = 16, InputCount = 0, OutputCount = 1)]
@@ -42,6 +44,20 @@ namespace NeoBuzz.Patch
 
         internal PatchEngine Engine { get; }
 
+        /// <summary>The inner canvas's view (zoom and pan) as text; the editor keeps it here and the song saves it.</summary>
+        internal string View { get; set; } = "";
+
+        /// <summary>Raised on the thread that replaced the patch from outside the editor (an undo step, a preset, a song opening): the open inner canvas redraws from it.</summary>
+        internal event Action PatchReplaced;
+
+        /// <summary>Puts a patch back from its text (an undo or redo step of the inner canvas): compiled off the audio thread, swapped in at a block boundary.</summary>
+        internal void ApplyPatchText(string text)
+        {
+            Engine.SetPatch(text);
+            state.Patch = Engine.Text();
+            PatchReplaced?.Invoke();
+        }
+
         /// <summary>Agent server (mcp-server.md A3): true while a table or sample the patch plays is still being built. Offline renders wait for it.</summary>
         public bool Busy => Engine.Busy;
 
@@ -54,11 +70,13 @@ namespace NeoBuzz.Patch
             {
                 // The patch as it is now (edits made through the engine are in the graph, not in the stored text).
                 state.Patch = Engine.Text();
+                state.View = View ?? "";
                 return state;
             }
             set
             {
                 state = value ?? new NeoPatchState();
+                View = state.View ?? "";
                 try
                 {
                     if (string.IsNullOrEmpty(state.Patch)) Engine.SetGraph(new PatchGraph());
@@ -82,6 +100,7 @@ namespace NeoBuzz.Patch
                 {
                     Engine.Runtime.UserSample = null;
                 }
+                PatchReplaced?.Invoke();
             }
         }
 
@@ -146,4 +165,12 @@ namespace NeoBuzz.Patch
             },
         };
     }
+
+#if WINDOWS || AVALONIA   // the inner canvas on WPF, or Avalonia in the studio (the Neo editor kit); none headless
+    [MachineGUIFactoryDecl(PreferWindowedGUI = true, IsGUIResizable = false, UseThemeStyles = false)]
+    public class MachineGUIFactory : IMachineGUIFactory
+    {
+        public IMachineGUI CreateGUI(IMachineGUIHost host) => new NeoPatchEditor();
+    }
+#endif
 }

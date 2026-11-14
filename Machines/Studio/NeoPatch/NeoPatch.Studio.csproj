@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Neo Patch, studio flavour (docs/specs/studio-mvp.md S1): see ../NeoStudio.targets. No editor yet (NP2): the studio shows the generic parameter view. -->
+  <!-- Neo Patch, studio flavour (docs/specs/studio-mvp.md S1): see ../NeoStudio.targets. The editor is the inner canvas (NeoPatchEditor.cs, Editor/). -->
   <PropertyGroup>
     <NeoFolder>NeoPatch</NeoFolder>
     <NeoName>Neo Patch</NeoName>
