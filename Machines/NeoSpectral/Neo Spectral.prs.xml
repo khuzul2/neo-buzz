@@ -1,0 +1,245 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Vocal — Gentle Resonance Control">
+    <Preset Machine="Neo Spectral">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="400" />
+        <Parameter Name="Knee" Group="1" Index="2" Track="0" Value="333" />
+        <Parameter Name="Selectivity" Group="1" Index="3" Track="0" Value="278" />
+        <Parameter Name="Smoothing" Group="1" Index="4" Track="0" Value="333" />
+        <Parameter Name="Tilt" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Lift" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="437" />
+        <Parameter Name="Low limit" Group="1" Index="9" Track="0" Value="287" />
+        <Parameter Name="High limit" Group="1" Index="10" Track="0" Value="778" />
+        <Parameter Name="Mix" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Light suppression of narrow resonances on a vocal; leaves the body and the air alone</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Vocal — Tame Harshness (2 - 8 kHz)">
+    <Preset Machine="Neo Spectral">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="700" />
+        <Parameter Name="Knee" Group="1" Index="2" Track="0" Value="222" />
+        <Parameter Name="Selectivity" Group="1" Index="3" Track="0" Value="333" />
+        <Parameter Name="Smoothing" Group="1" Index="4" Track="0" Value="333" />
+        <Parameter Name="Tilt" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Lift" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Low limit" Group="1" Index="9" Track="0" Value="849" />
+        <Parameter Name="High limit" Group="1" Index="10" Track="0" Value="602" />
+        <Parameter Name="Mix" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Stronger suppression in the presence region only</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Vocal — Even Tone (Fills Dips)">
+    <Preset Machine="Neo Spectral">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="500" />
+        <Parameter Name="Knee" Group="1" Index="2" Track="0" Value="333" />
+        <Parameter Name="Selectivity" Group="1" Index="3" Track="0" Value="333" />
+        <Parameter Name="Smoothing" Group="1" Index="4" Track="0" Value="333" />
+        <Parameter Name="Tilt" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Lift" Group="1" Index="6" Track="0" Value="250" />
+        <Parameter Name="Attack" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="437" />
+        <Parameter Name="Low limit" Group="1" Index="9" Track="0" Value="287" />
+        <Parameter Name="High limit" Group="1" Index="10" Track="0" Value="699" />
+        <Parameter Name="Mix" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Suppresses peaks and lifts dips by up to 3 dB</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Guitar — Tame Boxiness">
+    <Preset Machine="Neo Spectral">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="600" />
+        <Parameter Name="Knee" Group="1" Index="2" Track="0" Value="222" />
+        <Parameter Name="Selectivity" Group="1" Index="3" Track="0" Value="444" />
+        <Parameter Name="Smoothing" Group="1" Index="4" Track="0" Value="500" />
+        <Parameter Name="Tilt" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Lift" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Low limit" Group="1" Index="9" Track="0" Value="287" />
+        <Parameter Name="High limit" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Smooths a boxy resonance in the low mids</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drums — Ringing Toms and Snare">
+    <Preset Machine="Neo Spectral">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="650" />
+        <Parameter Name="Knee" Group="1" Index="2" Track="0" Value="333" />
+        <Parameter Name="Selectivity" Group="1" Index="3" Track="0" Value="222" />
+        <Parameter Name="Smoothing" Group="1" Index="4" Track="0" Value="167" />
+        <Parameter Name="Tilt" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Lift" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Low limit" Group="1" Index="9" Track="0" Value="199" />
+        <Parameter Name="High limit" Group="1" Index="10" Track="0" Value="477" />
+        <Parameter Name="Mix" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Fast attack catches a ring as it starts; the release follows the hit</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mix Bus — Subtle Smoothing">
+    <Preset Machine="Neo Spectral">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="300" />
+        <Parameter Name="Knee" Group="1" Index="2" Track="0" Value="444" />
+        <Parameter Name="Selectivity" Group="1" Index="3" Track="0" Value="444" />
+        <Parameter Name="Smoothing" Group="1" Index="4" Track="0" Value="333" />
+        <Parameter Name="Tilt" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Lift" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Low limit" Group="1" Index="9" Track="0" Value="239" />
+        <Parameter Name="High limit" Group="1" Index="10" Track="0" Value="903" />
+        <Parameter Name="Mix" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>A little resonance control over the whole mix</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Master — Gentle Balance">
+    <Preset Machine="Neo Spectral">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="250" />
+        <Parameter Name="Knee" Group="1" Index="2" Track="0" Value="333" />
+        <Parameter Name="Selectivity" Group="1" Index="3" Track="0" Value="444" />
+        <Parameter Name="Smoothing" Group="1" Index="4" Track="0" Value="333" />
+        <Parameter Name="Tilt" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Lift" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Low limit" Group="1" Index="9" Track="0" Value="199" />
+        <Parameter Name="High limit" Group="1" Index="10" Track="0" Value="903" />
+        <Parameter Name="Mix" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Moves the whole spectrum a quarter of the way toward a pink slope</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Master — Brighter Balance">
+    <Preset Machine="Neo Spectral">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="300" />
+        <Parameter Name="Knee" Group="1" Index="2" Track="0" Value="333" />
+        <Parameter Name="Selectivity" Group="1" Index="3" Track="0" Value="444" />
+        <Parameter Name="Smoothing" Group="1" Index="4" Track="0" Value="333" />
+        <Parameter Name="Tilt" Group="1" Index="5" Track="0" Value="625" />
+        <Parameter Name="Lift" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Low limit" Group="1" Index="9" Track="0" Value="199" />
+        <Parameter Name="High limit" Group="1" Index="10" Track="0" Value="903" />
+        <Parameter Name="Mix" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Balance with a tilt of +1.5 dB per octave above 300 Hz</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Master — Warmer Balance">
+    <Preset Machine="Neo Spectral">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="300" />
+        <Parameter Name="Knee" Group="1" Index="2" Track="0" Value="333" />
+        <Parameter Name="Selectivity" Group="1" Index="3" Track="0" Value="444" />
+        <Parameter Name="Smoothing" Group="1" Index="4" Track="0" Value="333" />
+        <Parameter Name="Tilt" Group="1" Index="5" Track="0" Value="375" />
+        <Parameter Name="Lift" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Low limit" Group="1" Index="9" Track="0" Value="199" />
+        <Parameter Name="High limit" Group="1" Index="10" Track="0" Value="903" />
+        <Parameter Name="Mix" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Balance with a tilt of -1.5 dB per octave above 300 Hz</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mix Bus — Stabilize the Tone">
+    <Preset Machine="Neo Spectral">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="400" />
+        <Parameter Name="Knee" Group="1" Index="2" Track="0" Value="222" />
+        <Parameter Name="Selectivity" Group="1" Index="3" Track="0" Value="333" />
+        <Parameter Name="Smoothing" Group="1" Index="4" Track="0" Value="333" />
+        <Parameter Name="Tilt" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Lift" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Low limit" Group="1" Index="9" Track="0" Value="199" />
+        <Parameter Name="High limit" Group="1" Index="10" Track="0" Value="903" />
+        <Parameter Name="Mix" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Pulls moments that stand out toward the long-term spectrum</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Hear What It Removes (Delta)">
+    <Preset Machine="Neo Spectral">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="700" />
+        <Parameter Name="Knee" Group="1" Index="2" Track="0" Value="222" />
+        <Parameter Name="Selectivity" Group="1" Index="3" Track="0" Value="333" />
+        <Parameter Name="Smoothing" Group="1" Index="4" Track="0" Value="333" />
+        <Parameter Name="Tilt" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Lift" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="437" />
+        <Parameter Name="Low limit" Group="1" Index="9" Track="0" Value="199" />
+        <Parameter Name="High limit" Group="1" Index="10" Track="0" Value="903" />
+        <Parameter Name="Mix" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="13" Track="0" Value="1" />
+      </Parameters>
+      <Attributes />
+      <Comment>Suppress with Delta on: only the resonances being taken out</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

@@ -1,275 +1,399 @@
 #nullable disable
-// Neo Spectral PROTOTYPE (docs/specs/mastering-tools.md §5.16, M7 gate): a short-time FFT resonance suppressor.
-//  - Detector: the packed spectrum's per-bin power (left + right, linked), smoothed in time and over 3 bins, as dB;
-//    an envelope = the mean of that over ±Selectivity octaves (prefix sums), twice (the second pass with the first's
-//    peaks clipped to 3 dB over, so a narrow resonance doesn't lift its own reference); excess = level − envelope; the mask is
-//    −Depth·excess·x⁴/(1 + x⁴) with x = excess/Threshold (the knee; at most 24 dB), smoothed over ±MaskSmooth bins, then per bin attack/release
-//    in dB (faster at high frequency). A mask that is exactly unity is exactly 1.0f (the null).
-//  - Two ways of applying it, both measured: Multiply (the mask times the frame's spectrum, WOLA: Stft.ApplyGains) and
-//    Fir (a 511-tap linear-phase kernel per hop from the mask, Hann-windowed, the outputs of the neighbouring hops'
-//    kernels cross-faded; latency N − 1 + 255).
-//  - Mix 0 returns the delayed input bit for bit.
-// Allocation-free after construction; the portable maths only (own float log2/exp2, bit tricks and +,−,×,÷).
+// Neo Spectral (docs/specs/mastering-tools.md §5.16): a short-time FFT resonance suppressor. Measured as a prototype first
+// (the gate, "M7 as measured"); the mask is applied by multiplying the frame's spectrum (the FIR option failed the gate).
+//  - Frames: Stft (N = 2048 at 44.1 / 48 kHz, 4096 at 88.2 / 96 and above, hop N/4, √Hann windows). Stereo is analysed as
+//    one packed transform and one real mask scales both channels (linked): the power of a bin is the sum of both channels'.
+//  - Detector: the bin power smoothed in time (one pole per hop) and over 3 bins, in dB (own float log2).
+//    Suppress: the reference is the mean over ±Selectivity octaves of that level (prefix sums), taken twice, the second time
+//    with the first's peaks (and, with Lift, its dips) clipped to 3 dB from it so a narrow resonance doesn't raise its own reference.
+//    Balance: that smoothed level against a pink slope (−3 dB per octave) fitted to its own level in 200 Hz – 8 kHz, plus Tilt dB
+//    per octave above 300 Hz. Stabilize: the level (smoothed over ±0.08 octave) against its own 4 s average.
+//  - Mask: excess = level − reference. Above the reference: cut = Depth · excess · x⁶/(1 + x⁶), x = excess/Knee (a soft knee, nearly
+//    nothing under Knee/2, nearly all over 1.5 · Knee), at most 24 dB; Balance has no knee. Below it (a dip): lift of the same shape,
+//    at most Lift dB (0: cut only). Outside Low … High nothing changes. The mask is widened over ±Smoothing bins (the deeper cut is
+//    kept), then smoothed per bin in dB with Attack (more reduction) and Release (less), both faster at high frequency
+//    (τ / √(1 + f/1 kHz)). A bin whose mask is within 0.005 dB of nothing is exactly 1.0, so with nothing to do the output is the
+//    delayed input within the transform's round-off (−138 dB); Mix 0 returns the delayed input bit for bit.
+//  - Latency N − 1, reported; Delta delays the dry by it.
+// Allocation-free after construction (SetSampleRate builds a new transform off the audio thread); the portable maths only (own float
+// log2/exp2 from bit tricks and + − × ÷).
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using NeoBuzz.Analysis;
 using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Spectral
 {
     internal sealed class SpectralEngine
     {
-        public const int MaxBlock = 4096;
-        public readonly int FirHalf;   // taps 0 … FirHalf − 1 on each side of the centre (2·FirHalf − 1 taps)
-        const int Kernels = 16;
+        public const int MaxBlock = 256;
+        public const int Bands = 96;                 // the editor's curve: log-spaced from 30 Hz to 20 kHz
+        const int Chunk = 4096;
 
-        public readonly int N, Hop, Mode;
-        public readonly double Rate;
-        public float Depth = 0.5f, ThresholdDb = 3.5f, Selectivity = 0.4f, MaskSmooth = 2f, AttackMs = 20f, ReleaseMs = 150f, Mix = 1f;
+        readonly ParamValues values;
+        double rate = 48000;
+        Core core;
+        SmoothRamp output;
+        public readonly DeltaListen Delta;
+        public readonly GainMatch Match;
+        public readonly LevelMeter InMeter = new LevelMeter();
+        public readonly LevelMeter OutMeter = new LevelMeter();
+        readonly float[] dryL = new float[MaxBlock], dryR = new float[MaxBlock];
+        /// <summary>The mask now in dB per band (30 Hz – 20 kHz, 96 log bands): the deepest cut, or the lift where there is none. For the editor.</summary>
+        public readonly float[] Curve = new float[Bands];
+        double hold, pubRed, pubMean, pubMatch = double.NaN;
+        int pubLatency;
 
-        readonly Stft stft;
-        readonly Mask mask;
-        // Dry delay and the Fir stage.
-        readonly float[] dryL, dryR, scratchL, scratchR, ringL, ringR;
-        readonly float[][] kernels;      // [frame % Kernels][FirHalf]
-        readonly bool[] kernelDelta;
-        readonly ComplexFft kfft;
-        readonly float[] kre, kim, kwin;
-        /// <summary>Diagnostics: mask cells (bin × hop) seen, and those cut by more than 1 dB.</summary>
-        public long CellsSeen, CellsCut;
-        long count;           // samples in
-        long frames;          // frames computed
-
-        public SpectralEngine(double rate, int mode, int firHalf = 256)
+        public SpectralEngine(ParamValues values)
         {
-            FirHalf = firHalf;
-            Rate = rate;
-            Mode = mode;
-            N = rate > 66000 ? 4096 : 2048;
-            stft = new Stft(N);
-            Hop = stft.Hop;
-            mask = new Mask(this);
-            int ring = 8192;
-            dryL = new float[ring];
-            dryR = new float[ring];
-            scratchL = new float[MaxBlock];
-            scratchR = new float[MaxBlock];
-            ringL = new float[4096];
-            ringR = new float[4096];
-            kernels = new float[Kernels][];
-            kernelDelta = new bool[Kernels];
-            for (int i = 0; i < Kernels; i++) { kernels[i] = new float[FirHalf]; kernelDelta[i] = true; kernels[i][0] = 1f; }
-            kfft = new ComplexFft(N);
-            kre = new float[N];
-            kim = new float[N];
-            kwin = new float[FirHalf];
-            for (int j = 0; j < FirHalf; j++) kwin[j] = (float)(0.5 + 0.5 * PortableMath.Cos(Math.PI * j / FirHalf));
-            Configure();
+            this.values = values;
+            Delta = new DeltaListen(4096 + 64, 48000);
+            Match = new GainMatch(48000);
+            Build(48000);
         }
 
-        public int Latency => Mode == 0 ? N - 1 : N - 1 + (FirHalf - 1);
+        public int Latency => core.Latency;
+        /// <summary>Mask cells (bin × hop) seen, and those cut by more than 1 dB (diagnostics for the tests).</summary>
+        public (long Seen, long Cut) Cells => (core.CellsSeen, core.CellsCut);
+        public double ReductionDb => Volatile.Read(ref pubRed);
+        public double GainMatchDb => Volatile.Read(ref pubMatch);
 
-        /// <summary>Recomputes the coefficients from the public fields (not on the audio thread's hot path).</summary>
-        public void Configure() => mask.Configure();
+        public void SetSampleRate(float sr)
+        {
+            Build(sr);
+            output.Setup(0.02, sr);
+            InMeter.SetSampleRate(sr);
+            OutMeter.SetSampleRate(sr);
+            Delta.SetSampleRate(sr);
+            Match.SetRate((int)Math.Round(sr));
+            Update(true);
+            Reset();
+        }
+
+        void Build(double sr)
+        {
+            rate = sr;
+            core = new Core(sr, Curve);
+        }
 
         public void Reset()
         {
-            stft.Reset();
-            mask.Reset();
-            Array.Clear(dryL); Array.Clear(dryR); Array.Clear(ringL); Array.Clear(ringR);
-            for (int i = 0; i < Kernels; i++) { Array.Clear(kernels[i]); kernels[i][0] = 1f; kernelDelta[i] = true; }
-            count = 0; frames = 0;
+            core.Reset();
+            Delta.Reset();
+            Match.Reset();
+            hold = 0;
+            Array.Clear(Curve);
         }
 
-        public void Process(float[] l, float[] r, int n)
+        void Update(bool force)
         {
-            for (int pos = 0; pos < n; pos += MaxBlock) ProcessChunk(l, r, pos, Math.Min(MaxBlock, n - pos));
+            if (!force && !values.AnyDirty) return;
+            core.Mode = values.Choice(P.Mode);
+            core.Depth = (float)values.Value(P.Depth);
+            core.KneeDb = (float)values.Value(P.Knee);
+            core.Selectivity = (float)values.Value(P.Selectivity);
+            core.Smoothing = (int)Math.Round(values.Value(P.Smoothing));
+            core.TiltDb = (float)values.Value(P.Tilt);
+            core.LiftDb = (float)values.Value(P.Lift);
+            core.AttackMs = (float)(values.Value(P.Attack) * 1000);
+            core.ReleaseMs = (float)(values.Value(P.Release) * 1000);
+            core.LowHz = (float)values.Value(P.Low);
+            core.HighHz = (float)values.Value(P.High);
+            core.Mix = (float)values.Value(P.Mix);
+            core.Configure();
+            Delta.Latency = Latency;
+            pubLatency = Latency;
+            Target(ref output, (float)DspMath.DbToGain(values.Value(P.Output)), force);
+            if (force) Delta.Set(values.On(P.Delta));
+            else Delta.On = values.On(P.Delta);
+            values.Clean();
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        void ProcessChunk(float[] l, float[] r, int off, int n)
+        static void Target(ref SmoothRamp r, float v, bool force)
         {
-            int lat = Latency, ringMask = dryL.Length - 1;
-            // The dry, delayed by the latency (before the wet overwrites the buffer).
+            if (force) r.Reset(v);
+            else r.SetTarget(v);
+        }
+
+        /// <summary>Processes a stereo block in place.</summary>
+        public void Process(float[] left, float[] right, int n)
+        {
+            if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
+            Update(false);
+            InMeter.Feed(left, right, n);
+            Array.Copy(left, dryL, n);
+            Array.Copy(right, dryR, n);
+            core.Process(left, right, 0, n);
+            Delta.Process(dryL, dryR, left, right, n);
             for (int i = 0; i < n; i++)
             {
-                long w = count + i;
-                int rd = (int)((w - lat) & ringMask);
-                scratchL[i] = w - lat >= 0 ? dryL[rd] : 0f;
-                scratchR[i] = w - lat >= 0 ? dryR[rd] : 0f;
-                dryL[(int)(w & ringMask)] = l[off + i];
-                dryR[(int)(w & ringMask)] = r[off + i];
+                float o = output.Next();
+                left[i] *= o;
+                right[i] *= o;
             }
-            // The analysis (and the Fir stage) always run, so a later Mix change is in step.
-            stft.Process(l, r, off, n, mask);
-            if (Mode == 1) FirStage(l, r, off, n, count);
-            count += n;
-            float m = Mix;
-            if (m <= 0f)
-            {
-                for (int i = 0; i < n; i++) { l[off + i] = scratchL[i]; r[off + i] = scratchR[i]; }
-            }
-            else if (m < 1f)
-            {
-                float d = 1f - m;
-                for (int i = 0; i < n; i++)
-                {
-                    l[off + i] = scratchL[i] * d + l[off + i] * m;
-                    r[off + i] = scratchR[i] * d + r[off + i] * m;
-                }
-            }
+            if (!Delta.Active) Match.Process(dryL, dryR, left, right, 0, n);
+            OutMeter.Feed(left, right, n);
+            hold = Math.Max(core.Deepest, hold - 12.0 * n / rate);
+            Volatile.Write(ref pubRed, hold);
+            Volatile.Write(ref pubMean, core.Mean);
+            Volatile.Write(ref pubMatch, Match.Db);
         }
 
-        // The Fir stage runs on the STFT's output (the input N − 1 back): the sample of label L (input time) is the centre of
-        // its kernel, so the stage lags the STFT by FirHalf − 1 more samples. Frame f ends at (f + 1)·Hop − 1 and its kernel is
-        // centred on label (f + 1)·Hop − 1 − N/2; the kernels of frames f and f + 1 are cross-faded linearly between their centres.
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        void FirStage(float[] l, float[] r, int off, int n, long first)
+        public IReadOnlyDictionary<string, double> Readings()
         {
-            int rm = ringL.Length - 1;
-            for (int i = 0; i < n; i++)
+            var d = new Dictionary<string, double>
             {
-                long t = first + i;                 // this STFT output is label t − (N − 1)
-                ringL[(int)(t & rm)] = l[off + i];
-                ringR[(int)(t & rm)] = r[off + i];
-                long outT = t - (FirHalf - 1);      // centre sample of the taps, in the STFT output's time
-                long label = outT - (N - 1);
-                long q = label + 1 + N / 2;
-                float yl = 0, yr = 0;
-                {
-                    long f = q >= 0 ? q / Hop - 1 : -1;
-                    float u = q >= 0 ? (float)(q % Hop) / Hop : 0f;
-                    int kA = (int)(((f % Kernels) + Kernels) % Kernels), kB = (int)((((f + 1) % Kernels) + Kernels) % Kernels);
-                    float wA = 1f - u, wB = u;
-                    if (f < 0) { wA = 1f; wB = 0f; }
-                    // centre sample
-                    float cL = ringL[(int)(outT & rm)], cR = ringR[(int)(outT & rm)];
-                    bool dA = f < 0 || f >= frames || kernelDelta[kA], dB = f + 1 >= frames || kernelDelta[kB];
-                    if (dA && dB)
-                    {
-                        yl = cL; yr = cR;
-                    }
-                    else
-                    {
-                        float[] hA = kernels[kA], hB = kernels[kB];
-                        float sAl = hA[0] * cL, sAr = hA[0] * cR, sBl = hB[0] * cL, sBr = hB[0] * cR;
-                        for (int j = 1; j < FirHalf; j++)
-                        {
-                            int p = (int)((outT + j) & rm), m = (int)((outT - j) & rm);
-                            float xl = ringL[p] + ringL[m], xr = ringR[p] + ringR[m];
-                            sAl += hA[j] * xl; sAr += hA[j] * xr;
-                            sBl += hB[j] * xl; sBr += hB[j] * xr;
-                        }
-                        if (dA) { sAl = cL; sAr = cR; }
-                        if (dB) { sBl = cL; sBr = cR; }
-                        yl = sAl * wA + sBl * wB;
-                        yr = sAr * wA + sBr * wB;
-                    }
-                }
-                l[off + i] = yl;
-                r[off + i] = yr;
-            }
+                ["reduction_db"] = Math.Round(ReductionDb, 2),
+                ["mean_reduction_db"] = Math.Round(Volatile.Read(ref pubMean), 2),
+                ["latency_samples"] = Volatile.Read(ref pubLatency),
+            };
+            double m = GainMatchDb;
+            if (double.IsFinite(m)) d["gain_match_db"] = Math.Round(m, 2);
+            return d;
         }
 
-        /// <summary>A kernel of the half-taps from the mask's gains (called once per hop, Fir mode).</summary>
-        void StoreKernel(float[] gains, bool unity)
+        /// <summary>The transform, the mask and the dry path at one sample rate.</summary>
+        internal sealed class Core : ISpectralProcessor
         {
-            int slot = (int)(frames % Kernels);
-            frames++;
-            if (unity)
-            {
-                kernelDelta[slot] = true;
-                Array.Clear(kernels[slot]);
-                kernels[slot][0] = 1f;
-                return;
-            }
-            kernelDelta[slot] = false;
-            int half = N / 2;
-            for (int k = 0; k <= half; k++) { kre[k] = gains[k]; kim[k] = 0f; }
-            for (int k = 1; k < half; k++) { kre[N - k] = gains[k]; kim[N - k] = 0f; }
-            kfft.Transform(kre, kim, true);
-            float s = 1f / N;
-            float[] h = kernels[slot];
-            for (int j = 0; j < FirHalf; j++) h[j] = kre[j] * s * kwin[j];
-        }
+            public readonly int N, Hop;
+            public readonly double Rate;
+            public int Mode, Smoothing;
+            public float Depth = 0.5f, KneeDb = 4f, Selectivity = 0.4f, TiltDb, LiftDb, AttackMs = 20f, ReleaseMs = 150f, LowHz = 100f, HighHz = 16000f, Mix = 1f;
+            /// <summary>Per block: the deepest cut now, and the mean cut over the working region, dB (0 or more).</summary>
+            public double Deepest, Mean;
+            public long CellsSeen, CellsCut;
 
-        sealed class Mask : ISpectralProcessor
-        {
-            readonly SpectralEngine e;
+            readonly NeoBuzz.Dsp.Stft stft;
             readonly int half;
-            readonly float[] ps, pf, lp, env, clip, cs, gdB, gsm, gs, gain, aAtt, aRel, hz;
-            float timeA;
-            int kLo, ilo0;
+            readonly float[] dryL, dryR, scratchL, scratchR;
+            readonly float[] ps, lp, env, clip, cs, gdB, gsm, gs, gain, aAtt, aRel, hz, avg, sm, speed;
+            readonly int[] bandOf;
+            readonly float[] curve, bandMin, bandMax;
+            float timeA, pinkA, longA;
+            bool avgInit, pinkInit;
+            int kLo, rLo, rHi, top;
+            long count;
 
-            public Mask(SpectralEngine e)
+            public Core(double rate, float[] curve)
             {
-                this.e = e;
-                half = e.N / 2;
+                Rate = rate;
+                N = rate > 66000 ? 4096 : 2048;
+                stft = new NeoBuzz.Dsp.Stft(N);
+                Hop = stft.Hop;
+                half = N / 2;
+                this.curve = curve;
+                int ring = 8192;
+                dryL = new float[ring]; dryR = new float[ring];
+                scratchL = new float[Chunk]; scratchR = new float[Chunk];
                 int m = half + 2;
-                ps = new float[m]; pf = new float[m]; lp = new float[m]; env = new float[m]; clip = new float[m];
+                ps = new float[m]; lp = new float[m]; env = new float[m]; clip = new float[m]; sm = new float[m]; avg = new float[m];
                 cs = new float[m + 1]; gdB = new float[m]; gsm = new float[m]; gs = new float[m]; gain = new float[m];
-                aAtt = new float[m]; aRel = new float[m]; hz = new float[m];
-                for (int k = 0; k < m; k++) { hz[k] = (float)(k * e.Rate / e.N); gain[k] = 1f; }
+                aAtt = new float[m]; aRel = new float[m]; hz = new float[m]; speed = new float[m];
+                bandOf = new int[m];
+                bandMin = new float[Bands]; bandMax = new float[Bands];
+                for (int k = 0; k < m; k++)
+                {
+                    hz[k] = (float)(k * rate / N);
+                    speed[k] = (float)(1.0 / Math.Sqrt(1.0 + hz[k] / 1000.0));
+                    gain[k] = 1f;
+                    int b = (int)(Math.Log(Math.Max(hz[k], 1.0) / 30.0) / Math.Log(20000.0 / 30.0) * Bands);
+                    bandOf[k] = Math.Clamp(b, 0, Bands - 1);
+                }
+                timeA = 0.35f;
+                pinkA = (float)(1.0 - PortableMath.Exp(-Hop / Rate / 0.5));
+                longA = (float)(1.0 - PortableMath.Exp(-Hop / Rate / 4.0));
+                Configure();
             }
+
+            public int Latency => N - 1;
 
             public void Reset()
             {
-                Array.Clear(ps); Array.Clear(gs);
+                stft.Reset();
+                Array.Clear(dryL); Array.Clear(dryR);
+                Array.Clear(ps); Array.Clear(gs); Array.Clear(avg);
                 for (int k = 0; k < gain.Length; k++) gain[k] = 1f;
+                avgInit = pinkInit = false;
+                count = 0;
+                Deepest = Mean = 0;
             }
 
+            /// <summary>Recomputes the coefficients from the public fields. The per-bin time constants are the dear part (a few
+            /// exponentials at every 8th bin, interpolated between), and only when Attack or Release moved.</summary>
             public void Configure()
             {
-                double hop = e.Hop / e.Rate;
-                for (int k = 0; k <= half; k++)
+                double hop = Hop / Rate;
+                if (AttackMs != doneAttack || ReleaseMs != doneRelease)
                 {
-                    double speed = 1.0 / Math.Sqrt(1.0 + hz[k] / 1000.0);
-                    aAtt[k] = (float)PortableMath.Exp(-hop / (Math.Max(e.AttackMs, 0.1) * 1e-3 * speed));
-                    aRel[k] = (float)PortableMath.Exp(-hop / (Math.Max(e.ReleaseMs, 0.1) * 1e-3 * speed));
+                    doneAttack = AttackMs;
+                    doneRelease = ReleaseMs;
+                    double ta = Math.Max(AttackMs, 0.1) * 1e-3, tr = Math.Max(ReleaseMs, 0.1) * 1e-3;
+                    const int Stride = 8;
+                    float pa = 0, pr = 0;
+                    for (int k = 0; k <= half + Stride; k += Stride)
+                    {
+                        int kk = Math.Min(k, half);
+                        float na = FastExp2((float)(-hop / (ta * speed[kk]) * 1.44269504)), nr = FastExp2((float)(-hop / (tr * speed[kk]) * 1.44269504));
+                        if (k > 0)
+                            for (int j = k - Stride + 1; j <= k && j <= half; j++)
+                            {
+                                float u = (j - (k - Stride)) / (float)Stride;
+                                aAtt[j] = pa + (na - pa) * u;
+                                aRel[j] = pr + (nr - pr) * u;
+                            }
+                        else { aAtt[0] = na; aRel[0] = nr; }
+                        pa = na; pr = nr;
+                    }
                 }
-                timeA = 0.35f;
-                kLo = Math.Max(2, (int)(40.0 * e.N / e.Rate));
+                kLo = Math.Max(2, (int)(20.0 * N / Rate));
+                top = half - 2;
+                rLo = Math.Max(kLo, (int)(LowHz * N / Rate));
+                rHi = Math.Min(top, (int)(HighHz * N / Rate));
+            }
+
+            float doneAttack = -1f, doneRelease = -1f;
+
+            [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+            public void Process(float[] l, float[] r, int off, int n)
+            {
+                Deepest = 0;
+                double meanSum = 0;
+                int means = 0;
+                for (int pos = 0; pos < n; pos += Chunk)
+                {
+                    int len = Math.Min(Chunk, n - pos);
+                    Chunk1(l, r, off + pos, len);
+                    meanSum += lastMean;
+                    means++;
+                }
+                Mean = means > 0 ? meanSum / means : 0;
+            }
+
+            double lastMean;
+
+            [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+            void Chunk1(float[] l, float[] r, int off, int n)
+            {
+                int lat = Latency, ringMask = dryL.Length - 1;
+                for (int i = 0; i < n; i++)
+                {
+                    long w = count + i;
+                    long rd = w - lat;
+                    scratchL[i] = rd >= 0 ? dryL[(int)(rd & ringMask)] : 0f;
+                    scratchR[i] = rd >= 0 ? dryR[(int)(rd & ringMask)] : 0f;
+                    dryL[(int)(w & ringMask)] = l[off + i];
+                    dryR[(int)(w & ringMask)] = r[off + i];
+                }
+                // The analysis always runs, so a later Mix change is in step.
+                stft.Process(l, r, off, n, this);
+                count += n;
+                float m = Mix;
+                if (m <= 0f)
+                {
+                    for (int i = 0; i < n; i++) { l[off + i] = scratchL[i]; r[off + i] = scratchR[i]; }
+                }
+                else if (m < 1f)
+                {
+                    float d = 1f - m;
+                    for (int i = 0; i < n; i++)
+                    {
+                        l[off + i] = scratchL[i] * d + l[off + i] * m;
+                        r[off + i] = scratchR[i] * d + r[off + i] * m;
+                    }
+                }
             }
 
             [MethodImpl(MethodImplOptions.AggressiveOptimization)]
             public void Process(float[] re, float[] im, int n)
             {
                 const float Db = 3.0103f;   // dB per log2 of power
-                float depth = e.Depth, thr = e.ThresholdDb;
                 for (int k = 1; k < half; k++)
                 {
                     float a = re[k], b = im[k], c = re[n - k], d = im[n - k];
                     float pw = 0.5f * (a * a + b * b + c * c + d * d);
                     ps[k] += timeA * (pw - ps[k]);
                 }
-                for (int k = kLo; k < half - 1; k++)
+                for (int k = kLo; k <= top; k++)
                 {
                     float p = 0.25f * ps[k - 1] + 0.5f * ps[k] + 0.25f * ps[k + 1];
                     lp[k] = Db * FastLog2(p + 1e-18f);
                 }
-                // Envelope, two passes.
-                float s = e.Selectivity;
-                float up = (float)PortableMath.Pow(2.0, s), dn = 1f / up;
-                int top = half - 2;
-                Envelope(lp, env, kLo, top, up, dn);
-                float over = 3f;
-                for (int k = kLo; k <= top; k++) clip[k] = Math.Min(lp[k], env[k] + over);
-                Envelope(clip, env, kLo, top, up, dn);
-                bool any = false;
+                float up = (float)PortableMath.Pow(2.0, Selectivity), dn = 1f / up;
+                float knee = KneeDb < 0.5f ? 0.5f : KneeDb;
+                float depth = Depth, lift = LiftDb;
+                bool balance = Mode == 1;
                 for (int k = 0; k <= half; k++) gdB[k] = 0f;
-                for (int k = kLo; k <= top; k++)
+
+                // The reference: env[k] is the level the bin is compared with; ex = level − reference.
+                if (Mode == 2)
                 {
-                    float ex = lp[k] - env[k];
-                    float x = ex / thr, x2 = x * x, x4 = x2 * x2 * x2;
+                    float s2 = 0.08f;
+                    Envelope(lp, sm, kLo, top, (float)PortableMath.Pow(2.0, s2), (float)PortableMath.Pow(2.0, -s2));
+                    if (!avgInit) { for (int k = kLo; k <= top; k++) avg[k] = sm[k]; avgInit = true; }
+                    for (int k = kLo; k <= top; k++) { env[k] = avg[k]; avg[k] += longA * (sm[k] - avg[k]); }
+                    // env holds the average before this frame's update; the level compared is the smoothed one.
+                }
+                else if (balance)
+                {
+                    // Balance compares the broad level, not the peaks.
+                    Envelope(lp, sm, kLo, top, up, dn);
+                }
+                else
+                {
+                    Envelope(lp, env, kLo, top, up, dn);
+                    for (int k = kLo; k <= top; k++) clip[k] = Math.Min(lift > 0f ? Math.Max(lp[k], env[k] - 3f) : lp[k], env[k] + 3f);
+                    Envelope(clip, env, kLo, top, up, dn);
+                }
+                float pinkOff = 0f;
+                if (balance)
+                {
+                    int a0 = Math.Max(kLo, (int)(200.0 * N / Rate)), a1 = Math.Min(top, (int)(8000.0 * N / Rate));
+                    double acc = 0;
+                    for (int k = a0; k <= a1; k++) acc += sm[k] + Log10Hz(hz[k]);
+                    float fit = (float)(acc / Math.Max(1, a1 - a0 + 1));
+                    if (!pinkInit) { pinkOff = fit; pinkA2 = fit; pinkInit = true; }
+                    else { pinkA2 += pinkA * (fit - pinkA2); pinkOff = pinkA2; }
+                }
+                bool any = false;
+                float tilt = TiltDb;
+                for (int k = rLo; k <= rHi; k++)
+                {
+                    float ex;
+                    if (balance)
+                    {
+                        float f = hz[k];
+                        float reference = pinkOff - Log10Hz(f) + (f > 300f ? tilt * FastLog2(f / 300f) : 0f);
+                        ex = sm[k] - reference;
+                        float g;
+                        if (ex > 0.05f) { g = -depth * ex; if (g < -24f) g = -24f; }
+                        else if (ex < -0.05f && lift > 0f) { g = depth * -ex; if (g > lift) g = lift; }
+                        else continue;
+                        gdB[k] = g;
+                        any = true;
+                        continue;
+                    }
+                    float level = Mode == 2 ? sm[k] : lp[k];
+                    ex = level - env[k];
                     if (ex > 0.05f)
                     {
-                        float cut = depth * ex * x4 / (1f + x4);
+                        float x = ex / knee, x2 = x * x, x6 = x2 * x2 * x2;
+                        float cut = depth * ex * x6 / (1f + x6);
                         gdB[k] = -(cut > 24f ? 24f : cut);
                         any = true;
                     }
+                    else if (ex < -0.05f && lift > 0f)
+                    {
+                        float x = -ex / knee, x2 = x * x, x6 = x2 * x2 * x2;
+                        float up2 = depth * -ex * x6 / (1f + x6);
+                        gdB[k] = up2 > lift ? lift : up2;
+                        any = true;
+                    }
                 }
-                // Mask smoothing over ±MaskSmooth bins (box), only where there is something.
-                int w = (int)(e.MaskSmooth + 0.5f);
+                // Widening over ±Smoothing bins (box); a deeper cut is kept as it is.
+                int w = Smoothing;
                 if (any && w > 0)
                 {
                     cs[0] = 0f;
@@ -279,27 +403,44 @@ namespace NeoBuzz.Spectral
                         int lo = k - w < 0 ? 0 : k - w, hi = k + w > half ? half : k + w;
                         gsm[k] = (cs[hi + 1] - cs[lo]) / (hi - lo + 1);
                     }
-                    // Keep the deeper of the box and the raw mask, so a narrow cut is widened but not thinned out.
                     for (int k = 0; k <= half; k++) if (gdB[k] < gsm[k]) gsm[k] = gdB[k];
                 }
                 else Array.Copy(gdB, gsm, half + 1);
-                // Attack (more reduction) / release per bin, in dB.
-                bool unity = true;
+                // Attack (more reduction) and release per bin, in dB; a mask that has come back to nothing is exactly unity.
+                for (int b = 0; b < Bands; b++) { bandMin[b] = 0f; bandMax[b] = 0f; }
+                double deepest = 0, sum = 0;
+                int cnt = 0;
                 for (int k = 0; k <= half; k++)
                 {
                     float t = gsm[k], g = gs[k];
                     float a = t < g ? aAtt[k] : aRel[k];
                     g = t + (g - t) * a;
-                    if (g > -0.005f && t == 0f) g = 0f;
+                    if (t == 0f && g > -0.005f && g < 0.005f) g = 0f;
                     gs[k] = g;
-                    e.CellsSeen++;
-                    if (g < -1f) e.CellsCut++;
                     if (g == 0f) gain[k] = 1f;
-                    else { gain[k] = FastExp2(g * 0.16609640f); unity = false; }
+                    else gain[k] = FastExp2(g * 0.16609640f);
+                    CellsSeen++;
+                    if (g < -1f) CellsCut++;
+                    int bi = bandOf[k];
+                    if (g < bandMin[bi]) bandMin[bi] = g;
+                    if (g > bandMax[bi]) bandMax[bi] = g;
+                    if (k >= rLo && k <= rHi)
+                    {
+                        if (-g > deepest) deepest = -g;
+                        sum += g < 0f ? -g : 0f;
+                        cnt++;
+                    }
                 }
-                if (e.Mode == 0) Stft.ApplyGains(re, im, n, gain);
-                e.StoreKernel(gain, unity);
+                for (int b = 0; b < Bands; b++) curve[b] = bandMin[b] < 0f ? bandMin[b] : bandMax[b];
+                if (deepest > Deepest) Deepest = deepest;
+                lastMean = cnt > 0 ? sum / cnt : 0;
+                NeoBuzz.Dsp.Stft.ApplyGains(re, im, n, gain);
             }
+
+            float pinkA2;
+
+            /// <summary>10·log10(f / 1 kHz) in dB (a power ratio), by the float log2.</summary>
+            static float Log10Hz(float f) => 3.0103f * FastLog2(f * 0.001f);
 
             // mean of v over [k/ratio, k·ratio], by prefix sums, into dst.
             void Envelope(float[] v, float[] dst, int lo0, int hi0, float up, float dn)
@@ -332,7 +473,7 @@ namespace NeoBuzz.Spectral
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float FastExp2(float x)
         {
-            float fl = (float)Math.Floor(x);
+            float fl = MathF.Floor(x);
             int i = (int)fl;
             float u = (x - fl) * 0.693147181f;
             float p = 1f + u * (1f + u * (0.5f + u * (1f / 6f + u * (1f / 24f + u * (1f / 120f + u * (1f / 720f + u * (1f / 5040f)))))));
