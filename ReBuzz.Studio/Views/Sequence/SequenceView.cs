@@ -219,6 +219,7 @@ namespace ReBuzz.Studio.Views.Sequence
             addTrack.Classes.Add("icon");
             Avalonia.Automation.AutomationProperties.SetName(addTrack, "Add track");
             ToolTip.SetTip(follow, "Follow the play position");
+            Avalonia.Automation.AutomationProperties.SetName(follow, "Follow the play position");
             ToolTip.SetTip(zoom, "Zoom (Ctrl/Command + wheel)");
 
             // The corner above the track headers: add track, the bar length, follow.

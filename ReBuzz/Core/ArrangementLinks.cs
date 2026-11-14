@@ -95,7 +95,11 @@ namespace ReBuzz.Core
             lane ??= buzz.Arrangement.Takes.MainLaneOf(pattern.Machine);
             if (lane == null) return "The machine has no lane in the arrangement.";
             var editor = new ClipEditor(buzz);
-            if (time < 0) time = editor.RoundUpToBar(editor.Read(lane).Select(i => i.End).DefaultIfEmpty(0).Max());      // after the lane's last clip
+            if (time < 0)
+            {
+                var clips = editor.Read(lane);
+                time = clips.Count == 0 ? 0 : editor.RoundUpToBar(clips.Max(i => i.End));      // after the lane's last clip
+            }
             return editor.Place(lane, pattern, time);
         }
     }
