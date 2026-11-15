@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Experiment (experiments/plugin-export): the editor as its own NativeAOT library, with its own runtime and garbage
+       collector. The DSP library loads it for the CLAP gui extension. Not part of ReBuzz.sln or the package. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <AssemblyName>neoeditor</AssemblyName>
+    <RootNamespace>NeoExport</RootNamespace>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+    <PublishAot>true</PublishAot>
+    <NativeLib>Shared</NativeLib>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <NoWarn>CS1591;CS8981;IL2026;IL3050;CS0649;CS0169;CS0414</NoWarn>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="*.cs" />
+    <Compile Include="..\shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
+    <Compile Include="..\..\..\Machines\NeoBuzz.Dsp\ParamDef.cs" Link="Dsp\ParamDef.cs" />
+    <Compile Include="..\..\..\Machines\NeoBuzz.Dsp\PortableMath.cs" Link="Dsp\PortableMath.cs" />
+    <Compile Include="..\..\..\Machines\NeoFilter\Engine\Params.g.cs" Link="Filter\Params.g.cs" />
+  </ItemGroup>
+</Project>

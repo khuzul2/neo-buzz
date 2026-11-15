@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Experiment (experiments/plugin-export): Neo Filter's engine as a CLAP plug-in, a NativeAOT shared library whose
+       exports are the CLAP entry's three functions (native/clap_entry.c holds the exported clap_entry data symbol, which a
+       C# export cannot be). Not part of ReBuzz.sln or the package. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <AssemblyName>neofilter_dsp</AssemblyName>
+    <RootNamespace>NeoExport</RootNamespace>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+    <PublishAot>true</PublishAot>
+    <NativeLib>Shared</NativeLib>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <TieredCompilation>false</TieredCompilation>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <NoWarn>CS1591;CS8981;IL2026;IL3050;CS0649;CS0169;CS0414</NoWarn>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="*.cs" />
+    <Compile Include="..\shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
+    <Compile Include="..\..\..\Machines\NeoBuzz.Dsp\**\*.cs" Link="Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\..\Machines\NeoFilter\Engine\**\*.cs" Link="Filter\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

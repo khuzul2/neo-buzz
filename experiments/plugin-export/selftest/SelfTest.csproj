@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Experiment (experiments/plugin-export): runs the CLAP plug-in's exports in-process under CoreCLR (no AOT) against the
+       engine used directly: layouts, parameters, state, sample-accurate events, a block's output bit for bit, no allocation
+       in process, and the editor ring. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>NeoExport</RootNamespace>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>CS1591;CS8981;CS0649;CS0169;CS0414</NoWarn>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="..\dsp\*.cs" Link="Dsp\%(Filename)%(Extension)" />
+    <Compile Include="..\shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
+    <Compile Include="..\..\..\Machines\NeoBuzz.Dsp\**\*.cs" Link="Neo\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\..\Machines\NeoFilter\Engine\**\*.cs" Link="Filter\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>
