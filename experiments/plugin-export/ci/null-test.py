@@ -85,6 +85,27 @@ def read_wav(path):
     return ch, [list(vals[c::ch]) for c in range(ch)]
 
 
+def where(a_path, b_path, rate=44100):
+    """Diagnostics: where in time the two probes differ (per 0.25 s window: differing samples, largest difference)."""
+    _, a = read_wav(a_path); _, b = read_wav(b_path)
+    n = min(len(a[0]), len(b[0])); win = rate // 4
+    out = []
+    for w in range(0, n, win):
+        cnt, mx = 0, 0.0
+        for c in range(2):
+            for i in range(w, min(n, w + win)):
+                d = abs(a[c][i] - b[c][i])
+                if d > 0: cnt += 1
+                mx = max(mx, d)
+        pk = max(abs(a[0][i]) for i in range(w, min(n, w + win)))
+        out.append("%.2fs:%d/%.2g/pk%.2g" % (w / rate, cnt, mx, pk))
+    first = next((i for i in range(n) if a[0][i] != b[0][i] or a[1][i] != b[1][i]), None)
+    head = ""
+    if first is not None:
+        head = " first differing frame %d: native %r %r, exported %r %r" % (first, a[0][first], a[1][first], b[0][first], b[1][first])
+    return "windows (differing samples / max diff / native peak): " + " ".join(out) + head
+
+
 def null(a_path, b_path):
     ca, a = read_wav(a_path); cb, b = read_wav(b_path)
     n = min(len(a[0]), len(b[0]))
@@ -167,6 +188,7 @@ for nm in filters[1:]:
     if not (pf1.get(nm) and pf1.get("NativeF")): continue
     res = null(pf1["NativeF"], pf1[nm])
     results["nulls"][nm] = res
+    print("     " + where(pf1["NativeF"], pf1[nm]))
     print(f"     null {nm} - NativeF: max |diff| {res['max_abs_diff']:.3g} ({res['max_abs_diff_dbfs']:.1f} dBFS), {res['differing_samples']}/{res['samples']} samples differ, "
           f"residual {res['residual_rel_rms_db']:.1f} dB re native, bit identical: {res['bit_identical']}, native peak {res['peak_native']:.3f}")
     check(res["peak_native"] > 0.01, f"{nm}: the native signal is audible (peak {res['peak_native']:.3f})")
