@@ -1,5 +1,8 @@
 // neoplug: VST3 hosting on the SDK's hosting helpers (MIT since 3.8).
 #include <chrono>
+#include <cmath>
+#include <memory>
+#include <unordered_map>
 #include <cstdio>
 #include <cstdlib>
 #include <atomic>
@@ -200,7 +203,7 @@ public:
     bool activate(double rate, int maxFrames, bool offline, std::string& err) override
     {
         deactivate();
-        quietUntil.store(nowMs() + 1500);
+        holdAll();
         int nIn = component->getBusCount(kAudio, kInput);
         int nOut = component->getBusCount(kAudio, kOutput);
         std::vector<SpeakerArrangement> ins(nIn), outs(nOut);
@@ -353,33 +356,56 @@ public:
         return toProcessor.push(id, v);
     }
 
-    // A plug-in may report a parameter's old value in the block after the host set it (its processor applies the change
-    // later): what it reports about a parameter the host set a moment ago is not news.
-    struct Recent { uint32_t id = 0; int64_t at = 0; };
-    Recent recent[64];
-    int recentNext = 0;
-    static int64_t nowMs() { return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count(); }
-    void noteSent(uint32_t id)
+    // A plug-in may report a parameter's old value in its output changes after the host set it (its processor applies the
+    // change later), and its first reports after a state load may still be defaults. Per parameter the host keeps the value
+    // it put there until the plug-in confirms it (reports that same value) or has reported something else twelve times;
+    // until then the plug-in's reports about that parameter are not forwarded. Counted in reports, not in time.
+    struct Hold { std::atomic<int> left{0}; std::atomic<double> expected{0.0}; };
+    std::unordered_map<uint32_t, int> holdIndex;   // built on the main thread (holdBuild); read-only on the audio thread
+    std::unique_ptr<Hold[]> holds;
+    void holdBuild()
     {
-        int64_t t = nowMs();
-        for (auto& r : recent) if (r.at != 0 && r.id == id) { r.at = t; return; }
-        recent[recentNext] = {id, t};
-        recentNext = (recentNext + 1) & 63;
+        if (holds) return;
+        int32 n = controller->getParameterCount();
+        holds.reset(new Hold[(size_t)std::max<int32>(n, 1)]);
+        holdIndex.reserve((size_t)n * 2);
+        for (int32 i = 0; i < n; i++)
+        {
+            ParameterInfo pi{};
+            if (controller->getParameterInfo(i, pi) == kResultOk) holdIndex[pi.id] = i;
+        }
     }
-    // After a state load or an activation a plug-in's first reports may still be its defaults, from before the state: the
-    // controller already has the loaded values, and they stand.
-    std::atomic<int64_t> quietUntil{0};
-    bool sentRecently(uint32_t id)
+    void holdAll()   // the controller's values stand: after a state load or an activation
     {
-        int64_t t = nowMs();
-        if (t < quietUntil.load(std::memory_order_relaxed)) return true;
-        for (auto& r : recent) if (r.at != 0 && r.id == id && t - r.at < 600) return true;
-        return false;
+        holdBuild();
+        for (auto& kv : holdIndex)
+        {
+            holds[(size_t)kv.second].expected.store(controller->getParamNormalized(kv.first), std::memory_order_relaxed);
+            holds[(size_t)kv.second].left.store(12, std::memory_order_relaxed);
+        }
+    }
+    void noteSent(uint32_t id, double v)
+    {
+        auto it = holdIndex.find(id);
+        if (it == holdIndex.end()) return;
+        holds[(size_t)it->second].expected.store(v, std::memory_order_relaxed);
+        holds[(size_t)it->second].left.store(12, std::memory_order_relaxed);
+    }
+    bool holdsReport(uint32_t id, double v)   // true: this report is not news
+    {
+        auto it = holdIndex.find(id);
+        if (it == holdIndex.end()) return false;
+        Hold& h = holds[(size_t)it->second];
+        int left = h.left.load(std::memory_order_relaxed);
+        if (left <= 0) return false;
+        if (std::fabs(v - h.expected.load(std::memory_order_relaxed)) < 1e-6) { h.left.store(0, std::memory_order_relaxed); return false; }
+        h.left.store(left - 1, std::memory_order_relaxed);
+        return true;
     }
 
     void addParam(ParamID id, int32 offset, ParamValue v)
     {
-        noteSent(id);
+        noteSent(id, v);
         int32 index = 0;
         if (auto* q = paramsIn.addParameterData(id, index))
         {
@@ -515,7 +541,7 @@ public:
                 ParamValue v = 0;
                 if (pc > 0 && q->getPoint(pc - 1, off, v) == kResultOk)
                 {
-                    if (sentRecently(q->getParameterId())) { dbgParam("plug-in output ignored (just set by the host)", q->getParameterId(), v); continue; }
+                    if (holdsReport(q->getParameterId(), v)) { dbgParam("plug-in output held back (the host's value stands)", q->getParameterId(), v); continue; }
                     dbgParam("plug-in output", q->getParameterId(), v);
                     toController.push(q->getParameterId(), v);
                 }
@@ -609,7 +635,11 @@ public:
         if (component->setState(&cs) != kResultOk) { err = "the component refused its state"; return false; }
         cs.seek(0, IBStream::kIBSeekSet, nullptr);
         controller->setComponentState(&cs);
-        quietUntil.store(nowMs() + 1500);
+        if (klen > 0 && U::cast<IEditController>(component) == nullptr)
+        {
+            MemoryStream ks((void*)ctrl, (TSize)klen);
+            controller->setState(&ks);
+        }
         // Some controllers (JUCE's) keep the values a host set earlier and apply them to the processor in the next process call,
         // on top of the state just loaded. Setting every parameter to what the state says replaces those.
         {
@@ -621,11 +651,7 @@ public:
                 controller->setParamNormalized(pi.id, controller->getParamNormalized(pi.id));
             }
         }
-        if (klen > 0 && U::cast<IEditController>(component) == nullptr)
-        {
-            MemoryStream ks((void*)ctrl, (TSize)klen);
-            controller->setState(&ks);
-        }
+        holdAll();
         return true;
     }
 
