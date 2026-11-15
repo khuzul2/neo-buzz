@@ -209,6 +209,20 @@ compare(render("changed"), "changed", skip=0.5)
 song = os.path.join(work, "px0.bmxml")
 check(call("song_save", path=song, overwrite=True)[0], "song_save")
 check(call("song_open", path=song, discard_unsaved=True)[0], "song_open")
+def dump(tag):
+    """Every parameter of every filter, native raw value against the exported one (a slot's raw is 0..65534 over the CLAP range)."""
+    tables = {}
+    for nm in filters:
+        ok, _, d = call("machine_describe", machine=nm, all=True)
+        tables[nm] = [(p.get("name"), p.get("value"), p.get("raw")) for p in d.get("parameters", []) if p.get("name") and not str(p.get("name")).startswith("Slot ") or nm == "NativeF"]
+    nat = tables.get("NativeF", [])
+    for nm in filters[1:]:
+        diffs = [(a, b) for a, b in zip(nat, tables[nm]) if a[1] != b[1]]
+        print(f"     {tag}: {nm} parameter texts differing from the native machine's: {diffs if diffs else 'none'} ({len(tables[nm])} parameters)")
+        results.setdefault("param_dump", {})[f"{tag}/{nm}"] = diffs
+
+
+dump("after reopen")
 compare(render("reopened"), "reopened", skip=0.5)
 
 proc.stdin.close()
