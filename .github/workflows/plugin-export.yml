@@ -87,6 +87,12 @@ jobs:
     - name: Self-test (the CLAP exports of every plug-in under CoreCLR, against its engine)
       run: dotnet run --project PluginExport/selftest -c Release 2>&1 | tee selftest.log | grep -v "^ok" | tail -40; grep -q "^ALL OK" selftest.log
 
+    - name: Editor smoke test (every Neo editor under CoreCLR, Avalonia headless: render, drag, gestures)
+      run: |
+        mkdir -p shots-managed
+        dotnet run --project PluginExport/editor-smoke -c Release -p:PublishAot=false -- "$PWD/shots-managed" 2>&1 | tee editor-smoke.log | tail -20
+        grep -q "^ALL OK" editor-smoke.log
+
     - name: Publish the NativeAOT libraries (DSP, editor)
       run: |
         dotnet publish PluginExport/dsp/NeoDsp.csproj -c Release -r ${{ matrix.rid }} -o "$PWD/_publish_dsp" 2>&1 | grep -E "error|warning IL|Generating|neo_dsp" | sort -u | head -30
@@ -227,7 +233,9 @@ jobs:
       if: always() && runner.os == 'Linux'
       with:
         name: editor-shots
-        path: shots
+        path: |
+          shots
+          shots-managed
         if-no-files-found: ignore
         retention-days: 14
 

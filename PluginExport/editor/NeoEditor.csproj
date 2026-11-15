@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Plug-in export (docs/specs/plugin-export.md §5): the Neo editors (the machines' own editor classes on the kit's Avalonia backend, the
+       same code as the studio's machine windows) as one NativeAOT library with its own runtime and garbage collector. The DSP library
+       loads it for the CLAP gui extension; they share only the Shared struct. The editor renders offscreen with Avalonia's headless
+       platform (Skia) and the library blits it into a native child window of the host's (X11, Win32, Cocoa). Not part of ReBuzz.sln. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <AssemblyName>neo_editor</AssemblyName>
+    <RootNamespace>NeoExport</RootNamespace>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+    <PublishAot>true</PublishAot>
+    <NativeLib>Shared</NativeLib>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <DefineConstants>$(DefineConstants);AVALONIA</DefineConstants>
+    <EnableAvaloniaXamlCompilation>false</EnableAvaloniaXamlCompilation>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <NoWarn>$(NoWarn);CS1591;CS8981;IL2026;IL3050;IL2104;IL3053;CS0649;CS0169;CS0414;CS0219;CS0067;MSB3277;NU1701;CA1416;AVLN3001</NoWarn>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <TrimmerSingleWarn>true</TrimmerSingleWarn>
+    <M>$(MSBuildThisFileDirectory)..\..\Machines\</M>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="*.cs" />
+    <Compile Include="Generated\*.cs" />
+    <Compile Include="..\shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoBuzz.Dsp\**\*.cs" Link="Neo\Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoBuzz.Machine\**\*.cs" Link="Neo\Machine\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoBuzz.Editor\Core\**\*.cs" Link="Neo\EditorCore\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoBuzz.Editor\Params\**\*.cs" Link="Neo\EditorParams\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoBuzz.Editor.Avalonia\**\*.cs" Link="Neo\EditorAvalonia\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" GlobalPropertiesToRemove="GearDir" />
+    <ProjectReference Include="..\..\ReBuzzGUI\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj" GlobalPropertiesToRemove="GearDir" />
+    <PackageReference Include="Avalonia" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Headless" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Skia" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.4" />
+  </ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="NeoEditorSmoke" /></ItemGroup>
+  <Import Project="Generated\Sources.g.props" />
+</Project>

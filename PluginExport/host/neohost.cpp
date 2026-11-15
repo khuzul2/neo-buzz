@@ -344,7 +344,7 @@ static int modeGui(Module& m, const std::string& id, const std::string& shot) {
     int scr = DefaultScreen(dpy);
     Window top = XCreateSimpleWindow(dpy, RootWindow(dpy, scr), 0, 0, w, h, 0, 0, 0x202020);
     XMapWindow(dpy, top); XSync(dpy, False);
-    clap_window_t cw{ CLAP_WINDOW_API_X11, { (clap_xwnd)top } };
+    clap_window_t cw{}; cw.api = CLAP_WINDOW_API_X11; cw.x11 = (clap_xwnd)top;
     check(in.gui->set_parent(in.p, &cw), "gui.set_parent (an X window of the host)");
     check(in.gui->show(in.p), "gui.show");
     pumpTimers(ptrs, nowNs() + 1'500'000'000LL);   // the editor builds and paints
@@ -364,28 +364,20 @@ static int modeGui(Module& m, const std::string& id, const std::string& shot) {
         if (!shot.empty()) { FILE* f = fopen(shot.c_str(), "wb"); if (f) { fprintf(f, "P6\n%u %u\n255\n", w, h); fwrite(rgb.data(), 1, rgb.size(), f); fclose(f); } }
         XDestroyImage(img);
     }
-    // a drag on a knob: the editor tells where one is; press, move up, release as X events to the editor's window
-    typedef int (*HotFn)(void*, int*, int*);
-    int hx = 0, hy = 0;
-#ifdef _WIN32
-#else
-    HotFn hot = (HotFn)dlsym(RTLD_DEFAULT, "ned_test_hotspot");
-    if (!hot) { void* ed = nullptr; (void)ed; }
-#endif
-    // the editor library is loaded by the plug-in next to the module; find its export
-    {
-        std::string mod = getenv("NEOHOST_EDITOR") ? getenv("NEOHOST_EDITOR") : "";
-        void* lib = mod.empty() ? nullptr : dlopen(mod.c_str(), RTLD_NOW | RTLD_NOLOAD);
-        if (lib) hot = (HotFn)dlsym(lib, "ned_test_hotspot");
+    // a drag on a knob: the editor library (loaded by the plug-in next to the module) says where one is
+    typedef int (*HotFn)(int*, int*);
+    int hx = (int)w / 5, hy = (int)h / 4;   // fallback: the upper-left quarter, where the first knobs are
+#ifndef _WIN32
+    if (const char* mod = getenv("NEOHOST_EDITOR")) {
+        void* lib = dlopen(mod, RTLD_NOW | RTLD_NOLOAD);
+        auto hot = lib ? (HotFn)dlsym(lib, "ned_test_hotspot") : nullptr;
+        int ex = 0, ey = 0;
+        if (hot && hot(&ex, &ey)) { hx = ex; hy = ey; }
     }
+#endif
     Window child = 0;
     { Window root, parent, *kids = nullptr; unsigned nk = 0; if (XQueryTree(dpy, top, &root, &parent, &kids, &nk) && nk > 0) child = kids[nk - 1]; if (kids) XFree(kids); }
     check(child != 0, "the editor made a child window of the host's");
-    if (hot && child) {
-        void* handle = nullptr; (void)handle;
-    }
-    // Without the editor's test export, drag the middle of the window's upper-left quarter, where the first knobs are.
-    hx = (int)w / 5; hy = (int)h / 4;
     if (const char* e = getenv("NEOHOST_HOTSPOT")) sscanf(e, "%d,%d", &hx, &hy);
     OutEvents oe; InEvents ev;
     auto sendBtn = [&](int type, int x, int y, unsigned state) {

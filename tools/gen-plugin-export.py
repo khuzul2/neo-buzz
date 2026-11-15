@@ -111,6 +111,7 @@ def editor_props():
 
 def editors():
     o = [HEAD + "using System;", "using NeoBuzz.Editor;", "", "namespace NeoExport", "{", "    internal static partial class EditorRegistry", "    {",
+         "        public static readonly string[] Ids = { " + ", ".join(q(d["id"]) for d in descs) + " };",
          "        /// <summary>A plug-in's Neo editor and the machine class the editor reads (null host: no engine thread, only its own Values).</summary>",
          "        public static bool TryMake(string pluginId, out NeoEditor editor, out object machine)", "        {", "            switch (pluginId)", "            {"]
     for d in descs:
@@ -167,7 +168,7 @@ check = "--check" in sys.argv
 bad = 0
 for path, text in outputs.items():
     old = open(path, encoding="utf-8", newline="").read() if os.path.exists(path) else None
-    if old == text: continue
+    if old is not None and old.replace("\r\n", "\n") == text: continue   # a Windows checkout may have converted the line endings
     if check:
         print("out of date:", os.path.relpath(path, root)); bad += 1
     else:

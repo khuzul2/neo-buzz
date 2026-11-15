@@ -603,6 +603,7 @@ namespace NeoExport
         static delegate* unmanaged[Cdecl]<IntPtr, double, int> edSetScale;
         static delegate* unmanaged[Cdecl]<IntPtr, int, void*, int> edSetParent;
         static delegate* unmanaged[Cdecl]<byte*, int, int> edGcConfig;
+        static delegate* unmanaged[Cdecl]<byte*, void> edInit;
 
         static string EditorFile()
         {
@@ -624,6 +625,10 @@ namespace NeoExport
             edSetScale = (delegate* unmanaged[Cdecl]<IntPtr, double, int>)NativeLibrary.GetExport(editorLib, "ned_set_scale");
             edSetParent = (delegate* unmanaged[Cdecl]<IntPtr, int, void*, int>)NativeLibrary.GetExport(editorLib, "ned_set_parent");
             edGcConfig = (delegate* unmanaged[Cdecl]<byte*, int, int>)NativeLibrary.GetExport(editorLib, "ned_gc_config");
+            edInit = (delegate* unmanaged[Cdecl]<byte*, void>)NativeLibrary.GetExport(editorLib, "ned_init");
+            var d8 = U8(dir);   // the folder the native libraries of the editor (Skia, HarfBuzz) are next to
+            edInit(d8);
+            Marshal.FreeCoTaskMem((IntPtr)d8);
             return true;
         }
 

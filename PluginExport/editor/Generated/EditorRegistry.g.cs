@@ -6,6 +6,7 @@ namespace NeoExport
 {
     internal static partial class EditorRegistry
     {
+        public static readonly string[] Ids = { "org.neobuzz.neo-comp", "org.neobuzz.neo-delay", "org.neobuzz.neo-eq", "org.neobuzz.neo-filter", "org.neobuzz.neo-poly", "org.neobuzz.neo-verb" };
         /// <summary>A plug-in's Neo editor and the machine class the editor reads (null host: no engine thread, only its own Values).</summary>
         public static bool TryMake(string pluginId, out NeoEditor editor, out object machine)
         {
