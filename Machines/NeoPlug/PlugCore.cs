@@ -288,7 +288,7 @@ namespace NeoBuzz.Plug
         {
             double span = smax[i] - smin[i];
             if (ssteps[i] > 0) return smin[i] + span * Math.Clamp(raw, 0, ssteps[i]) / ssteps[i];
-            return smin[i] + span * Math.Clamp(raw, 0, RawMax) / (double)RawMax;
+            return (double)(float)(smin[i] + span * Math.Clamp(raw, 0, RawMax) / (double)RawMax);   // a float: what plug-ins keep, so two paths give the same state
         }
 
         public bool IsBound(int i) => i >= 0 && i < Slots && bound[i];

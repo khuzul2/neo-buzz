@@ -1,4 +1,7 @@
 // neoplug: VST3 hosting on the SDK's hosting helpers (MIT since 3.8).
+#include <cstdio>
+#include <cstdlib>
+#include <atomic>
 #include "np_internal.h"
 
 #include "public.sdk/source/common/memorystream.h"
@@ -72,6 +75,13 @@ int vst3List(const std::string& path, std::vector<np_class_info>& out, std::stri
 }
 
 class Vst3Plugin;
+
+static void dbgParam(const char* src, uint32_t id, double v)
+{
+    static const bool on = std::getenv("NEOPLUG_DEBUG") != nullptr;
+    static std::atomic<int> count{0};
+    if (on && count.fetch_add(1) < 1500) std::fprintf(stderr, "[neoplug] vst3 %s: param %u = %.6f\n", src, id, v);
+}
 
 class Handler : public U::Implements<U::Directly<IComponentHandler>>
 {
@@ -419,6 +429,7 @@ public:
                 notes.noteOff(e.channel, e.key);
                 break;
             case NP_EV_PARAM:
+                dbgParam("host event", e.param_id, e.value);
                 addParam(e.param_id, x.sampleOffset, e.value);
                 toController.push(e.param_id, e.value);
                 break;
@@ -475,7 +486,7 @@ public:
                 int32 pc = q->getPointCount();
                 int32 off = 0;
                 ParamValue v = 0;
-                if (pc > 0 && q->getPoint(pc - 1, off, v) == kResultOk) toController.push(q->getParameterId(), v);
+                if (pc > 0 && q->getPoint(pc - 1, off, v) == kResultOk) { dbgParam("plug-in output", q->getParameterId(), v); toController.push(q->getParameterId(), v); }
             }
         // Its note output.
         io.out_count = 0;
@@ -596,7 +607,7 @@ public:
     void idle() override
     {
         ParamRing::Item it;
-        while (toController.pop(it)) controller->setParamNormalized(it.id, it.value);
+        while (toController.pop(it)) { dbgParam("controller set", it.id, it.value); controller->setParamNormalized(it.id, it.value); }
     }
 
     int poll() override
@@ -674,6 +685,7 @@ public:
 
 tresult PLUGIN_API Handler::performEdit(ParamID id, ParamValue v)
 {
+    dbgParam("controller edit", id, v);
     owner->toProcessor.push(id, v);
     return kResultOk;
 }
