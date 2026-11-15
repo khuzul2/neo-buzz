@@ -87,10 +87,16 @@ jobs:
     - name: Self-test (the CLAP exports of every plug-in under CoreCLR, against its engine)
       run: dotnet run --project PluginExport/selftest -c Release 2>&1 | tee selftest.log | grep -v "^ok" | tail -40; grep -q "^ALL OK" selftest.log
 
+    - name: MSBuild properties of the BuzzGUI projects (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        W=$(cygpath -w "$PWD")
+        echo "WINPROPS=-p:SolutionDir=${W}\\ -p:ReBuzzCleanBuild=true" >> "$GITHUB_ENV"
+
     - name: Editor smoke test (every Neo editor under CoreCLR, Avalonia headless, render, drag, gestures)
       run: |
         mkdir -p shots-managed
-        dotnet run --project PluginExport/editor-smoke -c Release -p:PublishAot=false -- "$PWD/shots-managed" 2>&1 | tee editor-smoke.log | tail -20
+        dotnet run --project PluginExport/editor-smoke -c Release -p:PublishAot=false $WINPROPS -- "$PWD/shots-managed" 2>&1 | tee editor-smoke.log | tail -20
         grep -q "^ALL OK" editor-smoke.log
 
     - name: Publish the NativeAOT libraries (DSP, editor)
@@ -98,7 +104,7 @@ jobs:
         dotnet publish PluginExport/dsp/NeoDsp.csproj -c Release -r ${{ matrix.rid }} -o "$PWD/_publish_dsp" 2>&1 | grep -E "error|warning IL|Generating|neo_dsp" | sort -u | head -30
         ls _publish_dsp | grep -q "neo_dsp"
         if [ -f PluginExport/editor/NeoEditor.csproj ]; then
-          dotnet publish PluginExport/editor/NeoEditor.csproj -c Release -r ${{ matrix.rid }} -o "$PWD/_publish_editor" 2>&1 | grep -E "error|Generating|neo_editor|Warning count|warning IL[0-9]+" | sort -u | head -40
+          dotnet publish PluginExport/editor/NeoEditor.csproj -c Release -r ${{ matrix.rid }} $WINPROPS -o "$PWD/_publish_editor" 2>&1 | grep -E "error|Generating|neo_editor|Warning count|warning IL[0-9]+" | sort -u | head -40
           ls -la _publish_editor | head -30
           ls _publish_editor | grep -q "neo_editor"
         else mkdir -p _publish_editor; fi
@@ -176,7 +182,7 @@ jobs:
         bad=0
         for n in "Neo Filter" "Neo EQ" "Neo Comp" "Neo Delay" "Neo Verb" "Neo Poly"; do
           w="nulltest-${n// /-}"
-          python3 PluginExport/ci/null-test.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$PWD/$w" --plugin "$n" --dir "$F" --lib "$G/libneoplug.so" --scan "$G/neoplug-scan" 2>&1 | tee "$w.log" | grep -v "^     \(gear_list\|song_\|machine_\|pattern\|notes\|arrange\|connect\|render\)" | tail -40 || true
+          python3 PluginExport/ci/null-test.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$PWD/$w" --plugin "$n" --dir "$F" --lib "$G/libneoplug.so" --scan "$G/neoplug-scan" 2>&1 | tee "$w.log" | grep -v "^     \(gear_list\|song_\|machine_\|pattern\|notes\|arrange\|connect\|render\)" | cut -c1-260 | tail -80 || true
           grep -q "^NULL-TEST .* ok" "$w.log" || bad=1
         done
         [ $bad = 0 ]

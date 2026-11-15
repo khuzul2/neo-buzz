@@ -288,7 +288,7 @@ namespace NeoExport
             if (index >= t.Length || index >= Shared.MaxParams) return 0;
             var d = t[index];
             info->Id = (uint)d.Index;
-            bool stepped = d.Kind == MapKind.Enum || d.Flag || d.Max - d.Min <= 1;
+            bool stepped = d.Kind == MapKind.Enum || d.Kind == MapKind.Switch || d.Kind == MapKind.Int || d.Max - d.Min <= 1;
             info->Flags = 1u << 5 | (stepped ? 1u : 0u) | (d.Kind == MapKind.Enum ? 1u << 16 : 0u);   // AUTOMATABLE; STEPPED; ENUM
             info->Cookie = null;
             CopyUtf8(info->Name, 256, d.Name);

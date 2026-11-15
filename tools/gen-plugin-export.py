@@ -136,8 +136,8 @@ def table(d):
     import re
     out = {}
     for line in open(os.path.join(root, "Machines", d["folder"], "Params.def"), encoding="utf-8"):
-        m = re.match(r'^(\w+)\s+"([^"]*)"\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)', line)
-        if m: out[m.group(1)] = (m.group(2), int(m.group(3)), int(m.group(4)), int(m.group(5)))
+        m = re.match(r'^(\w+)\s+"([^"]*)"\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)\s+(\w+)', line)
+        if m: out[m.group(1)] = (m.group(2), int(m.group(3)), int(m.group(4)), int(m.group(5)), m.group(6))
     return out
 
 
@@ -147,9 +147,11 @@ def manifest():
         t, tab = dict(d.get("test", {})), table(d)
         ch = []
         for pid, raw in t.get("changes", []):
-            name, lo, hi, _ = tab[pid]
+            name, lo, hi, _, kind = tab[pid]
             r = int(str(raw).split(":")[1])
-            ch.append({"param": name, "native": f"raw:{r}", "slot": f"raw:{round(65534 * (r - lo) / (hi - lo))}"})
+            # a stepped CLAP parameter (enum, switch, int, a range of one) is a slot of its own integer range; the others are 0..65534
+            stepped = kind in ("enum", "switch", "int") or hi - lo <= 1
+            ch.append({"param": name, "native": f"raw:{r}", "slot": f"raw:{r if stepped else round(65534 * (r - lo) / (hi - lo))}"})
         t["changes"] = ch
         res.append({"id": d["id"], "name": d["name"], "kind": d["kind"], "au": d["au"], "sidechain": d["process"] == "sidechain", "test": t,
                     "paramCount": len(tab), "latencyDependsOnParams": d["name"] == "Neo EQ"})

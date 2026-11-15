@@ -29,7 +29,7 @@
     {
      "param": "Mode",
      "native": "raw:1",
-     "slot": "raw:32767"
+     "slot": "raw:1"
     },
     {
      "param": "Feedback",
@@ -53,7 +53,7 @@
     {
      "param": "B1 on",
      "native": "raw:1",
-     "slot": "raw:65534"
+     "slot": "raw:1"
     },
     {
      "param": "B1 gain",
@@ -77,7 +77,7 @@
     {
      "param": "Type",
      "native": "raw:2",
-     "slot": "raw:21845"
+     "slot": "raw:2"
     },
     {
      "param": "Cutoff",
@@ -106,7 +106,7 @@
     {
      "param": "Unison",
      "native": "raw:3",
-     "slot": "raw:21845"
+     "slot": "raw:3"
     }
    ],
    "settle": 0.0
@@ -125,7 +125,7 @@
     {
      "param": "Mode",
      "native": "raw:3",
-     "slot": "raw:65534"
+     "slot": "raw:3"
     },
     {
      "param": "Decay",
