@@ -65,7 +65,15 @@ namespace NeoExport
         [UnmanagedCallersOnly(EntryPoint = "ned_gc_config", CallConvs = new[] { typeof(CallConvCdecl) })]
         public static int GcConfig(byte* name, int value) => 0;   // the runtime's GC settings are fixed at build time (runtimeconfig)
 
-        /// <summary>Test only: where a knob is in the newest editor's window (pixels).</summary>
+        /// <summary>Test only: a left mouse event (0 down, 1 move, 2 up) in the newest editor's native view, sent through the window system (Windows: a posted message; macOS: an event to the view).</summary>
+        [UnmanagedCallersOnly(EntryPoint = "ned_test_inject", CallConvs = new[] { typeof(CallConvCdecl) })]
+        public static int TestInject(int kind, int x, int y)
+        {
+            var e = last; if (e == null) return 0;
+            try { e.TestInject(kind, x, y); return 1; } catch (Exception) { return 0; }
+        }
+
+        /// <summary>Test only: where a knob is in the newest editor's view (the view's units).</summary>
         [UnmanagedCallersOnly(EntryPoint = "ned_test_hotspot", CallConvs = new[] { typeof(CallConvCdecl) })]
         public static int TestHotspot(int* x, int* y)
         {

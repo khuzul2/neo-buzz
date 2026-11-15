@@ -1,6 +1,7 @@
-// macOS: an NSView subclass added as a subview of the host's NSView (CLAP_WINDOW_API_COCOA), layer-backed; each frame becomes the
-// layer's contents (a CGImage). Written against the Objective-C runtime directly (arm64: CGRect/CGPoint are passed as doubles).
-// Not testable on the CI: hand-test in Ableton on a Mac.
+// macOS: an NSView subclass added as a subview of the host's NSView (CLAP_WINDOW_API_COCOA), layer-hosting (it owns its CALayer, so AppKit
+// never redraws over it); each frame becomes the layer's contents (a CGImage rendered at the window's backing scale: 2x on Retina, with
+// contentsScale to match). Written against the Objective-C runtime directly (arm64: CGRect/CGPoint are passed as doubles). The studio's
+// plug-in check (ReBuzz.Studio --plugin-export-check) runs it on the macOS runner; hand-test in Ableton on a Mac.
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -25,6 +26,7 @@ namespace NeoExport
         [DllImport(ObjC, EntryPoint = "objc_msgSend")] static extern Pt SendGetPoint(IntPtr o, IntPtr s);
         [DllImport(ObjC, EntryPoint = "objc_msgSend")] static extern double SendGetDouble(IntPtr o, IntPtr s);
         [DllImport(ObjC, EntryPoint = "objc_msgSend")] static extern nint SendGetInt(IntPtr o, IntPtr s);
+        [DllImport(ObjC, EntryPoint = "objc_msgSend")] static extern IntPtr SendEvent(IntPtr cls, IntPtr s, nuint type, double x, double y, nuint flags, double time, nint window, IntPtr ctx, nint number, nint clicks, float pressure);
         [DllImport(CF)] static extern IntPtr CFDataCreate(IntPtr alloc, byte* bytes, nint len);
         [DllImport(CF)] static extern void CFRelease(IntPtr o);
         [DllImport(CG)] static extern IntPtr CGColorSpaceCreateDeviceRGB();
@@ -43,6 +45,8 @@ namespace NeoExport
         static void EnsureClass()
         {
             if (cls != IntPtr.Zero) return;
+            NativeLibrary.TryLoad("/System/Library/Frameworks/QuartzCore.framework/QuartzCore", out _);   // CALayer and CATransaction
+            NativeLibrary.TryLoad("/System/Library/Frameworks/AppKit.framework/AppKit", out _);
             sLocation = sel_registerName("locationInWindow"); sConvert = sel_registerName("convertPoint:fromView:");
             sLayer = sel_registerName("layer"); sSetContents = sel_registerName("setContents:");
             cls = objc_allocateClassPair(objc_getClass("NSView"), "NeoBuzzEditorView", 0);
@@ -64,7 +68,11 @@ namespace NeoExport
             var v = new CocoaView(owner) { w = w, h = h };
             v.view = SendRect(Send(cls, sel_registerName("alloc")), sel_registerName("initWithFrame:"), 0, 0, w, h);
             if (v.view == IntPtr.Zero) return null;
+            // Layer-hosting: our own layer first, then wantsLayer (the other order makes a layer-backed view, whose contents AppKit replaces on redraw).
+            IntPtr layer = Send(objc_getClass("CALayer"), sLayer);
+            Send(v.view, sel_registerName("setLayer:"), layer);
             Send(v.view, sel_registerName("setWantsLayer:"), true);
+            SendRect(layer, sel_registerName("setFrame:"), 0, 0, w, h);
             Send(parent, sel_registerName("addSubview:"), v.view);
             v.rgb = CGColorSpaceCreateDeviceRGB();
             views[v.view] = v;
@@ -74,15 +82,55 @@ namespace NeoExport
         public unsafe void Present(byte* bgra, int width, int height, int stride)
         {
             if (view == IntPtr.Zero) return;
+            IntPtr layer = Send(view, sLayer);
+            // No crossfade between frames: implicit animations are off while the contents change.
+            IntPtr tx = objc_getClass("CATransaction");
+            Send(tx, sel_registerName("begin")); Send(tx, sel_registerName("setDisableActions:"), true);
+            double scale = BackingScale;
+            SendRect(layer, sel_registerName("setContentsScale:"), scale, 0, 0, 0);
             IntPtr data = CFDataCreate(IntPtr.Zero, bgra, (nint)stride * height);
             IntPtr prov = CGDataProviderCreateWithCFData(data);
             // BGRA, premultiplied alpha first, 32-bit little endian: kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Little
             IntPtr image = CGImageCreate((nuint)width, (nuint)height, 8, 32, (nuint)stride, rgb, 2 | (2u << 12), prov, IntPtr.Zero, false, 0);
-            Send(Send(view, sLayer), sSetContents, image);
+            Send(layer, sSetContents, image);
             CGImageRelease(image); CGDataProviderRelease(prov); CFRelease(data);
+            Send(tx, sel_registerName("commit"));
         }
 
-        public void Resize(int width, int height) { w = width; h = height; if (view != IntPtr.Zero) SendRect(view, sel_registerName("setFrameSize:"), width, height, 0, 0); }
+        /// <summary>Device pixels per point: the window's backing scale (the main screen's before the view has a window).</summary>
+        public double BackingScale
+        {
+            get
+            {
+                if (view == IntPtr.Zero) return 1;
+                IntPtr win = Send(view, sel_registerName("window"));
+                IntPtr target = win != IntPtr.Zero ? win : Send(objc_getClass("NSScreen"), sel_registerName("mainScreen"));
+                double s = target == IntPtr.Zero ? 1 : SendGetDouble(target, sel_registerName("backingScaleFactor"));
+                return s >= 1 ? s : 1;
+            }
+        }
+
+        /// <summary>Tests: an NSEvent of a left mouse button (down, dragged, up) at a point of the view, sent to the view's own handler.</summary>
+        public void TestInject(int kind, double x, double y)
+        {
+            if (view == IntPtr.Zero) return;
+            var p = SendPoint(view, sel_registerName("convertPoint:toView:"), x, y, IntPtr.Zero);   // to window coordinates
+            IntPtr win = Send(view, sel_registerName("window"));
+            nint number = win == IntPtr.Zero ? 0 : SendGetInt(win, sel_registerName("windowNumber"));
+            nuint type = kind == 0 ? 1u : kind == 1 ? 6u : 2u;   // NSEventTypeLeftMouseDown, LeftMouseDragged, LeftMouseUp
+            IntPtr ev = SendEvent(objc_getClass("NSEvent"), sel_registerName("mouseEventWithType:location:modifierFlags:timestamp:windowNumber:context:eventNumber:clickCount:pressure:"),
+                type, p.X, p.Y, 0, Environment.TickCount64 / 1000.0, number, IntPtr.Zero, 0, 1, kind == 2 ? 0f : 1f);
+            if (ev == IntPtr.Zero) return;
+            Send(view, sel_registerName(kind == 0 ? "mouseDown:" : kind == 1 ? "mouseDragged:" : "mouseUp:"), ev);
+        }
+
+        public void Resize(int width, int height)
+        {
+            w = width; h = height;   // points
+            if (view == IntPtr.Zero) return;
+            SendRect(view, sel_registerName("setFrameSize:"), width, height, 0, 0);
+            SendRect(Send(view, sLayer), sel_registerName("setFrame:"), 0, 0, width, height);
+        }
         public void SetVisible(bool v) { if (view != IntPtr.Zero) Send(view, sel_registerName("setHidden:"), !v); }
         public void Pump() { }
         public void Destroy()

@@ -68,6 +68,16 @@ namespace NeoExport
             ReleaseDC(hwnd, dc);
         }
 
+        [DllImport("user32")] static extern bool PostMessageW(IntPtr h, uint msg, nuint w, nint l);
+        public double BackingScale => 1;
+        /// <summary>Tests: WM_LBUTTONDOWN, WM_MOUSEMOVE (button down) and WM_LBUTTONUP posted to the view's window: its WndProc, as the message loop delivers them.</summary>
+        public void TestInject(int kind, double x, double y)
+        {
+            if (hwnd == IntPtr.Zero) return;
+            nint l = (nint)((((int)y & 0xFFFF) << 16) | ((int)x & 0xFFFF));
+            PostMessageW(hwnd, kind == 0 ? 0x0201u : kind == 1 ? 0x0200u : 0x0202u, kind == 2 ? (nuint)0 : (nuint)1, l);
+        }
+
         public void Resize(int w, int h) { if (hwnd != IntPtr.Zero) SetWindowPos(hwnd, IntPtr.Zero, 0, 0, w, h, 0x16 /*NOMOVE|NOZORDER|NOACTIVATE*/); }
         public void SetVisible(bool v) { if (hwnd != IntPtr.Zero) ShowWindow(hwnd, v ? 5 : 0); }
         public void Pump() { }
