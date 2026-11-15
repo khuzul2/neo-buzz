@@ -87,7 +87,12 @@ if [ "$RUNNER_OS" != Linux ]; then
     rm -f "$log"
     NEOPLUG_LIB="$G/$L" NEOPLUG_SCAN="$G/neoplug-scan$X" NEOBUZZ_PLUGIN_PATH="$surgepath" NEOBUZZ_PLUGIN_STANDARD=0 \
       NEOBUZZ_PLUGIN_DIR="$T/gui-plugin-data-$label" NEOBUZZ_PLUGIN_GUI_LOG="$log" \
-      timeout 120 "$STUDIO" --no-audio --settings "$T/gui-settings-$label" --plugin-gui-check "$plug" "$@" > "$OUT/plugin-gui-$label.out" 2>&1 || true
+      "$STUDIO" --no-audio --settings "$T/gui-settings-$label" --plugin-gui-check "$plug" "$@" > "$OUT/plugin-gui-$label.out" 2>&1 &
+    local pid=$!
+    ( sleep 120; kill -9 "$pid" 2>/dev/null ) >/dev/null 2>&1 &   # macOS has no timeout(1)
+    local watcher=$!
+    wait "$pid"; echo "studio exit code $? ($label)"
+    kill "$watcher" 2>/dev/null || true
     cat "$log" 2>/dev/null || echo "(no log: the studio did not run the check)"
     grep -q "plugin-gui: all passed" "$log" 2>/dev/null || { echo "--- studio output (tail)"; tail -n 25 "$OUT/plugin-gui-$label.out" | cut -c1-300; }
     grep -q "plugin-gui: all passed" "$log" 2>/dev/null || guifail=1

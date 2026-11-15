@@ -216,6 +216,8 @@ NP_API void np_platform_run(double seconds)
     }
 }
 
+NP_API void np_platform_pump() {}
+
 NP_API void np_platform_release(void* handle)
 {
     if (!handle) return;

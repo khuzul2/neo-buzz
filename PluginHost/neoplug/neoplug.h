@@ -186,6 +186,9 @@ NP_API int np_platform_describe(void* view, char* buf, int len);           /* th
 NP_API int np_platform_snapshot(void* view, const char* path, int rgb, char* stats, int len);
 NP_API void np_platform_run(double seconds);                               /* runs the platform event loop */
 NP_API void np_platform_release(void* handle);
+/* Windows: dispatches the calling thread's pending window messages once, without waiting. The plug-in host thread calls it so a plug-in
+ * that hands work to its own message thread (JUCE does) while an editor opens on another thread is answered. No-op elsewhere. */
+NP_API void np_platform_pump();
 /* Floating windows (from np_platform_window): sets the window's client size; and a callback for its close button, which then only
  * reports (the window stays until np_platform_release). */
 NP_API void np_platform_window_size(void* content, int width, int height);

@@ -140,6 +140,7 @@ namespace NeoBuzz.Plug
         [DllImport(Lib)] public static extern void np_platform_window_size(IntPtr content, int w, int h);
         [DllImport(Lib)] public static extern void np_platform_on_close(IntPtr content, ClosedCb cb, IntPtr user);
         [DllImport(Lib)] public static extern void np_platform_release(IntPtr handle);
+        [DllImport(Lib)] public static extern void np_platform_pump();
         [DllImport(Lib)] public static extern int np_platform_snapshot(IntPtr view, [MarshalAs(UnmanagedType.LPUTF8Str)] string path, int rgb, byte[] stats, int len);
         // Outputs (ABI 3)
         [DllImport(Lib)] public static extern int np_out_count(IntPtr p);

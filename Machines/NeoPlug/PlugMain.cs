@@ -33,6 +33,8 @@ namespace NeoBuzz.Plug
             }
         }
 
+        static readonly bool windows = OperatingSystem.IsWindows();
+
         static void Loop()
         {
             while (!quit)
@@ -45,6 +47,8 @@ namespace NeoBuzz.Plug
                     if (jobs.Count > 0) job = jobs.Dequeue();
                     else lock (pumps) copy = pumps.ToArray();
                 }
+                // A plug-in's own message thread is this one (it was opened here): an editor opened from the UI thread may hand work to it.
+                if (windows) try { PlugNative.np_platform_pump(); } catch (Exception) { }
                 if (job != null)
                 {
                     try { job(); } catch (Exception) { }

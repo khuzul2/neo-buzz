@@ -239,6 +239,16 @@ NP_API void np_platform_run(double seconds)
     }
 }
 
+NP_API void np_platform_pump()
+{
+    MSG m;
+    while (PeekMessageW(&m, nullptr, 0, 0, PM_REMOVE))
+    {
+        TranslateMessage(&m);
+        DispatchMessageW(&m);
+    }
+}
+
 NP_API void np_platform_release(void* handle)
 {
     if (handle) DestroyWindow((HWND)handle);
