@@ -36,6 +36,12 @@ namespace NeoBuzz.Plug
         public static readonly HashSet<PlugCore> Live = new();
 
         public readonly object Gate = new();
+        /// <summary>Guards the plug-in's editor (H3) against the plug-in being closed under it. Never held with Gate taken second.</summary>
+        public readonly object EditorLock = new();
+        PlugEditorSession editor;
+        internal IntPtr PluginHandle => plugin;
+        internal void EditorOpened(PlugEditorSession s) { lock (EditorLock) editor = s; }
+        internal void EditorClosed(PlugEditorSession s) { lock (EditorLock) if (ReferenceEquals(editor, s)) editor = null; }
         readonly IBuzzMachineHost host;
         readonly bool effect;
 
@@ -64,6 +70,59 @@ namespace NeoBuzz.Plug
         int applyQueued;
         readonly int[] applyValue = new int[Slots];
         public int Revision;
+
+        // Output buses (H1b): the plug-in's output buses or ports; one of them feeds the machine's output
+        int outCount = 1;
+        string[] outNames = new string[0];
+        volatile int outBus;
+        public int OutputCount => outCount;
+        public int OutBus => outBus;
+        public IReadOnlyList<string> OutputNames => outNames;
+
+        public void SetOutBus(int index)
+        {
+            index = Math.Clamp(index, 0, 15);
+            outBus = index;
+            var p = plugin;
+            if (p != IntPtr.Zero) PlugNative.np_out_select(p, index < outCount ? index : 0);
+        }
+
+        void ReadOutputs()
+        {
+            int n = Math.Max(1, PlugNative.np_out_count(plugin));
+            var names = new string[n];
+            var buf = new byte[128];
+            for (int i = 0; i < n; i++)
+            {
+                names[i] = PlugNative.np_out_info(plugin, i, buf, buf.Length, out _) == 0 ? PlugNative.Str(buf) : "";
+                if (names[i].Length == 0) names[i] = "Output " + (i + 1);
+            }
+            outCount = n;
+            outNames = names;
+            PlugNative.np_out_select(plugin, outBus < n ? outBus : 0);
+        }
+
+        // Song loading (item 3 of H1b): the engine writes slot values (its starting zeros, then the song's) while a song loads, before the
+        // plug-in's own state arrives; the state is the truth, so those writes are held until it has been loaded, and dropped then.
+        // A machine that never gets a state (one made from the Gear menu) gets them after a moment.
+        volatile bool awaitState;
+        long awaitSince;
+        readonly int[] deferred = new int[Slots];
+
+        /// <summary>The plug-in has just been opened for a machine whose state may follow (a song loading).</summary>
+        public void AwaitState()
+        {
+            Array.Fill(deferred, -1);
+            Volatile.Write(ref awaitSince, Environment.TickCount64);
+            awaitState = true;
+        }
+
+        /// <summary>The state arrived (or there is none to wait for): what was held is dropped.</summary>
+        public void StateArrived()
+        {
+            awaitState = false;
+            Array.Fill(deferred, -1);
+        }
 
         // Audio
         int rate = 44100;
@@ -170,6 +229,7 @@ namespace NeoBuzz.Plug
                     if (PlugNative.np_activate(plugin, rate, Chunk, 0, err, err.Length) != 0)
                         Log($"{entry.Name}: activate failed: {PlugNative.Str(err)}");
                     Refresh();
+                    ReadOutputs();
                     Bind();
                     Interlocked.Increment(ref Revision);
                     Log($"loaded {entry.Format} \"{entry.Name}\" at {rate} Hz ({PlugNative.np_param_count(plugin)} parameters, {CountBound()} bound, latency {latency})");
@@ -194,9 +254,30 @@ namespace NeoBuzz.Plug
             return n;
         }
 
+        /// <summary>What the plug-in's editor can do for a window API ("hwnd", "nsview"): 1 embedded, 2 floating, 0 none. UI thread.</summary>
+        public int EditorSupport(string api)
+        {
+            if (Missing || plugin == IntPtr.Zero || Busy) return 0;
+            if (!(OperatingSystem.IsWindows() && api == "hwnd") && !(OperatingSystem.IsMacOS() && api == "nsview")) return 0;
+            try
+            {
+                lock (EditorLock) return plugin == IntPtr.Zero ? 0 : PlugNative.np_gui_support(plugin, api);
+            }
+            catch (Exception) { return 0; }
+        }
+
+        public bool EditorOpen => editor != null;
+
         void CloseLocked()
         {
             if (plugin == IntPtr.Zero) return;
+            // An open editor goes first: the plug-in's window must not outlive the plug-in.
+            lock (EditorLock)
+            {
+                var e = editor;
+                editor = null;
+                e?.PluginGone();
+            }
             try { PlugNative.np_deactivate(plugin); } catch (Exception) { }
             try { PlugNative.np_close(plugin); } catch (Exception) { }
             plugin = IntPtr.Zero;
@@ -311,6 +392,12 @@ namespace NeoBuzz.Plug
         public void SlotSet(int i, int raw)
         {
             if (i < 0 || i >= Slots) return;
+            if (awaitState)
+            {
+                // Before the plug-in's state: the write waits (and a slot's own value is not changed meanwhile).
+                if (raw != Volatile.Read(ref mirror[i])) Volatile.Write(ref deferred[i], raw);
+                return;
+            }
             if (raw == Volatile.Read(ref mirror[i])) return;
             Volatile.Write(ref mirror[i], raw);
             Volatile.Write(ref wroteAt[i], Environment.TickCount64);
@@ -375,9 +462,12 @@ namespace NeoBuzz.Plug
                 }
                 else runtime.SetGlobalParameterInfo(i, "Slot " + (i + 1), "Unused", 0, RawMax, 0, false);
             }
+            runtime.SetGlobalParameterInfo(Slots, "Output", outCount > 1 ? "Which output bus of the plug-in feeds this machine: " + string.Join(", ", outNames.Select((n, k) => $"{k} {n}")) : "The plug-in has one output",
+                0, Math.Max(1, Math.Min(15, outCount - 1)), 0, outCount > 1);
             try
             {
                 var list = host.Machine.ParameterGroups[1].Parameters;
+                if (list.Count > Slots && outBus > 0) list[Slots].SetValue(1 << 16, outBus);
                 var p = new IParameter[Slots];
                 for (int i = 0; i < Slots && i < list.Count; i++) p[i] = list[i];
                 slotParams = p;
@@ -394,6 +484,15 @@ namespace NeoBuzz.Plug
             try
             {
                 PlugNative.np_idle(plugin);
+                if (awaitState && Environment.TickCount64 - Volatile.Read(ref awaitSince) > 1500)
+                {
+                    // No state came (a machine made from the Gear menu): what was held was the engine's starting values, not edits.
+                    // The engine takes the plug-in's values instead, and writes after this reach the plug-in.
+                    awaitState = false;
+                    for (int i = 0; i < Slots; i++)
+                        if (Interlocked.Exchange(ref deferred[i], -1) >= 0 && bound[i]) Volatile.Write(ref applyValue[i], Volatile.Read(ref mirror[i]) + 1);
+                    if (Interlocked.Exchange(ref applyQueued, 1) == 0) ThreadPool.QueueUserWorkItem(_ => ApplyToEngine());
+                }
                 int flags = PlugNative.np_poll(plugin);
                 if ((flags & PlugNative.PollLatency) != 0) Refresh();
                 if ((flags & PlugNative.PollRestart) != 0) Reactivate(offlineMode);
@@ -491,6 +590,7 @@ namespace NeoBuzz.Plug
         {
             MidiChannel = Math.Clamp(s.MidiChannel, 0, 15);
             SetMidiTarget(s.MidiOut);
+            StateArrived();
             if (Missing || plugin == IntPtr.Zero)
             {
                 var keep = s.Copy();

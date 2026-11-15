@@ -184,8 +184,10 @@ NP_API int np_gui_attach(np_plugin* p, void* parent, const char* api, int* width
     NP_UI_THREAD();
     std::string e;
     int w = 0, h = 0;
+    p->impl->guiThreadHash.store(Plugin::hashOf(std::this_thread::get_id()));
     if (!p->impl->guiAttach(parent, api, w, h, e))
     {
+        p->impl->guiThreadHash.store(0);
         setErr(err, errlen, e);
         return -1;
     }
@@ -194,7 +196,58 @@ NP_API int np_gui_attach(np_plugin* p, void* parent, const char* api, int* width
     return 0;
 }
 
-NP_API void np_gui_detach(np_plugin* p) { p->impl->guiDetach(); }
+NP_API void np_gui_detach(np_plugin* p)
+{
+    p->impl->guiDetach();
+    p->impl->guiThreadHash.store(0);
+}
+
+NP_API void np_gui_set_callbacks(np_plugin* p, np_gui_resize_cb resize_cb, np_gui_closed_cb closed_cb, void* user)
+{
+    p->impl->guiResizeCb = resize_cb;
+    p->impl->guiClosedCb = closed_cb;
+    p->impl->guiUser = user;
+}
+
+NP_API int np_gui_size(np_plugin* p, int* width, int* height)
+{
+    int w = 0, h = 0;
+    if (!p->impl->guiSize(w, h)) return -1;
+    if (width) *width = w;
+    if (height) *height = h;
+    return 0;
+}
+
+NP_API int np_gui_can_resize(np_plugin* p) { return p->impl->guiCanResize() ? 1 : 0; }
+
+NP_API int np_gui_set_size(np_plugin* p, int* width, int* height)
+{
+    int w = width ? *width : 0, h = height ? *height : 0;
+    if (!p->impl->guiSetSize(w, h)) return -1;
+    if (width) *width = w;
+    if (height) *height = h;
+    return 0;
+}
+
+NP_API int np_gui_set_scale(np_plugin* p, double scale)
+{
+    p->impl->guiSetScale(scale);
+    return 0;
+}
+
+NP_API int np_out_count(np_plugin* p) { return p->impl->outCount(); }
+
+NP_API int np_out_info(np_plugin* p, int index, char* name, int len, int* channels)
+{
+    std::string n;
+    int ch = 0;
+    if (!p->impl->outInfo(index, n, ch)) return -1;
+    copyStr(name, (size_t)(len > 0 ? len : 0), n);
+    if (channels) *channels = ch;
+    return 0;
+}
+
+NP_API void np_out_select(np_plugin* p, int index) { p->impl->outSel.store(index < 0 ? 0 : index); }
 
 } // extern "C"
 

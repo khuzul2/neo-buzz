@@ -423,7 +423,7 @@ public:
     bool paramSet(uint32_t id, double v) override
     {
         if (!params) return false;
-        if (active) return toProcessor.push(id, v);
+        if (active) return toProcessor.pushShared(id, v);
         evCount = 0;
         pushParam(0, id, v);
         clap_input_events_t in{this, evSize, evGet};
@@ -579,7 +579,9 @@ public:
         steadyTime += frames;
         evCount = 0;
         const Port* mainOut = nullptr;
-        for (auto& p : outPorts) if (p.main) { mainOut = &p; break; }
+        int sel = outSel.load(std::memory_order_relaxed);
+        if (sel > 0 && (size_t)sel < outPorts.size()) mainOut = &outPorts[(size_t)sel];
+        if (!mainOut) for (auto& p : outPorts) if (p.main) { mainOut = &p; break; }
         if (!mainOut && !outPorts.empty()) mainOut = &outPorts[0];
         if (st == CLAP_PROCESS_ERROR || !mainOut)
         {
@@ -712,7 +714,7 @@ public:
         if (!gui->create(plugin, a, false)) { err = "gui.create failed"; return false; }
         guiCreated = true;
 #if defined(_WIN32)
-        gui->set_scale(plugin, 1.0);
+        gui->set_scale(plugin, guiScale);
 #endif
         uint32_t cw = 0, ch = 0;
         gui->get_size(plugin, &cw, &ch);
@@ -733,6 +735,56 @@ public:
         gui->destroy(plugin);
         guiCreated = false;
     }
+
+    bool guiSize(int& w, int& h) override
+    {
+        if (!guiCreated) return false;
+        uint32_t cw = 0, ch = 0;
+        if (!gui->get_size(plugin, &cw, &ch)) return false;
+        w = (int)cw;
+        h = (int)ch;
+        return true;
+    }
+
+    bool guiCanResize() override
+    {
+        if (!guiCreated || !gui->can_resize) return false;
+        return gui->can_resize(plugin);
+    }
+
+    bool guiSetSize(int& w, int& h) override
+    {
+        if (!guiCreated) return false;
+        uint32_t cw = (uint32_t)w, ch = (uint32_t)h;
+        if (gui->adjust_size) gui->adjust_size(plugin, &cw, &ch);
+        hostResizing = true;
+        bool ok = gui->set_size(plugin, cw, ch);
+        hostResizing = false;
+        if (ok) { w = (int)cw; h = (int)ch; }
+        return ok;
+    }
+
+    void guiSetScale(double scale) override
+    {
+        Plugin::guiSetScale(scale);
+#if defined(_WIN32)
+        if (guiCreated) gui->set_scale(plugin, guiScale);
+#endif
+    }
+
+    bool hostResizing = false;
+
+    // Output ports (ABI 3): np_process_ex's out takes the selected one.
+    int outCount() override { return audioPorts ? (int)audioPorts->count(plugin, false) : 0; }
+
+    bool outInfo(int index, std::string& name, int& channels) override
+    {
+        clap_audio_port_info_t pi{};
+        if (!audioPorts || index < 0 || (uint32_t)index >= audioPorts->count(plugin, false) || !audioPorts->get(plugin, (uint32_t)index, false, &pi)) return false;
+        name = pi.name;
+        channels = (int)pi.channel_count;
+        return true;
+    }
 };
 
 // --- Host extensions ----------------------------------------------------------------------------
@@ -743,7 +795,7 @@ static void hLog(const clap_host_t*, clap_log_severity sev, const char* msg)
 }
 static const clap_host_log_t hostLog{hLog};
 
-static bool hIsMain(const clap_host_t* h) { return std::this_thread::get_id() == ClapPlugin::self(h)->mainThread; }
+static bool hIsMain(const clap_host_t* h) { return ClapPlugin::self(h)->onMainThread(); }
 static bool hIsAudio(const clap_host_t*) { return onAudioThread; }
 static const clap_host_thread_check_t hostThreadCheck{hIsMain, hIsAudio};
 
@@ -770,10 +822,17 @@ static void hNoteRescan(const clap_host_t*, uint32_t) {}
 static const clap_host_note_ports_t hostNotePorts{hNoteDialects, hNoteRescan};
 
 static void hGuiHints(const clap_host_t*) {}
-static bool hGuiResize(const clap_host_t*, uint32_t, uint32_t) { return true; }
+// The plugin asks for a size: the host's window takes it (np_gui_resize_cb); answering true says the host accepted.
+static bool hGuiResize(const clap_host_t* h, uint32_t w, uint32_t ht)
+{
+    auto* p = ClapPlugin::self(h);
+    if (p->hostResizing) return true;   // our own set_size is answering
+    p->guiRequestResize((int)w, (int)ht);
+    return true;
+}
 static bool hGuiShow(const clap_host_t*) { return true; }
 static bool hGuiHide(const clap_host_t*) { return true; }
-static void hGuiClosed(const clap_host_t*, bool) {}
+static void hGuiClosed(const clap_host_t* h, bool) { ClapPlugin::self(h)->guiRequestClose(); }
 static const clap_host_gui_t hostGui{hGuiHints, hGuiResize, hGuiShow, hGuiHide, hGuiClosed};
 
 const void* ClapPlugin::getExtension(const clap_host_t*, const char* id)

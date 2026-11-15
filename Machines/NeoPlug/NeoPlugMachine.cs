@@ -20,7 +20,7 @@ namespace NeoBuzz.Plug
 #else
     [MachineDecl(Name = "Neo Plug", ShortName = "Plug", Author = "neo-buzz", MaxTracks = 16, InputCount = 0, OutputCount = 1)]
 #endif
-    public partial class NeoPlugMachine : IBuzzMachine, IBuzzMachineInstrument, IBuzzMachineManifest, IDisposable
+    public partial class NeoPlugMachine : IBuzzMachine, IBuzzMachineInstrument, IBuzzMachineManifest, IBuzzMachineNativeEditor, IDisposable
     {
 #if FX
         const bool Effect = true;
@@ -75,6 +75,8 @@ namespace NeoBuzz.Plug
             core.State = new PlugState { SlotIds = core.State.SlotIds };
             core.Open(entry, entry.Display, false);
             core.PushToEngine();
+            // A song is loading: its state follows, and the engine's writes before it (starting zeros, the song's values) wait for it.
+            if ((host as IBuzzMachineHostRuntime)?.SongLoading == true) core.AwaitState();
         }
 
         public PlugState MachineState
@@ -82,7 +84,7 @@ namespace NeoBuzz.Plug
             get => core.SaveState();
             set
             {
-                if (value == null || (string.IsNullOrEmpty(value.Path) && string.IsNullOrEmpty(value.Id))) return;
+                if (value == null || (string.IsNullOrEmpty(value.Path) && string.IsNullOrEmpty(value.Id))) { core.StateArrived(); return; }
                 if (!core.Missing && core.State.Id == value.Id && core.State.Path == value.Path && core.IsOpen)
                 {
                     core.LoadState(value);
@@ -110,6 +112,13 @@ namespace NeoBuzz.Plug
         }
 
         public void Dispose() => core.Dispose();
+
+        // --- The plug-in's editor (H3) ----------------------------------------------------------------------
+
+        public int EditorSupport(string api) => core.EditorSupport(api);
+
+        public INativeEditorSession OpenEditor(string api, bool floating, IntPtr parent, double scale, string title, out string error) =>
+            PlugEditorSession.Open(core, api, floating, parent, scale, title, out error);
 
         // --- Parameters (track parameters of the instrument) -------------------------------------------------
 
@@ -165,12 +174,25 @@ namespace NeoBuzz.Plug
             {
                 if (parameter?.Group == null || parameter.Group.Type != ParameterGroupType.Global) return null;
                 int i = parameter.IndexInGroup;
+                if (i == PlugCore.Slots) return value >= 0 && value < core.OutputNames.Count ? core.OutputNames[value] : null;
                 return core.IsBound(i) ? core.SlotTextSafe(i, value) : null;
             }
             catch (Exception) { return null; }
         }
 
         public int ManifestRevision => core.Revision;
+
+        /// <summary>The menu's choice of output: through the machine's parameter, so the song, undo and the agent see it.</summary>
+        void SetOutput(int bus)
+        {
+            try
+            {
+                var list = host.Machine.ParameterGroups[1].Parameters;
+                if (list.Count > PlugCore.Slots) { list[PlugCore.Slots].SetValue(0, bus); return; }
+            }
+            catch (Exception) { }
+            core.SetOutBus(bus);
+        }
 
         public string ManifestJson
         {
@@ -208,6 +230,16 @@ namespace NeoBuzz.Plug
                 {
                     string target = name;
                     targets.Add(new MenuItemVM { Text = target, IsCheckable = true, IsChecked = core.MidiOutName == target, Command = new SimpleCommand { CanExecuteDelegate = _ => true, ExecuteDelegate = _ => core.SetMidiTarget(target) } });
+                }
+                if (core.OutputCount > 1)
+                {
+                    var outs = new List<IMenuItem>();
+                    for (int o = 0; o < core.OutputCount; o++)
+                    {
+                        int bus = o;
+                        outs.Add(new MenuItemVM { Text = core.OutputNames[o], IsCheckable = true, IsChecked = core.OutBus == o, Command = new SimpleCommand { CanExecuteDelegate = _ => true, ExecuteDelegate = _ => SetOutput(bus) } });
+                    }
+                    items.Add(new MenuItemVM { Text = "Output", Children = outs });
                 }
                 items.Add(new MenuItemVM { Text = "MIDI out to", Children = targets });
                 var channels = new List<IMenuItem>();

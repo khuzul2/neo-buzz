@@ -61,6 +61,8 @@
     <Compile Include="..\Machines\NeoBuzz.Editor\Params\**\*.cs" Link="ManifestEditor\EditorParams\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\Machines\NeoBuzz.Editor.Avalonia\**\*.cs" Link="ManifestEditor\EditorAvalonia\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\Machines\NeoBuzz.ManifestEditor\**\*.cs" Link="ManifestEditor\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- Fork (plugin-host.md H1b): Preferences > Plug-ins shares the Neo Plug machines' library code (the folders, the scan, the blocklist). -->
+    <Compile Include="..\Machines\NeoPlug\PlugLibrary.cs" Link="PlugIns\PlugLibrary.cs" />
   </ItemGroup>
 
   <!-- The Neo machines in Gear, with their editors on Avalonia (studio-mvp.md S1), and the Link helper. -->

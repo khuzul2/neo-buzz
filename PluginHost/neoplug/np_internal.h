@@ -42,6 +42,16 @@ struct ParamRing
         head.store(n, std::memory_order_release);
         return true;
     }
+    /// For rings with several producing threads (the host's main thread and a plugin's GUI thread): a short spin lock around push.
+    /// Never used on the audio thread, which is the only consumer of toProcessor.
+    bool pushShared(uint32_t id, double v)
+    {
+        while (lock.test_and_set(std::memory_order_acquire)) { }
+        bool ok = push(id, v);
+        lock.clear(std::memory_order_release);
+        return ok;
+    }
+    std::atomic_flag lock = ATOMIC_FLAG_INIT;
     bool pop(Item& out)
     {
         uint32_t t = tail.load(std::memory_order_relaxed);
@@ -101,6 +111,22 @@ struct Plugin
     np_class_info info{};
     std::thread::id mainThread = std::this_thread::get_id();
 
+    // GUI (ABI 3). The thread that shows the GUI counts as the plugin's main thread while it is attached.
+    np_gui_resize_cb guiResizeCb = nullptr;
+    np_gui_closed_cb guiClosedCb = nullptr;
+    void* guiUser = nullptr;
+    double guiScale = 1.0;
+    std::atomic<size_t> guiThreadHash{0};
+    std::atomic<int> outSel{0};
+    static size_t hashOf(std::thread::id i) { return std::hash<std::thread::id>()(i) | 1; }
+    bool onMainThread() const
+    {
+        auto me = std::this_thread::get_id();
+        return me == mainThread || guiThreadHash.load(std::memory_order_relaxed) == hashOf(me);
+    }
+    void guiRequestResize(int w, int h) { if (guiResizeCb) guiResizeCb(guiUser, w, h); }
+    void guiRequestClose() { if (guiClosedCb) guiClosedCb(guiUser); }
+
     virtual bool activate(double rate, int maxFrames, bool offline, std::string& err) = 0;
     virtual void deactivate() = 0;
     virtual int channels(bool input) = 0;
@@ -123,6 +149,12 @@ struct Plugin
     virtual int guiSupport(const char* api) = 0;
     virtual bool guiAttach(void* parent, const char* api, int& w, int& h, std::string& err) = 0;
     virtual void guiDetach() = 0;
+    virtual bool guiSize(int& w, int& h) = 0;
+    virtual bool guiCanResize() = 0;
+    virtual bool guiSetSize(int& w, int& h) = 0;
+    virtual void guiSetScale(double scale) { guiScale = scale > 0 ? scale : 1.0; }
+    virtual int outCount() = 0;
+    virtual bool outInfo(int index, std::string& name, int& channels) = 0;
 };
 
 // Backends.

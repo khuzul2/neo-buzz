@@ -20,6 +20,12 @@ for i in range(1, 65):
         f"        public int Slot{i} {{ get => core.SlotValue({i - 1}); set => core.SlotSet({i - 1}, value); }}",
         "",
     ]
+# After the slots, never before them: the order of the global parameters is the order of the declarations.
+lines += [
+    '        [ParameterDecl(Name = "Output", Description = "Which output bus of the plug-in feeds this machine (0 is its main output)", MinValue = 0, MaxValue = 15, DefValue = 0)]',
+    "        public int Output { get => core.OutBus; set => core.SetOutBus(value); }",
+    "",
+]
 lines += ["    }", "}", ""]
 with open(os.path.join(here, "Slots.g.cs"), "w", newline="\n") as f:
     f.write("\n".join(lines))
