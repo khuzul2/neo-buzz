@@ -320,6 +320,51 @@ namespace ReBuzz.Studio.Tests
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }
 
+        [AvaloniaTest]
+        public void AnEmbeddedHistoryIsInTheNblAsManifestsAndSharedChunksAndComesBackWithoutTheFolder()
+        {
+            using var untitled = Untitled(out _);
+            using var rig = Song("Lead");
+            var core = rig.Core;
+            string dir = Temp("embed-nbl");
+            Directory.CreateDirectory(dir);
+            bool embed = core.Snapshots.Embed;
+            using var restore = Studio.AfterTest(() => core.Snapshots.Embed = embed);
+            try
+            {
+                string plain = Path.Combine(dir, "plain.nbl"), withHistory = Path.Combine(dir, "with.nbl");
+                core.Snapshots.Embed = false;
+                core.SongCore.SongName = plain;
+                core.SaveSongFile(plain);
+                core.Snapshots.Flush();
+                using (var r = new ReBuzz.FileOps.Nbl.NblContainer.Reader(plain))
+                    Assert.That(System.Text.Json.Nodes.JsonNode.Parse(r.Manifest)["history"], Is.Null, "no history section without the option");
+
+                var snap = core.Snapshots.Capture("kept");
+                core.Snapshots.Flush();
+                core.Snapshots.Embed = true;
+                core.SongCore.SongName = withHistory;
+                core.SaveSongFile(withHistory);
+                Assert.That(new FileInfo(withHistory).Length, Is.GreaterThan(new FileInfo(plain).Length), "the history is in the song");
+                using (var r = new ReBuzz.FileOps.Nbl.NblContainer.Reader(withHistory))
+                {
+                    var manifest = System.Text.Json.Nodes.JsonNode.Parse(r.Manifest);
+                    var chunks = manifest["history"]["chunks"].AsArray().Select(c => (string)c).ToList();
+                    var coreChunks = manifest["core"]["sections"].AsArray().SelectMany(s => s["chunks"].AsArray()).Select(c => (string)c["blob"]).ToHashSet();
+                    Assert.That(chunks, Is.Not.Empty);
+                    Assert.That(chunks.All(r.Has), Is.True, "the snapshots' chunks are blobs of the file");
+                    Assert.That(chunks.Count(coreChunks.Contains), Is.GreaterThan(0), "and some are the song's own: held once");
+                }
+
+                Directory.Delete(withHistory + ".history", true);
+                Assert.That(core.TryOpenSongFile(withHistory), Is.True);
+                Assert.That(core.Snapshots.List().Select(s => s.Name), Does.Contain("kept"));
+                var back = core.Snapshots.Find("kept");
+                Assert.That(core.Snapshots.Assemble(back), Is.EqualTo(core.Snapshots.Assemble(snap)), "the same song bytes");
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }
+
         // ------------------------------------------------------------------ automatic snapshots
 
         [AvaloniaTest]

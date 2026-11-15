@@ -320,6 +320,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         [TestCase(".bmx")]
         [TestCase(".bmxml")]
+        [TestCase(".nbl")]
         public void NotesSaveWithTheSongAndOpenAgain(string extension)
         {
             using var restore = Studio.AfterTest(PutBack);

@@ -6,7 +6,7 @@ namespace ReBuzz.FileOps
 {
     internal class WaveUnpack
     {
-        public WaveUnpack(FileStream fs)
+        public WaveUnpack(Stream fs)
         {
             _filestream = fs;
 
@@ -301,7 +301,7 @@ namespace ReBuzz.FileOps
         const int c_maxbit = 8;
 
 
-        FileStream _filestream;
+        Stream _filestream;
         byte[] _buffer = new byte[2048];
         int _currentByteIndex = -1;
         //int _maxBytes = -1;

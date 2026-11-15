@@ -15,7 +15,7 @@ namespace ReBuzz.Agent
 {
     internal static class StudioTools
     {
-        static readonly string[] SongExtensions = { ".bmxml", ".bmx", ".bmw" };
+        static readonly string[] SongExtensions = { ".nbl", ".bmxml", ".bmx", ".bmw" };
 
         public static void Register(ToolRegistry tools, AgentHost host)
         {
@@ -180,7 +180,7 @@ namespace ReBuzz.Agent
                 Name = "song_open",
                 Title = "Open song",
                 Description =
-                    "Opens a song file (.bmxml, .bmx or .bmw) by its full path. Refuses when the current song has unsaved changes unless " +
+                    "Opens a song file (.nbl, .bmxml, .bmx or .bmw) by its full path. Refuses when the current song has unsaved changes unless " +
                     "discard_unsaved is true. Returns the new studio status. Not undoable. Example: song_open(path=\"C:/Music/demo.bmxml\").",
                 Input = Object(null,
                     Req("path", String("Full path of the song file")),
@@ -190,7 +190,7 @@ namespace ReBuzz.Agent
                 Handler = async c =>
                 {
                     string path = SongPath(c.RequiredString("path"));
-                    if (!File.Exists(path)) throw new ToolError($"No file at {path}. Give the full path of an existing .bmxml, .bmx or .bmw song.");
+                    if (!File.Exists(path)) throw new ToolError($"No file at {path}. Give the full path of an existing .nbl, .bmxml, .bmx or .bmw song.");
                     var s = await host.Engine("song_open", false, messages =>
                     {
                         RefuseUnsaved(core, c.Bool("discard_unsaved") == true, "open another song");
@@ -211,26 +211,40 @@ namespace ReBuzz.Agent
                 Name = "song_save",
                 Title = "Save song",
                 Description =
-                    "Saves the song: to its own file, or to path (save as; .bmxml recommended, it keeps everything readable). " +
-                    "Won't overwrite a different existing file unless overwrite is true. Example: song_save(path=\"C:/Music/sketch.bmxml\").",
+                    "Saves the song: to its own file, or to path (save as). .nbl is the native format and keeps everything; .bmxml is readable text; " +
+                    ".bmx opens in other Buzz versions but keeps less. A song opened from a .bmx, .bmw or .bmxml is saved next to it as a new .nbl " +
+                    "when path is omitted: the original isn't overwritten. " +
+                    "Won't overwrite a different existing file unless overwrite is true. Example: song_save(path=\"C:/Music/sketch.nbl\").",
                 Input = Object(null,
                     Opt("path", String("Full path to save to (save as). Omit to save to the song's own file")),
+                    Opt("format", String("The file type when path has no extension, or for the new file beside an opened old song (default nbl)", "nbl", "bmxml", "bmx")),
                     Opt("overwrite", Boolean("Replace an existing file that isn't this song's own"))),
                 Output = Object(null, Req("file", String("The file written")), Req("bytes", Integer("Its size"))),
                 Annotations = ToolAnnotations.WriteIdempotent,
                 Handler = async c =>
                 {
                     string requested = c.String("path");
+                    string format = (c.String("format") ?? "nbl").Trim().TrimStart('.').ToLowerInvariant();
+                    if (format != "nbl" && format != "bmxml" && format != "bmx") throw new ToolError("format: nbl, bmxml or bmx.");
+                    if (requested != null && Path.GetExtension(requested.Trim().Trim('"')).Length == 0) requested = requested.Trim().Trim('"') + "." + format;
                     var r = await host.Engine("song_save", false, messages =>
                     {
                         string current = core.SongCore.SongName;
                         string path = requested != null ? SongPath(requested) : current
-                            ?? throw new ToolError("This song has no file yet: give a path, e.g. song_save(path=\"C:/Music/song.bmxml\").");
-                        if (requested != null && File.Exists(path) && !string.Equals(Path.GetFullPath(path), current == null ? null : Path.GetFullPath(current), StringComparison.OrdinalIgnoreCase)
+                            ?? throw new ToolError("This song has no file yet: give a path, e.g. song_save(path=\"C:/Music/song.nbl\").");
+                        bool beside = false;
+                        if (requested == null && core.LegacyOrigin != null && core.LegacyOrigin == current)
+                        {
+                            // Opened from an older kind of file: the new file goes beside it; the original stays as it was.
+                            path = Path.ChangeExtension(current, "." + format);
+                            if (string.Equals(path, current, StringComparison.OrdinalIgnoreCase)) path = Path.ChangeExtension(current, ".nbl");
+                            beside = true;
+                        }
+                        if ((requested != null || beside) && File.Exists(path) && !string.Equals(Path.GetFullPath(path), current == null ? null : Path.GetFullPath(current), StringComparison.OrdinalIgnoreCase)
                             && c.Bool("overwrite") != true)
                             throw new ToolError($"{path} exists and isn't this song's file. Pass overwrite=true to replace it, or choose another name.");
                         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                        if (requested != null)
+                        if (requested != null || beside)
                         {
                             core.SongCore.SongName = path;
                         }
