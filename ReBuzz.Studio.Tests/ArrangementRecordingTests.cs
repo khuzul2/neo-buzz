@@ -840,7 +840,7 @@ namespace ReBuzz.Studio.Tests
             SongLength(48);
             var deleters = new Func<ISequence, IAction>[]
             {
-                lane => new ReBuzz.Studio.Views.Sequence.DeleteSequenceAction(lane),      // (the WPF editors' twin reports the same way; it builds with WPF only)
+                lane => new global::ReBuzz.Core.DeleteTrackAction(lane),      // (the WPF editors' twin reports the same way; it builds with WPF only)
             };
             foreach (var delete in deleters)
             {

@@ -707,7 +707,7 @@ namespace ReBuzz.Studio.Views.Session
         {
             var seq = layout.SequenceOf(track);
             if (seq?.Machine == null) return;
-            buzz.SongCore.ActionStack.Do(new ReBuzz.Studio.Views.Sequence.DeleteSequenceAction(seq));
+            buzz.SongCore.ActionStack.Do(new global::ReBuzz.Core.DeleteTrackAction(seq));
         }
 
         void ShowMidiOnlyMenu(Control anchor, SessionTarget target, int track, int scene, string what)

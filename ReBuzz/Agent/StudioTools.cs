@@ -247,12 +247,13 @@ namespace ReBuzz.Agent
                 Name = "song_set",
                 Title = "Set song properties",
                 Description =
-                    "Changes the tempo, ticks per beat (pattern resolution), song end and loop. Positions are in beats from the start " +
+                    "Changes the tempo, ticks per beat (pattern resolution), playback speed (Song Properties' Speed), song end and loop. Positions are in beats from the start " +
                     "(rounded to the nearest tick). Change ticks_per_beat before writing patterns: patterns keep their length in ticks, so it moves " +
                     "everything in beats. One undo step. Returns the values as they now are. Example: song_set(tempo_bpm=124, loop_start_beats=0, loop_end_beats=64).",
                 Input = Object(null,
                     Opt("tempo_bpm", Number("Tempo in beats per minute (rounded to a whole number)", 16, 500)),
                     Opt("ticks_per_beat", Integer("Pattern rows per beat (4 = 16th notes)", 1, 32)),
+                    Opt("speed", Integer("Playback speed offset, as Song Properties' Speed (0 is normal)", -1000, 1000)),
                     Opt("song_end_beats", Number("Where the song ends, in beats", 0)),
                     Opt("loop_start_beats", Number("Loop start, in beats", 0)),
                     Opt("loop_end_beats", Number("Loop end, in beats", 0)),
@@ -271,6 +272,11 @@ namespace ReBuzz.Agent
                         bool loopingNow = c.Bool("looping") ?? core.Looping;
                         if (tpbNow != core.TPB || bpmNow != core.BPM || loopingNow != core.Looping)
                             AgentActions.SetTransport(core, bpmNow, tpbNow, loopingNow);
+                        if (c.Int("speed") is int speed && speed != core.Speed)
+                        {
+                            int oldSpeed = core.Speed;
+                            AgentActions.Do(core, new DelegateAction(() => core.Speed = speed, () => core.Speed = oldSpeed, "Set speed"));
+                        }
                         int Ticks(double beats) => (int)Math.Round(beats * tpbNow);
                         void Marker(BuzzGUI.Interfaces.SongMarkers marker, int ticks) =>
                             AgentActions.Do(core, new BuzzGUI.Common.Actions.SongActions.SetMarkerAction(song, marker, ticks));
@@ -373,6 +379,7 @@ namespace ReBuzz.Agent
             Req("tempo_bpm", Number("Beats per minute")),
             Req("ticks_per_beat", Integer("Pattern rows per beat")),
             Req("beats_per_bar", Integer("Beats per bar, for \"bar.beat\" positions")),
+            Opt("speed", Integer("Playback speed offset (Song Properties' Speed; 0 is normal)")),
             Req("length_beats", Number("Song end, in beats")),
             Req("loop", Object(null, Req("start_beats", Number("Loop start")), Req("end_beats", Number("Loop end")), Req("on", Boolean("Looping")))),
             Req("sample_rate", Integer("Samples per second")),
@@ -485,6 +492,7 @@ namespace ReBuzz.Agent
                 ["tempo_bpm"] = core.BPM,
                 ["ticks_per_beat"] = tpb,
                 ["beats_per_bar"] = SongModel.BeatsPerBar(core),
+                ["speed"] = core.Speed,
                 ["length_beats"] = Beats(song.SongEnd, tpb),
                 ["loop"] = new JsonObject { ["start_beats"] = Beats(song.LoopStart, tpb), ["end_beats"] = Beats(song.LoopEnd, tpb), ["on"] = core.Looping },
                 ["sample_rate"] = ReBuzzCore.masterInfo.SamplesPerSec,

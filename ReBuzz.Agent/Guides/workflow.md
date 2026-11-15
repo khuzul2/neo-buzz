@@ -15,7 +15,7 @@ Build, listen, measure, adjust. Never claim a result you haven't rendered and me
 - **Effects:** `machine_add(gear="Neo Verb", name="Room", connect_to=…)` or `machine_add(gear=…, insert_after="Bass")` for an insert, then `connect`/`disconnect` to route. A send: connect the source to both Master and the effect, set the effect 100% wet.
 - **Sound:** start from a preset (`preset_list(machine=…)`, `preset_load(machine=…, preset=…)`): the Neo machines and the curated classic ones (Pedal, Jeskola, FSM, Oomek…) have factory presets named for what they do ("Echo — Dotted Eighth"), ours levelled to peak below −1 dBFS (a machine's own bank, such as Pedal Juno106's, can run hotter: render and check); then `machine_describe(machine)` lists every parameter with its value in units. `param_set` takes values in those units ("800 Hz", "-6 dB", "35%", "Saw"), relative changes (`by: "+3 dB"`) or factors (`times: 2`). Extreme values are rarely right.
 - **Notes:** `pattern_create(machine, length_beats)` then `notes_write(machine, pattern, notes)`. Pitches are MIDI numbers or names (60 = "C4"); times are in beats from the pattern start. Chords are notes with the same start. `theory` gives exact chord and scale pitches; `notes_transform` edits notes already written.
-- **Arrangement:** `arrangement_place(machine, pattern, at=[0, 16, 32])` puts a pattern on the timeline (beats, or "bar.beat" text: "5.1" is bar 5). `arrangement_markers` names sections; `arrangement_get` shows the whole timeline. `automation_write` moves a parameter inside a pattern.
+- **Arrangement:** `arrangement_place(machine, pattern, at=[0, 16, 32])` puts a pattern on the timeline (beats, or "bar.beat" text: "5.1" is bar 5). `arrangement_markers` names sections; `arrangement_get` shows the whole timeline, each machine's lanes numbered with their role. `arrangement_clip` edits a lane's clips like the Arrange view: `add`, `draw`, `move`, `copy`, `trim`, `loop`, `split`, `join`, `make_unique`; `arrangement_lane` adds a take or automation lane; `arrangement_takes` comps a take onto the main lane and records armed tracks; `song_meter` sets the bar length. `automation_write` moves a parameter inside a pattern, `arrangement_automation` over the song.
 
 ## Listen and measure
 - `render(from=…, to=…)` renders faster than real time and returns a render id, the WAV file and a loudness/peak summary. Render a short range while you iterate (4–8 bars, or `section="Drop"`), the whole song to finish.
@@ -54,7 +54,7 @@ Read the one for the job with `guide(topic=…)` (or the resource rebuzz://guide
 | `mastering-chain` | the chain stage by stage with settings |
 | `dye-essence-in-depth`, `dye-essence-analysis`, `dye-essence-effects`, `neo-eq-in-depth` | the parts of those two machines that their pages leave out |
 | `build-a-synth` | learning Neo Patch: the empty patch to sound in three steps, then each template node by node |
-| `app-control` | preferences, the audio device, MIDI bindings, the studio window, export to WAV |
+| `app-control` | preferences, the audio device, MIDI bindings, the studio window, export to WAV, clone, groups, latency, recording the Master |
 | `live-performance` | the Session View played live: scenes, clips, controllers, levels, a safe restore |
 | `dye-sound-design` | Dye Essence's seven engines: which for what, what to move, what to measure |
 | `migrating-songs` | classic machines onto their Neo successors with `machine_replace` |
