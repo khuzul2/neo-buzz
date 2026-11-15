@@ -1,4 +1,4 @@
-# Neo Clipper parameters (docs/specs/mastering-tools.md §5.1). The order is permanent: songs and presets
+# Neo Clipper parameters (docs/specs/mastering-tools.md §5.1). The order changes only with a version (machines.md §3.2): songs and presets
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoClipper
 namespace NeoBuzz.Clipper
 class NeoClipperMachine

@@ -498,7 +498,9 @@ namespace ReBuzz.FileOps
                     {
                         // Copy parametervalues
                         CopyParameters(machineProto, machineNew, 0, 0);
-                        CopyParameters(machineProto, machineNew, 1, 0);
+                        var protoGlobals = machineProto.ParameterGroupsList[1].ParametersList;
+                        if (!LoadedStateMigration.CopyGlobals(machineNew, protoGlobals.Count, i => protoGlobals[i].GetValue(0), msg => buzz.DCWriteLine(msg, DCLogLevel.Error)))
+                            CopyParameters(machineProto, machineNew, 1, 0);
                         for (int m = 0; m < tracks; m++)
                         {
                             CopyParameters(machineProto, machineNew, 2, m);

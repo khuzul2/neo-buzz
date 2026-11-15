@@ -1,4 +1,4 @@
-# Neo Spectral parameters (docs/specs/mastering-tools.md §5.16). The order is permanent: songs and presets
+# Neo Spectral parameters (docs/specs/mastering-tools.md §5.16). The order changes only with a version (machines.md §3.2): songs and presets
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoSpectral
 namespace NeoBuzz.Spectral
 class NeoSpectralMachine
