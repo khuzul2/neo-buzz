@@ -19,7 +19,7 @@ Third-party components in these bundles and their licences
 * Inter typeface, SIL Open Font License 1.1. Copyright (c) The Inter Project Authors. https://github.com/rsms/inter
 * .NET runtime and libraries (NativeAOT), MIT licence. Copyright (c) .NET Foundation and contributors.
 
-The full licence texts are in the NeoBuzz Live source tree (PluginExport/LICENSES/) and in the packages named above.
+The licence texts of the CLAP headers, clap-wrapper, the VST3 SDK and (macOS) the AudioUnitSDK are in the LICENSES folder of this bundle; those of the other components are in the packages named above.
 
 Names
 -----

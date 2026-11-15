@@ -225,6 +225,11 @@ jobs:
           cp -R _build/assets/* "$D/" || true
         fi
         cp PluginExport/NOTICE.txt PluginExport/INSTALL.txt "$D/"
+        mkdir -p "$D/LICENSES"
+        for f in "clap/LICENSE:CLAP.txt" "cw/LICENSE:clap-wrapper.txt" "vst3sdk380/LICENSE.txt:VST3-SDK.txt" "AudioUnitSDK/LICENSE.txt:AudioUnitSDK.txt"; do
+          cp "$RUNNER_TEMP/${f%%:*}" "$D/LICENSES/${f##*:}" 2>/dev/null || true
+        done
+        ls "$D/LICENSES"
         find "$D" -maxdepth 3 | head -50; du -sh "$D"
 
     - uses: actions/upload-artifact@v4

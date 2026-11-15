@@ -166,7 +166,7 @@ struct Inst {
 
 struct Audio {
     std::vector<float> inL, inR, kL, kR, outL, outR;
-    explicit Audio(int n = 32768) : inL(n), inR(n), kL(n), kR(n), outL(n), outR(n) {}
+    explicit Audio(int n = 131072) : inL(n), inR(n), kL(n), kR(n), outL(n), outR(n) {}
     void noise(uint32_t seed, float amp) {
         uint32_t r = seed;
         auto f = [&] { r = r * 1664525u + 1013904223u; return ((int)(r >> 9) / 4194304.0f - 1.0f); };
@@ -196,12 +196,12 @@ static double peakOf(const std::vector<float>& v, int from, int n) { double p = 
 
 // one render of 20 blocks of 128 with the given events at block 0; returns the output (left) concatenated
 static std::vector<float> renderOnce(Inst& in, Audio& a, bool withNotes, int blocks = 0) {
-    std::vector<float> out; if (blocks == 0) blocks = withNotes ? 150 : 20;
+    std::vector<float> out; if (blocks == 0) blocks = withNotes ? 600 : 20;
     InEvents ev; OutEvents oe;
     for (int b = 0; b < blocks; b++) {
         ev.clear();
         if (withNotes && b == 0) { ev.note(10, true, 60, 0.8); ev.note(20, true, 67, 0.6); }
-        if (withNotes && b == blocks / 2) { ev.note(5, false, 60, 0); ev.note(6, false, 67, 0); }
+        if (withNotes && b == blocks * 2 / 3) { ev.note(5, false, 60, 0); ev.note(6, false, 67, 0); }
         processBlock(in, a, b * 128, 128, ev, &oe, b * 128);
         out.insert(out.end(), a.outL.begin() + b * 128, a.outL.begin() + (b + 1) * 128);
     }
