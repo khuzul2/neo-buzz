@@ -1,4 +1,4 @@
-# Neo De-esser parameters (docs/specs/mastering-tools.md §5.12). The order is permanent: songs and presets
+# Neo De-esser parameters (docs/specs/mastering-tools.md §5.12). The order changes only with a version (machines.md §3.2): songs and presets
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoDeEsser
 namespace NeoBuzz.DeEsser
 class NeoDeEsserMachine

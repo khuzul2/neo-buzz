@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Fork (docs/specs/machines.md §3.4): a Neo effect with three state versions (VersionedTest.cs), built for net10.0 into the studio
+    tests' Gear/Effects as "Versioned Test.NET.dll", for the versioned state tests. The tests' project builds it; it is not shipped.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>Versioned Test.NET</AssemblyName>
+    <RootNamespace>ReBuzz.Studio.Tests.VersionedTest</RootNamespace>
+    <Optimize>true</Optimize>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);MSB3277;CS1591;CS0067;CS0414;CS0169;CS0649</NoWarn>
+    <M>$(MSBuildThisFileDirectory)..\..\..\Machines\</M>
+    <GearDir Condition="'$(GearDir)' == ''">$(MSBuildThisFileDirectory)bin\Gear\</GearDir>
+    <OutDir>$([MSBuild]::EnsureTrailingSlash('$(GearDir)'))Effects\</OutDir>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="VersionedTest.cs" />
+    <Compile Include="$(M)NeoBuzz.Dsp\**\*.cs" Link="Shared\Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoBuzz.Machine\**\*.cs" Link="Shared\Machine\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The engine's portable machine API; the host provides it at run time (not copied). -->
+    <ProjectReference Include="..\..\..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" Private="false" GlobalPropertiesToRemove="GearDir" />
+    <ProjectReference Include="..\..\..\ReBuzzGUI\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj" Private="false" GlobalPropertiesToRemove="GearDir" />
+  </ItemGroup>
+</Project>

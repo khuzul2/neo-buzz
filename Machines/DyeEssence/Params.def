@@ -1,4 +1,4 @@
-# Dye Essence parameters (docs/specs/dye-essence.md §7). The order is permanent once a phase merges:
+# Dye Essence parameters (docs/specs/dye-essence.md §7). The order changes only with a version (machines.md §3.2):
 # songs and presets store values by position. New parameters go at the end; an enum's maximum may
 # grow, its values never move. Regenerate: python3 tools/gen-machine-params.py Machines/DyeEssence
 namespace NeoBuzz.DyeEssence
