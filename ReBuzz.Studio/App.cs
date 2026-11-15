@@ -135,6 +135,11 @@ namespace ReBuzz.Studio
                 });
                 _ = Shell.Design.StudioTheme.Settings;      // the saved theme (Preferences ▸ Appearance), once the settings store is there
                 _ = AfterStart(host);
+                if (Platform.PluginGuiCheck.PlugIn != null)
+                {
+                    _ = Platform.PluginGuiCheck.Run(host, desktop);
+                    return;
+                }
                 if (Program.Smoke)
                 {
                     // Quit once the window has drawn with the views in it.

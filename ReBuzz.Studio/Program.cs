@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using Avalonia;
 using ReBuzz.Host;
+using ReBuzz.Studio.Platform;
 using ReBuzz.Studio.Shell;
 
 namespace ReBuzz.Studio
@@ -37,8 +38,15 @@ namespace ReBuzz.Studio
                 return EngineHost.ListDevices(Console.Out, Console.Error);
             }
             Smoke = args.Contains("--smoke");
+            if (Option(args, "--plugin-gui-check") is string plugIn)
+            {
+                // CI's check of plug-in editors in a real window (Platform/PluginGuiCheck.cs).
+                PluginGuiCheck.PlugIn = plugIn;
+                PluginGuiCheck.Effect = args.Contains("--plugin-gui-fx");
+                PluginGuiCheck.Floating = args.Contains("--plugin-gui-floating");
+            }
             string settings = Option(args, "--settings");
-            string[] valued = { "--settings", "--agent-port", "--agent-token" };
+            string[] valued = { "--settings", "--agent-port", "--agent-token", "--plugin-gui-check" };
             for (int i = 0; i < args.Length && Song == null; i++)
             {
                 if (valued.Any(v => string.Equals(args[i], v, StringComparison.OrdinalIgnoreCase))) i++;
