@@ -123,6 +123,26 @@ namespace NeoExport
             pe->GetValue(p, (uint)P.Output, &a);
             Check(a == 250 && inst.Sh->Param[P.Output] == 250 && inst.Sh->EditsApplied == 1, "an editor edit through the ring reaches the audio side");
 
+            // The engine remembers how it got to its parameters: a filter that glided from the defaults to Cutoff 5000 / Resonance 500
+            // and one that started there differ by ~1e-4 for good (the smoothers' resting values). This is why the host null test
+            // judges a reloaded song, where only the native machine glides, against a looser tolerance than a settled start.
+            {
+                var vA = new ParamValues(Params.Table); var eA = new FilterEngine(vA); eA.SetSampleRate(44100);     // glides
+                var vB = new ParamValues(Params.Table); vB.Set(P.Type, 2); vB.Set(P.Cutoff, 5000); vB.Set(P.Resonance, 500);
+                var eB = new FilterEngine(vB); eB.SetSampleRate(44100);                                              // settled
+                vA.Set(P.Type, 2); vA.Set(P.Cutoff, 5000); vA.Set(P.Resonance, 500);
+                var aL = new float[256]; var aR = new float[256]; var bL = new float[256]; var bR = new float[256];
+                var rr = new Random(3); double worstLate = 0; double worstEarly = 0;
+                for (int blk = 0; blk < 44100 * 3 / 256; blk++)
+                {
+                    for (int i = 0; i < 256; i++) { aL[i] = bL[i] = (float)(rr.NextDouble() - 0.5); aR[i] = bR[i] = (float)(rr.NextDouble() - 0.5); }
+                    eA.Process(aL, aR, 256); eB.Process(bL, bR, 256);
+                    double m = 0; for (int i = 0; i < 256; i++) m = Math.Max(m, Math.Abs(aL[i] - bL[i]));
+                    if (blk * 256 < 22050) worstEarly = Math.Max(worstEarly, m); else worstLate = Math.Max(worstLate, m);
+                }
+                Console.WriteLine($"     glided vs settled engine: largest difference in the first 0.5 s {worstEarly:g3}, after it {worstLate:g3}");
+            }
+
             p->Destroy(p); p2->Destroy(p2);
             Console.WriteLine(failures == 0 ? "ALL OK" : $"{failures} FAILED");
             return failures == 0 ? 0 : 1;

@@ -173,7 +173,8 @@ def probe_files(r):
     return out
 
 
-def compare(pf, tag, skip=0.0):
+def compare(pf, tag, skip=0.0, tol=None):
+    tol = args.tolerance if tol is None else tol
     check(all(pf.values()), f"{tag}: probe files found")
     for nm in filters[1:]:
         if not (pf.get(nm) and pf.get("NativeF")): continue
@@ -184,7 +185,12 @@ def compare(pf, tag, skip=0.0):
               f"bit identical: {full['bit_identical']}, native peak {full['peak_native']:.3f}")
         if skip: print(f"     {tag}: {nm} - NativeF after {skip} s: max |diff| {res['max_abs_diff']:.3g} ({res['max_abs_diff_dbfs']:.1f} dBFS), {res['differing_samples']}/{res['samples']} samples differ")
         check(full["peak_native"] > 0.01, f"{tag}: {nm}: the native signal is audible (peak {full['peak_native']:.3f})")
-        check(res["max_abs_diff"] <= args.tolerance, f"{tag}: {nm} nulls against the native machine within {args.tolerance:g}" + (f" after {skip} s" if skip else "") + f" (max |diff| {res['max_abs_diff']:.3g})")
+        check(res["max_abs_diff"] <= tol, f"{tag}: {nm} nulls against the native machine within {tol:g}" + (f" after {skip} s" if skip else "") + f" (max |diff| {res['max_abs_diff']:.3g})")
+    if pf.get("ClapF") and pf.get("VstF"):
+        cv = null(pf["ClapF"], pf["VstF"])
+        results["nulls"][f"{tag}/clap-vs-vst3"] = cv
+        print(f"     {tag}: VstF - ClapF: max |diff| {cv['max_abs_diff']:.3g}, bit identical: {cv['bit_identical']}")
+        check(cv["bit_identical"], f"{tag}: the VST3 (clap-wrapper) renders the same bits as the CLAP")
 
 
 # 1. default parameters: nothing glides on either side
@@ -223,7 +229,10 @@ def dump(tag):
 
 
 dump("after reopen")
-compare(render("reopened"), "reopened", skip=0.5)
+# A reloaded song: the plug-in restores its state before it is activated and starts settled at it, while the native machine glides
+# from its defaults to the loaded values; the engine's smoothers rest ~1e-4 apart after the two histories (experiments/plugin-export/
+# selftest shows the same two engines differing by 1.05e-4). So the reloaded filters are held to 3e-4 (-70 dBFS), not to the settled tolerance.
+compare(render("reopened"), "reopened", skip=0.5, tol=3e-4)
 
 proc.stdin.close()
 try: proc.wait(timeout=60)
