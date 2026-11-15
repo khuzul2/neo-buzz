@@ -357,7 +357,11 @@ public:
         // A view of another process can't be put in our window on macOS. On Windows it can be tried (NEOPLUG_SANDBOX_EMBED=1), but the first
         // CI evidence was that IPlugView::attached() with a parent HWND of another process did not come back (the app's UI thread waits for the
         // server while the child window needs it to answer): the server was ended as hung. So a sandboxed editor floats, in a window the server owns.
-        if ((s == "nsview" || s == "hwnd") && !(s == "hwnd" && envInt("NEOPLUG_SANDBOX_EMBED", 0))) rc &= ~1;
+        if ((s == "nsview" || s == "hwnd") && !(s == "hwnd" && envInt("NEOPLUG_SANDBOX_EMBED", 0)))
+        {
+            if (rc & 1) rc |= 2;   // a plug-in that can be embedded floats in a window the server makes and embeds it in itself
+            rc &= ~1;
+        }
         return rc;
     }
     bool guiAttach(void* parent, const char* api, int& wOut, int& hOut, std::string& err) override

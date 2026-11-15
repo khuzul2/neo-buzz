@@ -90,7 +90,7 @@ namespace ReBuzz.Studio.Platform
             Check(controller.Has(machine), "the plug-in has an editor for this window API");
             if (!controller.Has(machine)) return;
 
-            var want = Floating ? PluginEditorMode.Floating : PluginEditorMode.Embedded;
+            var want = Floating || Sandboxed ? PluginEditorMode.Floating : PluginEditorMode.Embedded;
             for (int round = 1; round <= 2; round++)
             {
                 string r = round == 1 ? "first open" : "reopen";
