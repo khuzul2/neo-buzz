@@ -35,6 +35,18 @@ namespace ReBuzz.Studio.Shell.Design
     {
         [BuzzSetting(AppearanceTheme.Dark, Description = "Dark is the studio's look, Light its light twin, System follows the operating system's choice and changes with it. Classic Buzz draws the machine view on beige and the sequence on brown, as Buzz always has; every other view stays dark.")]
         public AppearanceTheme Theme { get => StudioTheme.Kind; set => StudioTheme.Kind = value; }
+
+        [BuzzSetting(false, Description = "The Sequence tab's tracker with time running down the page and the tracks as columns, as Buzz has it (daw-modes.md AR6). The Arrange mode stays horizontal. The Vertical button in the Sequence tab sets the same thing.")]
+        public bool VerticalTracker
+        {
+            get => Views.Sequence.SequenceOrientation.Vertical;
+            // Not while the base class sets the defaults and loads the saved values: the view's own button keeps the registry's value, which rules.
+            set { if (ready) Views.Sequence.SequenceOrientation.Vertical = value; }
+        }
+
+        readonly bool ready;
+
+        public AppearanceSettings() => ready = true;
     }
 
     /// <summary>The theme in use, and its colours.</summary>

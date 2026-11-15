@@ -3,7 +3,8 @@
 # Generated, like docs/machine-health.md, so the figures can't drift from the repository:
 #   per machine: category, how far its manifest is trusted (curated, generated, draft), whether it has a hand-written page,
 #   the share of its parameters that carry a role (and, for drafts, a suggested one), its factory presets, and its safe ranges;
-#   per tool: how many guides and pages name it, how many calls with arguments they show, and whether its own description has an example.
+#   per tool: how many guides and pages name it, how many calls with arguments they show, and whether its own description has an example;
+#   per feature built since K3: the tool that covers it (K3b).
 # The CatalogTests staleness test runs `--check`.
 #
 #   python3 tools/agent-coverage.py            rewrite docs/agent-coverage.md
@@ -18,6 +19,41 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "docs", "agent-coverage.md")
 GUIDES = os.path.join(ROOT, "ReBuzz.Agent", "Guides")
+
+
+# The features built since K3 (the studio's DAW modes, the Windows parity work) and the tool that covers each (docs/specs/agent-knowledge.md §11,
+# K3b). Every tool named here must be registered: the script stops when one is not. An empty tool list is an honest gap, with the reason.
+# (area, feature, where it is specified, tools, note)
+FEATURES = [
+    ("Arrangement (AR1)", "Clips: place, draw, move, trim, loop, split, join, copy, make unique", "daw-modes.md §8.2", ["arrangement_clip", "arrangement_place", "arrangement_clear", "arrangement_get"], "arrangement_clip is the Arrange view's own ClipEditor"),
+    ("Arrangement (AR1)", "Lanes and their roles (main, take, automation)", "daw-modes.md §8.2", ["arrangement_lane", "arrangement_get"], "arrangement_get numbers each machine's lanes and gives the role"),
+    ("Arrangement (AR1)", "Markers, loop, song end", "daw-modes.md §8.1", ["arrangement_markers", "song_set"], ""),
+    ("Arrangement (AR1)", "Song meter (the bar list)", "daw-modes.md §8.1", ["song_meter", "arrangement_get"], ""),
+    ("Piano roll (AR2)", "Notes in a clip or pattern", "daw-modes.md §8.3", ["notes_write", "notes_read", "notes_transform", "session_clip_set"], "the roll is a view of the same notes; view_show(editor=\"piano_roll\") opens it"),
+    ("Piano roll (AR2)", "Showing the roll or the tracker", "daw-modes.md §8.3", ["view_show"], ""),
+    ("Tracker lanes (AR3)", "Notes in the tracker's Note columns", "daw-modes.md §8.4", ["notes_write", "notes_read"], "input=\"tracks\""),
+    ("Automation (AR4)", "Automation lanes and clips over the song", "daw-modes.md §8.5", ["arrangement_automation"], "list, add_lane, write, clear"),
+    ("Automation (AR4)", "Automation inside a pattern", "daw-modes.md §8.5", ["automation_write", "automation_read"], ""),
+    ("Recording (AR5)", "Arming, recording takes, loop takes", "daw-modes.md §8.6", ["arrangement_takes", "session_record", "midi_play"], "recording needs studio mode"),
+    ("Recording (AR5)", "Comping a take onto the main lane", "daw-modes.md §8.6", ["arrangement_takes", "arrangement_lane"], "op=comp"),
+    ("Vertical tracker (AR6)", "The tracker's orientation", "daw-modes.md §8.7", ["settings_set", "settings_get"], "appearance.VerticalTracker"),
+    ("Modulation (P5b)", "The modulation matrix", "ux-overhaul.md §11 P5b", ["modulate", "modulation_list", "modulation_remove"], ""),
+    ("Samples (P5b)", "The Samples view: waves, import, from a render", "ux-overhaul.md §11 P5b", ["wave_list", "wave_import", "wave_from_render"], ""),
+    ("Machine view (P6b)", "Clone with patterns, and Copy / Paste of machines (P6c)", "ux-overhaul.md §9 rows 4 and 14", ["machine_clone", "machine_remove"], "a cut is a clone, then machine_remove"),
+    ("Machine view (P6b)", "Machine groups: make, fill, empty, fold, rename, delete", "ux-overhaul.md §9 row 12", ["machine_group"], "moving a group is the view's drag only"),
+    ("Machine view (P6b)", "Latency window: override and clear", "ux-overhaul.md §9 row 5", ["machine_latency"], ""),
+    ("Machine view (P6c)", "Attributes", "ux-overhaul.md §9 row 14", ["machine_attributes"], ""),
+    ("Machine view (P6c)", "A machine's own commands", "ux-overhaul.md §9 row 14", ["machine_command"], ""),
+    ("Tools (P6b)", "Song properties: tempo, ticks per beat, speed", "ux-overhaul.md §9 row 13", ["song_set"], ""),
+    ("Tools (P6b)", "MIDI bindings", "ux-overhaul.md §9 row 10", ["midi_bindings_list", "midi_bind", "midi_unbind", "midi_learn"], ""),
+    ("Tools (P6b)", "Hard Disk Recorder", "ux-overhaul.md §9 row 8", ["master_record", "export_audio"], "master_record needs studio mode and an audio output; export_audio renders offline"),
+    ("Tools (P6b)", "CPU monitor", "ux-overhaul.md §9 row 7", ["app_status", "render", "audio_status"], "render(cpu=true) gives each machine's cost"),
+    ("Tools (P6b)", "Signal analysis", "ux-overhaul.md §9 row 6", ["analyze", "meters_read", "plot"], ""),
+    ("Tools (P6b)", "Debug console", "ux-overhaul.md §9 row 9", [], "none: the agent's own log is the agent-logs folder; the engine's warnings reach a tool as its error text"),
+    ("Tools (P6b)", "MIDI focus bar and the on-screen piano keyboard", "ux-overhaul.md §9 row 11", ["midi_play", "select"], "the focus follows select; the keyboard is a way to play, midi_play plays"),
+    ("Plug-ins (H1 to H3)", "The plug-in host and its preferences", "plugin-host.md", [], "later round: another worker builds the plug-in GUIs and preferences; plugin_scan comes with them"),
+    ("Dropped", "Wireless, machine templates and the Create Template window", "ux-overhaul.md §9 row 14", [], "dropped in the studio too"),
+]
 
 
 def read(path):
@@ -61,7 +97,8 @@ def status(m):
 def tools():
     """Every tool the app registers (a ToolDef with Name, Title and Input) in ReBuzz/Agent and ReBuzz.Agent."""
     found = {}
-    files = glob.glob(os.path.join(ROOT, "ReBuzz", "Agent", "*.cs")) + glob.glob(os.path.join(ROOT, "ReBuzz.Agent", "**", "*.cs"), recursive=True)
+    files = glob.glob(os.path.join(ROOT, "ReBuzz", "Agent", "*.cs")) + glob.glob(os.path.join(ROOT, "ReBuzz.Agent", "**", "*.cs"), recursive=True) \
+        + glob.glob(os.path.join(ROOT, "ReBuzz.Studio", "Shell", "Tools", "*Tools.cs"))
     for f in sorted(files):
         n = f.replace("\\", "/")
         if "/obj/" in n or "/bin/" in n:
@@ -134,6 +171,13 @@ def generate():
     out.append(f"**Machines.** {n} in the profile: {by_status['curated']} curated manifests, {by_status['generated']} generated, {by_status['draft']} draft" + (f", {by_status['none']} with no manifest" if by_status["none"] else "") + f". Hand-written pages: {sum(1 for r in rows if r['page'])}. Factory presets: {sum(r['presets'] for r in rows)} on {sum(1 for r in rows if r['presets'])} machines. Parameters with a role: {sum(r['roled'] for r in rows)} of {sum(r['params'] for r in rows)}; with a role or a suggested one: {sum(r['suggested_n'] for r in rows)}. Safe ranges: {sum(r['safe'] for r in rows)}. Categories: {cats}.\n")
     never = [t[0] for t in trows if t[1] == 0]
     out.append(f"**Tools.** {len(trows)} registered. Named by at least one guide or page: {sum(1 for t in trows if t[1] > 0)}. Shown in a call with arguments: {sum(1 for t in trows if t[2] > 0)}. With an example in their own description: {sum(1 for t in trows if t[3])}." + (f" Named nowhere: {', '.join(never)}." if never else "") + "\n")
+    registered = set(tool_examples)
+    for area, feature, spec, names, note in FEATURES:
+        for name in names:
+            if name not in registered:
+                raise SystemExit(f"tools/agent-coverage.py: feature \"{feature}\" names {name}, which no tool definition registers")
+    covered = [f for f in FEATURES if f[3]]
+    out.append(f"**Features.** {len(FEATURES)} features built since K3: {len(covered)} covered by a tool, {len(FEATURES) - len(covered)} without one (each says why).\n")
     out.append("## Machines\n")
     out.append("Manifest: how far its units and roles are trusted. Page: a hand-written page in the manual. Roles: parameters with a curated role (with drafts' suggested roles counted in brackets when they add any). Presets: factory presets. Safe: parameters with a safe range.\n")
     out.append("| Machine | Category | Manifest | Page | Roles | Presets | Safe | Params |")
@@ -141,6 +185,12 @@ def generate():
     for r in rows:
         roles = r["roles"] + (f" ({r['suggested']})" if r["suggested_n"] > r["roled"] else "")
         out.append(f"| {r['gear']} | {r['category'] or '-'} | {r['status']} | {'yes' if r['page'] else 'no'} | {roles} | {r['presets']} | {r['safe']} | {r['params']} |")
+    out.append("\n## Features\n")
+    out.append("The features built since K3 and the tools that cover them (`FEATURES` in `tools/agent-coverage.py`; a tool named there must exist). A feature with no tool says why.\n")
+    out.append("| Area | Feature | Specified in | Tools | Note |")
+    out.append("|---|---|---|---|---|")
+    for area, feature, spec, names, note in FEATURES:
+        out.append(f"| {area} | {feature} | {spec} | {', '.join(names) if names else '**none**'} | {note} |")
     out.append("\n## Tools\n")
     out.append("Guides: how many guides, pages and prompts name the tool. Calls: how many calls with arguments they show. Example: whether the tool's own description carries one.\n")
     out.append("| Tool | Guides | Calls | Example |")

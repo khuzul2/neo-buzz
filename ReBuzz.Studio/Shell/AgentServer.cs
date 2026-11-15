@@ -48,6 +48,7 @@ namespace ReBuzz.Studio.Shell
             Host.AppControl.AddSettings("appearance", Design.StudioTheme.Settings);
             Host.AppControl.AddSettings("agent", Settings);
             Host.AppControl.View = new StudioViewControl(studio);
+            Tools.RecorderTools.Register(Host);   // K3b: master_record, the Hard Disk Recorder
             Host.Queue.CurrentChanged += name => studio.Services.Dispatcher.BeginInvoke(() =>
             {
                 current = name;

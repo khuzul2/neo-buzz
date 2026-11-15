@@ -73,7 +73,6 @@ namespace ReBuzz.Studio.Views.Sequence
         readonly ToggleButton arrangementMode = new ToggleButton { Content = "Arrange", Width = 64 };
         // Fork (daw-modes.md AR6): the tracker's vertical orientation (Buzz's default sequence view: time down, tracks as columns), remembered per user.
         readonly ToggleButton verticalMode = new ToggleButton { Content = "Vertical", Width = 80 };
-        const string OrientationKey = "SequenceVertical", OrientationSection = "Studio";
         StackPanel cornerRow, orientationRow;
         StackPanel corner;
         // Fork (daw-modes.md AR5): recording and the way back from the Session View. Shown in the arrangement mode.
@@ -143,26 +142,21 @@ namespace ReBuzz.Studio.Views.Sequence
         }
 
         /// <summary>The remembered orientation of the tracker.</summary>
-        static bool StoredVertical
-        {
-            get
-            {
-                try { return StudioHost.Current?.Registry?.Read(OrientationKey, false, OrientationSection) ?? false; }
-                catch (Exception) { return false; }
-            }
-        }
+        static bool StoredVertical => SequenceOrientation.Vertical;
 
         /// <summary>The tracker's orientation (daw-modes.md AR6); <paramref name="remember"/> keeps it for the next session.</summary>
         public void SetVertical(bool on, bool remember)
         {
             verticalMode.IsChecked = on;
-            if (remember)
-            {
-                try { StudioHost.Current?.Registry?.Write(OrientationKey, on, OrientationSection); }
-                catch (Exception) { /* a registry that can't be written: the choice lasts this session */ }
-            }
+            if (remember) SequenceOrientation.Remember(on);
             Canvas.Vertical = on;
             ApplyOrientation();
+        }
+
+        /// <summary>The Appearance setting (or an agent) turned the vertical tracker on or off.</summary>
+        void OnOrientationSetting(bool on)
+        {
+            if (Canvas.Vertical != on) SetVertical(on, false);
         }
 
         /// <summary>Where the corner's controls, the scroll bars and the empty-state card sit: by the tracker's orientation (the arrangement is always horizontal).</summary>
@@ -427,6 +421,7 @@ namespace ReBuzz.Studio.Views.Sequence
             base.OnAttachedToVisualTree(e);
             attached = true;
             StudioTheme.Changed += OnThemeChanged;
+            SequenceOrientation.Changed += OnOrientationSetting;
             if (core.Arrangement?.Takes is { } takes) takes.Changed += OnRecordingChanged;
             StudioSelection.For(core).Changed += FollowSelection;
             FollowSelection(null);                  // shown again: on the selection the other views made meanwhile
@@ -444,6 +439,7 @@ namespace ReBuzz.Studio.Views.Sequence
         {
             attached = false;
             StudioTheme.Changed -= OnThemeChanged;
+            SequenceOrientation.Changed -= OnOrientationSetting;
             if (core.Arrangement?.Takes is { } takes) takes.Changed -= OnRecordingChanged;
             StudioSelection.For(core).Changed -= FollowSelection;
             state.Changed -= OnStateChanged;
