@@ -1,0 +1,40 @@
+{
+ "id": "org.neobuzz.dye-essence",
+ "name": "Neo Dye Essence",
+ "folder": "DyeEssence",
+ "namespace": "NeoBuzz.DyeEssence",
+ "engine": "DyeEngine",
+ "machine": "DyeEssenceMachine",
+ "editor": "DyeEssenceEditor",
+ "kind": "instrument",
+ "features": [
+  "synthesizer"
+ ],
+ "au": "NDye",
+ "description": "Colour-synthesis instrument with an effects rack",
+ "process": "synth",
+ "tempo": true,
+ "idle": false,
+ "tailSeconds": 10,
+ "test": {
+  "changes": [
+   [
+    "Volume",
+    "raw:800"
+   ]
+  ],
+  "settle": 0.0,
+  "tolerance": 0.003,
+  "informational": [
+   "changed"
+  ]
+ },
+ "extra": [
+  "NeoWave/Engine/Tables.cs",
+  "NeoWave/Engine/WavReader.cs",
+  "NeoSampler/Engine/Interpolation.cs",
+  "NeoSampler/Engine/SampleData.cs",
+  "NeoClipper/Engine/*.cs"
+ ],
+ "gear": "Dye Essence"
+}

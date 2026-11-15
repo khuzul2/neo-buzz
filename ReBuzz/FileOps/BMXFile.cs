@@ -2352,6 +2352,11 @@ namespace ReBuzz.FileOps
                     var sequenceEvent = kv.Value;
                     ulong value;
 
+                    // Fork (NF2): an export for upstream leaves out take lanes and positions Buzz can't hold; the
+                    // "ExportedLanes" subsection keeps them (ArrangementEventStore).
+                    if (BuzzExport.Current != null && BuzzExport.Omits(sequence, pos))
+                        continue;
+
                     if (sequenceEvent.Type == SequenceEventType.Mute)
                     {
                         // Mute
@@ -2911,6 +2916,9 @@ namespace ReBuzz.FileOps
         {
             // Fork (mac-engine.md M2): Latin-1, as ReadString reads a byte per character. ASCII
             // wrote '?' for every byte above 127, so names such as "Attack time (µs)" changed.
+            // Fork (native-format.md NF2): an export for upstream writes names as readable Latin-1.
+            if (!utf8Strings && BuzzExport.Current != null)
+                str = BuzzExport.Current.Text(str);
             WriteString(ms, str, utf8Strings ? Encoding.UTF8 : Encoding.Latin1);
         }
 

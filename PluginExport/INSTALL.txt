@@ -1,0 +1,22 @@
+NeoBuzz Live Plug-ins: install notes
+====================================
+
+Windows (x64)
+  VST3: copy the folder "NeoBuzz Live" from VST3\ into C:\Program Files\Common Files\VST3\  (the .vst3 files and neo_dsp.dll / neo_editor.dll
+        and the other .dll files must stay together).
+  CLAP: copy the folder "NeoBuzz Live" from CLAP\ into C:\Program Files\Common Files\CLAP\ .
+  Ableton Live: Preferences > Plug-Ins > use VST3 System Folders, then Rescan. The plug-ins appear under Plug-Ins > Neo ....
+
+macOS (Apple silicon)
+  The bundles are signed ad hoc, not notarised. Copy them to
+    ~/Library/Audio/Plug-Ins/VST3/   (the .vst3 bundles)
+    ~/Library/Audio/Plug-Ins/CLAP/   (the .clap bundles)
+    ~/Library/Audio/Plug-Ins/Components/   (the .component bundles: Audio Units)
+  then remove the quarantine flag once:   xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/{VST3,CLAP,Components}/Neo*
+  The Audio Unit registrar may need a restart to see new components:   killall -9 AudioComponentRegistrar
+  (or log out and in). Ableton Live: Preferences > Plug-Ins > Use Audio Units / VST3 System Folders, then Rescan.
+
+Linux (x64)
+  CLAP and VST3 bundles go to ~/.clap and ~/.vst3 .
+
+Every bundle carries its two libraries (neo_dsp, neo_editor and what the editor needs). They are the same in every bundle.

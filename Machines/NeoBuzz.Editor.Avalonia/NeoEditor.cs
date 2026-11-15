@@ -67,6 +67,9 @@ namespace NeoBuzz.Editor
         /// <summary>What the body was built with (its parameters and undo history).</summary>
         internal EditorContext Context => ctx;
 
+        /// <summary>Plug-in hosts (PluginExport) have presets of their own: no ReBuzz preset bar in the header.</summary>
+        internal static bool NoPresets;
+
         /// <summary>The header's preset bar.</summary>
         internal PresetBar Presets { get; private set; }
 
@@ -102,11 +105,14 @@ namespace NeoBuzz.Editor
             };
             DockPanel.SetDock(title, Dock.Left);
             header.Children.Add(title);
-            Presets = new PresetBar(machine, Accent);
-            // The bar names the preset the sound is, and marks it edited once a parameter moves off it.
-            ctx.Changed += Presets.Refresh;
-            DockPanel.SetDock(Presets, Dock.Right);
-            header.Children.Add(Presets);
+            if (!NoPresets)
+            {
+                Presets = new PresetBar(machine, Accent);
+                // The bar names the preset the sound is, and marks it edited once a parameter moves off it.
+                ctx.Changed += Presets.Refresh;
+                DockPanel.SetDock(Presets, Dock.Right);
+                header.Children.Add(Presets);
+            }
             DockPanel.SetDock(header, Dock.Top);
             root.Children.Add(header);
             Control body;

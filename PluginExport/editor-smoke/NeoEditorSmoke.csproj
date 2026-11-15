@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Plug-in export (docs/specs/plugin-export.md §7): every exported plug-in's editor under CoreCLR (no AOT, no native window):
+       renders it with Avalonia headless to a PNG, fails on an "Editor error" panel, drags a knob and checks the gesture events and values
+       in the edit ring, and host automation reaching the editor. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>CS1591;CS8981;MSB3277;NU1701;CA1416</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\editor\NeoEditor.csproj" AdditionalProperties="PublishAot=false" />
+  </ItemGroup>
+</Project>

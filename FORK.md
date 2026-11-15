@@ -75,7 +75,7 @@ No Windows machine at hand? Run the **Fork package** workflow from the Actions t
 
 **Policy (2026-11-15).**
 
-- **Native format by default.** New songs save as `.nbl`. A song opened from `.bmx`, `.bmw` or `.bmxml` is saved as a new `.nbl` (Save asks for the name; the original is never overwritten silently). Every old format stays readable. A lossy "Export for Buzz/ReBuzz (.bmx)" is planned (NF2). The fork no longer keeps its new data inside files that upstream ReBuzz must play.
+- **Native format by default.** New songs save as `.nbl`. A song opened from `.bmx`, `.bmw` or `.bmxml` is saved as a new `.nbl` (Save asks for the name; the original is never overwritten silently). Every old format stays readable. File ▸ Export for Buzz/ReBuzz… (and the agent's `song_export`) writes a separate, lossy `.bmx` for upstream and lists what it loses (native-format.md NF2). The fork no longer keeps its new data inside files that upstream ReBuzz must play.
 - **Upstream is cherry-picked, not merged wholesale.** `git fetch upstream`, then `git cherry-pick` the commits worth having (machine fixes, loader fixes, new machines). No more `git merge upstream/main`. Last merge base: af162b9a.
 - **The Classic WPF app is frozen.** It gets fixes only: no new features, no `.nbl` in its dialogs (it saves `.bmx`). The studio is where the fork grows.
 - Fork-only changes still live in new files where that is natural; the engine keeps ReBuzz's names so cherry-picks apply.
