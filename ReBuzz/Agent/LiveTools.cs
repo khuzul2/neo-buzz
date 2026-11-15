@@ -45,7 +45,7 @@ namespace ReBuzz.Agent
         }
 
         /// <summary>Playing tools need someone listening: studio or live mode (an audio device plays).</summary>
-        static void RequireStudio(AgentHost host, string tool, string instead)
+        internal static void RequireStudio(AgentHost host, string tool, string instead)
         {
             if (!host.Live)
                 throw new ToolError($"{tool} plays live for the user to hear, which needs studio mode ({Product.Name} open, Settings → Agent → Allow agents) " +

@@ -342,10 +342,11 @@ namespace ReBuzz.Agent
                     "The timeline: one lane per machine with its patterns' places (start and end in beats and bar.beat), plus the song end and " +
                     "loop. A place that plays part of its pattern says which (part_beats) and its volume (gain); places joined into a clip " +
                     "(a start, then loop repeats, cut at its end) carry the clip's id, and each lane lists its clips with their loop. " +
-                    "meter: the song's bars, as the sequence editor sets them. Optionally only from/to (beats). Example: arrangement_get().",
+                    "meter: the song's bars, as the sequence editor sets them. Each lane has its number (lane) and role (main, take or automation); arrangement_clip, arrangement_lane and arrangement_takes take them. Optionally only from/to (beats). Example: arrangement_get().",
                 Input = Object(null, Opt("from", Position("From here")), Opt("to", Position("To here (exclusive)"))),
                 Output = Object(null,
-                    Req("lanes", Array(Object(null, Req("machine", String("Machine")), Req("events", Array(Object(null,
+                    Req("lanes", Array(Object(null, Req("machine", String("Machine")), Opt("lane", Integer("The lane's number among the machine's lanes", 0)),
+                        Opt("role", String("main, take or automation", "main", "take", "automation")), Req("events", Array(Object(null,
                         Req("at", Number("Start, beats")), Req("pattern", String("Pattern")), Req("ends", Number("Where it stops, beats")),
                         Opt("clip", Integer("The clip it belongs to")), Opt("part_beats", Array(Number("Beats into the pattern"), "The part of the pattern it plays: from, to")),
                         Opt("gain", Number("Its volume, 0-1"))), "Placements")),
@@ -397,6 +398,9 @@ namespace ReBuzz.Agent
                                 events.Add(o);
                             }
                             var lane = new JsonObject { ["machine"] = seq.Machine.Name, ["muted"] = seq.IsDisabled, ["events"] = events };
+                            // K3b: the lane's number among its machine's lanes (what arrangement_clip and arrangement_lane take) and its role.
+                            lane["lane"] = core.SongCore.Sequences.Where(q => q.Machine == seq.Machine).ToList().IndexOf(seq);
+                            lane["role"] = (core.Arrangement?.RoleOf(seq) ?? LaneRole.Main).ToString().ToLowerInvariant();
                             var clips = new JsonArray();
                             foreach (var clip in core.Clips.Of(seq))
                             {

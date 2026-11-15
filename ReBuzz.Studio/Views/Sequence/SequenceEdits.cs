@@ -73,39 +73,6 @@ namespace ReBuzz.Studio.Views.Sequence
         protected override void UndoAction() => DoAction();
     }
 
-    /// <summary>Removes a track; undo brings it back with its events (BuzzGUI.Common DeleteSequenceAction).</summary>
-    internal sealed class DeleteSequenceAction : MachineAction
-    {
-        readonly ISong song;
-        readonly int seqIndex;
-        Tuple<int, EventRef>[] events;
-        ISequence deleted;
-
-        public DeleteSequenceAction(ISequence s) : base(s.Machine)
-        {
-            song = s.Machine.Graph.Buzz.Song;
-            seqIndex = song.Sequences.IndexOf(s);
-        }
-
-        protected override void DoAction()
-        {
-            if (seqIndex >= song.Sequences.Count) return;
-            var seq = song.Sequences[seqIndex];
-            events = seq.Events.Select(e => Tuple.Create(e.Key, new EventRef(e.Value))).ToArray();
-            deleted = seq;
-            song.RemoveSequence(seq);
-        }
-
-        protected override void UndoAction()
-        {
-            var mac = Machine;
-            song.AddSequence(mac, seqIndex);
-            var seq = song.Sequences[seqIndex];
-            foreach (var e in events) e.Item2.Set(seq, e.Item1);
-            Restorations.Report(deleted, seq);
-        }
-    }
-
     /// <summary>Sets a pattern's length (BuzzGUI.Common SetLengthAction).</summary>
     internal sealed class SetLengthAction : MachineAction
     {
@@ -520,7 +487,7 @@ namespace ReBuzz.Studio.Views.Sequence
         public void DeleteTrack(int row)
         {
             var seq = Track(row);
-            if (seq != null) Do(new DeleteSequenceAction(seq));
+            if (seq != null) Do(new DeleteTrackAction(seq));
         }
 
         /// <summary>Move Track Up/Down (Ctrl+Up/Down).</summary>

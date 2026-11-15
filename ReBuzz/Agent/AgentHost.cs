@@ -51,16 +51,18 @@ namespace ReBuzz.Agent
             Mode = mode;
             Queue = new EngineQueue(new DispatcherEngineThread(dispatcher), timeout ?? TimeSpan.FromSeconds(120));
             Log = new AgentLog(logFolder, mode);
-            var tools = new ToolRegistry();
+            var tools = Tools = new ToolRegistry();
             StudioTools.Register(tools, this);
             NotesTools.Register(tools, this);       // fork (machine-safety.md §3.5): Song Notes
             GuideLibrary.Register(tools, gear => Manual(core, gear), () => Described(core).Select(x => x.Dll.Name).ToList());
             MachineCatalog.Register(tools, () => Described(core).Select(x => x.Manifest).ToList());   // K0 (agent-knowledge.md): machine_find
             MachineTools.Register(tools, this);
+            MachineEditTools.Register(tools, this); // K3b: machine_clone, machine_group, machine_latency, machine_attributes, machine_command
             ReplaceTools.Register(tools, this);     // U5 (mcp-server.md §12.5): machine_replace
             ParamTools.Register(tools, this);
             ModulationTools.Register(tools, this);
             PatternTools.Register(tools, this);
+            ArrangementTools.Register(tools, this);   // K3b (agent-knowledge.md §11): arrangement_clip, arrangement_lane, arrangement_automation, arrangement_takes
             RenderTools.Register(tools, this);
             AnalysisTools.Register(tools, this);
             MasteringTools.Register(tools, this);   // mastering-tools.md §6: target_build, eq_fit
@@ -95,6 +97,8 @@ namespace ReBuzz.Agent
         }
 
         public ReBuzzCore Core { get; }
+        /// <summary>The registered tools; a host adds its own after construction (the studio's master_record).</summary>
+        public ToolRegistry Tools { get; }
         /// <summary>ReBuzz's dispatcher; work queued here runs after the engine's own deferred updates.</summary>
         public IUiDispatcher Dispatcher { get; }
         /// <summary>
