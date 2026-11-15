@@ -66,6 +66,8 @@ namespace ReBuzz.Studio.Views.Machines
                 if (m != null) canvas.Select(new[] { m });
             })));
             menu.Items.Add(Item("Unmute All Machines", canvas.UnmuteAll, key: new KeyGesture(Key.U, CommandKey)));
+            if (core.SongCore.MachineGroups.Count > 0)
+                menu.Items.Add(Sub("Delete Group", core.SongCore.MachineGroups.ToList().Select(g => (object)Item(g.Name, () => { MachineEdits.DeleteGroup(core, g); canvas.Redraw(); }))));
             menu.Items.Add(new Separator());
             menu.Items.Add(Item("Snap Machines to Grid", () => MachineEdits.Snap(core, canvas.Selection.Count > 0 ? canvas.Selection.ToList() : core.SongCore.Machines.ToList(), 10)));
             menu.Items.Add(new Separator());
@@ -82,6 +84,7 @@ namespace ReBuzz.Studio.Views.Machines
             if (type == MachineType.Master)
             {
                 menu.Items.Add(Item("Parameters...", () => MachineEdits.OpenParameters(machine)));
+                menu.Items.Add(Item("Signal Analysis...", () => Shell.Tools.SignalAnalysisWindow.Open(Shell.StudioHost.Current, machine)));
                 if (core.MasterOver)
                     menu.Items.Add(Item($"Clear clip indicator ({core.MasterOverText})", core.ClearMasterOver));
                 return menu;
@@ -111,6 +114,9 @@ namespace ReBuzz.Studio.Views.Machines
                 menu.Items.Add(Check("Double-click Opens Editor", opens, () => ReBuzz.Agent.ManifestEditorSettings.Set(machine.DLL, !opens)));
             }
             menu.Items.Add(Sub("MIDI Input Channel", MidiChannels(machine)));
+            menu.Items.Add(Item("Latency...", () => _ = Shell.Tools.LatencyDialog.Ask(machine), !machine.IsControlMachine));
+            menu.Items.Add(new Separator());
+            menu.Items.Add(Item("Signal Analysis...", () => Shell.Tools.SignalAnalysisWindow.Open(Shell.StudioHost.Current, machine)));
             menu.Items.Add(new Separator());
             // U5 (mcp-server.md §12.5): a classic machine's Neo successors, the song moved over as machine_replace does it.
             if (machine is MachineCore classic)
@@ -119,9 +125,51 @@ namespace ReBuzz.Studio.Views.Machines
             menu.Items.Add(Sub("Replace", Gear(i => MachineEdits.Replace(core, machine, i))));
             menu.Items.Add(Item("Duplicate", () => { var copies = MachineEdits.Duplicate(core, selection.Where(m => m.DLL.Info.Type != MachineType.Master).ToList()); if (copies.Count > 0) canvas.Select(copies); },
                 key: new KeyGesture(Key.D, CommandKey)));
+            menu.Items.Add(Item("Clone with patterns", () => CloneWithPatterns(selection)));
+            menu.Items.Add(Sub("Group", GroupItems(machine, selection)));
             menu.Items.Add(Item("Rename...", () => MachineEdits.Rename(machine), key: new KeyGesture(Key.R, CommandKey)));
             menu.Items.Add(Item("Delete", () => MachineEdits.Delete(core, selection), key: DeleteKey));
             return menu;
+        }
+
+        /// <summary>The Group submenu (MachineControl's): a new group from the selection, into an existing one, out of its group.</summary>
+        IEnumerable<object> GroupItems(IMachine machine, IReadOnlyList<IMachine> selection)
+        {
+            var song = core.SongCore;
+            yield return Item("New Group From Selection", () =>
+            {
+                var g = MachineEdits.NewGroup(core, selection);
+                if (g != null) canvas.Select(selection.Where(m => m.DLL.Info.Type != MachineType.Master).ToList());
+                canvas.Redraw();
+            });
+            if (song.MachineGroups.Count > 0)
+            {
+                yield return new Separator();
+                foreach (var g in song.MachineGroups.ToList())
+                {
+                    var group = g;
+                    yield return Check("Add To " + group.Name, song.MachineToGroupDict.TryGetValue(machine, out var own) && own == group,
+                        () => { MachineEdits.AddToGroup(core, selection, group); canvas.Redraw(); });
+                }
+            }
+            yield return new Separator();
+            yield return Item("Remove From Group", () => { MachineEdits.RemoveFromGroup(core, selection); canvas.Redraw(); }, song.MachineToGroupDict.ContainsKey(machine));
+        }
+
+        /// <summary>Clone with patterns on the selection (the machine's menu); the copies are selected.</summary>
+        void CloneWithPatterns(IReadOnlyList<IMachine> selection)
+        {
+            var from = selection.Where(m => m.DLL.Info.Type != MachineType.Master).ToList();
+            if (from.Count == 0) return;
+            try
+            {
+                var copies = MachineEdits.CloneWithPatterns(core, from);
+                if (copies.Count > 0) canvas.Select(copies);
+            }
+            catch (Exception e)
+            {
+                core.DCWriteLine("Clone failed: " + e.Message, DCLogLevel.Error);
+            }
         }
 
         static IEnumerable<object> MidiChannels(IMachine machine)

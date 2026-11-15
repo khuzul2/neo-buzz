@@ -116,7 +116,13 @@ namespace ReBuzz.Studio.Shell.Commands
             C("view.device", "View", "D_evice", "Ctrl+Alt+5", "Alt+Cmd+5", help: "The detail panel's Device page: the selected machine's parameters, grouped and searchable, its editor, and the piano keyboard under it"),
             C("device.find", "View", "_Find Parameter", "Cmd+F", help: "Searches the parameters of the Device page"),
             C("view.addmachine", "View", "Add _Machine…", "Shift+Cmd+N", help: "Opens the machine browser on the Machine View, to search and add a machine (a double click on empty canvas does too)"),
+            C("view.cpu", "View", "C_PU Monitor", help: "Every machine's share of the audio engine's time, and the engine's total"),
+            C("view.recorder", "View", "_Hard Disk Recorder", help: "Records the Master to a wave file as it plays, or over the song's loop"),
+            C("view.console", "View", "_Debug Console", help: "The engine's log: what machines and the engine report"),
+            C("view.midibindings", "View", "MI_DI Bindings", help: "Every parameter a MIDI controller drives, with its channel and controller"),
             C("view.mixer", "View", "Session Mi_xer", "Ctrl+Alt+M", "Alt+Cmd+M", help: "Shows or hides the mixer under the Session View's grid"),
+
+            C("edit.songproperties", "Edit", "Song P_roperties…", help: "Tempo, ticks per beat and playback speed of the song"),
 
             C("window.minimize", "Window", "_Minimize", null, "Cmd+M"),
             C("window.zoom", "Window", "_Zoom"),

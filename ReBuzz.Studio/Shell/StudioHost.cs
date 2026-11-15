@@ -40,6 +40,7 @@ namespace ReBuzz.Studio.Shell
         {
             if (Current != null) return Current;
             EngineHost.PrepareProcess(m => Current?.Log(m));
+            Tools.DebugLog.Install();     // the debug console's memory of the log (ux-overhaul.md P6b)
             ReBuzzCore.DefaultUiHost = new StudioMachineUiHost();     // machine windows (studio-mvp.md §3.4)
             Current = new StudioHost(settingsFolder ?? DefaultSettingsFolder, openAudio);
             return Current;
