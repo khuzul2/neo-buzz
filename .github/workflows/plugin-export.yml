@@ -250,7 +250,9 @@ jobs:
 
     - name: Dogfood verdict
       if: steps.dogfood.outcome == 'failure'
-      run: echo "::error::the dogfood run failed (null tests in Neo Plug, or the editors in the studio: see its step)"; exit 1
+      run: |
+        echo "::error::the dogfood run failed (null tests in Neo Plug, or the editors in the studio; see its step)"
+        exit 1
 
     - name: AU verdict
       if: runner.os == 'macOS' && steps.auval.outcome == 'failure'
