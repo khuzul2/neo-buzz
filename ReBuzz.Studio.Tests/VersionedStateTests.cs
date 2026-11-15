@@ -136,6 +136,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         [TestCase(".bmxml")]
         [TestCase(".bmx")]
+        [TestCase(".nbl")]
         public void ASongSavedNowKeepsItsStateVersion(string extension)
         {
             NewSong();
@@ -158,6 +159,46 @@ namespace ReBuzz.Studio.Tests
             {
                 Dialogs.Responder = null;
                 try { File.Delete(path); } catch (IOException) { }
+                NewSong();
+            }
+        }
+
+        /// <summary>native-format.md §5: a .nbl holds each global as (key, raw) with the machine's StateVersion and loads it through MigrateKeyed.</summary>
+        [AvaloniaTest]
+        public void ANblSavesParametersByKeyAndLoadsAnOlderVersionThroughMigrateKeyed()
+        {
+            NewSong();
+            string path = TestTemp.Path("versioned-keyed-" + Guid.NewGuid().ToString("N") + ".nbl"), old = path + ".v1.nbl";
+            try
+            {
+                var vt = Add("VT");
+                Param(vt, "Cutoff").SetValue(0, 321);
+                Param(vt, "Gain").SetValue(0, 654);
+                Core.SaveSongCopy(path);
+                System.Text.Json.Nodes.JsonObject manifest;
+                var set = new ReBuzz.FileOps.Nbl.NblBlobSet();
+                using (var r = new ReBuzz.FileOps.Nbl.NblContainer.Reader(path))
+                {
+                    manifest = (System.Text.Json.Nodes.JsonObject)System.Text.Json.Nodes.JsonNode.Parse(r.Manifest);
+                    foreach (var h in r.Hashes) { var (codec, stored) = r.GetStored(h); set.AddStored(h, codec, stored); }
+                }
+                var entry = manifest["machines"].AsArray().Single(m => (string)m["name"] == "VT");
+                Assert.That((int)entry["stateVersion"], Is.EqualTo(3));
+                Assert.That((int)entry["params"]["cutoff"], Is.EqualTo(321), "saved by key");
+                Assert.That((int)entry["params"]["gain"], Is.EqualTo(654));
+
+                // As a build with version 1's layout saved it: freq 800, level 25 (of 100), mode 2, old pan 9.
+                entry["stateVersion"] = 1;
+                entry["params"] = new System.Text.Json.Nodes.JsonObject { ["freq"] = 800, ["level"] = 25, ["mode"] = 2, ["old_pan"] = 9 };
+                ReBuzz.FileOps.Nbl.NblContainer.WriteAtomic(old, System.Text.Encoding.UTF8.GetBytes(manifest.ToJsonString()), set);
+                Open(old);
+                vt = Core.SongCore.MachinesList.Single(m => m.Name == "VT");
+                Assert.That(Values(vt), Is.EqualTo(new[] { 800, 250, 2 }), "through the machine's own migration: renamed, rescaled, the pan dropped");
+            }
+            finally
+            {
+                Dialogs.Responder = null;
+                try { File.Delete(path); File.Delete(old); } catch (IOException) { }
                 NewSong();
             }
         }

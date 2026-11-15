@@ -439,6 +439,7 @@ namespace ReBuzzTests
 
         [TestCase(".bmx")]
         [TestCase(".bmxml")]
+        [TestCase(".nbl")]
         [Apartment(System.Threading.ApartmentState.STA)]      // the .bmxml loader creates UI objects
         public void AnOpenedSongHasItsStateParametersAndPlaysNoNotes(string extension)
         {
@@ -915,6 +916,7 @@ namespace ReBuzzTests
 
         [TestCase(".bmx")]
         [TestCase(".bmxml")]
+        [TestCase(".nbl")]
         [Apartment(ApartmentState.STA)]
         public void NeoSamplerPlaysTheSongsWavesKeepsThemThroughASaveAndShowsItsEditor(string extension)
         {
@@ -1002,6 +1004,7 @@ namespace ReBuzzTests
 
         [TestCase(".bmx")]
         [TestCase(".bmxml")]
+        [TestCase(".nbl")]
         [Apartment(ApartmentState.STA)]
         public void NeoDrumsPlaysFromItsKeysAndHitColumnsKeepsItsKitThroughASaveAndShowsItsEditor(string extension)
         {

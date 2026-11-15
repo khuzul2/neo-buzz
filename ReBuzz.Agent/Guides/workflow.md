@@ -80,4 +80,4 @@ Errors say what to do next ("Did you mean …", the valid range, the call that l
 - [ ] Notes read back as you meant them: `notes_read`.
 - [ ] Every claim has a number behind it: `analyze` on the render you describe.
 - [ ] A change that measured worse is backed out: `undo`, or `history_list` then `history_jump` for several steps.
-- [ ] Saved: `song_save(path=…)`; `.bmxml` keeps everything.
+- [ ] Saved: `song_save(path=…)`; `.nbl` (the native format) keeps everything.

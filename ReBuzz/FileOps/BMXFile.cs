@@ -42,7 +42,8 @@ namespace ReBuzz.FileOps
             public byte[] Data;
         }
 
-        FileStream fs;
+        Stream fs;
+        string openName;
 
         Dictionary<SectionType, Section> sections;
         Dictionary<string, SubSection> subSections;
@@ -64,7 +65,7 @@ namespace ReBuzz.FileOps
         private readonly IKeyboard keyboard;
         private readonly EngineSettings engineSettings;
 
-        enum SectionType
+        internal enum SectionType
         {
             Buzz = 0x7a7a7542, // Ok
             MACH = 0x4843414d, // Ok
@@ -108,13 +109,36 @@ namespace ReBuzz.FileOps
 
         public void Load(string path, float x = 0, float y = 0, ImportSongAction importAction = null)
         {
+            Open(path, FileMode.Open);
+            LoadOpened(x, y, importAction);
+        }
+
+        /// <summary>
+        /// Fork (docs/specs/native-format.md): loads a song whose sections are laid out in a BMX file's bytes, here in
+        /// <paramref name="stream"/> (the native reader assembles them from its blobs). <paramref name="name"/> is the file's name for the events.
+        /// </summary>
+        internal void LoadFrom(Stream stream, string name, float x, float y, ImportSongAction importAction)
+        {
+            fs = stream;
+            openName = name;
+            FileOpsEvent(FileEventType.Open, name);
+            LoadOpened(x, y, importAction);
+        }
+
+        /// <summary>Fork (native format): the native writer's start of a save, so the events match <see cref="Save"/>'s.</summary>
+        internal void BeginExternalSave(string name)
+        {
+            openName = name;
+            FileOpsEvent(FileEventType.Open, name);
+        }
+
+        void LoadOpened(float x, float y, ImportSongAction importAction)
+        {
             bool import = importAction != null;
             this.importAction = importAction;
             masterInputCount = 0;
             //lock (ReBuzzCore.AudioLock)
             {
-                Open(path, FileMode.Open);
-
                 LoadSections();
                 LoadFileInfo();
                 LoadPara();
@@ -181,6 +205,7 @@ namespace ReBuzz.FileOps
         public void Open(string path, FileMode mode)
         {
             fs = new FileStream(path, mode, mode == FileMode.Create ? FileAccess.Write : FileAccess.Read, mode == FileMode.Create ? FileShare.Write : FileShare.Read);
+            openName = path;
             FileOpsEvent(FileEventType.Open, path);
         }
 
@@ -192,7 +217,7 @@ namespace ReBuzz.FileOps
             {
                 loadedMachines = machines.Where(m => !m.Hidden && m.DLL.Info.Type != MachineType.Master);
             }
-            FileOpsEvent(FileEventType.Close, fs.Name, loadedMachines);
+            FileOpsEvent(FileEventType.Close, openName, loadedMachines);
 
             bmxSequences.Clear();
             machines.Clear();
@@ -2732,7 +2757,7 @@ namespace ReBuzz.FileOps
             return machine;
         }
 
-        public static int ReadInt(FileStream fs)
+        public static int ReadInt(Stream fs)
         {
             byte[] buffer = new byte[sizeof(int)];
 
@@ -2740,7 +2765,7 @@ namespace ReBuzz.FileOps
             return BitConverter.ToInt32(buffer, 0);
         }
 
-        public static uint ReadUInt(FileStream fs)
+        public static uint ReadUInt(Stream fs)
         {
             byte[] buffer = new byte[sizeof(int)];
 
@@ -2748,7 +2773,7 @@ namespace ReBuzz.FileOps
             return BitConverter.ToUInt32(buffer, 0);
         }
 
-        public static ushort ReadUShort(FileStream fs)
+        public static ushort ReadUShort(Stream fs)
         {
             byte[] buffer = new byte[sizeof(ushort)];
 
@@ -2756,7 +2781,7 @@ namespace ReBuzz.FileOps
             return BitConverter.ToUInt16(buffer, 0);
         }
 
-        public static float ReadFloat(FileStream fs)
+        public static float ReadFloat(Stream fs)
         {
             byte[] buffer = new byte[sizeof(float)];
 
@@ -2764,7 +2789,7 @@ namespace ReBuzz.FileOps
             return BitConverter.ToSingle(buffer, 0);
         }
 
-        public static byte ReadByte(FileStream fs)
+        public static byte ReadByte(Stream fs)
         {
             byte[] buffer = new byte[sizeof(byte)];
 
@@ -2772,7 +2797,7 @@ namespace ReBuzz.FileOps
             return buffer[0];
         }
 
-        public static ulong ReadULong(FileStream fs)
+        public static ulong ReadULong(Stream fs)
         {
             byte[] buffer = new byte[sizeof(ulong)];
 
@@ -2780,7 +2805,7 @@ namespace ReBuzz.FileOps
             return BitConverter.ToUInt64(buffer, 0);
         }
 
-        public static ulong ReadVal(FileStream fs, int size)
+        public static ulong ReadVal(Stream fs, int size)
         {
             switch (size)
             {
@@ -2797,28 +2822,41 @@ namespace ReBuzz.FileOps
             }
         }
 
-        public static string ReadString(FileStream fs)
+        [ThreadStatic] static bool utf8Strings;
+
+        /// <summary>
+        /// Fork (native-format.md): inside this scope the section strings (machine, pattern and wave names…) are UTF-8, not
+        /// Latin-1. The native writer and reader use it; .bmx files keep Latin-1. Per thread, so a file operation on the UI
+        /// thread doesn't touch another thread's reads.
+        /// </summary>
+        internal static IDisposable Utf8Strings()
         {
-            string ret = "";
-
-            do
-            {
-                char c = (char)fs.ReadByte();
-                if (c == 0)
-                    break;
-                else if (c == -1)
-                {
-                    ret = null;
-                    break;
-                }
-                else
-                    ret += c;
-            } while (true);
-
-            return ret;
+            bool before = utf8Strings;
+            utf8Strings = true;
+            return new Scope(() => utf8Strings = before);
         }
 
-        public static byte[] ReadBytes(FileStream fs, int length)
+        sealed class Scope : IDisposable
+        {
+            readonly Action end;
+            public Scope(Action end) { this.end = end; }
+            public void Dispose() => end();
+        }
+
+        public static string ReadString(Stream fs)
+        {
+            var bytes = new List<byte>();
+            while (true)
+            {
+                int b = fs.ReadByte();
+                if (b == 0) break;
+                if (b < 0) return null;
+                bytes.Add((byte)b);
+            }
+            return (utf8Strings ? Encoding.UTF8 : Encoding.Latin1).GetString(bytes.ToArray());
+        }
+
+        public static byte[] ReadBytes(Stream fs, int length)
         {
             byte[] buffer = new byte[length];
 
@@ -2873,9 +2911,42 @@ namespace ReBuzz.FileOps
         {
             // Fork (mac-engine.md M2): Latin-1, as ReadString reads a byte per character. ASCII
             // wrote '?' for every byte above 127, so names such as "Attack time (µs)" changed.
-            byte[] buffer = Encoding.Latin1.GetBytes(str);
+            WriteString(ms, str, utf8Strings ? Encoding.UTF8 : Encoding.Latin1);
+        }
+
+        /// <summary>A string in a given encoding (the pattern editor's data keeps Latin-1 whatever file it goes in).</summary>
+        public static void WriteString(MemoryStream ms, string str, Encoding encoding)
+        {
+            byte[] buffer = encoding.GetBytes(str);
             ms.Write(buffer, 0, buffer.Length);
             WriteByte(ms, 0);
+        }
+
+        /// <summary>The subsections as the IUGB section holds them (the native format keeps them as manifest fields instead).</summary>
+        internal static List<(string Name, byte[] Data)> ParseSubSections(byte[] iugb)
+        {
+            var list = new List<(string, byte[])>();
+            var s = new MemoryStream(iugb, false);
+            while (true)
+            {
+                string name = ReadString(s);
+                if (string.IsNullOrEmpty(name)) break;
+                list.Add((name, ReadBytes(s, ReadInt(s))));
+            }
+            return list;
+        }
+
+        internal static byte[] BuildSubSections(IEnumerable<(string Name, byte[] Data)> subs)
+        {
+            var ms = new MemoryStream();
+            foreach (var sub in subs)
+            {
+                WriteString(ms, sub.Name);
+                WriteInt(ms, sub.Data.Length);
+                WriteBytes(ms, sub.Data);
+            }
+            WriteString(ms, "");
+            return ms.ToArray();
         }
 
         public Dictionary<string, MemoryStream> GetSubSections()

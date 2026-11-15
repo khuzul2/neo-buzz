@@ -1,6 +1,6 @@
 # NeoBuzz Live
 
-NeoBuzz Live is a fork of [ReBuzz](https://github.com/wasteddesign/ReBuzz) (MIT, by WDE and the ReBuzz contributors). The app is NeoBuzz Live wherever it shows: its windows, menus and dialogs, the Mac app `NeoBuzz Live.app` and its disk image, the Windows `NeoBuzzLive.exe` and its zip, the MCP server `neobuzz-live`. The code keeps ReBuzz's names (`ReBuzz.sln`, the `ReBuzz.*` projects, namespaces and assemblies), its file formats, the machine names songs save ("ReBuzz Audio In"…) and its settings folders, so songs, settings, machines and upstream merges carry over. It adds:
+NeoBuzz Live is a fork of [ReBuzz](https://github.com/wasteddesign/ReBuzz) (MIT, by WDE and the ReBuzz contributors). The app is NeoBuzz Live wherever it shows: its windows, menus and dialogs, the Mac app `NeoBuzz Live.app` and its disk image, the Windows `NeoBuzzLive.exe` and its zip, the MCP server `neobuzz-live`. The code keeps ReBuzz's names (`ReBuzz.sln`, the `ReBuzz.*` projects, namespaces and assemblies), its file formats, the machine names songs save ("ReBuzz Audio In"…) and its settings folders, so old songs, settings and machines carry over. New songs save in the fork's own format, `.nbl` ([`docs/specs/native-format.md`](docs/specs/native-format.md)); `.bmx`, `.bmw` and `.bmxml` are read forever. It adds:
 
 | What | Where |
 |---|---|
@@ -69,9 +69,9 @@ No Windows machine at hand? Run the **Fork package** workflow from the Actions t
 
 ## Keeping up with upstream
 
-```bash
-git fetch upstream
-git merge upstream/main
-```
+**Policy (2026-11-15).**
 
-Fork-only changes live in new files wherever possible, so merges stay clean.
+- **Native format by default.** New songs save as `.nbl`. A song opened from `.bmx`, `.bmw` or `.bmxml` is saved as a new `.nbl` (Save asks for the name; the original is never overwritten silently). Every old format stays readable. A lossy "Export for Buzz/ReBuzz (.bmx)" is planned (NF2). The fork no longer keeps its new data inside files that upstream ReBuzz must play.
+- **Upstream is cherry-picked, not merged wholesale.** `git fetch upstream`, then `git cherry-pick` the commits worth having (machine fixes, loader fixes, new machines). No more `git merge upstream/main`. Last merge base: af162b9a.
+- **The Classic WPF app is frozen.** It gets fixes only: no new features, no `.nbl` in its dialogs (it saves `.bmx`). The studio is where the fork grows.
+- Fork-only changes still live in new files where that is natural; the engine keeps ReBuzz's names so cherry-picks apply.
