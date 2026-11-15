@@ -5,12 +5,22 @@
 
 #include <atomic>
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <string>
 #include <thread>
 #include <vector>
 
 namespace np {
+
+/* CI trace of where an editor call stops: appends to the file NEOBUZZ_PLUGIN_GUI_LOG names, if set. */
+inline void trace(const char* what)
+{
+    const char* path = std::getenv("NEOBUZZ_PLUGIN_GUI_LOG");
+    if (!path || !*path) return;
+    if (FILE* f = std::fopen(path, "ab")) { std::fprintf(f, "plugin-gui: native %s\n", what); std::fclose(f); }
+}
 
 inline void copyStr(char* dst, size_t cap, const std::string& s)
 {

@@ -35,6 +35,16 @@ namespace NeoBuzz.Plug
 
         static readonly bool windows = OperatingSystem.IsWindows();
 
+        static bool pumpNoted;
+        static void NoteFirstPump(Exception e)
+        {
+            if (pumpNoted) return;
+            pumpNoted = true;
+            string log = Environment.GetEnvironmentVariable("NEOBUZZ_PLUGIN_GUI_LOG");
+            if (!string.IsNullOrEmpty(log))
+                try { System.IO.File.AppendAllText(log, "plugin-gui: trace PlugMain pumps window messages" + (e == null ? "" : " FAILED " + e.Message) + "\n"); } catch (Exception) { }
+        }
+
         static void Loop()
         {
             while (!quit)
@@ -48,7 +58,9 @@ namespace NeoBuzz.Plug
                     else lock (pumps) copy = pumps.ToArray();
                 }
                 // A plug-in's own message thread is this one (it was opened here): an editor opened from the UI thread may hand work to it.
-                if (windows) try { PlugNative.np_platform_pump(); } catch (Exception) { }
+                if (windows)
+                    try { PlugNative.np_platform_pump(); NoteFirstPump(null); }
+                    catch (Exception e) { NoteFirstPump(e); }
                 if (job != null)
                 {
                     try { job(); } catch (Exception) { }

@@ -711,18 +711,23 @@ public:
         const char* a = clapApi(api);
         if (!gui || !a) { err = "no GUI extension"; return false; }
         if (!gui->is_api_supported(plugin, a, false)) { err = "embedding not supported"; return false; }
+        trace("clap: gui.create");
         if (!gui->create(plugin, a, false)) { err = "gui.create failed"; return false; }
         guiCreated = true;
 #if defined(_WIN32)
         gui->set_scale(plugin, guiScale);
 #endif
+        trace("clap: gui.get_size");
         uint32_t cw = 0, ch = 0;
         gui->get_size(plugin, &cw, &ch);
         clap_window_t win{};
         win.api = a;
         win.ptr = parent;
+        trace("clap: gui.set_parent");
         if (!gui->set_parent(plugin, &win)) { err = "gui.set_parent failed"; return false; }
+        trace("clap: gui.show");
         gui->show(plugin);
+        trace("clap: gui.show returned");
         w = (int)cw;
         h = (int)ch;
         return true;

@@ -718,6 +718,7 @@ public:
     {
         FIDString t = platformType(api);
         if (!t) return 0;
+        trace("vst3: createView");
         if (!view) view = owned(controller->createView(ViewType::kEditor));
         if (!view) return 0;
         // A VST3 view embeds in a parent; a floating window is the host's own window around it.
@@ -734,13 +735,16 @@ public:
         if (!view) { err = "the plugin has no editor"; return false; }
         if (view->isPlatformTypeSupported(t) != kResultTrue) { err = std::string("editor does not support ") + t; return false; }
         if (!frame) frame = owned(new Frame(this));
+        trace("vst3: setFrame");
         view->setFrame(frame);
         if (guiScale != 1.0)
         {
             auto scale = U::cast<IPlugViewContentScaleSupport>(view);
             if (scale) scale->setContentScaleFactor((float)guiScale);
         }
+        trace("vst3: attached()");
         if (view->attached(parent, t) != kResultOk) { err = "attached() failed"; return false; }
+        trace("vst3: attached() returned");
         attached = true;
         ViewRect r{};
         view->getSize(&r);
