@@ -177,11 +177,11 @@ namespace ReBuzz.Studio.Shell.Preferences
                 var text = new TextBlock
                 {
                     Text = dir + (exists ? "" : "  (not there)"),
-                    Foreground = exists ? null : Dim,
                     VerticalAlignment = VerticalAlignment.Center,
                     TextTrimming = Avalonia.Media.TextTrimming.CharacterEllipsis,
                     Margin = new Thickness(4, 2),
                 };
+                if (!exists) text.Foreground = Dim;        // an explicit null Foreground would draw nothing, not the inherited brush
                 Grid.SetColumn(text, 0);
                 row.Children.Add(text);
                 Button remove = null;

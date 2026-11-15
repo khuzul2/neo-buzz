@@ -422,6 +422,8 @@ namespace ReBuzz.Studio.Tests
             SettleWindow(prefs);
             Assert.That(page.FolderRows.Select(r => r.Path), Is.EqualTo(new[] { data.Plugins }));
             Assert.That(page.FolderRows[0].Custom, Is.True);
+            Assert.That(((Avalonia.Controls.Panel)page.FolderRows[0].Remove.Parent).Children.OfType<TextBlock>().First(t => t.Text == data.Plugins).IsSet(TextBlock.ForegroundProperty), Is.False,
+                "an existing folder's path keeps the inherited brush: an explicit null Foreground draws nothing");
             Assert.That(File.ReadAllLines(Path.Combine(data.Dir, "folders.txt")), Is.EqualTo(new[] { data.Plugins }), "kept in the plug-in data folder");
             Assert.That(PlugPaths.SearchDirs(), Does.Contain(data.Plugins), "and scanned from now on");
 

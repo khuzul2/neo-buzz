@@ -140,7 +140,7 @@ tools/gen-machine-presets.py  Presets.txt → <Name>.prs.xml
 | Member | What |
 |---|---|
 | `int StateVersion` | the version this build saves (0 for a machine with no steps) |
-| `IReadOnlyList<string> ParameterKeys` | each global parameter's **stable key**, in index order: the `Params.def` id (`Mode`, `Threshold`, `F2 cutoff`'s `F2Cutoff`…). The key is the parameter's identity: it never changes for the same parameter, whatever its name, position or range. Neo Plug: `slot1` … `slot64` (what a slot drives is the plug-in's own parameter id in its state) |
+| `IReadOnlyList<string> ParameterKeys` | each global parameter's **stable key**, in index order: the `Params.def` id (`Mode`, `Threshold`, `F2 cutoff`'s `F2Cutoff`…). The key is the parameter's identity: it never changes for the same parameter, whatever its name, position or range. Neo Plug: `slot1` … `slot64`, then `output` (which output bus feeds the machine; appended in H1b at version 0, so a song without it loads Output at 0); what a slot drives is the plug-in's own parameter id in its state |
 | `int[] MigrateGlobals(int from, int[] saved)` | raw values saved in version `from`'s order → the current order (`int.MinValue` in `saved`: not saved, the default stands); null for a version newer than the build |
 | `IReadOnlyDictionary<string,int> MigrateKeyed(int from, IReadOnlyDictionary<string,int> saved)` | the same by key: save a value under its key and the version, load it through this, and the machine's layout may change underneath |
 | `byte[] MigrateData(int from, byte[] data)` | the machine's own data (the XML of its `MachineState`, or whatever a loader holds as its blob) as the current version reads it |

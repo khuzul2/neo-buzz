@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using Avalonia.Threading;
 using ReBuzz.Agent.Mcp;
 using Avalonia.Headless.NUnit;
+using Buzz.MachineInterface;
 using BuzzGUI.Interfaces;
 using NUnit.Framework;
 using ReBuzz.Core;
@@ -310,6 +311,111 @@ namespace ReBuzz.Studio.Tests
             core.MarkerStore.Set("More", 16);
             Assert.That(SongFiles.Save().Result, Is.True);
             Assert.That(asked, Is.EqualTo(1), "and the next Save goes to the .nbl");
+        }
+
+        // ------------------------------------------------------------------ Neo Plug's Output (machines.md §3.2: key "output" after slot1 … slot64)
+
+        const int PlugSlots = 64;
+        static readonly (int Slot, int Raw)[] PlugSet = { (0, 1234), (1, 65534), (7, 321), (31, 40000), (63, 17) };
+
+        static IVersionedMachine PlugOf(MachineCore m) => (IVersionedMachine)m.ManagedMachine;
+
+        static int[] PlugGlobals(MachineCore m) => m.ParameterGroupsList[1].ParametersList.Select(p => p.GetValue(0)).ToArray();
+
+        /// <summary>A Neo Plug with no plug-in loaded (the parameter and state path needs none), some slots and Output set.</summary>
+        static MachineCore PlugWith(SessionRig rig, int output)
+        {
+            var m = rig.Add("Neo Plug", "Plug", track: false);
+            var globals = m.ParameterGroupsList[1].ParametersList;
+            Assert.That(globals.Count, Is.EqualTo(PlugSlots + 1), "64 slots, then Output");
+            foreach (var (slot, raw) in PlugSet) globals[slot].SetValue(0, raw);
+            globals[PlugSlots].SetValue(0, output);
+            Assert.That(globals[PlugSlots].GetValue(0), Is.EqualTo(output), "Output took its value");
+            return m;
+        }
+
+        static MachineCore PlugIn(ReBuzzCore core) => core.SongCore.MachinesList.First(x => x.Name == "Plug");
+
+        [AvaloniaTest]
+        public void NeoPlugKeysItsOutputAfterTheSlotsAndMigratesASongWithoutIt()
+        {
+            using var rig = new SessionRig();
+            var m = PlugWith(rig, 3);
+            var v = PlugOf(m);
+            Assert.That(v.StateVersion, Is.EqualTo(0), "appending a parameter needs no version");
+            Assert.That(v.ParameterKeys.Count, Is.EqualTo(PlugSlots + 1));
+            Assert.That(v.ParameterKeys.Take(PlugSlots), Is.EqualTo(Enumerable.Range(1, PlugSlots).Select(i => "slot" + i)), "the slots' keys are unchanged");
+            Assert.That(v.ParameterKeys[PlugSlots], Is.EqualTo("output"));
+
+            // A song saved before Output: 64 globals (or 64 keys). Every slot as saved, Output at its default.
+            var old = Enumerable.Range(0, PlugSlots).Select(i => 100 + i).ToArray();
+            var g = v.MigrateGlobals(0, old);
+            Assert.That(g.Length, Is.EqualTo(PlugSlots + 1));
+            Assert.That(g.Take(PlugSlots), Is.EqualTo(old));
+            Assert.That(g[PlugSlots], Is.EqualTo(0), "Output at its default");
+            var keyed = v.MigrateKeyed(0, Enumerable.Range(1, PlugSlots).ToDictionary(i => "slot" + i, i => 100 + i - 1));
+            Assert.That(keyed["output"], Is.EqualTo(0));
+            Assert.That(Enumerable.Range(1, PlugSlots).Select(i => keyed["slot" + i]), Is.EqualTo(old));
+            // With Output saved, or marked not saved, it travels or defaults.
+            Assert.That(v.MigrateGlobals(0, old.Append(5).ToArray())[PlugSlots], Is.EqualTo(5));
+            Assert.That(v.MigrateGlobals(0, old.Append(int.MinValue).ToArray())[PlugSlots], Is.EqualTo(0));
+            Assert.That(v.MigrateKeyed(0, new Dictionary<string, int> { ["output"] = 7 })["output"], Is.EqualTo(7));
+            Assert.That(v.MapParameterIndex(0, PlugSlots), Is.EqualTo(PlugSlots), "a binding to Output stays on it");
+        }
+
+        [AvaloniaTest]
+        public void ANeoPlugWithAnOutputAndSlotsSetSurvivesNblAndBmx()
+        {
+            using var untitled = SnapshotTests.Untitled(out _);
+            using var rig = new SessionRig();
+            var core = rig.Core;
+            using var restore = Studio.AfterTest(() => Dialogs.Responder = null);
+            var m = PlugWith(rig, 3);
+            var expected = PlugGlobals(m);
+            foreach (var (slot, raw) in PlugSet) Assert.That(expected[slot], Is.EqualTo(raw));
+            Assert.That(expected[PlugSlots], Is.EqualTo(3));
+
+            string nbl = Work("plug.nbl"), bmx = Work("plug.bmx");
+            core.SaveSongCopy(nbl);
+            core.SaveSongCopy(bmx);
+            var entry = ManifestOf(nbl)["machines"].AsArray().First(e => (string)e["name"] == "Plug");
+            Assert.That((int)entry["params"]["output"], Is.EqualTo(3), "Output is saved under its key");
+            Assert.That((int)entry["params"]["slot32"], Is.EqualTo(40000));
+            Assert.That(entry["params"].AsObject().Count, Is.EqualTo(PlugSlots + 1));
+
+            Reopen(core, nbl);
+            Assert.That(PlugGlobals(PlugIn(core)), Is.EqualTo(expected), ".nbl: every slot and Output the same after reopening");
+            Reopen(core, bmx);
+            Assert.That(PlugGlobals(PlugIn(core)), Is.EqualTo(expected), ".bmx: every slot and Output the same after reopening");
+        }
+
+        [AvaloniaTest]
+        public void ANeoPlugSongSavedBeforeOutputLoadsWithOutputAtItsDefault()
+        {
+            using var untitled = SnapshotTests.Untitled(out _);
+            using var rig = new SessionRig();
+            var core = rig.Core;
+            using var restore = Studio.AfterTest(() => Dialogs.Responder = null);
+            var m = PlugWith(rig, 0);
+            var expected = PlugGlobals(m);
+            string current = Work("plug-h1b.nbl"), old = Work("plug-h1a.nbl");
+            core.SaveSongCopy(current);
+
+            // The file as H1a wrote it: the same song, the plug's entry holding slot1 … slot64 and no "output".
+            using (var reader = new NblContainer.Reader(current))
+            {
+                var manifest = (JsonObject)JsonNode.Parse(reader.Manifest);
+                var entry = manifest["machines"].AsArray().First(e => (string)e["name"] == "Plug");
+                Assert.That(entry["params"].AsObject().Remove("output"), Is.True, "the current file has the key");
+                Assert.That(entry["params"].AsObject().Count, Is.EqualTo(PlugSlots));
+                var blobs = new NblBlobSet();
+                foreach (var h in reader.Hashes) blobs.Add(reader.Get(h));
+                NblContainer.WriteAtomic(old, Encoding.UTF8.GetBytes(manifest.ToJsonString()), blobs);
+            }
+            Reopen(core, old);
+            var loaded = PlugGlobals(PlugIn(core));
+            Assert.That(loaded.Take(PlugSlots), Is.EqualTo(expected.Take(PlugSlots)), "every slot unchanged");
+            Assert.That(loaded[PlugSlots], Is.EqualTo(0), "Output at its default");
         }
 
         // ------------------------------------------------------------------ the agent
