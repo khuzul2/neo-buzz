@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace ReBuzz.Core
 {
-    internal class ParameterCore : IParameter, UiEventQueue.ITarget
+    internal class ParameterCore : IParameter, IParameterMetadata, UiEventQueue.ITarget
     {
         public enum InternalParameter
         {
@@ -50,6 +50,35 @@ namespace ReBuzz.Core
         public ParameterFlags Flags { get; set; }
 
         public int DefValue { get; set; }
+
+        // Fork (plugin-host.md §3.1): a machine that names its parameters at run time (a bank of plugin slots) can hide the
+        // ones it has nothing bound to. Hidden parameters keep their values and stay in songs.
+        public bool Hidden { get; set; }
+
+        bool IParameterMetadata.IsVisible => !Hidden;
+
+        double IParameterMetadata.Indicator => 0;
+
+        IEnumerable<int> IParameterMetadata.GetValidParameterValues(int track) => null;
+
+        /// <summary>A managed machine renames, re-ranges or hides the parameter after it was made (IBuzzMachineHostRuntime).</summary>
+        internal void SetRuntimeInfo(string name, string description, int min, int max, int def, bool hidden)
+        {
+            bool rename = Name != name || Description != description;
+            bool range = MinValue != min || MaxValue != max || DefValue != def;
+            bool visibility = Hidden != hidden;
+            Name = name;
+            Description = description;
+            MinValue = min;
+            MaxValue = max;
+            DefValue = def;
+            Hidden = hidden;
+            describeValuePrev = -1;
+            descriveValuePrevString = null;
+            if (rename) { PropertyChanged.Raise(this, "Name"); PropertyChanged.Raise(this, "Description"); }
+            if (range) { PropertyChanged.Raise(this, "MinValue"); PropertyChanged.Raise(this, "MaxValue"); PropertyChanged.Raise(this, "DefValue"); }
+            if (visibility) PropertyChanged.Raise(this, "IsVisible");
+        }
         internal ConcurrentDictionary<int, (int, int)> MidiBindings { get => midiBindings; set => midiBindings = value; }
 
         ConcurrentDictionary<int, (int, int)> midiBindings = new ConcurrentDictionary<int, (int, int)>();

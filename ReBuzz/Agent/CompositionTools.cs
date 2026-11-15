@@ -311,7 +311,7 @@ namespace ReBuzz.Agent
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
                         string kind = c.RequiredString("kind");
-                        var manifest = SongModel.Manifest(m.DLL);
+                        var manifest = SongModel.Manifest(m);
                         var imports = manifest?.Imports ?? System.Array.Empty<ManifestImport>();
                         var import = imports.FirstOrDefault(i => string.Equals(i.Kind, kind, StringComparison.OrdinalIgnoreCase));
                         if (import == null)

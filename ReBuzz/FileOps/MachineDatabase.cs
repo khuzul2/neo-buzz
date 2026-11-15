@@ -229,6 +229,11 @@ namespace ReBuzz.FileOps
             {
                 DatabaseEvent.Invoke(machineDll.Name);
                 var mInfo = machineDll.Info;
+                if (mInfo.Flags.HasFlag(MachineInfoFlags.USES_INSTRUMENTS) && (machineDll as MachineDLL)?.IsManaged == true)
+                {
+                    // Fork (plugin-host.md §3.1): a managed machine lists its instruments itself (GetInstrumentList).
+                    return AddManagedLoaderMenus(machineDll, loaderLib, loaderDisplayName, menuPos, paramID);
+                }
                 if (mInfo.Flags.HasFlag(MachineInfoFlags.USES_INSTRUMENTS))
                 {
                     bool is64Bit = (machineDll as MachineDLL).Is64Bit;
@@ -311,6 +316,63 @@ namespace ReBuzz.FileOps
                 }
 
             }
+            return paramID;
+        }
+
+        private int AddManagedLoaderMenus(IMachineDLL machineDll, string loaderLib, string loaderDisplayName, MenuItemCore menuPos, int paramID)
+        {
+            DatabaseEvent?.Invoke("Building DB " + machineDll.Name);
+            List<string> instruments;
+            try
+            {
+                var dll = new ReBuzz.ManagedMachine.ManagedMachineDLL(dispatcher);
+                dll.LoadManagedMachine(machineDll.Path);
+                instruments = dll.GetInstrumentList();
+            }
+            catch (Exception ex)
+            {
+                buzz.DCWriteLine("Error listing instruments of " + loaderLib + ": " + (ex.InnerException ?? ex).Message, DCLogLevel.Error);
+                instruments = new List<string>();
+            }
+
+            var rootMenu = new MenuItemCore() { Text = loaderDisplayName, IsEnabled = true };
+            foreach (var instr in instruments)
+            {
+                MenuItemCore menuIterator = rootMenu;
+                var splitted = instr.Split('/').Select(p => p.Trim()).Where(p => p.Length > 0).ToList();
+                for (int i = 0; i < splitted.Count; i++)
+                {
+                    string menuPath = splitted[i];
+                    if (i == splitted.Count - 1)
+                    {
+                        menuIterator.ChildrenList.Add(new MenuItemCore() { Text = menuPath, ID = paramID, IsEnabled = true });
+                        DictLibRef[paramID] = new InstrumentInfo
+                        {
+                            IsLoaderInstrument = true,
+                            libName = loaderLib,
+                            InstrumentFullName = instr,
+                            InstrumentName = menuPath,
+                            InstrumentPath = machineDll.Path,
+                        };
+                        paramID++;
+                    }
+                    else
+                    {
+                        var sub = menuIterator.Children.FirstOrDefault(m => m.Text == menuPath) as MenuItemCore;
+                        if (sub == null)
+                        {
+                            sub = new MenuItemCore() { Text = menuPath, IsEnabled = true };
+                            menuIterator.ChildrenList.Add(sub);
+                        }
+                        menuIterator = sub;
+                    }
+                }
+            }
+            if (rootMenu.ChildrenList != null)
+            {
+                rootMenu.ChildrenList = rootMenu.ChildrenList.OrderBy(m => m.Children.Count() == 0).ThenBy(m => m.Text).ToList();
+            }
+            menuPos.ChildrenList.Add(rootMenu);
             return paramID;
         }
 

@@ -19,6 +19,19 @@ namespace ReBuzz.Agent
 {
     internal static class MachineTools
     {
+        /// <summary>The plug-ins a machine that hosts them offers (the instruments of its Gear menu entry), sorted.</summary>
+        static List<string> PluginNames(ReBuzzCore core, IMachineDLL dll)
+        {
+            if (dll.Info == null || (dll.Info.Flags & MachineInfoFlags.USES_INSTRUMENTS) == 0) return new List<string>();
+            try
+            {
+                return core.MachineDB.DictLibRef.Values
+                    .Where(i => i.IsLoaderInstrument && string.Equals(i.InstrumentPath, dll.Path, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(i.InstrumentFullName))
+                    .Select(i => i.InstrumentFullName).Distinct().OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
+            }
+            catch (Exception) { return new List<string>(); }
+        }
+
         public static void Register(ToolRegistry tools, AgentHost host)
         {
             var core = host.Core;
@@ -58,7 +71,9 @@ namespace ReBuzz.Agent
                         Opt("safe_ranges", Array(Object("A parameter's safe range", Req("param", String("Its name")), Req("range", String("The safe values"))), "Where param_set keeps agents")),
                         Opt("problems", Array(String("A problem"), "Why it is unhealthy, hot or warned about")),
                         Opt("quirks", Array(String("A quirk"), "Curated: what to know before using it")),
-                        Opt("successor", String("Its Neo successor: machine_replace moves a song's machine onto it"))), "Matching gear")),
+                        Opt("successor", String("Its Neo successor: machine_replace moves a song's machine onto it")),
+                        Opt("plugin_count", Integer("For gear that hosts plug-ins: how many it lists")),
+                        Opt("plugins", Array(String("A plug-in name"), "Names to pass to machine_add as plugin (search narrows the list)"))), "Matching gear")),
                     Req("total", Integer("How many matched before the limit")),
                     Opt("hidden_unhealthy", Array(String("A machine"), "Unhealthy machines that matched and were left out (include_unhealthy=true lists them)"))),
                 Annotations = ToolAnnotations.Read,
@@ -82,7 +97,8 @@ namespace ReBuzz.Agent
                             string summary = manifest?.Summary ?? "", type = manifest?.Type ?? "";
                             if (!string.IsNullOrEmpty(search) &&
                                 !(dll.Name.Contains(search, StringComparison.OrdinalIgnoreCase) || (info.Author ?? "").Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                                  summary.Contains(search, StringComparison.OrdinalIgnoreCase) || type.Contains(search, StringComparison.OrdinalIgnoreCase)))
+                                  summary.Contains(search, StringComparison.OrdinalIgnoreCase) || type.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                                  PluginNames(core, dll).Any(n => n.Contains(search, StringComparison.OrdinalIgnoreCase))))
                                 continue;
                             var row = new JsonObject { ["name"] = dll.Name, ["kind"] = k };
                             if (!string.IsNullOrEmpty(info.Author)) row["author"] = info.Author;
@@ -94,6 +110,15 @@ namespace ReBuzz.Agent
                             row["exact_units"] = exact;
                             if (manifest != null) row["manifest"] = manifest.Quality;
                             if (dll.Presets?.Count > 0) row["presets"] = dll.Presets.Count;
+                            // Fork (plugin-host.md §3.1): a machine that hosts plug-ins lists them; machine_add(plugin=...) picks one.
+                            var plugins = PluginNames(core, dll);
+                            if (plugins.Count > 0)
+                            {
+                                var shown = (string.IsNullOrEmpty(search) || dll.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
+                                             ? plugins : plugins.Where(n => n.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList()).Take(40).ToList();
+                                row["plugin_count"] = plugins.Count;
+                                row["plugins"] = new JsonArray(shown.Select(n => (JsonNode)n).ToArray());
+                            }
                             bool unhealthy = dll.IsMissing || dll.IsCrashed || manifest?.Health?.Unhealthy == true;
                             bool window = !unhealthy && manifest?.Health?.NeedsWindow == true;
                             if (dll.IsMissing || dll.IsCrashed) row["health"] = dll.IsMissing ? "missing" : "crashed";
@@ -186,7 +211,8 @@ namespace ReBuzz.Agent
                     Opt("connect_to", String("Machine its output goes to (default \"Master\", or unconnected for a machine with no audio output; \"none\" leaves it unconnected)")),
                     Opt("insert_after", String("For effects: put it after this machine, between it and everything it fed")),
                     Opt("gain_db", Db("Gain of its output connection in dB (default 0)")),
-                    Opt("tracks", Integer("Tracks (voices for tracker-played generators)", 1, 256))),
+                    Opt("tracks", Integer("Tracks (voices for tracker-played generators)", 1, 256)),
+                    Opt("plugin", String("For gear that hosts plug-ins (Neo Plug, Neo Plug FX): the plug-in's name from gear_list, such as \"Vendor/Name (VST3)\""))),
                 Output = Object(null,
                     Req("machine", Object(null, Req("name", String("Its name")))),
                     Req("parameters", Integer("Global parameters")),
@@ -196,6 +222,7 @@ namespace ReBuzz.Agent
                 Handler = async c =>
                 {
                     string gear = c.RequiredString("gear"), name = c.String("name")?.Trim(), connectTo = c.String("connect_to"), insertAfter = c.String("insert_after");
+                    string plugin = c.String("plugin")?.Trim();
                     double? gainDb = c.Arguments["gain_db"] != null ? Levels.ParseDb(c.Arguments["gain_db"], "gain_db") : null;
                     var r = await host.Engine("machine_add", true, _ =>
                     {
@@ -210,6 +237,19 @@ namespace ReBuzz.Agent
                             throw new ToolError($"{dll.Name} isn't a machine you can add to a song.");
                         if (dll.IsMissing || dll.IsCrashed) throw new ToolError($"{dll.Name} is {(dll.IsMissing ? "missing" : "crashed")} and can't be added.");
                         bool generator = dll.Info.Type == MachineType.Generator;
+                        if (!string.IsNullOrEmpty(plugin))
+                        {
+                            var known = PluginNames(core, dll);
+                            if (known.Count == 0) throw new ToolError($"{dll.Name} doesn't host plug-ins; leave plugin out.");
+                            string exact = known.FirstOrDefault(n => n == plugin) ?? known.FirstOrDefault(n => string.Equals(n, plugin, StringComparison.OrdinalIgnoreCase));
+                            if (exact == null)
+                            {
+                                var near = Text.Closest(plugin, known);
+                                throw new ToolError($"{dll.Name} has no plug-in \"{plugin}\"." + (near.Count > 0 ? $" Did you mean \"{near[0]}\"?" : "") + $" gear_list(search=\"{plugin.Split('/')[^1].Split(' ')[0]}\") lists what matches.");
+                            }
+                            plugin = exact;
+                        }
+                        else plugin = null;
                         if (name != null && SongModel.Machines(core).Any(m => string.Equals(m.Name, name, StringComparison.OrdinalIgnoreCase)))
                             throw new ToolError($"There's already a machine named \"{name}\". Choose another name, or omit name for one made from the gear.");
                         if (insertAfter != null && generator) throw new ToolError("insert_after is for effects; a generator starts a chain. Use connect_to.");
@@ -226,7 +266,7 @@ namespace ReBuzz.Agent
                         var profiled = SongModel.Manifest(dll)?.Health;
                         try
                         {
-                            core.SongCore.CreateMachine(dll.Name, null, name, null, null, null, tracks ?? -1, x, y);
+                            core.SongCore.CreateMachine(dll.Name, plugin, name, null, null, null, tracks ?? -1, x, y);
                         }
                         catch (Exception e) when (profiled?.NeedsWindow == true && e is not ToolError)
                         {

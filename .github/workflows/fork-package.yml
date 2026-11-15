@@ -599,3 +599,35 @@ jobs:
         name: null-test-macos
         path: ${{ runner.temp }}/null-test/renders/*.wav
         if-no-files-found: ignore
+
+  # Plug-in host (docs/specs/plugin-host.md, H1): neoplug built with CMake, Surge XT (CLAP and VST3), the SDK's AGain and Note
+  # Expression Synth and our test plug-ins hosted by Neo Plug / Neo Plug FX in rebuzz-headless: load, play, save, reload.
+  plugin-host-windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - uses: actions/checkout@v5
+
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: Plug-in host (native build, Surge XT, round trip)
+      run: tools/ci-plugin-host.sh
+
+    - name: Upload results
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: plugin-host-windows
+        path: plugin-host-results
+        if-no-files-found: ignore

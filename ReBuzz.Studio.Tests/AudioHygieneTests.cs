@@ -962,6 +962,62 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        // ------------------------------------------------------------------ Neo Plug (plug-in host, plugin-host.md H1)
+
+        static string PlugName(string gear, string contains) =>
+            Core.Instruments.FirstOrDefault(i => i.MachineDLL?.Name == gear && i.Name != null && i.Name.Contains(contains))?.Name;
+
+        /// <summary>
+        /// A hosted plug-in (our test synth, then our test gain after it) on the audio thread: notes from a pattern, a slot moved every
+        /// buffer (an event for the plug-in), the plug-in's own processing: nothing allocated on our side. Needs the plug-in host's native
+        /// library and test plug-ins (tools/ci-plugin-host.sh sets the environment up); skipped without them.
+        /// </summary>
+        [AvaloniaTest]
+        public void ANeoPlugHostingAPlugInAllocatesNothing()
+        {
+            string synth = PlugName("Neo Plug", "NeoPlug Test Synth"), gain = PlugName("Neo Plug FX", "NeoPlug Test Gain");
+            if (synth == null || gain == null) Assert.Ignore("the plug-in host's library or test plug-ins aren't here");
+            NewSong();
+            var song = Core.SongCore;
+            song.CreateMachine("Neo Plug", synth, "Hygiene Plug", null, null, null, 2, 0.3f, 0.3f);
+            var m = song.MachinesList.Last(x => x.Name == "Hygiene Plug");
+            song.ConnectMachines(m, song.MachinesList[0], new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            m.CreatePattern("00", 16);
+            var pattern = (PatternCore)m.Patterns.First();
+            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 48 + (i * 5) % 12, 60 + i * 4)).ToArray());
+            Arrange(m, pattern);
+            var master = song.MachinesList[0];
+            song.CreateMachine("Neo Plug FX", gain, "Hygiene Plug FX", null, null, null, -1, 0.85f, 0.75f);
+            var fx = song.MachinesList.Last(x => x.Name == "Hygiene Plug FX");
+            song.DisconnectMachines(m.Outputs.First(c => c.Destination == master));
+            song.ConnectMachines(m, fx, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            song.ConnectMachines(fx, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            var slot = m.ParameterGroupsList[1].ParametersList[0];
+            var fxSlot = fx.ParameterGroupsList[1].ParametersList[0];
+            try
+            {
+                int n = 0;
+                foreach (int algorithm in new[] { 0, 1, 2 })
+                {
+                    using var audio = new AudioThread(algorithm);
+                    lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                    var cost = Steady(audio, perBuffer: () =>
+                    {
+                        slot.SetValue(1 << 16, 30000 + (n % 40) * 500);
+                        fxSlot.SetValue(1 << 16, 50000 + (n % 20) * 300);
+                        n++;
+                    });
+                    AssertNoAllocation(cost, $"a pattern through Neo Plug and Neo Plug FX (algorithm {algorithm})");
+                    lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                }
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                NewSong();
+            }
+        }
+
         // ------------------------------------------------------------------ Neo Clipper and Neo Limiter v2
 
         /// <summary>Inserts <paramref name="gear"/> between <paramref name="source"/> and whatever it fed.</summary>

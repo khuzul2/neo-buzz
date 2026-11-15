@@ -32,7 +32,7 @@ namespace ReBuzz.Agent
         /// </summary>
         public static NoteInput For(MachineCore m, string requested = null, bool applyOffset = true)
         {
-            var notes = SongModel.Manifest(m.DLL)?.Notes;
+            var notes = SongModel.Manifest(m)?.Notes;
             var noteParameter = m.ParameterGroups.Count > 2 ? m.ParameterGroups[2].Parameters.FirstOrDefault(p => p.Type == ParameterType.Note) : null;
             string mode = requested ?? (notes?.Input == "tracks" && noteParameter != null ? "tracks" : "midi");
             if (mode == "tracks" && noteParameter == null)

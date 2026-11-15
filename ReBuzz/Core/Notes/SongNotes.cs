@@ -28,7 +28,7 @@ namespace ReBuzz.Core.Notes
             var route = KeyboardRoute.For(machine);
             if (route.Input == KeyboardInput.Tracks && TrackerColumnNotes.For(buzz, pattern) is { } tracker) return tracker;
             if (route.Input == KeyboardInput.Midi) return new MidiColumnNotes(buzz, pattern);
-            var manifest = SongModel.Manifest(machine.DLL);
+            var manifest = SongModel.Manifest(machine);
             if (machine.DLL.Info.Type == MachineType.Generator || manifest?.Notes != null) return new MidiColumnNotes(buzz, pattern);
             return null;
         }
