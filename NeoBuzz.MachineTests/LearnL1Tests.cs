@@ -548,7 +548,8 @@ namespace NeoBuzz.MachineTests
             [("Neo Learn Phase Distortion", "ring-bell")] = 0x0EEC227988EEEE8BUL,
             [("Neo Learn Sampler", "bell-grit")] = 0xDD2C4807E09969BDUL,
             [("Neo Learn Sampler", "init")] = 0x51879498562C8087UL,
-            [("Neo Learn Sampler", "strings-loop")] = 0x9C0020512F1BDAC7UL,
+            // Re-recorded: a voice outside the loop now reads plainly where no tap wraps (the taps add in another order, about 1e-8 here; no other pin moved).
+            [("Neo Learn Sampler", "strings-loop")] = 0x4E9B82452906425CUL,
             [("Neo Learn Sampler", "texture-room")] = 0x3D3A137BF81903F2UL,
             [("Neo Learn Spectral", "bell-gated")] = 0x5CFAB6C7FF46C43AUL,
             [("Neo Learn Spectral", "frozen-choir")] = 0x73021C578E7B7B82UL,
