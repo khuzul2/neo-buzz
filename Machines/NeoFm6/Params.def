@@ -1,4 +1,4 @@
-# Neo FM6 parameters (docs/specs/machines.md §5). The order is permanent: songs and presets
+# Neo FM6 parameters (docs/specs/machines.md §5). The order changes only with a version (machines.md §3.2): songs and presets
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoFm6
 # Operator and voice values use the DX7's own ranges (0-99 levels and rates, coarse 0-31, ...),
 # so DX7 patches, SysEx banks and DX7 know-how carry over one to one.

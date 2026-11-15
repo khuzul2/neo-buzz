@@ -1,3 +1,4 @@
+using Buzz.MachineInterface;
 using BuzzGUI.Common;
 using BuzzGUI.Common.Settings;
 using BuzzGUI.Interfaces;
@@ -924,16 +925,11 @@ namespace ReBuzz.MachineManagement
                     }
                     else
                     {
-                        using (MemoryStream ms = new MemoryStream())
-                        {
-                            var data = machineHost.MachineState;
-                            ms.Write(BitConverter.GetBytes(2), 0, 1);      // Version
-                            int size = data != null ? data.Length : 0;
-                            ms.Write(BitConverter.GetBytes(size), 0, 4);         // Size
-                            if (data != null)
-                                ms.Write(data, 0, size);                          // Content
-                            return ms.ToArray();
-                        }
+                        var data = machineHost.MachineState;
+                        // Fork (machines.md §3.4): a machine with a state version above 0 appends it (byte 3 envelope);
+                        // version 0 machines save exactly what they always did (byte 2, size, content).
+                        int stateVersion = (machineHost.ManagedMachine as IVersionedMachine)?.StateVersion ?? 0;
+                        return StateEnvelope.Write(data, stateVersion);
                     }
                 }
                 else if (nativeMachines.ContainsKey(machine))
@@ -961,7 +957,18 @@ namespace ReBuzz.MachineManagement
                 }
                 else if (value != null)
                 {
-                    machineHost.MachineState = value.Skip(5).ToArray();
+                    var (content, savedVersion) = StateEnvelope.Read(value);
+                    machine.LoadedStateVersion = savedVersion;
+                    // Fork (machines.md §3.4): data saved by an older layout is mapped to the current one, here on the loader thread, before the machine sees it.
+                    if (machineHost.ManagedMachine is IVersionedMachine versioned && savedVersion != versioned.StateVersion)
+                    {
+                        byte[] migrated = savedVersion < versioned.StateVersion ? versioned.MigrateData(savedVersion, content) : null;
+                        if (migrated == null)
+                            buzz.DCWriteLine($"{machine.Name}: its data was saved at state version {savedVersion}, this build has {versioned.StateVersion}; " +
+                                             (savedVersion > versioned.StateVersion ? "it comes from a newer build, so its own data is left out." : "the migration failed, so its own data is left out."), DCLogLevel.Error);
+                        content = migrated ?? Array.Empty<byte>();
+                    }
+                    machineHost.MachineState = content;
                 }
             }
             else if (nativeMachines.ContainsKey(machine))

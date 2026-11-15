@@ -1,4 +1,4 @@
-# Neo Learn Phase Distortion parameters (docs/specs/neo-learn.md, neo-learn-controls.md A1 and A2.9). The order is permanent: songs and
+# Neo Learn Phase Distortion parameters (docs/specs/neo-learn.md, neo-learn-controls.md A1 and A2.9). The order changes only with a version (machines.md §3.2): songs and
 # presets store values by position. The 12 controls are the six core ones, then the six global ones (Attack, Decay, Sustain, Release,
 # Unison / Spread, Output). Each has a snake_case id, and the Explain text (How, Sound; the description is the How line).
 # Regenerate: python3 tools/gen-machine-params.py Machines/NeoLearnPhaseDistortion
