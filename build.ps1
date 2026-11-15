@@ -785,9 +785,7 @@ if ($studioStaged) {
         if (Test-Path -LiteralPath $dest) { continue }                  # the studio's own build of it
         if ($f.Extension -eq '.dll') {
             $managed = if ($canReadDlls) { Test-ManagedDll $f.FullName } else { $null }
-            # A managed machine or library (WPF), or not readable, stays out; Neo Plug and Neo Plug FX are plain net10.0 (portable,
-            # plugin-host.md H1), so the studio loads them too.
-            if ($managed -ne $false -and $f.Name -notlike 'NeoPlug*.NET.dll') { $leftOut++; continue }
+            if ($managed -ne $false) { $leftOut++; continue }           # a managed machine or library (WPF), or not readable
             $sharedNative++
         } else {
             $sharedOther++

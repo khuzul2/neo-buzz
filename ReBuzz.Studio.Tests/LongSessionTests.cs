@@ -5,6 +5,7 @@
 // 3 to 5 times slower late in the run. Now a render's manager unsubscribes when it ends.
 
 using System;
+using NUnit.Framework;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -92,6 +93,40 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(heapHeld, Is.LessThan(history.UsedBytes * 3 + 10_000_000), $"what the session holds ({heapHeld / 1048576.0:0.0} MB more than at the start) is within 3x of what the history counts ({history.UsedBytes / 1048576.0:0.0} MB)");
                 double early = times.Take(10).Order().ElementAt(5), late = times.Skip(N - 10).Order().ElementAt(5);
                 Assert.That(late, Is.LessThan(early * 2 + 20), $"a render takes no longer after {N} cycles (median {early:0.0} ms of the first ten, {late:0.0} ms of the last ten)");
+            }
+            finally
+            {
+                Dialogs.Responder = null;
+            }
+        }
+
+        /// <summary>One measurement, not a regression test (run it by name): does the managed heap level off over a thousand add/render/remove
+        /// cycles at about the start plus the undo history's cap? Prints the curve: the heap after a forced full GC (collect, finalizers, collect),
+        /// the history's own byte count and its number of steps, every 50 cycles.</summary>
+        [AvaloniaTest, Explicit("a measurement: prints the heap curve over 1000 cycles")]
+        public void TheHeapLevelsOffAtTheHistorysCap()
+        {
+            Dialogs.Responder = (m, c, b) => UserAnswer.No;
+            try
+            {
+                SongFiles.New().Wait();
+                MachineViewTests.Settle();
+                Cycle();
+                Collect();
+                static long Heap() { GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect(); return GC.GetTotalMemory(true); }
+                long heapBase = Heap();
+                var history = Core.SongCore.ActionStack;
+                TestContext.Out.WriteLine($"[heap] cap {history.MaxBytes / 1048576.0:0} MB; start heap {heapBase / 1048576.0:0.0} MB");
+                TestContext.Out.WriteLine("[heap] cycle  heapMB  aboveStartMB  historyMB  steps");
+                for (int i = 1; i <= 1000; i++)
+                {
+                    Cycle();
+                    if (i % 50 == 0)
+                    {
+                        long h = Heap();
+                        TestContext.Out.WriteLine($"[heap] {i,5}  {h / 1048576.0,6:0.0}  {(h - heapBase) / 1048576.0,6:0.0}  {history.UsedBytes / 1048576.0,6:0.0}  {history.Steps.Count}  dropped {history.DroppedSteps}");
+                    }
+                }
             }
             finally
             {
