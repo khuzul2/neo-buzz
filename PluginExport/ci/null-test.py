@@ -138,7 +138,7 @@ ok, _, data = call("gear_list", search="", limit=1000)
 names = []
 for g in data.get("gear", []):
     if g["name"] == host_gear: names = g.get("plugins") or []
-mine = [n for n in names if n.lower().startswith(args.plugin.lower() + " (") or n.lower() == args.plugin.lower()]   # "Neo Learn FM (CLAP)", not "Neo Learn FM6 ..."
+mine = [n for n in names if (n.lower().split("/")[-1].startswith(args.plugin.lower() + " (") or n.lower().split("/")[-1] == args.plugin.lower())]   # "NeoBuzz Live/Neo Learn FM (CLAP)": the name after the vendor, exactly
 print(f"     {host_gear} lists:", mine)
 clap = next((n for n in mine if "(CLAP)" in n), None); vst3 = next((n for n in mine if "(VST3)" in n), None)
 check(clap is not None, f"the scan found {args.plugin} as CLAP")

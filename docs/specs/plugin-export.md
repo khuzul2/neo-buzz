@@ -1,12 +1,12 @@
 # Neo machines as plug-ins (CLAP, VST3, AU)
 
-Status: phase PX1 (branch `plugins/export-px1`). The measurement spike that led here is `docs/specs/plugin-export-spike-report.md` (PX0: editor path A, two NativeAOT runtimes, zero GCs in the DSP runtime).
+Status: phases PX1 (branch `plugins/export-px1`) and PX2 (branch `plugins/export-px2`: more machines, and the plug-ins dogfooded in NeoBuzz). The measurement spike that led here is `docs/specs/plugin-export-spike-report.md` (PX0: editor path A, two NativeAOT runtimes, zero GCs in the DSP runtime).
 
 ## 1. What it is
 
 Every exportable Neo machine becomes a plug-in for other DAWs (Ableton Live first): CLAP, VST3 (Windows, macOS, Linux) and AU (macOS). The plug-in runs the machine's own engine (`Machines/<Name>/Engine`, the code the studio runs) and shows the machine's own Neo editor (the INeoCanvas / Avalonia kit, the same editor classes as the machine windows in the studio). One descriptor of about 15 lines per machine; everything else comes from the engine and its `Params` table.
 
-Exported now: Neo Filter, Neo EQ, Neo Comp, Neo Delay, Neo Verb, Neo Poly and Neo Dye Essence (the machine is "Dye Essence" in ReBuzz; the descriptor's `gear` field names it for the tests). Plug-in names are "Neo ..." and carry no vendor trademarks. Out of scope by design: machines that need the host's song (canvas modulators, Neo Plug itself).
+Exported now (22): Neo Filter, Neo EQ, Neo Comp, Neo Delay, Neo Verb, Neo Poly, Neo FM6, Neo Drums, Dye Essence and the 13 Neo Learn synths (Additive, FM, Formant, Granular, Phase Distortion, Physical, Sampler, Spectral, String, Subtractive, Vector, Wavefolder, Wavetable). Plug-in names are the machines' own ("Neo ...", and "Dye Essence", which is the machine's name in ReBuzz too: PX1 called it "Neo Dye Essence"; the plug-in id `org.neobuzz.dye-essence` did not change) and carry no vendor trademarks. Out of scope by design: machines that need the host's song (canvas modulators, Neo Plug itself) and Neo Patch.
 
 ## 2. Layout
 
@@ -29,7 +29,7 @@ A bundle for one plug-in is the module (`.clap` / `.vst3` / `.component`, a thin
 
 ## 3. The generator and the descriptor
 
-`python3 tools/gen-plugin-export.py` (CI: `--check`, which ignores CRLF conversions of a Windows checkout). A descriptor names the plug-in (`id` `org.neobuzz.neo-...`, `name`, `au` four-character subtype), its machine folder, engine / machine / editor classes, `kind` (effect or instrument), CLAP `features`, `process` (`stereo`, `sidechain`, `synth`), and flags for what the engine offers: `tempo`, `transport` (`ticks`), `idle`, `latency`, `tailSeconds`, extra source files, and the `test` the null test applies.
+`python3 tools/gen-plugin-export.py` (CI: `--check`, which ignores CRLF conversions of a Windows checkout). A descriptor names the plug-in (`id` `org.neobuzz.neo-...`, `name`, `au` four-character subtype), its machine folder, engine / machine / editor classes, `kind` (effect or instrument), CLAP `features`, `process` (`stereo`, `sidechain`, `synth`, `learn`: a Neo Learn synth, whose adapter builds the shared `LearnHost` over Dye Essence's engine from the descriptor's `map` class), `tables` (the engine builds tables and samples on background threads: see Activation), and flags for what the engine offers: `tempo`, `transport` (`ticks`), `idle`, `latency`, `tailSeconds`, extra source files, and the `test` the null test applies.
 
 Derived at run time from the machine's `ParamDef` table, never written by hand: parameter id (= the Neo index), range, default, flags, display name, module (group), text and units (`value_to_text` / `text_to_value`: an exact text match first, then the nearest number, kHz understood). A new machine is a descriptor plus `dotnet`-side nothing else, as long as its engine follows the shape of the existing ones (`Create(ParamValues)`, `SetSampleRate`, `Process`, `Latency`, `Reset`, and for instruments `NoteOn/NoteOff/...`). An engine that differs gets a new `process` kind in the generator, not a hand-written plug-in.
 
