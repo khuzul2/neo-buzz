@@ -56,7 +56,7 @@
 # (tools/machine_roles.py) on the note's first 0.37 s. A note heard a semitone or more away fails the script.
 #
 #   python tools/native-compare.py <NeoBuzzLive.exe> <work> [--variant LABEL=DIR ...] [--zeroed LABEL=DIR] [--only gear,...]
-#                                  [--gate] [--shipped RunTime/Gear] [--json out.json] [--pitch] [--no-compare]
+#                                  [--gate] [--shipped RunTime/Gear] [--json out.json] [--pitch] [--no-compare] [--save-renders DIR]
 
 import hashlib
 import importlib.util
@@ -418,6 +418,7 @@ def judge_fixed(cases, roles):
 
 def main(argv):
     global REPEAT
+    save_dir = None
     try:
         sys.stdout.reconfigure(encoding="utf-8")
     except AttributeError:
@@ -449,6 +450,9 @@ def main(argv):
             i += 1
         elif a == "--repeat":
             REPEAT = int(argv[i + 1])
+            i += 2
+        elif a == "--save-renders":
+            save_dir = os.path.abspath(argv[i + 1])
             i += 2
         elif a == "--no-compare":
             do_compare = False
@@ -612,6 +616,13 @@ def main(argv):
                     groups.setdefault(res[label]["cases"][case[0]].get("sha1"), []).append(label)
                 if len(groups) > 1:
                     print(f"  {s['gear']} {case[0]}: the same bits: " + " | ".join(", ".join(g) for g in groups.values()), flush=True)
+                if save_dir:
+                    # R1 (docs/specs/cross-platform.md): the package's own build, as the Windows reference the macOS and
+                    # Linux jobs compare their rebuilds with (tools/native-cross.py --ref): <dir>/<gear>/<case>.wav
+                    for label, (st, f) in files.items():
+                        if label.startswith("package") and f and st == "ok":
+                            os.makedirs(os.path.join(save_dir, s["gear"]), exist_ok=True)
+                            shutil.copyfile(f, os.path.join(save_dir, s["gear"], case[0].replace(" ", "_") + ".wav"))
                 for _, f in files.values():      # the reference too, once every build is compared with it
                     try:
                         os.remove(f)

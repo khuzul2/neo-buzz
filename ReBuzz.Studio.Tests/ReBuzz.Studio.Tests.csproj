@@ -65,6 +65,8 @@
   <!-- The engine the tests start finds its gear beside them, as the app does (Neo editors included). -->
   <PropertyGroup>
     <NeoGearFlavour>Studio</NeoGearFlavour>
+    <!-- R1: the studio tests pin the gear menu and the placeholders of old songs; the rebuilt classics have tests of their own (tools/native-cross.py). -->
+    <SkipNativeClassics>true</SkipNativeClassics>
   </PropertyGroup>
   <Import Project="..\ReBuzz.Host\AppGear.targets" />
 

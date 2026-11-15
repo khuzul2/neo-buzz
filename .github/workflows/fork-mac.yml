@@ -39,6 +39,13 @@ on:
       - 'ReBuzz.SessionTests/**'
       - 'ReBuzz.AgentTests/**'
       - 'NeoBuzz.MachineTests/**'
+      - 'ReBuzzEngine/portable/**'
+      - 'ReBuzzEngine/rebe/**'
+      - 'ExternalMachines/machines.json'
+      - 'ExternalMachines/source/**'
+      - 'tools/build-natives-posix.py'
+      - 'tools/native-cross.py'
+      - 'tools/native-compare.py'
       - '.github/workflows/fork-mac.yml'
   workflow_dispatch:
     inputs:
@@ -51,7 +58,7 @@ jobs:
   portable-tests:
     if: ${{ inputs.gallery != true }}
     runs-on: macos-15
-    timeout-minutes: 50
+    timeout-minutes: 75
     steps:
     - uses: actions/checkout@v5
 
@@ -93,6 +100,18 @@ jobs:
         MEASUREMENTS_DIR: ${{ github.workspace }}/measurements
       run: dotnet test NeoBuzz.MachineTests --logger "console;verbosity=normal" 2>&1 | tee machine-test.log
 
+    # The classic Buzz machines rebuilt natively (docs/specs/cross-platform.md R1) and the portable host that runs them
+    # out of process: ReBuzz.Host/AppGear.targets copies build/natives (Gear, Licenses) and build/native-host into
+    # rebuzz-headless's output when it is built.
+    # always(): a failed test step above must not skip the build and make the classic-machine step fail for a missing host.
+    - name: Classic machines and native host (C++)
+      if: always()
+      run: |
+        python3 tools/build-natives-posix.py --out build/natives
+        cmake -S ReBuzzEngine/portable -B build/native-host >/dev/null
+        cmake --build build/native-host -j 3
+        ls build/natives/Gear/*
+
     # rebuzz-headless on Apple silicon (docs/specs/mac-engine.md M1/M4): the engine and the Neo
     # machines built for osx-arm64, driven over MCP stdio by the same smoke test as Linux.
     - name: Headless engine on macOS
@@ -102,6 +121,15 @@ jobs:
         git submodule update --init --depth 1 3rdParty/serilog/serilog
         dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
         python3 tools/headless-smoke.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/smoke"
+
+    # R1: each rebuilt classic loads and renders its cases through the native host (finite, audible, no divergence), and the
+    # classic demo songs of ExternalMachines/source open with their machines and play (tools/native-cross.py).
+    - name: Classic machines on macOS
+      if: always()
+      run: |
+        python3 -m pip install --break-system-packages numpy >/dev/null
+        test -x ReBuzz.Headless/bin/Release/net10.0/rebuzz-native-host
+        python3 tools/native-cross.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/natives" --json "$RUNNER_TEMP/natives.json"
 
     # The Pedal machines (docs/specs/studio-mvp.md S2) on Apple silicon, as on Linux.
     - name: Pedal machines on macOS

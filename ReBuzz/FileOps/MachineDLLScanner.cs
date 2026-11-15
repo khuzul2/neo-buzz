@@ -217,8 +217,12 @@ namespace ReBuzz.FileOps
             NativeMachine.NativeMachineHost nativeMachineHost = null, nativeMachineHost64 = null;
             if (NativeMachine.NativeMachineHost.Supported)
             {
-                nativeMachineHost = new NativeMachine.NativeMachineHost("ScanDLLs", buzzPath, dispatcher, engineSettings);
-                nativeMachineHost.InitHost(buzz, false);
+                // Fork (cross-platform.md R1): off Windows there is the one, 64-bit host (nativeMachineHost stays null)
+                if (OperatingSystem.IsWindows())
+                {
+                    nativeMachineHost = new NativeMachine.NativeMachineHost("ScanDLLs", buzzPath, dispatcher, engineSettings);
+                    nativeMachineHost.InitHost(buzz, false);
+                }
 
                 nativeMachineHost64 = new NativeMachine.NativeMachineHost("ScanDLLs64", buzzPath, dispatcher, engineSettings);
                 nativeMachineHost64.InitHost(buzz, true);
@@ -363,6 +367,38 @@ namespace ReBuzz.FileOps
 
                 return mDll;
             }
+            // Fork (cross-platform.md R1): off Windows, the classics rebuilt as .dylib/.so, in the one 64-bit host
+            else if (!OperatingSystem.IsWindows())
+            {
+                if (nativeMachineHost64 == null || !(libName.EndsWith(".dylib") || libName.EndsWith(".so")))
+                    return null;
+                libName = libName.Substring(0, libName.LastIndexOf('.'));
+                var machine = new MachineCore(buzz.SongCore, buzzPath, dispatcher, engineSettings);
+                machine.MachineDLL.Is64Bit = true;
+                if (uiMessage64.UILoadLibrarySync(buzz, machine, libName, path))
+                {
+                    XMLMachineDLL mDll = new XMLMachineDLL();
+                    mDll.Name = libName;
+                    mDll.Path = path;
+                    mDll.Is64Bit = true;
+
+                    XMLMachineInfo machineInfo = new XMLMachineInfo();
+                    var mi = machine.DLL.Info;
+
+                    machineInfo.Type = mi.Type;
+                    machineInfo.Version = mi.Version;
+                    machineInfo.InternalVersion = mi.InternalVersion;
+                    machineInfo.Flags = mi.Flags;
+                    machineInfo.MinTracks = mi.MinTracks;
+                    machineInfo.MaxTracks = mi.MaxTracks;
+                    machineInfo.Name = mi.Name;
+                    machineInfo.ShortName = mi.ShortName;
+                    machineInfo.Author = mi.Author;
+                    mDll.MachineInfo = machineInfo;
+
+                    return mDll;
+                }
+            }
             // 64 bit native machines
             else if (nativeMachineHost == null || nativeMachineHost64 == null)
             {
@@ -435,8 +471,12 @@ namespace ReBuzz.FileOps
             NativeMachine.NativeMachineHost nativeMachineHost = null, nativeMachineHost64 = null;
             if (NativeMachine.NativeMachineHost.Supported)
             {
-                nativeMachineHost = new NativeMachine.NativeMachineHost("ScanDLLs", buzzPath, dispatcher, engineSettings);
-                nativeMachineHost.InitHost(buzz, false);
+                // Fork (cross-platform.md R1): off Windows there is the one, 64-bit host (nativeMachineHost stays null)
+                if (OperatingSystem.IsWindows())
+                {
+                    nativeMachineHost = new NativeMachine.NativeMachineHost("ScanDLLs", buzzPath, dispatcher, engineSettings);
+                    nativeMachineHost.InitHost(buzz, false);
+                }
 
                 nativeMachineHost64 = new NativeMachine.NativeMachineHost("ScanDLLs64", buzzPath, dispatcher, engineSettings);
                 nativeMachineHost64.InitHost(buzz, true);
@@ -455,7 +495,8 @@ namespace ReBuzz.FileOps
             DirectoryInfo d = new DirectoryInfo(filepath);
             if (!d.Exists) return new List<FileInfo>();      // fork (mac-engine.md M2): a host without that gear folder
 
-            return d.GetFiles().Where(f => f.Name.EndsWith(".dll")).ToList();
+            // Fork (cross-platform.md R1): off Windows the native machines are shared libraries (.dylib, .so)
+            return d.GetFiles().Where(f => f.Name.EndsWith(".dll") || (!OperatingSystem.IsWindows() && (f.Name.EndsWith(".dylib") || f.Name.EndsWith(".so")))).ToList();
         }
     }
 

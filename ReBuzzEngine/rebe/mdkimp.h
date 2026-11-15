@@ -5,6 +5,9 @@
 
 #define MDK_VERSION		2
 
+class CMDKMachineInterface;
+class CMDKMachineInterfaceEx;
+
 class CInput
 {
 public:
