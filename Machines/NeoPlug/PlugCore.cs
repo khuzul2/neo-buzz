@@ -536,6 +536,26 @@ namespace NeoBuzz.Plug
 
         bool offlineMode;
 
+        void Dump(string where)
+        {
+            Log($"{where}: " + string.Join(", ", Enumerable.Range(0, Slots).Where(k => bound[k] && sname[k].StartsWith("Delay Time Left")).Take(2).Select(k => $"{sname[k]}: plug-in {ToRaw(k, PlugNative.np_param_get(plugin, slotId[k]))}, engine {Volatile.Read(ref mirror[k])}")));
+        }
+
+        // Activating, resetting or re-initialising may put a plug-in back to its own defaults while the engine still holds the
+        // song's values (and the host believes it has sent them): send every value that differs. The caller holds the gate.
+        void Resync(string why)
+        {
+            for (int i = 0; i < Slots; i++)
+            {
+                if (!bound[i] || Volatile.Read(ref pending[i]) >= 0) continue;
+                int mine = Volatile.Read(ref mirror[i]);
+                if (ToRaw(i, PlugNative.np_param_get(plugin, slotId[i])) == mine) continue;
+                if (DebugMidi) Log($"{why}: {sname[i]} was reset in the plug-in: sending {mine} again");
+                PlugNative.np_param_set(plugin, slotId[i], ToValue(i, mine));
+                Volatile.Write(ref wroteAt[i], Environment.TickCount64);
+            }
+        }
+
         void Reactivate(bool offline)
         {
             if (plugin == IntPtr.Zero) return;
@@ -543,10 +563,14 @@ namespace NeoBuzz.Plug
             {
                 var err = new byte[512];
                 offlineMode = offline;
+                if (DebugMidi) Dump("before deactivate");
                 PlugNative.np_deactivate(plugin);
+                if (DebugMidi) Dump("after deactivate");
                 rate = HostRate();
                 PlugNative.np_activate(plugin, rate, Chunk, offline ? 1 : 0, err, err.Length);
+                if (DebugMidi) Dump("after activate");
                 Refresh();
+                Resync("activate");
             }
         }
 
@@ -560,7 +584,12 @@ namespace NeoBuzz.Plug
                 PlugMain.Invoke(() =>
                 {
                     Reactivate(true);
-                    lock (Gate) PlugNative.np_reset(plugin);
+                    lock (Gate)
+                    {
+                        PlugNative.np_reset(plugin);
+                        if (DebugMidi) Dump("after reset");
+                        Resync("reset");
+                    }
                 }, 20000);
             }
             catch (Exception) { }
