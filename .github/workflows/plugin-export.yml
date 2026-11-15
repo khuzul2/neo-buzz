@@ -166,29 +166,6 @@ jobs:
         for f in shots/*.ppm; do convert "$f" "${f%.ppm}.png" && rm "$f"; done
         ls -la shots
 
-    - name: Null tests against the native machines (Linux, rebuzz-headless)
-      if: runner.os == 'Linux'
-      id: nulltest
-      continue-on-error: true
-      run: |
-        T="$RUNNER_TEMP"
-        cmake -S PluginHost -B build/PluginHost -G Ninja -DCMAKE_BUILD_TYPE=Release -DNEOPLUG_VST3_SDK="$T/vst3sdk" -DNEOPLUG_CLAP="$T/clap" -DNEOPLUG_FIXTURES=OFF 2>&1 | tail -2
-        cmake --build build/PluginHost -j 4 2>&1 | tail -2
-        git submodule update --init --depth 1 3rdParty/serilog/serilog
-        dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -v:q 2>&1 | grep -E " error |Build succeeded" | sort -u
-        F="$T/export-plugins"; mkdir -p "$F"
-        cp -R _build/assets/* "$F/"
-        G=ReBuzz.Headless/bin/Release/net10.0/Gear/NeoPlug
-        export NEOPLUG_DEBUG=1
-        bad=0
-        mapfile -t NAMES < <(python3 -c "import json;print('\\n'.join(p['name'] for p in json.load(open('PluginExport/plugins.json'))))")
-        for n in "${NAMES[@]}"; do
-          w="nulltest-${n// /-}"
-          python3 PluginExport/ci/null-test.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$PWD/$w" --plugin "$n" --dir "$F" --lib "$G/libneoplug.so" --scan "$G/neoplug-scan" 2>&1 | tee "$w.log" | grep -v "^     \(gear_list\|song_\|machine_\|pattern\|notes\|arrange\|connect\|render\)" | cut -c1-260 | tail -80 || true
-          grep -q "^NULL-TEST .* ok" "$w.log" || bad=1
-        done
-        [ $bad = 0 ]
-
     - name: Ad-hoc sign the bundles (macOS)
       if: runner.os == 'macOS'
       run: |
@@ -212,6 +189,17 @@ jobs:
           grep -q "AU VALIDATION SUCCEEDED" "auval-$sub.log" || bad=1
         done < <(python3 PluginExport/ci/au-list.py)
         [ $bad = 0 ]
+
+    - name: Dogfood in NeoBuzz (Neo Plug in rebuzz-headless over MCP; the editors in the studio on Windows and macOS)
+      id: dogfood
+      continue-on-error: true
+      run: PluginExport/ci/dogfood.sh _build/assets both 2>&1 | tee dogfood.log | grep -v "^PNG-\|^[A-Za-z0-9+/=]\{200,\}$" | tail -400; test "${PIPESTATUS[0]}" = 0
+      env:
+        GH_TOKEN: ${{ github.token }}
+
+    - name: Screenshots in the log (base64 PNG, for reading without the artifact)
+      if: always()
+      run: grep -A1 "^PNG-BEGIN" dogfood.log | head -20 || true
 
     - name: Package (the bundles, the notices, the install notes)
       if: always()
@@ -243,6 +231,14 @@ jobs:
         retention-days: 14
 
     - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: dogfood-${{ matrix.name }}
+        path: dogfood-results
+        if-no-files-found: ignore
+        retention-days: 14
+
+    - uses: actions/upload-artifact@v4
       if: always() && runner.os == 'Linux'
       with:
         name: editor-shots
@@ -252,9 +248,9 @@ jobs:
         if-no-files-found: ignore
         retention-days: 14
 
-    - name: Null test verdict
-      if: runner.os == 'Linux' && steps.nulltest.outcome == 'failure'
-      run: echo "::error::a null test failed (see its step)"; exit 1
+    - name: Dogfood verdict
+      if: steps.dogfood.outcome == 'failure'
+      run: echo "::error::the dogfood run failed (null tests in Neo Plug, or the editors in the studio: see its step)"; exit 1
 
     - name: AU verdict
       if: runner.os == 'macOS' && steps.auval.outcome == 'failure'

@@ -17,6 +17,12 @@
     <NativeLib>Shared</NativeLib>
     <InvariantGlobalization>true</InvariantGlobalization>
     <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <!-- Size (PX2): the editor library is UI code, so it is built for size (the DSP library stays on speed); no stack trace tables, event sources or debugger support; identical method bodies folded. -->
+    <IlcOptimizationPreference>Size</IlcOptimizationPreference>
+    <IlcFoldIdenticalMethodBodies>true</IlcFoldIdenticalMethodBodies>
+    <StackTraceSupport>false</StackTraceSupport>
+    <EventSourceSupport>false</EventSourceSupport>
+    <DebuggerSupport>false</DebuggerSupport>
     <DefineConstants>$(DefineConstants);AVALONIA</DefineConstants>
     <EnableAvaloniaXamlCompilation>false</EnableAvaloniaXamlCompilation>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
