@@ -1,0 +1,276 @@
+name: Plugin export
+
+# PluginExport/ (docs/specs/plugin-export.md): the Neo machines as CLAP, VST3 and (macOS) AU plug-ins. Per OS: the generator check,
+# the managed self-test, the NativeAOT libraries (neo_dsp, neo_editor), CMake (stub + clap-wrapper per plug-in + neohost), staging,
+# neohost's checks through the CLAP ABI, the editor (GC run with the editor allocating; on Linux a window under Xvfb), on Linux the null
+# tests against the native machines in rebuzz-headless (Neo Plug / Neo Plug FX, CLAP and VST3), on macOS ad-hoc signing and auval for
+# every AU. The bundles of the three OSes are one artifact, "NeoBuzz Live Plug-ins".
+#
+# Driven by pushes to the PX1 branch ("[mac]" adds macOS, "[win]" Windows, "[full]" all three; a plain push runs Linux) and by hand.
+on:
+  push:
+    branches: [ plugins/export-px1 ]
+    paths:
+      - 'PluginExport/**'
+      - 'tools/gen-plugin-export.py'
+      - 'Machines/Neo*/Engine/**'
+      - 'Machines/NeoBuzz.Dsp/**'
+      - 'Machines/NeoBuzz.Editor/**'
+      - 'Machines/NeoBuzz.Editor.Avalonia/**'
+      - '.github/workflows/plugin-export.yml'
+  workflow_dispatch:
+    inputs:
+      mac:
+        type: boolean
+        default: true
+      win:
+        type: boolean
+        default: true
+      seconds:
+        description: Seconds of the editor GC run
+        default: '30'
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+    - id: m
+      env:
+        MSG: ${{ github.event.head_commit.message }}
+        EVENT: ${{ github.event_name }}
+        MAC_IN: ${{ inputs.mac }}
+        WIN_IN: ${{ inputs.win }}
+      run: |
+        python3 - <<'PY' >> "$GITHUB_OUTPUT"
+        import json, os
+        msg, ev = os.environ['MSG'], os.environ['EVENT']
+        full = '[full]' in msg
+        mac = (ev == 'push' and (full or '[mac]' in msg)) or (ev != 'push' and os.environ['MAC_IN'] == 'true')
+        win = (ev == 'push' and (full or '[win]' in msg)) or (ev != 'push' and os.environ['WIN_IN'] == 'true')
+        inc = [{'os': 'ubuntu-latest', 'rid': 'linux-x64', 'name': 'Linux'}]
+        if mac: inc.append({'os': 'macos-15', 'rid': 'osx-arm64', 'name': 'macOS'})
+        if win: inc.append({'os': 'windows-latest', 'rid': 'win-x64', 'name': 'Windows'})
+        print('matrix=' + json.dumps({'include': inc}))
+        PY
+
+  export:
+    needs: plan
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
+    env:
+      SECONDS_GC: ${{ inputs.seconds || '30' }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Generator is up to date
+      run: python3 tools/gen-plugin-export.py --check
+
+    - name: System packages
+      run: |
+        if [ "$RUNNER_OS" = Linux ]; then
+          sudo apt-get update -q
+          sudo apt-get install -y -q ninja-build clang zlib1g-dev libx11-dev libx11-xcb-dev libxcb-util-dev libxcb-cursor-dev libxcb-xkb-dev libxkbcommon-dev \
+            libxkbcommon-x11-dev libfontconfig1-dev libcairo2-dev libgtkmm-3.0-dev libsqlite3-dev libxcb-keysyms1-dev xvfb x11-apps imagemagick
+        elif [ "$RUNNER_OS" = macOS ]; then brew install ninja; fi
+
+    - name: Self-test (the CLAP exports of every plug-in under CoreCLR, against its engine)
+      run: dotnet run --project PluginExport/selftest -c Release 2>&1 | tee selftest.log | grep -v "^ok" | tail -40; grep -q "^ALL OK" selftest.log
+
+    - name: MSBuild properties of the BuzzGUI projects (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        W=$(cygpath -w "$PWD")
+        echo "WINPROPS=-p:SolutionDir=${W}\\ -p:ReBuzzCleanBuild=true" >> "$GITHUB_ENV"
+
+    - name: Editor smoke test (every Neo editor under CoreCLR, Avalonia headless, render, drag, gestures)
+      run: |
+        mkdir -p shots-managed
+        dotnet run --project PluginExport/editor-smoke -c Release -p:PublishAot=false $WINPROPS -- "$PWD/shots-managed" 2>&1 | tee editor-smoke.log | tail -20
+        grep -q "^ALL OK" editor-smoke.log
+
+    - name: Publish the NativeAOT libraries (DSP, editor)
+      run: |
+        dotnet publish PluginExport/dsp/NeoDsp.csproj -c Release -r ${{ matrix.rid }} -o "$PWD/_publish_dsp" 2>&1 | grep -E "error|warning IL|Generating|neo_dsp" | sort -u | head -30
+        ls _publish_dsp | grep -q "neo_dsp"
+        if [ -f PluginExport/editor/NeoEditor.csproj ]; then
+          dotnet publish PluginExport/editor/NeoEditor.csproj -c Release -r ${{ matrix.rid }} $WINPROPS -o "$PWD/_publish_editor" 2>&1 | grep -E "error|Generating|neo_editor|Warning count|warning IL[0-9]+" | sort -u | head -40
+          ls -la _publish_editor | head -30
+          ls _publish_editor | grep -q "neo_editor"
+        else mkdir -p _publish_editor; fi
+        ls -la _publish_dsp | head
+
+    - name: SDKs (CLAP 1.2.10, VST3 SDK 3.8.0 / 3.8.1, clap-wrapper 0.17, AudioUnitSDK)
+      run: |
+        T="$RUNNER_TEMP"
+        git clone -q --depth 1 --branch v3.8.1_build_84 https://github.com/steinbergmedia/vst3sdk "$T/vst3sdk"
+        git -C "$T/vst3sdk" -c advice.detachedHead=false submodule update -q --init --depth 1 base pluginterfaces public.sdk cmake vstgui4
+        # clap-wrapper 0.17 builds against the VST3 SDK it pins (3.8.0); 3.8.1 renamed a member its macros use. Our plug-in host (null test) uses 3.8.1.
+        git clone -q --depth 1 --branch v3.8.0_build_66 https://github.com/steinbergmedia/vst3sdk "$T/vst3sdk380"
+        git -C "$T/vst3sdk380" -c advice.detachedHead=false submodule update -q --init --depth 1 base pluginterfaces public.sdk cmake
+        git -c advice.detachedHead=false clone -q --depth 1 --branch 1.2.10 https://github.com/free-audio/clap "$T/clap"
+        mkdir "$T/cw" && git -C "$T/cw" init -q && git -C "$T/cw" fetch -q --depth 1 https://github.com/free-audio/clap-wrapper 806bba0a5f792e3966b99c1561ab9952d3316d7c && git -C "$T/cw" -c advice.detachedHead=false checkout -q FETCH_HEAD
+        if [ "$RUNNER_OS" = macOS ]; then git -c advice.detachedHead=false clone -q --depth 1 --branch AudioUnitSDK-1.1.0 https://github.com/apple/AudioUnitSDK "$T/AudioUnitSDK"; fi
+
+    - name: Build the stubs, the wrappers and neohost (CMake)
+      run: |
+        T="$RUNNER_TEMP"; [ "$RUNNER_OS" = Windows ] && T=$(cygpath -m "$RUNNER_TEMP")
+        case "$RUNNER_OS" in
+          Windows) gen=(-A x64) ;;
+          macOS) gen=(-G Ninja -DCMAKE_OSX_ARCHITECTURES=arm64 "-DAUDIOUNIT_SDK_ROOT=$T/AudioUnitSDK") ;;
+          *) gen=(-G Ninja) ;;
+        esac
+        cmake -S PluginExport -B _build "${gen[@]}" -DCMAKE_BUILD_TYPE=Release -DCLAP_SDK_ROOT="$T/clap" -DVST3_SDK_ROOT="$T/vst3sdk380" -DCLAP_WRAPPER_DIR="$T/cw" 2>&1 | tail -8
+        cmake --build _build --config Release -j 4 > build.log 2>&1 || { grep -E -B3 -A6 "FAILED|error|undefined|relocation" build.log | cut -c1-300 | head -60; exit 1; }
+        tail -2 build.log
+        find _build/assets -maxdepth 3 | head -60
+
+    - name: Stage (the AOT libraries next to every module)
+      run: python3 PluginExport/ci/stage.py _build/assets _publish_dsp _publish_editor
+
+    - name: neohost checks through the CLAP ABI (every plug-in)
+      run: |
+        B=$(find _build -name neohost -o -name neohost.exe | head -1)
+        python3 PluginExport/ci/run-host.py _build/assets "$B" check
+
+    - name: Editor GC run (the DSP runtime does no GC with the editor open and allocating)
+      run: |
+        if [ ! -f PluginExport/editor/NeoEditor.csproj ]; then echo "no editor yet"; exit 0; fi
+        B=$(find _build -name neohost -o -name neohost.exe | head -1)
+        PRE=""; [ "$RUNNER_OS" = Linux ] && PRE="xvfb-run -a"
+        for n in "Neo Filter" "Neo Poly" "Neo Dye Essence"; do
+          $PRE python3 PluginExport/ci/run-host.py _build/assets "$B" gc --only "$n" --seconds "$SECONDS_GC" --load 0
+          $PRE python3 PluginExport/ci/run-host.py _build/assets "$B" gc --only "$n" --seconds "$SECONDS_GC" --load 3
+        done
+
+    - name: Editor window (X11 under Xvfb)
+      if: runner.os == 'Linux'
+      run: |
+        if [ ! -f PluginExport/editor/NeoEditor.csproj ]; then echo "no editor yet"; exit 0; fi
+        B=$(find _build -name neohost | head -1)
+        mkdir -p shots
+        for n in "Neo Filter" "Neo EQ" "Neo Comp" "Neo Delay" "Neo Verb" "Neo Poly" "Neo Dye Essence"; do
+          NEOHOST_EDITOR="$PWD/_build/assets/neo_editor.so" xvfb-run -a -s "-screen 0 1600x1200x24" python3 PluginExport/ci/run-host.py _build/assets "$B" gui --only "$n" --shot "shots/${n// /-}.ppm"
+        done
+        for f in shots/*.ppm; do convert "$f" "${f%.ppm}.png" && rm "$f"; done
+        ls -la shots
+
+    - name: Null tests against the native machines (Linux, rebuzz-headless)
+      if: runner.os == 'Linux'
+      id: nulltest
+      continue-on-error: true
+      run: |
+        T="$RUNNER_TEMP"
+        cmake -S PluginHost -B build/PluginHost -G Ninja -DCMAKE_BUILD_TYPE=Release -DNEOPLUG_VST3_SDK="$T/vst3sdk" -DNEOPLUG_CLAP="$T/clap" -DNEOPLUG_FIXTURES=OFF 2>&1 | tail -2
+        cmake --build build/PluginHost -j 4 2>&1 | tail -2
+        git submodule update --init --depth 1 3rdParty/serilog/serilog
+        dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -v:q 2>&1 | grep -E " error |Build succeeded" | sort -u
+        F="$T/export-plugins"; mkdir -p "$F"
+        cp -R _build/assets/* "$F/"
+        G=ReBuzz.Headless/bin/Release/net10.0/Gear/NeoPlug
+        export NEOPLUG_DEBUG=1
+        bad=0
+        for n in "Neo Filter" "Neo EQ" "Neo Comp" "Neo Delay" "Neo Verb" "Neo Poly" "Neo Dye Essence"; do
+          w="nulltest-${n// /-}"
+          python3 PluginExport/ci/null-test.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$PWD/$w" --plugin "$n" --dir "$F" --lib "$G/libneoplug.so" --scan "$G/neoplug-scan" 2>&1 | tee "$w.log" | grep -v "^     \(gear_list\|song_\|machine_\|pattern\|notes\|arrange\|connect\|render\)" | cut -c1-260 | tail -80 || true
+          grep -q "^NULL-TEST .* ok" "$w.log" || bad=1
+        done
+        [ $bad = 0 ]
+
+    - name: Ad-hoc sign the bundles (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        for b in _build/assets/*.clap _build/assets/*.vst3 _build/assets/*.component; do
+          codesign --force --deep --sign - "$b" && codesign --verify --deep --strict "$b" && echo "signed $b"
+        done
+
+    - name: AUs through auval (macOS)
+      if: runner.os == 'macOS'
+      id: auval
+      continue-on-error: true
+      run: |
+        mkdir -p ~/Library/Audio/Plug-Ins/Components
+        for c in _build/assets/*.component; do rm -rf ~/Library/Audio/Plug-Ins/Components/"$(basename "$c")"; cp -R "$c" ~/Library/Audio/Plug-Ins/Components/; done
+        killall -9 AudioComponentRegistrar 2>/dev/null || true   # a CI runner of our own: the registrar rescans on its restart
+        sleep 5
+        auval -a 2>&1 | grep -i -E "NBuz" || echo "not listed by auval -a"
+        bad=0
+        while IFS='|' read -r typ sub; do
+          auval -v "$typ" "$sub" NBuz 2>&1 | tee "auval-$sub.log" | tail -4
+          grep -q "AU VALIDATION SUCCEEDED" "auval-$sub.log" || bad=1
+        done < <(python3 PluginExport/ci/au-list.py)
+        [ $bad = 0 ]
+
+    - name: Package (the bundles, the notices, the install notes)
+      if: always()
+      run: |
+        D="NeoBuzz Live Plug-ins/${{ matrix.name }}"; mkdir -p "$D"
+        if [ "$RUNNER_OS" = Windows ]; then
+          mkdir -p "$D/CLAP/NeoBuzz Live" "$D/VST3/NeoBuzz Live"
+          cp _build/assets/CLAP/*.clap "$D/CLAP/NeoBuzz Live/" || true
+          cp _build/assets/VST3/*.vst3 "$D/VST3/NeoBuzz Live/" || true
+          cp _publish_dsp/*.dll _publish_editor/*.dll "$D/CLAP/NeoBuzz Live/" || true
+          cp _publish_dsp/*.dll _publish_editor/*.dll "$D/VST3/NeoBuzz Live/" || true
+        else
+          cp -R _build/assets/* "$D/" || true
+        fi
+        cp PluginExport/NOTICE.txt PluginExport/INSTALL.txt "$D/"
+        mkdir -p "$D/LICENSES"
+        for f in "clap/LICENSE:CLAP.txt" "cw/LICENSE:clap-wrapper.txt" "vst3sdk380/LICENSE.txt:VST3-SDK.txt" "AudioUnitSDK/LICENSE.txt:AudioUnitSDK.txt"; do
+          cp "$RUNNER_TEMP/${f%%:*}" "$D/LICENSES/${f##*:}" 2>/dev/null || true
+        done
+        ls "$D/LICENSES"
+        find "$D" -maxdepth 3 | head -50; du -sh "$D"
+
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: bundles-${{ matrix.name }}
+        path: NeoBuzz Live Plug-ins
+        if-no-files-found: ignore
+        retention-days: 14
+
+    - uses: actions/upload-artifact@v4
+      if: always() && runner.os == 'Linux'
+      with:
+        name: editor-shots
+        path: |
+          shots
+          shots-managed
+        if-no-files-found: ignore
+        retention-days: 14
+
+    - name: Null test verdict
+      if: runner.os == 'Linux' && steps.nulltest.outcome == 'failure'
+      run: echo "::error::a null test failed (see its step)"; exit 1
+
+    - name: AU verdict
+      if: runner.os == 'macOS' && steps.auval.outcome == 'failure'
+      run: echo "::error::auval did not validate every AU (see its step)"; exit 1
+
+  bundle:
+    needs: export
+    if: always() && needs.export.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: bundles-*
+        path: all
+        merge-multiple: true
+    - run: find all -maxdepth 3 | head -40
+    - uses: actions/upload-artifact@v4
+      with:
+        name: NeoBuzz Live Plug-ins
+        path: all
+        retention-days: 30

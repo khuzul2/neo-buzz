@@ -1,0 +1,36 @@
+{
+ "id": "org.neobuzz.neo-eq",
+ "name": "Neo EQ",
+ "folder": "NeoEq",
+ "namespace": "NeoBuzz.Eq",
+ "engine": "EqEngine",
+ "machine": "NeoEqMachine",
+ "editor": "NeoEqEditor",
+ "extra": [
+  "NeoBuzz.Analysis/Loudness.cs",
+  "NeoBuzz.Analysis/GainMatch.cs"
+ ],
+ "kind": "effect",
+ "features": [
+  "equalizer"
+ ],
+ "au": "NEqu",
+ "description": "Eight-band parametric equalizer, minimum phase or linear phase",
+ "process": "sidechain",
+ "tempo": false,
+ "idle": false,
+ "tailSeconds": 0,
+ "test": {
+  "changes": [
+   [
+    "B1On",
+    "raw:1"
+   ],
+   [
+    "B1Gain",
+    "raw:360"
+   ]
+  ],
+  "settle": 0.5
+ }
+}

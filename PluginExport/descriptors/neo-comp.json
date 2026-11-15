@@ -1,0 +1,6 @@
+{
+  "id": "org.neobuzz.neo-comp", "name": "Neo Comp", "folder": "NeoComp", "namespace": "NeoBuzz.Comp", "engine": "CompEngine", "machine": "NeoCompMachine", "editor": "NeoCompEditor",
+  "kind": "effect", "features": ["compressor"], "au": "NCmp", "description": "Compressor with four characters, lookahead and an external sidechain",
+  "process": "sidechain", "tempo": false, "idle": false, "tailSeconds": 0,
+  "test": {"changes": [["Threshold", "raw:300"]], "settle": 0.5}
+}

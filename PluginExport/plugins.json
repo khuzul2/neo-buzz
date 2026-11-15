@@ -1,0 +1,170 @@
+[
+ {
+  "id": "org.neobuzz.dye-essence",
+  "name": "Neo Dye Essence",
+  "gear": "Dye Essence",
+  "kind": "instrument",
+  "au": "NDye",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Volume",
+     "native": "raw:800",
+     "slot": "raw:52427"
+    }
+   ],
+   "settle": 0.0,
+   "tolerance": 0.003,
+   "informational": [
+    "changed"
+   ]
+  },
+  "paramCount": 484,
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-comp",
+  "name": "Neo Comp",
+  "gear": "Neo Comp",
+  "kind": "effect",
+  "au": "NCmp",
+  "sidechain": true,
+  "test": {
+   "changes": [
+    {
+     "param": "Threshold",
+     "native": "raw:300",
+     "slot": "raw:19660"
+    }
+   ],
+   "settle": 0.5
+  },
+  "paramCount": 16,
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-delay",
+  "name": "Neo Delay",
+  "gear": "Neo Delay",
+  "kind": "effect",
+  "au": "NDly",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Mode",
+     "native": "raw:1",
+     "slot": "raw:1"
+    },
+    {
+     "param": "Feedback",
+     "native": "raw:1500",
+     "slot": "raw:49647"
+    }
+   ],
+   "settle": 0.5
+  },
+  "paramCount": 17,
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-eq",
+  "name": "Neo EQ",
+  "gear": "Neo EQ",
+  "kind": "effect",
+  "au": "NEqu",
+  "sidechain": true,
+  "test": {
+   "changes": [
+    {
+     "param": "B1 on",
+     "native": "raw:1",
+     "slot": "raw:1"
+    },
+    {
+     "param": "B1 gain",
+     "native": "raw:360",
+     "slot": "raw:49150"
+    }
+   ],
+   "settle": 0.5
+  },
+  "paramCount": 195,
+  "latencyDependsOnParams": true
+ },
+ {
+  "id": "org.neobuzz.neo-filter",
+  "name": "Neo Filter",
+  "gear": "Neo Filter",
+  "kind": "effect",
+  "au": "NFlt",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Type",
+     "native": "raw:2",
+     "slot": "raw:2"
+    },
+    {
+     "param": "Cutoff",
+     "native": "raw:5000",
+     "slot": "raw:32767"
+    },
+    {
+     "param": "Resonance",
+     "native": "raw:500",
+     "slot": "raw:32767"
+    }
+   ],
+   "settle": 0.5
+  },
+  "paramCount": 18,
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-poly",
+  "name": "Neo Poly",
+  "gear": "Neo Poly",
+  "kind": "instrument",
+  "au": "NPly",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Volume",
+     "native": "raw:800",
+     "slot": "raw:52427"
+    }
+   ],
+   "settle": 0.0,
+   "tolerance": 0.003
+  },
+  "paramCount": 91,
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-verb",
+  "name": "Neo Verb",
+  "gear": "Neo Verb",
+  "kind": "effect",
+  "au": "NVrb",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Decay",
+     "native": "raw:700",
+     "slot": "raw:45874"
+    }
+   ],
+   "settle": 0.5,
+   "informational": [
+    "changed"
+   ]
+  },
+  "paramCount": 17,
+  "latencyDependsOnParams": false
+ }
+]
