@@ -17,6 +17,7 @@
 // where it has one (MachineKeyboardFrame's scroller; MachineWindowFit keeps the window inside the work area).
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
@@ -65,6 +66,69 @@ namespace ReBuzz.Studio.Platform
         public static Window EditorWindowOf(IMachine machine) => windows.TryGetValue(machine, out var w) ? w.Editor : null;
 
         public void AttachMachineView(IntPtr machineViewHwnd) { }
+
+        // ---- Fork (ux-overhaul.md P6c, §9 row 1): a native machine's own window, embedded --------------------------------------------
+
+        static NativeGuiController nativeGui;
+
+        /// <summary>
+        /// Who takes a native machine's window into a studio window (NativeGui.cs): Windows' platform, or a platform that finds none.
+        /// Tests set it to one with a fake. NEOBUZZ_NATIVE_GUI=floating leaves the windows as the machines put them.
+        /// </summary>
+        public static NativeGuiController NativeGui
+        {
+            get => nativeGui ??= CreateNativeGui();
+            set => nativeGui = value;
+        }
+
+        static NativeGuiController CreateNativeGui()
+        {
+            if (!OperatingSystem.IsWindows()) return new NativeGuiController(new NoNativeGui());
+            return CreateWindowsNativeGui();
+        }
+
+        [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+        static NativeGuiController CreateWindowsNativeGui()
+        {
+            var platform = new Win32NativeGui();
+            var controller = new NativeGuiController(platform)
+            {
+                EmbeddingOn = !string.Equals(Environment.GetEnvironmentVariable("NEOBUZZ_NATIVE_GUI"), "floating", StringComparison.OrdinalIgnoreCase),
+            };
+            platform.Closed = controller.Released;
+            return controller;
+        }
+
+        /// <summary>The platform off Windows: native machines do not run out of process there, so there is never a window to take.</summary>
+        sealed class NoNativeGui : INativeGuiPlatform
+        {
+            public IReadOnlyList<ForeignWindow> TopLevelWindows(int processId) => Array.Empty<ForeignWindow>();
+            public bool Exists(IntPtr handle) => false;
+            public bool Embed(string machineName, ForeignWindow window, object machine) => false;
+            public void Raise(IntPtr handle) { }
+            public void Later(TimeSpan delay, Action again) { }
+        }
+
+        /// <summary>
+        /// A native machine answered its double click with a window of its own in its host process: embedded in a studio window of the
+        /// machine's, or, when that does not work, left as the machine put it (a floating window, as in ReBuzz.exe).
+        /// </summary>
+        public void NativeGuiShown(IMachine machine, int hostProcessId)
+        {
+            var outcome = NativeGui.Shown(machine, machine.Name, machine.DLL?.Name, hostProcessId);
+            if (outcome == NativeGuiOutcome.Floating)
+                StudioHost.Current?.Log($"{machine.Name}: its window could not be embedded; it stays a window of its own");
+        }
+
+        /// <summary>A studio window around a native machine's embedded window (its keyboard under it where the machine plays notes).</summary>
+        internal static Window MakeNativeWindow(IMachine machine, string title, Control content, bool resizable)
+        {
+            var window = Make(machine, title, content, () => { }, scroll: false);
+            window.CanResize = resizable;
+            return window;
+        }
+
+        internal static void ShowNativeWindow(Window window) => Show(window, null);
 
         public void OpenParameterWindow(IMachine machine, WindowPlacement? at)
         {

@@ -24,6 +24,8 @@ namespace ReBuzz.Studio.Shell.Tools
         readonly Ellipse light = new Ellipse { Width = 8, Height = 8, VerticalAlignment = VerticalAlignment.Center };
         internal readonly ComboBox Machines = new ComboBox { MinWidth = 84, MaxWidth = 110, FontSize = 12, Padding = new Thickness(6, 0), MinHeight = 22, VerticalAlignment = VerticalAlignment.Center };
         internal readonly ToggleButton Lock = new ToggleButton { Content = "Lock" };
+        /// <summary>P6c: the on-screen piano keyboard (a window that plays the focus machine).</summary>
+        internal readonly Button Keys = new Button { Content = "Keys" };
         List<IMachine> listed = new List<IMachine>();
         bool updating;
 
@@ -37,12 +39,16 @@ namespace ReBuzz.Studio.Shell.Tools
             // the "MIDI" word is the tooltip and the automation name, not a label (the first row must not wrap)
             Children.Add(Machines);
             Children.Add(Lock);
+            Children.Add(Keys);
             AutomationProperties.SetName(Machines, "MIDI focus machine");
             AutomationProperties.SetName(Lock, "Lock the MIDI focus");
             AutomationProperties.SetName(light, "MIDI activity");
             ToolTip.SetTip(Machines, "The machine that receives MIDI notes and controllers");
             ToolTip.SetTip(Lock, "Keep the MIDI focus on this machine while you select others");
             ToolTip.SetTip(light, "Lights when MIDI arrives");
+            AutomationProperties.SetName(Keys, "On-screen piano keyboard");
+            ToolTip.SetTip(Keys, "Open the on-screen piano keyboard: it plays the machine that has the MIDI focus");
+            Keys.Click += (s, e) => PianoKeyboardWindow.Open(StudioHost.Current, TopLevel.GetTopLevel(this) as Window);
             Machines.SelectionChanged += (s, e) =>
             {
                 if (updating) return;

@@ -20,6 +20,7 @@
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <!-- Fork (docs/specs/daw-modes.md §8.1): methods with loops compiled fully optimised at once, so the audio

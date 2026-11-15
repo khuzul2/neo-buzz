@@ -120,6 +120,7 @@ namespace ReBuzz.Studio.Shell.Commands
             C("view.recorder", "View", "_Hard Disk Recorder", help: "Records the Master to a wave file as it plays, or over the song's loop"),
             C("view.console", "View", "_Debug Console", help: "The engine's log: what machines and the engine report"),
             C("view.midibindings", "View", "MI_DI Bindings", help: "Every parameter a MIDI controller drives, with its channel and controller"),
+            C("view.pianokeyboard", "View", "Piano _Keyboard", help: "An on-screen keyboard that plays the machine with the MIDI focus (the Keys button in the MIDI bar does the same)"),
             C("view.samples", "View", "Samp_les", help: "The song's wavetable: the slots (hex, as Buzz shows them), their names, loops and waveforms; load, replace, clear, play"),
             C("view.modulation", "View", "Mod_ulation Matrix", help: "Every modulation in the song as a table, with + Add; the keyboard's way to drag-to-modulate"),
             C("view.mixer", "View", "Session Mi_xer", "Ctrl+Alt+M", "Alt+Cmd+M", help: "Shows or hides the mixer under the Session View's grid"),

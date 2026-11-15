@@ -292,6 +292,9 @@ namespace ReBuzz.Studio.Views.Machines
         public bool Undo() => false;
         public bool Redo() => false;
         public bool Duplicate() => Canvas.DuplicateSelection();
+        public bool Cut() => Canvas.CutSelection();
+        public bool Copy() => Canvas.CopySelection();
+        public bool Paste() => Canvas.PasteSelection();
         public bool Rename() => Canvas.RenameSelection();
 
         public bool Delete()
