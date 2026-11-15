@@ -28,6 +28,25 @@ namespace ReBuzz.ManagedMachine
         public Type machineType { get; set; }
         public MachineInfo MachineInfo { get; private set; }
 
+        MethodInfo instrumentListMethod;
+
+        /// <summary>The instruments (names, '/' for submenus) the machine's static GetInstrumentList gives; empty for a machine with none.</summary>
+        public List<string> GetInstrumentList()
+        {
+            var list = new List<string>();
+            if (instrumentListMethod == null) return list;
+            try
+            {
+                if (instrumentListMethod.Invoke(null, null) is System.Collections.Generic.IEnumerable<string> names)
+                    list.AddRange(names.Where(n => !string.IsNullOrWhiteSpace(n)).Select(n => n.Trim()).Distinct());
+            }
+            catch (Exception)
+            {
+                // a machine whose list fails has no instruments, not a broken Gear menu
+            }
+            return list;
+        }
+
         public MachineParameter[] globalParameters;
         public MachineParameter[] trackParameters;
         internal MachineDecl machineInfo;
@@ -97,6 +116,17 @@ namespace ReBuzz.ManagedMachine
             if (method != null)
             {
                 nmi.Flags |= MachineInfoFlags.PATTERN_EDITOR;
+            }
+
+            // Fork (plugin-host.md §3.1): a machine that stands for many things lists them, as a loader machine does.
+            instrumentListMethod = machineType.GetMethod("GetInstrumentList", BindingFlags.Public | BindingFlags.Static, null, Type.EmptyTypes, null);
+            if (instrumentListMethod != null && typeof(System.Collections.Generic.IEnumerable<string>).IsAssignableFrom(instrumentListMethod.ReturnType))
+            {
+                nmi.Flags |= MachineInfoFlags.USES_INSTRUMENTS;
+            }
+            else
+            {
+                instrumentListMethod = null;
             }
 
             globalParameters = (from p in machineType.GetProperties()

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Decided 2026-11-03: V1 B, V2 A, V3 B, V4 A, V6 A; timing: the H0 spike and the plugin census now, H1–H3 after P3. Refines cross-platform.md D5 and P6. **H0 spike done (§8): its exit waits for your two commercial plugins (§8.7); the census tool is ready to run (§8.5)** |
+| Status | Decided 2026-11-03: V1 B, V2 A, V3 B, V4 A, V6 A; timing: the H0 spike and the plugin census now, H1–H3 after P3. Refines cross-platform.md D5 and P6. **H0 spike done (§8): its exit waits for your two commercial plugins (§8.7); the census tool is ready to run (§8.5).** **H1a built (§9): `Neo Plug` and `Neo Plug FX` host CLAP and VST3 in process; the GUI window, extra buses and the blocklist UI (H1b) are open** |
 | Date | 2026-11-03 |
 | Scope | Whether to build our own VST/VSTi host machine, and how, instead of or beside Polac VST/VSTi 1.1: formats, isolation, performance, mapping to Buzz, GUIs on WPF and Avalonia, songs, agents, licences, effort |
 | Code baseline | fork `f2ab63b` (main, 2026-11-03) on upstream `wasteddesign/ReBuzz` @ `0a48d88` (2026-10-30) |
@@ -555,3 +555,29 @@ Web sources:
 - VST.NET (VST2 only, Windows, LGPL-2.1; used by ReBuzz's signal-analysis window): https://github.com/obiwanjacobi/vst.net
 
 Not reachable during this analysis: the FSF's GPL FAQ (gnu.org) and Steinberg's ModuleInfo-JSON page. Their content is cited through the pages above.
+
+---
+
+## 9. H1a as built
+
+**What exists** (branch `plugins/host-h1`): the native library `neoplug` (`PluginHost/`, ABI 2, the H0 spike's code grown up), its scanner `neoplug-scan`, the managed machines `Neo Plug` (instruments) and `Neo Plug FX` (effects, sidechain on input 2) in `Machines/NeoPlug/` (one source, `#if FX`; plain net10.0 builds in `Machines/Portable` and `Machines/Studio`, the Windows package builds the same ones from `build.ps1`), and the round-trip test `tools/plugin-host-test.py`, run by `tools/ci-plugin-host.sh` in fork-ci (Linux), fork-mac and fork-package (Windows).
+
+**Core changes (§3.1), as built.** All optional interfaces in `ReBuzzGUI/BuzzGUI.Interfaces/MachineInterface/IBuzzMachineHostExtensions.cs`, so every other managed machine is untouched:
+- *Loader instruments.* A managed machine with a static `GetInstrumentList()` is a loader (`USES_INSTRUMENTS`): the Gear menu lists its names (a `/` makes submenus), a song stores the chosen name, and `IBuzzMachineInstrument.SetInstrument` tells the new machine which one. `machine_add(plugin=...)` takes the name, and `gear_list` lists a loader's `plugins` (the search text matches them too).
+- *Runtime parameter names and visibility.* `IBuzzMachineHostRuntime.SetGlobalParameterInfo` renames, re-ranges and hides a global parameter (`ParameterCore` implements `IParameterMetadata`); the agent's parameter lists skip hidden ones. The Windows and Avalonia parameter windows do not honour `IsVisible` yet (H1b).
+- *Per-instance manifests.* `IBuzzMachineManifest` gives the agent server a manifest built from the loaded plug-in (`machine_describe` shows `-6.0 dB`, `Saw`, `440 Hz`); every `SongModel.Manifest(...)` caller asks the machine first.
+- *Offline render.* `RenderTools` calls a machine's `ResetForRender()` before and `EndRender()` after, so a plug-in is activated in offline mode for the render.
+
+**Slots (§3.3).** 64 global parameters (`Slot N`, 0..65534; stepped plug-in parameters use 0..steps) bound at load to the plug-in's first automatable, visible parameters, by stable id (the map is saved, so a new plug-in version with more parameters does not shift them). They are *state* parameters that mirror the plug-in: the setter does nothing when the value equals the mirror, which is what song load does, so H0's problem (§8.3) is gone without a core change. A pump on the plug-in thread (every ~20 ms) copies changes the plug-in made itself (its window, its own automation) into the engine's values, skipping a slot the engine wrote in the last 150 ms. Engine-side changes reach the plug-in as events at the start of the next block.
+
+**Threads.** One host thread (`PlugMain`, STA on Windows) opens and closes plug-ins, saves and loads their state, and runs the pump; it also closes every plug-in at process exit. The audio thread takes a gate with `TryEnter` and plays silence when the host thread holds it (a plug-in being opened or reloaded). Nothing on the audio path allocates; `Render` is `AggressiveOptimization`.
+
+**Notes.** Track parameters: Note, Velocity, Delay (1/128 of a tick, carried across blocks), and a Param/Value pair that sets a slot from a pattern (applied while the song plays). MIDI in (`MidiNote`, `MidiControlChange`: CC, pitch bend 0xE0, channel pressure 0xD0). MIDI out: a plug-in's note output goes to a machine chosen in the machine's menu (saved by name). Latency and tail come from the plug-in; a silent plug-in past its tail sleeps.
+
+**State.** `PlugState` (XML in `MachineState`): format, path, id, name, display name, the plug-in's state deflated (H0 stored it raw), the slot map, note channel and MIDI-out target. A plug-in that cannot be found loads as *missing*: the machine passes audio through (effect) or is silent, and saves its state back byte for byte.
+
+**Scanner and library.** `neoplug-scan <module>` runs in its own process with a 30 s timeout; a crash, hang or load error puts the module on the blocklist (`library.json` in the plug-in data folder, keyed by path, size and modification time; a changed file is tried again). The first run scans before the Gear menu is built, later runs read the cache and rescan behind it. Folders: the standard VST3/CLAP ones, `NEOBUZZ_PLUGIN_PATH`, `CLAP_PATH` and `folders.txt` in the data folder (`NEOBUZZ_PLUGIN_DIR`; `NEOBUZZ_PLUGIN_STANDARD=0` skips the standard ones, for tests).
+
+**Names.** Gear names are "Vendor/Name (VST3)" or "(CLAP)", read from the plug-in's own metadata; our machines, presets and UI text carry no plug-in vendor's name.
+
+**Open (H1b).** The plug-in GUI window (WPF, `HwndHost`; the library has the platform window code from H0), multi-output buses beyond the main stereo pair, CLAP remote-control auto-binding and a "learn" command for slots, the blocklist and rescan UI, the fixed-block-size adapter for plug-ins that need it, parameter windows that hide unbound slots, a UI for the MIDI-out target beyond the machine menu, and the hand test with your commercial plug-ins (§8.7).

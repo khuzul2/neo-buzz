@@ -181,7 +181,7 @@ namespace ReBuzz.Studio.Views.Device
 
         public static DeviceLayout Build(IMachine machine)
         {
-            var manifest = machine.DLL != null ? SongModel.Manifest(machine.DLL) : null;
+            var manifest = machine.DLL != null ? SongModel.Manifest(machine) : null;
             var sections = new List<DeviceSection>();
             var all = new List<DeviceParam>();
 

@@ -47,6 +47,23 @@ namespace ReBuzz.Studio.Shell.Preferences
             else if (midi.Backend is NoMidiBackend)
                 Note($"This system has no MIDI devices for {Product.Name} (it uses CoreMIDI on macOS and WinMM on Windows).");
 
+            // Fork (ux-overhaul.md P6c, §9 row 15): the WPF toolbar's "Windows MIDI Tools…" and MIDI Glass, Microsoft's own programs from the
+            // Windows MIDI Services SDK, started when they are installed (Windows only).
+            if (WindowsMidiTools.Available().Count > 0)
+            {
+                Heading("Windows MIDI Services");
+                Note("Microsoft's MIDI tools, installed with the Windows MIDI Services SDK: they set up and watch the endpoints Windows offers.");
+                var tools = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+                foreach (var (label, path) in WindowsMidiTools.Available())
+                {
+                    string exe = path;
+                    var button = new Button { Content = label, Tag = exe };
+                    button.Click += (_, _) => WindowsMidiTools.Start(exe);
+                    tools.Children.Add(button);
+                }
+                Body.Children.Add(tools);
+            }
+
             Heading("Options");
             AddSection("midi");
 
@@ -152,6 +169,29 @@ namespace ReBuzz.Studio.Shell.Preferences
                 midi.OpenMidiOutDevices();
             }
             Dispatcher.UIThread.Post(Refresh);
+        }
+    }
+
+    /// <summary>The Windows MIDI Services SDK's tools, as the WPF toolbar starts them (ToolBarVM: midisettings.exe, midiglass.exe).</summary>
+    internal static class WindowsMidiTools
+    {
+        internal static readonly (string Label, string Path)[] Tools =
+        {
+            ("Windows MIDI Settings…", @"C:\Program Files\Windows MIDI Services\Tools\midisettings.exe"),
+            ("MIDI Glass…", @"C:\Program Files\Windows MIDI Services\Tools\midiglass.exe"),
+        };
+
+        /// <summary>For tests: whether a file is there.</summary>
+        internal static Func<string, bool> Exists = System.IO.File.Exists;
+
+        /// <summary>The tools that are installed (none off Windows).</summary>
+        public static List<(string Label, string Path)> Available() =>
+            OperatingSystem.IsWindows() ? Tools.Where(t => Exists(t.Path)).ToList() : new List<(string, string)>();
+
+        public static void Start(string path)
+        {
+            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true }); }
+            catch (Exception) { }
         }
     }
 }

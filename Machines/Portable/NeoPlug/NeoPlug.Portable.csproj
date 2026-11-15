@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Plug, portable (docs/specs/plugin-host.md H1): see ../NeoPlug.targets. -->
+  <PropertyGroup>
+    <NeoName>Neo Plug</NeoName>
+    <NeoKind>Generators</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoPlug.targets" />
+</Project>

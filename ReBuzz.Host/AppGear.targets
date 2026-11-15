@@ -64,6 +64,16 @@
     <Copy SourceFiles="$(MSBuildThisFileDirectory)..\build\LinkHelper\Release\ReBuzzLink.exe" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('$(MSBuildThisFileDirectory)..\build\LinkHelper\Release\ReBuzzLink.exe')" />
   </Target>
 
+  <!-- Fork (docs/specs/plugin-host.md, H1): the plug-in host's native library and scanner, once built with CMake
+       (PluginHost/CMakeLists.txt, into build/PluginHost/bin), in Gear/NeoPlug where Neo Plug looks for them
+       (Gear/Generators/../NeoPlug). Without them Neo Plug loads, lists no plug-ins and says why. -->
+  <Target Name="NeoPlugNative" AfterTargets="Build">
+    <ItemGroup>
+      <_NeoPlugNative Include="$(MSBuildThisFileDirectory)..\build\PluginHost\bin\libneoplug.so;$(MSBuildThisFileDirectory)..\build\PluginHost\bin\libneoplug.dylib;$(MSBuildThisFileDirectory)..\build\PluginHost\bin\neoplug.dll;$(MSBuildThisFileDirectory)..\build\PluginHost\bin\neoplug-scan;$(MSBuildThisFileDirectory)..\build\PluginHost\bin\neoplug-scan.exe" Condition="'$(SkipNeoPlugNative)' != 'true'" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_NeoPlugNative)" DestinationFolder="$(OutDir)Gear/NeoPlug" SkipUnchangedFiles="true" Condition="Exists('%(FullPath)')" />
+  </Target>
+
   <!-- A publish (the Mac app bundle, studio-mvp.md §3.9) takes the gear and the helper too. -->
   <Target Name="PublishGear" AfterTargets="Publish">
     <ItemGroup>

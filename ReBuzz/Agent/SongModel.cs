@@ -147,17 +147,54 @@ namespace ReBuzz.Agent
             });
         }
 
+        // Fork (plugin-host.md §3.1): a machine that describes its parameters itself, per instance (a plugin host: names,
+        // ranges and units come from the plugin that is loaded), gives its own manifest, kept until it says it changed.
+        static readonly System.Runtime.CompilerServices.ConditionalWeakTable<object, InstanceManifest> instanceManifests = new();
+
+        sealed class InstanceManifest
+        {
+            public int Revision = int.MinValue;
+            public MachineManifest Manifest;
+        }
+
+        /// <summary>The manifest of one machine: its own when it makes one (<see cref="Buzz.MachineInterface.IBuzzMachineManifest"/>), else the one beside its DLL.</summary>
+        public static MachineManifest Manifest(IMachine machine)
+        {
+            if (machine is MachineCore { ManagedMachine: Buzz.MachineInterface.IBuzzMachineManifest source } mc)
+            {
+                try
+                {
+                    var cache = instanceManifests.GetOrCreateValue(mc);
+                    int revision = source.ManifestRevision;
+                    if (cache.Revision != revision)
+                    {
+                        string json = source.ManifestJson;
+                        cache.Manifest = string.IsNullOrEmpty(json) ? null : MachineManifest.Parse(json);
+                        cache.Revision = revision;
+                    }
+                    if (cache.Manifest != null) return cache.Manifest;
+                }
+                catch (Exception)
+                {
+                    // a manifest the machine can't make is no manifest: the values still read through the machine's own texts
+                }
+            }
+            return Manifest(machine?.DLL);
+        }
+
         /// <summary>The machine's global and track parameters (not its inputs, not notes).</summary>
         /// <param name="played">Also the track parameters that hold no value (triggers), marked <see cref="AgentParam.Played"/>.</param>
         public static List<AgentParam> Params(MachineCore m, bool played = false)
         {
-            var manifest = Manifest(m.DLL);
+            var manifest = Manifest(m);
             var list = new List<AgentParam>();
             for (int g = 1; g <= 2 && g < m.ParameterGroups.Count; g++)
             {
                 foreach (var p in m.ParameterGroups[g].Parameters)
                 {
                     if (p.Type == ParameterType.Internal || p.Type == ParameterType.Note) continue;
+                    // A hidden parameter (a plugin host's unbound slot) isn't the agent's to see.
+                    if (p is IParameterMetadata { IsVisible: false }) continue;
                     // Track parameters that don't hold a value (a note's velocity) are played, not set.
                     bool isPlayed = g == 2 && (p.Flags & ParameterFlags.State) == 0;
                     if (isPlayed && !played) continue;
