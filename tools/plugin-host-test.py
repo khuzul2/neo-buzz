@@ -50,21 +50,6 @@ def check(ok, what):
         failures.append(what)
 
 
-# Known limits, reported but not blocking: a check that fails for a machine named here prints KNOWN-FAILURE and the reason.
-# Never remove or loosen the check itself. (Surge XT Effects as VST3: after save and reopen its processor state differs from
-# the saved one while the CLAP build of the same effect round-trips exactly; see docs/specs/plugin-host.md section 9.)
-KNOWN_REASON = "Surge XT Effects (VST3) does not restore its saved state exactly on reopen (CLAP build does)"
-known_machines = set()
-
-
-def check_known(ok, what, name):
-    if ok or name not in known_machines:
-        check(ok, what)
-        return
-    print("KNOWN-FAILURE " + what + " -- " + KNOWN_REASON, flush=True)
-    results["checks"].append({"ok": False, "known": True, "what": what, "reason": KNOWN_REASON})
-
-
 env = dict(os.environ)
 env["NEOBUZZ_PLUGIN_DIR"] = os.path.join(work, "plugin-data")
 env["NEOBUZZ_PLUGIN_PATH"] = os.pathsep.join(os.path.abspath(d) for d in args.dir)
@@ -180,7 +165,6 @@ for j, text in enumerate(args.fx):
     machines.append((name, "fx", plugin))
 
 names = [m[0] for m in machines]
-known_machines = {m[0] for m in machines if m[1] == "fx" and "Surge" in m[2] and "VST3" in m[2]}
 log = "\n".join(stderr_lines())
 loaded = re.findall(r"\[neoplug\] loaded (\w+) \"([^\"]*)\"", log)
 check(len(loaded) >= len(machines), f"{len(loaded)} of {len(machines)} plug-ins loaded: {', '.join(n for _, n in loaded)}")
@@ -242,8 +226,8 @@ loud_same = True
 for n in names:
     a, b = lv1.get(n, (None, None))[0], lv2.get(n, (None, None))[0]
     same = a is not None and (a == b or (isinstance(a, (int, float)) and isinstance(b, (int, float)) and abs(a - b) < 0.3))
-    loud_same &= same or n in known_machines
-    check_known(same, f"{n}: {a} LUFS before, {b} after", n)
+    loud_same &= same
+    check(same, f"{n}: {a} LUFS before, {b} after")
 results["identical_render"] = identical
 # Some plug-ins aren't deterministic (Surge XT's oscillators start at random phases): then the same loudness per machine is the test.
 check(identical or loud_same, "the reopened song renders the same" + (" (compare: no measurable difference)" if identical else f" per machine (compare: {text[:160]})"))
@@ -251,7 +235,7 @@ check(identical or loud_same, "the reopened song renders the same" + (" (compare
 for name, (pname, value, raw) in tweaks.items():
     ok, text, d3 = call("machine_describe", machine=name, all=True)
     now = next((p for p in d3.get("parameters", []) if p.get("name") == pname), {})
-    check_known(now.get("raw") == raw, f"{name}: {pname} comes back as {value} (raw {raw}) after reopen; now {now.get('value')} (raw {now.get('raw')})", name)
+    check(now.get("raw") == raw, f"{name}: {pname} comes back as {value} (raw {raw}) after reopen; now {now.get('value')} (raw {now.get('raw')})")
 
 
 def machine_states(path):
@@ -280,7 +264,7 @@ s1, s2 = machine_states(song), machine_states(song2)
 results["state_sizes"] = {k: len(v) for k, v in s1.items()}
 check(set(s1) >= set(names), f"the song holds every machine's state ({sorted(s1)})")
 for n in names:
-    check_known(n in s1 and n in s2 and s1[n] == s2[n], f"{n}: the saved state is identical after reopen and save ({len(s1.get(n, b''))} bytes)", n)
+    check(n in s1 and n in s2 and s1[n] == s2[n], f"{n}: the saved state is identical after reopen and save ({len(s1.get(n, b''))} bytes)")
     if n in s1 and n in s2 and s1[n] != s2[n]:   # what differs: the XML fields, then the plug-in's own blob
         import re, zlib
         def fields(raw):
