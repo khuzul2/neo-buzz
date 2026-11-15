@@ -813,7 +813,7 @@ $info = @(
     "Config:      $Configuration|x64",
     "C++ toolset: $toolsetText",
     "VC++ 2010 x64 runtime (bin64\msvcr100.dll) bundled: $(if ($crtBundled) { 'yes' } else { 'NO - install the VC++ 2010 SP1 x64 redistributable' })",
-    "Layout:      $(if ($layoutSwitched) { 'NeoBuzzLive.exe = the studio (Avalonia); Classic\NeoBuzzLiveClassic.exe = the WPF app (NeoBuzz Live Classic)' } elseif ($studioStaged) { 'NeoBuzzLive.exe = the WPF app; Studio\NeoBuzzLiveStudio.exe = the studio (preview), built with -StudioMain:$false' } else { 'NeoBuzzLive.exe = the WPF app (no studio in this build)' })",
+    "Layout:      $(if ($layoutSwitched) { 'NeoBuzzLive.exe = the studio (Avalonia; an apphost that starts App\ReBuzz.Studio.dll); App\ = its program files (managed and native libraries); Gear\, bin32\, bin64\, LinkHelper\ = beside the exe (BuzzPath); Classic\NeoBuzzLiveClassic.exe = the WPF app (NeoBuzz Live Classic) with everything it needs; Licenses\' } elseif ($studioStaged) { 'NeoBuzzLive.exe = the WPF app; Studio\NeoBuzzLiveStudio.exe = the studio (preview), built with -StudioMain:$false' } else { 'NeoBuzzLive.exe = the WPF app (no studio in this build)' })",
     "NeoBuzz Live Studio: $studioSummary",
     "Machine build failures: $($Failures.Count)"
 )
@@ -896,13 +896,14 @@ foreach ($t in $shippedTexts.Values) {
     Copy-Item -LiteralPath $t.Path -Destination ([IO.Path]::Combine($licDir, "$($t.Id).txt")) -Force
 }
 # Components that aren't machines, built from source here or bundled, whose licence text is in the repository.
-$studioRel = if ($layoutSwitched) { '' } else { 'Studio\' }   # where the studio's files are in the package
+$studioRel = if ($layoutSwitched) { 'App\' } else { 'Studio\' }   # where the studio's files are in the package
+$audioBuildNote = if ($layoutSwitched) { 'Licenses\PortAudio-BUILD.txt' } else { 'Studio\PortAudio-BUILD.txt' }
 $components = @(
     [pscustomobject]@{ Name = 'NeoBuzz Live and ReBuzz (wasteddesign/ReBuzz), which it is based on'; Licence = 'MIT'; Text = 'LICENSE'; As = 'ReBuzz-LICENSE.txt'; File = $AppExe },
     [pscustomobject]@{ Name = 'Serilog (serilog.dll, from 3rdParty\serilog\serilog)'; Licence = 'Apache-2.0'; Text = '3rdParty\serilog\serilog\LICENSE'; As = 'Serilog-LICENSE.txt'; File = 'serilog.dll' },
     [pscustomobject]@{ Name = 'Serilog.Sinks.RichTextBox.Wpf (from 3rdParty\serilog\serilog-sinks-richtextbox)'; Licence = 'Apache-2.0'; Text = '3rdParty\serilog\serilog-sinks-richtextbox\LICENSE'; As = 'Serilog.Sinks.RichTextBox.Wpf-LICENSE.txt'; File = 'Serilog.Sinks.RichTextBox.Wpf.dll' },
     [pscustomobject]@{ Name = 'r8brain-free-src (r8bsrc64.dll, from 3rdParty\r8b\r8brain-free-src)'; Licence = 'MIT'; Text = '3rdParty\r8b\r8brain-free-src\LICENSE'; As = 'r8brain-free-src-LICENSE.txt'; File = 'r8bsrc64.dll' },
-    [pscustomobject]@{ Name = "PortAudio (${studioRel}portaudio.dll, built from source with CMake: MME, DirectSound, WASAPI and WDM-KS, no ASIO; see ${studioRel}PortAudio-BUILD.txt)"; Licence = 'MIT'; Text = ([IO.Path]::Combine($StudioStage, 'PortAudio-LICENSE.txt')); As = 'PortAudio-LICENSE.txt'; File = 'Studio\portaudio.dll' },
+    [pscustomobject]@{ Name = "PortAudio (${studioRel}portaudio.dll, built from source with CMake: MME, DirectSound, WASAPI and WDM-KS, no ASIO; see $audioBuildNote)"; Licence = 'MIT'; Text = ([IO.Path]::Combine($StudioStage, 'PortAudio-LICENSE.txt')); As = 'PortAudio-LICENSE.txt'; File = 'Studio\portaudio.dll' },
     [pscustomobject]@{ Name = 'Concentus 2.2.2 (Concentus.dll, the Opus preview; NuGet, from 3rdParty\concentus)'; Licence = 'BSD-3-Clause'; Text = '3rdParty\concentus\LICENSE'; As = 'Concentus-LICENSE.txt'; File = 'Concentus.dll' }
 )
 $notice.Add('')
@@ -919,7 +920,7 @@ foreach ($c in $components) {
     }
 }
 if (Test-Path -LiteralPath ([IO.Path]::Combine($pkgDir, 'Studio', 'portaudio.dll'))) {
-    $notice.Add("  NeoBuzz Live Studio, $(if ($layoutSwitched) { 'the package root' } else { 'Studio\' }): Avalonia, SkiaSharp and HarfBuzzSharp (MIT), the Inter typeface (SIL OFL 1.1), from their NuGet packages")
+    $notice.Add("  NeoBuzz Live Studio, $(if ($layoutSwitched) { 'App\' } else { 'Studio\' }): Avalonia, SkiaSharp and HarfBuzzSharp (MIT), the Inter typeface (SIL OFL 1.1), from their NuGet packages")
 }
 if (Test-Path -LiteralPath ([IO.Path]::Combine($pkgDir, 'Gear', 'NeoPlug', 'neoplug.dll'))) {
     $notice.Add('  Gear\NeoPlug (the plug-in host behind Neo Plug): the VST3 SDK 3.8 (MIT) and the CLAP headers (MIT), statically; plug-ins are the user''s own and are not shipped')
@@ -953,6 +954,20 @@ Start: unzip anywhere and run NeoBuzzLive.exe. The first start scans all machine
 a while. Songs (.bmx, .bmw, .bmxml) open in it; Preferences > General > File types makes it the program
 double-clicked songs open with (this Windows user only; reversible). It keeps its settings in
 %APPDATA%\NeoBuzz Live.
+
+What is in this folder:
+  NeoBuzzLive.exe   the program. A small launcher: it starts App\ReBuzz.Studio.dll, with this folder as its home.
+  App\              the program's own files (about a hundred libraries: Avalonia, SkiaSharp, the audio engine,
+                    PortAudio). Nothing in it to touch; keep it beside NeoBuzzLive.exe.
+  Gear\             the machines (generators, effects, the Neo machines, native Buzz machines) the studio loads.
+  bin32\, bin64\    the helpers that run native Buzz machines in their own process: bin32\ for 32-bit machines,
+                    bin64\ for 64-bit ones. bin64\bin32\ is not a copy of bin32\: it is upstream ReBuzz's own
+                    layout, the 32-bit helpers (pdx, pover, ppsy, vst, scan, hiir) the 64-bit side uses to
+                    host 32-bit VST plug-ins. Leave it as it is.
+  Classic\          NeoBuzz Live Classic (the former WPF app), complete with its own Gear\, bin32\, bin64\.
+  LinkHelper\       the notes, licence and source of the Ableton Link helper (ReBuzzLink.exe, in App\).
+  Licenses\         the licences of the machines and libraries in this package (NOTICE.txt says which is which).
+  README-FIRST.txt, BUILD-INFO.txt, GEAR-INVENTORY.txt   this file, how the package was built, every machine in it.
 
 NeoBuzzLive.exe is the new interface (the studio: browser, device view, Preferences, Session View, History).
 NeoBuzz Live Classic, Classic\NeoBuzzLiveClassic.exe, is the former WPF app, kept for what the studio does not
@@ -1037,16 +1052,41 @@ if ($layoutSwitched) {
         Move-Item -LiteralPath $item.FullName -Destination ([IO.Path]::Combine($classicDir, $item.Name))
     }
     Move-Item -LiteralPath ([IO.Path]::Combine($classicDir, $AppExe)) -Destination ([IO.Path]::Combine($classicDir, 'NeoBuzzLiveClassic.exe'))
+    # The studio's files go to App\; only what a user meets stays at the root: the exe (an apphost that starts App\ReBuzz.Studio.dll,
+    # so the runtime reads App\'s runtimeconfig and deps and finds every managed and native library there), Gear\, bin32\, bin64\
+    # and LinkHelper\ (BuzzPath, Global.BuzzPath, is the exe's folder when the assembly sits in App\ beside a Gear\).
+    $appDir = [IO.Path]::Combine($pkgDir, 'App')
+    New-Dir $appDir
+    $atRoot = @('Gear', 'bin32', 'bin64', 'LinkHelper', 'NeoBuzzLive.exe')
     foreach ($item in Get-ChildItem -LiteralPath $studioDir -Force) {
-        $to = [IO.Path]::Combine($pkgDir, $item.Name)
-        if (Test-Path -LiteralPath $to) { throw "The studio's $($item.Name) clashes with a file at the package root" }
+        if ($item.Name -eq 'PortAudio-LICENSE.txt') { continue }                    # Licenses\ has it already
+        $to = [IO.Path]::Combine($(if ($atRoot -contains $item.Name) { $pkgDir } else { $appDir }), $item.Name)
+        if ($item.Name -eq 'PortAudio-BUILD.txt') { $to = [IO.Path]::Combine($pkgDir, 'Licenses', $item.Name) }
+        if (Test-Path -LiteralPath $to) { throw "The studio's $($item.Name) clashes with a file at $(Split-Path -Parent $to)" }
         Move-Item -LiteralPath $item.FullName -Destination $to
     }
-    Remove-Item -LiteralPath $studioDir -Force
+    Remove-Item -LiteralPath $studioDir -Recurse -Force
+    # The apphost's embedded path to the app (a 1024 byte field, padded with zeros): App\ReBuzz.Studio.dll.
+    $hostExe = [IO.Path]::Combine($pkgDir, 'NeoBuzzLive.exe')
+    $hostBytes = [IO.File]::ReadAllBytes($hostExe)
+    $latin = [Text.Encoding]::GetEncoding(28591)
+    $hostText = $latin.GetString($hostBytes)
+    $oldTarget = "ReBuzz.Studio.dll`0"
+    $at = $hostText.IndexOf($oldTarget, [StringComparison]::Ordinal)
+    if ($at -lt 0 -or $hostText.LastIndexOf($oldTarget, [StringComparison]::Ordinal) -ne $at) { throw 'NeoBuzzLive.exe: the apphost''s path to ReBuzz.Studio.dll was not found exactly once' }
+    $newBytes = $latin.GetBytes('App\ReBuzz.Studio.dll')
+    for ($i = 0; $i -le $newBytes.Length; $i++) {
+        if ($i -ge 'ReBuzz.Studio.dll'.Length + 1 -and $hostBytes[$at + $i] -ne 0) { throw 'NeoBuzzLive.exe: the apphost''s path field is shorter than expected' }
+    }
+    [Array]::Copy($newBytes, 0, $hostBytes, $at, $newBytes.Length)
+    $hostBytes[$at + $newBytes.Length] = 0
+    [IO.File]::WriteAllBytes($hostExe, $hostBytes)
+    Write-Host 'NeoBuzzLive.exe now starts App\ReBuzz.Studio.dll'
     $inventoryFile = [IO.Path]::Combine($pkgDir, 'GEAR-INVENTORY.txt')
     @('Note: this inventory lists the Gear of NeoBuzz Live Classic (Classic\Gear), the whole set. The studio''s Gear\ holds the native machines, the Neo and Pedal machines and the Pattern Editor, all of them in the list below.', '') + (Get-Content -LiteralPath $inventoryFile) |
         Set-Content -LiteralPath $inventoryFile -Encoding UTF8
-    Write-Host "Package root: $((Get-ChildItem -LiteralPath $pkgDir | Select-Object -First 12 | ForEach-Object Name) -join ', ') ..."
+    Write-Host "Package root: $((Get-ChildItem -LiteralPath $pkgDir -Force | ForEach-Object Name) -join ', ')"
+    Write-Host "App\: $((Get-ChildItem -LiteralPath $appDir -Recurse -File).Count) files"
 }
 
 if ($ShippedByException.Count -gt 0 -and $env:GITHUB_ACTIONS -eq 'true') {
@@ -1061,6 +1101,14 @@ if (-not $NoZip) {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     [IO.Compression.ZipFile]::CreateFromDirectory($pkgDir, $zip, [IO.Compression.CompressionLevel]::Optimal, $true)
     Write-Host "Package: $zip ($([math]::Round((Get-Item -LiteralPath $zip).Length / 1MB, 1)) MB)" -ForegroundColor Green
+    $zipTop = [IO.Compression.ZipFile]::OpenRead($zip)
+    try {
+        $tops = $zipTop.Entries | ForEach-Object { $parts = ($_.FullName -replace '\\', '/').Split('/'); if ($parts.Count -gt 2) { $parts[1] + '/' } elseif ($parts.Count -eq 2 -and $parts[1]) { $parts[1] } } | Sort-Object -Unique
+        Write-Host "Zip top-level entries ($(@($tops).Count)): $($tops -join ', ')"
+        if ($env:GITHUB_ACTIONS -eq 'true') { Write-Host "::notice title=Zip top-level entries::$($tops -join ', ')" }
+    } finally {
+        $zipTop.Dispose()
+    }
     # Fork (licences): the licence files as the zip has them, in the log, the step summary and an annotation.
     $licEntries = New-Object System.Collections.Generic.List[string]
     $archive = [IO.Compression.ZipFile]::OpenRead($zip)

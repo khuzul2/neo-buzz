@@ -78,8 +78,13 @@ wfiles = set(os.listdir(wpf_dir))
 check("NeoBuzzLive.exe" in files, "NeoBuzzLive.exe is at the package root")
 if switched:
     check(wpf_exe_name in wfiles and "NeoBuzzLive.exe" not in wfiles, "NeoBuzz Live Classic is Classic\\NeoBuzzLiveClassic.exe (no second NeoBuzzLive.exe)")
-    check("ReBuzz.Studio.dll" in files and "ReBuzz.dll" not in files, "the exe at the root is the studio: ReBuzz.Studio.dll, and no ReBuzz.dll (the WPF app's) beside it")
+    check("ReBuzz.Studio.dll" not in files and "ReBuzz.dll" not in files, "the root holds no libraries (the studio's are in App\\, the WPF app's in Classic\\)")
     check("Studio" not in files, "no Studio\\ folder in this layout")
+    # A tidy root: the exe and a few folders and notes, nothing else (LinkHelper\\ is there when the Link helper was built).
+    expected = {"NeoBuzzLive.exe", "App", "Gear", "bin32", "bin64", "Classic", "Licenses", "README-FIRST.txt", "BUILD-INFO.txt", "GEAR-INVENTORY.txt"}
+    check(expected <= files and files <= expected | {"LinkHelper"}, f"the package root is tidy: {', '.join(sorted(files))}")
+    exe_bytes = open(os.path.join(app, "NeoBuzzLive.exe"), "rb").read()
+    check(b"App\\ReBuzz.Studio.dll\0" in exe_bytes and b"\0ReBuzz.Studio.dll\0" not in exe_bytes, "NeoBuzzLive.exe is an apphost that starts App\\ReBuzz.Studio.dll")
 else:
     check(wpf_exe_name in wfiles, "the WPF app is NeoBuzzLive.exe (the preview layout)")
 check("ReBuzz.exe" not in wfiles and "ReBuzz.exe" not in files, "no ReBuzz.exe")
@@ -111,30 +116,31 @@ check("NeoBuzz Live and ReBuzz (wasteddesign/ReBuzz)" in read(os.path.join("Lice
 # The studio (docs/specs/ux-overhaul.md P6): the main app at the root (or Studio\\ in the preview layout), with its own binaries and Gear,
 # PortAudio built from source (no ASIO) with its licence, the native machine hosts and libraries it shares, and the licences and
 # notes that say so. (Started by tools/studio-windows-smoke.py.)
-studio = app if switched else os.path.join(app, "Studio")
+studio = os.path.join(app, "App") if switched else os.path.join(app, "Studio")     # the studio's program files
+sroot = app if switched else studio                                              # where its Gear, bin32 and bin64 are
 sfiles = set(os.listdir(studio)) if os.path.isdir(studio) else set()
-check(bool(sfiles) and (switched or os.path.isdir(studio)), "the studio is in the package")
+check(bool(sfiles) and os.path.isdir(studio), "the studio is in the package")
 if sfiles:
     studio_exe = "NeoBuzzLive.exe" if switched else "NeoBuzzLiveStudio.exe"
-    check(studio_exe in sfiles and "ReBuzz.Studio.exe" not in sfiles, f"the studio's executable is {studio_exe}")
+    check((studio_exe in files if switched else studio_exe in sfiles) and "ReBuzz.Studio.exe" not in sfiles, f"the studio's executable is {studio_exe}")
     check({"ReBuzz.Studio.dll", "ReBuzz.Studio.runtimeconfig.json", "ReBuzz.Studio.deps.json", "ReBuzz.Engine.dll", "ReBuzz.Host.dll", "Avalonia.Base.dll"} <= sfiles,
           "Studio\\ has the studio, its engine and host, and Avalonia")
-    check("ReBuzz.dll" not in sfiles and "WindowsBase.dll" not in sfiles and "PresentationFramework.dll" not in sfiles and (switched or "NeoBuzzLive.exe" not in sfiles),
+    check("ReBuzz.dll" not in sfiles and "WindowsBase.dll" not in sfiles and "PresentationFramework.dll" not in sfiles and "NeoBuzzLive.exe" not in sfiles,
           "the studio's folder doesn't hold the WPF app's files (the two can't share a folder)")
     check({"NAudio.Asio.dll", "NAudio.WinMM.dll", "NAudio.Midi.dll", "NAudio.Core.dll"} <= sfiles, "Studio\\ has NAudio (ASIO and WinMM MIDI)")
     check("portaudio.dll" in sfiles and "libsndfile-1.dll" in sfiles, "Studio\\ has portaudio.dll and libsndfile-1.dll")
     sread = lambda n: open(os.path.join(studio, n), encoding="utf-8-sig", errors="replace").read() if os.path.isfile(os.path.join(studio, n)) else ""
-    pa_build = sread("PortAudio-BUILD.txt")
+    pa_build = read(os.path.join("Licenses", "PortAudio-BUILD.txt")) if switched else sread("PortAudio-BUILD.txt")
     check("MME, DirectSound, WASAPI, WDM-KS" in pa_build and "No ASIO" in pa_build, "PortAudio is built with MME, DirectSound, WASAPI and WDM-KS, and no ASIO")
-    check("PortAudio" in sread("PortAudio-LICENSE.txt") and "Permission is hereby granted" in sread("PortAudio-LICENSE.txt"), "PortAudio's licence text ships (Studio\\PortAudio-LICENSE.txt)")
-    check("PortAudio" in read(os.path.join("Licenses", "PortAudio-LICENSE.txt")), "and in Licenses\\PortAudio-LICENSE.txt")
+    pa_lic = read(os.path.join("Licenses", "PortAudio-LICENSE.txt"))
+    check("PortAudio" in pa_lic and "Permission is hereby granted" in pa_lic, "PortAudio's licence text ships (Licenses\\PortAudio-LICENSE.txt)")
     check("ReBuzzLink.exe" in sfiles, "the Ableton Link helper is beside the studio (the Session View's Link)")
     check("PortAudio" in read(os.path.join("Licenses", "NOTICE.txt")), "Licenses\\NOTICE.txt names PortAudio")
     cfg = sread("ReBuzz.Studio.runtimeconfig.json")
     check(re.search(r'"System.Runtime.TieredCompilation.QuickJitForLoops":\s*false', cfg) is not None, "the studio's runtimeconfig has the audio thread's JIT setting")
-    check(os.path.isfile(os.path.join(studio, "bin64", "ReBuzzEngine64.exe")) and os.path.isfile(os.path.join(studio, "bin32", "ReBuzzEngine32.exe")),
-          "the native machine hosts are beside the studio (bin32, bin64)")
-    sgear = os.path.join(studio, "Gear")
+    check(os.path.isfile(os.path.join(sroot, "bin64", "ReBuzzEngine64.exe")) and os.path.isfile(os.path.join(sroot, "bin32", "ReBuzzEngine32.exe")),
+          "the native machine hosts are beside the studio's exe (bin32, bin64)")
+    sgear = os.path.join(sroot, "Gear")
     neo = [n for n in os.listdir(os.path.join(sgear, "Generators"))] if os.path.isdir(os.path.join(sgear, "Generators")) else []
     check(any(n.startswith("Neo Poly") and n.endswith(".dll") for n in neo), "the studio's Gear has the Neo machines (their Avalonia builds)")
     check(os.path.isdir(os.path.join(wpf_dir, "Gear", "Generators")), "the WPF app's Gear is still there")
