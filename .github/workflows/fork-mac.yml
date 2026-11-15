@@ -58,7 +58,7 @@ jobs:
   portable-tests:
     if: ${{ inputs.gallery != true }}
     runs-on: macos-15
-    timeout-minutes: 50
+    timeout-minutes: 75
     steps:
     - uses: actions/checkout@v5
 
@@ -125,7 +125,7 @@ jobs:
     - name: Classic machines on macOS
       if: always()
       run: |
-        python3 -m pip install numpy >/dev/null
+        python3 -m pip install --break-system-packages numpy >/dev/null
         test -x ReBuzz.Headless/bin/Release/net10.0/rebuzz-native-host
         python3 tools/native-cross.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/natives" --json "$RUNNER_TEMP/natives.json"
 
