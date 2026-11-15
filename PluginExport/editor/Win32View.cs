@@ -31,7 +31,10 @@ namespace NeoExport
 
         static readonly Dictionary<IntPtr, Win32View> views = new();
         static bool registered;
-        const string ClassName = "NeoBuzzEditorView";
+        // One window class per copy of this library: every bundle carries its own copy of the editor library (its own NativeAOT runtime and its own
+        // `views` table), and a host can have several Neo plug-ins open. A shared class name would give the second copy a class whose window procedure
+        // belongs to the first, which knows none of its windows.
+        static readonly string ClassName = "NeoBuzzEditorView" + Guid.NewGuid().ToString("N");
         IntPtr hwnd; readonly EditorInstance owner; byte* last; int lw, lh;
 
         Win32View(EditorInstance o) { owner = o; }

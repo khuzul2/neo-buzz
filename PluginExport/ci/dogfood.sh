@@ -50,6 +50,8 @@ if [ "$WHAT" = null ] || [ "$WHAT" = both ]; then
     rm -rf "$w"   # the renders are large; the log keeps the figures
   done
   echo "::endgroup::"
+  echo "== Null test results"
+  for n in "${NAMES[@]}"; do grep -h "^NULL-TEST" "$OUT/null/${n// /-}.log" | cut -c1-600 || echo "NULL-TEST $n: no result"; done
 fi
 
 if { [ "$WHAT" = gui ] || [ "$WHAT" = both ]; } && [ "$RUNNER_OS" != Linux ]; then
@@ -67,7 +69,10 @@ if { [ "$WHAT" = gui ] || [ "$WHAT" = both ]; } && [ "$RUNNER_OS" != Linux ]; th
     local watcher=$!
     local rc=0; wait "$pid" || rc=$?; echo "studio exit code $rc ($label)"
     kill "$watcher" 2>/dev/null || true
-    grep -E "FAIL|all passed|failed|== " "$log" 2>/dev/null | cut -c1-300 | head -120 || echo "(no log: the studio did not run the check)"
+    cut -c1-300 "$log" 2>/dev/null | head -700 || echo "(no log: the studio did not run the check)"
+    if [ "$rc" != 0 ] && [ "$RUNNER_OS" = macOS ]; then   # a crash report of the studio, if the system wrote one
+      for r in $(ls -t "$HOME"/Library/Logs/DiagnosticReports/*.ips 2>/dev/null | head -2); do echo "--- crash report $r"; head -c 7000 "$r" | cut -c1-400; done
+    fi
     grep -q "plugin-gui: all passed" "$log" 2>/dev/null || { echo "--- studio output (tail)"; tail -n 25 "$OUT/gui-$label.out" | cut -c1-300; fail=1; }
   }
   clap=""; for n in "${NAMES[@]}"; do clap="$clap${clap:+|}$n (CLAP)"; done

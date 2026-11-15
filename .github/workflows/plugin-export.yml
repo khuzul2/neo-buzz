@@ -193,7 +193,7 @@ jobs:
     - name: Dogfood in NeoBuzz (Neo Plug in rebuzz-headless over MCP; the editors in the studio on Windows and macOS)
       id: dogfood
       continue-on-error: true
-      run: PluginExport/ci/dogfood.sh _build/assets both 2>&1 | tee dogfood.log | grep -v "^PNG-\|^[A-Za-z0-9+/=]\{200,\}$" | tail -400; test "${PIPESTATUS[0]}" = 0
+      run: PluginExport/ci/dogfood.sh _build/assets both 2>&1 | tee dogfood.log | grep -v "^PNG-\|^[A-Za-z0-9+/=]\{200,\}$"; test "${PIPESTATUS[0]}" = 0
       env:
         GH_TOKEN: ${{ github.token }}
 

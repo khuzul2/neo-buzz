@@ -49,7 +49,9 @@ namespace NeoExport
             NativeLibrary.TryLoad("/System/Library/Frameworks/AppKit.framework/AppKit", out _);
             sLocation = sel_registerName("locationInWindow"); sConvert = sel_registerName("convertPoint:fromView:");
             sLayer = sel_registerName("layer"); sSetContents = sel_registerName("setContents:");
-            cls = objc_allocateClassPair(objc_getClass("NSView"), "NeoBuzzEditorView", 0);
+            // One Objective-C class per copy of this library (every bundle has its own; a second registration under one name fails and returns null).
+            cls = objc_allocateClassPair(objc_getClass("NSView"), "NeoBuzzEditorView" + Guid.NewGuid().ToString("N"), 0);
+            if (cls == IntPtr.Zero) return;
             class_addMethod(cls, sel_registerName("mouseDown:"), (IntPtr)(delegate* unmanaged[Cdecl]<IntPtr, IntPtr, IntPtr, void>)&MouseDown, "v@:@");
             class_addMethod(cls, sel_registerName("mouseUp:"), (IntPtr)(delegate* unmanaged[Cdecl]<IntPtr, IntPtr, IntPtr, void>)&MouseUp, "v@:@");
             class_addMethod(cls, sel_registerName("mouseDragged:"), (IntPtr)(delegate* unmanaged[Cdecl]<IntPtr, IntPtr, IntPtr, void>)&MouseMoved, "v@:@");
@@ -65,6 +67,7 @@ namespace NeoExport
         public static CocoaView Create(IntPtr parent, int w, int h, EditorInstance owner)
         {
             EnsureClass();
+            if (cls == IntPtr.Zero) return null;
             var v = new CocoaView(owner) { w = w, h = h };
             v.view = SendRect(Send(cls, sel_registerName("alloc")), sel_registerName("initWithFrame:"), 0, 0, w, h);
             if (v.view == IntPtr.Zero) return null;

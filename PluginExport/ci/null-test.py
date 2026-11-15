@@ -11,6 +11,8 @@
 #
 # Results: <work>/null-test.json and a table on stdout. Exit 1 if a check fails.
 import argparse, glob, json, math, os, queue, struct, subprocess, sys, threading, time
+try: sys.stdout.reconfigure(encoding="utf-8", errors="replace")   # the agent's texts hold Unicode (a minus sign, arrows); Windows consoles default to a code page
+except Exception: pass
 
 ap = argparse.ArgumentParser()
 ap.add_argument("exe"); ap.add_argument("work")
@@ -42,7 +44,7 @@ env["REBUZZ_NATIVE_MACHINES"] = "off"
 env.setdefault("NEOPLUG_DEBUG", "1")
 env["XDG_CONFIG_HOME"] = os.path.join(work, "config"); env["APPDATA"] = os.path.join(work, "appdata")
 proc = subprocess.Popen([args.exe, "--agent", "--settings", os.path.join(work, "settings")], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                        stderr=open(stderr_path, "w"), text=True, bufsize=1, env=env)
+                        stderr=open(stderr_path, "w"), text=True, encoding="utf-8", errors="replace", bufsize=1, env=env)
 next_id = 0
 lines = queue.Queue()
 threading.Thread(target=lambda: [lines.put(l) for l in iter(proc.stdout.readline, "")] + [lines.put("")], daemon=True).start()
@@ -265,7 +267,8 @@ check(call("song_open", path=song, discard_unsaved=True)[0], "song_open")
 param_check("after reopen")
 # A reloaded song: the plug-in restores its state before it is activated and starts settled at it, while the native machine glides from
 # its defaults to the loaded values, and the engines' smoothers rest ~1e-4 apart after the two histories (docs/specs/plugin-export.md §7).
-compare(render("reopened"), "reopened", skip=0.5, tol=args.reload_tolerance)
+pf_reopened = render("reopened")
+compare(pf_reopened, "reopened", skip=0.5, tol=args.reload_tolerance)
 
 
 # 4. units through the agent tools: the plug-in's slot takes the native machine's own text ("800 Hz", "-6 dB") and reads back the same
@@ -288,24 +291,37 @@ if cont and len(outs) > 1:
         check(not same, f"units: {nm} reads back the same texts as the native machine" + (f" (differing: {same})" if same else ""))
 
 pf = {}
-# 5. automation through the agent tools: steps on the first continuous parameters every 1/128 beat (172 samples at 120 bpm, under one block),
-# on the native machine and on each plug-in slot (the same values: the slot's raw is the position in the range), then one render.
-if cont and len(outs) > 1:
-    auto = cont[:4]
-    N = 1024
+# 5. automation through the agent tools: steps on the first continuous parameters, on the native machine and on each plug-in slot (the same values:
+# the slot's raw is the position in the range). First one step a beat (the song's own pace), then every 1/128 beat (172 samples at 120 bpm,
+# under one 256-sample block): one render each. What automation did to each machine is reported too (against the render before it).
+pf = {}
+ref = pf_reopened if "pf_reopened" in globals() else {}
+
+
+def write_automation(auto, N, per_beat, clear):
     for nm in outs:
         slot = nm != NATIVE
-        if not INSTR: call("pattern_create", machine=nm, name="A", length_beats=8); call("arrangement_place", machine=nm, pattern="A", at=[0])
+        if not INSTR and clear: call("pattern_create", machine=nm, name="A", length_beats=8); call("arrangement_place", machine=nm, pattern="A", at=[0])
         for j, (n, lo, hi, df) in enumerate(auto):
             pts = []
             for i in range(N):
                 frac = 0.5 + 0.4 * math.sin(2 * math.pi * (i / N * (3 + 2 * j)))
                 k = lo + round(frac * (hi - lo))
-                pts.append({"at": i / 128, "value": "raw:%d" % (round(65534 * (k - lo) / (hi - lo)) if slot else k)})
-            check(call("automation_write", machine=nm, pattern="A", param=n, points=pts, shape="step")[0], f"automation: {nm}.{n}: {N} steps")
-    time.sleep(1)
-    pf = render("automation")
-    compare(pf, "automation", skip=0.0, tol=spec["test"].get("automationTolerance", None))
+                pts.append({"at": i / per_beat, "value": "raw:%d" % (round(65534 * (k - lo) / (hi - lo)) if slot else k)})
+            check(call("automation_write", machine=nm, pattern="A", param=n, points=pts, shape="step", clear=True)[0], f"automation: {nm}.{n}: {N} steps")
+
+
+if cont and len(outs) > 1:
+    auto = cont[:4]
+    for label, N, per_beat in (("automation-beat", 8, 1), ("automation", 1024, 128)):
+        write_automation(auto, N, per_beat, label == "automation-beat")
+        time.sleep(1)
+        pf = render(label)
+        for nm in outs:
+            if ref.get(nm) and pf.get(nm):
+                d = null(ref[nm], pf[nm])
+                print(f"     {label}: {nm}: the automation moved its output by max |diff| {d['max_abs_diff']:.3g} against the render before it")
+        compare(pf, label, skip=0.0, tol=spec["test"].get("automationTolerance", None))
 
 # 6. save and reopen as .nbl and as .bmx: every slot value and the plug-in's state come back (the plug-in's render after equals the one before)
 if len(outs) > 1:

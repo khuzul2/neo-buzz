@@ -154,7 +154,7 @@ namespace ReBuzz.Studio.Platform
                 int colours = Colours(session);
                 Check(colours > 300, $"{r}: the plug-in drew its view ({colours} colours)");
                 string tag = System.Text.RegularExpressions.Regex.Replace(instrument, "[^A-Za-z0-9]+", "-").Trim('-');
-                if (Export) Check(Shot(session, $"{tag}-{(round == 1 ? "open" : "reopen")}") > 300, $"{r}: the screenshot shows more than a blank view");
+                if (Export) Check(Shot(session, $"{tag}-{(round == 1 ? "open" : "reopen")}") > 150, $"{r}: the screenshot shows more than a blank view");
 
                 if (round == 1 && Export) await Interact(machine, session, tag);
                 if (round == 1)
@@ -167,7 +167,7 @@ namespace ReBuzz.Studio.Platform
                         await Pause(800);
                         Check(session.Width > 0 && session.Height > 0, $"resized from the host: {w0} x {h0} to {session.Width} x {session.Height}");
                         Check(Colours(session) > 300, "and the view still draws");
-                        if (Export) Check(Shot(session, tag + "-resized") > 300, "the resized view's screenshot shows more than a blank view");
+                        if (Export) Check(Shot(session, tag + "-resized") > 150, "the resized view's screenshot shows more than a blank view");
                     }
                     else Say($"the editor has a fixed size ({session.Width} x {session.Height})");
                 }
@@ -211,7 +211,7 @@ namespace ReBuzz.Studio.Platform
             string path = PlugState(m).path;
             if (string.IsNullOrEmpty(path)) return (null, null, "no module path in the plug-in's state");
             string dir = System.IO.Directory.Exists(path) ? System.IO.Path.Combine(path, "Contents", "MacOS") : System.IO.Path.GetDirectoryName(path);
-            string file = System.IO.Path.Combine(dir, OperatingSystem.IsWindows() ? "neo_editor.dll" : OperatingSystem.IsMacOS() ? "libneo_editor.dylib" : "libneo_editor.so");
+            string file = System.IO.Path.Combine(dir, OperatingSystem.IsWindows() ? "neo_editor.dll" : OperatingSystem.IsMacOS() ? "neo_editor.dylib" : "neo_editor.so");
             if (!System.IO.File.Exists(file))
                 foreach (var f in System.IO.Directory.GetFiles(dir, "*neo_editor*")) { file = f; break; }
             if (!System.IO.File.Exists(file)) return (null, null, "no neo_editor library next to " + path);

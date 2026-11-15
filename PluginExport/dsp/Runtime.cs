@@ -728,7 +728,8 @@ namespace NeoExport
         static byte GuiGetSize(ClapPlugin* p, uint* w, uint* h)
         {
             var inst = Inst(p);
-            if (inst.Editor == IntPtr.Zero) return 0;
+            // A VST3 host (clap-wrapper) may ask for the size before the editor exists: make it, GuiCreate then finds it.
+            if (inst.Editor == IntPtr.Zero && OpenEditor(inst) == 0) return 0;
             return (byte)edGetSize(inst.Editor, w, h);
         }
 
@@ -760,7 +761,7 @@ namespace NeoExport
         }
 
         [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
-        static byte GuiSetSize(ClapPlugin* p, uint w, uint h) { var inst = Inst(p); return inst.Editor != IntPtr.Zero ? (byte)edSetSize(inst.Editor, w, h) : (byte)0; }
+        static byte GuiSetSize(ClapPlugin* p, uint w, uint h) { var inst = Inst(p); return inst.Editor != IntPtr.Zero && w >= 32 && h >= 32 ? (byte)edSetSize(inst.Editor, w, h) : (byte)0; }   // (a wrapper's 0 x 0 is not a size)
 
         [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
         static byte GuiSetParent(ClapPlugin* p, ClapWindow* w)
