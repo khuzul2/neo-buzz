@@ -227,7 +227,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | guide | 33 | 59 | yes |
 | history_jump | 1 | 1 | yes |
 | history_list | 3 | 1 | yes |
-| machine_add | 17 | 38 | yes |
+| machine_add | 17 | 37 | yes |
 | machine_attributes | 1 | 1 | yes |
 | machine_clone | 1 | 1 | yes |
 | machine_command | 1 | 1 | yes |
