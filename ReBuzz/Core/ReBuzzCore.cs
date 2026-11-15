@@ -1834,6 +1834,42 @@ namespace ReBuzz.Core
             file.Save(filename);
         }
 
+        /// <summary>
+        /// Fork (native-format.md NF2): what "Export for Buzz/ReBuzz" would lose for this song. Touches nothing (no file, name,
+        /// modified flag, undo or history).
+        /// </summary>
+        internal FileOps.ExportReport PreviewBuzzExport()
+        {
+            using (FileOps.BuzzExport.Begin(this))
+            {
+                SaveSongCore ss = new SaveSongCore();
+                ss.Song = songCore;
+                SaveSong?.Invoke(ss);
+                return FileOps.BuzzExport.Analyze(this, ss.GetStreamsDict().Keys);
+            }
+        }
+
+        /// <summary>
+        /// Fork (native-format.md NF2): writes the song as a .bmx upstream ReBuzz can read, atomically, and returns what that
+        /// lost. Like <see cref="SaveSongCopy"/> it changes nothing in the open song: not its name, recent files, backup,
+        /// modified flag, undo or history.
+        /// </summary>
+        internal FileOps.ExportReport ExportForBuzz(string filename)
+        {
+            using (FileOps.BuzzExport.Begin(this))
+            {
+                var file = new BMXFile(this, buzzPath, dispatcher, keyboard, engineSettings);
+                SaveSongCore ss = new SaveSongCore();
+                ss.Song = songCore;
+                SaveSong?.Invoke(ss);
+                var report = FileOps.BuzzExport.Analyze(this, ss.GetStreamsDict().Keys);
+                file.SetSubSections(ss);
+                byte[] bytes = BMXFile.Assemble(file.BuildSections(false));
+                FileOps.BuzzExport.WriteAtomic(filename, bytes);
+                return report;
+            }
+        }
+
         public int RenderAudio(float[] buffer, int nsamples, int samplerate)
         {
             var ap = AudioEngine.GetAudioProvider();

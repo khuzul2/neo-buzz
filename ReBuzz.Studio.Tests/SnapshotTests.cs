@@ -109,7 +109,7 @@ namespace ReBuzz.Studio.Tests
         static WorkManager work;
 
         /// <summary>The master's output over <paramref name="buffers"/> of 256 frames, from the song's start.</summary>
-        static float[] Render(ReBuzzCore core, int buffers)
+        internal static float[] Render(ReBuzzCore core, int buffers)
         {
             work ??= new WorkManager(core, new WorkThreadEngine(1), 0, core.EngineSettings);
             core.Playing = false;
