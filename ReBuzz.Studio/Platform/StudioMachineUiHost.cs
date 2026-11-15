@@ -109,6 +109,23 @@ namespace ReBuzz.Studio.Platform
             public void Later(TimeSpan delay, Action again) { }
         }
 
+        // ---- Fork (plugin-host.md H3): a hosted plug-in's own editor, embedded or floating --------------------------------------------
+
+        static PluginEditorController pluginEditors;
+
+        /// <summary>
+        /// Who shows a plug-in's editor (PluginEditor.cs): the Avalonia platform, or a fake in tests. NEOBUZZ_PLUGIN_GUI=floating leaves
+        /// the editors in windows of the library's, =off shows none (the device view opens instead).
+        /// </summary>
+        public static PluginEditorController PluginEditors
+        {
+            get => pluginEditors ??= new PluginEditorController(new AvaloniaPluginEditorPlatform())
+            {
+                EmbeddingOn = !string.Equals(Environment.GetEnvironmentVariable("NEOBUZZ_PLUGIN_GUI"), "floating", StringComparison.OrdinalIgnoreCase),
+            };
+            set => pluginEditors = value;
+        }
+
         /// <summary>
         /// A native machine answered its double click with a window of its own in its host process: embedded in a studio window of the
         /// machine's, or, when that does not work, left as the machine put it (a floating window, as in ReBuzz.exe).
@@ -141,6 +158,11 @@ namespace ReBuzz.Studio.Platform
 
         public void OpenGui(IMachine machine, WindowPlacement? at)
         {
+            // A hosted plug-in's own editor comes first (one window per machine; none here: the device view or parameters, as before).
+            var mode = PluginEditors.Open(machine, at);
+            if (mode == PluginEditorMode.Floating)
+                StudioHost.Current?.Log($"{machine.Name}: its editor could not be embedded; it opens in a window of its own");
+            if (mode != PluginEditorMode.None) return;
             var w = windows.GetValue(machine, _ => new Windows());
             if (w.Gui == null)
             {
@@ -176,6 +198,7 @@ namespace ReBuzz.Studio.Platform
 
         public void CloseWindows(IMachine machine)
         {
+            PluginEditors.Close(machine);
             if (!windows.TryGetValue(machine, out var w)) return;
             w.Parameters?.Close();
             w.Gui?.Close();

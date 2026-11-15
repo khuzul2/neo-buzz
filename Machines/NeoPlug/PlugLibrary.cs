@@ -130,9 +130,52 @@ namespace NeoBuzz.Plug
             return dirs;
         }
 
+        /// <summary>The folders the user added (folders.txt in DataDir), as written.</summary>
+        public static List<string> UserFolders()
+        {
+            var list = new List<string>();
+            try
+            {
+                string extra = System.IO.Path.Combine(DataDir, "folders.txt");
+                if (File.Exists(extra))
+                    foreach (var line in File.ReadAllLines(extra))
+                        if (!line.TrimStart().StartsWith("#") && line.Trim().Length > 0 && !list.Contains(line.Trim())) list.Add(line.Trim());
+            }
+            catch (Exception) { }
+            return list;
+        }
+
+        static void WriteUserFolders(List<string> folders)
+        {
+            Directory.CreateDirectory(DataDir);
+            File.WriteAllLines(System.IO.Path.Combine(DataDir, "folders.txt"), folders);
+        }
+
+        /// <summary>Adds a folder to scan; false when it is blank or there already.</summary>
+        public static bool AddFolder(string folder)
+        {
+            folder = (folder ?? "").Trim();
+            if (folder.Length == 0) return false;
+            var list = UserFolders();
+            if (list.Contains(folder)) return false;
+            list.Add(folder);
+            try { WriteUserFolders(list); } catch (Exception) { return false; }
+            return true;
+        }
+
+        public static bool RemoveFolder(string folder)
+        {
+            var list = UserFolders();
+            if (list.RemoveAll(f => f == folder) == 0) return false;
+            try { WriteUserFolders(list); } catch (Exception) { return false; }
+            return true;
+        }
+
         static IEnumerable<string> BesideCandidates(string assemblyLocation, string file)
         {
             string dir = System.IO.Path.GetDirectoryName(assemblyLocation) ?? "";
+            // An app that links this file (the studio) keeps the machines in Gear beside itself.
+            yield return System.IO.Path.Combine(AppContext.BaseDirectory, "Gear", "NeoPlug", file);
             yield return System.IO.Path.Combine(dir, file);
             yield return System.IO.Path.Combine(dir, "..", "NeoPlug", file);
             yield return System.IO.Path.Combine(dir, "..", "..", "NeoPlug", file);
@@ -163,7 +206,14 @@ namespace NeoBuzz.Plug
     {
         static readonly object gate = new();
         static LibraryFile file;
+        static long fileStamp;
         static int scanning;
+
+        /// <summary>A scan is running now.</summary>
+        public static bool Scanning => Volatile.Read(ref scanning) != 0;
+
+        /// <summary>What the last scan of this process found.</summary>
+        public static ScanReport LastReport { get; private set; }
         static readonly JsonSerializerOptions json = new() { WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.Never };
 
         /// <summary>How long one module gets to be scanned.</summary>
@@ -175,13 +225,19 @@ namespace NeoBuzz.Plug
         {
             lock (gate)
             {
-                if (file != null) return file;
+                // Another copy of this class (the studio's Preferences page links this file) may have rescanned or unblocked:
+                // the file's time says so.
+                long stamp = 0;
+                try { if (File.Exists(PlugPaths.LibraryFilePath)) stamp = File.GetLastWriteTimeUtc(PlugPaths.LibraryFilePath).Ticks; } catch (Exception) { }
+                if (file != null && stamp == fileStamp) return file;
+                file = null;
                 try
                 {
                     if (File.Exists(PlugPaths.LibraryFilePath))
                         file = JsonSerializer.Deserialize<LibraryFile>(File.ReadAllText(PlugPaths.LibraryFilePath), json);
                 }
                 catch (Exception) { }
+                fileStamp = stamp;
                 return file ??= new LibraryFile();
             }
         }
@@ -196,6 +252,7 @@ namespace NeoBuzz.Plug
                     string tmp = PlugPaths.LibraryFilePath + ".tmp";
                     File.WriteAllText(tmp, JsonSerializer.Serialize(file, json));
                     File.Move(tmp, PlugPaths.LibraryFilePath, true);
+                    try { fileStamp = File.GetLastWriteTimeUtc(PlugPaths.LibraryFilePath).Ticks; } catch (Exception) { }
                 }
                 catch (Exception) { }
             }
@@ -392,6 +449,7 @@ namespace NeoBuzz.Plug
                     report.Found = result.Sum(m => m.Classes.Count(c => c.Problem.Length == 0));
                     Save();
                 }
+                LastReport = report;
                 if (changed) Changed?.Invoke();
                 return report;
             }

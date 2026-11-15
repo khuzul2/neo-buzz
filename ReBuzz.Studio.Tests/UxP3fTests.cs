@@ -198,7 +198,7 @@ namespace ReBuzz.Studio.Tests
             using var restore = Studio.AfterTest(ClosePrefs);
             var prefs = OpenPrefs("General");
             var titles = prefs.Pages.Select(p => p.Title).ToList();
-            Assert.That(titles.Where(t => t != "Sync"), Is.EqualTo(new[] { "General", "Audio", "MIDI", "Appearance", "Agent", "Safety", "Advanced" }));
+            Assert.That(titles.Where(t => t != "Sync"), Is.EqualTo(new[] { "General", "Audio", "MIDI", "Appearance", "Agent", "Safety", "Plug-ins", "Advanced" }));
             Assert.That(PreferencesWindow.Open(Host), Is.SameAs(prefs), "one window");
             Assert.That(prefs.RestoreButton.IsVisible, Is.True);
             foreach (var page in prefs.Pages)

@@ -58,7 +58,8 @@ namespace ReBuzz.Studio.Parameters
             name.Text = DisplayName(parameter, track);
             if (!string.IsNullOrEmpty(parameter.Description)) ToolTip.SetTip(name, parameter.Description);
             IsLocked = parameter.Group.Type == ParameterGroupType.Input;
-            IsShown = ParameterVisibility.IsVisible(parameter);
+            // Fork (plugin-host.md H1b): a parameter its machine hides at run time (Neo Plug's unbound slots) is not shown until edit mode.
+            IsShown = ParameterVisibility.IsVisible(parameter) && (parameter as IParameterMetadata)?.IsVisible != false;
             shown.Changed += () => ShownChanged?.Invoke(this);
             Refresh(force: true);
 

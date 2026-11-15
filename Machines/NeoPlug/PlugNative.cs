@@ -9,7 +9,7 @@ namespace NeoBuzz.Plug
 {
     static class PlugNative
     {
-        public const int Abi = 2;
+        public const int Abi = 3;
         const string Lib = "neoplug";
 
         static PlugNative()
@@ -123,6 +123,28 @@ namespace NeoBuzz.Plug
         [DllImport(Lib)] public static extern void np_idle(IntPtr p);
         [DllImport(Lib)] public static extern int np_poll(IntPtr p);
         [DllImport(Lib)] public static extern void np_reset(IntPtr p);
+        // GUI (ABI 3)
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void ResizeCb(IntPtr user, int width, int height);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void ClosedCb(IntPtr user);
+        [DllImport(Lib)] public static extern int np_gui_support(IntPtr p, [MarshalAs(UnmanagedType.LPUTF8Str)] string api);
+        [DllImport(Lib)] public static extern int np_gui_attach(IntPtr p, IntPtr parent, [MarshalAs(UnmanagedType.LPUTF8Str)] string api, out int w, out int h, byte[] err, int errlen);
+        [DllImport(Lib)] public static extern void np_gui_detach(IntPtr p);
+        [DllImport(Lib)] public static extern void np_gui_set_callbacks(IntPtr p, ResizeCb resize, ClosedCb closed, IntPtr user);
+        [DllImport(Lib)] public static extern int np_gui_size(IntPtr p, out int w, out int h);
+        [DllImport(Lib)] public static extern int np_gui_can_resize(IntPtr p);
+        [DllImport(Lib)] public static extern int np_gui_set_size(IntPtr p, ref int w, ref int h);
+        [DllImport(Lib)] public static extern int np_gui_set_scale(IntPtr p, double scale);
+        [DllImport(Lib)] public static extern IntPtr np_platform_container(IntPtr parent, int w, int h);
+        [DllImport(Lib)] public static extern void np_platform_resize(IntPtr view, int w, int h);
+        [DllImport(Lib)] public static extern IntPtr np_platform_window([MarshalAs(UnmanagedType.LPUTF8Str)] string title, int w, int h);
+        [DllImport(Lib)] public static extern void np_platform_window_size(IntPtr content, int w, int h);
+        [DllImport(Lib)] public static extern void np_platform_on_close(IntPtr content, ClosedCb cb, IntPtr user);
+        [DllImport(Lib)] public static extern void np_platform_release(IntPtr handle);
+        [DllImport(Lib)] public static extern int np_platform_snapshot(IntPtr view, [MarshalAs(UnmanagedType.LPUTF8Str)] string path, int rgb, byte[] stats, int len);
+        // Outputs (ABI 3)
+        [DllImport(Lib)] public static extern int np_out_count(IntPtr p);
+        [DllImport(Lib)] public static extern int np_out_info(IntPtr p, int index, byte[] name, int len, out int channels);
+        [DllImport(Lib)] public static extern void np_out_select(IntPtr p, int index);
         [DllImport(Lib)] static extern unsafe int np_process_ex(IntPtr p, ProcessIo* io);
 
         /// <summary>One block. The planar channel arrays are the caller's, already filled (inL/inR: the main input or null, auxL/auxR: the sidechain or null).</summary>

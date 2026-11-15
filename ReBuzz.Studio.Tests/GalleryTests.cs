@@ -166,6 +166,51 @@ namespace ReBuzz.Studio.Tests
         const string Headless = "Headless (Avalonia.Headless, Skia): the window's content only, no macOS title bar; text in the headless fallback font, greyscale-antialiased.";
 
         /// <summary>A shot of a window: mac-<paramref name="id"/>.png.</summary>
+        /// <summary>Preferences ▸ Plug-ins over a plug-in library written for the picture (a data folder of its own; nothing is scanned).</summary>
+        static void PluginsGallery(PreferencesWindow prefs, string id, bool withBlocked, string what, string how)
+        {
+            string data = TestTemp.Path("gallery-plugin-data-" + Environment.ProcessId);
+            string vst3 = Path.Combine(TestTemp.Path("gallery-plugins-" + Environment.ProcessId), "VST3");
+            string clap = Path.Combine(TestTemp.Path("gallery-plugins-" + Environment.ProcessId), "CLAP");
+            Directory.CreateDirectory(data);
+            Directory.CreateDirectory(vst3);
+            Directory.CreateDirectory(clap);
+            string[] keep = { "NEOBUZZ_PLUGIN_DIR", "NEOBUZZ_PLUGIN_STANDARD", "NEOBUZZ_PLUGIN_PATH" };
+            var old = keep.Select(Environment.GetEnvironmentVariable).ToArray();
+            try
+            {
+                Environment.SetEnvironmentVariable("NEOBUZZ_PLUGIN_DIR", data);
+                Environment.SetEnvironmentVariable("NEOBUZZ_PLUGIN_STANDARD", "0");
+                Environment.SetEnvironmentVariable("NEOBUZZ_PLUGIN_PATH", vst3);
+                File.WriteAllLines(Path.Combine(data, "folders.txt"), new[] { clap });
+                string Entry(string format, string name, string vendor, bool instrument, string module) =>
+                    $"{{\"Format\":\"{format}\",\"Path\":{System.Text.Json.JsonSerializer.Serialize(module)},\"Id\":\"{name}\",\"Name\":\"{name}\",\"Vendor\":\"{vendor}\",\"Instrument\":{(instrument ? "true" : "false")},\"Display\":\"{vendor}/{name} ({format.ToUpperInvariant()})\",\"Problem\":\"\"}}";
+                string m1 = Path.Combine(vst3, "Wavetable Synth.vst3"), m2 = Path.Combine(vst3, "Plate Reverb.vst3"), m3 = Path.Combine(clap, "Tape Delay.clap");
+                string modules = string.Join(",", new[]
+                {
+                    $"{{\"Path\":{System.Text.Json.JsonSerializer.Serialize(m1)},\"Size\":1,\"Modified\":1,\"Classes\":[{Entry("vst3", "Wavetable Synth", "Example Audio", true, m1)}]}}",
+                    $"{{\"Path\":{System.Text.Json.JsonSerializer.Serialize(m2)},\"Size\":1,\"Modified\":1,\"Classes\":[{Entry("vst3", "Plate Reverb", "Example Audio", false, m2)}]}}",
+                    $"{{\"Path\":{System.Text.Json.JsonSerializer.Serialize(m3)},\"Size\":1,\"Modified\":1,\"Classes\":[{Entry("clap", "Tape Delay", "Example Audio", false, m3)}]}}",
+                });
+                string blocked = withBlocked
+                    ? $"{{\"Path\":{System.Text.Json.JsonSerializer.Serialize(Path.Combine(vst3, "Unstable Chorus.vst3"))},\"Size\":1,\"Modified\":1,\"Reason\":\"crashed while scanning (exit code 139)\",\"When\":\"\"}}," +
+                      $"{{\"Path\":{System.Text.Json.JsonSerializer.Serialize(Path.Combine(clap, "Needs A Licence.clap"))},\"Size\":1,\"Modified\":1,\"Reason\":\"does not load: the licence file is missing\",\"When\":\"\"}}"
+                    : "";
+                File.WriteAllText(Path.Combine(data, "library.json"), $"{{\"Format\":1,\"Modules\":[{modules}],\"Blocked\":[{blocked}]}}");
+                NeoBuzz.Plug.PlugLibrary.Reload();
+                prefs.ShowPage("Plug-ins");
+                prefs.Page<PluginsPage>().Show();
+                Settle();
+                Shot(prefs, id, what, how, notes: "The library and its folders are written for the picture; the plug-ins are not real ones.");
+            }
+            finally
+            {
+                for (int i = 0; i < keep.Length; i++) Environment.SetEnvironmentVariable(keep[i], old[i]);
+                NeoBuzz.Plug.PlugLibrary.Reload();
+                prefs.Page<PluginsPage>().Show();
+            }
+        }
+
         static void Shot(TopLevel top, string id, string what, string how, string song = GallerySong.Title, string notes = null)
         {
             string file = $"{Prefix}-{id}.png";
@@ -1363,6 +1408,13 @@ namespace ReBuzz.Studio.Tests
                         "Preferences ▸ Advanced ▸ Restore Defaults.");
                     Settle();
                 });
+                // H1b (plugin-host.md): Preferences ▸ Plug-ins, with a library written for the picture: no plug-in of anyone's is scanned.
+                Try("324-prefs-plugins", () => PluginsGallery(prefs, "324-prefs-plugins", withBlocked: false,
+                    "Preferences ▸ Plug-ins (H1b): the folders the plug-in host scans (standard ones, and the ones added here with Remove), Rescan and Rescan everything, and what was found.",
+                    "Preferences ▸ Plug-ins."));
+                Try("325-prefs-plugins-blocked", () => PluginsGallery(prefs, "325-prefs-plugins-blocked", withBlocked: true,
+                    "Preferences ▸ Plug-ins with two blocked plug-ins: each with the reason the scan gave (a crash, a missing dependency) and its Unblock button; Unblock all below.",
+                    "Preferences ▸ Plug-ins, after a scan met plug-ins that crashed or would not load."));
                 prefs.Close();
                 Settle();
 

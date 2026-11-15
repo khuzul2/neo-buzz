@@ -199,5 +199,8 @@ namespace NeoBuzz.Plug
         [ParameterDecl(Name = "Slot 64", Description = "A plug-in parameter (named once a plug-in is loaded)", MinValue = 0, MaxValue = 65534, DefValue = 0)]
         public int Slot64 { get => core.SlotValue(63); set => core.SlotSet(63, value); }
 
+        [ParameterDecl(Name = "Output", Description = "Which output bus of the plug-in feeds this machine (0 is its main output)", MinValue = 0, MaxValue = 15, DefValue = 0)]
+        public int Output { get => core.OutBus; set => core.SetOutBus(value); }
+
     }
 }

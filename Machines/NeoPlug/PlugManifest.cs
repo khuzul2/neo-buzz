@@ -118,6 +118,25 @@ namespace NeoBuzz.Plug
                 }
                 parameters.Add(p);
             }
+            int slotCount = parameters.Count;
+            if (core.OutputCount > 1)
+            {
+                var choices = new JsonArray();
+                foreach (var n in core.OutputNames) choices.Add(n);
+                parameters.Add(new JsonObject
+                {
+                    ["index"] = PlugCore.Slots,
+                    ["id"] = "output",
+                    ["name"] = "Output",
+                    ["group"] = "Routing",
+                    ["min"] = 0,
+                    ["max"] = core.OutputCount - 1,
+                    ["default"] = 0,
+                    ["description"] = "Which output bus of the plug-in feeds this machine",
+                    ["kind"] = "enum",
+                    ["choices"] = choices,
+                });
+            }
             var root = new JsonObject
             {
                 ["format"] = "rebuzz-machine-manifest/1",
@@ -127,7 +146,7 @@ namespace NeoBuzz.Plug
                 ["source"] = "generated at run time from the loaded plug-in's parameters",
                 ["summary"] = $"{core.Name}{(core.State.Vendor is { Length: > 0 } vendor ? " by " + vendor : "")} ({(core.State.Format ?? "").ToUpperInvariant()}), hosted: " +
                               (effect ? "an effect plug-in. " : "an instrument plug-in. ") +
-                              $"Its first {parameters.Count} automatable parameters are slots; values are shown with the plug-in's own units.",
+                              $"Its first {slotCount} automatable parameters are slots; values are shown with the plug-in's own units.",
                 ["category"] = effect ? "Plug-in effect" : "Plug-in instrument",
                 ["tags"] = new JsonArray("plug-in", (core.State.Format ?? "").ToLowerInvariant()),
                 ["use_for"] = effect ? "Run a CLAP or VST3 effect on a Buzz signal." : "Play a CLAP or VST3 instrument from patterns, MIDI and the agent.",
