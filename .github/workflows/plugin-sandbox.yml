@@ -1,0 +1,75 @@
+name: Plugin sandbox (H2)
+
+# docs/specs/plugin-host.md §6.1, H2: neoplug-server and its protocol on Linux, Windows and macOS, through the C ABI alone
+# (PluginHost/probe/neoplug-sandbox-test.cpp): smoke in every placement against in process, crashes, round-trip latency, and the bounded
+# "hour test" (five sandboxed plug-ins in series at 128 frames). The input `minutes` is the hour test's length: 10 by default, 60 for the
+# whole hour. The real hour on a real Mac is a hand test; the macOS runner is a VM and its job here is the Mach handover and a short run.
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: 'Length of the hour test in minutes (10 by default; 60 is the real thing)'
+        type: string
+        default: '10'
+      macos:
+        description: Include the macOS (arm64) runner (a short run: the hour test is for real Macs)
+        type: boolean
+        default: true
+  push:
+    branches: [ plugins/sandbox-h2 ]
+    paths:
+      - 'PluginHost/**'
+      - 'tools/ci-plugin-sandbox.sh'
+      - '.github/workflows/plugin-sandbox.yml'
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.m.outputs.os }}
+    steps:
+    - id: m
+      env:
+        EVENT: ${{ github.event_name }}
+        MAC: ${{ inputs.macos }}
+        MSG: ${{ github.event.head_commit.message }}
+      run: |
+        os='["ubuntu-latest","windows-latest"]'
+        if { [ "$EVENT" = workflow_dispatch ] && [ "$MAC" != false ]; } || printf '%s' "$MSG" | grep -qF '[mac]'; then
+          os='["ubuntu-latest","windows-latest","macos-15"]'
+        fi
+        echo "os=$os" >> "$GITHUB_OUTPUT"
+
+  sandbox:
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(needs.plan.outputs.os) }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 190
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Build and run the quick checks
+      run: tools/ci-plugin-sandbox.sh quick
+
+    # The hour test: Linux and Windows for the length asked for; macOS only a short run (the VM's p99 says little about a real Mac).
+    - name: Hour test
+      env:
+        MINUTES: ${{ inputs.minutes || '10' }}
+      run: |
+        m=$MINUTES
+        if [ "$RUNNER_OS" = macOS ]; then m=3; fi
+        tools/ci-plugin-sandbox.sh hour "$m"
+
+    - name: Upload results
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: plugin-sandbox-${{ matrix.os }}
+        path: plugin-host-results
+        if-no-files-found: ignore
