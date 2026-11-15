@@ -103,6 +103,9 @@ jobs:
         T="$RUNNER_TEMP"
         git clone -q --depth 1 --branch v3.8.1_build_84 https://github.com/steinbergmedia/vst3sdk "$T/vst3sdk"
         git -C "$T/vst3sdk" -c advice.detachedHead=false submodule update -q --init --depth 1 base pluginterfaces public.sdk cmake vstgui4
+        # clap-wrapper 0.17 builds against the VST3 SDK it pins (3.8.0); 3.8.1 renamed a member its macros use. Our plug-in host (null test) uses 3.8.1.
+        git clone -q --depth 1 --branch v3.8.0_build_66 https://github.com/steinbergmedia/vst3sdk "$T/vst3sdk380"
+        git -C "$T/vst3sdk380" -c advice.detachedHead=false submodule update -q --init --depth 1 base pluginterfaces public.sdk cmake
         git -c advice.detachedHead=false clone -q --depth 1 --branch 1.2.10 https://github.com/free-audio/clap "$T/clap"
         mkdir "$T/cw" && git -C "$T/cw" init -q && git -C "$T/cw" fetch -q --depth 1 https://github.com/free-audio/clap-wrapper 806bba0a5f792e3966b99c1561ab9952d3316d7c && git -C "$T/cw" -c advice.detachedHead=false checkout -q FETCH_HEAD
         git -C "$T/cw" log -1 --format='clap-wrapper %h %cd'
@@ -116,7 +119,7 @@ jobs:
           macOS) gen=(-G Ninja -DCMAKE_OSX_ARCHITECTURES=arm64 "-DAUDIOUNIT_SDK_ROOT=$T/AudioUnitSDK") ;;
           *) gen=(-G Ninja) ;;
         esac
-        cmake -S experiments/plugin-export -B _build "${gen[@]}" -DCMAKE_BUILD_TYPE=Release -DCLAP_SDK_ROOT="$T/clap" -DVST3_SDK_ROOT="$T/vst3sdk" -DCLAP_WRAPPER_DIR="$T/cw" 2>&1 | tail -15
+        cmake -S experiments/plugin-export -B _build "${gen[@]}" -DCMAKE_BUILD_TYPE=Release -DCLAP_SDK_ROOT="$T/clap" -DVST3_SDK_ROOT="$T/vst3sdk380" -DCLAP_WRAPPER_DIR="$T/cw" 2>&1 | tail -15
         cmake --build _build --config Release -j 4 2>&1 | grep -E "error|FAILED|warning: unused|Linking" | head -30 || true
         cmake --build _build --config Release -j 4 2>&1 | tail -3
         find _build/neofilter_assets -maxdepth 3 | head -30
