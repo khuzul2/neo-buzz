@@ -103,10 +103,20 @@ if [ "$RUNNER_OS" != Linux ]; then
     grep -q "plugin-gui: all passed" "$log" 2>/dev/null || { echo "--- studio output (tail)"; tail -n 25 "$OUT/plugin-gui-$label.out" | cut -c1-300; }
     grep -q "plugin-gui: all passed" "$log" 2>/dev/null || guifail=1
   }
+  # In the app's process (H3's rules: embedded, then floating). Windows would otherwise run them in a sandbox (H2's default).
+  export NEOPLUG_PLACEMENT=inprocess
   guicheck vst3 "Surge XT (VST3)"
   guicheck clap "Surge XT (CLAP)"
   guicheck float "Surge XT (VST3)" --plugin-gui-floating
   guicheck fx "Surge XT Effects (VST3)" --plugin-gui-fx
+  # In a sandbox (H2): the editor floats in a window of the server's. Windows must pass; on macOS the server's NSWindow is new and untried on a
+  # runner, so a failure there is reported as a warning for now.
+  export NEOPLUG_PLACEMENT=plugin
+  gf=$guifail; guifail=0
+  guicheck sandbox-vst3 "Surge XT (VST3)"
+  guicheck sandbox-clap "Surge XT (CLAP)"
+  if [ "$guifail" != 0 ] && [ "$RUNNER_OS" = macOS ]; then echo "::warning::the sandboxed editors failed on macOS (see plugin-gui-sandbox-*.log)"; guifail=$gf; else guifail=$((guifail + gf)); fi
+  unset NEOPLUG_PLACEMENT
   echo "::endgroup::"
   [ "$guifail" = 0 ] || { echo "::error::a plug-in editor check failed (see plugin-gui-*.log)"; exit 1; }
 fi
