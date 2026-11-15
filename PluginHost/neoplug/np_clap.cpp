@@ -644,6 +644,7 @@ public:
     bool loadState(const uint8_t* d, size_t size, std::string& err) override
     {
         if (!state) { err = "no state extension"; return false; }
+        { ParamRing::Item stale; while (toProcessor.pop(stale)) {} }   // the state is authoritative: no older queued change lands on top of it
         const uint8_t* p = d;
         const uint8_t* end = d + size;
         uint32_t fmt = 0, len = 0;

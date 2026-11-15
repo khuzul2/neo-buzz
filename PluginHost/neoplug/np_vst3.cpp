@@ -560,6 +560,8 @@ public:
         p += clen;
         if (!getU32(p, end, klen) || (size_t)(end - p) < klen) { err = "truncated"; return false; }
         const uint8_t* ctrl = p;
+        // The state is authoritative: parameter changes queued before it (the song's defaults) must not land on top of it.
+        { ParamRing::Item stale; while (toProcessor.pop(stale)) {} while (toController.pop(stale)) {} }
         MemoryStream cs((void*)comp, (TSize)clen);
         if (component->setState(&cs) != kResultOk) { err = "the component refused its state"; return false; }
         cs.seek(0, IBStream::kIBSeekSet, nullptr);

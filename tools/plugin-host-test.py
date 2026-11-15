@@ -345,7 +345,7 @@ results["failures"] = failures
 json.dump(results, open(result_path, "w"), indent=1)
 if failures:
     for line in stderr_lines():   # with NEOPLUG_DEBUG=1: what was saved and loaded
-        if "[neoplug] save:" in line or "[neoplug] load:" in line: print(line[:300])
+        if "[neoplug] save:" in line or "[neoplug] load:" in line or "[neoplug] pump:" in line: print(line[:300])
 print(f"\n{len(failures)} failed" if failures else "\nall passed")
 if failures:
     print("stderr tail:\n" + "\n".join(stderr_lines()[-60:]))

@@ -411,6 +411,7 @@ namespace NeoBuzz.Plug
                     if (now - Volatile.Read(ref wroteAt[i]) < 400 || Volatile.Read(ref pending[i]) >= 0) continue;
                     int raw = ToRaw(i, PlugNative.np_param_get(plugin, slotId[i]));
                     if (raw == Volatile.Read(ref mirror[i])) continue;
+                    if (DebugMidi) Log($"pump: {sname[i]} is {raw} in the plug-in, {Volatile.Read(ref mirror[i])} in the engine: the engine follows");
                     Volatile.Write(ref mirror[i], raw);
                     Volatile.Write(ref applyValue[i], raw + 1);
                     any = true;
@@ -518,6 +519,7 @@ namespace NeoBuzz.Plug
                             for (int i = 0; i < Slots; i++)
                                 if (bound[i]) Volatile.Write(ref mirror[i], ToRaw(i, PlugNative.np_param_get(plugin, slotId[i])));
                             Array.Fill(pending, -1);
+                            Array.Fill(toController, 0);
                             if (rc != 0) Log($"state load failed: {PlugNative.Str(err)}");
                             if (DebugMidi) Log("load: values after the blob " + string.Join(", ", Enumerable.Range(0, Slots).Where(k => bound[k]).Take(4).Select(k => $"{sname[k]}={mirror[k]}")));
                         }
