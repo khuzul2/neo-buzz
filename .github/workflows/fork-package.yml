@@ -93,8 +93,9 @@ jobs:
       run: ./tools/ci-annotate-log.ps1 build.log
 
     # The package as people get it is NeoBuzz Live (tools/package-check.py): NeoBuzz-Live-<version>-x64.zip (the
-    # folder alone in a quick run), NeoBuzzLive.exe beside ReBuzz.dll and no ReBuzz.exe, README-FIRST.txt and the
-    # licences; and NeoBuzzLive.exe started from it answers MCP as neobuzz-live.
+    # folder alone in a quick run), the studio as NeoBuzzLive.exe at its root and the WPF app as NeoBuzz Live Classic,
+    # Classic\NeoBuzzLiveClassic.exe beside ReBuzz.dll (ux-overhaul.md P6c; build.ps1 -StudioMain), no ReBuzz.exe,
+    # README-FIRST.txt and the licences; and Classic started from the package answers MCP as neobuzz-live.
     - name: Package check (names)
       if: steps.build.outcome == 'success'
       timeout-minutes: 15
@@ -406,27 +407,30 @@ jobs:
         $i = 0
         foreach ($l in $lines) { $i++; Write-Host "::notice title=Engine diagnostics $i::$l" }
 
-    # NeoBuzz Live Studio (preview) in the package (docs/specs/ux-overhaul.md P6), last so that it never hides the tests above.
+    # NeoBuzz Live (the studio, NeoBuzzLive.exe at the package root; docs/specs/ux-overhaul.md P6), last so that it never hides the tests above.
     # the package, started with a song of native Buzz machines (FSM Infector, x64, in its host; Jeskola Bass 3 and Reverb, x86,
     # through the 32-bit bridge), its MCP server, a render on the null device, and a clean quit (tools/studio-windows-smoke.py).
-    - name: Studio preview smoke test
+    - name: Studio smoke test (the package's NeoBuzzLive.exe)
       if: always() && steps.build.outcome == 'success'
       timeout-minutes: 30
       shell: pwsh
       run: |
         $pkg = (Get-ChildItem dist -Directory | Where-Object Name -like 'NeoBuzz-Live-*-x64' | Select-Object -First 1).FullName
-        python tools/studio-windows-smoke.py "$pkg\Studio\NeoBuzzLiveStudio.exe" "$env:RUNNER_TEMP\studio-package-smoke" --song "ExternalMachines/source/buzztrax-buzzmachines/FSM/Infector/FSM_Infector_Demo.bmx" --native-gear "FSM Infector,Jeskola Bass 3,Jeskola Reverb"
+        python tools/studio-windows-smoke.py "$pkg\NeoBuzzLive.exe" "$env:RUNNER_TEMP\studio-package-smoke" --song "ExternalMachines/source/buzztrax-buzzmachines/FSM/Infector/FSM_Infector_Demo.bmx" --native-gear "FSM Infector,Jeskola Bass 3,Jeskola Reverb"
         exit $LASTEXITCODE
 
-  # NeoBuzz Live Studio (preview) on Windows (docs/specs/ux-overhaul.md P6): the studio (ReBuzz.Studio, Avalonia) on a Windows
-  # runner. Its headless tests there, then it is published for win-x64 with PortAudio built from source with CMake
-  # (tools/build-portaudio.ps1: MME, DirectSound, WASAPI and WDM-KS, no ASIO) and the published NeoBuzzLiveStudio.exe is
+  # NeoBuzz Live (the studio) on Windows (docs/specs/ux-overhaul.md P6): the studio (ReBuzz.Studio, Avalonia) on a Windows
+  # runner. Its headless tests there, its headless UI gallery drawn on Windows (win-NNN-*.png, pushed to the branch
+  # ci-artifacts-studio-windows), then it is published for win-x64 with PortAudio built from source with CMake
+  # (tools/build-portaudio.ps1: MME, DirectSound, WASAPI and WDM-KS, no ASIO) and the published NeoBuzzLive.exe is
   # smoke-tested (tools/studio-windows-smoke.py): devices listed, started, its MCP server answers, a song plays on the null
-  # device and renders, the window closes cleanly. The package job above puts the same folder in the zip as Studio\ and
-  # smoke-tests that too, with a song of native Buzz machines.
+  # device and renders, the window closes cleanly. The package job above puts the same folder at the zip's root (the WPF
+  # app moves to Classic\) and smoke-tests that too, with a song of native Buzz machines.
   studio-windows:
     runs-on: windows-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
+    permissions:
+      contents: write       # the gallery's branch (ci-artifacts-studio-windows)
     steps:
     - name: Checkout (with submodules)
       uses: actions/checkout@v5
@@ -449,21 +453,58 @@ jobs:
         Select-String -Path studio-test.log -Pattern '^\s*Failed ' | Select-Object -First 60 | ForEach-Object { Write-Host $_.Line }
         Select-String -Path studio-test.log -Pattern 'Failed!|Passed!' | ForEach-Object { Write-Host $_.Line }
 
+    # The UI gallery on Windows (ux-overhaul.md P6c, docs/specs/ui-gallery.md): the headless gallery of the Mac job, drawn here with
+    # Windows' fonts and the Windows engine (GALLERY_PREFIX=win: win-NNN-*.png, index-win.md), in the Dark and the Light theme.
+    # Not a gate: a shot that fails is in the index; the pictures are what the step is for.
+    - name: Headless gallery (Windows fonts)
+      if: always()
+      continue-on-error: true
+      timeout-minutes: 40
+      shell: pwsh
+      env:
+        GALLERY_PREFIX: win
+      run: |
+        $env:GALLERY_DIR = Join-Path $PWD 'gallery/dark'
+        dotnet test ReBuzz.Studio.Tests -p:ReBuzzCleanBuild=true --filter TestCategory=Gallery --logger "console;verbosity=normal" *>&1 | Select-String -Pattern 'gallery\]|Passed |Failed |Total tests|error' | ForEach-Object { Write-Host $_.Line }
+        $env:GALLERY_DIR = Join-Path $PWD 'gallery/light'
+        $env:GALLERY_THEME = 'light'
+        dotnet test ReBuzz.Studio.Tests -p:ReBuzzCleanBuild=true --filter TestCategory=Gallery --logger "console;verbosity=normal" *>&1 | Select-String -Pattern 'gallery\]|Passed |Failed |Total tests|error' | ForEach-Object { Write-Host $_.Line }
+        exit 0
+
+    - name: Publish the gallery to ci-artifacts-studio-windows
+      if: always() && hashFiles('gallery/**/*.png') != ''
+      continue-on-error: true
+      shell: pwsh
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        $dir = Join-Path $env:RUNNER_TEMP 'ci-artifacts-studio-windows'
+        New-Item -ItemType Directory -Force $dir | Out-Null
+        Copy-Item gallery/* $dir -Recurse
+        Set-Content (Join-Path $dir 'README.md') "Windows UI gallery of the studio (headless, Windows fonts) from run $env:GITHUB_RUN_ID of $env:GITHUB_REF_NAME at $env:GITHUB_SHA. dark/ and light/."
+        Push-Location $dir
+        git init -q -b ci-artifacts-studio-windows
+        git add -A
+        git -c user.name='github-actions' -c user.email='github-actions@users.noreply.github.com' commit -q -m "Windows studio gallery: run $env:GITHUB_RUN_ID ($env:GITHUB_REF_NAME $env:GITHUB_SHA)"
+        git push -q -f "https://x-access-token:$env:GH_TOKEN@github.com/$env:GITHUB_REPOSITORY.git" ci-artifacts-studio-windows
+        Pop-Location
+        Write-Host "::notice title=Windows studio gallery::$((Get-ChildItem gallery -Recurse -Filter *.png).Count) pictures pushed to ci-artifacts-studio-windows"
+
     - name: Publish the studio (win-x64) with PortAudio from source
       if: always()
       shell: pwsh
       run: ./tools/publish-studio-windows.ps1 -Out build/Studio
 
     - name: Studio smoke test (published exe)
-      if: always() && hashFiles('build/Studio/NeoBuzzLiveStudio.exe') != ''
+      if: always() && hashFiles('build/Studio/NeoBuzzLive.exe') != ''
       timeout-minutes: 25
       shell: pwsh
       run: |
-        python tools/studio-windows-smoke.py "$PWD\build\Studio\NeoBuzzLiveStudio.exe" "$env:RUNNER_TEMP\studio-smoke"
+        python tools/studio-windows-smoke.py "$PWD\build\Studio\NeoBuzzLive.exe" "$env:RUNNER_TEMP\studio-smoke"
         exit $LASTEXITCODE
 
     - name: Zip the studio
-      if: always() && hashFiles('build/Studio/NeoBuzzLiveStudio.exe') != ''
+      if: always() && hashFiles('build/Studio/NeoBuzzLive.exe') != ''
       shell: pwsh
       run: |
         New-Item -ItemType Directory -Force dist | Out-Null

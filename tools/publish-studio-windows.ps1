@@ -1,21 +1,22 @@
 <#
 .SYNOPSIS
-    Publishes the studio (ReBuzz.Studio, Avalonia) for Windows x64: NeoBuzz Live Studio (preview).
+    Publishes the studio (ReBuzz.Studio, Avalonia) for Windows x64: NeoBuzz Live (the main app of the package from P6c).
     (docs/specs/ux-overhaul.md P6)
 
 .DESCRIPTION
     Framework-dependent like the WPF app (it needs the .NET 10 runtime, which the Desktop runtime includes), with its
-    own executable, NeoBuzzLiveStudio.exe, and beside it: its Gear (the Neo machines with their Avalonia editors, the
+    own executable, NeoBuzzLive.exe (-ExeName; build.ps1 -StudioMain:$false renames it in the preview layout), and beside it: its Gear (the Neo machines with their Avalonia editors, the
     Modern Pattern Editor, the Pedal machines), libsndfile and PortAudio built from source (tools/build-portaudio.ps1).
     build.ps1 then adds what the package shares with the WPF app (the native machine hosts and DLLs) and puts the
-    folder in the package as Studio\.
+    folder at the package root (the WPF app moves to Classic\), or as Studio\ with -StudioMain:$false.
 
-      ./tools/publish-studio-windows.ps1 -Out <folder> [-SkipPortAudio]
+      ./tools/publish-studio-windows.ps1 -Out <folder> [-SkipPortAudio] [-ExeName NeoBuzzLive.exe]
 #>
 param(
     [Parameter(Mandatory)][string]$Out,
     [string]$Configuration = 'Release',
-    [switch]$SkipPortAudio
+    [switch]$SkipPortAudio,
+    [string]$ExeName = 'NeoBuzzLive.exe'
 )
 
 Set-StrictMode -Version Latest
@@ -40,10 +41,10 @@ Invoke-Checked dotnet @('publish', [IO.Path]::Combine($Root, 'ReBuzz.Studio', 'R
 # The executable people start: the apphost, renamed (it starts ReBuzz.Studio.dll, whose name it carries).
 $apphost = [IO.Path]::Combine($Out, 'ReBuzz.Studio.exe')
 if (-not (Test-Path -LiteralPath $apphost)) { throw "ReBuzz.Studio.exe not published in $Out" }
-Move-Item -LiteralPath $apphost -Destination ([IO.Path]::Combine($Out, 'NeoBuzzLiveStudio.exe')) -Force
+Move-Item -LiteralPath $apphost -Destination ([IO.Path]::Combine($Out, $ExeName)) -Force
 
 if (-not $SkipPortAudio) {
     & ([IO.Path]::Combine($Root, 'tools', 'build-portaudio.ps1')) -Out $Out -Configuration $Configuration
     if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE) { throw 'build-portaudio.ps1 failed' }
 }
-Write-Host "NeoBuzzLiveStudio.exe -> $Out"
+Write-Host "$ExeName -> $Out"

@@ -2,11 +2,14 @@
 # Fork (rename): the Windows package as people get it is NeoBuzz Live. Checks build.ps1's output in dist\:
 #  - the zip is NeoBuzz-Live-<version>-x64.zip (no ReBuzz-*.zip), its one top folder named the same; with
 #    -NoZip (a quick package run) the folder alone;
-#  - the app is NeoBuzzLive.exe, beside ReBuzz.dll and its runtimeconfig (the assembly keeps its name, which
+#  - the layout (build.ps1 -StudioMain, ux-overhaul.md P6c): the studio is NeoBuzzLive.exe at the package root and the WPF
+#    app is NeoBuzz Live Classic, Classic\\NeoBuzzLiveClassic.exe, in its own folder (they share assembly names); with
+#    -StudioMain:$false, the WPF app is NeoBuzzLive.exe at the root and the studio is Studio\\NeoBuzzLiveStudio.exe;
+#  - the WPF app's exe sits beside ReBuzz.dll and its runtimeconfig (the assembly keeps its name, which
 #    machines, plugins and tests load), with no ReBuzz.exe and no update checker (BuzzGUI.BuzzUpdate.dll);
 #  - README-FIRST.txt says NeoBuzz Live, how to start it, that it's a fork of ReBuzz (its authors and link),
 #    and the `claude mcp add neobuzz-live` line; BUILD-INFO.txt names it; ReBuzz's MIT licence ships intact;
-#  - NeoBuzzLive.exe, started from the package (unzipped into a fresh folder), answers MCP on stdio as
+#  - the WPF app's exe, started from the package (unzipped into a fresh folder) with --agent, answers MCP on stdio as
 #    neobuzz-live ("NeoBuzz Live"), says so on stderr, and exits when stdin closes.
 #
 #   python tools/package-check.py <dist folder> [work folder]
@@ -68,11 +71,22 @@ else:
     app = os.path.join(dist, ours[0])
 
 files = set(os.listdir(app))
-check("NeoBuzzLive.exe" in files, "the app is NeoBuzzLive.exe")
-check("ReBuzz.exe" not in files, "no ReBuzz.exe")
-check("BuzzGUI.BuzzUpdate.dll" not in files, "no update checker (upstream's offered upstream ReBuzz's installer)")
-check({"ReBuzz.dll", "ReBuzz.runtimeconfig.json", "ReBuzz.deps.json"} <= files, "beside ReBuzz.dll, its runtimeconfig and deps (the assembly keeps its name)")
-check(os.path.isfile(os.path.join(app, "bin64", "ReBuzzEngine64.exe")), "the engine hosts keep their names (bin64\\ReBuzzEngine64.exe)")
+switched = os.path.isdir(os.path.join(app, "Classic"))
+wpf_dir = os.path.join(app, "Classic") if switched else app            # the WPF app's folder
+wpf_exe_name = "NeoBuzzLiveClassic.exe" if switched else "NeoBuzzLive.exe"
+wfiles = set(os.listdir(wpf_dir))
+check("NeoBuzzLive.exe" in files, "NeoBuzzLive.exe is at the package root")
+if switched:
+    check(wpf_exe_name in wfiles and "NeoBuzzLive.exe" not in wfiles, "NeoBuzz Live Classic is Classic\\NeoBuzzLiveClassic.exe (no second NeoBuzzLive.exe)")
+    check("ReBuzz.Studio.dll" in files and "ReBuzz.dll" not in files, "the exe at the root is the studio: ReBuzz.Studio.dll, and no ReBuzz.dll (the WPF app's) beside it")
+    check("Studio" not in files, "no Studio\\ folder in this layout")
+else:
+    check(wpf_exe_name in wfiles, "the WPF app is NeoBuzzLive.exe (the preview layout)")
+check("ReBuzz.exe" not in wfiles and "ReBuzz.exe" not in files, "no ReBuzz.exe")
+check("BuzzGUI.BuzzUpdate.dll" not in wfiles and "BuzzGUI.BuzzUpdate.dll" not in files, "no update checker (upstream's offered upstream ReBuzz's installer)")
+check({"ReBuzz.dll", "ReBuzz.runtimeconfig.json", "ReBuzz.deps.json"} <= wfiles, "the WPF app is beside ReBuzz.dll, its runtimeconfig and deps (the assembly keeps its name)")
+check(os.path.isfile(os.path.join(wpf_dir, "bin64", "ReBuzzEngine64.exe")), "the engine hosts keep their names (bin64\\ReBuzzEngine64.exe)")
+check(os.path.isdir(os.path.join(wpf_dir, "Themes", "Default")), "the WPF app has its Themes (the install check needs them)")
 
 
 def read(name):
@@ -84,8 +98,9 @@ def read(name):
 
 
 readme = read("README-FIRST.txt")
+agent_exe = "Classic\\" + wpf_exe_name if switched else wpf_exe_name
 for text in ("NeoBuzz Live - portable build", "run NeoBuzzLive.exe", "NeoBuzz Live is a fork of ReBuzz, by WDE and the ReBuzz contributors",
-             "https://github.com/wasteddesign/ReBuzz", 'claude mcp add neobuzz-live -- "<this folder>\\NeoBuzzLive.exe" --agent'):
+             "https://github.com/wasteddesign/ReBuzz", 'claude mcp add neobuzz-live -- "<this folder>\\' + agent_exe + '" --agent'):
     check(text in readme, f"README-FIRST.txt says \"{text}\"")
 check("ReBuzz.exe" not in readme and "ReBuzz (fork)" not in readme, "README-FIRST.txt doesn't call the app ReBuzz")
 check(read("BUILD-INFO.txt").startswith("NeoBuzz Live build "), "BUILD-INFO.txt names NeoBuzz Live")
@@ -93,17 +108,19 @@ licence = read(os.path.join("Licenses", "ReBuzz-LICENSE.txt"))
 check("MIT License" in licence and "Copyright (c) 2026 wasteddesign" in licence, "ReBuzz's MIT licence ships intact (Licenses\\ReBuzz-LICENSE.txt)")
 check("NeoBuzz Live and ReBuzz (wasteddesign/ReBuzz)" in read(os.path.join("Licenses", "NOTICE.txt")), "Licenses\\NOTICE.txt names both")
 
-# NeoBuzz Live Studio (preview), Studio\ (docs/specs/ux-overhaul.md P6): the studio beside the app, with its own binaries and Gear,
+# The studio (docs/specs/ux-overhaul.md P6): the main app at the root (or Studio\\ in the preview layout), with its own binaries and Gear,
 # PortAudio built from source (no ASIO) with its licence, the native machine hosts and libraries it shares, and the licences and
 # notes that say so. (Started by tools/studio-windows-smoke.py.)
-studio = os.path.join(app, "Studio")
+studio = app if switched else os.path.join(app, "Studio")
 sfiles = set(os.listdir(studio)) if os.path.isdir(studio) else set()
-check(bool(sfiles), "Studio\\ is in the package (NeoBuzz Live Studio, preview)")
+check(bool(sfiles) and (switched or os.path.isdir(studio)), "the studio is in the package")
 if sfiles:
-    check("NeoBuzzLiveStudio.exe" in sfiles and "ReBuzz.Studio.exe" not in sfiles, "the studio's executable is NeoBuzzLiveStudio.exe")
+    studio_exe = "NeoBuzzLive.exe" if switched else "NeoBuzzLiveStudio.exe"
+    check(studio_exe in sfiles and "ReBuzz.Studio.exe" not in sfiles, f"the studio's executable is {studio_exe}")
     check({"ReBuzz.Studio.dll", "ReBuzz.Studio.runtimeconfig.json", "ReBuzz.Studio.deps.json", "ReBuzz.Engine.dll", "ReBuzz.Host.dll", "Avalonia.Base.dll"} <= sfiles,
           "Studio\\ has the studio, its engine and host, and Avalonia")
-    check("ReBuzz.dll" not in sfiles and "NeoBuzzLive.exe" not in sfiles, "Studio\\ doesn't hold the WPF app's files (the two can't share a folder)")
+    check("ReBuzz.dll" not in sfiles and "WindowsBase.dll" not in sfiles and "PresentationFramework.dll" not in sfiles and (switched or "NeoBuzzLive.exe" not in sfiles),
+          "the studio's folder doesn't hold the WPF app's files (the two can't share a folder)")
     check({"NAudio.Asio.dll", "NAudio.WinMM.dll", "NAudio.Midi.dll", "NAudio.Core.dll"} <= sfiles, "Studio\\ has NAudio (ASIO and WinMM MIDI)")
     check("portaudio.dll" in sfiles and "libsndfile-1.dll" in sfiles, "Studio\\ has portaudio.dll and libsndfile-1.dll")
     sread = lambda n: open(os.path.join(studio, n), encoding="utf-8-sig", errors="replace").read() if os.path.isfile(os.path.join(studio, n)) else ""
@@ -111,22 +128,26 @@ if sfiles:
     check("MME, DirectSound, WASAPI, WDM-KS" in pa_build and "No ASIO" in pa_build, "PortAudio is built with MME, DirectSound, WASAPI and WDM-KS, and no ASIO")
     check("PortAudio" in sread("PortAudio-LICENSE.txt") and "Permission is hereby granted" in sread("PortAudio-LICENSE.txt"), "PortAudio's licence text ships (Studio\\PortAudio-LICENSE.txt)")
     check("PortAudio" in read(os.path.join("Licenses", "PortAudio-LICENSE.txt")), "and in Licenses\\PortAudio-LICENSE.txt")
+    check("ReBuzzLink.exe" in sfiles, "the Ableton Link helper is beside the studio (the Session View's Link)")
     check("PortAudio" in read(os.path.join("Licenses", "NOTICE.txt")), "Licenses\\NOTICE.txt names PortAudio")
     cfg = sread("ReBuzz.Studio.runtimeconfig.json")
     check(re.search(r'"System.Runtime.TieredCompilation.QuickJitForLoops":\s*false', cfg) is not None, "the studio's runtimeconfig has the audio thread's JIT setting")
     check(os.path.isfile(os.path.join(studio, "bin64", "ReBuzzEngine64.exe")) and os.path.isfile(os.path.join(studio, "bin32", "ReBuzzEngine32.exe")),
-          "the native machine hosts are beside the studio (Studio\\bin32, Studio\\bin64)")
+          "the native machine hosts are beside the studio (bin32, bin64)")
     sgear = os.path.join(studio, "Gear")
     neo = [n for n in os.listdir(os.path.join(sgear, "Generators"))] if os.path.isdir(os.path.join(sgear, "Generators")) else []
-    check(any(n.startswith("Neo Poly") and n.endswith(".dll") for n in neo), "Studio\\Gear has the Neo machines (their Avalonia builds)")
-    check(os.path.isdir(os.path.join(app, "Gear", "Generators")), "the app's Gear is still there")
-    check("NeoBuzz Live Studio (preview)" in readme and "%APPDATA%\\NeoBuzz Live" in readme, "README-FIRST.txt explains the preview and where it keeps its settings")
+    check(any(n.startswith("Neo Poly") and n.endswith(".dll") for n in neo), "the studio's Gear has the Neo machines (their Avalonia builds)")
+    check(os.path.isdir(os.path.join(wpf_dir, "Gear", "Generators")), "the WPF app's Gear is still there")
+    check("%APPDATA%\\NeoBuzz Live" in readme and ("NeoBuzz Live Classic" in readme if switched else "NeoBuzz Live Studio (preview)" in readme),
+          "README-FIRST.txt explains the two apps and where the studio keeps its settings")
+    if switched:
+        check("File types" in readme, "README-FIRST.txt names the file types switch in Preferences")
 
 # The app itself, from the package: MCP on stdio.
-exe = os.path.join(app, "NeoBuzzLive.exe")
+exe = os.path.join(wpf_dir, wpf_exe_name)
 if os.name == "nt" and os.path.exists(exe):
     started = time.time()
-    proc = subprocess.Popen([exe, "--agent"], cwd=app, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+    proc = subprocess.Popen([exe, "--agent"], cwd=wpf_dir, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                             text=True, encoding="utf-8", errors="replace", bufsize=1)
     lines, errors = queue.Queue(), []
     threading.Thread(target=lambda: [lines.put(l) for l in proc.stdout], daemon=True).start()
@@ -150,7 +171,7 @@ if os.name == "nt" and os.path.exists(exe):
     init = request(1, "initialize", {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "package-check", "version": "1"}}, 420)
     info = init.get("result", {}).get("serverInfo", {})
     check((info.get("name"), info.get("title")) == ("neobuzz-live", "NeoBuzz Live"),
-          f"NeoBuzzLive.exe --agent answers as {info.get('name')} ({info.get('title')}), {time.time() - started:.0f} s from start")
+          f"{wpf_exe_name} --agent answers as {info.get('name')} ({info.get('title')}), {time.time() - started:.0f} s from start")
     proc.stdin.write(json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}) + "\n")
     proc.stdin.flush()
     status = request(2, "tools/call", {"name": "studio_status", "arguments": {}}, 60).get("result", {})
@@ -165,6 +186,6 @@ if os.name == "nt" and os.path.exists(exe):
     if failures:
         print("stderr:\n  " + "\n  ".join(errors[-40:]))
 else:
-    print("     (not on Windows: NeoBuzzLive.exe not started)")
+    print("     (not on Windows: the WPF app's exe not started)")
 
 finish()
