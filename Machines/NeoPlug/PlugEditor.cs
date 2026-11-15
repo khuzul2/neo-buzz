@@ -30,6 +30,14 @@ namespace NeoBuzz.Plug
         public event Action<int, int> Resized;
         public event Action CloseRequested;
 
+        // CI traces where an open stops (NEOBUZZ_PLUGIN_GUI_LOG names the file); costs nothing otherwise.
+        static void Trace(string what)
+        {
+            string log = Environment.GetEnvironmentVariable("NEOBUZZ_PLUGIN_GUI_LOG");
+            if (!string.IsNullOrEmpty(log))
+                try { System.IO.File.AppendAllText(log, "plugin-gui: trace " + what + "\n"); } catch (Exception) { }
+        }
+
         PlugEditorSession(PlugCore core, string api, bool floating)
         {
             this.core = core;
@@ -44,8 +52,10 @@ namespace NeoBuzz.Plug
         public static PlugEditorSession Open(PlugCore core, string api, bool floating, IntPtr parent, double scale, string title, out string error)
         {
             var s = new PlugEditorSession(core, api, floating);
+            Trace($"open: waiting for the editor lock (parent {parent}, scale {scale})");
             lock (core.EditorLock)
             {
+                Trace("open: have the lock");
                 s.plugin = core.PluginHandle;
                 if (s.plugin == IntPtr.Zero || core.Missing)
                 {
@@ -60,6 +70,7 @@ namespace NeoBuzz.Plug
                 }
                 if (scale > 0 && OperatingSystem.IsWindows()) PlugNative.np_gui_set_scale(s.plugin, scale);
                 PlugNative.np_gui_set_callbacks(s.plugin, s.resizeCb, s.closedCb, IntPtr.Zero);
+                Trace("open: making the container");
                 s.container = floating
                     ? PlugNative.np_platform_window(title ?? "Plug-in", 640, 480)
                     : PlugNative.np_platform_container(OperatingSystem.IsWindows() ? parent : IntPtr.Zero, 640, 480);
@@ -69,6 +80,7 @@ namespace NeoBuzz.Plug
                     error = "the window could not be made";
                     return null;
                 }
+                Trace($"open: container {s.container}, attaching");
                 var err = new byte[512];
                 if (PlugNative.np_gui_attach(s.plugin, s.container, api, out int w, out int h, err, err.Length) != 0)
                 {
@@ -78,6 +90,7 @@ namespace NeoBuzz.Plug
                     s.container = IntPtr.Zero;
                     return null;
                 }
+                Trace($"open: attached {w} x {h}");
                 s.attached = true;
                 s.width = Math.Max(1, w);
                 s.height = Math.Max(1, h);

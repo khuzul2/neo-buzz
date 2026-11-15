@@ -87,8 +87,9 @@ if [ "$RUNNER_OS" != Linux ]; then
     rm -f "$log"
     NEOPLUG_LIB="$G/$L" NEOPLUG_SCAN="$G/neoplug-scan$X" NEOBUZZ_PLUGIN_PATH="$surgepath" NEOBUZZ_PLUGIN_STANDARD=0 \
       NEOBUZZ_PLUGIN_DIR="$T/gui-plugin-data-$label" NEOBUZZ_PLUGIN_GUI_LOG="$log" \
-      timeout 300 "$STUDIO" --no-audio --settings "$T/gui-settings-$label" --plugin-gui-check "$plug" "$@" > "$OUT/plugin-gui-$label.out" 2>&1 || true
+      timeout 120 "$STUDIO" --no-audio --settings "$T/gui-settings-$label" --plugin-gui-check "$plug" "$@" > "$OUT/plugin-gui-$label.out" 2>&1 || true
     cat "$log" 2>/dev/null || echo "(no log: the studio did not run the check)"
+    grep -q "plugin-gui: all passed" "$log" 2>/dev/null || { echo "--- studio output (tail)"; tail -n 25 "$OUT/plugin-gui-$label.out" | cut -c1-300; }
     grep -q "plugin-gui: all passed" "$log" 2>/dev/null || guifail=1
   }
   guicheck vst3 "Surge XT (VST3)"

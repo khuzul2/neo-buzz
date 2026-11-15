@@ -88,6 +88,7 @@ namespace ReBuzz.Studio.Platform
             for (int round = 1; round <= 2; round++)
             {
                 string r = round == 1 ? "first open" : "reopen";
+                Say($"{r}: opening the editor");
                 var mode = controller.Open(machine);
                 Check(mode == want, $"{r}: the editor is {want.ToString().ToLowerInvariant()} (got {mode}{(controller.LastError != null ? ", " + controller.LastError : "")})");
                 await Pause(2500);   // the plug-in draws, the window lays out
