@@ -177,7 +177,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void LaneRolesAndFoldsAreSavedWithTheSongAndOldSongsHaveNone([Values(".bmx", ".bmxml")] string extension)
+        public void LaneRolesAndFoldsAreSavedWithTheSongAndOldSongsHaveNone([Values(".bmx", ".bmxml", ".nbl")] string extension)
         {
             using var rig = new Rig("Lead", "Bass");
             Assert.That(Core.Arrangement.ToXml(), Is.Null, "nothing differs from the default: no subsection");

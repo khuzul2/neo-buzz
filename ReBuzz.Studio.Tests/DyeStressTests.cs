@@ -410,7 +410,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ .bmx and .bmxml
 
         [AvaloniaTest]
-        public void ASongWithItAllSavesAndOpens([Values(".bmx", ".bmxml")] string extension)
+        public void ASongWithItAllSavesAndOpens([Values(".bmx", ".bmxml", ".nbl")] string extension)
         {
             NewSong();
             var machine = Add("Stress Song");

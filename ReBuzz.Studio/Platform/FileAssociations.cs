@@ -27,7 +27,7 @@ namespace ReBuzz.Studio.Platform
     {
         public const string ProgId = "NeoBuzzLive.Song";
         public const string PreviousValue = "NeoBuzzLive.Previous";
-        public static readonly string[] Extensions = { ".bmx", ".bmw", ".bmxml" };
+        public static readonly string[] Extensions = { ".nbl", ".bmx", ".bmw", ".bmxml" };
 
         readonly IAssocStore store;
         readonly string exePath;

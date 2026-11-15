@@ -47,7 +47,9 @@ namespace ReBuzz.Core
         public static string PathFor(string songName)
         {
             string title = string.IsNullOrEmpty(songName) ? "Untitled" : Path.GetFileNameWithoutExtension(songName);
-            string ext = !string.IsNullOrEmpty(songName) && Path.GetExtension(songName).Equals(".bmxml", StringComparison.OrdinalIgnoreCase) ? ".bmxml" : ".bmx";
+            // Fork (native-format.md): a song that is a .bmx, .bmw or .bmxml keeps its kind of file; the others (new, or .nbl) autosave as .nbl.
+            string kind = string.IsNullOrEmpty(songName) ? "" : Path.GetExtension(songName).ToLowerInvariant();
+            string ext = kind == ".bmxml" ? ".bmxml" : kind == ".bmx" || kind == ".bmw" ? ".bmx" : ".nbl";
             string id = string.IsNullOrEmpty(songName) ? "0" : StableHash(Path.GetFullPath(songName).ToLowerInvariant()).ToString("x8");
             foreach (char c in Path.GetInvalidFileNameChars())
                 title = title.Replace(c, '_');
@@ -115,7 +117,7 @@ namespace ReBuzz.Core
             {
                 if (!Directory.Exists(Folder)) return Array.Empty<Leftover>();
                 return Directory.GetFiles(Folder, "*" + Marker + ".*")
-                    .Where(p => (p.EndsWith(".bmx", StringComparison.OrdinalIgnoreCase) || p.EndsWith(".bmxml", StringComparison.OrdinalIgnoreCase)) &&
+                    .Where(p => (p.EndsWith(".bmx", StringComparison.OrdinalIgnoreCase) || p.EndsWith(".bmxml", StringComparison.OrdinalIgnoreCase) || p.EndsWith(".nbl", StringComparison.OrdinalIgnoreCase)) &&
                                 !p.Contains(".partial.", StringComparison.OrdinalIgnoreCase))
                     .Select(p => new Leftover(p, File.Exists(p + ".txt") ? File.ReadAllText(p + ".txt").Trim() : "", File.GetLastWriteTime(p)))
                     .OrderByDescending(l => l.Saved)

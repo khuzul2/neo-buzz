@@ -207,6 +207,7 @@ namespace ReBuzzTests
 
         [TestCase(".bmx")]
         [TestCase(".bmxml")]
+        [TestCase(".nbl")]
         [Apartment(ApartmentState.STA)]      // the .bmxml loader creates UI objects
         public void WithoutASequenceEditorTheEngineKeepsTheBarsInTheSong(string extension)
         {

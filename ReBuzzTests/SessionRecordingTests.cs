@@ -453,6 +453,7 @@ namespace ReBuzzTests
 
         [TestCase(".bmx")]
         [TestCase(".bmxml")]
+        [TestCase(".nbl")]
         public void ASongKeepsItsTakes(string extension)
         {
             using var rig = new KeysRig();

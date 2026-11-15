@@ -395,6 +395,7 @@ namespace ReBuzzTests
 
         [TestCase(".bmx")]
         [TestCase(".bmxml")]
+        [TestCase(".nbl")]
         [Apartment(System.Threading.ApartmentState.STA)]      // the .bmxml loader creates UI objects
         public void ArrangementEventsKeepTheirRegionAndVolumeInSongFiles(string extension)
         {

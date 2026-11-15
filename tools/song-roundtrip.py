@@ -7,6 +7,9 @@
 #  - BMX: open the original, save A.bmx, open A, save B.bmx. A and B are byte-identical.
 #  - BMXML: the same with .bmxml. A and B are identical apart from the root's Name, Build and
 #    BuildString stamps.
+#  - NBL (docs/specs/native-format.md): open the original, render it, save N.nbl; open N, render it, save C.bmx.
+#    C.bmx is A.bmx byte for byte (the native file gives back what the old one gave), the two renders are the same bytes,
+#    and N saved again from N is the same file.
 #  - Nothing lost: A.bmx and A.bmxml, parsed here, keep what the original says about every machine:
 #    parameters and their values, the data blob, attributes, tracks, patterns and their contents,
 #    connections and sequences.
@@ -728,6 +731,43 @@ def roundtrip(h, song, work, ext):
     return (a, b), None
 
 
+def render_file(h, tag):
+    """Renders the first 8 beats of the open song; the WAV's bytes, or None when the tool can't (no machines to play)."""
+    r = h.request("tools/call", {"name": "render", "arguments": {"from": 0, "to": 8, "tail_seconds": 0, "name": tag}})
+    res = r.get("result") or {}
+    if res.get("isError", True):
+        return None
+    path = (res.get("structuredContent") or {}).get("file")
+    return open(path, "rb").read() if path and os.path.exists(path) else None
+
+
+def nbl_roundtrip(h, song, work, a_bmx):
+    """The native format's import check. Returns (N, problems)."""
+    base = os.path.join(work, os.path.splitext(os.path.basename(song))[0])
+    n, n2, c = f"{base}.N.nbl", f"{base}.N2.nbl", f"{base}.C.bmx"
+    problems = []
+    ok, text = h.call("song_open", path=song, discard_unsaved=True)
+    if not ok:
+        return None, [f"nbl: song_open {os.path.basename(song)}: {text[:200]}"]
+    # No render between the saves: rendering changes what a machine keeps (meters, noise state), which a save then writes.
+    for step, args in (("song_save", dict(path=n, overwrite=True)), ("song_open", dict(path=n, discard_unsaved=True)),
+                       ("song_save", dict(path=n2, overwrite=True)), ("song_open", dict(path=n, discard_unsaved=True)),
+                       ("song_save", dict(path=c, overwrite=True))):
+        ok, text = h.call(step, **args)
+        if not ok:
+            return None, [f"nbl: {step} {os.path.basename(args['path'])}: {text[:200]}"]
+    after = render_file(h, "nbl-after")
+    ok, text = h.call("song_open", path=song, discard_unsaved=True)
+    before = render_file(h, "nbl-before") if ok else None
+    if open(n, "rb").read() != open(n2, "rb").read():
+        problems.append(f"nbl: N ({os.path.getsize(n):,} bytes) and N saved again ({os.path.getsize(n2):,}) differ")
+    if open(c, "rb").read() != open(a_bmx, "rb").read():
+        problems.append(f"nbl: the .bmx saved from the .nbl ({os.path.getsize(c):,} bytes) differs from the one saved from the original ({os.path.getsize(a_bmx):,})")
+    if before != after:
+        problems.append(f"nbl: the render of the .nbl differs from the render of the original ({'none' if before is None else len(before)} / {'none' if after is None else len(after)} bytes)")
+    return n, problems
+
+
 def compare(original, a, b):
     """The checks main() makes on its own saves, for saves made elsewhere: A and B the same, nothing lost from the original."""
     problems = []
@@ -804,6 +844,9 @@ def main():
             problems.append(f"bmx: A ({sa:,} bytes) and B ({sb:,} bytes) differ")
         if orig is not None:
             compare_bmx(orig, parse_bmx(a), problems, "bmx A")
+        nbl, nbl_problems = nbl_roundtrip(h, song, work, a)
+        problems += nbl_problems
+        nsize = os.path.getsize(nbl) if nbl else 0
 
         (xml, err) = roundtrip(h, song, work, ".bmxml")
         if xml is None:
@@ -821,7 +864,7 @@ def main():
         missing = sum(1 for m in (orig or {"machines": []})["machines"] if m["type"] != 0)
         print(f"{'ok  ' if not problems else 'FAIL'} {name}: {os.path.getsize(song):,} -> bmx {sa:,} / {sb:,} "
               f"({'identical' if same else 'DIFFERENT'}); bmxml {xa:,} / {xb:,} ({'identical' if xsame else 'DIFFERENT'} but stamps); "
-              f"{missing} placeholders", flush=True)
+              f"{missing} placeholders; nbl {nsize:,}", flush=True)
         if xml is not None and missing > richest[0]:
             richest = (missing, xml[0])
         for p in problems[:12]:
