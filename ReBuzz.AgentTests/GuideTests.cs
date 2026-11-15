@@ -45,7 +45,8 @@ namespace ReBuzz.AgentTests
             ["song_new"] = new[] { "tempo_bpm", "discard_unsaved" },
             ["song_open"] = new[] { "path", "discard_unsaved" },
             ["song_save"] = new[] { "path", "overwrite" },
-            ["song_set"] = new[] { "tempo_bpm", "ticks_per_beat", "song_end_beats", "loop_start_beats", "loop_end_beats", "looping" },
+            ["song_set"] = new[] { "tempo_bpm", "ticks_per_beat", "speed", "song_end_beats", "loop_start_beats", "loop_end_beats", "looping" },
+            ["song_meter"] = new[] { "bar_beats", "from" },
             // machine-safety.md §3.5 (ReBuzz/Agent/NotesTools.cs): Song Notes
             ["song_notes_read"] = new[] { "format" },
             ["song_notes_write"] = new[] { "text", "mode" },
@@ -146,6 +147,17 @@ namespace ReBuzz.AgentTests
             ["export_audio"] = new[] { "path", "range", "from", "to", "section", "tail_seconds", "bits", "dither", "stems", "machines", "sample_rate", "normalize_db", "overwrite" },
             ["app_status"] = new string[0],
             ["song_recent"] = new[] { "limit" },
+            // K3b (agent-knowledge.md §11): the features built since K3 (ReBuzz/Agent/ArrangementTools.cs, MachineEditTools.cs; ReBuzz.Studio/Shell/Tools/RecorderTools.cs)
+            ["arrangement_clip"] = new[] { "op", "machine", "lane", "clip", "at", "pattern", "length_beats", "to", "to_lane", "link", "start", "end", "on", "split_at" },
+            ["arrangement_lane"] = new[] { "op", "machine", "role", "lane", "remove_clips" },
+            ["arrangement_automation"] = new[] { "op", "machine", "param", "track", "from", "to", "points", "shape", "allow_unsafe" },
+            ["arrangement_takes"] = new[] { "op", "machine", "loop", "take_lane", "to_lane", "from", "to" },
+            ["machine_clone"] = new[] { "machines", "with_patterns" },
+            ["machine_group"] = new[] { "op", "group", "name", "new_name", "machines" },
+            ["machine_latency"] = new[] { "machine", "override_samples", "clear", "clear_all" },
+            ["machine_attributes"] = new[] { "machine", "set" },
+            ["machine_command"] = new[] { "machine", "command" },
+            ["master_record"] = new[] { "op", "path", "bits", "loop", "overwrite" },
         };
 
         /// <summary>analyze's metrics (AudioReport.Metrics on agent/a2-analysis).</summary>
