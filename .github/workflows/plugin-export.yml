@@ -196,9 +196,7 @@ jobs:
         while IFS='|' read -r typ sub; do
           auval -v "$typ" "$sub" NBuz 2>&1 | tee "auval-$sub.log" | tail -4
           grep -q "AU VALIDATION SUCCEEDED" "auval-$sub.log" || bad=1
-        done < <(python3 -c "
-import json
-for p in json.load(open('PluginExport/plugins.json')): print(('aumu' if p['kind']=='instrument' else 'aufx') + '|' + p['au'])")
+        done < <(python3 PluginExport/ci/au-list.py)
         [ $bad = 0 ]
 
     - name: Package (the bundles, the notices, the install notes)
