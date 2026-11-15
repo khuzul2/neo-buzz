@@ -91,7 +91,7 @@ namespace ReBuzz.Studio.Shell
             var window = StudioDialog.Create(Title);
             var intro = new TextBlock
             {
-                Text = "Upstream ReBuzz can't hold everything in this song. The file is written for it anyway; this is what changes there:",
+                Text = "Upstream Buzz/ReBuzz can't hold everything in this song. The file is written for it anyway; this is what changes there:",
                 TextWrapping = Avalonia.Media.TextWrapping.Wrap,
                 Tag = "intro",
             };

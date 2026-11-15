@@ -234,7 +234,7 @@ namespace ReBuzz.FileOps
                 if (machine.MachineDLL?.Info?.Author == "neo-buzz")
                 {
                     losses.Add(new ExportLoss("Machines", $"{machine.Name} ({machine.DLL.Name})",
-                        "Not in upstream ReBuzz: shows as a missing machine; its connections, parameters and data stay in the file."));
+                        "Not in upstream Buzz/ReBuzz: shows as a missing machine; its connections, parameters and data stay in the file."));
                     if (machine.DLL.Name.StartsWith("Neo Plug", StringComparison.Ordinal))
                         losses.Add(new ExportLoss("Plug-in state", machine.Name, "The hosted plug-in and its state are not loaded without the machine."));
                 }

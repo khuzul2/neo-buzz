@@ -271,7 +271,7 @@ namespace ReBuzz.Agent
                 Output = Object(null,
                     Req("file", String("The file written")), Req("bytes", Integer("Its size")),
                     Req("lossless", Boolean("True when upstream loses nothing")),
-                    Req("losses", Array(Object(null, Req("category", String("The kind of loss")), Req("item", String("What it is")), Req("upstream", String("What happens in upstream ReBuzz"))), "The loss report, sorted; empty when nothing is lost"))),
+                    Req("losses", Array(Object(null, Req("category", String("The kind of loss")), Req("item", String("What it is")), Req("upstream", String("What happens in upstream Buzz/ReBuzz"))), "The loss report, sorted; empty when nothing is lost"))),
                 Annotations = ToolAnnotations.WriteIdempotent,
                 Handler = async c =>
                 {

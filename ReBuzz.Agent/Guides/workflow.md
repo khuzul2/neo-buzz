@@ -81,4 +81,4 @@ Errors say what to do next ("Did you mean …", the valid range, the call that l
 - [ ] Every claim has a number behind it: `analyze` on the render you describe.
 - [ ] A change that measured worse is backed out: `undo`, or `history_list` then `history_jump` for several steps.
 - [ ] Saved: `song_save(path=…)`; `.nbl` (the native format) keeps everything; `format="bmx"` is a full save in the old `.bmx`.
-- [ ] Only for someone on upstream Buzz or ReBuzz: `song_export(path=….bmx)`, a separate lossy copy (the song and its file stay as they are). Tell the user what its `losses` list says; never use it as the save.
+- [ ] Only for someone on upstream Buzz/ReBuzz: `song_export(path=….bmx)`, a separate lossy copy (the song and its file stay as they are). Tell the user what its `losses` list says; never use it as the save.
