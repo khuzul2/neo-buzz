@@ -1,5 +1,6 @@
 // neoplug: the C ABI, dispatching to the VST3 and CLAP backends.
 #include "np_internal.h"
+#include "np_ipc.h"
 
 #include <algorithm>
 #include <cctype>
@@ -47,7 +48,7 @@ static bool isClap(const std::string& path)
 
 extern "C" {
 
-NP_API const char* np_version(void) { return "neoplug 1.0 (H1)"; }
+NP_API const char* np_version(void) { return "neoplug 1.1 (H2)"; }
 NP_API int np_abi(void) { return NP_ABI; }
 
 NP_API int np_list(const char* path, np_class_info* out, int cap, char* err, int errlen)
@@ -77,6 +78,48 @@ NP_API np_plugin* np_open(const char* path, const char* id, char* err, int errle
     }
     return new np_plugin{impl};
 }
+
+NP_API np_plugin* np_open_ex(const char* path, const char* id, int placement, char* err, int errlen)
+{
+    if (placement <= 0) return np_open(path, id, err, errlen);
+    std::string e;
+    Plugin* impl = remoteOpen(placement > 3 ? 3 : placement, path ? path : "", id ? id : "", e);
+    if (!impl)
+    {
+        setErr(err, errlen, e);
+        return nullptr;
+    }
+    return new np_plugin{impl};
+}
+
+NP_API int np_server_available(void) { return ipc::serverPath().empty() ? 0 : 1; }
+NP_API int np_placement(np_plugin* p) { return p->impl->placement(); }
+NP_API int np_status(np_plugin* p) { return p->impl->status(); }
+NP_API long np_server_pid(np_plugin* p) { return p->impl->serverPid(); }
+
+NP_API int np_status_text(np_plugin* p, char* buf, int len)
+{
+    std::string s = p->impl->statusText();
+    copyStr(buf, (size_t)(len > 0 ? len : 0), s);
+    return (int)s.size();
+}
+
+NP_API int np_gui_open_window(np_plugin* p, const char* title, int* width, int* height, char* err, int errlen)
+{
+    std::string e;
+    int w = 0, h = 0;
+    if (!p->impl->guiOpenWindow(title, w, h, e))
+    {
+        setErr(err, errlen, e);
+        return -1;
+    }
+    if (width) *width = w;
+    if (height) *height = h;
+    return 0;
+}
+
+NP_API void np_gui_close_window(np_plugin* p) { p->impl->guiCloseWindow(); }
+NP_API void np_set_workgroup(void* wg, double period) { remoteSetWorkgroup(wg, period); }
 
 NP_API void np_close(np_plugin* p)
 {
@@ -269,5 +312,7 @@ NP_API int np_platform_snapshot(void*, const char*, int, char* stats, int len)
 }
 NP_API void np_platform_run(double) {}
 NP_API void np_platform_release(void*) {}
+NP_API void np_platform_window_size(void*, int, int) {}
+NP_API void np_platform_on_close(void*, void (*)(void*), void*) {}
 }
 #endif

@@ -1,9 +1,11 @@
-// neoplug-test.clap: a minimal CLAP module with four plugins, written for the host's tests.
+// neoplug-test.clap: a minimal CLAP module with five plugins, written for the host's tests.
 //  - neoplug.test.synth: 8-voice sine/saw/square synth; params Gain (1), Wave (2, stepped), Detune (3).
 //  - neoplug.test.gain:  stereo gain effect; param Gain dB (1); reports 64 samples of latency.
 //  - neoplug.test.duck:  a sidechain ducker: the main input is turned down by the level of the second
 //                        (auxiliary) input; param Depth (1).
 //  - neoplug.test.octaver: a note effect: every note in comes out an octave up on its note output; no audio.
+//  - neoplug.test.crasher: a gain that misbehaves on command (param Crash: 1 crashes in process(), 2 hangs in process(), 3 crashes
+//                        while saving its state); used by the sandbox tests (H2). Crash is never saved: a reload starts clean.
 // Both save and load their parameters as state. The GUI (macOS NSView, Windows HWND) is a solid
 // colour panel the GUI checks look for in screenshots. MIT.
 #include <clap/clap.h>
@@ -33,7 +35,7 @@ struct TestPlugin
     clap_plugin_t plugin{};
     const clap_host_t* host = nullptr;
     bool synth = true;
-    int kind = 0;                     // 0 synth, 1 gain, 2 duck, 3 octaver
+    int kind = 0;                     // 0 synth, 1 gain, 2 duck, 3 octaver, 4 crasher
     double auxEnv = 0;
     std::vector<ParamDesc> descs;
     std::vector<double> values;       // main-thread view
@@ -98,7 +100,12 @@ bool paramsToText(const clap_plugin_t* p, clap_id id, double v, char* buf, uint3
         snprintf(buf, size, "%s", names[std::clamp((int)std::lround(v), 0, 2)]);
     }
     else if (s->synth && id == 3) snprintf(buf, size, "%.1f ct", v);
-    else if (s->kind == 1) snprintf(buf, size, "%.2f dB", v);
+    else if (s->kind == 4 && id == 2)
+    {
+        static const char* modes[] = {"Off", "Crash", "Hang", "Crash on save"};
+        snprintf(buf, size, "%s", modes[std::clamp((int)std::lround(v), 0, 3)]);
+    }
+    else if (s->kind == 1 || s->kind == 4) snprintf(buf, size, "%.2f dB", v);
     else snprintf(buf, size, "%.0f %%", v * 100);
     return true;
 }
@@ -148,7 +155,12 @@ bool stateSave(const clap_plugin_t* p, const clap_ostream_t* os)
     if (os->write(os, magic, 8) != 8) return false;
     uint32_t n = (uint32_t)s->values.size();
     if (os->write(os, &n, 4) != 4) return false;
-    for (double v : s->values) if (os->write(os, &v, 8) != 8) return false;
+    if (s->kind == 4 && std::lround(s->values[1]) == 3) { volatile int* bad = nullptr; *bad = 1; }   // crash on save
+    for (size_t i = 0; i < s->values.size(); i++)
+    {
+        double v = (s->kind == 4 && i == 1) ? 0.0 : s->values[i];   // Crash is a trigger: never saved
+        if (os->write(os, &v, 8) != 8) return false;
+    }
     return true;
 }
 
@@ -177,7 +189,7 @@ uint32_t audioCount(const clap_plugin_t* p, bool isInput)
 {
     int k = self(p)->kind;
     if (!isInput) return 1;
-    return k == 1 ? 1 : k == 2 ? 2 : 0;
+    return (k == 1 || k == 4) ? 1 : k == 2 ? 2 : 0;
 }
 
 bool audioGet(const clap_plugin_t* p, uint32_t index, bool isInput, clap_audio_port_info_t* info)
@@ -389,6 +401,22 @@ clap_process_status process(const clap_plugin_t* p, const clap_process_t* pr)
     }
     if (s->dirtyToAudio.exchange(false)) s->audioValues = s->values;
     uint32_t n = pr->frames_count;
+    if (s->kind == 4)
+    {
+        // events first, so a Crash parameter set in this block is seen
+        uint32_t cn = pr->in_events->size(pr->in_events);
+        for (uint32_t i = 0; i < cn; i++) handleEvent(s, pr->in_events->get(pr->in_events, i));
+        long mode = std::lround(s->audioValues[1]);
+        if (mode == 1) { volatile int* bad = nullptr; *bad = 1; }
+        if (mode == 2) { volatile bool spin = true; while (spin) { } }
+        double g4 = std::pow(10.0, s->audioValues[0] / 20.0);
+        for (uint32_t i = 0; i < n; i++)
+        {
+            pr->audio_outputs[0].data32[0][i] = (float)(pr->audio_inputs[0].data32[0][i] * g4);
+            pr->audio_outputs[0].data32[1][i] = (float)(pr->audio_inputs[0].data32[1][i] * g4);
+        }
+        return CLAP_PROCESS_CONTINUE;
+    }
     uint32_t nev = pr->in_events->size(pr->in_events);
     uint32_t ei = 0;
     float* L = pr->audio_outputs[0].data32[0];
@@ -458,6 +486,7 @@ const void* getExtension(const clap_plugin_t*, const char* id)
 void onMainThread(const clap_plugin_t*) {}
 
 const char* synthFeatures[] = {CLAP_PLUGIN_FEATURE_INSTRUMENT, CLAP_PLUGIN_FEATURE_SYNTHESIZER, nullptr};
+const char* crashFeatures[] = {CLAP_PLUGIN_FEATURE_AUDIO_EFFECT, CLAP_PLUGIN_FEATURE_UTILITY, nullptr};
 const char* gainFeatures[] = {CLAP_PLUGIN_FEATURE_AUDIO_EFFECT, CLAP_PLUGIN_FEATURE_UTILITY, nullptr};
 
 const clap_plugin_descriptor_t synthDesc{CLAP_VERSION_INIT, "neoplug.test.synth", "NeoPlug Test Synth", "neo-buzz", "", "", "", "0.1.0",
@@ -470,6 +499,9 @@ const clap_plugin_descriptor_t octDesc{CLAP_VERSION_INIT, "neoplug.test.octaver"
                                        "Plays every note again an octave up on its note output", octFeatures};
 const clap_plugin_descriptor_t gainDesc{CLAP_VERSION_INIT, "neoplug.test.gain", "NeoPlug Test Gain", "neo-buzz", "", "", "", "0.1.0",
                                         "A gain with 64 samples of latency", gainFeatures};
+
+const clap_plugin_descriptor_t crashDesc{CLAP_VERSION_INIT, "neoplug.test.crasher", "NeoPlug Test Crasher", "neo-buzz", "", "", "", "0.1.0",
+                                         "A gain that crashes or hangs on command, for the sandbox tests", crashFeatures};
 
 const clap_plugin_t* create(const clap_host_t* host, const clap_plugin_descriptor_t* desc, int kind)
 {
@@ -484,6 +516,8 @@ const clap_plugin_t* create(const clap_host_t* host, const clap_plugin_descripto
         s->descs = {{1, "Gain dB", "", -60, 12, 0, false}};
     else if (kind == 2)
         s->descs = {{1, "Depth", "", 0, 1, 1, false}};
+    else if (kind == 4)
+        s->descs = {{1, "Gain dB", "", -60, 12, 0, false}, {2, "Crash", "", 0, 3, 0, true}};
     else
         s->descs = {{1, "Unused", "", 0, 1, 0, false}};
     for (auto& d : s->descs) s->values.push_back(d.def);
@@ -503,8 +537,8 @@ const clap_plugin_t* create(const clap_host_t* host, const clap_plugin_descripto
     return &s->plugin;
 }
 
-uint32_t factoryCount(const clap_plugin_factory_t*) { return 4; }
-const clap_plugin_descriptor_t* factoryDesc(const clap_plugin_factory_t*, uint32_t i) { return i == 0 ? &synthDesc : i == 1 ? &gainDesc : i == 2 ? &duckDesc : i == 3 ? &octDesc : nullptr; }
+uint32_t factoryCount(const clap_plugin_factory_t*) { return 5; }
+const clap_plugin_descriptor_t* factoryDesc(const clap_plugin_factory_t*, uint32_t i) { return i == 0 ? &synthDesc : i == 1 ? &gainDesc : i == 2 ? &duckDesc : i == 3 ? &octDesc : i == 4 ? &crashDesc : nullptr; }
 const clap_plugin_t* factoryCreate(const clap_plugin_factory_t*, const clap_host_t* host, const char* id)
 {
     if (!clap_version_is_compatible(host->clap_version)) return nullptr;
@@ -512,6 +546,7 @@ const clap_plugin_t* factoryCreate(const clap_plugin_factory_t*, const clap_host
     if (!strcmp(id, gainDesc.id)) return create(host, &gainDesc, 1);
     if (!strcmp(id, duckDesc.id)) return create(host, &duckDesc, 2);
     if (!strcmp(id, octDesc.id)) return create(host, &octDesc, 3);
+    if (!strcmp(id, crashDesc.id)) return create(host, &crashDesc, 4);
     return nullptr;
 }
 
