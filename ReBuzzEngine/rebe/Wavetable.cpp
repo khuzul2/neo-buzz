@@ -1,5 +1,9 @@
 #include "stdafx.h"
+#ifdef _WIN32
 #include "../IPC/ServerProcess.h"
+#else
+#include <IPC/ServerProcess.h>
+#endif
 #include "Machine.h"
 
 class Level : public CWaveLevel

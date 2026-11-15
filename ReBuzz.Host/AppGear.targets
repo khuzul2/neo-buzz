@@ -65,7 +65,7 @@
   </Target>
 
   <!-- Fork (docs/specs/cross-platform.md R1): the classic native machines rebuilt for this platform (the 17 open-source
-       ones; tools/build-natives-posix.py --out build/natives) in Gear, and the portable host that runs them
+       ones; tools/build-natives-posix.py, output build/natives) in Gear, and the portable host that runs them
        (ReBuzzEngine/portable, built with CMake into build/native-host) beside the app, where NativeMachineHost looks.
        Without the host they stay placeholders in songs; skip with SkipNativeClassics=true. -->
   <Target Name="NativeClassics" AfterTargets="Build" Condition="'$(SkipNativeClassics)' != 'true'">

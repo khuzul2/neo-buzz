@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #ifdef _WIN32
+#ifdef _WIN32
 #include "resource.h"
+#else
+#include <resource.h>
+#endif
 #endif
 
 #define MAX_LEVEL	11		// 1 << 11 == 2048
