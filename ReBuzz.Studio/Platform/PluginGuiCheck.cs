@@ -156,7 +156,7 @@ namespace ReBuzz.Studio.Platform
                 string tag = System.Text.RegularExpressions.Regex.Replace(instrument, "[^A-Za-z0-9]+", "-").Trim('-');
                 if (Export) Check(Shot(session, $"{tag}-{(round == 1 ? "open" : "reopen")}") > 150, $"{r}: the screenshot shows more than a blank view");
 
-                if (round == 1 && Export) await Interact(machine, session, tag);
+                if (round == 1 && Export) await Interact(host, machine, session, tag);
                 if (round == 1)
                 {
                     Check(controller.Open(machine) == want && controller.OpenCount == 1, "a second open raises the same window: one window per instance");
@@ -222,7 +222,7 @@ namespace ReBuzz.Studio.Platform
         }
 
         // A knob dragged with the mouse (events through the window system, into the plug-in's own view) changes a value of the slots.
-        static async Task Interact(IMachine machine, INativeEditorSession session, string tag)
+        static async Task Interact(StudioHost host, IMachine machine, INativeEditorSession session, string tag)
         {
             var (hot, inject, why) = EditorLib(machine);
             Check(hot != null, "the editor library's test exports are there" + (why == null ? "" : " (" + why + ")"));
@@ -234,12 +234,29 @@ namespace ReBuzz.Studio.Platform
             await Pause(150);
             for (int i = 1; i <= 8; i++) { inject(1, x, y - 6 * i); await Pause(60); }
             inject(2, x, y - 48);
-            await Pause(1800);   // the plug-in's gesture reaches Neo Plug's pump (about every 20 ms) and the engine
+            await Pause(300);
+            await Blip(host);
+            await Pause(1500);   // the plug-in's gesture reaches Neo Plug's pump (about every 20 ms) and the engine
             var after = Slots(machine);
             var moved = Enumerable.Range(0, Math.Min(before.Length, after.Length)).Where(i => before[i] != after[i]).ToList();
             Check(moved.Count >= 1, $"dragging a knob changed Neo Plug's slot value ({string.Join(", ", moved.Take(4).Select(i => $"slot {i}: {before[i]} -> {after[i]}"))})");
             Check(Colours(session) > 300, "the view still draws after the drag");
             Shot(session, tag + "-dragged");
+        }
+
+        // The check runs without an audio device, so the engine never calls Work and a plug-in's edits (they leave it in the next block's
+        // output events, like any CLAP plug-in's) would wait for ever: a short render (the agent's own tool) gives the engine a few blocks.
+        static async Task Blip(StudioHost host)
+        {
+            try
+            {
+                var tool = host.Agent?.Host.Tools.Find("render");
+                if (tool == null) { Say("no render tool to give the engine a few blocks"); return; }
+                var args = new System.Text.Json.Nodes.JsonObject { ["from"] = 0, ["to"] = 2, ["tail_seconds"] = 0 };
+                await tool.Handler(new ReBuzz.Agent.Mcp.ToolContext("render", args, System.Threading.CancellationToken.None));
+                Say("a short render gave the engine a few blocks");
+            }
+            catch (Exception e) { Say("the short render threw: " + e.Message); }
         }
 
         // The song saved as .nbl and as .bmx and loaded again: every slot value and the plug-in's own state come back equal.

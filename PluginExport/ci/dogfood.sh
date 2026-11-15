@@ -45,7 +45,7 @@ if [ "$WHAT" = null ] || [ "$WHAT" = both ]; then
   for n in "${NAMES[@]}"; do
     w="$OUT/null/${n// /-}"
     $PY PluginExport/ci/null-test.py "$H" "$w" --plugin "$n" --dir "$F" --lib "$G/$L" --scan "$G/neoplug-scan$X" > "$w.log" 2>&1 || true
-    grep -v "^     \(gear_list\|song_\|machine_\|pattern\|notes\|arrange\|connect\|render\|automation\|param\)" "$w.log" | cut -c1-260 | tail -45
+    grep -E "^(NOTE|FAIL|NULL-TEST)" "$w.log" | cut -c1-300 | head -60
     grep -q "^NULL-TEST .* ok" "$w.log" || { echo "FAILED: $n"; fail=1; }
     rm -rf "$w"   # the renders are large; the log keeps the figures
   done
