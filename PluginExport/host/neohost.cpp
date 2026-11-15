@@ -195,8 +195,8 @@ static int64_t memRead(const clap_istream_t* s, void* buf, uint64_t n) { auto* m
 static double peakOf(const std::vector<float>& v, int from, int n) { double p = 0; for (int i = from; i < from + n; i++) { if (!std::isfinite(v[i])) return INFINITY; p = std::max(p, (double)std::fabs(v[i])); } return p; }
 
 // one render of 20 blocks of 128 with the given events at block 0; returns the output (left) concatenated
-static std::vector<float> renderOnce(Inst& in, Audio& a, bool withNotes, int blocks = 20) {
-    std::vector<float> out;
+static std::vector<float> renderOnce(Inst& in, Audio& a, bool withNotes, int blocks = 0) {
+    std::vector<float> out; if (blocks == 0) blocks = withNotes ? 150 : 20;
     InEvents ev; OutEvents oe;
     for (int b = 0; b < blocks; b++) {
         ev.clear();
@@ -318,7 +318,7 @@ static int modeGc(Module& m, const std::string& id, double seconds, int load, in
     NeoStats s1{}; if (insts[0].stats) insts[0].stats->get_stats(insts[0].p, &s1);
     printf("     %lld blocks, worst callback %.0f us (budget %.0f us), editor frames %lld, editor GCs %d (g2 %d), editor alloc %.0f MB, DSP GCs %d -> %d, DSP alloc %lld bytes\n",
            (long long)blocks.load(), worst.load() / 1000.0, 64.0 / 48000 * 1e6, (long long)s1.edFrames, s1.edGc0, s1.edGc2, s1.edAllocBytes / 1048576.0, s0.dspGc0, s1.dspGc0, (long long)(s1.dspAllocBytes - s0.dspAllocBytes));
-    check(s1.dspGc0 == s0.dspGc0 && s1.dspGc1 == 0 && s1.dspGc2 == 0, "no garbage collection in the DSP runtime during the render");
+    check(s1.dspGc0 == s0.dspGc0 && s1.dspGc1 == s0.dspGc1 && s1.dspGc2 == s0.dspGc2, "no garbage collection in the DSP runtime during the render");
     check(opened && s1.edFrames > 10, "the editor rendered frames while the audio ran");
     if (load) check(s1.edAllocBytes > 50.0 * 1048576, "the editor runtime allocated (the load generator ran)");
     for (auto& in : insts) { if (&in == &insts[0]) in.gui->destroy(in.p); in.destroy(); }
