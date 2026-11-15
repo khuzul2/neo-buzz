@@ -699,6 +699,7 @@ namespace ReBuzz.Core.Session
             if (beatsChanged)
                 RaisePropertyChangedOnUi(nameof(BeatsPerBar));
             buzz.ActiveRestore?.OnTick(scheduler.Clock);             // fork (history-snapshots.md HS3): a live restore's boundary
+            PublishSongOffset(songPosition);                         // fork (daw-modes.md AR5)
             RecordTick(songPosition);
             ResolveGains(songPosition);
             if (tickChanges.Count == 0) return;

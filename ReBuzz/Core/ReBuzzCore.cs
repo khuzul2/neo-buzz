@@ -1475,6 +1475,7 @@ namespace ReBuzz.Core
             generalSettings.PropertyChanged -= GeneralSettings_PropertyChanged;
 
             MidiControllerAssignments.Song = null;
+            Arrangement?.Detach();         // fork (AR6): the same bus
             SessionLayout?.Detach();       // fork (0.6.3): off the static restoration bus
             SessionSync?.Dispose();        // fork (0.8): the Link helper and the clock thread end
             SessionSync = null;

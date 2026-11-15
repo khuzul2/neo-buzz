@@ -276,6 +276,13 @@ namespace ReBuzz.Studio.Views.Session
                 Select(track, scene);
         }
 
+        /// <summary>Daw-modes.md AR5, §6: the slot's pattern becomes a clip on its machine's main lane, after the lane's last clip (shared with the slot; its region from the clip settings).</summary>
+        void SendToArrangement(SlotCell cell)
+        {
+            string why = buzz.Arrangement.Links.SlotToLane(cell.Track, cell.Scene);
+            if (why != null) _ = Dialogs.Info(why, "Send to Arrangement");
+        }
+
         void DuplicateClip(int track, int scene)
         {
             if (layout.DuplicateClip(track, scene, out int target) != null)
@@ -595,6 +602,7 @@ namespace ReBuzz.Studio.Views.Session
                 }
                 menu.Items.Add(Item("Rename…", () => _ = RenameClip(pattern), KeyOf("Cmd+R")));
                 menu.Items.Add(Item("Duplicate", () => DuplicateClip(cell.Track, cell.Scene), KeyOf("Cmd+D")));
+                menu.Items.Add(Item("Send to Arrangement", () => SendToArrangement(cell), null, () => buzz.Arrangement != null));
                 menu.Items.Add(ColorMenu("Colour", PatternColors.Get(pattern), i => layout.SetClipColor(pattern, i), MachineColourName));
                 int notes = layout.RecordedNoteCount(pattern);
                 if (notes > 0)

@@ -96,6 +96,48 @@ namespace ReBuzz.Studio.Views.Sequence
         public double ScrollX { get; set; }
         public double ScrollY { get; set; }
 
+        // ---- Fork (daw-modes.md AR6): the vertical (Buzz's default) orientation. Time runs down, tracks are columns, the ruler is on the
+        // left and the headers on top. ScrollX and ScrollY stay the screen's: across (tracks, in the vertical) and down (time).
+
+        /// <summary>Time runs down the page and the tracks are columns (Buzz's default sequence view).</summary>
+        public bool Vertical { get; set; }
+
+        /// <summary>The vertical's ruler column and header row.</summary>
+        public const double VerticalRulerWidth = 44, VerticalHeaderHeight = 56;
+
+        /// <summary>A track column's width in the vertical.</summary>
+        public double TrackWidth { get; set; } = 104;
+
+        /// <summary>The vertical draws a tick this many times taller than the horizontal draws it wide (the page is long, the bars short).</summary>
+        public const double VerticalScale = 2;
+
+        /// <summary>Where the tracks start from the control's left and top.</summary>
+        public double LeadX => Vertical ? VerticalRulerWidth : HeaderWidth;
+        public double LeadY => Vertical ? VerticalHeaderHeight : RulerHeight;
+
+        /// <summary>Pixels a tick takes along the time axis.</summary>
+        public double PxPerTick => TickWidth * (Vertical ? VerticalScale : 1);
+
+        /// <summary>A track's size across the time axis (a row's height, a column's width).</summary>
+        public double RowSize => Vertical ? TrackWidth : TrackHeight;
+
+        /// <summary>The scroll along the time axis and along the tracks.</summary>
+        public double TimeScroll => Vertical ? ScrollY : ScrollX;
+        public double RowScroll => Vertical ? ScrollX : ScrollY;
+
+        public void SetScroll(double time, double rows)
+        {
+            if (Vertical) { ScrollY = time; ScrollX = rows; }
+            else { ScrollX = time; ScrollY = rows; }
+        }
+
+        /// <summary>A tick's place along the time axis (x in the horizontal, y in the vertical).</summary>
+        public double TimePos(int time) => (Vertical ? LeadY : LeadX) + time * PxPerTick - TimeScroll;
+
+        /// <summary>A track's place along the other axis (y in the horizontal, x in the vertical).</summary>
+        public double RowPos(int row) => (Vertical ? LeadX : LeadY) + row * RowSize - RowScroll;
+
+        // The horizontal's, as they were: the vertical goes through TimePos, RowPos, TimeAtPoint and RawRowAtPoint.
         public double XOf(int time) => HeaderWidth + time * TickWidth - ScrollX;
         public double YOf(int row) => RulerHeight + row * TrackHeight - ScrollY;
 
@@ -106,18 +148,45 @@ namespace ReBuzz.Studio.Views.Sequence
 
         public int RowAt(double y, int rows) => Math.Max(0, Math.Min(rows - 1, RawRowAt(y)));
 
+        /// <summary>The tick under a point, whichever way the timeline runs.</summary>
+        public int TimeAtPoint(Point p) => (int)Math.Max(0, Math.Floor(((Vertical ? p.Y - LeadY : p.X - LeadX) + TimeScroll) / PxPerTick));
+
+        /// <summary>The track under a point, unclamped.</summary>
+        public int RawRowAtPoint(Point p) => (int)Math.Floor(((Vertical ? p.X - LeadX : p.Y - LeadY) + RowScroll) / RowSize);
+
+        public int RowAtPoint(Point p, int rows) => Math.Max(0, Math.Min(rows - 1, RawRowAtPoint(p)));
+
         public static bool InRuler(Point p) => p.Y < RulerHeight && p.X >= HeaderWidth;
         public static bool InHeaders(Point p) => p.X < HeaderWidth && p.Y >= RulerHeight;
         public static bool InTracks(Point p) => p.X >= HeaderWidth && p.Y >= RulerHeight;
 
+        // The same three, for either orientation.
+        public bool OverRuler(Point p) => Vertical ? p.X < LeadX && p.Y >= LeadY : p.Y < LeadY && p.X >= LeadX;
+        public bool OverHeaders(Point p) => Vertical ? p.Y < LeadY && p.X >= LeadX : p.X < LeadX && p.Y >= LeadY;
+        public bool OverTracks(Point p) => p.X >= LeadX && p.Y >= LeadY;
+
+        /// <summary>The ruler, the headers and the tracks inside a control of this size.</summary>
+        public Rect RulerArea(Size s) => Vertical ? new Rect(0, LeadY, LeadX, Math.Max(0, s.Height - LeadY)) : new Rect(LeadX, 0, Math.Max(0, s.Width - LeadX), LeadY);
+        public Rect HeaderArea(Size s) => Vertical ? new Rect(LeadX, 0, Math.Max(0, s.Width - LeadX), LeadY) : new Rect(0, LeadY, LeadX, Math.Max(0, s.Height - LeadY));
+        public Rect TracksArea(Size s) => new Rect(LeadX, LeadY, Math.Max(0, s.Width - LeadX), Math.Max(0, s.Height - LeadY));
+
         /// <summary>Ticks a block covers: the event's span, or <see cref="NonPatternSpan"/> for the other kinds.</summary>
         public static int SpanOf(SequenceEvent e) => e.Type == SequenceEventType.PlayPattern && e.Pattern != null ? Math.Max(1, e.Span) : NonPatternSpan;
 
-        public Rect BlockRect(int time, int row, SequenceEvent e) =>
-            new Rect(XOf(time), YOf(row), Math.Max(SpanOf(e) * TickWidth, MinBlockWidth), TrackHeight);
+        public Rect BlockRect(int time, int row, SequenceEvent e) => Span(time, Math.Max(SpanOf(e) * PxPerTick, MinBlockWidth), row, 1, 0);
 
         /// <summary>The cell (one bar of one track) at a time and row.</summary>
-        public Rect CellRect(int time, int row, int barLength) => new Rect(XOf(time), YOf(row), barLength * TickWidth + 1, TrackHeight + 1);
+        public Rect CellRect(int time, int row, int barLength) => Span(time, barLength * PxPerTick + 1, row, 1, 1);
+
+        /// <summary>A track's stretch of ticks from <paramref name="time"/> (a resize's rectangle).</summary>
+        public Rect TickRect(int time, int ticks, int row) => Span(time, ticks * PxPerTick, row, 1, 0);
+
+        /// <summary>A block of ticks and tracks: <paramref name="timeLength"/> pixels along the time axis, whole tracks across it.</summary>
+        public Rect SpanRect(int time, int ticks, int row, int rows) => Span(time, ticks * PxPerTick + 1, row, rows, 1);
+
+        Rect Span(int time, double timeLength, int row, int rows, double pad) => Vertical
+            ? new Rect(RowPos(row), TimePos(time), rows * RowSize + pad, timeLength)
+            : new Rect(TimePos(time), RowPos(row), timeLength, rows * RowSize + pad);
 
         /// <summary>
         /// Body or edge of a block. The edges are WPF's drag lines (8 px wide at each end), narrower
@@ -130,6 +199,18 @@ namespace ReBuzz.Studio.Views.Sequence
             double edge = Math.Min(8, block.Width / 4);
             if (p.X < block.X + edge) return BlockPart.LeftEdge;
             if (p.X >= block.Right - edge) return BlockPart.RightEdge;
+            return BlockPart.Body;
+        }
+
+        /// <summary>Body or edge, either orientation: the start edge is the left (the vertical's top), the end edge the right (the bottom).</summary>
+        public BlockPart PartAtBlock(Rect block, Point p, bool resizable)
+        {
+            if (!Vertical) return PartAt(block, p, resizable);
+            if (!block.Contains(p)) return BlockPart.None;
+            if (!resizable) return BlockPart.Body;
+            double edge = Math.Min(8, block.Height / 4);
+            if (p.Y < block.Y + edge) return BlockPart.LeftEdge;
+            if (p.Y >= block.Bottom - edge) return BlockPart.RightEdge;
             return BlockPart.Body;
         }
 

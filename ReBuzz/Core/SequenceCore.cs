@@ -36,6 +36,12 @@ namespace ReBuzz.Core
         /// </summary>
         internal volatile bool IsRemoved;
 
+        /// <summary>
+        /// Fork (daw-modes.md AR5, S5): the lane holds takes (the passes of a loop recording): the arrangement never plays it.
+        /// Set from the lane's role (<see cref="ArrangementStore"/>), read on the audio thread.
+        /// </summary>
+        internal volatile bool TakeLane;
+
         private static IntPtr sequenceHandleCounter = 100;
 
         internal MachineCore MachineCore { get; private set; }
