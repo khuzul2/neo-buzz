@@ -61,8 +61,11 @@ namespace ReBuzz.FileOps
                 // Fork (mac-engine.md M2): no native machine hosts off Windows.
                 if (NativeMachine.NativeMachineHost.Supported)
                 {
-                    nativeMachineHost = new NativeMachine.NativeMachineHost("Index", buzzPath, dispatcher, engineSettings);
-                    nativeMachineHost.InitHost(buzz, false); // 32 bit
+                    if (OperatingSystem.IsWindows())    // fork (cross-platform.md R1): off Windows only the 64-bit host
+                    {
+                        nativeMachineHost = new NativeMachine.NativeMachineHost("Index", buzzPath, dispatcher, engineSettings);
+                        nativeMachineHost.InitHost(buzz, false); // 32 bit
+                    }
 
                     nativeMachineHost64 = new NativeMachine.NativeMachineHost("Index64", buzzPath, dispatcher, engineSettings);
                     nativeMachineHost64.InitHost(buzz, true); // 64 bit

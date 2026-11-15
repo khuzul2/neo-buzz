@@ -13,18 +13,28 @@ namespace ReBuzz.NativeMachine
         private readonly NativeMessage msg;
         Thread threadPing;
 
-        public EventWaitHandle WaitHandlePing { get; }
-        public EventWaitHandle WaitHandlePong { get; }
+        public NativeEvent WaitHandlePing { get; }
+        public NativeEvent WaitHandlePong { get; }
 
-        public ChannelListener(ChannelType channel, ThreadPriority priority, string eventId, NativeMessage msg, ReBuzzCore buzz)
+        /// <summary>Fork (cross-platform.md R1): the name the portable host knows a channel by (its FIFO files in the session folder).</summary>
+        internal static string ChannelFileName(ChannelType channel) => channel switch
+        {
+            ChannelType.HostChannel => "Host",
+            ChannelType.UIChannel => "UI",
+            ChannelType.MidiChannel => "MIDI",
+            _ => "Audio",
+        };
+
+        public ChannelListener(ChannelType channel, ThreadPriority priority, string eventId, NativeMessage msg, ReBuzzCore buzz, string sessionFolder = null)
         {
             this.buzz = buzz;
             Channel = channel;
             this.msg = msg;
 
             // Message from A is ready when Ping event signaled. Message handled when B send Pong nad channel is available
-            WaitHandlePing = new EventWaitHandle(false, EventResetMode.AutoReset, @"Global\Ping" + eventId);
-            WaitHandlePong = new EventWaitHandle(false, EventResetMode.AutoReset, @"Global\Pong" + eventId);
+            string fifo = sessionFolder == null ? null : System.IO.Path.Combine(sessionFolder, ChannelFileName(channel));
+            WaitHandlePing = new NativeEvent(@"Global\Ping" + eventId, fifo + ".ping");
+            WaitHandlePong = new NativeEvent(@"Global\Pong" + eventId, fifo + ".pong");
 
             Stopped = true;
             this.priority = priority;

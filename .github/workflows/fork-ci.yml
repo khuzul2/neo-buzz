@@ -124,6 +124,16 @@ jobs:
         git submodule update --init --depth 1 3rdParty/serilog/serilog
         dotnet build ReBuzz.Engine/ReBuzz.Engine.csproj -nologo -v:q
 
+    # The classic Buzz machines rebuilt natively (docs/specs/cross-platform.md R1) and the portable host that runs them
+    # out of process: ReBuzz.Host/AppGear.targets copies build/natives (Gear, Licenses) and build/native-host into
+    # rebuzz-headless's output when it is built.
+    - name: Classic machines and native host (C++)
+      run: |
+        python3 tools/build-natives-posix.py --out build/natives
+        cmake -S ReBuzzEngine/portable -B build/native-host >/dev/null
+        cmake --build build/native-host -j 3
+        ls build/natives/Gear/*
+
     # rebuzz-headless (docs/specs/mac-engine.md M1): the engine with the MCP server on stdio, no UI
     # toolkit, with the Neo machines built for net10.0. The smoke test drives it as a client does:
     # a chord through Neo Poly and Neo Verb, rendered, measured, saved, reopened, undone.
@@ -134,6 +144,15 @@ jobs:
         # Methods with loops compiled fully optimised at once (daw-modes.md §8.1, tools/msbuild/AudioThreadRuntime.props).
         grep -Eq '"System.Runtime.TieredCompilation.QuickJitForLoops": *false' ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless.runtimeconfig.json || { echo "::error::rebuzz-headless.runtimeconfig.json doesn't turn quick JIT for loops off"; exit 1; }
         python3 tools/headless-smoke.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/smoke"
+
+    # R1: each rebuilt classic loads and renders its cases through the native host (finite, audible, no divergence), and the
+    # classic demo songs of ExternalMachines/source open with their machines and play (tools/native-cross.py).
+    - name: Classic machines on Linux
+      if: always()
+      run: |
+        python3 -m pip install --break-system-packages numpy >/dev/null
+        test -x ReBuzz.Headless/bin/Release/net10.0/rebuzz-native-host
+        python3 tools/native-cross.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/natives" --json "$RUNNER_TEMP/natives.json"
 
     # The Pedal machines (docs/specs/studio-mvp.md S2), built for net10.0 without their WPF GUIs:
     # each loads, the synths play a note, the effects pass a chord, Chord and LFO drive their targets.
@@ -218,6 +237,8 @@ jobs:
     # whose pattern editor machines are missing too.
     - name: Songs with placeholders round-trip
       if: always()
+      env:
+        REBUZZ_NATIVE_MACHINES: 'off'   # R1: the check is of placeholders; the rebuilt classics have tools/native-cross.py
       run: python3 tools/song-roundtrip.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/roundtrip"
 
     # The studio (docs/specs/studio-mvp.md): its views drawn headless (Avalonia.Headless with Skia)

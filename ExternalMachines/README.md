@@ -34,6 +34,8 @@ ExternalMachines/
 
 ## Off Windows
 
+The natives with sources also build for macOS and Linux (docs/specs/cross-platform.md, R1): `python3 tools/build-natives-posix.py --out build/natives` (clang or g++) makes `.dylib`/`.so` files, `ReBuzzEngine/portable` (CMake) makes `rebuzz-native-host`, and `ReBuzz.Host/AppGear.targets` copies both into the app's Gear and `Licenses/NOTICE.txt`. The same ship rule applies as on Windows (Cross Delay does not ship; the Jeskola rebuilds stay "NOT FOR PUBLIC RELEASE AS IS"). `tools/native-cross.py` tests them.
+
 `portable/` builds the 19 Pedal machines as plain `net10.0`, without their WPF GUIs, for the studio and rebuzz-headless on macOS and Linux (docs/specs/studio-mvp.md S2). `ReBuzz.Host/AppGear.targets` builds them into the app's Gear; by hand: `dotnet build ExternalMachines/portable/Pedal.proj -p:GearDir=<folder>`. Each machine has a small project there that names its source folder and assembly, and lists its GUI-only files. Six sources keep their WPF code under `#if WINDOWS`, so the Windows builds above compile the same text as before (see `patches`).
 
 ## Prebuilt binaries
