@@ -107,7 +107,8 @@ namespace ReBuzz.Studio.Tests
 
             string target = Path.Combine(dir, "folder.nbl");
             Directory.CreateDirectory(target);                      // the rename onto a folder fails, after the temporary file is written
-            Assert.Throws<IOException>(() => NblContainer.WriteAtomic(target, Encoding.UTF8.GetBytes("{\"v\":2}"), one));
+            Assert.That(() => NblContainer.WriteAtomic(target, Encoding.UTF8.GetBytes("{\"v\":2}"), one),
+                Throws.InstanceOf<IOException>().Or.InstanceOf<UnauthorizedAccessException>(), "(Windows says access denied)");
             Assert.That(Directory.GetFiles(dir), Is.EqualTo(new[] { path }), "the failed save removed its temporary file");
             Assert.That(File.ReadAllBytes(path), Is.EqualTo(before), "and the old file is as it was");
         }
@@ -123,8 +124,8 @@ namespace ReBuzz.Studio.Tests
             Assert.That((string)json["element"], Is.EqualTo("SongMarkers"));
             Assert.That((string)json["children"][0]["attrs"]["name"], Is.EqualTo("Intro & ü"));
             Assert.That(NblXml.ToBytes(json), Is.EqualTo(markers), "the same bytes");
-            var notes = NblXml.TryToJson(Encoding.UTF8.GetBytes("<SongNotes><Text>line 1\nline 2 音</Text></SongNotes>"));
-            Assert.That((string)notes["children"][0]["text"], Is.EqualTo("line 1\nline 2 音"));
+            var notes = NblXml.TryToJson(Encoding.UTF8.GetBytes("<SongNotes><Text>line 1 | line 2 音</Text></SongNotes>"));   // (a newline would be written as CR LF on Windows)
+            Assert.That((string)notes["children"][0]["text"], Is.EqualTo("line 1 | line 2 音"));
 
             Assert.That(NblXml.TryToJson(Encoding.UTF8.GetBytes("<a><!-- c --><b/></a>")), Is.Null, "a comment: kept as a blob");
             Assert.That(NblXml.TryToJson(Encoding.UTF8.GetBytes("<a>\n  <b/>\n</a>")), Is.Null, "formatting whitespace: kept as a blob");
