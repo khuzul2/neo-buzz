@@ -4,6 +4,29 @@ using NeoBuzz.Dsp;
 
 namespace NeoExport
 {
+    internal sealed class A_DyeEngine : ExportEngine
+    {
+        NeoBuzz.DyeEssence.DyeEngine e;
+        public override ParamDef[] Table => NeoBuzz.DyeEssence.Params.Table;
+        public override int MaxBlock => NeoBuzz.DyeEssence.DyeEngine.MaxBlock;
+        public override void Create(ParamValues values) { e = new NeoBuzz.DyeEssence.DyeEngine(values); }
+        public override void SetSampleRate(float sr) => e.SetSampleRate(sr);
+        public override int Latency => 0;
+        public override void Reset() => e.AllNotesOff(true);
+        public override void SetTransport(double tempo, bool playing, double beats, double rate)
+        {
+            e.Tempo = tempo;
+        }
+        public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) => e.Process(l, r, n);
+        public override void NoteOn(int key, int note, float velocity) => e.NoteOn(key, note, velocity);
+        public override void NoteOff(int key) => e.NoteOff(key);
+        public override void ModWheel(float v) => e.ModWheel(v);
+        public override void PitchBend(float v) => e.PitchBend(v);
+        public override void Sustain(bool down) => e.Sustain(down);
+        public override void Aftertouch(float v) => e.Aftertouch(v);
+        public override void AllNotesOff(bool hard) => e.AllNotesOff(hard);
+    }
+
     internal sealed class A_CompEngine : ExportEngine
     {
         NeoBuzz.Comp.CompEngine e;
@@ -111,6 +134,7 @@ namespace NeoExport
     {
         public static readonly PluginInfo[] All =
         {
+            new PluginInfo("org.neobuzz.dye-essence", "Neo Dye Essence", "Colour-synthesis instrument with an effects rack", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 10, make: () => new A_DyeEngine(), gateQuiet: false),
             new PluginInfo("org.neobuzz.neo-comp", "Neo Comp", "Compressor with four characters, lookahead and an external sidechain", new[] { "audio-effect", "compressor", "stereo" }, instrument: false, sidechain: true, gateIdle: false, tailSeconds: 0, make: () => new A_CompEngine(), gateQuiet: false),
             new PluginInfo("org.neobuzz.neo-delay", "Neo Delay", "Tempo-synced stereo, ping-pong and cross delay", new[] { "audio-effect", "delay", "stereo" }, instrument: false, sidechain: false, gateIdle: true, tailSeconds: 10, make: () => new A_DelayEngine(), gateQuiet: false),
             new PluginInfo("org.neobuzz.neo-eq", "Neo EQ", "Eight-band parametric equalizer, minimum phase or linear phase", new[] { "audio-effect", "equalizer", "stereo" }, instrument: false, sidechain: true, gateIdle: false, tailSeconds: 0, make: () => new A_EqEngine(), gateQuiet: false),

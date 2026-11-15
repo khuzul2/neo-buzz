@@ -148,7 +148,7 @@ jobs:
         if [ ! -f PluginExport/editor/NeoEditor.csproj ]; then echo "no editor yet"; exit 0; fi
         B=$(find _build -name neohost -o -name neohost.exe | head -1)
         PRE=""; [ "$RUNNER_OS" = Linux ] && PRE="xvfb-run -a"
-        for n in "Neo Filter" "Neo Poly"; do
+        for n in "Neo Filter" "Neo Poly" "Neo Dye Essence"; do
           $PRE python3 PluginExport/ci/run-host.py _build/assets "$B" gc --only "$n" --seconds "$SECONDS_GC" --load 0
           $PRE python3 PluginExport/ci/run-host.py _build/assets "$B" gc --only "$n" --seconds "$SECONDS_GC" --load 3
         done
@@ -159,7 +159,7 @@ jobs:
         if [ ! -f PluginExport/editor/NeoEditor.csproj ]; then echo "no editor yet"; exit 0; fi
         B=$(find _build -name neohost | head -1)
         mkdir -p shots
-        for n in "Neo Filter" "Neo EQ" "Neo Comp" "Neo Delay" "Neo Verb" "Neo Poly"; do
+        for n in "Neo Filter" "Neo EQ" "Neo Comp" "Neo Delay" "Neo Verb" "Neo Poly" "Neo Dye Essence"; do
           NEOHOST_EDITOR="$PWD/_build/assets/neo_editor.so" xvfb-run -a -s "-screen 0 1600x1200x24" python3 PluginExport/ci/run-host.py _build/assets "$B" gui --only "$n" --shot "shots/${n// /-}.ppm"
         done
         for f in shots/*.ppm; do convert "$f" "${f%.ppm}.png" && rm "$f"; done
@@ -180,7 +180,7 @@ jobs:
         G=ReBuzz.Headless/bin/Release/net10.0/Gear/NeoPlug
         export NEOPLUG_DEBUG=1
         bad=0
-        for n in "Neo Filter" "Neo EQ" "Neo Comp" "Neo Delay" "Neo Verb" "Neo Poly"; do
+        for n in "Neo Filter" "Neo EQ" "Neo Comp" "Neo Delay" "Neo Verb" "Neo Poly" "Neo Dye Essence"; do
           w="nulltest-${n// /-}"
           python3 PluginExport/ci/null-test.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$PWD/$w" --plugin "$n" --dir "$F" --lib "$G/libneoplug.so" --scan "$G/neoplug-scan" 2>&1 | tee "$w.log" | grep -v "^     \(gear_list\|song_\|machine_\|pattern\|notes\|arrange\|connect\|render\)" | cut -c1-260 | tail -80 || true
           grep -q "^NULL-TEST .* ok" "$w.log" || bad=1

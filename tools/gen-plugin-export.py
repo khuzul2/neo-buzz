@@ -5,7 +5,7 @@ each Neo machine into a CLAP / VST3 / AU plug-in from its own engine and paramet
     python3 tools/gen-plugin-export.py            write the generated files
     python3 tools/gen-plugin-export.py --check    exit 1 when a generated file is out of date (CI)
 
-A descriptor is a small JSON file (see PluginExport/descriptors/neo-filter.json):
+A descriptor is a small JSON file (see PluginExport/descriptors/neo-filter.json; gear: the machine's name in ReBuzz when it differs from the plug-in's):
   id, name, folder (under Machines/), namespace, engine (class of Engine/), machine + editor (classes of the machine's own
   files, for the editor library), kind effect|instrument, features (CLAP features after the kind's own), au (4-char AU
   subtype), description, process stereo|sidechain|synth, tempo (engine.Tempo), transport "ticks" (engine.Transport as
@@ -153,7 +153,7 @@ def manifest():
             stepped = kind in ("enum", "switch", "int") or hi - lo <= 1
             ch.append({"param": name, "native": f"raw:{r}", "slot": f"raw:{r - lo if stepped else round(65534 * (r - lo) / (hi - lo))}"})
         t["changes"] = ch
-        res.append({"id": d["id"], "name": d["name"], "kind": d["kind"], "au": d["au"], "sidechain": d["process"] == "sidechain", "test": t,
+        res.append({"id": d["id"], "name": d["name"], "gear": d.get("gear", d["name"]), "kind": d["kind"], "au": d["au"], "sidechain": d["process"] == "sidechain", "test": t,
                     "paramCount": len(tab), "latencyDependsOnParams": d["name"] == "Neo EQ"})
     return json.dumps(res, indent=1) + "\n"
 

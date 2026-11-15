@@ -161,7 +161,7 @@ def pattern(machine):
 NATIVE = "Native"
 outs = [NATIVE]          # the machines whose output is probed
 if INSTR:
-    check(call("machine_add", gear=args.plugin, name=NATIVE)[0], f"native {args.plugin}")
+    check(call("machine_add", gear=spec.get("gear", args.plugin), name=NATIVE)[0], f"native {args.plugin}")
     pattern(NATIVE)
     call("connect", **{"from": NATIVE, "to": "Master"})
     for nm, plugin in (("ClapP", clap), ("VstP", vst3)):
@@ -173,7 +173,7 @@ if INSTR:
 else:
     check(call("machine_add", gear="Neo Poly", name="Src")[0], "Neo Poly source")
     pattern("Src")
-    check(call("machine_add", gear=args.plugin, name=NATIVE, insert_after="Src")[0], f"native {args.plugin} after the source")
+    check(call("machine_add", gear=spec.get("gear", args.plugin), name=NATIVE, insert_after="Src")[0], f"native {args.plugin} after the source")
     for nm, plugin in (("ClapF", clap), ("VstF", vst3)):
         if not plugin: continue
         ok, _, _ = call("machine_add", gear=host_gear, plugin=plugin, name=nm)

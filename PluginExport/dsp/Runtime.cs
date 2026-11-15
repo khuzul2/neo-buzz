@@ -27,6 +27,7 @@ namespace NeoExport
         public uint TimerId;
         public bool Active;
         public int Quiet;
+        public int Activations;
     }
 
     public static unsafe class ClapExports
@@ -165,6 +166,11 @@ namespace NeoExport
         {
             var inst = Inst(p);
             inst.Rate = sr;
+            // Every activation after the first starts from a new engine on the same parameters, as the machine does for an offline render
+            // (NeoMachineBase.Restart): random streams, drift, voice age and the free-running modulators go back to the start. This is the
+            // main thread, so the allocation is allowed.
+            inst.Quiet = 0;
+            if (inst.Activations++ > 0) { inst.Eng = inst.Info.Make(); inst.Eng.Create(inst.Values); }
             inst.Eng.SetSampleRate((float)sr);
             inst.Sh->Rate = sr;
             inst.ReportedLatency = inst.Eng.Latency;
