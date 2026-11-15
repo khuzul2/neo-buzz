@@ -10,6 +10,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Avalonia;
 using ReBuzz.Host;
 using ReBuzz.Studio.Shell;
@@ -23,9 +24,15 @@ namespace ReBuzz.Studio
 
         public static bool Smoke { get; private set; }
 
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        static extern bool SetDllDirectoryW(string path);
+
         [STAThread]
         public static int Main(string[] args)
         {
+            // Package layout: the program's files sit in App\ beside the Windows launcher (build.ps1), so libraries loaded by name
+            // (PortAudio's, r8brain's, Avalonia's ANGLE) are searched there too, after the exe's own folder.
+            if (OperatingSystem.IsWindows()) SetDllDirectoryW(AppContext.BaseDirectory);
             static string Option(string[] a, string name)
             {
                 int i = Array.FindIndex(a, x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase));
