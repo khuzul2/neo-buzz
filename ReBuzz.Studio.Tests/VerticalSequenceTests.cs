@@ -624,6 +624,48 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        /// <summary>The Tracker and Arrange mode buttons were fixed 64 px wide in a 120 px panel and both labels were clipped: each now gets
+        /// at least the width its label and padding ask for, in both themes, in the tracker's orientations and the arrangement.</summary>
+        [AvaloniaTest]
+        public void TheModeButtonsAreWideEnoughForTheirLabelsInBothThemes()
+        {
+            var kind = StudioTheme.Kind;
+            try
+            {
+                foreach (var theme in new[] { AppearanceTheme.Light, AppearanceTheme.Dark })
+                foreach (bool vertical in new[] { true, false })
+                {
+                    StudioTheme.Kind = theme;
+                    StudioTheme.Refresh();
+                    using var rig = new Rig(vertical);
+                    Settle();
+                    foreach (var button in new[] { rig.View.TrackerModeButton, rig.View.ArrangementModeButton })
+                    {
+                        var content = (string)button.Content!;
+                        Assert.That(button.IsEffectivelyVisible, Is.True, content);
+                        double arranged = button.Bounds.Width;
+                        button.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                        double wanted = button.DesiredSize.Width;
+                        Assert.That(wanted, Is.GreaterThan(20), content + " has a measured label");
+                        Assert.That(arranged, Is.GreaterThanOrEqualTo(wanted - 0.01), $"{content} ({theme}, vertical {vertical}) gets {arranged} px but its label wants {wanted}");
+                        var inPanel = button.TranslatePoint(new Point(arranged, 0), rig.View)!.Value.X;
+                        Assert.That(inPanel, Is.LessThanOrEqualTo(rig.View.Bounds.Width + 0.01), content + " lies inside the view");
+                    }
+                    Studio.Screenshot(rig.Window, $"sequence-mode-buttons-{theme}-{(vertical ? "vertical" : "horizontal")}");
+                    rig.Click(rig.Of(rig.View.ArrangementModeButton));
+                    Settle();
+                    Assert.That(rig.View.ArrangementModeButton.Bounds.Width, Is.GreaterThanOrEqualTo(rig.View.ArrangementModeButton.DesiredSize.Width - 0.01), "also in the arrangement");
+                    Assert.That(rig.View.TrackerModeButton.Bounds.Width, Is.GreaterThanOrEqualTo(rig.View.TrackerModeButton.DesiredSize.Width - 0.01), "also in the arrangement");
+                }
+            }
+            finally
+            {
+                StudioTheme.Kind = kind;
+                StudioTheme.Refresh();
+                Settle();
+            }
+        }
+
         static int Listeners(object owner, string eventName)
         {
             var field = owner.GetType().GetField(eventName, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);

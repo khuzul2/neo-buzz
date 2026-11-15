@@ -11,6 +11,9 @@ You can do what a person does in the app: change preferences, bind MIDI controll
 | Audio output | `audio_status`, `audio_devices`, `audio_set` | studio and live (headless renders only: they say so) |
 | The studio window | `view_show`, `machine_open_editor`, `select`, `panel_set`, `window_layout` | studio only: elsewhere they answer "Studio only" |
 | Files | `export_audio`, `song_recent` | all |
+| Song properties | `song_set` (tempo, ticks per beat, speed, loop), `song_meter` (bars) | all |
+| The machine menu | `machine_clone`, `machine_group`, `machine_latency`, `machine_attributes`, `machine_command` | all |
+| Recording the Master | `master_record` | studio, with an audio output open |
 | The app | `app_status` | all |
 
 `studio_status` has the song and the audio output at a glance; `app_status` adds the version, CPU and memory.
@@ -60,6 +63,21 @@ The person sees every call, so treat it as a conversation: show them what you ar
 - `window_layout()` reads where everything is; with `width`, `height` or `maximised` it resizes the window.
 - While the transport records, nothing opens a window or takes the keyboard: the pattern editor and machine windows are refused (`transport(action="stop")` first). Switching a view, selecting and panels still work.
 
+## Song properties and the bars
+
+`song_set(tempo_bpm=124, ticks_per_beat=4, speed=0)` is Edit, Song Properties: tempo 16 to 500, ticks per beat 1 to 32, and the playback speed offset (0 is normal, -1000 to 1000). Set ticks per beat before writing patterns: patterns keep their length in ticks. `song_meter` reads the bar list; `song_meter(from="9.1", bar_beats=3)` makes the bars 3 beats long from there on. Both are one undo step. The Sequence tab's vertical tracker is the setting `appearance.VerticalTracker`: `settings_set(key="appearance.VerticalTracker", value=true)`.
+
+## The machine menu
+
+- `machine_clone(machines=["Lead"])` is Clone: a copy with its settings. `with_patterns=true` is Clone with patterns, and what Copy then Paste does: the copy gets the patterns, the arrangement rows and the wires between the clones. A cut is a clone and then `machine_remove`.
+- `machine_group(op="create", machines=["Kick", "Snare"], name="Drums")`; `op` is also `add`, `remove`, `rename`, `fold`, `unfold`, `delete` (the machines stay) and `list`. Each is one undo step.
+- `machine_latency(machine="Lookahead", override_samples=512)` makes the delay compensation use that many samples; `clear=true` takes it off, `clear_all=true` takes every override off, and without arguments it lists machines that report a latency.
+- `machine_attributes(machine="Tracker")` lists a classic machine's attributes; add `set={"name": value}` to change them. `machine_command(machine="Tracker")` lists the commands in its menu and `command="About"` runs one: that is the machine's own action, undo does not take it back, so `snapshot_save` first if it matters.
+
+## Recording the Master
+
+`master_record(op="start", path="C:/Music/take.wav", bits="24")` is the Hard Disk Recorder: it writes what the person hears, live playing included, as it plays. `loop=true` waits for the song loop's first tick and stops after its last. `op="stop"` closes the file and `op="status"` reads seconds, bytes and lost blocks. It never overwrites (`overwrite=true` to replace) and says when no audio output is open: then `export_audio` renders the song without playing it.
+
 ## Export
 
 `export_audio(path="C:/Music/demo.wav")` renders as `render` does (faster than real time, the song unchanged) and writes the files itself.
@@ -70,7 +88,7 @@ The person sees every call, so treat it as a conversation: show them what you ar
 - It never overwrites: if any target exists it fails before rendering and writes nothing. Pass `overwrite=true` only when asked or when you made the file earlier in this session.
 - The result lists each file with its size and the master's loudness and peaks; check them with `analyze(source=…)` on a `render` id if you need more.
 
-`song_recent(limit=5)` lists the songs opened lately (open one with `song_open`). Out of scope for now: MIDI file export, and the plugin scan (there is no plugin host yet).
+`song_recent(limit=5)` lists the songs opened lately (open one with `song_open`). Out of scope for now: MIDI file export, and plug-in tools (the plug-in host has its own round).
 
 ## Checklist
 - [ ] You know the app's state and mode before acting: `app_status`, and `audio_status` when sound matters.
@@ -78,5 +96,7 @@ The person sees every call, so treat it as a conversation: show them what you ar
 - [ ] Engine and safety settings were changed one at a time and rendered before and after: `render` then `analyze`.
 - [ ] An audio change kept: `audio_set` returned `applied` true, and `audio_status` shows no new dropouts.
 - [ ] A MIDI binding is listed and undoable: `midi_bindings_list(machine=…)`.
+- [ ] A clone, a group or a latency change is listed and undoable: `machine_group(op="list")`, `machine_latency`, `history_list`.
+- [ ] A Master recording ended and its file is real: `master_record(op="status")` then `stop`.
 - [ ] An export did not overwrite anything you did not make: `export_audio` without `overwrite`, files checked in the result.
 - [ ] Window changes were announced and recording was not interrupted: `window_layout`, `transport`.
