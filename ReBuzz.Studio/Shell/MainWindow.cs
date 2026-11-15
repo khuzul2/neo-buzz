@@ -429,6 +429,7 @@ namespace ReBuzz.Studio.Shell
             yield return Command("file.save", mac, () => _ = SongFiles.Save(), running);
             yield return Command("file.saveas", mac, () => _ = SongFiles.SaveAs(), running);
             yield return Command("file.export", mac, () => _ = ExportSheet.Open(host.Core), running);
+            yield return Command("file.exportbuzz", mac, () => _ = BuzzExportFlow.Run(), running);
             yield return Command("file.revert", mac, () => _ = RevertToSaved(), () => running() && host.Core.SongCore.SongName != null && host.Core.Modified);
             if (!mac)
             {

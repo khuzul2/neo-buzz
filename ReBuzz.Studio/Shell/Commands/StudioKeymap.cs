@@ -79,6 +79,7 @@ namespace ReBuzz.Studio.Shell.Commands
             C("file.save", "File", "_Save", "Cmd+S"),
             C("file.saveas", "File", "Save _As…", "Shift+Cmd+S"),
             C("file.export", "File", "_Export Audio…", "Shift+Cmd+R", help: "Renders the song, or its loop, to a WAV file (16, 24 or 32 bit float, dither, sample rate, stems), on the same path as the agent's export_audio"),
+            C("file.exportbuzz", "File", "Export for _Buzz/ReBuzz…", help: "Writes a separate .bmx that upstream ReBuzz reads, after showing what it can't hold (lossy; the open song and its file are not touched)"),
             C("file.revert", "File", "Re_vert to Saved", help: "Opens the saved song again, after asking: the changes since are lost"),
             C("file.exit", "File", "E_xit", "Cmd+Q"),
 

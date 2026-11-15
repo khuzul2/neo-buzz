@@ -258,6 +258,48 @@ namespace ReBuzz.Agent
 
             tools.Add(new ToolDef
             {
+                Name = "song_export",
+                Title = "Export for Buzz/ReBuzz",
+                Description =
+                    "Writes a separate .bmx that upstream Buzz/ReBuzz can open, and returns what that file loses (the loss report: category, item, what happens upstream). " +
+                    "Lossy on purpose (clip trims and gain, engine automation, the Neo machines, takes…); the open song, its file, its name and its undo history are not touched. " +
+                    "To keep everything use song_save (.nbl, or .bmx with format=\"bmx\" for a full save). Refuses a .nbl target and the open song's own file; " +
+                    "won't replace an existing file unless overwrite is true. Example: song_export(path=\"C:/Music/sketch-for-buzz.bmx\").",
+                Input = Object(null,
+                    Req("path", String("Full path of the .bmx to write (the .bmx extension is added when missing)")),
+                    Opt("overwrite", Boolean("Replace an existing file"))),
+                Output = Object(null,
+                    Req("file", String("The file written")), Req("bytes", Integer("Its size")),
+                    Req("lossless", Boolean("True when upstream loses nothing")),
+                    Req("losses", Array(Object(null, Req("category", String("The kind of loss")), Req("item", String("What it is")), Req("upstream", String("What happens in upstream ReBuzz"))), "The loss report, sorted; empty when nothing is lost"))),
+                Annotations = ToolAnnotations.WriteIdempotent,
+                Handler = async c =>
+                {
+                    string requested = (c.String("path") ?? throw new ToolError("path: give the .bmx to write.")).Trim().Trim('"');
+                    if (Path.GetExtension(requested).Length == 0) requested += ".bmx";
+                    var r = await host.Engine("song_export", false, messages =>
+                    {
+                        string path = SongPath(requested);
+                        string problem = ReBuzz.FileOps.BuzzExport.TargetProblem(core.SongCore.SongName, path);
+                        if (problem != null) throw new ToolError(problem);
+                        if (File.Exists(path) && c.Bool("overwrite") != true)
+                            throw new ToolError($"{path} exists. Pass overwrite=true to replace it, or choose another name.");
+                        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                        ReBuzz.FileOps.ExportReport report;
+                        try { report = core.ExportForBuzz(path); }
+                        catch (Exception e) { throw new ToolError($"Exporting {path} failed: {e.Message}"); }
+                        var losses = new JsonArray();
+                        foreach (var l in report.Losses)
+                            losses.Add(new JsonObject { ["category"] = l.Category, ["item"] = l.Item, ["upstream"] = l.Upstream });
+                        return new JsonObject { ["file"] = path, ["bytes"] = new FileInfo(path).Length, ["lossless"] = report.IsEmpty, ["losses"] = losses };
+                    }, c.Cancellation);
+                    int n = ((JsonArray)r["losses"]!).Count;
+                    return ToolResult.Ok($"Exported {r["file"]} ({r["bytes"]} bytes) for Buzz/ReBuzz. " + (n == 0 ? "Nothing is lost." : $"{n} loss(es) listed."), r);
+                },
+            });
+
+            tools.Add(new ToolDef
+            {
                 Name = "song_set",
                 Title = "Set song properties",
                 Description =

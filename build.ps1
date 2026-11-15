@@ -950,7 +950,7 @@ https://github.com/wasteddesign/ReBuzz
 '@
 $readmeSwitched = @'
 Start: unzip anywhere and run NeoBuzzLive.exe. The first start scans all machines in Gear\, which takes
-a while. Songs (.bmx, .bmw, .bmxml) open in it; Preferences > General > File types makes it the program
+a while. Songs (.nbl, .bmx, .bmw, .bmxml) open in it; Preferences > General > File types makes it the program
 double-clicked songs open with (this Windows user only; reversible). It keeps its settings in
 %APPDATA%\NeoBuzz Live.
 
@@ -977,7 +977,7 @@ Classic gets bug fixes only. What the studio does not do yet:
 '@
 $readmePreview = @'
 Start: unzip anywhere and run NeoBuzzLive.exe. The first start scans all machines in Gear\, which takes
-a while. Songs (.bmx, .bmxml), settings and machines from ReBuzz carry over as they are: the settings stay
+a while. Songs (.nbl, .bmx, .bmxml), settings and machines from ReBuzz carry over as they are: the settings stay
 where ReBuzz keeps them (%APPDATA%\ReBuzz, %LOCALAPPDATA%\ReBuzz, Documents\ReBuzz and the registry's
 Software\ReBuzz).
 
