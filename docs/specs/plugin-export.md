@@ -6,7 +6,7 @@ Status: phase PX1 (branch `plugins/export-px1`). The measurement spike that led 
 
 Every exportable Neo machine becomes a plug-in for other DAWs (Ableton Live first): CLAP, VST3 (Windows, macOS, Linux) and AU (macOS). The plug-in runs the machine's own engine (`Machines/<Name>/Engine`, the code the studio runs) and shows the machine's own Neo editor (the INeoCanvas / Avalonia kit, the same editor classes as the machine windows in the studio). One descriptor of about 15 lines per machine; everything else comes from the engine and its `Params` table.
 
-Exported now: Neo Filter, Neo EQ, Neo Comp, Neo Delay, Neo Verb, Neo Poly. Plug-in names are "Neo ..." and carry no vendor trademarks. Out of scope by design: machines that need the host's song (canvas modulators, Neo Plug itself).
+Exported now: Neo Filter, Neo EQ, Neo Comp, Neo Delay, Neo Verb, Neo Poly and Neo Dye Essence (the machine is "Dye Essence" in ReBuzz; the descriptor's `gear` field names it for the tests). Plug-in names are "Neo ..." and carry no vendor trademarks. Out of scope by design: machines that need the host's song (canvas modulators, Neo Plug itself).
 
 ## 2. Layout
 
@@ -35,11 +35,12 @@ Derived at run time from the machine's `ParamDef` table, never written by hand: 
 
 ## 4. Behaviour
 
-- **Parameters.** Value = the Neo raw value (a frequency's raw value is its position on the log scale), so automation curves equal the editor's and state round trips are exact. Order and ranges are the machine's; they never change (append only), so a plug-in state saved earlier always loads.
+- **Parameters.** Value = the Neo raw value (a frequency's raw value is its position on the log scale), so automation curves equal the editor's and state round trips are exact. A parameter is `STEPPED` when its kind is enum, switch or int, or its range is one step (`ENUM` for choices). Order and ranges are the machine's; they never change (append only), so a plug-in state saved earlier always loads.
 - **State.** `"NBPS"`, format 1, machine state version, count, then int32 raw values. A shorter state (older machine) loads with defaults for the new parameters; a bad header is refused. The machine's own `StateVersion` / `MigrateState` run on load. Note: PX0 had no state version at all; the machines' `ParamDef` tables are append-only, which is what makes older states safe.
 - **Latency and tail.** Latency from the engine (Neo EQ's depends on its parameters: a change sets a flag, `request_callback`, then `request_restart` on the main thread; `latency.get` reports the value current at activation). Neo Verb reports 0. Tail from the descriptor (`tailSeconds`).
 - **Ports.** Effects: stereo in and out, plus a second stereo input as sidechain for Neo Comp and Neo EQ. Instruments: no audio input, one note port (CLAP note + MIDI dialects). Notes: key = 1000 + MIDI note, velocity quantised to 1..127; CC1 mod wheel, CC64 sustain, CC120 and CC123 all notes off, pitch bend, channel aftertouch. Blocks are split at event times and at the engine's maximum block (256), so events are sample accurate.
-- **Silence.** Like the machine in a song, an engine with an `idle` state that has silent input and nothing ringing is not run and writes zeros.
+- **Silence.** Like the machine in a song, an engine with an `idle` state that has silent input and nothing ringing is not run and writes zeros. Neo Verb has no such state in its engine but a rule in its machine (16 blocks with no input and no sound): the descriptor says `"idle": "quiet"` and the runtime applies the same rule, because Verb's modulators free-run while it is processed and a render would otherwise differ from the machine's.
+- **Activation.** The second and later activations of an instance start from a new engine on the same parameters (the machine's `Restart` for an offline render: random streams, drift, voice age and modulator phases back to the start). It is on the main thread, so it may allocate. A host that reactivates for a render (Neo Plug does) gets the same samples as a fresh instance.
 - **Audio thread.** No allocation in `process` (checked by the self-test and by `neohost gc`); sub-block splitting uses preallocated buffers.
 
 ## 5. The editor
@@ -58,19 +59,21 @@ Derived at run time from the machine's `ParamDef` table, never written by hand: 
 | `selftest` (CoreCLR, all OSes) | struct layouts, descriptor, ports, parameters and texts, latency/tail, bit-identical render against the engine used directly (param and note events), zero allocation in process, state round trip, old state, bad header, ring edit to gesture/value events, host automation to Shared |
 | `editor-smoke` (CoreCLR, all OSes) | every editor renders without an "Editor error" panel (PNG), a knob drag makes begin / values / end in the ring, a host change reaches the machine |
 | `neohost` (AOT, per OS) | loads each module through the CLAP ABI: entry, factory, ports, params, state, process; `gc` run; Linux: `gui` under Xvfb (window, screenshot variance, drag, gesture events) |
-| `ci/null-test.py` (Linux) | each plug-in as CLAP and as VST3 in Neo Plug (rebuzz-headless) renders null against the native machine; parameter count and units against `machine_describe`; defaults, changed and reopened-state phases |
+| `ci/null-test.py` (Linux) | each plug-in as CLAP and as VST3 in Neo Plug (rebuzz-headless) renders null against the native machine (1e-5, i.e. -100 dBFS; instruments 3e-3, see below); the VST3 equals the CLAP to 1e-6; the first 64 parameters (Neo Plug has 64 slots) against `machine_describe`: names, texts, units; phases defaults, changed (changed parameters, first 0.5 s skipped: the engines glide to them), reopened (song saved and opened) |
 | auval (macOS) | each AU passes `auval -v` |
 
 ## 7. Packaging and licences
 
 CI (`.github/workflows/plugin-export.yml`) builds per OS: Windows `.clap` + `.vst3`; macOS `.clap` + `.vst3` + `.component`, ad-hoc signed (not notarised); Linux for testing. One artifact, "NeoBuzz Live Plug-ins", with the bundles, `NOTICE.txt` (CLAP MIT, clap-wrapper MIT, VST3 SDK MIT, AudioUnitSDK Apache-2.0, Avalonia, SkiaSharp, HarfBuzz, Inter OFL, .NET) and `INSTALL.txt` (including the AU registrar note: `killall -9 AudioComponentRegistrar` or a logout makes macOS see a new `.component`).
 
+Null results (Linux CI, run on the final head): Neo Filter, Neo EQ, Neo Comp, Neo Delay null within 1e-5 in all phases (Filter, Comp bit-identical in defaults); Neo Verb defaults bit-identical, reopened within the reload tolerance; Neo Poly and Neo Dye Essence null within 3e-3 (instruments: the native machine's notes start at tick boundaries, the plug-in's at the block start Neo Plug sends them). Two phases are reported and not asserted: Neo Verb and Neo Dye Essence "changed" (the native machine carries state from the render before; the same parameters in the "reopened" phase, fresh instances, null). Neo Dye Essence builds its tables on a background thread and is silent for about a second after its first instance in a process; the test host waits for it.
+
 ## 8. Limits and not done
 
-- Not exported yet: Dye Essence, Neo FM6, the Neo Learn synths, Neo Drums, Neo Patch. They are descriptors if their engines fit the generator's shapes; each needs a null test and an editor check.
+- Not exported yet: Neo FM6, the Neo Learn synths, Neo Drums, Neo Patch (instruments of the Poly / Dye shape: a descriptor each, with a null test and an editor check). They are descriptors if their engines fit the generator's shapes; each needs a null test and an editor check.
 - Windows and macOS editor views are compile-checked and run only by CI's headless smoke test; real embedding (HiDPI, resize, focus) needs a hand test in Ableton.
 - No host keyboard input in the editor, no live meters, macOS renders at 1x (blurry on Retina), macOS arm64 only.
-- Each bundle carries its own copy of the libraries (about 40 MB); a shared install location would remove that.
+- Each bundle carries its own copy of the libraries; CI's Linux artifact is 317 MB and macOS 751 MB for 7 plug-ins in 3 formats. A shared install location (one `neo_dsp` and `neo_editor` for all bundles) would remove that.
 - Ad-hoc signing only: Gatekeeper needs quarantine removal until a Developer ID is available.
 
 ## 9. Hand-test list (Ableton Live)

@@ -24,6 +24,9 @@
     "raw:700"
    ]
   ],
-  "settle": 0.5
+  "settle": 0.5,
+  "informational": [
+   "changed"
+  ]
  }
 }
