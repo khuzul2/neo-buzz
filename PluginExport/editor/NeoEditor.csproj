@@ -37,8 +37,8 @@
     <Compile Include="$(M)NeoBuzz.Editor.Avalonia\**\*.cs" Link="Neo\EditorAvalonia\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" GlobalPropertiesToRemove="GearDir" />
-    <ProjectReference Include="..\..\ReBuzzGUI\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj" GlobalPropertiesToRemove="GearDir" />
+    <ProjectReference Include="..\..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" />
+    <ProjectReference Include="..\..\ReBuzzGUI\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj" />
     <PackageReference Include="Avalonia" Version="12.1.4" />
     <PackageReference Include="Avalonia.Headless" Version="12.1.4" />
     <PackageReference Include="Avalonia.Skia" Version="12.1.4" />
