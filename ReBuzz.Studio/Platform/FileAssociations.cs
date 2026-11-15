@@ -2,7 +2,7 @@
 // program for songs itself (Preferences ▸ General ▸ File types, Windows only). Per user, under HKCU\Software\Classes: no
 // administrator rights, nothing outside the user's own hive, and Remove puts back what Make found.
 //
-//   .bmx, .bmw, .bmxml  ->  ProgID NeoBuzzLive.Song  ->  shell\open\command = "<exe>" "%1"
+//   .nbl, .bmx, .bmw, .bmxml  ->  ProgID NeoBuzzLive.Song  ->  shell\open\command = "<exe>" "%1"
 //
 // The extension's earlier default (another Buzz, say) is kept in the extension key's value "NeoBuzzLive.Previous" and restored by Remove.
 // The registry sits behind IAssocStore so the logic is tested on any platform with a dictionary.

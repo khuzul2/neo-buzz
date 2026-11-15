@@ -27,7 +27,11 @@
 #include <string>
 #include <map>
 
+#ifdef _WIN32
 #include "../buzz/MachineInterfaceNext.h"
+#else
+#include <buzz/MachineInterfaceNext.h>
+#endif
 
 typedef unsigned char byte;
 

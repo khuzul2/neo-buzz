@@ -1,6 +1,6 @@
 # Native song format (.nbl)
 
-Status: NF1 built (spec, container, reader and writer, import of every old format, tests). NF2 (the lossy "Export for Buzz/ReBuzz (.bmx)") is next and is not part of NF1.
+Status: NF1 built (spec, container, reader and writer, import of every old format, tests). NF2 (the lossy "Export for Buzz/ReBuzz (.bmx)") is built on top of it (§11).
 
 **Decision (2026-11-15).** NeoBuzz Live stops writing files that upstream ReBuzz must play. New songs save as `.nbl` ("NeoBuzz Live song"). `.bmx`, `.bmw` and `.bmxml` are read forever. Old machines are still hosted and the engine model does not change.
 
@@ -97,7 +97,7 @@ XML to JSON: `{"element":"Name","attrs":{...},"children":[...]}` or `"text"`. A 
 
 - The core is still the BMX section codec inside blobs. What that keeps: 16-bit machine indices in some sections, 16-bit sequence machine count, section sizes under 4 GB each (the container itself is 64-bit), `int` tick positions in the engine (the file stores them as variable-width values up to 64 bits). What it gives up that the brief lists: machine/pattern/connection data as manifest fields. Plan (NF1b): one migration per section replaces its blob with JSON entities plus blobs, loader and writer together, tested by the same round-trip and import tests.
 - Parameter values are integers as in Buzz; real-valued parameters need the engine model to change, which is out of scope.
-- NF2: "Export for Buzz/ReBuzz (.bmx)" (lossy) reuses `BMXFile.Save` and is a menu item and a `format="bmx"` path of `song_save`.
+- NF2: "Export for Buzz/ReBuzz (.bmx)" (lossy), §11. `song_save format="bmx"` stays what it was: a full, non-lossy save in the old `.bmx`.
 
 ## 9. Tests
 
@@ -119,3 +119,55 @@ Linux, 2 shared cores at load 3-4 (indicative; times in ms, one run each, `NblFo
 | Dye Stress as .bmxml | | 12.4 MB | | 239 | | 461 | |
 
 Reading: files are smaller whenever there is data worth deflating (a third to a 30th of the .bmx); a tiny song costs about 5 KB more than its .bmx (the manifest, the index and the stores as JSON). Save is slower where there is much to hash and deflate (the big song: 410 ms against 206), open is within about 2x everywhere; both are far below a second on the biggest song. The demo songs' machines are placeholders on Linux; the Windows package run repeats the per-extension tests with the real machines (`ReBuzzTests`, `.nbl` added to the save/open tests).
+
+## 11. NF2: export for Buzz
+
+A separate, explicitly lossy command: **File ▸ Export for Buzz/ReBuzz…** and the agent's `song_export(path, overwrite)`. It writes a `.bmx` that upstream ReBuzz reads and says what upstream will not have. The song itself is never touched: no name, recent file, backup, dirty flag, undo step or history change (`ReBuzzCore.ExportForBuzz`, the `SaveSongCopy` rule). `song_save format="bmx"` and Save As `.bmx` stay full, non-lossy saves of the old kind.
+
+### 11.1 Decisions
+
+| Question | Decision |
+|---|---|
+| Writer | `BMXFile.BuildSections` and `Assemble` (the sections `Save` writes) under an export profile (`BuzzExport`, per thread, set only for the call), written atomically (temporary file beside the target, flushed, renamed). No history section. |
+| Takes (option C) | Take lanes are written **empty** in the core SEQU, so upstream plays no doubled notes. Their events, and any event past tick 65,535, are in the subsection `ExportedLanes` (per lane index: time, kind, pattern index). `ArrangementEventStore` reads it first on open, so the lane's events are back before the `Arrangement` roles and `ArrangementEvents` trims/ids/gain are applied: reopening the export restores the takes exactly. A normal save of that song writes the lanes whole again. |
+| Positions past 65,535 | Left out of SEQU (Buzz holds a position in two bytes), kept in `ExportedLanes`, reported. The export is not refused. |
+| Names | Latin-1, readable: `→` is `->`, `←` `<-`, quotes and dashes their plain forms, accents Latin-1 has stay (`é`), others lose the mark (`ś` is `s`), compatibility forms split (`ﬁ` is `fi`), `?` only when nothing is left (CJK, symbols, emoji; one per character). Machine names stay unique (` (2)` is added to a clash). Reported per machine and pattern. |
+| MIDI | The MIDI section keeps the bindings whose group, track, index, channel and controller fit a byte (as every save); MID2 has all, and only NeoBuzz Live reads it. Reported as a count. |
+| Trims, gain, clip ids | Not baked: a trimmed clip would need a derived pattern per trim (notes, columns, the pattern editor's data), which is not exact in general. Reported per lane. The `ArrangementEvents` subsection keeps them for NeoBuzz Live. |
+| Engine automation | Kept in the pattern data (TAP2), never played upstream; reported per column (ramps would play as steps). |
+| Lane roles | Take lanes as above; automation lanes play as ordinary sequences upstream (reported). |
+| Fork machines | Every machine with author `neo-buzz` (Neo *, Dye, Learn, Patch, modulators, Neo Plug): upstream shows them as missing, with their connections and data kept. Reported per machine; Neo Plug adds a "Plug-in state" line. |
+| Snapshots/history | Not written; reported when the song has snapshots. |
+| Other fork data | Session View, markers, notes, arrangement view data stay in their subsections; upstream ignores them and drops them when it saves. Reported by name. |
+| Target | A `.bmx` or `.bmw`. Refused: `.nbl`, `.bmxml`, the open song's own file, a folder. The studio adds `.bmx` to a name without one; the agent too. |
+
+### 11.2 The loss report
+
+`ExportReport`: a list of `ExportLoss(Category, Item, Upstream)`, distinct and sorted by category, item, text; `ToText()` is one `Category | Item | Upstream` line each (empty when nothing is lost). `PreviewBuzzExport()` gives it without writing. In the studio the dialog shows it grouped by category with **Export** (Return) and **Cancel** (Escape); with nothing lost it exports without asking. The agent gets `{file, bytes, lossless, losses[]}`.
+
+| Category | Item | What happens upstream |
+|---|---|---|
+| Takes | Lane N (machine): K events | Written empty; no take lane, nothing played. NeoBuzz Live restores it. |
+| Sequence length | Lane N: K events past tick 65535 | Left out. NeoBuzz Live restores them. |
+| Clip trims | Lane N: K clips | Play the whole pattern from the first row. |
+| Clip gain | Lane N: K clips | Play at full volume. |
+| Clip ids | Lane N: K events | Each event plays alone; loop regions ignored. |
+| Lane roles | Lane N: automation lane | Plays as an ordinary sequence. |
+| Automation / Automation ramps | machine / pattern: target, K events | Kept, never played; ramps would be steps. |
+| Machines | name (gear) | Missing machine; connections and data kept. |
+| Plug-in state | name | Not loaded without the machine. |
+| MIDI bindings | K bindings past index 255 | Only in MID2 (NeoBuzz Live). |
+| Names | machine or pattern | Written in Latin-1; fork data keyed by the old name is not matched on reopen; the Modern Pattern Editor's own note data names patterns in ASCII and may not find the pattern. |
+| History | K snapshots | Not written. |
+| NeoBuzz Live data | Session View, markers, notes, arrangement… | Ignored, and dropped when upstream saves. |
+
+### 11.3 Limits
+
+- Names that changed are not changed back when NeoBuzz Live reopens the export: the song shows the Latin-1 names, and data keyed by the old name (Session View clips, folds, parameter lanes) is not matched. Index-keyed data (takes, trims, roles, MIDI) is exact.
+- The Modern Pattern Editor writes its own note data with pattern names in ASCII (upstream's writer, unchanged); a pattern whose name is not ASCII may lose that data under a Latin-1 name.
+- Whether upstream reads a 4-byte position is not assumed: events past 65,535 are left out, not widened.
+- The simulated upstream read in the tests drops the fork-only subsections of the file; it is NeoBuzz Live reading, not upstream ReBuzz itself (not run in CI).
+
+### 11.4 Tests
+
+`ReBuzz.Studio.Tests/BuzzExportTests.cs`: transliteration; the report's type, order and text; target rules; a song with takes, trims, gain, clip ids, an automation lane, a ramped automation column, an event past 65,535, a Neo machine, a 704-parameter machine bound to MIDI and Unicode names: take lane empty in SEQU, `ExportedLanes` holds the take events, names Latin-1 in the core sections, the report lists exactly the expected items (and the MIDI count adds up to the MIDI section's), reopening restores the takes, trims, ids, gain, the late event, all 704 bindings and the ramp; an upstream read (subsections dropped) renders like the song minus the losses (-79 dB) and unlike the song (+2.6 dB); the open song unchanged (sections, name, dirty flag, undo, snapshots); the studio flow (suggested name, Cancel writes nothing, nothing lost exports without asking, `.nbl` and own-file refused, the report window); the agent tool (happy path, overwrite, refusals, no undo step, `song_save format="bmx"` still whole).

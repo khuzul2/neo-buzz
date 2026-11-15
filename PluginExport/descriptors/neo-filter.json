@@ -1,0 +1,6 @@
+{
+  "id": "org.neobuzz.neo-filter", "name": "Neo Filter", "folder": "NeoFilter", "namespace": "NeoBuzz.Filter", "engine": "FilterEngine", "machine": "NeoFilterMachine", "editor": "NeoFilterEditor",
+  "kind": "effect", "features": ["filter"], "au": "NFlt", "description": "Resonant filter with envelope follower and LFO (ladder and state-variable, oversampled drive)",
+  "process": "stereo", "tempo": true, "transport": "ticks", "idle": true, "tailSeconds": 2,
+  "test": {"changes": [["Type", "raw:2"], ["Cutoff", "raw:5000"], ["Resonance", "raw:500"]], "settle": 0.5}
+}

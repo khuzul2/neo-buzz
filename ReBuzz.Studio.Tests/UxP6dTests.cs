@@ -229,7 +229,7 @@ namespace ReBuzz.Studio.Tests
             assoc.Make();
 
             Assert.That(assoc.IsDefault, Is.True);
-            foreach (var ext in new[] { ".bmx", ".bmw", ".bmxml" }) Assert.That(store.Get(ext, ""), Is.EqualTo("NeoBuzzLive.Song"), ext);
+            foreach (var ext in new[] { ".nbl", ".bmx", ".bmw", ".bmxml" }) Assert.That(store.Get(ext, ""), Is.EqualTo("NeoBuzzLive.Song"), ext);
             Assert.That(store.Get(@"NeoBuzzLive.Song\shell\open\command", ""), Is.EqualTo("\"C:\\Apps\\NeoBuzz Live\\NeoBuzzLive.exe\" \"%1\""), "the path may hold spaces");
             Assert.That(store.Get(@"NeoBuzzLive.Song\DefaultIcon", ""), Is.EqualTo("\"C:\\Apps\\NeoBuzz Live\\NeoBuzzLive.exe\",0"));
             Assert.That(store.Get(".bmx", FileAssociations.PreviousValue), Is.EqualTo("Buzz.Song"));
@@ -278,16 +278,16 @@ namespace ReBuzz.Studio.Tests
 
             GeneralPage.Associations = () => Assoc(store);
             var page = new GeneralPage(new PrefsModel(Host.Agent.Host.AppControl));
-            Assert.That(page.AssociationButton.Content, Is.EqualTo("Make NeoBuzz Live the default for .bmx/.bmw"));
+            Assert.That(page.AssociationButton.Content, Is.EqualTo("Make NeoBuzz Live the default for .nbl/.bmx/.bmw"));
             Assert.That(page.AssociationText, Is.EqualTo("No program is set for .bmx songs."));
 
             page.AssociationButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
             Assert.That(store.Get(".bmx", ""), Is.EqualTo("NeoBuzzLive.Song"));
-            Assert.That(page.AssociationButton.Content, Is.EqualTo("Restore the previous default for .bmx/.bmw"));
+            Assert.That(page.AssociationButton.Content, Is.EqualTo("Restore the previous default for .nbl/.bmx/.bmw"));
 
             page.AssociationButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
             Assert.That(store.Get(".bmx", ""), Is.Null, "reversible");
-            Assert.That(page.AssociationButton.Content, Is.EqualTo("Make NeoBuzz Live the default for .bmx/.bmw"));
+            Assert.That(page.AssociationButton.Content, Is.EqualTo("Make NeoBuzz Live the default for .nbl/.bmx/.bmw"));
         }
     }
 }

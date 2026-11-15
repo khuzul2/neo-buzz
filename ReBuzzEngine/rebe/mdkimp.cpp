@@ -1,7 +1,11 @@
 #include "stdafx.h"
 #include "mdk.h"
 #include "mdkimp.h"
+#ifdef _WIN32
 #include "../buzz/MachineInterface.h"
+#else
+#include <buzz/MachineInterface.h>
+#endif
 
 #define UNROLL		4			// how many times to unroll inner loops
 #define SUNROLL		2			// same for loops with stereo output

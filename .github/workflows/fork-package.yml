@@ -257,8 +257,18 @@ jobs:
         if ($LASTEXITCODE -ne 0) { throw "upstream's binaries on a zeroed heap weren't made" }
         python tools/native-compare.py $exe.FullName native-compare --gate --pitch --json native-compare/native-compare.json `
           --variant R64=build/ExternalMachines/natives/x64/Gear --variant R86=build/ExternalMachines/natives/x86/Gear `
-          --zeroed Z64=build/ExternalMachines/natives-zeroed/x64/Gear
+          --zeroed Z64=build/ExternalMachines/natives-zeroed/x64/Gear --save-renders native-references
         exit $LASTEXITCODE
+
+    # R1 (docs/specs/cross-platform.md): this build's render of every case of the natives it ships rebuilt, which the Linux and
+    # macOS jobs below compare their own rebuilds with (tools/native-cross.py --ref).
+    - name: Upload the natives' Windows references
+      if: (success() || failure()) && steps.build.outcome == 'success' && inputs.quick != true
+      uses: actions/upload-artifact@v6
+      with:
+        name: native-references
+        path: native-references
+        if-no-files-found: ignore
 
     - name: Natives, diagnosis (fix/ci-flakes-4)
       if: (success() || failure()) && steps.build.outcome == 'success' && inputs.quick != true && inputs.diag == true
@@ -598,6 +608,98 @@ jobs:
       with:
         name: null-test-macos
         path: ${{ runner.temp }}/null-test/renders/*.wav
+        if-no-files-found: ignore
+
+  # R1 (docs/specs/cross-platform.md): the classic machines rebuilt natively on Linux x64 (tools/build-natives-posix.py), run by the
+  # portable host in rebuzz-headless: each loads and renders every case of tools/native-compare.py, which is held to the
+  # package job's render of the same case (bit for bit or within -100 dBFS; else level within 0.5 dB and third-octave bands
+  # within 1 dB), and the classic demo songs play. Full builds only (quick ones build no natives, hence no references).
+  natives-linux:
+    needs: package
+    if: ${{ !cancelled() && inputs.quick != true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+    - uses: actions/checkout@v5
+
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Classic machines and native host (C++)
+      run: |
+        python3 tools/build-natives-posix.py --out build/natives
+        cmake -S ReBuzzEngine/portable -B build/native-host >/dev/null
+        cmake --build build/native-host -j 3
+
+    - name: Build rebuzz-headless
+      run: |
+        git submodule update --init --depth 1 3rdParty/serilog/serilog
+        dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
+
+    - name: Download the Windows references
+      uses: actions/download-artifact@v7
+      with:
+        name: native-references
+        path: native-ref
+
+    - name: Natives, Linux x64 vs Windows
+      run: |
+        python3 -m pip install --break-system-packages numpy >/dev/null
+        python3 tools/native-cross.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/natives" --ref native-ref --json "$RUNNER_TEMP/natives.json"
+
+    - name: Upload the results
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: natives-linux
+        path: ${{ runner.temp }}/natives.json
+        if-no-files-found: ignore
+
+  # R1 (docs/specs/cross-platform.md): the classic machines rebuilt natively on macOS arm64 (tools/build-natives-posix.py), run by the
+  # portable host in rebuzz-headless: each loads and renders every case of tools/native-compare.py, which is held to the
+  # package job's render of the same case (bit for bit or within -100 dBFS; else level within 0.5 dB and third-octave bands
+  # within 1 dB), and the classic demo songs play. Full builds only (quick ones build no natives, hence no references).
+  natives-macos:
+    needs: package
+    if: ${{ !cancelled() && inputs.quick != true }}
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+    - uses: actions/checkout@v5
+
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Classic machines and native host (C++)
+      run: |
+        python3 tools/build-natives-posix.py --out build/natives
+        cmake -S ReBuzzEngine/portable -B build/native-host >/dev/null
+        cmake --build build/native-host -j 3
+
+    - name: Build rebuzz-headless
+      run: |
+        git submodule update --init --depth 1 3rdParty/serilog/serilog
+        dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
+
+    - name: Download the Windows references
+      uses: actions/download-artifact@v7
+      with:
+        name: native-references
+        path: native-ref
+
+    - name: Natives, macOS arm64 vs Windows
+      run: |
+        python3 -m pip install --break-system-packages numpy >/dev/null
+        python3 tools/native-cross.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/natives" --ref native-ref --json "$RUNNER_TEMP/natives.json"
+
+    - name: Upload the results
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: natives-macos
+        path: ${{ runner.temp }}/natives.json
         if-no-files-found: ignore
 
   # Plug-in host (docs/specs/plugin-host.md, H1): neoplug built with CMake, Surge XT (CLAP and VST3), the SDK's AGain and Note

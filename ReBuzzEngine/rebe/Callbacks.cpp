@@ -21,7 +21,11 @@ inline void BMPrand()
 	BMPRandStat = (BMPRandStat * 1103515245 + 12347) & 0x7fffffff;
 }
 
+#ifdef _WIN32
 __declspec(align(64)) __declspec(thread) float AuxBuffer[MAX_BUFFER_LENGTH*4 * 2 + 16];
+#else
+alignas(64) thread_local float AuxBuffer[MAX_BUFFER_LENGTH*4 * 2 + 16];
+#endif
 
 
 extern void AfxMessageBox(string txt);
@@ -129,12 +133,12 @@ static void _MICB6(CMachine *pmac, char const *loc, int a, int b, int c, int d, 
 }
 
 #define MICB0 if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB0(((CMachineCallbacks *)this)->pMachine, __FUNCTION__)
-#define MICB1(a) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB1(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(a))
-#define MICB2(a, b) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB2(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(a), (int)(b))
-#define MICB3(a, b, c) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB3(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(a), (int)(b), (int)(c))
-#define MICB4(a, b, c, d) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB4(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(a), (int)(b), (int)(c), (int)(d))
-#define MICB5(a, b, c, d, e) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB5(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(a), (int)(b), (int)(c), (int)(d), (int)(e))
-#define MICB6(a, b, c, d, e, f) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB6(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(a), (int)(b), (int)(c), (int)(d), (int)(e), (int)(f))
+#define MICB1(a) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB1(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(intptr_t)(a))
+#define MICB2(a, b) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB2(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(intptr_t)(a), (int)(intptr_t)(b))
+#define MICB3(a, b, c) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB3(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(intptr_t)(a), (int)(intptr_t)(b), (int)(intptr_t)(c))
+#define MICB4(a, b, c, d) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB4(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(intptr_t)(a), (int)(intptr_t)(b), (int)(intptr_t)(c), (int)(intptr_t)(d))
+#define MICB5(a, b, c, d, e) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB5(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(intptr_t)(a), (int)(intptr_t)(b), (int)(intptr_t)(c), (int)(intptr_t)(d), (int)(intptr_t)(e))
+#define MICB6(a, b, c, d, e, f) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB6(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(intptr_t)(a), (int)(intptr_t)(b), (int)(intptr_t)(c), (int)(intptr_t)(d), (int)(intptr_t)(e), (int)(intptr_t)(f))
 
 
 extern CWaveInfo const *wavetableGetWave(int i);
@@ -658,7 +662,7 @@ char const *CMICallbacks::GetMachineName(CMachine *pmac)
 	char* buf = pmcb->machineNames[name];
 	if (buf != NULL)
 	{
-		int len = min(strlen(name.c_str()), 255);
+		int len = min((int)strlen(name.c_str()), 255);
 		strcpy(buf, name.c_str());
 		buf[len] = 0;
 	}
@@ -809,7 +813,9 @@ bool CMICallbacks::HostMIDIFiltering()
 	return gstate.MIDIFiltering;
 }
 
+#ifdef _WIN32
 extern COLORREF GetGUIColor(char const *name);
+#endif
 
 dword CMICallbacks::GetThemeColor(char const *name)
 {
@@ -1347,7 +1353,7 @@ void CMICallbacks::RemapLoadedMachineName(char* name, int bufsize)
 	if (pmcb->remappedMachineNames.count(name))
 	{
 		string newname = pmcb->remappedMachineNames[name];
-		int copylen = min(strlen(newname.c_str()), bufsize - 1);
+		int copylen = min((int)strlen(newname.c_str()), bufsize - 1);
 		strncpy(name, newname.c_str(), copylen);
 		name[copylen] = 0;
 	}
@@ -1378,6 +1384,7 @@ int CMICallbacks::GetOutputChannelConnectionCount(CMachine *pmac, int channel)
 	return 1;
 }
 
+#ifdef _WIN32
 const CString REG_SW_GROUP_REBUZZ_MIDI = _T("Software\\ReBuzz\\BuzzGUI\\MIDISettings");
 const CString REG_KEY_MASTER_KEYBOARD_MODE = _T("MasterKeyboardMode");
 const CString REG_SW_GROUP_REBUZZ_ENGINE = _T("Software\\ReBuzz\\BuzzGUI\\EngineSettings");
@@ -1408,8 +1415,13 @@ Function_Exit:
 	return false;
 }
 
+#endif
+
 bool CMICallbacks::GetOption(char const *name)
 {
+#ifndef _WIN32
+	return false;	// Fork (R1): the options live in the Windows registry
+#else
 	// Avoid IPC calls.
 	CMachineCallbacks* pmcb = (CMachineCallbacks*)this;
 
@@ -1441,6 +1453,7 @@ bool CMICallbacks::GetOption(char const *name)
 	r.Read(ret);
 	return ret;
 	*/
+#endif
 }
 
 void CMICallbacks::ToggleRecordMode()
