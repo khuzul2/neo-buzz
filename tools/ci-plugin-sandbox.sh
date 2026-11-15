@@ -76,3 +76,4 @@ hour)
 *) echo "usage: $0 build|quick|hour <minutes>"; exit 2 ;;
 esac
 exit $((fails > 0 ? 1 : 0))
+# (H2: macOS joins when the commit message says [mac])
