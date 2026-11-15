@@ -1,4 +1,5 @@
 // neoplug: VST3 hosting on the SDK's hosting helpers (MIT since 3.8).
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <atomic>
@@ -351,8 +352,29 @@ public:
         return toProcessor.push(id, v);
     }
 
+    // A plug-in may report a parameter's old value in the block after the host set it (its processor applies the change
+    // later): what it reports about a parameter the host set a moment ago is not news.
+    struct Recent { uint32_t id = 0; int64_t at = 0; };
+    Recent recent[64];
+    int recentNext = 0;
+    static int64_t nowMs() { return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count(); }
+    void noteSent(uint32_t id)
+    {
+        int64_t t = nowMs();
+        for (auto& r : recent) if (r.at != 0 && r.id == id) { r.at = t; return; }
+        recent[recentNext] = {id, t};
+        recentNext = (recentNext + 1) & 63;
+    }
+    bool sentRecently(uint32_t id)
+    {
+        int64_t t = nowMs();
+        for (auto& r : recent) if (r.at != 0 && r.id == id && t - r.at < 600) return true;
+        return false;
+    }
+
     void addParam(ParamID id, int32 offset, ParamValue v)
     {
+        noteSent(id);
         int32 index = 0;
         if (auto* q = paramsIn.addParameterData(id, index))
         {
@@ -486,7 +508,12 @@ public:
                 int32 pc = q->getPointCount();
                 int32 off = 0;
                 ParamValue v = 0;
-                if (pc > 0 && q->getPoint(pc - 1, off, v) == kResultOk) { dbgParam("plug-in output", q->getParameterId(), v); toController.push(q->getParameterId(), v); }
+                if (pc > 0 && q->getPoint(pc - 1, off, v) == kResultOk)
+                {
+                    if (sentRecently(q->getParameterId())) { dbgParam("plug-in output ignored (just set by the host)", q->getParameterId(), v); continue; }
+                    dbgParam("plug-in output", q->getParameterId(), v);
+                    toController.push(q->getParameterId(), v);
+                }
             }
         // Its note output.
         io.out_count = 0;

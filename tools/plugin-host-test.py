@@ -188,7 +188,7 @@ for name, kind, plugin in machines:
         return not p.get("choices") and not any(w in p["name"].lower() for w in ("channel", "input", "output", "mode", "bypass"))
     pick = next((p for p in ps if wide(p)), next((p for p in ps if plain(p)), next((p for p in ps if not p.get("choices")), ps[0] if ps else None)))
     if pick:
-        want = 20000 if kind != "fx" else 42000   # an effect's first parameter is often a gain: stay audible
+        want = 20000 if kind != "fx" else 32767   # an effect's first parameter is often a gain: stay audible
         ok, text, s = call("param_set", machine=name, changes=[{"param": pick["name"], "value": f"raw:{want}"}])
         check(ok, f"{name}: param_set {pick['name']} = raw:{want}")
         ok, text, d2 = call("machine_describe", machine=name, all=True)
