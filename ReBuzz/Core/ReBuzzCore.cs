@@ -1588,10 +1588,15 @@ namespace ReBuzz.Core
         {
             string temp = Path.Combine(Path.GetTempPath(), "NeoBuzz-restore-" + Guid.NewGuid().ToString("N") + ".bmx");
             File.WriteAllBytes(temp, bmx);
+            var carry = NativeCarry;
+            string legacy = LegacyOrigin;
             try
             {
                 restoringSnapshot = true;
-                return TryOpenSongFile(temp, songName ?? "", true);
+                bool ok = TryOpenSongFile(temp, songName ?? "", true);
+                NativeCarry = carry;        // a snapshot is core sections; what the file carries stays
+                LegacyOrigin = legacy;
+                return ok;
             }
             finally
             {
@@ -1681,6 +1686,7 @@ namespace ReBuzz.Core
                 SongCore.SongName = restore ? (restoreAs.Length == 0 ? null : restoreAs) : filename;
                 if (!restore)
                 {
+                    LegacyOrigin = NblFile.IsNative(filename) ? null : filename;
                     UpdateRecentFilesList(filename);
                     Snapshots?.Bind(filename);          // fork (history-snapshots.md HS2)
                 }
@@ -1741,7 +1747,11 @@ namespace ReBuzz.Core
         {
             IReBuzzFile file;
             string extension = Path.GetExtension(path);
-            if (extension == ".bmx" || extension == ".bmw")
+            if (NblFile.IsNative(path))
+            {
+                file = new NblFile(this, buzzPath, dispatcher, keyboard, engineSettings);       // fork (native-format.md)
+            }
+            else if (extension == ".bmx" || extension == ".bmw")
             {
                 file = new BMXFile(this, buzzPath, dispatcher, keyboard, engineSettings);
             }
@@ -1786,6 +1796,7 @@ namespace ReBuzz.Core
             }
 
             // Do save
+            LegacyOrigin = null;        // fork (native-format.md): the song now has a file of its own
             IReBuzzFile file = GetReBuzzFile(filename);
 
             SaveSongCore ss = new SaveSongCore();
@@ -2566,8 +2577,19 @@ namespace ReBuzz.Core
         }
 
         // Clean up song 
+        /// <summary>Fork (native-format.md §6): what the .nbl this song came from holds that this build doesn't know, written back on save. Null for a new song or one opened from another format.</summary>
+        internal NblCarry NativeCarry { get; set; }
+
+        /// <summary>
+        /// Fork (native-format.md §7): the .bmx, .bmw or .bmxml this song was opened from, until it is saved under a name.
+        /// Save asks for a new .nbl name for such a song and never overwrites the original.
+        /// </summary>
+        internal string LegacyOrigin { get; private set; }
+
         internal void NewSong()
         {
+            NativeCarry = null;
+            LegacyOrigin = null;
             bool outer = SongLoading;
             SongLoading = true;                 // fork (0.6.1)
             try

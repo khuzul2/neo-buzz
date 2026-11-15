@@ -147,7 +147,7 @@ namespace ReBuzz.FileOps
             int globals = Group(machine, 1).Count;
             foreach (var (name, data) in patterns)
             {
-                BMXFile.WriteString(ms, name);                          // pattern name
+                BMXFile.WriteString(ms, name, System.Text.Encoding.Latin1);                          // pattern name
                 BMXFile.WriteInt(ms, 4);                                // rows per beat
                 BMXFile.WriteInt(ms, globals + Group(machine, 2).Count * data.Tracks.Length);   // columns (global + tracks)
                 WriteColumns(ms, machine, 1, 0, data.Global, 0);
@@ -162,7 +162,7 @@ namespace ReBuzz.FileOps
             var parameters = Group(machine, group);
             for (int j = 0; j < parameters.Count; j++)
             {
-                BMXFile.WriteString(ms, machine.Name);                  // name
+                BMXFile.WriteString(ms, machine.Name, System.Text.Encoding.Latin1);                  // name
                 BMXFile.WriteInt(ms, index);                            // parameter index
                 BMXFile.WriteInt(ms, track);                            // track
                 BMXFile.WriteByte(ms, 0);                               // bool graphical

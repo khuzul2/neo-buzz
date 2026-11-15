@@ -50,7 +50,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ S1: the song meter
 
         [AvaloniaTest]
-        public void TheSequenceEditorsBarsAreTheEnginesSongMeterAndSongFilesKeepThem([Values(".bmx", ".bmxml")] string extension)
+        public void TheSequenceEditorsBarsAreTheEnginesSongMeterAndSongFilesKeepThem([Values(".bmx", ".bmxml", ".nbl")] string extension)
         {
             using var rig = new SessionRig("Lead");
             var meter = rig.Core.SongMeter;
@@ -105,7 +105,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ S2: clip ids on events
 
         [AvaloniaTest]
-        public void ClipIdsAndLoopsSurviveEditsUndoAndSongFiles([Values(".bmx", ".bmxml")] string extension)
+        public void ClipIdsAndLoopsSurviveEditsUndoAndSongFiles([Values(".bmx", ".bmxml", ".nbl")] string extension)
         {
             using var rig = new SessionRig("Lead");
             var lead = rig.Machine("Lead");
