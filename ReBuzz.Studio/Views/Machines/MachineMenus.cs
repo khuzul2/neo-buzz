@@ -4,6 +4,8 @@
 // Fork (mcp-server.md §12.5, U5): "Replace with <successor>..." on a machine with a Neo successor.
 // Fork (machine-safety.md §3.2–3.3): Reset and unmute on a diverged machine; on the Master, clearing
 // the clip indicator.
+// Fork (ux-overhaul.md P6c, §9 row 14): Attributes, Cut / Copy / Paste, Search Online and the machine's own Commands (the list a native
+// machine reports, with its submenus) in a machine's menu; Paste on empty space; a group's menu (Rename, Fold, Delete).
 // Fork (mcp-server.md §12.11, U4): "Editor..." opens a machine's manifest editor, and "Double-click Opens
 // Editor" is its per-gear setting (on by default for curated manifests); "Parameters..." stays the plain list.
 
@@ -13,6 +15,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
@@ -65,9 +68,15 @@ namespace ReBuzz.Studio.Views.Machines
                 var m = MachineEdits.Create(core, i, (float)at.X, (float)at.Y);
                 if (m != null) canvas.Select(new[] { m });
             })));
+            menu.Items.Add(Item("Paste", () => canvas.PasteSelection(logical), MachineClipboard.CanPaste(core), new KeyGesture(Key.V, CommandKey)));
             menu.Items.Add(Item("Unmute All Machines", canvas.UnmuteAll, key: new KeyGesture(Key.U, CommandKey)));
             if (core.SongCore.MachineGroups.Count > 0)
-                menu.Items.Add(Sub("Delete Group", core.SongCore.MachineGroups.ToList().Select(g => (object)Item(g.Name, () => { MachineEdits.DeleteGroup(core, g); canvas.Redraw(); }))));
+            {
+                var groups = core.SongCore.MachineGroups.ToList();
+                menu.Items.Add(Sub("Rename Group", groups.Select(g => (object)Item(g.Name, () => RenameGroup(g)))));
+                menu.Items.Add(Sub("Fold Group", groups.Select(g => (object)Check(g.Name, g.IsGrouped, () => { MachineEdits.ToggleFold(core, g, canvas); }))));
+                menu.Items.Add(Sub("Delete Group", groups.Select(g => (object)Item(g.Name, () => { MachineEdits.DeleteGroup(core, g); canvas.Redraw(); }))));
+            }
             menu.Items.Add(new Separator());
             menu.Items.Add(Item("Snap Machines to Grid", () => MachineEdits.Snap(core, canvas.Selection.Count > 0 ? canvas.Selection.ToList() : core.SongCore.Machines.ToList(), 10)));
             menu.Items.Add(new Separator());
@@ -87,6 +96,8 @@ namespace ReBuzz.Studio.Views.Machines
                 menu.Items.Add(Item("Signal Analysis...", () => Shell.Tools.SignalAnalysisWindow.Open(Shell.StudioHost.Current, machine)));
                 if (core.MasterOver)
                     menu.Items.Add(Item($"Clear clip indicator ({core.MasterOverText})", core.ClearMasterOver));
+                menu.Items.Add(new Separator());
+                menu.Items.Add(Item("Paste", () => canvas.PasteSelection(), MachineClipboard.CanPaste(core), new KeyGesture(Key.V, CommandKey)));
                 return menu;
             }
 
@@ -107,6 +118,7 @@ namespace ReBuzz.Studio.Views.Machines
                 (generator && !machine.IsControlMachine) || machine.DLL.Info.Flags.HasFlag(MachineInfoFlags.MULTI_IO)));
             menu.Items.Add(new Separator());
             menu.Items.Add(Item("Parameters...", () => MachineEdits.OpenParameters(machine)));
+            menu.Items.Add(Sub("Attributes", Attributes(machine)));
             if (ReBuzz.Agent.ManifestEditorSettings.Available(machine.DLL))
             {
                 menu.Items.Add(Item("Editor...", () => core.UiHost?.OpenEditor(machine)));
@@ -129,7 +141,132 @@ namespace ReBuzz.Studio.Views.Machines
             menu.Items.Add(Sub("Group", GroupItems(machine, selection)));
             menu.Items.Add(Item("Rename...", () => MachineEdits.Rename(machine), key: new KeyGesture(Key.R, CommandKey)));
             menu.Items.Add(Item("Delete", () => MachineEdits.Delete(core, selection), key: DeleteKey));
+            menu.Items.Add(new Separator());
+            menu.Items.Add(Item("Cut", () => MachineClipboard.Cut(core, selection), key: new KeyGesture(Key.X, CommandKey)));
+            menu.Items.Add(Item("Copy", () => MachineClipboard.Copy(core, selection), key: new KeyGesture(Key.C, CommandKey)));
+            menu.Items.Add(Item("Paste", () => canvas.PasteSelection(), MachineClipboard.CanPaste(core), new KeyGesture(Key.V, CommandKey)));
+            menu.Items.Add(new Separator());
+            menu.Items.Add(Item("Search Online", () => SearchOnline(machine)));
+            // The machine's own commands (a native machine's list, with its submenus), as WPF appends them.
+            var commands = Commands(machine);
+            if (commands.Count > 0)
+            {
+                menu.Items.Add(new Separator());
+                foreach (var c in commands) menu.Items.Add(c);
+            }
             return menu;
+        }
+
+        /// <summary>A group's menu: rename, fold or unfold, delete (GroupControl.CreateMenu).</summary>
+        public ContextMenu ForGroup(IMachineGroup group)
+        {
+            var menu = new ContextMenu();
+            menu.Items.Add(Item("Rename...", () => RenameGroup(group)));
+            menu.Items.Add(Item(group.IsGrouped ? "Unfold" : "Fold", () => MachineEdits.ToggleFold(core, group, canvas)));
+            menu.Items.Add(new Separator());
+            menu.Items.Add(Item("Delete Group", () => { MachineEdits.DeleteGroup(core, group); canvas.Redraw(); }));
+            return menu;
+        }
+
+        /// <summary>Asks for a group's new name (the engine's prompt: IMachineUiHost.AskName) and renames it, undoably.</summary>
+        void RenameGroup(IMachineGroup group)
+        {
+            group.ShowDialog(MachineGroupDialog.Rename, 0, 0);
+            canvas.Redraw();
+        }
+
+        /// <summary>Where Search Online goes (Buzz's machine search, as the WPF menu does); tests replace the launcher.</summary>
+        public static Action<Uri> Launch { get; set; }
+
+        /// <summary>The Buzz machine search for a machine: its first word of the DLL name.</summary>
+        public static Uri SearchUri(IMachine machine)
+        {
+            var words = (machine.DLL?.Name ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return words.Length == 0 ? null : new Uri("https://buzz.robotplanet.dk/search.php?q=" + Uri.EscapeDataString(words[0]));
+        }
+
+        void SearchOnline(IMachine machine)
+        {
+            var uri = SearchUri(machine);
+            if (uri == null) return;
+            if (Launch != null) Launch(uri);
+            else _ = TopLevel.GetTopLevel(canvas)?.Launcher.LaunchUriAsync(uri);
+        }
+
+        /// <summary>The machine's attributes: each a submenu of its values (the current ticked, the default in bold), "Other..." for a big range.</summary>
+        IEnumerable<object> Attributes(IMachine machine) => AttributeItems(machine.Attributes, canvas);
+
+        internal static IEnumerable<object> AttributeItems(IEnumerable<IAttribute> attributes, Visual owner)
+        {
+            foreach (var a in attributes)
+            {
+                var attribute = a;
+                var values = attribute.GetPresentableNumberOfValues().ToList();
+                var sub = new MenuItem { Header = attribute.Name };
+                foreach (int v in values)
+                {
+                    int value = v;
+                    sub.Items.Add(new MenuItem
+                    {
+                        Header = value.ToString(),
+                        Command = new Command(() => attribute.Value = value),
+                        ToggleType = MenuItemToggleType.Radio,
+                        GroupName = "attribute " + attribute.Name,
+                        IsChecked = value == attribute.Value,
+                        FontWeight = value == attribute.DefValue ? Avalonia.Media.FontWeight.Bold : Avalonia.Media.FontWeight.Normal,
+                    });
+                }
+                if (values.Count < attribute.MaxValue - attribute.MinValue + 1)
+                {
+                    sub.Items.Add(new Separator());
+                    sub.Items.Add(Item("Other...", async () =>
+                    {
+                        var v = await Parameters.ParameterDialogs.AskValue(owner, new Point(40, 40), attribute.Value, attribute.MinValue, attribute.MaxValue, replace: true);
+                        if (v is int value) attribute.Value = value;
+                    }));
+                }
+                yield return sub;
+            }
+        }
+
+        /// <summary>The machine's own commands as menu items (its Commands list; a native machine's, with the submenus it reports).</summary>
+        public static List<object> Commands(IMachine machine)
+        {
+            var items = new List<object>();
+            IEnumerable<IMenuItem> commands;
+            try
+            {
+                commands = machine.Commands?.ToList();
+            }
+            catch (Exception)
+            {
+                return items;
+            }
+            if (commands == null) return items;
+            foreach (var c in commands) items.Add(FromBuzz(c));
+            return items;
+        }
+
+        /// <summary>One Buzz menu item (IMenuItem) as an Avalonia one, children and all.</summary>
+        internal static object FromBuzz(IMenuItem item)
+        {
+            if (item.IsSeparator) return new Separator();
+            var m = new MenuItem
+            {
+                Header = item.Text,
+                IsEnabled = item.IsEnabled && !item.IsLabel,
+                Command = item.Command,
+                CommandParameter = item.CommandParameter,
+            };
+            if (item.IsCheckable)
+            {
+                m.ToggleType = MenuItemToggleType.CheckBox;
+                m.IsChecked = item.IsChecked;
+            }
+            if (item.IsDefault) m.FontWeight = Avalonia.Media.FontWeight.Bold;
+            if (item.Children != null)
+                foreach (var child in item.Children) m.Items.Add(FromBuzz(child));
+            return m;
         }
 
         /// <summary>The Group submenu (MachineControl's): a new group from the selection, into an existing one, out of its group.</summary>
@@ -154,6 +291,11 @@ namespace ReBuzz.Studio.Views.Machines
             }
             yield return new Separator();
             yield return Item("Remove From Group", () => { MachineEdits.RemoveFromGroup(core, selection); canvas.Redraw(); }, song.MachineToGroupDict.ContainsKey(machine));
+            if (song.MachineToGroupDict.TryGetValue(machine, out var mine))
+            {
+                yield return Item("Rename Group...", () => RenameGroup(mine));
+                yield return Item(mine.IsGrouped ? "Unfold Group" : "Fold Group", () => MachineEdits.ToggleFold(core, mine, canvas));
+            }
         }
 
         /// <summary>Clone with patterns on the selection (the machine's menu); the copies are selected.</summary>

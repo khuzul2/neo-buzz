@@ -608,6 +608,22 @@ namespace ReBuzz.MachineManagement
             }
         }
 
+        /// <summary>
+        /// Fork (ux-overhaul.md P6c): the id of the process a native machine runs in (its host), or 0 when it runs in this one or is not
+        /// native. The studio looks for the machine's own window among that process's windows.
+        /// </summary>
+        internal int NativeHostProcessId(MachineCore machine)
+        {
+            try
+            {
+                return nativeMachines.TryGetValue(machine, out var host) && host.childProcess != null && !host.childProcess.HasExited ? host.childProcess.Id : 0;
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+        }
+
         internal bool MachineEvent(MachineCore machine, CMachineEvent me, int v)
         {
             bool ret = false;

@@ -522,6 +522,7 @@ namespace ReBuzz.Studio.Shell
             yield return Command("view.recorder", mac, () => Tools.HardDiskRecorderWindow.Open(host, this), () => host.Core?.SongCore != null, () => Tools.HardDiskRecorderWindow.Current != null);
             yield return Command("view.console", mac, () => Tools.DebugConsoleWindow.Open(host, this), null, () => Tools.DebugConsoleWindow.Current != null);
             yield return Command("view.midibindings", mac, () => Tools.MidiBindingsWindow.Open(host, this), () => host.Core?.SongCore != null, () => Tools.MidiBindingsWindow.Current != null);
+            yield return Command("view.pianokeyboard", mac, () => Tools.PianoKeyboardWindow.Open(host, this), () => host.Core?.SongCore != null, () => Tools.PianoKeyboardWindow.Current != null);
         }
 
         IEnumerable<MenuEntry> WindowItems(bool mac, Func<bool> running)

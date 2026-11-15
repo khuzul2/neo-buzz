@@ -39,7 +39,7 @@ namespace ReBuzz.Studio.Views.Machines
         Vector offset;          // scroll offset, in zoomed pixels
         double wheelZoom;       // wheel notches (or pinch) not yet turned into a level
 
-        enum Drag { None, Move, Connect, Select, Pan, Modulate }
+        enum Drag { None, Move, Connect, Select, Pan, Modulate, Group }
         IModulator modSource;                   // P5b: the modulator whose handle is dragged
         (double X, double Y)? modDropAt;
         Drag drag;
@@ -518,7 +518,7 @@ namespace ReBuzz.Studio.Views.Machines
         /// <summary>The machines in drawing order, bottom to top (the last one clicked is on top).</summary>
         List<IMachine> Ordered()
         {
-            var all = Machines.ToList();
+            var all = Machines.Where(m => !IsFolded(m)).ToList();
             order.RemoveAll(m => !all.Contains(m));
             foreach (var m in all)
                 if (!order.Contains(m)) order.Add(m);
@@ -544,7 +544,7 @@ namespace ReBuzz.Studio.Views.Machines
             get
             {
                 var shown = Machines.ToHashSet();
-                return shown.SelectMany(m => m.Inputs).Where(c => shown.Contains(c.Source)).ToList();
+                return shown.SelectMany(m => m.Inputs).Where(c => shown.Contains(c.Source) && !InOneFoldedGroup(c)).ToList();
             }
         }
 
@@ -733,6 +733,7 @@ namespace ReBuzz.Studio.Views.Machines
                 foreach (var m in machines)
                     DrawMachine(ctx, m, colours, solo);
 
+                DrawFoldedGroups(ctx, colours);
                 DrawPorts(ctx, machines);
 
                 if (drag == Drag.Select)
@@ -740,7 +741,62 @@ namespace ReBuzz.Studio.Views.Machines
             }
         }
 
-        /// <summary>P6b: a frame round each machine group's members, with its name (BuzzGUI.MachineView's GroupControl, unfolded).</summary>
+        // ---- machine groups (P6b: the frame; P6c: fold to one box, move, rename) --------------------------------------------------------
+
+        /// <summary>Whether the machine is a member of a group that is folded: it is not drawn, nor can it be pointed at.</summary>
+        public bool IsFolded(IMachine m) => song != null && song.MachineToGroupDict.TryGetValue(m, out var g) && g.IsGrouped;
+
+        bool InOneFoldedGroup(IMachineConnection c) =>
+            song != null && song.MachineToGroupDict.TryGetValue(c.Source, out var a) && a.IsGrouped
+            && song.MachineToGroupDict.TryGetValue(c.Destination, out var b) && a == b;
+
+        /// <summary>A folded group's position now (the box follows a drag).</summary>
+        Point GroupPositionOf(IMachineGroup g) =>
+            groupDragging == g ? groupDragPosition : CanvasMap.Clamp(new Point(g.Position.Item1, g.Position.Item2));
+
+        /// <summary>A folded group's box: the size of a machine's, at the group's position.</summary>
+        public Rect FoldedBoxOf(IMachineGroup g)
+        {
+            var p = GroupPositionOf(g);
+            return map.BoxAt(p.X, p.Y);
+        }
+
+        /// <summary>The frame round an open group's members, or null for a group with none.</summary>
+        public Rect? FrameOf(IMachineGroup g)
+        {
+            Rect? frame = null;
+            foreach (var m in g.Machines.ToList())
+                frame = frame == null ? BoxOf(m) : frame.Value.Union(BoxOf(m));
+            return frame?.Inflate(14);
+        }
+
+        const double GroupTabHeight = 16;
+
+        static FormattedText GroupText(string text, IBrush brush, double size = 11) =>
+            new FormattedText(text ?? "", CultureInfo.InvariantCulture, FlowDirection.LeftToRight, PlainFace, size, brush);
+
+        /// <summary>The part of an open group's frame that takes the pointer: a tab with its name at the top left (the rest lets machines and the band through).</summary>
+        public Rect? TabOf(IMachineGroup g)
+        {
+            if (g.IsGrouped || FrameOf(g) is not Rect f) return null;
+            double w = Math.Max(48, GroupText(g.Name, Shell.Design.StudioTokens.TextSecondaryBrush).Width + 14);
+            return new Rect(f.X, f.Y, Math.Min(w, f.Width), GroupTabHeight);
+        }
+
+        /// <summary>The group under a canvas point: a folded group's box, or an open group's tab.</summary>
+        public IMachineGroup GroupAt(Point logical)
+        {
+            var groups = song?.MachineGroups;
+            if (groups == null) return null;
+            for (int i = groups.Count - 1; i >= 0; i--)
+            {
+                var g = groups[i];
+                if (g.IsGrouped ? FoldedBoxOf(g).Contains(logical) : TabOf(g)?.Contains(logical) == true) return g;
+            }
+            return null;
+        }
+
+        /// <summary>P6b: a frame round each machine group's members, with its name (BuzzGUI.MachineView's GroupControl, open).</summary>
         void DrawGroups(DrawingContext ctx)
         {
             var groups = core.SongCore?.MachineGroups;
@@ -748,14 +804,33 @@ namespace ReBuzz.Studio.Views.Machines
             var edge = new Pen(Shell.Design.StudioTokens.AccentBrush, 1, new DashStyle(new double[] { 4, 3 }, 0));
             foreach (var g in groups)
             {
-                Rect? frame = null;
-                foreach (var m in g.Machines.ToList())
-                    frame = frame == null ? BoxOf(m) : frame.Value.Union(BoxOf(m));
-                if (frame == null) continue;
-                var r = frame.Value.Inflate(14);
+                if (g.IsGrouped) continue;
+                if (FrameOf(g) is not Rect r) continue;
                 ctx.DrawRectangle(Shell.Design.StudioTokens.BlockSelectionFill, edge, r, 6, 6);
-                var name = new FormattedText(g.Name ?? "", CultureInfo.InvariantCulture, FlowDirection.LeftToRight, PlainFace, 11, Shell.Design.StudioTokens.TextSecondaryBrush);
-                ctx.DrawText(name, new Point(r.X + 6, r.Y + 2));
+                if (TabOf(g) is Rect tab) ctx.DrawRectangle(Shell.Design.StudioTokens.BlockSelectionFill, null, tab, 6, 6);
+                ctx.DrawText(GroupText(g.Name, Shell.Design.StudioTokens.TextSecondaryBrush), new Point(r.X + 6, r.Y + 2));
+            }
+        }
+
+        /// <summary>P6c: a folded group, one box in the place of its members (GroupControl, "Group"): the name, how many machines, a dashed edge.</summary>
+        void DrawFoldedGroups(DrawingContext ctx, Palette colours)
+        {
+            var groups = core.SongCore?.MachineGroups;
+            if (groups == null) return;
+            foreach (var g in groups)
+            {
+                if (!g.IsGrouped) continue;
+                var box = FoldedBoxOf(g);
+                ctx.DrawRectangle(Shell.Design.StudioTokens.SurfaceBaseBrush, null, box);
+                ctx.DrawRectangle(Shell.Design.StudioTokens.BlockSelectionFill, new Pen(Shell.Design.StudioTokens.AccentBrush, 1.5, new DashStyle(new double[] { 4, 3 }, 0)), box.Deflate(1), 4, 4);
+                int n = g.Machines.Count();
+                var name = GroupText(g.Name, colours["MV Machine Text"], 12);
+                name.MaxTextWidth = Math.Max(10, box.Width - 8);
+                name.MaxLineCount = 1;
+                name.Trimming = TextTrimming.CharacterEllipsis;
+                ctx.DrawText(name, new Point(box.X + 5, box.Y + 5));
+                var count = GroupText(n == 1 ? "1 machine" : n + " machines", Shell.Design.StudioTokens.TextSecondaryBrush, 10);
+                ctx.DrawText(count, new Point(box.X + 5, box.Bottom - 16));
             }
         }
 
@@ -1139,6 +1214,18 @@ namespace ReBuzz.Studio.Views.Machines
                 return;
             }
 
+            if (GroupAt(p) is { } group)
+            {
+                // P6c: a double click folds an open group to one box and opens a folded one; a drag moves the group with its machines.
+                if (e.ClickCount == 2 && mods == KeyModifiers.None)
+                {
+                    MachineEdits.ToggleFold(core, group, this);
+                    return;
+                }
+                BeginGroupMove(group, p, e);
+                return;
+            }
+
             if (wire != null)
             {
                 // The amp control opens on the arrow, its amp knob already turning (Connection.HandleMouseDown).
@@ -1160,6 +1247,7 @@ namespace ReBuzz.Studio.Views.Machines
         public event Action<Point, Point, string> BrowseRequested;
 
         Point lastLogical;
+        bool pointerInside;
 
         Point TranslateToAmp(Point view) => Amp?.Parent is Visual parent ? this.TranslatePoint(view, parent) ?? view : view;
 
@@ -1169,6 +1257,7 @@ namespace ReBuzz.Studio.Views.Machines
             var view = e.GetPosition(this);
             var p = ToLogical(view);
             lastLogical = p;
+            pointerInside = true;
             switch (drag)
             {
                 case Drag.Move:
@@ -1176,6 +1265,9 @@ namespace ReBuzz.Studio.Views.Machines
                     break;
                 case Drag.Connect:
                     DragConnect(p);
+                    break;
+                case Drag.Group:
+                    DragGroup(p);
                     break;
                 case Drag.Select:
                     DragSelect(p);
@@ -1222,6 +1314,7 @@ namespace ReBuzz.Studio.Views.Machines
         protected override void OnPointerExited(PointerEventArgs e)
         {
             base.OnPointerExited(e);
+            pointerInside = false;
             if (drag == Drag.None && hover != null)
             {
                 hover = null;
@@ -1238,7 +1331,7 @@ namespace ReBuzz.Studio.Views.Machines
             if (drag != Drag.None)
             {
                 if (kind != dragButton) return;
-                if (drag == Drag.Move || drag == Drag.Connect) DragMoveOrConnect(p);
+                if (drag == Drag.Move || drag == Drag.Connect || drag == Drag.Group) DragMoveOrConnect(p);
                 if (drag == Drag.Modulate)
                 {
                     var screen = this.PointToScreen(view);
@@ -1254,8 +1347,11 @@ namespace ReBuzz.Studio.Views.Machines
             {
                 // The context menus open on release, as WPF's do.
                 var machine = MachineAt(p);
-                if (machine == null && WireAt(p) != null) return;
-                OpenMenu = machine != null ? Menus?.ForMachine(machine, SelectionOr(machine)) : Menus?.ForCanvas(p);
+                var group = machine == null ? GroupAt(p) : null;
+                if (machine == null && group == null && WireAt(p) != null) return;
+                OpenMenu = machine != null ? Menus?.ForMachine(machine, SelectionOr(machine))
+                    : group != null ? Menus?.ForGroup(group)
+                    : Menus?.ForCanvas(p);
                 OpenMenu?.Open(this);
                 e.Handled = true;
             }
@@ -1264,6 +1360,7 @@ namespace ReBuzz.Studio.Views.Machines
         void DragMoveOrConnect(Point p)
         {
             if (drag == Drag.Move) DragMove(p);
+            else if (drag == Drag.Group) DragGroup(p);
             else DragConnect(p);
         }
 
@@ -1271,7 +1368,7 @@ namespace ReBuzz.Studio.Views.Machines
         {
             base.OnPointerCaptureLost(e);
             // A lost capture ends a move where it is (Dragger.CancelDrag → EndMoveSelectedMachines).
-            if (drag != Drag.None) EndDrag(commit: drag == Drag.Move);
+            if (drag != Drag.None) EndDrag(commit: drag == Drag.Move || drag == Drag.Group);
         }
 
         void BeginMove(IMachine machine, Point p, PointerPressedEventArgs e)
@@ -1292,6 +1389,40 @@ namespace ReBuzz.Studio.Views.Machines
         }
 
         readonly Dictionary<IMachine, Point> moveStart = new Dictionary<IMachine, Point>();
+
+        IMachineGroup groupDragging;
+        Point groupDragPosition;
+
+        /// <summary>P6c: a drag on a group's tab or folded box (GroupControl's Dragger: "grouped machines move with groups").</summary>
+        void BeginGroupMove(IMachineGroup group, Point p, PointerPressedEventArgs e)
+        {
+            drag = Drag.Group;
+            dragOrigin = p;
+            moveDelta = default;
+            insertInto = null;
+            groupDragging = group;
+            groupDragStart = CanvasMap.Clamp(new Point(group.Position.Item1, group.Position.Item2));
+            groupDragPosition = groupDragStart;
+            dragPositions.Clear();
+            moveStart.Clear();
+            foreach (var m in group.Machines) moveStart[m] = PositionOf(m);
+            foreach (var kv in moveStart) dragPositions[kv.Key] = kv.Value;
+            e.Pointer.Capture(this);
+            InvalidateVisual();
+        }
+
+        Point groupDragStart;
+
+        void DragGroup(Point p)
+        {
+            moveDelta = p - dragOrigin;
+            var d = map.PositionDelta(moveDelta);
+            foreach (var kv in moveStart)
+                dragPositions[kv.Key] = CanvasMap.Clamp(kv.Value + d);
+            groupDragPosition = CanvasMap.Clamp(groupDragStart + d);
+            Cursor = HandCursor;
+            InvalidateVisual();
+        }
 
         void DragMove(Point p)
         {
@@ -1412,6 +1543,16 @@ namespace ReBuzz.Studio.Views.Machines
                     MachineEdits.Move(core, moved);
                 dragPositions.Clear();
             }
+            else if (was == Drag.Group)
+            {
+                var g = groupDragging;
+                var to = groupDragPosition;
+                var moved = dragPositions.Select(kv => (kv.Key, (float)kv.Value.X, (float)kv.Value.Y)).ToList();
+                groupDragging = null;
+                moveStart.Clear();
+                dragPositions.Clear();
+                if (g != null && commit && (moveDelta.X != 0 || moveDelta.Y != 0)) MachineEdits.MoveGroup(core, g, (float)to.X, (float)to.Y, moved);
+            }
             else if (was == Drag.Modulate)
             {
                 var at = commit ? modDropAt : null;
@@ -1494,6 +1635,25 @@ namespace ReBuzz.Studio.Views.Machines
             var copies = MachineEdits.Duplicate(core, sel);
             if (copies.Count > 0) Select(copies);
             return true;
+        }
+
+        /// <summary>⌘C (ux-overhaul.md §4): remembers the selected machines for Paste (not the Master).</summary>
+        public bool CopySelection() => MachineClipboard.Copy(core, SelectedNow());
+
+        /// <summary>⌘X: remembers them as cut; the paste moves them (nothing is deleted before it).</summary>
+        public bool CutSelection() => MachineClipboard.Cut(core, SelectedNow());
+
+        /// <summary>
+        /// ⌘V: pastes the machines held, with their middle at the pointer when it is on the canvas (else a little below and to the right of
+        /// the originals), one undo step; the copies are selected. <paramref name="at"/> overrides the pointer (a menu's click point).
+        /// </summary>
+        public bool PasteSelection(Point? at = null)
+        {
+            if (!MachineClipboard.CanPaste(core)) return false;
+            Point? where = at != null ? CanvasMap.Clamp(map.PositionAt(at.Value)) : pointerInside ? CanvasMap.Clamp(map.PositionAt(lastLogical)) : null;
+            var copies = MachineClipboard.Paste(core, where);
+            if (copies.Count > 0) Select(copies);
+            return copies.Count > 0;
         }
 
         /// <summary>⌘R: renames the selected machine (one).</summary>

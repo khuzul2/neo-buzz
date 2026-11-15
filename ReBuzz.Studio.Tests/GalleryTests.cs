@@ -1155,6 +1155,33 @@ namespace ReBuzz.Studio.Tests
                 MachineMenu("203-machines-menu-generator", view.PointOf(demo.Bass, window), "Machines: a generator's menu (Bass, Neo Poly): Mute, Solo, Parameters…, Editor…, MIDI input, Replace, Rename…, Delete.", "Right-click a generator.");
                 MachineMenu("204-machines-menu-effect", view.PointOf(demo.Delay, window), "Machines: an effect's menu (Delay, Neo Delay): Mute, Bypass, Parameters…, Editor…, Rename…, Delete.", "Right-click an effect.");
                 MachineMenu("205-machines-menu-master", view.PointOf(demo.Master, window), "Machines: the Master's menu (Parameters…, clear the clip indicator).", "Right-click the Master.");
+                // P6c: a machine's menu with Attributes, Cut / Copy / Paste, Search Online; groups folded, moved and renamed.
+                MachineMenu("206-machines-menu-group", view.PointOf(demo.Bass, window), "Machines: a generator's menu in P6c: Attributes, Cut / Copy / Paste, Search Online and the machine's own commands after Delete; the Group submenu with New Group From Selection.", "Right-click a generator ▸ Group.", "Group");
+                Try("207-machines-group-folded", () =>
+                {
+                    var group = ReBuzz.Studio.Views.Machines.MachineEdits.NewGroup(Core, new[] { demo.Bass, demo.Delay });
+                    Assert.That(group, Is.Not.Null);
+                    try
+                    {
+                        view.Canvas.Redraw();
+                        Settle();
+                        Shot(window, "207-machines-group-open", "Machines: a group of two machines drawn as a dashed frame with its name on a tab; the tab drags the group, a double click on it folds it.", "Right-click a machine ▸ Group ▸ New Group From Selection.");
+                        ReBuzz.Studio.Views.Machines.MachineEdits.Fold(Core, group);
+                        view.Canvas.Redraw();
+                        Settle();
+                        Shot(window, "208-machines-group-folded", "Machines: the same group folded to one box with its name and how many machines it holds; the wires to the machines in it end on the box. A double click opens it; right click: Rename, Unfold, Delete Group.", "Double-click the group's tab.");
+                        Click(window, view.FromCanvas(view.Canvas.FoldedBoxOf(group).Center, window), MouseButton.Right);
+                        menus.Add(view.Canvas.OpenMenu!);
+                        Shot(window, "209-machines-group-menu", "Machines: a folded group's menu.", "Right-click the folded group.");
+                    }
+                    finally
+                    {
+                        CloseMenus();
+                        ReBuzz.Studio.Views.Machines.MachineEdits.DeleteGroup(Core, group);
+                        view.Canvas.Redraw();
+                        Settle();
+                    }
+                });
 
                 // The Sequence View's menus.
                 window.ShowView("Sequence");
@@ -1380,6 +1407,13 @@ namespace ReBuzz.Studio.Tests
                     ReBuzz.Studio.Shell.Tools.MidiBindingsWindow.Open(Studio.Host, window);
                 }, "534-midi-bindings", "View ▸ MIDI Bindings: every parameter a MIDI controller drives, by machine, parameter and track, with its channel and controller, a filter and a Clear button per row.",
                     "View ▸ MIDI Bindings."));
+                // P6c (ux-overhaul.md §9): the on-screen piano keyboard.
+                Try("537-piano-keyboard", () => DialogOnOpen(window, () =>
+                {
+                    Studio.Host.Core.MIDIFocusMachine = Studio.Host.Core.SongCore.MachinesList.First(m => m.DLL.Info.Type == BuzzGUI.Interfaces.MachineType.Generator);
+                    ReBuzz.Studio.Shell.Tools.PianoKeyboardWindow.Open(Studio.Host, window);
+                }, "537-piano-keyboard", "View ▸ Piano Keyboard (or the Keys button in the MIDI bar): the keyboard every machine window has under its content, here playing the machine that has the MIDI focus.",
+                    "View ▸ Piano Keyboard."));
                 Try("535-latency", () => DialogOnOpen(window, () =>
                     _ = ReBuzz.Studio.Shell.Tools.LatencyDialog.Ask(Studio.Host.Core.SongCore.MachinesList.First(m => m.DLL.Info.Type != BuzzGUI.Interfaces.MachineType.Master)),
                     "535-latency", "Latency... on a machine's menu: the latency the machine reports and a switch to override it with a number of samples for the delay compensation.",

@@ -236,6 +236,7 @@ namespace ReBuzz.Studio.Tests
                 ("tool/recorder", () => ReBuzz.Studio.Shell.Tools.HardDiskRecorderWindow.Open(host, window)),
                 ("tool/console", () => ReBuzz.Studio.Shell.Tools.DebugConsoleWindow.Open(host, window)),
                 ("tool/midi", () => ReBuzz.Studio.Shell.Tools.MidiBindingsWindow.Open(host, window)),
+                ("tool/piano", () => { Core.MIDIFocusMachine = voice; return ReBuzz.Studio.Shell.Tools.PianoKeyboardWindow.Open(host, window); }),
                 ("dialog/latency", () => { var d = new ReBuzz.Studio.Shell.Tools.LatencyDialog(voice); d.Show(window); return d; }),
                 ("dialog/songprops", () => { var d = new ReBuzz.Studio.Shell.Tools.SongPropertiesDialog(Core); d.Show(window); return d; }),
             })
