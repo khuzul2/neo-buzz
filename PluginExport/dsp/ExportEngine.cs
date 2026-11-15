@@ -14,6 +14,10 @@ namespace NeoExport
         public abstract int Latency { get; }
         public virtual bool Idle => false;
         public abstract void Reset();
+        /// <summary>Starts the work the engine needs before it can sound (Dye Essence and the Neo Learn synths build their wavetables and samples on background threads); never blocks. Main thread: at creation and at activation.</summary>
+        public virtual void Prepare() { }
+        /// <summary>True while that work is not done: the engine is silent until it is.</summary>
+        public virtual bool Preparing => false;
         /// <summary>Tempo (beats per minute), whether the song plays, and its position in beats (quarter notes), before each block.</summary>
         public virtual void SetTransport(double tempo, bool playing, double beats, double rate) { }
         /// <summary>One block in place (<paramref name="kl"/>, <paramref name="kr"/>: the sidechain, or null). Instruments: false when silent.</summary>

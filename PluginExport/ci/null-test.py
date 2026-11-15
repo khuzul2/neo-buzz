@@ -10,7 +10,7 @@
 #   python3 null-test.py <rebuzz-headless> <work folder> --plugin "Neo Filter" --manifest PluginExport/plugins.json --dir <plug-in folder> --lib neoplug.so --scan neoplug-scan
 #
 # Results: <work>/null-test.json and a table on stdout. Exit 1 if a check fails.
-import argparse, glob, json, math, os, queue, struct, subprocess, sys, threading
+import argparse, glob, json, math, os, queue, struct, subprocess, sys, threading, time
 
 ap = argparse.ArgumentParser()
 ap.add_argument("exe"); ap.add_argument("work")
@@ -138,7 +138,7 @@ ok, _, data = call("gear_list", search="", limit=1000)
 names = []
 for g in data.get("gear", []):
     if g["name"] == host_gear: names = g.get("plugins") or []
-mine = [n for n in names if args.plugin.lower() in n.lower()]
+mine = [n for n in names if n.lower().startswith(args.plugin.lower() + " (") or n.lower() == args.plugin.lower()]   # "Neo Learn FM (CLAP)", not "Neo Learn FM6 ..."
 print(f"     {host_gear} lists:", mine)
 clap = next((n for n in mine if "(CLAP)" in n), None); vst3 = next((n for n in mine if "(VST3)" in n), None)
 check(clap is not None, f"the scan found {args.plugin} as CLAP")
@@ -147,7 +147,7 @@ results["plugins"] = {"clap": clap, "vst3": vst3}
 if not clap:
     print(finish("no CLAP")); sys.exit(1)
 
-call("song_set", tempo_bpm=120, song_end_beats=8)
+call("song_set", tempo_bpm=120, song_end_beats=8, ticks_per_beat=32)   # 32 rows a beat: automation events every 1/128 beat, 172 samples, under one 256-sample block
 CHORD = [{"pitch": "C3", "start": 0, "length": 4}, {"pitch": "G3", "start": 0, "length": 4}, {"pitch": "D#4", "start": 0, "length": 4},
          {"pitch": "A#3", "start": 4, "length": 3}, {"pitch": "F4", "start": 4, "length": 3}]
 
@@ -240,11 +240,17 @@ def param_check(tag):
         results.setdefault("param_dump", {})[f"{tag}/{nm}"] = {"count": len(named), "with_unit": len(units), "diffs": diffs[:20]}
 
 
-# 1. default parameters
+# 1. default parameters. Dye Essence and the Neo Learn synths build their tables in the background after creation (about a second).
+time.sleep(3)
 param_check("defaults")
 compare(render("defaults"), "defaults")
 
-# 2. the same changed parameters on all
+# 2. the same changed parameters on all. The song of the defaults is saved and opened first: every machine, the native one too, starts fresh
+# (a native machine that has just rendered carries its random streams, drift and tails into the next render; docs/specs/plugin-export.md §7).
+defaults_song = os.path.join(work, "px2-defaults.bmxml")
+check(call("song_save", path=defaults_song, overwrite=True)[0], "song_save (defaults)")
+check(call("song_open", path=defaults_song, discard_unsaved=True)[0], "song_open (defaults): fresh instances")
+time.sleep(3)
 if spec["test"]["changes"]:
     for nm in outs:
         slot = nm != NATIVE
@@ -260,6 +266,67 @@ param_check("after reopen")
 # A reloaded song: the plug-in restores its state before it is activated and starts settled at it, while the native machine glides from
 # its defaults to the loaded values, and the engines' smoothers rest ~1e-4 apart after the two histories (docs/specs/plugin-export.md §7).
 compare(render("reopened"), "reopened", skip=0.5, tol=args.reload_tolerance)
+
+
+# 4. units through the agent tools: the plug-in's slot takes the native machine's own text ("800 Hz", "-6 dB") and reads back the same
+STEPPED = ("enum", "switch", "int")
+cont = []
+for line in spec.get("params", []):
+    n, lo, hi, df, kind = line.split("|"); lo, hi, df = int(lo), int(hi), int(df)
+    if kind not in STEPPED and hi - lo >= 100: cont.append((n, lo, hi, df))
+print("     continuous parameters among the first 64:", [c[0] for c in cont[:6]])
+if cont and len(outs) > 1:
+    pick = cont[:3]
+    ch = [{"param": n, "value": f"raw:{lo + (hi - lo) * 3 // 10}"} for n, lo, hi, df in pick]
+    check(call("param_set", machine=NATIVE, changes=ch)[0], "units: native set to a value 30 % up its ranges")
+    nat = {d[0]: d for d in describe(NATIVE)}
+    for nm in outs[1:]:
+        ok, _, _ = call("param_set", machine=nm, changes=[{"param": n, "value": nat[n][1]} for n, _, _, _ in pick])
+        check(ok, f"units: {nm} takes the native machine's texts ({', '.join(str(nat[n][1]) for n, _, _, _ in pick)})")
+        got = {d[0]: d for d in describe(nm)}
+        same = [(n, nat[n][1], got[n][1]) for n, _, _, _ in pick if got.get(n) is None or got[n][1] != nat[n][1]]
+        check(not same, f"units: {nm} reads back the same texts as the native machine" + (f" (differing: {same})" if same else ""))
+
+pf = {}
+# 5. automation through the agent tools: steps on the first continuous parameters every 1/128 beat (172 samples at 120 bpm, under one block),
+# on the native machine and on each plug-in slot (the same values: the slot's raw is the position in the range), then one render.
+if cont and len(outs) > 1:
+    auto = cont[:4]
+    N = 1024
+    for nm in outs:
+        slot = nm != NATIVE
+        if not INSTR: call("pattern_create", machine=nm, name="A", length_beats=8); call("arrangement_place", machine=nm, pattern="A", at=[0])
+        for j, (n, lo, hi, df) in enumerate(auto):
+            pts = []
+            for i in range(N):
+                frac = 0.5 + 0.4 * math.sin(2 * math.pi * (i / N * (3 + 2 * j)))
+                k = lo + round(frac * (hi - lo))
+                pts.append({"at": i / 128, "value": "raw:%d" % (round(65534 * (k - lo) / (hi - lo)) if slot else k)})
+            check(call("automation_write", machine=nm, pattern="A", param=n, points=pts, shape="step")[0], f"automation: {nm}.{n}: {N} steps")
+    time.sleep(1)
+    pf = render("automation")
+    compare(pf, "automation", skip=0.0, tol=spec["test"].get("automationTolerance", None))
+
+# 6. save and reopen as .nbl and as .bmx: every slot value and the plug-in's state come back (the plug-in's render after equals the one before)
+if len(outs) > 1:
+    plug_outs = outs[1:]
+    before = {nm: describe(nm) for nm in outs}
+    for ext in (".nbl", ".bmx"):
+        path = os.path.join(work, "px2-song" + ext)
+        check(call("song_save", path=path, overwrite=True)[0], f"{ext}: song_save")
+        check(call("song_open", path=path, discard_unsaved=True)[0], f"{ext}: song_open")
+        time.sleep(3)
+        for nm in outs:
+            after = describe(nm)
+            diffs = [(a[0], a[2], b[2]) for a, b in zip(before[nm], after) if a[0] != b[0] or a[2] != b[2]]
+            check(len(after) == len(before[nm]) and not diffs, f"{ext}: {nm}: all {len(after)} parameter values equal after reopening" + (f" (differing: {diffs[:5]})" if diffs else ""))
+        pf2 = render("reopen-" + ext.strip("."))
+        for nm in plug_outs:
+            if not (pf.get(nm) and pf2.get(nm)): continue
+            d = null(pf[nm], pf2[nm])
+            results["nulls"][f"{ext}/{nm}"] = d
+            print(f"     {ext}: {nm} after - before: max |diff| {d['max_abs_diff']:.3g}, bit identical {d['bit_identical']}")
+            check(d["max_abs_diff"] <= 1e-6, f"{ext}: {nm}: the plug-in state came back (same render as before the save; max |diff| {d['max_abs_diff']:.3g})")
 
 proc.stdin.close()
 try: proc.wait(timeout=60)

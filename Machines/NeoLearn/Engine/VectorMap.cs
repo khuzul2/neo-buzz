@@ -111,14 +111,17 @@ namespace NeoBuzz.Learn
             dye.Set(DyeP.F2Type, 0);
         }
 
+        // Allocated once: Map runs on the audio thread (a new array per call allocated there).
+        static readonly int[] shapeParam = { DyeP.AShape, DyeP.BShape, DyeP.CShape }, sampleParam = { DyeP.ASmpSrc, DyeP.BSmpSrc, DyeP.CSmpSrc };
+
         // One corner's source: Dye slot type (2 Analog, 1 Wavetable, 3 Sample), then its shape / table / sample.
         void Corner(IDyeSink dye, int slot, int type, int a)
         {
             int b = DyeP.AType + slot * (DyeP.BType - DyeP.AType);
             dye.Set(b, type);
-            if (type == 2) dye.Set(new[] { DyeP.AShape, DyeP.BShape, DyeP.CShape }[slot], a);
+            if (type == 2) dye.Set(shapeParam[slot], a);
             else if (type == 1) dye.Set(b + (DyeP.ATable - DyeP.AType), a);
-            else dye.Set(new[] { DyeP.ASmpSrc, DyeP.BSmpSrc, DyeP.CSmpSrc }[slot], a);
+            else dye.Set(sampleParam[slot], a);
         }
 
         public override void Map(double[] c, IDyeSink dye)

@@ -1,0 +1,29 @@
+{
+ "id": "org.neobuzz.neo-fm6",
+ "name": "Neo FM6",
+ "folder": "NeoFm6",
+ "namespace": "NeoBuzz.Fm6",
+ "engine": "FmEngine",
+ "machine": "NeoFm6Machine",
+ "editor": "NeoFm6Editor",
+ "kind": "instrument",
+ "features": [
+  "synthesizer"
+ ],
+ "au": "NFM6",
+ "description": "Six-operator FM synthesizer",
+ "process": "synth",
+ "tempo": false,
+ "idle": false,
+ "tailSeconds": 3,
+ "test": {
+  "changes": [
+   [
+    "Volume",
+    "raw:600"
+   ]
+  ],
+  "settle": 0.0,
+  "tolerance": 0.003
+ }
+}
