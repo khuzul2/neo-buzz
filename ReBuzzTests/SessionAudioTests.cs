@@ -283,6 +283,7 @@ namespace ReBuzzTests
 
         [TestCase(".bmx")]
         [TestCase(".bmxml")]
+        [TestCase(".nbl")]
         public void ASongKeepsItsAudioClips(string extension)
         {
             using var rig = new Rig();

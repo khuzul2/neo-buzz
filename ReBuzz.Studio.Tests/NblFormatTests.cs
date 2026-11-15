@@ -11,6 +11,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Threading;
+using System.Threading.Tasks;
+using Avalonia.Threading;
+using ReBuzz.Agent.Mcp;
 using Avalonia.Headless.NUnit;
 using BuzzGUI.Interfaces;
 using NUnit.Framework;
@@ -305,6 +309,61 @@ namespace ReBuzz.Studio.Tests
             core.MarkerStore.Set("More", 16);
             Assert.That(SongFiles.Save().Result, Is.True);
             Assert.That(asked, Is.EqualTo(1), "and the next Save goes to the .nbl");
+        }
+
+        // ------------------------------------------------------------------ the agent
+
+        static JsonObject Tool(string tool, JsonObject args = null)
+        {
+            var message = new JsonObject
+            {
+                ["jsonrpc"] = "2.0", ["id"] = 1, ["method"] = "tools/call",
+                ["params"] = new JsonObject { ["name"] = tool, ["arguments"] = args ?? new JsonObject() },
+            };
+            var task = Studio.Host.Agent.Host.Server.HandleAsync(message, new McpSession(), _ => Task.CompletedTask, CancellationToken.None);
+            var until = DateTime.UtcNow.AddSeconds(60);
+            while (!task.IsCompleted)
+            {
+                Dispatcher.UIThread.RunJobs();
+                if (DateTime.UtcNow > until) Assert.Fail($"{tool} didn't answer in time");
+                Thread.Sleep(2);
+            }
+            return task.GetAwaiter().GetResult()["result"]!.AsObject();
+        }
+
+        [AvaloniaTest]
+        public void TheSongToolsSaveAndOpenNblAndNeverOverwriteAnOpenedOldSong()
+        {
+            using var untitled = SnapshotTests.Untitled(out _);
+            using var rig = SnapshotTests.Song("Lead");
+            var core = rig.Core;
+            using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
+            string a = Work("agent-a.nbl");
+            var saved = Tool("song_save", new JsonObject { ["path"] = a, ["overwrite"] = true });
+            Assert.That(saved["isError"]?.GetValue<bool>() == true, Is.False, saved.ToJsonString());
+            Assert.That(NblContainer.LooksLikeOne(a), Is.True);
+
+            string bare = Work("agent-bare");
+            var named = Tool("song_save", new JsonObject { ["path"] = bare, ["overwrite"] = true });
+            Assert.That(named["isError"]?.GetValue<bool>() == true, Is.False, named.ToJsonString());
+            Assert.That(NblContainer.LooksLikeOne(bare + ".nbl"), Is.True, "a path with no extension gets the format's (nbl by default)");
+            var xml = Tool("song_save", new JsonObject { ["path"] = Work("agent-x"), ["format"] = "bmxml", ["overwrite"] = true });
+            Assert.That(xml["isError"]?.GetValue<bool>() == true, Is.False);
+            Assert.That(File.Exists(Work("agent-x.bmxml")), Is.True);
+
+            string old = Work("agent-old.bmx");
+            core.SaveSongCopy(old);
+            byte[] original = File.ReadAllBytes(old);
+            var opened = Tool("song_open", new JsonObject { ["path"] = old, ["discard_unsaved"] = true });
+            Assert.That(opened["isError"]?.GetValue<bool>() == true, Is.False, opened.ToJsonString());
+            core.MarkerStore.Set("agent", 4);
+            var beside = Tool("song_save");
+            Assert.That(beside["isError"]?.GetValue<bool>() == true, Is.False, beside.ToJsonString());
+            Assert.That(File.ReadAllBytes(old), Is.EqualTo(original), "the opened .bmx is untouched");
+            Assert.That(NblContainer.LooksLikeOne(Work("agent-old.nbl")), Is.True, "the new .nbl is beside it");
+            var again = Tool("song_open", new JsonObject { ["path"] = Work("agent-old.nbl"), ["discard_unsaved"] = true });
+            Assert.That(again["isError"]?.GetValue<bool>() == true, Is.False, again.ToJsonString());
+            Assert.That(core.MarkerStore.All.Select(m => m.Name), Does.Contain("agent"));
         }
 
         // ------------------------------------------------------------------ the demo songs

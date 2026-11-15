@@ -229,6 +229,7 @@ namespace ReBuzzTests
 
         [TestCase(".bmx")]
         [TestCase(".bmxml")]
+        [TestCase(".nbl")]
         public void TheAgentsNotesSaveWithTheSongAndOpenAgain(string extension)
         {
             using var rig = new AgentServerTests.Rig();

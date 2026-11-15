@@ -317,7 +317,7 @@ namespace ReBuzz.Agent
             path = Path.GetFullPath(path.Trim().Trim('"'));
             string ext = Path.GetExtension(path).ToLowerInvariant();
             if (!SongExtensions.Contains(ext))
-                throw new ToolError($"\"{path}\" isn't a song file: use .bmxml (recommended), .bmx or .bmw.");
+                throw new ToolError($"\"{path}\" isn't a song file: use .nbl (native, recommended), .bmxml, .bmx or .bmw.");
             return path;
         }
 
