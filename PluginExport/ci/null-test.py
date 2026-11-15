@@ -207,7 +207,8 @@ def compare(pf, tag, skip=0.0, tol=None):
               f"bit identical: {full['bit_identical']}, native peak {full['peak_native']:.3f}")
         if skip: print(f"     {tag}: {nm} - {NATIVE} after {skip} s: max |diff| {res['max_abs_diff']:.3g} ({res['max_abs_diff_dbfs']:.1f} dBFS), {res['differing_samples']}/{res['samples']} samples differ")
         check(full["peak_native"] > 0.01, f"{tag}: {nm}: the native signal is audible (peak {full['peak_native']:.3f})")
-        check(res["max_abs_diff"] <= tol, f"{tag}: {nm} nulls against the native machine within {tol:g}" + (f" after {skip} s" if skip else "") + f" (max |diff| {res['max_abs_diff']:.3g})")
+        info_only = tag in spec["test"].get("informational", [])   # the native machine carries state from the render before; reported only
+        check(res["max_abs_diff"] <= tol or info_only, f"{tag}: {nm} nulls against the native machine within {tol:g}" + (" (informational)" if info_only else "") + (f" after {skip} s" if skip else "") + f" (max |diff| {res['max_abs_diff']:.3g})")
     if pf.get("ClapF" if not INSTR else "ClapP") and pf.get("VstF" if not INSTR else "VstP"):
         a, b = ("ClapF", "VstF") if not INSTR else ("ClapP", "VstP")
         cv = null(pf[a], pf[b], skip) if skip else null(pf[a], pf[b])

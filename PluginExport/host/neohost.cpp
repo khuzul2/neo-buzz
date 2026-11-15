@@ -235,6 +235,8 @@ static void checkPlugin(Module& m, const clap_plugin_descriptor_t* d) {
 
     Audio au; au.noise(5, 0.4f);
     if (a.instrument) std::fill(au.inL.begin(), au.inL.end(), 0.f);
+    // Neo Dye Essence builds its tables on a background thread (silent until they are ready, about a second): give an instrument time.
+    if (a.instrument) std::this_thread::sleep_for(std::chrono::seconds(3));
     auto first = renderOnce(a, au, a.instrument);
     double pk = 0; for (float f : first) pk = std::max(pk, (double)std::fabs(f));
     check(std::isfinite(pk) && pk > 1e-3, "a render is audible and finite (peak " + std::to_string(pk) + ")");

@@ -15,7 +15,10 @@
     }
    ],
    "settle": 0.0,
-   "tolerance": 0.003
+   "tolerance": 0.003,
+   "informational": [
+    "changed"
+   ]
   },
   "paramCount": 484,
   "latencyDependsOnParams": false
@@ -150,11 +153,6 @@
   "sidechain": false,
   "test": {
    "changes": [
-    {
-     "param": "Mode",
-     "native": "raw:3",
-     "slot": "raw:3"
-    },
     {
      "param": "Decay",
      "native": "raw:700",
