@@ -18,6 +18,7 @@ if(APPLE)
   enable_language(OBJC OBJCXX)
 endif()
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)   # the SDK and wrapper libraries are linked into shared modules
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CLAP_WRAPPER_DIR "" CACHE PATH "clap-wrapper checkout")
