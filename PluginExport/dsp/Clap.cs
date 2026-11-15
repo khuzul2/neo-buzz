@@ -134,11 +134,11 @@ namespace NeoExport
         public delegate* unmanaged[Cdecl]<ClapPlugin*, double, byte> SetScale;
         public delegate* unmanaged[Cdecl]<ClapPlugin*, uint*, uint*, byte> GetSize;
         public delegate* unmanaged[Cdecl]<ClapPlugin*, byte> CanResize;
-        public delegate* unmanaged[Cdecl]<ClapPlugin*, void*, byte> GetResizeHints;
+        public delegate* unmanaged[Cdecl]<ClapPlugin*, ClapResizeHints*, byte> GetResizeHints;
         public delegate* unmanaged[Cdecl]<ClapPlugin*, uint*, uint*, byte> AdjustSize;
         public delegate* unmanaged[Cdecl]<ClapPlugin*, uint, uint, byte> SetSize;
-        public delegate* unmanaged[Cdecl]<ClapPlugin*, void*, byte> SetParent;
-        public delegate* unmanaged[Cdecl]<ClapPlugin*, void*, byte> SetTransient;
+        public delegate* unmanaged[Cdecl]<ClapPlugin*, ClapWindow*, byte> SetParent;
+        public delegate* unmanaged[Cdecl]<ClapPlugin*, ClapWindow*, byte> SetTransient;
         public delegate* unmanaged[Cdecl]<ClapPlugin*, byte*, void> SuggestTitle;
         public delegate* unmanaged[Cdecl]<ClapPlugin*, byte> Show;
         public delegate* unmanaged[Cdecl]<ClapPlugin*, byte> Hide;

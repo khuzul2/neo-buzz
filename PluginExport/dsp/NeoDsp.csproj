@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Experiment (experiments/plugin-export): Neo Filter's engine as a CLAP plug-in, a NativeAOT shared library whose
-       exports are the CLAP entry's three functions (native/clap_entry.c holds the exported clap_entry data symbol, which a
-       C# export cannot be). Not part of ReBuzz.sln or the package. -->
+  <!-- Plug-in export (docs/specs/plugin-export.md): every exported Neo machine's engine and parameter table behind the CLAP ABI,
+       written in C# ([UnmanagedCallersOnly] exports), as one NativeAOT shared library. native/ holds the exported clap_entry data
+       symbol (a C# export cannot be one). Sources.g.props lists the engines (tools/gen-plugin-export.py). Not part of ReBuzz.sln. -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Library</OutputType>
-    <AssemblyName>neofilter_dsp</AssemblyName>
+    <AssemblyName>neo_dsp</AssemblyName>
     <RootNamespace>NeoExport</RootNamespace>
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
@@ -16,14 +16,15 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <TieredCompilation>false</TieredCompilation>
     <UseSystemResourceKeys>true</UseSystemResourceKeys>
-    <NoWarn>CS1591;CS8981;IL2026;IL3050;CS0649;CS0169;CS0414</NoWarn>
+    <NoWarn>CS1591;CS8981;IL2026;IL3050;CS0649;CS0169;CS0414;CS0219</NoWarn>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="*.cs" />
+    <Compile Include="Generated\*.cs" />
     <Compile Include="..\shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
-    <Compile Include="..\..\..\Machines\NeoBuzz.Dsp\**\*.cs" Link="Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="..\..\..\Machines\NeoFilter\Engine\**\*.cs" Link="Filter\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoBuzz.Dsp\**\*.cs" Link="Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
+  <Import Project="Generated\Sources.g.props" />
 </Project>

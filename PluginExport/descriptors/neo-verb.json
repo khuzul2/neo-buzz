@@ -1,0 +1,6 @@
+{
+  "id": "org.neobuzz.neo-verb", "name": "Neo Verb", "folder": "NeoVerb", "namespace": "NeoBuzz.Verb", "engine": "VerbEngine", "machine": "NeoVerbMachine", "editor": "NeoVerbEditor",
+  "kind": "effect", "features": ["reverb"], "au": "NVrb", "description": "Algorithmic reverb: hall, room, chamber, plate",
+  "process": "stereo", "tempo": false, "idle": false, "latency": false, "tailSeconds": 10,
+  "test": {"changes": [], "settle": 0.5}
+}

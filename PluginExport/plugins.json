@@ -1,0 +1,92 @@
+[
+ {
+  "id": "org.neobuzz.neo-comp",
+  "name": "Neo Comp",
+  "kind": "effect",
+  "au": "NCmp",
+  "sidechain": true,
+  "test": {
+   "changes": [
+    [
+     "Threshold",
+     "raw:300"
+    ]
+   ],
+   "settle": 0.5
+  },
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-delay",
+  "name": "Neo Delay",
+  "kind": "effect",
+  "au": "NDly",
+  "sidechain": false,
+  "test": {
+   "changes": [],
+   "settle": 0.5
+  },
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-eq",
+  "name": "Neo EQ",
+  "kind": "effect",
+  "au": "NEqu",
+  "sidechain": true,
+  "test": {
+   "changes": [],
+   "settle": 0.5
+  },
+  "latencyDependsOnParams": true
+ },
+ {
+  "id": "org.neobuzz.neo-filter",
+  "name": "Neo Filter",
+  "kind": "effect",
+  "au": "NFlt",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    [
+     "Type",
+     "raw:2"
+    ],
+    [
+     "Cutoff",
+     "raw:5000"
+    ],
+    [
+     "Resonance",
+     "raw:500"
+    ]
+   ],
+   "settle": 0.5
+  },
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-poly",
+  "name": "Neo Poly",
+  "kind": "instrument",
+  "au": "NPly",
+  "sidechain": false,
+  "test": {
+   "changes": [],
+   "settle": 0.0
+  },
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-verb",
+  "name": "Neo Verb",
+  "kind": "effect",
+  "au": "NVrb",
+  "sidechain": false,
+  "test": {
+   "changes": [],
+   "settle": 0.5
+  },
+  "latencyDependsOnParams": false
+ }
+]

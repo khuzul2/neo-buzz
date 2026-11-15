@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Plug-in export (docs/specs/plugin-export.md §7): runs every exported plug-in's CLAP exports in-process under CoreCLR (no AOT)
+       against its engine used directly: layouts, ports, parameters, texts, state (versions), sample-accurate parameter and note
+       events (bit for bit), no allocation in process, the editor's edit ring and the gesture events it makes. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>NeoExport</RootNamespace>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>CS1591;CS8981;CS0649;CS0169;CS0414;CS0219</NoWarn>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="..\dsp\*.cs" Link="Dsp\%(Filename)%(Extension)" />
+    <Compile Include="..\dsp\Generated\*.cs" Link="Dsp\Generated\%(Filename)%(Extension)" />
+    <Compile Include="..\shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoBuzz.Dsp\**\*.cs" Link="Neo\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+  <Import Project="..\dsp\Generated\Sources.g.props" />
+</Project>
