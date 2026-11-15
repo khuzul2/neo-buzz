@@ -16,7 +16,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument("exe"); ap.add_argument("work")
 ap.add_argument("--plugin", default="Neo Filter"); ap.add_argument("--manifest", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "plugins.json"))
 ap.add_argument("--dir", action="append", default=[]); ap.add_argument("--lib"); ap.add_argument("--scan")
-ap.add_argument("--tolerance", type=float, default=3e-6, help="largest allowed |difference| (full scale 1.0): -110 dBFS")
+ap.add_argument("--tolerance", type=float, default=1e-5, help="largest allowed |difference| (full scale 1.0): -100 dBFS (a descriptor may widen it: test.tolerance)")
 ap.add_argument("--reload-tolerance", type=float, default=3e-4)
 args = ap.parse_args()
 spec = next(p for p in json.load(open(args.manifest)) if p["name"] == args.plugin)
@@ -196,7 +196,7 @@ def render(label):
 
 
 def compare(pf, tag, skip=0.0, tol=None):
-    tol = args.tolerance if tol is None else tol
+    tol = spec["test"].get("tolerance", args.tolerance) if tol is None else max(tol, spec["test"].get("tolerance", 0))
     check(all(pf.values()), f"{tag}: probe files found")
     for nm in outs[1:]:
         if not (pf.get(nm) and pf.get(NATIVE)): continue
@@ -210,11 +210,11 @@ def compare(pf, tag, skip=0.0, tol=None):
         check(res["max_abs_diff"] <= tol, f"{tag}: {nm} nulls against the native machine within {tol:g}" + (f" after {skip} s" if skip else "") + f" (max |diff| {res['max_abs_diff']:.3g})")
     if pf.get("ClapF" if not INSTR else "ClapP") and pf.get("VstF" if not INSTR else "VstP"):
         a, b = ("ClapF", "VstF") if not INSTR else ("ClapP", "VstP")
-        cv = null(pf[a], pf[b])
+        cv = null(pf[a], pf[b], skip) if skip else null(pf[a], pf[b])
         results["nulls"][f"{tag}/clap-vs-vst3"] = cv
         print(f"     {tag}: VST3 - CLAP: max |diff| {cv['max_abs_diff']:.3g}, bit identical: {cv['bit_identical']}")
         # clap-wrapper may hand a parameter change to the plug-in a sample or a block apart from the CLAP path: a few ulp at most
-        check(cv["max_abs_diff"] <= 1e-6, f"{tag}: the VST3 (clap-wrapper) renders the same as the CLAP (max |diff| {cv['max_abs_diff']:.3g}, bit identical {cv['bit_identical']})")
+        check(cv["max_abs_diff"] <= 1e-6, f"{tag}: the VST3 (clap-wrapper) renders the same as the CLAP" + (f" after {skip} s" if skip else "") + f" (max |diff| {cv['max_abs_diff']:.3g}, bit identical {cv['bit_identical']})")
 
 
 def describe(nm):

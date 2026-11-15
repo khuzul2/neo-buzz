@@ -9,7 +9,7 @@ A descriptor is a small JSON file (see PluginExport/descriptors/neo-filter.json)
   id, name, folder (under Machines/), namespace, engine (class of Engine/), machine + editor (classes of the machine's own
   files, for the editor library), kind effect|instrument, features (CLAP features after the kind's own), au (4-char AU
   subtype), description, process stereo|sidechain|synth, tempo (engine.Tempo), transport "ticks" (engine.Transport as
-  FilterTransport), idle (engine.Idle), latency (false: the engine has none), tailSeconds, test {changes, settle} for ci/null-test.py.
+  FilterTransport), idle (true: engine.Idle gates the render; "quiet": the machine's own rule, 16 blocks with no input and no sound), latency (false: the engine has none), tailSeconds, test {changes, settle} for ci/null-test.py.
 Everything else (parameter ids, ranges, texts, units, groups, state, latency, ports) comes from the engine and its Params table at
 run time; nothing is written per machine beyond the descriptor.
 """
@@ -34,7 +34,7 @@ def adapter(d):
          "        public override void SetSampleRate(float sr) => e.SetSampleRate(sr);",
          "        public override int Latency => e.Latency;" if not inst and d.get("latency", True) else "        public override int Latency => 0;"]
     o.append("        public override void Reset() => e.AllNotesOff(true);" if inst else "        public override void Reset() => e.Reset();")
-    if d.get("idle"): o.append("        public override bool Idle => e.Idle;")
+    if d.get("idle") is True: o.append("        public override bool Idle => e.Idle;")
     tempo = "e.Tempo = tempo;" if d.get("tempo") else ""
     tr = ""
     if d.get("transport") == "ticks":
@@ -77,7 +77,7 @@ def registry():
     for d in descs:
         feats = ", ".join(q(f) for f in (["instrument"] if d["kind"] == "instrument" else ["audio-effect"]) + d.get("features", []) + ["stereo"])
         o.append(f"            new PluginInfo({q(d['id'])}, {q(d['name'])}, {q(d['description'])}, new[] {{ {feats} }}, "
-                 f"instrument: {str(d['kind'] == 'instrument').lower()}, sidechain: {str(d['process'] == 'sidechain').lower()}, gateIdle: {str(bool(d.get('idle'))).lower()}, tailSeconds: {d.get('tailSeconds', 0)}, make: () => new {ident(d)}()),")
+                 f"instrument: {str(d['kind'] == 'instrument').lower()}, sidechain: {str(d['process'] == 'sidechain').lower()}, gateIdle: {str(bool(d.get('idle'))).lower()}, tailSeconds: {d.get('tailSeconds', 0)}, make: () => new {ident(d)}(), gateQuiet: {str(d.get('idle') == 'quiet').lower()}),")
     o += ["        };", "    }", "}", ""]
     return "\n".join(o)
 

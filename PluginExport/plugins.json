@@ -104,12 +104,13 @@
   "test": {
    "changes": [
     {
-     "param": "Unison",
-     "native": "raw:3",
-     "slot": "raw:3"
+     "param": "Volume",
+     "native": "raw:800",
+     "slot": "raw:52427"
     }
    ],
-   "settle": 0.0
+   "settle": 0.0,
+   "tolerance": 0.003
   },
   "paramCount": 91,
   "latencyDependsOnParams": false

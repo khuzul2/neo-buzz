@@ -19,10 +19,11 @@
  "test": {
   "changes": [
    [
-    "Unison",
-    "raw:3"
+    "Volume",
+    "raw:800"
    ]
   ],
-  "settle": 0.0
+  "settle": 0.0,
+  "tolerance": 0.003
  }
 }

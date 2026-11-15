@@ -111,12 +111,12 @@ namespace NeoExport
     {
         public static readonly PluginInfo[] All =
         {
-            new PluginInfo("org.neobuzz.neo-comp", "Neo Comp", "Compressor with four characters, lookahead and an external sidechain", new[] { "audio-effect", "compressor", "stereo" }, instrument: false, sidechain: true, gateIdle: false, tailSeconds: 0, make: () => new A_CompEngine()),
-            new PluginInfo("org.neobuzz.neo-delay", "Neo Delay", "Tempo-synced stereo, ping-pong and cross delay", new[] { "audio-effect", "delay", "stereo" }, instrument: false, sidechain: false, gateIdle: true, tailSeconds: 10, make: () => new A_DelayEngine()),
-            new PluginInfo("org.neobuzz.neo-eq", "Neo EQ", "Eight-band parametric equalizer, minimum phase or linear phase", new[] { "audio-effect", "equalizer", "stereo" }, instrument: false, sidechain: true, gateIdle: false, tailSeconds: 0, make: () => new A_EqEngine()),
-            new PluginInfo("org.neobuzz.neo-filter", "Neo Filter", "Resonant filter with envelope follower and LFO (ladder and state-variable, oversampled drive)", new[] { "audio-effect", "filter", "stereo" }, instrument: false, sidechain: false, gateIdle: true, tailSeconds: 2, make: () => new A_FilterEngine()),
-            new PluginInfo("org.neobuzz.neo-poly", "Neo Poly", "Polyphonic virtual analog synthesizer", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 0, make: () => new A_PolyEngine()),
-            new PluginInfo("org.neobuzz.neo-verb", "Neo Verb", "Algorithmic reverb: hall, room, chamber, plate", new[] { "audio-effect", "reverb", "stereo" }, instrument: false, sidechain: false, gateIdle: false, tailSeconds: 10, make: () => new A_VerbEngine()),
+            new PluginInfo("org.neobuzz.neo-comp", "Neo Comp", "Compressor with four characters, lookahead and an external sidechain", new[] { "audio-effect", "compressor", "stereo" }, instrument: false, sidechain: true, gateIdle: false, tailSeconds: 0, make: () => new A_CompEngine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-delay", "Neo Delay", "Tempo-synced stereo, ping-pong and cross delay", new[] { "audio-effect", "delay", "stereo" }, instrument: false, sidechain: false, gateIdle: true, tailSeconds: 10, make: () => new A_DelayEngine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-eq", "Neo EQ", "Eight-band parametric equalizer, minimum phase or linear phase", new[] { "audio-effect", "equalizer", "stereo" }, instrument: false, sidechain: true, gateIdle: false, tailSeconds: 0, make: () => new A_EqEngine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-filter", "Neo Filter", "Resonant filter with envelope follower and LFO (ladder and state-variable, oversampled drive)", new[] { "audio-effect", "filter", "stereo" }, instrument: false, sidechain: false, gateIdle: true, tailSeconds: 2, make: () => new A_FilterEngine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-poly", "Neo Poly", "Polyphonic virtual analog synthesizer", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 0, make: () => new A_PolyEngine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-verb", "Neo Verb", "Algorithmic reverb: hall, room, chamber, plate", new[] { "audio-effect", "reverb", "stereo" }, instrument: false, sidechain: false, gateIdle: true, tailSeconds: 10, make: () => new A_VerbEngine(), gateQuiet: true),
         };
     }
 }

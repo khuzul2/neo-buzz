@@ -14,7 +14,7 @@
  "description": "Algorithmic reverb: hall, room, chamber, plate",
  "process": "stereo",
  "tempo": false,
- "idle": false,
+ "idle": "quiet",
  "latency": false,
  "tailSeconds": 10,
  "test": {

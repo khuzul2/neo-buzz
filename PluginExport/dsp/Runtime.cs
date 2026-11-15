@@ -535,7 +535,7 @@ namespace NeoExport
                 eng.SetTransport(tempo, playing, t->SongPosBeats / 2147483648.0, inst.Rate);
                 inst.Sh->Tempo = tempo;
             }
-            bool gate = inst.Info.GateIdle;
+            bool gate = inst.Info.GateIdle, quiet = inst.Info.GateQuiet;
             DrainEdits(inst, pr->OutEvents, 0);
             uint ne = pr->InEvents != null ? pr->InEvents->Size(pr->InEvents) : 0, ei = 0, pos = 0;
             float inPeak = 0, outPeak = 0;
@@ -558,7 +558,7 @@ namespace NeoExport
                 else { Array.Clear(L, 0, chunk); Array.Clear(R, 0, chunk); }
                 if (peak > inPeak) inPeak = peak;
                 bool active = true;
-                if (gate && peak <= 9.2e-7f && eng.Idle)
+                if (gate && peak <= 9.2e-7f && (quiet ? inst.Quiet > 16 : eng.Idle))
                 {
                     // Like the machine in a song: silence in, nothing left ringing, nothing to compute.
                     Array.Clear(L, 0, chunk); Array.Clear(R, 0, chunk);
@@ -570,6 +570,13 @@ namespace NeoExport
                         for (int i = 0; i < chunk; i++) { inst.KL[i] = kL[pos + i]; inst.KR[i] = kR[pos + i]; }
                     active = eng.Process(L, R, kL != null ? inst.KL : null, kL != null ? inst.KR : null, chunk);
                     if (!active) { Array.Clear(L, 0, chunk); Array.Clear(R, 0, chunk); }
+                    if (quiet)
+                    {
+                        // The machine's rule (Neo Verb): after 16 blocks with no input and no sound the engine is left alone.
+                        bool sound = peak > 9.2e-7f;
+                        for (int i = 0; i < chunk && !sound; i++) sound = Math.Abs(L[i]) > 1e-6f || Math.Abs(R[i]) > 1e-6f;
+                        inst.Quiet = sound ? 0 : inst.Quiet + 1;
+                    }
                 }
                 for (int i = 0; i < chunk; i++) { float a = L[i], b = R[i]; if (!float.IsFinite(a)) a = 0; if (!float.IsFinite(b)) b = 0; oL[pos + i] = a; oR[pos + i] = b; float m = Math.Max(Math.Abs(a), Math.Abs(b)); if (m > outPeak) outPeak = m; }
                 pos += (uint)chunk;

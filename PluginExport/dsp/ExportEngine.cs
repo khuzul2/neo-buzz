@@ -37,13 +37,13 @@ namespace NeoExport
     {
         public readonly string Id, Name, Description;
         public readonly string[] Features;
-        public readonly bool Instrument, Sidechain, GateIdle;
+        public readonly bool Instrument, Sidechain, GateIdle, GateQuiet;
         public readonly int TailSeconds;
         public readonly Func<ExportEngine> Make;
 
-        public PluginInfo(string id, string name, string description, string[] features, bool instrument, bool sidechain, bool gateIdle, int tailSeconds, Func<ExportEngine> make)
+        public PluginInfo(string id, string name, string description, string[] features, bool instrument, bool sidechain, bool gateIdle, int tailSeconds, Func<ExportEngine> make, bool gateQuiet = false)
         {
-            Id = id; Name = name; Description = description; Features = features; Instrument = instrument; Sidechain = sidechain; GateIdle = gateIdle; TailSeconds = tailSeconds; Make = make;
+            Id = id; Name = name; Description = description; Features = features; Instrument = instrument; Sidechain = sidechain; GateIdle = gateIdle; GateQuiet = gateQuiet; TailSeconds = tailSeconds; Make = make;
         }
     }
 }
