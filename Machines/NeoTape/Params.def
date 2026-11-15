@@ -1,4 +1,4 @@
-# Neo Tape parameters (docs/specs/mastering-tools.md §5.11). The order is permanent: songs and presets
+# Neo Tape parameters (docs/specs/mastering-tools.md §5.11). The order changes only with a version (machines.md §3.2): songs and presets
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoTape
 namespace NeoBuzz.Tape
 class NeoTapeMachine

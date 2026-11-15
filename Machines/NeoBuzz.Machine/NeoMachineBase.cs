@@ -4,13 +4,14 @@
 // does as the machine, so only the machine class itself may.
 
 using System;
+using System.Collections.Generic;
 using Buzz.MachineInterface;
 using BuzzGUI.Interfaces;
 using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Machine
 {
-    public abstract class NeoMachineBase
+    public abstract class NeoMachineBase : IVersionedMachine
     {
         protected readonly IBuzzMachineHost host;
         bool wasPlaying;
@@ -45,6 +46,48 @@ namespace NeoBuzz.Machine
                 int bpm = host?.MasterInfo?.BeatsPerMin ?? 0;
                 return bpm > 0 ? bpm : 120;
             }
+        }
+
+        // ---------------------------------------------------------------- versioned state (docs/specs/machines.md §3.4)
+
+        StateMigrations chain;
+
+        /// <summary>
+        /// The machine's migrations (null: version 0, its table is the layout every song has). Override with a static chain once the table changes;
+        /// it is read on the UI/loader thread only.
+        /// </summary>
+        internal virtual StateMigrations Migrations => null;
+
+        StateMigrations Chain => chain ??= Migrations ?? new StateMigrations(Table);
+
+        /// <summary>The version of the layout and data this build saves (see <see cref="IVersionedMachine"/>).</summary>
+        public int StateVersion => Chain.Current;
+
+        /// <summary>Each global parameter's stable key (its Params.def id), in index order.</summary>
+        public IReadOnlyList<string> ParameterKeys => Chain.Keys;
+
+        public int[] MigrateGlobals(int fromVersion, int[] saved)
+        {
+            try { return Chain.MigrateGlobals(fromVersion, saved ?? Array.Empty<int>()); }
+            catch { return null; }
+        }
+
+        public IReadOnlyDictionary<string, int> MigrateKeyed(int fromVersion, IReadOnlyDictionary<string, int> saved)
+        {
+            try { return Chain.Migrate(fromVersion, saved); }
+            catch { return null; }
+        }
+
+        public byte[] MigrateData(int fromVersion, byte[] data)
+        {
+            try { return Chain.MigrateData(fromVersion, data); }
+            catch { return null; }
+        }
+
+        public int MapParameterIndex(int fromVersion, int savedIndex)
+        {
+            try { return Chain.MapIndex(fromVersion, savedIndex); }
+            catch { return -1; }
         }
 
         /// <summary>ReBuzz asks for the text of a value: ours for global parameters, its own otherwise.</summary>

@@ -1,4 +1,4 @@
-# Neo Patch parameters (docs/specs/neo-patch.md §4.1, docs/specs/neo-patch-engine.md). The order is permanent: songs and presets store
+# Neo Patch parameters (docs/specs/neo-patch.md §4.1, docs/specs/neo-patch-engine.md). The order changes only with a version (machines.md §3.2): songs and presets store
 # values by position. The patch itself (its nodes, wires, settings and macro mappings) is the machine's state, not a parameter.
 # Regenerate: python3 tools/gen-machine-params.py Machines/NeoPatch
 namespace NeoBuzz.Patch

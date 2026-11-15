@@ -127,6 +127,56 @@ tools/gen-machine-presets.py  Presets.txt → <Name>.prs.xml
 
 `MachineCore.parametersChanged` is keyed by parameter, so when one parameter changes on several tracks in the same tick only the last track reaches a managed machine: a chord on tracks 1–3 plays one note. (The Pedal synths work around it by reading ReBuzz's private fields, and take MIDI notes since mcp-server.md §12.15, a voice each.) M0 keys it by parameter and track.
 
+### 3.2 Versioned machine state (our machines)
+
+**The rule.** The old rule, "a machine's parameters are only ever appended, never reordered; ranges and saved data never change", is replaced for **our own machines** (every Neo machine, Dye Essence, Neo Learn, Neo Patch, the canvas modulators, Neo Plug) by **versions with migrations**: a machine may reorder, rename, rescale, split, merge or drop parameters and change its own data, as long as it bumps its `StateVersion` and adds the migration step that maps what the previous version saved. **Old Buzz machines (and every machine we do not own) stay frozen as before**: their layout is whatever the DLL declares, ReBuzz maps their songs by name as it always did, and nothing here touches them. Appending parameters at the end of a table needs no version (a song that did not save them keeps their defaults).
+
+**What a version is.** `StateVersion` is the number of migration steps a machine has; **version 0 is the layout every song had before versions existed** (the machine's table as it is on the day its first step is written, which is why `NeoBuzz.MachineTests/Layouts/state-layouts.txt` records it). A machine with no steps is version 0 and behaves byte for byte as before: it saves the old data envelope and loads songs by position. The version is saved with the machine's data (`StateEnvelope`): version 0 writes `[2][size:4][content]` exactly as ReBuzz always did; version above 0 writes `[3][size:4][content][version:4]`. A build older than this one reads the version-3 envelope's trailing four bytes as part of the machine's XML (the fork has no such builds in the wild; do not ship a versioned machine to one).
+
+**Where it runs.** On the UI/loader thread only, never in `Work`. `MachineManager.SetMachineData` reads the envelope, remembers the saved version on the `MachineCore` and, when it is older than the machine's, runs the chain on the machine's own data (`IVersionedMachine.MigrateData`) before the machine's `MachineState` setter sees it. The BMX and BMXML loaders then set the global parameter values through `LoadedStateMigration.CopyGlobals` (`IVersionedMachine.MigrateGlobals`) instead of copying by position. A song from a **newer** build (saved version above the machine's) is not guessed at: the parameters keep their defaults, the machine's own data is left out and the error is logged. Track parameters are played events (notes, triggers) with no saved values, so only global parameters migrate.
+
+**The API** (what the native song format `.nbl` calls; `Buzz.MachineInterface.IVersionedMachine`, implemented by `NeoMachineBase` and by Neo Plug):
+
+| Member | What |
+|---|---|
+| `int StateVersion` | the version this build saves (0 for a machine with no steps) |
+| `IReadOnlyList<string> ParameterKeys` | each global parameter's **stable key**, in index order: the `Params.def` id (`Mode`, `Threshold`, `F2 cutoff`'s `F2Cutoff`…). The key is the parameter's identity: it never changes for the same parameter, whatever its name, position or range. Neo Plug: `slot1` … `slot64` (what a slot drives is the plug-in's own parameter id in its state) |
+| `int[] MigrateGlobals(int from, int[] saved)` | raw values saved in version `from`'s order → the current order (`int.MinValue` in `saved`: not saved, the default stands); null for a version newer than the build |
+| `IReadOnlyDictionary<string,int> MigrateKeyed(int from, IReadOnlyDictionary<string,int> saved)` | the same by key: save a value under its key and the version, load it through this, and the machine's layout may change underneath |
+| `byte[] MigrateData(int from, byte[] data)` | the machine's own data (the XML of its `MachineState`, or whatever a loader holds as its blob) as the current version reads it |
+| `int MapParameterIndex(int from, int savedIndex)` | where the parameter at `savedIndex` of version `from` is now; -1: dropped. For loaders that keep indices (pattern columns, MIDI bindings) |
+
+`.nbl` stores `(key, raw value)` per global parameter plus `StateVersion`, and loads through `MigrateKeyed`. A machine that is not an `IVersionedMachine` (an old Buzz machine) is stored by name as before. The pure core is `NeoBuzz.Dsp.StateMigrations` (no Buzz references): tests and tools can use it with a bare `ParamDef[]`.
+
+**Adding a migration** (a machine at version *n* becoming *n + 1*):
+
+1. Before touching `Params.def`, copy the keys of the table **as it is now**, in order (the ids in `Engine/Params.g.cs`, or `Params.Table.Select(p => p.Id)`). They are what songs saved at version *n* contain.
+2. Change `Params.def` and regenerate (`python3 tools/gen-machine-params.py Machines/<Machine>`). A parameter that is **the same parameter** keeps its id (give a renamed one the old `Id` only if you do not want a migration; otherwise a new id and a `Rename`).
+3. In the machine, add a static chain and override `Migrations` (it is built once, on first use):
+
+```csharp
+static readonly StateMigrations Chain = new StateMigrations(Params.Table)
+    .Step(new[] { "Mode", "Threshold", "Ratio", "OldPan" /* version 0's keys, in order */ }, s => s
+        .Rename("Threshold", "Thresh")                        // same parameter, new key
+        .Rescale("Ratio", 0, 1000, 0, 2000)                   // the raw value keeps its place in the range
+        .Map("Mode", v => v == 3 ? 2 : v)                     // any change to one saved value
+        .Remove("OldPan")                                     // gone: what a song saved for it is dropped
+        .Add("Legacy", 1)                                     // a new parameter takes this value in an old song (not its table default)
+        .Split("Range", new[] { "Low", "High" }, v => new[] { v / 2, v - v / 2 })
+        .Merge(new[] { "Wet", "Dry" }, "Mix", v => v[0] - v[1] + 500)
+        .Data(blob => Rewrite(blob)));                         // the machine's own XML, from version n's form to n + 1's
+internal override StateMigrations Migrations => Chain;
+```
+
+   One `.Step(...)` per version, oldest first; a pure reorder is `s => { }` (the values travel by key and are laid out by the current table). Every operation is optional and applies in the order written. `Data` receives the empty array when the song saved no data. Anything beyond these (a bank re-encoded, a preset name list) goes in `Data` or in a `Map`.
+4. Add the machine's new line to `NeoBuzz.MachineTests/Layouts/state-layouts.txt` (`namespace<TAB>version<TAB>count<TAB>fingerprint`; regenerate the fingerprint with `NEO_WRITE_LAYOUTS=<file> dotnet test NeoBuzz.MachineTests --filter EveryMachineLayoutIsRecordedAndOnlyChangesWithAVersion` and copy the machine's new line; **keep the old lines**). The test fails until you do, and fails again if a table's recorded prefix changes without a new version.
+5. Test it: a case in `StateVersionTests` style (a song saved at each version: build the old arrays from the old table, assert the current values and the same physical sound), `Validate()` returning no problems, and `Migrations.Current` equal to the last line's version.
+6. Regenerate the factory presets (`tools/gen-machine-presets.py`; they are written in units by name) and check `tools/null-test.py` is still bit-identical for the machine's cases.
+
+**Checklist for any change to a machine's layout or saved data:** key stable? (ids never recycled for another meaning) · `Params.def` regenerated · old keys copied into the step · `Migrations` overridden · `state-layouts.txt` line added · migration test for every older version · `Validate()` clean · presets regenerated · null test unchanged · agent knowledge/manifest (`machine.json`) regenerated · this section's table still true.
+
+**Known limits.** A song's **pattern data** (the pattern editor's columns are saved by parameter index), **MIDI bindings**, **automation targets** and the **modulators' targets** (the canvas modulators name a parameter) are not rewritten by the loaders yet; `MapParameterIndex` and `MigrateKeyed` are what the loaders and `.nbl` use to do it. Until a machine's first step exists nothing changes for any of them. **User presets** are saved by parameter name, group and index, so a preset made before a rename or reorder loads by its old names. `machine_describe` reports the current layout and `state_version` (when above 0); `param_set` takes current names and `#index`.
+
 ## 4. Shared foundation (M0)
 
 **DSP library (`NeoBuzz.Dsp`)**

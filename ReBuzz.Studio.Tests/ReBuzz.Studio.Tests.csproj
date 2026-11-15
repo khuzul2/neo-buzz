@@ -83,6 +83,12 @@
     <MSBuild Projects="TestMachines\KeysTest\KeysTest.csproj" Targets="Build" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
   </Target>
 
+  <!-- The versioned state tests' effect with three state versions (docs/specs/machines.md §3.4), in the tests' Gear/Effects the same way. -->
+  <Target Name="VersionedTestGear" AfterTargets="Build">
+    <MSBuild Projects="TestMachines\VersionedTest\VersionedTest.csproj" Targets="Restore" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration);_VersionedTestRestore=true" />
+    <MSBuild Projects="TestMachines\VersionedTest\VersionedTest.csproj" Targets="Build" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
+  </Target>
+
   <!-- Dye Essence's G0 stress machine (docs/specs/dye-essence.md §5.2): about 700 parameters and a large
        state, in the tests' Gear/Generators the same way. -->
   <Target Name="DyeStressGear" AfterTargets="Build">
