@@ -68,7 +68,11 @@ namespace ReBuzz.Studio.Platform
                 Check(false, "the check threw " + e);
             }
             Say(failures.Count == 0 ? "all passed" : $"{failures.Count} failed");
-            desktop.Shutdown(failures.Count == 0 ? 0 : 1);
+            int code = failures.Count == 0 ? 0 : 1;
+            desktop.Shutdown(code);
+            // The studio's shutdown can wait on the plug-in host's threads: the verdict is in, so leave.
+            await Pause(3000);
+            Environment.Exit(code);
         }
 
         static async Task Exercise(StudioHost host, string gear, string instrument, IClassicDesktopStyleApplicationLifetime desktop)

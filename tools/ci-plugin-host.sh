@@ -91,7 +91,7 @@ if [ "$RUNNER_OS" != Linux ]; then
     local pid=$!
     ( sleep 120; kill -9 "$pid" 2>/dev/null ) >/dev/null 2>&1 &   # macOS has no timeout(1)
     local watcher=$!
-    wait "$pid"; echo "studio exit code $? ($label)"
+    local rc=0; wait "$pid" || rc=$?; echo "studio exit code $rc ($label)"
     kill "$watcher" 2>/dev/null || true
     cat "$log" 2>/dev/null || echo "(no log: the studio did not run the check)"
     grep -q "plugin-gui: all passed" "$log" 2>/dev/null || { echo "--- studio output (tail)"; tail -n 25 "$OUT/plugin-gui-$label.out" | cut -c1-300; }
