@@ -1,6 +1,28 @@
 {
-  "id": "org.neobuzz.neo-poly", "name": "Neo Poly", "folder": "NeoPoly", "namespace": "NeoBuzz.Poly", "engine": "PolyEngine", "machine": "NeoPolyMachine", "editor": "NeoPolyEditor",
-  "kind": "instrument", "features": ["synthesizer"], "au": "NPly", "description": "Polyphonic virtual analog synthesizer",
-  "process": "synth", "tempo": true, "idle": false, "tailSeconds": 0,
-  "test": {"changes": [], "settle": 0.0}
+ "id": "org.neobuzz.neo-poly",
+ "name": "Neo Poly",
+ "folder": "NeoPoly",
+ "namespace": "NeoBuzz.Poly",
+ "engine": "PolyEngine",
+ "machine": "NeoPolyMachine",
+ "editor": "NeoPolyEditor",
+ "kind": "instrument",
+ "features": [
+  "synthesizer"
+ ],
+ "au": "NPly",
+ "description": "Polyphonic virtual analog synthesizer",
+ "process": "synth",
+ "tempo": true,
+ "idle": false,
+ "tailSeconds": 0,
+ "test": {
+  "changes": [
+   [
+    "Unison",
+    "raw:3"
+   ]
+  ],
+  "settle": 0.0
+ }
 }

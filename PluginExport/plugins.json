@@ -7,13 +7,15 @@
   "sidechain": true,
   "test": {
    "changes": [
-    [
-     "Threshold",
-     "raw:300"
-    ]
+    {
+     "param": "Threshold",
+     "native": "raw:300",
+     "slot": "raw:19660"
+    }
    ],
    "settle": 0.5
   },
+  "paramCount": 16,
   "latencyDependsOnParams": false
  },
  {
@@ -23,9 +25,21 @@
   "au": "NDly",
   "sidechain": false,
   "test": {
-   "changes": [],
+   "changes": [
+    {
+     "param": "Mode",
+     "native": "raw:1",
+     "slot": "raw:32767"
+    },
+    {
+     "param": "Feedback",
+     "native": "raw:1500",
+     "slot": "raw:49647"
+    }
+   ],
    "settle": 0.5
   },
+  "paramCount": 17,
   "latencyDependsOnParams": false
  },
  {
@@ -35,9 +49,21 @@
   "au": "NEqu",
   "sidechain": true,
   "test": {
-   "changes": [],
+   "changes": [
+    {
+     "param": "B1 on",
+     "native": "raw:1",
+     "slot": "raw:65534"
+    },
+    {
+     "param": "B1 gain",
+     "native": "raw:360",
+     "slot": "raw:49150"
+    }
+   ],
    "settle": 0.5
   },
+  "paramCount": 195,
   "latencyDependsOnParams": true
  },
  {
@@ -48,21 +74,25 @@
   "sidechain": false,
   "test": {
    "changes": [
-    [
-     "Type",
-     "raw:2"
-    ],
-    [
-     "Cutoff",
-     "raw:5000"
-    ],
-    [
-     "Resonance",
-     "raw:500"
-    ]
+    {
+     "param": "Type",
+     "native": "raw:2",
+     "slot": "raw:21845"
+    },
+    {
+     "param": "Cutoff",
+     "native": "raw:5000",
+     "slot": "raw:32767"
+    },
+    {
+     "param": "Resonance",
+     "native": "raw:500",
+     "slot": "raw:32767"
+    }
    ],
    "settle": 0.5
   },
+  "paramCount": 18,
   "latencyDependsOnParams": false
  },
  {
@@ -72,9 +102,16 @@
   "au": "NPly",
   "sidechain": false,
   "test": {
-   "changes": [],
+   "changes": [
+    {
+     "param": "Unison",
+     "native": "raw:3",
+     "slot": "raw:21845"
+    }
+   ],
    "settle": 0.0
   },
+  "paramCount": 91,
   "latencyDependsOnParams": false
  },
  {
@@ -84,9 +121,21 @@
   "au": "NVrb",
   "sidechain": false,
   "test": {
-   "changes": [],
+   "changes": [
+    {
+     "param": "Mode",
+     "native": "raw:3",
+     "slot": "raw:65534"
+    },
+    {
+     "param": "Decay",
+     "native": "raw:700",
+     "slot": "raw:45874"
+    }
+   ],
    "settle": 0.5
   },
+  "paramCount": 17,
   "latencyDependsOnParams": false
  }
 ]

@@ -1,21 +1,26 @@
 #!/usr/bin/env python3
-# Null test of the exported Neo Filter (CLAP and VST3) against the machine itself, in our own plug-in host (Neo Plug FX,
+# Null test of an exported Neo plug-in (CLAP and VST3) against the machine itself, in our own plug-in host (Neo Plug FX,
 # docs/specs/plugin-host.md) inside rebuzz-headless, driven over MCP like tools/plugin-host-test.py.
 #
-# One Neo Poly feeds four filters in parallel: the native Neo Filter and the exported one as CLAP and as VST3 (the VST3 is
-# clap-wrapper's module around the same CLAP), all with the same parameters. One render captures each filter's output as a probe;
-# the probes are subtracted. Then the song is saved, reopened and rendered again: the exported filter must come back the same.
+# An effect: one Neo Poly feeds three copies in parallel, the native machine and the exported one as CLAP and as VST3 (the VST3 is
+# clap-wrapper's module around the same CLAP), all with the same parameters. An instrument: the same notes go to the native machine
+# and to the exported one in Neo Plug. One render captures each output as a probe; the probes are subtracted. The parameters of the
+# plug-ins are compared with machine_describe's (count, names, texts, units). Then the song is saved, reopened and rendered again.
 #
-#   python3 null-test.py <rebuzz-headless> <work folder> --dir <plug-in folder> --lib neoplug.so --scan neoplug-scan
+#   python3 null-test.py <rebuzz-headless> <work folder> --plugin "Neo Filter" --manifest PluginExport/plugins.json --dir <plug-in folder> --lib neoplug.so --scan neoplug-scan
 #
 # Results: <work>/null-test.json and a table on stdout. Exit 1 if a check fails.
 import argparse, glob, json, math, os, queue, struct, subprocess, sys, threading
 
 ap = argparse.ArgumentParser()
 ap.add_argument("exe"); ap.add_argument("work")
+ap.add_argument("--plugin", default="Neo Filter"); ap.add_argument("--manifest", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "plugins.json"))
 ap.add_argument("--dir", action="append", default=[]); ap.add_argument("--lib"); ap.add_argument("--scan")
 ap.add_argument("--tolerance", type=float, default=3e-6, help="largest allowed |difference| (full scale 1.0): -110 dBFS")
+ap.add_argument("--reload-tolerance", type=float, default=3e-4)
 args = ap.parse_args()
+spec = next(p for p in json.load(open(args.manifest)) if p["name"] == args.plugin)
+INSTR = spec["kind"] == "instrument"
 work = os.path.abspath(args.work); os.makedirs(work, exist_ok=True)
 stderr_path = os.path.join(work, "stderr.txt"); result_path = os.path.join(work, "null-test.json")
 failures, results = [], {"checks": [], "nulls": {}}
@@ -124,120 +129,139 @@ def null(a_path, b_path, skip_seconds=0.0, rate=44100):
             "differing_samples": diff_samples, "residual_rel_rms_db": rms_db, "bit_identical": diff_samples == 0 and len(a[0]) == len(b[0])}
 
 
-init = request("initialize", {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "px0", "version": "1"}})
+init = request("initialize", {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "px1", "version": "1"}})
 check(init.get("result", {}).get("serverInfo", {}).get("name") == "neobuzz-live", "initialize")
 proc.stdin.write(json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}) + "\n"); proc.stdin.flush()
 
+host_gear = "Neo Plug" if INSTR else "Neo Plug FX"
 ok, _, data = call("gear_list", search="", limit=1000)
-fx_names = []
+names = []
 for g in data.get("gear", []):
-    if g["name"] == "Neo Plug FX": fx_names = g.get("plugins") or []
-mine = [n for n in fx_names if "neo filter" in n.lower()]
-print("     Neo Plug FX lists:", mine)
+    if g["name"] == host_gear: names = g.get("plugins") or []
+mine = [n for n in names if args.plugin.lower() in n.lower()]
+print(f"     {host_gear} lists:", mine)
 clap = next((n for n in mine if "(CLAP)" in n), None); vst3 = next((n for n in mine if "(VST3)" in n), None)
-check(clap is not None, "the scan found Neo Filter as CLAP")
-check(vst3 is not None, "the scan found Neo Filter as VST3 (clap-wrapper)")
+check(clap is not None, f"the scan found {args.plugin} as CLAP")
+check(vst3 is not None, f"the scan found {args.plugin} as VST3 (clap-wrapper)")
 results["plugins"] = {"clap": clap, "vst3": vst3}
 if not clap:
     print(finish("no CLAP")); sys.exit(1)
 
 call("song_set", tempo_bpm=120, song_end_beats=8)
-check(call("machine_add", gear="Neo Poly", name="Src")[0], "Neo Poly source")
-call("pattern_create", machine="Src", name="A", length_beats=8)
-check(call("notes_write", machine="Src", pattern="A", notes=[{"pitch": "C3", "start": 0, "length": 4}, {"pitch": "G3", "start": 0, "length": 4}, {"pitch": "D#4", "start": 0, "length": 4},
-                                                         {"pitch": "A#3", "start": 4, "length": 3}, {"pitch": "F4", "start": 4, "length": 3}])[0], "notes")
-call("arrangement_place", machine="Src", pattern="A", at=[0])
-check(call("machine_add", gear="Neo Filter", name="NativeF", insert_after="Src")[0], "native Neo Filter after the source")
-filters = ["NativeF"]
-for nm, plugin in (("ClapF", clap), ("VstF", vst3)):
-    if not plugin: continue
-    ok, _, _ = call("machine_add", gear="Neo Plug FX", plugin=plugin, name=nm)
-    check(ok, f"machine_add {nm} ({plugin})")
-    if ok:
-        check(call("connect", **{"from": "Src", "to": nm})[0], f"connect Src -> {nm}")
-        call("connect", **{"from": nm, "to": "Master"})
-        filters.append(nm)
+CHORD = [{"pitch": "C3", "start": 0, "length": 4}, {"pitch": "G3", "start": 0, "length": 4}, {"pitch": "D#4", "start": 0, "length": 4},
+         {"pitch": "A#3", "start": 4, "length": 3}, {"pitch": "F4", "start": 4, "length": 3}]
+
+
+def pattern(machine):
+    call("pattern_create", machine=machine, name="A", length_beats=8)
+    check(call("notes_write", machine=machine, pattern="A", notes=CHORD)[0], f"notes on {machine}")
+    call("arrangement_place", machine=machine, pattern="A", at=[0])
+
+
+NATIVE = "Native"
+outs = [NATIVE]          # the machines whose output is probed
+if INSTR:
+    check(call("machine_add", gear=args.plugin, name=NATIVE)[0], f"native {args.plugin}")
+    pattern(NATIVE)
+    call("connect", **{"from": NATIVE, "to": "Master"})
+    for nm, plugin in (("ClapP", clap), ("VstP", vst3)):
+        if not plugin: continue
+        ok, _, _ = call("machine_add", gear=host_gear, plugin=plugin, name=nm)
+        check(ok, f"machine_add {nm} ({plugin})")
+        if ok:
+            pattern(nm); call("connect", **{"from": nm, "to": "Master"}); outs.append(nm)
+else:
+    check(call("machine_add", gear="Neo Poly", name="Src")[0], "Neo Poly source")
+    pattern("Src")
+    check(call("machine_add", gear=args.plugin, name=NATIVE, insert_after="Src")[0], f"native {args.plugin} after the source")
+    for nm, plugin in (("ClapF", clap), ("VstF", vst3)):
+        if not plugin: continue
+        ok, _, _ = call("machine_add", gear=host_gear, plugin=plugin, name=nm)
+        check(ok, f"machine_add {nm} ({plugin})")
+        if ok:
+            check(call("connect", **{"from": "Src", "to": nm})[0], f"connect Src -> {nm}")
+            call("connect", **{"from": nm, "to": "Master"})
+            outs.append(nm)
+
 
 def render(label):
-    ok, text, r = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": filters, "name": label})
+    ok, text, r = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": outs, "name": label})
     check(ok and not (r.get("measure") or {}).get("silent", True), f"render {label} is audible")
-    return probe_files(r)
-
-
-def probe_files(r):
     base = os.path.splitext(r["file"])[0]
-    out = {}
-    for nm in filters:
+    res = {}
+    for nm in outs:
         hits = glob.glob(base + "-" + nm + ".wav") or glob.glob(base + "-*" + nm + "*.wav")
-        out[nm] = hits[0] if hits else None
-    return out
+        res[nm] = hits[0] if hits else None
+    return res
 
 
 def compare(pf, tag, skip=0.0, tol=None):
     tol = args.tolerance if tol is None else tol
     check(all(pf.values()), f"{tag}: probe files found")
-    for nm in filters[1:]:
-        if not (pf.get(nm) and pf.get("NativeF")): continue
-        full = null(pf["NativeF"], pf[nm]); res = null(pf["NativeF"], pf[nm], skip) if skip else full
+    for nm in outs[1:]:
+        if not (pf.get(nm) and pf.get(NATIVE)): continue
+        full = null(pf[NATIVE], pf[nm]); res = null(pf[NATIVE], pf[nm], skip) if skip else full
         results["nulls"][f"{tag}/{nm}"] = {"whole": full, "after_start": res if skip else None, "skip_seconds": skip}
-        print("     " + where(pf["NativeF"], pf[nm]))
-        print(f"     {tag}: {nm} - NativeF whole render: max |diff| {full['max_abs_diff']:.3g} ({full['max_abs_diff_dbfs']:.1f} dBFS), {full['differing_samples']}/{full['samples']} samples differ, "
+        print("     " + where(pf[NATIVE], pf[nm]))
+        print(f"     {tag}: {nm} - {NATIVE} whole render: max |diff| {full['max_abs_diff']:.3g} ({full['max_abs_diff_dbfs']:.1f} dBFS), {full['differing_samples']}/{full['samples']} samples differ, "
               f"bit identical: {full['bit_identical']}, native peak {full['peak_native']:.3f}")
-        if skip: print(f"     {tag}: {nm} - NativeF after {skip} s: max |diff| {res['max_abs_diff']:.3g} ({res['max_abs_diff_dbfs']:.1f} dBFS), {res['differing_samples']}/{res['samples']} samples differ")
+        if skip: print(f"     {tag}: {nm} - {NATIVE} after {skip} s: max |diff| {res['max_abs_diff']:.3g} ({res['max_abs_diff_dbfs']:.1f} dBFS), {res['differing_samples']}/{res['samples']} samples differ")
         check(full["peak_native"] > 0.01, f"{tag}: {nm}: the native signal is audible (peak {full['peak_native']:.3f})")
         check(res["max_abs_diff"] <= tol, f"{tag}: {nm} nulls against the native machine within {tol:g}" + (f" after {skip} s" if skip else "") + f" (max |diff| {res['max_abs_diff']:.3g})")
-    if pf.get("ClapF") and pf.get("VstF"):
-        cv = null(pf["ClapF"], pf["VstF"])
+    if pf.get("ClapF" if not INSTR else "ClapP") and pf.get("VstF" if not INSTR else "VstP"):
+        a, b = ("ClapF", "VstF") if not INSTR else ("ClapP", "VstP")
+        cv = null(pf[a], pf[b])
         results["nulls"][f"{tag}/clap-vs-vst3"] = cv
-        print(f"     {tag}: VstF - ClapF: max |diff| {cv['max_abs_diff']:.3g}, bit identical: {cv['bit_identical']}")
+        print(f"     {tag}: VST3 - CLAP: max |diff| {cv['max_abs_diff']:.3g}, bit identical: {cv['bit_identical']}")
         check(cv["bit_identical"], f"{tag}: the VST3 (clap-wrapper) renders the same bits as the CLAP")
 
 
-# 1. default parameters: nothing glides on either side
+def describe(nm):
+    ok, _, d = call("machine_describe", machine=nm, all=True)
+    return [(p.get("name"), p.get("value"), p.get("raw"), p.get("unit")) for p in d.get("parameters", [])]
+
+
+def param_check(tag):
+    """The plug-in's parameters against machine_describe's: how many, their names and texts (a plug-in's slots carry the CLAP name)."""
+    nat = describe(NATIVE)
+    check(len(nat) >= spec["paramCount"], f"{tag}: {NATIVE} describes {len(nat)} parameters (the table has {spec['paramCount']})")
+    for nm in outs[1:]:
+        got = describe(nm)
+        named = [g for g in got if g[0] and not str(g[0]).startswith("Slot ")]
+        nat_names = [n[0] for n in nat]
+        diffs = [(a, b) for a, b in zip(nat, named) if a[0] != b[0] or a[1] != b[1]]
+        print(f"     {tag}: {nm}: {len(named)} named parameters; differing from the native machine's names/texts: {diffs[:6] if diffs else 'none'}")
+        check(len(named) >= spec["paramCount"] - 2, f"{tag}: {nm} has the machine's {spec['paramCount']} parameters ({len(named)} named)")
+        check(not diffs, f"{tag}: {nm} parameter names and texts match machine_describe of the machine")
+        units = [n for n in named if n[3]]
+        results.setdefault("param_dump", {})[f"{tag}/{nm}"] = {"count": len(named), "with_unit": len(units), "diffs": diffs[:20]}
+
+
+# 1. default parameters
+param_check("defaults")
 compare(render("defaults"), "defaults")
 
-# 2. the same changed parameters on all: Type SVF LP, Cutoff 5000 (a slot's 32767 of 65534 is the same position), Resonance 500.
-#    The engines glide from the defaults to them (a smoother of ~50 ms) and each host path starts that glide at its own block: the
-#    first half second is a start-up transient and is reported, the rest has to null.
-for nm in filters:
-    slot = nm != "NativeF"
-    ch = [{"param": "Type", "value": "raw:2"}, {"param": "Cutoff", "value": "raw:32767" if slot else "raw:5000"}, {"param": "Resonance", "value": "raw:32767" if slot else "raw:500"}]
-    ok, _, _ = call("param_set", machine=nm, changes=ch)
-    check(ok, f"{nm}: parameters set")
-    ok, _, d = call("machine_describe", machine=nm, all=True)
-    got = {p.get("name"): (p.get("value"), p.get("raw"), p.get("unit")) for p in d.get("parameters", [])}
-    print(f"     {nm}: Cutoff={got.get('Cutoff')} Resonance={got.get('Resonance')} Type={got.get('Type')}")
-    results.setdefault("params", {})[nm] = {k: got.get(k) for k in ("Cutoff", "Resonance", "Type")}
-    if slot:
-        check(got.get("Cutoff", (None, None, None))[2] not in (None, ""), f"{nm}: Cutoff shows a unit ({got.get('Cutoff')})")
-compare(render("changed"), "changed", skip=0.5)
+# 2. the same changed parameters on all
+if spec["test"]["changes"]:
+    for nm in outs:
+        slot = nm != NATIVE
+        ch = [{"param": c["param"], "value": c["slot" if slot else "native"]} for c in spec["test"]["changes"]]
+        check(call("param_set", machine=nm, changes=ch)[0], f"{nm}: parameters set")
+    param_check("changed")
+    compare(render("changed"), "changed", skip=spec["test"].get("settle", 0.5))
 
-song = os.path.join(work, "px0.bmxml")
+song = os.path.join(work, "px1.bmxml")
 check(call("song_save", path=song, overwrite=True)[0], "song_save")
 check(call("song_open", path=song, discard_unsaved=True)[0], "song_open")
-def dump(tag):
-    """Every parameter of every filter, native raw value against the exported one (a slot's raw is 0..65534 over the CLAP range)."""
-    tables = {}
-    for nm in filters:
-        ok, _, d = call("machine_describe", machine=nm, all=True)
-        tables[nm] = [(p.get("name"), p.get("value"), p.get("raw")) for p in d.get("parameters", []) if p.get("name") and not str(p.get("name")).startswith("Slot ") or nm == "NativeF"]
-    nat = tables.get("NativeF", [])
-    for nm in filters[1:]:
-        diffs = [(a, b) for a, b in zip(nat, tables[nm]) if a[1] != b[1]]
-        print(f"     {tag}: {nm} parameter texts differing from the native machine's: {diffs if diffs else 'none'} ({len(tables[nm])} parameters)")
-        results.setdefault("param_dump", {})[f"{tag}/{nm}"] = diffs
-
-
-dump("after reopen")
-# A reloaded song: the plug-in restores its state before it is activated and starts settled at it, while the native machine glides
-# from its defaults to the loaded values; the engine's smoothers rest ~1e-4 apart after the two histories (experiments/plugin-export/
-# selftest shows the same two engines differing by 1.05e-4). So the reloaded filters are held to 3e-4 (-70 dBFS), not to the settled tolerance.
-compare(render("reopened"), "reopened", skip=0.5, tol=3e-4)
+param_check("after reopen")
+# A reloaded song: the plug-in restores its state before it is activated and starts settled at it, while the native machine glides from
+# its defaults to the loaded values, and the engines' smoothers rest ~1e-4 apart after the two histories (docs/specs/plugin-export.md §7).
+compare(render("reopened"), "reopened", skip=0.5, tol=args.reload_tolerance)
 
 proc.stdin.close()
 try: proc.wait(timeout=60)
 except Exception: proc.kill()
-json.dump({"ok": not failures, "failures": failures, "checks": results["checks"], "nulls": results["nulls"], "plugins": results.get("plugins"), "params": results.get("params"),
+json.dump({"ok": not failures, "failures": failures, "checks": results["checks"], "nulls": results["nulls"], "plugins": results.get("plugins"), "param_dump": results.get("param_dump"),
            "tolerance": args.tolerance}, open(result_path, "w"), indent=1)
-print("NULL-TEST " + ("ok" if not failures else f"FAILED ({len(failures)}): " + "; ".join(failures)))
+print(f"NULL-TEST {args.plugin} " + ("ok" if not failures else f"FAILED ({len(failures)}): " + "; ".join(failures)))
 sys.exit(1 if failures else 0)

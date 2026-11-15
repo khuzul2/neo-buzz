@@ -1,0 +1,26 @@
+NeoBuzz Live Plug-ins
+=====================
+
+Neo Filter, Neo EQ, Neo Comp, Neo Delay, Neo Verb and Neo Poly as CLAP, VST3 and (macOS) Audio Unit plug-ins. Part of NeoBuzz Live
+(github.com/khuzul2/neo-buzz), a fork of ReBuzz.
+
+Third-party components in these bundles and their licences
+----------------------------------------------------------
+* CLAP (headers and API), MIT licence. Copyright (c) 2014-2022 Alexandre BIQUE and the CLAP contributors. https://github.com/free-audio/clap
+* clap-wrapper (CLAP to VST3 / Audio Unit), MIT licence. Copyright (c) 2022 Paul Walker, Timo Kaluza and the clap-wrapper contributors.
+  https://github.com/free-audio/clap-wrapper
+* VST3 SDK 3.8, MIT licence (since 3.8). Copyright (c) Steinberg Media Technologies GmbH. VST is a trademark of Steinberg Media
+  Technologies GmbH. https://github.com/steinbergmedia/vst3sdk
+* AudioUnitSDK (macOS), Apache License 2.0. Copyright (c) Apple Inc. https://github.com/apple/AudioUnitSDK
+  Audio Units is a trademark of Apple Inc.
+* Avalonia (the editors' window toolkit), MIT licence. Copyright (c) AvaloniaUI OÜ. https://github.com/AvaloniaUI/Avalonia
+* SkiaSharp and HarfBuzzSharp (drawing, text shaping), MIT licence. Copyright (c) Microsoft Corporation, Xamarin Inc. and contributors.
+  Skia: BSD 3-Clause, Copyright (c) Google Inc. HarfBuzz: MIT, Copyright (c) the HarfBuzz authors.
+* Inter typeface, SIL Open Font License 1.1. Copyright (c) The Inter Project Authors. https://github.com/rsms/inter
+* .NET runtime and libraries (NativeAOT), MIT licence. Copyright (c) .NET Foundation and contributors.
+
+The full licence texts are in the NeoBuzz Live source tree (PluginExport/LICENSES/) and in the packages named above.
+
+Names
+-----
+The plug-ins are named "Neo ..." and carry no third-party product names or marks. Other names are the marks of their owners.
