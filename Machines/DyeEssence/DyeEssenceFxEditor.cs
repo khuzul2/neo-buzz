@@ -43,6 +43,9 @@ namespace NeoBuzz.DyeEssence
             TypeBinding = ctx.Bind(typeParam, _ => Show(Binding.Value));
             Default = Binding.Normalized(def.Default);
             UserChanged += t => Binding.Set(Binding.RawFromNormalized(t));
+#if AVALONIA   // drag-to-modulate is the studio's (ux-overhaul.md P5b)
+            BindModulation(ctx.Machine, Binding.Parameter, Binding.Track, Binding.Normalized);
+#endif
             Show(Binding.Value);
         }
 

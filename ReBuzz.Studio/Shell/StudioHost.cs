@@ -20,6 +20,7 @@ namespace ReBuzz.Studio.Shell
         StudioHost(string settingsFolder, bool openAudio)
         {
             SettingsFolder = Path.GetFullPath(settingsFolder);
+            Views.Modulation.ModulationDrop.Install();     // drag-to-modulate (ux-overhaul.md P5b): where a drag from a modulator's handle lands
             OpenAudio = openAudio;
             Registry = EngineHost.UseSettings(SettingsFolder);
             EngineHost.UseAudio(Registry, null);    // the settings' device (Preferences picks it)
@@ -40,6 +41,7 @@ namespace ReBuzz.Studio.Shell
         {
             if (Current != null) return Current;
             EngineHost.PrepareProcess(m => Current?.Log(m));
+            Tools.DebugLog.Install();     // the debug console's memory of the log (ux-overhaul.md P6b)
             ReBuzzCore.DefaultUiHost = new StudioMachineUiHost();     // machine windows (studio-mvp.md §3.4)
             Current = new StudioHost(settingsFolder ?? DefaultSettingsFolder, openAudio);
             return Current;

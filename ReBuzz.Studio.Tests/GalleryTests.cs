@@ -1340,6 +1340,53 @@ namespace ReBuzz.Studio.Tests
                     "Help ▸ Keyboard Shortcuts… (⌘/)."));
                 Try("339-keyboard-shortcuts-search", () => DialogOnOpen(window, () => ReBuzz.Studio.Shell.Commands.ShortcutsWindow.Open(window).Search = "delete",
                     "339-keyboard-shortcuts-search", "Keyboard Shortcuts searched for \"delete\": every key that deletes, in every view.", "Type in the window's search box."));
+                // P6b (ux-overhaul.md §9): ReBuzz.exe's tool windows, in the studio.
+                Try("530-cpu-monitor", () => DialogOnOpen(window, () => ReBuzz.Studio.Shell.Tools.CpuMonitorWindow.Open(Studio.Host, window),
+                    "530-cpu-monitor", "View ▸ CPU Monitor: each machine's share of the audio engine's time as a bar and a percentage, its cycles per sample and the longest it held the engine's lock; the engine's total and the overhead no machine accounts for.",
+                    "View ▸ CPU Monitor."));
+                Try("531-signal-analysis", () => DialogOnOpen(window, () =>
+                {
+                    var master = Studio.Host.Core.SongCore.Machines.First(m => m.DLL.Info.Type == BuzzGUI.Interfaces.MachineType.Master);
+                    var analysis = ReBuzz.Studio.Shell.Tools.SignalAnalysisWindow.Open(Studio.Host, master, window);
+                    int rate = System.Math.Max(1, Studio.Host.Core.SelectedAudioDriverSampleRate);
+                    var tone = new float[8192];
+                    for (int i = 0; i < tone.Length / 2; i++)
+                    {
+                        double t = i / (double)rate;
+                        tone[2 * i] = (float)(12000 * System.Math.Sin(2 * System.Math.PI * 220 * t) + 6000 * System.Math.Sin(2 * System.Math.PI * 1320 * t) + 2000 * System.Math.Sin(2 * System.Math.PI * 5280 * t));
+                        tone[2 * i + 1] = (float)(9000 * System.Math.Sin(2 * System.Math.PI * 330 * t) + 3000 * System.Math.Sin(2 * System.Math.PI * 2640 * t));
+                    }
+                    analysis.Tap.Add(tone, true);
+                    analysis.Tick();
+                }, "531-signal-analysis", "Signal Analysis of the Master (a machine's menu ▸ Signal Analysis...): the spectrum on a log frequency axis with a window to choose and a peak line that falls slowly, the scope under it. Here fed a test tone.",
+                    "Right click a machine ▸ Signal Analysis...."));
+                Try("532-hard-disk-recorder", () => DialogOnOpen(window, () => ReBuzz.Studio.Shell.Tools.HardDiskRecorderWindow.Open(Studio.Host, window),
+                    "532-hard-disk-recorder", "View ▸ Hard Disk Recorder: records the Master to a wave file as it plays (Record), or exactly over the song's loop (Record loop); the file is named after the song and numbered, the bit depth is a choice.",
+                    "View ▸ Hard Disk Recorder."));
+                Try("533-debug-console", () => DialogOnOpen(window, () =>
+                {
+                    Studio.Host.Core.DCWriteLine("Song loaded: " + GallerySong.Title);
+                    Studio.Host.Core.DCWriteLine("Machine Neo Delay: latency 0 samples", BuzzGUI.Interfaces.DCLogLevel.Information);
+                    Studio.Host.Core.DCWriteLine("Audio: the output was reopened at 48000 Hz", BuzzGUI.Interfaces.DCLogLevel.Warning);
+                    ReBuzz.Studio.Shell.Tools.DebugConsoleWindow.Open(Studio.Host, window);
+                }, "533-debug-console", "View ▸ Debug Console: the engine's log, newest at the bottom, with a level filter, a text filter, Clear, Copy and Follow.",
+                    "View ▸ Debug Console."));
+                Try("534-midi-bindings", () => DialogOnOpen(window, () =>
+                {
+                    var backend = new ReBuzz.Agent.MidiBackend(Studio.Host.Core);
+                    var machine = Studio.Host.Core.SongCore.MachinesList.FirstOrDefault(m => m.DLL.Info.Type == BuzzGUI.Interfaces.MachineType.Generator);
+                    var parameter = machine?.ParameterGroups.SelectMany(g => g.Parameters).FirstOrDefault(p => p.Type != BuzzGUI.Interfaces.ParameterType.Note && p.Type != BuzzGUI.Interfaces.ParameterType.Internal && p.Group.Type == BuzzGUI.Interfaces.ParameterGroupType.Global);
+                    if (machine != null && parameter != null) backend.Bind(machine.Name, parameter.Name, 0, 1, 74);
+                    ReBuzz.Studio.Shell.Tools.MidiBindingsWindow.Open(Studio.Host, window);
+                }, "534-midi-bindings", "View ▸ MIDI Bindings: every parameter a MIDI controller drives, by machine, parameter and track, with its channel and controller, a filter and a Clear button per row.",
+                    "View ▸ MIDI Bindings."));
+                Try("535-latency", () => DialogOnOpen(window, () =>
+                    _ = ReBuzz.Studio.Shell.Tools.LatencyDialog.Ask(Studio.Host.Core.SongCore.MachinesList.First(m => m.DLL.Info.Type != BuzzGUI.Interfaces.MachineType.Master)),
+                    "535-latency", "Latency... on a machine's menu: the latency the machine reports and a switch to override it with a number of samples for the delay compensation.",
+                    "Right click a machine ▸ Latency...."));
+                Try("536-song-properties", () => DialogOnOpen(window, () => _ = ReBuzz.Studio.Shell.Tools.SongPropertiesDialog.Ask(Studio.Host.Core),
+                    "536-song-properties", "Edit ▸ Song Properties...: tempo, ticks per beat and playback speed of the song, checked as they are typed.",
+                    "Edit ▸ Song Properties..."));
                 Try("332-save-changes", () =>
                 {
                     Core.SetModifiedFlag();
@@ -1506,6 +1553,67 @@ namespace ReBuzz.Studio.Tests
                         Core.UiHost.CloseWindows(m);
                     });
                 }
+                // P5b (ux-overhaul.md): drag-to-modulate and the Samples view.
+                Try("493-modulation-ring-and-drop-targets", () =>
+                {
+                    var lfo = Add("Neo LFO", "LFO");
+                    var filter = Add("Neo Filter", "Filter");
+                    var mod = ModulationBoard.Of(lfo)!;
+                    Assert.That(ReBuzz.Agent.ModulationEdits.Add(Core, mod, filter, filter.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == "Cutoff"), 0, 60), Is.Null);
+                    Core.UiHost.OpenGui(filter, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(filter)!;
+                    ModulationBoard.BeginDrag(mod);          // a drag in progress: every knob that takes a modulator is outlined
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor, "493-modulation-ring-and-drop-targets", "Neo Filter's editor while a modulator is dragged (P5b): every knob is outlined as a drop target, and Cutoff carries the ring of the modulation already on it (the arc is where it reaches, the tick the value you set).", "Press a modulator's output handle (in its editor, its device view or on its box on the canvas) and drag it over a knob.");
+                    ModulationBoard.EndDrag(null);
+                    Core.UiHost.CloseWindows(filter);
+                });
+                Try("494-modulation-matrix", () =>
+                {
+                    var lfo = Core.SongCore.MachinesList.First(m => m.Name == "LFO");
+                    var filter = Core.SongCore.MachinesList.First(m => m.Name == "Filter");
+                    var mod = ModulationBoard.Of(lfo)!;
+                    ReBuzz.Agent.ModulationEdits.Add(Core, mod, filter, filter.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == "Resonance"), 0, -35);
+                    var w = ReBuzz.Studio.Views.Modulation.ModulationMatrixWindow.Open(mod);
+                    Settle();
+                    w.Choose("LFO", "Filter", "Cutoff");
+                    Settle();
+                    Shot(w, "494-modulation-matrix", "The modulation matrix (P5b): every modulation in the song as a row (source, machine, parameter, depth, polarity, Remove) and, above, + Add with a source, a machine and a parameter chosen from lists.", "View ▸ Modulation Matrix.");
+                    w.Close();
+                    foreach (var m in new[] { lfo, filter }) Core.UiHost.ReleaseMachine(m);
+                    Core.SongCore.DeleteMachines(new[] { lfo, filter });
+                });
+                Try("495-samples-view", () =>
+                {
+                    string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "gallery-samples-" + System.Guid.NewGuid().ToString("N"));
+                    System.IO.Directory.CreateDirectory(dir);
+                    try
+                    {
+                        string[] names = { "Kick", "Snare", "Pad A3" };
+                        for (int n = 0; n < names.Length; n++)
+                        {
+                            const int rate = 22050;
+                            int frames = rate * (n + 1) / 2;
+                            var data = new float[frames * 2];
+                            for (int i = 0; i < frames; i++) data[2 * i] = data[2 * i + 1] = (float)(0.7 * System.Math.Sin(i * 2 * System.Math.PI * (110 + 55 * n) / rate) * System.Math.Exp(-3.0 * i / frames));
+                            string path = System.IO.Path.Combine(dir, names[n] + ".wav");
+                            ReBuzz.Agent.Audio.Wav.WriteStereoFloat(path, data, frames, rate);
+                            Assert.That(ReBuzz.Agent.WaveEdits.Load(Core, path, n == 2 ? 9 : n, null, true, out _), Is.Null);
+                        }
+                        ReBuzz.Agent.WaveEdits.SetLoop(Core, 2, true, 2000, 9000);
+                        var w = ReBuzz.Studio.Views.Samples.SamplesWindow.Open();
+                        Settle();
+                        w.Selected = 2;
+                        Settle();
+                        w.Selected = 9;
+                        Settle();
+                        Shot(w, "495-samples-view", "The Samples view (P5b): the song's wavetable with slots in hex as Buzz shows them (01 … C8) and their names; the chosen wave's name, length, rate, root note, loop points, waveform with the loop shaded, and Replace, Clear, Play.", "View ▸ Samples; drag an audio file into the window to load it.");
+                        w.Close();
+                        for (int n = 0; n < 10; n++) if (Core.SongCore.Wavetable.Waves[n] != null) Core.SongCore.Wavetable.LoadWave(n, null, null, false);
+                    }
+                    finally { try { System.IO.Directory.Delete(dir, true); } catch (System.IO.IOException) { } }
+                });
                 Control EditorPart(Window w, string type, string name) =>
                     w.GetVisualDescendants().OfType<Control>().First(c => c.GetType().Name == type && Avalonia.Automation.AutomationProperties.GetName(c) == name);
                 void ClickIn(Window w, Control c, double x, double y)

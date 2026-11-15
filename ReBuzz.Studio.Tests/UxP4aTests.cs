@@ -227,6 +227,35 @@ namespace ReBuzz.Studio.Tests
                 Settle();
                 yield return new Surface("dialog/" + name, ask);
             }
+            // P6b: the tool windows and the two small dialogs.
+            var voice = Core.SongCore.MachinesList.First(m => m.Name == "Voice");
+            foreach (var (name, open) in new (string, Func<Avalonia.Controls.Window>)[]
+            {
+                ("tool/cpu", () => ReBuzz.Studio.Shell.Tools.CpuMonitorWindow.Open(host, window)),
+                ("tool/signal", () => ReBuzz.Studio.Shell.Tools.SignalAnalysisWindow.Open(host, voice, window)),
+                ("tool/recorder", () => ReBuzz.Studio.Shell.Tools.HardDiskRecorderWindow.Open(host, window)),
+                ("tool/console", () => ReBuzz.Studio.Shell.Tools.DebugConsoleWindow.Open(host, window)),
+                ("tool/midi", () => ReBuzz.Studio.Shell.Tools.MidiBindingsWindow.Open(host, window)),
+                ("dialog/latency", () => { var d = new ReBuzz.Studio.Shell.Tools.LatencyDialog(voice); d.Show(window); return d; }),
+                ("dialog/songprops", () => { var d = new ReBuzz.Studio.Shell.Tools.SongPropertiesDialog(Core); d.Show(window); return d; }),
+            })
+            {
+                var tool = open();
+                opened.Add(tool);
+                Settle();
+                (tool as ReBuzz.Studio.Shell.Tools.ToolWindow)?.Tick();
+                Settle();
+                yield return new Surface(name, tool);
+            }
+            // P5b: the Samples view and the modulation matrix are surfaces too.
+            var samples = ReBuzz.Studio.Views.Samples.SamplesWindow.Open();
+            opened.Add(samples);
+            Settle();
+            yield return new Surface("samples", samples);
+            var matrix = ReBuzz.Studio.Views.Modulation.ModulationMatrixWindow.Open();
+            opened.Add(matrix);
+            Settle();
+            yield return new Surface("modulation", matrix);
             Call("machine_add", Args(("gear", "Pedal Gain"), ("name", "Plain")));
             Core.UiHost.OpenParameterWindow(Core.SongCore.MachinesList.First(m => m.Name == "Plain"), null);
             var parameters = ReBuzz.Studio.Platform.StudioMachineUiHost.ParameterWindowOf(Core.SongCore.MachinesList.First(m => m.Name == "Plain"));
@@ -462,7 +491,7 @@ namespace ReBuzz.Studio.Tests
         /// round). A control that keeps Tab for itself (the tracker's cells move the cursor with it) holds the focus: the walk notes it
         /// in <paramref name="own"/> and goes on from the next stop in the tree, as a person leaves it by the mouse or the view keys.
         /// </summary>
-        static List<Avalonia.Input.IInputElement> TabOrder(Avalonia.Controls.Window window, List<string> own = null)
+        internal static List<Avalonia.Input.IInputElement> TabOrder(Avalonia.Controls.Window window, List<string> own = null)
         {
             var order = new List<Avalonia.Input.IInputElement>();
             window.Activate();

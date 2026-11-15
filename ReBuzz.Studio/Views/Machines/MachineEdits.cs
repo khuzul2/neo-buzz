@@ -267,6 +267,83 @@ namespace ReBuzz.Studio.Views.Machines
             return song.Machines.Where(m => !before.Contains(m) && !(m is MachineCore mc && mc.Hidden)).ToList();
         }
 
+        /// <summary>
+        /// Clone with patterns (BuzzGUI.MachineView's CloneSelectedMachines(true)): each machine again with its settings (as Duplicate does),
+        /// its patterns and its rows in the sequence (the same events, on the copy's patterns), and the wires between the machines
+        /// cloned together; one undo step. The copies, in the order given. (The WPF app builds a template for this; the template code
+        /// is WPF-only, so the studio does the same steps with the engine's own operations.)
+        /// </summary>
+        public static List<IMachine> CloneWithPatterns(ReBuzzCore core, IReadOnlyList<IMachine> machines)
+        {
+            var song = core.SongCore;
+            var copies = new Dictionary<IMachine, IMachine>();
+            using (Group(core))
+            {
+                foreach (var m in machines)
+                {
+                    var before = song.Machines.ToHashSet();
+                    var at = CanvasMap.Clamp(new Avalonia.Point(m.Position.Item1 + DuplicateOffset, m.Position.Item2 + DuplicateOffset));
+                    song.CloneMachine(m, (float)at.X, (float)at.Y);
+                    var copy = song.Machines.FirstOrDefault(x => !before.Contains(x) && !(x is MachineCore mc && mc.Hidden));
+                    if (copy == null) continue;
+                    copies[m] = copy;
+                    foreach (var p in m.Patterns.ToList()) copy.ClonePattern(p.Name, p);
+                    foreach (var seq in song.Sequences.Where(q => q.Machine == m).ToList())
+                    {
+                        song.AddSequence(copy, song.Sequences.Count);
+                        var made = song.Sequences[song.Sequences.Count - 1];
+                        foreach (var e in seq.Events.OrderBy(k => k.Key))
+                        {
+                            var pattern = e.Value.Type == SequenceEventType.PlayPattern ? copy.Patterns.FirstOrDefault(q => q.Name == e.Value.Pattern?.Name) : null;
+                            if (e.Value.Type == SequenceEventType.PlayPattern && pattern == null) continue;
+                            made.SetEvent(e.Key, new SequenceEvent(e.Value.Type, pattern) { Span = e.Value.Span, Offset = e.Value.Offset, End = e.Value.End, Gain = e.Value.Gain });
+                        }
+                    }
+                }
+                foreach (var m in machines)
+                    foreach (var c in m.Outputs.ToList())
+                        if (copies.TryGetValue(m, out var from) && copies.TryGetValue(c.Destination, out var to) && song.CanConnectMachines(from, to))
+                            song.ConnectMachines(from, to, c.SourceChannels.ToList(), c.DestinationChannels.ToList(), c.Amp, c.Pan);
+            }
+            return machines.Where(copies.ContainsKey).Select(m => copies[m]).ToList();
+        }
+
+        // ---- machine groups (BuzzGUI.MachineView's Group menu). As there, making and deleting a group are undo steps and moving a
+        // machine in or out of one is not (SongCore.AddMachineToGroup); a group is drawn as a frame round its members.
+
+        /// <summary>"New Group": a group named New Group a little beyond the selection, with the machines in it (the Master never).</summary>
+        public static IMachineGroup NewGroup(ReBuzzCore core, IEnumerable<IMachine> machines)
+        {
+            var members = machines.Where(m => m.DLL.Info.Type != MachineType.Master).ToList();
+            if (members.Count == 0) return null;
+            var song = core.SongCore;
+            float x = members.Max(m => m.Position.Item1) + 0.2f, y = members.Max(m => m.Position.Item2) + 0.2f;
+            var before = song.MachineGroups.ToHashSet();
+            song.CreateMachineGroup("New Group", x, y);
+            var group = song.MachineGroups.LastOrDefault(g => !before.Contains(g));
+            if (group != null) AddToGroup(core, members, group);
+            return group;
+        }
+
+        /// <summary>The machines into <paramref name="group"/> (out of the one they were in), their places kept for when it is unfolded.</summary>
+        public static void AddToGroup(ReBuzzCore core, IEnumerable<IMachine> machines, IMachineGroup group)
+        {
+            var song = core.SongCore;
+            foreach (var m in machines.Where(m => m.DLL.Info.Type != MachineType.Master).ToList())
+            {
+                song.AddMachineToGroup(m, group);
+                song.UpdateGroupedMachinesPositions(new[] { Tuple.Create(m, m.Position) });
+            }
+        }
+
+        /// <summary>The machines out of their groups.</summary>
+        public static void RemoveFromGroup(ReBuzzCore core, IEnumerable<IMachine> machines)
+        {
+            foreach (var m in machines.ToList()) core.SongCore.RemoveMachineFromGroup(m);
+        }
+
+        public static void DeleteGroup(ReBuzzCore core, IMachineGroup group) => core.SongCore.DeleteMachineGroups(new[] { group });
+
         /// <summary>How far a copy lands from its machine, in song coordinates (the canvas spans −1 to 1).</summary>
         public const float DuplicateOffset = 0.06f;
 

@@ -23,7 +23,7 @@ namespace ReBuzz.Studio.Views.Device
 {
     using Control = Avalonia.Controls.Control;
 
-    internal sealed class DeviceList : Control
+    internal sealed class DeviceList : Control, IModulationDropSurface
     {
         public const double Pad = 12;
         const double LabelColumn = 44;        // a table's track labels
@@ -125,6 +125,7 @@ namespace ReBuzz.Studio.Views.Device
         protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
         {
             base.OnAttachedToVisualTree(e);
+            ModulationBoard.DragChanged += OnDragChanged;
             if (this.FindAncestorOfType<ScrollViewer>() is { } sv)
             {
                 scroller = sv;
@@ -136,11 +137,24 @@ namespace ReBuzz.Studio.Views.Device
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
             base.OnDetachedFromVisualTree(e);
+            ModulationBoard.DragChanged -= OnDragChanged;
             if (scroller != null) scroller.ScrollChanged -= Scrolled;
             scroller = null;
         }
 
         ScrollViewer scroller;
+
+        void OnDragChanged() => Avalonia.Threading.Dispatcher.UIThread.Post(InvalidateVisual);
+
+        /// <summary>Drag-to-modulate (ux-overhaul.md P5b): the parameter under the pointer takes a modulator dropped on it.</summary>
+        public bool ModulationTargetAt(double x, double y, out IMachine target, out IParameter parameter, out int track)
+        {
+            var p = HitTest(new Point(x, y)).Param;
+            target = machine;
+            parameter = p?.Parameter;
+            track = p?.Track ?? 0;
+            return p != null && !p.IsInput && p.Parameter != null && p.Parameter.Type != ParameterType.Note;
+        }
 
         void Scrolled(object sender, ScrollChangedEventArgs e)
         {
@@ -415,6 +429,8 @@ namespace ReBuzz.Studio.Views.Device
             double tx = rail.X + b * rail.Width;
             ctx.FillRectangle(StudioTokens.TextPrimaryBrush, new Rect(Math.Clamp(tx - 1, rail.X, rail.Right - 2), area.Y + 1, 2, Math.Max(2, area.Height - 2)));
             DrawModulationRing(ctx, p, rail);
+            if (ModulationBoard.Dragging != null)   // a modulator is being dragged: this takes it
+                ctx.DrawRectangle(null, new Pen(new SolidColorBrush(StudioTokens.Identity(NeoBuzz.Editor.MachineCategory.Control)), 1.5, dashStyle: DashStyle.Dash), rail.Inflate(3), 5, 5);
         }
 
         void DrawTable(DrawingContext ctx, TableItem t, double y, double width)
