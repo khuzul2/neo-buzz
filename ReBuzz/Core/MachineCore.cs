@@ -649,6 +649,12 @@ namespace ReBuzz.Core
 
         byte[] data = null; 
 
+        /// <summary>
+        /// Fork (machines.md §3.4): the state version of the data this machine was last given (SetMachineData), so a loader
+        /// that then sets the global parameter values knows which layout they are in. -1: none given.
+        /// </summary>
+        internal int LoadedStateVersion = -1;
+
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public byte[] Data
         {

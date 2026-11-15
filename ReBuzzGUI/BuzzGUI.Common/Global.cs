@@ -14,7 +14,13 @@ namespace BuzzGUI.Common
         {
             get
             {
-                return System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                // Fork (package layout): the studio's program files sit in App\ beside the exe's Gear\, bin32\ and bin64\ (build.ps1,
+                // the switch); BuzzPath is then the exe's folder, the parent of App\.
+                string folder = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                string parent = folder == null ? null : System.IO.Path.GetDirectoryName(folder);
+                if (parent != null && System.IO.Path.GetFileName(folder) == "App" && System.IO.Directory.Exists(System.IO.Path.Combine(parent, "Gear")))
+                    return parent;
+                return folder;
             }
         }
 

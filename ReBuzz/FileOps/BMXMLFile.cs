@@ -283,7 +283,9 @@ namespace ReBuzz.FileOps
                     {
                         // Copy parametervalues
                         CopyParameters(machineData.ParameterGroups[0], machineNew, 0, 0);
-                        CopyParameters(machineData.ParameterGroups[1], machineNew, 1, 0);
+                        var xmlGlobals = machineData.ParameterGroups[1].Parameters;
+                        if (!LoadedStateMigration.CopyGlobals(machineNew, xmlGlobals.Count(), i => xmlGlobals[i].Values.FirstOrDefault(t => t.Track == 0)?.Value, msg => buzz.DCWriteLine(msg, DCLogLevel.Error)))
+                            CopyParameters(machineData.ParameterGroups[1], machineNew, 1, 0);
                         for (int m = 0; m < tracks; m++)
                         {
                             CopyParameters(machineData.ParameterGroups[2], machineNew, 2, m);
