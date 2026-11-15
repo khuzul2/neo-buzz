@@ -27,6 +27,7 @@ Build every scene as a whole: the same patterns, lengths in whole bars, and a le
 
 - `midi_play(machine="Keys", notes=[{"pitch": "C4", "start": 0, "length": 1}])` plays a phrase on the next bar (`start` can be "now" or "beat"); `stop=true` lets go of everything.
 - `session_record(action="start", machine="Keys", scene=1, bars=4)` records what is played (the person's keyboard, or `midi_play`) into the first empty slot from that scene. `stop` ends the take on a whole bar; `capture` keeps what armed tracks just played; `arm`, `disarm` and `status` do what they say. Takes are on the Session View's own history, not `undo`'s.
+- `master_record(op="start", path="C:/Music/set.wav")` records the Master as it plays (the whole set, or `loop=true` for one pass of the song loop) and `op="stop"` closes the file. For the arrangement's own takes: `arrangement_takes(op="arm", machine="Keys")`, `op="start"` (or `loop=true`, a take per loop pass), `op="stop"`, then `op="comp"` puts the best part of a take on the main lane. Latency of a machine that lags: `machine_latency`.
 - A Note envelope on a modulator hears notes written by patterns and by `midi_play`, not notes played from a MIDI keyboard.
 
 ## Controllers and knobs
@@ -63,4 +64,5 @@ Build every scene as a whole: the same patterns, lengths in whole bars, and a le
 - [ ] Every scene was rehearsed and its level measured: `meters_read(machines=[…], window_seconds=2)` shows true peak below -1 dBTP and no clipped samples.
 - [ ] A way back exists: `snapshot_save(name=…)` before the set and `snapshot_list` shows it.
 - [ ] No new dropouts while playing: `audio_status` before and after, `dropouts` unchanged.
+- [ ] A recording ended and was checked: `master_record(op="status")`, or `arrangement_get` shows the take's lane.
 - [ ] Controllers are bound and read back: `midi_bindings_list(machine=…)`.
