@@ -333,16 +333,107 @@ namespace ReBuzz.Studio.Views.Machines
             {
                 song.AddMachineToGroup(m, group);
                 song.UpdateGroupedMachinesPositions(new[] { Tuple.Create(m, m.Position) });
+                // Into a folded group: onto its box (GroupSelectedMachines).
+                if (group.IsGrouped) song.MoveMachines(new[] { Tuple.Create(m, group.Position) });
             }
         }
 
         /// <summary>The machines out of their groups.</summary>
         public static void RemoveFromGroup(ReBuzzCore core, IEnumerable<IMachine> machines)
         {
-            foreach (var m in machines.ToList()) core.SongCore.RemoveMachineFromGroup(m);
+            var song = core.SongCore;
+            foreach (var m in machines.ToList())
+            {
+                // Out of a folded group: back to its own place, not left under the box.
+                if (song.MachineToGroupDict.TryGetValue(m, out var g) && g.IsGrouped)
+                    song.MoveMachines(new[] { Tuple.Create(m, g.GetMachinePosition(m)) });
+                song.RemoveMachineFromGroup(m);
+            }
         }
 
-        public static void DeleteGroup(ReBuzzCore core, IMachineGroup group) => core.SongCore.DeleteMachineGroups(new[] { group });
+        /// <summary>Deletes a group, not its machines (a folded one opens first, so they are not left stacked).</summary>
+        public static void DeleteGroup(ReBuzzCore core, IMachineGroup group)
+        {
+            using (Group(core))
+            {
+                Unfold(core, group);
+                core.SongCore.DeleteMachineGroups(new[] { group });
+            }
+        }
+
+        // ---- P6c: fold, move and rename a group (GroupControl, MachineView.GroupMachines / UnGroupMachines). As there, a folded group is one
+        // box at the group's position with its members moved onto it (their places kept for when it opens), and fold and unfold are one undo
+        // step each, with the moves. Renaming is the engine's undoable rename.
+
+        /// <summary>Folds an open group: its members onto the group's position, hidden by the canvas; one undo step. Does nothing when it is folded.</summary>
+        public static void Fold(ReBuzzCore core, IMachineGroup group)
+        {
+            if (group == null || group.IsGrouped) return;
+            var song = core.SongCore;
+            var members = group.Machines.ToList();
+            var at = group.Position;
+            using (Group(core))
+            {
+                song.GroupMachines(group, true);
+                // The places to come back to, then the move onto the group.
+                song.UpdateGroupedMachinesPositions(members.Select(m => Tuple.Create(m, m.Position)));
+                if (members.Count > 0) song.MoveMachines(members.Select(m => Tuple.Create(m, at)).ToList());
+            }
+        }
+
+        /// <summary>Opens a folded group: its members back to the places they had; one undo step. Does nothing when it is open.</summary>
+        public static void Unfold(ReBuzzCore core, IMachineGroup group)
+        {
+            if (group == null || !group.IsGrouped) return;
+            var song = core.SongCore;
+            var back = group.Machines.Select(m => Tuple.Create(m, group.GetMachinePosition(m))).ToList();
+            using (Group(core))
+            {
+                song.GroupMachines(group, false);
+                if (back.Count > 0) song.MoveMachines(back);
+            }
+        }
+
+        /// <summary>A double click on a group: folds it, or opens it. The members of a folded group leave the canvas's selection.</summary>
+        public static void ToggleFold(ReBuzzCore core, IMachineGroup group, MachineCanvas canvas = null)
+        {
+            if (group.IsGrouped) Unfold(core, group);
+            else
+            {
+                Fold(core, group);
+                if (canvas != null && group.Machines.Any(canvas.Selection.Contains))
+                    canvas.Select(canvas.Selection.Where(m => !group.Machines.Contains(m)).ToList());
+            }
+            canvas?.Redraw();
+        }
+
+        /// <summary>
+        /// A group moved to a song position, with its members to theirs (a drag): one undo step. A folded group's saved places move
+        /// by the same distance, so it opens where it was, relative to the box.
+        /// </summary>
+        public static void MoveGroup(ReBuzzCore core, IMachineGroup group, float x, float y, IReadOnlyList<(IMachine Machine, float X, float Y)> members)
+        {
+            var song = core.SongCore;
+            float dx = x - group.Position.Item1, dy = y - group.Position.Item2;
+            var saved = group.IsGrouped
+                ? group.Machines.Select(m => { var p = group.GetMachinePosition(m); return Tuple.Create(m, Tuple.Create(p.Item1 + dx, p.Item2 + dy)); }).ToList()
+                : null;
+            using (Group(core))
+            {
+                song.MoveMachineGroups(new[] { Tuple.Create(group, Tuple.Create(x, y)) });
+                Move(core, members);
+                if (saved != null) song.UpdateGroupedMachinesPositions(saved);
+            }
+        }
+
+        /// <summary>Renames a group (an undo step); a name another group has gets Buzz's " | 2". False for an empty name or none to change.</summary>
+        public static bool RenameGroup(ReBuzzCore core, IMachineGroup group, string name)
+        {
+            name = name?.Trim();
+            if (string.IsNullOrEmpty(name) || name == group.Name || group is not MachineGroupCore mg) return false;
+            core.SongCore.RenameMachineGroupUndoable(mg, core.SongCore.GetNewGroupName(name));
+            return true;
+        }
 
         /// <summary>How far a copy lands from its machine, in song coordinates (the canvas spans −1 to 1).</summary>
         public const float DuplicateOffset = 0.06f;

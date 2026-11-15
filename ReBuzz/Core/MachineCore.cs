@@ -963,6 +963,12 @@ namespace ReBuzz.Core
                         // Open parameter windows
                         OpenEditorOrParameterWindow();
                     }
+                    else
+                    {
+                        // Fork (ux-overhaul.md P6c): the machine showed a window of its own, in its host process; a UI host may embed it.
+                        int pid = buzzCore.MachineManager.NativeHostProcessId(this);
+                        if (pid != 0) UiHostOf(graph)?.NativeGuiShown(this, pid);
+                    }
                 }
                 else
                 {
