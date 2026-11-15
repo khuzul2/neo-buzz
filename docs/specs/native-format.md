@@ -45,6 +45,7 @@ Little-endian. A blob is named by the SHA-256 of its raw bytes; deflate is used 
   "minReaderVersion": 1,
   "writer": { "app": "NeoBuzz Live", "build": "..." },
   "index":  { "bpm": 126, "tpb": 4, "songEnd": 64, "loopStart": 0, "loopEnd": 64, "machines": [ { "name": "Lead", "dll": "Neo Poly", "x": 0.1, "y": -0.4, "tracks": 1 } ] },
+  "machines": [ { "name": "Comp", "stateVersion": 3, "params": { "threshold": 420, "ratio": 250 } } ],
   "core":   { "codec": "bmx-sections-v1", "strings": "utf-8", "sections": [ { "id": "MACH", "size": 4096, "chunks": [ { "blob": "<sha-256>", "size": 4096 } ] } ] },
   "stores": { "SongMarkers": { "kind": "xml", "doc": { "element": "SongMarkers", "attrs": { "version": "1" }, "children": [ ... ] } },
               "SequenceEditor": { "kind": "binary", "size": 90, "chunks": [ ... ] } },
@@ -58,7 +59,8 @@ Little-endian. A blob is named by the SHA-256 of its raw bytes; deflate is used 
 
 | Song data | Where in `.nbl` (v1) |
 |---|---|
-| Machines: dll, name, position, tracks, parameter values, attributes | `core` sections MACH, PARA, XNOC… The parameter identity is the PARA definition (name, type, range) saved with each machine; the loader maps by it (`RemapLoadedMachineParameterIndex`), so appended parameters and reordered ones load. Machines keep their own state version inside their data blob; no host-level field is needed. |
+| Machines: dll, name, position, tracks, attributes | `core` sections MACH, PARA, XNOC… (old Buzz machines keep positional values, mapped by the PARA definition: name, type, range). |
+| Parameter values of our versioned machines (`IVersionedMachine`, machines.md §3.2) | manifest `machines`: `{name, stateVersion, params:{<Params.def key>: raw}}`. On load the values go through the machine's `MigrateKeyed(stateVersion, …)`, so a layout that changed since the song was saved loads by identity; the machine's own data goes through `MigrateData` as for every format. |
 | Opaque machine data, plug-in states, modulation | The machine's data blob in `core` (chunked, hashed: an unchanged state is the same blob in every save and in the history). Modulation lives in machine state. |
 | Connections (amp, pan, channels) | `core` CONN |
 | Patterns, columns, TAP2 engine columns, MPE, PXP data | `core` PATT, XPAT, XTAP, TAP2, machine data |

@@ -11,7 +11,9 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Buzz.MachineInterface;
 using BuzzGUI.Common;
+using BuzzGUI.Interfaces;
 using BuzzGUI.Common.Settings;
 using ReBuzz.MachineManagement;
 using ReBuzz.Core;
@@ -41,7 +43,7 @@ namespace ReBuzz.FileOps
         public const string FormatName = "neobuzz-live-song";
         public const string CoreCodec = "bmx-sections-v1";
 
-        static readonly HashSet<string> KnownMembers = new(StringComparer.Ordinal) { "format", "formatVersion", "minReaderVersion", "writer", "index", "core", "stores", "history" };
+        static readonly HashSet<string> KnownMembers = new(StringComparer.Ordinal) { "format", "formatVersion", "minReaderVersion", "writer", "index", "machines", "core", "stores", "history" };
 
         /// <summary>The subsections this build writes or reads by name: the others in a file are carried over untouched.</summary>
         internal static readonly HashSet<string> KnownStores = new(StringComparer.Ordinal)
@@ -78,6 +80,7 @@ namespace ReBuzz.FileOps
             bool import = importAction != null;
             Stream stream;
             NblCarry carry;
+            JsonArray keyedMachines;
             using (var reader = new NblContainer.Reader(path))
             {
                 var manifest = JsonNode.Parse(reader.Manifest) as JsonObject ?? throw new InvalidDataException("The song file's manifest isn't a JSON object.");
@@ -85,10 +88,58 @@ namespace ReBuzz.FileOps
                 var ctx = new NblReadContext(reader);
                 NblMigrations.Default.Migrate(manifest, ctx);
                 (stream, carry) = ToBmxLayout(manifest, ctx, import);
+                keyedMachines = manifest["machines"] as JsonArray;
             }
             if (!import) buzz.NativeCarry = carry;
             using (BMXFile.Utf8Strings())
                 inner.LoadFrom(stream, path, x, y, importAction);
+            if (!import && keyedMachines != null) ApplyKeyed(buzz, keyedMachines);
+        }
+
+        /// <summary>
+        /// Our versioned machines (machines.md §3.2) save each global parameter as (key, raw value) with the machine's StateVersion:
+        /// the values come back through the machine's own MigrateKeyed, so a layout that changed since the song was saved loads by identity.
+        /// Machines that aren't versioned (old Buzz machines) keep the positional values the core sections hold.
+        /// </summary>
+        static JsonArray BuildMachines(ReBuzzCore buzz)
+        {
+            var list = new JsonArray();
+            foreach (var m in buzz.SongCore.MachinesList)
+            {
+                if (m.ManagedMachine is not IVersionedMachine v) continue;
+                var globals = m.ParameterGroupsList[1].ParametersList;
+                var keys = v.ParameterKeys;
+                var values = new JsonObject();
+                for (int i = 0; i < globals.Count && i < keys.Count; i++)
+                    if (IsState(globals[i])) values[keys[i]] = globals[i].GetValue(0);
+                list.Add(new JsonObject { ["name"] = m.Name, ["stateVersion"] = v.StateVersion, ["params"] = values });
+            }
+            return list;
+        }
+
+        static bool IsState(IParameter p) => p.Flags.HasFlag(ParameterFlags.State) && p.Type != ParameterType.Note;
+
+        static void ApplyKeyed(ReBuzzCore buzz, JsonArray saved)
+        {
+            foreach (var entry in saved)
+            {
+                var m = buzz.SongCore.MachinesList.FirstOrDefault(x => x.Name == (string)entry["name"]);
+                if (m?.ManagedMachine is not IVersionedMachine v) continue;
+                int from = (int?)entry["stateVersion"] ?? 0;
+                var raw = new Dictionary<string, int>();
+                foreach (var p in (JsonObject)entry["params"]) raw[p.Key] = (int)p.Value;
+                IReadOnlyDictionary<string, int> current = from == v.StateVersion ? raw : from < v.StateVersion ? v.MigrateKeyed(from, raw) : null;
+                if (current == null)
+                {
+                    buzz.DCWriteLine($"{m.Name}: its parameters were saved at state version {from}, this build has {v.StateVersion}; they keep what the song's core holds.", DCLogLevel.Warning);
+                    continue;
+                }
+                var globals = m.ParameterGroupsList[1].ParametersList;
+                var keys = v.ParameterKeys;
+                for (int i = 0; i < globals.Count && i < keys.Count; i++)
+                    if (IsState(globals[i]) && current.TryGetValue(keys[i], out int value))
+                        globals[i].SetValue(0, value);
+            }
         }
 
         /// <summary>The song's sections laid out as a BMX file has them, for the loader; and the parts this build doesn't know.</summary>
@@ -226,6 +277,7 @@ namespace ReBuzz.FileOps
                 },
             };
             root["index"] = BuildIndex(buzz);
+            root["machines"] = BuildMachines(buzz);
 
             var sections = new JsonArray();
             var stores = new JsonObject();
