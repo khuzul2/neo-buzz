@@ -70,7 +70,7 @@ proc.stdin.flush()
 tools = request("tools/list")["result"]["tools"]
 check(len(tools) >= 50, f"{len(tools)} tools")
 
-ok, text, data = call("gear_list")
+ok, text, data = call("gear_list", limit=1000)
 names = {g.get("name") for g in data.get("gear", [])}   # the text names the first dozen only
 check(ok and "Neo Poly" in names and "Neo Verb" in names and "Neo Sampler" in names, "the portable Neo machines are installed")
 

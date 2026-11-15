@@ -237,6 +237,8 @@ jobs:
     # whose pattern editor machines are missing too.
     - name: Songs with placeholders round-trip
       if: always()
+      env:
+        REBUZZ_NATIVE_MACHINES: 'off'   # R1: the check is of placeholders; the rebuilt classics have tools/native-cross.py
       run: python3 tools/song-roundtrip.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/roundtrip"
 
     # The studio (docs/specs/studio-mvp.md): its views drawn headless (Avalonia.Headless with Skia)

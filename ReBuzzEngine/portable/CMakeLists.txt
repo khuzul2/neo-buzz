@@ -31,5 +31,5 @@ add_executable(rebuzz-native-host
 # "../buzz/X.h" and "../IPC/X.h" (Windows is case-blind) resolve against shim/a/..
 target_include_directories(rebuzz-native-host PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shim/a ${CMAKE_CURRENT_SOURCE_DIR}/shim ${ENGINE}/rebe ${ENGINE}/ipc)
 # no fused multiply-adds: the mixing code in mdkimp.cpp must round as the Windows build does
-target_compile_options(rebuzz-native-host PRIVATE -ffp-contract=off -fpermissive -w)
+target_compile_options(rebuzz-native-host PRIVATE -ffp-contract=off -fpermissive -fms-extensions -w)
 target_link_libraries(rebuzz-native-host PRIVATE pthread ${CMAKE_DL_LIBS})

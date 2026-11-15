@@ -133,12 +133,12 @@ static void _MICB6(CMachine *pmac, char const *loc, int a, int b, int c, int d, 
 }
 
 #define MICB0 if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB0(((CMachineCallbacks *)this)->pMachine, __FUNCTION__)
-#define MICB1(a) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB1(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(a))
-#define MICB2(a, b) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB2(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(a), (int)(b))
-#define MICB3(a, b, c) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB3(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(a), (int)(b), (int)(c))
-#define MICB4(a, b, c, d) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB4(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(a), (int)(b), (int)(c), (int)(d))
-#define MICB5(a, b, c, d, e) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB5(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(a), (int)(b), (int)(c), (int)(d), (int)(e))
-#define MICB6(a, b, c, d, e, f) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB6(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(a), (int)(b), (int)(c), (int)(d), (int)(e), (int)(f))
+#define MICB1(a) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB1(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(intptr_t)(a))
+#define MICB2(a, b) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB2(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(intptr_t)(a), (int)(intptr_t)(b))
+#define MICB3(a, b, c) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB3(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(intptr_t)(a), (int)(intptr_t)(b), (int)(intptr_t)(c))
+#define MICB4(a, b, c, d) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB4(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(intptr_t)(a), (int)(intptr_t)(b), (int)(intptr_t)(c), (int)(intptr_t)(d))
+#define MICB5(a, b, c, d, e) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB5(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(intptr_t)(a), (int)(intptr_t)(b), (int)(intptr_t)(c), (int)(intptr_t)(d), (int)(intptr_t)(e))
+#define MICB6(a, b, c, d, e, f) if (((CMachineCallbacks *)this)->pMachine->CallbackDebugging()) _MICB6(((CMachineCallbacks *)this)->pMachine, __FUNCTION__, (int)(intptr_t)(a), (int)(intptr_t)(b), (int)(intptr_t)(c), (int)(intptr_t)(d), (int)(intptr_t)(e), (int)(intptr_t)(f))
 
 
 extern CWaveInfo const *wavetableGetWave(int i);
