@@ -1,6 +1,18 @@
 #pragma once
 
+#ifdef _WIN32
 #include "../IPC/ServerProcess.h"
+#else
+#include <IPC/ServerProcess.h>
+#endif
+
+#ifndef _WIN32
+// Fork (docs/specs/cross-platform.md R1): the portable host loads .dylib/.so machines with dlopen.
+#include <dlfcn.h>
+#define GetProcAddress(h, name) dlsym((h), (name))
+#define FreeLibrary(h) dlclose((h))
+#define GetLastError() 0
+#endif
 
 extern void AfxMessageBox(string msg);
 

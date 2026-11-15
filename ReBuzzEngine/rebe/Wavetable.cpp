@@ -1,5 +1,9 @@
 #include "stdafx.h"
+#ifdef _WIN32
 #include "../IPC/ServerProcess.h"
+#else
+#include <IPC/ServerProcess.h>
+#endif
 #include "Machine.h"
 
 class Level : public CWaveLevel
@@ -12,7 +16,9 @@ public:
 
 	~Level()
 	{
+#ifdef _WIN32
 		if (hShared != NULL && pSamples != NULL) ::UnmapViewOfFile(pSamples);
+#endif
 	}
 
 public:
@@ -54,6 +60,11 @@ Wave wavetable[WAVE_MAX];
 
 void ReadWavetable(IPC::MessageReader &r)
 {
+#ifndef _WIN32
+	// Fork (docs/specs/cross-platform.md R1): wave data is shared with the host through named file mappings, which
+	// the engine makes only on Windows; elsewhere the portable host sees an empty wavetable (the 17 classics don't read waves).
+	return;
+#else
 	for (int wi = 0; wi < WAVE_MAX; wi++)
 	{
 		Wave& w = wavetable[wi];
@@ -110,6 +121,7 @@ void ReadWavetable(IPC::MessageReader &r)
 			w.Levels.resize(0);
 		}
 	}
+#endif
 }
 
 char const *wavetableGetWaveName(int i)
