@@ -6,9 +6,13 @@
 #include <ObjBase.h>
 #include "ReBuzzEngine.h"
 #include "Machine.h"
+#ifdef _WIN32
 #include "../dsplib/dsplib.h"
+#endif
 
+#ifdef _WIN32
 #pragma comment(linker, "/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#endif
 
 //char const *BuildCount =
 //#include "../buildcount"
@@ -22,8 +26,13 @@ CSubTickInfo g_SubTickInfo = { 0 };
 
 IPC::BuzzGlobalState gstate;
 
+#ifdef _WIN32
 __declspec(align(64)) __declspec(thread) float MonoBuffer[MAX_BUFFER_LENGTH*4 + 16];
 __declspec(align(64)) __declspec(thread) float StereoBuffer[MAX_BUFFER_LENGTH*4 + 16];
+#else
+alignas(64) thread_local float MonoBuffer[MAX_BUFFER_LENGTH*4 + 16];
+alignas(64) thread_local float StereoBuffer[MAX_BUFFER_LENGTH*4 + 16];
+#endif
 
 #define MAX_MULTI_IO_BUFFER_COUNT 64
 float** MultiIOInputsBuffer = NULL;
@@ -49,6 +58,18 @@ void ReadSubTickInfo(IPC::MessageReader& r)
 
 extern void ReadWavetable(IPC::MessageReader &r);
 
+#ifndef _WIN32
+string GetLastErrorMessage()
+{
+	char const *e = dlerror();
+	return e ? e : "Unknown error";
+}
+
+void AfxMessageBox(string msg)
+{
+	fprintf(stderr, "[native host] %s\n", msg.c_str());
+}
+#else
 string GetLastErrorMessage() 
 { 
     // Retrieve the system error message for the last-error code
@@ -77,6 +98,7 @@ void AfxMessageBox(string msg)
 {
 	::MessageBox(NULL, msg.c_str(), "Buzz", MB_OK);
 }
+#endif
 
 void CMachineDataOutput::Write(void *pbuf, int const numbytes) {}
 
@@ -147,7 +169,11 @@ void UIReceive(IPC::Message const &msg, IPC::Message &reply)
 	{
 		DCWrite("[Engine32] DSP_Init");
 		int sr = (int)r.ReadDWORD();
+#ifdef _WIN32
 		DSP_Init(sr);
+#else
+		(void)sr;		// Fork (R1): each classic links its own copy of dsplib and starts it in its Init
+#endif
 	}
 	break;
 
@@ -156,7 +182,11 @@ void UIReceive(IPC::Message const &msg, IPC::Message &reply)
 		string libname = r.ReadString();
 		string path = r.ReadString();
 
+#ifdef _WIN32
 		auto h = ::LoadLibrary(path.c_str());
+#else
+		auto h = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
+#endif
 
 		if (h == NULL)
 		{
@@ -415,7 +445,11 @@ void UIReceive(IPC::Message const &msg, IPC::Message &reply)
 		reinterpret_cast<void*&>(eh1) = ptr;
 		void* param = (void*)r.ReadPtr();
 		//EVENT_HANDLER_PTR eh = *(EVENT_HANDLER_PTR*)ptr; // cast it back
+#ifdef _WIN32
 		bool ret = (pmac->pInterface->*eh1)(param); // And call
+#else
+		bool ret = false;	// Fork (R1): a member function pointer isn't a plain pointer in the Itanium ABI
+#endif
 
 		reply.Write(ret);
 	}
@@ -424,6 +458,7 @@ void UIReceive(IPC::Message const &msg, IPC::Message &reply)
 	{
 		DCWrite("[Engine32] GetResourceImage");
 		CMachine* pmac = (CMachine*)r.ReadPtr();
+#ifdef _WIN32
 		HINSTANCE pdll = pmac->pTemplate->LibHandle;
 
 		HBITMAP bmp = ::LoadBitmap(pdll, TEXT("SKIN"));
@@ -515,6 +550,12 @@ void UIReceive(IPC::Message const &msg, IPC::Message &reply)
 		{
 			reply.Write((WORD)0);
 		}
+#else
+		// Fork (R1): the classics carry no skin resources off Windows: no skin, no LED image, no LED position
+		reply.Write(false);
+		reply.Write(false);
+		reply.Write((WORD)0);
+#endif
 	}
 	break;
 	case IPC::UICreatePattern:
@@ -933,6 +974,7 @@ void MIDIReceive(IPC::Message const &msg, IPC::Message &reply)
 
 extern void InitOscTables();
 
+#ifdef _WIN32
 class ListenThread //: public thread
 {
 public:
@@ -1213,4 +1255,132 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    return TRUE;
 }
+#else
+// Fork (docs/specs/cross-platform.md R1): the portable host. Same threads as above (the main thread serves the
+// UI channel, one thread each serves MIDI and audio); no priorities to set here, the parent places the process.
+class ListenThread
+{
+public:
+	ListenThread(IPC::Channel &chn, IPC::Channel::ReceiveCallback cb, int pr = 0)
+		: channel(chn), callback(cb)
+	{
+	}
+
+	void Main()
+	{
+		id = std::this_thread::get_id();
+		channel.Listen(callback);
+	}
+
+	std::thread::id id;
+
+	void Start()
+	{
+		mythread = new thread(&ListenThread::Main, this);
+	}
+
+	~ListenThread()
+	{
+		if (mythread != NULL)
+		{
+			mythread->detach();		// the process ends with the parent; the channel waits for ever
+			delete mythread;
+		}
+	}
+
+private:
+	IPC::Channel &channel;
+	IPC::Channel::ReceiveCallback callback;
+
+	std::thread* mythread = NULL;
+};
+
+std::thread::id uiThreadId;
+
+ListenThread midiThread(midiChannel, &MIDIReceive);
+ListenThread audioThread(audioChannel, &AudioReceive);
+
+void DoCallback(IPC::Message const &msg, IPC::Message &reply)
+{
+	std::thread::id id = std::this_thread::get_id();
+
+	if (id == uiThreadId && uiChannel.IsInReceiveCallback())
+		uiChannel.Callback(msg, reply);
+	else if (id == midiThread.id && midiChannel.IsInReceiveCallback())
+		midiChannel.Callback(msg, reply);
+	else if (id == audioThread.id && audioChannel.IsInReceiveCallback())
+		audioChannel.Callback(msg, reply);
+	else
+		hostChannel.Send(msg, reply);
+}
+
+extern void InitOscTables();
+
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#ifdef __linux__
+#include <sys/prctl.h>
+#include <signal.h>
+#endif
+
+// argv[1]: the session folder the parent made: "shm" (the shared memory) and a "<Channel>.ping|pong" FIFO pair per channel.
+int main(int argc, char** argv)
+{
+	if (argc < 2) return -1;
+	std::string dir = argv[1];
+
+#ifdef __linux__
+	prctl(PR_SET_PDEATHSIG, SIGKILL);
+#endif
+	pid_t parent = getppid();
+
+	int fd = ::open((dir + "/shm").c_str(), O_RDWR);
+	if (fd < 0) return -1;
+	IPC::SharedMem *pSharedMem = (IPC::SharedMem *)::mmap(NULL, sizeof(IPC::SharedMem), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	if (pSharedMem == MAP_FAILED) return -1;
+
+	InitOscTables();
+
+	uiThreadId = std::this_thread::get_id();
+
+	if (!hostChannel.InitChild(pSharedMem, IPC::HostChannel, dir, "Host") ||
+		!uiChannel.InitChild(pSharedMem, IPC::UIChannel, dir, "UI") ||
+		!midiChannel.InitChild(pSharedMem, IPC::MIDIChannel, dir, "MIDI") ||
+		!audioChannel.InitChild(pSharedMem, IPC::AudioChannel, dir, "Audio"))
+		return -1;
+
+	midiThread.Start();
+	audioThread.Start();
+
+	// Create MultiIOBuffers
+	MultiIOInputsBuffer = new float* [MAX_MULTI_IO_BUFFER_COUNT];
+	MultiIOOutputsBuffer = new float* [MAX_MULTI_IO_BUFFER_COUNT];
+	MultiIOInputsBufferWork = new float* [MAX_MULTI_IO_BUFFER_COUNT];
+	MultiIOOutputsBufferWork = new float* [MAX_MULTI_IO_BUFFER_COUNT];
+
+	// Create groove data buffer
+	g_MasterInfo.GrooveData = new float[256];
+
+	for (int i = 0; i < MAX_MULTI_IO_BUFFER_COUNT; i++)
+	{
+		MultiIOOutputsBuffer[i] = (float*)_aligned_malloc((MAX_BUFFER_LENGTH * 2 + 16) * sizeof(float), 64);
+		MultiIOInputsBuffer[i] = (float*)_aligned_malloc((MAX_BUFFER_LENGTH * 2 + 16) * sizeof(float), 64);
+	}
+
+	// Leave when the parent does (on Linux PDEATHSIG does it too; macOS has nothing like it)
+	std::thread([parent]() {
+		for (;;)
+		{
+			usleep(500 * 1000);
+			if (getppid() != parent) _exit(0);
+		}
+	}).detach();
+
+	DCWrite("[Engine64] Init");
+
+	uiChannel.Listen(&UIReceive);
+	return 0;
+}
+#endif
 

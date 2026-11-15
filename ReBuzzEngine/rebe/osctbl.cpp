@@ -1,5 +1,7 @@
 #include "stdafx.h"
+#ifdef _WIN32
 #include "resource.h"
+#endif
 
 #define MAX_LEVEL	11		// 1 << 11 == 2048
 
@@ -15,8 +17,16 @@ short Saw303Table[TBL_SIZE];
 short const *OscTableOffsets[] = { SineTable, SawtoothTable, PulseTable, TriangleTable, NoiseTable, Saw303Table };
 
 
+#ifndef _WIN32
+// Fork (R1): the oscillator tables are a resource of the Windows exe; the portable build embeds the same file
+// (res/osctbl.raw, as a C array that CMake writes).
+extern const unsigned char OscTblRaw[];
+extern const unsigned int OscTblRawSize;
+#endif
+
 void InitOscTables()
 {
+#ifdef _WIN32
 	HRSRC hr = FindResource(NULL, (char const *)IDR_OSCTBL, "osctbl");
 	assert(hr != NULL);
 	
@@ -25,6 +35,10 @@ void InitOscTables()
 
 	short *pdata = (short *)LockResource(hg);
 	assert(pdata != NULL);
+#else
+	assert(OscTblRawSize >= 2 * 5 * TBL_SIZE);
+	short *pdata = (short *)OscTblRaw;
+#endif
 
 	memcpy(SineTable, pdata, 2*TBL_SIZE);
 	memcpy(SawtoothTable, pdata+TBL_SIZE, 2*TBL_SIZE);

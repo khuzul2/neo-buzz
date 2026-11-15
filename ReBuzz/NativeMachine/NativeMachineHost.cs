@@ -25,11 +25,23 @@ namespace ReBuzz.NativeMachine
         /// (bin32 or bin64, as the Windows package ships them): the studio's test runs and a studio folder without them
         /// start no hosts, rather than failing the machine scan.
         /// </remarks>
-        internal static bool Supported => OperatingSystem.IsWindows() && Environment.GetEnvironmentVariable("REBUZZ_NATIVE_MACHINES") != "off" && HostsInstalled;
+        /// <remarks>
+        /// Fork (docs/specs/cross-platform.md R1): on macOS and Linux the native machines are the 17 open-source classics
+        /// built as .dylib/.so (ExternalMachines/native), run by the portable host (ReBuzzEngine/portable) in a process
+        /// of its own, over the same messages: it sits beside the app. Without it they stay placeholders.
+        /// </remarks>
+        internal static bool Supported => Environment.GetEnvironmentVariable("REBUZZ_NATIVE_MACHINES") != "off" && HostsInstalled;
 
-        static bool HostsInstalled =>
+        /// <summary>The portable host's executable (beside the app), off Windows.</summary>
+        internal static string PortableHostPath => System.IO.Path.Combine(Global.BuzzPath, "rebuzz-native-host");
+
+        static bool HostsInstalled => OperatingSystem.IsWindows() ?
             System.IO.File.Exists(System.IO.Path.Combine(Global.BuzzPath, "bin64", "ReBuzzEngine64.exe")) ||
-            System.IO.File.Exists(System.IO.Path.Combine(Global.BuzzPath, "bin32", "ReBuzzEngine32.exe"));
+            System.IO.File.Exists(System.IO.Path.Combine(Global.BuzzPath, "bin32", "ReBuzzEngine32.exe")) :
+            System.IO.File.Exists(PortableHostPath);
+
+        /// <summary>Fork (R1): off Windows, the folder holding the shared memory file and the channels' FIFOs.</summary>
+        private string sessionFolder;
 
         private readonly string sharedId;
         internal Process childProcess;
@@ -70,11 +82,27 @@ namespace ReBuzz.NativeMachine
             if (IsConnected)
                 return;
 
-            Host64 = host64;
-            string path = host64 ? System.IO.Path.Combine(buzzPath, "bin64", "ReBuzzEngine64.exe") : System.IO.Path.Combine(buzzPath, "bin32", "ReBuzzEngine32.exe");
+            bool windows = OperatingSystem.IsWindows();
+            Host64 = host64 || !windows;      // the portable host is 64-bit
+            string path = !windows ? PortableHostPath :
+                host64 ? System.IO.Path.Combine(buzzPath, "bin64", "ReBuzzEngine64.exe") : System.IO.Path.Combine(buzzPath, "bin32", "ReBuzzEngine32.exe");
 
             int mapSize = IPC.GetSharedPageSize();
-            mappedFile = MemoryMappedFile.CreateNew(sharedId, mapSize);
+            if (windows)
+            {
+                mappedFile = MemoryMappedFile.CreateNew(sharedId, mapSize);
+            }
+            else
+            {
+                // No named maps or events off Windows: a folder with the map's file and a FIFO for each event.
+                sessionFolder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "neobuzz-native-" + Environment.ProcessId + "-" + sharedId);
+                System.IO.Directory.CreateDirectory(sessionFolder);
+                foreach (var channelType in new[] { ChannelType.HostChannel, ChannelType.UIChannel, ChannelType.MidiChannel, ChannelType.AudioChannel })
+                    foreach (var suffix in new[] { ".ping", ".pong" })
+                        if (Posix.mkfifo(System.IO.Path.Combine(sessionFolder, ChannelListener.ChannelFileName(channelType) + suffix), Convert.ToUInt32("600", 8)) != 0)
+                            throw new System.IO.IOException("mkfifo failed in " + sessionFolder);
+                mappedFile = MemoryMappedFile.CreateFromFile(System.IO.Path.Combine(sessionFolder, "shm"), System.IO.FileMode.Create, null, mapSize);
+            }
             accessor = mappedFile.CreateViewAccessor();
 
             HostMessage = new HostMessage(ChannelType.HostChannel, accessor, this, engineSettings);
@@ -84,31 +112,40 @@ namespace ReBuzz.NativeMachine
 
             // Host messages. Only this one listens to incoming messages from native machine.
             channelListenerHost = new ChannelListener(ChannelType.HostChannel,
-                ThreadPriority.Normal, "Host" + sharedId, HostMessage, buzz);
+                ThreadPriority.Normal, "Host" + sharedId, HostMessage, buzz, sessionFolder);
             HostMessage.ChannelListener = channelListenerHost;
             channelListenerHost.Start();
 
             channelListenerMIDI = new ChannelListener(ChannelType.MidiChannel,
-                ThreadPriority.Normal, "MIDI" + sharedId, null, buzz);
+                ThreadPriority.Normal, "MIDI" + sharedId, null, buzz, sessionFolder);
             MidiMessage.ChannelListener = channelListenerMIDI;
 
             // Audio messages
             channelListenerAudio = new ChannelListener(ChannelType.AudioChannel,
-                ThreadPriority.Normal, "Audio" + sharedId, AudioMessage, buzz);
+                ThreadPriority.Normal, "Audio" + sharedId, AudioMessage, buzz, sessionFolder);
             AudioMessage.ChannelListener = channelListenerAudio;
 
             // UI Messages
             channelListenerUI = new ChannelListener(ChannelType.UIChannel,
-                ThreadPriority.Normal, "UI" + sharedId, UIMessage, buzz);
+                ThreadPriority.Normal, "UI" + sharedId, UIMessage, buzz, sessionFolder);
             UIMessage.ChannelListener = channelListenerUI;
 
-            ProcessStartInfo processInfo = new ProcessStartInfo(path, sharedId);
+            ProcessStartInfo processInfo = new ProcessStartInfo(path, windows ? sharedId : "\"" + sessionFolder + "\"");
+            if (!windows) processInfo.UseShellExecute = false;
 
             childProcess = Process.Start(processInfo);
-            childProcess.PriorityClass = ProcessAndThreadProfile.ProcessPriorityClassNativeHostProcess;
+            if (windows)
+            {
+                childProcess.PriorityClass = ProcessAndThreadProfile.ProcessPriorityClassNativeHostProcess;
+            }
+            else
+            {
+                try { childProcess.PriorityClass = ProcessAndThreadProfile.ProcessPriorityClassNativeHostProcess; } catch { }    // raising it needs rights here
+            }
             childProcess.EnableRaisingEvents = true;
 
-            childProcess.WaitForInputIdle(); // Wait for the process to be ready for input
+            if (windows)
+                childProcess.WaitForInputIdle(); // Wait for the process to be ready for input
             IsConnected = true;
 
             childProcess.Exited += (sender, e) =>
@@ -147,8 +184,9 @@ namespace ReBuzz.NativeMachine
                 }
             };
 
-            // Track child processes and close them is main app crashes/closes
-            ChildProcessTracker.AddProcess(childProcess);
+            // Track child processes and close them is main app crashes/closes (off Windows the host watches its parent)
+            if (windows)
+                ChildProcessTracker.AddProcess(childProcess);
 
             UIMessage.SendMessageBuzzInitSync(buzz.MainWindowHandle, host64);
             UIMessage.UIDSPInitSync(ReBuzzCore.masterInfo.SamplesPerSec);
@@ -195,6 +233,11 @@ namespace ReBuzz.NativeMachine
                 accessor.Dispose();
                 mappedFile.Dispose();
                 IsConnected = false;
+
+                if (sessionFolder != null)
+                {
+                    try { System.IO.Directory.Delete(sessionFolder, true); } catch { }
+                }
             }
         }
     }

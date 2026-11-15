@@ -35,6 +35,8 @@ public:
 	{
 		pTemplate = &dll;
 		pInterface = dll.CreateMI();
+		pInterfaceEx = NULL;
+		pInterfaceNext = NULL;
 		mdkImpl = NULL;
 
 		for (int c = 0; c < pTemplate->pInfo->numAttributes; c++)
@@ -50,6 +52,8 @@ public:
 	{
 		pTemplate = NULL;
 		pInterface = NULL;
+		pInterfaceEx = NULL;
+		pInterfaceNext = NULL;
 		mdkImpl = NULL;
 		numTracks = 0;
 

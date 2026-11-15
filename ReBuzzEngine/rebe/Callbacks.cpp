@@ -21,7 +21,11 @@ inline void BMPrand()
 	BMPRandStat = (BMPRandStat * 1103515245 + 12347) & 0x7fffffff;
 }
 
+#ifdef _WIN32
 __declspec(align(64)) __declspec(thread) float AuxBuffer[MAX_BUFFER_LENGTH*4 * 2 + 16];
+#else
+alignas(64) thread_local float AuxBuffer[MAX_BUFFER_LENGTH*4 * 2 + 16];
+#endif
 
 
 extern void AfxMessageBox(string txt);
@@ -658,7 +662,7 @@ char const *CMICallbacks::GetMachineName(CMachine *pmac)
 	char* buf = pmcb->machineNames[name];
 	if (buf != NULL)
 	{
-		int len = min(strlen(name.c_str()), 255);
+		int len = min((int)strlen(name.c_str()), 255);
 		strcpy(buf, name.c_str());
 		buf[len] = 0;
 	}
@@ -809,7 +813,9 @@ bool CMICallbacks::HostMIDIFiltering()
 	return gstate.MIDIFiltering;
 }
 
+#ifdef _WIN32
 extern COLORREF GetGUIColor(char const *name);
+#endif
 
 dword CMICallbacks::GetThemeColor(char const *name)
 {
@@ -1347,7 +1353,7 @@ void CMICallbacks::RemapLoadedMachineName(char* name, int bufsize)
 	if (pmcb->remappedMachineNames.count(name))
 	{
 		string newname = pmcb->remappedMachineNames[name];
-		int copylen = min(strlen(newname.c_str()), bufsize - 1);
+		int copylen = min((int)strlen(newname.c_str()), bufsize - 1);
 		strncpy(name, newname.c_str(), copylen);
 		name[copylen] = 0;
 	}
@@ -1378,6 +1384,7 @@ int CMICallbacks::GetOutputChannelConnectionCount(CMachine *pmac, int channel)
 	return 1;
 }
 
+#ifdef _WIN32
 const CString REG_SW_GROUP_REBUZZ_MIDI = _T("Software\\ReBuzz\\BuzzGUI\\MIDISettings");
 const CString REG_KEY_MASTER_KEYBOARD_MODE = _T("MasterKeyboardMode");
 const CString REG_SW_GROUP_REBUZZ_ENGINE = _T("Software\\ReBuzz\\BuzzGUI\\EngineSettings");
@@ -1408,8 +1415,13 @@ Function_Exit:
 	return false;
 }
 
+#endif
+
 bool CMICallbacks::GetOption(char const *name)
 {
+#ifndef _WIN32
+	return false;	// Fork (R1): the options live in the Windows registry
+#else
 	// Avoid IPC calls.
 	CMachineCallbacks* pmcb = (CMachineCallbacks*)this;
 
@@ -1441,6 +1453,7 @@ bool CMICallbacks::GetOption(char const *name)
 	r.Read(ret);
 	return ret;
 	*/
+#endif
 }
 
 void CMICallbacks::ToggleRecordMode()
