@@ -120,8 +120,51 @@ namespace ReBuzz.Studio.Platform
                 await Pause(500);
                 Check(controller.ModeOf(machine) == PluginEditorMode.None, $"{r}: closing the window closes the editor");
             }
-            song.DeleteMachines(new IMachine[] { machine });
+            await LoadSong(host, machine, controller, want);
+            host.Core.SongCore.DeleteMachines(host.Core.SongCore.MachinesList.Where(m => m.Name == "GuiCheck").Cast<IMachine>().ToArray());
             await Pause(300);
+        }
+
+        // The studio's UI thread is the plug-in host's main thread: loading a song that holds a Neo Plug must not wait on a thread that
+        // needs the UI thread. The song is saved and loaded back on the UI thread, with a watchdog on another one.
+        static async Task LoadSong(StudioHost host, IMachine machine, PluginEditorController controller, PluginEditorMode want)
+        {
+            string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "gui-check-" + Environment.ProcessId + ".bmxml");
+            var finished = new System.Threading.ManualResetEventSlim();
+            var watchdog = new System.Threading.Thread(() =>
+            {
+                if (finished.Wait(90000)) return;
+                Say("FAIL loading the song with a Neo Plug did not finish in 90 s (the UI thread waits for itself)");
+                Environment.Exit(1);
+            }) { IsBackground = true };
+            watchdog.Start();
+            try
+            {
+                host.Core.SaveSongFile(path);
+                Say("song saved");
+                bool opened = host.Core.TryOpenSongFile(path);
+                Check(opened, "the song with a Neo Plug loads back on the UI thread");
+                await Pause(1500);
+                var again = host.Core.SongCore.MachinesList.LastOrDefault(m => m.Name == "GuiCheck");
+                Check(again != null, "and the machine is there");
+                if (again != null)
+                {
+                    var mode = controller.Open(again);
+                    Check(mode == want, $"the loaded machine's editor opens too (got {mode})");
+                    await Pause(1500);
+                    controller.WindowOf(again)?.Close();
+                    await Pause(300);
+                }
+            }
+            catch (Exception e)
+            {
+                Check(false, "loading the song threw " + e.Message);
+            }
+            finally
+            {
+                finished.Set();
+                try { System.IO.File.Delete(path); } catch (Exception) { }
+            }
         }
     }
 }

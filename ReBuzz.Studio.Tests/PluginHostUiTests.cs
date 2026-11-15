@@ -486,5 +486,55 @@ namespace ReBuzz.Studio.Tests
             File.SetLastWriteTimeUtc(Path.Combine(data.Dir, "library.json"), DateTime.UtcNow.AddMinutes(1));
             Assert.That(PlugLibrary.Blocked().Select(b => b.Reason), Is.EqualTo(new[] { "hung" }), "the machines' copy of the library follows the studio's page");
         }
+
+        // The UI thread is the plug-ins' main thread (StudioPluginMainThread): its own calls run at once, other threads' calls queue to
+        // it and wait, its timer ticks on it, and nothing waits for itself.
+        [AvaloniaTest]
+        public void TheUiThreadIsThePluginMainThread()
+        {
+            var main = new StudioPluginMainThread();
+            int ui = Environment.CurrentManagedThreadId;
+            Assert.That(main.IsCurrent, Is.True);
+            Assert.That(main.Invoke(() => Environment.CurrentManagedThreadId, 1000), Is.EqualTo(ui), "on the UI thread a call runs inline");
+
+            var other = System.Threading.Tasks.Task.Run(() =>
+            {
+                bool wasCurrent = main.IsCurrent;
+                int ranOn = main.Invoke(() => Environment.CurrentManagedThreadId, 20000);
+                return (wasCurrent, ranOn);
+            });
+            var until = DateTime.UtcNow.AddSeconds(20);
+            while (!other.IsCompleted && DateTime.UtcNow < until) { Dispatcher.UIThread.RunJobs(); System.Threading.Thread.Sleep(5); }
+            Assert.That(other.IsCompleted, "a call from another thread is served while the UI thread runs its jobs");
+            Assert.That(other.Result.wasCurrent, Is.False);
+            Assert.That(other.Result.ranOn, Is.EqualTo(ui), "and runs on the UI thread");
+
+            int posted = 0, ticks = 0, tickThread = 0;
+            main.Post(() => posted++);
+            Dispatcher.UIThread.RunJobs();
+            Assert.That(posted, Is.EqualTo(1));
+            using (main.Every(10, () => { ticks++; tickThread = Environment.CurrentManagedThreadId; }))
+            {
+                until = DateTime.UtcNow.AddSeconds(5);
+                while (ticks < 3 && DateTime.UtcNow < until) { Dispatcher.UIThread.RunJobs(); System.Threading.Thread.Sleep(5); }
+            }
+            Assert.That(ticks, Is.GreaterThanOrEqualTo(3), "the pump ticks");
+            Assert.That(tickThread, Is.EqualTo(ui), "on the UI thread");
+        }
+
+        [AvaloniaTest]
+        public void AWaitingCallGivesUpInsteadOfHanging()
+        {
+            var main = new StudioPluginMainThread();
+            var other = System.Threading.Tasks.Task.Run(() =>
+            {
+                try { main.Invoke(() => 1, 200); return "answered"; }
+                catch (TimeoutException) { return "timed out"; }
+            });
+            // The UI thread does not run its jobs for this long: the call must come back with a timeout, not wait for ever.
+            Assert.That(other.Wait(10000), "the call returns");
+            Assert.That(other.Result, Is.EqualTo("timed out"));
+            Dispatcher.UIThread.RunJobs();
+        }
     }
 }

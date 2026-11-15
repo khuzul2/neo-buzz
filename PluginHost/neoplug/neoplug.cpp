@@ -269,6 +269,5 @@ NP_API int np_platform_snapshot(void*, const char*, int, char* stats, int len)
 }
 NP_API void np_platform_run(double) {}
 NP_API void np_platform_release(void*) {}
-NP_API void np_platform_pump() {}
 }
 #endif

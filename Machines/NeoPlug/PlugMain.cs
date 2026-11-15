@@ -2,10 +2,13 @@
 // The plug-in host's "main thread" (docs/specs/plugin-host.md §3.4). Plug-ins want one thread for opening, closing, state
 // and idling; ReBuzz's own threads come and go, so the host has one of its own (STA on Windows) that serves every Neo Plug
 // machine: a queue of jobs, and a pump every ~20 ms for the machines' mirrors and the plug-ins' idle calls.
+// A studio with a window hands over its UI thread (PluginMainThread.Current): the plug-ins' editors and their parent window then
+// live on the thread the plug-ins treat as main, as in every DAW, and nothing here runs on a thread of its own.
 
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Buzz.MachineInterface;
 
 namespace NeoBuzz.Plug
 {
@@ -18,7 +21,9 @@ namespace NeoBuzz.Plug
         static int threadId;
         static volatile bool quit;
 
-        public static bool OnThread => Environment.CurrentManagedThreadId == threadId;
+        static IPluginMainThread Provided => PluginMainThread.Current;
+
+        public static bool OnThread => Provided is { } p ? p.IsCurrent : Environment.CurrentManagedThreadId == threadId;
 
         static void Ensure()
         {
@@ -33,18 +38,6 @@ namespace NeoBuzz.Plug
             }
         }
 
-        static readonly bool windows = OperatingSystem.IsWindows();
-
-        static bool pumpNoted;
-        static void NoteFirstPump(Exception e)
-        {
-            if (pumpNoted) return;
-            pumpNoted = true;
-            string log = Environment.GetEnvironmentVariable("NEOBUZZ_PLUGIN_GUI_LOG");
-            if (!string.IsNullOrEmpty(log))
-                try { System.IO.File.AppendAllText(log, "plugin-gui: trace PlugMain pumps window messages" + (e == null ? "" : " FAILED " + e.Message) + "\n"); } catch (Exception) { }
-        }
-
         static void Loop()
         {
             while (!quit)
@@ -57,10 +50,6 @@ namespace NeoBuzz.Plug
                     if (jobs.Count > 0) job = jobs.Dequeue();
                     else lock (pumps) copy = pumps.ToArray();
                 }
-                // A plug-in's own message thread is this one (it was opened here): an editor opened from the UI thread may hand work to it.
-                if (windows)
-                    try { PlugNative.np_platform_pump(); NoteFirstPump(null); }
-                    catch (Exception e) { NoteFirstPump(e); }
                 if (job != null)
                 {
                     try { job(); } catch (Exception) { }
@@ -72,12 +61,56 @@ namespace NeoBuzz.Plug
             }
         }
 
-        public static void AddPump(Action pump) { Ensure(); lock (pumps) pumps.Add(pump); }
-        public static void RemovePump(Action pump) { lock (pumps) pumps.Remove(pump); }
+        static IDisposable providedTick;
+        static IPluginMainThread tickOwner;
+
+        static void RunPumps()
+        {
+            Action[] copy;
+            lock (pumps) copy = pumps.ToArray();
+            foreach (var p in copy)
+                try { p(); } catch (Exception) { }
+        }
+
+        public static void AddPump(Action pump)
+        {
+            var provided = Provided;
+            if (provided == null) Ensure();
+            lock (pumps)
+            {
+                pumps.Add(pump);
+                if (provided != null && !ReferenceEquals(tickOwner, provided))
+                {
+                    tickOwner = provided;
+                    providedTick = provided.Every(20, RunPumps);
+                }
+            }
+        }
+
+        public static void RemovePump(Action pump)
+        {
+            lock (pumps)
+            {
+                pumps.Remove(pump);
+                if (pumps.Count == 0 && providedTick != null)
+                {
+                    providedTick.Dispose();
+                    providedTick = null;
+                    tickOwner = null;
+                }
+            }
+        }
 
         /// <summary>Runs <paramref name="f"/> on the host thread and waits for it (at once when already there).</summary>
         public static T Invoke<T>(Func<T> f, int timeoutMs = 120000)
         {
+            var provided = Provided;
+            if (provided != null)
+            {
+                if (provided.IsCurrent) return f();
+                try { return provided.Invoke(f, timeoutMs); }
+                catch (TimeoutException) { throw new TimeoutException("the plug-in host thread did not answer"); }
+            }
             if (OnThread) return f();
             Ensure();
             T result = default;
@@ -102,6 +135,7 @@ namespace NeoBuzz.Plug
         /// <summary>Runs a job without waiting.</summary>
         public static void Post(Action a)
         {
+            if (Provided is { } provided) { provided.Post(a); return; }
             Ensure();
             lock (gate) { jobs.Enqueue(a); Monitor.Pulse(gate); }
         }
@@ -110,10 +144,10 @@ namespace NeoBuzz.Plug
         {
             PlugCore[] all;
             lock (PlugCore.Live) all = new List<PlugCore>(PlugCore.Live).ToArray();
-            if (thread == null) return;
+            if (thread == null && Provided == null) return;
             try
             {
-                Invoke(() => { foreach (var c in all) c.CloseNow(); }, 5000);
+                Invoke(() => { foreach (var c in all) c.CloseNow(); }, Provided == null ? 5000 : 1500);
             }
             catch (Exception) { }
             quit = true;

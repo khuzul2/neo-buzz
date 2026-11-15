@@ -106,4 +106,30 @@ namespace Buzz.MachineInterface
         /// <summary>A check of what the view draws (colour statistics as JSON); null when the platform cannot say. For tests.</summary>
         string Snapshot(string imagePath);
     }
+
+    /// <summary>
+    /// Fork (docs/specs/plugin-host.md H3): the thread plug-ins treat as their main thread. A studio with a window provides its UI
+    /// thread (plug-in editors and their parent window must live on one thread, as in every DAW); without one the plug-in host runs
+    /// a thread of its own (headless, tests).
+    /// </summary>
+    public interface IPluginMainThread
+    {
+        /// <summary>Whether the calling thread is the main thread.</summary>
+        bool IsCurrent { get; }
+
+        /// <summary>Queues <paramref name="action"/> on the main thread and returns at once.</summary>
+        void Post(Action action);
+
+        /// <summary>Runs <paramref name="f"/> on the main thread and waits for it (at once when already there).</summary>
+        T Invoke<T>(Func<T> f, int timeoutMs);
+
+        /// <summary>Calls <paramref name="tick"/> on the main thread every <paramref name="intervalMs"/> until disposed.</summary>
+        IDisposable Every(int intervalMs, Action tick);
+    }
+
+    /// <summary>Where the studio puts its <see cref="IPluginMainThread"/>, before the engine starts.</summary>
+    public static class PluginMainThread
+    {
+        public static IPluginMainThread Current { get; set; }
+    }
 }
