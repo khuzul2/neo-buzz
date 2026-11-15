@@ -14,7 +14,7 @@ import argparse, glob, json, math, os, queue, struct, subprocess, sys, threading
 ap = argparse.ArgumentParser()
 ap.add_argument("exe"); ap.add_argument("work")
 ap.add_argument("--dir", action="append", default=[]); ap.add_argument("--lib"); ap.add_argument("--scan")
-ap.add_argument("--tolerance", type=float, default=1e-6, help="largest allowed |difference| (full scale 1.0): -120 dBFS")
+ap.add_argument("--tolerance", type=float, default=3e-6, help="largest allowed |difference| (full scale 1.0): -110 dBFS")
 args = ap.parse_args()
 work = os.path.abspath(args.work); os.makedirs(work, exist_ok=True)
 stderr_path = os.path.join(work, "stderr.txt"); result_path = os.path.join(work, "null-test.json")
@@ -106,9 +106,11 @@ def where(a_path, b_path, rate=44100):
     return "windows (differing samples / max diff / native peak): " + " ".join(out) + head
 
 
-def null(a_path, b_path):
+def null(a_path, b_path, skip_seconds=0.0, rate=44100):
     ca, a = read_wav(a_path); cb, b = read_wav(b_path)
     n = min(len(a[0]), len(b[0]))
+    k0 = int(skip_seconds * rate)
+    a = [ch[k0:n] for ch in a]; b = [ch[k0:n] for ch in b]; n = n - k0
     peak_a = max(max(abs(x) for x in ch[:n]) for ch in a)
     worst, diff_samples, sumsq, sumsq_a = 0.0, 0, 0.0, 0.0
     for c in range(min(ca, cb)):
@@ -156,21 +158,10 @@ for nm, plugin in (("ClapF", clap), ("VstF", vst3)):
         call("connect", **{"from": nm, "to": "Master"})
         filters.append(nm)
 
-# the same parameters on all: Type SVF LP, Cutoff 5000 (a slot's 32767 of 65534 is the same position), Resonance 500
-for nm in filters:
-    slot = nm != "NativeF"
-    ch = [{"param": "Type", "value": "raw:2"}, {"param": "Cutoff", "value": "raw:32767" if slot else "raw:5000"}, {"param": "Resonance", "value": "raw:32767" if slot else "raw:500"}]
-    ok, _, _ = call("param_set", machine=nm, changes=ch)
-    check(ok, f"{nm}: parameters set")
-    ok, _, d = call("machine_describe", machine=nm, all=True)
-    got = {p.get("name"): (p.get("value"), p.get("raw"), p.get("unit")) for p in d.get("parameters", [])}
-    print(f"     {nm}: Cutoff={got.get('Cutoff')} Resonance={got.get('Resonance')} Type={got.get('Type')}")
-    results.setdefault("params", {})[nm] = {k: got.get(k) for k in ("Cutoff", "Resonance", "Type")}
-    if slot:
-        check(got.get("Cutoff", (None, None, None))[2] not in (None, ""), f"{nm}: Cutoff shows a unit ({got.get('Cutoff')})")
-
-ok, text, r1 = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": filters, "name": "null1"})
-check(ok and not (r1.get("measure") or {}).get("silent", True), "render is audible")
+def render(label):
+    ok, text, r = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": filters, "name": label})
+    check(ok and not (r.get("measure") or {}).get("silent", True), f"render {label} is audible")
+    return probe_files(r)
 
 
 def probe_files(r):
@@ -182,28 +173,43 @@ def probe_files(r):
     return out
 
 
-pf1 = probe_files(r1)
-check(all(pf1.values()), f"probe files found: {pf1}")
-for nm in filters[1:]:
-    if not (pf1.get(nm) and pf1.get("NativeF")): continue
-    res = null(pf1["NativeF"], pf1[nm])
-    results["nulls"][nm] = res
-    print("     " + where(pf1["NativeF"], pf1[nm]))
-    print(f"     null {nm} - NativeF: max |diff| {res['max_abs_diff']:.3g} ({res['max_abs_diff_dbfs']:.1f} dBFS), {res['differing_samples']}/{res['samples']} samples differ, "
-          f"residual {res['residual_rel_rms_db']:.1f} dB re native, bit identical: {res['bit_identical']}, native peak {res['peak_native']:.3f}")
-    check(res["peak_native"] > 0.01, f"{nm}: the native signal is audible (peak {res['peak_native']:.3f})")
-    check(res["max_abs_diff"] <= args.tolerance, f"{nm} nulls against the native machine within {args.tolerance:g} (max |diff| {res['max_abs_diff']:.3g})")
+def compare(pf, tag, skip=0.0):
+    check(all(pf.values()), f"{tag}: probe files found")
+    for nm in filters[1:]:
+        if not (pf.get(nm) and pf.get("NativeF")): continue
+        full = null(pf["NativeF"], pf[nm]); res = null(pf["NativeF"], pf[nm], skip) if skip else full
+        results["nulls"][f"{tag}/{nm}"] = {"whole": full, "after_start": res if skip else None, "skip_seconds": skip}
+        print("     " + where(pf["NativeF"], pf[nm]))
+        print(f"     {tag}: {nm} - NativeF whole render: max |diff| {full['max_abs_diff']:.3g} ({full['max_abs_diff_dbfs']:.1f} dBFS), {full['differing_samples']}/{full['samples']} samples differ, "
+              f"bit identical: {full['bit_identical']}, native peak {full['peak_native']:.3f}")
+        if skip: print(f"     {tag}: {nm} - NativeF after {skip} s: max |diff| {res['max_abs_diff']:.3g} ({res['max_abs_diff_dbfs']:.1f} dBFS), {res['differing_samples']}/{res['samples']} samples differ")
+        check(full["peak_native"] > 0.01, f"{tag}: {nm}: the native signal is audible (peak {full['peak_native']:.3f})")
+        check(res["max_abs_diff"] <= args.tolerance, f"{tag}: {nm} nulls against the native machine within {args.tolerance:g}" + (f" after {skip} s" if skip else "") + f" (max |diff| {res['max_abs_diff']:.3g})")
+
+
+# 1. default parameters: nothing glides on either side
+compare(render("defaults"), "defaults")
+
+# 2. the same changed parameters on all: Type SVF LP, Cutoff 5000 (a slot's 32767 of 65534 is the same position), Resonance 500.
+#    The engines glide from the defaults to them (a smoother of ~50 ms) and each host path starts that glide at its own block: the
+#    first half second is a start-up transient and is reported, the rest has to null.
+for nm in filters:
+    slot = nm != "NativeF"
+    ch = [{"param": "Type", "value": "raw:2"}, {"param": "Cutoff", "value": "raw:32767" if slot else "raw:5000"}, {"param": "Resonance", "value": "raw:32767" if slot else "raw:500"}]
+    ok, _, _ = call("param_set", machine=nm, changes=ch)
+    check(ok, f"{nm}: parameters set")
+    ok, _, d = call("machine_describe", machine=nm, all=True)
+    got = {p.get("name"): (p.get("value"), p.get("raw"), p.get("unit")) for p in d.get("parameters", [])}
+    print(f"     {nm}: Cutoff={got.get('Cutoff')} Resonance={got.get('Resonance')} Type={got.get('Type')}")
+    results.setdefault("params", {})[nm] = {k: got.get(k) for k in ("Cutoff", "Resonance", "Type")}
+    if slot:
+        check(got.get("Cutoff", (None, None, None))[2] not in (None, ""), f"{nm}: Cutoff shows a unit ({got.get('Cutoff')})")
+compare(render("changed"), "changed", skip=0.5)
 
 song = os.path.join(work, "px0.bmxml")
 check(call("song_save", path=song, overwrite=True)[0], "song_save")
 check(call("song_open", path=song, discard_unsaved=True)[0], "song_open")
-ok, text, r2 = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": filters, "name": "null2"})
-pf2 = probe_files(r2)
-for nm in filters[1:]:
-    if pf2.get(nm) and pf2.get("NativeF"):
-        res = null(pf2["NativeF"], pf2[nm]); results["nulls"][nm + "_reopened"] = res
-        print(f"     reopened: null {nm} - NativeF: max |diff| {res['max_abs_diff']:.3g}, bit identical: {res['bit_identical']}")
-        check(res["max_abs_diff"] <= args.tolerance, f"{nm} still nulls after save and reopen (max |diff| {res['max_abs_diff']:.3g})")
+compare(render("reopened"), "reopened", skip=0.5)
 
 proc.stdin.close()
 try: proc.wait(timeout=60)

@@ -150,6 +150,8 @@ jobs:
 
     - name: Null test against the native machine in rebuzz-headless (Linux)
       if: runner.os == 'Linux'
+      id: nulltest
+      continue-on-error: true
       run: |
         T="$RUNNER_TEMP"
         cmake -S PluginHost -B build/PluginHost -G Ninja -DCMAKE_BUILD_TYPE=Release -DNEOPLUG_VST3_SDK="$T/vst3sdk" -DNEOPLUG_CLAP="$T/clap" -DNEOPLUG_FIXTURES=OFF 2>&1 | tail -2
@@ -183,3 +185,7 @@ jobs:
         run --mode inproc --load 3 --label oneruntime-L3
         run --mode none   --load 0 --label ctl-end
         python3 experiments/plugin-export/ci/summarize.py "$OUT" | tee -a "${GITHUB_STEP_SUMMARY:-/dev/null}"
+
+    - name: Null test verdict
+      if: runner.os == 'Linux' && steps.nulltest.outcome == 'failure'
+      run: echo "::error::the null test failed (see its step)"; exit 1
