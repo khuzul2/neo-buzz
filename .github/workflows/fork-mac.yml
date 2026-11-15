@@ -103,7 +103,9 @@ jobs:
     # The classic Buzz machines rebuilt natively (docs/specs/cross-platform.md R1) and the portable host that runs them
     # out of process: ReBuzz.Host/AppGear.targets copies build/natives (Gear, Licenses) and build/native-host into
     # rebuzz-headless's output when it is built.
+    # always(): a failed test step above must not skip the build and make the classic-machine step fail for a missing host.
     - name: Classic machines and native host (C++)
+      if: always()
       run: |
         python3 tools/build-natives-posix.py --out build/natives
         cmake -S ReBuzzEngine/portable -B build/native-host >/dev/null
