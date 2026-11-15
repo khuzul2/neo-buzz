@@ -12,7 +12,7 @@ on:
         type: string
         default: '10'
       macos:
-        description: Include the macOS (arm64) runner (a short run: the hour test is for real Macs)
+        description: 'Include the macOS (arm64) runner (a short run; the hour test is for real Macs)'
         type: boolean
         default: true
   push:
