@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Fork (docs/specs/ux-overhaul.md P6): a smoke test of NeoBuzz Live Studio (preview), the published exe on Windows
-# (Studio\NeoBuzzLiveStudio.exe of the package, or build\Studio from tools/publish-studio-windows.ps1). It checks that:
+# Fork (docs/specs/ux-overhaul.md P6): a smoke test of NeoBuzz Live (the studio), the published exe on Windows
+# (NeoBuzzLive.exe of the package, or build\Studio from tools/publish-studio-windows.ps1). It checks that:
 #  - --list-devices loads PortAudio and lists the audio devices, and the WinMM MIDI ports (none is needed on a runner);
 #  - the app starts (its window, the engine, the machine scan) and its MCP server, allowed for this run with
 #    --agent-port and --agent-token (nothing saved), answers as "studio" (the runner has no sound card: --no-audio,
@@ -11,7 +11,7 @@
 #  - the transport plays and stops;
 #  - the app quits when its window closes (WM_CLOSE: what the user's close button sends), with exit code 0.
 #
-#   python tools/studio-windows-smoke.py <NeoBuzzLiveStudio.exe> [work folder] [--song <bmx>] [--native-gear "FSM Infector,Jeskola Bass 3"]
+#   python tools/studio-windows-smoke.py <NeoBuzzLive.exe> [work folder] [--song <bmx>] [--native-gear "FSM Infector,Jeskola Bass 3"]
 
 import ctypes
 import json

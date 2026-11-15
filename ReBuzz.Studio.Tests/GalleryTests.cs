@@ -62,6 +62,11 @@ namespace ReBuzz.Studio.Tests
         static readonly List<Window> opened = new();
         static System.Action<Window> onOpened;
 
+        /// <summary>The file prefix and the index's platform: "mac" (the default), or GALLERY_PREFIX=win on the Windows runner (ux-overhaul.md P6c,
+        /// the package workflow's studio-windows job: the same headless gallery drawn with Windows' fonts; the file names are win-NNN-*.png).</summary>
+        static string Prefix => System.Environment.GetEnvironmentVariable("GALLERY_PREFIX") is { Length: > 0 } p ? p : "mac";
+        static string PlatformName => Prefix == "mac" ? "Mac" : Prefix == "win" ? "Windows" : Prefix;
+
         static string Folder
         {
             get
@@ -148,14 +153,14 @@ namespace ReBuzz.Studio.Tests
             sb.AppendLine("| App | File | What it shows | How a user reaches it | Window size and scale | Song | Notes |");
             sb.AppendLine("|---|---|---|---|---|---|---|");
             foreach (var r in rows.OrderBy(r => r.File, System.StringComparer.Ordinal))
-                sb.AppendLine($"| Mac ({Product.Name}, headless) | {Cell(r.File)} | {Cell(r.What)} | {Cell(r.How)} | {Cell(r.Size)} | {Cell(r.Song)} | {Cell(r.Notes)} |");
+                sb.AppendLine($"| {PlatformName} ({Product.Name}, headless) | {Cell(r.File)} | {Cell(r.What)} | {Cell(r.How)} | {Cell(r.Size)} | {Cell(r.Song)} | {Cell(r.Notes)} |");
             if (failures.Count > 0)
             {
                 sb.AppendLine();
                 sb.AppendLine("Not captured:");
                 foreach (var f in failures) sb.AppendLine("- " + f);
             }
-            File.WriteAllText(Path.Combine(Folder, "index-mac.md"), sb.ToString());
+            File.WriteAllText(Path.Combine(Folder, $"index-{Prefix}.md"), sb.ToString());
         }
 
         const string Headless = "Headless (Avalonia.Headless, Skia): the window's content only, no macOS title bar; text in the headless fallback font, greyscale-antialiased.";
@@ -163,7 +168,7 @@ namespace ReBuzz.Studio.Tests
         /// <summary>A shot of a window: mac-<paramref name="id"/>.png.</summary>
         static void Shot(TopLevel top, string id, string what, string how, string song = GallerySong.Title, string notes = null)
         {
-            string file = $"mac-{id}.png";
+            string file = $"{Prefix}-{id}.png";
             var frame = Frame(top);
             Save(frame, file);
             Record(file, what, how, SizeText(top, frame), song, notes ?? "");
@@ -172,7 +177,7 @@ namespace ReBuzz.Studio.Tests
         /// <summary>A dialog (a window of its own) drawn over the main window, centred, with a shadow, as macOS shows it.</summary>
         static void DialogShot(Window main, Window dialog, string id, string what, string how, string song = GallerySong.Title, string notes = null)
         {
-            string file = $"mac-{id}.png";
+            string file = $"{Prefix}-{id}.png";
             var back = Frame(main);
             var front = Frame(dialog);
             var size = back.PixelSize;
@@ -212,7 +217,7 @@ namespace ReBuzz.Studio.Tests
             }
             catch (System.Exception e)
             {
-                string why = $"mac-{id}: {e.GetType().Name}: {e.Message.Split('\n')[0]}";
+                string why = $"{Prefix}-{id}: {e.GetType().Name}: {e.Message.Split('\n')[0]}";
                 failures.Add(why);
                 TestContext.Out.WriteLine("[gallery] not captured: " + why + "\n" + e.StackTrace);
                 WriteIndex();

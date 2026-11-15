@@ -8,7 +8,7 @@ namespace ReBuzz.Common
     /// <summary>
     /// Fork: is the install whole? A package that is still being unzipped (or was unzipped in part, or half-synced by OneDrive)
     /// has the folders that extract first but not Themes, and the first window then dies with a DirectoryNotFoundException.
-    /// The windowed app checks the files its start-up loads (themes, the native machine hosts, the gear list) before it opens
+    /// The windowed WPF app (NeoBuzz Live Classic, Classic\NeoBuzzLiveClassic.exe in the package; ux-overhaul.md P6c) checks the files its start-up loads (themes, the native machine hosts, the gear list) before it opens
     /// anything, and says so in one message. The headless server (--agent) loads no theme and is not checked; the studio
     /// (Avalonia) has its own parameter windows and reads no theme, so it has no such dependency.
     /// </summary>
