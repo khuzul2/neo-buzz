@@ -166,7 +166,7 @@ struct Inst {
 
 struct Audio {
     std::vector<float> inL, inR, kL, kR, outL, outR;
-    explicit Audio(int n = 4096) : inL(n), inR(n), kL(n), kR(n), outL(n), outR(n) {}
+    explicit Audio(int n = 32768) : inL(n), inR(n), kL(n), kR(n), outL(n), outR(n) {}
     void noise(uint32_t seed, float amp) {
         uint32_t r = seed;
         auto f = [&] { r = r * 1664525u + 1013904223u; return ((int)(r >> 9) / 4194304.0f - 1.0f); };
