@@ -566,6 +566,17 @@ public:
         if (component->setState(&cs) != kResultOk) { err = "the component refused its state"; return false; }
         cs.seek(0, IBStream::kIBSeekSet, nullptr);
         controller->setComponentState(&cs);
+        // Some controllers (JUCE's) keep the values a host set earlier and apply them to the processor in the next process call,
+        // on top of the state just loaded. Setting every parameter to what the state says replaces those.
+        {
+            int32 n = controller->getParameterCount();
+            for (int32 i = 0; i < n; i++)
+            {
+                ParameterInfo pi{};
+                if (controller->getParameterInfo(i, pi) != kResultOk || (pi.flags & ParameterInfo::kIsReadOnly)) continue;
+                controller->setParamNormalized(pi.id, controller->getParamNormalized(pi.id));
+            }
+        }
         if (klen > 0 && U::cast<IEditController>(component) == nullptr)
         {
             MemoryStream ks((void*)ctrl, (TSize)klen);
