@@ -176,7 +176,7 @@ jobs:
         bad=0
         for n in "Neo Filter" "Neo EQ" "Neo Comp" "Neo Delay" "Neo Verb" "Neo Poly"; do
           w="nulltest-${n// /-}"
-          python3 PluginExport/ci/null-test.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$PWD/$w" --plugin "$n" --dir "$F" --lib "$G/libneoplug.so" --scan "$G/neoplug-scan" 2>&1 | tee "$w.log" | grep -v "^     \(gear_list\|song_\|machine_\|pattern\|notes\|arrange\|connect\|render\|param_set\)" | tail -32
+          python3 PluginExport/ci/null-test.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$PWD/$w" --plugin "$n" --dir "$F" --lib "$G/libneoplug.so" --scan "$G/neoplug-scan" 2>&1 | tee "$w.log" | grep -v "^     \(gear_list\|song_\|machine_\|pattern\|notes\|arrange\|connect\|render\)" | tail -40 || true
           grep -q "^NULL-TEST .* ok" "$w.log" || bad=1
         done
         [ $bad = 0 ]
