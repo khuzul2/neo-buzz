@@ -265,6 +265,24 @@ results["state_sizes"] = {k: len(v) for k, v in s1.items()}
 check(set(s1) >= set(names), f"the song holds every machine's state ({sorted(s1)})")
 for n in names:
     check(n in s1 and n in s2 and s1[n] == s2[n], f"{n}: the saved state is identical after reopen and save ({len(s1.get(n, b''))} bytes)")
+    if n in s1 and n in s2 and s1[n] != s2[n]:   # what differs: the XML fields, then the plug-in's own blob
+        import re, zlib
+        def fields(raw):
+            t = raw.decode("utf-8", "replace")
+            blob = re.search(r"<Blob>([^<]*)</Blob>", t)
+            rest = re.sub(r"<Blob>[^<]*</Blob>", "<Blob/>", t)
+            try:
+                inner = zlib.decompress(base64.b64decode(blob.group(1)), -15) if blob else b""
+            except Exception:
+                inner = b""
+            return rest, inner
+        r1, i1 = fields(s1[n]); r2, i2 = fields(s2[n])
+        print(f"  {n}: xml {'same' if r1 == r2 else 'DIFFERS'}; blob {len(i1)} vs {len(i2)} bytes")
+        if r1 != r2: print("   ", r1[:300], "|", r2[:300])
+        if i1 != i2:
+            ds = [k for k in range(min(len(i1), len(i2))) if i1[k] != i2[k]]
+            print(f"   {len(ds)} bytes differ, first at {ds[:6]}; before {i1[ds[0]-8:ds[0]+24] if ds else b''!r} after {i2[ds[0]-8:ds[0]+24] if ds else b''!r}")
+
 
 def edit_state(src, dst, victim, fn):
     """Writes dst: src with the victim machine's PlugState XML run through fn. Returns (old state bytes, new state bytes)."""
