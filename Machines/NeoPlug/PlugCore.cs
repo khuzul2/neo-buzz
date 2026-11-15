@@ -408,7 +408,7 @@ namespace NeoBuzz.Plug
                         Volatile.Write(ref toController[i], 0);
                         PlugNative.np_param_set(plugin, slotId[i], ToValue(i, Volatile.Read(ref mirror[i])));
                     }
-                    if (now - Volatile.Read(ref wroteAt[i]) < 150 || Volatile.Read(ref pending[i]) >= 0) continue;
+                    if (now - Volatile.Read(ref wroteAt[i]) < 400 || Volatile.Read(ref pending[i]) >= 0) continue;
                     int raw = ToRaw(i, PlugNative.np_param_get(plugin, slotId[i]));
                     if (raw == Volatile.Read(ref mirror[i])) continue;
                     Volatile.Write(ref mirror[i], raw);
@@ -752,6 +752,7 @@ namespace NeoBuzz.Plug
                 for (int i = 0; i < Slots && ne < events.Length - 1; i++)
                 {
                     int v = Interlocked.Exchange(ref pending[i], -1);
+                    if (v >= 0) Volatile.Write(ref wroteAt[i], Environment.TickCount64);   // the plug-in takes it in this block: the pump waits for it to show
                     if (v >= 0 && bound[i]) events[ne++] = new PlugNative.Event { type = PlugNative.EvParam, param_id = slotId[i], value = ToValue(i, v) };
                 }
                 SortByFrame(events, ne);
