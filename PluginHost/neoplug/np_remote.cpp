@@ -47,7 +47,7 @@ std::string describeEnd(const ipc::Child& c)
 {
     char buf[96];
     if (c.signal) { std::snprintf(buf, sizeof buf, "crashed (signal %d)", c.signal); return buf; }
-    if (c.code > 0) { std::snprintf(buf, sizeof buf, "crashed (exit code %ld / 0x%lx)", c.code, (unsigned long)c.code); return buf; }
+    if (c.code != 0 && c.code != -1) { std::snprintf(buf, sizeof buf, "crashed (exit code %ld / 0x%lx)", c.code, (unsigned long)c.code); return buf; }
     return c.code == 0 ? "ended" : "ended unexpectedly";
 }
 

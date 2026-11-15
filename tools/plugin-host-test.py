@@ -370,6 +370,64 @@ if args.fixtures:
     lvl = probe_levels(r1m).get("Voice", (None, True))
     check(lvl[1] is False, f"Voice plays what the Octaver sends it ({lvl[0]} LUFS)")
 
+if args.fixtures:
+    # --- H2, the sandbox: Test Crasher crashes on command (its Crash parameter); the crash must take only its own server -----------
+    def quirks_of(name):
+        ok, text, d = call("machine_describe", machine=name)
+        return ok, "\n".join(d.get("quirks", [])) if isinstance(d, dict) else text
+
+    call("song_new", discard_unsaved=True)
+    call("song_set", tempo_bpm=120, song_end_beats=8)
+    call("machine_add", gear="Neo Plug", plugin=resolve("Test Synth", gen_names, "instrument"), name="Pad", tracks=2)
+    call("pattern_create", machine="Pad", name="A", length_beats=8)
+    call("notes_write", machine="Pad", pattern="A", notes=[{"pitch": "C3", "start": 0, "length": 8}, {"pitch": "G3", "start": 0, "length": 8}])
+    call("arrangement_place", machine="Pad", pattern="A", at=[0])
+    ok, _, _ = call("machine_add", gear="Neo Plug FX", plugin=resolve("Test Crasher", fx_names, "effect"), name="Crash", insert_after="Pad")
+    check(ok, "machine_add Crash after Pad")
+    ok, q = quirks_of("Crash")
+    check("Placement:" in q, f"machine_describe shows where Crash runs ({q.splitlines()[0][:90] if q else 'nothing'})")
+    ok, _, cmds = call("machine_command", machine="Crash")
+    texts = [c["command"] for c in (cmds or {}).get("commands", [])]
+    check(any(t.startswith("Placement") for t in texts) and "Reload plug-in" in texts, f"machine_command lists Placement and Reload plug-in ({len(texts)} commands)")
+    ok, _, _ = call("machine_command", machine="Crash", command="Placement > Sandbox per plug-in")
+    check(ok, "machine_command: Placement > Sandbox per plug-in")
+    ok, q = quirks_of("Crash")
+    check("sandbox" in q.lower(), f"Crash now runs in a sandbox: {q.splitlines()[0][:100] if q else ''}")
+    ok, _, before = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": ["Crash"], "name": "sbx-ok"})
+    lb = probe_levels(before).get("Crash", (None, True))
+    check(lb[1] is False, f"the sandboxed Crash passes the pad ({lb[0]} LUFS)")
+
+    # the crash: Crash=1 makes process() crash; the render finishes, the pad (another machine, in process) is audible, Crash is silent
+    ok, _, _ = call("param_set", machine="Crash", changes=[{"param": "Crash", "value": "raw:1"}])
+    check(ok, "param_set Crash = 1")
+    ok, _, after = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": ["Crash", "Pad"], "name": "sbx-crash"})
+    check(ok, "the render finishes although the plug-in crashed")
+    lv = probe_levels(after)
+    check(lv.get("Pad", (None, True))[1] is False, "the pad, in another machine, still plays")
+    ok, q = quirks_of("Crash")
+    check("CRASHED" in q, "machine_describe says Crash crashed")
+
+    # reload from the last state: the crash switch is never saved, so it works again
+    ok, _, _ = call("machine_command", machine="Crash", command="Reload plug-in")
+    check(ok, "machine_command: Reload plug-in")
+    ok, q = quirks_of("Crash")
+    check("CRASHED" not in q, "Crash is back after the reload")
+    ok, _, again = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": ["Crash"], "name": "sbx-reloaded"})
+    la = probe_levels(again).get("Crash", (None, True))
+    check(la[1] is False, f"the reloaded plug-in passes the pad again ({la[0]} LUFS)")
+
+    # back in process, and a song with a sandboxed machine keeps the choice
+    ok, _, _ = call("machine_command", machine="Crash", command="Placement > Sandbox per instance")
+    sbx_song = os.path.join(work, "sandbox.bmxml")
+    check(call("song_save", path=sbx_song, overwrite=True)[0], "song_save with a sandboxed plug-in")
+    check("<Placement>instance</Placement>" in "".join(open(sbx_song, encoding="utf-8").read().split()), "the placement is saved with the song")
+    call("song_open", path=sbx_song, discard_unsaved=True)
+    ok, q = quirks_of("Crash")
+    check("instance" in q.lower(), "the song opens with Crash in its own sandbox")
+    ok, _, _ = call("machine_command", machine="Crash", command="Placement > In process")
+    ok, q = quirks_of("Crash")
+    check(ok and "in process" in q.lower(), "back in process")
+
 proc.stdin.close()
 try:
     code = proc.wait(60)

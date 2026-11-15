@@ -200,7 +200,7 @@ NP_API np_plugin* np_open_ex(const char* path, const char* id, int placement, ch
 NP_API int np_server_available(void);                    /* 1 if neoplug-server is installed beside the library */
 NP_API int np_placement(np_plugin* p);                   /* NP_IN_PROCESS .. NP_SANDBOX_SHARED */
 NP_API int np_status(np_plugin* p);                      /* 0 in process, 1 sandboxed and running, 2 its server ended */
-NP_API long np_server_pid(np_plugin* p);                 /* the server's process id (0 in process) */
+NP_API int np_server_pid(np_plugin* p);                  /* the server's process id (0 in process) */
 NP_API int np_status_text(np_plugin* p, char* buf, int len);   /* "in process", "running", or how the server ended ("crashed (signal 11)") */
 /* A sandboxed plug-in's editor in a window the server owns (macOS always, and Windows when embedding failed). Main thread. */
 NP_API int np_gui_open_window(np_plugin* p, const char* title, int* width, int* height, char* err, int errlen);

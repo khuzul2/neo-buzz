@@ -95,7 +95,7 @@ NP_API np_plugin* np_open_ex(const char* path, const char* id, int placement, ch
 NP_API int np_server_available(void) { return ipc::serverPath().empty() ? 0 : 1; }
 NP_API int np_placement(np_plugin* p) { return p->impl->placement(); }
 NP_API int np_status(np_plugin* p) { return p->impl->status(); }
-NP_API long np_server_pid(np_plugin* p) { return p->impl->serverPid(); }
+NP_API int np_server_pid(np_plugin* p) { return (int)p->impl->serverPid(); }
 
 NP_API int np_status_text(np_plugin* p, char* buf, int len)
 {

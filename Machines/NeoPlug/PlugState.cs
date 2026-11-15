@@ -26,6 +26,8 @@ namespace NeoBuzz.Plug
         public int MidiChannel { get; set; }
         /// <summary>The machine that gets the MIDI the plug-in plays (by name); empty for none.</summary>
         public string MidiOut { get; set; }
+        /// <summary>Where this machine's plug-in runs (H2): "" for the plug-in's own choice or the default, else "inprocess", "plugin", "instance" or "shared".</summary>
+        public string Placement { get; set; }
 
         public static byte[] Pack(byte[] raw)
         {

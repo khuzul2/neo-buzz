@@ -69,7 +69,7 @@
        (Gear/Generators/../NeoPlug). Without them Neo Plug loads, lists no plug-ins and says why. -->
   <Target Name="NeoPlugNative" AfterTargets="Build">
     <ItemGroup>
-      <_NeoPlugNative Include="$(MSBuildThisFileDirectory)..\build\PluginHost\bin\libneoplug.so;$(MSBuildThisFileDirectory)..\build\PluginHost\bin\libneoplug.dylib;$(MSBuildThisFileDirectory)..\build\PluginHost\bin\neoplug.dll;$(MSBuildThisFileDirectory)..\build\PluginHost\bin\neoplug-scan;$(MSBuildThisFileDirectory)..\build\PluginHost\bin\neoplug-scan.exe" Condition="'$(SkipNeoPlugNative)' != 'true'" />
+      <_NeoPlugNative Include="$(MSBuildThisFileDirectory)..\build\PluginHost\bin\libneoplug.so;$(MSBuildThisFileDirectory)..\build\PluginHost\bin\libneoplug.dylib;$(MSBuildThisFileDirectory)..\build\PluginHost\bin\neoplug.dll;$(MSBuildThisFileDirectory)..\build\PluginHost\bin\neoplug-scan;$(MSBuildThisFileDirectory)..\build\PluginHost\bin\neoplug-scan.exe;$(MSBuildThisFileDirectory)..\build\PluginHost\bin\neoplug-server;$(MSBuildThisFileDirectory)..\build\PluginHost\bin\neoplug-server.exe" Condition="'$(SkipNeoPlugNative)' != 'true'" />
     </ItemGroup>
     <Copy SourceFiles="@(_NeoPlugNative)" DestinationFolder="$(OutDir)Gear/NeoPlug" SkipUnchangedFiles="true" Condition="Exists('%(FullPath)')" />
   </Target>

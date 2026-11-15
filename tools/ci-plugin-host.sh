@@ -72,6 +72,12 @@ export NEOPLUG_DEBUG=1
 $PY tools/plugin-host-test.py "$H" "$OUT/run" "${dirs[@]}" --lib "$G/$L" --scan "$G/neoplug-scan$X" \
   --gen "Note Expression Synth" --gen "Test Synth" "${surge[@]}" --fx "AGain VST3" --fx "Test Gain" --fixtures
 
+# The sandbox (H2): the same plug-ins behind a neoplug-server process, a plug-in that crashes, round-trip latency, a short chain.
+# (The 10 minute "hour test" is the plugin-sandbox workflow's.) The native tools were built above.
+echo "::group::Sandbox: placements, crashes, latency"
+bash tools/ci-plugin-sandbox.sh quick
+echo "::endgroup::"
+
 # The plug-in editors in the studio, in a real window (H3): Surge XT's own editors embedded in the studio's window (VST3 and CLAP), then
 # floating; each run opens, draws (colours in the view), resizes from the host, closes and reopens (Platform/PluginGuiCheck.cs).
 # Windows and macOS only: Linux has no editors to show.

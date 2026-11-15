@@ -111,6 +111,7 @@ void onResize(void* user, int w, int h)
     in->a->guiW.store(w);
     in->a->guiH.store(h);
     in->a->guiFlags.fetch_or(GuiResize);
+    if (in->window) np_platform_window_size(in->window, w, h);   // a floating window of ours follows its plug-in
 }
 
 void onClosed(void* user) { ((Inst*)user)->a->guiFlags.fetch_or(GuiClosed); }
@@ -325,6 +326,7 @@ void handle(uint32_t op, int instId, Rd& r, Wr& w, int32_t& rc, bool& quit)
     {
         int gw = r.i32(), gh = r.i32();
         rc = np_gui_set_size(p, &gw, &gh);
+        if (rc == 0 && in.window) np_platform_window_size(in.window, gw, gh);
         w.i32(gw); w.i32(gh);
         break;
     }

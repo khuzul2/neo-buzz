@@ -477,6 +477,87 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void PlacementFollowsTheOrderTheSpecGivesAndABlockedModuleIsNeverInProcess()
+        {
+            using var data = new PluginData("placement");
+            string old = Environment.GetEnvironmentVariable("NEOPLUG_PLACEMENT");
+            Environment.SetEnvironmentVariable("NEOPLUG_PLACEMENT", null);
+            PlugPlacement.Reload();
+            try
+            {
+                string path = Path.Combine(data.Plugins, "some.clap");
+                string platform = PlugPlacement.PlatformDefault;
+                Assert.That(PlugPlacement.Resolve("", "clap", "x.fx", "X", path, out _), Is.EqualTo(platform), "nothing chosen: the platform's default");
+                PlugPlacement.Default = PlugPlacement.PerInstance;
+                Assert.That(PlugPlacement.Resolve("", "clap", "x.fx", "X", path, out _), Is.EqualTo(PlugPlacement.PerInstance), "the default in Preferences");
+                PlugPlacement.SetForPlugin("clap", "x.fx", "X", PlugPlacement.Shared);
+                Assert.That(PlugPlacement.Resolve("", "clap", "x.fx", "X", path, out _), Is.EqualTo(PlugPlacement.Shared), "the plug-in's own choice beats the default");
+                Assert.That(PlugPlacement.Resolve(PlugPlacement.InProcess, "clap", "x.fx", "X", path, out _), Is.EqualTo(PlugPlacement.InProcess), "the song's choice for the machine beats both");
+                Assert.That(PlugPlacement.Resolve("bogus", "clap", "x.fx", "X", path, out _), Is.EqualTo(PlugPlacement.Shared), "an unknown value is ignored");
+
+                // Saved: another read of the file finds the same.
+                PlugPlacement.Reload();
+                Assert.That(PlugPlacement.Default, Is.EqualTo(PlugPlacement.PerInstance));
+                Assert.That(PlugPlacement.ForPlugin("clap", "x.fx", "X"), Is.EqualTo(PlugPlacement.Shared));
+                PlugPlacement.SetForPlugin("clap", "x.fx", "X", "");
+                Assert.That(PlugPlacement.ForPlugin("clap", "x.fx", "X"), Is.EqualTo(""));
+
+                // Flagged (unblocked once): in a sandbox whatever is asked for.
+                PlugPlacement.Flag(path, "it was blocked: crashed while scanning");
+                string placed = PlugPlacement.Resolve(PlugPlacement.InProcess, "clap", "x.fx", "X", path, out string why);
+                Assert.That(PlugPlacement.IsSandbox(placed), Is.True);
+                Assert.That(why, Does.Contain("forced"));
+                Assert.That(PlugPlacement.Unflag(path), Is.True);
+                Assert.That(PlugPlacement.Resolve(PlugPlacement.InProcess, "clap", "x.fx", "X", path, out _), Is.EqualTo(PlugPlacement.InProcess));
+
+                // The environment overrides everything but the forcing.
+                Environment.SetEnvironmentVariable("NEOPLUG_PLACEMENT", "instance");
+                Assert.That(PlugPlacement.Resolve(PlugPlacement.InProcess, "clap", "x.fx", "X", path, out _), Is.EqualTo(PlugPlacement.PerInstance));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("NEOPLUG_PLACEMENT", old);
+                PlugPlacement.Reload();
+            }
+        }
+
+        [AvaloniaTest]
+        public void ThePlugInsPageSetsTheDefaultPlacementAndShowsPlugInsWithAChoiceOfTheirOwn()
+        {
+            if (OperatingSystem.IsWindows()) Assert.Ignore("the stand-in scanner is a shell script");
+            using var data = new PluginData("placementpage");
+            data.UseScanner(StubScanner(data.Dir));
+            File.WriteAllText(Path.Combine(data.Plugins, "good.clap"), "x");
+            PlugPaths.AddFolder(data.Plugins);
+            PlugPlacement.Reload();
+            var prefs = PreferencesWindow.Open(Studio.Host, "Plug-ins");
+            using var restore = Studio.AfterTest(() => prefs.Close());
+            SettleWindow(prefs);
+            var page = prefs.Page<PluginsPage>();
+            var lastReport = PlugLibrary.LastReport;
+            page.RescanButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            WaitForScan(lastReport);
+            page.Refresh();
+            SettleWindow(prefs);
+            Assert.That(page.DefaultPlacement.SelectedIndex, Is.EqualTo(0), "the platform's default");
+            Assert.That(page.PlacementRows, Is.Empty);
+
+            page.DefaultPlacement.SelectedIndex = 2;   // sandbox per plug-in
+            SettleWindow(prefs);
+            Assert.That(PlugPlacement.Default, Is.EqualTo(PlugPlacement.PerPlugin));
+
+            var entry = PlugLibrary.All().Single();
+            PlugPlacement.SetForPlugin(entry.Format, entry.Id, entry.Name, PlugPlacement.PerInstance);
+            page.Refresh();
+            SettleWindow(prefs);
+            Assert.That(page.PlacementRows.Count, Is.EqualTo(1));
+            Assert.That(page.PlacementRows[0].Choice.SelectedIndex, Is.EqualTo(3), "sandbox per instance");
+            page.PlacementRows[0].Choice.SelectedIndex = 0;
+            SettleWindow(prefs);
+            Assert.That(PlugPlacement.ForPlugin(entry.Format, entry.Id, entry.Name), Is.EqualTo(""));
+        }
+
+        [AvaloniaTest]
         public void AChangeToTheLibraryFileMadeElsewhereIsSeenWithoutARestart()
         {
             using var data = new PluginData("reload");
