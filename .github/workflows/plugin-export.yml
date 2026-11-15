@@ -137,16 +137,30 @@ jobs:
         "$B" --clap "$C" --selftest 2>&1 | tee bench-selftest.log
         grep -q "^SELFTEST ok" bench-selftest.log
 
+    - name: Sign (ad hoc) the bundles after staging (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        for b in _build/neofilter_assets/*.clap _build/neofilter_assets/*.vst3 _build/neofilter_assets/*.component; do
+          codesign --force --deep --sign - "$b" && codesign --verify --deep --strict "$b" && echo "signed $b"
+        done
+
     - name: AU through auval (macOS)
       if: runner.os == 'macOS'
+      id: auval
       continue-on-error: true
       run: |
         mkdir -p ~/Library/Audio/Plug-Ins/Components
-        cp -R "_build/neofilter_assets/Neo Filter.component" ~/Library/Audio/Plug-Ins/Components/ || find _build/neofilter_assets -name '*.component'
-        sleep 3
+        rm -rf ~/Library/Audio/Plug-Ins/Components/"Neo Filter.component"
+        cp -R "_build/neofilter_assets/Neo Filter.component" ~/Library/Audio/Plug-Ins/Components/
+        killall -9 AudioComponentRegistrar 2>/dev/null || true   # a CI runner of our own: the registrar rescans on its restart
+        sleep 5
         auval -a 2>&1 | grep -i -E "NBuz|Neo" || echo "not listed by auval -a"
-        auval -v aufx NFlt NBuz 2>&1 | tail -40 | tee auval.log
+        auval -v aufx NFlt NBuz 2>&1 | tee auval.log | tail -45
         grep -q "AU VALIDATION SUCCEEDED" auval.log
+
+    - name: AU verdict
+      if: runner.os == 'macOS' && steps.auval.outcome == 'failure'
+      run: echo "::warning::auval did not validate the AU (see its step)"
 
     - name: Null test against the native machine in rebuzz-headless (Linux)
       if: runner.os == 'Linux'
