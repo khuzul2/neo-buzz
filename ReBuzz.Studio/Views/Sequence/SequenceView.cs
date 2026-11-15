@@ -68,9 +68,11 @@ namespace ReBuzz.Studio.Views.Sequence
         {
             FontSize = 12, BorderThickness = new Thickness(1),
         };
+        /// <summary>The right panel's width: the mode switch's two buttons share it.</summary>
+        internal const double RightPanelWidth = 160;
         // Fork (daw-modes.md AR1): the mode switch (tracker: one row a sequence, edges set the pattern's length; arrangement: tracks with lanes and clips).
-        readonly ToggleButton trackerMode = new ToggleButton { Content = "Tracker", Width = 64, IsChecked = true };
-        readonly ToggleButton arrangementMode = new ToggleButton { Content = "Arrange", Width = 64 };
+        readonly ToggleButton trackerMode = new ToggleButton { Content = "Tracker", IsChecked = true, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Center };
+        readonly ToggleButton arrangementMode = new ToggleButton { Content = "Arrange", HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Center };
         // Fork (daw-modes.md AR6): the tracker's vertical orientation (Buzz's default sequence view: time down, tracks as columns), remembered per user.
         readonly ToggleButton verticalMode = new ToggleButton { Content = "Vertical", Width = 80 };
         const string OrientationKey = "SequenceVertical", OrientationSection = "Studio";
@@ -186,7 +188,7 @@ namespace ReBuzz.Studio.Views.Sequence
             corner.IsVisible = !on;
             cornerRow.IsVisible = on;
             orientationRow.IsVisible = !isArrangement;
-            right.Width = on ? 168 : 120;
+            right.Width = on ? 168 : RightPanelWidth;
             Sync();
         }
 
@@ -295,11 +297,13 @@ namespace ReBuzz.Studio.Views.Sequence
             var timeline = new Panel { Children = { Canvas, Canvas.Overlay, Arrangement, Arrangement.Overlay, headers, emptyState, horizontal, vertical, corner } };
             headers.Margin = new Thickness(0, 0, 0, 0);
 
-            right = new DockPanel { Width = 120 };
+            right = new DockPanel { Width = RightPanelWidth };
             var zoomRow = new Border { Height = SequenceGeometry.RulerHeight, Child = zoom };
             DockPanel.SetDock(zoomRow, Dock.Top);
             right.Children.Add(zoomRow);
-            var modeRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2), HorizontalAlignment = HorizontalAlignment.Center, Spacing = 2, Children = { trackerMode, arrangementMode } };
+            // Two equal columns across the panel: fixed 64 px buttons plus their gap were wider than the 120 px panel and clipped both labels in the old 120 px panel (the kit's button padding and font ask for ~70 px each).
+            var modeRow = new Grid { Margin = new Thickness(2), ColumnDefinitions = new ColumnDefinitions("*,*"), ColumnSpacing = 2, Children = { trackerMode, arrangementMode } };
+            Grid.SetColumn(arrangementMode, 1);
             DockPanel.SetDock(modeRow, Dock.Top);
             right.Children.Add(modeRow);
             orientationRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 2), HorizontalAlignment = HorizontalAlignment.Center, Spacing = 2, Children = { verticalMode } };
