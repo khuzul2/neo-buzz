@@ -5,6 +5,7 @@
 // amp and pan "a-" and "p-". The right-click menu is the view's (ParameterWindowView.RowMenu).
 
 using System;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
@@ -17,7 +18,7 @@ namespace ReBuzz.Studio.Parameters
 {
     using Control = Avalonia.Controls.Control;
 
-    internal sealed class ParameterRow : Grid
+    internal sealed class ParameterRow : Grid, IModulationDropSurface
     {
         readonly TextBlock name = new TextBlock { FontSize = 12, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis, Foreground = ParameterTheme.Text };
         readonly TextBlock valueText = new TextBlock { FontSize = 12, Margin = new Thickness(4, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis, Foreground = ParameterTheme.ValueText };
@@ -69,6 +70,52 @@ namespace ReBuzz.Studio.Parameters
         }
 
         public IParameter Parameter { get; }
+
+        // ---- drag-to-modulate (ux-overhaul.md P5b)
+        bool modHooked;
+
+        protected override void OnAttachedToVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
+        {
+            base.OnAttachedToVisualTree(e);
+            if (!modHooked)
+            {
+                modHooked = true;
+                ModulationBoard.Changed += OnModulation;
+                ModulationBoard.DragChanged += OnModulation;
+            }
+            RefreshModulation();
+        }
+
+        protected override void OnDetachedFromVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
+        {
+            if (modHooked)
+            {
+                modHooked = false;
+                ModulationBoard.Changed -= OnModulation;
+                ModulationBoard.DragChanged -= OnModulation;
+            }
+            base.OnDetachedFromVisualTree(e);
+        }
+
+        void OnModulation() => Avalonia.Threading.Dispatcher.UIThread.Post(RefreshModulation);
+
+        /// <summary>The ring on the slider: where the modulation on this parameter reaches.</summary>
+        public void RefreshModulation()
+        {
+            var machine = Parameter.Group?.Machine;
+            bool isTrack = Parameter.Group?.Type == ParameterGroupType.Track;
+            var found = machine == null ? null : ModulationBoard.Incoming(machine).FirstOrDefault(i => i.Param == Parameter.Name && i.IsTrack == isTrack && (!isTrack || i.Track == Track));
+            Slider.Modulated = found == null ? null : (found.Low, found.High, found.Base);
+            Slider.DropReady = ModulationBoard.Dragging != null && Parameter.Group?.Type != ParameterGroupType.Input;
+        }
+
+        bool IModulationDropSurface.ModulationTargetAt(double x, double y, out IMachine machine, out IParameter parameter, out int track)
+        {
+            machine = Parameter.Group?.Machine;
+            parameter = Parameter;
+            track = Track;
+            return machine != null && Parameter.Group.Type != ParameterGroupType.Input && Parameter.Type != ParameterType.Note;
+        }
 
         public int Track { get; }
 

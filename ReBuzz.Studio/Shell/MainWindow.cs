@@ -54,6 +54,17 @@ namespace ReBuzz.Studio.Shell
         BuzzPerformanceData lastPerformance;
         double? cpu;
 
+        string notice;
+        long noticeUntil;
+
+        /// <summary>A line the status bar adds for a few seconds (what a drop did, or why it did not).</summary>
+        internal void Notice(string text)
+        {
+            notice = text;
+            noticeUntil = Environment.TickCount64 + 8000;
+            status.Text = text;
+        }
+
         public MainWindow(StudioHost host)
         {
             this.host = host;
@@ -502,6 +513,8 @@ namespace ReBuzz.Studio.Shell
             yield return Command("view.maximise", mac, () => ToggleTrackerMaximised(), () => detail != null, () => detail?.IsMaximised == true);
             yield return Command("view.device", mac, ShowDevice, () => detail?.DevicePage != null, () => detail?.IsOpen == true && detail.IsDevice);
             yield return Command("device.find", mac, FindParameter, () => detail?.DevicePage != null);
+            yield return Command("view.samples", mac, () => Views.Samples.SamplesWindow.Open(this), () => host.Core != null);
+            yield return Command("view.modulation", mac, () => Views.Modulation.ModulationMatrixWindow.Open(null, this), () => host.Core != null);
             yield return Command("view.mixer", mac, ToggleSessionMixer, () => host.Core?.SessionLayout != null, () => host.Core?.SessionLayout?.Document?.ShowMixer == true);
             // Fork (ux-overhaul.md P6b): ReBuzz.exe's tool windows.
             yield return MenuEntry.Separator;
@@ -902,7 +915,8 @@ namespace ReBuzz.Studio.Shell
                 ? $"{device.Name}, {core.SelectedAudioDriverSampleRate} Hz, {core.AudioEngine.CurrentDriver?.BufferSize} frames" + (cpu is double load ? $" · CPU {load:0}%" : "") + " · "
                 : "";
             string agent = host.Agent?.Status;
-            status.Text = $"{audio}dropouts {ReBuzzCore.DeadlineMisses} · {MachineCountText(core)}" + SafetyText(core) + (string.IsNullOrEmpty(agent) ? "" : " · " + agent);
+            status.Text = $"{audio}dropouts {ReBuzzCore.DeadlineMisses} · {MachineCountText(core)}" + SafetyText(core) + (string.IsNullOrEmpty(agent) ? "" : " · " + agent)
+                          + (Environment.TickCount64 < noticeUntil && notice != null ? " · " + notice : "");
             health.Refresh();
             if (ticks % 5 == 1) RefreshProblems();
         }

@@ -64,6 +64,13 @@ namespace NeoBuzz.Modulator
                 outputItems.Add(Layout.Gap(1, 6));
                 outputItems.Add(listenButton);
             }
+#if AVALONIA   // drag-to-modulate is the studio's (ux-overhaul.md P5b)
+            if (mod != null)
+            {
+                outputItems.Add(Layout.Gap(1, 6));
+                outputItems.Add(new ModSourceHandle(mod, accent, 210));
+            }
+#endif
             var top = Layout.Row(controls, Layout.Gap(6), new Section("Output", accent, Layout.Column(outputItems.ToArray())));
 
             TableModel = new ModTable(this, accent);

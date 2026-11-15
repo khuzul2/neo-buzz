@@ -68,6 +68,9 @@ namespace ReBuzz.Studio.Views.Device
             };
             count = new TextBlock { FontSize = StudioTokens.FontCaption, Foreground = StudioTokens.TextSecondaryBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
             Toolbar = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Children = { search, count } };
+            // A canvas modulator's output (ux-overhaul.md P5b): drag it onto a knob, a row here, a machine's editor.
+            if (ModulationBoard.Of(machine) is { } modulator)
+                ((StackPanel)Toolbar).Children.Add(new NeoBuzz.Editor.ModSourceHandle(modulator, NeoBuzz.Editor.KnobModel.ModulationRing, 214) { Margin = new Thickness(8, 0, 0, 0) });
 
             list = new DeviceList(machine);
             macros = new DeviceList(machine) { Height = MacroItem.StripHeight };
