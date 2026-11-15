@@ -87,6 +87,9 @@ class Client:
         self.exe, self.work, self.timeout = exe, work, timeout
         self.proc = None
         self.starts = 0
+        self.budget_hit = False
+        self.deadline = None   # time.time() after which calls raise BudgetExceeded (the depth passes of one machine)
+        self.stats = {}   # tool -> [calls, seconds]: where a slow machine's time goes
         self.start()
 
     def start(self):
@@ -149,7 +152,16 @@ class Client:
 
     def call(self, tool, timeout=None, **args):
         """The tool's structured result; raises ToolFailed on a tool error (the server is fine)."""
-        r = self.request("tools/call", {"name": tool, "arguments": args}, timeout)
+        t0 = time.time()
+        if self.deadline and t0 > self.deadline:
+            self.budget_hit = True
+            raise BudgetExceeded(f"{tool}: the depth budget ran out")
+        try:
+            r = self.request("tools/call", {"name": tool, "arguments": args}, timeout)
+        finally:
+            st = self.stats.setdefault(tool, [0, 0.0])
+            st[0] += 1
+            st[1] += time.time() - t0
         res = r.get("result") or {}
         text = (res.get("content") or [{}])[0].get("text", "") if res else json.dumps(r.get("error"))
         if "error" in r or res.get("isError", True):
@@ -182,6 +194,10 @@ class Client:
 
 class ToolFailed(Exception):
     pass
+
+
+class BudgetExceeded(ToolFailed):
+    """The machine's time for the depth passes ran out (--depth-budget): what was measured so far is kept, marked partial."""
 
 
 # ---- audio from the render files -----------------------------------------------------------------
@@ -1919,6 +1935,8 @@ def profile_machine(c, gear, kind, baseline, generated):
     depth_ranges = prof.data.get("safe_ranges", {})
     if prof.data["type"] != "control" and not prof.diverging and DEPTH["on"]:
         roles = DEPTH["roles"] and (not generated or DEPTH["roles_generated"])
+        if DEPTH.get("budget"):
+            c.deadline = time.time() + DEPTH["budget"]
         try:
             if kind == "effect" and not (prof.data.get("effect") or {}).get("silent"):
                 if roles:
@@ -1935,6 +1953,13 @@ def profile_machine(c, gear, kind, baseline, generated):
                                   f"it plays ({dn['slowdown']}× for 4 s or more)")
         except ToolFailed as e:
             prof.notes.append(f"the depth passes stopped: {e}")
+        finally:
+            c.deadline = None
+            if c.budget_hit:
+                # Partial, not failed: the sweeps and tests so far stand; the parameters not reached were not swept.
+                c.budget_hit = False
+                prof.data["partial"] = f"the depth passes stopped after {DEPTH['budget']:.0f} s (--depth-budget)"
+                prof.notes.append(f"partial profile: {prof.data['partial']}; parameters not reached have no suggested role")
     # The summary and the draft keep each parameter's role, its evidence and the ends measured; the features at each
     # end (a few dozen numbers a parameter) go to <out>/roles-detail/ for a person checking a suggestion.
     if prof.data.get("roles") and DEPTH.get("detail_dir"):
@@ -2130,7 +2155,9 @@ def health_report(summary, curated=None, sourced=None, rebuilt=None):
         f"Crashes or hangs: {len(crashes)}. Swept parameter by parameter: {len(swept)} machines; {ranges} safe ranges. "
         f"Slow down after their input goes silent: {sum(1 for e in rows if (e.get('denormal') or {}).get('slowdown'))}. "
         f"Suggested roles: {sum(1 for e in rows for r in ((e.get('roles') or {}).get('params') or {}).values() if r.get('suggested_role'))} "
-        f"parameters on {sum(1 for e in rows if any(r.get('suggested_role') for r in ((e.get('roles') or {}).get('params') or {}).values()))} machines.",
+        f"parameters on {sum(1 for e in rows if any(r.get('suggested_role') for r in ((e.get('roles') or {}).get('params') or {}).values()))} machines."
+        + "".join(f" Partial profiles (the depth passes ran out of time, so not every parameter was swept): {', '.join(e['gear'] for e in rows if e.get('partial'))}."
+                  for _ in [0] if any(e.get('partial') for e in rows)),
         "",
         "How it's measured: a level test renders 4 s of the machine alone, fed noise at a mix's level (effects, peaks near −9 dBFS) or "
         "holding A4 (generators; a drum kit silent on A4 hit on the key that sounds, every second): at its defaults, with every parameter at its minimum and at its maximum at once, and, for machines "
@@ -2472,9 +2499,12 @@ def main():
     ap.add_argument("--health-only", action="store_true", help="U1 and U2's health only: no test signal sweeps, roles, velocity, envelope, denormals or triggers")
     ap.add_argument("--no-roles", action="store_true", help="leave out the per-parameter sweeps (suggested roles)")
     ap.add_argument("--roles-generated", action="store_true", help="also sweep the machines with generated manifests (Neo): a check of the role inference")
+    ap.add_argument("--restart-every", type=int, default=10, help="start the server afresh after this many machines (0: never): a long run slows the engine down, "
+                    "on Windows 3-5 times by the Pedal machines, so a full run no longer finished in its time limit")
+    ap.add_argument("--depth-budget", type=float, default=900, help="seconds one machine's per-parameter sweeps, denormal test and the like may take before they stop and the profile is marked partial (0: no limit)")
     ap.add_argument("--no-denormal", action="store_true", help="leave out the denormal test (20 s of silence per machine)")
     args = ap.parse_args()
-    DEPTH.update({"on": not args.health_only, "roles": not args.no_roles, "roles_generated": args.roles_generated,
+    DEPTH.update({"on": not args.health_only, "budget": args.depth_budget, "roles": not args.no_roles, "roles_generated": args.roles_generated,
                   "denormal": not args.no_denormal, "triggers": not args.health_only,
                   "detail_dir": os.path.join(os.path.abspath(args.out or "."), "roles-detail") if args.out else None})
     root_default = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -2517,6 +2547,13 @@ def main():
     started = time.time()
     for i, g in enumerate(chosen):
         name, kind = g["name"], g["kind"]
+        if i and args.restart_every and i % args.restart_every == 0:
+            # A server that has loaded and dropped many machines gets slower (3-5 times after ~100 on Windows); a fresh one
+            # is as fast as the first. The baselines are measured again, so every machine's CPU is read against its own process.
+            r0 = time.time()
+            c.restart()
+            baseline = baselines(c)
+            print(f"        (server restarted in {time.time() - r0:.1f} s)", flush=True)
         t = time.time()
         try:
             prof = profile_machine(c, name, kind, baseline, generated.get(name))
@@ -2559,6 +2596,10 @@ def main():
         said = prof.problems + prof.hot + prof.warnings + ([f"needs a window: {prof.window}"] if prof.window else [])
         print(f"[{i + 1}/{len(chosen)}] {flag} {name:<32} {e.get('type', ''):<22} {time.time() - t:5.1f} s"
               + (f"  {'; '.join(said)[:220]}" if said else ""), flush=True)
+        if time.time() - t > 30:
+            top = sorted(c.stats.items(), key=lambda kv: -kv[1][1])[:4]
+            print("        calls: " + ", ".join(f"{k} {v[0]}x {v[1]:.0f} s" for k, v in top), flush=True)
+        c.stats = {}
     c.close()
     write_json(os.path.join(out, "machine-profile.json"), summary)
     with open(os.path.join(out, "machine-health.md"), "w", encoding="utf-8", newline="\n") as f:

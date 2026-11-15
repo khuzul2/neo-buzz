@@ -47,13 +47,15 @@ namespace ReBuzz.Studio.Views.Sequence
         int cursorTime;
         double wheelZoom;
 
-        enum Drag { None, PendingMove, Move, TrimLeft, TrimRight }
+        enum Drag { None, PendingMove, Move, TrimLeft, TrimRight, Comp }
         Drag drag;
         Point pressPoint;
         ClipItem dragItem;
         int grabOffset, ghostTime, ghostLength;
         ISequence ghostLane;
         ClipEditor.CopyMode ghostMode;
+        int compFrom;
+        bool compMoved;
 
         public ArrangementCanvas(ReBuzzCore core, SequenceSongState state)
         {
@@ -345,6 +347,9 @@ namespace ReBuzz.Studio.Views.Sequence
             Overlay.InvalidateVisual();
             ViewChanged?.Invoke();
         }
+
+        /// <summary>Says something in the view's status line (recording, links).</summary>
+        public void ShowStatus(string text) => SetStatus(text);
 
         void SetStatus(string text)
         {
@@ -745,6 +750,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 string label = drag switch
                 {
                     Drag.Move => ghostMode switch { ClipEditor.CopyMode.Independent => "copy", ClipEditor.CopyMode.Linked => "linked copy", _ => "" },
+                    Drag.Comp => "comp",
                     _ => "",
                 };
                 return (r, label);
@@ -752,6 +758,23 @@ namespace ReBuzz.Studio.Views.Sequence
         }
 
         public double PlayMarkerX => geo.XOf(Song.PlayPosition);
+
+        /// <summary>Daw-modes.md AR5: a track that records shows a red band from where its take began to the play position.</summary>
+        internal void DrawRecording(DrawingContext ctx)
+        {
+            var takes = core.Arrangement?.Takes;
+            if (takes == null || !takes.IsRecording) return;
+            foreach (var (lane, origin) in takes.Live)
+            {
+                var row = RowOf(lane);
+                if (row == null) continue;
+                int to = Math.Max(origin, Song.PlayPosition);
+                if (takes.IsLoopRecording) to = Song.LoopEnd;
+                double x = geo.XOf(origin);
+                var r = new Rect(x, YOf(row) + ClipInset, Math.Max(SequenceGeometry.MinBlockWidth, geo.XOf(to) - x), row.Height - 2 * ClipInset);
+                ctx.DrawRectangle(Look.Record, Look.RecordPen, r.Deflate(0.5));
+            }
+        }
 
         // ------------------------------------------------------------------ the mouse
 
@@ -831,6 +854,22 @@ namespace ReBuzz.Studio.Views.Sequence
             }
 
             pressPoint = p;
+            if (item != null && fine && core.Arrangement?.RoleOf(item.Sequence) == LaneRole.Take && core.Arrangement.Takes.MainLaneOf(item.Sequence.Machine) is { } mainLane && RowOf(mainLane) != null)
+            {
+                // Daw-modes.md §4.4, AR5: Shift-drag on a take lane picks a range of the take (a click, the bar) to comp onto the main lane.
+                Select(item);
+                dragItem = item;
+                compFrom = Snap(geo.TimeAt(p.X), false);
+                compMoved = false;
+                var (barStart, barEnd) = BarAround(compFrom);
+                ghostTime = Math.Max(barStart, item.Time);
+                ghostLength = Math.Max(1, Math.Min(barEnd, item.End) - ghostTime);
+                ghostLane = mainLane;
+                drag = Drag.Comp;
+                e.Pointer.Capture(this);
+                Overlay.InvalidateVisual();
+                return;
+            }
             if (item != null)
             {
                 Select(item);
@@ -882,6 +921,16 @@ namespace ReBuzz.Studio.Views.Sequence
                     ghostMode = mods.HasFlag(CommandKey) ? ClipEditor.CopyMode.Independent : mods.HasFlag(KeyModifiers.Alt) ? ClipEditor.CopyMode.Linked : ClipEditor.CopyMode.Move;
                     ghostLength = dragItem.Spec.Segments().Sum(s => s.Length);
                     break;
+                case Drag.Comp:
+                    {
+                        if (!compMoved && Math.Abs(p.X - pressPoint.X) < 3) return;
+                        compMoved = true;
+                        int t = Snap(geo.TimeAt(p.X), false);
+                        int from = Math.Max(Math.Min(compFrom, t), dragItem.Time), to = Math.Min(Math.Max(compFrom, t), dragItem.End);
+                        ghostTime = from;
+                        ghostLength = Math.Max(TicksPerBeat, to - from);
+                        break;
+                    }
                 case Drag.TrimLeft:
                     {
                         int t = Snap(geo.TimeAt(p.X), fine);
@@ -952,6 +1001,7 @@ namespace ReBuzz.Studio.Views.Sequence
                         ? editor.Move(item, ghostLane ?? item.Sequence, ghostTime, ghostMode) : null,
                     Drag.TrimLeft => editor.TrimLeft(item, ghostTime),
                     Drag.TrimRight => editor.TrimRight(item, ghostTime + ghostLength),
+                    Drag.Comp => editor.Comp(item.Sequence, ghostTime, ghostTime + ghostLength, ghostLane),
                     _ => null,
                 };
                 SetStatus(why);
@@ -1121,6 +1171,37 @@ namespace ReBuzz.Studio.Views.Sequence
             return ok;
         }
 
+        /// <summary>The bar around a tick (start and end, in ticks).</summary>
+        (int Start, int End) BarAround(int tick)
+        {
+            foreach (var (start, length) in core.SongMeter.GetBars(tick + 2048))
+                if (tick >= start && tick < start + length) return (start, start + Math.Max(1, length));
+            return (tick, tick + TicksPerBeat);
+        }
+
+        /// <summary>Comp (daw-modes.md §4.4, AR5): the bar at the cursor of the selected take (or the take under the cursor) goes on the machine's main lane.</summary>
+        public bool CompAtCursor()
+        {
+            var take = selected != null && core.Arrangement.RoleOf(selected.Sequence) == LaneRole.Take
+                ? selected
+                : ItemsOf(cursorLane).FirstOrDefault(i => core.Arrangement.RoleOf(i.Sequence) == LaneRole.Take && i.Time <= cursorTime && cursorTime < i.End);
+            if (take == null) { SetStatus("Select a take (on a take lane), or put the cursor on one, to comp its bar."); return false; }
+            var main = core.Arrangement.Takes.MainLaneOf(take.Sequence.Machine);
+            if (main == null) { SetStatus("The machine has no main lane."); return false; }
+            var (start, end) = BarAround(Math.Clamp(cursorTime, take.Time, take.End - 1));
+            return Run(editor.Comp(take.Sequence, Math.Max(start, take.Time), Math.Min(end, take.End), main));
+        }
+
+        /// <summary>Launches the selected clip in the Session View, on its lane's track.</summary>
+        public bool LaunchSelected() => selected != null && Run(core.Arrangement.Links.Launch(selected));
+
+        /// <summary>Gives the selected clip's pattern to a slot of its machine's session track.</summary>
+        public bool SendSelectedToSession()
+        {
+            if (selected == null) return false;
+            return Run(core.Arrangement.Links.ToSlot(selected, out _, out _));
+        }
+
         public void ClearSelection()
         {
             if (selected != null) Select(null);
@@ -1140,6 +1221,7 @@ namespace ReBuzz.Studio.Views.Sequence
                     case Key.J: return JoinWithNext();
                     case Key.L: return ToggleLoop();
                     case Key.U: return MakeUnique();
+                    case Key.C: return CompAtCursor();
                     case Key.Return when selected != null: PatternDoubleClicked?.Invoke(selected.Pattern); return true;
                     case Key.P when selected != null: ClipOpened?.Invoke(selected.Pattern); return true;
                     case Key.Escape: ClearSelection(); return true;
@@ -1206,6 +1288,7 @@ namespace ReBuzz.Studio.Views.Sequence
                     ctx.FillRectangle(canvas.IsActive ? Look.Cursor : Look.CursorInactive, new Rect(tracks.X, y, tracks.Width, row.Height));
                     ctx.FillRectangle(Look.Param, new Rect(Math.Floor(geo.XOf(canvas.CursorTime)), y, 1, row.Height));
                 }
+                canvas.DrawRecording(ctx);
                 if (canvas.Ghost is { } g)
                 {
                     ctx.DrawRectangle(Look.ResizeFill, Look.ResizePen, g.Rect.Deflate(0.5));

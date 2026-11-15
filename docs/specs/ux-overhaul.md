@@ -337,7 +337,7 @@ P1 figures: §11.
 
 ## 9. Windows parity checklist (for P6; filled in as P6 starts)
 
-What WPF has that the studio needs before it replaces it on Windows: native (Win32) machine GUIs in their host windows; the vertical sequence editor as an option; the wavetable (as the Samples view, P5); Clone with patterns; Latency and Signal Analysis windows; the CPU monitor; the Hard Disk Recorder; the debug console; MIDI bindings and the MIDI-focus toolbar's functions; machine groups; song properties (TPB, speed); the installer, file associations, `--ui-shots`; the WPF tests' scenarios (ReBuzzTests) run against the studio.
+What WPF has that the studio needs before it replaces it on Windows: native (Win32) machine GUIs in their host windows; the vertical sequence editor as an option (built, AR6: daw-modes.md §8.7); the wavetable (as the Samples view, P5); Clone with patterns; Latency and Signal Analysis windows; the CPU monitor; the Hard Disk Recorder; the debug console; MIDI bindings and the MIDI-focus toolbar's functions; machine groups; song properties (TPB, speed); the installer, file associations, `--ui-shots`; the WPF tests' scenarios (ReBuzzTests) run against the studio.
 
 ## 10. Decisions taken where the review left a choice (P1)
 

@@ -88,6 +88,7 @@ namespace ReBuzz.Core.Session
         {
             arm = ArmState.None;
             recordWindows = Array.Empty<RecordWindow>();
+            arrangementWindows = Array.Empty<ArrangementWindow>();
             Array.Clear(heldNotes);
             Array.Clear(heldPedals);
         }
@@ -268,6 +269,9 @@ namespace ReBuzz.Core.Session
             public int ParameterTrack;
             /// <summary>A take's input after its first pass (Session Record on): an overdub.</summary>
             public bool PastFirstPass;
+            /// <summary>Arrangement recording (daw-modes.md AR5): the window it was stamped for, and the pass of the loop it belongs to. The stamp's position is in take time.</summary>
+            public ArrangementWindow Arrangement;
+            public int Pass;
         }
 
         const int RingSize = 4096;
@@ -393,6 +397,7 @@ namespace ReBuzz.Core.Session
                 for (int i = 0; i < state.Rings.Length; i++)
                     if (only == null || ReferenceEquals(state.Tracks[i].MachineCore, only))
                         state.Rings[i].Add(data, time);
+                if (StampArrangement(data, time, fraction, only)) queued = true;      // daw-modes.md AR5
                 for (int i = 0; i < windows.Length; i++)
                 {
                     var w = windows[i];
@@ -497,21 +502,8 @@ namespace ReBuzz.Core.Session
             TakeInputArrived?.Invoke();
         }
 
-        /// <summary>UI thread: moves the queued input into <paramref name="into"/>, oldest first.</summary>
-        internal void TakeInputs(List<TakeInput> into)
-        {
-            lock (ringLock)
-            {
-                for (int i = 0; i < ringCount; i++)
-                {
-                    int at = (ringStart + i) % RingSize;
-                    into.Add(ring[at]);
-                    ring[at] = default;
-                }
-                ringStart = 0;
-                ringCount = 0;
-            }
-        }
+        /// <summary>UI thread: moves the session's queued input into <paramref name="into"/>, oldest first (the arrangement's stays queued).</summary>
+        internal void TakeInputs(List<TakeInput> into) => TakeInputs(into, false);
 
         // ------------------------------------------------------------------ takes
 

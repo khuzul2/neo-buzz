@@ -96,6 +96,15 @@ namespace ReBuzz.Core.Session
             }
         }
 
+        /// <summary>Whether this message is the release of a note this writer holds (daw-modes.md AR5: a note held across a loop's wrap is released in the next pass, but belongs to the pass it began in).</summary>
+        public bool Holds(int data)
+        {
+            int status = data & 0xFF;
+            int kind = status & 0xF0;
+            if (kind != 0x80 && !(kind == 0x90 && ((data >> 16) & 0x7F) == 0)) return false;
+            return held.ContainsKey(((status & 0x0F) << 7) | ((data >> 8) & 0x7F));
+        }
+
         /// <summary>Ends every held note at <paramref name="time"/> (session clock, 1/240 tick).</summary>
         public void CloseAll(long time, List<TakeEvent> output)
         {
