@@ -450,12 +450,27 @@ namespace NeoBuzz.Plug
                 return PlugMain.Invoke(() =>
                 {
                     PlugNative.np_idle(plugin);
-                    int size = PlugNative.np_state_save(plugin, null, 0);
-                    if (size > 0)
+                    lock (Gate)
                     {
-                        var blob = new byte[size];
-                        int got = PlugNative.np_state_save(plugin, blob, size);
-                        if (got > 0 && got <= size) State.Blob = PlugState.Pack(got == size ? blob : blob.AsSpan(0, got).ToArray());
+                        // Engine-side slot writes no block has delivered yet go to the plug-in now: its state has to hold them.
+                        for (int i = 0; i < Slots; i++)
+                        {
+                            int v = Interlocked.Exchange(ref pending[i], -1);
+                            if (v >= 0 && bound[i])
+                            {
+                                PlugNative.np_param_set(plugin, slotId[i], ToValue(i, v));
+                                Volatile.Write(ref toController[i], 0);
+                                if (DebugMidi) Log($"save: slot {i} ({sname[i]}) queued {v} flushed into the plug-in");
+                            }
+                        }
+                        int size = PlugNative.np_state_save(plugin, null, 0);
+                        if (size > 0)
+                        {
+                            var blob = new byte[size];
+                            int got = PlugNative.np_state_save(plugin, blob, size);
+                            if (got > 0 && got <= size) State.Blob = PlugState.Pack(got == size ? blob : blob.AsSpan(0, got).ToArray());
+                            if (DebugMidi) Log($"save: {got} bytes; plug-in values now " + string.Join(", ", Enumerable.Range(0, Slots).Where(k => bound[k]).Take(4).Select(k => $"{sname[k]}={ToRaw(k, PlugNative.np_param_get(plugin, slotId[k]))}")));
+                        }
                     }
                     var copy = State.Copy();
                     copy.MidiChannel = MidiChannel;
@@ -504,6 +519,7 @@ namespace NeoBuzz.Plug
                                 if (bound[i]) Volatile.Write(ref mirror[i], ToRaw(i, PlugNative.np_param_get(plugin, slotId[i])));
                             Array.Fill(pending, -1);
                             if (rc != 0) Log($"state load failed: {PlugNative.Str(err)}");
+                            if (DebugMidi) Log("load: values after the blob " + string.Join(", ", Enumerable.Range(0, Slots).Where(k => bound[k]).Take(4).Select(k => $"{sname[k]}={mirror[k]}")));
                         }
                     }
                     finally { Busy = false; }

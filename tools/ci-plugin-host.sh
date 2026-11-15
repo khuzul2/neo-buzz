@@ -66,6 +66,7 @@ fi
 
 H="$W/ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless$X"
 G="$W/ReBuzz.Headless/bin/Release/net10.0/Gear/NeoPlug"
+export NEOPLUG_DEBUG=1
 $PY tools/plugin-host-test.py "$H" "$OUT/run" "${dirs[@]}" --lib "$G/$L" --scan "$G/neoplug-scan$X" \
   --gen "Note Expression Synth" --gen "Test Synth" "${surge[@]}" --fx "AGain VST3" --fx "Test Gain" --fixtures
 

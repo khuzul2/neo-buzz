@@ -610,9 +610,26 @@ public:
         return (int64_t)n;
     }
 
+    // Parameter changes still queued for the processor (no block has run since) must be in the plug-in before its state is read.
+    // The caller holds the host's gate: no process call is running.
+    void flushPending()
+    {
+        if (!params || !active) return;
+        evCount = 0;
+        ParamRing::Item it;
+        while (toProcessor.pop(it)) pushParam(0, it.id, it.value);
+        if (evCount == 0) return;
+        if (processing) { plugin->stop_processing(plugin); processing = false; }
+        clap_input_events_t in{this, evSize, evGet};
+        clap_output_events_t out{this, outPush};
+        params->flush(plugin, &in, &out);
+        evCount = 0;
+    }
+
     bool saveState(std::vector<uint8_t>& out) override
     {
         if (!state) return false;
+        flushPending();
         std::vector<uint8_t> blob;
         clap_ostream_t os{&blob, writeCb};
         if (!state->save(plugin, &os)) return false;

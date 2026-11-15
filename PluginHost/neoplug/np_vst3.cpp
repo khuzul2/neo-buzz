@@ -511,8 +511,28 @@ public:
         return silent ? 0 : 1;
     }
 
+    // Parameter changes still queued for the processor (no block has run since) must reach it before its state is read:
+    // a process call of zero samples carries them. The caller holds the host's gate: no process call is running.
+    void flushPending()
+    {
+        if (!active) return;
+        paramsIn.clearQueue();
+        paramsOut.clearQueue();
+        events.clear();
+        eventsOut.clear();
+        ParamRing::Item it;
+        bool any = false;
+        while (toProcessor.pop(it)) { addParam(it.id, 0, it.value); any = true; }
+        if (!any) return;
+        data.numSamples = 0;
+        processor->process(data);
+        paramsIn.clearQueue();
+        paramsOut.clearQueue();
+    }
+
     bool saveState(std::vector<uint8_t>& out) override
     {
+        flushPending();
         MemoryStream cs, ks;
         if (component->getState(&cs) != kResultOk) return false;
         bool single = U::cast<IEditController>(component) != nullptr;
