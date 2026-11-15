@@ -456,7 +456,7 @@ Sizes as in session-view.md: S < 500 LOC, M 500–2,000, L 2,000–5,000.
 
 **Exit test** (`ReBuzz.Studio.Tests/ArrangementViewTests.cs`): an 8-bar song of two Neo Poly tracks built with mouse (double clicks through `MachineViewTests.DoubleClick`, drags, a copy-drag, keys): looped, copied and trimmed clips. It renders bit-identical to the same events written plain, and Lead (no trims) bit-identical to upstream's playback (no `Offset`/`End`); Bass, with trims, differs.
 
-**Not in AR1:** MCP tools (§7.3's `arrangement_clip`, clip-aware `arrangement_place`, lane roles in `arrangement_get`), Launch in Session and slot drag (AR5), clips with several selected at once, left-trim past a pattern's start (looping backwards), clip settings (session) copied to an independent copy.
+**Not in AR1:** (MCP tools: `arrangement_clip`, `arrangement_lane` and lane numbers and roles in `arrangement_get`, `song_meter`, built later: agent-knowledge.md §11), Launch in Session and slot drag (AR5), clips with several selected at once, left-trim past a pattern's start (looping backwards), clip settings (session) copied to an independent copy.
 
 ### 8.3 As built (AR2)
 
@@ -544,7 +544,7 @@ Sizes as in session-view.md: S < 500 LOC, M 500–2,000, L 2,000–5,000.
 - An old song (no lanes) has no subsection, loads and renders unchanged; a lane that holds nothing changes no sound.
 - No audio-path code changed in AR4 (the ramps are S3's): `WorkManager` and the machines are as they were, so the null tests and the 0 bytes a buffer stand. The recorder runs on the UI thread.
 
-**Not in AR4:** MCP tools for lanes and automation clips (`arrangement_clip`-style calls), hiding automation and take lanes from the Session View (a lane's sequence is a session track as any, §4.1), curves other than ramps and steps (S3 plays only these), several selected points, a draggable lane height, touch and latch modes, writing a lane back to a tracker column.
+**Not in AR4:** (MCP tools for lanes and automation clips: `arrangement_automation`, built later: agent-knowledge.md §11), hiding automation and take lanes from the Session View (a lane's sequence is a session track as any, §4.1), curves other than ramps and steps (S3 plays only these), several selected points, a draggable lane height, touch and latch modes, writing a lane back to a tracker column.
 
 ### 8.6 As built (AR5)
 
@@ -571,7 +571,7 @@ Sizes as in session-view.md: S < 500 LOC, M 500–2,000, L 2,000–5,000.
 
 **Decisions taken from the spec's recommendations or open in it:** no count-in; loop recording does not fill the main lane by itself; dragging between the views is a pair of commands on the model API and in menus, because the Session and Arrangement views are never on screen together; the role of a take lane deleted and then restored by undo was lost (the lane came back as a main lane): fixed in AR6 (§8.7).
 
-**Not in AR5:** MCP tools for takes, hiding take lanes from the Session View (a lane's sequence is a session track as any), a count-in, auto-filling the main lane from the last take, pointer drags across the two views.
+**Not in AR5:** (MCP tools for takes: `arrangement_takes`, built later: agent-knowledge.md §11), hiding take lanes from the Session View (a lane's sequence is a session track as any), a count-in, auto-filling the main lane from the last take, pointer drags across the two views.
 
 ### 8.7 As built (AR6)
 
