@@ -200,6 +200,7 @@ public:
     bool activate(double rate, int maxFrames, bool offline, std::string& err) override
     {
         deactivate();
+        quietUntil.store(nowMs() + 1500);
         int nIn = component->getBusCount(kAudio, kInput);
         int nOut = component->getBusCount(kAudio, kOutput);
         std::vector<SpeakerArrangement> ins(nIn), outs(nOut);
@@ -365,9 +366,13 @@ public:
         recent[recentNext] = {id, t};
         recentNext = (recentNext + 1) & 63;
     }
+    // After a state load or an activation a plug-in's first reports may still be its defaults, from before the state: the
+    // controller already has the loaded values, and they stand.
+    std::atomic<int64_t> quietUntil{0};
     bool sentRecently(uint32_t id)
     {
         int64_t t = nowMs();
+        if (t < quietUntil.load(std::memory_order_relaxed)) return true;
         for (auto& r : recent) if (r.at != 0 && r.id == id && t - r.at < 600) return true;
         return false;
     }
@@ -604,6 +609,7 @@ public:
         if (component->setState(&cs) != kResultOk) { err = "the component refused its state"; return false; }
         cs.seek(0, IBStream::kIBSeekSet, nullptr);
         controller->setComponentState(&cs);
+        quietUntil.store(nowMs() + 1500);
         // Some controllers (JUCE's) keep the values a host set earlier and apply them to the processor in the next process call,
         // on top of the state just loaded. Setting every parameter to what the state says replaces those.
         {
