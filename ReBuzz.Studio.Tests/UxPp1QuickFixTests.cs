@@ -1,6 +1,6 @@
 // Fork (docs/specs/ux-overhaul.md, the parameter panel redesign PP1, quick fixes): Dye Essence's doubled unit, Neo Plug's hidden unbound
 // slots, a slider track at 3:1, tabular values, a name column that fits its names, the Device page bar on two lines when narrow, and
-// a macro strip that wraps instead of dropping cells.
+// (the macro strip moved to the Inspector in the panel redesign).
 
 using System;
 using System.Linq;
@@ -40,6 +40,7 @@ namespace ReBuzz.Studio.Tests
         {
             var page = new DevicePage(machine, floating);
             page.SetEditor(false, remember: false);
+            page.Parameters.SetMode(DeviceView.DeviceMode.List, remember: false);       // the quick fixes are about the list
             var window = new Window { Width = width, Height = height, Content = page };
             window.Show();
             Settle();
@@ -158,49 +159,18 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void TheMacroStripWrapsInsteadOfDroppingCells()
-        {
-            var m = Add("Neo Poly", "PP1 Macros");
-            var (window, page, view) = Stage(m, 300, floating: true);
-            try
-            {
-                var strip = view.MacroStrip;
-                var item = (MacroItem)strip.Items.Single();
-                Assert.That(item.Cells.Count, Is.GreaterThan(2));
-                Assert.That(item.PerRow, Is.LessThan(item.Cells.Count), "300 pt cannot hold every cell in a row");
-                Assert.That(item.Rows, Is.GreaterThan(1));
-                Assert.That(strip.Bounds.Height, Is.EqualTo(item.Rows * MacroItem.StripHeight).Within(1), "the strip is as tall as its rows");
-                foreach (var p in item.Cells)
-                {
-                    Assert.That(strip.TryGetBounds(p, out var cell), Is.True, p.FullName);
-                    Assert.That(cell.Right, Is.LessThanOrEqualTo(strip.Bounds.Width + 1), p.FullName + " is inside the strip");
-                    Assert.That(cell.Bottom, Is.LessThanOrEqualTo(strip.Bounds.Height + 1), p.FullName);
-                    var hit = strip.HitTest(new Point(cell.Center.X, cell.Bottom - 8));
-                    Assert.That(hit.Param, Is.SameAs(p), "every cell can be reached");
-                }
-            }
-            finally
-            {
-                window.Close();
-                Remove(m);
-            }
-        }
-
-        [AvaloniaTest]
-        public void TheDockedPagePutsMacrosAndSearchInOneBar()
+        public void TheDockedBarIsOneThirtyTwoPointLineWithTheSearchOnIt()
         {
             var m = Add("Neo Poly", "PP1 Dock");
             var (window, page, view) = Stage(m, 1400);
             try
             {
-                Assert.That(page.BarMacros, Is.Not.Null, "docked and wide: the macros are in the bar");
+                Assert.That(page.BarWrapped, Is.False);
                 Assert.That(page.Bar.Bounds.Height, Is.LessThanOrEqualTo(32.5), "one 32 pt bar");
-                var macro = page.BarMacros!.TranslatePoint(new Point(0, 0), page.Bar)!.Value;
                 var search = view.Toolbar.TranslatePoint(new Point(0, 0), page.Bar)!.Value;
-                Assert.That(Math.Abs(macro.Y - search.Y), Is.LessThan(16), "on the same row as the search");
-                Assert.That(page.BarMacros.Bounds.Width, Is.GreaterThan(400));
-                var item = (MacroItem)page.BarMacros.Items.Single();
-                Assert.That(item.Compact && item.Rows == 1, Is.True);
+                var title = page.Bar.GetVisualDescendants().OfType<TextBlock>().First().TranslatePoint(new Point(0, 0), page.Bar)!.Value;
+                Assert.That(Math.Abs(search.Y - title.Y), Is.LessThan(16), "the search is on the name's line");
+                Assert.That(view.Options.Bounds.Height, Is.GreaterThan(0), "the chips and options are a row of their own under the bar");
             }
             finally
             {

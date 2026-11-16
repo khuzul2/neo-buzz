@@ -1,7 +1,7 @@
 // Fork (docs/specs/studio-mvp.md §3.4): the engine's machine windows (IMachineUiHost) as Avalonia
 // windows: a machine's parameter window and its own GUI, one each, kept as long as the machine,
 // with their placement saved in songs. What goes inside comes from the steps that build it:
-// ParameterWindowContent (S2, the generic parameter window) and GuiContent (S1: a machine's own
+// the Device page (floating, where the parameter window was) and GuiContent (S1: a machine's own
 // GUI when it is an Avalonia control, as the Neo machines' editors are, MachineGuis.cs). Until
 // they are in, a window says what will be there.
 // Fork (docs/specs/mcp-server.md §12.11, U4): a machine's manifest editor (Machines/NeoBuzz.ManifestEditor),
@@ -35,15 +35,11 @@ namespace ReBuzz.Studio.Platform
     {
         sealed class Windows
         {
-            public Window Parameters;
             public Window Gui;
             public Window Editor;
         }
 
         static readonly ConditionalWeakTable<IMachine, Windows> windows = new();
-
-        /// <summary>The generic parameter window's content for a machine (S2); null: a placeholder.</summary>
-        public static Func<IMachine, Control> ParameterWindowContent { get; set; } = m => new Parameters.ParameterWindowView(m);
 
         /// <summary>
         /// A machine's own GUI as an Avalonia control (S1: the Neo editors), or null when it has none
@@ -60,7 +56,8 @@ namespace ReBuzz.Studio.Platform
         /// <summary>The window a machine's GUI or parameters are in, if open (for tests).</summary>
         public static Window GuiWindowOf(IMachine machine) => windows.TryGetValue(machine, out var w) ? w.Gui : null;
 
-        public static Window ParameterWindowOf(IMachine machine) => windows.TryGetValue(machine, out var w) ? w.Parameters : null;
+        /// <summary>The window a machine's parameters are in (the floating Device window: the retired parameter window's place), if open.</summary>
+        public static Window ParameterWindowOf(IMachine machine) => Views.Device.DeviceDock.IsFloating(machine) ? Views.Device.DeviceDock.FloatingWindowOf(machine) : null;
 
         /// <summary>The window a machine's manifest editor is in, if open (for tests).</summary>
         public static Window EditorWindowOf(IMachine machine) => windows.TryGetValue(machine, out var w) ? w.Editor : null;
@@ -147,14 +144,8 @@ namespace ReBuzz.Studio.Platform
 
         internal static void ShowNativeWindow(Window window) => Show(window, null);
 
-        public void OpenParameterWindow(IMachine machine, WindowPlacement? at)
-        {
-            var w = windows.GetValue(machine, _ => new Windows());
-            // The parameter window scrolls its rows itself.
-            w.Parameters ??= Make(machine, $"{machine.Name} — parameters",
-                ParameterWindowContent?.Invoke(machine) ?? Note("The parameter window comes in step S2."), () => w.Parameters = null, scroll: false);
-            Show(w.Parameters, at);
-        }
+        /// <summary>Fork (ux-overhaul.md, the parameter panel): the parameter window is retired; its place is the Device page, floating.</summary>
+        public void OpenParameterWindow(IMachine machine, WindowPlacement? at) => Views.Device.DeviceDock.OpenFloating(machine, at);
 
         public void OpenGui(IMachine machine, WindowPlacement? at)
         {
@@ -200,7 +191,7 @@ namespace ReBuzz.Studio.Platform
         {
             PluginEditors.Close(machine);
             if (!windows.TryGetValue(machine, out var w)) return;
-            w.Parameters?.Close();
+            Views.Device.DeviceDock.FloatingWindowOf(machine)?.Close();
             w.Gui?.Close();
             w.Editor?.Close();
         }
@@ -208,8 +199,9 @@ namespace ReBuzz.Studio.Platform
         public MachineWindowState GetWindowState(IMachine machine)
         {
             windows.TryGetValue(machine, out var w);
+            var parameters = ParameterWindowOf(machine);
             return new MachineWindowState(
-                w?.Parameters?.IsVisible == true, Placement(w?.Parameters),
+                parameters?.IsVisible == true, Placement(parameters),
                 w?.Gui?.IsVisible == true, Placement(w?.Gui));
         }
 
@@ -268,7 +260,5 @@ namespace ReBuzz.Studio.Platform
         static WindowPlacement Placement(Window window) =>
             window == null ? default : new WindowPlacement(window.Position.X, window.Position.Y, window.Bounds.Width,
                 Math.Max(0, window.Bounds.Height - NeoBuzz.Editor.MachineKeyboardFrame.ExtraHeightOf(window.Content)));
-
-        static Control Note(string text) => new TextBlock { Text = text, Margin = new Thickness(24), Foreground = ReBuzz.Studio.Shell.Design.StudioTokens.TextSecondaryBrush };
     }
 }

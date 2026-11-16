@@ -1754,9 +1754,9 @@ namespace ReBuzz.Studio.Tests
                     Core.UiHost.OpenParameterWindow(demo.Bass, null);
                     var w = StudioMachineUiHost.ParameterWindowOf(demo.Bass)!;
                     Settle();
-                    var row = w.GetVisualDescendants().OfType<Control>().First(c => c.GetType().Name == "ParameterRow");
-                    Click(w, Centre(row, w, 0.1), MouseButton.Right);
-                    Shot(w, "453-parameters-menu", "A parameter's menu in the parameter window (right-click on a row).", "Right-click a parameter in the parameter window.");
+                    var knob = w.GetVisualDescendants().OfType<ReBuzz.Studio.Views.Device.DeviceCell>().First().Face;
+                    Click(w, DeviceTestKit.Centre(w, knob), MouseButton.Right);
+                    Shot(w, "453-parameters-menu", "A parameter's menu in the Device window (right-click on a knob).", "Right-click a knob in the Device window.");
                     Core.UiHost.CloseWindows(demo.Bass);
                 });
 

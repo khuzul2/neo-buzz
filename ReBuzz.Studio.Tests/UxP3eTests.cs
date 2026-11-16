@@ -55,6 +55,8 @@ namespace ReBuzz.Studio.Tests
         {
             var page = new DevicePage(machine, floating: false);
             page.SetEditor(false, remember: false);
+            page.Parameters.Docked = false;                                 // these tests are about the rows: the list, down a page
+            page.Parameters.SetMode(DeviceView.DeviceMode.List, remember: false);
             var window = new Window { Width = width, Height = height, Content = page };
             window.Show();
             Settle();
@@ -124,10 +126,10 @@ namespace ReBuzz.Studio.Tests
         [Test]
         public void NamePrefixesGroupWhereTwoWordsAreShared()
         {
-            var plan = DeviceLayout.Plan(new[] { "Volume", "F1 cutoff", "F1 reso", "F2 cutoff", "F2 reso", "Pan" });
+            var plan = DeviceLayout.Plan(new[] { "Volume", "F1 cutoff", "F1 reso", "F1 env", "F2 cutoff", "F2 reso", "F2 env", "Pan" });
             Assert.That(plan.Source, Is.EqualTo("prefix"));
             Assert.That(plan.Groups.Select(g => g.Title), Is.EqualTo(new[] { "General", "F1", "F2" }), "the loose ones first");
-            Assert.That(plan.Groups[1].Names, Is.EqualTo(new[] { "cutoff", "reso" }), "the prefix is the header's");
+            Assert.That(plan.Groups[1].Names, Is.EqualTo(new[] { "cutoff", "reso", "env" }), "the prefix is the header's");
             Assert.That(plan.Groups[0].Names, Is.EqualTo(new[] { "Volume", "Pan" }));
         }
 
@@ -136,6 +138,7 @@ namespace ReBuzz.Studio.Tests
         {
             Assert.That(DeviceLayout.Plan(new[] { "Volume", "Pan", "Gain" }).Source, Is.EqualTo("section"));
             Assert.That(DeviceLayout.Plan(new[] { "F1 cutoff", "F1 reso", "Volume", "Pan" }).Source, Is.EqualTo("section"), "one shared word is not a grouping");
+            Assert.That(DeviceLayout.Plan(new[] { "F1 cutoff", "F1 reso", "F2 cutoff", "F2 reso", "Volume", "Pan" }).Source, Is.EqualTo("section"), "a prefix needs three parameters");
         }
 
         [AvaloniaTest]
@@ -492,7 +495,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ the macro strip
 
         [AvaloniaTest]
-        public void TheMacroStripHoldsUpToEightSlidersFromTheManifestsRoles()
+        public void TheMacrosAreUpToEightSlidersFromTheManifestsRoles()
         {
             var m = Add("Neo Comp", "P3e Macros");
             var (window, page, view) = Stage(m);
@@ -502,18 +505,6 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(l.Macros.Count, Is.InRange(1, DeviceLayout.MacroCount));
                 Assert.That(l.Macros.All(p => p.Kind == DeviceKind.Slider));
                 Assert.That(l.Macros.Select(p => p.Name), Does.Contain("Threshold"));
-                Assert.That(view.MacroStrip.IsVisible, Is.True);
-                Assert.That(view.MacroStrip.Items.Single(), Is.InstanceOf<MacroItem>());
-
-                // A macro is edited as a row is: here a drag across its cell and a reset.
-                var p = l.Macros.First();
-                view.MacroStrip.TryGetBounds(p, out var cell);
-                var inner = view.MacroStrip.TranslatePoint(new Point(cell.X + 6, cell.Bottom - 12), window)!.Value;
-                int steps = Steps;
-                DeviceEdits.Set(Core, p, p.Min);
-                Drag(window, inner, new Point(inner.X + cell.Width - 14, inner.Y));
-                Assert.That(p.Value, Is.GreaterThan(p.Min));
-                Assert.That(Steps, Is.EqualTo(steps + 2), "the set and the drag: a step each");
             }
             finally
             {
@@ -582,13 +573,10 @@ namespace ReBuzz.Studio.Tests
             {
                 int n = m.ParameterGroups[1].Parameters.Count(p => p.Flags.HasFlag(ParameterFlags.State));
                 Assert.That(n, Is.GreaterThanOrEqualTo(433));
-                // The old window and the new one on a small machine first (both JIT'd), then on this one: the old window's rows are a control
-                // tree of every parameter, the new one's a layout of one panel.
+                // A small machine first (JIT'd), then this one: the list is a layout of one panel, not a control per row.
                 var small = Add("Pedal Comp", "P3e Warm");
-                OpenOld(small);
                 Stage(small).Window.Close();
                 Remove(small);
-                double oldMs = OpenOld(m);
                 var sw = Stopwatch.StartNew();
                 var (window, page, view) = Stage(m, 760, 640);
                 double ms = sw.Elapsed.TotalMilliseconds;
@@ -596,17 +584,17 @@ namespace ReBuzz.Studio.Tests
                 {
                     Assert.That(view.Layout.All.Count, Is.EqualTo(n), "every parameter is in the list");
                     Frame(window);
-                    Assert.That(view.List.RenderedItems, Is.LessThan(40), $"{view.List.RenderedItems} of {view.List.Items.Count} items drawn: only what is in view");
+                    Assert.That(view.List.RenderedItems, Is.LessThan(90), $"{view.List.RenderedItems} of {view.List.Items.Count} items drawn: only what is in view");
                     Assert.That(view.List.Items.Count, Is.GreaterThan(433));
-                    TestContext.Out.WriteLine($"{n} parameters: the device view opened in {ms:F0} ms, the old parameter window in {oldMs:F0} ms; {view.List.RenderedItems} items drawn");
-                    Assert.That(ms, Is.LessThan(oldMs * 0.6), "much faster than the old window's control per row");
+                    TestContext.Out.WriteLine($"{n} parameters: the device view opened in {ms:F0} ms; {view.List.RenderedItems} items drawn");
+                    Assert.That(ms, Is.LessThan(5000), "opens in seconds, not minutes (shared runners vary)");
 
                     // Scrolled to the end it draws as few, and the last parameter is reachable.
                     var last = view.Layout.All.Last();
                     view.Scroller.Offset = new Vector(0, 1e6);
                     Settle();
                     Frame(window);
-                    Assert.That(view.List.RenderedItems, Is.LessThan(40));
+                    Assert.That(view.List.RenderedItems, Is.LessThan(90));
                     Assert.That(view.List.TryGetBounds(last, out _), Is.True);
                     view.List.Reveal(last);
                     Settle();
@@ -622,20 +610,6 @@ namespace ReBuzz.Studio.Tests
             {
                 Remove(m);
             }
-        }
-
-        /// <summary>The classic parameter window opened and laid out; its time in ms.</summary>
-        static double OpenOld(MachineCore machine)
-        {
-            var sw = Stopwatch.StartNew();
-            Core.UiHost.OpenParameterWindow(machine, null);
-            var old = StudioMachineUiHost.ParameterWindowOf(machine)!;
-            Dispatcher.UIThread.RunJobs();
-            old.UpdateLayout();
-            double ms = sw.Elapsed.TotalMilliseconds;
-            old.Close();
-            Settle();
-            return ms;
         }
 
         // ------------------------------------------------------------------ Explain

@@ -1,8 +1,10 @@
-// Fork (docs/specs/ux-overhaul.md P3e, decisions 62-70): the device view's list, drawn by one control. Only the rows in view are drawn
-// and hit-tested (433 parameters cost what 20 do: the old window made a control tree of every row, 0.3-0.4 s), so opening a machine
-// with a very large parameter set is a layout of one panel. Rows are 24 pt: name, a slider filled from zero (or a segmented control
-// of up to four choices, or a toggle) and the value with its unit. A double click types a value, Alt-click (⌥) resets, a drag is one
-// undo step, the wheel and arrows are steps that merge, the track parameters are one table and the macro strip is eight sliders.
+// Fork (docs/specs/ux-overhaul.md P3e, decisions 62-70; the parameter panel, List mode): the device view's list, drawn by one control. Only the
+// items in view are drawn and hit-tested (433 parameters cost what 20 do: the old window made a control tree of every row, 0.3-0.4 s). A row is
+// 24 pt: its name, then a bar filled from zero (centre-filled when bipolar) with the value inside, right-aligned in tabular figures (or a
+// segmented control of up to four choices, or a toggle). The rows flow into columns of about 320 pt with a header over each group: floating,
+// as many columns as fit, balanced, scrolling down; docked, columns as tall as the panel, scrolling sideways. A double click types a value,
+// Alt-click (⌥) resets, a drag is one undo step, the wheel and arrows are steps that merge, and the track parameters are one table.
+// Embedded (the table under the knob cards) it draws everything it holds and measures itself.
 
 using System;
 using System.Collections.Generic;
@@ -26,9 +28,12 @@ namespace ReBuzz.Studio.Views.Device
     internal sealed class DeviceList : Control, IModulationDropSurface
     {
         public const double Pad = 12;
+        /// <summary>The width a column of rows is about (List mode).</summary>
+        public const double ColumnTarget = 320;
         const double LabelColumn = 44;        // a table's track labels
         const double MinColumn = 64;          // a table's narrowest column
         const double DragThreshold = 3;
+        const double BarHeight = 18;
         static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-us");
         static readonly Typeface Font = new Typeface(StudioTokens.UiFont);
         static readonly Typeface Bold = new Typeface(StudioTokens.UiFont, FontStyle.Normal, FontWeight.SemiBold);
@@ -37,8 +42,10 @@ namespace ReBuzz.Studio.Views.Device
         readonly TextBox editor;
         readonly Dictionary<DeviceParam, (int Raw, string Text)> texts = new();
         List<DeviceItem> items = new();
-        double[] tops = Array.Empty<double>();
-        double total, scrollTop, viewport = 600;
+        Rect[] rects = Array.Empty<Rect>();
+        double contentW, contentH;
+        double scrollLeft, scrollTop, viewW = 600, viewH = 600;
+        double layoutW = -1, layoutH = -1;
         DeviceParam focus, hover;
         DeviceParam editing;
         int visibleRows;
@@ -80,7 +87,7 @@ namespace ReBuzz.Studio.Views.Device
         /// <summary>The parameter the explain strip speaks of (the last one clicked or arrowed to).</summary>
         public DeviceParam Focused => focus;
 
-        /// <summary>Rows, headers and tables drawn by the last render (virtualised: the ones in view).</summary>
+        /// <summary>Items drawn by the last render (virtualised: the ones in view).</summary>
         public int RenderedItems => visibleRows;
 
         public bool IsTyping => editing != null;
@@ -93,39 +100,68 @@ namespace ReBuzz.Studio.Views.Device
 
         public string TypeError { get; private set; }
 
-        public double ContentHeight => total;
+        public double ContentHeight => contentH;
+
+        public double ContentWidth => contentW;
+
+        /// <summary>
+        /// Drawn inside another control's scroll (the track table under the knob cards): everything it holds is drawn, it measures itself and
+        /// takes no scroll of its own.
+        /// </summary>
+        public bool Embedded { get; init; }
+
+        bool sideways;
+
+        /// <summary>
+        /// Docked: columns as tall as the panel and scrolling sideways (set with the scroll viewer's vertical bar off). Else the columns
+        /// are as many as fit the width, balanced, and the list scrolls down.
+        /// </summary>
+        public bool Sideways
+        {
+            get => sideways;
+            set
+            {
+                if (sideways == value) return;
+                sideways = value;
+                layoutW = -1;
+                InvalidateMeasure();
+            }
+        }
+
+        /// <summary>How many columns the rows are in.</summary>
+        public int Columns { get; private set; } = 1;
 
         public event Action<DeviceParam> FocusChanged;
 
         /// <summary>A header was clicked: its section closes or opens.</summary>
         public event Action<DeviceSection> HeaderClicked;
 
+        /// <summary>The menu of a parameter (a right click): the control it opens over.</summary>
+        public event Action<DeviceParam, Control> ContextRequested;
+
         public void SetItems(IEnumerable<DeviceItem> list)
         {
             CloseEditor();
             items = list.ToList();
-            if (items.OfType<MacroItem>().FirstOrDefault() is { } strip && Bounds.Width > 0) strip.Fit(Bounds.Width);
-            Layout();
+            layoutW = -1;
+            Layout(Math.Max(1, Bounds.Width > 0 ? Bounds.Width : ViewportWidth()), Bounds.Height > 0 ? Bounds.Height : viewH);
             MeasureNames();
             if (focus != null && !Contains(focus)) SetFocus(null);
             InvalidateMeasure();
             InvalidateVisual();
         }
 
-        void Layout()
-        {
-            tops = new double[items.Count + 1];
-            for (int i = 0; i < items.Count; i++) tops[i + 1] = tops[i] + items[i].Height;
-            total = tops[^1];
-        }
-
-        bool Contains(DeviceParam p) => items.Any(i => i is ParamItem pi && pi.Param == p || i is MacroItem mi && mi.Cells.Contains(p) || i is TableItem ti && ti.Section.TableCells.Contains(p));
+        bool Contains(DeviceParam p) => items.Any(i => i is ParamItem pi && pi.Param == p || i is TableItem ti && ti.Section.TableCells.Contains(p));
 
         /// <summary>What is in view (the scroller tells it; tests set it).</summary>
-        public void SetViewport(double top, double height)
+        public void SetViewport(double top, double height) => SetViewport(scrollLeft, top, viewW, height);
+
+        public void SetViewport(double left, double top, double width, double height)
         {
+            scrollLeft = Math.Max(0, left);
             scrollTop = Math.Max(0, top);
-            viewport = Math.Max(1, height);
+            viewW = Math.Max(1, width);
+            viewH = Math.Max(1, height);
             InvalidateVisual();
         }
 
@@ -133,7 +169,7 @@ namespace ReBuzz.Studio.Views.Device
         {
             base.OnAttachedToVisualTree(e);
             ModulationBoard.DragChanged += OnDragChanged;
-            if (this.FindAncestorOfType<ScrollViewer>() is { } sv)
+            if (!Embedded && this.FindAncestorOfType<ScrollViewer>() is { } sv)
             {
                 scroller = sv;
                 sv.ScrollChanged += Scrolled;
@@ -163,39 +199,148 @@ namespace ReBuzz.Studio.Views.Device
             return p != null && !p.IsInput && p.Parameter != null && p.Parameter.Type != ParameterType.Note;
         }
 
+        double ViewportWidth() => scroller is { } sv && sv.Viewport.Width > 0 ? sv.Viewport.Width : scroller is { Bounds.Width: > 0 } b ? b.Bounds.Width : 600;
+
         void Scrolled(object sender, ScrollChangedEventArgs e)
         {
             if (scroller == null) return;
-            double top = scroller.Offset.Y, height = scroller.Viewport.Height > 0 ? scroller.Viewport.Height : scroller.Bounds.Height;
-            if (top == scrollTop && height == viewport) return;
-            SetViewport(top, height);
+            double left = scroller.Offset.X, top = scroller.Offset.Y;
+            double w = scroller.Viewport.Width > 0 ? scroller.Viewport.Width : scroller.Bounds.Width;
+            double h = scroller.Viewport.Height > 0 ? scroller.Viewport.Height : scroller.Bounds.Height;
+            // The viewport's width (or, docked, its height) decides the columns: lay them out again when it changed.
+            if (!sideways && Math.Abs(w - layoutW) > 0.5 || sideways && Math.Abs(h - layoutH) > 0.5) InvalidateMeasure();
+            if (left == scrollLeft && top == scrollTop && w == viewW && h == viewH) return;
+            SetViewport(left, top, w, h);
+        }
+
+        // ------------------------------------------------------------------ geometry
+
+        /// <summary>The width a track table needs: its labels and a minimum for each column.</summary>
+        static double TableNeed(TableItem t) => Pad * 2 + LabelColumn + MinColumn * t.Columns.Count;
+
+        /// <summary>
+        /// Lays the items out: header and rows in columns, then (after them) the track table. Vertically (floating): as many columns of
+        /// <see cref="ColumnTarget"/> or more as fit <paramref name="width"/>, as short as they can be. Sideways (docked): columns of
+        /// <see cref="ColumnTarget"/> as tall as <paramref name="height"/>.
+        /// </summary>
+        void Layout(double width, double height)
+        {
+            layoutW = width;
+            layoutH = height;
+            rects = new Rect[items.Count];
+            // The table block (its header and the table) is laid out apart from the columns.
+            int block = items.FindIndex(i => i is HeaderItem { Section.IsTable: true } || i is TableItem);
+            int n = block < 0 ? items.Count : block;
+            double colW, colH;
+            int cols = 1;
+            if (n == 0) { colW = Math.Max(width, ColumnTarget); colH = 0; }
+            else if (sideways)
+            {
+                colW = ColumnTarget;
+                colH = Math.Max(height, DeviceItem.HeaderHeight + DeviceItem.RowHeight * 3);
+            }
+            else
+            {
+                int fit = Math.Max(1, (int)(width / ColumnTarget));
+                colW = width / fit;
+                colH = BalancedHeight(n, fit);
+                cols = fit;
+            }
+            double x = 0, y = 0, bottom = 0;
+            int used = n == 0 ? 0 : 1;
+            for (int i = 0; i < n; i++)
+            {
+                double h = items[i].Height;
+                // A header never ends a column alone: it goes with its first row.
+                double need = h + (items[i] is HeaderItem && i + 1 < n ? items[i + 1].Height : 0);
+                if (y > 0 && y + need > colH + 0.5)
+                {
+                    x += colW;
+                    y = 0;
+                    used++;
+                }
+                rects[i] = new Rect(x, y, colW, h);
+                y += h;
+                bottom = Math.Max(bottom, y);
+            }
+            Columns = sideways ? used : cols;
+            double right = n == 0 ? 0 : (sideways ? x + colW : colW * cols);
+            contentW = right;
+            contentH = bottom;
+            if (block >= 0)
+            {
+                double tw = items.OfType<TableItem>().Select(TableNeed).DefaultIfEmpty(0).Max();
+                double bx = sideways ? right : 0, by = sideways ? 0 : bottom;
+                double w = sideways ? tw : Math.Max(width, tw);
+                for (int i = block; i < items.Count; i++)
+                {
+                    double h = items[i].Height;
+                    rects[i] = new Rect(bx, by, w, h);
+                    by += h;
+                }
+                contentW = Math.Max(contentW, bx + w);
+                contentH = Math.Max(contentH, by);
+            }
+            if (!sideways) contentW = Math.Max(contentW, width);
+        }
+
+        /// <summary>The shortest column height at which the first <paramref name="n"/> items fit in <paramref name="cols"/> columns.</summary>
+        double BalancedHeight(int n, int cols)
+        {
+            double total = 0, tallest = 0;
+            for (int i = 0; i < n; i++)
+            {
+                total += items[i].Height;
+                tallest = Math.Max(tallest, items[i].Height);
+            }
+            if (cols <= 1 || n == 0) return total;
+            double h = Math.Max(tallest + DeviceItem.RowHeight, Math.Ceiling(total / cols));
+            for (int guard = 0; guard < 200; guard++, h += DeviceItem.RowHeight / 2)
+            {
+                int used = 1;
+                double y = 0;
+                for (int i = 0; i < n; i++)
+                {
+                    double need = items[i].Height + (items[i] is HeaderItem && i + 1 < n ? items[i + 1].Height : 0);
+                    if (y > 0 && y + need > h + 0.5)
+                    {
+                        used++;
+                        y = 0;
+                    }
+                    y += items[i].Height;
+                }
+                if (used <= cols) return h;
+            }
+            return total;
         }
 
         protected override Size MeasureOverride(Size available)
         {
             editor.Measure(new Size(200, 22));
-            double need = items.OfType<TableItem>().Select(t => Pad * 2 + LabelColumn + MinColumn * t.Columns.Count).DefaultIfEmpty(0).Max();
-            double w = double.IsInfinity(available.Width) ? Math.Max(240, need) : Math.Max(available.Width, need);
-            // The macro strip wraps to the width it has: more rows, never fewer cells.
-            if (items.OfType<MacroItem>().FirstOrDefault() is { } strip && strip.Fit(w))
+            double width, height;
+            if (Embedded)
             {
-                Layout();
-                InvalidateVisual();
+                width = double.IsInfinity(available.Width) ? items.OfType<TableItem>().Select(TableNeed).DefaultIfEmpty(240).Max() : available.Width;
+                height = 400;
             }
-            return new Size(w, total);
+            else
+            {
+                width = double.IsInfinity(available.Width) ? Math.Max(240, ViewportWidth()) : available.Width;
+                height = double.IsInfinity(available.Height) ? (scroller is { Viewport.Height: > 0 } sv ? sv.Viewport.Height : viewH) : available.Height;
+            }
+            Layout(width, height);
+            return new Size(Math.Max(1, contentW), contentH);
         }
 
         protected override Size ArrangeOverride(Size finalSize)
         {
-            PlaceEditor(finalSize.Width);
+            PlaceEditor();
             return finalSize;
         }
 
-        // ------------------------------------------------------------------ geometry
-
         sealed class Cols
         {
-            public double Name, ControlX, ControlW, ValueX, ValueW;
+            public double Name, ControlX, ControlW;
         }
 
         /// <summary>The widest a name column goes (a longer name is cut, its tooltip says it whole).</summary>
@@ -215,55 +360,49 @@ namespace ReBuzz.Studio.Views.Device
             nameColumn = Math.Clamp(Math.Ceiling(widest) + 6, MinNameColumn, MaxNameColumn);
         }
 
+        /// <summary>A row's parts, as offsets in the row: the name, then the bar (or segments, or toggle) to the right padding.</summary>
         Cols ColumnsOf(double width)
         {
-            double nameW = Math.Min(nameColumn, Math.Max(MinNameColumn, width * 0.5));
-            double valueW = 96;
+            double nameW = Math.Min(nameColumn, Math.Max(MinNameColumn, width * 0.45));
             double controlX = Pad + nameW + 8;
-            double controlW = Math.Max(48, width - Pad - valueW - 8 - controlX);
-            return new Cols { Name = nameW, ControlX = controlX, ControlW = controlW, ValueX = width - Pad - valueW, ValueW = valueW };
+            double controlW = Math.Max(48, width - Pad - controlX);
+            return new Cols { Name = nameW, ControlX = controlX, ControlW = controlW };
         }
 
-        int IndexAt(double y)
+        /// <summary>The items in view.</summary>
+        IEnumerable<int> Visible()
         {
-            if (items.Count == 0 || y < 0 || y >= total) return -1;
-            int lo = 0, hi = items.Count - 1;
-            while (lo < hi)
+            if (Embedded)
             {
-                int mid = (lo + hi + 1) / 2;
-                if (tops[mid] <= y) lo = mid; else hi = mid - 1;
+                for (int i = 0; i < items.Count; i++) yield return i;
+                yield break;
             }
-            return lo;
+            var view = new Rect(scrollLeft, scrollTop, viewW, viewH);
+            for (int i = 0; i < items.Count; i++)
+                if (rects[i].Intersects(view)) yield return i;
         }
 
-        /// <summary>The first and last items in view (one more each side).</summary>
-        (int First, int Last) Range()
+        int IndexOf(Point pt)
         {
-            if (items.Count == 0) return (0, -1);
-            int first = Math.Max(0, IndexAt(scrollTop));
-            int last = IndexAt(Math.Min(total - 0.5, scrollTop + viewport));
-            if (last < 0) last = items.Count - 1;
-            return (first, last);
+            for (int i = 0; i < items.Count; i++)
+                if (rects[i].Contains(pt)) return i;
+            return -1;
         }
 
         /// <summary>The row of a parameter in the list (header and table excluded), in the list's coordinates; false when it isn't shown.</summary>
         public bool TryGetBounds(DeviceParam p, out Rect row)
         {
-            double width = Bounds.Width > 0 ? Bounds.Width : 600;
             for (int i = 0; i < items.Count; i++)
             {
                 switch (items[i])
                 {
                     case ParamItem pi when pi.Param == p:
-                        row = new Rect(0, tops[i], width, DeviceItem.RowHeight);
-                        return true;
-                    case MacroItem mi when mi.Cells.Contains(p):
-                        row = CellRect(mi, mi.Cells.ToList().IndexOf(p), width);
+                        row = rects[i];
                         return true;
                     case TableItem ti when ti.Section.TableCells.Contains(p):
                     {
                         int at = ti.Section.TableCells.IndexOf(p);
-                        row = TableCellRect(ti, tops[i], at / ti.Section.Params.Count, ti.Columns.IndexOf(at % ti.Section.Params.Count), width);
+                        row = TableCellRect(ti, rects[i], at / ti.Section.Params.Count, ti.Columns.IndexOf(at % ti.Section.Params.Count));
                         return row.Width > 0;
                     }
                 }
@@ -272,13 +411,13 @@ namespace ReBuzz.Studio.Views.Device
             return false;
         }
 
-        /// <summary>The control of a parameter's row (the slider, the segments, the toggle), in the list's coordinates.</summary>
+        /// <summary>The control of a parameter's row (the bar, the segments, the toggle), in the list's coordinates.</summary>
         public Rect ControlBounds(DeviceParam p)
         {
             if (!TryGetBounds(p, out var row)) return default;
-            if (p.IsTrack || items.OfType<MacroItem>().Any(m => m.Cells.Contains(p))) return row;
+            if (p.IsTrack) return row;
             var c = ColumnsOf(row.Width);
-            return new Rect(c.ControlX, row.Y + 3, c.ControlW, DeviceItem.RowHeight - 6);
+            return new Rect(row.X + c.ControlX, row.Y + 3, c.ControlW, DeviceItem.RowHeight - 6);
         }
 
         /// <summary>The rectangle of a segment of a segmented control.</summary>
@@ -289,32 +428,26 @@ namespace ReBuzz.Studio.Views.Device
             return new Rect(r.X + choice * w, r.Y, w, r.Height);
         }
 
+        /// <summary>Where the value is: inside the bar, at its right end.</summary>
         public Rect ValueBounds(DeviceParam p)
         {
             if (!TryGetBounds(p, out var row)) return default;
-            if (p.IsTrack || items.OfType<MacroItem>().Any(m => m.Cells.Contains(p))) return row;
-            var c = ColumnsOf(row.Width);
-            return new Rect(c.ValueX, row.Y, c.ValueW, DeviceItem.RowHeight);
+            if (p.IsTrack) return row;
+            var bar = ControlBounds(p);
+            double w = Math.Min(96, bar.Width);
+            return new Rect(bar.Right - w, row.Y, w, DeviceItem.RowHeight);
         }
 
-        static Rect CellRect(MacroItem m, int index, double width)
-        {
-            double w = width / Math.Max(1, m.PerRow);
-            return new Rect(index % m.PerRow * w, index / m.PerRow * m.CellHeight, w, m.CellHeight);
-        }
-
-        Rect TableCellRect(TableItem t, double top, int track, int columnIndex, double width)
+        Rect TableCellRect(TableItem t, Rect at, int track, int columnIndex)
         {
             if (columnIndex < 0) return default;
-            double colW = TableColumnWidth(t, width);
-            return new Rect(Pad + LabelColumn + columnIndex * colW, top + DeviceItem.RowHeight * (track + 1), colW, DeviceItem.RowHeight);
+            double colW = TableColumnWidth(t, at.Width);
+            return new Rect(at.X + Pad + LabelColumn + columnIndex * colW, at.Y + DeviceItem.RowHeight * (track + 1), colW, DeviceItem.RowHeight);
         }
 
         static double TableColumnWidth(TableItem t, double width) => Math.Max(MinColumn, (width - Pad * 2 - LabelColumn) / Math.Max(1, t.Columns.Count));
 
         // ------------------------------------------------------------------ drawing
-
-        static IBrush Brush(Color c) => StudioTokens.Brush(c);
 
         static readonly FontFeatureCollection Tabular = FontFeatureCollection.Parse("tnum");
 
@@ -347,45 +480,39 @@ namespace ReBuzz.Studio.Views.Device
 
         public override void Render(DrawingContext ctx)
         {
-            double width = Bounds.Width;
             ctx.FillRectangle(Brushes.Transparent, new Rect(Bounds.Size));       // the whole list takes the pointer
-            var (first, last) = Range();
             visibleRows = 0;
-            for (int i = first; i <= last && i < items.Count; i++)
+            foreach (int i in Visible())
             {
                 visibleRows++;
-                double y = tops[i];
                 switch (items[i])
                 {
-                    case HeaderItem h: DrawHeader(ctx, h, y, width); break;
-                    case ParamItem p: DrawRow(ctx, p.Param, y, width); break;
-                    case TableItem t: DrawTable(ctx, t, y, width); break;
-                    case MacroItem m: DrawMacros(ctx, m, width); break;
+                    case HeaderItem h: DrawHeader(ctx, h, rects[i]); break;
+                    case ParamItem p: DrawRow(ctx, p.Param, rects[i]); break;
+                    case TableItem t: DrawTable(ctx, t, rects[i]); break;
                 }
             }
         }
 
-        void DrawHeader(DrawingContext ctx, HeaderItem h, double y, double width)
+        void DrawHeader(DrawingContext ctx, HeaderItem h, Rect r)
         {
-            Draw(ctx, (h.Collapsed ? "▸ " : "▾ ") + h.Section.Name, Pad, y + 4, width - Pad * 2 - 40, DeviceItem.HeaderHeight - 4, StudioTokens.FontBody, StudioTokens.TextPrimaryBrush, bold: true);
-            Draw(ctx, h.Count.ToString(CultureInfo.InvariantCulture), width - Pad - 40, y + 4, 40, DeviceItem.HeaderHeight - 4, StudioTokens.FontCaption, StudioTokens.TextSecondaryBrush, align: TextAlignment.Right);
-            ctx.FillRectangle(StudioTokens.SurfaceBorderBrush, new Rect(Pad, y + DeviceItem.HeaderHeight - 1, Math.Max(0, width - Pad * 2), 1));
+            Draw(ctx, (h.Collapsed ? "▸ " : "▾ ") + h.Section.Name, r.X + Pad, r.Y + 4, r.Width - Pad * 2 - 40, DeviceItem.HeaderHeight - 4, StudioTokens.FontBody, StudioTokens.TextPrimaryBrush, bold: true);
+            Draw(ctx, h.Count.ToString(CultureInfo.InvariantCulture), r.Right - Pad - 40, r.Y + 4, 40, DeviceItem.HeaderHeight - 4, StudioTokens.FontCaption, StudioTokens.TextSecondaryBrush, align: TextAlignment.Right, tabular: true);
+            ctx.FillRectangle(StudioTokens.SurfaceBorderBrush, new Rect(r.X + Pad, r.Y + DeviceItem.HeaderHeight - 1, Math.Max(0, r.Width - Pad * 2), 1));
         }
 
-        void DrawRow(DrawingContext ctx, DeviceParam p, double y, double width)
+        void DrawRow(DrawingContext ctx, DeviceParam p, Rect row)
         {
-            var c = ColumnsOf(width);
-            var row = new Rect(0, y, width, DeviceItem.RowHeight);
+            var c = ColumnsOf(row.Width);
             if (p == focus) ctx.FillRectangle(StudioTokens.SelectionFillBrush, row);
             else if (p == hover) ctx.FillRectangle(StudioTokens.SurfaceControlBrush, row);
-            Draw(ctx, p.Name, Pad, y, c.Name, DeviceItem.RowHeight, StudioTokens.FontBody, StudioTokens.TextPrimaryBrush);
+            Draw(ctx, p.Name, row.X + Pad, row.Y, c.Name, DeviceItem.RowHeight, StudioTokens.FontBody, StudioTokens.TextPrimaryBrush);
             int raw = p.Value;
-            var area = new Rect(c.ControlX, y + 3, c.ControlW, DeviceItem.RowHeight - 6);
+            var area = new Rect(row.X + c.ControlX, row.Y + 3, c.ControlW, DeviceItem.RowHeight - 6);
             DrawControl(ctx, p, raw, area);
-            if (editing != p) Draw(ctx, TextOf(p, raw), c.ValueX, y, c.ValueW, DeviceItem.RowHeight, StudioTokens.FontBody, StudioTokens.TextPrimaryBrush, align: TextAlignment.Right, tabular: true);
         }
 
-        /// <summary>The control of one parameter in <paramref name="area"/>: a slider filled from zero, segments or a toggle.</summary>
+        /// <summary>The control of one parameter in <paramref name="area"/>: a bar filled from zero with its value inside, segments or a toggle.</summary>
         void DrawControl(DrawingContext ctx, DeviceParam p, int raw, Rect area)
         {
             switch (p.Kind)
@@ -406,13 +533,15 @@ namespace ReBuzz.Studio.Views.Device
                     bool isOn = raw != p.Min;
                     double tw = Math.Min(36, area.Width), th = 16;
                     var track = new Rect(area.X, area.Y + (area.Height - th) / 2, tw, th);
-                    ctx.DrawRectangle(isOn ? StudioTokens.AccentBrush : StudioTokens.SurfaceControlBrush, new Pen(StudioTokens.SurfaceBorderBrush, 1), track, 8, 8);
+                    ctx.DrawRectangle(isOn ? StudioTokens.AccentBrush : StudioTokens.ControlTrackBrush, null, track, 8, 8);
                     double knob = th - 6;
-                    ctx.DrawEllipse(isOn ? StudioTokens.TextOnBrush(StudioTokens.Accent) : StudioTokens.TextSecondaryBrush, null,
+                    ctx.DrawEllipse(isOn ? StudioTokens.TextOnBrush(StudioTokens.Accent) : StudioTokens.TextPrimaryBrush, null,
                         new Point(isOn ? track.Right - 3 - knob / 2 : track.X + 3 + knob / 2, track.Center.Y), knob / 2, knob / 2);
+                    if (editing != p)
+                        Draw(ctx, TextOf(p, raw), area.X + tw + 8, area.Y, Math.Max(1, area.Width - tw - 8), area.Height, StudioTokens.FontBody, StudioTokens.TextPrimaryBrush, align: TextAlignment.Right, tabular: true);
                     break;
                 default:
-                    DrawSlider(ctx, p, raw, area);
+                    DrawBar(ctx, p, raw, area);
                     break;
             }
         }
@@ -441,10 +570,10 @@ namespace ReBuzz.Studio.Views.Device
             if (m == null) return;
             var colour = StudioTokens.Identity(NeoBuzz.Editor.MachineCategory.Control);
             double lo = rail.X + p.Fraction(m.Low) * rail.Width, hi = rail.X + p.Fraction(m.High) * rail.Width;
-            var ring = new Rect(lo - 2, rail.Y - 3, Math.Max(6, hi - lo + 4), rail.Height + 6);
+            var ring = new Rect(lo - 2, rail.Y - 2, Math.Max(6, hi - lo + 4), rail.Height + 4);
             ctx.DrawRectangle(new SolidColorBrush(colour, 0.18), new Pen(new SolidColorBrush(colour), 1.5), ring, 5, 5);
             double bx = rail.X + p.Fraction(m.Base) * rail.Width;
-            ctx.FillRectangle(new SolidColorBrush(colour), new Rect(bx - 0.5, rail.Y - 5, 1, rail.Height + 10));
+            ctx.FillRectangle(new SolidColorBrush(colour), new Rect(bx - 0.5, rail.Y - 3, 1, rail.Height + 6));
             double cx = rail.X + p.Fraction(m.Current) * rail.Width;
             ctx.DrawEllipse(new SolidColorBrush(colour), new Pen(StudioTokens.SurfaceBaseBrush, 1), new Point(cx, rail.Center.Y), 4, 4);
         }
@@ -452,41 +581,54 @@ namespace ReBuzz.Studio.Views.Device
         /// <summary>Whether a parameter in view is being modulated (tests).</summary>
         internal bool IsModulated(DeviceParam p) => ModulatedBy(p) != null;
 
-        void DrawSlider(DrawingContext ctx, DeviceParam p, int raw, Rect area)
+        /// <summary>
+        /// A slider as a bar (List mode): the track at 3:1 against the panel (WCAG 1.4.11), the fill from zero (the middle, for a range through
+        /// it) in the accent up to the value, and the value inside the bar, right-aligned in tabular figures on a backing that keeps it readable.
+        /// </summary>
+        void DrawBar(DrawingContext ctx, DeviceParam p, int raw, Rect area)
         {
-            const double bar = 6;
-            var rail = new Rect(area.X, area.Center.Y - bar / 2, area.Width, bar);
-            ctx.DrawRectangle(StudioTokens.ControlTrackBrush, null, rail, 3, 3);       // 3:1 against the panel (WCAG 1.4.11), as a knob's track
+            var rail = new Rect(area.X, area.Center.Y - BarHeight / 2, area.Width, BarHeight);
+            ctx.DrawRectangle(StudioTokens.ControlTrackBrush, null, rail, 4, 4);
             double a = p.ZeroFraction, b = p.Fraction(raw);
             double x0 = rail.X + Math.Min(a, b) * rail.Width, x1 = rail.X + Math.Max(a, b) * rail.Width;
-            if (x1 - x0 >= 1) ctx.DrawRectangle(StudioTokens.AccentBrush, null, new Rect(x0, rail.Y, x1 - x0, bar), 3, 3);
+            if (x1 - x0 >= 1) ctx.DrawRectangle(StudioTokens.AccentBrush, null, new Rect(x0, rail.Y, x1 - x0, rail.Height), 4, 4);
             double tx = rail.X + b * rail.Width;
-            ctx.FillRectangle(StudioTokens.TextPrimaryBrush, new Rect(Math.Clamp(tx - 1, rail.X, rail.Right - 2), area.Y + 1, 2, Math.Max(2, area.Height - 2)));
+            ctx.FillRectangle(StudioTokens.TextPrimaryBrush, new Rect(Math.Clamp(tx - 1, rail.X, rail.Right - 2), rail.Y, 2, rail.Height));
             DrawModulationRing(ctx, p, rail);
+            if (editing != p)
+            {
+                string text = TextOf(p, raw);
+                double natural = Text(text, StudioTokens.FontCaption, StudioTokens.TextPrimaryBrush, 1000, tabular: true).WidthIncludingTrailingWhitespace;
+                double w = Math.Min(rail.Width - 4, natural + 10);
+                var back = new Rect(rail.Right - 3 - w, rail.Y + 2, w, rail.Height - 4);
+                ctx.DrawRectangle(StudioTokens.SurfaceControlBrush, null, back, 3, 3);
+                var ft = Text(text, StudioTokens.FontCaption, StudioTokens.TextPrimaryBrush, w - 8, align: TextAlignment.Right, tabular: true);
+                ctx.DrawText(ft, new Point(back.X + 4, back.Y + (back.Height - ft.Height) / 2));
+            }
             if (ModulationBoard.Dragging != null)   // a modulator is being dragged: this takes it
                 ctx.DrawRectangle(null, new Pen(new SolidColorBrush(StudioTokens.Identity(NeoBuzz.Editor.MachineCategory.Control)), 1.5, dashStyle: DashStyle.Dash), rail.Inflate(3), 5, 5);
         }
 
-        void DrawTable(DrawingContext ctx, TableItem t, double y, double width)
+        void DrawTable(DrawingContext ctx, TableItem t, Rect r)
         {
-            double colW = TableColumnWidth(t, width);
+            double colW = TableColumnWidth(t, r.Width);
             for (int k = 0; k < t.Columns.Count; k++)
-                Draw(ctx, t.Section.Params[t.Columns[k]].Name, Pad + LabelColumn + k * colW + 4, y, colW - 8, DeviceItem.RowHeight, StudioTokens.FontCaption, StudioTokens.TextSecondaryBrush);
+                Draw(ctx, t.Section.Params[t.Columns[k]].Name, r.X + Pad + LabelColumn + k * colW + 4, r.Y, colW - 8, DeviceItem.RowHeight, StudioTokens.FontCaption, StudioTokens.TextSecondaryBrush);
             for (int tr = 0; tr < t.Section.Tracks; tr++)
             {
-                double ry = y + DeviceItem.RowHeight * (tr + 1);
-                Draw(ctx, "T" + tr.ToString(CultureInfo.InvariantCulture), Pad, ry, LabelColumn - 4, DeviceItem.RowHeight, StudioTokens.FontCaption, StudioTokens.TextSecondaryBrush);
+                double ry = r.Y + DeviceItem.RowHeight * (tr + 1);
+                Draw(ctx, "T" + tr.ToString(CultureInfo.InvariantCulture), r.X + Pad, ry, LabelColumn - 4, DeviceItem.RowHeight, StudioTokens.FontCaption, StudioTokens.TextSecondaryBrush);
                 for (int k = 0; k < t.Columns.Count; k++)
                 {
                     var p = t.Section.Cell(tr, t.Columns[k]);
-                    var cell = new Rect(Pad + LabelColumn + k * colW, ry, colW, DeviceItem.RowHeight).Deflate(new Thickness(2, 2));
+                    var cell = new Rect(r.X + Pad + LabelColumn + k * colW, ry, colW, DeviceItem.RowHeight).Deflate(new Thickness(2, 2));
                     DrawCell(ctx, p, cell);
                 }
             }
         }
 
-        /// <summary>A table cell or a macro: the value as a bar from zero with its text over it (a choice or a switch: the text alone).</summary>
-        void DrawCell(DrawingContext ctx, DeviceParam p, Rect cell, string label = null)
+        /// <summary>A table cell: the value as a bar from zero with its text over it (a choice or a switch: the text alone).</summary>
+        void DrawCell(DrawingContext ctx, DeviceParam p, Rect cell)
         {
             int raw = p.Value;
             bool isFocus = p == focus;
@@ -495,7 +637,7 @@ namespace ReBuzz.Studio.Views.Device
             {
                 double a = p.ZeroFraction, b = p.Fraction(raw);
                 double x0 = cell.X + Math.Min(a, b) * cell.Width, x1 = cell.X + Math.Max(a, b) * cell.Width;
-                if (x1 - x0 >= 1) ctx.DrawRectangle(StudioTokens.SelectionFillBrush, null, new Rect(x0, cell.Y + 1, x1 - x0, cell.Height - 2), 2, 2);
+                if (x1 - x0 >= 1) ctx.DrawRectangle(StudioTokens.SelectionFillBrush, null, new Rect(x0, cell.Y + 1, x1 - x0, Math.Max(0, cell.Height - 2)), 2, 2);
                 ctx.FillRectangle(StudioTokens.AccentBrush, new Rect(Math.Clamp(cell.X + b * cell.Width - 1, cell.X + 1, Math.Max(cell.X + 1, cell.Right - 3)), cell.Y + 1, 2, Math.Max(0, cell.Height - 2)));
             }
             else if (p.Kind == DeviceKind.Toggle && raw != p.Min)
@@ -506,17 +648,6 @@ namespace ReBuzz.Studio.Views.Device
                 // under the text so the marker line never runs through it (it looked overprinted).
                 string text = TextOf(p, raw);
                 if (cell.Width < 90 && text.IndexOf(" · ", StringComparison.Ordinal) is int dot and > 0) text = text.Substring(dot + 3);
-                if (label != null)
-                {
-                    // The bar's one row: its name at the left, its value at the right.
-                    var value = Text(text, StudioTokens.FontCaption, StudioTokens.TextPrimaryBrush, cell.Width * 0.5, align: TextAlignment.Right, tabular: true);
-                    double lw = Math.Max(10, cell.Width - Math.Min(value.WidthIncludingTrailingWhitespace, cell.Width * 0.5) - 14);
-                    var name = Text(label, StudioTokens.FontCaption, StudioTokens.TextSecondaryBrush, lw);
-                    ctx.DrawRectangle(StudioTokens.SurfaceControlBrush, null, new Rect(cell.X + 2, cell.Y + 2, cell.Width - 4, cell.Height - 4), 3, 3);
-                    ctx.DrawText(name, new Point(cell.X + 6, cell.Y + (cell.Height - name.Height) / 2));
-                    ctx.DrawText(value, new Point(cell.Right - 6 - value.MaxTextWidth, cell.Y + (cell.Height - value.Height) / 2));
-                    return;
-                }
                 var ft = Text(text, StudioTokens.FontCaption, StudioTokens.TextPrimaryBrush, cell.Width - 8, align: TextAlignment.Center, tabular: true);
                 if (p.Kind == DeviceKind.Slider)
                 {
@@ -524,22 +655,6 @@ namespace ReBuzz.Studio.Views.Device
                     ctx.DrawRectangle(StudioTokens.SurfaceControlBrush, null, new Rect(cell.Center.X - w / 2, cell.Y + 3, w, cell.Height - 6), 3, 3);
                 }
                 ctx.DrawText(ft, new Point(cell.X + 4, cell.Y + (cell.Height - ft.Height) / 2));
-            }
-        }
-
-        void DrawMacros(DrawingContext ctx, MacroItem m, double width)
-        {
-            for (int i = 0; i < m.Cells.Count; i++)
-            {
-                var r = CellRect(m, i, width).Deflate(new Thickness(4, 4));
-                var p = m.Cells[i];
-                if (m.Compact)
-                {
-                    DrawCell(ctx, p, r, p.MacroLabel);
-                    continue;
-                }
-                Draw(ctx, p.MacroLabel, r.X + 2, r.Y, r.Width - 4, 16, StudioTokens.FontCaption, StudioTokens.TextSecondaryBrush);
-                DrawCell(ctx, p, new Rect(r.X, r.Y + 20, r.Width, r.Height - 20));
             }
         }
 
@@ -558,23 +673,21 @@ namespace ReBuzz.Studio.Views.Device
 
         public Hit HitTest(Point pt)
         {
-            int i = IndexAt(pt.Y);
+            int i = IndexOf(pt);
             var none = new Hit { Part = Part.None };
             if (i < 0) return none;
-            double width = Bounds.Width > 0 ? Bounds.Width : 600;
-            double y = tops[i];
+            var r = rects[i];
             switch (items[i])
             {
                 case HeaderItem h:
-                    return new Hit { Part = Part.Header, Header = h, Area = new Rect(0, y, width, DeviceItem.HeaderHeight) };
+                    return new Hit { Part = Part.Header, Header = h, Area = r };
                 case ParamItem pi:
                 {
-                    var c = ColumnsOf(width);
+                    var c = ColumnsOf(r.Width);
                     var p = pi.Param;
-                    var area = new Rect(c.ControlX, y + 3, c.ControlW, DeviceItem.RowHeight - 6);
+                    var area = new Rect(r.X + c.ControlX, r.Y + 3, c.ControlW, DeviceItem.RowHeight - 6);
                     var hit = new Hit { Param = p, Area = area };
-                    if (pt.X < c.ControlX - 4) hit.Part = Part.Name;
-                    else if (pt.X >= c.ValueX) { hit.Part = Part.Value; hit.Area = new Rect(c.ValueX, y, c.ValueW, DeviceItem.RowHeight); }
+                    if (pt.X < area.X - 4) hit.Part = Part.Name;
                     else
                     {
                         hit.Part = Part.Control;
@@ -584,24 +697,13 @@ namespace ReBuzz.Studio.Views.Device
                 }
                 case TableItem ti:
                 {
-                    int track = (int)((pt.Y - y) / DeviceItem.RowHeight) - 1;
+                    int track = (int)((pt.Y - r.Y) / DeviceItem.RowHeight) - 1;
                     if (track < 0 || track >= ti.Section.Tracks) return none;
-                    double colW = TableColumnWidth(ti, width);
-                    int k = (int)Math.Floor((pt.X - Pad - LabelColumn) / colW);
+                    double colW = TableColumnWidth(ti, r.Width);
+                    int k = (int)Math.Floor((pt.X - r.X - Pad - LabelColumn) / colW);
                     if (k < 0 || k >= ti.Columns.Count) return none;
                     var p = ti.Section.Cell(track, ti.Columns[k]);
-                    return new Hit { Part = Part.Cell, Param = p, Area = new Rect(Pad + LabelColumn + k * colW, y + DeviceItem.RowHeight * (track + 1), colW, DeviceItem.RowHeight).Deflate(new Thickness(2, 2)) };
-                }
-                case MacroItem mi:
-                {
-                    double w = width / Math.Max(1, mi.PerRow);
-                    int row = (int)Math.Clamp((pt.Y - y) / mi.CellHeight, 0, mi.Rows - 1);
-                    int k = row * mi.PerRow + (int)Math.Clamp(pt.X / w, 0, mi.PerRow - 1);
-                    if (k >= mi.Cells.Count) return none;
-                    var r = CellRect(mi, k, width).Deflate(new Thickness(4, 4));
-                    if (mi.Compact) return new Hit { Part = Part.Cell, Param = mi.Cells[k], Area = r };
-                    if (pt.Y - y < r.Y + 20) return new Hit { Part = Part.Name, Param = mi.Cells[k], Area = r };
-                    return new Hit { Part = Part.Cell, Param = mi.Cells[k], Area = new Rect(r.X, r.Y + 20, r.Width, r.Height - 20) };
+                    return new Hit { Part = Part.Cell, Param = p, Area = new Rect(r.X + Pad + LabelColumn + k * colW, r.Y + DeviceItem.RowHeight * (track + 1), colW, DeviceItem.RowHeight).Deflate(new Thickness(2, 2)) };
                 }
             }
             return none;
@@ -621,18 +723,38 @@ namespace ReBuzz.Studio.Views.Device
         public void Reveal(DeviceParam p)
         {
             if (scroller == null || !TryGetBounds(p, out var row)) return;
-            double top = scroller.Offset.Y, h = scroller.Viewport.Height;
-            if (row.Y < top) scroller.Offset = new Vector(scroller.Offset.X, row.Y);
-            else if (row.Bottom > top + h) scroller.Offset = new Vector(scroller.Offset.X, row.Bottom - h);
+            var off = scroller.Offset;
+            double left = off.X, top = off.Y;
+            double w = scroller.Viewport.Width, h = scroller.Viewport.Height;
+            if (row.Y < top) top = row.Y;
+            else if (row.Bottom > top + h) top = row.Bottom - h;
+            if (row.X < left) left = row.X;
+            else if (row.Right > left + w) left = Math.Max(row.X, row.Right - w);
+            if (left != off.X || top != off.Y) scroller.Offset = new Vector(left, top);
         }
 
-        IEnumerable<DeviceParam> Navigable() => items.SelectMany(i => i switch
+        /// <summary>Scrolls a section's header to the start of the view (a chip was chosen); false when it isn't in the list.</summary>
+        public bool JumpTo(DeviceSection section)
         {
-            ParamItem pi => new[] { pi.Param },
-            MacroItem mi => mi.Cells,
-            TableItem ti => ti.Columns.SelectMany(c => Enumerable.Range(0, ti.Section.Tracks).Select(t => ti.Section.Cell(t, c))),
-            _ => Array.Empty<DeviceParam>(),
-        });
+            if (scroller == null) return false;
+            for (int i = 0; i < items.Count; i++)
+                if (items[i] is HeaderItem h && h.Section == section)
+                {
+                    scroller.Offset = sideways ? new Vector(Math.Max(0, rects[i].X), scroller.Offset.Y) : new Vector(scroller.Offset.X, Math.Max(0, rects[i].Y));
+                    return true;
+                }
+            return false;
+        }
+
+        /// <summary>Where a section's header is (its column's left edge, its top), in the list's coordinates; null when it isn't listed.</summary>
+        public Rect? HeaderBounds(DeviceSection section)
+        {
+            for (int i = 0; i < items.Count; i++)
+                if (items[i] is HeaderItem h && h.Section == section) return rects[i];
+            return null;
+        }
+
+        IEnumerable<DeviceParam> Navigable() => items.SelectMany(i => ParamsOf(i));
 
         // ------------------------------------------------------------------ the pointer
 
@@ -687,10 +809,23 @@ namespace ReBuzz.Studio.Views.Device
             }
         }
 
+        /// <summary>A drag is on (the view leaves "Changed only" alone until it ends).</summary>
+        public bool Dragging => dragParam != null;
+
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
             base.OnPointerPressed(e);
-            if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+            var props = e.GetCurrentPoint(this).Properties;
+            if (props.IsRightButtonPressed)
+            {
+                var rp = HitTest(e.GetPosition(this)).Param;
+                if (rp == null) return;
+                e.Handled = true;
+                SetFocus(rp);
+                ContextRequested?.Invoke(rp, this);
+                return;
+            }
+            if (!props.IsLeftButtonPressed) return;
             if (editing != null) CloseEditor();
             Focus();
             var hit = HitTest(e.GetPosition(this));
@@ -724,11 +859,10 @@ namespace ReBuzz.Studio.Views.Device
                 case DeviceKind.Toggle:
                     DeviceEdits.Set(Core, p, p.Value == p.Min ? p.Max : p.Min);
                     break;
-                case DeviceKind.Segmented:                  // a table or macro cell of choices: the next choice
+                case DeviceKind.Segmented:                  // a table cell of choices: the next choice
                     DeviceEdits.Set(Core, p, p.Value >= p.Max ? p.Min : p.Value + 1);
                     break;
                 default:
-                    if (hit.Part == Part.Value) break;
                     dragParam = p;
                     dragArea = hit.Area;
                     dragFrom = p.Parameter.GetValue(p.Track);
@@ -823,17 +957,17 @@ namespace ReBuzz.Studio.Views.Device
             editor.ClearValue(Avalonia.Controls.Primitives.TemplatedControl.BorderBrushProperty);
             Avalonia.Controls.ToolTip.SetTip(editor, "Type a value with its unit: Enter sets it, Esc cancels");
             editor.IsVisible = true;
-            PlaceEditor(Bounds.Width);
+            PlaceEditor();
             InvalidateVisual();
             editor.Focus();
             editor.SelectAll();
         }
 
-        void PlaceEditor(double width)
+        void PlaceEditor()
         {
             if (editing == null || !TryGetBounds(editing, out _)) return;
             var r = ValueBounds(editing);
-            var box = editing.IsTrack || items.OfType<MacroItem>().Any(m => m.Cells.Contains(editing)) ? r.Deflate(new Thickness(2, 1)) : new Rect(r.X, r.Y + 1, r.Width, r.Height - 2);
+            var box = editing.IsTrack ? r.Deflate(new Thickness(2, 1)) : new Rect(r.X, r.Y + 1, r.Width, r.Height - 2);
             editor.Measure(box.Size);
             editor.Arrange(new Rect(box.X, box.Y, Math.Max(60, box.Width), box.Height));
         }
@@ -881,9 +1015,8 @@ namespace ReBuzz.Studio.Views.Device
         /// <summary>Redraws if any value in view changed (the machine, an agent, a pattern, undo).</summary>
         public void Poll()
         {
-            var (first, last) = Range();
             bool changed = false;
-            for (int i = first; i <= last && i < items.Count; i++)
+            foreach (int i in Visible())
             {
                 foreach (var p in ParamsOf(items[i]))
                 {
@@ -902,7 +1035,6 @@ namespace ReBuzz.Studio.Views.Device
         static IEnumerable<DeviceParam> ParamsOf(DeviceItem item) => item switch
         {
             ParamItem pi => new[] { pi.Param },
-            MacroItem mi => mi.Cells,
             TableItem ti => ti.Columns.SelectMany(c => Enumerable.Range(0, ti.Section.Tracks).Select(t => ti.Section.Cell(t, c))),
             _ => Array.Empty<DeviceParam>(),
         };

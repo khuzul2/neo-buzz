@@ -48,6 +48,18 @@ namespace ReBuzz.Studio.Views.Device
         public string MacroLabel => TitleCase(PlainName.Length > 0 ? PlainName : Name);
 
         /// <summary>Capitalises each lower-case word; words with a capital in them (LFO, PEG, Hz) stay.</summary>
+        /// <summary>A parameter's name as the machine shows it: inputs "a-"/"p-", tracks "1-Name".</summary>
+        public static string DisplayName(IParameter parameter, int track)
+        {
+            string n = parameter.GetDisplayName(track);
+            return parameter.Group.Type switch
+            {
+                ParameterGroupType.Input => parameter.IndexInGroup switch { 0 => "a-" + n, 1 => "p-" + n, _ => "?-" + n },
+                ParameterGroupType.Track => $"{track}-{n}",
+                _ => n,
+            };
+        }
+
         public static string TitleCase(string s) =>
             string.Join(" ", (s ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(w => char.IsLower(w[0]) ? char.ToUpperInvariant(w[0]) + w.Substring(1) : w));
 
@@ -59,6 +71,12 @@ namespace ReBuzz.Studio.Views.Device
         public bool HasExplain => How.Length > 0 || Sound.Length > 0;
 
         public int Value => Math.Clamp(Parameter.GetValue(Track), Min, Max);
+
+        /// <summary>The value is not the parameter's default ("Changed only" shows these).</summary>
+        public bool IsChanged => Value != Default;
+
+        /// <summary>A global parameter can be pinned to the machine's card in the Inspector.</summary>
+        public bool CanPin => !IsTrack && !IsInput;
 
         /// <summary>Where the value is in its range, 0 to 1.</summary>
         public double Fraction(int raw) => Max == Min ? 0 : Math.Clamp((raw - Min) / (double)(Max - Min), 0, 1);
@@ -154,30 +172,22 @@ namespace ReBuzz.Studio.Views.Device
         public override double Height => RowHeight * (Section.Tracks + 1);
     }
 
-    /// <summary>The macro strip: up to eight parameters as big knobs' worth of sliders side by side.</summary>
-    internal sealed class MacroItem : DeviceItem
+    /// <summary>
+    /// A card of knobs (Knobs mode): up to <see cref="Capacity"/> of one section's parameters, three rows of four. A section with more
+    /// splits into several, titled "Osc A 1/3".
+    /// </summary>
+    internal sealed class DeviceCard
     {
-        public const double StripHeight = 56, CompactHeight = 32;
-        /// <summary>The narrowest a cell goes before the strip wraps onto another row (no cell is ever dropped).</summary>
-        public const double MinCell = 104;
-        public MacroItem(IReadOnlyList<DeviceParam> cells, bool compact = false) { Cells = cells; Compact = compact; }
-        public IReadOnlyList<DeviceParam> Cells { get; }
-        /// <summary>One 32 pt row, the label inside the cell (the docked page's bar); else cells with their label over them, wrapping.</summary>
-        public bool Compact { get; }
-        /// <summary>Cells in a row at the width it was fitted to, and the rows that makes.</summary>
-        public int PerRow { get; private set; } = DeviceLayout.MacroCount;
-        public int Rows => Math.Max(1, (Cells.Count + PerRow - 1) / PerRow);
-        public double CellHeight => Compact ? CompactHeight : StripHeight;
-        public override double Height => Rows * CellHeight;
+        /// <summary>Knobs in a row of a card, and the rows: what a card holds.</summary>
+        public const int Columns = 4, Rows = 3, Capacity = Columns * Rows;
 
-        /// <summary>Fits the strip to a width: a row holds as many cells as are at least <see cref="MinCell"/> wide; true when that changed.</summary>
-        public bool Fit(double width)
-        {
-            int per = Compact ? Math.Max(1, Cells.Count) : Math.Clamp((int)(width / MinCell), 1, Math.Max(1, Cells.Count));
-            if (per == PerRow) return false;
-            PerRow = per;
-            return true;
-        }
+        public DeviceSection Section { get; init; }
+        public string Title { get; init; }
+        public int Index { get; init; }
+        public int Count { get; init; }
+        public IReadOnlyList<DeviceParam> Params { get; init; }
+        /// <summary>Rows of controls the card has (at most three).</summary>
+        public int RowCount => Math.Max(1, (Params.Count + Columns - 1) / Columns);
     }
 
     /// <summary>The machine's parameters grouped and classified, built once per view.</summary>
@@ -200,6 +210,12 @@ namespace ReBuzz.Studio.Views.Device
 
         public const int MacroCount = 8;
 
+        /// <summary>The group of a machine whose parameters have no groups of their own (no manifest groups, no "- " indents, no shared prefix).</summary>
+        public const string OneGroup = "Parameters";
+
+        /// <summary>A name prefix makes a group only when this many parameters share it.</summary>
+        public const int PrefixGroupMin = 3;
+
         public static DeviceLayout Build(IMachine machine)
         {
             var manifest = machine.DLL != null ? SongModel.Manifest(machine) : null;
@@ -216,7 +232,7 @@ namespace ReBuzz.Studio.Views.Device
                     Parameter = p,
                     Track = track,
                     Name = name,
-                    FullName = ParameterRow.DisplayName(p, track),
+                    FullName = DeviceParam.DisplayName(p, track),
                     Group = group,
                     IsTrack = isTrack,
                     IsInput = input,
@@ -259,7 +275,7 @@ namespace ReBuzz.Studio.Views.Device
                     {
                         if (i == 1 && !machine.HasStereoInput) break;
                         var p = inputs.Parameters[i];
-                        var dp = Make(p, t, ParameterRow.DisplayName(p, t), "Inputs", false, true, null);
+                        var dp = Make(p, t, DeviceParam.DisplayName(p, t), "Inputs", false, true, null);
                         s.Params.Add(dp);
                         all.Add(dp);
                     }
@@ -275,7 +291,7 @@ namespace ReBuzz.Studio.Views.Device
                 var entries = ps.Select(p => manifest?.FindAt(false, p.IndexInGroup, p.Name)).ToList();
                 var names = ps.Select(p => p.Name ?? "").ToList();
                 var plan = GroupFromManifest(ps, entries) ?? GroupFromIndents(names) ?? GroupFromPrefixes(names);
-                if (plan.Source == "section") plan = new GroupPlan("section", new[] { ("Global", Enumerable.Range(0, ps.Count).Select(i => (i, names[i])).ToList()) });
+                if (plan.Source == "section") plan = new GroupPlan("section", new[] { (DeviceLayout.OneGroup, Enumerable.Range(0, ps.Count).Select(i => (i, names[i])).ToList()) });
                 source = plan.Source;
                 foreach (var (title, members) in plan.Groups)
                 {
@@ -512,7 +528,7 @@ namespace ReBuzz.Studio.Views.Device
             return t.TrimStart('-', ' ');
         }
 
-        /// <summary>The first word of the names ("F1 cutoff", "F1 res"): a group for each word that two or more share, and at least two such.</summary>
+        /// <summary>The first word of the names ("F1 cutoff", "F1 res", "F1 type"): a group for each word that three or more share.</summary>
         static GroupPlan GroupFromPrefixes(List<string> names)
         {
             string Prefix(string name)
@@ -522,8 +538,8 @@ namespace ReBuzz.Studio.Views.Device
                 return cut > 0 && cut < n.Length - 1 ? n.Substring(0, cut) : "";
             }
             var prefixes = names.Select(Prefix).ToList();
-            var counts = prefixes.Where(p => p.Length > 0).GroupBy(p => p, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() >= 2).Select(g => g.Key).ToList();
-            if (counts.Count < 2) return Plain;
+            var counts = prefixes.Where(p => p.Length > 0).GroupBy(p => p, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() >= PrefixGroupMin).Select(g => g.Key).ToList();
+            if (counts.Count < 1) return Plain;
             var keep = new HashSet<string>(counts, StringComparer.OrdinalIgnoreCase);
             var order = new List<string>();
             var map = new Dictionary<string, List<(int, string)>>(StringComparer.OrdinalIgnoreCase);
@@ -547,28 +563,82 @@ namespace ReBuzz.Studio.Views.Device
 
         // ------------------------------------------------------------------ the list
 
+        static string[] Words(string query) => (query ?? "").Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+
+        /// <summary>The parameters of a section a search (and "Changed only") leaves: those matching every word (all of them when the section's name does).</summary>
+        IEnumerable<DeviceParam> Shown(DeviceSection s, string[] words, bool changedOnly) =>
+            s.Params.Where(p => (words.Length == 0 || p.Matches(words) || words.All(w => s.Name.Contains(w, StringComparison.OrdinalIgnoreCase))) && (!changedOnly || p.IsChanged));
+
+        /// <summary>The track table's columns a search leaves; with "Changed only", those a track has moved off its default.</summary>
+        List<int> TableColumns(DeviceSection s, string[] words, bool changedOnly) =>
+            Enumerable.Range(0, s.Params.Count)
+                .Where(c => words.Length == 0 || s.Params[c].Matches(words) || words.All(w => "tracks".Contains(w, StringComparison.OrdinalIgnoreCase)))
+                .Where(c => !changedOnly || Enumerable.Range(0, s.Tracks).Any(t => s.Cell(t, c).IsChanged))
+                .ToList();
+
         /// <summary>The items a search leaves: the headers of the groups with a match, the matching rows, the table with the matching columns.</summary>
-        public List<DeviceItem> Items(string query, ISet<string> collapsed = null)
+        public List<DeviceItem> Items(string query, ISet<string> collapsed = null, bool changedOnly = false)
         {
-            var words = (query ?? "").Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+            var words = Words(query);
             var items = new List<DeviceItem>();
             foreach (var s in Sections)
             {
-                bool closed = words.Length == 0 && collapsed != null && collapsed.Contains(s.Name);
+                bool closed = words.Length == 0 && !changedOnly && collapsed != null && collapsed.Contains(s.Name);
                 if (s.IsTable)
                 {
-                    var columns = Enumerable.Range(0, s.Params.Count).Where(c => words.Length == 0 || s.Params[c].Matches(words) || words.All(w => "tracks".Contains(w, StringComparison.OrdinalIgnoreCase))).ToList();
+                    var columns = TableColumns(s, words, changedOnly);
                     if (columns.Count == 0) continue;
                     items.Add(new HeaderItem(s, columns.Count, closed));
                     if (!closed) items.Add(new TableItem(s, columns));
                     continue;
                 }
-                var shown = s.Params.Where(p => words.Length == 0 || p.Matches(words) || words.All(w => s.Name.Contains(w, StringComparison.OrdinalIgnoreCase))).ToList();
+                var shown = Shown(s, words, changedOnly).ToList();
                 if (shown.Count == 0) continue;
                 items.Add(new HeaderItem(s, shown.Count, closed));
                 if (!closed) items.AddRange(shown.Select(p => new ParamItem(p)));
             }
             return items;
+        }
+
+        /// <summary>
+        /// The cards of knobs a search leaves (Knobs mode), in section order: each section's matching parameters in cards of at most
+        /// <see cref="DeviceCard.Capacity"/>, split evenly ("Osc A 1/3"). The track table is not a card (see <see cref="TableSection"/>).
+        /// </summary>
+        public List<DeviceCard> Cards(string query, bool changedOnly = false)
+        {
+            var words = Words(query);
+            var cards = new List<DeviceCard>();
+            foreach (var s in Sections)
+            {
+                if (s.IsTable) continue;
+                var shown = Shown(s, words, changedOnly).ToList();
+                if (shown.Count == 0) continue;
+                int count = (shown.Count + DeviceCard.Capacity - 1) / DeviceCard.Capacity;
+                int each = (shown.Count + count - 1) / count;
+                for (int k = 0; k < count; k++)
+                    cards.Add(new DeviceCard
+                    {
+                        Section = s,
+                        Index = k,
+                        Count = count,
+                        Title = count > 1 ? $"{s.Name} {k + 1}/{count}" : s.Name,
+                        Params = shown.Skip(k * each).Take(each).ToList(),
+                    });
+            }
+            return cards;
+        }
+
+        /// <summary>The track parameters' section (the table), or null.</summary>
+        public DeviceSection TableSection => Sections.FirstOrDefault(s => s.IsTable);
+
+        /// <summary>The track table's columns a search leaves, or none.</summary>
+        public List<int> TableColumnsFor(string query, bool changedOnly = false) => TableSection is { } t ? TableColumns(t, Words(query), changedOnly) : new List<int>();
+
+        /// <summary>The sections a chip jumps to: those with something left by the search, the track table last.</summary>
+        public List<DeviceSection> Chips(string query, bool changedOnly = false)
+        {
+            var words = Words(query);
+            return Sections.Where(s => s.IsTable ? TableColumns(s, words, changedOnly).Count > 0 : Shown(s, words, changedOnly).Any()).ToList();
         }
     }
 }
