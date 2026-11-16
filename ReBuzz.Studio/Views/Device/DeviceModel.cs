@@ -32,7 +32,7 @@ namespace ReBuzz.Studio.Views.Device
         public int Max { get; init; }
         public int Default { get; init; }
         public DeviceKind Kind { get; init; }
-        /// <summary>The choices of a segmented control (up to four), their texts from the machine.</summary>
+        /// <summary>The choices of a segmented control or a drop-down, their texts from the machine.</summary>
         public IReadOnlyList<string> Choices { get; init; } = Array.Empty<string>();
         /// <summary>The unit the manifest names ("Hz", "dB", "%"); empty when it doesn't or the machine's text says it.</summary>
         public string Unit { get; init; } = "";
@@ -59,6 +59,50 @@ namespace ReBuzz.Studio.Views.Device
                 _ => n,
             };
         }
+
+        /// <summary>The name shown on a control: sentence case ("Filter Env" is "Filter env", "attack" is "Attack"); words with a capital inside (LFO, PW), single letters and units stay. Display only: the parameter keeps its name.</summary>
+        public string Label => SentenceCase(Name);
+
+        static readonly HashSet<string> KeepCase = new(StringComparer.Ordinal) { "Hz", "Db", "Ms" };
+
+        public static string SentenceCase(string s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return s ?? "";
+            var words = s.Split(' ');
+            bool first = true;
+            for (int i = 0; i < words.Length; i++)
+            {
+                string w = words[i];
+                if (w.Length == 0) continue;
+                if (first)
+                {
+                    if (char.IsLower(w[0])) w = char.ToUpperInvariant(w[0]) + w.Substring(1);
+                    first = false;
+                }
+                else if (w.Length >= 2 && char.IsUpper(w[0]) && !KeepCase.Contains(w) && w.Skip(1).All(c => !char.IsUpper(c)) && w.Skip(1).Any(char.IsLetter))
+                    w = char.ToLowerInvariant(w[0]) + w.Substring(1);
+                words[i] = w;
+            }
+            return string.Join(" ", words);
+        }
+
+        /// <summary>The machine this parameter belongs to.</summary>
+        public IMachine Machine => Parameter?.Group?.Machine;
+
+        /// <summary>What a lock and a pin call it in the song: a global's name; "T:" and the name for a track parameter.</summary>
+        public string LockKey => IsTrack ? "T:" + Parameter.Name : Parameter.Name;
+
+        /// <summary>Input parameters (the amps and pans of connections) are never randomized or morphed, as in the old window; the rest can be locked.</summary>
+        public bool CanLock => !IsInput;
+
+        /// <summary>Left out of Randomize and Morph: locked by the person (kept in the song), or an input.</summary>
+        public bool Locked => IsInput || ((Machine?.Graph?.Buzz as ReBuzz.Core.ReBuzzCore)?.PinStore?.IsLocked(Machine.Name, LockKey) ?? false);
+
+        /// <summary>Hidden by the person (the old window's list of unused parameters, per machine type): out of view unless "Show hidden" is on.</summary>
+        public bool Hidden => !IsInput && Parameter != null && !ReBuzz.Studio.Parameters.ParameterVisibility.IsVisible(Parameter);
+
+        /// <summary>A choice (a strip, a toggle or a drop-down) rather than a knob.</summary>
+        public bool IsChoice => Kind != DeviceKind.Slider;
 
         public static string TitleCase(string s) =>
             string.Join(" ", (s ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(w => char.IsLower(w[0]) ? char.ToUpperInvariant(w[0]) + w.Substring(1) : w));
@@ -178,16 +222,22 @@ namespace ReBuzz.Studio.Views.Device
     /// </summary>
     internal sealed class DeviceCard
     {
-        /// <summary>Knobs in a row of a card, and the rows: what a card holds.</summary>
+        /// <summary>Knobs in a row of a card, and the rows: what a card holds (its choices come on top and don't count).</summary>
         public const int Columns = 4, Rows = 3, Capacity = Columns * Rows;
+
+        /// <summary>The most choices (strips, toggles, drop-downs) a card holds.</summary>
+        public const int ControlCapacity = 10;
 
         public DeviceSection Section { get; init; }
         public string Title { get; init; }
         public int Index { get; init; }
         public int Count { get; init; }
+        /// <summary>The card's parameters: its choices first, then its knobs.</summary>
         public IReadOnlyList<DeviceParam> Params { get; init; }
-        /// <summary>Rows of controls the card has (at most three).</summary>
-        public int RowCount => Math.Max(1, (Params.Count + Columns - 1) / Columns);
+        public IEnumerable<DeviceParam> Choices => Params.Where(p => p.IsChoice);
+        public IEnumerable<DeviceParam> Knobs => Params.Where(p => !p.IsChoice);
+        /// <summary>Rows of knobs the card has (at most three).</summary>
+        public int RowCount => Math.Max(1, (Knobs.Count() + Columns - 1) / Columns);
     }
 
     /// <summary>The machine's parameters grouped and classified, built once per view.</summary>
@@ -199,6 +249,12 @@ namespace ReBuzz.Studio.Views.Device
         public IReadOnlyList<DeviceParam> Macros { get; init; }
         /// <summary>Where the global parameters' groups came from: "manifest", "prefix", "indent" or "section".</summary>
         public string GroupSource { get; init; } = "section";
+
+        /// <summary>Hidden parameters show too (the bar's "Show hidden").</summary>
+        public bool ShowHidden { get; set; }
+
+        /// <summary>How many parameters the person hid.</summary>
+        public int HiddenParams => All.Count(p => p.Hidden && (!p.IsTrack || p.Track == 0));
 
         // ------------------------------------------------------------------ building
 
@@ -297,10 +353,11 @@ namespace ReBuzz.Studio.Views.Device
                 {
                     if (members.Count == 0) continue;
                     var s = new DeviceSection { Name = title, Source = plan.Source };
-                    int cut = CommonWord(members.Select(m => m.Shown).ToList());
+                    var stripped = StripPrefix(members.Select(m => m.Shown).ToList());
+                    int at = 0;
                     foreach (var (i, shown) in members)
                     {
-                        var dp = Make(ps[i], 0, cut > 0 ? shown.Substring(cut).TrimStart() : shown, title, false, false, entries[i]);
+                        var dp = Make(ps[i], 0, stripped[at++], title, false, false, entries[i]);
                         s.Params.Add(dp);
                         all.Add(dp);
                     }
@@ -347,14 +404,24 @@ namespace ReBuzz.Studio.Views.Device
             }
         }
 
-        /// <summary>The length of the first word every name of a group starts with ("O1 shape", "O1 PW": "O1 "), which the header says; 0 when they share none.</summary>
-        static int CommonWord(List<string> names)
+        /// <summary>
+        /// The names of a group without the word the header says: the first word most of them start with ("O2 shape", "O2 PW": "O2"), cut
+        /// from every name that has it (a name that is only that word stays), so one group's cards read alike.
+        /// </summary>
+        internal static List<string> StripPrefix(List<string> names)
         {
-            if (names.Count < 3) return 0;
-            int space = names[0].IndexOf(' ');
-            if (space <= 0) return 0;
-            string word = names[0].Substring(0, space);
-            return names.All(n => n.Length > space + 1 && n.StartsWith(word, StringComparison.OrdinalIgnoreCase) && n[space] == ' ' && n.Substring(space).Trim().Length > 0) ? space + 1 : 0;
+            var result = names.ToList();
+            if (names.Count < 3) return result;
+            string Word(string n) { int sp = n.IndexOf(' '); return sp > 0 ? n.Substring(0, sp) : ""; }
+            var top = names.Select(Word).Where(w => w.Length > 0).GroupBy(w => w, StringComparer.OrdinalIgnoreCase).OrderByDescending(g => g.Count()).FirstOrDefault();
+            if (top == null || top.Count() < 3 || top.Count() * 5 < names.Count * 3) return result;      // three at least, and three in five
+            for (int i = 0; i < names.Count; i++)
+            {
+                string w = Word(names[i]);
+                if (w.Equals(top.Key, StringComparison.OrdinalIgnoreCase) && names[i].Substring(w.Length).Trim().Length > 0)
+                    result[i] = names[i].Substring(w.Length).TrimStart();
+            }
+            return result;
         }
 
         /// <summary>A state parameter a view shows (notes, triggers and internals are played, not set).</summary>
@@ -412,13 +479,19 @@ namespace ReBuzz.Studio.Views.Device
         // ------------------------------------------------------------------ the kind of control
 
         /// <summary>
-        /// A switch is a toggle; two to four values that the machine names (not numbers) are a segmented control; the rest
-        /// are sliders. A manifest enum with names says its choices even where the machine's texts are numbers.
+        /// A switch is a toggle; two to <see cref="ChoiceMax"/> values that the machine names (not numbers) are a choice (up to three a
+        /// strip, more a drop-down); the rest are sliders. A manifest enum with names says its choices even where the machine's texts are numbers.
         /// </summary>
+        /// <summary>The most values a choice has: a parameter with more is a knob.</summary>
+        public const int ChoiceMax = 64;
+
         static (DeviceKind, IReadOnlyList<string>) Classify(IParameter p, ManifestParameter entry)
         {
             int n = p.MaxValue - p.MinValue + 1;
-            if (n < 2 || n > 4) return (DeviceKind.Slider, Array.Empty<string>());
+            if (n < 2 || n > ChoiceMax) return (DeviceKind.Slider, Array.Empty<string>());
+            bool wide = n > 4;
+            bool numeric = entry != null && entry.Mapping.Kind is not (MappingKind.Enum or MappingKind.Switch) && !(entry.Mapping.Names is { Count: > 0 });
+            if (wide && numeric) return (DeviceKind.Slider, Array.Empty<string>());
             var texts = new List<string>();
             for (int v = p.MinValue; v <= p.MaxValue; v++)
             {
@@ -435,6 +508,8 @@ namespace ReBuzz.Studio.Views.Device
             }
             if (p.Type == ParameterType.Switch || entry?.Mapping.Kind == MappingKind.Switch) return (DeviceKind.Toggle, texts);
             if (n == 2 && !named) return (DeviceKind.Toggle, texts);
+            // Many values are a choice only where the machine names them: not "440 Hz", "-6 dB" or "37".
+            if (wide && named && texts.Count(t => char.IsDigit(t[0]) || t[0] is '-' or '+' && t.Length > 1 && char.IsDigit(t[1])) * 4 > texts.Count) named = false;
             if (named) return (DeviceKind.Segmented, texts);
             return (DeviceKind.Slider, Array.Empty<string>());
         }
@@ -567,11 +642,12 @@ namespace ReBuzz.Studio.Views.Device
 
         /// <summary>The parameters of a section a search (and "Changed only") leaves: those matching every word (all of them when the section's name does).</summary>
         IEnumerable<DeviceParam> Shown(DeviceSection s, string[] words, bool changedOnly) =>
-            s.Params.Where(p => (words.Length == 0 || p.Matches(words) || words.All(w => s.Name.Contains(w, StringComparison.OrdinalIgnoreCase))) && (!changedOnly || p.IsChanged));
+            s.Params.Where(p => (ShowHidden || !p.Hidden) && (words.Length == 0 || p.Matches(words) || words.All(w => s.Name.Contains(w, StringComparison.OrdinalIgnoreCase))) && (!changedOnly || p.IsChanged));
 
         /// <summary>The track table's columns a search leaves; with "Changed only", those a track has moved off its default.</summary>
         List<int> TableColumns(DeviceSection s, string[] words, bool changedOnly) =>
             Enumerable.Range(0, s.Params.Count)
+                .Where(c => ShowHidden || !s.Params[c].Hidden)
                 .Where(c => words.Length == 0 || s.Params[c].Matches(words) || words.All(w => "tracks".Contains(w, StringComparison.OrdinalIgnoreCase)))
                 .Where(c => !changedOnly || Enumerable.Range(0, s.Tracks).Any(t => s.Cell(t, c).IsChanged))
                 .ToList();
@@ -613,17 +689,23 @@ namespace ReBuzz.Studio.Views.Device
                 if (s.IsTable) continue;
                 var shown = Shown(s, words, changedOnly).ToList();
                 if (shown.Count == 0) continue;
-                int count = (shown.Count + DeviceCard.Capacity - 1) / DeviceCard.Capacity;
-                int each = (shown.Count + count - 1) / count;
+                var choices = shown.Where(p => p.IsChoice).ToList();
+                var knobs = shown.Where(p => !p.IsChoice).ToList();
+                int count = Math.Max(1, Math.Max((knobs.Count + DeviceCard.Capacity - 1) / DeviceCard.Capacity, (choices.Count + DeviceCard.ControlCapacity - 1) / DeviceCard.ControlCapacity));
+                int eachKnobs = (knobs.Count + count - 1) / count, eachChoices = (choices.Count + count - 1) / count;
                 for (int k = 0; k < count; k++)
+                {
+                    var params_ = choices.Skip(k * eachChoices).Take(eachChoices).Concat(knobs.Skip(k * eachKnobs).Take(eachKnobs)).ToList();
+                    if (params_.Count == 0) continue;
                     cards.Add(new DeviceCard
                     {
                         Section = s,
                         Index = k,
                         Count = count,
                         Title = count > 1 ? $"{s.Name} {k + 1}/{count}" : s.Name,
-                        Params = shown.Skip(k * each).Take(each).ToList(),
+                        Params = params_,
                     });
+                }
             }
             return cards;
         }

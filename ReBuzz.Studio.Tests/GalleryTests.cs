@@ -1778,12 +1778,13 @@ namespace ReBuzz.Studio.Tests
                     Try("455-device-floating-" + slug, () =>
                     {
                         var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery " + gear);
-                        Core.UiHost.OpenParameterWindow(m, null);
-                        var w = StudioMachineUiHost.ParameterWindowOf(m);
-                        Assert.That(w, Is.Not.Null);
+                        var page = new ReBuzz.Studio.Views.Device.DevicePage(m, floating: true);
+                        page.SetEditor(false, remember: false);
+                        var w = new Window { Width = gear == "Dye Essence" ? 1440 : 900, Height = gear == "Dye Essence" ? 820 : 620, Content = page };
+                        w.Show();
                         Settle();
-                        Shot(w!, "455-device-floating-" + slug, $"The Device panel floating for {gear}: the cards wrap and scroll down.", "Right-click a machine ▸ Parameters…, or Float in the Device panel.");
-                        Core.UiHost.CloseWindows(m);
+                        Shot(w, "455-device-floating-" + slug, $"The Device panel floating for {gear}: cards sized to their content flowing to fill the width, choices on top of each card, one colour, sentence-case labels, a \"+N\" menu for the chips that don't fit.", "Right-click a machine ▸ Parameters…, or Float in the Device panel.");
+                        w.Close();
                     });
                 }
                 Try("456-device-list-mode", () =>
@@ -1797,6 +1798,51 @@ namespace ReBuzz.Studio.Tests
                     Settle();
                     Shot(w, "456-device-list-mode", "The Device panel in List mode: rows in columns with group headers, filled bars with the value inside.", "Device panel ▸ List.");
                     w.Close();
+                });
+                Try("458-device-knob-menu", () =>
+                {
+                    var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Dye Essence");
+                    var page = new ReBuzz.Studio.Views.Device.DevicePage(m, floating: true);
+                    page.SetEditor(false, remember: false);
+                    var w = new Window { Width = 900, Height = 700, Content = page };
+                    w.Show();
+                    Settle();
+                    var cell = page.Parameters.Cards.Shown.SelectMany(s => s.Card.Knobs).Take(2).Select(p => page.Parameters.Cards.Cell(p)!).Last();
+                    Click(w, DeviceTestKit.Centre(w, cell.Face), MouseButton.Right);
+                    Shot(w, "458-device-knob-menu", "A knob's menu: Reset, Type a Value, Pin to Inspector, Automate (adds the parameter's arrangement lane), Modulate (a modulator or the matrix), Lock and Hide (ticks), MIDI binding, Keyboard Sends MIDI Notes. The List rows have the same menu.", "Right-click a knob or a row in the Device panel.");
+                    w.Close();
+                });
+                Try("459-device-edit-features", () =>
+                {
+                    var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Dye Essence");
+                    string hiddenFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "gallery-hidden-" + System.Guid.NewGuid().ToString("N") + ".xml");
+                    ReBuzz.Studio.Parameters.ParameterVisibility.FilePath = hiddenFile;
+                    ReBuzz.Studio.Parameters.ParameterVisibility.Reset();
+                    var page = new ReBuzz.Studio.Views.Device.DevicePage(m, floating: true);
+                    page.SetEditor(false, remember: false);
+                    var w = new Window { Width = 1200, Height = 760, Content = page };
+                    w.Show();
+                    Settle();
+                    try
+                    {
+                        var view = page.Parameters;
+                        var knobs = view.Cards.Shown.SelectMany(s => s.Card.Knobs).ToList();
+                        foreach (var p in knobs.Take(3)) ReBuzz.Studio.Views.Device.DeviceMenus.SetLocked(m, p, true);
+                        foreach (var p in knobs.Skip(3).Take(2)) ReBuzz.Studio.Parameters.ParameterVisibility.SetVisible(p.Parameter, false);
+                        view.ShowHidden = true;
+                        Settle();
+                        ReBuzz.Studio.Views.Device.DeviceFunctions.OpenMorph(m, page.PresetsButton, null);
+                        Settle();
+                        Shot(w, "459-device-edit-features", "The old Edit mode's features in the Device panel: locked parameters carry a padlock (left out of Randomize and Morph), hidden ones are dimmed while Show hidden is on, and the Presets menu's Morph flyout (preset A, preset B, a slider; one undo step).", "Right-click a knob ▸ Lock or Hide; Show hidden in the bar; Presets ▸ Morph Between A and B.");
+                    }
+                    finally
+                    {
+                        w.Close();
+                        Core.PinStore!.Clear();
+                        ReBuzz.Studio.Parameters.ParameterVisibility.FilePath = null;
+                        ReBuzz.Studio.Parameters.ParameterVisibility.Reset();
+                        try { System.IO.File.Delete(hiddenFile); } catch (System.IO.IOException) { }
+                    }
                 });
                 Try("457-inspector-macros-and-pins", () =>
                 {
