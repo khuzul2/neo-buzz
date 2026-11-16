@@ -84,7 +84,7 @@ namespace ReBuzz.Agent
                 Title = "Hot-swap a machine",
                 Description =
                     "Puts other gear in a machine's place, as dropping a browser item on a machine's box does: its connections (with their gains), position and name are kept, " +
-                    "its patterns are made again on the new machine with the same names and lengths (their notes and values are not converted), the arrangement's clips follow, " +
+                    "its patterns are made again on the new machine with the same names and lengths, empty (their notes and values belong to the old machine's columns and are not converted), the arrangement's tracks are made again but not their clips, " +
                     "one undo step. A generator can only be swapped for a generator and an effect for an effect. Same gear with another plug-in (Neo Plug) swaps the plug-in in place. " +
                     "For a classic machine's Neo successor with its settings converted use machine_replace instead. Example: machine_swap(machine=\"Lead\", gear=\"Neo Poly\").",
                 Input = Object(null,
@@ -116,8 +116,7 @@ namespace ReBuzz.Agent
                             throw new ToolError($"{dll.Name} has no plug-in \"{plugin}\". gear_list(search=...) lists plug-ins.");
                         string from = old.DLL.Name;
                         string name = old.Name;
-                        core.SongCore.ReplaceMachine(old, dll.Name, string.IsNullOrEmpty(plugin) ? null : plugin, old.Position.Item1, old.Position.Item2);
-                        var now = SongModel.Machines(core).FirstOrDefault(m => m.Name == name) ?? throw new ToolError("The swap didn't leave a machine of that name; undo restores the song.");
+                        var now = ReBuzz.Core.MachineEditing.HotSwap(core, old, dll.Name, string.IsNullOrEmpty(plugin) ? null : plugin) ?? throw new ToolError("The swap didn't leave a machine of that name; undo restores the song.");
                         return new JsonObject { ["machine"] = now.Name, ["from"] = from, ["to"] = dll.Name + (string.IsNullOrEmpty(plugin) ? "" : " " + plugin), ["patterns"] = now.Patterns.Count };
                     }, c.Cancellation);
                     return ToolResult.Ok($"Swapped {r["machine"]} from {r["from"]} to {r["to"]}; {r["patterns"]} patterns.", r);

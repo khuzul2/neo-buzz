@@ -515,6 +515,7 @@ namespace ReBuzz.Studio.Views.Browser
                 if (items.Count > MachineBrowserModel.MaxRows) others.Add(new BrowserRow("none:", $"{items.Count - MachineBrowserModel.MaxRows:N0} more: search to narrow it", null, true));
             }
 
+            foreach (var r in others) if (r.Item != null) itemsByTag[r.Tag] = r.Item;
             string tags = string.Join("\n", rows.Select(r => r.Tag).Concat(others.Select(r => r.Tag)));
             string shownPattern = pattern?.Name ?? "";
             string stamp = source + "|" + treeMode + "|" + string.Join(",", folded) + "\n" + tags + "\n" + string.Join(",", model.Favourites) + "|" + string.Join(",", model.Collections.All()) + "|" + string.Join(",", model.Collections.All().Select(model.Collections.Colour));
@@ -541,7 +542,6 @@ namespace ReBuzz.Studio.Views.Browser
                             built.Add(allView ? BrowserRows.Header(r.Tag, r.Text) : BrowserRows.Group(r.Text, isFolded, () => { if (!folded.Add(key)) folded.Remove(key); lastStamp = null; Rebuild(force: true); }));
                             continue;
                         }
-                        itemsByTag[r.Tag] = r.Item;
                         built.Add(r.Item.Machine != null && r.Item.Kind != BrowserKind.Preset
                             ? BrowserRows.Item(new MachineBrowserModel.Row(r.Tag, r.Item.Name, r.Item.Machine, false), model, detail: false)
                             : BrowserRows.ItemRow(r.Item, model, grouped: !allView && treeMode));

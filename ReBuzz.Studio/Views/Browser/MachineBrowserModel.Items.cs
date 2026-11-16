@@ -82,12 +82,14 @@ namespace ReBuzz.Studio.Views.Browser
 
         // ------------------------------------------------------------------ favourites and tags, for any item
 
+        static bool IsGearItem(BrowserItem item) => item.Machine != null && item.Kind is BrowserKind.Machine or BrowserKind.Plugin;
+
         public bool IsFavourite(BrowserItem item) =>
-            item.Machine != null ? IsFavourite(item.Machine) || Collections.IsFavourite(item.Key) : Collections.IsFavourite(item.Key);
+            IsGearItem(item) ? IsFavourite(item.Machine) || Collections.IsFavourite(item.Key) : Collections.IsFavourite(item.Key);
 
         public void ToggleFavourite(BrowserItem item)
         {
-            if (item.Machine != null) { ToggleFavourite(item.Machine); Collections.Remove(item.Key); }
+            if (IsGearItem(item)) { ToggleFavourite(item.Machine); Collections.Remove(item.Key); }
             else Collections.ToggleFavourite(item.Key);
         }
 
@@ -95,7 +97,7 @@ namespace ReBuzz.Studio.Views.Browser
         public void SetColour(BrowserItem item, int colour)
         {
             Collections.SetColour(item.Key, colour);
-            if (item.Machine != null && colour > 0 && !IsFavourite(item.Machine)) ToggleFavourite(item.Machine);
+            if (IsGearItem(item) && colour > 0 && !IsFavourite(item.Machine)) ToggleFavourite(item.Machine);
         }
 
         public int ColourOf(BrowserItem item) => Collections.Colour(item.Key);
@@ -386,8 +388,7 @@ namespace ReBuzz.Studio.Views.Browser
                 {
                     if (machine.DLL.Name != e.Gear.Instrument.MachineDLL.Name)
                     {
-                        MachineEdits.Replace(core, machine, e.Gear.Instrument);
-                        machine = core.Song.Machines.FirstOrDefault(m => m.Name == name) ?? machine;
+                        machine = MachineEditing.HotSwap(core, machine, e.Gear.Instrument.MachineDLL.Name, e.Gear.Instrument.Name) ?? machine;
                     }
                     ApplyPreset(machine, data.Preset);
                 }
@@ -398,8 +399,7 @@ namespace ReBuzz.Studio.Views.Browser
                         why = "It already is " + e.Name + ".";
                         return null;
                     }
-                    MachineEdits.Replace(core, machine, e.Gear.Instrument);
-                    machine = core.Song.Machines.FirstOrDefault(m => m.Name == name) ?? machine;
+                    machine = MachineEditing.HotSwap(core, machine, e.Gear.Instrument.MachineDLL.Name, e.Gear.Instrument.Name) ?? machine;
                 }
             }
             MarkUsed(e);
