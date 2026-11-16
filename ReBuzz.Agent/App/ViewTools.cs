@@ -73,7 +73,7 @@ namespace ReBuzz.Agent.App
                 Name = "machine_open_editor",
                 Title = "Open a machine's window",
                 Description =
-                    "Opens a machine's window in the studio: window=\"gui\" (its own editor, default), \"parameters\" (the parameter window) or \"editor\" (the manifest editor, for machines that have one). " +
+                    "Opens a machine's window in the studio: window=\"gui\" (its own editor, default), \"parameters\" (the Device panel in a window of its own: knobs or a list of every parameter) or \"editor\" (the manifest editor, for machines that have one). " +
                     "Studio mode only; refused while recording. The window opens over the studio, so the person sees it. Example: machine_open_editor(machine=\"Bass\", window=\"parameters\").",
                 Input = Object(null,
                     Req("machine", String("The machine")),

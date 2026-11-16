@@ -55,6 +55,7 @@ namespace ReBuzz.Studio.Views.Inspector
         readonly Avalonia.Controls.Control songPage;
         readonly HistoryTab historyPage;
         readonly TextBlock heading, subtitle, hint;
+        readonly InspectorDevice device;
         readonly Grid facts;
         // Explain (neo-learn.md §5.3): the focused control of a machine whose editor has Explain text.
         readonly Border explain;
@@ -118,10 +119,11 @@ namespace ReBuzz.Studio.Views.Inspector
                 Child = new StackPanel { Children = { explainTitle, explainBadge, explainHow, explainSound } },
             };
             AutomationProperties.SetName(explain, "Explain");
+            device = new InspectorDevice(core);
             var top = new StackPanel
             {
                 Margin = new Thickness(12, 0, 12, 8),
-                Children = { heading, subtitle, facts, explain, hint, patternButton, notesButton },
+                Children = { heading, subtitle, facts, device, explain, hint, patternButton, notesButton },
             };
             DockPanel.SetDock(top, Dock.Top);
             selectionPage = new DockPanel { LastChildFill = true };
@@ -240,6 +242,9 @@ namespace ReBuzz.Studio.Views.Inspector
         internal string HeadingText => heading.Text;
         internal string SubtitleText => subtitle.Text;
         internal string HintText => hint.Text;
+
+        /// <summary>The selected machine's macros and pinned parameters.</summary>
+        internal InspectorDevice Device => device;
 
         /// <summary>The facts rows, as "label: value" (the clip panel's own sections are not among them).</summary>
         internal IReadOnlyList<(string Label, string Value)> Facts =>
@@ -414,6 +419,7 @@ namespace ReBuzz.Studio.Views.Inspector
                 notesButton.IsVisible = machine == null;
             }
 
+            device.Show(machine);
             RefreshExplain(machine);
 
             if (clip != null)
