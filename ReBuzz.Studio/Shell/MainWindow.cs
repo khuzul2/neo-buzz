@@ -253,6 +253,7 @@ namespace ReBuzz.Studio.Shell
                 host.Core != null ? new Views.Device.DeviceDock(host.Core) : null);
             // Fork (ux-overhaul.md P3e): a double click on a machine with no editor of its own opens its device view here.
             Platform.StudioMachineUiHost.DeviceOpener = OpenDevice;
+            Views.Device.DeviceMenus.ShowArrangement = () => ShowView("Arrangement");     // fork: the Device menu's Automate shows the lane
             if (tracker is PatternPage page)
             {
                 page.Reveal = () => detail.Show(detail.IsMaximised);

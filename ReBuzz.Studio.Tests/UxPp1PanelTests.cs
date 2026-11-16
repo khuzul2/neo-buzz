@@ -79,7 +79,7 @@ namespace ReBuzz.Studio.Tests
                 var layout = DeviceLayout.Build(m);
                 var cards = layout.Cards("");
                 Assert.That(cards, Is.Not.Empty);
-                Assert.That(cards.All(c => c.Params.Count <= DeviceCard.Capacity), "no card holds more than 3 rows of 4");
+                Assert.That(cards.All(c => c.Knobs.Count() <= DeviceCard.Capacity), "no card holds more than 3 rows of 4 knobs");
                 var split = cards.Where(c => c.Count > 1).ToList();
                 Assert.That(split, Is.Not.Empty, "Dye Essence has sections over 12");
                 Assert.That(split.All(c => Regex.IsMatch(c.Title, @" \d+/\d+$")), "\"Osc A 1/3\"");
