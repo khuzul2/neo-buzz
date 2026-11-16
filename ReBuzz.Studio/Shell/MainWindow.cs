@@ -430,6 +430,8 @@ namespace ReBuzz.Studio.Shell
             yield return Command("file.saveas", mac, () => _ = SongFiles.SaveAs(), running);
             yield return Command("file.export", mac, () => _ = ExportSheet.Open(host.Core), running);
             yield return Command("file.exportbuzz", mac, () => _ = BuzzExportFlow.Run(), running);
+            // Fork (docs/specs/stem-separation.md): an audio file into stems on new Neo Audio tracks.
+            yield return new MenuEntry { Header = "Separate _Stems from Audio File…", Run = () => _ = StemFlow.SeparateFile(), CanRun = running };
             yield return Command("file.revert", mac, () => _ = RevertToSaved(), () => running() && host.Core.SongCore.SongName != null && host.Core.Modified);
             if (!mac)
             {

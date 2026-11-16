@@ -32,7 +32,7 @@ Forms, harmony, melody, groove and arrangement, with the calls that write them. 
 8. Movement: `automation_write(machine="Chords", pattern="Build", param="F1 cutoff", points=[{"at": 0, "value": "400 Hz"}, {"at": 32, "value": "8 kHz"}])`. Automation lives in a pattern and plays only where that pattern is placed.
 9. Check: `notes_read`, `theory(op="fit", key="A minor", notes=[…])`, `render(section="Drop")`, `analyze(source="r3", metrics=["key", "tempo", "loudness"])`.
 
-The Session View grid (`session_clip_set`, `session_scene_set`, `session_get`) is good for sketching loops as scenes. Audio files come in with `audio_import` (a Neo Audio track; WAV, AIFF, FLAC, OGG, MP3) and are shaped with `audio_clip_get` and `audio_clip_set` (warp, tempo, transpose, gain, loop). Renders play the arrangement, so the finished song lives there.
+The Session View grid (`session_clip_set`, `session_scene_set`, `session_get`) is good for sketching loops as scenes. Audio files come in with `audio_import` (a Neo Audio track; WAV, AIFF, FLAC, OGG, MP3) and are shaped with `audio_clip_get` and `audio_clip_set` (warp, tempo, transpose, gain, loop); `audio_separate` splits a clip or a file into vocals, drums, bass and other on new tracks. Renders play the arrangement, so the finished song lives there.
 
 ## Harmony
 

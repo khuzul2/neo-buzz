@@ -131,6 +131,15 @@ namespace ReBuzz.Studio.Views.Browser
             var none = new MenuItem { Header = "Remove the tag" };
             none.Click += (s, a) => model.SetColour(it, 0);
             items.Add(none);
+            // Fork (docs/specs/stem-separation.md): a sample file into stems on new tracks.
+            if (it.Kind == ReBuzz.Agent.Browser.BrowserKind.Audio && it.Path != null)
+            {
+                items.Add(new Separator());
+                var separate = new MenuItem { Header = "Separate stems…" };
+                string file = it.Path;
+                separate.Click += (s, a) => _ = ReBuzz.Studio.Shell.StemFlow.SeparateFile(file);
+                items.Add(separate);
+            }
             menu.ItemsSource = items;
             item.ContextMenu = menu;
             ToolTip.SetTip(item, it.Path ?? it.Name);

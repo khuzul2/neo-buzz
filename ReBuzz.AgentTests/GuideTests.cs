@@ -120,6 +120,8 @@ namespace ReBuzz.AgentTests
             ["audio_import"] = new[] { "path", "track", "slot", "at_beats" },
             ["audio_clip_get"] = new[] { "machine", "pattern" },
             ["audio_clip_set"] = new[] { "machine", "pattern", "warp", "preserve", "tempo_bpm", "detect_tempo", "transpose", "detune", "gain_db", "loop", "region", "warp_markers" },
+            // stem separation (stem-separation.md: ReBuzz/Agent/AudioClipTools.cs)
+            ["audio_separate"] = new[] { "machine", "pattern", "path", "quality", "stems", "slot", "at_beats" },
             ["session_scene_set"] = new[] { "scene", "insert", "name", "tempo_bpm", "beats_per_bar" },
             // A3 (origin/agent/a3-tools: ReBuzz.Agent/Model/CompositionTools.cs, Transforms.cs)
             ["theory"] = new[] { "op", "chord", "progression", "key", "octave", "register", "voicing", "inversion", "voice_leading", "previous", "beats_per_chord", "start", "pitches", "steps", "notes" },

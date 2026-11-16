@@ -52,6 +52,7 @@ namespace ReBuzz.Studio.Shell.Preferences
             if (host.Agent != null) pages.Add(new AgentPage(host.Agent, model));
             pages.Add(new SafetyPage(core, model));
             pages.Add(new PluginsPage(model));
+            pages.Add(new StemsPage(model));
             pages.Add(new AdvancedPage(model));
             foreach (var page in pages)
             {

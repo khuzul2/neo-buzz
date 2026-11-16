@@ -24,6 +24,7 @@ The audio track of the Session View and the arrangement: it plays audio clips (a
 
 - Import a file: `audio_import(path="/music/loop.wav", track="Drums audio", slot=1)`; leave `track` out to get a new audio track named after the file.
 - Change it: `audio_clip_set(machine="Drums audio", pattern="loop", warp="Complex", transpose=-2, gain_db=-3)`; `audio_clip_get` reads it back.
+- Split a clip (or a file) into stems on new tracks: `audio_separate(machine="Drums audio", pattern="loop", quality="Fast", stems=["drums", "bass"])` (or `path="/music/song.flac"`). Each stem gets a Neo Audio track named after it, with a clip in the same scene and at the same arrangement positions, one undo step. It needs a stem model installed (Gear/Models/Stems or Preferences > Stems; Install models takes the "NeoBuzz Live Stem Models" zip) and takes minutes for a song, longer for Balanced (four times Fast) and Best; a repeat on the same audio and quality is instant.
 - Launch it: `session_launch(scene=0, machine="Drums audio")`, or place it with `audio_import(..., at_beats=0)`.
 - Record a take: `session_record(action="start", machine="Drums audio", bars=4)`.
 
@@ -45,6 +46,7 @@ None needed: it is the Session Clip Player renamed. A song that names Session Cl
 
 ## Checklist
 
+- [ ] `audio_separate(machine="Drums audio", pattern="loop", quality="Fast")`: four new audio tracks (or the error that says which model to install).
 - [ ] `machine_describe(machine="Drums audio")`: its parameters are `Monitor` and `Input`.
 - [ ] `audio_clip_get(machine="Drums audio", pattern="loop")`: the warp, tempo and audio are listed.
 - [ ] `meters_read(machines=["Drums audio"])`: a launched clip shows a level.

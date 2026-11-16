@@ -57,6 +57,7 @@ FEATURES = [
     ("Browser (BR1)", "Places: the folders the browser indexes", "browser.md", ["browser_places"], "list, add, remove; the scan runs in the background"),
     ("Browser (BR1)", "Hot-swap: other gear in a machine's place", "browser.md", ["machine_swap"], "the Machine View's drop on a machine's box; one undo step"),
     ("Neo Audio (NA1)", "Audio files in the song: import, warp, tempo, transpose, gain, loop, region", "neo-audio.md", ["audio_import", "audio_clip_get", "audio_clip_set"], "the audio is kept in the song (an .nbl embeds it), not in the wavetable"),
+    ("Neo Audio (stems)", "Separate stems: a clip or a file into vocals, drums, bass and other on new audio tracks", "stem-separation.md", ["audio_separate"], "the Separate stems and Install models dialogs and the Preferences page are the studio's only"),
     ("Dropped", "Wireless, machine templates and the Create Template window", "ux-overhaul.md §9 row 14", [], "dropped in the studio too"),
 ]
 

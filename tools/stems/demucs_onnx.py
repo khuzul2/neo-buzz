@@ -9,7 +9,7 @@
 #   freq [1, S, 4, 2048, 336] (already un-normalised) and  time [1, S, 2, L]
 # The caller adds the inverse STFT of `freq` to `time`.
 #
-#   python3 demucs_onnx.py export <htdemucs|htdemucs_ft> <out folder>
+#   python3 demucs_onnx.py export <htdemucs|htdemucs_ft> <out folder> [--fp16-weights]
 import json
 import math
 import os
@@ -112,10 +112,26 @@ def single_models(name):
     return bag.models, [list(w) for w in bag.weights] if hasattr(bag, "weights") else None
 
 
-def export(name, out):
-    os.makedirs(out, exist_ok=True)
+QUALITY = {"htdemucs": ("Fast", "Demucs (htdemucs)"), "htdemucs_ft": ("Balanced", "Demucs fine-tuned (htdemucs_ft)")}
+SOURCE = {"htdemucs": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th (facebookresearch/demucs 4.1)",
+          "htdemucs_ft": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/ f7e0c4bc-ba3fe64a.th, d12395a8-e57c48e6.th, "
+                         "92cfc3b6-ef3bcb9c.th, 04573f0d-f3cf25b2.th (facebookresearch/demucs 4.1)"}
+LICENSE = ("The Demucs code is MIT (facebookresearch/demucs). The pretrained weights come with no licence of their own and were trained on "
+           "MUSDB18-HQ and 800 further songs: personal use only, do not redistribute.")
+
+
+def to_fp16_weights(path):
+    from roformer_onnx import to_fp16_weights as convert
+    convert(path)
+
+
+def export(name, out, fp16=False):
+    """Writes <out>/<name>/model.json and the ONNX files; returns the manifest dict."""
+    folder = os.path.join(out, name)
+    os.makedirs(folder, exist_ok=True)
     models, weights = single_models(name)
-    entries = []
+    passes = []
+    details = []
     for i, m in enumerate(models):
         m.eval()
         core = DemucsCore(m).eval()
@@ -123,28 +139,70 @@ def export(name, out):
         x = cac_spec(m, mix)
         with torch.no_grad():
             f, t = core(mix, x)
-            # the cut must give the model's own output
-            ref = m(mix)
-            mine = post(m, f, t, SEGMENT)
-            err = (ref - mine).abs().max().item()
+            ref = m(mix)            # the cut must give the model's own output
+            err = (ref - post(m, f, t, SEGMENT)).abs().max().item()
         assert err < 1e-3, f"the cut model differs from HTDemucs.forward by {err}"
-        path = os.path.join(out, f"{name}_{i}.onnx")
+        fname = f"{name}_{i}.onnx"
+        path = os.path.join(folder, fname)
         torch.onnx.export(core, (mix, x), path, input_names=["mix", "cac"], output_names=["freq", "time"],
                           opset_version=17, dynamo=False, do_constant_folding=True)
-        w = weights[i] if weights else [1, 1, 1, 1]
-        entries.append({"file": os.path.basename(path), "sources": list(m.sources), "weights": w,
-                        "cut_error": err, "bytes": os.path.getsize(path)})
+        sources = list(m.sources)
+        w = weights[i] if weights else [1.0] * len(sources)
+        outputs = {src: [k] for k, src in enumerate(sources) if w[k] > 0}   # a bag of one-stem specialists keeps one stem each
+        passes.append({"file": fname, "outputs": outputs})
+        details.append({"file": fname, "cutError": err, "bytes": os.path.getsize(path)})
+        if fp16:
+            to_fp16_weights(path)
+        details[-1]["bytes"] = os.path.getsize(path)
+        details[-1]["fp16Weights"] = fp16
         print(f"{path}: {os.path.getsize(path) / 1e6:.0f} MB, cut error {err:.2e}", flush=True)
-    meta = {"family": "htdemucs", "name": name, "sampleRate": 44100, "segment": SEGMENT, "nfft": 4096, "hop": 1024,
-            "bins": 2048, "frames": math.ceil(SEGMENT / 1024), "channels": 2,
-            "sources": list(models[0].sources), "models": entries}
-    with open(os.path.join(out, name + ".json"), "w") as fh:
+        del core
+    quality, title = QUALITY[name]
+    meta = {"id": name, "quality": quality, "title": title, "family": "htdemucs", "source": SOURCE[name], "license": LICENSE,
+            "revision": "1", "sampleRate": 44100, "segment": SEGMENT, "overlap": 0.25, "nfft": 4096, "hop": 1024,
+            "stems": ["vocals", "drums", "bass", "other"], "outputStems": len(models[0].sources), "passes": passes, "export": details}
+    with open(os.path.join(folder, "model.json"), "w") as fh:
         json.dump(meta, fh, indent=1)
     return meta
 
 
+
+
+# ---------------------------------------------------------------------------------------------------------- validation hooks
+from types import SimpleNamespace  # noqa: E402
+from demucs.htdemucs import HTDemucs  # noqa: E402
+
+_NS = SimpleNamespace(hop_length=1024, nfft=4096, cac=True, wiener_iters=0)
+
+
+def torch_pass(name, index):
+    """The PyTorch model of one pass as a function: chunk [2, SEGMENT] float32 -> [S, 2, SEGMENT]."""
+    m = get_model(name).models[index].eval()
+
+    def run(chunk):
+        with torch.no_grad():
+            return m(torch.from_numpy(chunk)[None])[0].numpy()
+    return run
+
+
+def onnx_pass(path):
+    """The exported model as a function with the same signature, with the transform done as the C# does it (here by Demucs's own code)."""
+    import onnxruntime as ort
+    session = ort.InferenceSession(path, providers=["CPUExecutionProvider"])
+
+    def run(chunk):
+        mix = torch.from_numpy(chunk)[None]
+        cac = HTDemucs._magnitude(_NS, HTDemucs._spec(_NS, mix))
+        freq, time = session.run(None, {"mix": mix.numpy(), "cac": cac.numpy()})
+        zout = HTDemucs._mask(_NS, None, torch.from_numpy(freq))
+        out = HTDemucs._ispec(_NS, zout, chunk.shape[-1]) + torch.from_numpy(time)
+        return out[0].numpy()
+    return run
+
+
 if __name__ == "__main__":
-    if len(sys.argv) == 4 and sys.argv[1] == "export":
-        export(sys.argv[2], sys.argv[3])
+    args = [a for a in sys.argv[1:] if a != "--fp16-weights"]
+    if len(args) == 3 and args[0] == "export":
+        export(args[1], args[2], "--fp16-weights" in sys.argv)
     else:
         sys.exit(__doc__)
