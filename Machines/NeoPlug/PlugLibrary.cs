@@ -302,7 +302,10 @@ namespace NeoBuzz.Plug
             var f = Load();
             lock (gate)
             {
+                var was = f.Blocked.Where(b => string.Equals(b.Path, path, StringComparison.OrdinalIgnoreCase)).ToList();
                 int n = f.Blocked.RemoveAll(b => string.Equals(b.Path, path, StringComparison.OrdinalIgnoreCase));
+                // H2: a plug-in that was blocked and is tried again runs in a sandbox, whatever else is chosen, until the flag is taken off.
+                foreach (var b in was) PlugPlacement.Flag(b.Path, "it was blocked: " + b.Reason);
                 if (n > 0) Save();
                 return n > 0;
             }
@@ -311,7 +314,12 @@ namespace NeoBuzz.Plug
         public static void UnblockAll()
         {
             var f = Load();
-            lock (gate) { f.Blocked.Clear(); Save(); }
+            lock (gate)
+            {
+                foreach (var b in f.Blocked) PlugPlacement.Flag(b.Path, "it was blocked: " + b.Reason);
+                f.Blocked.Clear();
+                Save();
+            }
         }
 
         // --- Scanning ------------------------------------------------------------------------------------

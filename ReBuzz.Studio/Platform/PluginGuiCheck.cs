@@ -24,6 +24,8 @@ namespace ReBuzz.Studio.Platform
         /// <summary>The plug-in's name to look for, from the command line; null when the check isn't asked for.</summary>
         public static string PlugIn { get; set; }
         public static bool Effect { get; set; }
+        /// <summary>The plug-in runs in a sandbox (the environment's choice, else the platform's default).</summary>
+        static bool Sandboxed => NeoBuzz.Plug.PlugPlacement.IsSandbox(NeoBuzz.Plug.PlugPlacement.Resolve("", "", "", PlugIn, null, out _));
         public static bool Floating { get; set; }
         /// <summary>The check of the exported Neo plug-ins (docs/specs/plugin-export.md PX2): PlugIn is a list ("A|B|C"); each is also dragged, screenshot, resized, saved as .nbl and .bmx and reopened.</summary>
         public static bool Export { get; set; }
@@ -139,7 +141,7 @@ namespace ReBuzz.Studio.Platform
             Check(controller.Has(machine), "the plug-in has an editor for this window API");
             if (!controller.Has(machine)) return;
 
-            var want = Floating ? PluginEditorMode.Floating : PluginEditorMode.Embedded;
+            var want = Floating || Sandboxed ? PluginEditorMode.Floating : PluginEditorMode.Embedded;
             for (int round = 1; round <= 2; round++)
             {
                 string r = round == 1 ? "first open" : "reopen";
@@ -152,9 +154,11 @@ namespace ReBuzz.Studio.Platform
                 if (session == null) return;
                 Check(session.Width >= 100 && session.Height >= 100, $"{r}: the view is {session.Width} x {session.Height}");
                 int colours = Colours(session);
-                Check(colours > 150, $"{r}: the plug-in drew its view ({colours} colours)");
                 string tag = System.Text.RegularExpressions.Regex.Replace(instrument, "[^A-Za-z0-9]+", "-").Trim('-');
-                if (Export) Check(Shot(session, $"{tag}-{(round == 1 ? "open" : "reopen")}") > 150, $"{r}: the screenshot shows more than a blank view");
+                // A sandboxed editor is a window of another process: its pixels can't be read from here (H2), so only that it opened is checked.
+                if (colours < 0 && Sandboxed) Say($"ok {r}: the editor is a window of the plug-in's sandbox (its pixels are not readable from here)");
+                else Check(colours > 150, $"{r}: the plug-in drew its view ({colours} colours)");
+                if (Export) Check(Shot(session, $"{tag}-{(round == 1 ? "open" : "reopen")}") > 150 || (colours < 0 && Sandboxed), $"{r}: the screenshot shows more than a blank view");
 
                 if (round == 1 && Export) await Interact(host, machine, session, tag);
                 if (round == 1)
@@ -167,8 +171,8 @@ namespace ReBuzz.Studio.Platform
                         await Pause(800);
                         for (int tries = 0; tries < 8 && Colours(session) <= 150; tries++) await Pause(400);   // a resized view repaints on the plug-in's next frame
                         Check(session.Width > 0 && session.Height > 0, $"resized from the host: {w0} x {h0} to {session.Width} x {session.Height}");
-                        { int cc = Colours(session); Check(cc > 150, $"and the view still draws ({cc} colours)"); }
-                        if (Export) Check(Shot(session, tag + "-resized") > 150, "the resized view's screenshot shows more than a blank view");
+                        { int again = Colours(session); if (again < 0 && Sandboxed) Say("ok and the sandbox's window is still there"); else Check(again > 150, $"and the view still draws ({again} colours)"); }
+                        if (Export) Check(Shot(session, tag + "-resized") > 150 || Sandboxed, "the resized view's screenshot shows more than a blank view");
                     }
                     else Say($"the editor has a fixed size ({session.Width} x {session.Height})");
                 }
@@ -231,21 +235,27 @@ namespace ReBuzz.Studio.Platform
             if (hot(out int x, out int y) == 0) { Check(false, "the editor reports a knob to drag"); return; }
             var before = Slots(machine);
             Say($"dragging the knob at ({x}, {y}) of a {session.Width} x {session.Height} view; {before.Length} slot values");
-            inject(0, x, y);
-            await Pause(150);
-            for (int i = 1; i <= 8; i++) { inject(1, x, y - 6 * i); await Pause(60); }
-            inject(2, x, y - 48);
-            await Pause(300);
-            await Blip(host);
-            await Pause(1500);   // the plug-in's gesture reaches Neo Plug's pump (about every 20 ms) and the engine
-            var after = Slots(machine);
-            var moved = Enumerable.Range(0, Math.Min(before.Length, after.Length)).Where(i => before[i] != after[i]).ToList();
-            string seen = string.Join(", ", moved.Take(4).Select(i => $"slot {i}: {before[i]} -> {after[i]}"));
-            // Known gap, reported with its evidence (docs/specs/plugin-export.md, limits): a VST3 plug-in's own edits reach Neo Plug's slots only
-            // through clap-wrapper's output parameter changes, and on macOS two instruments' first knob does not move a slot through the CLAP path.
-            bool gap = tag.Contains("VST3") || (OperatingSystem.IsMacOS() && (tag.Contains("Drums") || tag.Contains("FM6")));
-            if (gap && moved.Count == 0) Say($"NOTE dragging a knob changed no slot value of this instance (known gap, not asserted)");
-            else Check(moved.Count >= 1, $"dragging a knob changed Neo Plug's slot value ({seen})");
+            // Up first; a knob that sits at its top does not move that way, so a second drag goes down. Either way a slot value changes.
+            string seen = "";
+            List<int> moved = new();
+            for (int attempt = 0; attempt < 2 && moved.Count == 0; attempt++)
+            {
+                int dir = attempt == 0 ? -1 : 1;
+                inject(0, x, y);
+                await Pause(150);
+                for (int i = 1; i <= 8; i++) { inject(1, x, y + dir * 6 * i); await Pause(60); }
+                inject(2, x, y + dir * 48);
+                await Pause(300);
+                await Blip(host);
+                await Pause(1500);   // the plug-in's gesture reaches Neo Plug's pump (about every 20 ms) and the engine
+                var after = Slots(machine);
+                moved = Enumerable.Range(0, Math.Min(before.Length, after.Length)).Where(i => before[i] != after[i]).ToList();
+                seen = string.Join(", ", moved.Take(4).Select(i => $"slot {i}: {before[i]} -> {after[i]}"));
+                if (moved.Count == 0) Say($"the drag {(dir < 0 ? "up" : "down")} changed no slot value" + (attempt == 0 ? "; trying the other way" : ""));
+            }
+            // Asserted for every plug-in and both formats. A VST3 module (clap-wrapper) reports its view's edits through the component handler's
+            // performEdit, which the host applies to the controller (np_vst3.cpp, Handler::performEdit); a CLAP module's through its parameter flush.
+            Check(moved.Count >= 1, $"dragging a knob changed Neo Plug's slot value ({seen})");
             Check(Colours(session) > 150, "the view still draws after the drag");
             Shot(session, tag + "-dragged");
         }

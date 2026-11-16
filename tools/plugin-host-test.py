@@ -239,13 +239,24 @@ results["render_after"] = {"measure": r2.get("measure"), "probes": lv2}
 ok, text, cmp = call("compare", a=r1.get("id", "r1"), b=r2.get("id", "r2"))
 identical = ok and "No measurable difference" in text
 loud_same = True
+# H2: a plug-in with a noise table built from rand() (Note Expression Synth's brown noise, Surge XT's oscillator phases) renders a little differently
+# each time it is created in a server process of its own (in the app's process the sequence happens to repeat); its loudness is within 1 LU.
+placed = os.environ.get("NEOPLUG_PLACEMENT", "")
+sandboxed = placed in ("plugin", "instance", "shared") or (sys.platform == "win32" and placed in ("", "plugin", "instance", "shared"))
+def noisy(plugin): return any(k in plugin for k in ("Note Expression Synth", "Surge XT"))
+noisy_machine = {}
+for k, (mn, kind, plugin) in enumerate(machines):
+    j = k - len(gens) if kind == "fx" else -1
+    noisy_machine[mn] = noisy(plugin) or (0 <= j < len(gens) and noisy(machines[j][2]))
 for n in names:
     a, b = lv1.get(n, (None, None))[0], lv2.get(n, (None, None))[0]
-    same = a is not None and (a == b or (isinstance(a, (int, float)) and isinstance(b, (int, float)) and abs(a - b) < 0.3))
+    tol = 1.0 if sandboxed and noisy_machine.get(n) else 0.3
+    same = a is not None and (a == b or (isinstance(a, (int, float)) and isinstance(b, (int, float)) and abs(a - b) < tol))
     loud_same &= same or n in known_machines
     check_known(same, f"{n}: {a} LUFS before, {b} after", n)
 results["identical_render"] = identical
 # Some plug-ins aren't deterministic (Surge XT's oscillators start at random phases): then the same loudness per machine is the test.
+loud_same_run = loud_same
 check(identical or loud_same, "the reopened song renders the same" + (" (compare: no measurable difference)" if identical else f" per machine (compare: {text[:160]})"))
 
 for name, (pname, value, raw) in tweaks.items():
@@ -369,6 +380,72 @@ if args.fixtures:
     ok, _, r1m = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": ["Voice"], "name": "midi-on"})
     lvl = probe_levels(r1m).get("Voice", (None, True))
     check(lvl[1] is False, f"Voice plays what the Octaver sends it ({lvl[0]} LUFS)")
+
+if args.fixtures and placed != "inprocess":
+    # --- H2, the sandbox: Test Crasher crashes on command (its Crash parameter); the crash must take only its own server -----------
+    def quirks_of(name):
+        ok, text, d = call("machine_describe", machine=name)
+        lines = d.get("quirks", []) if isinstance(d, dict) else []
+        crashed = "CRASHED" if any(l.startswith("CRASHED") for l in lines) else ""
+        place = next((l.split(". machine_command")[0] for l in lines if l.startswith("Placement:")), "")
+        return ok, (crashed + " " + place).strip().lower().replace("crashed", "CRASHED")
+
+    call("song_new", discard_unsaved=True)
+    call("song_set", tempo_bpm=120, song_end_beats=8)
+    call("machine_add", gear="Neo Plug", plugin=resolve("Test Synth", gen_names, "instrument"), name="Pad", tracks=2)
+    call("pattern_create", machine="Pad", name="A", length_beats=8)
+    call("notes_write", machine="Pad", pattern="A", notes=[{"pitch": "C3", "start": 0, "length": 8}, {"pitch": "G3", "start": 0, "length": 8}])
+    call("arrangement_place", machine="Pad", pattern="A", at=[0])
+    ok, _, _ = call("machine_add", gear="Neo Plug FX", plugin=resolve("Test Crasher", fx_names, "effect"), name="Crash", insert_after="Pad")
+    check(ok, "machine_add Crash after Pad")
+    ok, q = quirks_of("Crash")
+    check("placement:" in q, f"machine_describe shows where Crash runs ({q[:100] if q else 'nothing'})")
+    ok, _, cmds = call("machine_command", machine="Crash")
+    texts = [c["command"] for c in (cmds or {}).get("commands", [])]
+    check(any(t.startswith("Placement") for t in texts) and "Reload plug-in" in texts, f"machine_command lists Placement and Reload plug-in ({len(texts)} commands)")
+    ok, _, _ = call("machine_command", machine="Crash", command="Placement > Sandbox per plug-in")
+    check(ok, "machine_command: Placement > Sandbox per plug-in")
+    ok, q = quirks_of("Crash")
+    check("sandbox" in q or bool(placed), f"Crash now runs in a sandbox: {q[:100]}")
+    ok, _, before = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": ["Crash"], "name": "sbx-ok"})
+    lb = probe_levels(before).get("Crash", (None, True))
+    check(lb[1] is False, f"the sandboxed Crash passes the pad ({lb[0]} LUFS)")
+
+    # the crash: Crash=1 makes process() crash; the render finishes, the pad (another machine, in process) is audible, Crash is silent
+    ok, _, _ = call("param_set", machine="Crash", changes=[{"param": "Crash", "value": "raw:1"}])
+    check(ok, "param_set Crash = 1")
+    ok, _, after = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": ["Crash", "Pad"], "name": "sbx-crash"})
+    check(ok, "the render finishes although the plug-in crashed")
+    lv = probe_levels(after)
+    shared = placed == "shared"   # one server for everything sandboxed: the pad was in it and is gone too
+    if not shared:
+        check(lv.get("Pad", (None, True))[1] is False, "the pad, in another machine, still plays")
+    ok, q = quirks_of("Crash")
+    check("CRASHED" in q, "machine_describe says Crash crashed")
+    if shared:
+        check("CRASHED" in quirks_of("Pad")[1], "the shared server took the pad with it")
+        check(call("machine_command", machine="Pad", command="Reload plug-in")[0], "machine_command: Reload plug-in on the pad")
+
+    # reload from the last state: the crash switch is never saved, so it works again
+    ok, _, _ = call("machine_command", machine="Crash", command="Reload plug-in")
+    check(ok, "machine_command: Reload plug-in")
+    ok, q = quirks_of("Crash")
+    check("CRASHED" not in q, "Crash is back after the reload")
+    ok, _, again = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": ["Crash"], "name": "sbx-reloaded"})
+    la = probe_levels(again).get("Crash", (None, True))
+    check(la[1] is False, f"the reloaded plug-in passes the pad again ({la[0]} LUFS)")
+
+    # back in process, and a song with a sandboxed machine keeps the choice
+    ok, _, _ = call("machine_command", machine="Crash", command="Placement > Sandbox per instance")
+    sbx_song = os.path.join(work, "sandbox.bmxml")
+    check(call("song_save", path=sbx_song, overwrite=True)[0], "song_save with a sandboxed plug-in")
+    check(b"<Placement>instance</Placement>" in machine_states(sbx_song).get("Crash", b""), "the placement is saved with the song")
+    call("song_open", path=sbx_song, discard_unsaved=True)
+    ok, q = quirks_of("Crash")
+    check("per instance" in q or bool(placed), "the song opens with Crash in its own sandbox")
+    ok, _, _ = call("machine_command", machine="Crash", command="Placement > In process")
+    ok, q = quirks_of("Crash")
+    check(ok and ("in process" in q or bool(placed)), "back in process")
 
 proc.stdin.close()
 try:

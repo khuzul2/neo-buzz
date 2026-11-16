@@ -166,6 +166,14 @@ struct Plugin
     virtual void guiSetScale(double scale) { guiScale = scale > 0 ? scale : 1.0; }
     virtual int outCount() = 0;
     virtual bool outInfo(int index, std::string& name, int& channels) = 0;
+
+    // Sandbox (H2). The in-process backends are placement 0; a RemotePlugin (np_remote.cpp) lives in a neoplug-server process.
+    virtual int placement() { return 0; }                 // 0 in process, 1 sandbox per plug-in, 2 per instance, 3 shared
+    virtual int status() { return 0; }                    // 0 in process, 1 sandboxed and running, 2 the server ended (crashed or hung)
+    virtual long serverPid() { return 0; }
+    virtual std::string statusText() { return "in process"; }
+    virtual bool guiOpenWindow(const char*, int&, int&, std::string& err) { err = "not a sandboxed plug-in"; return false; }
+    virtual void guiCloseWindow() {}
 };
 
 // Backends.
@@ -173,6 +181,10 @@ int vst3List(const std::string& path, std::vector<np_class_info>& out, std::stri
 Plugin* vst3Open(const std::string& path, const std::string& id, std::string& err);
 int clapList(const std::string& path, std::vector<np_class_info>& out, std::string& err);
 Plugin* clapOpen(const std::string& path, const std::string& id, std::string& err);
+
+// The sandbox: a plug-in in a neoplug-server process (np_remote.cpp). placement 1 per plug-in, 2 per instance, 3 shared.
+Plugin* remoteOpen(int placement, const std::string& path, const std::string& id, std::string& err);
+void remoteSetWorkgroup(void* workgroup, double periodSec);
 
 // State envelope: "NPST", format, then length-prefixed chunks.
 void putU32(std::vector<uint8_t>& v, uint32_t x);

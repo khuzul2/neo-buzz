@@ -24,6 +24,9 @@ namespace ReBuzz.Studio.Shell.Preferences
         readonly StackPanel foldersPanel = new StackPanel { Spacing = 2 };
         readonly StackPanel foundPanel = new StackPanel { Spacing = 2 };
         readonly StackPanel blockedPanel = new StackPanel { Spacing = 4 };
+        readonly StackPanel sandboxPanel = new StackPanel { Spacing = 2 };
+        readonly ComboBox defaultPlacement = new ComboBox { MinWidth = 220 };
+        bool fillingPlacement;
         readonly TextBox folderBox = new TextBox { Watermark = "A folder with .vst3 or .clap plug-ins", Width = 380 };
         readonly Button addButton = new Button { Content = "Add folder" };
         readonly Button rescanButton = new Button { Content = "Rescan" };
@@ -63,6 +66,24 @@ namespace ReBuzz.Studio.Shell.Preferences
             Heading("Found");
             Body.Children.Add(foundPanel);
 
+            Heading("Where plug-ins run");
+            Note("A sandbox is a process of its own: a plug-in that crashes there is silent and can be reloaded, and the song plays on. In process is the lightest. "
+                 + "A blocked plug-in that was unblocked always runs in a sandbox. The default is a sandbox per plug-in on Windows and in process elsewhere; a song remembers the choice made on its machine.");
+            var defRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(4, 2) };
+            defRow.Children.Add(new TextBlock { Text = "Default", VerticalAlignment = VerticalAlignment.Center });
+            defaultPlacement.ItemsSource = PlacementChoices(true);
+            defaultPlacement.SelectedIndex = 0;
+            AutomationProperties.SetName(defaultPlacement, "Default placement");
+            defaultPlacement.SelectionChanged += (_, _) =>
+            {
+                if (fillingPlacement || defaultPlacement.SelectedIndex < 0) return;
+                PlugPlacement.Default = PlacementValue(defaultPlacement.SelectedIndex, true);
+                Refresh();
+            };
+            defRow.Children.Add(defaultPlacement);
+            Body.Children.Add(defRow);
+            Body.Children.Add(sandboxPanel);
+
             Heading("Blocked");
             Note("A blocked plug-in is not offered on the Gear menu. Unblocking it tries it again at the next scan.");
             Body.Children.Add(blockedPanel);
@@ -77,6 +98,21 @@ namespace ReBuzz.Studio.Shell.Preferences
         }
 
         public override string Title => "Plug-ins";
+
+        /// <summary>The default's combo box and the rows for plug-ins with a choice of their own (for tests).</summary>
+        public ComboBox DefaultPlacement => defaultPlacement;
+        public IReadOnlyList<(PlugEntry Entry, ComboBox Choice)> PlacementRows => placementRows;
+        readonly List<(PlugEntry, ComboBox)> placementRows = new();
+
+        static List<string> PlacementChoices(bool isDefault)
+        {
+            var l = new List<string> { isDefault ? "Platform default (" + PlugPlacement.Label(PlugPlacement.PlatformDefault) + ")" : "Default" };
+            foreach (var v in PlugPlacement.Values) l.Add(PlugPlacement.Label(v));
+            return l;
+        }
+
+        static string PlacementValue(int index, bool isDefault) => index <= 0 ? PlugPlacement.Auto : PlugPlacement.Values[index - 1];
+        static int PlacementIndex(string value) => string.IsNullOrEmpty(value) ? 0 : Array.IndexOf(PlugPlacement.Values, value) + 1;
 
         public TextBox FolderBox => folderBox;
         public Button AddButton => addButton;
@@ -144,7 +180,9 @@ namespace ReBuzz.Studio.Shell.Preferences
             var user = PlugPaths.UserFolders();
             var dirs = PlugPaths.SearchDirs();
             string state = string.Join("|", dirs) + "#" + string.Join("|", user) + "#" + string.Join("|", entries.Select(e => e.Display + e.Path)) + "#" +
-                           string.Join("|", blocked.Select(b => b.Path + b.Reason)) + "#" + scanning;
+                           string.Join("|", blocked.Select(b => b.Path + b.Reason)) + "#" + scanning + "#" +
+                           PlugPlacement.Default + "#" + string.Join("|", PlugPlacement.Chosen().Select(kv => kv.Key + "=" + kv.Value)) + "#" +
+                           string.Join("|", PlugPlacement.FlaggedModules().Keys);
             if (wasScanning && !scanning)
             {
                 wasScanning = false;
@@ -163,6 +201,70 @@ namespace ReBuzz.Studio.Shell.Preferences
             FillFolders(dirs, user);
             FillFound(entries);
             FillBlocked(blocked);
+            FillPlacement(entries);
+        }
+
+        void FillPlacement(List<PlugEntry> entries)
+        {
+            fillingPlacement = true;
+            try { defaultPlacement.SelectedIndex = PlacementIndex(PlugPlacement.Default); }
+            finally { fillingPlacement = false; }
+            sandboxPanel.Children.Clear();
+            placementRows.Clear();
+            var chosen = PlugPlacement.Chosen();
+            var flagged = PlugPlacement.FlaggedModules();
+            // The plug-ins with a choice of their own, and the ones that are forced into a sandbox; any other plug-in follows the default.
+            foreach (var e in entries)
+            {
+                string key = PlugPlacement.Key(e.Format, e.Id, e.Name);
+                bool forced = PlugPlacement.Forced(e.Path) != null;
+                if (!chosen.ContainsKey(key) && !forced) continue;
+                AddPlacementRow(e, forced);
+            }
+            foreach (var kv in flagged)
+            {
+                var path = kv.Key;
+                var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(4, 2) };
+                row.Children.Add(new TextBlock { Text = Path.GetFileName(path.TrimEnd('/', '\\')) + ": always in a sandbox (" + kv.Value + ")", VerticalAlignment = VerticalAlignment.Center });
+                var clear = new Button { Content = "Clear flag" };
+                AutomationProperties.SetName(clear, "Clear flag " + Path.GetFileName(path.TrimEnd('/', '\\')));
+                clear.Click += (_, _) => { PlugPlacement.Unflag(path); Refresh(); };
+                row.Children.Add(clear);
+                sandboxPanel.Children.Add(row);
+            }
+            // Pick a plug-in to give it a choice of its own.
+            var picker = new ComboBox { MinWidth = 260, PlaceholderText = "Choose a plug-in…" };
+            var cands = entries.Where(e => !chosen.ContainsKey(PlugPlacement.Key(e.Format, e.Id, e.Name))).Take(400).ToList();
+            picker.ItemsSource = cands.Select(e => e.Display).ToList();
+            AutomationProperties.SetName(picker, "Choose a plug-in for its own placement");
+            picker.SelectionChanged += (_, _) =>
+            {
+                if (picker.SelectedIndex < 0 || picker.SelectedIndex >= cands.Count) return;
+                var e = cands[picker.SelectedIndex];
+                PlugPlacement.SetForPlugin(e.Format, e.Id, e.Name, PlugPlacement.Native(PlugPlacement.PlatformDefault) == 0 ? PlugPlacement.PerPlugin : PlugPlacement.InProcess);
+                Refresh();
+            };
+            if (cands.Count > 0) sandboxPanel.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 6, 4, 2), Children = { picker } });
+        }
+
+        void AddPlacementRow(PlugEntry e, bool forced)
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(4, 2) };
+            row.Children.Add(new TextBlock { Text = e.Display, VerticalAlignment = VerticalAlignment.Center, Width = 260, TextTrimming = Avalonia.Media.TextTrimming.CharacterEllipsis });
+            var combo = new ComboBox { MinWidth = 220, ItemsSource = PlacementChoices(false), IsEnabled = true };
+            combo.SelectedIndex = PlacementIndex(PlugPlacement.ForPlugin(e.Format, e.Id, e.Name));
+            AutomationProperties.SetName(combo, "Placement of " + e.Display);
+            var entry = e;
+            combo.SelectionChanged += (_, _) =>
+            {
+                if (fillingPlacement || combo.SelectedIndex < 0) return;
+                PlugPlacement.SetForPlugin(entry.Format, entry.Id, entry.Name, PlacementValue(combo.SelectedIndex, false));
+                Refresh();
+            };
+            row.Children.Add(combo);
+            if (forced) row.Children.Add(new TextBlock { Text = "sandboxed whatever this says: " + PlugPlacement.Forced(e.Path), Foreground = Dim, FontSize = 12, VerticalAlignment = VerticalAlignment.Center });
+            sandboxPanel.Children.Add(row);
+            placementRows.Add((e, combo));
         }
 
         void FillFolders(List<string> dirs, List<string> user)

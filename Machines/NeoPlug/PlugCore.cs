@@ -148,6 +148,21 @@ namespace NeoBuzz.Plug
         readonly int[] carryNote = new int[MaxTracks], carryVel = new int[MaxTracks], carryFrames = new int[MaxTracks];
         readonly int[] pendingParam = new int[MaxTracks], pendingValue = new int[MaxTracks];
 
+        // Placement (H2): where the plug-in runs, and whether its sandbox is still there
+        string placement = PlugPlacement.InProcess;        // the placement it is open with (resolved)
+        public string Placement => placement;
+        public string PlacementWhy { get; private set; } = "";
+        public bool Sandboxed => PlugPlacement.IsSandbox(placement);
+        public volatile bool Crashed;
+        public string CrashReason { get; private set; } = "";
+        public int ServerPid { get; private set; }
+        PlugState lastGood;                                  // the state a reload starts from: the last one saved, loaded or taken in the background
+        int changes, snapped;
+        long snapAt;
+        IntPtr workgroupSet;
+        /// <summary>Raised on PlugMain when the placement or the crash state changed (the machine refreshes its menu and manifest).</summary>
+        public event Action PlacementChanged;
+
         // MIDI out
         volatile IMachine midiTarget;
         volatile string midiTargetName = "";
@@ -213,16 +228,32 @@ namespace NeoBuzz.Plug
                     State.Vendor = entry.Vendor;
                     State.Display = display ?? entry.Display;
                     var err = new byte[1024];
-                    plugin = PlugNative.np_open(entry.Path, string.IsNullOrEmpty(entry.Id) ? null : entry.Id, err, err.Length);
+                    string place = PlugPlacement.Resolve(State.Placement, entry.Format, entry.Id, entry.Name, entry.Path, out string why);
+                    if (PlugPlacement.IsSandbox(place) && PlugNative.np_server_available() == 0)
+                    {
+                        why = "the sandbox server (neoplug-server) is not installed beside the plug-in library, so it runs in process";
+                        place = PlugPlacement.InProcess;
+                    }
+                    placement = place;
+                    PlacementWhy = why;
+                    Crashed = false;
+                    CrashReason = "";
+                    string openId = string.IsNullOrEmpty(entry.Id) ? null : entry.Id;
+                    plugin = PlugPlacement.IsSandbox(place)
+                        ? PlugNative.np_open_ex(entry.Path, openId, PlugPlacement.Native(place), err, err.Length)
+                        : PlugNative.np_open(entry.Path, openId, err, err.Length);
                     if (plugin == IntPtr.Zero)
                     {
                         Missing = true;
                         Problem = "could not load: " + PlugNative.Str(err);
                         Log($"{entry.Name}: {Problem}");
+                        PlacementChanged?.Invoke();
                         return false;
                     }
                     Missing = false;
                     Problem = "";
+                    ServerPid = PlugPlacement.IsSandbox(place) ? PlugNative.np_server_pid(plugin) : 0;
+                    workgroupSet = IntPtr.Zero;
                     PlugNative.np_info(plugin, out info);
                     Instrument = info.is_instrument != 0;
                     rate = HostRate();
@@ -232,7 +263,9 @@ namespace NeoBuzz.Plug
                     ReadOutputs();
                     Bind();
                     Interlocked.Increment(ref Revision);
-                    Log($"loaded {entry.Format} \"{entry.Name}\" at {rate} Hz ({PlugNative.np_param_count(plugin)} parameters, {CountBound()} bound, latency {latency})");
+                    Log($"loaded {entry.Format} \"{entry.Name}\" at {rate} Hz ({PlugNative.np_param_count(plugin)} parameters, {CountBound()} bound, latency {latency}), {PlugPlacement.Label(place).ToLowerInvariant()}" +
+                        (ServerPid > 0 ? $" (server {ServerPid})" : "") + $"; {why}");
+                    PlacementChanged?.Invoke();
                     return true;
                 }
             }
@@ -257,7 +290,7 @@ namespace NeoBuzz.Plug
         /// <summary>What the plug-in's editor can do for a window API ("hwnd", "nsview"): 1 embedded, 2 floating, 0 none. UI thread.</summary>
         public int EditorSupport(string api)
         {
-            if (Missing || plugin == IntPtr.Zero || Busy) return 0;
+            if (Missing || plugin == IntPtr.Zero || Busy || Crashed) return 0;
             if (!(OperatingSystem.IsWindows() && api == "hwnd") && !(OperatingSystem.IsMacOS() && api == "nsview")) return 0;
             try
             {
@@ -401,6 +434,7 @@ namespace NeoBuzz.Plug
             if (raw == Volatile.Read(ref mirror[i])) return;
             Volatile.Write(ref mirror[i], raw);
             Volatile.Write(ref wroteAt[i], Environment.TickCount64);
+            Interlocked.Increment(ref changes);
             if (bound[i])
             {
                 Volatile.Write(ref pending[i], raw);
@@ -480,9 +514,16 @@ namespace NeoBuzz.Plug
 
         void Pump()
         {
-            if (plugin == IntPtr.Zero || Missing || Busy) return;
+            if (plugin == IntPtr.Zero || Missing || Busy || Crashed) return;
             try
             {
+                if (Sandboxed)
+                {
+                    // The sandbox's server may have ended (a crash, a hang, a kill): the slot is silent, and the machine says so.
+                    if (PlugNative.np_status(plugin) == 2) { MarkCrashed(); return; }
+                    FollowWorkgroup();
+                    SnapshotIfChanged();
+                }
                 PlugNative.np_idle(plugin);
                 if (awaitState && Environment.TickCount64 - Volatile.Read(ref awaitSince) > 1500)
                 {
@@ -495,6 +536,7 @@ namespace NeoBuzz.Plug
                 }
                 int flags = PlugNative.np_poll(plugin);
                 if ((flags & PlugNative.PollFlush) != 0) lock (Gate) PlugNative.np_flush(plugin);   // the plug-in's own window changed a value: apply it now, whether or not audio runs
+                if ((flags & PlugNative.PollDirty) != 0) Interlocked.Increment(ref changes);
                 if ((flags & PlugNative.PollLatency) != 0) Refresh();
                 if ((flags & PlugNative.PollRestart) != 0) Reactivate(offlineMode);
                 long now = Environment.TickCount64;
@@ -514,6 +556,7 @@ namespace NeoBuzz.Plug
                     if (DebugMidi) Log($"pump: {sname[i]} is {raw} in the plug-in, {Volatile.Read(ref mirror[i])} in the engine: the engine follows");
                     Volatile.Write(ref mirror[i], raw);
                     Volatile.Write(ref applyValue[i], raw + 1);
+                    Interlocked.Increment(ref changes);
                     any = true;
                 }
                 if (any && Interlocked.Exchange(ref applyQueued, 1) == 0) ThreadPool.QueueUserWorkItem(_ => ApplyToEngine());
@@ -546,9 +589,32 @@ namespace NeoBuzz.Plug
         public PlugState SaveState()
         {
             if (Missing || plugin == IntPtr.Zero) return State;
+            if (Crashed)
+            {
+                // The plug-in is gone: a song saved now keeps the last state it had.
+                var keep = (lastGood ?? State).Copy();
+                keep.MidiChannel = MidiChannel;
+                keep.MidiOut = midiTargetName;
+                keep.Placement = State.Placement;
+                return keep;
+            }
             try
             {
-                return PlugMain.Invoke(() =>
+                var saved = PlugMain.Invoke(CaptureState, 20000);
+                if (Sandboxed && saved != null && !Crashed) lastGood = saved.Copy();
+                return saved;
+            }
+            catch (Exception e)
+            {
+                Log("could not save the plug-in's state: " + e.Message);
+                return State;
+            }
+        }
+
+        /// <summary>PlugMain: the plug-in's state as a song keeps it.</summary>
+        PlugState CaptureState()
+        {
+            {
                 {
                     PlugNative.np_idle(plugin);
                     lock (Gate)
@@ -577,13 +643,82 @@ namespace NeoBuzz.Plug
                     copy.MidiChannel = MidiChannel;
                     copy.MidiOut = midiTargetName;
                     return copy;
-                }, 20000);
+                }
             }
-            catch (Exception e)
+        }
+
+        // --- The sandbox (H2) ----------------------------------------------------------------------------------
+
+        void MarkCrashed()
+        {
+            if (Crashed) return;
+            var text = new byte[256];
+            PlugNative.np_status_text(plugin, text, text.Length);
+            CrashReason = PlugNative.Str(text);
+            Crashed = true;
+            // An open editor goes: its window belongs to the process that is gone.
+            PlugEditorSession open;
+            lock (EditorLock) { open = editor; editor = null; }
+            try { open?.PluginGone(); } catch (Exception) { }
+            Interlocked.Increment(ref Revision);
+            Log($"{Name}: the plug-in's sandbox ended: {CrashReason}. The slot is silent; reload it from the machine's menu.");
+            PlacementChanged?.Invoke();
+        }
+
+        /// <summary>The state a reload starts from: the last one saved, loaded or taken in the background, else what the machine knows.</summary>
+        public PlugState LastGoodOrCurrent()
+        {
+            var keep = (lastGood ?? State).Copy();
+            keep.MidiChannel = MidiChannel;
+            keep.MidiOut = midiTargetName;
+            keep.Placement = State.Placement;
+            return keep;
+        }
+
+        /// <summary>A sandboxed plug-in's state is taken now and then while it changes, so a reload after a crash is not far behind (the song's own autosave is unchanged).</summary>
+        void SnapshotIfChanged()
+        {
+            long now = Environment.TickCount64;
+            int c = Volatile.Read(ref changes);
+            if (c == snapped || now - snapAt < 15000 || awaitState) return;
+            snapAt = now;
+            snapped = c;
+            try
             {
-                Log("could not save the plug-in's state: " + e.Message);
-                return State;
+                lock (Gate)
+                {
+                    int size = PlugNative.np_state_save(plugin, null, 0);
+                    if (size <= 0) return;
+                    var blob = new byte[size];
+                    int got = PlugNative.np_state_save(plugin, blob, size);
+                    if (got <= 0 || got > size || Crashed) return;
+                    var copy = State.Copy();
+                    copy.Blob = PlugState.Pack(got == size ? blob : blob.AsSpan(0, got).ToArray());
+                    copy.MidiChannel = MidiChannel;
+                    copy.MidiOut = midiTargetName;
+                    lastGood = copy;
+                }
             }
+            catch (Exception) { }
+        }
+
+        /// <summary>macOS: the audio device's workgroup, for the servers' audio threads (the engine attaches and detaches it as the device changes).</summary>
+        void FollowWorkgroup()
+        {
+            if (!OperatingSystem.IsMacOS()) return;
+            var wg = (host as IBuzzMachineHostRuntime)?.AudioWorkgroup ?? IntPtr.Zero;
+            if (wg == workgroupSet) return;
+            workgroupSet = wg;
+            try { PlugNative.np_set_workgroup(wg, (host as IBuzzMachineHostRuntime)?.AudioWorkgroupPeriod ?? 0.003); } catch (Exception) { }
+        }
+
+        /// <summary>One line for the machine's menu and the agent: where it runs, and whether its server is up.</summary>
+        public string PlacementText()
+        {
+            string label = PlugPlacement.Label(placement);
+            if (!Sandboxed) return label.ToLowerInvariant() + (PlacementWhy.StartsWith("forced") ? " (" + PlacementWhy + ")" : "");
+            if (Crashed) return $"{label.ToLowerInvariant()}: CRASHED, {CrashReason}; silent until reloaded";
+            return $"{label.ToLowerInvariant()}, server {ServerPid}" + (PlacementWhy.StartsWith("forced") ? " (" + PlacementWhy + ")" : "");
         }
 
         /// <summary>Loads a song's state (the plug-in is open already, or missing and the state is kept unchanged).</summary>
@@ -627,6 +762,8 @@ namespace NeoBuzz.Plug
                     }
                     finally { Busy = false; }
                 }, 60000);
+                lastGood = s.Copy();   // (what a reload after a crash starts from, until a later save or snapshot replaces it)
+                Volatile.Write(ref snapped, Volatile.Read(ref changes));
                 var p = slotParams;
                 if (p != null) for (int i = 0; i < Slots; i++) p[i]?.SetValue(1 << 16, Volatile.Read(ref mirror[i]));
             }
@@ -826,6 +963,11 @@ namespace NeoBuzz.Plug
             }
             try
             {
+                if (Crashed)
+                {
+                    Array.Clear(output, 0, n);   // a sandbox that ended: the slot is silent, the song plays on
+                    return false;
+                }
                 if (plugin == IntPtr.Zero || Missing)
                 {
                     if (effect && input != null && !ReferenceEquals(input, output)) Array.Copy(input, output, n);

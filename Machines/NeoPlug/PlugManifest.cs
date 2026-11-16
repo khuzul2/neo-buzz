@@ -155,6 +155,26 @@ namespace NeoBuzz.Plug
                 ["parameters"] = parameters,
             };
             if (!effect) root["notes"] = new JsonObject { ["input"] = "midi", ["pitched"] = true };
+            root["quirks"] = Quirks(core);
+            return root.ToJsonString();
+        }
+
+        /// <summary>Where the plug-in runs and whether its sandbox is up, as machine_describe's quirks (H2), with the commands that change it.</summary>
+        static JsonArray Quirks(PlugCore core)
+        {
+            var quirks = new JsonArray();
+            if (core.Crashed)
+                quirks.Add($"CRASHED: the plug-in's sandbox ended ({core.CrashReason}). The slot is silent and the song plays on. machine_command(command=\"Reload plug-in\") starts it again from its last state.");
+            quirks.Add("Placement: " + core.PlacementText() + ". machine_command(command=\"Placement > Sandbox per plug-in\") (or \"In process\", \"Sandbox per instance\", \"Sandbox shared\", \"Default\") moves it; it is reloaded from its state.");
+            return quirks;
+        }
+
+        /// <summary>The manifest as it was, with the placement and crash lines brought up to date (a crashed plug-in can't be asked again).</summary>
+        public static string Patch(string json, PlugCore core)
+        {
+            var root = JsonNode.Parse(json)?.AsObject();
+            if (root == null) return json;
+            root["quirks"] = Quirks(core);
             return root.ToJsonString();
         }
     }
