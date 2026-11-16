@@ -216,6 +216,9 @@ public:
     bool activate(double rate, int maxFrames, bool offline, std::string& err) override
     {
         deactivate();
+        // Reports the plug-in made during the activation before (a render's last blocks) are history: drained later they would set the
+        // controller, and through it the processor, back over the values the host sends on this activation (the engine's, the song's).
+        { ParamRing::Item stale; while (toController.pop(stale)) {} }
         holdAll();
         int nIn = component->getBusCount(kAudio, kInput);
         int nOut = component->getBusCount(kAudio, kOutput);

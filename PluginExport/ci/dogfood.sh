@@ -46,7 +46,8 @@ if [ "$WHAT" = null ] || [ "$WHAT" = both ]; then
     w="$OUT/null/${n// /-}"
     $PY PluginExport/ci/null-test.py "$H" "$w" --plugin "$n" --dir "$F" --lib "$G/$L" --scan "$G/neoplug-scan$X" > "$w.log" 2>&1 || true
     grep -E "^(NOTE|FAIL|NULL-TEST)" "$w.log" | cut -c1-300 | head -60
-    grep -q "^NULL-TEST .* ok" "$w.log" || { echo "FAILED: $n"; fail=1; grep -q "^NULL-TEST" "$w.log" || tail -n 12 "$w.log" | cut -c1-300; }
+    grep -q "^NULL-TEST .* ok" "$w.log" || { echo "FAILED: $n"; fail=1; grep -q "^NULL-TEST" "$w.log" || tail -n 12 "$w.log" | cut -c1-300
+      grep -E "\[neoplug\] (save|load|activate|state)" "$w/stderr.txt" 2>/dev/null | cut -c1-220 | tail -n 40; }
     rm -rf "$w"   # the renders are large; the log keeps the figures
   done
   echo "::endgroup::"
@@ -58,10 +59,12 @@ if { [ "$WHAT" = gui ] || [ "$WHAT" = both ]; } && [ "$RUNNER_OS" != Linux ]; th
   echo "::group::Editors in the studio window (Windows, macOS)"
   dotnet build ReBuzz.Studio/ReBuzz.Studio.csproj -c Release -v:q "${win[@]}" 2>&1 | grep -E " error |Build succeeded" | sort -u
   STUDIO="$W/ReBuzz.Studio/bin/Release/net10.0/ReBuzz.Studio$X"
+  # In process: the check reads the editor view's pixels and drags its knob, which a sandbox's window (another process, floating; the Windows default) does not allow.
+  # The sandboxed editors have their own checks in tools/ci-plugin-host.sh.
   guicheck() {   # label, list of Neo Plug names, extra studio arguments...
     local label="$1" list="$2"; shift 2
     local log="$OUT/gui-$label.log"; rm -f "$log"
-    NEOPLUG_DEBUG=1 NEOPLUG_LIB="$G/$L" NEOPLUG_SCAN="$G/neoplug-scan$X" NEOBUZZ_PLUGIN_PATH="$ASSETS" NEOBUZZ_PLUGIN_STANDARD=0 \
+    NEOPLUG_PLACEMENT=inprocess NEOPLUG_DEBUG=1 NEOPLUG_LIB="$G/$L" NEOPLUG_SCAN="$G/neoplug-scan$X" NEOBUZZ_PLUGIN_PATH="$ASSETS" NEOBUZZ_PLUGIN_STANDARD=0 \
       NEOBUZZ_PLUGIN_DIR="$T/export-gui-data-$label" NEOBUZZ_PLUGIN_GUI_LOG="$log" \
       "$STUDIO" --no-audio --settings "$T/export-gui-settings-$label" --plugin-export-check "$list" --plugin-export-out "$OUT/shots/$label" "$@" > "$OUT/gui-$label.out" 2>&1 &
     local pid=$!
