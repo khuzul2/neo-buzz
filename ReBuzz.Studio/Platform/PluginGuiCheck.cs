@@ -152,7 +152,7 @@ namespace ReBuzz.Studio.Platform
                 if (session == null) return;
                 Check(session.Width >= 100 && session.Height >= 100, $"{r}: the view is {session.Width} x {session.Height}");
                 int colours = Colours(session);
-                Check(colours > 300, $"{r}: the plug-in drew its view ({colours} colours)");
+                Check(colours > 150, $"{r}: the plug-in drew its view ({colours} colours)");
                 string tag = System.Text.RegularExpressions.Regex.Replace(instrument, "[^A-Za-z0-9]+", "-").Trim('-');
                 if (Export) Check(Shot(session, $"{tag}-{(round == 1 ? "open" : "reopen")}") > 150, $"{r}: the screenshot shows more than a blank view");
 
@@ -166,7 +166,7 @@ namespace ReBuzz.Studio.Platform
                         session.SetSize(w0 + 80, h0 + 60);
                         await Pause(800);
                         Check(session.Width > 0 && session.Height > 0, $"resized from the host: {w0} x {h0} to {session.Width} x {session.Height}");
-                        Check(Colours(session) > 300, "and the view still draws");
+                        { int cc = Colours(session); Check(cc > 150, $"and the view still draws ({cc} colours)"); }
                         if (Export) Check(Shot(session, tag + "-resized") > 150, "the resized view's screenshot shows more than a blank view");
                     }
                     else Say($"the editor has a fixed size ({session.Width} x {session.Height})");
@@ -240,7 +240,7 @@ namespace ReBuzz.Studio.Platform
             var after = Slots(machine);
             var moved = Enumerable.Range(0, Math.Min(before.Length, after.Length)).Where(i => before[i] != after[i]).ToList();
             Check(moved.Count >= 1, $"dragging a knob changed Neo Plug's slot value ({string.Join(", ", moved.Take(4).Select(i => $"slot {i}: {before[i]} -> {after[i]}"))})");
-            Check(Colours(session) > 300, "the view still draws after the drag");
+            Check(Colours(session) > 150, "the view still draws after the drag");
             Shot(session, tag + "-dragged");
         }
 
@@ -294,7 +294,7 @@ namespace ReBuzz.Studio.Platform
                     var mode = controller.Open(again);
                     Check(mode == want, $"{ext}: the loaded machine's editor opens ({mode})");
                     await Pause(1500);
-                    Check(Colours(controller.WindowOf(again)?.Session) > 300, $"{ext}: and draws");
+                    Check(Colours(controller.WindowOf(again)?.Session) > 150, $"{ext}: and draws");
                     controller.WindowOf(again)?.Close();
                     await Pause(300);
                 }

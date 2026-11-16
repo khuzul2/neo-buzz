@@ -494,6 +494,7 @@ namespace NeoBuzz.Plug
                     if (Interlocked.Exchange(ref applyQueued, 1) == 0) ThreadPool.QueueUserWorkItem(_ => ApplyToEngine());
                 }
                 int flags = PlugNative.np_poll(plugin);
+                if ((flags & PlugNative.PollFlush) != 0) lock (Gate) PlugNative.np_flush(plugin);   // the plug-in's own window changed a value: apply it now, whether or not audio runs
                 if ((flags & PlugNative.PollLatency) != 0) Refresh();
                 if ((flags & PlugNative.PollRestart) != 0) Reactivate(offlineMode);
                 long now = Environment.TickCount64;

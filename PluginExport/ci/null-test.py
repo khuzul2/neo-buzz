@@ -197,6 +197,16 @@ def render(label):
     return res
 
 
+def same_text(a, b):
+    """equal, or the same number to 1.5 % (a slot holds 65535 steps; a native machine's own integer may sit one step off: 12.9 ms and 12.8 ms)"""
+    if a == b: return True
+    import re
+    na, nb = re.match(r"\s*([-+\u2212]?[0-9.]+)(.*)$", str(a)), re.match(r"\s*([-+\u2212]?[0-9.]+)(.*)$", str(b))
+    if not (na and nb and na.group(2) == nb.group(2)): return False
+    x, y = (float(m.group(1).replace("\u2212", "-")) for m in (na, nb))
+    return abs(x - y) <= 0.015 * max(abs(x), abs(y)) + 1e-9
+
+
 def compare(pf, tag, skip=0.0, tol=None, soft=False):
     tol = spec["test"].get("tolerance", args.tolerance) if tol is None else max(tol, spec["test"].get("tolerance", 0))
     check(all(pf.values()), f"{tag}: probe files found")
@@ -289,16 +299,6 @@ if cont and len(outs) > 1:
         got = {d[0]: d for d in describe(nm)}
         same = [(n, nat[n][1], got[n][1]) for n, _, _, _ in pick if got.get(n) is None or not same_text(got[n][1], nat[n][1])]
         check(not same, f"units: {nm} reads back the same texts as the native machine" + (f" (differing: {same})" if same else ""))
-
-def same_text(a, b):
-    """equal, or the same number to 1.5 % (a slot holds 65535 steps; a native machine's own integer may sit one step off: 12.9 ms and 12.8 ms)"""
-    if a == b: return True
-    import re
-    na, nb = re.match(r"\s*([-+\u2212]?[0-9.]+)(.*)$", str(a)), re.match(r"\s*([-+\u2212]?[0-9.]+)(.*)$", str(b))
-    if not (na and nb and na.group(2) == nb.group(2)): return False
-    x, y = (float(m.group(1).replace("\u2212", "-")) for m in (na, nb))
-    return abs(x - y) <= 0.015 * max(abs(x), abs(y)) + 1e-9
-
 
 pf = {}
 # 5. automation through the agent tools: steps on the first continuous parameters, on the native machine and on each plug-in slot (the same values:

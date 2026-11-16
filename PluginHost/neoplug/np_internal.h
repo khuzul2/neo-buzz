@@ -149,6 +149,7 @@ struct Plugin
     virtual int process(np_process_io& io) = 0;
     virtual int auxChannels() = 0;
     virtual int poll() = 0;
+    virtual void flushIdle() {}
     virtual double paramPlain(uint32_t id, double v) = 0;
     virtual void reset() = 0;
     virtual bool saveState(std::vector<uint8_t>& out) = 0;

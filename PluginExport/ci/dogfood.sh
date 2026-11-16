@@ -46,7 +46,7 @@ if [ "$WHAT" = null ] || [ "$WHAT" = both ]; then
     w="$OUT/null/${n// /-}"
     $PY PluginExport/ci/null-test.py "$H" "$w" --plugin "$n" --dir "$F" --lib "$G/$L" --scan "$G/neoplug-scan$X" > "$w.log" 2>&1 || true
     grep -E "^(NOTE|FAIL|NULL-TEST)" "$w.log" | cut -c1-300 | head -60
-    grep -q "^NULL-TEST .* ok" "$w.log" || { echo "FAILED: $n"; fail=1; }
+    grep -q "^NULL-TEST .* ok" "$w.log" || { echo "FAILED: $n"; fail=1; grep -q "^NULL-TEST" "$w.log" || tail -n 12 "$w.log" | cut -c1-300; }
     rm -rf "$w"   # the renders are large; the log keeps the figures
   done
   echo "::endgroup::"

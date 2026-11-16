@@ -674,6 +674,19 @@ public:
         if (callbackRequested.exchange(false)) plugin->on_main_thread(plugin);
     }
 
+    // The plug-in asked for a flush (its own window changed a value) and no block may be running (the caller holds the gate): process stops
+    // and the plug-in applies its edits, so np_param_get shows them. With audio running the next block carries them anyway.
+    void flushIdle() override
+    {
+        if (!params || !active) return;
+        if (processing) { plugin->stop_processing(plugin); processing = false; }
+        evCount = 0;
+        curIo = nullptr;
+        clap_input_events_t in{this, evSize, evGet};
+        clap_output_events_t out{this, outPush};
+        params->flush(plugin, &in, &out);
+    }
+
     int poll() override
     {
         int f = pollFlags.exchange(0);
@@ -806,7 +819,7 @@ static const clap_host_thread_check_t hostThreadCheck{hIsMain, hIsAudio};
 
 static void hParamsRescan(const clap_host_t* h, clap_param_rescan_flags f) { if (f & (CLAP_PARAM_RESCAN_ALL | CLAP_PARAM_RESCAN_INFO | CLAP_PARAM_RESCAN_TEXT)) ClapPlugin::self(h)->pollFlags |= NP_POLL_PARAMS; }
 static void hParamsClear(const clap_host_t*, clap_id, clap_param_clear_flags) {}
-static void hParamsFlush(const clap_host_t*) {}
+static void hParamsFlush(const clap_host_t* h) { ClapPlugin::self(h)->pollFlags |= NP_POLL_FLUSH; }
 static const clap_host_params_t hostParams{hParamsRescan, hParamsClear, hParamsFlush};
 
 static void hMarkDirty(const clap_host_t* h) { ClapPlugin::self(h)->pollFlags |= NP_POLL_DIRTY; }

@@ -102,7 +102,8 @@ enum {
     NP_POLL_LATENCY = 1,      /* the latency changed: read np_latency */
     NP_POLL_PARAMS = 2,       /* parameter names, ranges or the list changed: rescan */
     NP_POLL_RESTART = 4,      /* the plugin asks to be deactivated and activated again (ports changed) */
-    NP_POLL_DIRTY = 8         /* the plugin's state changed */
+    NP_POLL_DIRTY = 8,        /* the plugin's state changed */
+    NP_POLL_FLUSH = 16        /* the plugin asked for a parameter flush (its own window changed a value): call np_flush with the block gate held */
 };
 
 typedef struct np_plugin np_plugin;
@@ -137,6 +138,8 @@ NP_API int np_process(np_plugin* p, const float* const* in, int in_ch, float* co
 NP_API int np_aux_channels(np_plugin* p);
 /* Main thread. What the plugin asked since the last call (NP_POLL_*). */
 NP_API int np_poll(np_plugin* p);
+/* Runs the plugin's parameter flush outside a block (CLAP params.flush, process stopped): its own edits take effect while no audio runs. */
+NP_API void np_flush(np_plugin* p);
 /* The plain value of a parameter (VST3: its normalized value converted; CLAP: the value itself). */
 NP_API double np_param_plain(np_plugin* p, uint32_t id, double value);
 /* Main thread. Asks the plugin to forget its voices (a deactivate and activate would do too). */
