@@ -91,10 +91,8 @@ namespace ReBuzz.Studio.Views.Browser
             return item;
         }
 
-        public static readonly string[] ColourHex = { "#E5484D", "#F0883E", "#E3B341", "#3FB950", "#4C8DF6", "#A371F7", "#8B949E" };
-
         /// <summary>The seven tag colours.</summary>
-        public static IBrush ColourBrush(int colour) => new SolidColorBrush(Color.Parse(ColourHex[Math.Clamp(colour, 1, 7) - 1]));
+        public static IBrush ColourBrush(int colour) => ReBuzz.Studio.Views.Session.SessionPalette.Tags[Math.Clamp(colour, 1, 7) - 1];
 
         /// <summary>A list item for any other result (preset, pattern, sample, MIDI file, the song's wave): name, what it is, a star, a colour dot, a menu, and it can be dragged.</summary>
         public static ListBoxItem ItemRow(BrowserItem it, MachineBrowserModel model, bool grouped = false)
