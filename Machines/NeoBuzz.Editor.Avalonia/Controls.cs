@@ -73,10 +73,14 @@ namespace NeoBuzz.Editor
     /// <summary>A knob for a parameter.</summary>
     internal sealed class ParamKnob : Knob
     {
+        /// <summary>The parameter's index in the machine's table (the plug-in export's tests drag the first knob that has a slot).</summary>
+        public int ParamIndex { get; }
+
         public ParamKnob(EditorContext ctx, int index, string label = null, double diameter = 46)
             : base(ctx.Accent, diameter)
         {
             var def = ctx.Table[index];
+            ParamIndex = index;
             Label = label ?? def.Name;
             Origin = ParamMapping.ArcOrigin(def);
             Steps = def.Max - def.Min;

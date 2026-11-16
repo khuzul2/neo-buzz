@@ -52,8 +52,16 @@ namespace ReBuzz.Studio
                 PluginGuiCheck.Effect = args.Contains("--plugin-gui-fx");
                 PluginGuiCheck.Floating = args.Contains("--plugin-gui-floating");
             }
+            if (Option(args, "--plugin-export-check") is string exported)
+            {
+                // CI's check of the exported Neo plug-ins in the studio (docs/specs/plugin-export.md PX2): a list "A|B|C" of Neo Plug names.
+                PluginGuiCheck.PlugIn = exported;
+                PluginGuiCheck.Export = true;
+                PluginGuiCheck.OutDir = Option(args, "--plugin-export-out");
+                PluginGuiCheck.Floating = false;
+            }
             string settings = Option(args, "--settings");
-            string[] valued = { "--settings", "--agent-port", "--agent-token", "--plugin-gui-check" };
+            string[] valued = { "--settings", "--agent-port", "--agent-token", "--plugin-gui-check", "--plugin-export-check", "--plugin-export-out" };
             for (int i = 0; i < args.Length && Song == null; i++)
             {
                 if (valued.Any(v => string.Equals(args[i], v, StringComparison.OrdinalIgnoreCase))) i++;

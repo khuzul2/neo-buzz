@@ -1,6 +1,6 @@
 {
  "id": "org.neobuzz.dye-essence",
- "name": "Neo Dye Essence",
+ "name": "Dye Essence",
  "folder": "DyeEssence",
  "namespace": "NeoBuzz.DyeEssence",
  "engine": "DyeEngine",
@@ -24,10 +24,7 @@
    ]
   ],
   "settle": 0.0,
-  "tolerance": 0.003,
-  "informational": [
-   "changed"
-  ]
+  "tolerance": 0.003
  },
  "extra": [
   "NeoWave/Engine/Tables.cs",
@@ -36,5 +33,6 @@
   "NeoSampler/Engine/SampleData.cs",
   "NeoClipper/Engine/*.cs"
  ],
- "gear": "Dye Essence"
+ "gear": "Dye Essence",
+ "tables": true
 }
