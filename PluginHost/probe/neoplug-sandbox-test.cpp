@@ -140,6 +140,44 @@ std::vector<uint8_t> save(np_plugin* p)
     return s;
 }
 
+// A parameter event lands on its own sample (np_event.frame), in process and in a sandbox (docs/specs/plugin-host.md): the gain effect takes
+// its gain when an input sample enters its delay line, so the edge of a gain change at frame `at` of a block is `at` + latency samples later.
+void edge(np_plugin* p, const std::string& tag)
+{
+    const int frames = 128, blocks = 3, at = 70;
+    char err[256] = {0};
+    check(np_activate(p, 48000, 256, 0, err, sizeof err) == 0, tag + "edge: activates");
+    np_reset(p);
+    int lat = np_latency(p);
+    const double g0 = 0.0, g1 = -6.0;
+    std::vector<float> in((size_t)frames, 0.5f), oL((size_t)frames), oR((size_t)frames), out;
+    for (int b = 0; b < blocks; b++)
+    {
+        const float* ins[2] = {in.data(), in.data()};
+        float* outs[2] = {oL.data(), oR.data()};
+        np_event ev{};
+        ev.frame = (uint32_t)(b == 0 ? 0 : at); ev.type = NP_EV_PARAM; ev.param_id = 1; ev.value = b == 0 ? g0 : g1;
+        np_process_io io{};
+        io.in = ins; io.in_ch = 2; io.out = outs; io.out_ch = 2; io.frames = frames;
+        io.events = b <= 1 ? &ev : nullptr; io.nevents = b <= 1 ? 1 : 0;
+        io.tempo = 120; io.playing = 1; io.beat_pos = -1; io.tsig_num = 4; io.tsig_den = 4;
+        if (np_process_ex(p, &io) < 0) { check(false, tag + "edge: plays"); return; }
+        out.insert(out.end(), oL.begin(), oL.end());
+    }
+    size_t k = (size_t)(frames + at + lat);
+    float oldv = (float)(0.5 * std::pow(10.0, g0 / 20.0)), newv = (float)(0.5 * std::pow(10.0, g1 / 20.0));
+    bool ok = k < out.size() && std::fabs(out[k - 1] - oldv) < 1e-6 && std::fabs(out[k] - newv) < 1e-6 && std::fabs(oldv - newv) > 0.01;
+    check(ok, tag + "a parameter event at frame " + std::to_string(at) + " changes the output exactly at sample " + std::to_string(k) + " (latency " + std::to_string(lat) +
+          ": " + std::to_string(k < out.size() ? out[k - 1] : 0.f) + " then " + std::to_string(k < out.size() ? out[k] : 0.f) + ")");
+    // np_flush (the plug-in's own window changed a value) crosses to the sandbox's server like the other calls: it answers and the plug-in plays on
+    np_flush(p);
+    np_process_io io{};
+    const float* ins[2] = {in.data(), in.data()};
+    float* outs[2] = {oL.data(), oR.data()};
+    io.in = ins; io.in_ch = 2; io.out = outs; io.out_ch = 2; io.frames = frames; io.tempo = 120; io.playing = 1; io.beat_pos = -1; io.tsig_num = 4; io.tsig_den = 4;
+    check(np_status(p) != 2 && np_process_ex(p, &io) >= 0, tag + "np_flush answers and the plug-in plays on");
+}
+
 // --- smoke ---------------------------------------------------------------------------------------------------------------
 
 int smoke(const std::string& path, const std::string& id, int placement)
@@ -193,6 +231,7 @@ int smoke(const std::string& path, const std::string& id, int placement)
     render(ref, inst, 12, 128, autoId, autoVal, 4, q0);
     render(sb, inst, 12, 128, autoId, autoVal, 4, q1);
     check(autoId < 0 || eq(q0, q1), tag + (exactPlugin ? "automation: bit-identical to in process" : "automation: same loudness"));
+    if (id == "neoplug.test.gain") { edge(ref, tag + "in process: "); edge(sb, tag); }
     // parameters set from the main thread, and the plug-in's own values
     if (autoId >= 0)
     {

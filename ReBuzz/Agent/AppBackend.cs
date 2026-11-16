@@ -49,6 +49,9 @@ namespace ReBuzz.Agent
         /// <summary>Studio mode's view control, set by the studio when its window exists.</summary>
         public IViewControl View { get; set; }
 
+        /// <summary>Studio mode's browser (BR1), set by the studio when it has one.</summary>
+        public IBrowserControl Browser { get; set; }
+
         public IAudioControl Audio => host.Live ? audio : null;
 
         public IMidiBindings Midi => midi;

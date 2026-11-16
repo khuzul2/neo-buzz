@@ -140,8 +140,7 @@ namespace ReBuzz.Studio.Platform
         /// <summary>A studio window around a native machine's embedded window (its keyboard under it where the machine plays notes).</summary>
         internal static Window MakeNativeWindow(IMachine machine, string title, Control content, bool resizable)
         {
-            var window = Make(machine, title, content, () => { }, scroll: false);
-            window.CanResize = resizable;
+            var window = Make(machine, title, content, () => { }, scroll: false, fixedSize: !resizable);
             return window;
         }
 
@@ -178,7 +177,7 @@ namespace ReBuzz.Studio.Platform
                     return;
                 }
                 // A GUI of a fixed layout (the factory says so: the Neo editors) scrolls where the screen can't hold it.
-                w.Gui = Make(machine, machine.Name, content, () => w.Gui = null, scroll: !MachineGuis.Resizable(machine));
+                w.Gui = Make(machine, machine.Name, content, () => w.Gui = null, scroll: !MachineGuis.Resizable(machine), fixedSize: !MachineGuis.Resizable(machine));
             }
             Show(w.Gui, at);
         }
@@ -190,7 +189,7 @@ namespace ReBuzz.Studio.Platform
             {
                 var editor = ReBuzz.Agent.MachineFaces.Editor(machine, () => OpenParameterWindow(machine, null));
                 if (editor == null) return false;
-                w.Editor = Make(machine, $"{machine.Name} — editor", editor, () => w.Editor = null, scroll: true);
+                w.Editor = Make(machine, $"{machine.Name} — editor", editor, () => w.Editor = null, scroll: true, fixedSize: true);
             }
             Show(w.Editor, null);
             return true;
@@ -224,7 +223,7 @@ namespace ReBuzz.Studio.Platform
 
         /// <param name="scroll">A GUI of a fixed layout (a Neo editor, a manifest editor): in a scroll viewer, for where the
         /// window is smaller than it (above the keyboard, where the machine has one).</param>
-        static Window Make(IMachine machine, string title, Control content, Action closed, bool scroll)
+        static Window Make(IMachine machine, string title, Control content, Action closed, bool scroll, bool fixedSize = false)
         {
             var window = new Window
             {
@@ -234,8 +233,10 @@ namespace ReBuzz.Studio.Platform
                 ShowInTaskbar = false,
             };
             _ = new TransportKeys(window, () => machine.Graph?.Buzz as ReBuzzCore, () => false);
-            // Never larger than the screen's work area (the editor and its keyboard together); resizable (the content scrolls).
-            MachineWindowFit.Clamp(window);
+            // Never larger than the screen's work area (the editor and its keyboard together), the content scrolling.
+            // A GUI window is a fixed size; the parameter window and a machine's own resizable GUI stay resizable.
+            if (fixedSize) MachineWindowFit.Fix(window);
+            else MachineWindowFit.Clamp(window);
             window.Closed += (s, e) => closed();
             return window;
         }
@@ -250,11 +251,15 @@ namespace ReBuzz.Studio.Platform
         {
             if (at is WindowPlacement p && p.Width > 0)
             {
-                window.SizeToContent = SizeToContent.Manual;
                 window.Position = new PixelPoint((int)p.Left, (int)p.Top);
-                window.Width = p.Width;
-                // Songs keep the GUI's height; the keyboard comes on top of it.
-                window.Height = p.Height + NeoBuzz.Editor.MachineKeyboardFrame.ExtraHeightOf(window.Content);
+                // A fixed window opens at its content's size, never at a size a user once gave it; the others keep the
+                // song's size (its GUI's height; the keyboard comes on top of it).
+                if (window.CanResize)
+                {
+                    window.SizeToContent = SizeToContent.Manual;
+                    window.Width = p.Width;
+                    window.Height = p.Height + NeoBuzz.Editor.MachineKeyboardFrame.ExtraHeightOf(window.Content);
+                }
             }
             var owner = Dialogs.Owner;
             if (!window.IsVisible)

@@ -406,7 +406,9 @@ namespace ReBuzz.Studio.Tests
             rig.Window.Width = 900;
             Settle();
             Assert.That(rig.Browser.IsSqueezed, Is.False, "900 wide has room for both");
-            Assert.That(rig.Browser.Bounds.Width, Is.EqualTo(BrowserPanel.DefaultWidth).Within(1));
+            // BR1: the browser is 400 wide by default (two columns); with the room three panels leave it, it takes what is left and shows one column.
+            Assert.That(rig.Browser.Bounds.Width, Is.InRange(BrowserPanel.MinPanelWidth - 1, BrowserPanel.DefaultWidth + 1));
+            Assert.That(rig.Browser.IsOneColumn, Is.EqualTo(rig.Browser.Bounds.Width < BrowserPanel.NarrowWidth));
             Assert.That(inspector.Bounds.Width, Is.EqualTo(Views.Inspector.InspectorPanel.DefaultWidth).Within(1));
             Assert.That(rig.Window.Tabs.Bounds.Width, Is.GreaterThanOrEqualTo(MainWindow.MinMainWidth - 2));
 

@@ -158,7 +158,8 @@ namespace NeoBuzz.Plug
         public int ServerPid { get; private set; }
         PlugState lastGood;                                  // the state a reload starts from: the last one saved, loaded or taken in the background
         int changes, snapped;
-        long snapAt;
+        long snapAt = Environment.TickCount64;
+        long lastRender;   // when a block last came in (the audio is running): the snapshot waits, its state save holds the gate
         IntPtr workgroupSet;
         /// <summary>Raised on PlugMain when the placement or the crash state changed (the machine refreshes its menu and manifest).</summary>
         public event Action PlacementChanged;
@@ -535,6 +536,7 @@ namespace NeoBuzz.Plug
                     if (Interlocked.Exchange(ref applyQueued, 1) == 0) ThreadPool.QueueUserWorkItem(_ => ApplyToEngine());
                 }
                 int flags = PlugNative.np_poll(plugin);
+                if ((flags & PlugNative.PollFlush) != 0) lock (Gate) PlugNative.np_flush(plugin);   // the plug-in's own window changed a value: apply it now, whether or not audio runs
                 if ((flags & PlugNative.PollDirty) != 0) Interlocked.Increment(ref changes);
                 if ((flags & PlugNative.PollLatency) != 0) Refresh();
                 if ((flags & PlugNative.PollRestart) != 0) Reactivate(offlineMode);
@@ -648,8 +650,19 @@ namespace NeoBuzz.Plug
 
         // --- The sandbox (H2) ----------------------------------------------------------------------------------
 
+        readonly object crashLock = new object();
+
+        /// <summary>Reads the sandbox's state now, for a caller that asks (machine_describe, the menu): the pump notices a crash within 20 ms, an offline render can end before that.</summary>
+        public void CheckCrashed()
+        {
+            if (Crashed || !Sandboxed || plugin == IntPtr.Zero || Missing) return;
+            if (PlugNative.np_status(plugin) == 2) MarkCrashed();
+        }
+
         void MarkCrashed()
         {
+            lock (crashLock)
+            {
             if (Crashed) return;
             var text = new byte[256];
             PlugNative.np_status_text(plugin, text, text.Length);
@@ -662,6 +675,7 @@ namespace NeoBuzz.Plug
             Interlocked.Increment(ref Revision);
             Log($"{Name}: the plug-in's sandbox ended: {CrashReason}. The slot is silent; reload it from the machine's menu.");
             PlacementChanged?.Invoke();
+            }
         }
 
         /// <summary>The state a reload starts from: the last one saved, loaded or taken in the background, else what the machine knows.</summary>
@@ -680,6 +694,9 @@ namespace NeoBuzz.Plug
             long now = Environment.TickCount64;
             int c = Volatile.Read(ref changes);
             if (c == snapped || now - snapAt < 15000 || awaitState) return;
+            // The save holds the gate, and a block that finds it taken is silent: while audio runs it waits (at most a minute), so a render
+            // and a song playing do not lose a block to it, and two runs of one song stay the same samples.
+            if (now - Volatile.Read(ref lastRender) < 250 && now - snapAt < 60000) return;
             snapAt = now;
             snapped = c;
             try
@@ -714,6 +731,7 @@ namespace NeoBuzz.Plug
         /// <summary>One line for the machine's menu and the agent: where it runs, and whether its server is up.</summary>
         public string PlacementText()
         {
+            CheckCrashed();
             string label = PlugPlacement.Label(placement);
             if (!Sandboxed) return label.ToLowerInvariant() + (PlacementWhy.StartsWith("forced") ? " (" + PlacementWhy + ")" : "");
             if (Crashed) return $"{label.ToLowerInvariant()}: CRASHED, {CrashReason}; silent until reloaded";
@@ -973,6 +991,7 @@ namespace NeoBuzz.Plug
                     else if (!effect) Array.Clear(output, 0, n);
                     return effect && input != null;
                 }
+                Volatile.Write(ref lastRender, Environment.TickCount64);
                 var master = host.MasterInfo;
                 int ne = 0;
                 bool playing = false;
@@ -1041,7 +1060,11 @@ namespace NeoBuzz.Plug
                 for (int i = 0; i < Slots && ne < events.Length - 1; i++)
                 {
                     int v = Interlocked.Exchange(ref pending[i], -1);
-                    if (v >= 0) Volatile.Write(ref wroteAt[i], Environment.TickCount64);   // the plug-in takes it in this block: the pump waits for it to show
+                    if (v >= 0)
+                    {
+                        Volatile.Write(ref wroteAt[i], Environment.TickCount64);   // the plug-in takes it in this block: the pump waits for it to show
+                        Volatile.Write(ref toController[i], 0);   // and it tells its own controller of it: a copy sent by the pump would arrive blocks late (in a sandbox, after newer values) and put an old value back
+                    }
                     if (v >= 0 && bound[i]) events[ne++] = new PlugNative.Event { type = PlugNative.EvParam, param_id = slotId[i], value = ToValue(i, v) };
                 }
                 SortByFrame(events, ne);

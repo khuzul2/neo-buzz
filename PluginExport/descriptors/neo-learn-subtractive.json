@@ -1,0 +1,45 @@
+{
+ "id": "org.neobuzz.neo-learn-subtractive",
+ "name": "Neo Learn Subtractive",
+ "folder": "NeoLearnSubtractive",
+ "namespace": "NeoBuzz.LearnSub",
+ "engine": "(learn)",
+ "machine": "NeoLearnSubtractiveMachine",
+ "editor": "NeoLearnSubtractiveEditor",
+ "map": "SubtractiveMap",
+ "kind": "instrument",
+ "features": [
+  "synthesizer"
+ ],
+ "au": "NLSb",
+ "description": "Subtractive synth",
+ "process": "learn",
+ "tempo": true,
+ "idle": false,
+ "tailSeconds": 10,
+ "test": {
+  "changes": [
+   [
+    "FilterCutoff",
+    "raw:400"
+   ]
+  ],
+  "settle": 0.0,
+  "tolerance": 0.003
+ },
+ "extra": [
+  "NeoWave/Engine/Tables.cs",
+  "NeoWave/Engine/WavReader.cs",
+  "NeoSampler/Engine/Interpolation.cs",
+  "NeoSampler/Engine/SampleData.cs",
+  "NeoClipper/Engine/*.cs",
+  "NeoLearn/Engine/*.cs",
+  "NeoBuzz.Analysis/Loudness.cs",
+  "NeoBuzz.Analysis/GainMatch.cs"
+ ],
+ "extraEditor": [
+  "NeoLearn/LearnEditor.cs"
+ ],
+ "gear": "Neo Learn Subtractive",
+ "tables": true
+}

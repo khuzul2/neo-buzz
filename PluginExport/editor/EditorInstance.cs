@@ -38,6 +38,10 @@ namespace NeoExport
         /// <summary>Handles the window system's pending events (X11 only; Win32 and Cocoa deliver theirs through the host's loop).</summary>
         void Pump();
         void Destroy();
+        /// <summary>Device pixels per point of the view's window (macOS Retina: 2; 1 elsewhere, where sizes are already pixels).</summary>
+        double BackingScale { get; }
+        /// <summary>Tests: a left mouse event (0 down, 1 move with the button down, 2 up) at a point of the view, sent the way the window system sends one.</summary>
+        void TestInject(int kind, double x, double y);
     }
 
     internal sealed unsafe class EditorInstance
@@ -55,6 +59,8 @@ namespace NeoExport
         INativeView native;
         double scale = 1;
         int natW = 640, natH = 400, pxW, pxH;
+        int lw, lh;            // the size the host sees (CLAP gui get_size): pixels on Windows and X11, points on macOS
+        double backing = 1;    // device pixels per point (macOS Retina 2): the frame is rendered at lw * backing
         byte* frame; int frameCap;
         int seenSeq = -1;
         bool pointerDown, visible = true;
@@ -118,7 +124,7 @@ namespace NeoExport
             // The editor's natural size: measured with room to spare, then the window is that size (times the scale).
             editor.Measure(new Size(4000, 4000));
             natW = Math.Max(64, (int)Math.Ceiling(editor.DesiredSize.Width)); natH = Math.Max(48, (int)Math.Ceiling(editor.DesiredSize.Height));
-            SetPixelSize((int)Math.Round(natW * scale), (int)Math.Round(natH * scale));
+            SetLogicalSize((int)Math.Round(natW * scale), (int)Math.Round(natH * scale));
             window.Show();
             window.AddHandler(InputElement.PointerReleasedEvent, (s, e) => { }, Avalonia.Interactivity.RoutingStrategies.Tunnel, true);
             LoadGen.Publish = sh;
@@ -127,6 +133,12 @@ namespace NeoExport
             if (int.TryParse(load, out int mode) && mode > 0) LoadGen.Start(mode);
             Tick();
             return true;
+        }
+
+        void SetLogicalSize(int w, int h)
+        {
+            lw = Math.Max(16, w); lh = Math.Max(16, h);
+            SetPixelSize((int)Math.Round(lw * backing), (int)Math.Round(lh * backing));
         }
 
         void SetPixelSize(int w, int h)
@@ -141,7 +153,7 @@ namespace NeoExport
         internal ParamDef[] TestTable => editor.Table;
         internal int TestMachineRaw(int i) => ((NeoBuzz.Machine.NeoMachineBase)machine).Values[i];
 
-        public void GetSize(out uint w, out uint h) { w = (uint)pxW; h = (uint)pxH; }
+        public void GetSize(out uint w, out uint h) { w = (uint)lw; h = (uint)lh; }
 
         public bool SetScale(double s)
         {
@@ -151,8 +163,9 @@ namespace NeoExport
 
         public bool Resize(int w, int h)
         {
-            SetPixelSize(w, h);
-            native?.Resize(pxW, pxH);
+            SetLogicalSize(w, h);
+            native?.Resize(lw, lh);
+            try { window?.UpdateLayout(); Dispatcher.UIThread.RunJobs(); Present(); } catch (Exception) { }   // the new size is laid out and drawn now, not at some later frame
             return true;
         }
 
@@ -161,12 +174,13 @@ namespace NeoExport
             native?.Destroy(); native = null;
             try
             {
-                if (api == 3 && OperatingSystem.IsLinux()) native = X11View.Create((ulong)handle, pxW, pxH, this);
-                else if (api == 1 && OperatingSystem.IsWindows()) native = Win32View.Create((IntPtr)handle, pxW, pxH, this);
-                else if (api == 2 && OperatingSystem.IsMacOS()) native = CocoaView.Create((IntPtr)handle, pxW, pxH, this);
+                if (api == 3 && OperatingSystem.IsLinux()) native = X11View.Create((ulong)handle, lw, lh, this);
+                else if (api == 1 && OperatingSystem.IsWindows()) native = Win32View.Create((IntPtr)handle, lw, lh, this);
+                else if (api == 2 && OperatingSystem.IsMacOS()) native = CocoaView.Create((IntPtr)handle, lw, lh, this);
             }
             catch (Exception) { native = null; }
             if (native == null) return false;
+            UpdateBacking();
             native.SetVisible(visible);
             Present();
             return true;
@@ -211,6 +225,7 @@ namespace NeoExport
         {
             if (sh == null) return;
             native?.Pump();
+            UpdateBacking();
             int seq = Volatile.Read(ref sh->ParamSeq);
             if (seq != seenSeq)
             {
@@ -222,6 +237,16 @@ namespace NeoExport
             Dispatcher.UIThread.RunJobs();
             Present();
             Volatile.Write(ref sh->EdFrames, ++frames);
+        }
+
+        /// <summary>The window's backing scale (macOS: 2 on a Retina display, and it changes when the window moves to another display): the frame is rendered at that many pixels per point.</summary>
+        void UpdateBacking()
+        {
+            if (native == null) return;
+            double b = native.BackingScale;
+            if (b < 1 || b > 4 || Math.Abs(b - backing) < 0.01) return;
+            backing = b;
+            SetLogicalSize(lw, lh);
         }
 
         void Present()
@@ -244,25 +269,28 @@ namespace NeoExport
         }
 
         // ---------------------------------------------------------------- native events -> the headless window
-        public void MouseDown(double x, double y, int button) { pointerDown = true; window.MouseDown(new Point(x, y), ToButton(button)); }
-        public void MouseUp(double x, double y, int button) { window.MouseUp(new Point(x, y), ToButton(button)); pointerDown = false; EndGestures(); }
-        public void MouseMove(double x, double y) => window.MouseMove(new Point(x, y));
-        public void Wheel(double x, double y, double dy) => window.MouseWheel(new Point(x, y), new Vector(0, dy));
+        // (points from the native view, pixels in the headless window)
+        public void MouseDown(double x, double y, int button) { pointerDown = true; window.MouseDown(new Point(x * backing, y * backing), ToButton(button)); }
+        public void MouseUp(double x, double y, int button) { window.MouseUp(new Point(x * backing, y * backing), ToButton(button)); pointerDown = false; EndGestures(); }
+        public void MouseMove(double x, double y) => window.MouseMove(new Point(x * backing, y * backing));
+        public void Wheel(double x, double y, double dy) => window.MouseWheel(new Point(x * backing, y * backing), new Vector(0, dy));
+        public void TestInject(int kind, double x, double y) => native?.TestInject(kind, x, y);
         static MouseButton ToButton(int b) => b == 3 ? MouseButton.Right : b == 2 ? MouseButton.Middle : MouseButton.Left;
 
         /// <summary>For the tests: where a parameter knob is, in window pixels.</summary>
         public bool Hotspot(out int x, out int y)
         {
             x = y = 0;
+            int best = int.MaxValue;   // the knob of the lowest parameter index below 64: the host has a slot for it
             foreach (var v in window.GetVisualDescendants())
-                if (v is Control c && c.GetType().Name == "ParamKnob" && c.Bounds.Width > 8)
+                if (v is NeoBuzz.Editor.ParamKnob c && c.Bounds.Width > 8 && c.ParamIndex < 64 && c.ParamIndex < best)
                 {
                     var p = c.TranslatePoint(new Point(c.Bounds.Width / 2, c.Bounds.Height / 2), window);
                     if (p == null) continue;
-                    x = (int)Math.Round(p.Value.X); y = (int)Math.Round(p.Value.Y);
-                    return true;
+                    best = c.ParamIndex;
+                    x = (int)Math.Round(p.Value.X / backing); y = (int)Math.Round(p.Value.Y / backing);   // in the native view's units
                 }
-            return false;
+            return best != int.MaxValue;
         }
 
         public void Destroy()
