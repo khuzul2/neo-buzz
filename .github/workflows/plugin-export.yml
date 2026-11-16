@@ -220,7 +220,7 @@ jobs:
           cp "$RUNNER_TEMP/${f%%:*}" "$D/LICENSES/${f##*:}" 2>/dev/null || true
         done
         ls "$D/LICENSES"
-        find "$D" -maxdepth 3 | head -50; du -sh "$D"
+        find "$D" -maxdepth 2 | head -50 || true; du -sh "$D"
 
     - uses: actions/upload-artifact@v4
       if: always()

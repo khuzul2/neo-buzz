@@ -165,6 +165,7 @@ namespace NeoExport
         {
             SetLogicalSize(w, h);
             native?.Resize(lw, lh);
+            try { window?.UpdateLayout(); Dispatcher.UIThread.RunJobs(); Present(); } catch (Exception) { }   // the new size is laid out and drawn now, not at some later frame
             return true;
         }
 

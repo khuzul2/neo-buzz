@@ -81,7 +81,8 @@ namespace NeoExport
             PostMessageW(hwnd, kind == 0 ? 0x0201u : kind == 1 ? 0x0200u : 0x0202u, kind == 2 ? (nuint)0 : (nuint)1, l);
         }
 
-        public void Resize(int w, int h) { if (hwnd != IntPtr.Zero) SetWindowPos(hwnd, IntPtr.Zero, 0, 0, w, h, 0x16 /*NOMOVE|NOZORDER|NOACTIVATE*/); }
+        public void Resize(int w, int h) { if (hwnd != IntPtr.Zero) { SetWindowPos(hwnd, IntPtr.Zero, 0, 0, w, h, 0x16 /*NOMOVE|NOZORDER|NOACTIVATE*/); InvalidateRect(hwnd, IntPtr.Zero, 0); } }
+        [DllImport("user32")] static extern int InvalidateRect(IntPtr h, IntPtr rect, int erase);
         public void SetVisible(bool v) { if (hwnd != IntPtr.Zero) ShowWindow(hwnd, v ? 5 : 0); }
         public void Pump() { }
         public void Destroy() { if (hwnd == IntPtr.Zero) return; views.Remove(hwnd); DestroyWindow(hwnd); hwnd = IntPtr.Zero; }
