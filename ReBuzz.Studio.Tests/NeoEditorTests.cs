@@ -441,11 +441,42 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void AFixedMachineWindowIsClampedAgainWhenTheScreenChanges()
+        {
+            // The work area changes (another screen, another scale): a fixed window follows it, content scrolling inside.
+            var area = MachineWindowFit.WorkArea;
+            var size = new Size(1920, 1080);
+            MachineWindowFit.WorkArea = w => size;
+            var poly = Add("Neo Poly", "Fit Poly Screen");
+            try
+            {
+                var window = OpenEditor(poly);
+                window.UpdateLayout();
+                Assert.That(window.CanResize, Is.False);
+                Assert.That(window.MaxHeight, Is.EqualTo(1080 - MachineWindowFit.FrameHeight));
+                size = new Size(1280, 600);
+                MachineWindowFit.Apply(window);
+                window.UpdateLayout();
+                Assert.That(window.MaxHeight, Is.EqualTo(600 - MachineWindowFit.FrameHeight), "clamped to the smaller screen");
+                Assert.That(window.ClientSize.Height, Is.LessThanOrEqualTo(600 - MachineWindowFit.FrameHeight + 0.5));
+                Assert.That(window.CanResize, Is.False, "still fixed");
+                var scroller = StudioMachineUiHost.ContentOf(window)!.GetVisualAncestors().OfType<ScrollViewer>().First();
+                Assert.That(scroller.Extent.Height, Is.GreaterThan(scroller.Viewport.Height), "the rest scrolls inside the window");
+            }
+            finally
+            {
+                MachineWindowFit.WorkArea = area;
+                Remove(poly);
+            }
+        }
+
+        [AvaloniaTest]
         public void MachineWindowsStayInsideTheScreensWorkAreaAndScroll()
         {
             // UI gallery review: Neo FM6's, Neo Poly's and Neo Wave's editors (942–1000 pt tall) were fixed in size and the
-            // parameter window 1080 pt, taller than a laptop's screen. On a 1280 × 720 work area each window stays inside it
-            // and can be resized; an editor keeps its own layout and scrolls.
+            // parameter window 1080 pt, taller than a laptop's screen. On a 1280 × 720 work area each window stays inside it;
+            // an editor window is a fixed size (not resizable, no maximise) and keeps its own layout, scrolling inside the
+            // clamped window; the parameter window stays resizable.
             var area = MachineWindowFit.WorkArea;
             MachineWindowFit.WorkArea = w => new Size(1280, 720);
             var wave = Add("Neo Wave", "Fit Wave");
@@ -459,7 +490,8 @@ namespace ReBuzz.Studio.Tests
                 var editor = StudioMachineUiHost.ContentOf(window)!;
                 Assert.That(editor.GetType().Name, Is.EqualTo("NeoWaveEditor"));
                 Assert.That(window.ClientSize.Height, Is.LessThanOrEqualTo(maxH + 0.5), "the window inside the work area");
-                Assert.That(window.CanResize, Is.True, "and resizable");
+                Assert.That(window.CanResize, Is.False, "a fixed size, not resizable");
+                Assert.That(window.CanMaximize, Is.False, "no zoom or maximise");
                 editor.Measure(Size.Infinity);
                 Assert.That(editor.Bounds.Height, Is.EqualTo(editor.DesiredSize.Height).Within(1), "the editor at its own height: never squashed");
                 Assert.That(editor.Bounds.Height, Is.GreaterThan(window.ClientSize.Height + 100), "taller than the window");
@@ -477,7 +509,7 @@ namespace ReBuzz.Studio.Tests
                 parameters.UpdateLayout();
                 parameters.CaptureRenderedFrame();
                 Assert.That(parameters.ClientSize.Height, Is.LessThanOrEqualTo(maxH + 0.5), "the parameter window inside the work area");
-                Assert.That(parameters.CanResize, Is.True);
+                Assert.That(parameters.CanResize, Is.True, "the parameter window is under its own design review: resizable as before");
                 Studio.Screenshot(parameters, "parameters-neo-poly-small-screen");
             }
             finally

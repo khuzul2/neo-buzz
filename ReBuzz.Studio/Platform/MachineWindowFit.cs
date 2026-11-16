@@ -1,10 +1,12 @@
-// Fork (UI gallery review): a machine window (a machine's GUI, its manifest editor, its parameter window) never
-// larger than the screen's work area. Neo FM6's, Neo Poly's and Neo Wave's editors are 942–1000 pt tall and were
-// fixed in size, the parameter window 1080 pt: on a laptop's screen their bottoms were out of reach. A GUI of a
+// Fork (UI gallery review, then the user's "machine windows are not resizable"): a machine window (a machine's GUI,
+// its manifest editor, a native machine's window) is a fixed size: CanResize = false, sized to its content, so a
+// resize never leaves the UI unresponsive. It is never larger than the screen's work area, though: Neo FM6's, Neo
+// Poly's and Neo Wave's editors are 942-1000 pt tall, and on a laptop their bottoms were out of reach. A GUI of a
 // fixed layout (the Neo editors, the manifest editor) sits in a scroll viewer (NeoBuzz.Editor.MachineKeyboardFrame,
-// above the machine keyboard where the machine has one), so where the window is clamped it keeps its layout and
-// scrolls; the parameter window scrolls its rows itself. Each window may be resized (the content scrolls), never
-// past the work area.
+// above the machine keyboard where the machine has one), so where the window is clamped to the work area it keeps
+// its layout and scrolls inside it. The clamp is checked again when the window opens, moves to another screen or
+// the UI scale changes. A plug-in's editor window follows the plug-in's own can-resize flag (PluginEditor); the
+// generic parameter window and the device dock's floating window stay resizable (Clamp) and scroll their rows.
 
 using System;
 using Avalonia;
@@ -44,14 +46,33 @@ namespace ReBuzz.Studio.Platform
         }
 
         /// <summary>
-        /// Keeps <paramref name="window"/> inside the work area (now, and when it opens on its screen) and lets it be
-        /// resized: smaller, its content scrolls; larger, up to the work area.
+        /// A machine's window: a fixed size (not resizable, no zoom or maximise), sized to its content and kept inside
+        /// the work area, the content scrolling where it is larger.
+        /// </summary>
+        public static void Fix(Window window)
+        {
+            window.CanResize = false;
+            window.CanMaximize = false;
+            window.SizeToContent = SizeToContent.WidthAndHeight;
+            Watch(window);
+        }
+
+        /// <summary>
+        /// Keeps <paramref name="window"/> inside the work area (now, and when it opens, moves to another screen or its
+        /// scale changes) and leaves it resizable: smaller, its content scrolls; larger, up to the work area.
         /// </summary>
         public static void Clamp(Window window)
         {
             window.CanResize = true;
+            Watch(window);
+        }
+
+        static void Watch(Window window)
+        {
             Apply(window);
             window.Opened += (s, e) => Apply(window);
+            window.PositionChanged += (s, e) => Apply(window);
+            window.ScalingChanged += (s, e) => Apply(window);
         }
 
         /// <summary>Sets the window's largest size from the work area.</summary>
