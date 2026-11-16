@@ -13,7 +13,12 @@ namespace ReBuzz.SessionTests
     public class AudioLibraryTests
     {
         [OneTimeSetUp]
-        public void FindLibsndfile() => ReBuzz.Platform.NativeLibraries.Register(typeof(AudioLibraryTests).Assembly);
+        public void FindLibsndfile()
+        {
+            ReBuzz.Platform.NativeLibraries.Register(typeof(AudioLibraryTests).Assembly);
+            try { SoundFile.FormatsMajor.ToList(); }
+            catch (DllNotFoundException) { Assert.Ignore("libsndfile isn't installed here"); }
+        }
 
         static float[] Tone(double hz, int rate, double seconds, double level = 0.5)
         {
