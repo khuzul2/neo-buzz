@@ -496,10 +496,12 @@ namespace NeoBuzz.DyeEssence
                     double y = pos * scale;
                     y = y < ymin ? ymin : y > ymax ? ymax : y;
                     float l, r;
-                    bool seam = loop != (int)SampleLoop.Off && (y + Interpolation.Half > leL || y - Interpolation.Half < lsL);
+                    // The wrapped read only where a tap would wrap: past the end when playing forward (or once looped), before the start when playing back (or once looped).
+                    // A voice that sits outside the loop on the side it is leaving by (a note's first samples, or a loop start moved past it) reads plainly, the same samples.
+                    bool up = dir > 0 || looped, down = dir < 0 || looped;
+                    bool seam = loop != (int)SampleLoop.Off && (up && y + Interpolation.Half > leL || down && y - Interpolation.Half < lsL);
                     if (seam)
                     {
-                        bool up = dir > 0 || looped, down = dir < 0 || looped;
                         l = ReadLooped(dl, y, kernel, lsL, leL, pingPong, up, down);
                         r = stereo ? ReadLooped(dr, y, kernel, lsL, leL, pingPong, up, down) : l;
                     }
@@ -515,7 +517,6 @@ namespace NeoBuzz.DyeEssence
                             double y2 = p2 * scale;
                             y2 = y2 < ymin ? ymin : y2 > ymax ? ymax : y2;
                             float l2, r2;
-                            bool up = dir > 0 || looped, down = dir < 0 || looped;
                             l2 = ReadLooped(dl, y2, kernel, lsL, leL, false, up, down);
                             r2 = stereo ? ReadLooped(dr, y2, kernel, lsL, leL, false, up, down) : l2;
                             float w = (float)(into / xf);

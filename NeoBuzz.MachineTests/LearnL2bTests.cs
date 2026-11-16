@@ -328,6 +328,30 @@ namespace NeoBuzz.MachineTests
             Assert.That(looped, Is.GreaterThan(once + 20));
         }
 
+        // The loop start moves every block, so the loop window is dragged across notes that sound inside it, before it and past it, down to the sample's first
+        // samples and up to its last. A voice outside the loop reads the data plainly where no tap wraps; the read stays inside the sample's padding.
+        [TestCase(0, 36)]
+        [TestCase(1, 60)]
+        [TestCase(3, 84)]
+        [TestCase(4, 24)]
+        public void LoopStartMovedEveryBlockStaysFiniteAndInsideTheSample(int source, int note)
+        {
+            var (h, v) = Make(Smp, x => { x.Set(QP.Source, source); x.Set(QP.Loop, 60); x.Set(QP.RoomSpace, 0); x.Set(QP.EnvAttack, 0); x.Set(QP.EnvSustain, 1000); });
+            h.Engine.NoteOn(0, note, 0.9f);
+            h.Engine.NoteOn(0, note + 7, 0.9f);
+            uint s = 7;
+            var y = Render(h, Rate * 3, b =>
+            {
+                s = s * 1664525u + 1013904223u;
+                // Every few blocks to an end of the range (the first and last samples), otherwise anywhere.
+                int pick = (int)(s >> 24) % 4;
+                v.Set(QP.SampleOffset, pick == 0 ? 0 : pick == 1 ? 1000 : (int)((s >> 8) % 1001));
+            }).L;
+            float peak = 0;
+            foreach (float f in y) { Assert.That(float.IsFinite(f));  peak = Math.Max(peak, Math.Abs(f)); }
+            Assert.That(peak, Is.GreaterThan(0.001f).And.LessThan(8f));
+        }
+
         [Test]
         public void UserWithNoSampleLoadedPlaysTheFirstBuiltIn()
         {
