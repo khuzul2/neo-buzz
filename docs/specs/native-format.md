@@ -171,3 +171,12 @@ A separate, explicitly lossy command: **File ▸ Export for Buzz/ReBuzz…** and
 ### 11.4 Tests
 
 `ReBuzz.Studio.Tests/BuzzExportTests.cs`: transliteration; the report's type, order and text; target rules; a song with takes, trims, gain, clip ids, an automation lane, a ramped automation column, an event past 65,535, a Neo machine, a 704-parameter machine bound to MIDI and Unicode names: take lane empty in SEQU, `ExportedLanes` holds the take events, names Latin-1 in the core sections, the report lists exactly the expected items (and the MIDI count adds up to the MIDI section's), reopening restores the takes, trims, ids, gain, the late event, all 704 bindings and the ramp; an upstream read (subsections dropped) renders like the song minus the losses (-79 dB) and unlike the song (+2.6 dB); the open song unchanged (sections, name, dirty flag, undo, snapshots); the studio flow (suggested name, Cancel writes nothing, nothing lost exports without asking, `.nbl` and own-file refused, the report window); the agent tool (happy path, overwrite, refusals, no undo step, `song_save format="bmx"` still whole).
+
+## 12. NF3: audio in the song (formatVersion 2)
+
+Audio of the Neo Audio machine's clips ([neo-audio.md](neo-audio.md)) is kept in the song, not in the wavetable.
+
+- **Manifest member `audio`** (known, so it is not carried as unknown): `{ "codec": "pcm-f32-shuffle-v1", "assets": [ { "id", "name", "path", "sha256", "sampleRate", "channels", "frames", "chunks": [ { "blob", "size" } ] } ] }`. An asset's id is `a` and 16 hex digits of the SHA-256 of its rate, channels and samples, so identical audio is one asset; its blobs are the byte-shuffled planar float32 data cut by `NblBlobSet.AddChunked`, so identical audio is also one set of blobs (and one set across songs in the same store).
+- **Version rule.** `formatVersion` 1 to 2; the migration step is empty (version 1 has no audio). A song with audio writes `minReaderVersion` 2 (an older build refuses it, naming the version, rather than dropping the audio); a song without audio writes 1 and stays readable by older builds.
+- **Load.** The assets are read (each id is checked against its samples) before the legacy sections, so the clips find them. A song opened from .bmx or .bmxml has an empty store until its wave-based clips are migrated.
+- **Export (NF2).** Saving as .bmx writes the assets the clips use into waves while slots last; the loss report says how many, and which could not be written ([neo-audio.md](neo-audio.md) §5).

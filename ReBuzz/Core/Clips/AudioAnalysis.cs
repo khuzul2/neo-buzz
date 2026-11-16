@@ -15,6 +15,10 @@ namespace ReBuzz.Core.Clips
         const int FrameHop = 256;
         /// <summary>Spectral flux below this is no transient (log-magnitude rises summed over the bins).</summary>
         const double MinFlux = 1.0;
+        /// <summary>The autocorrelation's share of the flux's energy below which its tempo is no tempo.</summary>
+        const double MinTempoConfidence = 0.12;
+        /// <summary>Beat grid slices stop here: a warp map spanning more beats than this has nothing to keep time with.</summary>
+        const double MaxGridSlices = 200000;
 
         /// <summary>
         /// Transients: peaks of spectral flux (how much louder each frequency got) above a
@@ -135,7 +139,9 @@ namespace ReBuzz.Core.Clips
             double ac = AutocorrelationTempo(source, out double confidence);
             if (barsBpm > 0 && (ac <= 0 || confidence < 0.3 || Math.Abs(ac - barsBpm) / barsBpm < 0.04))
                 return (barsBpm, Math.Round(barsBpm * seconds / 60));
-            double tempo = ac > 0 ? ac : 120;
+            // No bars fit and nothing in the transients keeps a beat (silence, noise, a pad, a clip under a quarter of a
+            // second): there is no tempo to find, so 120 rather than one made up from the noise.
+            double tempo = ac > 0 && confidence >= MinTempoConfidence ? ac : 120;
             return (tempo, tempo * seconds / 60);
         }
 
@@ -178,15 +184,17 @@ namespace ReBuzz.Core.Clips
         {
             var slices = new SortedSet<double>(transients.Where(t => t >= 0 && t < source.Length));
             slices.Add(0);
-            if (grid > 0)
+            double first = map.BeatAt(0), last = map.BeatAt(source.Length);
+            // Extreme warp markers can put millions of beats in a clip (or none that are finite): no grid then.
+            if (grid > 0 && double.IsFinite(first) && double.IsFinite(last) && (last - first) / grid <= MaxGridSlices)
             {
-                double first = map.BeatAt(0), last = map.BeatAt(source.Length);
                 for (double b = Math.Ceiling(first / grid) * grid; b < last; b += grid)
                 {
                     double s = map.SampleAt(b);
                     // Only where no transient is within a quarter of the grid.
                     double near = 0.25 * grid * map.SamplesPerBeat(b);
-                    if (!slices.Any(x => Math.Abs(x - s) < near)) slices.Add(s);
+                    if (!double.IsFinite(s) || !(near >= 0) || !double.IsFinite(near)) continue;
+                    if (slices.GetViewBetween(s - near, s + near).All(x => Math.Abs(x - s) >= near)) slices.Add(s);
                 }
             }
             return slices.ToArray();

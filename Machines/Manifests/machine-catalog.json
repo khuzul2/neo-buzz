@@ -1297,14 +1297,14 @@
    ],
    "use_for": "Complete synthesised drum machine with kick, snare, toms, rim, clap, hats, crash and ride."
   },
-  "Session Clip Player": {
+  "Neo Audio": {
    "category": "Samplers",
    "tags": [
     "sampler",
     "looper",
     "recording"
    ],
-   "use_for": "An audio track for the Session View: play audio clips and record takes into them."
+   "use_for": "An audio track: play imported or recorded audio clips warped to the song's tempo (Session slots and arrangement), and record takes from an input or the master."
   },
   "SpectrumBlock": {
    "category": "Utility",

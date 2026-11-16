@@ -143,6 +143,7 @@ if sfiles:
     sgear = os.path.join(sroot, "Gear")
     neo = [n for n in os.listdir(os.path.join(sgear, "Generators"))] if os.path.isdir(os.path.join(sgear, "Generators")) else []
     check(any(n.startswith("Neo Poly") and n.endswith(".dll") for n in neo), "the studio's Gear has the Neo machines (their Avalonia builds)")
+    check(os.path.isfile(os.path.join(sgear, "Effects", "Neo Audio.NET.dll")), "the studio's Gear has Neo Audio (the audio track), which plays imported audio through libsndfile")
     check(os.path.isdir(os.path.join(wpf_dir, "Gear", "Generators")), "the WPF app's Gear is still there")
     check("%APPDATA%\\NeoBuzz Live" in readme and ("NeoBuzz Live Classic" in readme if switched else "NeoBuzz Live Studio (preview)" in readme),
           "README-FIRST.txt explains the two apps and where the studio keeps its settings")

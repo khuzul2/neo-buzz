@@ -253,7 +253,7 @@ Today automation lives in two places:
   - Otherwise: a new pattern, placed as a clip from where recording started. It grows as it records (0.7.1) and ends where recording stops.
 - **Loop recording:** each pass is a new take, its own pattern, on a take lane.
 - **Comping:** select a range on a take lane, and *Comp* puts a trimmed event of that take's pattern on the main lane (`Offset`/`End`). No notes are copied. It's late in the plan (AR5), and worth it because it costs little here.
-- **Audio:** audio clips are patterns of the Session Clip Player, which the arrangement already plays (1.0). The studio hasn't ported the player yet (S5, "not ported"), so arrangement audio waits for that port.
+- **Audio:** audio clips are patterns of Neo Audio (the Session Clip Player, renamed; [neo-audio.md](neo-audio.md)), which the arrangement already plays (1.0). The studio hasn't ported the player yet (S5, "not ported"), so arrangement audio waits for that port.
 - **Reuse:** the session's recorder (`SessionCore.Recording.cs`: MIDI-thread stamps and record windows; `TakeWriter`; `SessionLayout.Takes.cs`). It counts in session time; arrangement takes count in song ticks, so the writer gets a target (a pattern and an origin) instead of a slot (§8 S6).
 
 ### 4.5 Extend the horizontal sequence editor, or a new view?

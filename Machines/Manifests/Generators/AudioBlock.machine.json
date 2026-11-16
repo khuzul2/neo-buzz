@@ -15,7 +15,7 @@
  "quirks": [
   "The clips live in its own timeline window and in its saved state, not in parameters: the Studio does not show that window, so it is for songs that already use it.",
   "Mute yes returns no audio from the machine; with no clips placed the profile heard silence (health warn).",
-  "For new work the Session View's audio tracks (Session Clip Player) and the arrangement cover this: unverified how an AudioBlock song behaves in the Studio."
+  "For new work the Session View's audio tracks (Neo Audio) and the arrangement cover this: unverified how an AudioBlock song behaves in the Studio."
  ],
  "evidence": [
   "Machines/AudioBlock/AudioBlock.cs — the machine's source: its declarations, Work and menu",

@@ -109,7 +109,7 @@ Everything else the profile noticed (most are the profiler's own limits: trigger
 | Jeskola Wave Shaper | windows | sound from silence (-51.93 dBFS peak): noise, hum or DC |
 | Joachims Hyperion | windows | every parameter at its maximum at once diverges (+223.4 dBFS: the engine's guard caught it), but no parameter alone does at its maximum |
 | Joachims Jupiter 3 | windows | silent with noise through it at the defaults (a gate closed, a wet mix at 0, or it needs setting up); every parameter at its maximum at once diverges (-60.0 dBFS peak over 30 s, growing +6 dB), but no parameter alone does at its maximum |
-| Session Clip Player | windows | silent with noise through it at the defaults (a gate closed, a wet mix at 0, or it needs setting up) |
+| Neo Audio | windows | silent with noise through it at the defaults (a gate closed, a wet mix at 0, or it needs setting up) |
 | AudioBlock | windows | no sound from a MIDI note at its defaults (it has no Note track parameter) |
 | Intoxicat ACloud15 | windows | no sound from a MIDI note at its defaults (it has no Note track parameter) |
 | Jeskola Tracker | windows | no sound from a note at its defaults, as MIDI or in its tracks, even with a wave in slot 1 |
@@ -529,7 +529,7 @@ Drafts:
 | Polac Out II | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 13.2 | 11.522 | ok |
 | Polac VST 1.1 | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 18.3 | 12.175 | ok |
 | ReBuzz Audio Out | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.499 | ok |
-| Session Clip Player | effect (silent at defaults) |  |  |  |  |  |  | 3.4 | 0.598 | warn |
+| Neo Audio | effect (silent at defaults) |  |  |  |  |  |  | 3.4 | 0.598 | warn |
 
 ## Not measured yet
 

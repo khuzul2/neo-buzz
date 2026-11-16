@@ -189,7 +189,12 @@ namespace ReBuzz.Core.Session
             public static readonly string[] WarpModes = { "Off", "Repitch", "Beats", "Complex" };
             public static readonly string[] PreserveModes = { "Transients", "1/4", "1/8", "1/16" };
 
-            /// <summary>Index into the wavetable (0-based).</summary>
+            /// <summary>
+            /// The audio asset the clip plays (the song's audio store, docs/specs/neo-audio.md). Empty on a clip an older song made: it plays
+            /// <see cref="Wave"/> until the layout migrates it to an asset (the wave stays as it is).
+            /// </summary>
+            public string Asset { get; set; } = "";
+            /// <summary>Index into the wavetable (0-based): the wave an older song's clip played, and the wave a .bmx export writes the asset into.</summary>
             public int Wave { get; set; }
             /// <summary>The audio's tempo: its length in beats is its seconds times this over 60.</summary>
             public double Bpm { get; set; } = 120;
@@ -220,6 +225,7 @@ namespace ReBuzz.Core.Session
             internal XElement ToXml()
             {
                 var e = new XElement("Audio", new XAttribute("wave", Wave), new XAttribute("bpm", Num(Bpm)));
+                if (!string.IsNullOrEmpty(Asset)) e.SetAttributeValue("asset", Asset);
                 if (Warp != "Beats") e.SetAttributeValue("warp", Warp);
                 if (Preserve != "Transients") e.SetAttributeValue("preserve", Preserve);
                 if (GainDb != 0) e.SetAttributeValue("gain", Num(GainDb));
@@ -237,6 +243,7 @@ namespace ReBuzz.Core.Session
                 string preserve = (string)e.Attribute("preserve") ?? "Transients";
                 var a = new AudioSettings
                 {
+                    Asset = (string)e.Attribute("asset") ?? "",
                     Wave = Math.Max(0, IntAttr(e, "wave", 0)),
                     Bpm = Math.Clamp(DoubleAttr(e, "bpm", 120), 1, 999),
                     Warp = Array.IndexOf(WarpModes, warp) >= 0 ? warp : "Beats",

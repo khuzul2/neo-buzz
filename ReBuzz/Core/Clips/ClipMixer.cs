@@ -52,27 +52,30 @@ namespace ReBuzz.Core.Clips
         ClipPlayback[] next = new ClipPlayback[MaxClips];
         int activeCount, nextCount;
 
-        public ClipMixer(int maxBlock = 256)
+        /// <summary>The longest block it mixes (the audio settings' largest buffer; the engine's blocks are 256 at most).</summary>
+        public const int DefaultMaxBlock = 4096;
+
+        public ClipMixer(int maxBlock = DefaultMaxBlock)
         {
             Left = new float[Math.Max(1, maxBlock)];
             Right = new float[Math.Max(1, maxBlock)];
         }
 
-        public float[] Left { get; private set; }
-        public float[] Right { get; private set; }
+        public float[] Left { get; }
+        public float[] Right { get; }
 
-        /// <summary>Starts a block of <paramref name="n"/> samples: the buffers cleared.</summary>
-        public void Begin(int n)
+        /// <summary>The frames this block mixes: <c>min(n, capacity)</c>. A longer block is never allocated for; its end is silent.</summary>
+        public int Frames { get; private set; }
+
+        /// <summary>Starts a block of <paramref name="n"/> samples: the buffers cleared. Returns the frames it mixes.</summary>
+        public int Begin(int n)
         {
-            if (n > Left.Length)
-            {
-                // Not expected (blocks are 256 at most); grows once rather than failing.
-                Left = new float[n];
-                Right = new float[n];
-            }
+            n = Math.Clamp(n, 0, Left.Length);
+            Frames = n;
             Array.Clear(Left, 0, n);
             Array.Clear(Right, 0, n);
             nextCount = 0;
+            return n;
         }
 
         /// <summary>A clip plays this block from <paramref name="beat"/>.</summary>
@@ -80,7 +83,7 @@ namespace ReBuzz.Core.Clips
         {
             var p = clip?.Params;
             if (p == null || nextCount >= MaxClips || Array.IndexOf(next, clip, 0, nextCount) >= 0) return;
-            clip.Voice.Render(p, beat, beatsPerSample, sampleRate, Left, Right, 0, n);
+            clip.Voice.Render(p, beat, beatsPerSample, sampleRate, Left, Right, 0, Math.Min(n, Frames));
             next[nextCount++] = clip;
         }
 
@@ -92,7 +95,7 @@ namespace ReBuzz.Core.Clips
             {
                 var clip = active[i];
                 if (Array.IndexOf(next, clip, 0, nextCount) >= 0) continue;
-                clip.Voice.Stop(Left, Right, 0, n);
+                clip.Voice.Stop(Left, Right, 0, Math.Min(n, Frames));
                 sound = true;
                 if (clip.Voice.IsSounding && nextCount < MaxClips) next[nextCount++] = clip;
             }

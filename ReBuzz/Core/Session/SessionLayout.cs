@@ -1032,7 +1032,12 @@ namespace ReBuzz.Core.Session
             document.LaunchQuantization = Session.LaunchQuantization.ToString();
             var stream = save.CreateSubSection(SessionDocument.SubSectionName);
             if (stream != null)
-                document.Save(stream);
+            {
+                if (save is SaveSongCore { Legacy: true } legacy)
+                    SaveDocumentWithWaves(legacy, stream);          // 1.0 / neo-audio.md: .bmx and .bmxml hold audio clips as waves
+                else
+                    document.Save(stream);
+            }
         }
 
         void OnOpenSong(IOpenSong open)

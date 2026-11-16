@@ -40,6 +40,11 @@ for lib in libportaudio.dylib libsndfile.dylib; do
   dylibbundler -of -cd -b -x "$macos/$lib" -d "$macos/libs" -p "@loader_path/libs/" >/dev/null
 done
 
+# Audio import (docs/specs/neo-audio.md §6): libsndfile decodes WAV, AIFF, FLAC, OGG and MP3, so the codecs it links must be carried too.
+for codec in mpg123 vorbis FLAC ogg; do
+  ls "$macos/libs" | grep -qi "$codec" || { echo "the bundle's libs/ has no $codec library (libsndfile needs it to import audio)" >&2; exit 1; }
+done
+
 # The app icon: ReBuzz's own (ReBuzz/rebuzzlogo.ico holds one 256 px PNG), as an .icns up to 256 px.
 iconset="$out/AppIcon.iconset"
 rm -rf "$iconset" && mkdir -p "$iconset"

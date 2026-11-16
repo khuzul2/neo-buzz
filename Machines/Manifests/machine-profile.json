@@ -47678,12 +47678,12 @@
    "generated": false,
    "health": "warn"
   },
-  "Session Clip Player": {
-   "gear": "Session Clip Player",
+  "Neo Audio": {
+   "gear": "Neo Audio",
    "kind": "effect",
    "load_seconds": 0.01,
    "gear_info": {
-    "file": "Effects/Session Clip Player.NET.dll",
+    "file": "Effects/Neo Audio.NET.dll",
     "managed": true,
     "min_tracks": 0,
     "max_tracks": 0,
@@ -47741,7 +47741,7 @@
    ],
    "hot": [],
    "notes_profiler": [],
-   "generated": false,
+   "generated": true,
    "health": "warn"
   },
   "SpectrumBlock": {

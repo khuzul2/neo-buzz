@@ -192,7 +192,7 @@ namespace ReBuzz.FileOps
             ["ArrangementEvents"] = "clip trims, gain, ids and loops",
         };
 
-        public static ExportReport Analyze(ReBuzzCore buzz, IEnumerable<string> subSections)
+        public static ExportReport Analyze(ReBuzzCore buzz, IEnumerable<string> subSections, SaveSongCore audio = null)
         {
             var losses = new List<ExportLoss>();
             var song = buzz.SongCore;
@@ -271,6 +271,15 @@ namespace ReBuzz.FileOps
                 foreach (var p in m.PatternsList)
                     if (Latin1Names.Transliterate(p.Name) != p.Name)
                         losses.Add(new ExportLoss("Names", $"Pattern \"{p.Name}\" of {m.Name}", "Written as Latin-1 text (\"" + Latin1Names.Transliterate(p.Name) + "\"). The Modern Pattern Editor's own note data names patterns in ASCII (as upstream writes it) and may not find it by that name."));
+
+            // Audio clips (neo-audio.md): their assets go into waves of the wavetable while slots last; upstream has no player for them.
+            if (audio != null)
+            {
+                if (audio.AudioWaves > 0)
+                    losses.Add(new ExportLoss("Audio", $"{audio.AudioWaves} audio assets written as waves", "Upstream has no Neo Audio machine, so the clips are not played; the waves are in the wavetable."));
+                foreach (var name in audio.AudioLosses)
+                    losses.Add(new ExportLoss("Audio", name, "Not written: the wavetable has no free slot. Its clips are silent when the file is opened again."));
+            }
 
             int snapshots = buzz.Snapshots?.List().Count ?? 0;
             if (snapshots > 0)

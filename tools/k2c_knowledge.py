@@ -38,7 +38,7 @@ EXPLAIN = {**k2c_fsm.EXPLAIN, **k2c_oomek_joachims.EXPLAIN, **k2c_polac.EXPLAIN,
 CURATE = {**k2c_fsm.CURATE, **k2c_oomek_joachims.CURATE, **k2c_polac.CURATE, **k2d_builtin.CURATE, **k2d_control.CURATE, **k2d_synths.CURATE}
 # Generated from source by tools/native_manifests.py (the FSM natives) and tools/source_manifests.py (ReBuzz's own machines): they call curate and explain themselves.
 FROM_SOURCE = ["FSM WahMan", "FSM WahManPro", "FSM WahPro2", "FSM Chorus2", "FSM PhatMan", "AudioBlock", "Connection Mixer Console", "EnvelopeBlock", "QuickNote", "ReBuzz Audio In",
-               "ReBuzz Audio Out", "ReBuzz Groove", "ReBuzz Midi Output", "Session Clip Player", "ManagedMultiIOEffect"]
+               "ReBuzz Audio Out", "ReBuzz Groove", "ReBuzz Midi Output", "ManagedMultiIOEffect"]
 GROUPS = (("parameters", "p"), ("track_parameters", "t"))
 
 

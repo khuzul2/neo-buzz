@@ -34,7 +34,7 @@ namespace ReBuzz.AgentTests
             "Joachims Chopper 2", "Joachims Enceladus Tube EQ v1", "Joachims Hyperion", "Joachims Jupiter 3", "Joachims Neptune 1.2", "Joachims Saturn 1.4",
             // K2 batch d: the last 26: ReBuzz's own machines (ten generated from source), the synths and samplers, and the utility and control machines
             "AudioBlock", "Connection Mixer Console", "EnvelopeBlock", "QuickNote", "ReBuzz Audio In", "ReBuzz Audio Out", "ReBuzz Groove", "ReBuzz Midi Output",
-            "Session Clip Player", "ManagedMultiIOEffect", "Bigyo Wood One", "kibibu Green Milk", "KrimZon AY-3-8910", "Intoxicat ACloud15", "Matilde Tracker2",
+            "ManagedMultiIOEffect", "Bigyo Wood One", "kibibu Green Milk", "KrimZon AY-3-8910", "Intoxicat ACloud15", "Matilde Tracker2",
             "EasyRec", "mixIO", "SpectrumBlock", "BTDSys PeerChord", "DAWControl", "GuitarChordBox", "Info", "JumpLoop", "Modern Sequence Editor", "TrackScript",
             "Yitten Mongoose",
         };
@@ -103,7 +103,7 @@ namespace ReBuzz.AgentTests
             // K2 (agent-knowledge.md): every packaged machine but the Neo ones and Dye Essence (KnowledgeFamilies) has a curated manifest.
             var profiled = Profiled();
             var family = profiled.Keys.Where(KnowledgeFamilies.Covers).OrderBy(g => g).ToList();
-            Assert.That(family.Count, Is.GreaterThanOrEqualTo(98), "every packaged machine but the Neo ones is found");
+            Assert.That(family.Count, Is.GreaterThanOrEqualTo(97), "every packaged machine but the Neo ones is found (98 before the Session Clip Player became Neo Audio)");
             var notCurated = family.Where(g => !profiled[g].IsCurated).ToList();
             Assert.That(notCurated, Is.Empty, "machines of a finished family that are not curated: " + string.Join(", ", notCurated));
             Assert.That(Curated().Keys.Where(KnowledgeFamilies.Covers), Is.EquivalentTo(family));
