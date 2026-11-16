@@ -591,7 +591,8 @@ namespace ReBuzz.Studio.Tests
             var window = StudioMachineUiHost.ParameterWindowOf(m);
             Assert.That(window, Is.Not.Null);
             Pump();
-            var row = ((ParameterWindowView)StudioMachineUiHost.ContentOf(window)!).Rows.Single(r => r.ParameterName == "F1 cutoff");
+            var deviceView = DeviceTestKit.PageOf(window!).Parameters;
+            var knob = DeviceTestKit.Knob(window!, deviceView, "F1 cutoff");
             var told = new List<int>();
             Action<IParameter, int> listener = (p, t) => told.Add(p.GetValue(t));
             cutoff.SubscribeEvents(0, listener, null);
@@ -616,7 +617,8 @@ namespace ReBuzz.Studio.Tests
                 Pump();
                 Assert.That(told, Is.Not.Empty, "the listener was told");
                 Assert.That(told.Last(), Is.EqualTo(cutoff.GetValue(0)), "and saw the final value");
-                Assert.That(row.ValueText, Is.EqualTo(cutoff.DescribeValue(cutoff.GetValue(0))), "the window's row shows it");
+                deviceView.Cards.Poll();
+                Assert.That(knob.ValueText, Is.EqualTo(cutoff.DescribeValue(cutoff.GetValue(0))), "the window's knob shows it");
                 Assert.That(Core.MasterVolume, Is.EqualTo((volume.MaxValue - volume.GetValue(0)) / (double)volume.MaxValue), "the master volume follows its parameter");
             }
             finally

@@ -1,5 +1,5 @@
 // Fork (docs/specs/ux-overhaul.md P3e, decisions 62-70): the device view of a machine, the parameters page. A search box (⌘F; Ctrl+F
-// elsewhere), the macro strip, the grouped, virtualised list (DeviceList) and, under it, the Explain text of the parameter last
+// elsewhere), the chips row, the cards of knobs (DeviceCards) or the grouped, virtualised list (DeviceList) and, under it, the Explain text of the parameter last
 // focused when the machine's manifest has it (neo-learn.md §5.3: How it changes the sound, and what you will hear).
 
 using System;
@@ -12,22 +12,34 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
 using BuzzGUI.Interfaces;
+using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Shell.Design;
 
 namespace ReBuzz.Studio.Views.Device
 {
+    using Control = Avalonia.Controls.Control;
+
     internal sealed class DeviceView : UserControl
     {
         readonly IMachine machine;
         DeviceLayout layout;
         string signature;
-        readonly DeviceList list, macros;
+        readonly DeviceList list;
+        readonly DeviceCards cards;
         readonly TextBox search;
         readonly ScrollViewer scroller;
         readonly Border explain;
+        readonly StackPanel nothing, chips;
+        readonly ScrollViewer chipScroller;
+        readonly Button changedButton, knobsButton, listButton;
         readonly TextBlock explainTitle, explainValue, explainHow, explainSound, count;
         readonly HashSet<string> collapsed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         readonly DispatcherTimer poll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+        DeviceMode mode;
+        bool docked, changedOnly, filling;
+        DeviceParam explained;
+        int ticks;
+        string changedSignature = "";
 
         public DeviceView(IMachine machine)
         {
@@ -57,26 +69,38 @@ namespace ReBuzz.Studio.Views.Device
                 if (e.Key == Key.Escape)
                 {
                     if (!string.IsNullOrEmpty(search.Text)) search.Text = "";
-                    list.Focus();
+                    FocusContent();
                     e.Handled = true;
                 }
                 else if (e.Key == Key.Down || e.Key == Key.Enter)
                 {
-                    list.Focus();
+                    FocusContent();
                     e.Handled = true;
                 }
             };
             count = new TextBlock { FontSize = StudioTokens.FontCaption, Foreground = StudioTokens.TextSecondaryBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
-            Toolbar = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Children = { search, count } };
+            // The search takes what room it is given (up to its MaxWidth), so the bar's second line never runs past the page.
+            var toolbar = new Grid { VerticalAlignment = VerticalAlignment.Center, ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto") };
+            search.MinWidth = 96;
+            Grid.SetColumn(count, 1);
+            toolbar.Children.Add(search);
+            toolbar.Children.Add(count);
+            Toolbar = toolbar;
             // A canvas modulator's output (ux-overhaul.md P5b): drag it onto a knob, a row here, a machine's editor.
             if (ModulationBoard.Of(machine) is { } modulator)
-                ((StackPanel)Toolbar).Children.Add(new NeoBuzz.Editor.ModSourceHandle(modulator, NeoBuzz.Editor.KnobModel.ModulationRing, 214) { Margin = new Thickness(8, 0, 0, 0) });
+            {
+                var handle = new NeoBuzz.Editor.ModSourceHandle(modulator, NeoBuzz.Editor.KnobModel.ModulationRing, 214) { Margin = new Thickness(8, 0, 0, 0) };
+                Grid.SetColumn(handle, 2);
+                toolbar.Children.Add(handle);
+            }
 
             list = new DeviceList(machine);
-            macros = new DeviceList(machine) { Height = MacroItem.StripHeight };
+            var category = ReBuzz.Studio.Views.MachineIdentity.CategoryOf(machine) ?? NeoBuzz.Editor.MachineCategory.Synth;
+            cards = new DeviceCards(machine, NeoBuzz.Editor.Tokens.Identity(category));
             list.HeaderClicked += s => { if (!collapsed.Remove(s.Name)) collapsed.Add(s.Name); Refill(); };
-            list.FocusChanged += p => FocusChanged(list, p);
-            macros.FocusChanged += p => FocusChanged(macros, p);
+            list.FocusChanged += p => ShowExplain(p);
+            cards.FocusChanged += p => ShowExplain(p);
+            cards.Changed += () => Refill();
             scroller = new ScrollViewer
             {
                 Content = list,
@@ -84,6 +108,28 @@ namespace ReBuzz.Studio.Views.Device
                 VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
                 Focusable = false,
             };
+
+            // The options row: a chip per section (jump to it), Changed only, Knobs | List.
+            chips = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, VerticalAlignment = VerticalAlignment.Center };
+            chipScroller = new ScrollViewer
+            {
+                Content = chips,
+                HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden,
+                VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+                Focusable = false,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            changedButton = Option("Changed only", "Only the parameters that are off their default");
+            changedButton.Click += (s, e) => { ChangedOnly = !ChangedOnly; };
+            knobsButton = Option("Knobs", "Cards of knobs");
+            listButton = Option("List", "Rows with bars, in columns");
+            knobsButton.Click += (s, e) => SetMode(DeviceMode.Knobs, remember: true);
+            listButton.Click += (s, e) => SetMode(DeviceMode.List, remember: true);
+            var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), Children = { changedButton, knobsButton, listButton } };
+            Options = new DockPanel { Height = 30, Margin = new Thickness(8, 0, 8, 0), LastChildFill = true };
+            DockPanel.SetDock(right, Dock.Right);
+            Options.Children.Add(right);
+            Options.Children.Add(chipScroller);
 
             explainTitle = new TextBlock { FontSize = StudioTokens.FontBody, FontWeight = FontWeight.SemiBold, Foreground = StudioTokens.TextPrimaryBrush, TextTrimming = TextTrimming.CharacterEllipsis };
             explainValue = new TextBlock { FontSize = StudioTokens.FontBody, Foreground = StudioTokens.AccentBrush, Margin = new Thickness(12, 0, 0, 0) };
@@ -113,18 +159,127 @@ namespace ReBuzz.Studio.Views.Device
             Avalonia.Automation.AutomationProperties.SetName(explain, "Explain");
 
             var root = new DockPanel { LastChildFill = true };
-            DockPanel.SetDock(macros, Dock.Top);
-            root.Children.Add(macros);
+            DockPanel.SetDock(Options, Dock.Top);
+            root.Children.Add(Options);
             DockPanel.SetDock(explain, Dock.Bottom);
             root.Children.Add(explain);
-            root.Children.Add(scroller);
+            nothing = new StackPanel
+            {
+                Margin = new Thickness(16), Spacing = 6, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, IsVisible = false,
+                Children =
+                {
+                    new TextBlock { Text = NothingLoadedText, FontSize = StudioTokens.FontBody + 1, FontWeight = FontWeight.SemiBold, Foreground = StudioTokens.TextPrimaryBrush },
+                    new TextBlock { Text = "Its parameters appear here once a plug-in is loaded.", FontSize = StudioTokens.FontBody, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap },
+                },
+            };
+            root.Children.Add(new Grid { Children = { scroller, cards, nothing } });     // the last child fills
             Content = root;
+            mode = ReadMode(machine);
             ShowExplain(null);
+            ApplyMode();
             Refill();
         }
 
+        /// <summary>How the parameters show: cards of knobs, or rows in columns.</summary>
+        public enum DeviceMode { Knobs, List }
+
+        /// <summary>The setting a machine type's mode is kept in.</summary>
+        public static string ModeKey(IMachine machine) => "DeviceMode:" + (machine?.DLL?.Name ?? machine?.Name ?? "");
+
+        static DeviceMode ReadMode(IMachine machine) => DevicePage.Read(ModeKey(machine), "Knobs") == "List" ? DeviceMode.List : DeviceMode.Knobs;
+
+        static Button Option(string text, string tip)
+        {
+            var b = StudioButtons.KeepFocus(new Button { Content = text, BorderThickness = new Thickness(1) });
+            ToolTip.SetTip(b, tip);
+            Avalonia.Automation.AutomationProperties.SetName(b, text);
+            return b;
+        }
+
+        static void Mark(Button b, bool on)
+        {
+            b.Background = on ? StudioTokens.SelectionFillBrush : Brushes.Transparent;
+            b.BorderBrush = on ? StudioTokens.AccentBrush : Brushes.Transparent;
+            b.Foreground = on ? StudioTokens.TextPrimaryBrush : StudioTokens.TextSecondaryBrush;
+        }
+
+        public DeviceMode Mode => mode;
+
+        /// <summary>Shows the cards or the list; <paramref name="remember"/> keeps the choice for this machine type.</summary>
+        public void SetMode(DeviceMode next, bool remember)
+        {
+            if (remember) DevicePage.Write(ModeKey(machine), next.ToString());
+            if (next == mode) return;
+            mode = next;
+            ApplyMode();
+            Refill();
+        }
+
+        /// <summary>The docked page: one row of columns or cards, scrolling sideways. The floating one wraps and scrolls down.</summary>
+        public bool Docked
+        {
+            get => docked;
+            set
+            {
+                if (docked == value) return;
+                docked = value;
+                ApplyMode();
+                Refill();
+            }
+        }
+
+        public bool ChangedOnly
+        {
+            get => changedOnly;
+            set
+            {
+                if (changedOnly == value) return;
+                changedOnly = value;
+                Mark(changedButton, changedOnly);
+                Refill();
+            }
+        }
+
+        public DeviceCards Cards => cards;
+
+        /// <summary>The chips row: a chip per section, Changed only, Knobs | List.</summary>
+        public DockPanel Options { get; }
+
+        public IReadOnlyList<Control> ChipButtons => chips.Children.OfType<Control>().ToList();
+
+        public Button ChangedButton => changedButton;
+
+        public Button KnobsButton => knobsButton;
+
+        public Button ListButton => listButton;
+
+        public ScrollViewer ChipScroller => chipScroller;
+
+        void ApplyMode()
+        {
+            bool knobs = mode == DeviceMode.Knobs;
+            cards.SetSideways(docked);
+            list.Sideways = docked;
+            scroller.HorizontalScrollBarVisibility = docked ? Avalonia.Controls.Primitives.ScrollBarVisibility.Auto : Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled;
+            scroller.VerticalScrollBarVisibility = docked ? Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled : Avalonia.Controls.Primitives.ScrollBarVisibility.Auto;
+            scroller.IsVisible = !knobs && !layout.NothingLoaded;
+            cards.IsVisible = knobs && !layout.NothingLoaded;
+            Mark(knobsButton, knobs);
+            Mark(listButton, !knobs);
+            Mark(changedButton, changedOnly);
+        }
+
+        void FocusContent()
+        {
+            if (mode == DeviceMode.List) list.Focus();
+            else Focus();
+        }
+
+        /// <summary>Scrolls to a section (a chip's job): its first card, or its header in the list.</summary>
+        public bool JumpTo(DeviceSection section) => mode == DeviceMode.Knobs ? cards.JumpTo(section) : list.JumpTo(section);
+
         /// <summary>What decides the layout besides the machine's parameters: its track and input counts.</summary>
-        string Signature() => string.Join(",", machine.ParameterGroups.Select(g => g.TrackCount)) + (machine.HasStereoInput ? "s" : "m");
+        string Signature() => string.Join(",", machine.ParameterGroups.Select(g => g.TrackCount)) + (machine.HasStereoInput ? "s" : "m") + "/" + DeviceLayout.HiddenCount(machine);
 
         /// <summary>Tracks or inputs came or went: the groups and the table are made again.</summary>
         void Rebuild()
@@ -137,6 +292,10 @@ namespace ReBuzz.Studio.Views.Device
         const double Pad = 12;
         const double ExplainHeight = 72, ExplainLineHeight = 28;
         public const string ExplainPrompt = "Click a parameter to see what it does.";
+        public const string NothingLoadedText = "Load a plug-in";
+
+        /// <summary>The "Load a plug-in" note shows where a machine has parameters but all are hidden (Neo Plug before a plug-in is loaded).</summary>
+        public bool NothingLoadedShown => nothing.IsVisible;
 
         public static string FindKeyLabel => OperatingSystem.IsMacOS() ? "⌘F" : "Ctrl+F";
 
@@ -145,8 +304,6 @@ namespace ReBuzz.Studio.Views.Device
         public DeviceLayout Layout => layout;
 
         public DeviceList List => list;
-
-        public DeviceList MacroStrip => macros;
 
         public TextBox Search => search;
 
@@ -191,30 +348,59 @@ namespace ReBuzz.Studio.Views.Device
 
         void Refill()
         {
-            var items = layout.Items(Query, collapsed);
-            list.SetItems(items);
-            macros.SetItems(layout.Macros.Count > 0 ? new DeviceItem[] { new MacroItem(layout.Macros) } : Array.Empty<DeviceItem>());
-            macros.IsVisible = layout.Macros.Count > 0;
-            if (list.Focused == null && macros.Focused == null && ExplainFocused) ShowExplain(null);
-            int shown = items.Sum(i => i switch { ParamItem => 1, TableItem t => t.Columns.Count, _ => 0 });
-            int all = layout.Sections.Sum(s => s.IsTable ? s.Params.Count : s.Params.Count);
-            count.Text = Query.Trim().Length == 0 || collapsed.Count > 0 && shown == 0 ? $"{all} parameters" : $"{shown} of {all}";
-            if (items.Count == 0 && Query.Trim().Length > 0) count.Text = "No parameter matches";
-            scroller.Offset = new Vector(scroller.Offset.X, 0);
+            if (filling) return;
+            filling = true;
+            try
+            {
+                var items = layout.Items(Query, collapsed, changedOnly);
+                var shownCards = layout.Cards(Query, changedOnly);
+                scroller.IsVisible = mode == DeviceMode.List && !layout.NothingLoaded;
+                cards.IsVisible = mode == DeviceMode.Knobs && !layout.NothingLoaded;
+                nothing.IsVisible = layout.NothingLoaded;
+                if (mode == DeviceMode.List)
+                {
+                    list.SetItems(items);
+                    scroller.Offset = new Vector(0, 0);
+                }
+                else cards.SetCards(shownCards, layout.TableSection, layout.TableColumnsFor(Query, changedOnly));
+                FillChips();
+                if (explained != null && !layout.All.Contains(explained)) ShowExplain(null);
+                int shown = items.Sum(i => i switch { ParamItem => 1, TableItem t => t.Columns.Count, _ => 0 });
+                int all = layout.Sections.Sum(s => s.Params.Count);
+                count.Text = Query.Trim().Length == 0 && !changedOnly || collapsed.Count > 0 && shown == 0 && mode == DeviceMode.List ? $"{all} parameters" : $"{shown} of {all}";
+                if (items.Count == 0 && (Query.Trim().Length > 0 || changedOnly)) count.Text = changedOnly && Query.Trim().Length == 0 ? "Nothing changed" : "No parameter matches";
+                changedSignature = ChangedSignature();
+            }
+            finally { filling = false; }
         }
+
+        /// <summary>The chips: a chip per section with something in it (the search and Changed only leave fewer).</summary>
+        void FillChips()
+        {
+            chips.Children.Clear();
+            foreach (var s in layout.Chips(Query, changedOnly))
+            {
+                var section = s;
+                var chip = StudioButtons.KeepFocus(new Button { Content = section.Name, BorderThickness = new Thickness(1), BorderBrush = StudioTokens.SurfaceBorderBrush, Background = Brushes.Transparent, Foreground = StudioTokens.TextSecondaryBrush });
+                ToolTip.SetTip(chip, "Jump to " + section.Name);
+                Avalonia.Automation.AutomationProperties.SetName(chip, section.Name);
+                chip.Click += (a, b) => JumpTo(section);
+                chips.Children.Add(chip);
+            }
+            chipScroller.IsVisible = chips.Children.Count > 1;
+        }
+
+        string ChangedSignature() => changedOnly ? string.Join(",", layout.All.Where(p => p.IsChanged).Select(p => p.FullName)) : "";
+
+        /// <summary>A gesture or an editor is open (a drag, a typed value): nothing is rebuilt under it.</summary>
+        public bool Interacting => cards.Busy || list.Dragging || list.IsTyping;
 
         // ------------------------------------------------------------------ explain
-
-        void FocusChanged(DeviceList source, DeviceParam p)
-        {
-            if (source == list && macros.Focused != null) macros.SetFocus(null);
-            else if (source == macros && list.Focused != null) list.SetFocus(null);
-            ShowExplain(p);
-        }
 
         /// <summary>The focused parameter's name and value, and its How and Sound when the manifest has them (its description else).</summary>
         public void ShowExplain(DeviceParam p)
         {
+            explained = p;
             ExplainFocused = p != null;
             if (p == null) SetExpanded(false);
             else if (!expanded) ExpandSoon();
@@ -228,7 +414,7 @@ namespace ReBuzz.Studio.Views.Device
                 explainSound.IsVisible = false;
                 return;
             }
-            explainTitle.Text = p.IsTrack ? $"{p.FullName}" : p.Group.Length > 0 && p.Group != "Global" && p.Group != "Inputs" ? $"{p.Group}: {p.Name}" : p.Name;
+            explainTitle.Text = p.IsTrack ? $"{p.FullName}" : p.Group.Length > 0 && p.Group != "Global" && p.Group != DeviceLayout.OneGroup && p.Group != "Inputs" ? $"{p.Group}: {p.Name}" : p.Name;
             explainValue.Text = p.Describe(p.Value);
             bool has = p.HasExplain;
             explainHow.IsVisible = has ? p.How.Length > 0 : p.Description.Length > 0;
@@ -274,15 +460,15 @@ namespace ReBuzz.Studio.Views.Device
         void ExpandNow(object sender, EventArgs e)
         {
             expandTimer.Stop();
-            if (list.IsTyping || macros.IsTyping)
+            if (Interacting)
             {
                 expandTimer.Start();
                 return;
             }
-            var p = list.Focused ?? macros.Focused;
+            var p = explained;
             if (p == null) return;
             SetExpanded(true);
-            if (list.Focused != null) Dispatcher.UIThread.Post(() => list.Reveal(p), DispatcherPriority.Loaded);
+            if (mode == DeviceMode.List && list.Focused != null) Dispatcher.UIThread.Post(() => list.Reveal(p), DispatcherPriority.Loaded);
         }
 
         /// <summary>Opens the strip now instead of after the pause (tests).</summary>
@@ -332,9 +518,11 @@ namespace ReBuzz.Studio.Views.Device
         void Tick(object sender, EventArgs e)
         {
             Refresh();
-            list.Poll();
-            macros.Poll();
-            if (ExplainFocused && (list.Focused ?? macros.Focused) is { } p) explainValue.Text = p.Describe(p.Value);
+            if (mode == DeviceMode.List) list.Poll();
+            else cards.Poll();
+            if (ExplainFocused && explained is { } p) explainValue.Text = p.Describe(p.Value);
+            // Changed only follows the values: looked at once a second, and never under a drag.
+            if (changedOnly && ++ticks % 10 == 0 && !Interacting && ChangedSignature() != changedSignature) Refill();
         }
 
         /// <summary>⌘F (Ctrl+F elsewhere) goes to the search box.</summary>

@@ -78,6 +78,7 @@ namespace ReBuzz.Studio.Tests
             rig.Select(rig.Fm);
             var page = rig.Dock.Page!;
             var view = page.Parameters;
+            view.SetMode(DeviceView.DeviceMode.List, remember: false);
             Settle(rig.Window);
             Assert.That(view.ExplainFocused, Is.False);
             Assert.That(view.Scroller.Bounds.Height, Is.GreaterThan(100), "a list of rows, not one");
@@ -124,18 +125,6 @@ namespace ReBuzz.Studio.Tests
             Assert.That(DeviceParam.TitleCase("L depth"), Is.EqualTo("L Depth"));
             Assert.That(DeviceParam.TitleCase("LFO speed"), Is.EqualTo("LFO Speed"));
             Assert.That(DeviceParam.TitleCase("Filter cutoff"), Is.EqualTo("Filter Cutoff"));
-        }
-
-        [AvaloniaTest]
-        public void ASliderCellsTextHasABackingSoTheMarkerNeverRunsThroughIt()
-        {
-            using var rig = new DeviceRig();
-            rig.Window.Detail.ShowDevice();
-            rig.Select(rig.Fm);
-            var strip = rig.Dock.Page!.Parameters.MacroStrip;
-            Settle(rig.Window);
-            Assert.That(strip.IsVisible && strip.Bounds.Width > 100, Is.True);
-            Studio.Screenshot(rig.Window, "device-macros");
         }
 
         [AvaloniaTest]
