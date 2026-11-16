@@ -7,6 +7,7 @@ using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.Input;
 using Avalonia.Media;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
@@ -38,12 +39,17 @@ namespace ReBuzz.Studio.Views.Device
         readonly TextBlock title;
         Avalonia.Controls.Control editorContent;
         bool editorMode;
+        readonly DeviceKeys keys;
 
         public DevicePage(IMachine machine, bool floating)
         {
             this.machine = machine;
             this.floating = floating;
             view = new DeviceView(machine) { Docked = !floating };
+            keys = new DeviceKeys(machine, this, floating);
+            Focusable = !floating;       // the docked page takes the keyboard focus on a click: the computer's keys play the machine only while it has it
+            if (!floating)
+                AddHandler(PointerPressedEvent, (s, e) => { if (TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is not TextBox && !IsKeyboardFocusWithin) Focus(); }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
             Background = StudioTokens.SurfacePanelBrush;
             AutomationProperties.SetName(this, "Device page");
 
@@ -64,7 +70,7 @@ namespace ReBuzz.Studio.Views.Device
             parametersButton.Click += (s, e) => SetEditor(false, remember: true);
             floatButton = Tab(floating ? "Dock" : "Float", floating ? "Back to the Detail panel" : "Open this machine's device in its own window");
             floatButton.Click += (s, e) => FloatToggled?.Invoke();
-            presetsButton = Tab("Presets", "Apply a preset, edit the presets, copy and paste one");
+            presetsButton = Tab("Presets", "Apply a preset, randomize or morph the unlocked parameters, edit the presets, copy and paste one");
             presetsButton.Click += (s, e) => DeviceMenus.Presets(machine, this, () => view.Refresh()).Open(presetsButton);
 
             var tabs = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { editorButton, parametersButton } };
@@ -87,6 +93,20 @@ namespace ReBuzz.Studio.Views.Device
             Content = root;
             bool wantEditor = HasEditor(machine) && Read(EditorKey, false);
             SetEditor(wantEditor, remember: false);
+        }
+
+        public DeviceKeys Keys => keys;
+
+        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnAttachedToVisualTree(e);
+            keys.Attach();
+        }
+
+        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnDetachedFromVisualTree(e);
+            keys.Detach();
         }
 
         /// <summary>Whether the bar is on two lines (a page narrower than <see cref="NarrowBar"/>).</summary>

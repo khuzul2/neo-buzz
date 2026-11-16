@@ -2496,6 +2496,8 @@ namespace ReBuzz.Core
                 {
                     string oldName = machine.Name;
                     machine.Name = MachineManager.GetNewMachineName(name);
+                    if (!string.IsNullOrEmpty(oldName) && SongCore.MachinesList.Contains(machine))
+                        PinStore?.Rename(oldName, machine.Name);     // fork (ux-overhaul.md): pins and locks follow a renamed machine
                     Modified = true;
 
                     return true;
