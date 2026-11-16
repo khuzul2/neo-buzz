@@ -159,6 +159,10 @@ namespace ReBuzz.AgentTests
             ["machine_latency"] = new[] { "machine", "override_samples", "clear", "clear_all" },
             ["machine_attributes"] = new[] { "machine", "set" },
             ["machine_command"] = new[] { "machine", "command" },
+            // BR1 (docs/specs/browser.md: ReBuzz.Agent/App/BrowserTools.cs, ReBuzz/Agent/ReplaceTools.cs)
+            ["browser_search"] = new[] { "query", "kind", "limit" },
+            ["browser_places"] = new[] { "op", "path", "wait_seconds" },
+            ["machine_swap"] = new[] { "machine", "gear", "plugin" },
             ["master_record"] = new[] { "op", "path", "bits", "loop", "overwrite" },
         };
 
@@ -170,7 +174,7 @@ namespace ReBuzz.AgentTests
         static readonly string[] TransformOps = { "transpose", "quantize", "humanize", "velocity", "shift", "stretch", "reverse", "invert", "legato", "staccato" };
 
         /// <summary>Tool areas: a backticked snake_case word starting with one of these must be a tool.</summary>
-        static readonly string[] Areas = { "studio", "song", "gear", "machine", "connection", "param", "preset", "snapshot", "pattern", "notes", "automation", "arrangement", "session", "wave", "theory", "render", "analyze", "guide", "target", "eq", "settings", "midi", "audio", "export", "view", "panel", "window", "patch" };
+        static readonly string[] Areas = { "studio", "song", "gear", "machine", "connection", "param", "preset", "snapshot", "pattern", "notes", "automation", "arrangement", "session", "wave", "theory", "render", "analyze", "guide", "target", "eq", "settings", "midi", "audio", "export", "view", "panel", "window", "patch", "browser" };
 
         // ---- the repository -------------------------------------------------------------------
 

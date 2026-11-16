@@ -20,7 +20,7 @@ namespace ReBuzz.Agent.Guides
         static readonly (string Area, string[] Names)[] Areas =
         {
             ("Session and help", new[] { "studio_status", "guide", "undo", "redo", "history_*", "song_*" }),
-            ("Machines and wiring", new[] { "gear_list", "machine_find", "machine_list", "machine_add", "machine_remove", "machine_replace", "machine_set", "machine_describe", "machine_data_import", "machine_clone", "machine_group", "machine_latency", "machine_attributes", "machine_command", "connect", "disconnect", "connection_set" }),
+            ("Machines and wiring", new[] { "gear_list", "machine_find", "machine_list", "machine_add", "machine_remove", "machine_replace", "machine_swap", "machine_set", "machine_describe", "machine_data_import", "machine_clone", "machine_group", "machine_latency", "machine_attributes", "machine_command", "connect", "disconnect", "connection_set" }),
             ("Parameters, presets and snapshots", new[] { "param_*", "preset_*", "snapshot_*", "modulate", "modulation_*" }),
             ("Neo Patch", new[] { "patch_*" }),
             ("Patterns and notes", new[] { "pattern_*", "notes_*", "theory" }),
@@ -28,7 +28,7 @@ namespace ReBuzz.Agent.Guides
             ("Session View and live play", new[] { "session_*", "transport", "midi_play", "meters_read", "machine_readings" }),
             ("Render and analysis", new[] { "render", "analyze", "analyze_mix", "compare", "plot", "target_build", "eq_fit" }),
             ("Waves", new[] { "wave_*" }),
-            ("App control", new[] { "settings_*", "midi_bind", "midi_bindings_list", "midi_unbind", "midi_learn", "audio_*", "export_audio", "master_record", "app_status", "view_show", "machine_open_editor", "select", "panel_set", "window_layout" }),
+            ("App control", new[] { "settings_*", "midi_bind", "midi_bindings_list", "midi_unbind", "midi_learn", "audio_*", "export_audio", "master_record", "app_status", "view_show", "machine_open_editor", "select", "panel_set", "window_layout", "browser_search", "browser_places" }),
         };
 
         /// <summary>The area a tool belongs to ("Other" when none names it).</summary>

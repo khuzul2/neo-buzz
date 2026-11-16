@@ -135,6 +135,8 @@ namespace ReBuzz.Studio.Views.Machines
                 foreach (var successor in ReBuzz.Agent.MachineReplace.Successors(core, machine.DLL))
                     menu.Items.Add(Item($"Replace with {successor.To}...", () => MachineEdits.ReplaceWithSuccessor(core, classic, successor.To)));
             menu.Items.Add(Sub("Replace", Gear(i => MachineEdits.Replace(core, machine, i))));
+            // BR1 (docs/specs/browser.md): the browser opens in swap mode for this machine; the next double-click on a result replaces it.
+            menu.Items.Add(Item("Hot-swap", () => canvas.Browser?.BeginSwap(machine), machine.DLL.Info.Type != MachineType.Master));
             menu.Items.Add(Item("Duplicate", () => { var copies = MachineEdits.Duplicate(core, selection.Where(m => m.DLL.Info.Type != MachineType.Master).ToList()); if (copies.Count > 0) canvas.Select(copies); },
                 key: new KeyGesture(Key.D, CommandKey)));
             menu.Items.Add(Item("Clone with patterns", () => CloneWithPatterns(selection)));

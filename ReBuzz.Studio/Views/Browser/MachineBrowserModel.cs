@@ -32,13 +32,19 @@ namespace ReBuzz.Studio.Views.Browser
         public string Brand { get; }
         public string UseFor { get; }
 
+        /// <summary>BR1: a plug-in from Neo Plug's scan (an instrument of Neo Plug or Neo Plug FX), listed by vendor.</summary>
+        public bool IsPlugin => Gear.Instrument.Name.Length > 0 && (Gear.Instrument.MachineDLL?.Name ?? "").StartsWith("Neo Plug", StringComparison.Ordinal);
+
+        /// <summary>The plug-in's vendor (the part of its gear name before the slash), else "".</summary>
+        public string Vendor => IsPlugin && Gear.Instrument.Name.IndexOf('/') is > 0 and int i ? Gear.Instrument.Name[..i] : "";
+
         /// <summary>The brand first (it is shown as a tag), then the catalogue's tags.</summary>
         public IReadOnlyList<string> Tags { get; }
 
         public string TagLine => string.Join("  ·  ", Tags.Take(5));
     }
 
-    internal sealed class MachineBrowserModel
+    internal sealed partial class MachineBrowserModel
     {
         internal const string RegistrySection = "Studio";
         internal const string RecentsKey = "MachineRecents";
@@ -76,6 +82,9 @@ namespace ReBuzz.Studio.Views.Browser
         /// <summary>The category filter's "all" and the section of a machine the catalogue doesn't know.</summary>
         public const string Other = "Other";
 
+        /// <summary>BR1: the section of the plug-ins from the scan, after the catalogue's categories.</summary>
+        public const string PlugIns = "Plug-ins";
+
         // ------------------------------------------------------------------ entries
 
         public IReadOnlyList<MachineEntry> Entries
@@ -100,7 +109,10 @@ namespace ReBuzz.Studio.Views.Browser
                 {
                     string dll = g.Instrument.MachineDLL?.Name ?? g.DisplayName;
                     var e = catalogue(dll) ?? catalogue(g.DisplayName);
-                    list.Add(new MachineEntry(g, e?.Category ?? "", e?.Tags ?? Array.Empty<string>(), e?.UseFor ?? "", BrandOf(g, dll)));
+                    bool plug = g.Instrument.Name.Length > 0 && dll.StartsWith("Neo Plug", StringComparison.Ordinal);
+                    string vendor = plug && g.Instrument.Name.IndexOf('/') is > 0 and int v ? g.Instrument.Name[..v] : "";
+                    list.Add(plug ? new MachineEntry(g, PlugIns, new[] { "plug-in" }, "", vendor)
+                                  : new MachineEntry(g, e?.Category ?? "", e?.Tags ?? Array.Empty<string>(), e?.UseFor ?? "", BrandOf(g, dll)));
                 }
             return list.OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase).ToList();
         }
@@ -279,7 +291,7 @@ namespace ReBuzz.Studio.Views.Browser
                 Section("Recent", RecentEntries);
                 Section("Favourites", FavouriteEntries);
             }
-            foreach (var c in Categories.Append(Other))
+            foreach (var c in Categories.Append(PlugIns).Append(Other))
             {
                 if (category != null && c != category) continue;
                 Section(c, Search("", c, favouritesOnly));
