@@ -21,6 +21,7 @@
     <Compile Include="..\NeoBuzz.Dsp\**\*.cs" Link="Shared\Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\NeoBuzz.Machine\**\*.cs" Link="Shared\Machine\%(RecursiveDir)%(Filename)%(Extension)" />
     <None Include="Params.def" />
+    <None Include="Neo Audio.prs.xml" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Neo Audio.machine.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

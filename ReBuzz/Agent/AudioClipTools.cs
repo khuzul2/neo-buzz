@@ -177,7 +177,7 @@ namespace ReBuzz.Agent
                 },
             });
 
-            var clipTarget = new[] { Req("machine", String("The Neo Audio machine (its track)")), Req("pattern", String("The audio clip's pattern")) };
+            static (string Name, System.Text.Json.Nodes.JsonObject Schema, bool Required)[] ClipTarget() => new[] { Req("machine", String("The Neo Audio machine (its track)")), Req("pattern", String("The audio clip's pattern")) };
 
             tools.Add(new ToolDef
             {
@@ -187,7 +187,7 @@ namespace ReBuzz.Agent
                     "An audio clip's settings: warp mode (Off, Repitch, Beats, Complex), what Beats preserves, tempo, transposition (semitones) and detune (cents), gain (dB), " +
                     "loop and region (beats), warp markers, its length, and its audio (id, name, seconds, rate, channels, beats). " +
                     "Example: audio_clip_get(machine=\"Drums audio\", pattern=\"loop\").",
-                Input = Object(null, clipTarget),
+                Input = Object(null, ClipTarget()),
                 Output = Object(null, Req("machine", String("Machine")), Req("pattern", String("Pattern")), Req("warp", String("Warp mode"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
@@ -213,7 +213,7 @@ namespace ReBuzz.Agent
                     "follows it: 4 beats at 120 BPM are 8 at 60); detect_tempo=true finds it again. transpose -48..48 semitones, detune -50..50 cents, gain_db -70..24. " +
                     "loop on or off; region = {start_beats, loop_start_beats, loop_end_beats} inside the clip (loop_end 0 is its end). warp_markers = [{sample, beat}] " +
                     "(at least 2; [] clears them). Example: audio_clip_set(machine=\"Drums audio\", pattern=\"loop\", warp=\"Complex\", transpose=-2, gain_db=-3).",
-                Input = Object(null, clipTarget.Concat(new[]
+                Input = Object(null, ClipTarget().Concat(new[]
                 {
                     Opt("warp", String("Warp mode", Warps)),
                     Opt("preserve", String("What Beats keeps", Preserves)),

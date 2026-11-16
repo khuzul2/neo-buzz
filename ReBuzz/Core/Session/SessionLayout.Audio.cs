@@ -702,7 +702,18 @@ namespace ReBuzz.Core.Session
         /// </summary>
         string EnsureAsset(SessionDocument.AudioSettings audio)
         {
-            if (!string.IsNullOrEmpty(audio.Asset)) return Assets.Get(audio.Asset)?.Id ?? audio.Asset;
+            if (!string.IsNullOrEmpty(audio.Asset))
+            {
+                var held = Assets.Get(audio.Asset);
+                if (held != null) return held.Id;
+                // Not in the store: a take whose audio isn't made yet, or a song saved as .bmx (the asset went into a wave, which names it).
+                return MigrateWave(audio) ?? audio.Asset;
+            }
+            return MigrateWave(audio);
+        }
+
+        string MigrateWave(SessionDocument.AudioSettings audio)
+        {
             var waves = song.Wavetable?.Waves;
             int index = audio.Wave;
             if (waves == null || index < 0 || index >= waves.Count) return null;

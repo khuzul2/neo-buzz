@@ -5,7 +5,7 @@ A source that brings one stereo pair of the audio device's input into the song, 
 ## Use it for
 
 - Live input (a microphone, a synth, a record player) as a source to run through effects.
-- A signal to record: connect it to a Session Clip Player and record a take.
+- A signal to record: connect it to a Neo Audio and record a take.
 
 ## Key controls
 
@@ -16,7 +16,7 @@ A source that brings one stereo pair of the audio device's input into the song, 
 ## Starting points
 
 - Add it, connect it to an effect or to the master, then check the meter: `machine_add` then `meters_read(machines=["Audio In"])`.
-- To record the input, connect it to a Session Clip Player with `connect(from="Audio In", to="Clips")` and use `session_record(action="start", machine="Clips", bars=4)`.
+- To record the input, connect it to a Neo Audio with `connect(from="Audio In", to="Clips")` and use `session_record(action="start", machine="Clips", bars=4)`.
 
 ## Pitfalls
 
@@ -26,7 +26,7 @@ A source that brings one stereo pair of the audio device's input into the song, 
 
 ## Pairs well with
 
-- Any effect you want to run the input through; Session Clip Player to capture it.
+- Any effect you want to run the input through; Neo Audio to capture it.
 
 ## Successor
 

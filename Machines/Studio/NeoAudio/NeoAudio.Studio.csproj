@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Audio, studio flavour (docs/specs/studio-mvp.md S1): see ../NeoStudio.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoAudio</NeoFolder>
+    <NeoName>Neo Audio</NeoName>
+    <NeoKind>Effects</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoStudio.targets" />
+</Project>

@@ -78,7 +78,7 @@ namespace ReBuzz.AgentTests
                         else if (!(t.EndsWith('.') || t.EndsWith(')'))) problems.Add($"{m.Gear}/{p.Id} {what}: does not end in a full stop");
                     }
             }
-            Assert.That(machines, Is.GreaterThanOrEqualTo(98));
+            Assert.That(machines, Is.GreaterThanOrEqualTo(97));
             Assert.That(problems, Is.Empty, string.Join("\n", problems.Take(30)));
         }
 

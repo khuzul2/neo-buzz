@@ -49,7 +49,13 @@ namespace ReBuzz.Core.AudioLibrary
         /// <summary>The file's first two channels as floats at the file's rate (the right array is the left for a mono file).</summary>
         public static (float[] Left, float[] Right, int Rate, int Channels) Decode(string path)
         {
-            using var file = libsndfile.SoundFile.OpenRead(path);
+            libsndfile.SoundFile file;
+            try { file = libsndfile.SoundFile.OpenRead(path); }
+            catch (Exception e) when (e is not DllNotFoundException && e is not EntryPointNotFoundException)
+            {
+                throw new InvalidDataException("not an audio file this build can read (" + e.Message.TrimEnd('.') + ")");
+            }
+            using var _ = file;
             int channels = file.ChannelCount;
             int rate = file.SampleRate;
             if (channels < 1 || rate <= 0) throw new InvalidDataException("not an audio file");

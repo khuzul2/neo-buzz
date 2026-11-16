@@ -277,6 +277,7 @@ namespace ReBuzz.SessionTests
         {
             var clip = new ClipPlayback { Params = Clip(Tone(2), 120, WarpMode.Repitch) };
             var mixer = new ClipMixer(512);
+            mixer.Begin(100000); mixer.Play(clip, 0, 2.0 / Rate, Rate, 100000); mixer.End(100000);   // warm up (JIT)
             long before = GC.GetAllocatedBytesForCurrentThread();
             int frames = mixer.Begin(100000);
             mixer.Play(clip, 0, 2.0 / Rate, Rate, 100000);

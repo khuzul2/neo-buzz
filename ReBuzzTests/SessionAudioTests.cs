@@ -17,21 +17,18 @@ namespace ReBuzzTests
 {
     /// <summary>
     /// Fork addition: audio tracks and clips (docs/specs/session-view.md 1.0) through the real
-    /// audio loop. The Session Clip Player machine is compiled from its source in the repository
-    /// (Machines/SessionClipPlayer); the clip's audio is made in the wavetable directly, and a
+    /// audio loop. The Neo Audio machine is compiled from a short source here; the clip's audio is made in the wavetable directly, and a
     /// WAV file is imported (Inconclusive where libsndfile can't load). The warping itself is
     /// tested in detail by ReBuzz.SessionTests (AudioClipTests).
     /// </summary>
     [Apartment(ApartmentState.STA)]
     public class SessionAudioTests
     {
-        /// <summary>The real Session Clip Player, compiled from its source.</summary>
+        /// <summary>The Neo Audio contract, compiled from a short source.</summary>
         internal sealed class ClipPlayerInfo : IDynamicTestMachineInfo
         {
             public static IDynamicTestMachineInfo Instance { get; } = new ClipPlayerInfo();
 
-            static string SourcePath([CallerFilePath] string here = "") =>
-                Path.GetFullPath(Path.Combine(Path.GetDirectoryName(here)!, "..", "Machines", "SessionClipPlayer", "SessionClipPlayer.cs"));
 
             MachineDLL ITestMachineInfo.GetMachineDll(ReBuzzCore buzz, AbsoluteFilePath location) => new MachineDLL
             {
@@ -53,7 +50,7 @@ namespace ReBuzzTests
                     MaxTracks = 0,
                     MinTracks = 0,
                     Name = SessionClipHost.MachineName,
-                    ShortName = "Clips",
+                    ShortName = "Audio",
                     Type = MachineType.Effect,
                     Version = 66
                 },
@@ -63,9 +60,37 @@ namespace ReBuzzTests
                 ModuleHandle = 0
             };
 
+            // The machine's contract in a few lines (the shipped Neo Audio is built on the Neo family's base; the Session engine does the work).
+            const string Source = @"
+using Buzz.MachineInterface;
+using BuzzGUI.Common;
+using BuzzGUI.Interfaces;
+namespace NeoBuzz.NeoAudio
+{
+    [MachineDecl(Name = SessionClipHost.MachineName, ShortName = ""Audio"", Author = ""neo-buzz"", MaxTracks = 0, InputCount = 1, OutputCount = 1)]
+    public class NeoAudioMachine : IBuzzMachine
+    {
+        readonly IBuzzMachineHost host;
+        readonly object state;
+        public NeoAudioMachine(IBuzzMachineHost host) { this.host = host; state = SessionClipHost.CreateState?.Invoke(); }
+        [ParameterDecl(Name = ""Monitor"", MinValue = 0, MaxValue = 2, DefValue = 0, ValueDescriptions = new[] { ""auto"", ""in"", ""off"" })]
+        public int Monitor { get; set; }
+        [ParameterDecl(Name = ""Input"", MinValue = 0, MaxValue = 1, DefValue = 0, ValueDescriptions = new[] { ""in"", ""master"" })]
+        public int Input { get; set; }
+        public bool Work(Sample[] output, Sample[] input, int n, WorkModes mode)
+        {
+            var render = SessionClipHost.Render;
+            if (render != null && state != null) return render(host.Machine, state, output, input, n, mode, Monitor);
+            if ((mode & WorkModes.WM_READ) == 0) return false;
+            for (int i = 0; i < n; i++) output[i] = input[i];
+            return true;
+        }
+    }
+}
+";
             public string DllName => SessionClipHost.MachineName + ".dll";
             public string RealDllName => DllName;
-            public string SourceCode => File.ReadAllText(SourcePath());
+            public string SourceCode => Source;
         }
 
         internal sealed class Rig : IDisposable
@@ -110,7 +135,7 @@ namespace ReBuzzTests
             {
                 Layout.Ensure();
                 var machine = Layout.NewAudioTrack();
-                Assert.That(machine, Is.Not.Null, "the Session Clip Player is there");
+                Assert.That(machine, Is.Not.Null, "Neo Audio is there");
                 int track = Layout.FirstTrackOf(machine!);
                 var clip = (PatternCore)Layout.AddAudioClip(track, 0, machine!, "clip",
                     new SessionDocument.AudioSettings { Wave = wave, Bpm = bpm, Warp = warp })!;
@@ -534,7 +559,7 @@ namespace ReBuzzTests
         }
 
         [Test]
-        public void AWaveEditedInPlacePlaysAsEdited()
+        public void AWaveBasedClipMovesIntoTheSongAndTheWaveStaysAsItWas()
         {
             using var rig = new Rig();
             var tone = Enumerable.Repeat(0.25f, rig.Rate * 2).ToArray();
@@ -543,9 +568,10 @@ namespace ReBuzzTests
             Assert.That(clip.SessionAudio!.Params!.Source.Left[1000], Is.EqualTo(0.25f));
             var layer = rig.Core.SongCore.Wavetable.Waves[wave].Layers[0];
             var half = Enumerable.Repeat(0.125f, tone.Length).ToArray();
-            layer.SetDataAsFloat(half, 0, 1, 0, 0, half.Length);          // as Normalize or Fade would
+            layer.SetDataAsFloat(half, 0, 1, 0, 0, half.Length);
             layer.InvalidateData();
-            Assert.That(clip.SessionAudio!.Params!.Source.Left[1000], Is.EqualTo(0.125f), "read again");
+            Assert.That(clip.SessionAudio!.Params!.Source.Left[1000], Is.EqualTo(0.25f), "the clip's audio is the song's own copy");
+            Assert.That(rig.Layout.AudioOf(clip)!.Asset, Is.Not.Empty, "it references an asset");
         }
 
         /// <summary>A 16-bit mono WAV file.</summary>
