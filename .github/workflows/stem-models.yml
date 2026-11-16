@@ -1,0 +1,113 @@
+name: Stem models
+
+# NeoBuzz Live's stem separation models (docs/specs/stem-separation.md), built apart from the app: the weights are big
+# (hundreds of MB) and come from other projects, so they are an artifact of this workflow, not part of the package.
+#  - exports htdemucs (Fast), htdemucs_ft (Balanced) and BS-RoFormer SW (Best) to ONNX from their official sources
+#    (tools/stems/demucs_onnx.py, roformer_onnx.py), the net alone: the app does the STFT, chunking and resampling;
+#  - checks each against PyTorch on a test clip (max abs difference, SDR);
+#  - runs the C# pipeline (ReBuzz.SessionTests StemRealModelTests) against the PyTorch stems;
+#  - quality check with the engine's own audio: a mix of Neo Drums, a Dye Essence bass, a Neo Poly pad and a Dye Essence lead,
+#    separated by each model, SDR per stem and time per minute of audio on the runner. It reports and asserts nothing;
+#  - uploads "NeoBuzz Live Stem Models": the model folders, a README naming each model, its source and the licence caveat, and the reports.
+# Install the zip with Preferences > Stems > Install models...
+
+on:
+  workflow_dispatch:
+    inputs:
+      models:
+        description: Models to export (comma separated)
+        default: htdemucs,htdemucs_ft,bs-roformer-sw
+      fp16_weights:
+        description: Store the weights as 16-bit floats (half the size; the graph still computes in 32-bit)
+        type: boolean
+        default: true
+      clip_seconds:
+        description: Length of the test clip for the PyTorch comparison
+        default: '12'
+
+jobs:
+  models:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      MODELS: ${{ github.event.inputs.models }}
+      FP16: ${{ github.event.inputs.fp16_weights == 'true' && '--fp16-weights' || '' }}
+      CLIP: ${{ github.event.inputs.clip_seconds }}
+    steps:
+    - uses: actions/checkout@v5
+
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Python packages (CPU torch)
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+        python -m pip install numpy onnx onnxruntime demucs huggingface_hub einops rotary-embedding-torch omegaconf ml_collections safetensors pyyaml
+        python -c "import torch, onnx, onnxruntime, demucs; print(torch.__version__, onnx.__version__, onnxruntime.__version__)"
+        df -h / | tail -1
+
+    - name: Export
+      run: |
+        mkdir -p out/models out/reports
+        for m in ${MODELS//,/ }; do
+          echo "::group::export $m"
+          case "$m" in
+            htdemucs|htdemucs_ft) python tools/stems/demucs_onnx.py export "$m" out/models $FP16 || echo "::error::export of $m failed" ;;
+            bs-roformer-sw) python tools/stems/roformer_onnx.py export out/models $FP16 || echo "::error::export of $m failed" ;;
+            *) echo "::error::unknown model $m" ;;
+          esac
+          echo "::endgroup::"
+          du -sh out/models/* || true
+        done
+        for m in ${MODELS//,/ }; do test -f out/models/$m/model.json || { echo "::error::$m was not exported"; exit 1; }; done
+
+    - name: Validate against PyTorch
+      if: always()
+      run: |
+        mkdir -p out/reference
+        for m in ${MODELS//,/ }; do
+          test -f out/models/$m/model.json || continue
+          echo "::group::validate $m"
+          python tools/stems/validate.py out/models $m --seconds "$CLIP" --reference out/reference --report out/reports/$m.json || echo "::error::validation of $m failed"
+          echo "::endgroup::"
+        done
+
+    - name: The C# pipeline against PyTorch (StemRealModelTests)
+      if: always()
+      env:
+        NEOBUZZ_STEM_MODELS: ${{ github.workspace }}/out/models
+        NEOBUZZ_STEM_REFERENCE: ${{ github.workspace }}/out/reference
+        NEOBUZZ_STEM_REPORT: ${{ github.workspace }}/out/reports/csharp-pipeline.json
+      run: dotnet test ReBuzz.SessionTests --filter "FullyQualifiedName~StemRealModelTests" --logger "console;verbosity=normal"
+
+    - name: Quality check with the engine's own audio
+      if: always()
+      continue-on-error: true
+      run: |
+        sudo apt-get update -q
+        sudo apt-get install -y -q --no-install-recommends libportaudio2 libsndfile1
+        dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
+        python tools/stems/quality_check.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless out/models "$RUNNER_TEMP/quality" --report out/reports/quality.json | tee out/reports/quality.txt
+
+    - name: README
+      if: always()
+      run: |
+        python tools/stems/make_readme.py out/models out/reports out/models/README.md
+        cat out/models/README.md
+        cp -r out/reports out/models/reports
+        (cd out/models && du -sh * | sort -h)
+
+    - name: Upload
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: NeoBuzz Live Stem Models
+        path: out/models
+        compression-level: 1
+        if-no-files-found: error
