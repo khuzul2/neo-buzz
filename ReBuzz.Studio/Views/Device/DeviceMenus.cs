@@ -14,6 +14,7 @@ using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Common.Presets;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
+using ReBuzz.Core.Session;
 using ReBuzz.Studio.Parameters;
 
 namespace ReBuzz.Studio.Views.Device
@@ -30,6 +31,59 @@ namespace ReBuzz.Studio.Views.Device
             item.Click += (s, e) => run();
             return item;
         }
+
+        static MenuItem Check(string header, bool on, Action run, bool enabled = true, string tip = null)
+        {
+            var item = new MenuItem { Header = header, IsEnabled = enabled, ToggleType = MenuItemToggleType.CheckBox, IsChecked = on, StaysOpenOnClick = false };
+            item.Click += (s, e) => run();
+            if (tip != null) ToolTip.SetTip(item, tip);
+            return item;
+        }
+
+        /// <summary>Opens the arrangement's view; the studio sets it.</summary>
+        public static Action ShowArrangement { get; set; }
+
+        static ColumnKey? LaneKey(IMachine machine, DeviceParam p)
+        {
+            var groups = machine.ParameterGroups;
+            for (int g = 0; g < groups.Count; g++)
+                if (ReferenceEquals(groups[g], p.Parameter.Group))
+                    return new ColumnKey(g, p.Parameter.IndexInGroup, p.Track);
+            return null;
+        }
+
+        /// <summary>This parameter has an automation lane in the arrangement.</summary>
+        public static bool HasLane(IMachine machine, DeviceParam p) =>
+            DeviceEdits.CoreOf(machine)?.Arrangement is { } a && LaneKey(machine, p) is { } key && a.HasParameterLane(machine.Name, key);
+
+        /// <summary>Adds this parameter's lane to the arrangement (when it has none yet) and shows the arrangement. False when it can't be automated.</summary>
+        public static bool Automate(IMachine machine, DeviceParam p)
+        {
+            var arrangement = DeviceEdits.CoreOf(machine)?.Arrangement;
+            if (arrangement == null || p.IsInput || LaneKey(machine, p) is not { } key || AutomationParams.Find(machine, key) == null) return false;
+            arrangement.AddParameterLane(machine.Name, key);
+            ShowArrangement?.Invoke();
+            return true;
+        }
+
+        /// <summary>Modulate: one of the canvas modulators drives this parameter (the drag's drop, from a menu), or the matrix.</summary>
+        static MenuItem ModulateMenu(IMachine machine, DeviceParam p)
+        {
+            var items = new List<Control>();
+            foreach (var source in ModulationBoard.All().Where(m => m.Machine != null && !ReferenceEquals(m.Machine, machine)))
+            {
+                var modulator = source;
+                items.Add(Item(modulator.Machine.Name, () => Modulation.ModulationDrop.Drop(modulator, machine, p.Parameter, p.Track)));
+            }
+            if (items.Count == 0) items.Add(Item("(no modulators in the song)", () => { }, enabled: false));
+            items.Add(new Separator());
+            items.Add(Item("Modulation _Matrix...", () => Modulation.ModulationMatrixWindow.Open()));
+            return new MenuItem { Header = "_Modulate", IsEnabled = !p.IsInput && p.Parameter.Type != ParameterType.Note, ItemsSource = items };
+        }
+
+        /// <summary>Locks or unlocks a parameter (a track parameter on all its tracks): one undo step.</summary>
+        public static bool SetLocked(IMachine machine, DeviceParam p, bool locked) =>
+            p.CanLock && DeviceEdits.CoreOf(machine)?.PinStore is { } store && store.SetLocked(machine.Name, p.LockKey, locked);
 
         /// <summary>The parameter a pin names: its name in the machine (a global parameter).</summary>
         public static string PinKey(DeviceParam p) => p.Parameter.Name;
@@ -51,6 +105,15 @@ namespace ReBuzz.Studio.Views.Device
                     : Item("_Pin to Inspector", () => { pins.Set(machine.Name, PinKey(p), true); changed?.Invoke(); }, pins.Get(machine.Name).Count < MachinePinStore.Max));
             }
             items.Add(new Separator());
+            bool automatable = !p.IsInput && p.Parameter.Type != ParameterType.Note && core?.Arrangement != null;
+            items.Add(Item(HasLane(machine, p) ? "Show _Automation Lane" : "_Automate", () => Automate(machine, p), automatable));
+            items.Add(ModulateMenu(machine, p));
+            items.Add(new Separator());
+            items.Add(Check("_Lock", p.CanLock && p.Locked, () => { SetLocked(machine, p, !p.Locked); changed?.Invoke(); }, p.CanLock && core?.PinStore != null,
+                "Left out of Randomize and Morph (saved in the song)"));
+            items.Add(Check("_Hide", p.Hidden, () => { ParameterVisibility.SetVisible(p.Parameter, p.Hidden); changed?.Invoke(); }, p.CanLock,
+                "Out of view while \"Show hidden\" is off (kept for this kind of machine)"));
+            items.Add(new Separator());
             var bindItems = new List<Control> { Item("Bind...", async () => await BindLearned(p)), new Separator() };
             var controllers = core?.MIDIControllers;
             if (controllers != null && controllers.Count > 0)
@@ -59,6 +122,8 @@ namespace ReBuzz.Studio.Views.Device
             items.Add(new MenuItem { Header = "_Bind to MIDI Controller", ItemsSource = bindItems });
             items.Add(Item("_Unbind All", () => machine.UnbindAllMIDIControllers()));
             items.Add(new MenuItem { Header = "_Attributes", IsEnabled = machine.Attributes.Count > 0, ItemsSource = AttributeItems(machine) });
+            items.Add(Check("_Keyboard Sends MIDI Notes", DeviceKeys.Enabled, () => DeviceKeys.Enabled = !DeviceKeys.Enabled, true,
+                "The computer's keys play the machine while this panel has the keyboard focus (the old window's setting)"));
             int tracks = machine.TrackCount;
             if (machine.DLL.Info.MaxTracks > machine.DLL.Info.MinTracks)
             {
@@ -115,6 +180,10 @@ namespace ReBuzz.Studio.Views.Device
                 string n = name;
                 items.Add(Item(n, () => { ParameterEdits.ApplyPreset(core, machine, machine.GetPreset(n)); changed?.Invoke(); }));
             }
+            items.Add(new Separator());
+            items.Add(Item("_Randomize", () => DeviceFunctions.Run(core, machine, ParameterFunction.Randomize, 0, changed), DeviceFunctions.HasTargets(core, machine)));
+            items.Add(Item("Randomize a _Little", () => DeviceFunctions.Run(core, machine, ParameterFunction.Nudge, 0.3, changed), DeviceFunctions.HasTargets(core, machine)));
+            items.Add(Item("_Morph Between A and B...", () => DeviceFunctions.OpenMorph(machine, owner, changed), DeviceFunctions.HasTargets(core, machine)));
             items.Add(new Separator());
             items.Add(Item("_Presets...", () => OpenPresets(machine, owner)));
             var paste = Item("_Paste Preset", async () => await Paste(machine, owner, changed), false);

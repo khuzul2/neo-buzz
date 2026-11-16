@@ -208,7 +208,8 @@ namespace ReBuzz.Studio.Tests
                 var rows = view.List.Items.OfType<ParamItem>().Select(i => i.Param).ToList();
                 Assert.That(rows, Is.Not.Empty);
                 Assert.That(rows.All(p => p.Name.Contains("cutoff", StringComparison.OrdinalIgnoreCase) || p.Description.Contains("cutoff", StringComparison.OrdinalIgnoreCase)
-                    || p.How.Contains("cutoff", StringComparison.OrdinalIgnoreCase) || p.Sound.Contains("cutoff", StringComparison.OrdinalIgnoreCase)), Is.True, "only what matches (name, description or Explain text)");
+                    || p.How.Contains("cutoff", StringComparison.OrdinalIgnoreCase) || p.Sound.Contains("cutoff", StringComparison.OrdinalIgnoreCase)
+                    || p.Choices.Any(c => c.Contains("cutoff", StringComparison.OrdinalIgnoreCase))), Is.True, "only what matches (name, description, Explain text or a choice)");
                 Assert.That(rows.Count, Is.LessThan(all / 4));
                 Assert.That(view.List.Items.OfType<HeaderItem>().Select(h => h.Section.Name), Does.Contain("Filter 1"), "with the headers of the groups that have one");
                 Assert.That(view.List.Items.OfType<HeaderItem>().Count(), Is.LessThan(view.Layout.Sections.Count));
@@ -286,7 +287,7 @@ namespace ReBuzz.Studio.Tests
                 f = Frame(window);
                 var ru = view.List.ControlBounds(uni);
                 var ou = view.List.TranslatePoint(new Point(ru.X, ru.Center.Y), window)!.Value;
-                Assert.That(Near(f, (int)(ou.X + ru.Width * 0.12), (int)ou.Y, StudioTokens.Accent), Is.True, "filled from the left up to the value");
+                Assert.That(Near(f, (int)(ou.X + ru.Width * 0.12), (int)ou.Y, view.List.Identity), Is.True, "filled from the left up to the value, in the machine's colour");
                 Assert.That(Near(f, (int)(ou.X + ru.Width * 0.6), (int)ou.Y, StudioTokens.ControlTrack), Is.True, "the rail beyond it");
 
                 Row(bi);
@@ -294,7 +295,7 @@ namespace ReBuzz.Studio.Tests
                 var rb = view.List.ControlBounds(bi);
                 var ob = view.List.TranslatePoint(new Point(rb.X, rb.Center.Y), window)!.Value;
                 Assert.That(Near(f, (int)(ob.X + rb.Width * 0.1), (int)ob.Y, StudioTokens.ControlTrack), Is.True, "left of zero is not filled");
-                Assert.That(Near(f, (int)(ob.X + rb.Width * 0.62), (int)ob.Y, StudioTokens.Accent), Is.True, "from zero to the value");
+                Assert.That(Near(f, (int)(ob.X + rb.Width * 0.62), (int)ob.Y, view.List.Identity), Is.True, "from zero to the value");
                 Studio.Screenshot(window, "device-neo-poly");
             }
             finally
