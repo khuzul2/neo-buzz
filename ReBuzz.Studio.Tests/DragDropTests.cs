@@ -133,6 +133,17 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>One drop is one undo step: undo gives the song back as it was, redo does it again.</summary>
+        /// <summary>The picture of a window; also into GALLERY_DIR when the gallery run sets it (the CI publishes that folder).</summary>
+        static void Shot(Avalonia.Controls.TopLevel window, string name)
+        {
+            string path = Studio.Screenshot(window, name);
+            if (System.Environment.GetEnvironmentVariable("GALLERY_DIR") is { Length: > 0 } dir)
+            {
+                Directory.CreateDirectory(dir);
+                File.Copy(path, Path.Combine(dir, name + ".png"), true);
+            }
+        }
+
         static void AssertOneStep(string before)
         {
             var (undone, after) = UndoRedo();
@@ -679,21 +690,21 @@ namespace ReBuzz.Studio.Tests
             Assert.That(plan.Allowed, Is.True);
             Assert.That(canvas.DropLitMachine, Is.SameAs(lead), "the target track is lit");
             Assert.That(plan.MakesTrack, Is.False);
-            Studio.Screenshot(s.Window, "drag-drop-arrangement-lit-track");
+            Shot(s.Window, "drag-drop-arrangement-lit-track");
 
             // A line where a new track will go.
             var fresh = canvas.ShowDropAt(One(Gear("Neo Poly")), below);
             Settle();
             Assert.That(fresh.MakesTrack, Is.True, "an instrument on empty space makes a track: its insertion line is drawn");
             Assert.That(fresh.Describe, Does.Contain("New track"));
-            Studio.Screenshot(s.Window, "drag-drop-arrangement-new-track");
+            Shot(s.Window, "drag-drop-arrangement-new-track");
 
             // A refusal with its reason.
             var refused = canvas.ShowDropAt(One(Gear("Neo Comp")), below);
             Settle();
             Assert.That(refused.Allowed, Is.False);
             Assert.That(canvas.DropFeedback.Refusal, Does.Contain("Drop on a track"));
-            Studio.Screenshot(s.Window, "drag-drop-arrangement-refused");
+            Shot(s.Window, "drag-drop-arrangement-refused");
 
             // The time snaps to the beat; Shift keeps the tick.
             double beat = Core.TPB;
@@ -701,7 +712,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(canvas.TargetAt(off, free: false).Time, Is.EqualTo(32), "snapped to the beat");
             Assert.That(canvas.TargetAt(off, free: true).Time, Is.EqualTo(34), "Shift: the tick");
             canvas.ShowDropAt(Files(Sine("snap.wav")), off);
-            Studio.Screenshot(s.Window, "drag-drop-arrangement-audio-snap");
+            Shot(s.Window, "drag-drop-arrangement-audio-snap");
 
             canvas.ClearDropFeedback();
             Settle();
@@ -730,18 +741,18 @@ namespace ReBuzz.Studio.Tests
             s.Rig.Settle();
             Assert.That(plan.Action, Is.EqualTo(DropAction.AudioClips));
             Assert.That(view.DropSlots, Is.EqualTo(new[] { (at, 1), (at, 2) }), "the slots the files would fill are lit");
-            Studio.Screenshot(s.Rig.Window, "drag-drop-session-slots");
+            Shot(s.Rig.Window, "drag-drop-session-slots");
 
             var fresh = view.ShowDropAt(One(Gear("Neo Poly")), view.DropPointOnEmptySpace());
             s.Rig.Settle();
             Assert.That(fresh.MakesTrack, Is.True, "a line where the new track will go");
-            Studio.Screenshot(s.Rig.Window, "drag-drop-session-new-track");
+            Shot(s.Rig.Window, "drag-drop-session-new-track");
 
             var refused = view.ShowDropAt(One(Gear("Neo Comp")), view.DropPointOnEmptySpace());
             s.Rig.Settle();
             Assert.That(refused.Allowed, Is.False);
             Assert.That(refused.Refusal, Does.Contain("Drop on a track"));
-            Studio.Screenshot(s.Rig.Window, "drag-drop-session-refused");
+            Shot(s.Rig.Window, "drag-drop-session-refused");
 
             view.ClearDropFeedback();
             Assert.That(view.DropFeedback, Is.Null);
@@ -804,7 +815,7 @@ namespace ReBuzz.Studio.Tests
                 var plan = view.Canvas.ShowDropAt(One(Gear("Neo Comp")), view.PointOf(poly, view.Canvas));
                 Assert.That(plan.Allowed, Is.False, "an effect can't replace a generator");
                 Assert.That(view.Canvas.DropFeedback.Refusal, Does.Contain("generator"));
-                Studio.Screenshot(window, "drag-drop-machine-refused");
+                Shot(window, "drag-drop-machine-refused");
             }
             finally
             {
