@@ -27,6 +27,12 @@ python3 "$root/tools/build-natives-posix.py" --out "$root/build/natives"
 cmake -S "$root/ReBuzzEngine/portable" -B "$root/build/native-host" -DCMAKE_OSX_ARCHITECTURES=arm64 >/dev/null
 cmake --build "$root/build/native-host" -j 3
 
+# Neo Audio's Pro warp mode (docs/specs/neo-audio.md section 11): the neostretch library (a C ABI over Signalsmith Stretch, MIT), for
+# arm64 like the rest, built here and carried beside the app. The Mac is Apple silicon only in this bundle, so there is no x64 build to match.
+cmake -S "$root/NeoStretch" -B "$root/build/NeoStretch" -DCMAKE_OSX_ARCHITECTURES=arm64 >/dev/null
+cmake --build "$root/build/NeoStretch" -j 3 --target neostretch
+test -f "$root/build/NeoStretch/libneostretch.dylib"
+
 dotnet publish "$root/ReBuzz.Studio/ReBuzz.Studio.csproj" -c Release -r osx-arm64 --self-contained -p:UseAppHost=true -nologo -v:q -o "$macos"
 mv "$macos/ReBuzz.Studio" "$macos/$name"
 
@@ -39,6 +45,14 @@ for lib in libportaudio.dylib libsndfile.dylib; do
   install_name_tool -id "@loader_path/$lib" "$macos/$lib"
   dylibbundler -of -cd -b -x "$macos/$lib" -d "$macos/libs" -p "@loader_path/libs/" >/dev/null
 done
+
+cp "$root/build/NeoStretch/libneostretch.dylib" "$macos/libneostretch.dylib"
+chmod u+w "$macos/libneostretch.dylib"
+install_name_tool -id "@loader_path/libneostretch.dylib" "$macos/libneostretch.dylib"
+# it links nothing of ours or Homebrew's: the system's libraries only, or the bundle would fail to load it on another Mac
+if otool -L "$macos/libneostretch.dylib" | tail -n +2 | grep -v "^[[:space:]]*\(@loader_path/libneostretch.dylib\|/usr/lib/\|/System/\)"; then
+  echo "libneostretch.dylib links something that is not a system library" >&2; exit 1
+fi
 
 # Audio import (docs/specs/neo-audio.md §6): libsndfile decodes WAV, AIFF, FLAC, OGG and MP3, so the codecs it links must be carried too.
 for codec in mpg123 vorbis FLAC ogg; do
@@ -104,6 +118,7 @@ file "$macos/$name" | grep "Mach-O 64-bit executable arm64" >/dev/null
 test -f "$app/Contents/Resources/AppIcon.icns"
 # the rebuilt classics: the host, the machines in Gear and the notice that names them
 test -x "$macos/rebuzz-native-host" && file "$macos/rebuzz-native-host" | grep "arm64" >/dev/null
+test -f "$macos/libneostretch.dylib" && file "$macos/libneostretch.dylib" | grep "arm64" >/dev/null
 test -f "$macos/Gear/Generators/FSM Infector.dylib" && test -f "$macos/Gear/Effects/Jeskola Distortion.dylib"
 grep -q "NOT FOR PUBLIC RELEASE AS IS" "$macos/Licenses/NOTICE.txt"
 codesign -dv "$app" 2>&1 | grep "^Identifier=$identifier$" >/dev/null

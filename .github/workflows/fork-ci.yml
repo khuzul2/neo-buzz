@@ -46,6 +46,15 @@ jobs:
         cmake -S LinkHelper -B build/LinkHelper
         cmake --build build/LinkHelper -j 4
 
+    # Neo Audio's Pro warp mode (docs/specs/neo-audio.md section 11): the neostretch library, a C ABI over Signalsmith Stretch, built
+    # with CMake and tested by its own test (no allocation in the audio calls, finite output, alignment); the session tests copy it
+    # beside themselves, so the Pro tests run against it.
+    - name: NeoStretch (CMake)
+      run: |
+        cmake -S NeoStretch -B build/NeoStretch
+        cmake --build build/NeoStretch -j 3
+        ctest --test-dir build/NeoStretch --output-on-failure
+
     - name: Test
       shell: pwsh
       env:

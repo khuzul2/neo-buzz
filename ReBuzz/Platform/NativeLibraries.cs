@@ -72,6 +72,42 @@ namespace ReBuzz.Platform
             return null;
         }
 
+        /// <summary>
+        /// Loads a library of ours by the name it goes by here (neostretch: Neo Audio's Pro warp mode), from the folders above. The
+        /// environment variable <c>NEO_NATIVE_DIR</c> names one more folder to try first (a build tree). False, with the reason,
+        /// when none loads: the caller does without.
+        /// </summary>
+        public static bool TryLoad(string name, out IntPtr handle, out string detail)
+        {
+            handle = IntPtr.Zero;
+            var folders = new List<string>();
+            string extra = Environment.GetEnvironmentVariable("NEO_NATIVE_DIR");
+            if (!string.IsNullOrEmpty(extra)) folders.Add(extra);
+            folders.AddRange(Folders());
+            string firstFailure = null;
+            foreach (var folder in folders)
+                foreach (var file in FileNames(name))
+                {
+                    string path = Path.Combine(folder, file);
+                    if (!File.Exists(path)) continue;
+                    try
+                    {
+                        if (NativeLibrary.TryLoad(path, out handle))
+                        {
+                            detail = path;
+                            return true;
+                        }
+                        firstFailure ??= path + " would not load";
+                    }
+                    catch (Exception e)
+                    {
+                        firstFailure ??= path + ": " + e.Message;
+                    }
+                }
+            detail = firstFailure ?? $"{string.Join(" or ", FileNames(name))} is not in the app's folder";
+            return false;
+        }
+
         /// <summary>Installs the resolver for the engine's assembly (PortAudio).</summary>
         public static void Register() => Register(typeof(NativeLibraries).Assembly);
 

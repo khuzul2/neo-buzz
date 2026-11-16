@@ -348,6 +348,26 @@ if (-not $SkipCore) {
     }
 }
 
+# ---------------------------------------------------------------- 3b3. NeoStretch (fork, neo-audio.md section 11, NA5)
+
+# neostretch.dll is the Pro warp mode of Neo Audio: a small C ABI over Signalsmith Stretch (MIT; the headers it needs are in
+# NeoStretch\third_party). Beside the WPF app's exe here, and beside the studio's (3c); without it Pro clips play as Complex.
+if (-not $SkipCore) {
+    $nsSrc = [IO.Path]::Combine($Root, 'NeoStretch')
+    if ((Test-Path -LiteralPath $nsSrc) -and (Get-Command cmake -ErrorAction SilentlyContinue)) {
+        Write-Step 'Building the Pro warp mode (neostretch.dll)'
+        $nsBuild = [IO.Path]::Combine($Root, 'build', 'NeoStretch')
+        Invoke-Checked cmake @('-S', $nsSrc, '-B', $nsBuild, '-A', 'x64')
+        Invoke-Checked cmake @('--build', $nsBuild, '--config', $Configuration)
+        $nsDll = [IO.Path]::Combine($nsBuild, $Configuration, 'neostretch.dll')
+        if (-not (Test-Path -LiteralPath $nsDll)) { throw "neostretch.dll not built ($nsDll)" }
+        Copy-Item -LiteralPath $nsDll -Destination $OutDir -Force
+        Write-Host "neostretch.dll -> $OutDir"
+    } else {
+        Write-Warning 'NeoStretch or cmake is missing: Pro clips play as Complex in this package.'
+    }
+}
+
 # ---------------------------------------------------------------- 3c. NeoBuzz Live Studio (fork)
 
 # The studio (ReBuzz.Studio, Avalonia; docs/specs/ux-overhaul.md P6) published for win-x64 with PortAudio built from source
@@ -357,6 +377,8 @@ $StudioStage = [IO.Path]::Combine($Root, 'build', 'Studio')
 if ((-not $SkipCore) -and (-not $SkipStudio)) {
     Write-Step 'Publishing NeoBuzz Live Studio (preview)'
     & ([IO.Path]::Combine($Root, 'tools', 'publish-studio-windows.ps1')) -Out $StudioStage -Configuration $Configuration
+    $nsStudio = [IO.Path]::Combine($Root, 'build', 'NeoStretch', $Configuration, 'neostretch.dll')
+    if (Test-Path -LiteralPath $nsStudio) { Copy-Item -LiteralPath $nsStudio -Destination $StudioStage -Force }       # the Pro warp mode, beside the studio's engine (NA5)
 }
 
 # Remove what a previous run added, so Gear holds only upstream files again.
@@ -902,7 +924,9 @@ $components = @(
     [pscustomobject]@{ Name = 'Serilog.Sinks.RichTextBox.Wpf (from 3rdParty\serilog\serilog-sinks-richtextbox)'; Licence = 'Apache-2.0'; Text = '3rdParty\serilog\serilog-sinks-richtextbox\LICENSE'; As = 'Serilog.Sinks.RichTextBox.Wpf-LICENSE.txt'; File = 'Serilog.Sinks.RichTextBox.Wpf.dll' },
     [pscustomobject]@{ Name = 'r8brain-free-src (r8bsrc64.dll, from 3rdParty\r8b\r8brain-free-src)'; Licence = 'MIT'; Text = '3rdParty\r8b\r8brain-free-src\LICENSE'; As = 'r8brain-free-src-LICENSE.txt'; File = 'r8bsrc64.dll' },
     [pscustomobject]@{ Name = "PortAudio (${studioRel}portaudio.dll, built from source with CMake: MME, DirectSound, WASAPI and WDM-KS, no ASIO; see $audioBuildNote)"; Licence = 'MIT'; Text = ([IO.Path]::Combine($StudioStage, 'PortAudio-LICENSE.txt')); As = 'PortAudio-LICENSE.txt'; File = 'Studio\portaudio.dll' },
-    [pscustomobject]@{ Name = 'Concentus 2.2.2 (Concentus.dll, the Opus preview; NuGet, from 3rdParty\concentus)'; Licence = 'BSD-3-Clause'; Text = '3rdParty\concentus\LICENSE'; As = 'Concentus-LICENSE.txt'; File = 'Concentus.dll' }
+    [pscustomobject]@{ Name = 'Concentus 2.2.2 (Concentus.dll, the Opus preview; NuGet, from 3rdParty\concentus)'; Licence = 'BSD-3-Clause'; Text = '3rdParty\concentus\LICENSE'; As = 'Concentus-LICENSE.txt'; File = 'Concentus.dll' },
+    [pscustomobject]@{ Name = 'Signalsmith Stretch 1.3.2 (neostretch.dll, the Pro warp mode; vendored in NeoStretch\third_party)'; Licence = 'MIT'; Text = 'NeoStretch\third_party\signalsmith-stretch\LICENSE.txt'; As = 'SignalsmithStretch-LICENSE.txt'; File = 'neostretch.dll' },
+    [pscustomobject]@{ Name = 'Signalsmith Linear 0.6.6 (inside neostretch.dll; vendored in NeoStretch\third_party)'; Licence = 'MIT'; Text = 'NeoStretch\third_party\signalsmith-linear\LICENSE.txt'; As = 'SignalsmithLinear-LICENSE.txt'; File = 'neostretch.dll' }
 )
 $notice.Add('')
 $notice.Add('Other components and their licences')

@@ -910,6 +910,7 @@ namespace ReBuzz.Core
 
             SessionCore = new SessionCore(this);
             global::ReBuzz.Core.Session.SessionClipEngine.Install();      // fork (1.0): audio tracks
+            global::ReBuzz.Core.Clips.NeoStretch.Log = line => DCWriteLine(line, DCLogLevel.Warning);   // fork (NA5): the Pro warp mode's missing library says so once
             UiEvents = UiEventQueue.For(dispatcher);    // fork (audio hygiene): with its signal, made here on the UI thread
             UiEvents.Reserve(1);                        // the transport's Playing event (StartPlaying)
 
