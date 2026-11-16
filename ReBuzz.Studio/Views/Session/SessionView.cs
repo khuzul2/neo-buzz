@@ -342,7 +342,7 @@ namespace ReBuzz.Studio.Views.Session
             root.Children.Add(statusBar);
             DockPanel.SetDock(clipPanel, Dock.Right);
             root.Children.Add(clipPanel);
-            root.Children.Add(body);
+            root.Children.Add(WithDropOverlay(body));      // DD1 (SessionView.Drop.cs)
             mixerSection = mixerBorder;
             masterSection = masterBorder;
             Content = root;

@@ -253,6 +253,7 @@ namespace ReBuzz.Studio.Views.Sequence
             Arrangement = new ArrangementCanvas(core, state) { IsVisible = false };
             Arrangement.Overlay.IsVisible = false;
             headers = new ArrangementHeaders(core, Arrangement) { IsVisible = false, HorizontalAlignment = HorizontalAlignment.Left };
+            Arrangement.AttachDropTo(headers);      // DD1: a drop on a track's header is a drop on the track
             rollPanel = new ArrangementRollPanel(core) { IsVisible = false };
             rollPanel.PatternEditorRequested += p => ChoosePattern(p, true);
             Focusable = true;
