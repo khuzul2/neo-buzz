@@ -667,12 +667,15 @@ namespace NeoBuzz.Plug
             var text = new byte[256];
             PlugNative.np_status_text(plugin, text, text.Length);
             CrashReason = PlugNative.Str(text);
-            Crashed = true;
             // An open editor goes: its window belongs to the process that is gone.
             PlugEditorSession open;
             lock (EditorLock) { open = editor; editor = null; }
             try { open?.PluginGone(); } catch (Exception) { }
+            // Order matters: the revision is bumped first and Crashed (volatile) is published last. A reader on another thread that
+            // sees Crashed (CheckCrashed returns at once for it) must also see the new Revision, or it serves the manifest cached
+            // from before the crash. Closing the editor can take long on macOS (it waits for the UI thread), which made the window wide.
             Interlocked.Increment(ref Revision);
+            Crashed = true;
             Log($"{Name}: the plug-in's sandbox ended: {CrashReason}. The slot is silent; reload it from the machine's menu.");
             PlacementChanged?.Invoke();
             }
