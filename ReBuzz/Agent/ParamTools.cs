@@ -318,6 +318,49 @@ namespace ReBuzz.Agent
                     return ToolResult.Ok($"{r["machine"]}: " + string.Join("; ", r["values"]!.AsArray().Take(60).Select(x => $"{x!["param"]} = {x["value"]}")) + DraftNote(r), r);
                 },
             });
+
+            tools.Add(new ToolDef
+            {
+                Name = "machine_pin",
+                Title = "Pin a parameter",
+                Description =
+                    "Pins a global parameter to the machine's card in the studio's Inspector (up to 8 per machine, the person sees them beside the 8 macros), or unpins it. " +
+                    "Pins are saved with the song and are one undo step. Track parameters can't be pinned. With no param it lists the machine's pins. " +
+                    "Example: machine_pin(machine=\"Bass\", param=\"F1 cutoff\", pinned=true).",
+                Input = Object(null,
+                    Req("machine", String("The machine")),
+                    Opt("param", String("A global parameter's name (machine_describe lists them)")),
+                    Opt("pinned", Boolean("true pins it (default), false unpins"))),
+                Output = Object(null,
+                    Req("machine", String("The machine")),
+                    Req("pinned", Array(String("A pinned parameter"), "The machine's pins now, in order")),
+                    Opt("changed", Boolean("Whether this call changed them"))),
+                Annotations = ToolAnnotations.Write,
+                Handler = async c =>
+                {
+                    var r = await host.Engine("machine_pin", true, _ =>
+                    {
+                        var m = SongModel.Machine(core, c.RequiredString("machine"));
+                        var store = core.PinStore ?? throw new ToolError("This song has no pinned parameters here.");
+                        bool changed = false;
+                        if (c.String("param") is { Length: > 0 } name)
+                        {
+                            var p = SongModel.Param(m, SongModel.Params(m), name);
+                            if (p.IsTrack) throw new ToolError($"{p.Name} is a track parameter: only global parameters can be pinned.");
+                            bool pin = c.Bool("pinned") ?? true;
+                            if (pin && !store.IsPinned(m.Name, p.Name) && store.Get(m.Name).Count >= MachinePinStore.Max)
+                                throw new ToolError($"{m.Name} already has {MachinePinStore.Max} pinned parameters ({string.Join(", ", store.Get(m.Name))}). Unpin one first.");
+                            changed = store.Set(m.Name, p.Name, pin);
+                        }
+                        var o = new JsonObject { ["machine"] = m.Name, ["pinned"] = new JsonArray(store.Get(m.Name).Select(n => (JsonNode)JsonValue.Create(n)).ToArray()) };
+                        if (c.String("param") != null) o["changed"] = changed;
+                        return o;
+                    }, c.Cancellation);
+                    var list = r["pinned"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
+                    return ToolResult.Ok($"{r["machine"]}: " + (list.Count == 0 ? "nothing pinned" : "pinned " + string.Join(", ", list)) +
+                        (r["changed"] is { } ch && !ch.GetValue<bool>() ? " (no change)" : ""), r);
+                },
+            });
         }
 
         /// <summary>What gear_list and machine_describe say about a machine that needs a window (machine-safety.md §3.1).</summary>

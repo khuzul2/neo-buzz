@@ -22,6 +22,7 @@ namespace ReBuzz.Studio.Views.Device
         readonly ReBuzzCore core;
         readonly StudioSelection selection;
         readonly Shell.EmptyState hint;
+        readonly Action<IMachine> followFloat;
         IMachine shown;
         DevicePage page;
         bool attached;
@@ -32,6 +33,7 @@ namespace ReBuzz.Studio.Views.Device
             selection = StudioSelection.For(core);
             Background = StudioTokens.SurfacePanelBrush;
             hint = new Shell.EmptyState(core);
+            followFloat = m => { if (attached && m == shown) { shown = null; Follow(); } };
             Avalonia.Automation.AutomationProperties.SetName(this, "Device");
         }
 
@@ -52,6 +54,7 @@ namespace ReBuzz.Studio.Views.Device
             if (attached) return;
             attached = true;
             selection.Changed += SelectionChanged;
+            FloatChanged += followFloat;
             Follow();
         }
 
@@ -61,6 +64,7 @@ namespace ReBuzz.Studio.Views.Device
             if (!attached) return;
             attached = false;
             selection.Changed -= SelectionChanged;
+            FloatChanged -= followFloat;
             Clear();
         }
 
@@ -113,8 +117,18 @@ namespace ReBuzz.Studio.Views.Device
             Child = null;
         }
 
+        /// <summary>A machine's device moved into a window or back (the docks showing it follow).</summary>
+        static event Action<IMachine> FloatChanged;
+
         /// <summary>Moves a machine's device page into a window of its own.</summary>
-        public void Float(IMachine m)
+        public void Float(IMachine m) => OpenFloating(m, null);
+
+        /// <summary>
+        /// A machine's device page in a window of its own (one per machine), at the placement a song kept where there is one. This is what
+        /// "Parameters...", a double click on a machine with no editor and the song's saved parameter windows open: the retired
+        /// parameter window's place.
+        /// </summary>
+        public static void OpenFloating(IMachine m, WindowPlacement? at)
         {
             if (m == null) return;
             if (!floating.TryGetValue(m, out var w) || !w.IsVisible)
@@ -130,19 +144,24 @@ namespace ReBuzz.Studio.Views.Device
                 };
                 var window = w;
                 content.FloatToggled += () => window.Close();
-                _ = new TransportKeys(w, () => core, () => false);
+                _ = new TransportKeys(w, () => m.Graph?.Buzz as ReBuzzCore, () => false);
+                if (at is WindowPlacement p && p.Width > 0)
+                {
+                    w.Position = new PixelPoint((int)p.Left, (int)p.Top);
+                    w.Width = p.Width;
+                    w.Height = Math.Max(240, p.Height + NeoBuzz.Editor.MachineKeyboardFrame.ExtraHeightOf(w.Content));
+                }
                 MachineWindowFit.Clamp(w);
                 w.Closed += (s, e) =>
                 {
                     floating.Remove(m);
-                    if (attached) { shown = null; Follow(); }
+                    FloatChanged?.Invoke(m);
                 };
                 floating[m] = w;
                 var owner = Dialogs.Owner;
                 if (owner != null) w.Show(owner); else w.Show();
+                FloatChanged?.Invoke(m);
             }
-            shown = null;
-            Follow();
             w.Activate();
         }
 

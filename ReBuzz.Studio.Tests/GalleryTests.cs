@@ -1754,10 +1754,63 @@ namespace ReBuzz.Studio.Tests
                     Core.UiHost.OpenParameterWindow(demo.Bass, null);
                     var w = StudioMachineUiHost.ParameterWindowOf(demo.Bass)!;
                     Settle();
-                    var row = w.GetVisualDescendants().OfType<Control>().First(c => c.GetType().Name == "ParameterRow");
-                    Click(w, Centre(row, w, 0.1), MouseButton.Right);
-                    Shot(w, "453-parameters-menu", "A parameter's menu in the parameter window (right-click on a row).", "Right-click a parameter in the parameter window.");
+                    var knob = w.GetVisualDescendants().OfType<ReBuzz.Studio.Views.Device.DeviceCell>().First().Face;
+                    Click(w, DeviceTestKit.Centre(w, knob), MouseButton.Right);
+                    Shot(w, "453-parameters-menu", "A parameter's menu in the Device window (right-click on a knob).", "Right-click a knob in the Device window.");
                     Core.UiHost.CloseWindows(demo.Bass);
+                });
+
+                // The Device panel (ux-overhaul.md, the parameter panel): cards of knobs docked (one row, scrolling sideways) and floating
+                // (wrapping), for four machines, and the Inspector with the macros and the pinned parameters.
+                foreach (var (gear, slug) in new[] { ("Neo Filter", "neo-filter"), ("Neo Poly", "neo-poly"), ("Neo Drums", "neo-drums"), ("Dye Essence", "dye-essence") })
+                {
+                    Try("454-device-docked-" + slug, () =>
+                    {
+                        var m = Add(gear, "Gallery " + gear);
+                        var page = new ReBuzz.Studio.Views.Device.DevicePage(m, floating: false);
+                        page.SetEditor(false, remember: false);
+                        var w = new Window { Width = 1100, Height = 330, Content = page };
+                        w.Show();
+                        Settle();
+                        Shot(w, "454-device-docked-" + slug, $"The Device panel docked for {gear}: its sections as cards of knobs in one row that scrolls sideways, a chip per section, search, Changed only, Knobs | List.", "Select the machine; Detail ▸ Device.");
+                        w.Close();
+                    });
+                    Try("455-device-floating-" + slug, () =>
+                    {
+                        var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery " + gear);
+                        Core.UiHost.OpenParameterWindow(m, null);
+                        var w = StudioMachineUiHost.ParameterWindowOf(m);
+                        Assert.That(w, Is.Not.Null);
+                        Settle();
+                        Shot(w!, "455-device-floating-" + slug, $"The Device panel floating for {gear}: the cards wrap and scroll down.", "Right-click a machine ▸ Parameters…, or Float in the Device panel.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                Try("456-device-list-mode", () =>
+                {
+                    var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Neo Poly");
+                    var page = new ReBuzz.Studio.Views.Device.DevicePage(m, floating: true);
+                    page.SetEditor(false, remember: false);
+                    page.Parameters.SetMode(ReBuzz.Studio.Views.Device.DeviceView.DeviceMode.List, remember: false);
+                    var w = new Window { Width = 760, Height = 560, Content = page };
+                    w.Show();
+                    Settle();
+                    Shot(w, "456-device-list-mode", "The Device panel in List mode: rows in columns with group headers, filled bars with the value inside.", "Device panel ▸ List.");
+                    w.Close();
+                });
+                Try("457-inspector-macros-and-pins", () =>
+                {
+                    var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Neo Poly");
+                    var layout = ReBuzz.Studio.Views.Device.DeviceLayout.Build(m);
+                    foreach (var p in layout.All.Where(p => p.CanPin).Take(4)) Core.PinStore.Set(m.Name, p.Parameter.Name, true);
+                    var device = new ReBuzz.Studio.Views.Inspector.InspectorDevice(Core);
+                    var w = new Window { Width = 320, Height = 420, Content = new Border { Padding = new Thickness(12), Background = ReBuzz.Studio.Shell.Design.StudioTokens.SurfacePanelBrush, Child = device } };
+                    w.Show();
+                    device.Show(m);
+                    Settle();
+                    Shot(w, "457-inspector-macros-and-pins", "The Inspector's machine card: the eight macros, then the parameters pinned to it (pin from a knob's right-click menu).", "Select a machine; the Inspector's Selection tab.");
+                    w.Close();
+                    Core.PinStore.Clear();
                 });
 
                 // The machine keyboard (docs/specs/studio-mvp.md §3.12): playing, and hidden.
