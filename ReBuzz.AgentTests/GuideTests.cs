@@ -66,6 +66,7 @@ namespace ReBuzz.AgentTests
             ["machine_describe"] = new[] { "machine", "group", "value_table", "table_points" },
             ["param_set"] = new[] { "machine", "changes", "allow_unsafe" },
             ["param_get"] = new[] { "machine", "params", "track" },
+            ["machine_pin"] = new[] { "machine", "param", "pinned" },
             // neo-patch.md §3 (ReBuzz/Agent/ModulationTools.cs): the canvas modulators.
             ["modulate"] = new[] { "source", "target_machine", "param", "depth", "polarity", "range", "curve", "track", "slot", "listen_machine", "listen_track" },
             ["modulation_list"] = new[] { "machine" },

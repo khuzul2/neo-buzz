@@ -328,20 +328,21 @@ namespace ReBuzz.Studio.Tests
                 Settle();
                 Menu(window, view, view.PointOf(bass, window) + new Vector(12, 8), null, "Parameters...");
                 var parameters = StudioMachineUiHost.ParameterWindowOf(bass);
-                Assert.That(parameters?.IsVisible, Is.True, "Parameters... opens SH101's parameter window");
+                Assert.That(parameters?.IsVisible, Is.True, "Parameters... opens SH101's Device window");
                 SessionRig.Quiet(parameters!);
                 Dispatcher.UIThread.RunJobs();
                 parameters.UpdateLayout();
-                var rows = ((ParameterWindowView)StudioMachineUiHost.ContentOf(parameters)!).Rows;
-                var cutoff = rows.Single(r => r.ParameterName == "Cutoff");
-                int cutoffBefore = cutoff.Parameter.GetValue(0);
-                var thumb = cutoff.Slider.TranslatePoint(cutoff.Slider.ThumbBounds.Center, parameters)!.Value;
-                parameters.MouseDown(thumb, MouseButton.Left);
-                parameters.MouseMove(thumb - new Point(25, 0), RawInputModifiers.LeftMouseButton);
-                parameters.MouseMove(thumb - new Point(50, 0), RawInputModifiers.LeftMouseButton);
-                parameters.MouseUp(thumb - new Point(50, 0), MouseButton.Left);
+                var device = DeviceTestKit.PageOf(parameters).Parameters;
+                var cutoff = DeviceTestKit.Param(device, "Cutoff");
+                var cutoffKnob = DeviceTestKit.Knob(parameters, device, "Cutoff");
+                int cutoffBefore = cutoff.Value;
+                var grip = DeviceTestKit.Centre(parameters, cutoffKnob);
+                parameters.MouseDown(grip, MouseButton.Left);
+                parameters.MouseMove(grip + new Point(0, 25), RawInputModifiers.LeftMouseButton);
+                parameters.MouseMove(grip + new Point(0, 60), RawInputModifiers.LeftMouseButton);
+                parameters.MouseUp(grip + new Point(0, 60), MouseButton.Left);
                 Settle();
-                Assert.That(cutoff.Parameter.GetValue(0), Is.LessThan(cutoffBefore - 10), "the slider lowered SH101's cutoff");
+                Assert.That(cutoff.Value, Is.LessThan(cutoffBefore - 10), "the knob lowered SH101's cutoff");
                 Studio.Screenshot(parameters, "exit-4-sh101-parameters");
 
                 // ---- The Pattern tab (F2): notes typed into each synth's pattern. A click on empty space

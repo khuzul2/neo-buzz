@@ -839,7 +839,7 @@ namespace ReBuzz.Studio.Views.Session
             base.OnKeyDown(e);
             if (stepInput && e.KeyModifiers == KeyModifiers.None)
             {
-                int index = ReBuzz.Studio.Parameters.ParameterWindowView.PianoKeyIndex(e.PhysicalKey);
+                int index = ReBuzz.Studio.Parameters.PianoKeys.IndexOf(e.PhysicalKey);
                 if (index >= 0)
                 {
                     StepNoteOn(e.PhysicalKey, index);

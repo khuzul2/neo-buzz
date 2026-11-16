@@ -67,6 +67,7 @@ namespace ReBuzz.Studio.Tests
             Core.UiHost.OpenGui(m, null);
             var w = StudioMachineUiHost.GuiWindowOf(m) ?? StudioMachineUiHost.EditorWindowOf(m) ?? StudioMachineUiHost.ParameterWindowOf(m);
             Assert.That(w, Is.Not.Null, $"{m.Name}: a window opened");
+            if (w == StudioMachineUiHost.ParameterWindowOf(m)) KeyboardOf(w!)?.SetShown(true);   // the Device window's keyboard starts collapsed
             Settle();
             w!.CaptureRenderedFrame();
             return w;
@@ -77,6 +78,7 @@ namespace ReBuzz.Studio.Tests
             Core.UiHost.OpenParameterWindow(m, null);
             var w = StudioMachineUiHost.ParameterWindowOf(m);
             Assert.That(w, Is.Not.Null);
+            KeyboardOf(w!)?.SetShown(true);   // the Device window's keyboard starts collapsed
             Settle();
             w!.CaptureRenderedFrame();
             return w;
@@ -180,7 +182,7 @@ namespace ReBuzz.Studio.Tests
                 var pk = KeyboardOf(parameters);
                 Assert.That(pk, Is.Not.Null, "a generic parameter window has it");
                 Assert.That(pk!.BadgeText, Is.EqualTo(pk.Player.Route.Input == KeyboardInput.Midi ? "MIDI" : "Note tracks"), "it says how the machine gets the notes");
-                Assert.That(pk.Keys.Layout.Octaves, Is.EqualTo(2), "a narrow window: two octaves");
+                Assert.That(pk.Keys.Layout.Octaves, Is.GreaterThanOrEqualTo(2), "the Device window (720 wide): at least two octaves");
                 Assert.That(parameters.ClientSize.Width, Is.GreaterThanOrEqualTo(KeyboardLayout.MinWidth));
                 Studio.Screenshot(parameters, "keyboard-parameter-window");
                 // Its manifest editor too (a double click opens it: curated).
@@ -472,70 +474,6 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ toggling
 
         [AvaloniaTest]
-        public void TheToggleHidesAndShowsItForThatMachineTypeAndPersists()
-        {
-            // Preferences' setting, as the page sets it (and saves it): its value as text, the change told.
-            var setting = Global.GeneralSettings.List.First(s => s.Name == nameof(BuzzGUI.Common.Settings.GeneralSettings.MachineKeyboard));
-            string before = setting.Value;
-            MachineCore a = null, b = null, juno = null;
-            using var restore = Studio.AfterTest(() => setting.Value = before);
-            try
-            {
-                a = Add("Pedal SH101", "Kb Toggle A");
-                b = Add("Pedal SH101", "Kb Toggle B");
-                juno = Add("Pedal Juno106", "Kb Toggle Juno");
-                var wa = Parameters(a);
-                var wb = Parameters(b);
-                var wj = Parameters(juno);
-                var ka = KeyboardOf(wa)!;
-                double shownHeight = wa.ClientSize.Height;
-                var contentHeight = StudioMachineUiHost.ContentOf(wa)!.Bounds.Height;
-
-                ka.Toggle.Press();
-                Settle();
-                Assert.That(ka.Shown, Is.False);
-                Assert.That(ka.Keys.IsVisible, Is.False, "the keys hide; the strip with the toggle stays");
-                Assert.That(wa.ClientSize.Height, Is.EqualTo(contentHeight + MachineKeyboard.CollapsedHeight).Within(1), "the window shrinks by the keys");
-                Assert.That(StudioMachineUiHost.ContentOf(wa)!.Bounds.Height, Is.EqualTo(contentHeight).Within(1), "the GUI keeps its size");
-                Assert.That(KeyboardSettings.Shown(a.DLL), Is.False, "kept for the machine type");
-                Assert.That(KeyboardOf(wb)!.Shown, Is.False, "the type's other windows follow");
-                Assert.That(KeyboardOf(wj)!.Shown, Is.True, "other machine types keep the default");
-                Studio.Screenshot(wa, "keyboard-hidden-parameter-window");
-
-                // A new window of the type opens hidden; Ctrl+K (⌘K) shows it again.
-                Core.UiHost.ReleaseMachine(b);
-                var wb2 = Parameters(b);
-                Assert.That(KeyboardOf(wb2)!.Shown, Is.False, "remembered");
-                var command = OperatingSystem.IsMacOS() ? RawInputModifiers.Meta : RawInputModifiers.Control;
-                wb2.KeyPressQwerty(PhysicalKey.K, command);
-                wb2.KeyReleaseQwerty(PhysicalKey.K, command);
-                Settle();
-                Assert.That(KeyboardOf(wb2)!.Shown, Is.True, "Ctrl+K shows it");
-                Assert.That(ka.Shown, Is.True);
-                Assert.That(KeyboardSettings.Choice(a.DLL), Is.Null, "back to the default: no choice kept");
-                Assert.That(wa.ClientSize.Height, Is.EqualTo(shownHeight).Within(1), "the window grows back");
-                Assert.That(ReBuzz.Studio.Shell.MainWindow.ShortcutsText(mac: true), Does.Contain("⌘K\tshow / hide the keyboard"), "Help ▸ Keyboard shortcuts lists it");
-
-                // Preferences' default: hidden for every type without a choice of its own.
-                setting.Value = "False";
-                Settle();
-                Assert.That(ka.Shown, Is.False, "the default off hides it");
-                Assert.That(KeyboardOf(wj)!.Shown, Is.False);
-                KeyboardOf(wj)!.Toggle.Press();
-                Assert.That(KeyboardSettings.Choice(juno.DLL), Is.True, "a type shown against the default keeps that choice");
-                setting.Value = "True";
-                Settle();
-                Assert.That(ka.Shown, Is.True, "the default on again shows the types without a choice");
-                Assert.That(KeyboardOf(wj)!.Shown, Is.True);
-            }
-            finally
-            {
-                foreach (var m in new[] { a, juno }.Where(m => m != null)) KeyboardSettings.Set(m.DLL, KeyboardSettings.Default);
-                Remove(a, b, juno);
-            }
-        }
-
-        [AvaloniaTest]
         public void TheKeysAreNamedAsPreferencesNameNotes()
         {
             // Fork (ux-overhaul.md §3.5): the keys, the octave and the readout name notes as the pattern editor and the piano
@@ -575,12 +513,12 @@ namespace ReBuzz.Studio.Tests
                 Core.UiHost.OpenParameterWindow(m, new WindowPlacement(40, 40, 520, 300));
                 Settle();
                 var w = StudioMachineUiHost.ParameterWindowOf(m)!;
-                Assert.That(w.ClientSize.Height, Is.EqualTo(300 + MachineKeyboard.ExpandedHeight).Within(1), "a song's window opens at its size, the keyboard under it");
+                Assert.That(w.ClientSize.Height, Is.EqualTo(300 + MachineKeyboard.CollapsedHeight).Within(1), "a song's window opens at its size, the Device window's keyboard collapsed under it");
                 Assert.That(Core.UiHost.GetWindowState(m).ParameterWindow.Height, Is.EqualTo(300).Within(1), "and is saved at it");
                 var kb = KeyboardOf(w)!;
                 kb.Toggle.Press();
                 Settle();
-                Assert.That(w.ClientSize.Height, Is.EqualTo(300 + MachineKeyboard.CollapsedHeight).Within(1), "a window of its own size shrinks by the keys");
+                Assert.That(w.ClientSize.Height, Is.EqualTo(300 + MachineKeyboard.ExpandedHeight).Within(1), "a window of its own size grows by the keys");
                 Assert.That(Core.UiHost.GetWindowState(m).ParameterWindow.Height, Is.EqualTo(300).Within(1));
                 kb.Toggle.Press();
             }

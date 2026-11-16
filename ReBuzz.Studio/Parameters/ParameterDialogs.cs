@@ -34,7 +34,7 @@ namespace ReBuzz.Studio.Parameters
         {
             if (ValueResponder != null) return ValueResponder(start, min, max);
             var box = new TextBox { Text = start.ToString(), MinWidth = 80 };
-            var range = new TextBlock { Text = $"[{min}..{max}]", FontSize = 11, Foreground = ParameterTheme.DimText, VerticalAlignment = VerticalAlignment.Center };
+            var range = new TextBlock { Text = $"[{min}..{max}]", FontSize = 11, Foreground = ReBuzz.Studio.Shell.Design.StudioTokens.TextPlaceholderBrush, VerticalAlignment = VerticalAlignment.Center };
             int? result = null;
             var window = new Window
             {
