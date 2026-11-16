@@ -975,7 +975,7 @@ namespace NeoBuzz.Editor
     /// the GUI above keeps its size; Ctrl+K (⌘K) in the window shows or hides them. A GUI of a fixed layout
     /// (a Neo editor, a managed GUI, a manifest editor) sits in a scroll viewer, with or without a keyboard:
     /// where the window is smaller than it and the keyboard (the screen's work area holds machine windows,
-    /// MachineWindowFit, and a user may resize them; Neo Poly's editor is 972 px tall), it keeps its layout and
+    /// MachineWindowFit, a fixed size; Neo Poly's editor is 972 px tall), it keeps its layout and
     /// scrolls rather than being cut or squashed. A parameter window scrolls its rows itself.
     /// </summary>
     internal sealed class MachineKeyboardFrame : Grid

@@ -1,0 +1,45 @@
+{
+ "id": "org.neobuzz.neo-learn-fm",
+ "name": "Neo Learn FM",
+ "folder": "NeoLearnFM",
+ "namespace": "NeoBuzz.LearnFm",
+ "engine": "(learn)",
+ "machine": "NeoLearnFMMachine",
+ "editor": "NeoLearnFMEditor",
+ "map": "FmMap",
+ "kind": "instrument",
+ "features": [
+  "synthesizer"
+ ],
+ "au": "NLFm",
+ "description": "Teaching FM synth",
+ "process": "learn",
+ "tempo": true,
+ "idle": false,
+ "tailSeconds": 10,
+ "test": {
+  "changes": [
+   [
+    "FmIndex",
+    "raw:700"
+   ]
+  ],
+  "settle": 0.0,
+  "tolerance": 0.003
+ },
+ "extra": [
+  "NeoWave/Engine/Tables.cs",
+  "NeoWave/Engine/WavReader.cs",
+  "NeoSampler/Engine/Interpolation.cs",
+  "NeoSampler/Engine/SampleData.cs",
+  "NeoClipper/Engine/*.cs",
+  "NeoLearn/Engine/*.cs",
+  "NeoBuzz.Analysis/Loudness.cs",
+  "NeoBuzz.Analysis/GainMatch.cs"
+ ],
+ "extraEditor": [
+  "NeoLearn/LearnEditor.cs"
+ ],
+ "gear": "Neo Learn FM",
+ "tables": true
+}

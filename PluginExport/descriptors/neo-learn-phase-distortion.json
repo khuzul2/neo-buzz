@@ -1,0 +1,45 @@
+{
+ "id": "org.neobuzz.neo-learn-phase-distortion",
+ "name": "Neo Learn Phase Distortion",
+ "folder": "NeoLearnPhaseDistortion",
+ "namespace": "NeoBuzz.LearnPd",
+ "engine": "(learn)",
+ "machine": "NeoLearnPhaseDistortionMachine",
+ "editor": "NeoLearnPhaseDistortionEditor",
+ "map": "PhaseDistortionMap",
+ "kind": "instrument",
+ "features": [
+  "synthesizer"
+ ],
+ "au": "NLPd",
+ "description": "Phase-distortion synth",
+ "process": "learn",
+ "tempo": true,
+ "idle": false,
+ "tailSeconds": 10,
+ "test": {
+  "changes": [
+   [
+    "PhaseBend",
+    "raw:700"
+   ]
+  ],
+  "settle": 0.0,
+  "tolerance": 0.003
+ },
+ "extra": [
+  "NeoWave/Engine/Tables.cs",
+  "NeoWave/Engine/WavReader.cs",
+  "NeoSampler/Engine/Interpolation.cs",
+  "NeoSampler/Engine/SampleData.cs",
+  "NeoClipper/Engine/*.cs",
+  "NeoLearn/Engine/*.cs",
+  "NeoBuzz.Analysis/Loudness.cs",
+  "NeoBuzz.Analysis/GainMatch.cs"
+ ],
+ "extraEditor": [
+  "NeoLearn/LearnEditor.cs"
+ ],
+ "gear": "Neo Learn Phase Distortion",
+ "tables": true
+}

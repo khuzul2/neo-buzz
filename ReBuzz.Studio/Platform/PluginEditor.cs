@@ -311,11 +311,12 @@ namespace ReBuzz.Studio.Platform
         public IPluginEditorWindow ShowEmbedded(IMachine machine, IBuzzMachineNativeEditor editor, string title, WindowPlacement? at, out string error)
         {
             var host = new PluginEditorHost(editor, Api, title);
-            var window = StudioMachineUiHost.MakeNativeWindow(machine, title, host, resizable: true);
+            // Fixed until the plug-in says it can be resized (its own flag, below).
+            var window = StudioMachineUiHost.MakeNativeWindow(machine, title, host, resizable: false);
             var result = new EmbeddedEditorWindow(window, host);
             host.SessionChanged += () =>
             {
-                if (host.Session != null) window.CanResize = host.Session.CanResize;
+                if (host.Session != null) window.CanMaximize = window.CanResize = host.Session.CanResize;
             };
             host.ContentSizeChanged += () => window.SizeToContent = SizeToContent.WidthAndHeight;
             host.CloseRequested += () => window.Close();

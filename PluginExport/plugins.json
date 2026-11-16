@@ -1,7 +1,7 @@
 [
  {
   "id": "org.neobuzz.dye-essence",
-  "name": "Neo Dye Essence",
+  "name": "Dye Essence",
   "gear": "Dye Essence",
   "kind": "instrument",
   "au": "NDye",
@@ -15,12 +15,75 @@
     }
    ],
    "settle": 0.0,
-   "tolerance": 0.003,
-   "informational": [
-    "changed"
-   ]
+   "tolerance": 0.003
   },
   "paramCount": 484,
+  "params": [
+   "Voice mode|0|2|0|enum",
+   "Polyphony|1|32|8|int",
+   "Glide mode|0|2|0|enum",
+   "Glide|0|1000|200|pow",
+   "Bend range|0|24|2|int",
+   "Quality|0|1|0|enum",
+   "Vel \u2192 amp|0|1000|700|pct",
+   "Volume|0|1000|739|db",
+   "A engine|0|7|1|enum",
+   "A table|0|10|0|enum",
+   "A position|0|1000|667|pct",
+   "A octave|0|8|4|int",
+   "A semi|0|24|12|int",
+   "A fine|0|1000|500|lin",
+   "A level|0|1000|1000|pct",
+   "A pan|0|1000|500|bip",
+   "A unison|1|16|1|int",
+   "A detune|0|1000|447|pow",
+   "A spread|0|1000|700|pct",
+   "A phase|0|1000|0|lin",
+   "A random|0|1000|1000|pct",
+   "A warp 1|0|11|0|enum",
+   "A warp 1 amt|0|1000|0|pct",
+   "A warp 2|0|11|0|enum",
+   "A warp 2 amt|0|1000|0|pct",
+   "A modulator|0|4|1|enum",
+   "A \u2192 filter 2|0|1000|0|pct",
+   "B engine|0|7|0|enum",
+   "B table|0|10|2|enum",
+   "B position|0|1000|0|pct",
+   "B octave|0|8|4|int",
+   "B semi|0|24|12|int",
+   "B fine|0|1000|500|lin",
+   "B level|0|1000|1000|pct",
+   "B pan|0|1000|500|bip",
+   "B unison|1|16|1|int",
+   "B detune|0|1000|447|pow",
+   "B spread|0|1000|700|pct",
+   "B phase|0|1000|0|lin",
+   "B random|0|1000|1000|pct",
+   "B warp 1|0|11|0|enum",
+   "B warp 1 amt|0|1000|0|pct",
+   "B warp 2|0|11|0|enum",
+   "B warp 2 amt|0|1000|0|pct",
+   "B modulator|0|4|0|enum",
+   "B \u2192 filter 2|0|1000|0|pct",
+   "C engine|0|7|0|enum",
+   "C table|0|10|3|enum",
+   "C position|0|1000|0|pct",
+   "C octave|0|8|4|int",
+   "C semi|0|24|12|int",
+   "C fine|0|1000|500|lin",
+   "C level|0|1000|1000|pct",
+   "C pan|0|1000|500|bip",
+   "C unison|1|16|1|int",
+   "C detune|0|1000|447|pow",
+   "C spread|0|1000|700|pct",
+   "C phase|0|1000|0|lin",
+   "C random|0|1000|1000|pct",
+   "C warp 1|0|11|0|enum",
+   "C warp 1 amt|0|1000|0|pct",
+   "C warp 2|0|11|0|enum",
+   "C warp 2 amt|0|1000|0|pct",
+   "C modulator|0|4|0|enum"
+  ],
   "latencyDependsOnParams": false
  },
  {
@@ -41,6 +104,24 @@
    "settle": 0.5
   },
   "paramCount": 16,
+  "params": [
+   "Mode|0|3|0|enum",
+   "Threshold|0|1000|700|lin",
+   "Ratio|0|1000|463|ratio",
+   "Knee|0|1000|250|lin",
+   "Attack|0|1000|639|time",
+   "Release|0|1000|532|time",
+   "Auto release|0|1|0|switch",
+   "Sidechain|0|1|0|enum",
+   "SC low cut|0|1000|0|freq",
+   "Lookahead|0|1000|0|lin",
+   "Stereo link|0|1000|1000|pct",
+   "Makeup|0|1000|0|lin",
+   "Auto makeup|0|1|0|switch",
+   "Character|0|1000|0|pct",
+   "Mix|0|1000|1000|pct",
+   "Output|0|1000|500|db"
+  ],
   "latencyDependsOnParams": false
  },
  {
@@ -66,6 +147,112 @@
    "settle": 0.5
   },
   "paramCount": 17,
+  "params": [
+   "Mode|0|2|0|enum",
+   "Sync|0|8|4|enum",
+   "Feel|0|2|1|enum",
+   "Time|0|10000|6959|time",
+   "Offset|0|1500|500|lin",
+   "Feedback|0|1980|1340|lin",
+   "Low cut|0|1000|291|freq",
+   "High cut|0|1000|801|freq",
+   "Drive|0|240|0|lin",
+   "Mod depth|0|1000|0|lin",
+   "Mod rate|0|1000|500|freq",
+   "Duck|0|400|0|lin",
+   "Duck threshold|0|600|300|lin",
+   "Duck release|0|1000|548|time",
+   "Width|0|200|100|lin",
+   "Mix|0|1000|300|pct",
+   "Output|0|240|120|db"
+  ],
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-drums",
+  "name": "Neo Drums",
+  "gear": "Neo Drums",
+  "kind": "instrument",
+  "au": "NDrm",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Volume",
+     "native": "raw:480",
+     "slot": "raw:43689"
+    }
+   ],
+   "settle": 0.0,
+   "tolerance": 0.003
+  },
+  "paramCount": 67,
+  "params": [
+   "Volume|0|720|600|db",
+   "Accent gain|0|120|60|db",
+   "Vel \u2192 level|0|1000|700|pct",
+   "Vel \u2192 tone|0|1000|500|pct",
+   "Kick tune|0|1000|365|freq",
+   "Kick sweep|0|480|300|lin",
+   "Kick sweep time|0|1000|548|time",
+   "Kick decay|0|1000|525|time",
+   "Kick click|0|1000|500|pct",
+   "Kick punch|0|1000|500|pct",
+   "Kick drive|0|240|30|db",
+   "Kick level|0|660|600|db",
+   "Kick pan|0|200|100|lin",
+   "Snare tune|0|1000|424|freq",
+   "Snare tone|0|1000|702|freq",
+   "Snare snap|0|1000|500|pct",
+   "Snare decay|0|1000|486|time",
+   "Snare level|0|660|600|db",
+   "Snare pan|0|200|100|lin",
+   "Clap tune|0|1000|301|freq",
+   "Clap spread|0|1000|630|time",
+   "Clap decay|0|1000|674|time",
+   "Clap level|0|660|600|db",
+   "Clap pan|0|200|100|lin",
+   "Rim tune|0|1000|398|freq",
+   "Rim decay|0|1000|635|time",
+   "Rim level|0|660|600|db",
+   "Rim pan|0|200|100|lin",
+   "Closed hat tune|0|240|120|lin",
+   "Closed hat tone|0|1000|636|freq",
+   "Closed hat decay|0|1000|452|time",
+   "Closed hat level|0|660|600|db",
+   "Closed hat pan|0|200|100|lin",
+   "Open hat tune|0|240|120|lin",
+   "Open hat tone|0|1000|636|freq",
+   "Open hat decay|0|1000|567|time",
+   "Open hat level|0|660|600|db",
+   "Open hat pan|0|200|100|lin",
+   "Low tom tune|0|1000|147|freq",
+   "Low tom decay|0|1000|706|time",
+   "Low tom tone|0|1000|300|pct",
+   "Low tom level|0|660|600|db",
+   "Low tom pan|0|200|100|lin",
+   "Mid tom tune|0|1000|238|freq",
+   "Mid tom decay|0|1000|626|time",
+   "Mid tom tone|0|1000|300|pct",
+   "Mid tom level|0|660|600|db",
+   "Mid tom pan|0|200|100|lin",
+   "High tom tune|0|1000|294|freq",
+   "High tom decay|0|1000|626|time",
+   "High tom tone|0|1000|300|pct",
+   "High tom level|0|660|600|db",
+   "High tom pan|0|200|100|lin",
+   "Cowbell tune|0|1000|371|freq",
+   "Cowbell decay|0|1000|651|time",
+   "Cowbell level|0|660|600|db",
+   "Cowbell pan|0|200|100|lin",
+   "Crash tune|0|240|120|lin",
+   "Crash tone|0|1000|452|freq",
+   "Crash decay|0|1000|546|time",
+   "Crash level|0|660|600|db",
+   "Crash pan|0|200|100|lin",
+   "Ride tune|0|240|120|lin",
+   "Ride tone|0|1000|615|freq"
+  ],
   "latencyDependsOnParams": false
  },
  {
@@ -91,6 +278,72 @@
    "settle": 0.5
   },
   "paramCount": 195,
+  "params": [
+   "B1 on|0|1|0|switch",
+   "B1 type|0|5|3|enum",
+   "B1 freq|0|10000|587|freq",
+   "B1 gain|0|480|240|db",
+   "B1 Q|0|2000|686|exp",
+   "B1 slope|0|2|1|enum",
+   "B2 on|0|1|1|switch",
+   "B2 type|0|5|1|enum",
+   "B2 freq|0|10000|2330|freq",
+   "B2 gain|0|480|240|db",
+   "B2 Q|0|2000|686|exp",
+   "B2 slope|0|2|0|enum",
+   "B3 on|0|1|1|switch",
+   "B3 type|0|5|0|enum",
+   "B3 freq|0|10000|3656|freq",
+   "B3 gain|0|480|240|db",
+   "B3 Q|0|2000|807|exp",
+   "B3 slope|0|2|0|enum",
+   "B4 on|0|1|1|switch",
+   "B4 type|0|5|0|enum",
+   "B4 freq|0|10000|4924|freq",
+   "B4 gain|0|480|240|db",
+   "B4 Q|0|2000|807|exp",
+   "B4 slope|0|2|0|enum",
+   "B5 on|0|1|1|switch",
+   "B5 type|0|5|0|enum",
+   "B5 freq|0|10000|6250|freq",
+   "B5 gain|0|480|240|db",
+   "B5 Q|0|2000|807|exp",
+   "B5 slope|0|2|0|enum",
+   "B6 on|0|1|1|switch",
+   "B6 type|0|5|0|enum",
+   "B6 freq|0|10000|7670|freq",
+   "B6 gain|0|480|240|db",
+   "B6 Q|0|2000|807|exp",
+   "B6 slope|0|2|0|enum",
+   "B7 on|0|1|1|switch",
+   "B7 type|0|5|2|enum",
+   "B7 freq|0|10000|8674|freq",
+   "B7 gain|0|480|240|db",
+   "B7 Q|0|2000|686|exp",
+   "B7 slope|0|2|0|enum",
+   "B8 on|0|1|0|switch",
+   "B8 type|0|5|4|enum",
+   "B8 freq|0|10000|9847|freq",
+   "B8 gain|0|480|240|db",
+   "B8 Q|0|2000|686|exp",
+   "B8 slope|0|2|0|enum",
+   "Output|0|480|240|db",
+   "Mode|0|1|0|enum",
+   "G 20 Hz|0|360|180|db",
+   "G 25 Hz|0|360|180|db",
+   "G 31.5 Hz|0|360|180|db",
+   "G 40 Hz|0|360|180|db",
+   "G 50 Hz|0|360|180|db",
+   "G 63 Hz|0|360|180|db",
+   "G 80 Hz|0|360|180|db",
+   "G 100 Hz|0|360|180|db",
+   "G 125 Hz|0|360|180|db",
+   "G 160 Hz|0|360|180|db",
+   "G 200 Hz|0|360|180|db",
+   "G 250 Hz|0|360|180|db",
+   "G 315 Hz|0|360|180|db",
+   "G 400 Hz|0|360|180|db"
+  ],
   "latencyDependsOnParams": true
  },
  {
@@ -121,6 +374,568 @@
    "settle": 0.5
   },
   "paramCount": 18,
+  "params": [
+   "Type|0|6|0|enum",
+   "Slope|0|1|0|enum",
+   "Cutoff|0|10000|6667|freq",
+   "Resonance|0|1000|66|exp",
+   "Drive|0|240|0|lin",
+   "Env amount|0|1200|600|lin",
+   "Env sensitivity|0|480|120|lin",
+   "Env attack|0|1000|459|time",
+   "Env release|0|1000|588|time",
+   "LFO rate|0|1000|489|freq",
+   "LFO sync|0|18|0|enum",
+   "LFO shape|0|6|0|enum",
+   "LFO depth|0|400|0|lin",
+   "LFO spread|0|180|0|lin",
+   "LFO retrig|0|2|1|enum",
+   "LFO phase|0|360|0|lin",
+   "Mix|0|1000|1000|pct",
+   "Output|0|480|240|db"
+  ],
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-fm6",
+  "name": "Neo FM6",
+  "gear": "Neo FM6",
+  "kind": "instrument",
+  "au": "NFM6",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Volume",
+     "native": "raw:600",
+     "slot": "raw:39320"
+    }
+   ],
+   "settle": 0.0,
+   "tolerance": 0.003
+  },
+  "paramCount": 172,
+  "params": [
+   "Algorithm|0|31|0|int",
+   "Feedback|0|7|0|int",
+   "Osc key sync|0|1|1|switch",
+   "Transpose|0|48|24|int",
+   "PEG rate 1|0|99|99|int",
+   "PEG rate 2|0|99|99|int",
+   "PEG rate 3|0|99|99|int",
+   "PEG rate 4|0|99|99|int",
+   "PEG level 1|0|99|50|int",
+   "PEG level 2|0|99|50|int",
+   "PEG level 3|0|99|50|int",
+   "PEG level 4|0|99|50|int",
+   "LFO wave|0|5|0|enum",
+   "LFO speed|0|99|35|int",
+   "LFO delay|0|99|0|int",
+   "LFO pitch|0|99|0|int",
+   "LFO amp|0|99|0|int",
+   "LFO key sync|0|1|1|switch",
+   "Pitch sens|0|7|3|int",
+   "Voice mode|0|2|0|enum",
+   "Polyphony|1|16|8|int",
+   "Unison|1|4|1|int",
+   "Uni detune|0|1000|150|pct",
+   "Uni spread|0|1000|600|pct",
+   "Glide mode|0|2|0|enum",
+   "Glide|0|1000|200|pow",
+   "Bend range|0|12|2|int",
+   "Wheel pitch|0|99|50|int",
+   "Wheel amp|0|99|0|int",
+   "AT pitch|0|99|0|int",
+   "AT amp|0|99|0|int",
+   "Tone|0|1000|1000|freq",
+   "Engine|0|1|0|enum",
+   "Volume|0|1000|739|db",
+   "Op1 on|0|1|1|switch",
+   "Op1 level|0|99|99|int",
+   "Op1 mode|0|1|0|enum",
+   "Op1 coarse|0|31|1|int",
+   "Op1 fine|0|99|0|int",
+   "Op1 detune|0|14|7|int",
+   "Op1 wave|0|3|0|enum",
+   "Op1 rate 1|0|99|99|int",
+   "Op1 rate 2|0|99|99|int",
+   "Op1 rate 3|0|99|99|int",
+   "Op1 rate 4|0|99|99|int",
+   "Op1 level 1|0|99|99|int",
+   "Op1 level 2|0|99|99|int",
+   "Op1 level 3|0|99|99|int",
+   "Op1 level 4|0|99|0|int",
+   "Op1 break|0|99|39|int",
+   "Op1 L depth|0|99|0|int",
+   "Op1 R depth|0|99|0|int",
+   "Op1 L curve|0|3|0|enum",
+   "Op1 R curve|0|3|0|enum",
+   "Op1 rate sc|0|7|0|int",
+   "Op1 amp sens|0|3|0|int",
+   "Op1 vel sens|0|7|0|int",
+   "Op2 on|0|1|1|switch",
+   "Op2 level|0|99|0|int",
+   "Op2 mode|0|1|0|enum",
+   "Op2 coarse|0|31|1|int",
+   "Op2 fine|0|99|0|int",
+   "Op2 detune|0|14|7|int",
+   "Op2 wave|0|3|0|enum"
+  ],
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-learn-additive",
+  "name": "Neo Learn Additive",
+  "gear": "Neo Learn Additive",
+  "kind": "instrument",
+  "au": "NLAd",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Brightness Tilt",
+     "native": "raw:300",
+     "slot": "raw:19660"
+    }
+   ],
+   "settle": 0.0,
+   "tolerance": 0.003
+  },
+  "paramCount": 12,
+  "params": [
+   "Brightness Tilt|0|1000|800|lin",
+   "Odd / Even|0|1000|500|bip",
+   "Partials|0|63|31|int",
+   "Inharmonicity|0|1000|0|pct",
+   "Spectral Comb|0|1000|0|pct",
+   "Shimmer|0|1000|0|pct",
+   "Attack|0|1000|250|time",
+   "Decay|0|1000|594|time",
+   "Sustain|0|1000|700|pct",
+   "Release|0|1000|515|time",
+   "Unison / Spread|0|1000|0|pct",
+   "Output|0|1000|606|db"
+  ],
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-learn-fm",
+  "name": "Neo Learn FM",
+  "gear": "Neo Learn FM",
+  "kind": "instrument",
+  "au": "NLFm",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "FM Depth",
+     "native": "raw:700",
+     "slot": "raw:45874"
+    }
+   ],
+   "settle": 0.0,
+   "tolerance": 0.003
+  },
+  "paramCount": 12,
+  "params": [
+   "Mod Ratio|0|1000|500|exp",
+   "FM Depth|0|1000|350|pct",
+   "Mod Decay|0|1000|583|time",
+   "Feedback|0|1000|0|pct",
+   "Metallic Edge|0|1000|0|pct",
+   "Velocity to FM|0|1000|500|pct",
+   "Attack|0|1000|250|time",
+   "Decay|0|1000|594|time",
+   "Sustain|0|1000|700|pct",
+   "Release|0|1000|515|time",
+   "Unison / Spread|0|1000|0|pct",
+   "Output|0|1000|529|db"
+  ],
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-learn-formant",
+  "name": "Neo Learn Formant",
+  "gear": "Neo Learn Formant",
+  "kind": "instrument",
+  "au": "NLFo",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Vowel (A-E-I-O-U)",
+     "native": "raw:700",
+     "slot": "raw:45874"
+    }
+   ],
+   "settle": 0.0,
+   "tolerance": 0.003
+  },
+  "paramCount": 12,
+  "params": [
+   "Vowel (A-E-I-O-U)|0|1000|0|pct",
+   "Tract Size|0|1000|500|bip",
+   "Formant Q|0|1000|350|pct",
+   "Glottal / Bass|0|1000|400|pct",
+   "Breath Noise|0|1000|100|pct",
+   "Talking Env|0|1000|500|bip",
+   "Attack|0|1000|250|time",
+   "Decay|0|1000|594|time",
+   "Sustain|0|1000|700|pct",
+   "Release|0|1000|515|time",
+   "Unison / Spread|0|1000|0|pct",
+   "Output|0|1000|581|db"
+  ],
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-learn-granular",
+  "name": "Neo Learn Granular",
+  "gear": "Neo Learn Granular",
+  "kind": "instrument",
+  "au": "NLGr",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Scan Position",
+     "native": "raw:700",
+     "slot": "raw:45874"
+    }
+   ],
+   "settle": 0.0,
+   "tolerance": 0.003
+  },
+  "paramCount": 12,
+  "params": [
+   "Scan Position|0|1000|300|pct",
+   "Grain Size|0|1000|690|time",
+   "Density|0|1000|720|exp",
+   "Time Spray|0|1000|200|pct",
+   "Pitch Shimmer|0|1000|0|pct",
+   "Grain Contour|0|1000|700|pct",
+   "Attack|0|1000|551|time",
+   "Decay|0|1000|718|time",
+   "Sustain|0|1000|1000|pct",
+   "Release|0|1000|630|time",
+   "Unison / Spread|0|1000|0|pct",
+   "Output|0|1000|604|db"
+  ],
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-learn-phase-distortion",
+  "name": "Neo Learn Phase Distortion",
+  "gear": "Neo Learn Phase Distortion",
+  "kind": "instrument",
+  "au": "NLPd",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Phase Bend",
+     "native": "raw:700",
+     "slot": "raw:45874"
+    }
+   ],
+   "settle": 0.0,
+   "tolerance": 0.003
+  },
+  "paramCount": 12,
+  "params": [
+   "Phase Bend|0|1000|400|pct",
+   "Resonance|0|1000|250|pct",
+   "PD Wave|0|5|0|enum",
+   "Bend Decay|0|1000|520|time",
+   "Ring Mod|0|1000|0|pct",
+   "Chorus|0|1000|300|pct",
+   "Attack|0|1000|150|time",
+   "Decay|0|1000|520|time",
+   "Sustain|0|1000|700|pct",
+   "Release|0|1000|450|time",
+   "Unison / Spread|0|1000|0|pct",
+   "Output|0|1000|573|db"
+  ],
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-learn-physical",
+  "name": "Neo Learn Physical",
+  "gear": "Neo Learn Physical",
+  "kind": "instrument",
+  "au": "NLPh",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Material",
+     "native": "raw:700",
+     "slot": "raw:45874"
+    }
+   ],
+   "settle": 0.0,
+   "tolerance": 0.003
+  },
+  "paramCount": 12,
+  "params": [
+   "Material|0|1000|200|pct",
+   "Exciter Mode|0|1000|0|pct",
+   "Strike / Pressure|0|1000|500|pct",
+   "Geometry|0|1000|0|pct",
+   "Damping|0|1000|300|pct",
+   "Body Size|0|1000|500|pct",
+   "Attack|0|1000|150|time",
+   "Decay|0|1000|812|time",
+   "Sustain|0|1000|1000|pct",
+   "Release|0|1000|577|time",
+   "Unison / Spread|0|1000|0|pct",
+   "Output|0|1000|644|db"
+  ],
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-learn-sampler",
+  "name": "Neo Learn Sampler",
+  "gear": "Neo Learn Sampler",
+  "kind": "instrument",
+  "au": "NLSa",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Start Offset",
+     "native": "raw:300",
+     "slot": "raw:19660"
+    }
+   ],
+   "settle": 0.0,
+   "tolerance": 0.003
+  },
+  "paramCount": 12,
+  "params": [
+   "Start Offset|0|1000|0|pct",
+   "Tone|0|1000|500|bip",
+   "Source|0|5|0|enum",
+   "Loop|0|1000|0|pct",
+   "Vintage Grit|0|1000|0|pct",
+   "Room Acoustic|0|1000|200|pct",
+   "Attack|0|1000|300|time",
+   "Decay|0|1000|600|time",
+   "Sustain|0|1000|800|pct",
+   "Release|0|1000|500|time",
+   "Unison / Spread|0|1000|0|pct",
+   "Output|0|1000|665|db"
+  ],
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-learn-spectral",
+  "name": "Neo Learn Spectral",
+  "gear": "Neo Learn Spectral",
+  "kind": "instrument",
+  "au": "NLSp",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Time Smear",
+     "native": "raw:600",
+     "slot": "raw:39320"
+    }
+   ],
+   "settle": 0.0,
+   "tolerance": 0.003
+  },
+  "paramCount": 12,
+  "params": [
+   "Stretch|0|1000|500|bip",
+   "Time Smear|0|1000|0|pct",
+   "Freeze|0|1000|0|pct",
+   "Source|0|5|0|enum",
+   "Partial Gate|0|1000|0|pct",
+   "Tone / Noise|0|1000|500|pct",
+   "Attack|0|1000|300|time",
+   "Decay|0|1000|600|time",
+   "Sustain|0|1000|800|pct",
+   "Release|0|1000|500|time",
+   "Unison / Spread|0|1000|0|pct",
+   "Output|0|1000|665|db"
+  ],
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-learn-string",
+  "name": "Neo Learn String",
+  "gear": "Neo Learn String",
+  "kind": "instrument",
+  "au": "NLSg",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Pick Position",
+     "native": "raw:700",
+     "slot": "raw:45874"
+    }
+   ],
+   "settle": 0.0,
+   "tolerance": 0.003
+  },
+  "paramCount": 12,
+  "params": [
+   "Pick Position|0|1000|300|pct",
+   "String Damping|0|1000|350|pct",
+   "Pick Hardness|0|1000|500|pct",
+   "Decay Time|0|1000|683|time",
+   "Stiffness|0|1000|80|pct",
+   "Sympathetic|0|1000|150|pct",
+   "Attack|0|1000|150|time",
+   "Decay|0|1000|812|time",
+   "Sustain|0|1000|1000|pct",
+   "Release|0|1000|577|time",
+   "Unison / Spread|0|1000|0|pct",
+   "Output|0|1000|754|db"
+  ],
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-learn-subtractive",
+  "name": "Neo Learn Subtractive",
+  "gear": "Neo Learn Subtractive",
+  "kind": "instrument",
+  "au": "NLSb",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Cutoff",
+     "native": "raw:400",
+     "slot": "raw:26214"
+    }
+   ],
+   "settle": 0.0,
+   "tolerance": 0.003
+  },
+  "paramCount": 12,
+  "params": [
+   "Cutoff|0|1000|666|freq",
+   "Resonance|0|1000|150|pct",
+   "Wave Shape|0|1000|667|pct",
+   "Sub Osc|0|1000|0|pct",
+   "Env to Filter|0|1000|650|bip",
+   "Drive|0|1000|100|pct",
+   "Attack|0|1000|250|time",
+   "Decay|0|1000|594|time",
+   "Sustain|0|1000|700|pct",
+   "Release|0|1000|515|time",
+   "Unison / Spread|0|1000|0|pct",
+   "Output|0|1000|635|db"
+  ],
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-learn-vector",
+  "name": "Neo Learn Vector",
+  "gear": "Neo Learn Vector",
+  "kind": "instrument",
+  "au": "NLVc",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Vector X (W-E)",
+     "native": "raw:800",
+     "slot": "raw:52427"
+    }
+   ],
+   "settle": 0.0,
+   "tolerance": 0.003
+  },
+  "paramCount": 12,
+  "params": [
+   "Vector X (W-E)|0|1000|500|bip",
+   "Vector Y (S-N)|0|1000|500|bip",
+   "Corner Palette|0|3|0|enum",
+   "Orbit Rate|0|1000|400|freq",
+   "Orbit Depth|0|1000|250|pct",
+   "Orbit Path|0|3|0|enum",
+   "Attack|0|1000|551|time",
+   "Decay|0|1000|600|time",
+   "Sustain|0|1000|800|pct",
+   "Release|0|1000|600|time",
+   "Unison / Spread|0|1000|0|pct",
+   "Output|0|1000|621|db"
+  ],
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-learn-wavefolder",
+  "name": "Neo Learn Wavefolder",
+  "gear": "Neo Learn Wavefolder",
+  "kind": "instrument",
+  "au": "NLWf",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Wavefold",
+     "native": "raw:800",
+     "slot": "raw:52427"
+    }
+   ],
+   "settle": 0.0,
+   "tolerance": 0.003
+  },
+  "paramCount": 12,
+  "params": [
+   "Wavefold|0|1000|450|pct",
+   "Symmetry|0|1000|500|bip",
+   "Fold Stages|0|5|2|int",
+   "Timbre FM|0|1000|0|pct",
+   "Low-Pass Gate|0|1000|600|pct",
+   "Gate Strike|0|1000|300|pct",
+   "Attack|0|1000|150|time",
+   "Decay|0|1000|520|time",
+   "Sustain|0|1000|600|pct",
+   "Release|0|1000|450|time",
+   "Unison / Spread|0|1000|0|pct",
+   "Output|0|1000|590|db"
+  ],
+  "latencyDependsOnParams": false
+ },
+ {
+  "id": "org.neobuzz.neo-learn-wavetable",
+  "name": "Neo Learn Wavetable",
+  "gear": "Neo Learn Wavetable",
+  "kind": "instrument",
+  "au": "NLWt",
+  "sidechain": false,
+  "test": {
+   "changes": [
+    {
+     "param": "Frame Pos",
+     "native": "raw:800",
+     "slot": "raw:52427"
+    }
+   ],
+   "settle": 0.0,
+   "tolerance": 0.003
+  },
+  "paramCount": 12,
+  "params": [
+   "Frame Pos|0|1000|500|pct",
+   "Phase Warp|0|1000|500|bip",
+   "Wavetable|0|10|0|enum",
+   "Motion Rate|0|1000|500|freq",
+   "Motion Depth|0|1000|500|bip",
+   "Sub Anchor|0|1000|0|pct",
+   "Attack|0|1000|250|time",
+   "Decay|0|1000|594|time",
+   "Sustain|0|1000|700|pct",
+   "Release|0|1000|515|time",
+   "Unison / Spread|0|1000|0|pct",
+   "Output|0|1000|775|db"
+  ],
   "latencyDependsOnParams": false
  },
  {
@@ -139,9 +954,76 @@
     }
    ],
    "settle": 0.0,
-   "tolerance": 0.003
+   "tolerance": 0.003,
+   "automationTolerance": 0.005
   },
   "paramCount": 91,
+  "params": [
+   "Voice mode|0|2|0|enum",
+   "Polyphony|1|16|8|int",
+   "Unison|1|7|1|int",
+   "Uni detune|0|1000|200|pct",
+   "Uni spread|0|1000|600|pct",
+   "Glide mode|0|2|0|enum",
+   "Glide|0|1000|200|pow",
+   "Bend range|0|24|2|int",
+   "Drift|0|1000|150|pct",
+   "Volume|0|1000|739|db",
+   "Vel \u2192 amp|0|1000|700|pct",
+   "O1 shape|0|1000|667|lin",
+   "O1 PW|0|1000|500|lin",
+   "O1 octave|0|6|3|int",
+   "O1 semi|0|24|12|int",
+   "O1 fine|0|1000|500|lin",
+   "O1 level|0|1000|1000|pct",
+   "O2 shape|0|1000|667|lin",
+   "O2 PW|0|1000|500|lin",
+   "O2 octave|0|6|3|int",
+   "O2 semi|0|24|12|int",
+   "O2 fine|0|1000|540|lin",
+   "O2 level|0|1000|0|pct",
+   "O2 sync|0|1|0|switch",
+   "FM 1 \u2192 2|0|1000|0|pow",
+   "O3 shape|0|1000|0|lin",
+   "O3 octave|0|6|2|int",
+   "O3 semi|0|24|12|int",
+   "O3 fine|0|1000|500|lin",
+   "O3 level|0|1000|0|pct",
+   "Ring 1\u00d72|0|1000|0|pct",
+   "Noise|0|1000|0|pct",
+   "Noise colour|0|1000|0|pct",
+   "F1 type|0|5|0|enum",
+   "F1 cutoff|0|1000|700|freq",
+   "F1 reso|0|1000|150|pct",
+   "F1 drive|0|1000|0|lin",
+   "F1 env|0|1000|650|bip",
+   "F1 key track|0|1000|500|pct",
+   "F1 velocity|0|1000|300|pct",
+   "F2 type|0|4|0|enum",
+   "F2 cutoff|0|1000|800|freq",
+   "F2 reso|0|1000|100|pct",
+   "F2 env|0|1000|500|bip",
+   "Routing|0|1|0|enum",
+   "Amp attack|0|1000|100|time",
+   "Amp decay|0|1000|500|time",
+   "Amp sustain|0|1000|800|pct",
+   "Amp release|0|1000|450|time",
+   "Flt attack|0|1000|100|time",
+   "Flt decay|0|1000|520|time",
+   "Flt sustain|0|1000|300|pct",
+   "Flt release|0|1000|450|time",
+   "Mod attack|0|1000|300|time",
+   "Mod decay|0|1000|600|time",
+   "Mod sustain|0|1000|0|pct",
+   "Mod release|0|1000|500|time",
+   "LFO1 shape|0|6|0|enum",
+   "LFO1 rate|0|1000|500|freq",
+   "LFO1 sync|0|11|0|enum",
+   "LFO1 retrig|0|1|1|switch",
+   "LFO1 fade|0|1000|0|pow",
+   "LFO2 shape|0|6|1|enum",
+   "LFO2 rate|0|1000|300|freq"
+  ],
   "latencyDependsOnParams": false
  },
  {
@@ -161,10 +1043,31 @@
    ],
    "settle": 0.5,
    "informational": [
-    "changed"
+    "changed",
+    "automation-beat",
+    "automation"
    ]
   },
   "paramCount": 17,
+  "params": [
+   "Mode|0|3|0|enum",
+   "Pre-delay|0|1000|80|lin",
+   "Size|0|1000|500|pct",
+   "Decay|0|1000|504|time",
+   "Low decay|0|1000|566|exp",
+   "High damping|0|1000|598|freq",
+   "Diffusion|0|1000|700|pct",
+   "Mod depth|0|1000|300|pct",
+   "Mod rate|0|1000|540|freq",
+   "Freeze|0|1|0|switch",
+   "Shimmer|0|1000|0|pct",
+   "Early|0|1000|739|db",
+   "Late|0|1000|870|db",
+   "Width|0|1000|667|lin",
+   "Low cut|0|1000|389|freq",
+   "High cut|0|1000|804|freq",
+   "Mix|0|1000|300|pct"
+  ],
   "latencyDependsOnParams": false
  }
 ]

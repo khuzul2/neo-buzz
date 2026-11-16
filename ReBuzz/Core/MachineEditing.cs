@@ -179,5 +179,54 @@ namespace ReBuzz.Core
             core.SongCore.RenameMachineGroupUndoable(mg, core.SongCore.GetNewGroupName(name));
             return true;
         }
+
+        // ---- hot-swap (docs/specs/browser.md, BR1)
+
+        /// <summary>Makes sure the machine has patterns of these names and lengths (an undo step of its own, inside a group: the machine is made again by the replace's redo, then this runs).</summary>
+        sealed class EnsurePatterns : IAction
+        {
+            readonly ReBuzzCore core;
+            readonly string machine;
+            readonly List<(string Name, int Length)> patterns;
+
+            public EnsurePatterns(ReBuzzCore core, string machine, List<(string Name, int Length)> patterns)
+            {
+                this.core = core;
+                this.machine = machine;
+                this.patterns = patterns;
+            }
+
+            public void Do()
+            {
+                var m = core.SongCore.Machines.FirstOrDefault(x => x.Name == machine);
+                if (m == null) return;
+                foreach (var (name, length) in patterns)
+                    if (!m.Patterns.Any(p => p.Name == name)) m.CreatePattern(name, length);
+            }
+
+            public void Undo() { /* the replace's undo removes the machine, and its patterns with it */ }
+        }
+
+        /// <summary>
+        /// Other gear in a machine's place, as one undo step: the song's Replace (the connections with their gains, the position; the same
+        /// machine with another plug-in swaps the plug-in in place), then the old name back and the old patterns' names and lengths made on the new
+        /// machine (empty: a pattern's notes and values belong to the old machine's columns). The arrangement's tracks are made again, not their clips.
+        /// Returns the machine now in its place.
+        /// </summary>
+        public static IMachine HotSwap(ReBuzzCore core, IMachine machine, string dll, string instrument)
+        {
+            string name = machine.Name;
+            var patterns = machine.Patterns.Select(p => (p.Name, p.Length)).ToList();
+            bool inPlace = machine.DLL.Name == dll && !string.IsNullOrEmpty(instrument);
+            using (Group(core))
+            {
+                core.SongCore.ReplaceMachine(machine, dll, string.IsNullOrEmpty(instrument) ? null : instrument, machine.Position.Item1, machine.Position.Item2);
+                if (inPlace) return core.SongCore.Machines.FirstOrDefault(m => m.Name == name);
+                var made = core.SongCore.Machines.Last() as MachineCore;
+                if (made != null && made.Name != name) core.SongCore.RenameMachineUndoable(made, name);
+                core.SongCore.Do(new EnsurePatterns(core, name, patterns));
+            }
+            return core.SongCore.Machines.FirstOrDefault(m => m.Name == name);
+        }
     }
 }

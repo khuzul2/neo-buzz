@@ -221,7 +221,7 @@ namespace ReBuzz.AgentTests
         static readonly string[] AppToolNames =
         {
             "settings_get", "settings_set", "settings_reset", "settings_history", "midi_bindings_list", "midi_bind", "midi_unbind", "midi_learn", "audio_status", "audio_devices", "audio_set",
-            "view_show", "machine_open_editor", "select", "panel_set", "window_layout", "export_audio", "app_status", "song_recent",
+            "view_show", "machine_open_editor", "select", "panel_set", "window_layout", "export_audio", "app_status", "song_recent", "browser_search", "browser_places",
         };
 
         // ---- schemas -----------------------------------------------------------------------------

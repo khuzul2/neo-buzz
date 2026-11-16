@@ -126,6 +126,32 @@ namespace ReBuzz.Agent.App
         void Window(double? width, double? height, bool? maximised);
     }
 
+    /// <summary>One search result of the browser (BR1, docs/specs/browser.md).</summary>
+    public sealed record BrowserHit(string Kind, string Name, string Id, string? Group, string? Detail, string? Path, string? Preset);
+
+    /// <summary>A folder the user added to the browser's Places and how many files are indexed under it.</summary>
+    public sealed record BrowserPlace(string Path, int Files, bool Exists);
+
+    /// <summary>The studio's browser (Avalonia studio only): one search over machines, plug-ins, presets, patterns and the indexed sample folders; the places.</summary>
+    public interface IBrowserControl
+    {
+        /// <summary>Kinds: machine, plugin, preset, audio, midi, pattern (null: all).</summary>
+        IReadOnlyList<BrowserHit> Search(string query, string? kind, int limit);
+
+        IReadOnlyList<BrowserPlace> Places();
+
+        /// <summary>False when it isn't a folder or already is a place.</summary>
+        bool AddPlace(string path);
+
+        bool RemovePlace(string path);
+
+        /// <summary>"Indexing 120 of 3,400", or "idle"; and how many files are indexed.</summary>
+        (string Status, int Indexed) Index();
+
+        /// <summary>Waits for the scan that is running (at most this long); true when it finished.</summary>
+        bool WaitForIndex(int milliseconds);
+    }
+
     /// <summary>What the tools get from the app.</summary>
     public interface IAppServices
     {
@@ -149,5 +175,8 @@ namespace ReBuzz.Agent.App
 
         /// <summary>The audio device; null where there is none to control.</summary>
         IAudioControl? Audio { get; }
+
+        /// <summary>The studio's browser; null in headless and live mode.</summary>
+        IBrowserControl? Browser => null;
     }
 }

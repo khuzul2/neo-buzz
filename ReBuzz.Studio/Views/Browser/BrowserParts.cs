@@ -22,7 +22,7 @@ namespace ReBuzz.Studio.Views.Browser
 
         public FilterBar()
         {
-            category.ItemsSource = new[] { All }.Concat(MachineBrowserModel.Categories).Append(MachineBrowserModel.Other).ToList();
+            category.ItemsSource = new[] { All }.Concat(MachineBrowserModel.Categories).Append(MachineBrowserModel.PlugIns).Append(MachineBrowserModel.Other).ToList();
             category.SelectedIndex = 0;
             AutomationProperties.SetName(category, "Category");
             AutomationProperties.SetName(favourites, "Favourites only");
@@ -87,6 +87,71 @@ namespace ReBuzz.Studio.Views.Browser
             };
             ToolTip.SetTip(item, e.UseFor.Length > 0 ? e.UseFor : e.Name);
             AutomationProperties.SetName(item, e.Name);
+            BrowserDragSource.Attach(item, () => MachineBrowserModel.MachineItem(e).Drag);
+            return item;
+        }
+
+        /// <summary>The seven tag colours.</summary>
+        public static IBrush ColourBrush(int colour) => ReBuzz.Studio.Views.Session.SessionPalette.Tags[Math.Clamp(colour, 1, 7) - 1];
+
+        /// <summary>A list item for any other result (preset, pattern, sample, MIDI file, the song's wave): name, what it is, a star, a colour dot, a menu, and it can be dragged.</summary>
+        public static ListBoxItem ItemRow(BrowserItem it, MachineBrowserModel model, bool grouped = false)
+        {
+            var stack = new StackPanel { Spacing = 1 };
+            stack.Children.Add(new TextBlock { Text = it.Name, FontSize = 12, Foreground = StudioTokens.TextPrimaryBrush, TextTrimming = TextTrimming.CharacterEllipsis });
+            if (it.Detail.Length > 0) stack.Children.Add(Small(it.Detail));
+            bool fav = model.IsFavourite(it);
+            int colour = model.ColourOf(it);
+            var star = StudioButtons.KeepFocus(StudioButtons.Icon(new Button
+            {
+                Content = fav ? "★" : "☆",
+                Foreground = colour > 0 ? ColourBrush(colour) : fav ? StudioTokens.AccentBrush : StudioTokens.TextSecondaryBrush,
+                VerticalAlignment = VerticalAlignment.Top,
+            }, (fav ? "Unfavourite " : "Favourite ") + it.Name, fav ? "Remove from favourites" : "Add to favourites"));
+            star.Click += (s, a) => model.ToggleFavourite(it);
+            DockPanel.SetDock(star, Dock.Right);
+            var item = new ListBoxItem
+            {
+                Content = new DockPanel { LastChildFill = true, Children = { star, stack } },
+                Tag = it.Tag,
+                DataContext = it,
+                Padding = new Thickness(grouped ? 20 : 10, 2, 4, 2),
+                MinHeight = 24,
+            };
+            var menu = new ContextMenu();
+            var items = new System.Collections.Generic.List<object> { new MenuItem { Header = fav ? "Remove from favourites" : "Add to favourites" } };
+            ((MenuItem)items[0]).Click += (s, a) => model.ToggleFavourite(it);
+            for (int c = 1; c <= 7; c++)
+            {
+                int tag = c;
+                var m = new MenuItem { Header = "Tag " + ReBuzz.Agent.Browser.BrowserCollections.ColourNames[c - 1].ToLowerInvariant(), Icon = new Border { Width = 10, Height = 10, CornerRadius = new CornerRadius(5), Background = ColourBrush(c) } };
+                m.Click += (s, a) => model.SetColour(it, tag);
+                items.Add(m);
+            }
+            var none = new MenuItem { Header = "Remove the tag" };
+            none.Click += (s, a) => model.SetColour(it, 0);
+            items.Add(none);
+            menu.ItemsSource = items;
+            item.ContextMenu = menu;
+            ToolTip.SetTip(item, it.Path ?? it.Name);
+            AutomationProperties.SetName(item, it.Name);
+            BrowserDragSource.Attach(item, () => it.Drag);
+            return item;
+        }
+
+        /// <summary>A group header of the tree: a click folds it.</summary>
+        public static ListBoxItem Group(string title, bool folded, Action toggle)
+        {
+            var item = new ListBoxItem
+            {
+                Content = new TextBlock { Text = (folded ? "▸ " : "▾ ") + title, FontSize = 11, FontWeight = FontWeight.SemiBold, Foreground = StudioTokens.TextSecondaryBrush, TextTrimming = TextTrimming.CharacterEllipsis },
+                Tag = "#" + title,
+                MinHeight = 22,
+                Padding = new Thickness(8, 6, 8, 2),
+                Focusable = false,
+            };
+            item.Tapped += (s, e) => toggle();
+            AutomationProperties.SetName(item, title);
             return item;
         }
 

@@ -128,6 +128,7 @@ namespace NeoExport
             inst.Eng = inst.Info.Make();
             inst.Values = new ParamValues(inst.Eng.Table);
             inst.Eng.Create(inst.Values);
+            inst.Eng.Prepare();   // tables and samples build in the background from now on: ready when the host plays the first note
             int mb = inst.Eng.MaxBlock;
             inst.L = new float[mb]; inst.R = new float[mb]; inst.KL = new float[mb]; inst.KR = new float[mb];
             inst.Handle = GCHandle.Alloc(inst);
@@ -161,6 +162,8 @@ namespace NeoExport
             NativeMemory.Free(p);
         }
 
+        const int PrepareWaitMs = 150;
+
         [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
         static byte PActivate(ClapPlugin* p, double sr, uint min, uint max)
         {
@@ -172,6 +175,10 @@ namespace NeoExport
             inst.Quiet = 0;
             if (inst.Activations++ > 0) { inst.Eng = inst.Info.Make(); inst.Eng.Create(inst.Values); }
             inst.Eng.SetSampleRate((float)sr);
+            // Dye Essence and the Neo Learn synths are silent until their tables are built (about a second of work, started at creation):
+            // wait for it here, but never long, the host's main thread is waiting.
+            inst.Eng.Prepare();
+            for (int waited = 0; inst.Eng.Preparing && waited < PrepareWaitMs; waited += 5) System.Threading.Thread.Sleep(5);
             inst.Sh->Rate = sr;
             inst.ReportedLatency = inst.Eng.Latency;
             inst.LatencyDirty = 0;
@@ -721,7 +728,8 @@ namespace NeoExport
         static byte GuiGetSize(ClapPlugin* p, uint* w, uint* h)
         {
             var inst = Inst(p);
-            if (inst.Editor == IntPtr.Zero) return 0;
+            // A VST3 host (clap-wrapper) may ask for the size before the editor exists: make it, GuiCreate then finds it.
+            if (inst.Editor == IntPtr.Zero && OpenEditor(inst) == 0) return 0;
             return (byte)edGetSize(inst.Editor, w, h);
         }
 
@@ -753,7 +761,7 @@ namespace NeoExport
         }
 
         [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
-        static byte GuiSetSize(ClapPlugin* p, uint w, uint h) { var inst = Inst(p); return inst.Editor != IntPtr.Zero ? (byte)edSetSize(inst.Editor, w, h) : (byte)0; }
+        static byte GuiSetSize(ClapPlugin* p, uint w, uint h) { var inst = Inst(p); return inst.Editor != IntPtr.Zero && w >= 32 && h >= 32 ? (byte)edSetSize(inst.Editor, w, h) : (byte)0; }   // (a wrapper's 0 x 0 is not a size)
 
         [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
         static byte GuiSetParent(ClapPlugin* p, ClapWindow* w)
