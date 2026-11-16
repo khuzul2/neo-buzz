@@ -61,7 +61,7 @@ if { [ "$WHAT" = gui ] || [ "$WHAT" = both ]; } && [ "$RUNNER_OS" != Linux ]; th
   guicheck() {   # label, list of Neo Plug names, extra studio arguments...
     local label="$1" list="$2"; shift 2
     local log="$OUT/gui-$label.log"; rm -f "$log"
-    NEOPLUG_LIB="$G/$L" NEOPLUG_SCAN="$G/neoplug-scan$X" NEOBUZZ_PLUGIN_PATH="$ASSETS" NEOBUZZ_PLUGIN_STANDARD=0 \
+    NEOPLUG_DEBUG=1 NEOPLUG_LIB="$G/$L" NEOPLUG_SCAN="$G/neoplug-scan$X" NEOBUZZ_PLUGIN_PATH="$ASSETS" NEOBUZZ_PLUGIN_STANDARD=0 \
       NEOBUZZ_PLUGIN_DIR="$T/export-gui-data-$label" NEOBUZZ_PLUGIN_GUI_LOG="$log" \
       "$STUDIO" --no-audio --settings "$T/export-gui-settings-$label" --plugin-export-check "$list" --plugin-export-out "$OUT/shots/$label" "$@" > "$OUT/gui-$label.out" 2>&1 &
     local pid=$!
@@ -73,6 +73,7 @@ if { [ "$WHAT" = gui ] || [ "$WHAT" = both ]; } && [ "$RUNNER_OS" != Linux ]; th
     if [ "$rc" != 0 ] && [ "$RUNNER_OS" = macOS ]; then   # a crash report of the studio, if the system wrote one
       for r in $(ls -t "$HOME"/Library/Logs/DiagnosticReports/*.ips 2>/dev/null | head -2); do echo "--- crash report $r"; head -c 7000 "$r" | cut -c1-400; done
     fi
+    grep -E "controller edit|plug-in output|pump:|events out" "$OUT/gui-$label.out" 2>/dev/null | cut -c1-200 | head -40   # what the host saw of the plug-ins' own edits
     grep -q "plugin-gui: all passed" "$log" 2>/dev/null || { echo "--- studio output (tail)"; tail -n 25 "$OUT/gui-$label.out" | cut -c1-300; fail=1; }
   }
   clap=""; for n in "${NAMES[@]}"; do clap="$clap${clap:+|}$n (CLAP)"; done

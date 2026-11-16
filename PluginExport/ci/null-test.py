@@ -220,6 +220,7 @@ def compare(pf, tag, skip=0.0, tol=None, soft=False):
         if skip: print(f"     {tag}: {nm} - {NATIVE} after {skip} s: max |diff| {res['max_abs_diff']:.3g} ({res['max_abs_diff_dbfs']:.1f} dBFS), {res['differing_samples']}/{res['samples']} samples differ")
         check(full["peak_native"] > 0.01, f"{tag}: {nm}: the native signal is audible (peak {full['peak_native']:.3f})")
         info_only = soft or tag in spec["test"].get("informational", [])   # the native machine carries state from the render before; reported only
+        if info_only: print(f"NOTE {tag}: {nm} - {NATIVE}: max |diff| {res['max_abs_diff']:.3g} against the tolerance {tol:g} (reported, not asserted)")
         check(res["max_abs_diff"] <= tol or info_only, f"{tag}: {nm} nulls against the native machine within {tol:g}" + (" (reported, not asserted)" if info_only else "") + (f" after {skip} s" if skip else "") + f" (max |diff| {res['max_abs_diff']:.3g})")
     if pf.get("ClapF" if not INSTR else "ClapP") and pf.get("VstF" if not INSTR else "VstP"):
         a, b = ("ClapF", "VstF") if not INSTR else ("ClapP", "VstP")

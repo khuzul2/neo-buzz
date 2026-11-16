@@ -280,15 +280,16 @@ namespace NeoExport
         public bool Hotspot(out int x, out int y)
         {
             x = y = 0;
+            int best = int.MaxValue;   // the knob of the lowest parameter index below 64: the host has a slot for it
             foreach (var v in window.GetVisualDescendants())
-                if (v is Control c && c.GetType().Name == "ParamKnob" && c.Bounds.Width > 8)
+                if (v is NeoBuzz.Editor.ParamKnob c && c.Bounds.Width > 8 && c.ParamIndex < 64 && c.ParamIndex < best)
                 {
                     var p = c.TranslatePoint(new Point(c.Bounds.Width / 2, c.Bounds.Height / 2), window);
                     if (p == null) continue;
+                    best = c.ParamIndex;
                     x = (int)Math.Round(p.Value.X / backing); y = (int)Math.Round(p.Value.Y / backing);   // in the native view's units
-                    return true;
                 }
-            return false;
+            return best != int.MaxValue;
         }
 
         public void Destroy()
