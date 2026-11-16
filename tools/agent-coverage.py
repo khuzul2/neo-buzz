@@ -26,6 +26,7 @@ GUIDES = os.path.join(ROOT, "ReBuzz.Agent", "Guides")
 # (area, feature, where it is specified, tools, note)
 FEATURES = [
     ("Device panel (PP1)", "Pinned parameters in the Inspector (up to 8 per machine, saved in the song)", "ux-overhaul.md", ["machine_pin"], "the macros come from the manifest roles; machine_open_editor(window=\"parameters\") opens the panel"),
+    ("Device panel (PP2)", "Locks (left out of Randomize and Morph, saved in the song), Randomize, Nudge and Morph between two presets", "ux-overhaul.md", ["param_lock", "param_randomize"], "hiding a parameter is a view setting of the Device panel (per machine type); the agent sees every parameter"),
     ("Arrangement (AR1)", "Clips: place, draw, move, trim, loop, split, join, copy, make unique", "daw-modes.md §8.2", ["arrangement_clip", "arrangement_place", "arrangement_clear", "arrangement_get"], "arrangement_clip is the Arrange view's own ClipEditor"),
     ("Arrangement (AR1)", "Lanes and their roles (main, take, automation)", "daw-modes.md §8.2", ["arrangement_lane", "arrangement_get"], "arrangement_get numbers each machine's lanes and gives the role"),
     ("Arrangement (AR1)", "Markers, loop, song end", "daw-modes.md §8.1", ["arrangement_markers", "song_set"], ""),
@@ -55,6 +56,7 @@ FEATURES = [
     ("Plug-ins (H1 to H3)", "The plug-in host and its preferences", "plugin-host.md", ["gear_list", "machine_add", "machine_describe", "machine_command"], "placement (in process or a sandbox) and the crash state are in machine_describe; Placement and Reload plug-in are machine_command items; the Preferences page and plug-in editors are the studio's only"),
     ("Neo Audio (NA1)", "Audio files in the song: import, warp, tempo, transpose, gain, loop, region", "neo-audio.md", ["audio_import", "audio_clip_get", "audio_clip_set"], "the audio is kept in the song (an .nbl embeds it), not in the wavetable"),
     ("Drag and drop (DD1)", "Dropping a browser item or a file on the Arrangement, the Session or the Machine View, by the same rules", "drag-drop.md", ["drop_item"], "the drag itself is the person's; drop_item does what the drop does, plan=true says what it would do"),
+    ("Neo Audio (NA2)", "Audio clips in the arrangement: waveforms, move across audio tracks, trim, stretch, loop, fades, crossfades, gain, split, consolidate, reverse", "neo-audio.md §10", ["arrangement_clip", "audio_clip_set", "audio_clip_get"], "arrangement_clip ops fade, gain, crossfade, reverse, stretch, consolidate and to_machine are the Arrange view's gestures; the waveform drawing is the studio's only"),
     ("Browser (BR1)", "One search over machines, plug-ins, presets, patterns and indexed sample folders", "browser.md", ["browser_search"], "the panel's search; kind narrows it"),
     ("Browser (BR1)", "Places: the folders the browser indexes", "browser.md", ["browser_places"], "list, add, remove; the scan runs in the background"),
     ("Browser (BR1)", "Hot-swap: other gear in a machine's place", "browser.md", ["machine_swap"], "the Machine View's drop on a machine's box; one undo step"),

@@ -61,6 +61,7 @@ The person sees every call, so treat it as a conversation: show them what you ar
 - `panel_set(panel="inspector", open=true, tab="Song")`, `panel_set(panel="browser", open=false)`, `panel_set(panel="detail", maximised=true)`; `size` is the width in pixels (the detail panel's height).
 - `machine_open_editor(machine="Bass", window="parameters")` opens a machine's window (`gui`, `parameters` or `editor`); `parameters` is the Device panel (cards of knobs, or a list) in a window of its own.
 - `machine_pin(machine="Bass", param="F1 cutoff", pinned=true)` pins a parameter to the machine's card in the inspector (up to eight per machine, saved in the song); `machine_pin(machine="Bass")` lists them.
+- `param_lock(machine="Bass", param="Volume", locked=true)` keeps a parameter out of Randomize and Morph (saved in the song; a track parameter is locked on every track); `param_lock(machine="Bass")` lists the locks. `param_randomize(machine="Bass", mode="randomize")` sets every unlocked parameter anywhere in its range, `mode="nudge"` moves each a little, `mode="morph", a="Warm", b="Bright", amount=0.5` sets each to a point between two presets; one undo step.
 - `window_layout()` reads where everything is; with `width`, `height` or `maximised` it resizes the window.
 - While the transport records, nothing opens a window or takes the keyboard: the pattern editor and machine windows are refused (`transport(action="stop")` first). Switching a view, selecting and panels still work.
 

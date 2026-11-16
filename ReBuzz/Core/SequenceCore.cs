@@ -77,6 +77,25 @@ namespace ReBuzz.Core
             public int[] Times { get; }
             public SequenceEvent[] Events { get; }
 
+            /// <summary>
+            /// Where the clip of the event at <paramref name="index"/> starts and ends (song ticks): the run of touching events of its pattern
+            /// with its clip id (an event with none is a clip of its own). No allocation: the audio thread asks.
+            /// </summary>
+            public void ClipBounds(int index, out int start, out int end)
+            {
+                var ev = Events[index];
+                start = Times[index];
+                end = start + ev.Span;
+                int id = ev.Clip;
+                if (id == 0) return;
+                int j = index;
+                while (j > 0 && Events[j - 1].Clip == id && ReferenceEquals(Events[j - 1].Pattern, ev.Pattern) && Times[j - 1] + Events[j - 1].Span == Times[j]) j--;
+                start = Times[j];
+                j = index;
+                while (j + 1 < Times.Length && Events[j + 1].Clip == id && ReferenceEquals(Events[j + 1].Pattern, ev.Pattern) && Times[j] + Events[j].Span == Times[j + 1]) j++;
+                end = Times[j] + Events[j].Span;
+            }
+
             /// <summary>Index of the last event at or before <paramref name="time"/>, or -1.</summary>
             public int IndexAtOrBefore(int time)
             {

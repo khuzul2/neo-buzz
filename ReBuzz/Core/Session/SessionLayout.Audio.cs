@@ -31,6 +31,9 @@ namespace ReBuzz.Core.Session
             public AudioAsset Asset;
             public AudioSource Source;
             public List<double> Onsets;
+            /// <summary>The audio backwards, and its transients, made once for clips that play it reversed (NA2).</summary>
+            public AudioSource Reversed;
+            public List<double> ReversedOnsets;
             public int Version;
         }
 
@@ -178,7 +181,7 @@ namespace ReBuzz.Core.Session
             }
             var asset = ImportAsset(path, out error);
             if (asset == null) return null;
-            var (bpm, _) = AudioAnalysis.Tempo(asset.Source, Session.BeatsPerBar);
+            var (bpm, _) = AudioAnalysis.Tempo(asset.Source, Session.BeatsPerBar, out bool tempoFound);
 
             var machine = SequenceOf(track)?.Machine;
             if (!IsClipPlayer(machine))
@@ -192,7 +195,11 @@ namespace ReBuzz.Core.Session
                 }
             }
             // The tempo as found (a loop's bars exactly): rounding it would make the clip a tick longer.
-            return AddAudioClip(track, scene, machine, asset.Name, new SessionDocument.AudioSettings { Asset = asset.Id, Bpm = bpm });
+            // A file with no tempo to find plays at its own speed (warp Off, at the song's tempo so it is as long as it sounds) until one is set.
+            var settings = tempoFound
+                ? new SessionDocument.AudioSettings { Asset = asset.Id, Bpm = bpm }
+                : new SessionDocument.AudioSettings { Asset = asset.Id, Bpm = Math.Clamp(buzz.BPM, 1, 999), Warp = "Off" };
+            return AddAudioClip(track, scene, machine, asset.Name, settings);
         }
 
         /// <summary>Decodes a file into the song's audio store at the song's sample rate; null and a reason when it can't.</summary>
@@ -243,6 +250,43 @@ namespace ReBuzz.Core.Session
                 UndoStack.EndActionGroup();
             }
         }
+
+        /// <summary>
+        /// A pattern for an arrangement audio clip (NA2): the audio's length, its settings, in no slot. Part of the caller's undo group; null when
+        /// the audio is missing.
+        /// </summary>
+        internal IPattern CreateAudioPattern(IMachine machine, string name, SessionDocument.AudioSettings audio, SessionDocument.ClipSettings settings = null)
+        {
+            var source = ClipAudioOf(audio)?.Source;
+            if (source == null || machine == null) return null;
+            int length = AudioClipLength(source, audio);
+            var create = new SessionCreatePatternAction(this, machine, string.IsNullOrWhiteSpace(name) ? "Audio" : name.Trim(), length);
+            UndoStack.Do(create);
+            var created = create.Created;
+            if (created == null) return null;
+            settings = settings?.Clone() ?? new SessionDocument.ClipSettings();
+            settings.Audio = audio.Clone();
+            SetClipSettings(created, settings);
+            return created;
+        }
+
+        /// <summary>What a view needs to draw an audio clip's waveform: the asset (and its peaks), the map from the clip's beats to the audio, and whether it plays backwards. Null when it isn't an audio clip or its audio is gone.</summary>
+        internal AudioClipView ViewOf(IPattern pattern)
+        {
+            var audio = AudioOf(pattern);
+            var w = audio == null ? null : ClipAudioOf(audio);
+            if (w == null) return null;
+            var map = MapOf(w.Source, audio);
+            return new AudioClipView(w.Asset, w.Source, map, map.BeatAt(w.Source.Length), audio);
+        }
+
+        /// <summary>How the pattern plays now (null when it isn't an audio clip): offline renders play it with a voice of their own.</summary>
+        internal AudioClipParams ParamsOfPattern(IPattern pattern) => (pattern as PatternCore)?.SessionAudio?.Params;
+
+        /// <summary>The song's sample rate (what an offline render makes).</summary>
+        internal int RenderRate => SampleRate;
+
+        internal AudioAsset AddAsset(AudioAsset asset) => Assets.Add(asset);
 
         /// <summary>
         /// A clip's length in ticks: its audio's beats, rounded up to a tick, but to the nearest
@@ -685,15 +729,28 @@ namespace ReBuzz.Core.Session
 
         AudioClipParams ParamsOf(SessionDocument.AudioSettings audio, WaveAudio w)
         {
-            var map = MapOf(w.Source, audio);
+            var source = w.Source;
+            var map = MapOf(source, audio);
             var mode = ModeOf(audio.Warp);
+            if (audio.Reverse)
+            {
+                // Backwards: the audio reversed once (shared by every clip that plays it so), with the map mirrored over the clip's beats.
+                map = map.Mirrored(source.Length, map.BeatAt(source.Length));
+                source = w.Reversed ??= source.Reversed();
+            }
             double[] slices = null;
             if (mode == WarpMode.Beats)
             {
-                IReadOnlyList<double> transients = audio.PreservesTransients ? (w.Onsets ??= AudioAnalysis.Onsets(w.Source)) : Array.Empty<double>();
-                slices = AudioAnalysis.Slices(w.Source, map, transients, audio.Grid);
+                IReadOnlyList<double> transients;
+                if (!audio.PreservesTransients) transients = Array.Empty<double>();
+                else if (audio.Reverse) transients = w.ReversedOnsets ??= AudioAnalysis.Onsets(source);
+                else transients = w.Onsets ??= AudioAnalysis.Onsets(source);
+                slices = AudioAnalysis.Slices(source, map, transients, audio.Grid);
             }
-            return new AudioClipParams(w.Source, map, mode, slices, audio.Gain, audio.Semitones);
+            return new AudioClipParams(source, map, mode, slices, audio.Gain, audio.Semitones)
+            {
+                Fades = new ClipFades(audio.FadeIn, audio.FadeOut, audio.Tail, audio.CrossIn),
+            };
         }
 
         /// <summary>
@@ -811,6 +868,19 @@ namespace ReBuzz.Core.Session
                 audioKeys.Remove(gone);
             }
         }
+    }
+
+    /// <summary>An audio clip as the arrangement draws it (NA2): see <see cref="SessionLayout.ViewOf"/>.</summary>
+    internal sealed record AudioClipView(AudioAsset Asset, AudioSource Source, WarpMap Map, double EndBeat, SessionDocument.AudioSettings Audio)
+    {
+        public bool Reverse => Audio.Reverse;
+
+        /// <summary>The audio sample (of the audio as the asset has it) that sounds at a beat of the clip, for any warp: backwards when reversed.</summary>
+        public double SampleAt(double beat) => Audio.Reverse ? Map.SampleAt(EndBeat - beat) : Map.SampleAt(beat);
+
+        /// <summary>The clip's beat of each warp marker (the markers are in the audio's own beats, so reversed they are mirrored).</summary>
+        public IEnumerable<double> MarkerBeats() =>
+            (Audio.Markers ?? new List<(double, double)>()).Select(m => Audio.Reverse ? EndBeat - m.Beat : m.Beat);
     }
 
     /// <summary>

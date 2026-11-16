@@ -10,6 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
+using BuzzGUI.Common.Presets;
+using BuzzGUI.Interfaces;
 using ReBuzz.Agent.Mcp;
 using ReBuzz.Agent.Model;
 using ReBuzz.Core;
@@ -25,6 +27,7 @@ namespace ReBuzz.Agent
         public static void Register(ToolRegistry tools, AgentHost host)
         {
             var core = host.Core;
+            RegisterEditFunctions(tools, host);
 
             tools.Add(new ToolDef
             {
@@ -359,6 +362,116 @@ namespace ReBuzz.Agent
                     var list = r["pinned"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
                     return ToolResult.Ok($"{r["machine"]}: " + (list.Count == 0 ? "nothing pinned" : "pinned " + string.Join(", ", list)) +
                         (r["changed"] is { } ch && !ch.GetValue<bool>() ? " (no change)" : ""), r);
+                },
+            });
+        }
+
+        static void RegisterEditFunctions(ToolRegistry tools, AgentHost host)
+        {
+            var core = host.Core;
+
+            tools.Add(new ToolDef
+            {
+                Name = "param_lock",
+                Title = "Lock a parameter",
+                Description =
+                    "Locks a parameter so Randomize and Morph (param_randomize and the studio's Presets menu) leave it alone, or unlocks it. Locks are saved with the song and are one undo step. " +
+                    "A track parameter is locked on all its tracks; a connection's amp and pan are always left alone. With no param it lists the machine's locks. " +
+                    "Example: param_lock(machine=\"Bass\", param=\"Volume\", locked=true).",
+                Input = Object(null,
+                    Req("machine", String("The machine")),
+                    Opt("param", String("A parameter's name (machine_describe lists them)")),
+                    Opt("locked", Boolean("true locks it (default), false unlocks it"))),
+                Output = Object(null,
+                    Req("machine", String("The machine")),
+                    Req("locked", Array(String("A locked parameter"), "The machine's locks now (a track parameter as \"T:name\")")),
+                    Opt("changed", Boolean("Whether this call changed them"))),
+                Annotations = ToolAnnotations.Write,
+                Handler = async c =>
+                {
+                    var r = await host.Engine("param_lock", true, _ =>
+                    {
+                        var m = SongModel.Machine(core, c.RequiredString("machine"));
+                        var store = core.PinStore ?? throw new ToolError("This song has no parameter locks here.");
+                        bool changed = false;
+                        if (c.String("param") is { Length: > 0 } name)
+                        {
+                            var p = SongModel.Param(m, SongModel.Params(m), name);
+                            changed = store.SetLocked(m.Name, p.IsTrack ? "T:" + p.Name : p.Name, c.Bool("locked") ?? true);
+                        }
+                        var o = new JsonObject { ["machine"] = m.Name, ["locked"] = new JsonArray(store.GetLocks(m.Name).Select(n => (JsonNode)JsonValue.Create(n)).ToArray()) };
+                        if (c.String("param") != null) o["changed"] = changed;
+                        return o;
+                    }, c.Cancellation);
+                    var list = r["locked"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
+                    return ToolResult.Ok($"{r["machine"]}: " + (list.Count == 0 ? "nothing locked" : "locked " + string.Join(", ", list)) +
+                        (r["changed"] is { } ch && !ch.GetValue<bool>() ? " (no change)" : ""), r);
+                },
+            });
+
+            tools.Add(new ToolDef
+            {
+                Name = "param_randomize",
+                Title = "Randomize or morph a machine's parameters",
+                Description =
+                    "The studio's Presets menu functions, on every parameter that is not locked (param_lock): mode \"randomize\" sets each anywhere in its range; \"nudge\" moves each a little " +
+                    "(amount 0..1 is how far, 0.3 by default); \"morph\" sets each to a point between two presets (a and b: preset names or \"<default>\"; amount 0 is a, 1 is b). " +
+                    "One undo step. Example: param_randomize(machine=\"Pad\", mode=\"morph\", a=\"Warm\", b=\"Bright\", amount=0.5).",
+                Input = Object(null,
+                    Req("machine", String("The machine")),
+                    Opt("mode", String("randomize (default), nudge or morph", "randomize", "nudge", "morph")),
+                    Opt("amount", Number("nudge: how far (default 0.3); morph: 0 is a, 1 is b (default 0.5)", 0, 1)),
+                    Opt("a", String("morph: the first preset (default \"<default>\")")),
+                    Opt("b", String("morph: the second preset (default \"<default>\")"))),
+                Output = Object(null,
+                    Req("machine", String("The machine")),
+                    Req("mode", String("What was done")),
+                    Req("changed", Integer("Parameters whose value changed")),
+                    Req("locked", Integer("Parameters left alone because they are locked"))),
+                Annotations = ToolAnnotations.Write,
+                Handler = async c =>
+                {
+                    var r = await host.Engine("param_randomize", true, _ =>
+                    {
+                        var m = SongModel.Machine(core, c.RequiredString("machine"));
+                        string mode = (c.String("mode") ?? "randomize").ToLowerInvariant();
+                        var function = mode switch
+                        {
+                            "randomize" => ParameterFunction.Randomize,
+                            "nudge" => ParameterFunction.Nudge,
+                            "morph" => ParameterFunction.Morph,
+                            _ => throw new ToolError($"mode is randomize, nudge or morph, not \"{mode}\"."),
+                        };
+                        double amount = c.Number("amount") ?? (function == ParameterFunction.Nudge ? 0.3 : 0.5);
+                        Preset a = null, b = null;
+                        if (function == ParameterFunction.Morph)
+                        {
+                            a = ParameterFunctions.PresetOf(m, c.String("a")) ?? throw new ToolError($"{m.Name} has no preset \"{c.String("a")}\" (preset_list).");
+                            b = ParameterFunctions.PresetOf(m, c.String("b")) ?? throw new ToolError($"{m.Name} has no preset \"{c.String("b")}\" (preset_list).");
+                        }
+                        int unlocked = ParameterFunctions.Targets(core, m).Count;
+                        if (unlocked == 0) throw new ToolError($"Every parameter of {m.Name} is locked (param_lock).");
+                        var before = new Preset(m, false, true);
+                        Preset after = null;
+                        string machine = m.Name;
+                        int changed = 0;
+                        void Apply(Preset p)
+                        {
+                            var target = core.SongCore.MachinesList.FirstOrDefault(x => x.Name == machine);
+                            if (target != null) p.Apply(target, true);
+                        }
+                        AgentActions.Do(core, new DelegateAction(() =>
+                        {
+                            if (after != null) { Apply(after); return; }
+                            var target = core.SongCore.MachinesList.FirstOrDefault(x => x.Name == machine);
+                            changed = ParameterFunctions.Apply(core, target, function, a, b, amount);
+                            after = new Preset(target, false, true);
+                        }, () => Apply(before)));
+                        int locks = m.ParameterGroups.Where(g => g.Type != ParameterGroupType.Input).Sum(g => g.Parameters.Count(p => p.Flags.HasFlag(ParameterFlags.State) && p.Type is not (ParameterType.Note or ParameterType.Internal)
+                            && core.PinStore.IsLocked(m.Name, ParameterFunctions.LockKey(p))));
+                        return new JsonObject { ["machine"] = m.Name, ["mode"] = mode, ["changed"] = changed, ["locked"] = locks };
+                    }, c.Cancellation);
+                    return ToolResult.Ok($"{r["machine"]}: {r["mode"]} changed {r["changed"]} parameters ({r["locked"]} locked, left alone).", r);
                 },
             });
         }

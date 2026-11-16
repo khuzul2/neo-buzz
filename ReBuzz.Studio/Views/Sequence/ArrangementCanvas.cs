@@ -47,7 +47,7 @@ namespace ReBuzz.Studio.Views.Sequence
         int cursorTime;
         double wheelZoom;
 
-        enum Drag { None, PendingMove, Move, TrimLeft, TrimRight, Comp }
+        enum Drag { None, PendingMove, Move, TrimLeft, TrimRight, Comp, FadeIn, FadeOut, Gain, Stretch }
         Drag drag;
         Point pressPoint;
         ClipItem dragItem;
@@ -558,6 +558,7 @@ namespace ReBuzz.Studio.Views.Sequence
             }
 
             var session = core.SessionCore;
+            views.Clear();
             foreach (var row in rows)
             {
                 double y = YOf(row);
@@ -581,6 +582,7 @@ namespace ReBuzz.Studio.Views.Sequence
                                 if (r.Right < area.X || r.X > area.Right) continue;
                                 DrawClip(ctx, r, item);
                             }
+                            DrawCrossfades(ctx, row);
                             DrawLoose(ctx, area, row, y);
                             if (session != null && session.IsArrangementOverridden(row.Lane))
                             {
@@ -675,6 +677,7 @@ namespace ReBuzz.Studio.Views.Sequence
             if (h > 3) ctx.FillRectangle(shadow, new Rect(w - 1, 2, 1, h - 3));
 
             // The previews and the loop's repeats, a part at a time: a repeat starts with a dashed line.
+            var audio = ViewOf(item);
             var segments = item.Actual;
             for (int i = 0; i < segments.Count; i++)
             {
@@ -682,7 +685,8 @@ namespace ReBuzz.Studio.Views.Sequence
                 double sx = (s.Time - item.Time) * geo.TickWidth, sw = s.Length * geo.TickWidth;
                 if (r.X + sx > Bounds.Width || r.X + sx + sw < 0) continue;
                 if (i > 0) ctx.DrawLine(new Pen(shadow, 1, DashStyle.Dash), new Point(sx, 1), new Point(sx, h - 1));
-                if (core.Arrangement?.RoleOf(item.Sequence) == LaneRole.Automation) DrawAutomationLine(ctx, spec.Pattern, s, sx, sw, h);
+                if (audio != null) DrawWaveform(ctx, audio, item, s, sx, sw, h, shadow);
+                else if (core.Arrangement?.RoleOf(item.Sequence) == LaneRole.Automation) DrawAutomationLine(ctx, spec.Pattern, s, sx, sw, h);
                 else DrawPreview(ctx, spec.Pattern, s, sx, sw, h);
             }
 
@@ -693,9 +697,16 @@ namespace ReBuzz.Studio.Views.Sequence
             int n = UsesOf(spec.Pattern);
             if (n > 1) badges += DrawBadge(ctx, w - 4 - badges, 3, $"{n}", Look.Param, textBrush);
             if (spec.Loop) badges += DrawBadge(ctx, w - 4 - badges, 3, "loop", Look.Note, textBrush);
+            if (audio != null && audio.Reverse) badges += DrawBadge(ctx, w - 4 - badges, 3, "rev", Look.Param, textBrush);
+            if (audio != null && audio.Audio.Warp == "Off") badges += DrawBadge(ctx, w - 4 - badges, 3, "unwarped", Look.Off, textBrush);
             ctx.DrawRectangle(Look.NameBack, Look.NameBackPen, new Rect(4.5, 2.5, Math.Max(0, w - 8 - badges), 15));
             ctx.DrawText(Text(name, textBrush, 12, maxWidth: Math.Max(1, w - 12 - badges)), new Point(6, 1));
 
+            if (audio != null)
+            {
+                DrawWarpMarkers(ctx, audio, item, h, highlight);
+                DrawAudioDecor(ctx, audio, item, w, h, shadow);
+            }
             if (isSelected) ctx.DrawRectangle(null, new Pen(Look.SelectionBorder.Brush, 2), new Rect(1, 1, Math.Max(1, w - 1), Math.Max(1, h - 1)));
         }
 
@@ -744,7 +755,7 @@ namespace ReBuzz.Studio.Views.Sequence
         {
             get
             {
-                if (drag is Drag.None or Drag.PendingMove || dragItem == null) return null;
+                if (drag is Drag.None or Drag.PendingMove or Drag.FadeIn or Drag.FadeOut or Drag.Gain || dragItem == null) return null;
                 var row = RowOf(ghostLane ?? dragItem.Sequence);
                 if (row == null) return null;
                 var r = new Rect(geo.XOf(ghostTime), YOf(row) + ClipInset, Math.Max(SequenceGeometry.MinBlockWidth, ghostLength * geo.TickWidth), row.Height - 2 * ClipInset);
@@ -752,6 +763,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 {
                     Drag.Move => ghostMode switch { ClipEditor.CopyMode.Independent => "copy", ClipEditor.CopyMode.Linked => "linked copy", _ => "" },
                     Drag.Comp => "comp",
+                    Drag.Stretch => "stretch",
                     _ => "",
                 };
                 return (r, label);
@@ -784,6 +796,7 @@ namespace ReBuzz.Studio.Views.Sequence
             if (ParameterRowAt(p.Y) is { } prow && p.X >= SequenceGeometry.HeaderWidth) return ParameterTip(prow, p);
             var (item, part) = ClipAt(p);
             if (item == null) return SequenceGeometry.InRuler(p) ? $"{BarBeat(geo.TimeAt(p.X))}\nClick: move the play position here" : null;
+            if (IsAudioItem(item)) return AudioTip(item, part, p);
             var s = item.Spec;
             string text = $"{s.Pattern.Name} · {BarBeat(item.Time)} · {item.End - item.Time} ticks";
             if (UsesOf(s.Pattern) > 1) text += $"\nShared by {UsesOf(s.Pattern)} places: Make unique gives this clip a pattern of its own";
@@ -855,6 +868,12 @@ namespace ReBuzz.Studio.Views.Sequence
             }
 
             pressPoint = p;
+            if (item != null && HandleAt(item, p) is var audioHandle && audioHandle != AudioHandle.None)
+            {
+                // An audio clip's fade corners and gain handle.
+                BeginAudioHandleDrag(item, audioHandle, p, e);
+                return;
+            }
             if (item != null && fine && core.Arrangement?.RoleOf(item.Sequence) == LaneRole.Take && core.Arrangement.Takes.MainLaneOf(item.Sequence.Machine) is { } mainLane && RowOf(mainLane) != null)
             {
                 // Daw-modes.md §4.4, AR5: Shift-drag on a take lane picks a range of the take (a click, the bar) to comp onto the main lane.
@@ -881,7 +900,9 @@ namespace ReBuzz.Studio.Views.Sequence
                 ghostLane = item.Sequence;
                 ghostMode = ClipEditor.CopyMode.Move;
                 grabOffset = geo.TimeAt(p.X) - item.Time;
-                drag = part switch { BlockPart.LeftEdge => Drag.TrimLeft, BlockPart.RightEdge => Drag.TrimRight, _ => Drag.PendingMove };
+                // Alt on the right edge of an audio clip stretches it (warps the audio to fill); on its loop's edge it repeats the loop, as for any clip.
+                bool stretch = part == BlockPart.RightEdge && mods.HasFlag(KeyModifiers.Alt) && IsAudioItem(item) && !item.Spec.Loop;
+                drag = stretch ? Drag.Stretch : part switch { BlockPart.LeftEdge => Drag.TrimLeft, BlockPart.RightEdge => Drag.TrimRight, _ => Drag.PendingMove };
                 e.Pointer.Capture(this);
                 Overlay.InvalidateVisual();
                 return;
@@ -905,8 +926,18 @@ namespace ReBuzz.Studio.Views.Sequence
                     shownTip = tip;
                     ToolTip.SetTip(this, tip);
                 }
-                var (_, part) = ClipAt(p);
-                Cursor = part is BlockPart.LeftEdge or BlockPart.RightEdge ? new Cursor(StandardCursorType.SizeWestEast) : Cursor.Default;
+                var (over, part) = ClipAt(p);
+                if (!ReferenceEquals(over, hover) && !(over != null && over.Equals(hover)))
+                {
+                    hover = over;
+                    InvalidateVisual();
+                }
+                Cursor = HandleAt(over, p) switch
+                {
+                    AudioHandle.Gain => new Cursor(StandardCursorType.SizeNorthSouth),
+                    AudioHandle.FadeIn or AudioHandle.FadeOut => new Cursor(StandardCursorType.SizeWestEast),
+                    _ => part is BlockPart.LeftEdge or BlockPart.RightEdge ? new Cursor(StandardCursorType.SizeWestEast) : Cursor.Default,
+                };
                 return;
             }
             bool fine = mods.HasFlag(KeyModifiers.Shift);
@@ -918,8 +949,11 @@ namespace ReBuzz.Studio.Views.Sequence
                     goto case Drag.Move;
                 case Drag.Move:
                     ghostTime = Snap(geo.TimeAt(p.X) - grabOffset, fine);
-                    if (LaneRowAt(p.Y)?.Lane is { } lane && lane.Machine == dragItem.Sequence.Machine) ghostLane = lane;
-                    ghostMode = mods.HasFlag(CommandKey) ? ClipEditor.CopyMode.Independent : mods.HasFlag(KeyModifiers.Alt) ? ClipEditor.CopyMode.Linked : ClipEditor.CopyMode.Move;
+                    // An audio clip may go to the lane of another Neo Audio track too (it gets a pattern there); Alt copies it, as Ctrl/Cmd does.
+                    bool audioClip = IsAudioItem(dragItem);
+                    if (LaneRowAt(p.Y)?.Lane is { } lane && (lane.Machine == dragItem.Sequence.Machine ||
+                        (audioClip && lane.Machine != null && ReBuzz.Core.Session.SessionLayout.IsClipPlayer(lane.Machine) && core.Arrangement?.RoleOf(lane) != LaneRole.Automation))) ghostLane = lane;
+                    ghostMode = mods.HasFlag(CommandKey) || (audioClip && mods.HasFlag(KeyModifiers.Alt)) ? ClipEditor.CopyMode.Independent : mods.HasFlag(KeyModifiers.Alt) ? ClipEditor.CopyMode.Linked : ClipEditor.CopyMode.Move;
                     ghostLength = dragItem.Spec.Segments().Sum(s => s.Length);
                     break;
                 case Drag.Comp:
@@ -948,6 +982,18 @@ namespace ReBuzz.Studio.Views.Sequence
                         ghostLength = Math.Min(t - dragItem.Time, dragItem.Spec.MaxLength);
                         break;
                     }
+                case Drag.Stretch:
+                    {
+                        int t = Math.Max(dragItem.Time + 1, Snap(geo.TimeAt(p.X), fine));
+                        ghostTime = dragItem.Time;
+                        ghostLength = t - dragItem.Time;
+                        break;
+                    }
+                case Drag.FadeIn:
+                case Drag.FadeOut:
+                case Drag.Gain:
+                    MoveAudioHandle(p, fine);
+                    return;
             }
             Overlay.InvalidateVisual();
         }
@@ -1002,6 +1048,10 @@ namespace ReBuzz.Studio.Views.Sequence
                         ? editor.Move(item, ghostLane ?? item.Sequence, ghostTime, ghostMode) : null,
                     Drag.TrimLeft => editor.TrimLeft(item, ghostTime),
                     Drag.TrimRight => editor.TrimRight(item, ghostTime + ghostLength),
+                    Drag.Stretch => editor.Stretch(item, ghostTime + ghostLength),
+                    Drag.FadeIn => editor.Fade(item, (int)dragFade, null),
+                    Drag.FadeOut => editor.Fade(item, null, (int)dragFade),
+                    Drag.Gain => editor.SetGain(item, dragDb),
                     Drag.Comp => editor.Comp(item.Sequence, ghostTime, ghostTime + ghostLength, ghostLane),
                     _ => null,
                 };
@@ -1153,7 +1203,9 @@ namespace ReBuzz.Studio.Views.Sequence
         public bool PasteAtCursor()
         {
             if (clipboard == null) return false;
-            var lane = cursorLane?.Machine == clipboard.Pattern.Machine ? cursorLane : Song.Sequences.FirstOrDefault(s => s.Machine == clipboard.Pattern.Machine);
+            bool audioClip = editor.IsAudio(clipboard.Pattern);
+            var lane = cursorLane?.Machine == clipboard.Pattern.Machine || (audioClip && cursorLane?.Machine != null && ReBuzz.Core.Session.SessionLayout.IsClipPlayer(cursorLane.Machine))
+                ? cursorLane : Song.Sequences.FirstOrDefault(s => s.Machine == clipboard.Pattern.Machine);
             if (lane == null) { SetStatus("The clip's machine has no lane."); return false; }
             int at = Snap(cursorTime, false);
             bool ok = Run(editor.Paste(clipboard, lane, at));
@@ -1222,6 +1274,7 @@ namespace ReBuzz.Studio.Views.Sequence
                     case Key.J: return JoinWithNext();
                     case Key.L: return ToggleLoop();
                     case Key.U: return MakeUnique();
+                    case Key.R when IsAudioSelected: return ReverseSelected();
                     case Key.C: return CompAtCursor();
                     case Key.Return when selected != null: PatternDoubleClicked?.Invoke(selected.Pattern); return true;
                     case Key.P when selected != null: ClipOpened?.Invoke(selected.Pattern); return true;
@@ -1236,6 +1289,8 @@ namespace ReBuzz.Studio.Views.Sequence
             {
                 switch (key)
                 {
+                    case Key.E: return SplitAtPlayhead();
+                    case Key.J: return ConsolidateSelected();
                     case Key.D: return DuplicateSelected();
                     case Key.C: return CopySelected();
                     case Key.V: return PasteAtCursor();

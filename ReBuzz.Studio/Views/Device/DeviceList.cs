@@ -18,6 +18,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using BuzzGUI.Interfaces;
+using NeoBuzz.Editor;
 using ReBuzz.Core;
 using ReBuzz.Studio.Shell.Design;
 
@@ -356,7 +357,7 @@ namespace ReBuzz.Studio.Views.Device
             double widest = 0;
             foreach (var item in items)
                 if (item is ParamItem pi)
-                    widest = Math.Max(widest, Text(pi.Param.Name, StudioTokens.FontBody, StudioTokens.TextPrimaryBrush, 1000).WidthIncludingTrailingWhitespace);
+                    widest = Math.Max(widest, Text(pi.Param.Label, StudioTokens.FontBody, StudioTokens.TextPrimaryBrush, 1000).WidthIncludingTrailingWhitespace);
             nameColumn = Math.Clamp(Math.Ceiling(widest) + 6, MinNameColumn, MaxNameColumn);
         }
 
@@ -478,8 +479,20 @@ namespace ReBuzz.Studio.Views.Device
             return text;
         }
 
+        public double ScrollLeft => scrollLeft;
+
+        public double ScrollTop => scrollTop;
+
+        IBrush identBrush = StudioTokens.AccentBrush;
+        Color identColor = StudioTokens.Accent;
+
+        /// <summary>The colour every bar, segment and switch here is filled with: the machine's identity colour, as its knobs are, at 3:1 or more against the panel.</summary>
+        public Color Identity => StudioTokens.Of(DeviceColour.Of(machine));
+
         public override void Render(DrawingContext ctx)
         {
+            identColor = StudioTokens.Of(DeviceColour.Of(machine));
+            identBrush = new SolidColorBrush(identColor);
             ctx.FillRectangle(Brushes.Transparent, new Rect(Bounds.Size));       // the whole list takes the pointer
             visibleRows = 0;
             foreach (int i in Visible())
@@ -506,7 +519,7 @@ namespace ReBuzz.Studio.Views.Device
             var c = ColumnsOf(row.Width);
             if (p == focus) ctx.FillRectangle(StudioTokens.SelectionFillBrush, row);
             else if (p == hover) ctx.FillRectangle(StudioTokens.SurfaceControlBrush, row);
-            Draw(ctx, p.Name, row.X + Pad, row.Y, c.Name, DeviceItem.RowHeight, StudioTokens.FontBody, StudioTokens.TextPrimaryBrush);
+            Draw(ctx, p.Label, row.X + Pad, row.Y, c.Name, DeviceItem.RowHeight, StudioTokens.FontBody, StudioTokens.TextPrimaryBrush);
             int raw = p.Value;
             var area = new Rect(row.X + c.ControlX, row.Y + 3, c.ControlW, DeviceItem.RowHeight - 6);
             DrawControl(ctx, p, raw, area);
@@ -517,25 +530,34 @@ namespace ReBuzz.Studio.Views.Device
         {
             switch (p.Kind)
             {
+                case DeviceKind.Segmented when p.Choices.Count > DeviceChoice.StripMax:
+                {
+                    var box = new Rect(area.X, area.Y, Math.Min(area.Width, 200), area.Height);
+                    ctx.DrawRectangle(StudioTokens.SurfaceControlBrush, new Pen(StudioTokens.SurfaceBorderBrush, 1), box.Deflate(0.5), 4, 4);
+                    if (editing != p)
+                        Draw(ctx, TextOf(p, raw), box.X + 6, box.Y, box.Width - 22, box.Height, StudioTokens.FontBody, StudioTokens.TextPrimaryBrush);
+                    Draw(ctx, "\u25BE", box.Right - 16, box.Y, 12, box.Height, StudioTokens.FontCaption, identBrush);
+                    break;
+                }
                 case DeviceKind.Segmented:
                     double sw = area.Width / Math.Max(1, p.Choices.Count);
                     for (int i = 0; i < p.Choices.Count; i++)
                     {
                         bool on = raw == p.Min + i;
                         var seg = new Rect(area.X + i * sw, area.Y, sw, area.Height);
-                        var back = on ? StudioTokens.AccentBrush : StudioTokens.SurfaceControlBrush;
+                        var back = on ? identBrush : StudioTokens.SurfaceControlBrush;
                         ctx.DrawRectangle(back, new Pen(StudioTokens.SurfaceBorderBrush, 1), seg.Deflate(0.5), 4, 4);
                         Draw(ctx, p.Choices[i], seg.X + 3, seg.Y, seg.Width - 6, seg.Height, StudioTokens.FontCaption,
-                            on ? StudioTokens.TextOnBrush(StudioTokens.Accent) : StudioTokens.TextSecondaryBrush, align: TextAlignment.Center);
+                            on ? StudioTokens.TextOnBrush(identColor) : StudioTokens.TextSecondaryBrush, align: TextAlignment.Center);
                     }
                     break;
                 case DeviceKind.Toggle:
                     bool isOn = raw != p.Min;
                     double tw = Math.Min(36, area.Width), th = 16;
                     var track = new Rect(area.X, area.Y + (area.Height - th) / 2, tw, th);
-                    ctx.DrawRectangle(isOn ? StudioTokens.AccentBrush : StudioTokens.ControlTrackBrush, null, track, 8, 8);
+                    ctx.DrawRectangle(isOn ? identBrush : StudioTokens.ControlTrackBrush, null, track, 8, 8);
                     double knob = th - 6;
-                    ctx.DrawEllipse(isOn ? StudioTokens.TextOnBrush(StudioTokens.Accent) : StudioTokens.TextPrimaryBrush, null,
+                    ctx.DrawEllipse(isOn ? StudioTokens.TextOnBrush(identColor) : StudioTokens.TextPrimaryBrush, null,
                         new Point(isOn ? track.Right - 3 - knob / 2 : track.X + 3 + knob / 2, track.Center.Y), knob / 2, knob / 2);
                     if (editing != p)
                         Draw(ctx, TextOf(p, raw), area.X + tw + 8, area.Y, Math.Max(1, area.Width - tw - 8), area.Height, StudioTokens.FontBody, StudioTokens.TextPrimaryBrush, align: TextAlignment.Right, tabular: true);
@@ -591,7 +613,7 @@ namespace ReBuzz.Studio.Views.Device
             ctx.DrawRectangle(StudioTokens.ControlTrackBrush, null, rail, 4, 4);
             double a = p.ZeroFraction, b = p.Fraction(raw);
             double x0 = rail.X + Math.Min(a, b) * rail.Width, x1 = rail.X + Math.Max(a, b) * rail.Width;
-            if (x1 - x0 >= 1) ctx.DrawRectangle(StudioTokens.AccentBrush, null, new Rect(x0, rail.Y, x1 - x0, rail.Height), 4, 4);
+            if (x1 - x0 >= 1) ctx.DrawRectangle(identBrush, null, new Rect(x0, rail.Y, x1 - x0, rail.Height), 4, 4);
             double tx = rail.X + b * rail.Width;
             ctx.FillRectangle(StudioTokens.TextPrimaryBrush, new Rect(Math.Clamp(tx - 1, rail.X, rail.Right - 2), rail.Y, 2, rail.Height));
             DrawModulationRing(ctx, p, rail);
@@ -613,7 +635,7 @@ namespace ReBuzz.Studio.Views.Device
         {
             double colW = TableColumnWidth(t, r.Width);
             for (int k = 0; k < t.Columns.Count; k++)
-                Draw(ctx, t.Section.Params[t.Columns[k]].Name, r.X + Pad + LabelColumn + k * colW + 4, r.Y, colW - 8, DeviceItem.RowHeight, StudioTokens.FontCaption, StudioTokens.TextSecondaryBrush);
+                Draw(ctx, t.Section.Params[t.Columns[k]].Label, r.X + Pad + LabelColumn + k * colW + 4, r.Y, colW - 8, DeviceItem.RowHeight, StudioTokens.FontCaption, StudioTokens.TextSecondaryBrush);
             for (int tr = 0; tr < t.Section.Tracks; tr++)
             {
                 double ry = r.Y + DeviceItem.RowHeight * (tr + 1);
@@ -638,7 +660,7 @@ namespace ReBuzz.Studio.Views.Device
                 double a = p.ZeroFraction, b = p.Fraction(raw);
                 double x0 = cell.X + Math.Min(a, b) * cell.Width, x1 = cell.X + Math.Max(a, b) * cell.Width;
                 if (x1 - x0 >= 1) ctx.DrawRectangle(StudioTokens.SelectionFillBrush, null, new Rect(x0, cell.Y + 1, x1 - x0, Math.Max(0, cell.Height - 2)), 2, 2);
-                ctx.FillRectangle(StudioTokens.AccentBrush, new Rect(Math.Clamp(cell.X + b * cell.Width - 1, cell.X + 1, Math.Max(cell.X + 1, cell.Right - 3)), cell.Y + 1, 2, Math.Max(0, cell.Height - 2)));
+                ctx.FillRectangle(identBrush, new Rect(Math.Clamp(cell.X + b * cell.Width - 1, cell.X + 1, Math.Max(cell.X + 1, cell.Right - 3)), cell.Y + 1, 2, Math.Max(0, cell.Height - 2)));
             }
             else if (p.Kind == DeviceKind.Toggle && raw != p.Min)
                 ctx.DrawRectangle(StudioTokens.SelectionFillBrush, null, cell.Deflate(1), 2, 2);
@@ -691,7 +713,7 @@ namespace ReBuzz.Studio.Views.Device
                     else
                     {
                         hit.Part = Part.Control;
-                        if (p.Kind == DeviceKind.Segmented) hit.Choice = (int)Math.Clamp((pt.X - area.X) / (area.Width / p.Choices.Count), 0, p.Choices.Count - 1);
+                        if (p.Kind == DeviceKind.Segmented && p.Choices.Count <= DeviceChoice.StripMax) hit.Choice = (int)Math.Clamp((pt.X - area.X) / (area.Width / p.Choices.Count), 0, p.Choices.Count - 1);
                     }
                     return hit;
                 }
@@ -853,6 +875,14 @@ namespace ReBuzz.Studio.Views.Device
             }
             switch (p.Kind)
             {
+                case DeviceKind.Segmented when hit.Part == Part.Control && p.Choices.Count > DeviceChoice.StripMax:
+                {
+                    var names = p.Choices.ToArray();
+                    var at = hit.Area.BottomLeft;
+                    var param = p;
+                    PickerPopup.Show(this, at.X - scrollLeft, at.Y - scrollTop, names, i => { DeviceEdits.Set(Core, param, param.Min + i); InvalidateVisual(); }, names.Length > 12);
+                    break;
+                }
                 case DeviceKind.Segmented when hit.Part == Part.Control:
                     DeviceEdits.Set(Core, p, p.Min + hit.Choice);
                     break;
