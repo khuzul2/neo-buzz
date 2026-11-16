@@ -359,7 +359,9 @@ if (-not $SkipCore) {
         $nsBuild = [IO.Path]::Combine($Root, 'build', 'NeoStretch')
         Invoke-Checked cmake @('-S', $nsSrc, '-B', $nsBuild, '-A', 'x64')
         Invoke-Checked cmake @('--build', $nsBuild, '--config', $Configuration)
-        $nsDll = [IO.Path]::Combine($nsBuild, $Configuration, 'neostretch.dll')
+        # The CMake file puts the library in the build folder itself, whatever the configuration; a generator that adds one is covered.
+        $nsDll = @([IO.Path]::Combine($nsBuild, 'neostretch.dll'), [IO.Path]::Combine($nsBuild, $Configuration, 'neostretch.dll')) | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+        if (-not $nsDll) { $nsDll = [IO.Path]::Combine($nsBuild, 'neostretch.dll') }
         if (-not (Test-Path -LiteralPath $nsDll)) { throw "neostretch.dll not built ($nsDll)" }
         Copy-Item -LiteralPath $nsDll -Destination $OutDir -Force
         Write-Host "neostretch.dll -> $OutDir"
@@ -377,7 +379,7 @@ $StudioStage = [IO.Path]::Combine($Root, 'build', 'Studio')
 if ((-not $SkipCore) -and (-not $SkipStudio)) {
     Write-Step 'Publishing NeoBuzz Live Studio (preview)'
     & ([IO.Path]::Combine($Root, 'tools', 'publish-studio-windows.ps1')) -Out $StudioStage -Configuration $Configuration
-    $nsStudio = [IO.Path]::Combine($Root, 'build', 'NeoStretch', $Configuration, 'neostretch.dll')
+    $nsStudio = [IO.Path]::Combine($OutDir, 'neostretch.dll')
     if (Test-Path -LiteralPath $nsStudio) { Copy-Item -LiteralPath $nsStudio -Destination $StudioStage -Force }       # the Pro warp mode, beside the studio's engine (NA5)
 }
 
