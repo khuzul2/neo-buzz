@@ -46,7 +46,7 @@ namespace ReBuzz.Studio.Views.Inspector
             poll.Tick += (s, e) => { foreach (var c in cells) if (!c.Busy) c.Sync(); };
         }
 
-        static TextBlock Title(string text) => new() { Text = text, FontSize = 10.5, FontWeight = Avalonia.Media.FontWeight.SemiBold, Foreground = StudioTokens.TextSecondaryBrush, Margin = new Thickness(0, 6, 0, 4) };
+        static TextBlock Title(string text) => new() { Text = text, FontSize = StudioTokens.FontCaption, FontWeight = Avalonia.Media.FontWeight.SemiBold, Foreground = StudioTokens.TextSecondaryBrush, Margin = new Thickness(0, 6, 0, 4) };
 
         public IReadOnlyList<DeviceCell> MacroCells => macros.Children.OfType<DeviceCell>().ToList();
 
