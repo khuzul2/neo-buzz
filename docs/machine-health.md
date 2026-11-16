@@ -488,6 +488,7 @@ Drafts:
 | ManagedMultiIOEffect | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 4.0 | 0.807 | ok |
 | mixIO | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 23.1 | 14.01 | hot |
 | Neo Analyzer | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 1.1 | 5.339 | ok |
+| Neo Audio | effect (silent at defaults) |  |  |  |  |  |  | 3.4 | 0.598 | warn |
 | Neo Clipper | utility | -0.14 | 343 | 0.01 |  |  | 21 Hz – 18.8 kHz | 3.2 | 0.516 | hot |
 | Neo Comp | dynamics | -2.54 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.645 | hot |
 | Neo De-esser | filter or EQ | -0.72 | 44 | 0.0 |  |  | 9397 Hz – 18.8 kHz | 0.6 | 0.529 | hot |
@@ -529,7 +530,6 @@ Drafts:
 | Polac Out II | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 13.2 | 11.522 | ok |
 | Polac VST 1.1 | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 18.3 | 12.175 | ok |
 | ReBuzz Audio Out | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.499 | ok |
-| Neo Audio | effect (silent at defaults) |  |  |  |  |  |  | 3.4 | 0.598 | warn |
 
 ## Not measured yet
 

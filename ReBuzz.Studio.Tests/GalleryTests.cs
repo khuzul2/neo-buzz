@@ -1778,12 +1778,13 @@ namespace ReBuzz.Studio.Tests
                     Try("455-device-floating-" + slug, () =>
                     {
                         var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery " + gear);
-                        Core.UiHost.OpenParameterWindow(m, null);
-                        var w = StudioMachineUiHost.ParameterWindowOf(m);
-                        Assert.That(w, Is.Not.Null);
+                        var page = new ReBuzz.Studio.Views.Device.DevicePage(m, floating: true);
+                        page.SetEditor(false, remember: false);
+                        var w = new Window { Width = gear == "Dye Essence" ? 1440 : 900, Height = gear == "Dye Essence" ? 820 : 620, Content = page };
+                        w.Show();
                         Settle();
-                        Shot(w!, "455-device-floating-" + slug, $"The Device panel floating for {gear}: the cards wrap and scroll down.", "Right-click a machine ▸ Parameters…, or Float in the Device panel.");
-                        Core.UiHost.CloseWindows(m);
+                        Shot(w, "455-device-floating-" + slug, $"The Device panel floating for {gear}: cards sized to their content flowing to fill the width, choices on top of each card, one colour, sentence-case labels, a \"+N\" menu for the chips that don't fit.", "Right-click a machine ▸ Parameters…, or Float in the Device panel.");
+                        w.Close();
                     });
                 }
                 Try("456-device-list-mode", () =>
@@ -1797,6 +1798,51 @@ namespace ReBuzz.Studio.Tests
                     Settle();
                     Shot(w, "456-device-list-mode", "The Device panel in List mode: rows in columns with group headers, filled bars with the value inside.", "Device panel ▸ List.");
                     w.Close();
+                });
+                Try("458-device-knob-menu", () =>
+                {
+                    var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Dye Essence");
+                    var page = new ReBuzz.Studio.Views.Device.DevicePage(m, floating: true);
+                    page.SetEditor(false, remember: false);
+                    var w = new Window { Width = 900, Height = 700, Content = page };
+                    w.Show();
+                    Settle();
+                    var cell = page.Parameters.Cards.Shown.SelectMany(s => s.Card.Knobs).Take(2).Select(p => page.Parameters.Cards.Cell(p)!).Last();
+                    Click(w, DeviceTestKit.Centre(w, cell.Face), MouseButton.Right);
+                    Shot(w, "458-device-knob-menu", "A knob's menu: Reset, Type a Value, Pin to Inspector, Automate (adds the parameter's arrangement lane), Modulate (a modulator or the matrix), Lock and Hide (ticks), MIDI binding, Keyboard Sends MIDI Notes. The List rows have the same menu.", "Right-click a knob or a row in the Device panel.");
+                    w.Close();
+                });
+                Try("459-device-edit-features", () =>
+                {
+                    var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Dye Essence");
+                    string hiddenFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "gallery-hidden-" + System.Guid.NewGuid().ToString("N") + ".xml");
+                    ReBuzz.Studio.Parameters.ParameterVisibility.FilePath = hiddenFile;
+                    ReBuzz.Studio.Parameters.ParameterVisibility.Reset();
+                    var page = new ReBuzz.Studio.Views.Device.DevicePage(m, floating: true);
+                    page.SetEditor(false, remember: false);
+                    var w = new Window { Width = 1200, Height = 760, Content = page };
+                    w.Show();
+                    Settle();
+                    try
+                    {
+                        var view = page.Parameters;
+                        var knobs = view.Cards.Shown.SelectMany(s => s.Card.Knobs).ToList();
+                        foreach (var p in knobs.Take(3)) ReBuzz.Studio.Views.Device.DeviceMenus.SetLocked(m, p, true);
+                        foreach (var p in knobs.Skip(3).Take(2)) ReBuzz.Studio.Parameters.ParameterVisibility.SetVisible(p.Parameter, false);
+                        view.ShowHidden = true;
+                        Settle();
+                        ReBuzz.Studio.Views.Device.DeviceFunctions.OpenMorph(m, page.PresetsButton, null);
+                        Settle();
+                        Shot(w, "459-device-edit-features", "The old Edit mode's features in the Device panel: locked parameters carry a padlock (left out of Randomize and Morph), hidden ones are dimmed while Show hidden is on, and the Presets menu's Morph flyout (preset A, preset B, a slider; one undo step).", "Right-click a knob ▸ Lock or Hide; Show hidden in the bar; Presets ▸ Morph Between A and B.");
+                    }
+                    finally
+                    {
+                        w.Close();
+                        Core.PinStore!.Clear();
+                        ReBuzz.Studio.Parameters.ParameterVisibility.FilePath = null;
+                        ReBuzz.Studio.Parameters.ParameterVisibility.Reset();
+                        try { System.IO.File.Delete(hiddenFile); } catch (System.IO.IOException) { }
+                    }
                 });
                 Try("457-inspector-macros-and-pins", () =>
                 {
@@ -1885,6 +1931,86 @@ namespace ReBuzz.Studio.Tests
         }
 
         // ------------------------------------------------------------------ 5xx: old songs, natives, safety, many machines
+
+        // ------------------------------------------------------------------ 36x: Neo Audio clips in the Arrangement
+
+        /// <summary>Two seconds of a drum loop (a kick on every beat of 120 BPM, a hat between), as a float WAV the song's rate: something with a shape to draw.</summary>
+        static string DrumLoop(string name, int rate = 44100)
+        {
+            string path = Path.Combine(SongFolder, name);
+            int n = rate * 4;
+            var inter = new float[n * 2];
+            var rnd = new System.Random(7);
+            for (int i = 0; i < n; i++)
+            {
+                double t = i / (double)rate, beat = t * 2, inBeat = (beat - System.Math.Floor(beat)) * 0.5;
+                double kick = System.Math.Sin(2 * System.Math.PI * (55 + 90 * System.Math.Exp(-inBeat * 30)) * inBeat) * System.Math.Exp(-inBeat * 9) * 0.9;
+                double off = ((beat + 0.5) % 1) * 0.5;
+                double hat = (rnd.NextDouble() * 2 - 1) * System.Math.Exp(-off * 60) * 0.25;
+                inter[2 * i] = inter[2 * i + 1] = (float)(kick + hat);
+            }
+            using var f = libsndfile.SoundFile.Create(path, rate, 2, libsndfile.Format.SF_FORMAT_WAV | libsndfile.Format.SF_FORMAT_FLOAT);
+            f.WriteFloat(inter, 0, n);
+            return path;
+        }
+
+        [AvaloniaTest, Order(7)]
+        public void AudioArrangement()
+        {
+            BeforeAll();
+            LoadDemo();
+            var window = Open();
+            try
+            {
+                Try("036-arrangement-audio-clips", () =>
+                {
+                    var layout = Core.SessionLayout;
+                    layout.Ensure();
+                    var drums = layout.NewAudioTrack("Drum Loop");
+                    var vox = layout.NewAudioTrack("Chops");
+                    var laneD = Core.Song.Sequences.First(s => s.Machine == drums);
+                    var laneV = Core.Song.Sequences.First(s => s.Machine == vox);
+                    var editor = new ClipEditor(Core);
+                    string file = DrumLoop("drum-loop.wav");
+                    IPattern Import(IMachine m)
+                    {
+                        var pattern = layout.ImportAudio(layout.FirstTrackOf(m), 0, file, out string error);
+                        Assert.That(pattern, Is.Not.Null, error);
+                        return pattern;
+                    }
+                    ClipItem At(ISequence lane, int time) => editor.Read(lane).First(i => i.Time == time);
+                    // Drums: a loop with fades, a second one crossfaded under it, the last turned down.
+                    var first = Import(drums);
+                    Assert.That(editor.Place(laneD, first, 16 * 4), Is.Null);
+                    int end = At(laneD, 16 * 4).End;
+                    Assert.That(editor.Fade(At(laneD, 16 * 4), 12, 24), Is.Null);
+                    Assert.That(editor.Place(laneD, Import(drums), end - 12), Is.Null);        // overlaps the first: a crossfade
+                    var third = At(laneD, end - 12);
+                    Assert.That(editor.Place(laneD, Import(drums), third.End + 16), Is.Null);
+                    Assert.That(editor.SetGain(At(laneD, third.End + 16), -9), Is.Null);
+                    // Chops: one stretched to twice its length, one backwards.
+                    Assert.That(editor.Place(laneV, Import(vox), 16 * 4 + 8), Is.Null);
+                    var chop = At(laneV, 16 * 4 + 8);
+                    Assert.That(editor.Stretch(chop, chop.Time + (chop.End - chop.Time) * 2), Is.Null);
+                    chop = At(laneV, 16 * 4 + 8);
+                    Assert.That(editor.Place(laneV, Import(vox), chop.End + 16), Is.Null);
+                    Assert.That(editor.Reverse(At(laneV, chop.End + 16)), Is.Null);
+                    Settle();
+                    var seq = Tab<SequenceView>(window, "Arrangement");
+                    window.ShowView("Sequence");
+                    seq.SetArrangementMode(true);
+                    Settle();
+                    Click(window, seq.Arrangement.TranslatePoint(new Point(seq.Arrangement.Geometry.XOf(16 * 4 + 20), seq.Arrangement.YOf(seq.Arrangement.RowOf(laneD)) + 28), window)!.Value);
+                    Shot(window, "036-arrangement-audio-clips", "Neo Audio clips in the Arrangement (neo-audio.md, NA2): waveforms drawn along the beats from a peak cache, warp markers, fade corners and the gain handle on the selected clip, a crossfade where two clips overlap, a clip stretched with Alt+drag of its right edge, a reversed clip (the \"rev\" badge), a turned-down clip.", "Drag a WAV onto the Arrangement, or audio_import; the handles on a selected clip.");
+                    seq.SetArrangementMode(false);
+                });
+            }
+            finally
+            {
+                Close(window);
+            }
+            AfterAll();
+        }
 
         [AvaloniaTest, Order(6)]
         public void SongsAndStates()

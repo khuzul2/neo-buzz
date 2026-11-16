@@ -52,6 +52,10 @@ namespace ReBuzz.Agent
                 ["transpose"] = a.Transpose,
                 ["detune"] = a.Detune,
                 ["gain_db"] = Math.Round(a.GainDb, 3),
+                ["fade_in_beats"] = Math.Round(a.FadeIn, 4),
+                ["fade_out_beats"] = Math.Round(a.FadeOut, 4),
+                ["crossfade_beats"] = Math.Round(a.Tail, 4),
+                ["reverse"] = a.Reverse,
                 ["loop"] = settings.Loop,
                 ["region"] = new JsonObject
                 {
@@ -76,6 +80,11 @@ namespace ReBuzz.Agent
             else
                 o["audio"] = JsonValue.Create((string)null);
             return o;
+        }
+
+        static void Check(string why)
+        {
+            if (why != null) throw new ToolError(why);
         }
 
         public static void Register(ToolRegistry tools, AgentHost host)
@@ -214,7 +223,10 @@ namespace ReBuzz.Agent
                     "(a phase vocoder; any material). preserve (Beats): Transients, 1/4, 1/8, 1/16. tempo_bpm is the audio's tempo (without warp markers the clip's length " +
                     "follows it: 4 beats at 120 BPM are 8 at 60); detect_tempo=true finds it again. transpose -48..48 semitones, detune -50..50 cents, gain_db -70..24. " +
                     "loop on or off; region = {start_beats, loop_start_beats, loop_end_beats} inside the clip (loop_end 0 is its end). warp_markers = [{sample, beat}] " +
-                    "(at least 2; [] clears them). Example: audio_clip_set(machine=\"Drums audio\", pattern=\"loop\", warp=\"Complex\", transpose=-2, gain_db=-3).",
+                    "(at least 2; [] clears them). Arrangement audio clips (NA2): fade_in_beats and fade_out_beats (the fades in the arrangement; 0 none), reverse " +
+                    "(true or false: the audio plays backwards, the same part of it), stretch_to_beats (the clip's length in the arrangement: the audio is warped to fill it; " +
+                    "the clip must be placed there, warp not Off, loop off). Setting tempo_bpm, or detect_tempo, on a clip whose warp is Off (a file with no tempo found) turns warp to Beats " +
+                    "unless warp is given. Example: audio_clip_set(machine=\"Drums audio\", pattern=\"loop\", warp=\"Complex\", transpose=-2, gain_db=-3).",
                 Input = Object(null, ClipTarget().Concat(new[]
                 {
                     Opt("warp", String("Warp mode", Warps)),
@@ -227,6 +239,10 @@ namespace ReBuzz.Agent
                     Opt("loop", Boolean("Loop the clip")),
                     Opt("region", Object(null, Opt("start_beats", Number("Start marker", 0)), Opt("loop_start_beats", Number("Loop start", 0)), Opt("loop_end_beats", Number("Loop end; 0 is the clip's end", 0)))),
                     Opt("warp_markers", Array(Object(null, Req("sample", Number("Audio sample")), Req("beat", Number("Clip beat"))), "Markers; empty clears")),
+                    Opt("fade_in_beats", Number("Fade in over this many beats from the clip's start in the arrangement; 0 none", 0)),
+                    Opt("fade_out_beats", Number("Fade out over this many beats to the clip's end in the arrangement; 0 none", 0)),
+                    Opt("reverse", Boolean("Play the audio backwards (the part the clip plays stays the same)")),
+                    Opt("stretch_to_beats", Number("The clip's length in the arrangement, beats: the audio is warped to fill it", 0.0001)),
                 }).ToArray()),
                 Output = Object(null, Req("machine", String("Machine")), Req("pattern", String("Pattern")), Req("warp", String("Warp mode"))),
                 Annotations = ToolAnnotations.WriteIdempotent,
@@ -245,7 +261,14 @@ namespace ReBuzz.Agent
                             a.Warp = Warps.FirstOrDefault(w => string.Equals(w, warp, StringComparison.OrdinalIgnoreCase)) ?? throw new ToolError($"warp: one of {string.Join(", ", Warps)}.");
                         if (c.String("preserve") is string pr)
                             a.Preserve = Preserves.FirstOrDefault(w => string.Equals(w, pr, StringComparison.OrdinalIgnoreCase)) ?? throw new ToolError($"preserve: one of {string.Join(", ", Preserves)}.");
-                        if (c.Number("tempo_bpm") is double bpm) a.Bpm = Math.Clamp(bpm, 1, 999);
+                        if (c.Number("tempo_bpm") is double bpm)
+                        {
+                            a.Bpm = Math.Clamp(bpm, 1, 999);
+                            if (a.Warp == "Off" && c.String("warp") == null) a.Warp = "Beats";       // a tempo is what a file with none was waiting for
+                        }
+                        if (c.Bool("detect_tempo") == true && a.Warp == "Off" && c.String("warp") == null) a.Warp = "Beats";
+                        if (c.Number("fade_in_beats") is double fi) { a.FadeIn = Math.Max(0, fi); if (fi <= 0) a.CrossIn = false; }
+                        if (c.Number("fade_out_beats") is double fo) a.FadeOut = Math.Max(0, fo);
                         if (c.Int("transpose") is int tr) a.Transpose = Math.Clamp(tr, -48, 48);
                         if (c.Int("detune") is int dt) a.Detune = Math.Clamp(dt, -50, 50);
                         if (c.Number("gain_db") is double g) a.GainDb = Math.Clamp(g, -70, 24);
@@ -265,6 +288,14 @@ namespace ReBuzz.Agent
                         layout.SetAudio(p, a);
                         layout.SetClipSettings(p, settings);
                         if (c.Bool("detect_tempo") == true) layout.DetectTempo(p);
+                        var editor = new ClipEditor(core);
+                        if (c.Bool("reverse") is bool reverse && reverse != layout.AudioOf(p).Reverse)
+                            Check(editor.ReversePattern(p));
+                        if (c.Number("stretch_to_beats") is double stretch)
+                        {
+                            var use = editor.ClipsOf(p).FirstOrDefault() ?? throw new ToolError($"\"{p.Name}\" isn't placed in the arrangement: stretch_to_beats stretches the clip there (audio_import with at_beats, or arrangement_clip add).");
+                            Check(editor.Stretch(use, use.Time + Math.Max(1, SongModel.Ticks(core, stretch))));
+                        }
                         var after = layout.Document.CloneLayout();
                         AgentActions.Do(core, new DelegateAction(() => layout.Restore(after), () => layout.Restore(before)));
                         return ClipJson(core, layout, m, p);

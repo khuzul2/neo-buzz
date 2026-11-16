@@ -132,6 +132,16 @@ namespace ReBuzz.Core.Clips
             return true;
         }
 
+        /// <summary>The voice is silent at once, with no fade (a crossfade tail that has faded to nothing by its own envelope).</summary>
+        public void Silence()
+        {
+            sounding = false;
+            expected = double.NaN;
+            tail.Left = 0;
+            older.Left = 0;
+            lastSource = double.NaN;
+        }
+
         /// <summary>The clip stopped: what sounded fades out (into these buffers, and the next ones until it has).</summary>
         public void Stop(float[] left, float[] right, int offset, int count)
         {

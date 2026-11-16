@@ -90,6 +90,29 @@ namespace ReBuzz.Core.AudioLibrary
         public AudioSource Source { get; }
         public IAudioAssetReader Reader { get; }
 
+        volatile PeakCache peaks;
+        int peaksStarted;
+
+        /// <summary>
+        /// The peaks the views draw its waveform from (NA2), or null until the background build ends; asking starts the build once. Kept in
+        /// memory beside the asset, never saved. <paramref name="ready"/> runs on a pool thread when they are made.
+        /// </summary>
+        public PeakCache PeaksOrBuild(Action ready = null)
+        {
+            var p = peaks;
+            if (p != null) return p;
+            if (System.Threading.Interlocked.Exchange(ref peaksStarted, 1) == 0)
+                PeakCache.BuildAsync(Source, c =>
+                {
+                    peaks = c;
+                    ready?.Invoke();
+                });
+            return null;
+        }
+
+        /// <summary>The peaks if they are made.</summary>
+        public PeakCache Peaks => peaks;
+
         /// <summary>"a" and 16 hex digits of the SHA-256 of the audio's rate, channels and samples.</summary>
         public static string ContentId(AudioSource s, int channels)
         {
