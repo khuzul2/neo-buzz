@@ -1,6 +1,7 @@
 using BuzzGUI.Common;
 using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Interfaces;
+using ReBuzz.Core.AudioLibrary;
 using ReBuzz.Core.Clips;
 using System;
 using System.Collections.Generic;
@@ -11,43 +12,51 @@ namespace ReBuzz.Core.Session
 {
     /// <summary>
     /// Audio clips, layout side (docs/specs/session-view.md 1.0). An audio track is a track of a
-    /// Session Clip Player machine; an audio clip is one of its patterns whose clip settings have
-    /// audio (<see cref="SessionDocument.AudioSettings"/>): a wave of the song's wavetable, its
-    /// tempo, warp mode and markers, gain and pitch. Dropping a file on a slot loads it into a
-    /// free wave and makes the clip (a new audio track for it when the slot's track isn't one).
+    /// Neo Audio machine (once the Session Clip Player); an audio clip is one of its patterns whose clip settings have
+    /// audio (<see cref="SessionDocument.AudioSettings"/>): an asset of the song's audio store (docs/specs/neo-audio.md; clips an
+    /// older song made name a wave of the wavetable and are migrated to assets, the wave kept), its
+    /// tempo, warp mode and markers, gain and pitch. Dropping a file on a slot imports it as an asset
+    /// and makes the clip (a new audio track for it when the slot's track isn't one).
     ///
     /// After every edit (with the launch map), each audio clip's pattern gets how it plays now
-    /// (<see cref="PatternCore.SessionAudio"/>): its audio read from the wave (kept until the
-    /// wave changes), the warp map, Beats mode's slices (transients found once per wave). The
-    /// Session Clip Player renders from that on the audio thread (<see cref="SessionClipEngine"/>).
+    /// (<see cref="PatternCore.SessionAudio"/>): its audio (the asset's), the warp map, Beats mode's slices
+    /// (transients found once per asset). Neo Audio renders from that on the audio thread (<see cref="SessionClipEngine"/>).
     /// UI thread.
     /// </summary>
     internal sealed partial class SessionLayout
     {
-        /// <summary>A wave as audio clips play it: read once, with its transients when Beats mode needs them.</summary>
+        /// <summary>An asset as audio clips play it, with its transients when Beats mode needs them (found once).</summary>
         sealed class WaveAudio
         {
-            public IWaveLayer Layer;
-            public string Path;
-            public int Count, Rate, Channels;
+            public AudioAsset Asset;
             public AudioSource Source;
             public List<double> Onsets;
             public int Version;
         }
 
-        readonly Dictionary<int, WaveAudio> waveAudio = new Dictionary<int, WaveAudio>();
+        /// <summary>A wave of the wavetable a clip of an older song played, migrated to an asset (the wave stays as it is).</summary>
+        sealed class MigratedWave
+        {
+            public IWaveLayer Layer;
+            public int Count, Rate, Channels;
+            public string AssetId;
+        }
+
+        readonly Dictionary<string, WaveAudio> assetAudio = new Dictionary<string, WaveAudio>(StringComparer.Ordinal);
+        readonly Dictionary<int, MigratedWave> migratedWaves = new Dictionary<int, MigratedWave>();
+        AudioAssetStore Assets => buzz.AudioAssets;
         readonly Dictionary<PatternCore, string> audioKeys = new Dictionary<PatternCore, string>();
         int waveVersion;
         bool audioRefreshPosted;
         readonly HashSet<int> changedWaves = new HashSet<int>();
 
-        /// <summary>Whether the machine is a Session Clip Player: its tracks are audio tracks.</summary>
+        /// <summary>Whether the machine is a Neo Audio: its tracks are audio tracks.</summary>
         public static bool IsClipPlayer(IMachine machine) => machine?.DLL?.Info?.Name == SessionClipHost.MachineName;
 
-        /// <summary>The Session Clip Player's DLL, or null when it isn't installed (Gear\Effects).</summary>
+        /// <summary>Neo Audio's DLL, or null when it isn't installed (Gear\Effects).</summary>
         IMachineDLL ClipPlayerDll => buzz.MachineDLLs.Values.FirstOrDefault(d => d?.Info?.Name == SessionClipHost.MachineName);
 
-        /// <summary>Whether audio tracks can be made (the Session Clip Player is installed).</summary>
+        /// <summary>Whether audio tracks can be made (Neo Audio is installed).</summary>
         public bool CanMakeAudioTracks => ClipPlayerDll != null;
 
         /// <summary>A pattern's audio, or null when it is no audio clip.</summary>
@@ -81,14 +90,15 @@ namespace ReBuzz.Core.Session
                     audioRefreshPosted = false;
                 }
                 foreach (int i in changed)
-                    waveAudio.Remove(i);
+                    migratedWaves.Remove(i);
                 RefreshAudio();
             }, UiPriority.Background);
         }
 
         void ResetAudio()
         {
-            waveAudio.Clear();
+            assetAudio.Clear();
+            migratedWaves.Clear();
             foreach (var p in audioKeys.Keys)
                 if (p.SessionAudio != null) p.SessionAudio.Params = null;
             audioKeys.Clear();
@@ -97,7 +107,7 @@ namespace ReBuzz.Core.Session
         // ------------------------------------------------------------------ audio tracks
 
         /// <summary>
-        /// A new audio track: a Session Clip Player connected to the master (one step of the
+        /// A new audio track: a Neo Audio connected to the master (one step of the
         /// song's undo), with a track at the end. Null when the machine isn't installed.
         /// </summary>
         public IMachine NewAudioTrack(string name = null)
@@ -148,11 +158,10 @@ namespace ReBuzz.Core.Session
         // ------------------------------------------------------------------ import
 
         /// <summary>
-        /// Loads an audio file (WAV, AIFF, FLAC: what the wavetable reads) into a free wave and
-        /// puts it in a slot as an audio clip at its tempo (found from its length and transients),
-        /// warped in Beats mode. On a track that isn't an audio track, a new audio track gets it
-        /// (in the same scene). The clip is one undo step of the session; the wave stays loaded.
-        /// Null and a reason when it can't.
+        /// Imports an audio file (WAV, AIFF, FLAC, OGG, MP3; <see cref="AudioImporter"/>) as an asset of the song, converted to the song's
+        /// sample rate, and puts it in a slot as an audio clip at its tempo (found from its length and transients), warped in Beats mode.
+        /// On a track that isn't an audio track, a new audio track gets it (in the same scene). The clip is one undo step of the session;
+        /// the asset stays in the song. Null and a reason when it can't.
         /// </summary>
         public IPattern ImportAudio(int track, int scene, string path, out string error)
         {
@@ -167,122 +176,52 @@ namespace ReBuzz.Core.Session
                 error = $"The {SessionClipHost.MachineName} machine isn't installed (Gear\\Effects), so {Product.Name} can't play audio clips.";
                 return null;
             }
-            int wave = FreeWave();
-            if (wave < 0)
+            var asset = ImportAsset(path, out error);
+            if (asset == null) return null;
+            var (bpm, _) = AudioAnalysis.Tempo(asset.Source, Session.BeatsPerBar);
+
+            var machine = SequenceOf(track)?.Machine;
+            if (!IsClipPlayer(machine))
             {
-                error = "The wavetable is full.";
-                return null;
+                machine = NewAudioTrack(asset.Name);
+                track = FirstTrackOf(machine);
+                if (machine == null || track < 0)
+                {
+                    error = "Couldn't make an audio track.";
+                    return null;
+                }
             }
-            string name = System.IO.Path.GetFileNameWithoutExtension(path);
-            AudioSource source;
+            // The tempo as found (a loop's bars exactly): rounding it would make the clip a tick longer.
+            return AddAudioClip(track, scene, machine, asset.Name, new SessionDocument.AudioSettings { Asset = asset.Id, Bpm = bpm });
+        }
+
+        /// <summary>Decodes a file into the song's audio store at the song's sample rate; null and a reason when it can't.</summary>
+        public AudioAsset ImportAsset(string path, out string error)
+        {
+            error = null;
             try
             {
-                source = ReadAudioFile(path);
+                var asset = AudioImporter.Import(path, SampleRate);
+                if (asset.Frames == 0) throw new InvalidDataException("it holds no audio");
+                return Assets.Add(asset);
             }
             catch (Exception e)
             {
                 error = $"Couldn't read {System.IO.Path.GetFileName(path)}: {e.Message}";
                 return null;
             }
-            if (source.Length == 0)
-            {
-                error = $"{System.IO.Path.GetFileName(path)} holds no audio.";
-                return null;
-            }
-            var audio = PutWave(wave, path, name, source);
-            if (audio == null)
-            {
-                ClearWave(wave);
-                error = "Couldn't make a wave of it.";
-                return null;
-            }
-            var (bpm, _) = AudioAnalysis.Tempo(audio.Source, Session.BeatsPerBar);
-
-            var machine = SequenceOf(track)?.Machine;
-            if (!IsClipPlayer(machine))
-            {
-                machine = NewAudioTrack(name);
-                track = FirstTrackOf(machine);
-                if (machine == null || track < 0)
-                {
-                    ClearWave(wave);
-                    error = "Couldn't make an audio track.";
-                    return null;
-                }
-            }
-            // The tempo as found (a loop's bars exactly): rounding it would make the clip a tick longer.
-            return AddAudioClip(track, scene, machine, name, new SessionDocument.AudioSettings { Wave = wave, Bpm = bpm });
         }
 
         /// <summary>The longest audio file a clip takes.</summary>
-        public const int MaxImportMinutes = 30;
+        public const int MaxImportMinutes = AudioImporter.MaxMinutes;
 
         /// <summary>
-        /// A file's audio (libsndfile, as the wavetable reads it), its first two channels. Read
-        /// here rather than by the wavetable's LoadWave, which holds the audio lock while it reads.
+        /// Makes an audio clip of an asset (or of a wave, which is migrated to an asset first) in a slot (undoable); the slot's clip, if
+        /// any, makes way (its pattern stays).
         /// </summary>
-        static AudioSource ReadAudioFile(string path)
-        {
-            using var file = libsndfile.SoundFile.OpenRead(path);
-            int channels = file.ChannelCount;
-            int rate = file.SampleRate;
-            if (channels < 1 || rate <= 0) throw new InvalidDataException("not an audio file");
-            long frames = file.FrameCount;
-            if (frames > (long)MaxImportMinutes * 60 * rate) throw new InvalidDataException($"it is longer than {MaxImportMinutes} minutes");
-            var left = new float[Math.Max(0, frames)];
-            var right = channels > 1 ? new float[left.Length] : left;
-            const int Chunk = 4096;
-            var buffer = new float[Chunk * channels];
-            long at = 0;
-            while (at < frames)
-            {
-                long n = file.ReadFloat(buffer, Math.Min(Chunk, frames - at));
-                if (n <= 0) break;
-                for (int i = 0; i < n; i++)
-                {
-                    left[at + i] = buffer[i * channels];
-                    if (channels > 1) right[at + i] = buffer[i * channels + 1];
-                }
-                at += n;
-            }
-            if (at < frames)
-            {
-                Array.Resize(ref left, (int)at);
-                right = channels > 1 ? right[..(int)at] : left;
-            }
-            return new AudioSource(left, right, rate);
-        }
-
-        /// <summary>Puts audio into a wave of the song (float, mono or stereo) and keeps it as read; null if it can't.</summary>
-        WaveAudio PutWave(int index, string path, string name, AudioSource source)
-        {
-            bool stereo = !ReferenceEquals(source.Left, source.Right);
-            // A free slot: nothing plays it, so this needn't hold the audio lock.
-            song.Wavetable.AllocateWave(index, path ?? "", name, source.Length, WaveFormat.Float32, stereo, 65, false, false);
-            var layer = song.Wavetable.Waves[index]?.Layers.FirstOrDefault();
-            if (layer == null) return null;
-            layer.SampleRate = source.SampleRate;
-            layer.SetDataAsFloat(source.Left, 0, 1, 0, 0, source.Length);
-            if (stereo) layer.SetDataAsFloat(source.Right, 0, 1, 1, 0, source.Length);
-            layer.InvalidateData();
-            var w = new WaveAudio
-            {
-                Layer = layer,
-                Path = layer.Path,
-                Count = layer.SampleCount,
-                Rate = layer.SampleRate,
-                Channels = layer.ChannelCount,
-                Source = source,
-                Version = ++waveVersion
-            };
-            waveAudio[index] = w;
-            return w;
-        }
-
-        /// <summary>Makes an audio clip of a wave in a slot (undoable); the slot's clip, if any, makes way (its pattern stays).</summary>
         internal IPattern AddAudioClip(int track, int scene, IMachine machine, string name, SessionDocument.AudioSettings audio)
         {
-            var source = WaveAudioOf(audio.Wave)?.Source;
+            var source = ClipAudioOf(audio)?.Source;
             if (source == null || machine == null) return null;
             int length = AudioClipLength(source, audio);
             UndoStack.BeginActionGroup();
@@ -320,17 +259,13 @@ namespace ReBuzz.Core.Session
             return Math.Clamp(n, 1, 1 << 20);
         }
 
-        /// <summary>A wave slot to fill: empty, and not one an audio clip of the layout or a take plays.</summary>
-        int FreeWave()
+        /// <summary>A wave slot to fill (a .bmx save of audio clips): empty, and not one in <paramref name="taken"/>.</summary>
+        int FreeWave(ICollection<int> taken = null)
         {
             var waves = song.Wavetable?.Waves;
             if (waves == null) return -1;
-            var used = new HashSet<int>(audioTakes.Values.Select(t => t.Wave));
-            if (document != null)
-                foreach (var c in document.Clips.Values)
-                    if (c.Audio != null) used.Add(c.Audio.Wave);
             for (int i = 0; i < waves.Count; i++)
-                if ((waves[i] == null || waves[i].Layers.Count == 0) && !used.Contains(i)) return i;
+                if ((waves[i] == null || waves[i].Layers.Count == 0) && (taken == null || !taken.Contains(i))) return i;
             return -1;
         }
 
@@ -338,7 +273,75 @@ namespace ReBuzz.Core.Session
         {
             try { song.Wavetable.LoadWave(index, null, null, false); }
             catch (Exception) { }
-            waveAudio.Remove(index);
+            migratedWaves.Remove(index);
+        }
+
+        // ------------------------------------------------------------------ .bmx and .bmxml
+
+        /// <summary>
+        /// Writes the document for a format that has no audio store: each audio clip names a wave of the wavetable. An asset migrated from a wave
+        /// uses that wave while it is as it was; the others go into free slots (temporary: the song's wavetable is put back after the file
+        /// is written, <see cref="SaveSongCore.RunCleanup"/>). An asset with no slot left is listed (the export's loss report) and its clips
+        /// stay silent when the file is opened again. The live document is not changed.
+        /// </summary>
+        void SaveDocumentWithWaves(SaveSongCore ss, Stream stream)
+        {
+            var waves = song.Wavetable?.Waves;
+            var placed = new Dictionary<string, int>(StringComparer.Ordinal);
+            var taken = new HashSet<int>();
+            var changed = new List<(SessionDocument.AudioSettings Audio, int Wave)>();
+            foreach (var c in document.Clips.Values)
+            {
+                var a = c.Audio;
+                if (a == null) continue;
+                var asset = Assets.Get(EnsureAsset(a));
+                if (asset == null) continue;
+                if (!placed.TryGetValue(asset.Id, out int w))
+                {
+                    w = -1;
+                    int origin = asset.OriginWave;
+                    if (origin >= 0 && waves != null && origin < waves.Count && waves[origin]?.Layers.FirstOrDefault() is { } layer && layer.SampleCount == asset.Frames)
+                        w = origin;
+                    else
+                    {
+                        w = FreeWave(taken);
+                        if (w >= 0 && !ss.DryRun)
+                        {
+                            if (!FillWave(w, asset)) w = -1;
+                            else { int slot = w; ss.Cleanup.Add(() => ClearWave(slot)); }
+                        }
+                    }
+                    placed[asset.Id] = w;
+                    if (w >= 0) { taken.Add(w); ss.AudioWaves++; }
+                    else ss.AudioLosses.Add(string.IsNullOrEmpty(asset.Name) ? asset.Id : asset.Name);
+                }
+                if (w >= 0) changed.Add((a, a.Wave));
+                if (w >= 0) a.Wave = w;
+            }
+            try
+            {
+                document.Save(stream);
+            }
+            finally
+            {
+                // Put every clip's wave back (changed holds each clip's own).
+                foreach (var (a, wave) in changed) a.Wave = wave;
+            }
+        }
+
+        /// <summary>An asset as a wave of the wavetable (float, mono or stereo); false if it can't be made.</summary>
+        bool FillWave(int index, AudioAsset asset)
+        {
+            var source = asset.Source;
+            bool stereo = asset.Channels > 1;
+            song.Wavetable.AllocateWave(index, asset.SourcePath ?? "", asset.Name ?? "", source.Length, WaveFormat.Float32, stereo, 65, false, false);
+            var layer = song.Wavetable.Waves[index]?.Layers.FirstOrDefault();
+            if (layer == null) return false;
+            layer.SampleRate = source.SampleRate;
+            layer.SetDataAsFloat(source.Left, 0, 1, 0, 0, source.Length);
+            if (stereo) layer.SetDataAsFloat(source.Right, 0, 1, 1, 0, source.Length);
+            layer.InvalidateData();
+            return true;
         }
 
         // ------------------------------------------------------------------ edits
@@ -352,9 +355,11 @@ namespace ReBuzz.Core.Session
             if (pattern?.Machine == null || audio == null || !IsClipPlayer(pattern.Machine)) return;
             var settings = ClipOf(pattern);
             if (settings.Audio == null) return;
-            var source = WaveAudioOf(audio.Wave)?.Source;
+            audio = audio.Clone();
+            if (string.IsNullOrEmpty(audio.Asset)) audio.Asset = settings.Audio.Asset;       // a caller that names only a wave or nothing keeps the clip's asset
+            var source = ClipAudioOf(audio)?.Source;
             // Only a new tempo or new markers make it another length: a length set by hand stays through a gain change.
-            bool timing = audio.Bpm != settings.Audio.Bpm || audio.Wave != settings.Audio.Wave ||
+            bool timing = audio.Bpm != settings.Audio.Bpm || audio.Asset != settings.Audio.Asset || audio.Wave != settings.Audio.Wave ||
                           !(audio.Markers ?? new List<(double, double)>()).SequenceEqual(settings.Audio.Markers ?? new List<(double, double)>());
             UndoStack.BeginActionGroup();
             try
@@ -378,7 +383,7 @@ namespace ReBuzz.Core.Session
         public double DetectTempo(IPattern pattern)
         {
             var audio = AudioOf(pattern);
-            var source = audio == null ? null : WaveAudioOf(audio.Wave)?.Source;
+            var source = audio == null ? null : ClipAudioOf(audio)?.Source;
             if (source == null) return 0;
             var (bpm, _) = AudioAnalysis.Tempo(source, Session.BeatsPerBar);
             audio.Bpm = bpm;
@@ -387,29 +392,28 @@ namespace ReBuzz.Core.Session
             return audio.Bpm;
         }
 
-        /// <summary>What the clip panel shows of an audio clip's audio: the wave's name, seconds, rate and channels; null if it is gone.</summary>
+        /// <summary>What the clip panel shows of an audio clip's audio: the asset's name, seconds, rate and channels; null if it is gone.</summary>
         public (string Wave, double Seconds, int Rate, int Channels, double Beats)? AudioInfo(IPattern pattern)
         {
             var audio = AudioOf(pattern);
             if (audio == null) return null;
-            var w = WaveAudioOf(audio.Wave);
+            var w = ClipAudioOf(audio);
             if (w == null) return null;
-            var wave = song.Wavetable.Waves[audio.Wave];
-            return (wave?.Name ?? "", w.Source.Seconds, w.Rate, w.Channels, MapOf(w.Source, audio).BeatAt(w.Source.Length));
+            return (w.Asset?.Name ?? "", w.Source.Seconds, w.Source.SampleRate, w.Asset?.Channels ?? 1, MapOf(w.Source, audio).BeatAt(w.Source.Length));
         }
 
         /// <summary>An audio clip's audio as it plays (for the warp marker editor and tests), or null.</summary>
         internal AudioSource AudioSourceOf(IPattern pattern)
         {
             var audio = AudioOf(pattern);
-            return audio == null ? null : WaveAudioOf(audio.Wave)?.Source;
+            return audio == null ? null : ClipAudioOf(audio)?.Source;
         }
 
         /// <summary>An audio clip's transients (audio samples), found once per wave; empty if none.</summary>
         internal IReadOnlyList<double> TransientsOf(IPattern pattern)
         {
             var audio = AudioOf(pattern);
-            var w = audio == null ? null : WaveAudioOf(audio.Wave);
+            var w = audio == null ? null : ClipAudioOf(audio);
             if (w == null) return Array.Empty<double>();
             return w.Onsets ??= AudioAnalysis.Onsets(w.Source);
         }
@@ -423,7 +427,8 @@ namespace ReBuzz.Core.Session
             public PatternCore Take;
             public AudioCapture Capture;
             public SessionClipEngine.TakeCapture Capturing;
-            public int Wave;
+            /// <summary>The id the clip names until the take is done (the store aliases it to the finished asset).</summary>
+            public string PendingId;
             public string Name;
             public double Bpm;
             public int TicksPerBeat;
@@ -489,7 +494,7 @@ namespace ReBuzz.Core.Session
         /// <summary>
         /// Records a take of an audio track (an armed Session Clip Player): a new audio clip in an
         /// empty slot, launched on the grid, recording its input (or the master, resampling) for
-        /// the record length, or until stopped (then whole bars). Its audio becomes a wave of the
+        /// the record length, or until stopped (then whole bars). Its audio becomes an asset of the
         /// song when the take is done; it plays from its next pass. One undo step (the clip).
         /// </summary>
         IPattern RecordAudioTake(int track, int scene, SequenceCore seq)
@@ -502,9 +507,8 @@ namespace ReBuzz.Core.Session
                 stopping.Capture.SetLength(Math.Min(stopping.Capture.Length, stopping.Capture.Written));
                 FinishAudioTake(stopping);
             }
-            int wave = FreeWave();
             string name = machine?.GetNewPatternName();
-            if (wave < 0 || name == null) return null;
+            if (name == null) return null;
             var doc = Ensure();
             int bar = BarTicks;
             int bars = doc.RecordBars;
@@ -512,9 +516,9 @@ namespace ReBuzz.Core.Session
             double bpm = buzz.BPM;
             int tpb = Math.Max(1, buzz.TPB);
 
-            // The wave's slot is kept (a frame of silence) until the take's audio fills it.
+            // The clip names an id the store doesn't hold yet (silent) until the take's audio becomes an asset.
             string waveName = $"{machine.Name} {name}";
-            song.Wavetable.AllocateWave(wave, "", waveName, 1, WaveFormat.Float32, true, 65, false, true);
+            string pendingId = "take-" + Guid.NewGuid().ToString("N");
             PatternCore take;
             UndoStack.BeginActionGroup();
             try
@@ -523,16 +527,13 @@ namespace ReBuzz.Core.Session
                 UndoStack.Do(create);
                 take = create.Created as PatternCore;
                 if (take == null)
-                {
-                    ClearWave(wave);
                     return null;
-                }
                 Edit(d =>
                 {
                     d.SetSlot(track, scene, take.Name);
                     d.SetClip(machine.Name, take.Name, new SessionDocument.ClipSettings
                     {
-                        Audio = new SessionDocument.AudioSettings { Wave = wave, Bpm = bpm, Warp = "Beats" }
+                        Audio = new SessionDocument.AudioSettings { Asset = pendingId, Bpm = bpm, Warp = "Beats" }
                     });
                 });
             }
@@ -548,7 +549,7 @@ namespace ReBuzz.Core.Session
             long skip = !master && Engine.LatencyCompensation && HearsHardware(machine) ? buzz.OutputLatencySamples : 0;
             long length = bars > 0 ? FramesOf(ticks, bpm, tpb) : long.MaxValue;
             var capture = new AudioCapture(SampleRate, skip, length, (long)MaxAudioTakeMinutes * 60 * SampleRate, FramesOf(tpb, bpm, tpb));
-            var t = new AudioTake { Track = seq, Take = take, Capture = capture, Wave = wave, Name = waveName, Bpm = bpm, TicksPerBeat = tpb, UntilStopped = bars == 0 };
+            var t = new AudioTake { Track = seq, Take = take, Capture = capture, PendingId = pendingId, Name = waveName, Bpm = bpm, TicksPerBeat = tpb, UntilStopped = bars == 0 };
             t.Capturing = new SessionClipEngine.TakeCapture(take, capture, master);
             if (!master) (take.SessionAudio ??= new ClipPlayback()).Capture = capture;
             Engine.TakeCaptures = Engine.TakeCaptures.Append(t.Capturing).ToArray();
@@ -636,7 +637,7 @@ namespace ReBuzz.Core.Session
             }
         }
 
-        /// <summary>The take is over: its audio goes into its wave (the clip plays it from then on).</summary>
+        /// <summary>The take is over: its audio becomes an asset of the song (the clip plays it from then on).</summary>
         void FinishAudioTake(AudioTake t)
         {
             if (!audioTakes.TryGetValue(t.Track, out var current) || !ReferenceEquals(current, t)) return;
@@ -648,19 +649,11 @@ namespace ReBuzz.Core.Session
             if (frames > 0 && !t.Take.IsDeleted)
             {
                 var (left, right) = t.Capture.Collect(t.Capture.Length == long.MaxValue ? frames : t.Capture.Length);
-                song.Wavetable.AllocateWave(t.Wave, "", t.Name, left.Length, WaveFormat.Float32, true, 65, false, false);
-                var layer = song.Wavetable.Waves[t.Wave]?.Layers.FirstOrDefault();
-                if (layer != null)
-                {
-                    layer.SampleRate = t.Capture.SampleRate;
-                    layer.SetDataAsFloat(left, 0, 1, 0, 0, left.Length);
-                    layer.SetDataAsFloat(right, 0, 1, 1, 0, right.Length);
-                    layer.InvalidateData();
-                }
+                var asset = Assets.Add(new AudioAsset(t.Name, "", null, new AudioSource(left, right, t.Capture.SampleRate), 2));
+                Assets.Alias(t.PendingId, asset.Id);
                 if (t.Capture.Dropped > 0)
                     buzz.DCWriteLine($"Session: audio take {t.Name}: {t.Capture.Dropped} frames lost (the UI was too slow)", DCLogLevel.Warning);
             }
-            waveAudio.Remove(t.Wave);
             RefreshAudio();
             UpdatePollTimer();
             RecordingChanged?.Invoke();
@@ -703,20 +696,25 @@ namespace ReBuzz.Core.Session
             return new AudioClipParams(w.Source, map, mode, slices, audio.Gain, audio.Semitones);
         }
 
-        /// <summary>A wave's audio, read again when the wave isn't the one read; null when empty.</summary>
-        WaveAudio WaveAudioOf(int index)
+        /// <summary>
+        /// The asset a clip plays, migrating a clip an older song made (it names a wave) to one: the wave's audio is copied into the
+        /// store, once per wave, and the wave stays untouched. Empty when the clip has no audio (a wave that's empty, an asset gone).
+        /// </summary>
+        string EnsureAsset(SessionDocument.AudioSettings audio)
         {
+            if (!string.IsNullOrEmpty(audio.Asset)) return Assets.Get(audio.Asset)?.Id ?? audio.Asset;
             var waves = song.Wavetable?.Waves;
+            int index = audio.Wave;
             if (waves == null || index < 0 || index >= waves.Count) return null;
             var layer = waves[index]?.Layers.FirstOrDefault();
             if (layer == null || layer.SampleCount <= 0)
             {
-                waveAudio.Remove(index);
+                migratedWaves.Remove(index);
                 return null;
             }
-            if (waveAudio.TryGetValue(index, out var known) && ReferenceEquals(known.Layer, layer) && known.Path == layer.Path &&
-                known.Count == layer.SampleCount && known.Rate == layer.SampleRate && known.Channels == layer.ChannelCount)
-                return known;
+            if (migratedWaves.TryGetValue(index, out var known) && ReferenceEquals(known.Layer, layer) &&
+                known.Count == layer.SampleCount && known.Rate == layer.SampleRate && known.Channels == layer.ChannelCount && Assets.Get(known.AssetId) != null)
+                return known.AssetId;
             int n = layer.SampleCount;
             var left = new float[n];
             layer.GetDataAsFloat(left, 0, 1, 0, 0, n);
@@ -726,18 +724,40 @@ namespace ReBuzz.Core.Session
                 right = new float[n];
                 layer.GetDataAsFloat(right, 0, 1, 1, 0, n);
             }
-            var w = new WaveAudio
-            {
-                Layer = layer,
-                Path = layer.Path,
-                Count = n,
-                Rate = layer.SampleRate,
-                Channels = layer.ChannelCount,
-                Source = new AudioSource(left, right, layer.SampleRate > 0 ? layer.SampleRate : 44100),
-                Version = ++waveVersion
-            };
-            waveAudio[index] = w;
+            var asset = Assets.Add(new AudioAsset(waves[index].Name ?? "", layer.Path, null,
+                new AudioSource(left, right, layer.SampleRate > 0 ? layer.SampleRate : 44100), layer.ChannelCount > 1 ? 2 : 1, index));
+            migratedWaves[index] = new MigratedWave { Layer = layer, Count = n, Rate = layer.SampleRate, Channels = layer.ChannelCount, AssetId = asset.Id };
+            return asset.Id;
+        }
+
+        /// <summary>The audio a clip plays (its asset's), or null; sets <see cref="SessionDocument.AudioSettings.Asset"/> on a clip that named a wave.</summary>
+        WaveAudio ClipAudioOf(SessionDocument.AudioSettings audio)
+        {
+            if (audio == null) return null;
+            string id = EnsureAsset(audio);
+            var asset = id == null ? null : Assets.Get(id);
+            if (asset == null) return null;
+            if (audio.Asset != asset.Id) audio.Asset = asset.Id;
+            if (assetAudio.TryGetValue(asset.Id, out var known) && ReferenceEquals(known.Asset, asset)) return known;
+            var w = new WaveAudio { Asset = asset, Source = asset.Reader.InMemory ?? asset.Source, Version = ++waveVersion };
+            assetAudio[asset.Id] = w;
             return w;
+        }
+
+        /// <summary>The assets the layout's audio clips play (what a .nbl embeds).</summary>
+        internal IReadOnlyList<AudioAsset> ReferencedAssets()
+        {
+            var list = new List<AudioAsset>();
+            var doc = document;
+            if (doc == null) return list;
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var c in doc.Clips.Values)
+            {
+                if (c.Audio == null) continue;
+                var asset = Assets.Get(EnsureAsset(c.Audio));
+                if (asset != null && seen.Add(asset.Id)) list.Add(asset);
+            }
+            return list.OrderBy(a => a.Id, StringComparer.Ordinal).ToList();
         }
 
         /// <summary>
@@ -753,15 +773,13 @@ namespace ReBuzz.Core.Session
                 var machines = new Dictionary<string, IMachine>();
                 foreach (var m in song.Machines)
                     if (IsClipPlayer(m)) machines[m.Name] = m;
-                // A wave changed since it was read: read again (the version tells the clips).
-                foreach (var index in waveAudio.Keys.ToList()) WaveAudioOf(index);
                 foreach (var entry in doc.Clips)
                 {
                     var audio = entry.Value.Audio;
                     if (audio == null || !machines.TryGetValue(entry.Key.Machine, out var machine)) continue;
                     if (machine.Patterns.FirstOrDefault(p => p.Name == entry.Key.Pattern) is not PatternCore pattern) continue;
                     live.Add(pattern);
-                    var w = WaveAudioOf(audio.Wave);
+                    var w = ClipAudioOf(audio);                 // migrates a wave to an asset, and a take's placeholder id to its asset's
                     string key = audio.ToXml().ToString(System.Xml.Linq.SaveOptions.DisableFormatting) + "|" + (w?.Version ?? 0);
                     var playback = pattern.SessionAudio ??= new ClipPlayback();
                     if (audioKeys.TryGetValue(pattern, out var old) && old == key) continue;

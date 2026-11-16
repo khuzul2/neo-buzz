@@ -14,9 +14,25 @@ namespace ReBuzz.Core.Clips
     {
         public AudioSource(float[] left, float[] right, int sampleRate)
         {
-            Left = left ?? Array.Empty<float>();
-            Right = right ?? Left;
+            // Audio that came from a file or a recording can hold NaN or infinity (a damaged float file): one such
+            // sample would poison the phase vocoder's state for good, so they are silenced here, once, off the audio thread.
+            bool mono = right == null || ReferenceEquals(left, right);
+            Left = Clean(left ?? Array.Empty<float>());
+            Right = mono ? Left : Clean(right);
             SampleRate = Math.Max(1, sampleRate);
+        }
+
+        /// <summary>The array itself when every sample is finite, else a copy with the others silenced.</summary>
+        static float[] Clean(float[] x)
+        {
+            int bad = -1;
+            for (int i = 0; i < x.Length; i++)
+                if (!float.IsFinite(x[i])) { bad = i; break; }
+            if (bad < 0) return x;
+            var y = (float[])x.Clone();
+            for (int i = bad; i < y.Length; i++)
+                if (!float.IsFinite(y[i])) y[i] = 0f;
+            return y;
         }
 
         public float[] Left { get; }
@@ -37,6 +53,13 @@ namespace ReBuzz.Core.Clips
         /// </summary>
         public void Read(double position, out float left, out float right)
         {
+            // A position that isn't a place in any audio (NaN, infinity, beyond 2^50) is silence: a NaN fraction would
+            // make the whole interpolation NaN even from zeros.
+            if (!(Math.Abs(position) < 1e15))
+            {
+                left = right = 0f;
+                return;
+            }
             long i = (long)Math.Floor(position);
             float t = (float)(position - i);
             left = Hermite(L(i - 1), L(i), L(i + 1), L(i + 2), t);
@@ -68,10 +91,15 @@ namespace ReBuzz.Core.Clips
             var list = (markers ?? Enumerable.Empty<WarpMarker>())
                 .Where(m => double.IsFinite(m.Sample) && double.IsFinite(m.Beat))
                 .OrderBy(m => m.Beat).ToList();
-            // Strictly rising both ways: a marker that doesn't is dropped.
+            // Strictly rising both ways, and a slope the engine can play (between 1e-3 and 1e9 samples a beat): a marker
+            // that isn't is dropped (a pair 1e-9 beats apart and 1e3 samples apart would be a slope of 1e12 and more).
             var kept = new List<WarpMarker>();
             foreach (var m in list)
-                if (kept.Count == 0 || (m.Beat > kept[^1].Beat + 1e-9 && m.Sample > kept[^1].Sample + 1e-6)) kept.Add(m);
+            {
+                if (kept.Count == 0) { kept.Add(m); continue; }
+                double beats = m.Beat - kept[^1].Beat, samples = m.Sample - kept[^1].Sample;
+                if (beats > 1e-9 && samples > 1e-6 && double.IsFinite(samples / beats) && samples / beats >= 1e-3 && samples / beats <= 1e9) kept.Add(m);
+            }
             if (kept.Count == 0) kept.Add(new WarpMarker(0, 0));
             if (kept.Count == 1) kept.Add(new WarpMarker(kept[0].Sample + 44100, kept[0].Beat + 2));      // 120 BPM at 44.1 kHz
             this.markers = kept.ToArray();
@@ -161,8 +189,8 @@ namespace ReBuzz.Core.Clips
             if (Slices.Length == 0 || Slices[0] > 0) Slices = new[] { 0.0 }.Concat(Slices).ToArray();
             SliceBeats = Slices.Select(map.BeatAt).ToArray();
             EndBeat = map.BeatAt(source.Length);
-            Gain = gain;
-            Semitones = Math.Clamp(semitones, -48, 48);
+            Gain = float.IsFinite(gain) ? Math.Clamp(gain, 0f, 64f) : 1f;
+            Semitones = double.IsFinite(semitones) ? Math.Clamp(semitones, -48, 48) : 0;
             PitchRatio = Math.Pow(2, Semitones / 12.0);
         }
 

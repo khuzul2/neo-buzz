@@ -1,5 +1,5 @@
 #nullable disable
-// Fork addition (neo-buzz, docs/specs/session-view.md 1.0): how the Session Clip Player machine
+// Fork addition (neo-buzz, docs/specs/session-view.md 1.0): how the Neo Audio machine (once the Session Clip Player)
 // (Machines/SessionClipPlayer, the audio tracks' machine) reaches ReBuzz. The machine is a
 // separate DLL, as every managed machine is (they are loaded with Assembly.LoadFile); its Work
 // hands the block to ReBuzz here, which plays the audio clips of its patterns and records.
@@ -13,7 +13,10 @@ namespace BuzzGUI.Common
     public static class SessionClipHost
     {
         /// <summary>The machine's name (its MachineDecl): how ReBuzz knows an audio track.</summary>
-        public const string MachineName = "Session Clip Player";
+        public const string MachineName = "Neo Audio";
+
+        /// <summary>What the machine was called before it became Neo Audio: songs that name it load as Neo Audio (MachineAliases).</summary>
+        public const string LegacyMachineName = "Session Clip Player";
 
         /// <summary>
         /// Plays and records a block: <paramref name="state"/> is what <see cref="CreateState"/>

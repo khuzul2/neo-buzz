@@ -179,7 +179,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickNote", "Machines\Quick
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SysExTests", "SysExTests\SysExTests.csproj", "{9E62AB30-D9E7-437A-800F-B3C0952F06A8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SessionClipPlayer", "Machines\SessionClipPlayer\SessionClipPlayer.csproj", "{EC1056DF-9431-4221-8A13-E0702150FB7A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeoAudio", "Machines\NeoAudio\NeoAudio.csproj", "{EC1056DF-9431-4221-8A13-E0702150FB7A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeoEnsemble", "Machines\NeoEnsemble\NeoEnsemble.csproj", "{5E0D7A11-3C2B-4D8E-9F10-0A1B2C3D4E51}"
 EndProject

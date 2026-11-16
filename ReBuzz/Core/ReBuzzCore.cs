@@ -1801,6 +1801,7 @@ namespace ReBuzz.Core
 
             SaveSongCore ss = new SaveSongCore();
             ss.Song = songCore;
+            ss.Legacy = !NblFile.IsNative(filename);        // fork (neo-audio.md): audio clips go into waves
             SaveSong.Invoke(ss);
 
             file.SetSubSections(ss);
@@ -1812,6 +1813,10 @@ namespace ReBuzz.Core
             catch (Exception ex)
             {
                 userMessages.Error("Error saving file " + filename + "\n\n" + ex, "Error saving file.", ex);
+            }
+            finally
+            {
+                ss.RunCleanup();
             }
 
             Modified = false;
@@ -1829,9 +1834,17 @@ namespace ReBuzz.Core
             IReBuzzFile file = GetReBuzzFile(filename);
             SaveSongCore ss = new SaveSongCore();
             ss.Song = songCore;
-            SaveSong?.Invoke(ss);
-            file.SetSubSections(ss);
-            file.Save(filename);
+            ss.Legacy = !NblFile.IsNative(filename);
+            try
+            {
+                SaveSong?.Invoke(ss);
+                file.SetSubSections(ss);
+                file.Save(filename);
+            }
+            finally
+            {
+                ss.RunCleanup();
+            }
         }
 
         /// <summary>
@@ -1844,8 +1857,10 @@ namespace ReBuzz.Core
             {
                 SaveSongCore ss = new SaveSongCore();
                 ss.Song = songCore;
+                ss.Legacy = true;
+                ss.DryRun = true;
                 SaveSong?.Invoke(ss);
-                return FileOps.BuzzExport.Analyze(this, ss.GetStreamsDict().Keys);
+                return FileOps.BuzzExport.Analyze(this, ss.GetStreamsDict().Keys, ss);
             }
         }
 
@@ -1861,12 +1876,20 @@ namespace ReBuzz.Core
                 var file = new BMXFile(this, buzzPath, dispatcher, keyboard, engineSettings);
                 SaveSongCore ss = new SaveSongCore();
                 ss.Song = songCore;
-                SaveSong?.Invoke(ss);
-                var report = FileOps.BuzzExport.Analyze(this, ss.GetStreamsDict().Keys);
-                file.SetSubSections(ss);
-                byte[] bytes = BMXFile.Assemble(file.BuildSections(false));
-                FileOps.BuzzExport.WriteAtomic(filename, bytes);
-                return report;
+                ss.Legacy = true;
+                try
+                {
+                    SaveSong?.Invoke(ss);
+                    var report = FileOps.BuzzExport.Analyze(this, ss.GetStreamsDict().Keys, ss);
+                    file.SetSubSections(ss);
+                    byte[] bytes = BMXFile.Assemble(file.BuildSections(false));
+                    FileOps.BuzzExport.WriteAtomic(filename, bytes);
+                    return report;
+                }
+                finally
+                {
+                    ss.RunCleanup();
+                }
             }
         }
 
@@ -2616,6 +2639,12 @@ namespace ReBuzz.Core
         /// <summary>Fork (native-format.md §6): what the .nbl this song came from holds that this build doesn't know, written back on save. Null for a new song or one opened from another format.</summary>
         internal NblCarry NativeCarry { get; set; }
 
+        /// <summary>Fork (docs/specs/neo-audio.md): the song's audio assets (what audio clips play). Cleared with the song; a .nbl's are read into it on load.</summary>
+        internal AudioLibrary.AudioAssetStore AudioAssets { get; } = new AudioLibrary.AudioAssetStore();
+
+        /// <summary>Fork: a snapshot is being restored (the song's audio assets stay: a snapshot holds the core sections, which name them).</summary>
+        internal bool IsRestoringSnapshot => restoringSnapshot;
+
         /// <summary>
         /// Fork (native-format.md §7): the .bmx, .bmw or .bmxml this song was opened from, until it is saved under a name.
         /// Save asks for a new .nbl name for such a song and never overwrites the original.
@@ -2625,6 +2654,7 @@ namespace ReBuzz.Core
         internal void NewSong()
         {
             NativeCarry = null;
+            if (!restoringSnapshot) AudioAssets.Clear();       // fork (neo-audio.md)
             LegacyOrigin = null;
             bool outer = SongLoading;
             SongLoading = true;                 // fork (0.6.1)

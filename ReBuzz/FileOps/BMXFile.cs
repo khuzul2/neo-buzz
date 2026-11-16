@@ -380,11 +380,13 @@ namespace ReBuzz.FileOps
                 if (type != 0)
                 {
                     machineLibrary = ReadString(fs);
+                    machineLibrary = MachineAliases.Resolve(buzz.MachineDLLs, machineLibrary, out bool aliasedLibrary);   // fork: renamed machines
                     if (buzz.MachineDLLs.ContainsKey(machineLibrary))
                     {
                         machineDLL = buzz.MachineDLLs[machineLibrary] as MachineDLL;
                         machineProto.MachineDLL = machineDLL;
-                        machineProto.MachineDLL.MachineInfo.Type = (MachineType)type;
+                        if (!aliasedLibrary)
+                            machineProto.MachineDLL.MachineInfo.Type = (MachineType)type;
 
                         if (superOldSong)
                         {

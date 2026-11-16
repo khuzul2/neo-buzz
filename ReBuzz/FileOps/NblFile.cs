@@ -43,7 +43,7 @@ namespace ReBuzz.FileOps
         public const string FormatName = "neobuzz-live-song";
         public const string CoreCodec = "bmx-sections-v1";
 
-        static readonly HashSet<string> KnownMembers = new(StringComparer.Ordinal) { "format", "formatVersion", "minReaderVersion", "writer", "index", "machines", "core", "stores", "history" };
+        static readonly HashSet<string> KnownMembers = new(StringComparer.Ordinal) { "format", "formatVersion", "minReaderVersion", "writer", "index", "machines", "core", "stores", "history", NblAudio.Member };
 
         /// <summary>The subsections this build writes or reads by name: the others in a file are carried over untouched.</summary>
         internal static readonly HashSet<string> KnownStores = new(StringComparer.Ordinal)
@@ -81,16 +81,21 @@ namespace ReBuzz.FileOps
             Stream stream;
             NblCarry carry;
             JsonArray keyedMachines;
+            List<ReBuzz.Core.AudioLibrary.AudioAsset> audioAssets;
             using (var reader = new NblContainer.Reader(path))
             {
                 var manifest = JsonNode.Parse(reader.Manifest) as JsonObject ?? throw new InvalidDataException("The song file's manifest isn't a JSON object.");
                 if ((string)manifest["format"] != FormatName) throw new InvalidDataException("Not a NeoBuzz Live song.");
                 var ctx = new NblReadContext(reader);
                 NblMigrations.Default.Migrate(manifest, ctx);
+                audioAssets = NblAudio.Read(manifest, ctx);
                 (stream, carry) = ToBmxLayout(manifest, ctx, import);
                 keyedMachines = manifest["machines"] as JsonArray;
             }
             if (!import) buzz.NativeCarry = carry;
+            // The audio assets come before the sections: the Session View's clips name them (docs/specs/neo-audio.md).
+            if (import) foreach (var a in audioAssets) buzz.AudioAssets.Add(a);
+            else buzz.AudioAssets.ReplaceWith(audioAssets);
             using (BMXFile.Utf8Strings())
                 inner.LoadFrom(stream, path, x, y, importAction);
             if (!import && keyedMachines != null) ApplyKeyed(buzz, keyedMachines);
@@ -304,6 +309,13 @@ namespace ReBuzz.FileOps
                     blobs.AddStored(b.Key, b.Value.Codec, b.Value.Stored);
             }
             root["stores"] = new JsonObject(stores.OrderBy(s => s.Key, StringComparer.Ordinal).Select(s => KeyValuePair.Create(s.Key, s.Value.DeepClone())));
+            // The audio the clips play (neo-audio.md): a song with none stays readable by a version 1 reader.
+            var audio = NblAudio.Build(buzz.SessionLayout?.ReferencedAssets() ?? Array.Empty<ReBuzz.Core.AudioLibrary.AudioAsset>(), blobs);
+            if (audio != null)
+            {
+                root[NblAudio.Member] = audio;
+                root["minReaderVersion"] = 2;
+            }
             if (history != null) root["history"] = history;
             if (carry != null)
                 foreach (var m in carry.Members.OrderBy(m => m.Key, StringComparer.Ordinal))

@@ -19,7 +19,7 @@ namespace ReBuzz.Core.Session
         internal sealed class PlayerState
         {
             public readonly ClipMixer Mixer = new ClipMixer();
-            public readonly float[] InputLeft = new float[256], InputRight = new float[256];
+            public readonly float[] InputLeft = new float[ClipMixer.DefaultMaxBlock], InputRight = new float[ClipMixer.DefaultMaxBlock];
         }
 
         /// <summary>
@@ -93,7 +93,7 @@ namespace ReBuzz.Core.Session
             var player = (PlayerState)state;
             var buzz = (machine as MachineCore)?.Graph?.Buzz as ReBuzzCore;
             var mixer = player.Mixer;
-            mixer.Begin(n);
+            int frames = mixer.Begin(n);          // never more than it was made for: a longer block's end is silent, nothing is allocated
             if (buzz != null && buzz.Playing)
             {
                 var mi = ReBuzzCore.masterInfo;
@@ -114,10 +114,10 @@ namespace ReBuzz.Core.Session
                         Record(player, capture, input, n, mode);
                         capture.LastBlock = ReBuzzCore.GlobalState.AudioFrame;
                     }
-                    mixer.Play(clip, beat, beatsPerSample, mi.SamplesPerSec, n);
+                    mixer.Play(clip, beat, beatsPerSample, mi.SamplesPerSec, frames);
                 }
             }
-            bool sound = mixer.End(n);
+            bool sound = mixer.End(frames);
 
             bool hear = (mode & WorkModes.WM_READ) != 0 &&
                         (monitor == 1 || (monitor == 0 && buzz != null && buzz.SessionCore.IsArmedMachine(machine)));
@@ -133,7 +133,7 @@ namespace ReBuzz.Core.Session
             var right = mixer.Right;
             for (int i = 0; i < n; i++)
             {
-                float l = left[i] * 32768f, r = right[i] * 32768f;
+                float l = i < frames ? Clean(left[i] * 32768f) : 0f, r = i < frames ? Clean(right[i] * 32768f) : 0f;
                 if (hear)
                 {
                     l += input[i].L;
@@ -144,6 +144,9 @@ namespace ReBuzz.Core.Session
             }
             return true;
         }
+
+        /// <summary>What the clips made, as the master may have it: no NaN or infinity (they would stay in every filter and delay after it), no subnormals.</summary>
+        static float Clean(float x) => !float.IsFinite(x) || Math.Abs(x) < 1e-12f ? 0f : x;
 
         static bool HasSound(Sample[] samples, int n)
         {
@@ -160,13 +163,17 @@ namespace ReBuzz.Core.Session
                 capture.WriteSilence(n);
                 return;
             }
-            int count = Math.Min(n, player.InputLeft.Length);
-            for (int i = 0; i < count; i++)
+            // In pieces of what the buffers hold, so a block longer than that records whole and keeps its time.
+            for (int at = 0; at < n; at += player.InputLeft.Length)
             {
-                player.InputLeft[i] = input[i].L;
-                player.InputRight[i] = input[i].R;
+                int count = Math.Min(n - at, player.InputLeft.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    player.InputLeft[i] = input[at + i].L;
+                    player.InputRight[i] = input[at + i].R;
+                }
+                capture.Write(player.InputLeft, player.InputRight, count, 1f / 32768);
             }
-            capture.Write(player.InputLeft, player.InputRight, count, 1f / 32768);
         }
     }
 }
