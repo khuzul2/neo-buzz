@@ -59,6 +59,7 @@ namespace ReBuzz.Agent
             MachineTools.Register(tools, this);
             MachineEditTools.Register(tools, this); // K3b: machine_clone, machine_group, machine_latency, machine_attributes, machine_command
             ReplaceTools.Register(tools, this);     // U5 (mcp-server.md §12.5): machine_replace
+            ReplaceTools.RegisterSwap(tools, this); // BR1 (docs/specs/browser.md): machine_swap
             ParamTools.Register(tools, this);
             ModulationTools.Register(tools, this);
             PatternTools.Register(tools, this);

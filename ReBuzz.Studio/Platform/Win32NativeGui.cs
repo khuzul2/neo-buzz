@@ -118,7 +118,7 @@ namespace ReBuzz.Studio.Platform
         public bool Embed(string machineName, ForeignWindow window, object machine)
         {
             var host = new ForeignWindowHost(window.Handle);
-            var studioWindow = StudioMachineUiHost.MakeNativeWindow((IMachine)machine, machineName, host, host.Resizable);
+            var studioWindow = StudioMachineUiHost.MakeNativeWindow((IMachine)machine, machineName, host, resizable: false);
             studioWindow.Closed += (s, e) =>
             {
                 windows.Remove(window.Handle);

@@ -194,14 +194,16 @@ static int64_t memRead(const clap_istream_t* s, void* buf, uint64_t n) { auto* m
 
 static double peakOf(const std::vector<float>& v, int from, int n) { double p = 0; for (int i = from; i < from + n; i++) { if (!std::isfinite(v[i])) return INFINITY; p = std::max(p, (double)std::fabs(v[i])); } return p; }
 
+static int gKeyA = 60, gKeyB = 67;   // Neo Drums plays the drum keys (a kick and a snare), the others a fifth
+
 // one render of 20 blocks of 128 with the given events at block 0; returns the output (left) concatenated
 static std::vector<float> renderOnce(Inst& in, Audio& a, bool withNotes, int blocks = 0) {
     std::vector<float> out; if (blocks == 0) blocks = withNotes ? 600 : 20;
     InEvents ev; OutEvents oe;
     for (int b = 0; b < blocks; b++) {
         ev.clear();
-        if (withNotes && b == 0) { ev.note(10, true, 60, 0.8); ev.note(20, true, 67, 0.6); }
-        if (withNotes && b == blocks * 2 / 3) { ev.note(5, false, 60, 0); ev.note(6, false, 67, 0); }
+        if (withNotes && b == 0) { ev.note(10, true, gKeyA, 0.8); ev.note(20, true, gKeyB, 0.6); }
+        if (withNotes && b == blocks * 2 / 3) { ev.note(5, false, gKeyA, 0); ev.note(6, false, gKeyB, 0); }
         processBlock(in, a, b * 128, 128, ev, &oe, b * 128);
         out.insert(out.end(), a.outL.begin() + b * 128, a.outL.begin() + (b + 1) * 128);
     }
@@ -210,7 +212,8 @@ static std::vector<float> renderOnce(Inst& in, Audio& a, bool withNotes, int blo
 
 static void checkPlugin(Module& m, const clap_plugin_descriptor_t* d) {
     printf("--- %s (%s)\n", d->name, d->id);
-    check(!strncmp(d->name, "Neo ", 4), "the plug-in's name starts with Neo");
+    check(!strncmp(d->name, "Neo ", 4) || !strcmp(d->name, "Dye Essence"), "the plug-in's name is a Neo name or Dye Essence");
+    if (strstr(d->id, "drums")) { gKeyA = 36; gKeyB = 38; } else { gKeyA = 60; gKeyB = 67; }
     Inst a;
     check(a.create(m, d, 48000), "create, init, activate, start_processing");
     if (!a.p) return;
@@ -235,7 +238,7 @@ static void checkPlugin(Module& m, const clap_plugin_descriptor_t* d) {
 
     Audio au; au.noise(5, 0.4f);
     if (a.instrument) std::fill(au.inL.begin(), au.inL.end(), 0.f);
-    // Neo Dye Essence builds its tables on a background thread (silent until they are ready, about a second): give an instrument time.
+    // Dye Essence and the Neo Learn synths build their tables on background threads (silent until they are ready, about a second): give an instrument time.
     if (a.instrument) std::this_thread::sleep_for(std::chrono::seconds(3));
     auto first = renderOnce(a, au, a.instrument);
     double pk = 0; for (float f : first) pk = std::max(pk, (double)std::fabs(f));

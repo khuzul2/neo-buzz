@@ -47,7 +47,7 @@ Every package run of every branch overwrites `ci-artifacts`: fetch it as soon as
 - No window frame or title bar; text is in the headless platform's fonts, greyscale-antialiased; shortcuts that the code spells by platform (`OperatingSystem.IsMacOS()`) show Ctrl off a Mac.
 - No audio device: the engine is run offline (a WorkManager filling buffers) for the playing and recording states; the Audio page's device lists are injected. Native (Windows) machines don't load: an old Windows song shows their placeholders.
 - Tooltips are off in the headless tests (HeadlessInput), except where a shot turns them on.
-- Machine windows (4xx) are kept inside the work area of the Mac drawn, 1440 × 875 pt (its screen less the menu bar), as the app keeps them inside a real screen's (`MachineWindowFit`): an editor taller than that scrolls. The headless platform's own screen is 1920 × 1280 and it cuts windows off at 1080 pt.
+- Machine windows (4xx) are kept inside the work area of the Mac drawn, 1440 × 875 pt (its screen less the menu bar), as the app keeps them inside a real screen's (`MachineWindowFit`, a fixed size): an editor taller than that scrolls. The headless platform's own screen is 1920 × 1280 and it cuts windows off at 1080 pt.
 
 **The studio on Windows (ux-overhaul.md P6c).** The package workflow's `studio-windows` job runs the Mac harness's headless gallery on the Windows runner after the studio's tests, dark and light, with `GALLERY_PREFIX=win` (files `win-NNN-*.png` in `dark/` and `light/`, `index-win.md`), and force-pushes it to the branch `ci-artifacts-studio-windows`. Same limits as the Mac's headless run (no title bar, no audio device, native machines as placeholders), with Windows' fonts and the Windows engine. A real-window run of the published exe is not built. Note that the `win-` names of `ci-artifacts` are the WPF app's (now NeoBuzz Live Classic, `Classic\\NeoBuzzLiveClassic.exe --ui-shots`).
 
@@ -60,6 +60,8 @@ Every package run of every branch overwrites `ci-artifacts`: fetch it as soon as
 - Machine windows (6xx) are drawn as the app shows them on the runner's screen: inside its work area (`MachineWindowFit`), an editor taller than that scrolled above its keyboard (win-610, win-611).
 
 **The machine keyboard** (docs/specs/studio-mvp.md §3.12) is in both: under every Neo synth's editor and the parameter windows of machines that play notes (mac-4xx, mac-450, mac-451; win-600, win-602, win-603), Neo Poly's and Neo Drums' editors on Windows (win-610, win-612), playing, with a key held by the pointer and a chord lit from MIDI (mac-470, win-611), and hidden (mac-471).
+
+**The Device panel** (ux-overhaul.md, PP1: the parameter panel) is in the Mac gallery: mac-454 (docked, one row of cards scrolling sideways) and mac-455 (floating, wrapping) for Neo Filter, Neo Poly, Neo Drums and Dye Essence, mac-456 (List mode), mac-457 (the Inspector's macros and pinned parameters), mac-453 (a knob's right-click menu). Dark and light are two runs of the harness (`GALLERY_THEME=light`). The old parameter window's shots (mac-450 to mac-452) now show the same panel floating.
 
 ## 4. What it found, fixed
 

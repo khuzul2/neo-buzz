@@ -1,0 +1,45 @@
+{
+ "id": "org.neobuzz.neo-learn-wavetable",
+ "name": "Neo Learn Wavetable",
+ "folder": "NeoLearnWavetable",
+ "namespace": "NeoBuzz.LearnWt",
+ "engine": "(learn)",
+ "machine": "NeoLearnWavetableMachine",
+ "editor": "NeoLearnWavetableEditor",
+ "map": "WavetableMap",
+ "kind": "instrument",
+ "features": [
+  "synthesizer"
+ ],
+ "au": "NLWt",
+ "description": "Wavetable synth",
+ "process": "learn",
+ "tempo": true,
+ "idle": false,
+ "tailSeconds": 10,
+ "test": {
+  "changes": [
+   [
+    "WtPosition",
+    "raw:800"
+   ]
+  ],
+  "settle": 0.0,
+  "tolerance": 0.003
+ },
+ "extra": [
+  "NeoWave/Engine/Tables.cs",
+  "NeoWave/Engine/WavReader.cs",
+  "NeoSampler/Engine/Interpolation.cs",
+  "NeoSampler/Engine/SampleData.cs",
+  "NeoClipper/Engine/*.cs",
+  "NeoLearn/Engine/*.cs",
+  "NeoBuzz.Analysis/Loudness.cs",
+  "NeoBuzz.Analysis/GainMatch.cs"
+ ],
+ "extraEditor": [
+  "NeoLearn/LearnEditor.cs"
+ ],
+ "gear": "Neo Learn Wavetable",
+ "tables": true
+}

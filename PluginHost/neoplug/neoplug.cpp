@@ -191,6 +191,7 @@ NP_API int np_process(np_plugin* p, const float* const* in, int in_ch, float* co
 
 NP_API int np_aux_channels(np_plugin* p) { return p->impl->auxChannels(); }
 NP_API int np_poll(np_plugin* p) { return p->impl->poll(); }
+NP_API void np_flush(np_plugin* p) { p->impl->flushIdle(); }
 NP_API double np_param_plain(np_plugin* p, uint32_t id, double value) { return p->impl->paramPlain(id, value); }
 NP_API void np_reset(np_plugin* p) { p->impl->reset(); }
 

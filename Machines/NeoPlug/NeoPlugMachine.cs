@@ -239,6 +239,8 @@ namespace NeoBuzz.Plug
             get
             {
                 if (core.Missing || !core.IsOpen) return null;
+                // The cached manifest is keyed by Revision, which the pump bumps when it notices a dead sandbox (20 ms later): ask first.
+                core.CheckCrashed();
                 int rev = core.Revision;
                 if (manifestRevision != rev || manifestJson == null)
                 {

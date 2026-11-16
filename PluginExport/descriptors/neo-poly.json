@@ -24,6 +24,7 @@
    ]
   ],
   "settle": 0.0,
-  "tolerance": 0.003
+  "tolerance": 0.003,
+  "automationTolerance": 0.005
  }
 }

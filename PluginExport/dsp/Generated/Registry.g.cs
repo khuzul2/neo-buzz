@@ -4,7 +4,7 @@ using NeoBuzz.Dsp;
 
 namespace NeoExport
 {
-    internal sealed class A_DyeEngine : ExportEngine
+    internal sealed class A_DyeEssenceMachine : ExportEngine
     {
         NeoBuzz.DyeEssence.DyeEngine e;
         public override ParamDef[] Table => NeoBuzz.DyeEssence.Params.Table;
@@ -13,6 +13,8 @@ namespace NeoExport
         public override void SetSampleRate(float sr) => e.SetSampleRate(sr);
         public override int Latency => 0;
         public override void Reset() => e.AllNotesOff(true);
+        public override void Prepare() { _ = e.TablesBuilding; }
+        public override bool Preparing => e.TablesBuilding;
         public override void SetTransport(double tempo, bool playing, double beats, double rate)
         {
             e.Tempo = tempo;
@@ -27,7 +29,7 @@ namespace NeoExport
         public override void AllNotesOff(bool hard) => e.AllNotesOff(hard);
     }
 
-    internal sealed class A_CompEngine : ExportEngine
+    internal sealed class A_NeoCompMachine : ExportEngine
     {
         NeoBuzz.Comp.CompEngine e;
         public override ParamDef[] Table => NeoBuzz.Comp.Params.Table;
@@ -39,7 +41,7 @@ namespace NeoExport
         public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) { e.Process(l, r, kl, kr, n); return true; }
     }
 
-    internal sealed class A_DelayEngine : ExportEngine
+    internal sealed class A_NeoDelayMachine : ExportEngine
     {
         NeoBuzz.Delay.DelayEngine e;
         public override ParamDef[] Table => NeoBuzz.Delay.Params.Table;
@@ -56,7 +58,26 @@ namespace NeoExport
         public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) { e.Process(l, r, n); return true; }
     }
 
-    internal sealed class A_EqEngine : ExportEngine
+    internal sealed class A_NeoDrumsMachine : ExportEngine
+    {
+        NeoBuzz.Drums.DrumsEngine e;
+        public override ParamDef[] Table => NeoBuzz.Drums.Params.Table;
+        public override int MaxBlock => NeoBuzz.Drums.DrumsEngine.MaxBlock;
+        public override void Create(ParamValues values) { e = new NeoBuzz.Drums.DrumsEngine(values); }
+        public override void SetSampleRate(float sr) => e.SetSampleRate(sr);
+        public override int Latency => 0;
+        public override void Reset() => e.AllNotesOff(true);
+        public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) => e.Process(l, r, n);
+        public override void NoteOn(int key, int note, float velocity) => e.NoteOn(key, note, velocity);
+        public override void NoteOff(int key) => e.NoteOff(key);
+        public override void ModWheel(float v) => e.ModWheel(v);
+        public override void PitchBend(float v) => e.PitchBend(v);
+        public override void Sustain(bool down) => e.Sustain(down);
+        public override void Aftertouch(float v) => e.Aftertouch(v);
+        public override void AllNotesOff(bool hard) => e.AllNotesOff(hard);
+    }
+
+    internal sealed class A_NeoEqMachine : ExportEngine
     {
         NeoBuzz.Eq.EqEngine e;
         public override ParamDef[] Table => NeoBuzz.Eq.Params.Table;
@@ -68,7 +89,7 @@ namespace NeoExport
         public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) { e.Process(l, r, kl, kr, n); return true; }
     }
 
-    internal sealed class A_FilterEngine : ExportEngine
+    internal sealed class A_NeoFilterMachine : ExportEngine
     {
         NeoBuzz.Filter.FilterEngine e;
         public override ParamDef[] Table => NeoBuzz.Filter.Params.Table;
@@ -95,7 +116,312 @@ namespace NeoExport
         public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) { e.Process(l, r, n); return true; }
     }
 
-    internal sealed class A_PolyEngine : ExportEngine
+    internal sealed class A_NeoFm6Machine : ExportEngine
+    {
+        NeoBuzz.Fm6.FmEngine e;
+        public override ParamDef[] Table => NeoBuzz.Fm6.Params.Table;
+        public override int MaxBlock => NeoBuzz.Fm6.FmEngine.MaxBlock;
+        public override void Create(ParamValues values) { e = new NeoBuzz.Fm6.FmEngine(values); }
+        public override void SetSampleRate(float sr) => e.SetSampleRate(sr);
+        public override int Latency => 0;
+        public override void Reset() => e.AllNotesOff(true);
+        public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) => e.Process(l, r, n);
+        public override void NoteOn(int key, int note, float velocity) => e.NoteOn(key, note, velocity);
+        public override void NoteOff(int key) => e.NoteOff(key);
+        public override void ModWheel(float v) => e.ModWheel(v);
+        public override void PitchBend(float v) => e.PitchBend(v);
+        public override void Sustain(bool down) => e.Sustain(down);
+        public override void Aftertouch(float v) => e.Aftertouch(v);
+        public override void AllNotesOff(bool hard) => e.AllNotesOff(hard);
+    }
+
+    internal sealed class A_NeoLearnAdditiveMachine : ExportEngine
+    {
+        NeoBuzz.Learn.LearnHost h;
+        public override ParamDef[] Table => NeoBuzz.LearnAdd.Params.Table;
+        public override int MaxBlock => NeoBuzz.DyeEssence.DyeEngine.MaxBlock;
+        public override void Create(ParamValues values) { h = new NeoBuzz.Learn.LearnHost(new NeoBuzz.Learn.AdditiveMap(NeoBuzz.LearnAdd.Params.Table), values); }
+        public override void SetSampleRate(float sr) => h.SetSampleRate(sr);
+        public override int Latency => 0;
+        public override void Reset() => h.Engine.AllNotesOff(true);
+        public override void Prepare() { _ = h.Engine.TablesBuilding; }
+        public override bool Preparing => h.Engine.TablesBuilding;
+        public override void SetTransport(double tempo, bool playing, double beats, double rate) { if (tempo > 0) h.Engine.Tempo = tempo; }
+        public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) => h.Process(l, r, n);
+        public override void NoteOn(int key, int note, float velocity) => h.Engine.NoteOn(key, note, velocity);
+        public override void NoteOff(int key) => h.Engine.NoteOff(key);
+        public override void ModWheel(float v) => h.Engine.ModWheel(v);
+        public override void PitchBend(float v) => h.Engine.PitchBend(v);
+        public override void Sustain(bool down) => h.Engine.Sustain(down);
+        public override void Aftertouch(float v) => h.Engine.Aftertouch(v);
+        public override void AllNotesOff(bool hard) => h.Engine.AllNotesOff(hard);
+    }
+
+    internal sealed class A_NeoLearnFMMachine : ExportEngine
+    {
+        NeoBuzz.Learn.LearnHost h;
+        public override ParamDef[] Table => NeoBuzz.LearnFm.Params.Table;
+        public override int MaxBlock => NeoBuzz.DyeEssence.DyeEngine.MaxBlock;
+        public override void Create(ParamValues values) { h = new NeoBuzz.Learn.LearnHost(new NeoBuzz.Learn.FmMap(NeoBuzz.LearnFm.Params.Table), values); }
+        public override void SetSampleRate(float sr) => h.SetSampleRate(sr);
+        public override int Latency => 0;
+        public override void Reset() => h.Engine.AllNotesOff(true);
+        public override void Prepare() { _ = h.Engine.TablesBuilding; }
+        public override bool Preparing => h.Engine.TablesBuilding;
+        public override void SetTransport(double tempo, bool playing, double beats, double rate) { if (tempo > 0) h.Engine.Tempo = tempo; }
+        public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) => h.Process(l, r, n);
+        public override void NoteOn(int key, int note, float velocity) => h.Engine.NoteOn(key, note, velocity);
+        public override void NoteOff(int key) => h.Engine.NoteOff(key);
+        public override void ModWheel(float v) => h.Engine.ModWheel(v);
+        public override void PitchBend(float v) => h.Engine.PitchBend(v);
+        public override void Sustain(bool down) => h.Engine.Sustain(down);
+        public override void Aftertouch(float v) => h.Engine.Aftertouch(v);
+        public override void AllNotesOff(bool hard) => h.Engine.AllNotesOff(hard);
+    }
+
+    internal sealed class A_NeoLearnFormantMachine : ExportEngine
+    {
+        NeoBuzz.Learn.LearnHost h;
+        public override ParamDef[] Table => NeoBuzz.LearnFormant.Params.Table;
+        public override int MaxBlock => NeoBuzz.DyeEssence.DyeEngine.MaxBlock;
+        public override void Create(ParamValues values) { h = new NeoBuzz.Learn.LearnHost(new NeoBuzz.Learn.FormantMap(NeoBuzz.LearnFormant.Params.Table), values); }
+        public override void SetSampleRate(float sr) => h.SetSampleRate(sr);
+        public override int Latency => 0;
+        public override void Reset() => h.Engine.AllNotesOff(true);
+        public override void Prepare() { _ = h.Engine.TablesBuilding; }
+        public override bool Preparing => h.Engine.TablesBuilding;
+        public override void SetTransport(double tempo, bool playing, double beats, double rate) { if (tempo > 0) h.Engine.Tempo = tempo; }
+        public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) => h.Process(l, r, n);
+        public override void NoteOn(int key, int note, float velocity) => h.Engine.NoteOn(key, note, velocity);
+        public override void NoteOff(int key) => h.Engine.NoteOff(key);
+        public override void ModWheel(float v) => h.Engine.ModWheel(v);
+        public override void PitchBend(float v) => h.Engine.PitchBend(v);
+        public override void Sustain(bool down) => h.Engine.Sustain(down);
+        public override void Aftertouch(float v) => h.Engine.Aftertouch(v);
+        public override void AllNotesOff(bool hard) => h.Engine.AllNotesOff(hard);
+    }
+
+    internal sealed class A_NeoLearnGranularMachine : ExportEngine
+    {
+        NeoBuzz.Learn.LearnHost h;
+        public override ParamDef[] Table => NeoBuzz.LearnGrain.Params.Table;
+        public override int MaxBlock => NeoBuzz.DyeEssence.DyeEngine.MaxBlock;
+        public override void Create(ParamValues values) { h = new NeoBuzz.Learn.LearnHost(new NeoBuzz.Learn.GranularMap(NeoBuzz.LearnGrain.Params.Table), values); }
+        public override void SetSampleRate(float sr) => h.SetSampleRate(sr);
+        public override int Latency => 0;
+        public override void Reset() => h.Engine.AllNotesOff(true);
+        public override void Prepare() { _ = h.Engine.TablesBuilding; }
+        public override bool Preparing => h.Engine.TablesBuilding;
+        public override void SetTransport(double tempo, bool playing, double beats, double rate) { if (tempo > 0) h.Engine.Tempo = tempo; }
+        public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) => h.Process(l, r, n);
+        public override void NoteOn(int key, int note, float velocity) => h.Engine.NoteOn(key, note, velocity);
+        public override void NoteOff(int key) => h.Engine.NoteOff(key);
+        public override void ModWheel(float v) => h.Engine.ModWheel(v);
+        public override void PitchBend(float v) => h.Engine.PitchBend(v);
+        public override void Sustain(bool down) => h.Engine.Sustain(down);
+        public override void Aftertouch(float v) => h.Engine.Aftertouch(v);
+        public override void AllNotesOff(bool hard) => h.Engine.AllNotesOff(hard);
+    }
+
+    internal sealed class A_NeoLearnPhaseDistortionMachine : ExportEngine
+    {
+        NeoBuzz.Learn.LearnHost h;
+        public override ParamDef[] Table => NeoBuzz.LearnPd.Params.Table;
+        public override int MaxBlock => NeoBuzz.DyeEssence.DyeEngine.MaxBlock;
+        public override void Create(ParamValues values) { h = new NeoBuzz.Learn.LearnHost(new NeoBuzz.Learn.PhaseDistortionMap(NeoBuzz.LearnPd.Params.Table), values); }
+        public override void SetSampleRate(float sr) => h.SetSampleRate(sr);
+        public override int Latency => 0;
+        public override void Reset() => h.Engine.AllNotesOff(true);
+        public override void Prepare() { _ = h.Engine.TablesBuilding; }
+        public override bool Preparing => h.Engine.TablesBuilding;
+        public override void SetTransport(double tempo, bool playing, double beats, double rate) { if (tempo > 0) h.Engine.Tempo = tempo; }
+        public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) => h.Process(l, r, n);
+        public override void NoteOn(int key, int note, float velocity) => h.Engine.NoteOn(key, note, velocity);
+        public override void NoteOff(int key) => h.Engine.NoteOff(key);
+        public override void ModWheel(float v) => h.Engine.ModWheel(v);
+        public override void PitchBend(float v) => h.Engine.PitchBend(v);
+        public override void Sustain(bool down) => h.Engine.Sustain(down);
+        public override void Aftertouch(float v) => h.Engine.Aftertouch(v);
+        public override void AllNotesOff(bool hard) => h.Engine.AllNotesOff(hard);
+    }
+
+    internal sealed class A_NeoLearnPhysicalMachine : ExportEngine
+    {
+        NeoBuzz.Learn.LearnHost h;
+        public override ParamDef[] Table => NeoBuzz.LearnPhys.Params.Table;
+        public override int MaxBlock => NeoBuzz.DyeEssence.DyeEngine.MaxBlock;
+        public override void Create(ParamValues values) { h = new NeoBuzz.Learn.LearnHost(new NeoBuzz.Learn.PhysicalMap(NeoBuzz.LearnPhys.Params.Table), values); }
+        public override void SetSampleRate(float sr) => h.SetSampleRate(sr);
+        public override int Latency => 0;
+        public override void Reset() => h.Engine.AllNotesOff(true);
+        public override void Prepare() { _ = h.Engine.TablesBuilding; }
+        public override bool Preparing => h.Engine.TablesBuilding;
+        public override void SetTransport(double tempo, bool playing, double beats, double rate) { if (tempo > 0) h.Engine.Tempo = tempo; }
+        public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) => h.Process(l, r, n);
+        public override void NoteOn(int key, int note, float velocity) => h.Engine.NoteOn(key, note, velocity);
+        public override void NoteOff(int key) => h.Engine.NoteOff(key);
+        public override void ModWheel(float v) => h.Engine.ModWheel(v);
+        public override void PitchBend(float v) => h.Engine.PitchBend(v);
+        public override void Sustain(bool down) => h.Engine.Sustain(down);
+        public override void Aftertouch(float v) => h.Engine.Aftertouch(v);
+        public override void AllNotesOff(bool hard) => h.Engine.AllNotesOff(hard);
+    }
+
+    internal sealed class A_NeoLearnSamplerMachine : ExportEngine
+    {
+        NeoBuzz.Learn.LearnHost h;
+        public override ParamDef[] Table => NeoBuzz.LearnSampler.Params.Table;
+        public override int MaxBlock => NeoBuzz.DyeEssence.DyeEngine.MaxBlock;
+        public override void Create(ParamValues values) { h = new NeoBuzz.Learn.LearnHost(new NeoBuzz.Learn.SamplerMap(NeoBuzz.LearnSampler.Params.Table), values); }
+        public override void SetSampleRate(float sr) => h.SetSampleRate(sr);
+        public override int Latency => 0;
+        public override void Reset() => h.Engine.AllNotesOff(true);
+        public override void Prepare() { _ = h.Engine.TablesBuilding; }
+        public override bool Preparing => h.Engine.TablesBuilding;
+        public override void SetTransport(double tempo, bool playing, double beats, double rate) { if (tempo > 0) h.Engine.Tempo = tempo; }
+        public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) => h.Process(l, r, n);
+        public override void NoteOn(int key, int note, float velocity) => h.Engine.NoteOn(key, note, velocity);
+        public override void NoteOff(int key) => h.Engine.NoteOff(key);
+        public override void ModWheel(float v) => h.Engine.ModWheel(v);
+        public override void PitchBend(float v) => h.Engine.PitchBend(v);
+        public override void Sustain(bool down) => h.Engine.Sustain(down);
+        public override void Aftertouch(float v) => h.Engine.Aftertouch(v);
+        public override void AllNotesOff(bool hard) => h.Engine.AllNotesOff(hard);
+    }
+
+    internal sealed class A_NeoLearnSpectralMachine : ExportEngine
+    {
+        NeoBuzz.Learn.LearnHost h;
+        public override ParamDef[] Table => NeoBuzz.LearnSpectral.Params.Table;
+        public override int MaxBlock => NeoBuzz.DyeEssence.DyeEngine.MaxBlock;
+        public override void Create(ParamValues values) { h = new NeoBuzz.Learn.LearnHost(new NeoBuzz.Learn.SpectralMap(NeoBuzz.LearnSpectral.Params.Table), values); }
+        public override void SetSampleRate(float sr) => h.SetSampleRate(sr);
+        public override int Latency => 0;
+        public override void Reset() => h.Engine.AllNotesOff(true);
+        public override void Prepare() { _ = h.Engine.TablesBuilding; }
+        public override bool Preparing => h.Engine.TablesBuilding;
+        public override void SetTransport(double tempo, bool playing, double beats, double rate) { if (tempo > 0) h.Engine.Tempo = tempo; }
+        public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) => h.Process(l, r, n);
+        public override void NoteOn(int key, int note, float velocity) => h.Engine.NoteOn(key, note, velocity);
+        public override void NoteOff(int key) => h.Engine.NoteOff(key);
+        public override void ModWheel(float v) => h.Engine.ModWheel(v);
+        public override void PitchBend(float v) => h.Engine.PitchBend(v);
+        public override void Sustain(bool down) => h.Engine.Sustain(down);
+        public override void Aftertouch(float v) => h.Engine.Aftertouch(v);
+        public override void AllNotesOff(bool hard) => h.Engine.AllNotesOff(hard);
+    }
+
+    internal sealed class A_NeoLearnStringMachine : ExportEngine
+    {
+        NeoBuzz.Learn.LearnHost h;
+        public override ParamDef[] Table => NeoBuzz.LearnString.Params.Table;
+        public override int MaxBlock => NeoBuzz.DyeEssence.DyeEngine.MaxBlock;
+        public override void Create(ParamValues values) { h = new NeoBuzz.Learn.LearnHost(new NeoBuzz.Learn.StringMap(NeoBuzz.LearnString.Params.Table), values); }
+        public override void SetSampleRate(float sr) => h.SetSampleRate(sr);
+        public override int Latency => 0;
+        public override void Reset() => h.Engine.AllNotesOff(true);
+        public override void Prepare() { _ = h.Engine.TablesBuilding; }
+        public override bool Preparing => h.Engine.TablesBuilding;
+        public override void SetTransport(double tempo, bool playing, double beats, double rate) { if (tempo > 0) h.Engine.Tempo = tempo; }
+        public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) => h.Process(l, r, n);
+        public override void NoteOn(int key, int note, float velocity) => h.Engine.NoteOn(key, note, velocity);
+        public override void NoteOff(int key) => h.Engine.NoteOff(key);
+        public override void ModWheel(float v) => h.Engine.ModWheel(v);
+        public override void PitchBend(float v) => h.Engine.PitchBend(v);
+        public override void Sustain(bool down) => h.Engine.Sustain(down);
+        public override void Aftertouch(float v) => h.Engine.Aftertouch(v);
+        public override void AllNotesOff(bool hard) => h.Engine.AllNotesOff(hard);
+    }
+
+    internal sealed class A_NeoLearnSubtractiveMachine : ExportEngine
+    {
+        NeoBuzz.Learn.LearnHost h;
+        public override ParamDef[] Table => NeoBuzz.LearnSub.Params.Table;
+        public override int MaxBlock => NeoBuzz.DyeEssence.DyeEngine.MaxBlock;
+        public override void Create(ParamValues values) { h = new NeoBuzz.Learn.LearnHost(new NeoBuzz.Learn.SubtractiveMap(NeoBuzz.LearnSub.Params.Table), values); }
+        public override void SetSampleRate(float sr) => h.SetSampleRate(sr);
+        public override int Latency => 0;
+        public override void Reset() => h.Engine.AllNotesOff(true);
+        public override void Prepare() { _ = h.Engine.TablesBuilding; }
+        public override bool Preparing => h.Engine.TablesBuilding;
+        public override void SetTransport(double tempo, bool playing, double beats, double rate) { if (tempo > 0) h.Engine.Tempo = tempo; }
+        public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) => h.Process(l, r, n);
+        public override void NoteOn(int key, int note, float velocity) => h.Engine.NoteOn(key, note, velocity);
+        public override void NoteOff(int key) => h.Engine.NoteOff(key);
+        public override void ModWheel(float v) => h.Engine.ModWheel(v);
+        public override void PitchBend(float v) => h.Engine.PitchBend(v);
+        public override void Sustain(bool down) => h.Engine.Sustain(down);
+        public override void Aftertouch(float v) => h.Engine.Aftertouch(v);
+        public override void AllNotesOff(bool hard) => h.Engine.AllNotesOff(hard);
+    }
+
+    internal sealed class A_NeoLearnVectorMachine : ExportEngine
+    {
+        NeoBuzz.Learn.LearnHost h;
+        public override ParamDef[] Table => NeoBuzz.LearnVector.Params.Table;
+        public override int MaxBlock => NeoBuzz.DyeEssence.DyeEngine.MaxBlock;
+        public override void Create(ParamValues values) { h = new NeoBuzz.Learn.LearnHost(new NeoBuzz.Learn.VectorMap(NeoBuzz.LearnVector.Params.Table), values); }
+        public override void SetSampleRate(float sr) => h.SetSampleRate(sr);
+        public override int Latency => 0;
+        public override void Reset() => h.Engine.AllNotesOff(true);
+        public override void Prepare() { _ = h.Engine.TablesBuilding; }
+        public override bool Preparing => h.Engine.TablesBuilding;
+        public override void SetTransport(double tempo, bool playing, double beats, double rate) { if (tempo > 0) h.Engine.Tempo = tempo; }
+        public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) => h.Process(l, r, n);
+        public override void NoteOn(int key, int note, float velocity) => h.Engine.NoteOn(key, note, velocity);
+        public override void NoteOff(int key) => h.Engine.NoteOff(key);
+        public override void ModWheel(float v) => h.Engine.ModWheel(v);
+        public override void PitchBend(float v) => h.Engine.PitchBend(v);
+        public override void Sustain(bool down) => h.Engine.Sustain(down);
+        public override void Aftertouch(float v) => h.Engine.Aftertouch(v);
+        public override void AllNotesOff(bool hard) => h.Engine.AllNotesOff(hard);
+    }
+
+    internal sealed class A_NeoLearnWavefolderMachine : ExportEngine
+    {
+        NeoBuzz.Learn.LearnHost h;
+        public override ParamDef[] Table => NeoBuzz.LearnFold.Params.Table;
+        public override int MaxBlock => NeoBuzz.DyeEssence.DyeEngine.MaxBlock;
+        public override void Create(ParamValues values) { h = new NeoBuzz.Learn.LearnHost(new NeoBuzz.Learn.WavefolderMap(NeoBuzz.LearnFold.Params.Table), values); }
+        public override void SetSampleRate(float sr) => h.SetSampleRate(sr);
+        public override int Latency => 0;
+        public override void Reset() => h.Engine.AllNotesOff(true);
+        public override void Prepare() { _ = h.Engine.TablesBuilding; }
+        public override bool Preparing => h.Engine.TablesBuilding;
+        public override void SetTransport(double tempo, bool playing, double beats, double rate) { if (tempo > 0) h.Engine.Tempo = tempo; }
+        public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) => h.Process(l, r, n);
+        public override void NoteOn(int key, int note, float velocity) => h.Engine.NoteOn(key, note, velocity);
+        public override void NoteOff(int key) => h.Engine.NoteOff(key);
+        public override void ModWheel(float v) => h.Engine.ModWheel(v);
+        public override void PitchBend(float v) => h.Engine.PitchBend(v);
+        public override void Sustain(bool down) => h.Engine.Sustain(down);
+        public override void Aftertouch(float v) => h.Engine.Aftertouch(v);
+        public override void AllNotesOff(bool hard) => h.Engine.AllNotesOff(hard);
+    }
+
+    internal sealed class A_NeoLearnWavetableMachine : ExportEngine
+    {
+        NeoBuzz.Learn.LearnHost h;
+        public override ParamDef[] Table => NeoBuzz.LearnWt.Params.Table;
+        public override int MaxBlock => NeoBuzz.DyeEssence.DyeEngine.MaxBlock;
+        public override void Create(ParamValues values) { h = new NeoBuzz.Learn.LearnHost(new NeoBuzz.Learn.WavetableMap(NeoBuzz.LearnWt.Params.Table), values); }
+        public override void SetSampleRate(float sr) => h.SetSampleRate(sr);
+        public override int Latency => 0;
+        public override void Reset() => h.Engine.AllNotesOff(true);
+        public override void Prepare() { _ = h.Engine.TablesBuilding; }
+        public override bool Preparing => h.Engine.TablesBuilding;
+        public override void SetTransport(double tempo, bool playing, double beats, double rate) { if (tempo > 0) h.Engine.Tempo = tempo; }
+        public override bool Process(float[] l, float[] r, float[] kl, float[] kr, int n) => h.Process(l, r, n);
+        public override void NoteOn(int key, int note, float velocity) => h.Engine.NoteOn(key, note, velocity);
+        public override void NoteOff(int key) => h.Engine.NoteOff(key);
+        public override void ModWheel(float v) => h.Engine.ModWheel(v);
+        public override void PitchBend(float v) => h.Engine.PitchBend(v);
+        public override void Sustain(bool down) => h.Engine.Sustain(down);
+        public override void Aftertouch(float v) => h.Engine.Aftertouch(v);
+        public override void AllNotesOff(bool hard) => h.Engine.AllNotesOff(hard);
+    }
+
+    internal sealed class A_NeoPolyMachine : ExportEngine
     {
         NeoBuzz.Poly.PolyEngine e;
         public override ParamDef[] Table => NeoBuzz.Poly.Params.Table;
@@ -118,7 +444,7 @@ namespace NeoExport
         public override void AllNotesOff(bool hard) => e.AllNotesOff(hard);
     }
 
-    internal sealed class A_VerbEngine : ExportEngine
+    internal sealed class A_NeoVerbMachine : ExportEngine
     {
         NeoBuzz.Verb.VerbEngine e;
         public override ParamDef[] Table => NeoBuzz.Verb.Params.Table;
@@ -134,13 +460,28 @@ namespace NeoExport
     {
         public static readonly PluginInfo[] All =
         {
-            new PluginInfo("org.neobuzz.dye-essence", "Neo Dye Essence", "Colour-synthesis instrument with an effects rack", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 10, make: () => new A_DyeEngine(), gateQuiet: false),
-            new PluginInfo("org.neobuzz.neo-comp", "Neo Comp", "Compressor with four characters, lookahead and an external sidechain", new[] { "audio-effect", "compressor", "stereo" }, instrument: false, sidechain: true, gateIdle: false, tailSeconds: 0, make: () => new A_CompEngine(), gateQuiet: false),
-            new PluginInfo("org.neobuzz.neo-delay", "Neo Delay", "Tempo-synced stereo, ping-pong and cross delay", new[] { "audio-effect", "delay", "stereo" }, instrument: false, sidechain: false, gateIdle: true, tailSeconds: 10, make: () => new A_DelayEngine(), gateQuiet: false),
-            new PluginInfo("org.neobuzz.neo-eq", "Neo EQ", "Eight-band parametric equalizer, minimum phase or linear phase", new[] { "audio-effect", "equalizer", "stereo" }, instrument: false, sidechain: true, gateIdle: false, tailSeconds: 0, make: () => new A_EqEngine(), gateQuiet: false),
-            new PluginInfo("org.neobuzz.neo-filter", "Neo Filter", "Resonant filter with envelope follower and LFO (ladder and state-variable, oversampled drive)", new[] { "audio-effect", "filter", "stereo" }, instrument: false, sidechain: false, gateIdle: true, tailSeconds: 2, make: () => new A_FilterEngine(), gateQuiet: false),
-            new PluginInfo("org.neobuzz.neo-poly", "Neo Poly", "Polyphonic virtual analog synthesizer", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 0, make: () => new A_PolyEngine(), gateQuiet: false),
-            new PluginInfo("org.neobuzz.neo-verb", "Neo Verb", "Algorithmic reverb: hall, room, chamber, plate", new[] { "audio-effect", "reverb", "stereo" }, instrument: false, sidechain: false, gateIdle: true, tailSeconds: 10, make: () => new A_VerbEngine(), gateQuiet: true),
+            new PluginInfo("org.neobuzz.dye-essence", "Dye Essence", "Colour-synthesis instrument with an effects rack", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 10, make: () => new A_DyeEssenceMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-comp", "Neo Comp", "Compressor with four characters, lookahead and an external sidechain", new[] { "audio-effect", "compressor", "stereo" }, instrument: false, sidechain: true, gateIdle: false, tailSeconds: 0, make: () => new A_NeoCompMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-delay", "Neo Delay", "Tempo-synced stereo, ping-pong and cross delay", new[] { "audio-effect", "delay", "stereo" }, instrument: false, sidechain: false, gateIdle: true, tailSeconds: 10, make: () => new A_NeoDelayMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-drums", "Neo Drums", "Synthesised drum kit", new[] { "instrument", "drum-machine", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 4, make: () => new A_NeoDrumsMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-eq", "Neo EQ", "Eight-band parametric equalizer, minimum phase or linear phase", new[] { "audio-effect", "equalizer", "stereo" }, instrument: false, sidechain: true, gateIdle: false, tailSeconds: 0, make: () => new A_NeoEqMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-filter", "Neo Filter", "Resonant filter with envelope follower and LFO (ladder and state-variable, oversampled drive)", new[] { "audio-effect", "filter", "stereo" }, instrument: false, sidechain: false, gateIdle: true, tailSeconds: 2, make: () => new A_NeoFilterMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-fm6", "Neo FM6", "Six-operator FM synthesizer", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 3, make: () => new A_NeoFm6Machine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-learn-additive", "Neo Learn Additive", "Additive synth: partials from the spectrum's tilt and balance", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 10, make: () => new A_NeoLearnAdditiveMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-learn-fm", "Neo Learn FM", "Teaching FM synth", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 10, make: () => new A_NeoLearnFMMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-learn-formant", "Neo Learn Formant", "Vowel-like formant synth", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 10, make: () => new A_NeoLearnFormantMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-learn-granular", "Neo Learn Granular", "Granular synth cut from built-in samples", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 10, make: () => new A_NeoLearnGranularMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-learn-phase-distortion", "Neo Learn Phase Distortion", "Phase-distortion synth", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 10, make: () => new A_NeoLearnPhaseDistortionMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-learn-physical", "Neo Learn Physical", "Physical-model synth", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 10, make: () => new A_NeoLearnPhysicalMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-learn-sampler", "Neo Learn Sampler", "Sample-playback synth from built-in sources", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 10, make: () => new A_NeoLearnSamplerMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-learn-spectral", "Neo Learn Spectral", "Spectral resynthesis synth", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 10, make: () => new A_NeoLearnSpectralMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-learn-string", "Neo Learn String", "Plucked-string synth", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 10, make: () => new A_NeoLearnStringMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-learn-subtractive", "Neo Learn Subtractive", "Subtractive synth", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 10, make: () => new A_NeoLearnSubtractiveMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-learn-vector", "Neo Learn Vector", "Vector synth blending four corner sources", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 10, make: () => new A_NeoLearnVectorMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-learn-wavefolder", "Neo Learn Wavefolder", "Wavefolder synth", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 10, make: () => new A_NeoLearnWavefolderMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-learn-wavetable", "Neo Learn Wavetable", "Wavetable synth", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 10, make: () => new A_NeoLearnWavetableMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-poly", "Neo Poly", "Polyphonic virtual analog synthesizer", new[] { "instrument", "synthesizer", "stereo" }, instrument: true, sidechain: false, gateIdle: false, tailSeconds: 0, make: () => new A_NeoPolyMachine(), gateQuiet: false),
+            new PluginInfo("org.neobuzz.neo-verb", "Neo Verb", "Algorithmic reverb: hall, room, chamber, plate", new[] { "audio-effect", "reverb", "stereo" }, instrument: false, sidechain: false, gateIdle: true, tailSeconds: 10, make: () => new A_NeoVerbMachine(), gateQuiet: true),
         };
     }
 }

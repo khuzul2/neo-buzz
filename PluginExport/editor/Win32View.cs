@@ -31,7 +31,10 @@ namespace NeoExport
 
         static readonly Dictionary<IntPtr, Win32View> views = new();
         static bool registered;
-        const string ClassName = "NeoBuzzEditorView";
+        // One window class per copy of this library: every bundle carries its own copy of the editor library (its own NativeAOT runtime and its own
+        // `views` table), and a host can have several Neo plug-ins open. A shared class name would give the second copy a class whose window procedure
+        // belongs to the first, which knows none of its windows.
+        static readonly string ClassName = "NeoBuzzEditorView" + Guid.NewGuid().ToString("N");
         IntPtr hwnd; readonly EditorInstance owner; byte* last; int lw, lh;
 
         Win32View(EditorInstance o) { owner = o; }
@@ -68,7 +71,18 @@ namespace NeoExport
             ReleaseDC(hwnd, dc);
         }
 
-        public void Resize(int w, int h) { if (hwnd != IntPtr.Zero) SetWindowPos(hwnd, IntPtr.Zero, 0, 0, w, h, 0x16 /*NOMOVE|NOZORDER|NOACTIVATE*/); }
+        [DllImport("user32")] static extern bool PostMessageW(IntPtr h, uint msg, nuint w, nint l);
+        public double BackingScale => 1;
+        /// <summary>Tests: WM_LBUTTONDOWN, WM_MOUSEMOVE (button down) and WM_LBUTTONUP posted to the view's window: its WndProc, as the message loop delivers them.</summary>
+        public void TestInject(int kind, double x, double y)
+        {
+            if (hwnd == IntPtr.Zero) return;
+            nint l = (nint)((((int)y & 0xFFFF) << 16) | ((int)x & 0xFFFF));
+            PostMessageW(hwnd, kind == 0 ? 0x0201u : kind == 1 ? 0x0200u : 0x0202u, kind == 2 ? (nuint)0 : (nuint)1, l);
+        }
+
+        public void Resize(int w, int h) { if (hwnd != IntPtr.Zero) { SetWindowPos(hwnd, IntPtr.Zero, 0, 0, w, h, 0x16 /*NOMOVE|NOZORDER|NOACTIVATE*/); InvalidateRect(hwnd, IntPtr.Zero, 0); } }
+        [DllImport("user32")] static extern int InvalidateRect(IntPtr h, IntPtr rect, int erase);
         public void SetVisible(bool v) { if (hwnd != IntPtr.Zero) ShowWindow(hwnd, v ? 5 : 0); }
         public void Pump() { }
         public void Destroy() { if (hwnd == IntPtr.Zero) return; views.Remove(hwnd); DestroyWindow(hwnd); hwnd = IntPtr.Zero; }
