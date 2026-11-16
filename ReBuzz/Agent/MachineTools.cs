@@ -20,7 +20,7 @@ namespace ReBuzz.Agent
     internal static class MachineTools
     {
         /// <summary>The plug-ins a machine that hosts them offers (the instruments of its Gear menu entry), sorted.</summary>
-        static List<string> PluginNames(ReBuzzCore core, IMachineDLL dll)
+        internal static List<string> PluginNames(ReBuzzCore core, IMachineDLL dll)
         {
             if (dll.Info == null || (dll.Info.Flags & MachineInfoFlags.USES_INSTRUMENTS) == 0) return new List<string>();
             try

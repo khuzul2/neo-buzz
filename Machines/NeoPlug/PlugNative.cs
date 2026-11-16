@@ -54,7 +54,7 @@ namespace NeoBuzz.Plug
         public const int FormatVst3 = 1, FormatClap = 2;
         public const int ParamAutomatable = 1, ParamStepped = 2, ParamReadOnly = 4, ParamHidden = 8, ParamBypass = 16;
         public const int EvNoteOn = 1, EvNoteOff = 2, EvParam = 3, EvCc = 4, EvPitchBend = 5, EvChannelPressure = 6, EvPolyPressure = 7, EvNoteExpr = 8, EvAllNotesOff = 9;
-        public const int PollLatency = 1, PollParams = 2, PollRestart = 4, PollDirty = 8;
+        public const int PollLatency = 1, PollParams = 2, PollRestart = 4, PollDirty = 8, PollFlush = 16;
 
         [StructLayout(LayoutKind.Sequential)]
         public struct ClassInfo
@@ -133,6 +133,7 @@ namespace NeoBuzz.Plug
         [DllImport(Lib)] public static extern int np_tail(IntPtr p);
         [DllImport(Lib)] public static extern void np_idle(IntPtr p);
         [DllImport(Lib)] public static extern int np_poll(IntPtr p);
+        [DllImport(Lib)] public static extern void np_flush(IntPtr p);
         [DllImport(Lib)] public static extern void np_reset(IntPtr p);
         // GUI (ABI 3)
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void ResizeCb(IntPtr user, int width, int height);

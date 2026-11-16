@@ -1,0 +1,45 @@
+{
+ "id": "org.neobuzz.neo-learn-sampler",
+ "name": "Neo Learn Sampler",
+ "folder": "NeoLearnSampler",
+ "namespace": "NeoBuzz.LearnSampler",
+ "engine": "(learn)",
+ "machine": "NeoLearnSamplerMachine",
+ "editor": "NeoLearnSamplerEditor",
+ "map": "SamplerMap",
+ "kind": "instrument",
+ "features": [
+  "synthesizer"
+ ],
+ "au": "NLSa",
+ "description": "Sample-playback synth from built-in sources",
+ "process": "learn",
+ "tempo": true,
+ "idle": false,
+ "tailSeconds": 10,
+ "test": {
+  "changes": [
+   [
+    "SampleOffset",
+    "raw:300"
+   ]
+  ],
+  "settle": 0.0,
+  "tolerance": 0.003
+ },
+ "extra": [
+  "NeoWave/Engine/Tables.cs",
+  "NeoWave/Engine/WavReader.cs",
+  "NeoSampler/Engine/Interpolation.cs",
+  "NeoSampler/Engine/SampleData.cs",
+  "NeoClipper/Engine/*.cs",
+  "NeoLearn/Engine/*.cs",
+  "NeoBuzz.Analysis/Loudness.cs",
+  "NeoBuzz.Analysis/GainMatch.cs"
+ ],
+ "extraEditor": [
+  "NeoLearn/LearnEditor.cs"
+ ],
+ "gear": "Neo Learn Sampler",
+ "tables": true
+}

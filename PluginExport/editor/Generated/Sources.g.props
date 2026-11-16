@@ -4,8 +4,23 @@
     <Compile Include="..\..\Machines\DyeEssence\**\*.cs" Exclude="..\..\Machines\DyeEssence\obj\**;..\..\Machines\DyeEssence\bin\**" Link="Machines\DyeEssence\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\..\Machines\NeoComp\**\*.cs" Exclude="..\..\Machines\NeoComp\obj\**;..\..\Machines\NeoComp\bin\**" Link="Machines\NeoComp\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\..\Machines\NeoDelay\**\*.cs" Exclude="..\..\Machines\NeoDelay\obj\**;..\..\Machines\NeoDelay\bin\**" Link="Machines\NeoDelay\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoDrums\**\*.cs" Exclude="..\..\Machines\NeoDrums\obj\**;..\..\Machines\NeoDrums\bin\**" Link="Machines\NeoDrums\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\..\Machines\NeoEq\**\*.cs" Exclude="..\..\Machines\NeoEq\obj\**;..\..\Machines\NeoEq\bin\**" Link="Machines\NeoEq\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\..\Machines\NeoFilter\**\*.cs" Exclude="..\..\Machines\NeoFilter\obj\**;..\..\Machines\NeoFilter\bin\**" Link="Machines\NeoFilter\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoFm6\**\*.cs" Exclude="..\..\Machines\NeoFm6\obj\**;..\..\Machines\NeoFm6\bin\**" Link="Machines\NeoFm6\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoLearnAdditive\**\*.cs" Exclude="..\..\Machines\NeoLearnAdditive\obj\**;..\..\Machines\NeoLearnAdditive\bin\**" Link="Machines\NeoLearnAdditive\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoLearnFM\**\*.cs" Exclude="..\..\Machines\NeoLearnFM\obj\**;..\..\Machines\NeoLearnFM\bin\**" Link="Machines\NeoLearnFM\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoLearnFormant\**\*.cs" Exclude="..\..\Machines\NeoLearnFormant\obj\**;..\..\Machines\NeoLearnFormant\bin\**" Link="Machines\NeoLearnFormant\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoLearnGranular\**\*.cs" Exclude="..\..\Machines\NeoLearnGranular\obj\**;..\..\Machines\NeoLearnGranular\bin\**" Link="Machines\NeoLearnGranular\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoLearnPhaseDistortion\**\*.cs" Exclude="..\..\Machines\NeoLearnPhaseDistortion\obj\**;..\..\Machines\NeoLearnPhaseDistortion\bin\**" Link="Machines\NeoLearnPhaseDistortion\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoLearnPhysical\**\*.cs" Exclude="..\..\Machines\NeoLearnPhysical\obj\**;..\..\Machines\NeoLearnPhysical\bin\**" Link="Machines\NeoLearnPhysical\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoLearnSampler\**\*.cs" Exclude="..\..\Machines\NeoLearnSampler\obj\**;..\..\Machines\NeoLearnSampler\bin\**" Link="Machines\NeoLearnSampler\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoLearnSpectral\**\*.cs" Exclude="..\..\Machines\NeoLearnSpectral\obj\**;..\..\Machines\NeoLearnSpectral\bin\**" Link="Machines\NeoLearnSpectral\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoLearnString\**\*.cs" Exclude="..\..\Machines\NeoLearnString\obj\**;..\..\Machines\NeoLearnString\bin\**" Link="Machines\NeoLearnString\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoLearnSubtractive\**\*.cs" Exclude="..\..\Machines\NeoLearnSubtractive\obj\**;..\..\Machines\NeoLearnSubtractive\bin\**" Link="Machines\NeoLearnSubtractive\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoLearnVector\**\*.cs" Exclude="..\..\Machines\NeoLearnVector\obj\**;..\..\Machines\NeoLearnVector\bin\**" Link="Machines\NeoLearnVector\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoLearnWavefolder\**\*.cs" Exclude="..\..\Machines\NeoLearnWavefolder\obj\**;..\..\Machines\NeoLearnWavefolder\bin\**" Link="Machines\NeoLearnWavefolder\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoLearnWavetable\**\*.cs" Exclude="..\..\Machines\NeoLearnWavetable\obj\**;..\..\Machines\NeoLearnWavetable\bin\**" Link="Machines\NeoLearnWavetable\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\..\Machines\NeoPoly\**\*.cs" Exclude="..\..\Machines\NeoPoly\obj\**;..\..\Machines\NeoPoly\bin\**" Link="Machines\NeoPoly\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\..\Machines\NeoVerb\**\*.cs" Exclude="..\..\Machines\NeoVerb\obj\**;..\..\Machines\NeoVerb\bin\**" Link="Machines\NeoVerb\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\..\Machines\NeoWave\Engine\Tables.cs" Link="Machines\Extra\%(Filename)%(Extension)" />
@@ -15,5 +30,7 @@
     <Compile Include="..\..\Machines\NeoClipper\Engine\*.cs" Link="Machines\Extra\%(Filename)%(Extension)" />
     <Compile Include="..\..\Machines\NeoBuzz.Analysis\Loudness.cs" Link="Machines\Extra\%(Filename)%(Extension)" />
     <Compile Include="..\..\Machines\NeoBuzz.Analysis\GainMatch.cs" Link="Machines\Extra\%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoLearn\Engine\*.cs" Link="Machines\Extra\%(Filename)%(Extension)" />
+    <Compile Include="..\..\Machines\NeoLearn\LearnEditor.cs" Link="Machines\Extra\%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

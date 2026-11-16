@@ -59,9 +59,18 @@ The person sees every call, so treat it as a conversation: show them what you ar
 - `view_show(view="Session")` brings Arrangement, Session or Machines to the front. `view_show(machine="Bass", pattern="Verse", editor="piano_roll")` shows that pattern in the detail panel's piano roll (`editor="tracker"` for the Tracker).
 - `select(machine="Bass", pattern="Verse")` selects as a click does: the inspector and the other views follow. `select(clear=true)` selects nothing.
 - `panel_set(panel="inspector", open=true, tab="Song")`, `panel_set(panel="browser", open=false)`, `panel_set(panel="detail", maximised=true)`; `size` is the width in pixels (the detail panel's height).
-- `machine_open_editor(machine="Bass", window="parameters")` opens a machine's window (`gui`, `parameters` or `editor`).
+- `machine_open_editor(machine="Bass", window="parameters")` opens a machine's window (`gui`, `parameters` or `editor`); `parameters` is the Device panel (cards of knobs, or a list) in a window of its own.
+- `machine_pin(machine="Bass", param="F1 cutoff", pinned=true)` pins a parameter to the machine's card in the inspector (up to eight per machine, saved in the song); `machine_pin(machine="Bass")` lists them.
 - `window_layout()` reads where everything is; with `width`, `height` or `maximised` it resizes the window.
 - While the transport records, nothing opens a window or takes the keyboard: the pattern editor and machine windows are refused (`transport(action="stop")` first). Switching a view, selecting and panels still work.
+
+## The browser (studio mode)
+
+The browser panel on the left is one search over everything a person can drag into a song. You can use it too.
+
+- `browser_search(query="kick 808", kind="audio")` finds sample files by name and folder; `kind` is also `machine`, `plugin` (the plug-ins of Neo Plug's scan), `preset` (factory presets: the result's `id` is the gear and `preset` its name), `midi` and `pattern`. Every word must match; results come best first with their length, rate and tempo.
+- `browser_places(op="add", path="/Users/me/Samples", wait_seconds=10)` adds a folder to the browser's Places: its audio and MIDI files are indexed in the background and watched for changes. `op="list"` shows each place with how many files it holds and the scan's progress; `op="remove"` takes one out (the files stay).
+- `machine_swap(machine="Lead", gear="Neo Poly")` is the browser's hot-swap: the gear takes the machine's place, connections, position and name kept, patterns made again by name and length, one undo step. A generator is swapped for a generator, an effect for an effect. For a classic machine's Neo successor with its settings converted use `machine_replace`.
 
 ## Song properties and the bars
 

@@ -13,6 +13,7 @@ namespace ReBuzz.Agent.App
             MidiTools.Register(tools, app);
             AudioTools.Register(tools, app);
             ViewTools.Register(tools, app);
+            BrowserTools.Register(tools, app);
             ExportTools.Register(tools, app);
             AppInfoTools.Register(tools, app);
         }

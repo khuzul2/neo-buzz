@@ -1,0 +1,29 @@
+{
+ "id": "org.neobuzz.neo-drums",
+ "name": "Neo Drums",
+ "folder": "NeoDrums",
+ "namespace": "NeoBuzz.Drums",
+ "engine": "DrumsEngine",
+ "machine": "NeoDrumsMachine",
+ "editor": "NeoDrumsEditor",
+ "kind": "instrument",
+ "features": [
+  "drum-machine"
+ ],
+ "au": "NDrm",
+ "description": "Synthesised drum kit",
+ "process": "synth",
+ "tempo": false,
+ "idle": false,
+ "tailSeconds": 4,
+ "test": {
+  "changes": [
+   [
+    "Volume",
+    "raw:480"
+   ]
+  ],
+  "settle": 0.0,
+  "tolerance": 0.003
+ }
+}

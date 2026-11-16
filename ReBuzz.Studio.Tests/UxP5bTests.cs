@@ -207,7 +207,9 @@ namespace ReBuzz.Studio.Tests
             {
                 var mod = ModulationBoard.Of(lfo)!;
                 var source = new DeviceView(lfo);
+                source.SetMode(DeviceView.DeviceMode.List, remember: false);
                 var target = new DeviceView(filter);
+                target.SetMode(DeviceView.DeviceMode.List, remember: false);
                 var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*"), RowDefinitions = new RowDefinitions("Auto,*") };
                 Grid.SetRow(source, 1);
                 Grid.SetRow(target, 1);
@@ -235,7 +237,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void TheParameterWindowsSliderShowsTheRingToo()
+        public void TheDevicePanelsKnobShowsTheRingToo()
         {
             var lfo = Add("Neo LFO", "P5b LFO");
             var filter = Add("Neo Filter", "P5b Filter");
@@ -243,15 +245,16 @@ namespace ReBuzz.Studio.Tests
             {
                 var mod = ModulationBoard.Of(lfo)!;
                 var cutoff = Global(filter, "Cutoff");
-                var row = new ReBuzz.Studio.Parameters.ParameterRow(cutoff, 0);
-                var host = new Window { Width = 500, Height = 100, Content = row };
+                var param = DeviceLayout.Build(filter).All.First(p => p.Name == "Cutoff");
+                var knob = new DeviceKnob(filter, param, Core, NeoBuzz.Editor.Tokens.Identity(NeoBuzz.Editor.MachineCategory.Synth));
+                var host = new Window { Width = 200, Height = 140, Content = new Grid { Children = { knob } } };
                 host.Show();
                 Settle();
-                Assert.That(row.Slider.Modulated, Is.Null);
+                Assert.That(knob.ShowsModulationRing, Is.False);
                 Assert.That(ModulationEdits.Add(Core, mod, filter, cutoff, 0), Is.Null);
-                row.RefreshModulation();
-                Assert.That(row.Slider.Modulated, Is.Not.Null, "a band over the slider's track");
-                var surface = (IModulationDropSurface)row;
+                knob.RefreshModulation();
+                Assert.That(knob.ShowsModulationRing, Is.True, "a ring around the knob");
+                var surface = (IModulationDropSurface)knob;
                 Assert.That(surface.ModulationTargetAt(5, 5, out var machine, out var parameter, out _), Is.True);
                 Assert.That(parameter, Is.SameAs(cutoff));
                 Assert.That(machine, Is.SameAs(filter));
@@ -271,6 +274,7 @@ namespace ReBuzz.Studio.Tests
                 lfo = Add("Neo LFO", "P5b LFO");
                 filter = Add("Neo Filter", "P5b Filter");
                 var device = new DeviceView(filter);
+                device.SetMode(DeviceView.DeviceMode.List, remember: false);
                 host.Content = device;
                 host.Position = new PixelPoint(3000, 0);
                 host.Show();

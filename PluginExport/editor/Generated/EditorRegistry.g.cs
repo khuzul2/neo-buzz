@@ -6,7 +6,7 @@ namespace NeoExport
 {
     internal static partial class EditorRegistry
     {
-        public static readonly string[] Ids = { "org.neobuzz.dye-essence", "org.neobuzz.neo-comp", "org.neobuzz.neo-delay", "org.neobuzz.neo-eq", "org.neobuzz.neo-filter", "org.neobuzz.neo-poly", "org.neobuzz.neo-verb" };
+        public static readonly string[] Ids = { "org.neobuzz.dye-essence", "org.neobuzz.neo-comp", "org.neobuzz.neo-delay", "org.neobuzz.neo-drums", "org.neobuzz.neo-eq", "org.neobuzz.neo-filter", "org.neobuzz.neo-fm6", "org.neobuzz.neo-learn-additive", "org.neobuzz.neo-learn-fm", "org.neobuzz.neo-learn-formant", "org.neobuzz.neo-learn-granular", "org.neobuzz.neo-learn-phase-distortion", "org.neobuzz.neo-learn-physical", "org.neobuzz.neo-learn-sampler", "org.neobuzz.neo-learn-spectral", "org.neobuzz.neo-learn-string", "org.neobuzz.neo-learn-subtractive", "org.neobuzz.neo-learn-vector", "org.neobuzz.neo-learn-wavefolder", "org.neobuzz.neo-learn-wavetable", "org.neobuzz.neo-poly", "org.neobuzz.neo-verb" };
         /// <summary>A plug-in's Neo editor and the machine class the editor reads (null host: no engine thread, only its own Values).</summary>
         public static bool TryMake(string pluginId, out NeoEditor editor, out object machine)
         {
@@ -18,10 +18,40 @@ namespace NeoExport
                     { var m = new NeoBuzz.Comp.NeoCompMachine(null); machine = m; editor = new NeoBuzz.Comp.NeoCompEditor(); return true; }
                 case "org.neobuzz.neo-delay":
                     { var m = new NeoBuzz.Delay.NeoDelayMachine(null); machine = m; editor = new NeoBuzz.Delay.NeoDelayEditor(); return true; }
+                case "org.neobuzz.neo-drums":
+                    { var m = new NeoBuzz.Drums.NeoDrumsMachine(null); machine = m; editor = new NeoBuzz.Drums.NeoDrumsEditor(); return true; }
                 case "org.neobuzz.neo-eq":
                     { var m = new NeoBuzz.Eq.NeoEqMachine(null); machine = m; editor = new NeoBuzz.Eq.NeoEqEditor(); return true; }
                 case "org.neobuzz.neo-filter":
                     { var m = new NeoBuzz.Filter.NeoFilterMachine(null); machine = m; editor = new NeoBuzz.Filter.NeoFilterEditor(); return true; }
+                case "org.neobuzz.neo-fm6":
+                    { var m = new NeoBuzz.Fm6.NeoFm6Machine(null); machine = m; editor = new NeoBuzz.Fm6.NeoFm6Editor(); return true; }
+                case "org.neobuzz.neo-learn-additive":
+                    { var m = new NeoBuzz.LearnAdd.NeoLearnAdditiveMachine(null); machine = m; editor = new NeoBuzz.LearnAdd.NeoLearnAdditiveEditor(); return true; }
+                case "org.neobuzz.neo-learn-fm":
+                    { var m = new NeoBuzz.LearnFm.NeoLearnFMMachine(null); machine = m; editor = new NeoBuzz.LearnFm.NeoLearnFMEditor(); return true; }
+                case "org.neobuzz.neo-learn-formant":
+                    { var m = new NeoBuzz.LearnFormant.NeoLearnFormantMachine(null); machine = m; editor = new NeoBuzz.LearnFormant.NeoLearnFormantEditor(); return true; }
+                case "org.neobuzz.neo-learn-granular":
+                    { var m = new NeoBuzz.LearnGrain.NeoLearnGranularMachine(null); machine = m; editor = new NeoBuzz.LearnGrain.NeoLearnGranularEditor(); return true; }
+                case "org.neobuzz.neo-learn-phase-distortion":
+                    { var m = new NeoBuzz.LearnPd.NeoLearnPhaseDistortionMachine(null); machine = m; editor = new NeoBuzz.LearnPd.NeoLearnPhaseDistortionEditor(); return true; }
+                case "org.neobuzz.neo-learn-physical":
+                    { var m = new NeoBuzz.LearnPhys.NeoLearnPhysicalMachine(null); machine = m; editor = new NeoBuzz.LearnPhys.NeoLearnPhysicalEditor(); return true; }
+                case "org.neobuzz.neo-learn-sampler":
+                    { var m = new NeoBuzz.LearnSampler.NeoLearnSamplerMachine(null); machine = m; editor = new NeoBuzz.LearnSampler.NeoLearnSamplerEditor(); return true; }
+                case "org.neobuzz.neo-learn-spectral":
+                    { var m = new NeoBuzz.LearnSpectral.NeoLearnSpectralMachine(null); machine = m; editor = new NeoBuzz.LearnSpectral.NeoLearnSpectralEditor(); return true; }
+                case "org.neobuzz.neo-learn-string":
+                    { var m = new NeoBuzz.LearnString.NeoLearnStringMachine(null); machine = m; editor = new NeoBuzz.LearnString.NeoLearnStringEditor(); return true; }
+                case "org.neobuzz.neo-learn-subtractive":
+                    { var m = new NeoBuzz.LearnSub.NeoLearnSubtractiveMachine(null); machine = m; editor = new NeoBuzz.LearnSub.NeoLearnSubtractiveEditor(); return true; }
+                case "org.neobuzz.neo-learn-vector":
+                    { var m = new NeoBuzz.LearnVector.NeoLearnVectorMachine(null); machine = m; editor = new NeoBuzz.LearnVector.NeoLearnVectorEditor(); return true; }
+                case "org.neobuzz.neo-learn-wavefolder":
+                    { var m = new NeoBuzz.LearnFold.NeoLearnWavefolderMachine(null); machine = m; editor = new NeoBuzz.LearnFold.NeoLearnWavefolderEditor(); return true; }
+                case "org.neobuzz.neo-learn-wavetable":
+                    { var m = new NeoBuzz.LearnWt.NeoLearnWavetableMachine(null); machine = m; editor = new NeoBuzz.LearnWt.NeoLearnWavetableEditor(); return true; }
                 case "org.neobuzz.neo-poly":
                     { var m = new NeoBuzz.Poly.NeoPolyMachine(null); machine = m; editor = new NeoBuzz.Poly.NeoPolyEditor(); return true; }
                 case "org.neobuzz.neo-verb":

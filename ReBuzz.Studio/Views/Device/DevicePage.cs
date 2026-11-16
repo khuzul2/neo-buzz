@@ -1,5 +1,5 @@
 // Fork (docs/specs/ux-overhaul.md P3e, decisions 62-70): one machine's device page: a bar (the machine's name, Editor | Parameters,
-// Float or Dock, Classic) over either its own editor (when it has one) or the device view of its parameters. The same page is docked
+// the search, Presets, Float or Dock) over either its own editor (when it has one) or the device view of its parameters. The same page is docked
 // in Detail ▸ Device and floats in its own window.
 
 using System;
@@ -27,7 +27,14 @@ namespace ReBuzz.Studio.Views.Device
         readonly bool floating;
         readonly DeviceView view;
         readonly Border body = new Border();
-        readonly Button editorButton, parametersButton, floatButton, classicButton;
+        readonly Grid bar;
+        readonly (TextBlock Title, StackPanel Tabs, StackPanel Right) barParts;
+        bool narrow;
+
+        /// <summary>Under this width the bar wraps onto two lines.</summary>
+        public const double NarrowBar = 520;
+
+        readonly Button editorButton, parametersButton, floatButton, presetsButton;
         readonly TextBlock title;
         Avalonia.Controls.Control editorContent;
         bool editorMode;
@@ -36,7 +43,7 @@ namespace ReBuzz.Studio.Views.Device
         {
             this.machine = machine;
             this.floating = floating;
-            view = new DeviceView(machine);
+            view = new DeviceView(machine) { Docked = !floating };
             Background = StudioTokens.SurfacePanelBrush;
             AutomationProperties.SetName(this, "Device page");
 
@@ -57,18 +64,22 @@ namespace ReBuzz.Studio.Views.Device
             parametersButton.Click += (s, e) => SetEditor(false, remember: true);
             floatButton = Tab(floating ? "Dock" : "Float", floating ? "Back to the Detail panel" : "Open this machine's device in its own window");
             floatButton.Click += (s, e) => FloatToggled?.Invoke();
-            classicButton = Tab("Classic…", "The classic parameter window: presets, edit functions, MIDI binding, attributes");
-            classicButton.Click += (s, e) => OpenClassic();
+            presetsButton = Tab("Presets", "Apply a preset, edit the presets, copy and paste one");
+            presetsButton.Click += (s, e) => DeviceMenus.Presets(machine, this, () => view.Refresh()).Open(presetsButton);
 
             var tabs = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { editorButton, parametersButton } };
-            var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { classicButton, floatButton } };
-            var bar = new DockPanel { Height = 32, Margin = new Thickness(8, 0, 8, 0), LastChildFill = false };
-            DockPanel.SetDock(right, Dock.Right);
-            bar.Children.Add(right);
+            var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { presetsButton, floatButton } };
+            // One row of 32 pt: name, tabs, search, Presets, Float. Under NarrowBar it wraps to two: the search takes the second.
+            bar = new Grid { Margin = new Thickness(8, 0, 8, 0), ColumnDefinitions = new ColumnDefinitions("Auto,Auto,*,Auto,Auto"), RowDefinitions = new RowDefinitions("32,Auto") };
+            title.MaxWidth = 240;
+            barParts = (title, tabs, right);
             bar.Children.Add(title);
             bar.Children.Add(tabs);
             view.Toolbar.Margin = new Thickness(12, 0, 8, 0);
-            bar.Children.Add(view.Toolbar);
+            bar.Children.Add(view.Toolbar);       // tab order is reading order: the search, then the buttons at the right
+            bar.Children.Add(right);
+            bar.SizeChanged += (s, e) => LayoutBar(e.NewSize.Width);
+            LayoutBar(double.PositiveInfinity);
             var root = new DockPanel { LastChildFill = true };
             DockPanel.SetDock(bar, Dock.Top);
             root.Children.Add(bar);
@@ -76,6 +87,31 @@ namespace ReBuzz.Studio.Views.Device
             Content = root;
             bool wantEditor = HasEditor(machine) && Read(EditorKey, false);
             SetEditor(wantEditor, remember: false);
+        }
+
+        /// <summary>Whether the bar is on two lines (a page narrower than <see cref="NarrowBar"/>).</summary>
+        public bool BarWrapped => narrow;
+
+        public Avalonia.Controls.Control Bar => bar;
+
+        void LayoutBar(double width)
+        {
+            bool wrap = width < NarrowBar;
+            narrow = wrap;
+            void At(Avalonia.Controls.Control c, int row, int col, int span = 1)
+            {
+                Grid.SetRow(c, row);
+                Grid.SetColumn(c, col);
+                Grid.SetColumnSpan(c, span);
+            }
+            barParts.Title.MaxWidth = wrap ? 96 : 240;     // the name gives way before the buttons do
+            At(barParts.Title, 0, 0);
+            At(barParts.Tabs, 0, 1);
+            At(barParts.Right, 0, 4);
+            if (wrap) At(view.Toolbar, 1, 0, 5);
+            else At(view.Toolbar, 0, 3);
+            view.Toolbar.Margin = wrap ? new Thickness(0, 0, 0, 4) : new Thickness(12, 0, 8, 0);
+            view.Toolbar.MaxWidth = wrap && !double.IsInfinity(width) ? Math.Max(120, width) : double.PositiveInfinity;   // the search shrinks to the line
         }
 
         public IMachine Machine => machine;
@@ -94,7 +130,7 @@ namespace ReBuzz.Studio.Views.Device
 
         public Button FloatButton => floatButton;
 
-        public Button ClassicButton => classicButton;
+        public Button PresetsButton => presetsButton;
 
         /// <summary>The Float button (Dock in a window) was pressed.</summary>
         public event Action FloatToggled;
@@ -136,10 +172,11 @@ namespace ReBuzz.Studio.Views.Device
             }
             else body.Child = view;
             view.Toolbar.IsVisible = !editorMode;
+            view.Options.IsVisible = !editorMode;
             Mark(editorButton, editorMode);
             Mark(parametersButton, !editorMode);
             Mark(floatButton, false);
-            Mark(classicButton, false);
+            Mark(presetsButton, false);
         }
 
         static void Mark(Button b, bool on)
@@ -159,8 +196,6 @@ namespace ReBuzz.Studio.Views.Device
                 Children = { new TextBlock { Text = text, FontSize = StudioTokens.FontBody, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap }, b },
             };
         }
-
-        void OpenClassic() => (machine.Graph?.Buzz as ReBuzzCore)?.UiHost?.OpenParameterWindow(machine, null);
 
         internal static T Read<T>(string key, T def)
         {

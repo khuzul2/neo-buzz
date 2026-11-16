@@ -389,6 +389,7 @@ namespace ReBuzz.Studio.Tests
 
                 // The device view of the target: the ring.
                 var device = new DeviceView(filter);
+                device.SetMode(DeviceView.DeviceMode.List, remember: false);
                 var host = new Window { Width = 760, Height = 700, Content = device };
                 host.Show();
                 MachineViewTests.Settle();

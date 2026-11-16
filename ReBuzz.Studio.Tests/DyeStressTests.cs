@@ -146,11 +146,11 @@ namespace ReBuzz.Studio.Tests
                 Core.UiHost.OpenParameterWindow(machine, null);
                 var window = StudioMachineUiHost.ParameterWindowOf(machine);
                 Assert.That(window, Is.Not.Null);
-                var view = (ParameterWindowView)StudioMachineUiHost.ContentOf(window!)!;   // inside the machine keyboard's frame (a generator that takes notes)
+                var view = DeviceTestKit.PageOf(window!).Parameters;   // inside the machine keyboard's frame (a generator that takes notes)
                 Dispatcher.UIThread.RunJobs();
                 window.UpdateLayout();
                 double openMs = sw.Elapsed.TotalMilliseconds;
-                Assert.That(view.Rows.Count, Is.EqualTo(Globals), "a row per state parameter");
+                Assert.That(view.Layout.All.Count(p => !p.IsTrack), Is.EqualTo(Globals), "a control per state parameter");
                 var frames = new List<double>();
                 for (int i = 0; i < 5; i++)
                 {
@@ -161,15 +161,13 @@ namespace ReBuzz.Studio.Tests
                 }
                 frames.Sort();
                 // The last row, scrolled to and moved as a user would.
-                var last = view.Rows.Single(r => r.ParameterName == "Arp scale");
+                var last = DeviceTestKit.Param(view, "Arp scale");
                 sw.Restart();
-                last.Slider.BringIntoView();
-                Dispatcher.UIThread.RunJobs();
-                window.UpdateLayout();
+                DeviceTestKit.Cell(window!, view, last);
                 double scrollMs = sw.Elapsed.TotalMilliseconds;
-                last.Slider.Commit(5);
+                ReBuzz.Studio.Views.Device.DeviceEdits.Set(Core, last, 5);
                 Dispatcher.UIThread.RunJobs();
-                Assert.That(globals.Single(p => p.Name == "Arp scale").GetValue(0), Is.EqualTo(5), "the last parameter's slider moves it");
+                Assert.That(globals.Single(p => p.Name == "Arp scale").GetValue(0), Is.EqualTo(5), "the last parameter's knob moves it");
                 Report($"parameter window: open and laid out in {openMs:F0} ms, a frame {frames[2]:F1} ms (median of 5), to the last row {scrollMs:F0} ms");
                 Studio.Screenshot(window, "dye-stress-parameters");
                 // Reported against the target of a second (dye-essence.md §5.2); asserted only as a bound
