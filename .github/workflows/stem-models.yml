@@ -12,6 +12,9 @@ name: Stem models
 # Install the zip with Preferences > Stems > Install models...
 
 on:
+  push:
+    branches: [ audio/stem-separation ]   # TEMPORARY: a workflow can be dispatched only once it is on main; remove after the first run
+    paths: [ '.github/workflows/stem-models.yml' ]
   workflow_dispatch:
     inputs:
       models:
@@ -30,9 +33,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 300
     env:
-      MODELS: ${{ github.event.inputs.models }}
-      FP16: ${{ github.event.inputs.fp16_weights == 'true' && '--fp16-weights' || '' }}
-      CLIP: ${{ github.event.inputs.clip_seconds }}
+      MODELS: ${{ github.event.inputs.models || 'htdemucs,htdemucs_ft,bs-roformer-sw' }}
+      FP16: ${{ github.event.inputs.fp16_weights != 'false' && '--fp16-weights' || '' }}
+      CLIP: ${{ github.event.inputs.clip_seconds || '12' }}
     steps:
     - uses: actions/checkout@v5
 
