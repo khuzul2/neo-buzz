@@ -189,6 +189,8 @@ namespace ReBuzz.ManagedMachine
 
         // Fork (plugin-host.md §3.1): IBuzzMachineHostRuntime.
         public bool SongLoading => (Machine?.Graph?.Buzz as ReBuzzCore)?.SongLoading ?? false;
+        public IntPtr AudioWorkgroup => ReBuzz.Platform.AudioWorkgroup.CurrentHandle;
+        public double AudioWorkgroupPeriod => ReBuzz.Platform.AudioWorkgroup.CurrentPeriod;
 
         public void SetGlobalParameterInfo(int index, string name, string description, int min, int max, int def, bool visible)
         {

@@ -42,6 +42,12 @@ namespace ReBuzz.Platform
         /// <summary>Whether workgroups exist here (macOS 11 and later).</summary>
         public static bool Supported => OperatingSystem.IsMacOSVersionAtLeast(11);
 
+        /// <summary>The attached workgroup (an os_workgroup_t), or zero: the plug-in sandbox passes it to its servers (docs/specs/plugin-host.md H2).</summary>
+        public static IntPtr CurrentHandle { get { var g = Volatile.Read(ref current); return g == null ? IntPtr.Zero : g.Handle; } }
+
+        /// <summary>The attached device's buffer period in seconds (0 when none).</summary>
+        public static double CurrentPeriod { get { var g = Volatile.Read(ref current); return g == null ? 0 : g.Period; } }
+
         /// <summary>Whether a device's workgroup is attached.</summary>
         public static bool Attached => Volatile.Read(ref current) != null;
 

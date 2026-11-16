@@ -24,6 +24,8 @@ namespace ReBuzz.Studio.Platform
         /// <summary>The plug-in's name to look for, from the command line; null when the check isn't asked for.</summary>
         public static string PlugIn { get; set; }
         public static bool Effect { get; set; }
+        /// <summary>The plug-in runs in a sandbox (the environment's choice, else the platform's default).</summary>
+        static bool Sandboxed => NeoBuzz.Plug.PlugPlacement.IsSandbox(NeoBuzz.Plug.PlugPlacement.Resolve("", "", "", PlugIn, null, out _));
         public static bool Floating { get; set; }
 
         static readonly List<string> failures = new();
@@ -88,7 +90,7 @@ namespace ReBuzz.Studio.Platform
             Check(controller.Has(machine), "the plug-in has an editor for this window API");
             if (!controller.Has(machine)) return;
 
-            var want = Floating ? PluginEditorMode.Floating : PluginEditorMode.Embedded;
+            var want = Floating || Sandboxed ? PluginEditorMode.Floating : PluginEditorMode.Embedded;
             for (int round = 1; round <= 2; round++)
             {
                 string r = round == 1 ? "first open" : "reopen";
@@ -101,7 +103,9 @@ namespace ReBuzz.Studio.Platform
                 if (session == null) return;
                 Check(session.Width >= 100 && session.Height >= 100, $"{r}: the view is {session.Width} x {session.Height}");
                 int colours = Colours(session);
-                Check(colours > 300, $"{r}: the plug-in drew its view ({colours} colours)");
+                // A sandboxed editor is a window of another process: its pixels can't be read from here (H2), so only that it opened is checked.
+                if (colours < 0 && Sandboxed) Say($"ok {r}: the editor is a window of the plug-in's sandbox (its pixels are not readable from here)");
+                else Check(colours > 300, $"{r}: the plug-in drew its view ({colours} colours)");
 
                 if (round == 1)
                 {
@@ -112,7 +116,7 @@ namespace ReBuzz.Studio.Platform
                         session.SetSize(w0 + 80, h0 + 60);
                         await Pause(800);
                         Check(session.Width > 0 && session.Height > 0, $"resized from the host: {w0} x {h0} to {session.Width} x {session.Height}");
-                        Check(Colours(session) > 300, "and the view still draws");
+                        { int again = Colours(session); if (again < 0 && Sandboxed) Say("ok and the sandbox's window is still there"); else Check(again > 300, "and the view still draws"); }
                     }
                     else Say($"the editor has a fixed size ({session.Width} x {session.Height})");
                 }

@@ -70,6 +70,8 @@ add_library(neoplug SHARED
     neoplug/neoplug.cpp
     neoplug/np_vst3.cpp
     neoplug/np_clap.cpp
+    neoplug/np_ipc.cpp
+    neoplug/np_remote.cpp
     # sdk_hosting leaves these to each host:
     ${NEOPLUG_VST3_SDK}/public.sdk/source/common/memorystream.cpp
     ${NEOPLUG_VST3_SDK}/public.sdk/source/vst/hosting/plugprovider.cpp)
@@ -83,14 +85,29 @@ if(APPLE)
     set_target_properties(neoplug PROPERTIES INSTALL_RPATH "@loader_path" BUILD_WITH_INSTALL_RPATH ON)
 elseif(WIN32)
     target_sources(neoplug PRIVATE neoplug/np_platform_win.cpp ${NEOPLUG_VST3_SDK}/public.sdk/source/vst/hosting/module_win32.cpp)
-    target_link_libraries(neoplug PRIVATE user32 gdi32 ole32 shell32)
+    target_link_libraries(neoplug PRIVATE user32 gdi32 ole32 shell32 avrt)
     target_compile_definitions(neoplug PRIVATE NOMINMAX)
     target_compile_definitions(neoplug PRIVATE UNICODE _UNICODE)
 else()
     target_sources(neoplug PRIVATE ${NEOPLUG_VST3_SDK}/public.sdk/source/vst/hosting/module_linux.cpp)
-    target_link_libraries(neoplug PRIVATE dl pthread)
+    target_link_libraries(neoplug PRIVATE dl pthread rt)
 endif()
 np_output(neoplug)
+
+# --- neoplug-server: hosts plug-ins in a process of its own (H2); the library starts it (np_open_ex with a sandbox placement) ---------
+add_executable(neoplug-server server/neoplug-server.cpp neoplug/np_serve.cpp neoplug/np_ipc.cpp)
+target_include_directories(neoplug-server PRIVATE neoplug)
+target_link_libraries(neoplug-server PRIVATE neoplug)
+if(APPLE)
+    set_target_properties(neoplug-server PROPERTIES INSTALL_RPATH "@executable_path" BUILD_WITH_INSTALL_RPATH ON)
+elseif(WIN32)
+    target_link_libraries(neoplug-server PRIVATE user32 avrt)
+    target_compile_definitions(neoplug-server PRIVATE NOMINMAX)
+else()
+    set_target_properties(neoplug-server PROPERTIES INSTALL_RPATH "$ORIGIN" BUILD_WITH_INSTALL_RPATH ON)
+    target_link_libraries(neoplug-server PRIVATE pthread rt)
+endif()
+np_output(neoplug-server)
 
 # --- neoplug-probe ---------------------------------------------------------------------------------
 add_executable(neoplug-probe probe/neoplug-probe.cpp)
@@ -102,6 +119,21 @@ elseif(UNIX)
     target_link_libraries(neoplug-probe PRIVATE pthread)
 endif()
 np_output(neoplug-probe)
+
+# --- neoplug-sandbox-test: the sandbox's checks through the C ABI (smoke, crash, latency, the hour test's chain) ---------------------------
+add_executable(neoplug-sandbox-test probe/neoplug-sandbox-test.cpp neoplug/np_ipc.cpp)
+target_include_directories(neoplug-sandbox-test PRIVATE neoplug)
+target_link_libraries(neoplug-sandbox-test PRIVATE neoplug)
+if(APPLE)
+    set_target_properties(neoplug-sandbox-test PROPERTIES INSTALL_RPATH "@executable_path" BUILD_WITH_INSTALL_RPATH ON)
+elseif(WIN32)
+    target_link_libraries(neoplug-sandbox-test PRIVATE winmm avrt user32)
+    target_compile_definitions(neoplug-sandbox-test PRIVATE NOMINMAX)
+else()
+    set_target_properties(neoplug-sandbox-test PROPERTIES INSTALL_RPATH "$ORIGIN" BUILD_WITH_INSTALL_RPATH ON)
+    target_link_libraries(neoplug-sandbox-test PRIVATE pthread rt)
+endif()
+np_output(neoplug-sandbox-test)
 
 # --- neoplug-test.clap: a CLAP module for the tests (synth + gain, with a native GUI panel) ----------
 add_library(neoplug-test MODULE testplug/neoplug-test.cpp)

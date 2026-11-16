@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using BuzzGUI.Interfaces;
 
@@ -42,6 +43,15 @@ namespace Buzz.MachineInterface
         /// outside state (a hosted plug-in) holds the engine's writes meanwhile, since its own state follows.
         /// </summary>
         bool SongLoading => false;
+
+        /// <summary>
+        /// macOS: the audio device's workgroup (an os_workgroup_t), or zero. The plug-in sandbox gives it to its server processes so their audio
+        /// threads join it, as the engine's own workers do (docs/specs/plugin-host.md H2).
+        /// </summary>
+        IntPtr AudioWorkgroup => IntPtr.Zero;
+
+        /// <summary>The device's buffer period in seconds, for the servers' time constraint (0 when unknown).</summary>
+        double AudioWorkgroupPeriod => 0;
     }
 
     /// <summary>

@@ -63,6 +63,7 @@
     <Compile Include="..\Machines\NeoBuzz.ManifestEditor\**\*.cs" Link="ManifestEditor\%(RecursiveDir)%(Filename)%(Extension)" />
     <!-- Fork (plugin-host.md H1b): Preferences > Plug-ins shares the Neo Plug machines' library code (the folders, the scan, the blocklist). -->
     <Compile Include="..\Machines\NeoPlug\PlugLibrary.cs" Link="PlugIns\PlugLibrary.cs" />
+    <Compile Include="..\Machines\NeoPlug\PlugPlacement.cs" Link="PlugIns\PlugPlacement.cs" />
   </ItemGroup>
 
   <!-- The Neo machines in Gear, with their editors on Avalonia (studio-mvp.md S1), and the Link helper. -->

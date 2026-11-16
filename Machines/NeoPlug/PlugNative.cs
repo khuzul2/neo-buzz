@@ -9,7 +9,7 @@ namespace NeoBuzz.Plug
 {
     static class PlugNative
     {
-        public const int Abi = 3;
+        public const int Abi = 4;
         const string Lib = "neoplug";
 
         static PlugNative()
@@ -104,6 +104,17 @@ namespace NeoBuzz.Plug
         [DllImport(Lib)] public static extern int np_abi();
         [DllImport(Lib)] public static extern IntPtr np_open([MarshalAs(UnmanagedType.LPUTF8Str)] string path, [MarshalAs(UnmanagedType.LPUTF8Str)] string id, byte[] err, int errlen);
         [DllImport(Lib)] public static extern void np_close(IntPtr p);
+        // Sandbox (ABI 4, docs/specs/plugin-host.md H2)
+        public const int InProcess = 0, SandboxPlugin = 1, SandboxInstance = 2, SandboxShared = 3;
+        [DllImport(Lib)] public static extern IntPtr np_open_ex([MarshalAs(UnmanagedType.LPUTF8Str)] string path, [MarshalAs(UnmanagedType.LPUTF8Str)] string id, int placement, byte[] err, int errlen);
+        [DllImport(Lib)] public static extern int np_server_available();
+        [DllImport(Lib)] public static extern int np_placement(IntPtr p);
+        [DllImport(Lib)] public static extern int np_status(IntPtr p);
+        [DllImport(Lib)] public static extern int np_server_pid(IntPtr p);
+        [DllImport(Lib)] public static extern int np_status_text(IntPtr p, byte[] buf, int len);
+        [DllImport(Lib)] public static extern int np_gui_open_window(IntPtr p, [MarshalAs(UnmanagedType.LPUTF8Str)] string title, out int w, out int h, byte[] err, int errlen);
+        [DllImport(Lib)] public static extern void np_gui_close_window(IntPtr p);
+        [DllImport(Lib)] public static extern void np_set_workgroup(IntPtr workgroup, double periodSeconds);
         [DllImport(Lib)] public static extern int np_info(IntPtr p, out ClassInfo info);
         [DllImport(Lib)] public static extern int np_activate(IntPtr p, double rate, int maxFrames, int offline, byte[] err, int errlen);
         [DllImport(Lib)] public static extern void np_deactivate(IntPtr p);

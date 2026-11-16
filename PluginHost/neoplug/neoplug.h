@@ -191,9 +191,26 @@ NP_API void np_platform_release(void* handle);
 NP_API void np_platform_window_size(void* content, int width, int height);
 NP_API void np_platform_on_close(void* content, void (*cb)(void*), void* user);
 
+/* Sandbox, ABI 4 (docs/specs/plugin-host.md H2). One protocol for both placements: the same calls reach a plug-in in this process
+ * (placement 0, on the calling thread) or in a neoplug-server process (1 = one server per plug-in, 2 = one per instance, 3 = one shared
+ * by every sandboxed plug-in), through shared memory. A server that ends (crash, hang, killed) leaves the plug-in silent: np_process_ex
+ * returns -2, np_status says 2, and the plug-in is opened again (np_open_ex) from its saved state. */
+enum { NP_IN_PROCESS = 0, NP_SANDBOX_PLUGIN = 1, NP_SANDBOX_INSTANCE = 2, NP_SANDBOX_SHARED = 3 };
+NP_API np_plugin* np_open_ex(const char* path, const char* id, int placement, char* err, int errlen);
+NP_API int np_server_available(void);                    /* 1 if neoplug-server is installed beside the library */
+NP_API int np_placement(np_plugin* p);                   /* NP_IN_PROCESS .. NP_SANDBOX_SHARED */
+NP_API int np_status(np_plugin* p);                      /* 0 in process, 1 sandboxed and running, 2 its server ended */
+NP_API int np_server_pid(np_plugin* p);                  /* the server's process id (0 in process) */
+NP_API int np_status_text(np_plugin* p, char* buf, int len);   /* "in process", "running", or how the server ended ("crashed (signal 11)") */
+/* A sandboxed plug-in's editor in a window the server owns (macOS always, and Windows when embedding failed). Main thread. */
+NP_API int np_gui_open_window(np_plugin* p, const char* title, int* width, int* height, char* err, int errlen);
+NP_API void np_gui_close_window(np_plugin* p);
+/* macOS: the audio device's os_workgroup_t, so the servers' audio threads join it (NULL = none). Other platforms ignore it. */
+NP_API void np_set_workgroup(void* os_workgroup, double period_seconds);
+
 NP_API const char* np_version(void);
 /* The library's ABI number (managed callers refuse a different one). */
-#define NP_ABI 3
+#define NP_ABI 4
 NP_API int np_abi(void);
 
 #ifdef __cplusplus
