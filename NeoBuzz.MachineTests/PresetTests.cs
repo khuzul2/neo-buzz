@@ -19,6 +19,8 @@ namespace NeoBuzz.MachineTests
         {
             // Neo Analyzer passes its input through: its presets only change what it shows.
             ["Neo Analyzer"] = (NeoBuzz.Analyzer.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Analyzer(v).Process(l, r, n))),
+            // Neo Audio hands its input to the Session engine (the app), which has no clips here: with none playing the input goes through.
+            ["Neo Audio"] = (NeoBuzz.NeoAudio.Params.Table, (v, x) => x),
             ["Neo Drive"] = (NeoBuzz.Drive.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Drive(v).Process(l, r, n))),
             ["Neo Comp"] = (NeoBuzz.Comp.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Comp(v).Process(l, r, null, null, n))),
             ["Neo Verb"] = (NeoBuzz.Verb.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Verb(v).Process(l, r, n))),

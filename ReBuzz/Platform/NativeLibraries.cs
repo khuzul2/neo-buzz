@@ -25,6 +25,7 @@ namespace ReBuzz.Platform
             {
                 yield return "lib" + name + ".dylib";
                 yield return "lib" + name + ".2.dylib";
+                yield return "lib" + name + ".1.dylib";       // Homebrew's libsndfile
             }
             else if (OperatingSystem.IsLinux())
             {

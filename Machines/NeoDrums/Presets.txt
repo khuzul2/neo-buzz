@@ -147,3 +147,182 @@ High tom decay = 0.3
 Cowbell decay = 0.15
 Crash decay = 0.8
 Ride decay = 1.0
+
+# House sound set: tech house and bass house sounds (content/house-sound-set). Each preset is documented in the report of that branch; names describe the sound.
+
+preset "Tech House — Tight Kit"
+Volume = 1.6
+Kick tune = 52
+Kick sweep = 16
+Kick sweep time = 0.025
+Kick decay = 0.3
+Kick click = 55
+Kick punch = 50
+Kick drive = 6
+Clap tune = 1300
+Clap spread = 0.011
+Clap decay = 0.35
+Closed hat tone = 9500
+Closed hat decay = 0.04
+Open hat tone = 9000
+Open hat decay = 0.28
+Open hat level = -4
+Rim decay = 0.06
+
+preset "Tech House — Rolling Kit"
+Volume = 2.8
+Kick tune = 50
+Kick sweep = 14
+Kick sweep time = 0.03
+Kick decay = 0.42
+Kick click = 40
+Kick punch = 45
+Kick drive = 4
+Clap tune = 1150
+Clap spread = 0.013
+Clap decay = 0.45
+Closed hat tone = 8500
+Closed hat decay = 0.05
+Closed hat level = -3
+Open hat tone = 8000
+Open hat decay = 0.35
+Open hat level = -5
+Rim tune = 1400
+Rim decay = 0.08
+
+preset "Tech House — Minimal Dry Kit"
+Volume = 2.0
+Kick tune = 56
+Kick sweep = 15
+Kick sweep time = 0.02
+Kick decay = 0.18
+Kick click = 45
+Kick punch = 55
+Kick drive = 3
+Clap tune = 1500
+Clap spread = 0.008
+Clap decay = 0.18
+Closed hat tone = 10500
+Closed hat decay = 0.03
+Open hat tone = 10000
+Open hat decay = 0.18
+Open hat level = -6
+Rim tune = 1700
+Rim decay = 0.05
+
+preset "Tech House — Warehouse Kit"
+Volume = 0.7
+Kick tune = 48
+Kick sweep = 17
+Kick sweep time = 0.03
+Kick decay = 0.5
+Kick click = 60
+Kick punch = 55
+Kick drive = 12
+Clap tune = 1000
+Clap spread = 0.014
+Clap decay = 0.6
+Closed hat tone = 8000
+Closed hat decay = 0.06
+Open hat tone = 7500
+Open hat decay = 0.45
+Open hat level = -3
+Rim decay = 0.1
+
+preset "Tech House — Dub Kit"
+Volume = 4.5
+Kick tune = 46
+Kick sweep = 12
+Kick sweep time = 0.05
+Kick decay = 0.55
+Kick click = 20
+Kick punch = 30
+Kick drive = 2
+Clap tune = 900
+Clap spread = 0.016
+Clap decay = 0.5
+Closed hat tone = 7000
+Closed hat decay = 0.07
+Closed hat level = -5
+Open hat tone = 6500
+Open hat decay = 0.4
+Open hat level = -6
+Rim tune = 800
+Rim decay = 0.15
+
+preset "Bass House — Punch Kit"
+Volume = 0.9
+Kick tune = 48
+Kick sweep = 17
+Kick sweep time = 0.022
+Kick decay = 0.45
+Kick click = 65
+Kick punch = 55
+Kick drive = 12
+Clap tune = 1250
+Clap spread = 0.012
+Clap decay = 0.5
+Closed hat tone = 9500
+Closed hat decay = 0.045
+Open hat tone = 9000
+Open hat decay = 0.3
+Open hat level = -4
+Rim decay = 0.07
+
+preset "Bass House — Heavy Sub Kit"
+Volume = 1.0
+Kick tune = 45
+Kick sweep = 18
+Kick sweep time = 0.03
+Kick decay = 0.7
+Kick click = 50
+Kick punch = 50
+Kick drive = 15
+Clap tune = 1100
+Clap spread = 0.014
+Clap decay = 0.55
+Closed hat tone = 9000
+Closed hat decay = 0.04
+Open hat tone = 8500
+Open hat decay = 0.32
+Open hat level = -5
+Rim decay = 0.07
+
+preset "Bass House — Dirty Kit"
+Volume = 0.7
+Kick tune = 50
+Kick sweep = 18
+Kick sweep time = 0.018
+Kick decay = 0.4
+Kick click = 80
+Kick punch = 60
+Kick drive = 20
+Clap tune = 1400
+Clap spread = 0.01
+Clap decay = 0.4
+Closed hat tone = 11000
+Closed hat decay = 0.035
+Open hat tone = 10000
+Open hat decay = 0.25
+Open hat level = -4
+Rim tune = 1900
+Rim decay = 0.05
+
+preset "Bass House — Open Kit"
+Volume = 1.4
+Kick tune = 53
+Kick sweep = 16
+Kick sweep time = 0.028
+Kick decay = 0.34
+Kick click = 55
+Kick punch = 50
+Kick drive = 8
+Clap tune = 1350
+Clap spread = 0.012
+Clap decay = 0.42
+Closed hat tone = 10000
+Closed hat decay = 0.045
+Open hat tone = 9500
+Open hat decay = 0.5
+Open hat level = -2
+Rim decay = 0.06

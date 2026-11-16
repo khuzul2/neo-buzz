@@ -14,7 +14,7 @@
 ## Patterns, the arrangement and the session grid
 - A **pattern** belongs to one machine and holds its notes and automation (a parameter's movement, played whenever the pattern plays). Its length is in beats.
 - The **arrangement** (sequence) places patterns on a timeline, one lane per machine. A pattern placed at beat 16 plays from there until it ends or the lane's next pattern starts. The song plays from 0 to its end; the loop range is what plays on repeat. **Markers** name its sections ("Verse", "Drop").
-- The **Session View** grid launches patterns as clips, in time, a scene (a row) or a clip at a time: `session_get`, `session_clip_set`, `session_scene_set`. Renders play the arrangement, so a finished song lives there.
+- The **Session View** grid launches patterns as clips, in time, a scene (a row) or a clip at a time: `session_get`, `session_clip_set`, `session_scene_set`; audio clips (`audio_import`, `audio_clip_set`, `audio_clip_get`) live on Neo Audio tracks. Renders play the arrangement, so a finished song lives there.
 
 ## Undo, history and snapshots
 - Every changing call is one undo step (`undo`, `history_list`); `snapshot_save` keeps the whole song under a name and `snapshot_restore` puts it back, glitch-free while it plays. The user's edits share the same history.

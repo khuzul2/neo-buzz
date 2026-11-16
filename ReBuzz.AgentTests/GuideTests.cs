@@ -18,7 +18,7 @@ namespace ReBuzz.AgentTests
     public class GuideTests
     {
         internal static readonly string[] Topics = { "workflow", "concepts", "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain", "dye-essence-in-depth", "dye-essence-analysis", "dye-essence-effects", "neo-eq-in-depth", "build-a-synth", "app-control", "live-performance", "dye-sound-design", "migrating-songs", "teaching", "performance", "recipes", "troubleshooting" };
-        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Clipper", "Neo Comp", "Neo De-esser", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo Envelope", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Gate", "Neo Imager", "Neo Limiter", "Neo LFO", "Neo Low End", "Neo Macro", "Neo Multiband", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Spectral", "Neo Step", "Neo Strip", "Neo Tape", "Neo Transient", "Neo Utility", "Neo Verb", "Neo Wave", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
+        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Audio", "Neo Clipper", "Neo Comp", "Neo De-esser", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo Envelope", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Gate", "Neo Imager", "Neo Limiter", "Neo LFO", "Neo Low End", "Neo Macro", "Neo Multiband", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Spectral", "Neo Step", "Neo Strip", "Neo Tape", "Neo Transient", "Neo Utility", "Neo Verb", "Neo Wave", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
 
         /// <summary>Neo gear being built in parallel (phase A4): parameter names aren't final, so guides give them moves in units and say to read the names with machine_describe.</summary>
         static readonly string[] PendingGear = System.Array.Empty<string>();
@@ -67,6 +67,8 @@ namespace ReBuzz.AgentTests
             ["param_set"] = new[] { "machine", "changes", "allow_unsafe" },
             ["param_get"] = new[] { "machine", "params", "track" },
             ["machine_pin"] = new[] { "machine", "param", "pinned" },
+            ["param_lock"] = new[] { "machine", "param", "locked" },
+            ["param_randomize"] = new[] { "machine", "mode", "amount", "a", "b" },
             // neo-patch.md §3 (ReBuzz/Agent/ModulationTools.cs): the canvas modulators.
             ["modulate"] = new[] { "source", "target_machine", "param", "depth", "polarity", "range", "curve", "track", "slot", "listen_machine", "listen_track" },
             ["modulation_list"] = new[] { "machine" },
@@ -116,6 +118,10 @@ namespace ReBuzz.AgentTests
             ["wave_from_render"] = new[] { "source", "from_seconds", "to_seconds", "slot", "name", "root_note" },
             ["session_get"] = new string[0],
             ["session_clip_set"] = new[] { "machine", "scene", "pattern", "mode", "quantization", "loop", "legato" },
+            // NA1 (neo-audio.md: ReBuzz/Agent/AudioClipTools.cs)
+            ["audio_import"] = new[] { "path", "track", "slot", "at_beats" },
+            ["audio_clip_get"] = new[] { "machine", "pattern" },
+            ["audio_clip_set"] = new[] { "machine", "pattern", "warp", "preserve", "tempo_bpm", "detect_tempo", "transpose", "detune", "gain_db", "loop", "region", "warp_markers", "fade_in_beats", "fade_out_beats", "reverse", "stretch_to_beats" },
             ["session_scene_set"] = new[] { "scene", "insert", "name", "tempo_bpm", "beats_per_bar" },
             // A3 (origin/agent/a3-tools: ReBuzz.Agent/Model/CompositionTools.cs, Transforms.cs)
             ["theory"] = new[] { "op", "chord", "progression", "key", "octave", "register", "voicing", "inversion", "voice_leading", "previous", "beats_per_chord", "start", "pitches", "steps", "notes" },
@@ -151,7 +157,7 @@ namespace ReBuzz.AgentTests
             ["app_status"] = new string[0],
             ["song_recent"] = new[] { "limit" },
             // K3b (agent-knowledge.md §11): the features built since K3 (ReBuzz/Agent/ArrangementTools.cs, MachineEditTools.cs; ReBuzz.Studio/Shell/Tools/RecorderTools.cs)
-            ["arrangement_clip"] = new[] { "op", "machine", "lane", "clip", "at", "pattern", "length_beats", "to", "to_lane", "link", "start", "end", "on", "split_at" },
+            ["arrangement_clip"] = new[] { "op", "machine", "lane", "clip", "at", "pattern", "length_beats", "to", "to_lane", "link", "start", "end", "on", "split_at", "to_machine", "fade_in_beats", "fade_out_beats", "gain_db", "start_at", "end_at" },
             ["arrangement_lane"] = new[] { "op", "machine", "role", "lane", "remove_clips" },
             ["arrangement_automation"] = new[] { "op", "machine", "param", "track", "from", "to", "points", "shape", "allow_unsafe" },
             ["arrangement_takes"] = new[] { "op", "machine", "loop", "take_lane", "to_lane", "from", "to" },
@@ -326,7 +332,7 @@ namespace ReBuzz.AgentTests
         {
             // K2: and every other packaged machine but Dye Essence (KnowledgeFamilies), each with a curated manifest too.
             var family = CuratedManifestTests.Curated().Keys.Where(KnowledgeFamilies.Covers).ToArray();
-            Assert.That(family.Length, Is.GreaterThanOrEqualTo(98));
+            Assert.That(family.Length, Is.GreaterThanOrEqualTo(97));
             var pages = NeoGear.Concat(family).ToArray();
             Assert.That(MachineManual.CuratedGear, Is.EquivalentTo(pages));
             Assert.That(Manifests().Keys, Is.EquivalentTo(NeoGear));

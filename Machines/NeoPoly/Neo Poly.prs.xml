@@ -1782,4 +1782,1786 @@
       <Comment></Comment>
     </Preset>
   </Item>
+  <Item Key="Bass — Rolling Saw Ladder">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="100" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="965" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="667" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="750" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="540" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="3" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="850" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="418" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="220" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="690" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="0" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="300" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="131" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="604" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="1000" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="435" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="65" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="538" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="100" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="300" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="600" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="1" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="0" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="500" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Rolling Pulse Tight">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="100" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="852" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="354" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="540" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="3" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="800" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="1" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="460" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="120" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="650" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="0" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="300" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="131" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="565" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="800" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="435" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="65" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="517" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="200" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="300" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="600" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="1" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="0" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="500" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Sub Triangle Long">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="2" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="271" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="100" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="907" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="333" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="540" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="3" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="700" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="2" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="347" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="500" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="0" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="300" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="262" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="604" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="1000" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="517" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="65" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="565" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="200" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="300" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="600" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="1" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="0" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="500" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Twin Saw Growl Mono">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="180" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="100" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="739" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="667" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="640" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="1000" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="3" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="700" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="492" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="280" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="600" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="0" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="300" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="131" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="604" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="1000" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="435" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="65" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="631" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="350" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="300" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="600" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="323" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="1" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="16" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="590" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Wobble Triplet Eighth">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="100" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="887" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="667" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="590" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="700" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="3" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="700" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="406" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="420" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="500" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="0" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="300" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="131" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="604" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="1000" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="500" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="65" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="565" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="200" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="300" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="600" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="1" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="6" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="1" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="16" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="775" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Wobble Sixteenth Chop">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="100" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="839" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="448" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="540" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="3" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="700" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="515" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="200" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="500" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="0" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="300" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="131" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="604" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="1000" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="386" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="65" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="565" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="200" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="300" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="600" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="4" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="3" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="1" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="20" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="275" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="1" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="16" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="650" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Donk Hollow Pulse">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="100" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="857" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="5" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="540" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="3" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="0" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="1" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="504" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="550" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="740" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="0" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="300" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="131" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="517" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="0" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="414" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="65" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="466" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="0" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="300" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="386" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="3" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="1" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="440" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Donk FM Metal">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="100" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="950" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="5" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="5" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="540" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="1000" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="592" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="3" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="0" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="1" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="748" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="100" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="500" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="0" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="300" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="131" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="532" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="0" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="414" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="65" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="565" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="200" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="300" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="452" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="3" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="10" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="700" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Sync Growl Saw">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="100" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="876" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="667" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="400" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="540" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="1000" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="1" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="3" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="750" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="551" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="200" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="550" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="0" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="300" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="131" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="604" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="1000" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="452" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="65" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="565" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="200" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="65" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="652" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="3" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="3" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="675" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Keys — Chord Stab Bright">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="140" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="700" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="200" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="578" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="667" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="800" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="620" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="600" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="0" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="705" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="140" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="650" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="600" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="300" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="131" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="574" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="0" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="479" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="100" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="532" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="100" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="300" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="600" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="1" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="0" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="500" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Keys — Pulse Stab Hollow">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="140" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="700" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="200" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="502" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="292" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="800" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="1000" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="396" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="590" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="600" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="0" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="2" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="680" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="140" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="625" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="600" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="300" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="131" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="590" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="0" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="479" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="100" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="532" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="100" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="300" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="600" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="1" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="0" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="500" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Keys — Fifth Stab Detuned">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="3" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="700" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="200" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="513" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="667" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="800" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="19" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="620" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="500" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="0" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="667" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="140" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="690" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="600" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="300" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="131" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="604" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="0" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="479" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="100" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="532" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="100" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="300" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="600" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="1" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="0" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="500" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Lead — Square Hook Mono">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="120" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="2" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="247" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="250" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="700" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="900" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="600" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="500" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="0" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="760" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="140" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="625" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="400" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="300" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="196" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="565" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="850" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="565" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="100" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="604" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="500" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="300" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="600" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="1" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="0" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="500" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Lead — Sync Saw Cut">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="120" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="2" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="247" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="250" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="672" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="667" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="900" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="4" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="600" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="900" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="1" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="0" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="813" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="140" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="625" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="400" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="300" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="196" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="565" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="850" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="565" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="100" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="604" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="500" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="65" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="631" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="300" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="3" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="3" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="590" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drum — Sine Tom Low">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="150" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="778" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="540" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="0" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="2" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="867" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="500" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="0" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="300" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="65" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="642" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="0" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="435" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="100" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="520" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="300" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="0" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="479" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="3" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="1" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="775" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drum — Sine Tom High">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="150" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="776" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="4" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="540" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="0" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="2" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="867" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="500" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="0" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="300" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="65" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="604" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="0" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="435" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="100" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="520" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="300" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="0" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="435" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="3" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="1" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="725" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drum — Zap Sync Percussion">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="150" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="759" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="667" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="4" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="800" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="540" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="900" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="1" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="0" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="2" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="826" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="500" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="0" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="300" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="65" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="544" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="0" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="435" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="100" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="520" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="300" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="0" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="517" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="3" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="3" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="800" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drum — Noise Tick Bright">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="150" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="909" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="700" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="540" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="0" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="1000" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="1000" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="3" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="884" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="300" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="500" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="0" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="300" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="65" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="369" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="0" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="435" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="100" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="520" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="300" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="0" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="435" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="1" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="0" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="500" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
 </PresetDictionary>

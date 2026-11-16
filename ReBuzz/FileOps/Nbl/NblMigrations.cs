@@ -37,12 +37,20 @@ namespace ReBuzz.FileOps.Nbl
     internal sealed class NblMigrations
     {
         /// <summary>The manifest version this build writes.</summary>
-        public const int Current = 1;
+        public const int Current = 2;
 
         readonly SortedDictionary<int, Action<JsonObject, NblReadContext>> steps = new();
 
         /// <summary>The steps this build knows (none yet: version 1 is the first).</summary>
-        public static NblMigrations Default { get; } = new NblMigrations();
+        public static NblMigrations Default { get; } = Standard();
+
+        /// <summary>The steps of this build. 1 to 2 (neo-audio.md): the "audio" member is new; a version 1 song has none, so nothing changes.</summary>
+        static NblMigrations Standard()
+        {
+            var m = new NblMigrations();
+            m.Register(1, (manifest, ctx) => { });
+            return m;
+        }
 
         public void Register(int from, Action<JsonObject, NblReadContext> step) => steps[from] = step;
 

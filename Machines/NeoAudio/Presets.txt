@@ -1,0 +1,14 @@
+# Neo Audio factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoAudio
+machine "Neo Audio"
+
+preset "Audio Track (Monitor While Armed)"
+Monitor = auto
+Input = in
+
+preset "Audio Track (Always Hear the Input)"
+Monitor = in
+Input = in
+
+preset "Resample (Record the Master, Input Silent)"
+Monitor = off
+Input = master

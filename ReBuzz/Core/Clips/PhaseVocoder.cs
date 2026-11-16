@@ -84,13 +84,16 @@ namespace ReBuzz.Core.Clips
                     nextFrame++;
                 }
                 int slot = (int)(time % Ring);
-                left[offset + i] += gain * (float)(olaL[slot] / Overlap);
-                right[offset + i] += gain * (float)(olaR[slot] / Overlap);
+                left[offset + i] += gain * Flush((float)(olaL[slot] / Overlap));
+                right[offset + i] += gain * Flush((float)(olaR[slot] / Overlap));
                 olaL[slot] = 0;
                 olaR[slot] = 0;
                 time++;
             }
         }
+
+        /// <summary>A decaying overlap-add tail would end in subnormal floats, which cost many times a normal sample on some CPUs.</summary>
+        static float Flush(float x) => Math.Abs(x) < 1e-20f ? 0f : x;
 
         void Frame(AudioSource source, ISourceClock clock, double ratio)
         {
@@ -127,6 +130,15 @@ namespace ReBuzz.Core.Clips
 
             LockedPhases(ratio);
             fresh = false;
+            // Phases carry from frame to frame, so one non-finite value would stay for good: start the phases again instead.
+            double check = 0;
+            for (int k = 0; k < Bins; k++) check += outMagL[k] + outMagR[k] + outPhase[k] + synth[k];
+            if (!double.IsFinite(check))
+            {
+                Array.Clear(outMagL); Array.Clear(outMagR); Array.Clear(outPhase); Array.Clear(synth);
+                Array.Fill(lastOwner, -1);
+                fresh = true;
+            }
 
             // Each channel: the sum's phase plus its own offset from it.
             for (int k = 0; k < Bins; k++)

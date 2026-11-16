@@ -47,7 +47,7 @@ namespace ReBuzz.Studio.Views.Device
             p = param;
             this.core = core;
             MaxLabelWidth = DeviceCell.CellWidth - 4;
-            Label = p.Name;
+            Label = p.Label;
             Origin = p.ZeroFraction;
             Steps = p.Max - p.Min;
             Default = p.Fraction(p.Default);
@@ -111,12 +111,12 @@ namespace ReBuzz.Studio.Views.Device
         }
     }
 
-    /// <summary>A choice: a strip of buttons (a few choices), a toggle (an Off/On switch) or a drop-down (many).</summary>
+    /// <summary>A choice: a strip of buttons (two or three choices), a toggle (an Off/On switch) or a compact drop-down with the value shown (more).</summary>
     internal sealed class DeviceChoice : NeoElement, IDeviceFace
     {
         public enum Face { Strip, Toggle, Dropdown }
 
-        public const int StripMax = 6;
+        public const int StripMax = 3;
 
         readonly DeviceParam p;
         readonly ReBuzzCore core;
@@ -138,14 +138,14 @@ namespace ReBuzz.Studio.Views.Device
             if (p.Kind == DeviceKind.Toggle)
             {
                 Mode = Face.Toggle;
-                toggle = new ToggleFace(p.Name, DeviceCell.CellWidth - 6, canvas);
+                toggle = new ToggleFace(p.Label, DeviceCell.CellWidth - 6, canvas);
                 Width = toggle.Width;
                 Height = toggle.Height;
             }
             else if (names.Length <= StripMax)
             {
                 Mode = Face.Strip;
-                strip = new ChoiceStrip(p.Name, names, Math.Min(80, Math.Floor(DeviceCell.CellWidth * 4 / names.Length)), false, canvas);
+                strip = new ChoiceStrip(p.Label, names, 0, false, canvas);
                 Width = strip.Width;
                 Height = strip.Height;
             }
@@ -157,7 +157,7 @@ namespace ReBuzz.Studio.Views.Device
             }
             Cursor = Cursors.Hand;
             Focusable = false;
-            Avalonia.Automation.AutomationProperties.SetName(this, p.Name);
+            Avalonia.Automation.AutomationProperties.SetName(this, p.Label);
             Sync();
         }
 
@@ -231,7 +231,7 @@ namespace ReBuzz.Studio.Views.Device
             var c = canvas.On(dc);
             if (Mode == Face.Toggle) toggle.Draw(c, selected > 0, hover >= 0, accent);
             else if (Mode == Face.Strip) strip.Draw(c, selected, hover, accent);
-            else DropdownFace.Draw(c, Bounds.Width > 0 ? Bounds.Width : Width, p.Name, DropdownFace.TextOf(names, selected), accent);
+            else DropdownFace.Draw(c, Bounds.Width > 0 ? Bounds.Width : Width, p.Label, DropdownFace.TextOf(names, selected), accent);
         }
     }
 
@@ -245,6 +245,7 @@ namespace ReBuzz.Studio.Views.Device
         readonly ReBuzzCore core;
         readonly Control face;
         readonly TextBox editor;
+        readonly LockMark lockMark;
 
         public DeviceCell(IMachine machine, DeviceParam param, ReBuzzCore core, NeoColor accent, Action<DeviceCell> context, Action<DeviceParam> touched)
         {
@@ -256,10 +257,13 @@ namespace ReBuzz.Studio.Views.Device
             f.Touched += () => touched?.Invoke(p);
             if (face is DeviceKnob k) k.TypeRequested += BeginType;
             Width = face.Width < CellWidth ? CellWidth : face.Width + 4;
-            Height = Math.Max(face.Height, DeviceKnob.Diameter + 18);
+            Height = p.Kind == DeviceKind.Slider ? Math.Max(face.Height, DeviceKnob.Diameter + 18) : face.Height + 4;
+            lockMark = new LockMark { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 1, 1, 0), IsVisible = false };
             face.HorizontalAlignment = HorizontalAlignment.Center;
             face.VerticalAlignment = VerticalAlignment.Top;
             Children.Add(face);
+            Children.Add(lockMark);
+            RefreshMarks();
             editor = new TextBox
             {
                 IsVisible = false,
@@ -296,7 +300,21 @@ namespace ReBuzz.Studio.Views.Device
         /// <summary>A gesture or the editor is open: the cell is left alone.</summary>
         public bool Busy => ((IDeviceFace)face).Busy || editor.IsVisible;
 
-        public void Sync() => ((IDeviceFace)face).Sync();
+        public void Sync()
+        {
+            ((IDeviceFace)face).Sync();
+            bool locked = p.CanLock && p.Locked;
+            if (lockMark.IsVisible != locked) lockMark.IsVisible = locked;
+        }
+
+        /// <summary>The lock mark, and the dimming of a hidden parameter (shown while "Show hidden" is on).</summary>
+        public void RefreshMarks()
+        {
+            lockMark.IsVisible = p.CanLock && p.Locked;
+            Opacity = p.Hidden ? 0.5 : 1;
+        }
+
+        public bool LockShown => lockMark.IsVisible;
 
         /// <summary>Opens the value editor over the knob, with its text selected.</summary>
         public void BeginType()
@@ -329,6 +347,44 @@ namespace ReBuzz.Studio.Views.Device
             if (!editor.IsVisible) return;
             editor.IsVisible = false;
             ToolTip.SetTip(editor, null);
+        }
+    }
+
+    /// <summary>A small padlock, drawn: marks a locked parameter (left out of Randomize and Morph).</summary>
+    internal sealed class LockMark : Control
+    {
+        public LockMark()
+        {
+            Width = 10;
+            Height = 11;
+            IsHitTestVisible = false;
+            Avalonia.Automation.AutomationProperties.SetName(this, "Locked");
+        }
+
+        public override void Render(DrawingContext ctx)
+        {
+            var brush = ReBuzz.Studio.Shell.Design.StudioTokens.TextSecondaryBrush;
+            var pen = new Pen(brush, 1.4);
+            ctx.DrawRectangle(brush, null, new Rect(1, 5, 8, 6), 1.5, 1.5);
+            ctx.DrawGeometry(null, pen, StreamGeometry.Parse("M 2.8,5 L 2.8,3.6 A 2.2,2.2 0 0 1 7.2,3.6 L 7.2,5"));
+        }
+    }
+
+    /// <summary>The colour the Device panel draws with: the machine's identity colour, nudged until it has 3:1 against the panel (knobs, bars, segments and switches alike).</summary>
+    internal static class DeviceColour
+    {
+        public static NeoColor Of(IMachine machine) => Of(ReBuzz.Studio.Views.MachineIdentity.CategoryOf(machine) ?? MachineCategory.Synth);
+
+        public static NeoColor Of(MachineCategory category)
+        {
+            var colour = Tokens.Identity(category);
+            var panel = Tokens.SurfacePanel;
+            bool darken = Contrast.Luminance(panel) > 0.5;
+            for (int i = 0; i < 24 && Contrast.Ratio(colour, panel) < 3.0; i++)
+                colour = darken
+                    ? NeoColor.FromRgb((byte)(colour.R * 0.9), (byte)(colour.G * 0.9), (byte)(colour.B * 0.9))
+                    : colour.Tint(0.08);
+            return colour;
         }
     }
 }

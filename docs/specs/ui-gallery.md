@@ -61,7 +61,7 @@ Every package run of every branch overwrites `ci-artifacts`: fetch it as soon as
 
 **The machine keyboard** (docs/specs/studio-mvp.md §3.12) is in both: under every Neo synth's editor and the parameter windows of machines that play notes (mac-4xx, mac-450, mac-451; win-600, win-602, win-603), Neo Poly's and Neo Drums' editors on Windows (win-610, win-612), playing, with a key held by the pointer and a chord lit from MIDI (mac-470, win-611), and hidden (mac-471).
 
-**The Device panel** (ux-overhaul.md, PP1: the parameter panel) is in the Mac gallery: mac-454 (docked, one row of cards scrolling sideways) and mac-455 (floating, wrapping) for Neo Filter, Neo Poly, Neo Drums and Dye Essence, mac-456 (List mode), mac-457 (the Inspector's macros and pinned parameters), mac-453 (a knob's right-click menu). Dark and light are two runs of the harness (`GALLERY_THEME=light`). The old parameter window's shots (mac-450 to mac-452) now show the same panel floating.
+**The Device panel** (ux-overhaul.md, PP1: the parameter panel) is in the Mac gallery: mac-454 (docked, one row of cards scrolling sideways) and mac-455 (floating, wrapping) for Neo Filter, Neo Poly, Neo Drums and Dye Essence, mac-456 (List mode), mac-457 (the Inspector's macros and pinned parameters), mac-453 (a knob's right-click menu). PP2 redrew them and added mac-458 (the menu with Automate, Modulate, Lock, Hide) and mac-459 (Edit features: lock marks, hidden parameters shown dimmed, the Morph flyout). Dark and light are two runs of the harness (`GALLERY_THEME=light`). The old parameter window's shots (mac-450 to mac-452) now show the same panel floating.
 
 ## 4. What it found, fixed
 

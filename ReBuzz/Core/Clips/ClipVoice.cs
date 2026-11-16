@@ -69,7 +69,7 @@ namespace ReBuzz.Core.Clips
         public void Render(AudioClipParams p, double beat, double beatsPerSample, int outputRate, float[] left, float[] right, int offset, int count)
         {
             if (p == null || count <= 0) return;
-            if (!(beatsPerSample > 0) || !double.IsFinite(beat))
+            if (!(beatsPerSample > 0) || !double.IsFinite(beatsPerSample) || !double.IsFinite(beat) || outputRate <= 0)
             {
                 Stop(left, right, offset, count);
                 return;
@@ -130,6 +130,16 @@ namespace ReBuzz.Core.Clips
             for (int i = 0; i < a.Length; i++)
                 if (a[i] != b[i] || old.SliceBeats[i] != p.SliceBeats[i]) return false;
             return true;
+        }
+
+        /// <summary>The voice is silent at once, with no fade (a crossfade tail that has faded to nothing by its own envelope).</summary>
+        public void Silence()
+        {
+            sounding = false;
+            expected = double.NaN;
+            tail.Left = 0;
+            older.Left = 0;
+            lastSource = double.NaN;
         }
 
         /// <summary>The clip stopped: what sounded fades out (into these buffers, and the next ones until it has).</summary>
@@ -333,6 +343,6 @@ namespace ReBuzz.Core.Clips
 
         /// <summary>The vocoder's clock: the audio's position for an output time.</summary>
         public double SourceAt(double outputTime) =>
-            current.Map.SampleAt(clockBeat + (outputTime - clockTime) * clockRate);
+            Math.Clamp(current.Map.SampleAt(clockBeat + (outputTime - clockTime) * clockRate), -1e15, 1e15);
     }
 }

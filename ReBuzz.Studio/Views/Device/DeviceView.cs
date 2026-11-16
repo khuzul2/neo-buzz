@@ -29,14 +29,14 @@ namespace ReBuzz.Studio.Views.Device
         readonly TextBox search;
         readonly ScrollViewer scroller;
         readonly Border explain;
-        readonly StackPanel nothing, chips;
-        readonly ScrollViewer chipScroller;
-        readonly Button changedButton, knobsButton, listButton;
+        readonly StackPanel nothing;
+        readonly ChipRow chips;
+        readonly Button changedButton, hiddenButton, knobsButton, listButton;
         readonly TextBlock explainTitle, explainValue, explainHow, explainSound, count;
         readonly HashSet<string> collapsed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         readonly DispatcherTimer poll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         DeviceMode mode;
-        bool docked, changedOnly, filling;
+        bool docked, changedOnly, showHidden, filling;
         DeviceParam explained;
         int ticks;
         string changedSignature = "";
@@ -95,12 +95,12 @@ namespace ReBuzz.Studio.Views.Device
             }
 
             list = new DeviceList(machine);
-            var category = ReBuzz.Studio.Views.MachineIdentity.CategoryOf(machine) ?? NeoBuzz.Editor.MachineCategory.Synth;
-            cards = new DeviceCards(machine, NeoBuzz.Editor.Tokens.Identity(category));
+            cards = new DeviceCards(machine, DeviceColour.Of(machine));       // the one colour: knobs here, bars and segments in the list
             list.HeaderClicked += s => { if (!collapsed.Remove(s.Name)) collapsed.Add(s.Name); Refill(); };
             list.FocusChanged += p => ShowExplain(p);
             cards.FocusChanged += p => ShowExplain(p);
             cards.Changed += () => Refill();
+            list.ContextRequested += (p, owner) => (listMenu = DeviceMenus.ForParam(machine, p, () => list.BeginType(p), () => Refill())).Open(owner);
             scroller = new ScrollViewer
             {
                 Content = list,
@@ -110,26 +110,20 @@ namespace ReBuzz.Studio.Views.Device
             };
 
             // The options row: a chip per section (jump to it), Changed only, Knobs | List.
-            chips = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, VerticalAlignment = VerticalAlignment.Center };
-            chipScroller = new ScrollViewer
-            {
-                Content = chips,
-                HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden,
-                VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
-                Focusable = false,
-                VerticalAlignment = VerticalAlignment.Center,
-            };
+            chips = new ChipRow { VerticalAlignment = VerticalAlignment.Center };
             changedButton = Option("Changed only", "Only the parameters that are off their default");
             changedButton.Click += (s, e) => { ChangedOnly = !ChangedOnly; };
+            hiddenButton = Option("Show hidden", "Show the parameters you hid (each is dimmed; its menu unhides it)");
+            hiddenButton.Click += (s, e) => { ShowHidden = !ShowHidden; };
             knobsButton = Option("Knobs", "Cards of knobs");
             listButton = Option("List", "Rows with bars, in columns");
             knobsButton.Click += (s, e) => SetMode(DeviceMode.Knobs, remember: true);
             listButton.Click += (s, e) => SetMode(DeviceMode.List, remember: true);
-            var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), Children = { changedButton, knobsButton, listButton } };
+            var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), Children = { changedButton, hiddenButton, knobsButton, listButton } };
             Options = new DockPanel { Height = 30, Margin = new Thickness(8, 0, 8, 0), LastChildFill = true };
             DockPanel.SetDock(right, Dock.Right);
             Options.Children.Add(right);
-            Options.Children.Add(chipScroller);
+            Options.Children.Add(chips);
 
             explainTitle = new TextBlock { FontSize = StudioTokens.FontBody, FontWeight = FontWeight.SemiBold, Foreground = StudioTokens.TextPrimaryBrush, TextTrimming = TextTrimming.CharacterEllipsis };
             explainValue = new TextBlock { FontSize = StudioTokens.FontBody, Foreground = StudioTokens.AccentBrush, Margin = new Thickness(12, 0, 0, 0) };
@@ -242,10 +236,14 @@ namespace ReBuzz.Studio.Views.Device
 
         public DeviceCards Cards => cards;
 
+        /// <summary>The right-click menu opened last, in either mode (tests).</summary>
+        public ContextMenu LastMenu => mode == DeviceMode.Knobs ? cards.LastMenu : listMenu;
+        ContextMenu listMenu;
+
         /// <summary>The chips row: a chip per section, Changed only, Knobs | List.</summary>
         public DockPanel Options { get; }
 
-        public IReadOnlyList<Control> ChipButtons => chips.Children.OfType<Control>().ToList();
+        public IReadOnlyList<Control> ChipButtons => chips.Chips.ToList();
 
         public Button ChangedButton => changedButton;
 
@@ -253,7 +251,24 @@ namespace ReBuzz.Studio.Views.Device
 
         public Button ListButton => listButton;
 
-        public ScrollViewer ChipScroller => chipScroller;
+        /// <summary>The chips; the ones that don't fit are behind its "+N" button.</summary>
+        public ChipRow ChipsRow => chips;
+
+        public Button HiddenButton => hiddenButton;
+
+        /// <summary>Hidden parameters show too (dimmed; the menu's Hide takes the mark off).</summary>
+        public bool ShowHidden
+        {
+            get => showHidden;
+            set
+            {
+                if (showHidden == value) return;
+                showHidden = value;
+                layout.ShowHidden = value;
+                Mark(hiddenButton, value);
+                Refill();
+            }
+        }
 
         void ApplyMode()
         {
@@ -267,6 +282,7 @@ namespace ReBuzz.Studio.Views.Device
             Mark(knobsButton, knobs);
             Mark(listButton, !knobs);
             Mark(changedButton, changedOnly);
+            Mark(hiddenButton, showHidden);
         }
 
         void FocusContent()
@@ -286,6 +302,7 @@ namespace ReBuzz.Studio.Views.Device
         {
             signature = Signature();
             layout = DeviceLayout.Build(machine);
+            layout.ShowHidden = showHidden;
             Refill();
         }
 
@@ -377,7 +394,7 @@ namespace ReBuzz.Studio.Views.Device
         /// <summary>The chips: a chip per section with something in it (the search and Changed only leave fewer).</summary>
         void FillChips()
         {
-            chips.Children.Clear();
+            var made = new List<Button>();
             foreach (var s in layout.Chips(Query, changedOnly))
             {
                 var section = s;
@@ -385,12 +402,13 @@ namespace ReBuzz.Studio.Views.Device
                 ToolTip.SetTip(chip, "Jump to " + section.Name);
                 Avalonia.Automation.AutomationProperties.SetName(chip, section.Name);
                 chip.Click += (a, b) => JumpTo(section);
-                chips.Children.Add(chip);
+                made.Add(chip);
             }
-            chipScroller.IsVisible = chips.Children.Count > 1;
+            chips.SetChips(made, name => layout.Sections.FirstOrDefault(x => x.Name == name) is { } sec ? JumpTo(sec) : false);
+            chips.IsVisible = made.Count > 1;
         }
 
-        string ChangedSignature() => changedOnly ? string.Join(",", layout.All.Where(p => p.IsChanged).Select(p => p.FullName)) : "";
+        string ChangedSignature() => (changedOnly ? string.Join(",", layout.All.Where(p => p.IsChanged).Select(p => p.FullName)) : "");
 
         /// <summary>A gesture or an editor is open (a drag, a typed value): nothing is rebuilt under it.</summary>
         public bool Interacting => cards.Busy || list.Dragging || list.IsTyping;
@@ -534,6 +552,113 @@ namespace ReBuzz.Studio.Views.Device
                 FocusSearch();
                 e.Handled = true;
             }
+        }
+    }
+
+    /// <summary>
+    /// The chips row: a chip per section, left to right; the ones that don't fit are out of the row and behind a "+N" button at its end
+    /// (its menu jumps to them), so the row never runs under the buttons beside it.
+    /// </summary>
+    internal sealed class ChipRow : Panel
+    {
+        const double Gap = 4;
+        readonly List<Button> chips = new();
+        readonly Button more = new Button { Content = "+0", BorderThickness = new Thickness(1), IsVisible = false, Padding = new Thickness(8, 3) };
+        Func<string, bool> jump;
+        int overflow;
+
+        public ChipRow()
+        {
+            ClipToBounds = true;
+            StudioButtons.KeepFocus(more);
+            more.Background = Brushes.Transparent;
+            more.BorderBrush = StudioTokens.SurfaceBorderBrush;
+            more.Foreground = StudioTokens.TextSecondaryBrush;
+            Avalonia.Automation.AutomationProperties.SetName(more, "More sections");
+            ToolTip.SetTip(more, "More sections");
+            more.Click += (s, e) => OpenMenu();
+            Children.Add(more);
+        }
+
+        public IReadOnlyList<Button> Chips => chips;
+
+        public Button MoreButton => more;
+
+        /// <summary>How many chips are behind the "+N" button.</summary>
+        public int Overflow => overflow;
+
+        public IEnumerable<string> OverflowNames => chips.Skip(chips.Count - overflow).Select(c => (string)c.Content);
+
+        public void SetChips(IEnumerable<Button> next, Func<string, bool> jumpTo)
+        {
+            jump = jumpTo;
+            foreach (var c in chips) Children.Remove(c);
+            chips.Clear();
+            foreach (var c in next) { chips.Add(c); Children.Insert(Children.Count - 1, c); }
+            InvalidateMeasure();
+        }
+
+        protected override Size MeasureOverride(Size available)
+        {
+            foreach (var c in chips) c.Measure(Size.Infinity);
+            double width = double.IsInfinity(available.Width) ? double.PositiveInfinity : available.Width;
+            double all = chips.Sum(c => c.DesiredSize.Width) + Math.Max(0, chips.Count - 1) * Gap;
+            double height = chips.Count == 0 ? 0 : chips.Max(c => c.DesiredSize.Height);
+            overflow = 0;
+            if (all > width)
+            {
+                more.Content = "+" + chips.Count;
+                more.Measure(Size.Infinity);
+                double room = width - more.DesiredSize.Width - Gap, used = 0;
+                int fit = 0;
+                foreach (var c in chips)
+                {
+                    double w = c.DesiredSize.Width + (fit > 0 ? Gap : 0);
+                    if (used + w > room) break;
+                    used += w;
+                    fit++;
+                }
+                overflow = chips.Count - fit;
+                more.Content = "+" + overflow;
+                more.Measure(Size.Infinity);
+                height = Math.Max(height, more.DesiredSize.Height);
+            }
+            more.IsVisible = overflow > 0;
+            return new Size(double.IsInfinity(width) ? all : Math.Min(width, all), height);
+        }
+
+        protected override Size ArrangeOverride(Size finalSize)
+        {
+            double x = 0;
+            int fit = chips.Count - overflow;
+            for (int i = 0; i < chips.Count; i++)
+            {
+                var c = chips[i];
+                if (i < fit)
+                {
+                    c.Arrange(new Rect(x, (finalSize.Height - c.DesiredSize.Height) / 2, c.DesiredSize.Width, c.DesiredSize.Height));
+                    x += c.DesiredSize.Width + Gap;
+                }
+                else c.Arrange(new Rect(0, 0, 0, 0));
+            }
+            if (overflow > 0) more.Arrange(new Rect(x, (finalSize.Height - more.DesiredSize.Height) / 2, more.DesiredSize.Width, more.DesiredSize.Height));
+            return finalSize;
+        }
+
+        /// <summary>Jumps to a section from the "+N" menu (tests).</summary>
+        public bool Jump(string name) => jump?.Invoke(name) ?? false;
+
+        void OpenMenu()
+        {
+            var items = new List<Control>();
+            foreach (var name in OverflowNames)
+            {
+                var n = name;
+                var item = new MenuItem { Header = n };
+                item.Click += (s, e) => jump?.Invoke(n);
+                items.Add(item);
+            }
+            new ContextMenu { FontSize = 12, ItemsSource = items }.Open(more);
         }
     }
 }

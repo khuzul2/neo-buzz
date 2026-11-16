@@ -875,6 +875,8 @@ public sealed class MyPadsScript : ControllerScript
 
 ### 1.0 — Audio clips (feature parity)
 
+> As built since NA1: the player is **Neo Audio** and the audio belongs to the song, not the wavetable; see [neo-audio.md](neo-audio.md).
+
 **Features**
 1. Audio clips: drag a WAV/AIFF/FLAC onto a slot. Playback through a per-track audio player machine (build on `AudioBlock`, or a new lightweight `ClipPlayer` machine).
 2. **Warping**: Repitch first (cheap), then time-stretch modes (Beats, Complex) via a library — SoundTouch (LGPL) is licence-compatible; Rubber Band is GPL/commercial.

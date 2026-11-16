@@ -28,7 +28,7 @@ A control machine that plays audio clips laid out on a timeline in its own windo
 
 ## Successor
 
-None: the Session View's Session Clip Player does the same job but is not a drop-in for it, so `machine_replace` does not apply.
+None: the Session View's Neo Audio does the same job but is not a drop-in for it, so `machine_replace` does not apply.
 
 ## Checklist
 

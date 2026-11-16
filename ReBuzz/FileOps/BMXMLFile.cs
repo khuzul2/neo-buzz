@@ -187,11 +187,13 @@ namespace ReBuzz.FileOps
 
                 if (machineData.Type != MachineType.Master)
                 {
+                    machineLibrary = MachineAliases.Resolve(buzz.MachineDLLs, machineLibrary, out bool aliasedLibrary);   // fork: renamed machines
                     if (buzz.MachineDLLs.ContainsKey(machineLibrary))
                     {
                         machineDLL = buzz.MachineDLLs[machineLibrary] as MachineDLL;
                         machineProto.MachineDLL = machineDLL;
-                        machineProto.MachineDLL.MachineInfo.Type = machineData.Type;
+                        if (!aliasedLibrary)
+                            machineProto.MachineDLL.MachineInfo.Type = machineData.Type;
                     }
                     else
                     {

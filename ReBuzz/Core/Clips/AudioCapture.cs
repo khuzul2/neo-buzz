@@ -147,8 +147,8 @@ namespace ReBuzz.Core.Clips
                 return;
             }
             int i = (int)(frame % ChunkFrames) * 2;
-            chunk[i] = l;
-            chunk[i + 1] = r;
+            chunk[i] = float.IsFinite(l) ? l : 0f;       // an input's NaN or infinity must not reach the take's clip
+            chunk[i + 1] = float.IsFinite(r) ? r : 0f;
         }
 
         /// <summary>UI thread: the first <paramref name="frames"/> frames as two channels (silence where none was kept).</summary>

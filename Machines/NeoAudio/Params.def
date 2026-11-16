@@ -1,0 +1,14 @@
+# Neo Audio parameters (docs/specs/neo-audio.md). The layout is the Session Clip Player's (version 0), so songs that name that machine load here. The order changes only with a version (machines.md §3.2).
+# Regenerate: python3 tools/gen-machine-params.py Machines/NeoAudio
+namespace NeoBuzz.NeoAudio
+class NeoAudioMachine
+summary An audio track: plays the audio clips its track launches (Session View slots and arrangement clips), warped to the song's tempo, and records takes from its input or from the master (resampling). Use it for loops, vocals and any recorded or imported audio.
+
+group Input
+Monitor   "Monitor"        0 2 0 enum auto in off | Hear the input: auto (while armed), in (always) or off
+    how Chooses when you hear the input while this track is open to it: auto (only while the track is armed, the default), in (always) or off (never).
+    sound At auto you monitor what you record; at in the input is always audible through the track; at off only the clips are heard.
+Input     "Input"          0 1 0 enum in master   | What a take records: the input, or the master output (resampling)
+    id input
+    how Chooses what a take records: in (the machines connected to this one, the default) or master (the song's own output, resampling).
+    sound At in a take holds the connected source; at master it captures everything the song plays, to bounce or layer it.

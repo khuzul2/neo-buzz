@@ -40,6 +40,7 @@ namespace NeoBuzz.MachineTests
         static readonly Dictionary<string, (ParamDef[] Table, Make Make)> Machines = new()
         {
             ["Neo Analyzer"] = (NeoBuzz.Analyzer.Params.Table, v => { var e = new NeoBuzz.Analyzer.AnalyzerEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
+            ["Neo Audio"] = (NeoBuzz.NeoAudio.Params.Table, v => (l, r, n) => { }),   // its audio is the Session engine's (the app): nothing here to move
             ["Neo Drive"] = (NeoBuzz.Drive.Params.Table, v => { var e = new NeoBuzz.Drive.DriveEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Comp"] = (NeoBuzz.Comp.Params.Table, v => { var e = new NeoBuzz.Comp.CompEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, null, null, n); }),
             ["Neo Verb"] = (NeoBuzz.Verb.Params.Table, v => { var e = new NeoBuzz.Verb.VerbEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),

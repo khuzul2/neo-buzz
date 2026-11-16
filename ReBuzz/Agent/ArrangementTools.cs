@@ -66,6 +66,16 @@ namespace ReBuzz.Agent
             };
             if (s.Id != 0) o["clip"] = s.Id;
             if (s.Gain != 1.0) o["gain"] = Math.Round(s.Gain, 4);
+            if (core.SessionLayout?.AudioOf(it.Pattern) is { } a)
+            {
+                // neo-audio.md (NA2): an audio clip's own settings (its pattern is its own; copies share the audio asset only).
+                var audio = new JsonObject { ["warp"] = a.Warp, ["gain_db"] = Math.Round(a.GainDb, 3) };
+                if (a.FadeIn > 0) audio["fade_in_beats"] = Math.Round(a.FadeIn, 4);
+                if (a.FadeOut > 0) audio["fade_out_beats"] = Math.Round(a.FadeOut, 4);
+                if (a.Tail > 0) audio["crossfade_beats"] = Math.Round(a.Tail, 4);
+                if (a.Reverse) audio["reverse"] = true;
+                o["audio"] = audio;
+            }
             return o;
         }
 
@@ -90,6 +100,8 @@ namespace ReBuzz.Agent
             throw new ToolError("Say which clip: clip=<its id, from arrangement_get> or at=<a position inside it>.");
         }
 
+        static bool AudioMachine(IMachine m) => ReBuzz.Core.Session.SessionLayout.IsClipPlayer(m);
+
         static void Check(string why, string hint = null)
         {
             if (why != null) throw new ToolError(why + (hint != null ? " " + hint : ""));
@@ -103,7 +115,9 @@ namespace ReBuzz.Agent
                 Req("pattern", String("Its pattern")), Req("at", Number("Start, beats")), Req("ends", Number("End, beats")),
                 Req("start_beats", Number("Where its first play starts in the pattern, beats")),
                 Req("loop", Object(null, Req("start_beats", Number("Loop start in the pattern")), Req("end_beats", Number("Loop end in the pattern")), Req("on", Boolean("Whether it loops")))),
-                Opt("gain", Number("Volume, 0-1 (1 is not shown)")));
+                Opt("gain", Number("Volume, 0-1 (1 is not shown)")),
+                Opt("audio", Object(null, Req("warp", String("Warp mode")), Req("gain_db", Number("Gain, dB")), Opt("fade_in_beats", Number("Fade in")), Opt("fade_out_beats", Number("Fade out")),
+                    Opt("crossfade_beats", Number("The clip's audio goes on this long under the clip that follows (a crossfade)")), Opt("reverse", Boolean("Plays backwards")))));
 
             tools.Add(new ToolDef
             {
@@ -114,11 +128,16 @@ namespace ReBuzz.Agent
                     "trimmed, looped or repeated. op: add (an existing pattern as a clip at `at`, length_beats long, default the pattern's), draw (a new empty " +
                     "pattern as a clip, length_beats), move (to `to`, on lane to_lane), copy (to `to`, default right after it; an independent pattern, or " +
                     "link=true the same one), trim (start and/or end, beats), loop (on=true/false), split (at split_at), join (with the clip that starts " +
-                    "where it ends), make_unique (a pattern of its own). The clip is clip=<id> or at=<a position inside it>; lane is the number " +
+                    "where it ends), make_unique (a pattern of its own). Audio clips (Neo Audio tracks; each has a pattern of its own, copies share the audio only) " +
+                    "also take: fade (fade_in_beats, fade_out_beats), gain (gain_db), crossfade (length_beats: with the clip that starts where it ends; 0 removes it), " +
+                    "reverse (toggles), stretch (end: warps the audio to fill the clip up to there; not with warp Off or loop on) and consolidate (renders the clip, " +
+                    "or the audio clips between start and end, into a new audio asset and one plain clip; one tempo, the song's now). move and copy may go to another " +
+                    "Neo Audio machine (to_machine); split makes two clips with a pattern each. A clip moved or trimmed over an audio clip crossfades with it. " +
+                    "The clip is clip=<id> or at=<a position inside it>; lane is the number " +
                     "arrangement_get shows (default the main lane). To delete a clip use arrangement_clear. One undo step. Example: " +
                     "arrangement_clip(op=\"trim\", machine=\"Bass\", at=\"2.1\", end=\"3.1\").",
                 Input = Object(null,
-                    Req("op", String("What to do", "add", "draw", "move", "copy", "trim", "loop", "split", "join", "make_unique")),
+                    Req("op", String("What to do", "add", "draw", "move", "copy", "trim", "loop", "split", "join", "make_unique", "fade", "gain", "crossfade", "reverse", "stretch", "consolidate")),
                     Req("machine", String("The machine")),
                     Opt("lane", Integer("The machine's lane number (arrangement_get; default its first main lane)", 0)),
                     Opt("clip", Integer("The clip's id")),
@@ -131,7 +150,13 @@ namespace ReBuzz.Agent
                     Opt("start", Position("trim: the clip now starts here (what plays there goes on playing)")),
                     Opt("end", Position("trim: the clip now ends here (with a loop it repeats to there)")),
                     Opt("on", Boolean("loop: whether the clip loops")),
-                    Opt("split_at", Position("split: where to cut"))),
+                    Opt("split_at", Position("split: where to cut")),
+                    Opt("to_machine", String("move/copy of an audio clip: another Neo Audio machine (its lane given by to_lane, default its first)")),
+                    Opt("fade_in_beats", Number("fade: the fade in, beats (0 none)", 0)),
+                    Opt("fade_out_beats", Number("fade: the fade out, beats (0 none)", 0)),
+                    Opt("gain_db", Number("gain: the clip's gain, dB", -70, 24)),
+                    Opt("start_at", Position("consolidate: start of the range (default the clip's start)")),
+                    Opt("end_at", Position("consolidate: end of the range (default the clip's end)"))),
                 Output = Object(null, Req("machine", String("Machine")), Req("lane", Integer("The lane edited")), Req("op", String("What was done")), Req("done", String("What happened, in words")),
                     Req("clips", Array(clipSchema, "The lane's clips now (the first 64)"))),
                 Annotations = ToolAnnotations.Write,
@@ -174,11 +199,18 @@ namespace ReBuzz.Agent
                             {
                                 var it = FindClip(core, editor, seq, c, name);
                                 var target = c.Int("to_lane") != null ? Lane(core, m, c.Int("to_lane")) : seq;
+                                if (c.String("to_machine") is string toName)
+                                {
+                                    var other = SongModel.Machine(core, toName, "to_machine");
+                                    if (!AudioMachine(other)) throw new ToolError($"to_machine: {other.Name} isn't a Neo Audio machine (only audio clips go to another machine).");
+                                    if (LanesOf(core, other).Count == 0) AgentActions.Do(core, new AddSequenceAction(other));
+                                    target = Lane(core, other, c.Int("to_lane"));
+                                }
                                 int to = c.Arguments["to"] != null ? Pos("to") : op == "copy" ? it.End : throw new ToolError("move needs to.");
                                 var mode = op == "move" ? ClipEditor.CopyMode.Move : c.Bool("link") == true ? ClipEditor.CopyMode.Linked : ClipEditor.CopyMode.Independent;
                                 Check(editor.Move(it, target, to, mode));
-                                done = op == "move" ? "moved" : mode == ClipEditor.CopyMode.Linked ? "copied (same pattern)" : "copied (a pattern of its own)";
-                                if (target != seq) seq = target;
+                                done = op == "move" ? "moved" : mode == ClipEditor.CopyMode.Linked && !editor.IsAudio(it.Pattern) ? "copied (same pattern)" : "copied (a pattern of its own)";
+                                if (target != seq) { seq = target; m = (MachineCore)target.Machine; }
                                 break;
                             }
                             case "trim":
@@ -228,8 +260,53 @@ namespace ReBuzz.Agent
                                 done = $"gave the clip a pattern of its own (a copy of \"{it.Pattern.Name}\")";
                                 break;
                             }
+                            case "fade":
+                            {
+                                if (c.Number("fade_in_beats") == null && c.Number("fade_out_beats") == null) throw new ToolError("fade needs fade_in_beats and/or fade_out_beats.");
+                                var it = FindClip(core, editor, seq, c, name);
+                                int? fi = c.Number("fade_in_beats") is double a ? SongModel.Ticks(core, a) : null;
+                                int? fo = c.Number("fade_out_beats") is double b ? SongModel.Ticks(core, b) : null;
+                                Check(editor.Fade(it, fi, fo));
+                                done = "set the fades";
+                                break;
+                            }
+                            case "gain":
+                            {
+                                if (c.Number("gain_db") is not double db) throw new ToolError("gain needs gain_db (-70 to 24).");
+                                Check(editor.SetGain(FindClip(core, editor, seq, c, name), db));
+                                done = $"gain {db:0.##} dB";
+                                break;
+                            }
+                            case "crossfade":
+                            {
+                                if (c.Number("length_beats") is not double lb) throw new ToolError("crossfade needs length_beats (0 removes it).");
+                                Check(editor.Crossfade(FindClip(core, editor, seq, c, name), lb <= 0 ? 0 : Math.Max(1, SongModel.Ticks(core, lb))));
+                                done = lb <= 0 ? "removed the crossfade" : "crossfaded with the clip that follows";
+                                break;
+                            }
+                            case "reverse":
+                            {
+                                Check(editor.Reverse(FindClip(core, editor, seq, c, name)));
+                                done = "reversed (the same part of the audio, backwards)";
+                                break;
+                            }
+                            case "stretch":
+                            {
+                                var it = FindClip(core, editor, seq, c, name);
+                                Check(editor.Stretch(it, Pos("end")), "Say where the clip should now end (end), and use warp Beats, Repitch or Complex with the loop off.");
+                                done = "stretched";
+                                break;
+                            }
+                            case "consolidate":
+                            {
+                                var it = FindClip(core, editor, seq, c, name);
+                                int from = c.Arguments["start_at"] != null ? Pos("start_at") : it.Time, to = c.Arguments["end_at"] != null ? Pos("end_at") : it.End;
+                                Check(editor.Consolidate(seq, from, to, out var made));
+                                done = $"consolidated into a new audio clip \"{made?.Name}\" (rendered at {core.BPM} BPM)";
+                                break;
+                            }
                             default:
-                                throw new ToolError("op: add, draw, move, copy, trim, loop, split, join or make_unique.");
+                                throw new ToolError("op: add, draw, move, copy, trim, loop, split, join, make_unique, fade, gain, crossfade, reverse, stretch or consolidate.");
                         }
                         return new JsonObject
                         {

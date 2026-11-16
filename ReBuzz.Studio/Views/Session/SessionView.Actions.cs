@@ -727,9 +727,20 @@ namespace ReBuzz.Studio.Views.Session
                 () => midi.Unbind(target, track, scene), null, () => binding != null, tag: "Clear MIDI mapping"));
         }
 
+        void NewAudioTrackMade(IMachine machine)
+        {
+            if (machine == null) return;
+            int track = layout.FirstTrackOf(machine);
+            if (track >= 0) Select(track, selected?.Scene ?? 0);
+        }
+
         void ShowAddTrackMenu(Control anchor)
         {
             var menu = new ContextMenu();
+            // Neo Audio (docs/specs/neo-audio.md): an audio track; drop audio on its slots, or import into one.
+            menu.Items.Add(Item("New audio track", () => NewAudioTrackMade(layout.NewAudioTrack()), null, () => layout.CanMakeAudioTracks, tag: "New audio track"));
+            menu.Items.Add(Item("New resampling track (records the master)", () => NewAudioTrackMade(layout.NewResamplingTrack()), null, () => layout.CanMakeAudioTracks, tag: "New resampling track"));
+            menu.Items.Add(new Separator());
             var machines = layout.MachinesWithoutTrack().ToList();
             foreach (var m in machines)
             {
