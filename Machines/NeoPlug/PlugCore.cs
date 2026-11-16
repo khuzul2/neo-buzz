@@ -650,8 +650,19 @@ namespace NeoBuzz.Plug
 
         // --- The sandbox (H2) ----------------------------------------------------------------------------------
 
+        readonly object crashLock = new object();
+
+        /// <summary>Reads the sandbox's state now, for a caller that asks (machine_describe, the menu): the pump notices a crash within 20 ms, an offline render can end before that.</summary>
+        public void CheckCrashed()
+        {
+            if (Crashed || !Sandboxed || plugin == IntPtr.Zero || Missing) return;
+            if (PlugNative.np_status(plugin) == 2) MarkCrashed();
+        }
+
         void MarkCrashed()
         {
+            lock (crashLock)
+            {
             if (Crashed) return;
             var text = new byte[256];
             PlugNative.np_status_text(plugin, text, text.Length);
@@ -664,6 +675,7 @@ namespace NeoBuzz.Plug
             Interlocked.Increment(ref Revision);
             Log($"{Name}: the plug-in's sandbox ended: {CrashReason}. The slot is silent; reload it from the machine's menu.");
             PlacementChanged?.Invoke();
+            }
         }
 
         /// <summary>The state a reload starts from: the last one saved, loaded or taken in the background, else what the machine knows.</summary>
@@ -719,6 +731,7 @@ namespace NeoBuzz.Plug
         /// <summary>One line for the machine's menu and the agent: where it runs, and whether its server is up.</summary>
         public string PlacementText()
         {
+            CheckCrashed();
             string label = PlugPlacement.Label(placement);
             if (!Sandboxed) return label.ToLowerInvariant() + (PlacementWhy.StartsWith("forced") ? " (" + PlacementWhy + ")" : "");
             if (Crashed) return $"{label.ToLowerInvariant()}: CRASHED, {CrashReason}; silent until reloaded";
