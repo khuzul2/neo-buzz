@@ -13,7 +13,7 @@ name: Stem models
 
 on:
   push:
-    branches: [ audio/stem-separation ]   # TEMPORARY (round 3): a workflow can be dispatched only once it is on main; remove after the first run
+    branches: [ audio/stem-separation ]   # TEMPORARY (round 4): a workflow can be dispatched only once it is on main; remove after the first run
     paths: [ '.github/workflows/stem-models.yml' ]
   workflow_dispatch:
     inputs:
@@ -57,6 +57,18 @@ jobs:
         python -m pip install numpy onnx onnxruntime demucs huggingface_hub einops rotary-embedding-torch omegaconf ml_collections safetensors pyyaml soundfile librosa tqdm beartype loguru
         python -c "import torch, onnx, onnxruntime, demucs; print(torch.__version__, onnx.__version__, onnxruntime.__version__)"
         df -h / | tail -1
+
+    # The RoFormer export traces a network of hundreds of millions of weights on a 7 GB runner: the runner was shut down mid-trace
+    # (out of memory) without this swap, which the runner's second disk holds.
+    - name: Swap
+      run: |
+        df -h /mnt | tail -1
+        sudo swapoff -a || true
+        sudo fallocate -l 16G /mnt/stem-swap
+        sudo chmod 600 /mnt/stem-swap
+        sudo mkswap /mnt/stem-swap >/dev/null
+        sudo swapon /mnt/stem-swap
+        free -g | head -2
 
     - name: Export
       run: |
