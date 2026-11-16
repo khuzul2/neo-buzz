@@ -190,8 +190,8 @@ namespace ReBuzz.Studio.Platform
         public void CloseWindows(IMachine machine)
         {
             PluginEditors.Close(machine);
-            if (!windows.TryGetValue(machine, out var w)) return;
             Views.Device.DeviceDock.FloatingWindowOf(machine)?.Close();
+            if (!windows.TryGetValue(machine, out var w)) return;
             w.Gui?.Close();
             w.Editor?.Close();
         }

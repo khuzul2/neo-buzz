@@ -59,7 +59,8 @@ The person sees every call, so treat it as a conversation: show them what you ar
 - `view_show(view="Session")` brings Arrangement, Session or Machines to the front. `view_show(machine="Bass", pattern="Verse", editor="piano_roll")` shows that pattern in the detail panel's piano roll (`editor="tracker"` for the Tracker).
 - `select(machine="Bass", pattern="Verse")` selects as a click does: the inspector and the other views follow. `select(clear=true)` selects nothing.
 - `panel_set(panel="inspector", open=true, tab="Song")`, `panel_set(panel="browser", open=false)`, `panel_set(panel="detail", maximised=true)`; `size` is the width in pixels (the detail panel's height).
-- `machine_open_editor(machine="Bass", window="parameters")` opens a machine's window (`gui`, `parameters` or `editor`).
+- `machine_open_editor(machine="Bass", window="parameters")` opens a machine's window (`gui`, `parameters` or `editor`); `parameters` is the Device panel (cards of knobs, or a list) in a window of its own.
+- `machine_pin(machine="Bass", param="F1 cutoff", pinned=true)` pins a parameter to the machine's card in the inspector (up to eight per machine, saved in the song); `machine_pin(machine="Bass")` lists them.
 - `window_layout()` reads where everything is; with `width`, `height` or `maximised` it resizes the window.
 - While the transport records, nothing opens a window or takes the keyboard: the pattern editor and machine windows are refused (`transport(action="stop")` first). Switching a view, selecting and panels still work.
 
