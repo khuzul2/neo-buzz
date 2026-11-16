@@ -143,6 +143,15 @@ namespace ReBuzz.Studio.Views.Device
 
         double KnobRowHeight(IReadOnlyList<DeviceParam> knobs) => knobs.Count == 0 ? DeviceKnob.Diameter + 34 : knobs.Max(k => CellOf(k).Height);
 
+        /// <summary>The columns a docked card gets (what Build gives it), so the height model packs the choices as they will be drawn.</summary>
+        int ColsFor(IReadOnlyList<DeviceParam> choices, IReadOnlyList<DeviceParam> knobs)
+        {
+            double widest = choices.Count == 0 ? 0 : choices.Max(p => CellOf(p).Width);
+            int cols = Math.Max(1, Math.Max(Math.Min(knobs.Count, DeviceCard.Columns), (int)Math.Ceiling(widest / DeviceCell.CellWidth - 0.001)));
+            if (knobs.Count == 0 && choices.Count > 0) cols = Math.Max(cols, 2);
+            return cols;
+        }
+
         /// <summary>The height of a card holding these choices and knobs, in <paramref name="cols"/> columns.</summary>
         double HeightOf(IReadOnlyList<DeviceParam> choices, IReadOnlyList<DeviceParam> knobs, int cols, double knobRow)
         {
@@ -178,7 +187,7 @@ namespace ReBuzz.Studio.Views.Device
                 foreach (var c in choices)
                 {
                     cc.Add(c);
-                    if (cc.Count > 1 && HeightOf(cc, kk, DeviceCard.Columns, knobRow) > room)
+                    if (cc.Count > 1 && HeightOf(cc, kk, ColsFor(cc, kk), knobRow) > room)
                     {
                         cc.RemoveAt(cc.Count - 1);
                         chunks.Add((cc, kk));
@@ -189,7 +198,7 @@ namespace ReBuzz.Studio.Views.Device
                 foreach (var k in knobs)
                 {
                     kk.Add(k);
-                    if (kk.Count > 1 && (kk.Count - 1) % DeviceCard.Columns == 0 && HeightOf(cc, kk, DeviceCard.Columns, knobRow) > room)
+                    if (kk.Count > 1 && (kk.Count - 1) % DeviceCard.Columns == 0 && HeightOf(cc, kk, ColsFor(cc, kk), knobRow) > room)
                     {
                         kk.RemoveAt(kk.Count - 1);
                         chunks.Add((cc, kk));
