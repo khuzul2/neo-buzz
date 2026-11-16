@@ -295,6 +295,7 @@ public:
         return (int)f;
     }
     void reset() override { int32_t rc; rpc(OpReset, nullptr, rc); }
+    void flushIdle() override { int32_t rc; rpc(OpFlush, nullptr, rc); }
     int latency() override { int32_t rc = 0; return rpc(OpLatency, nullptr, rc) ? rc : 0; }
     int tail() override { int32_t rc = 0; return rpc(OpTail, nullptr, rc) ? rc : 0; }
 

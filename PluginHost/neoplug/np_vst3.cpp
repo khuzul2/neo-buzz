@@ -141,6 +141,7 @@ public:
     int auxChannelsActive = 0;
     ProcessContext context{};
     ParamRing toProcessor, toController;
+    ParamRing fromEditor;   // the plug-in's own view reported these through IComponentHandler::performEdit (several threads produce; idle() consumes)
     std::atomic<int32> restartFlags{0};
     bool active = false, processing = false;
     int latencySamples = 0;
@@ -644,7 +645,7 @@ public:
         if (!getU32(p, end, klen) || (size_t)(end - p) < klen) { err = "truncated"; return false; }
         const uint8_t* ctrl = p;
         // The state is authoritative: parameter changes queued before it (the song's defaults) must not land on top of it.
-        { ParamRing::Item stale; while (toProcessor.pop(stale)) {} while (toController.pop(stale)) {} }
+        { ParamRing::Item stale; while (toProcessor.pop(stale)) {} while (toController.pop(stale)) {} while (fromEditor.pop(stale)) {} }
         MemoryStream cs((void*)comp, (TSize)clen);
         if (component->setState(&cs) != kResultOk) { err = "the component refused its state"; return false; }
         cs.seek(0, IBStream::kIBSeekSet, nullptr);
@@ -681,6 +682,7 @@ public:
     {
         ParamRing::Item it;
         while (toController.pop(it)) { dbgParam("controller set", it.id, it.value); controller->setParamNormalized(it.id, it.value); }
+        while (fromEditor.pop(it)) { dbgParam("controller set (edit)", it.id, it.value); controller->setParamNormalized(it.id, it.value); }
     }
 
     int poll() override
@@ -815,6 +817,9 @@ tresult PLUGIN_API Handler::performEdit(ParamID id, ParamValue v)
 {
     dbgParam("controller edit", id, v);
     owner->toProcessor.pushShared(id, v);
+    // A plug-in that is its own controller, like a clap-wrapper module, does not set the value it reports: the host's component handler
+    // is the one that has to (the controller's own getParamNormalized is what Neo Plug's slots read). Done in idle(), on the main thread.
+    owner->fromEditor.pushShared(id, v);
     return kResultOk;
 }
 

@@ -80,10 +80,11 @@ if { [ "$WHAT" = gui ] || [ "$WHAT" = both ]; } && [ "$RUNNER_OS" != Linux ]; th
   guicheck clap "$clap"
   guicheck vst3 "Neo Filter (VST3)|Neo Poly (VST3)|Neo Learn FM (VST3)|Neo Drums (VST3)"
   echo "::endgroup::"
-  # three screenshots in the log, to look at without the artifact (base64 PNG between markers)
-  for n in Neo-FM6 Neo-Drums Neo-Learn-FM Dye-Essence; do
-    f="$OUT/shots/clap/$n-CLAP-dragged.png"
-    [ -f "$f" ] && $PY - "$f" <<'PY'
+  # four screenshots in the log, to look at without the artifact (base64 PNG between markers). The studio names a file after the machine
+  # ("NeoBuzz-Live-Neo-FM6-CLAP-dragged.png"): the knob dragged, and one of each kind of editor.
+  for n in Neo-FM6-CLAP-dragged Neo-Drums-CLAP-dragged Neo-Learn-FM-CLAP-dragged Dye-Essence-CLAP-resized; do
+    f=$(ls "$OUT"/shots/clap/*"$n".png 2>/dev/null | head -1)
+    [ -n "$f" ] && $PY - "$f" <<'PY'
 import base64, sys
 d = open(sys.argv[1], "rb").read()
 print("PNG-BEGIN", sys.argv[1].split("/")[-1], len(d)); print(base64.b64encode(d).decode()); print("PNG-END")

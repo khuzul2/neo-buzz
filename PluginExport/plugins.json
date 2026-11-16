@@ -954,7 +954,8 @@
     }
    ],
    "settle": 0.0,
-   "tolerance": 0.003
+   "tolerance": 0.003,
+   "automationTolerance": 0.005
   },
   "paramCount": 91,
   "params": [
@@ -1042,7 +1043,9 @@
    ],
    "settle": 0.5,
    "informational": [
-    "changed"
+    "changed",
+    "automation-beat",
+    "automation"
    ]
   },
   "paramCount": 17,

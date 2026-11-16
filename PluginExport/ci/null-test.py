@@ -310,8 +310,10 @@ ref = pf_reopened if "pf_reopened" in globals() else {}
 
 
 def write_automation(auto, N, per_beat, clear):
+    first = {}
     for nm in outs:
         slot = nm != NATIVE
+        first[nm] = []
         if not INSTR and clear: call("pattern_create", machine=nm, name="A", length_beats=8); call("arrangement_place", machine=nm, pattern="A", at=[0])
         for j, (n, lo, hi, df) in enumerate(auto):
             pts = []
@@ -319,26 +321,51 @@ def write_automation(auto, N, per_beat, clear):
                 frac = 0.5 + 0.4 * math.sin(2 * math.pi * (i / N * (3 + 2 * j)))
                 k = lo + round(frac * (hi - lo))
                 pts.append({"at": i / per_beat, "value": "raw:%d" % (round(65534 * (k - lo) / (hi - lo)) if slot else k)})
+                if i == 0: first[nm].append({"param": n, "value": pts[-1]["value"]})
             check(call("automation_write", machine=nm, pattern="A", param=n, points=pts, shape="step", clear=True)[0], f"automation: {nm}.{n}: {N} steps")
+    return first
 
 
 if cont and len(outs) > 1:
     auto = cont[:4]
     for label, N, per_beat in (("automation-beat", 8, 1), ("automation", 1024, 128)):
-        write_automation(auto, N, per_beat, label == "automation-beat")
+        first = write_automation(auto, N, per_beat, label == "automation-beat")
+        # An instrument has no settle window: its song starts at the automation's first values, so that a machine loaded with other values
+        # does not glide from them to the first step (a plug-in restored from state starts settled at the state's, the native machine
+        # does not); that glide is not what is under test. An effect nulls after its settle window instead.
+        if INSTR:
+          for nm in outs: check(call("param_set", machine=nm, changes=first[nm])[0], f"{label}: {nm} set to the first step's values")
         time.sleep(1)
+        # Like with like: every machine loads the song with its automation as a fresh instance (a native machine that has played carries
+        # filter states, random streams and tails that a plug-in instance does not share; docs/specs/plugin-export.md section 7).
+        ap = os.path.join(work, f"px2-{label}.bmxml")
+        check(call("song_save", path=ap, overwrite=True)[0], f"{label}: song_save")
+        check(call("song_open", path=ap, discard_unsaved=True)[0], f"{label}: song_open (fresh instances)")
+        time.sleep(3)
         pf = render(label)
         for nm in outs:
             if ref.get(nm) and pf.get(nm):
                 d = null(ref[nm], pf[nm])
                 print(f"NOTE {label}: {nm}: the automation moved its output by max |diff| {d['max_abs_diff']:.3g} against the render before it")
-        compare(pf, label, skip=0.0, tol=spec["test"].get("automationTolerance", None), soft=True)
+        # Parameter changes reach the plug-in at their sample (the events carry it; docs/specs/plugin-host.md): the machine's own value at a
+        # tick and the slot's agree sample by sample, so the render nulls at the tolerances of the unautomated ones. The settle window is the
+        # one of "changed": a native machine loaded from a song glides from its defaults to the loaded values, a plug-in starts settled.
+        compare(pf, label, skip=spec["test"].get("settle", 0.0), tol=spec["test"].get("automationTolerance", None))
 
-# 6. save and reopen as .nbl and as .bmx: every slot value and the plug-in's state come back (the plug-in's render after equals the one before)
+# 6. save and reopen as .nbl and as .bmx: every slot value and the plug-in's state come back. Compared like with like: a render of a fresh
+# instance before saving (the song written as bmxml and opened, so nothing has played) against a render of a fresh instance after saving
+# in the format and opening it. The two nulls at the tolerances of the plug-in's other renders.
 if len(outs) > 1:
     plug_outs = outs[1:]
-    before = {nm: describe(nm) for nm in outs}
+    tol6 = spec["test"].get("tolerance", args.tolerance)
+    skip6 = spec["test"].get("settle", 0.0)
     for ext in (".nbl", ".bmx"):
+        base = os.path.join(work, "px2-before" + ext.replace(".", "-") + ".bmxml")
+        check(call("song_save", path=base, overwrite=True)[0], f"{ext}: song_save (bmxml, the fresh instance before)")
+        check(call("song_open", path=base, discard_unsaved=True)[0], f"{ext}: song_open (fresh instance before)")
+        time.sleep(3)
+        before = {nm: describe(nm) for nm in outs}
+        pf_before = render("fresh-before-" + ext.strip("."))
         path = os.path.join(work, "px2-song" + ext)
         check(call("song_save", path=path, overwrite=True)[0], f"{ext}: song_save")
         check(call("song_open", path=path, discard_unsaved=True)[0], f"{ext}: song_open")
@@ -347,15 +374,14 @@ if len(outs) > 1:
             after = describe(nm)
             diffs = [(a[0], a[2], b[2]) for a, b in zip(before[nm], after) if a[0] != b[0] or a[2] != b[2]]
             check(len(after) == len(before[nm]) and not diffs, f"{ext}: {nm}: all {len(after)} parameter values equal after reopening" + (f" (differing: {diffs[:5]})" if diffs else ""))
-        pf2 = render("reopen-" + ext.strip("."))
-        for nm in plug_outs:
-            if not (pf.get(nm) and pf2.get(nm)): continue
-            d = null(pf[nm], pf2[nm])
+        pf_after = render("fresh-after-" + ext.strip("."))
+        for nm in outs:
+            if not (pf_before.get(nm) and pf_after.get(nm)): continue
+            full = null(pf_before[nm], pf_after[nm]); d = null(pf_before[nm], pf_after[nm], skip6) if skip6 else full
             results["nulls"][f"{ext}/{nm}"] = d
-            print(f"     {ext}: {nm} after - before: max |diff| {d['max_abs_diff']:.3g}, bit identical {d['bit_identical']}")
-            # the slot values are asserted equal above and the state blob byte for byte in the studio check; the render after is reported (a played
-            # instance carries tails and phases that a fresh one starts without)
-            print(f"NOTE {ext}: {nm}: the render after the save differs from the one before by max |diff| {d['max_abs_diff']:.3g}" + (" (state came back audibly)" if d["max_abs_diff"] <= 1e-6 else ""))
+            print(f"     {ext}: {nm} fresh after - fresh before: max |diff| {d['max_abs_diff']:.3g}, bit identical {d['bit_identical']}")
+            check(full["peak_native"] > 0.01, f"{ext}: {nm}: the render before saving is audible (peak {full['peak_native']:.3f})")
+            check(d["max_abs_diff"] <= tol6, f"{ext}: {nm}: a fresh instance after reopening renders the same as a fresh one before saving within {tol6:g}" + (f" after {skip6} s" if skip6 else "") + f" (max |diff| {d['max_abs_diff']:.3g})")
 
 proc.stdin.close()
 try: proc.wait(timeout=60)
