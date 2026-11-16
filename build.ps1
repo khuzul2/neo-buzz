@@ -317,7 +317,7 @@ if (-not $SkipCore) {
     $vstSdk = $env:NEOPLUG_VST3_SDK
     $clapSdk = $env:NEOPLUG_CLAP
     if ((Test-Path -LiteralPath $npSrc) -and (Get-Command cmake -ErrorAction SilentlyContinue)) {
-        Write-Step 'Building the plug-in host (neoplug.dll, neoplug-scan.exe) and Neo Plug'
+        Write-Step 'Building the plug-in host (neoplug.dll, neoplug-scan.exe, neoplug-server.exe) and Neo Plug'
         if (-not $vstSdk) {
             $vstSdk = [IO.Path]::Combine($npDeps, 'vst3sdk')
             if (-not (Test-Path -LiteralPath $vstSdk)) {
@@ -332,10 +332,10 @@ if (-not $SkipCore) {
             }
         }
         Invoke-Checked cmake @('-S', $npSrc, '-B', $npBuild, '-A', 'x64', '-DNEOPLUG_FIXTURES=OFF', "-DNEOPLUG_VST3_SDK=$vstSdk", "-DNEOPLUG_CLAP=$clapSdk")
-        Invoke-Checked cmake @('--build', $npBuild, '--config', $Configuration, '--target', 'neoplug', 'neoplug-scan')
+        Invoke-Checked cmake @('--build', $npBuild, '--config', $Configuration, '--target', 'neoplug', 'neoplug-scan', 'neoplug-server')
         $npGear = [IO.Path]::Combine($OutDir, 'Gear', 'NeoPlug')
         New-Dir $npGear
-        foreach ($f in 'neoplug.dll', 'neoplug-scan.exe') {
+        foreach ($f in 'neoplug.dll', 'neoplug-scan.exe', 'neoplug-server.exe') {
             Copy-Item -LiteralPath ([IO.Path]::Combine($npBuild, 'bin', $f)) -Destination $npGear -Force
         }
         $gearOut = [IO.Path]::Combine($OutDir, 'Gear') + [IO.Path]::DirectorySeparatorChar

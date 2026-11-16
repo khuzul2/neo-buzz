@@ -88,7 +88,9 @@ The person sees every call, so treat it as a conversation: show them what you ar
 - It never overwrites: if any target exists it fails before rendering and writes nothing. Pass `overwrite=true` only when asked or when you made the file earlier in this session.
 - The result lists each file with its size and the master's loudness and peaks; check them with `analyze(source=…)` on a `render` id if you need more.
 
-`song_recent(limit=5)` lists the songs opened lately (open one with `song_open`). Out of scope for now: MIDI file export, and plug-in tools (the plug-in host has its own round).
+`song_recent(limit=5)` lists the songs opened lately (open one with `song_open`). Out of scope for now: MIDI file export.
+
+Plug-ins (CLAP and VST3, the Neo Plug machines): `gear_list` lists what was found, `machine_add` with a plug-in name from that list adds one, and `machine_describe` shows where it runs (a `Placement` line under `quirks`) and, if its sandbox died, a `CRASHED` line with the reason. A plug-in runs in the app (fastest) or in a sandbox process of its own (a crash there silences that machine; the song plays on). Use `machine_command` with `Placement > Sandbox per plug-in` (or `In process`, `Sandbox per instance`, `Sandbox shared`) to change it, and `Reload plug-in` to start a crashed one again from its last saved state. Switching reloads the plug-in from its state. A plug-in that was blocked and unblocked is always sandboxed. The default per plug-in is in Preferences > Plug-ins.
 
 ## Checklist
 - [ ] You know the app's state and mode before acting: `app_status`, and `audio_status` when sound matters.

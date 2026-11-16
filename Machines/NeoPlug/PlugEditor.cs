@@ -18,6 +18,7 @@ namespace NeoBuzz.Plug
         IntPtr plugin;
         IntPtr container;
         bool attached, disposed;
+        bool remoteWindow;   // a sandboxed plug-in's floating editor: a window the server owns, not a container of ours
         int width, height;
         readonly PlugNative.ResizeCb resizeCb;
         readonly PlugNative.ClosedCb closedCb;
@@ -70,6 +71,26 @@ namespace NeoBuzz.Plug
                 }
                 if (scale > 0 && OperatingSystem.IsWindows()) PlugNative.np_gui_set_scale(s.plugin, scale);
                 PlugNative.np_gui_set_callbacks(s.plugin, s.resizeCb, s.closedCb, IntPtr.Zero);
+                if (floating && PlugNative.np_placement(s.plugin) != 0)
+                {
+                    // A plug-in in a sandbox floats in a window of its server's: the view can't be handed across processes on macOS.
+                    Trace("open: window in the sandbox");
+                    var rerr = new byte[512];
+                    if (PlugNative.np_gui_open_window(s.plugin, title ?? "Plug-in", out int rw, out int rh, rerr, rerr.Length) != 0)
+                    {
+                        PlugNative.np_gui_set_callbacks(s.plugin, null, null, IntPtr.Zero);
+                        error = PlugNative.Str(rerr);
+                        return null;
+                    }
+                    s.remoteWindow = true;
+                    s.attached = true;
+                    s.width = Math.Max(1, rw);
+                    s.height = Math.Max(1, rh);
+                    s.CanResize = PlugNative.np_gui_can_resize(s.plugin) == 1;
+                    core.EditorOpened(s);
+                    error = null;
+                    return s;
+                }
                 Trace("open: making the container");
                 s.container = floating
                     ? PlugNative.np_platform_window(title ?? "Plug-in", 640, 480)
@@ -105,7 +126,7 @@ namespace NeoBuzz.Plug
 
         void SizeContainer()
         {
-            if (container == IntPtr.Zero) return;
+            if (container == IntPtr.Zero || remoteWindow) return;
             if (Floating) PlugNative.np_platform_window_size(container, width, height);
             else PlugNative.np_platform_resize(container, width, height);
         }
@@ -157,7 +178,7 @@ namespace NeoBuzz.Plug
         {
             if (!attached) return;
             attached = false;
-            try { PlugNative.np_gui_detach(plugin); } catch (Exception) { }
+            try { if (remoteWindow) PlugNative.np_gui_close_window(plugin); else PlugNative.np_gui_detach(plugin); } catch (Exception) { }
             plugin = IntPtr.Zero;
             CloseRequested?.Invoke();
         }
@@ -172,7 +193,7 @@ namespace NeoBuzz.Plug
                 {
                     try
                     {
-                        PlugNative.np_gui_detach(plugin);
+                        if (remoteWindow) PlugNative.np_gui_close_window(plugin); else PlugNative.np_gui_detach(plugin);
                         PlugNative.np_gui_set_callbacks(plugin, null, null, IntPtr.Zero);
                     }
                     catch (Exception) { }

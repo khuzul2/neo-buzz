@@ -113,6 +113,46 @@ namespace NeoBuzz.Plug
 
         public void Dispose() => core.Dispose();
 
+        // --- Placement and crashes (H2) -----------------------------------------------------------------------
+
+        /// <summary>Opens the plug-in again from <paramref name="keep"/> (identity, slot map, placement and the plug-in's own state).</summary>
+        void ReopenFrom(PlugState keep)
+        {
+            var entry = PlugLibrary.Find(keep.Path, keep.Id, keep.Name, keep.Format);
+            if (entry == null && (System.IO.File.Exists(keep.Path ?? "") || System.IO.Directory.Exists(keep.Path ?? "")))
+                entry = new PlugEntry { Format = keep.Format, Path = keep.Path, Id = keep.Id, Name = keep.Name, Vendor = keep.Vendor, Display = keep.Display };
+            core.State = keep;
+            if (entry == null)
+            {
+                core.Missing = true;
+                core.Problem = $"plug-in not found: {keep.Display ?? keep.Name} ({keep.Path})";
+                core.PushToEngine();
+                return;
+            }
+            if (core.Open(entry, keep.Display, true)) core.LoadState(keep);
+            core.PushToEngine();
+        }
+
+        /// <summary>Starts a plug-in whose sandbox ended again, from its last state (the one a song save, a load or the background snapshot left).</summary>
+        public void Reload()
+        {
+            if (core.Missing && !core.Crashed) return;
+            ReopenFrom(core.LastGoodOrCurrent());
+        }
+
+        /// <summary>Moves the plug-in to another placement: it is saved, closed and opened again from that state.</summary>
+        public void SetPlacement(string placement)
+        {
+            placement = PlugPlacement.Normalize(placement);
+            if (core.Missing && !core.Crashed) { core.State.Placement = placement; return; }
+            var keep = (core.Crashed ? core.LastGoodOrCurrent() : core.SaveState()).Copy();
+            keep.Placement = placement;
+            ReopenFrom(keep);
+        }
+
+        public bool Crashed => core.Crashed;
+        public string PlacementText => core.PlacementText();
+
         // --- The plug-in's editor (H3) ----------------------------------------------------------------------
 
         public int EditorSupport(string api) => core.EditorSupport(api);
@@ -204,7 +244,9 @@ namespace NeoBuzz.Plug
                 {
                     try
                     {
-                        manifestJson = PlugMain.Invoke(() => PlugManifest.Build(core, Gear, Effect), 30000);
+                        // A crashed plug-in can't be asked for its texts: the manifest it had stays, with what happened added.
+                        if (core.Crashed) { if (manifestJson == null) return null; manifestJson = PlugManifest.Patch(manifestJson, core); }
+                        else manifestJson = PlugMain.Invoke(() => PlugManifest.Build(core, Gear, Effect), 30000);
                         manifestRevision = rev;
                     }
                     catch (Exception) { return null; }
@@ -215,6 +257,35 @@ namespace NeoBuzz.Plug
 
         // --- Menu -------------------------------------------------------------------------------------------
 
+        List<IMenuItem> PlacementItems()
+        {
+            string forced = core.State.Path == null ? null : PlugPlacement.Forced(core.State.Path);
+            string chosen = PlugPlacement.Normalize(core.State.Placement);
+            var list = new List<IMenuItem>();
+            void Add(string text, string value, bool allowed = true) => list.Add(new MenuItemVM
+            {
+                Text = text,
+                IsCheckable = true,
+                IsChecked = chosen == value,
+                Command = new SimpleCommand { CanExecuteDelegate = _ => allowed, ExecuteDelegate = _ => SetPlacement(value) },
+            });
+            Add("Default", PlugPlacement.Auto);
+            Add("In process", PlugPlacement.InProcess, forced == null);
+            Add("Sandbox per plug-in", PlugPlacement.PerPlugin);
+            Add("Sandbox per instance", PlugPlacement.PerInstance);
+            Add("Sandbox shared", PlugPlacement.Shared);
+            list.Add(new MenuItemVM
+            {
+                Text = "Remember for this plug-in",
+                Command = new SimpleCommand
+                {
+                    CanExecuteDelegate = _ => core.State.Name != null,
+                    ExecuteDelegate = _ => PlugPlacement.SetForPlugin(core.State.Format, core.State.Id, core.State.Name, chosen.Length > 0 ? chosen : core.Placement),
+                },
+            });
+            return list;
+        }
+
         public IEnumerable<IMenuItem> Commands
         {
             get
@@ -222,6 +293,17 @@ namespace NeoBuzz.Plug
                 var items = new List<IMenuItem>();
                 string title = core.Missing ? "Missing: " + (core.State.Display ?? core.State.Name) : core.State.Display ?? core.State.Name ?? "no plug-in";
                 items.Add(new MenuItemVM { Text = title, Command = new SimpleCommand { CanExecuteDelegate = _ => false, ExecuteDelegate = _ => { } } });
+                items.Add(new MenuItemVM { Text = "Runs: " + core.PlacementText(), Command = new SimpleCommand { CanExecuteDelegate = _ => false, ExecuteDelegate = _ => { } } });
+                items.Add(new MenuItemVM
+                {
+                    Text = "Placement",
+                    Children = PlacementItems(),
+                });
+                items.Add(new MenuItemVM
+                {
+                    Text = "Reload plug-in",
+                    Command = new SimpleCommand { CanExecuteDelegate = _ => core.Crashed || core.IsOpen, ExecuteDelegate = _ => Reload() },
+                });
                 var targets = new List<IMenuItem>
                 {
                     new MenuItemVM { Text = "(none)", IsCheckable = true, IsChecked = core.MidiOutName.Length == 0, Command = new SimpleCommand { CanExecuteDelegate = _ => true, ExecuteDelegate = _ => core.SetMidiTarget("") } },
