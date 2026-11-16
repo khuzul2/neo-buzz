@@ -23,7 +23,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-HF_REPO = "jarredou/BS-ROFO-SW-Fixed"
+HF_REPO = os.environ.get("STEM_HF_REPO", "enerjazzer/BS-ROFO-SW-Fixed")  # a mirror of jarredou/BS-ROFO-SW-Fixed (that repo answers 401 from CI)
 MSST_URL = "https://github.com/ZFTurbo/Music-Source-Separation-Training"
 WORK = os.environ.get("STEM_WORK", os.path.join(os.path.expanduser("~"), ".cache", "neobuzz-stems"))
 FOUR = ["vocals", "drums", "bass", "other"]

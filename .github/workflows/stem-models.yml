@@ -13,7 +13,7 @@ name: Stem models
 
 on:
   push:
-    branches: [ audio/stem-separation ]   # TEMPORARY: a workflow can be dispatched only once it is on main; remove after the first run
+    branches: [ audio/stem-separation ]   # TEMPORARY (round 2): a workflow can be dispatched only once it is on main; remove after the first run
     paths: [ '.github/workflows/stem-models.yml' ]
   workflow_dispatch:
     inputs:
