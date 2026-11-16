@@ -222,7 +222,16 @@ namespace NeoBuzz.Plug
             catch (Exception) { return null; }
         }
 
-        public int ManifestRevision => core.Revision;
+        /// <summary>The engine's manifest cache (SongModel.Manifest) asks this and calls ManifestJson only when it changed: so a death the pump has not
+        /// noticed yet (it bumps Revision up to 20 ms later) has to be noticed here, or the cached pre-crash manifest is served.</summary>
+        public int ManifestRevision
+        {
+            get
+            {
+                if (!core.Missing && core.IsOpen) core.CheckCrashed();
+                return Volatile.Read(ref core.Revision);
+            }
+        }
 
         /// <summary>The menu's choice of output: through the machine's parameter, so the song, undo and the agent see it.</summary>
         void SetOutput(int bus)
