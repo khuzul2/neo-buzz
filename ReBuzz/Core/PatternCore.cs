@@ -98,6 +98,12 @@ namespace ReBuzz.Core
         /// </summary>
         internal volatile Clips.ClipPlayback SessionAudio;
 
+        /// <summary>
+        /// Fork (neo-audio.md NA2), audio thread: while an arrangement event plays this pattern as an audio clip with fades, the ticks since
+        /// its clip started and until it ends (a clip is the events of one clip id; Session clips and the rest: <see cref="int.MinValue"/>).
+        /// </summary>
+        internal int ArrangementSinceClipStart = int.MinValue, ArrangementUntilClipEnd = int.MinValue;
+
         public event Action<IPattern> OnPatternPlayStart;
         public event Action<IPattern> OnPatternPlayPositionChange;
         public event Action<IPattern> OnPatternPlayEnd;

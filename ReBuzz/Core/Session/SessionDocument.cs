@@ -20,7 +20,8 @@ namespace ReBuzz.Core.Session
     {
         /// <summary>Name of the song's BGUI subsection holding the layout.</summary>
         public const string SubSectionName = "SessionView";
-        public const int FormatVersion = 1;
+        /// <summary>2 (NA2): audio clips' fades, crossfade tail and reverse (an older reader skips the attributes it doesn't know; the layout has no minimum reader).</summary>
+        public const int FormatVersion = 2;
 
         /// <summary>A new or auto-filled grid shows at least this many scenes.</summary>
         public const int MinScenes = 8;
@@ -208,6 +209,17 @@ namespace ReBuzz.Core.Session
             /// <summary>Cents, -50 to 50.</summary>
             public int Detune { get; set; }
 
+            /// <summary>Fade in over this many beats from the clip's start in the arrangement (NA2); 0 for none.</summary>
+            public double FadeIn { get; set; }
+            /// <summary>Fade out over this many beats to the clip's end in the arrangement.</summary>
+            public double FadeOut { get; set; }
+            /// <summary>The clip's audio goes on this many beats past its end, falling away, under what starts there (the first half of a crossfade).</summary>
+            public double Tail { get; set; }
+            /// <summary>The fade in is the second half of a crossfade (an equal-power curve), not a straight line.</summary>
+            public bool CrossIn { get; set; }
+            /// <summary>The audio plays backwards.</summary>
+            public bool Reverse { get; set; }
+
             public double Semitones => Transpose + Detune / 100.0;
             public float Gain => (float)Math.Pow(10, GainDb / 20);
 
@@ -231,6 +243,11 @@ namespace ReBuzz.Core.Session
                 if (GainDb != 0) e.SetAttributeValue("gain", Num(GainDb));
                 if (Transpose != 0) e.SetAttributeValue("transpose", Transpose);
                 if (Detune != 0) e.SetAttributeValue("detune", Detune);
+                if (FadeIn != 0) e.SetAttributeValue("fadeIn", Num(FadeIn));
+                if (FadeOut != 0) e.SetAttributeValue("fadeOut", Num(FadeOut));
+                if (Tail != 0) e.SetAttributeValue("tail", Num(Tail));
+                if (CrossIn) e.SetAttributeValue("crossIn", "true");
+                if (Reverse) e.SetAttributeValue("reverse", "true");
                 foreach (var (sample, beat) in Markers ?? new List<(double, double)>())
                     e.Add(new XElement("Marker", new XAttribute("sample", Num(sample)), new XAttribute("beat", Num(beat))));
                 return e;
@@ -251,6 +268,11 @@ namespace ReBuzz.Core.Session
                     GainDb = Math.Clamp(DoubleAttr(e, "gain", 0), -70, 24),
                     Transpose = Math.Clamp(IntAttr(e, "transpose", 0), -48, 48),
                     Detune = Math.Clamp(IntAttr(e, "detune", 0), -50, 50),
+                    FadeIn = Math.Clamp(DoubleAttr(e, "fadeIn", 0), 0, 1e6),
+                    FadeOut = Math.Clamp(DoubleAttr(e, "fadeOut", 0), 0, 1e6),
+                    Tail = Math.Clamp(DoubleAttr(e, "tail", 0), 0, 1e6),
+                    CrossIn = (string)e.Attribute("crossIn") == "true",
+                    Reverse = (string)e.Attribute("reverse") == "true",
                 };
                 foreach (var m in e.Elements("Marker"))
                 {

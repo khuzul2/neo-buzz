@@ -157,7 +157,7 @@ namespace ReBuzz.Core
     /// Reads and edits the clips of a song. Edits return null when made, else why not, in words.
     /// Copies by the AR1 gestures get their own clip ids (daw-modes.md §8.1).
     /// </summary>
-    internal sealed class ClipEditor
+    internal sealed partial class ClipEditor
     {
         readonly ReBuzzCore core;
 
@@ -233,6 +233,16 @@ namespace ReBuzz.Core
             readonly HashSet<ClipItem> removed = new();
             public int End;
 
+            /// <summary>
+            /// NA2: the audio clip this plan writes, and the audio clips it cut at their ends or starts to make room (with the ticks of overlap,
+            /// which become a crossfade: the earlier clip's tail under the later one's fade in).
+            /// </summary>
+            public IPattern Writer;
+            public readonly List<(IPattern Pattern, bool Earlier, int Ticks)> Cuts = new();
+            public readonly HashSet<ISequence> Lanes = new();
+            /// <summary>Clips cut to make room are not crossfaded (a consolidation replaces what it renders).</summary>
+            public bool NoCrossfade;
+
             public Plan(ClipEditor editor) => this.editor = editor;
 
             SortedDictionary<int, SequenceEvent> Of(ISequence seq)
@@ -255,6 +265,7 @@ namespace ReBuzz.Core
             public void Remove(ClipItem item)
             {
                 if (!removed.Add(item)) return;
+                Lanes.Add(item.Sequence);
                 var map = Of(item.Sequence);
                 foreach (int t in item.EventTimes) map.Remove(t);
             }
@@ -263,6 +274,7 @@ namespace ReBuzz.Core
             public ClipSpec Write(ISequence seq, ClipSpec spec, bool newId = false)
             {
                 var map = Of(seq);
+                Lanes.Add(seq);
                 int id = spec.Id;
                 if (newId || id <= 0 || !editor.Clips.TryGetLoop(id, out var l) || l != spec.LoopRecord)
                 {
@@ -284,8 +296,21 @@ namespace ReBuzz.Core
                 {
                     if (removed.Contains(item) || item.End <= from || item.Time >= to) continue;
                     Remove(item);
-                    if (item.Time < from) Write(seq, item.Spec.CutRight(from));
-                    if (item.End > to) Write(seq, item.Spec.CutLeft(to), newId: item.Time < from);
+                    bool audio = !ReferenceEquals(item.Pattern, Writer) && editor.IsAudio(item.Pattern);
+                    bool fade = audio && Writer != null && !NoCrossfade;
+                    if (item.Time < from)
+                    {
+                        Write(seq, item.Spec.CutRight(from));
+                        if (fade) Cuts.Add((item.Pattern, true, Math.Min(item.End, to) - from));
+                    }
+                    if (item.End > to)
+                    {
+                        var rest = item.Spec.CutLeft(to);
+                        // Cut in the middle (a clip dropped inside it): the two parts are two clips, each with its own pattern.
+                        if (item.Time < from && audio && editor.CloneAudioPattern(item.Pattern, item.Pattern.Machine) is { } own) rest = rest with { Pattern = own };
+                        Write(seq, rest, newId: item.Time < from);
+                        if (fade) Cuts.Add((rest.Pattern, false, to - Math.Max(item.Time, from)));
+                    }
                 }
                 foreach (int t in map.Keys.Where(t => t >= from && t < to && map[t].Type != SequenceEventType.PlayPattern).ToList()) map.Remove(t);
             }
@@ -334,7 +359,11 @@ namespace ReBuzz.Core
         void Commit(Plan plan)
         {
             var action = plan.Build();
-            core.SongCore.ActionStack.Do(action);
+            Group(() =>
+            {
+                core.SongCore.ActionStack.Do(action);
+                ApplyCrossfades(plan);
+            });
             core.SetModifiedFlag();
         }
 
@@ -353,6 +382,7 @@ namespace ReBuzz.Core
         {
             var layout = core.SessionLayout;
             if (layout == null || source?.Machine == null) return null;
+            if (IsAudio(source)) return CloneAudioPattern(source, source.Machine);
             string name = Session.SessionLayout.CopyName(source.Machine, source.Name);
             int color = Session.PatternColors.Get(source);
             var create = new Session.SessionCreatePatternAction(layout, source.Machine, name, source.Length, source);
@@ -362,8 +392,9 @@ namespace ReBuzz.Core
             return copy;
         }
 
-        static string Lane(ISequence lane, IPattern pattern) =>
-            lane == null || pattern?.Machine == null || lane.Machine != pattern.Machine ? "A clip stays on its own machine's lanes." : null;
+        string Lane(ISequence lane, IPattern pattern) =>
+            lane == null || pattern?.Machine == null || (lane.Machine != pattern.Machine && !(IsAudio(pattern) && Session.SessionLayout.IsClipPlayer(lane.Machine)))
+                ? "A clip stays on its own machine's lanes (an audio clip may move to another Neo Audio track)." : null;
 
         // ------------------------------------------------------------------ the edits
 
@@ -373,7 +404,8 @@ namespace ReBuzz.Core
             var loop = core.SessionLayout?.Document != null ? Session.SceneToArrangement.LoopOf(core.SessionLayout, pattern) : new ClipLoop(0, 0, true);
             var c = core.SessionLayout?.Document != null ? core.SessionLayout.ClipOf(pattern) : null;
             var shape = c == null ? (Start: 0, LoopStart: 0, End: pattern.Length) : new Session.ClipShape(c.Start, c.LoopStart, c.LoopEnd, c.Loop).Resolve(pattern.Length);
-            return new ClipSpec(0, pattern, time, Math.Max(1, length), shape.Item1, loop.Start, loop.End, loop.On, 1.0);
+            // An audio clip plays once until its loop is switched on (an edge drag then trims; with the loop on, it repeats).
+            return new ClipSpec(0, pattern, time, Math.Max(1, length), shape.Item1, loop.Start, loop.End, loop.On && !IsAudio(pattern), 1.0);
         }
 
         /// <summary>Draws a clip: a new pattern of the clip's length on the machine, and the clip over it. Returns the clip's start.</summary>
@@ -407,12 +439,22 @@ namespace ReBuzz.Core
         public string Place(ISequence lane, IPattern pattern, int time, int length = 0)
         {
             if (Lane(lane, pattern) is { } why) return why;
-            var spec = NewSpec(pattern, Math.Max(0, time), length > 0 ? length : Math.Max(1, pattern.Length));
-            var plan = new Plan(this);
-            plan.Overwrite(lane, spec.Time, spec.Time + Math.Min(spec.Length, spec.MaxLength));
-            plan.Write(lane, spec, newId: true);
-            Commit(plan);
-            return null;
+            string result = null;
+            Group(() =>
+            {
+                // An audio clip is never shared: each place has a pattern of its own (the audio asset is what they share).
+                if (IsAudio(pattern) && Uses(pattern) > 0)
+                {
+                    pattern = CloneAudioPattern(pattern, lane.Machine);
+                    if (pattern == null) { result = "The pattern couldn't be copied."; return; }
+                }
+                var spec = NewSpec(pattern, Math.Max(0, time), length > 0 ? length : Math.Max(1, pattern.Length));
+                var plan = new Plan(this) { Writer = IsAudio(pattern) ? pattern : null };
+                plan.Overwrite(lane, spec.Time, spec.Time + Math.Min(spec.Length, spec.MaxLength));
+                plan.Write(lane, spec, newId: true);
+                Commit(plan);
+            });
+            return result;
         }
 
         public enum CopyMode { Move, Independent, Linked }
@@ -427,18 +469,28 @@ namespace ReBuzz.Core
             Group(() =>
             {
                 var pattern = item.Pattern;
-                if (mode == CopyMode.Independent)
+                bool audio = IsAudio(pattern);
+                var how = audio && mode == CopyMode.Linked ? CopyMode.Independent : mode;      // audio clips are always independent copies
+                if (audio && lane.Machine != pattern.Machine)
+                {
+                    pattern = CloneAudioPattern(pattern, lane.Machine);                          // to another Neo Audio track: a pattern there
+                    if (pattern == null) { result = "The pattern couldn't be copied."; return; }
+                }
+                else if (how == CopyMode.Independent)
                 {
                     pattern = ClonePattern(item.Pattern);
                     if (pattern == null) { result = "The pattern couldn't be copied."; return; }
                 }
-                var plan = new Plan(this);
+                var plan = new Plan(this) { Writer = audio ? pattern : null };
                 var moved = item.Spec with { Pattern = pattern, Time = time };
                 int span = moved.Segments().Sum(s => s.Length);
-                if (mode == CopyMode.Move) plan.Remove(item);
+                if (how == CopyMode.Move) plan.Remove(item);
                 plan.Overwrite(lane, time, time + span);
-                plan.Write(lane, moved, newId: mode != CopyMode.Move || item.Single);
+                plan.Write(lane, moved, newId: how != CopyMode.Move || item.Single || !ReferenceEquals(pattern, item.Pattern));
                 Commit(plan);
+                // Moved to another track: the pattern left behind is empty of clips, so it goes.
+                if (audio && how == CopyMode.Move && !ReferenceEquals(pattern, item.Pattern) && Uses(item.Pattern) == 0)
+                    core.SessionLayout.DeleteClip(item.Pattern);
             });
             return result;
         }
@@ -451,11 +503,14 @@ namespace ReBuzz.Core
             if (time < s.Time) time = Math.Max(time, s.Time - s.Start);        // not before the pattern's start
             time = Math.Max(0, time);
             if (time == s.Time) return null;
-            var plan = new Plan(this);
-            plan.Remove(item);
-            if (time < s.Time) plan.Overwrite(item.Sequence, time, s.Time);
-            plan.Write(item.Sequence, s.CutLeft(time) with { Start = Math.Clamp(s.Start + (time - s.Time), 0, s.RegionEnd - 1) });
-            Commit(plan);
+            Group(() =>
+            {
+                var plan = new Plan(this) { Writer = IsAudio(item.Pattern) ? item.Pattern : null };
+                plan.Remove(item);
+                if (time < s.Time) plan.Overwrite(item.Sequence, time, s.Time);
+                plan.Write(item.Sequence, s.CutLeft(time) with { Start = Math.Clamp(s.Start + (time - s.Time), 0, s.RegionEnd - 1) });
+                Commit(plan);
+            });
             return null;
         }
 
@@ -466,11 +521,14 @@ namespace ReBuzz.Core
             int length = Math.Max(1, end - s.Time);
             if (!s.Loop) length = Math.Min(length, s.MaxLength);
             if (length == s.Length) return null;
-            var plan = new Plan(this);
-            plan.Remove(item);
-            if (s.Time + length > s.End) plan.Overwrite(item.Sequence, s.End, s.Time + length);
-            plan.Write(item.Sequence, s with { Length = length });
-            Commit(plan);
+            Group(() =>
+            {
+                var plan = new Plan(this) { Writer = IsAudio(item.Pattern) ? item.Pattern : null };
+                plan.Remove(item);
+                if (s.Time + length > s.End) plan.Overwrite(item.Sequence, s.End, s.Time + length);
+                plan.Write(item.Sequence, s with { Length = length });
+                Commit(plan);
+            });
             return null;
         }
 
@@ -479,6 +537,7 @@ namespace ReBuzz.Core
         {
             var s = item.Spec;
             if (at <= s.Time || at >= s.End) return "Split inside the clip.";
+            if (IsAudio(item.Pattern)) return SplitAudio(item, at);
             var plan = new Plan(this);
             plan.Remove(item);
             plan.Write(item.Sequence, s.CutRight(at));
@@ -581,14 +640,14 @@ namespace ReBuzz.Core
         public string Paste(ClipCopy copy, ISequence lane, int time)
         {
             if (Lane(lane, copy.Pattern) is { } why) return why;
-            if (!lane.Machine.Patterns.Contains(copy.Pattern)) return "The pattern is gone.";
+            if (copy.Pattern.Machine == null || !copy.Pattern.Machine.Patterns.Contains(copy.Pattern)) return "The pattern is gone.";
             string result = null;
             Group(() =>
             {
-                var pattern = ClonePattern(copy.Pattern);
+                var pattern = IsAudio(copy.Pattern) && lane.Machine != copy.Pattern.Machine ? CloneAudioPattern(copy.Pattern, lane.Machine) : ClonePattern(copy.Pattern);
                 if (pattern == null) { result = "The pattern couldn't be copied."; return; }
                 var spec = new ClipSpec(0, pattern, Math.Max(0, time), copy.Length, copy.Start, copy.LoopStart, copy.LoopEnd, copy.Loop, copy.Gain);
-                var plan = new Plan(this);
+                var plan = new Plan(this) { Writer = IsAudio(pattern) ? pattern : null };
                 plan.Overwrite(lane, spec.Time, spec.Time + spec.Segments().Sum(s => s.Length));
                 plan.Write(lane, spec, newId: true);
                 Commit(plan);

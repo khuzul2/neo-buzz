@@ -1833,6 +1833,86 @@ namespace ReBuzz.Studio.Tests
 
         // ------------------------------------------------------------------ 5xx: old songs, natives, safety, many machines
 
+        // ------------------------------------------------------------------ 36x: Neo Audio clips in the Arrangement
+
+        /// <summary>Two seconds of a drum loop (a kick on every beat of 120 BPM, a hat between), as a float WAV the song's rate: something with a shape to draw.</summary>
+        static string DrumLoop(string name, int rate = 44100)
+        {
+            string path = Path.Combine(SongFolder, name);
+            int n = rate * 4;
+            var inter = new float[n * 2];
+            var rnd = new System.Random(7);
+            for (int i = 0; i < n; i++)
+            {
+                double t = i / (double)rate, beat = t * 2, inBeat = (beat - System.Math.Floor(beat)) * 0.5;
+                double kick = System.Math.Sin(2 * System.Math.PI * (55 + 90 * System.Math.Exp(-inBeat * 30)) * inBeat) * System.Math.Exp(-inBeat * 9) * 0.9;
+                double off = ((beat + 0.5) % 1) * 0.5;
+                double hat = (rnd.NextDouble() * 2 - 1) * System.Math.Exp(-off * 60) * 0.25;
+                inter[2 * i] = inter[2 * i + 1] = (float)(kick + hat);
+            }
+            using var f = libsndfile.SoundFile.Create(path, rate, 2, libsndfile.Format.SF_FORMAT_WAV | libsndfile.Format.SF_FORMAT_FLOAT);
+            f.WriteFloat(inter, 0, n);
+            return path;
+        }
+
+        [AvaloniaTest, Order(7)]
+        public void AudioArrangement()
+        {
+            BeforeAll();
+            LoadDemo();
+            var window = Open();
+            try
+            {
+                Try("036-arrangement-audio-clips", () =>
+                {
+                    var layout = Core.SessionLayout;
+                    layout.Ensure();
+                    var drums = layout.NewAudioTrack("Drum Loop");
+                    var vox = layout.NewAudioTrack("Chops");
+                    var laneD = Core.Song.Sequences.First(s => s.Machine == drums);
+                    var laneV = Core.Song.Sequences.First(s => s.Machine == vox);
+                    var editor = new ClipEditor(Core);
+                    string file = DrumLoop("drum-loop.wav");
+                    IPattern Import(IMachine m)
+                    {
+                        var pattern = layout.ImportAudio(layout.FirstTrackOf(m), 0, file, out string error);
+                        Assert.That(pattern, Is.Not.Null, error);
+                        return pattern;
+                    }
+                    ClipItem At(ISequence lane, int time) => editor.Read(lane).First(i => i.Time == time);
+                    // Drums: a loop with fades, a second one crossfaded under it, the last turned down.
+                    var first = Import(drums);
+                    Assert.That(editor.Place(laneD, first, 16 * 4), Is.Null);
+                    int end = At(laneD, 16 * 4).End;
+                    Assert.That(editor.Fade(At(laneD, 16 * 4), 12, 24), Is.Null);
+                    Assert.That(editor.Place(laneD, Import(drums), end - 12), Is.Null);        // overlaps the first: a crossfade
+                    var third = At(laneD, end - 12);
+                    Assert.That(editor.Place(laneD, Import(drums), third.End + 16), Is.Null);
+                    Assert.That(editor.SetGain(At(laneD, third.End + 16), -9), Is.Null);
+                    // Chops: one stretched to twice its length, one backwards.
+                    Assert.That(editor.Place(laneV, Import(vox), 16 * 4 + 8), Is.Null);
+                    var chop = At(laneV, 16 * 4 + 8);
+                    Assert.That(editor.Stretch(chop, chop.Time + (chop.End - chop.Time) * 2), Is.Null);
+                    chop = At(laneV, 16 * 4 + 8);
+                    Assert.That(editor.Place(laneV, Import(vox), chop.End + 16), Is.Null);
+                    Assert.That(editor.Reverse(At(laneV, chop.End + 16)), Is.Null);
+                    Settle();
+                    var seq = Tab<SequenceView>(window, "Arrangement");
+                    window.ShowView("Sequence");
+                    seq.SetArrangementMode(true);
+                    Settle();
+                    Click(window, seq.Arrangement.TranslatePoint(new Point(seq.Arrangement.Geometry.XOf(16 * 4 + 20), seq.Arrangement.YOf(seq.Arrangement.RowOf(laneD)) + 28), window)!.Value);
+                    Shot(window, "036-arrangement-audio-clips", "Neo Audio clips in the Arrangement (neo-audio.md, NA2): waveforms drawn along the beats from a peak cache, warp markers, fade corners and the gain handle on the selected clip, a crossfade where two clips overlap, a clip stretched with Alt+drag of its right edge, a reversed clip (the \"rev\" badge), a turned-down clip.", "Drag a WAV onto the Arrangement, or audio_import; the handles on a selected clip.");
+                    seq.SetArrangementMode(false);
+                });
+            }
+            finally
+            {
+                Close(window);
+            }
+            AfterAll();
+        }
+
         [AvaloniaTest, Order(6)]
         public void SongsAndStates()
         {
