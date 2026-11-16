@@ -297,11 +297,6 @@ SPECS = [
         ],
     },
     {
-        "gear": "Session Clip Player", "kind": "effect", "file": "Machines/SessionClipPlayer/SessionClipPlayer.cs",
-        "summary": "A Session View audio track: plays its audio clips, and records takes from its input or the master.",
-        "params": [P("Monitor", "enum"), P("Input", "enum")],
-    },
-    {
         "gear": "ManagedMultiIOEffect", "kind": "effect", "file": "Machines/ManagedMultiIOEffect/ManagedMultiIOEffect.cs",
         "summary": "ReBuzz's example of a managed multi-input, multi-output effect: a clean input, a noise input that gets noise "
                    "added, a delay input with feedback; a mix out and each part on its own output.",

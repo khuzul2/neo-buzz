@@ -38,14 +38,14 @@ PAGES = {}
 PAGES["ReBuzz Audio In"] = page(
     "A source that brings one stereo pair of the audio device's input into the song, with one Bypass switch. It adds nothing to the sound; you hear whatever the device is fed. The pair and mono or stereo are chosen in its menu, not by a parameter.",
     ["Live input (a microphone, a synth, a record player) as a source to run through effects.",
-     "A signal to record: connect it to a Session Clip Player and record a take."],
+     "A signal to record: connect it to a Neo Audio and record a take."],
     [("Bypass", "no", "no passes the input; yes makes the machine silent")],
     ["Add it, connect it to an effect or to the master, then check the meter: `machine_add` then `meters_read(machines=[\"Audio In\"])`.",
-     "To record the input, connect it to a Session Clip Player with `connect(from=\"Audio In\", to=\"Clips\")` and use `session_record(action=\"start\", machine=\"Clips\", bars=4)`."],
+     "To record the input, connect it to a Neo Audio with `connect(from=\"Audio In\", to=\"Clips\")` and use `session_record(action=\"start\", machine=\"Clips\", bars=4)`."],
     ["It is silent until the audio device has a signal on the chosen pair; unverified here (the profile had no input), so which device channel arrives was not checked.",
      "Live input through speakers can feed back: lower the monitoring first.",
      "A note does nothing: it is a source, not an instrument."],
-    ["Any effect you want to run the input through; Session Clip Player to capture it."],
+    ["Any effect you want to run the input through; Neo Audio to capture it."],
     NONE,
     ["`machine_describe(machine=\"Audio In\")`: its one parameter is `Bypass`.",
      "`param_get(machine=\"Audio In\")`: `Bypass` reads no.",
@@ -107,24 +107,6 @@ PAGES["ReBuzz Midi Output"] = page(
      "`param_get(machine=\"Midi Output\", track=0)`: the device and channel read 0.",
      "`notes_read(machine=\"Midi Output\", pattern=\"A\")`: the notes written are back."])
 
-PAGES["Session Clip Player"] = page(
-    "An audio track for the Session View: it plays the audio clips its track launches, warped to the song's tempo, and records takes from its input or from the master. It is silent until a clip is launched. Two parameters: what you hear of the input, and what a take records.",
-    ["Audio loops launched as clips next to pattern clips in the Session View.",
-     "Recording a take from a connected machine or, by resampling, from the master."],
-    [("Monitor", "auto", "hear the input only while the track is armed; in always, off never"),
-     ("Take source", "in", "in records what is connected to it; master records the song's output")],
-    ["Make the track in the Session View with + Track, then drop an audio file on a slot; `session_get` lists the grid.",
-     "Launch a clip: `session_launch(scene=0, machine=\"Clips\")`.",
-     "Record a take: `session_record(action=\"start\", machine=\"Clips\", bars=4)`."],
-    ["Silent with no clip launched (the profile's health warn); that is not a fault.",
-     "Take source master records everything the song plays, including this track: mute it first to avoid doubling.",
-     "Outside the app's own Session engine it only passes its input through."],
-    ["ReBuzz Audio In or any instrument connected to it for takes."],
-    NONE,
-    ["`machine_describe(machine=\"Clips\")`: its parameters are `Monitor` and `Take source`.",
-     "`session_get`: the track's clips are listed.",
-     "`meters_read(machines=[\"Clips\"])`: a launched clip shows a level."])
-
 PAGES["AudioBlock"] = page(
     "A control machine that plays audio clips laid out on a timeline in its own window, following the song's position. It makes no sound of its own when the timeline is empty, and its one parameter is Mute.",
     ["Songs that already use it for audio on a timeline."],
@@ -134,7 +116,7 @@ PAGES["AudioBlock"] = page(
     ["The clips live in its own window and are saved with the song; the Studio does not show that window, so they cannot be edited here: unverified how an AudioBlock song plays in the Studio.",
      "Silent at its defaults in the profile (no clips placed): that is expected."],
     ["Any machine you want to line up with its clips."],
-    "None: the Session View's Session Clip Player does the same job but is not a drop-in for it, so `machine_replace` does not apply.",
+    "None: the Session View's Neo Audio does the same job but is not a drop-in for it, so `machine_replace` does not apply.",
     ["`machine_describe(machine=\"AudioBlock\")`: its one parameter is `Mute`.",
      "`param_get(machine=\"AudioBlock\")`: `Mute` reads No.",
      "`meters_read(machines=[\"AudioBlock\"])`: with clips placed it shows a level."])

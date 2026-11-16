@@ -1,6 +1,6 @@
 # Fork (agent-knowledge.md K2 batch d): ReBuzz's own machines and the Rout 909's Explain text and curation (see tools/k2c_knowledge.py,
 # which applies them). The ten machines here that tools/source_manifests.py generates from their C# source (Audio In, Audio Out,
-# Groove, Midi Output, Session Clip Player, AudioBlock, Connection Mixer Console, EnvelopeBlock, QuickNote, ManagedMultiIOEffect)
+# Groove, Midi Output, AudioBlock, Connection Mixer Console, EnvelopeBlock, QuickNote, ManagedMultiIOEffect)
 # were read against that source (Machines/<name>/<name>.cs) and ReBuzz/Core; the Rout 909 is closed source (its texts and profile).
 # Keys are positions ("p3" is the fourth global parameter, "t0" the first track parameter).
 
@@ -47,12 +47,6 @@ EXPLAIN = {
                "It moves that controller on the external device; the wheel's centre leaves the pitch unbent."),
         "t3": ("Chooses the MIDI channel this track's notes and controller changes go out on: raw 0 is channel 1, raw 15 is channel 16.",
                "Use a different channel per track to address different parts of a multi-timbral device."),
-    },
-    "Session Clip Player": {
-        "p0": ("Chooses when you hear the input while this track is open to it: auto (only while the track is armed, the default), in (always) or off (never).",
-               "At auto you monitor what you record; at in the input is always audible through the track; at off only the clips are heard."),
-        "p1": ("Chooses what a take records: in (the machines connected to this one, the default) or master (the song's own output, resampling).",
-               "At in a take holds the connected source; at master it captures everything the song plays, to bounce or layer it."),
     },
     "AudioBlock": {"p0": (
         "Mutes the machine: no (the default) lets the clips on its timeline play, yes makes it output nothing.",
@@ -122,19 +116,6 @@ CURATE = {
         ],
         "evidence": [SRC.format("MidiOutput"), PROFILE + " - silent: it sends MIDI"],
     },
-    "Session Clip Player": {
-        "type": "effect",
-        "summary": "A Session View audio track: plays the audio clips its track launches, warped to the song's tempo, and records takes from its input or the master.",
-        "params": {"p0": ("Monitor", None), "p1": ("Take source", None)},
-        "quirks": [
-            "The work is done by the app's Session View engine (ReBuzz/Core/Session/SessionClipEngine.cs); the machine only hands it the block.",
-            "Outside the app's engine it passes its input through; with no clip launched it is silent, which is why its health is warn.",
-            "Clips are made in the Session View (dropping a file or session_clip_set), not by notes.",
-        ],
-        "evidence": ["Machines/SessionClipPlayer/SessionClipPlayer.cs — the machine's source: two parameters and a hand-off to the Session View engine",
-                     "docs/specs/session-view.md — Audio tracks: a track of a Session Clip Player, clips warped to the song's tempo",
-                     PROFILE + " - silent with no clip launched"],
-    },
     "AudioBlock": {
         "type": "control",
         "summary": "Plays audio clips placed on a timeline in its own window, following the song's position (a Windows window), with a Mute switch.",
@@ -142,7 +123,7 @@ CURATE = {
         "quirks": [
             "The clips live in its own timeline window and in its saved state, not in parameters: the Studio does not show that window, so it is for songs that already use it.",
             "Mute yes returns no audio from the machine; with no clips placed the profile heard silence (health warn).",
-            "For new work the Session View's audio tracks (Session Clip Player) and the arrangement cover this: unverified how an AudioBlock song behaves in the Studio.",
+            "For new work the Session View's audio tracks (Neo Audio) and the arrangement cover this: unverified how an AudioBlock song behaves in the Studio.",
         ],
         "evidence": [SRC.format("AudioBlock"), PROFILE + " - silent: no clips on its timeline"],
     },

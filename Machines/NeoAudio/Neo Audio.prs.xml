@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Audio Track (Monitor While Armed)">
+    <Preset Machine="Neo Audio">
+      <Parameters>
+        <Parameter Name="Monitor" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Input" Group="1" Index="1" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Audio Track (Always Hear the Input)">
+    <Preset Machine="Neo Audio">
+      <Parameters>
+        <Parameter Name="Monitor" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Input" Group="1" Index="1" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Resample (Record the Master, Input Silent)">
+    <Preset Machine="Neo Audio">
+      <Parameters>
+        <Parameter Name="Monitor" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Input" Group="1" Index="1" Track="0" Value="1" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

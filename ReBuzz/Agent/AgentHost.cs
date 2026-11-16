@@ -69,6 +69,7 @@ namespace ReBuzz.Agent
             MasteringTools.Register(tools, this);   // mastering-tools.md §6: target_build, eq_fit
             StateTools.Register(tools, this);
             CompositionTools.Register(tools, this);
+            AudioClipTools.Register(tools, this);   // neo-audio.md (NA1): audio_import, audio_clip_get, audio_clip_set
             WaveTools.Register(tools, this);
             LiveTools.Register(tools, this);
             AppControl = new AppBackend(this, () => tools.All.Count);   // K3 (agent-knowledge.md §5): settings, MIDI, audio, view, export, app

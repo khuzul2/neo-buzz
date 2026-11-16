@@ -212,7 +212,7 @@ namespace ReBuzz.Studio.Tests
 
             var manifest = ManifestOf(a);
             Assert.That((string)manifest["format"], Is.EqualTo("neobuzz-live-song"));
-            Assert.That((int)manifest["formatVersion"], Is.EqualTo(1));
+            Assert.That((int)manifest["formatVersion"], Is.EqualTo(2));
             Assert.That(manifest["stores"]["SongMarkers"]["kind"].ToString(), Is.EqualTo("xml"), "markers are manifest fields");
             Assert.That(manifest["stores"]["SongNotes"]["kind"].ToString(), Is.EqualTo("xml"));
             Assert.That(manifest["index"]["machines"].AsArray().Select(m => (string)m["name"]).ToArray(), Does.Contain("Lead").And.Contain("Bass"));
@@ -264,7 +264,7 @@ namespace ReBuzz.Studio.Tests
             var refs = set.AddChunked(payload);
             manifest["future"] = new JsonObject { ["hello"] = "world", ["data"] = new JsonArray(refs.Select(x => (JsonNode)new JsonObject { ["blob"] = x.Hash, ["size"] = x.Size }).ToArray()) };
             manifest["stores"]["FutureStore"] = new JsonObject { ["kind"] = "binary", ["size"] = payload.Length, ["chunks"] = new JsonArray(refs.Select(x => (JsonNode)new JsonObject { ["blob"] = x.Hash, ["size"] = x.Size }).ToArray()) };
-            manifest["formatVersion"] = 2;
+            manifest["formatVersion"] = 3;
             manifest["minReaderVersion"] = 1;
             NblContainer.WriteAtomic(future, Encoding.UTF8.GetBytes(manifest.ToJsonString()), set);
 
@@ -274,7 +274,7 @@ namespace ReBuzz.Studio.Tests
             var back = ManifestOf(again);
             Assert.That((string)back["future"]["hello"], Is.EqualTo("world"), "an unknown top-level member");
             Assert.That(back["stores"]["FutureStore"], Is.Not.Null, "an unknown store");
-            Assert.That((int)back["formatVersion"], Is.EqualTo(1), "written as this build's version");
+            Assert.That((int)back["formatVersion"], Is.EqualTo(2), "written as this build's version");
             using (var r = new NblContainer.Reader(again))
             {
                 var joined = back["future"]["data"].AsArray().SelectMany(x => r.Get((string)x["blob"])).ToArray();

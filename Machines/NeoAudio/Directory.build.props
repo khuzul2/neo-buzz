@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <MSBUildProjectExtensionsPath>$(SolutionDir)build\$(Configuration)\$(Platform)\SessionClipPlayer\obj</MSBUildProjectExtensionsPath>
+        <MSBUildProjectExtensionsPath>$(SolutionDir)build\$(Configuration)\$(Platform)\NeoAudio\obj</MSBUildProjectExtensionsPath>
     </PropertyGroup>
 	<ItemDefinitionGroup>
 		<ProjectReference>
