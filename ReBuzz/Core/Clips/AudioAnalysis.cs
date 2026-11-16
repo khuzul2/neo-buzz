@@ -124,8 +124,15 @@ namespace ReBuzz.Core.Clips
         /// the transients' own tempo (the autocorrelation of their flux) agrees within 4%,
         /// or when there is no clear one. Otherwise the transients' tempo, in 80-160 BPM.
         /// </summary>
-        public static (double Bpm, double Beats) Tempo(AudioSource source, int beatsPerBar = 4)
+        public static (double Bpm, double Beats) Tempo(AudioSource source, int beatsPerBar = 4) => Tempo(source, beatsPerBar, out _);
+
+        /// <summary>
+        /// The same, saying whether a tempo was found (<paramref name="found"/>): bars that fit, or transients that keep a beat. When not, the
+        /// 120 returned is only a place to start from.
+        /// </summary>
+        public static (double Bpm, double Beats) Tempo(AudioSource source, int beatsPerBar, out bool found)
         {
+            found = false;
             double seconds = source.Seconds;
             if (seconds <= 0) return (120, 1);
             beatsPerBar = Math.Max(1, beatsPerBar);
@@ -138,10 +145,14 @@ namespace ReBuzz.Core.Clips
             }
             double ac = AutocorrelationTempo(source, out double confidence);
             if (barsBpm > 0 && (ac <= 0 || confidence < 0.3 || Math.Abs(ac - barsBpm) / barsBpm < 0.04))
+            {
+                found = true;
                 return (barsBpm, Math.Round(barsBpm * seconds / 60));
+            }
             // No bars fit and nothing in the transients keeps a beat (silence, noise, a pad, a clip under a quarter of a
             // second): there is no tempo to find, so 120 rather than one made up from the noise.
-            double tempo = ac > 0 && confidence >= MinTempoConfidence ? ac : 120;
+            found = ac > 0 && confidence >= MinTempoConfidence;
+            double tempo = found ? ac : 120;
             return (tempo, tempo * seconds / 60);
         }
 

@@ -41,6 +41,21 @@ namespace ReBuzz.Core.Clips
         public int Length => Left.Length;
         public double Seconds => Length / (double)SampleRate;
 
+        /// <summary>
+        /// The same audio played backwards (a copy; made off the audio thread). Sample <c>i</c> of the original is sample <c>Length - 1 - i</c> of
+        /// the copy, so a clip's reverse plays this with a mirrored map (<see cref="WarpMap.Mirrored"/>).
+        /// </summary>
+        public AudioSource Reversed()
+        {
+            bool mono = ReferenceEquals(Left, Right);
+            var l = (float[])Left.Clone();
+            Array.Reverse(l);
+            if (mono) return new AudioSource(l, l, SampleRate);
+            var r = (float[])Right.Clone();
+            Array.Reverse(r);
+            return new AudioSource(l, r, SampleRate);
+        }
+
         /// <summary>A sample, 0 outside the audio.</summary>
         public float L(long i) => i >= 0 && i < Left.Length ? Left[i] : 0f;
         public float R(long i) => i >= 0 && i < Right.Length ? Right[i] : 0f;
@@ -111,6 +126,13 @@ namespace ReBuzz.Core.Clips
 
         public IReadOnlyList<WarpMarker> Markers => markers;
 
+        /// <summary>
+        /// This map for the audio played backwards (<see cref="AudioSource.Reversed"/>, <paramref name="length"/> samples): the clip's beat
+        /// <c>b</c> plays what beat <c>endBeat - b</c> played, so each marker (sample, beat) becomes (length - 1 - sample, endBeat - beat).
+        /// </summary>
+        public WarpMap Mirrored(double length, double endBeat) =>
+            new WarpMap(markers.Select(m => new WarpMarker(length - 1 - m.Sample, endBeat - m.Beat)));
+
         /// <summary>The beats from the first marker to the last.</summary>
         public double Beats => markers[^1].Beat - markers[0].Beat;
 
@@ -174,6 +196,42 @@ namespace ReBuzz.Core.Clips
     }
 
     /// <summary>
+    /// An arrangement clip's fades (docs/specs/neo-audio.md, NA2), in beats: the gain rises over <see cref="FadeIn"/> from the clip's start (a
+    /// sine curve when <see cref="CrossIn"/>, the equal-power half of a crossfade; else a line), falls over <see cref="FadeOut"/> to its end, and
+    /// <see cref="Tail"/> is how long the audio goes on past the end under what starts there, falling as a cosine (the other half).
+    /// </summary>
+    internal readonly record struct ClipFades(double FadeIn, double FadeOut, double Tail, bool CrossIn)
+    {
+        public static readonly ClipFades None = default;
+
+        public bool Active => FadeIn > 0 || FadeOut > 0;
+
+        public ClipFades Sanitised() => new ClipFades(Clean(FadeIn), Clean(FadeOut), Clean(Tail), CrossIn);
+
+        static double Clean(double x) => double.IsFinite(x) ? Math.Clamp(x, 0, 1e6) : 0;
+
+        /// <summary>The gain at <paramref name="pos"/> beats from the clip's start with <paramref name="left"/> beats to go.</summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public float GainAt(double pos, double left)
+        {
+            float g = 1f;
+            if (FadeIn > 0 && pos < FadeIn)
+            {
+                double x = pos <= 0 ? 0 : pos / FadeIn;
+                g = CrossIn ? (float)Math.Sin(x * (Math.PI / 2)) : (float)x;
+            }
+            if (FadeOut > 0 && left < FadeOut)
+                g *= left <= 0 ? 0f : (float)(left / FadeOut);
+            return g;
+        }
+
+        /// <summary>The gain of the tail <paramref name="gone"/> beats after the clip's end.</summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public float TailGainAt(double gone) =>
+            Tail <= 0 || gone >= Tail ? 0f : gone <= 0 ? 1f : (float)Math.Cos(gone / Tail * (Math.PI / 2));
+    }
+
+    /// <summary>
     /// How an audio clip plays, as the audio thread uses it: its audio, warp map and mode, the
     /// slices Beats mode plays (sample positions), gain and pitch. Never modified: a change is
     /// a new object.
@@ -206,5 +264,9 @@ namespace ReBuzz.Core.Clips
         public float Gain { get; }
         public double Semitones { get; }
         public double PitchRatio { get; }
+
+        /// <summary>An arrangement clip's fades and crossfade tail (NA2); none for a Session clip. Set once, before the params are handed over.</summary>
+        public ClipFades Fades { get => fades; init => fades = value.Sanitised(); }
+        ClipFades fades;
     }
 }

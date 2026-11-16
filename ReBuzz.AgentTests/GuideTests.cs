@@ -119,7 +119,7 @@ namespace ReBuzz.AgentTests
             // NA1 (neo-audio.md: ReBuzz/Agent/AudioClipTools.cs)
             ["audio_import"] = new[] { "path", "track", "slot", "at_beats" },
             ["audio_clip_get"] = new[] { "machine", "pattern" },
-            ["audio_clip_set"] = new[] { "machine", "pattern", "warp", "preserve", "tempo_bpm", "detect_tempo", "transpose", "detune", "gain_db", "loop", "region", "warp_markers" },
+            ["audio_clip_set"] = new[] { "machine", "pattern", "warp", "preserve", "tempo_bpm", "detect_tempo", "transpose", "detune", "gain_db", "loop", "region", "warp_markers", "fade_in_beats", "fade_out_beats", "reverse", "stretch_to_beats" },
             ["session_scene_set"] = new[] { "scene", "insert", "name", "tempo_bpm", "beats_per_bar" },
             // A3 (origin/agent/a3-tools: ReBuzz.Agent/Model/CompositionTools.cs, Transforms.cs)
             ["theory"] = new[] { "op", "chord", "progression", "key", "octave", "register", "voicing", "inversion", "voice_leading", "previous", "beats_per_chord", "start", "pitches", "steps", "notes" },
@@ -155,7 +155,7 @@ namespace ReBuzz.AgentTests
             ["app_status"] = new string[0],
             ["song_recent"] = new[] { "limit" },
             // K3b (agent-knowledge.md §11): the features built since K3 (ReBuzz/Agent/ArrangementTools.cs, MachineEditTools.cs; ReBuzz.Studio/Shell/Tools/RecorderTools.cs)
-            ["arrangement_clip"] = new[] { "op", "machine", "lane", "clip", "at", "pattern", "length_beats", "to", "to_lane", "link", "start", "end", "on", "split_at" },
+            ["arrangement_clip"] = new[] { "op", "machine", "lane", "clip", "at", "pattern", "length_beats", "to", "to_lane", "link", "start", "end", "on", "split_at", "to_machine", "fade_in_beats", "fade_out_beats", "gain_db", "start_at", "end_at" },
             ["arrangement_lane"] = new[] { "op", "machine", "role", "lane", "remove_clips" },
             ["arrangement_automation"] = new[] { "op", "machine", "param", "track", "from", "to", "points", "shape", "allow_unsafe" },
             ["arrangement_takes"] = new[] { "op", "machine", "loop", "take_lane", "to_lane", "from", "to" },

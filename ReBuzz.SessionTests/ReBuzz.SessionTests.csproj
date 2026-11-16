@@ -49,6 +49,7 @@
     <Compile Include="..\ReBuzz\Core\Clips\Fft.cs" Link="Engine\Fft.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\PhaseVocoder.cs" Link="Engine\PhaseVocoder.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\AudioAsset.cs" Link="Engine\AudioAsset.cs" />
+    <Compile Include="..\ReBuzz\Core\AudioLibrary\PeakCache.cs" Link="Engine\PeakCache.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\Resampler.cs" Link="Engine\Resampler.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\AudioImporter.cs" Link="Engine\AudioImporter.cs" />
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Common\libsndfile\SoundFile.cs" Link="Engine\SoundFile.cs" />

@@ -527,6 +527,8 @@ namespace ReBuzz.Audio
             {
                 positioned[i].PlayPosition = int.MinValue;
                 positioned[i].SessionTrack = null;
+                positioned[i].ArrangementSinceClipStart = int.MinValue;
+                positioned[i].ArrangementUntilClipEnd = int.MinValue;
             }
             positioned.Clear();
 
@@ -615,7 +617,16 @@ namespace ReBuzz.Audio
                                 }
                                 pc.PlayPosition = newPatternPos;
                                 if (newPatternPos != int.MinValue)
+                                {
+                                    // Fork (neo-audio.md NA2): an audio clip with fades is told where it is in its clip.
+                                    if (pc.SessionAudio?.Params is { } audio && audio.Fades.Active)
+                                    {
+                                        arranged.ClipBounds(index, out int clipStart, out int clipEnd);
+                                        pc.ArrangementSinceClipStart = songPlayPosition - clipStart;
+                                        pc.ArrangementUntilClipEnd = clipEnd - songPlayPosition;
+                                    }
                                     AddActivePattern(pc);
+                                }
                             }
                         }
                     }

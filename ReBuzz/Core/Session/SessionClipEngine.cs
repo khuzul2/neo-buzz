@@ -93,6 +93,7 @@ namespace ReBuzz.Core.Session
             var player = (PlayerState)state;
             var buzz = (machine as MachineCore)?.Graph?.Buzz as ReBuzzCore;
             var mixer = player.Mixer;
+            bool sound;
             int frames = mixer.Begin(n);          // never more than it was made for: a longer block's end is silent, nothing is allocated
             if (buzz != null && buzz.Playing)
             {
@@ -114,10 +115,20 @@ namespace ReBuzz.Core.Session
                         Record(player, capture, input, n, mode);
                         capture.LastBlock = ReBuzzCore.GlobalState.AudioFrame;
                     }
-                    mixer.Play(clip, beat, beatsPerSample, mi.SamplesPerSec, frames);
+                    // An arrangement clip with fades knows where it is in its clip (WorkManager.UpdatePatternPositions).
+                    double clipPos = double.NaN, clipLeft = double.NaN;
+                    if (pattern.ArrangementSinceClipStart != int.MinValue)
+                    {
+                        double inTick = mi.PosInTick / (double)samplesPerTick;
+                        clipPos = (pattern.ArrangementSinceClipStart + inTick) / ticksPerBeat;
+                        clipLeft = (pattern.ArrangementUntilClipEnd - inTick) / ticksPerBeat;
+                    }
+                    mixer.Play(clip, beat, beatsPerSample, mi.SamplesPerSec, frames, clipPos, clipLeft);
                 }
+                sound = mixer.End(frames, beatsPerSample, mi.SamplesPerSec);
             }
-            bool sound = mixer.End(frames);
+            else
+                sound = mixer.End(frames);
 
             bool hear = (mode & WorkModes.WM_READ) != 0 &&
                         (monitor == 1 || (monitor == 0 && buzz != null && buzz.SessionCore.IsArmedMachine(machine)));

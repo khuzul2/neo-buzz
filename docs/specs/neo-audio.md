@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Status | Built (NA1): engine review, the Neo Audio machine, the song's audio store, the import pipeline. Streaming for long files (NA1b) is not built; the seam for it is. |
-| Branch | `audio/neo-audio-na1` |
+| Status | Built (NA1, NA2): engine review, the Neo Audio machine, the song's audio store, the import pipeline. Streaming for long files (NA1b) is not built; the seam for it is. |
+| Branch | `audio/neo-audio-na1`, `audio/neo-audio-na2` |
 | Related | [session-view.md](session-view.md) §1.0 (audio clips), [daw-modes.md](daw-modes.md) §4.4, [native-format.md](native-format.md) §12, [machines.md](machines.md) §3.2 |
 
 ## 1. What it is
@@ -95,3 +95,33 @@ The audit covered `AudioClip`, `ClipVoice`, `PhaseVocoder`, `AudioAnalysis`, `Au
 - Only two channels are kept of a file with more.
 - A clip made before this version keeps its wave, which is not removed after the migration (a song saved as .nbl holds both until the wave is deleted).
 - The Classic WPF clip panel still prints the wave's name for a clip that has none (it is frozen).
+
+## 10. NA2 as built: audio clips in the Arrangement
+
+**Own pattern per clip.** An audio clip on a lane is a run of `PlayPattern` events of an audio pattern, as any clip. Each clip has its own pattern and so its own settings (gain, warp, markers, fades, reverse); copies share only the asset. Alt-drag, Cmd-drag, Duplicate, Paste, a split, and a move to another Neo Audio track clone the pattern (`CloneAudioPattern`); a move to another track deletes the orphaned pattern. The loop switch is off for a new audio clip; with it on, dragging the right edge repeats the loop as for any clip.
+
+**Drawing.** `PeakCache` (ReBuzz/Core/AudioLibrary) holds min/max peaks per asset: level 0 is 64-sample blocks, each next level 4 times coarser, up to 9 levels. It is built on a worker thread when an asset is first drawn (a flat line shows until it is ready), kept in memory beside the asset and never saved. The waveform is drawn per column through the clip's warp map (a stretched clip shows stretched audio), times the gain; warp markers are ticks; a "rev" badge shows for a reversed clip and "unwarped" for warp Off.
+
+**Gestures** (each one undo step of the song; all through `ClipEditor`, so the agent reaches the same code):
+
+| Gesture | Editor | Agent |
+|---|---|---|
+| Move, Alt copy, across Neo Audio tracks | `Move` | `arrangement_clip` move/copy with `to_machine` |
+| Trim | `TrimLeft`, `TrimRight` | trim |
+| Alt + right edge: stretch | `Stretch` (the warp follows: tempo and markers scale, the pattern length changes) | `stretch` (`end`), `audio_clip_set` `stretch_to_beats` |
+| Loop switch, edge repeat | `SetLoop`, `TrimRight` | loop |
+| Fade corner handles | `Fade` | `fade`, `audio_clip_set` `fade_in_beats`, `fade_out_beats` |
+| Gain handle (+12 to -24 dB) | `SetGain` | `gain` |
+| Split at the play position (Ctrl/Cmd+E) | `Split` | split |
+| Consolidate (Ctrl/Cmd+J) | `Consolidate`: renders the range offline into a new asset and one new clip | `consolidate` |
+| Reverse (R) | `Reverse` | `reverse`, `audio_clip_set` `reverse` |
+
+**Crossfades.** Where one audio clip's start overwrites the end of another on a lane, the cut part keeps playing under the new clip for the overlap (`Tail` of the first), and the new clip fades in over it (`CrossIn`); the overlap is the crossfade (sine/cosine pair, equal power). Overlaps are found and cleaned up by `ClipEditor` after every edit; `Crossfade` sets or removes one by hand.
+
+**Engine.** `ClipFades` (AudioClip.cs) holds the fade in, fade out, tail and crossfade flag of a clip, in beats at the clip's own tempo; they are saved with the clip's settings (`SessionDocument.AudioSettings`: `fadeIn`, `fadeOut`, `tail`, `crossIn`, `reverse`, written only when set; `FormatVersion` 2, an older song loads with none). `ClipMixer.Play` gets the position in the clip and what is left of it (from `PatternCore.ArrangementSinceClipStart` and `ArrangementUntilClipEnd`, set by `WorkManager` from the arranged events) and renders a clip with fades through scratch buffers and a per-sample envelope; `End` renders the tails of clips that have ended. Everything is sample accurate, block-size independent, and allocation-free (a test counts allocations). Clips without fades take the NA1 path unchanged. Reverse makes a reversed copy of the source and a mirrored warp map off the audio thread (an audio clip's source is a pair of float arrays), so the voice is not changed.
+
+**Tempo.** A clip follows the song tempo unless its warp is Off. A file in which no tempo is found is imported with warp Off and the song's BPM; the tempo is set later with `audio_clip_set` (`tempo_bpm`), which turns warp on.
+
+**Tests.** `ReBuzz.SessionTests/AudioClipEditingTests.cs` (fades, gain, crossfade against the expected envelope, tail after stop, allocation, reverse sample for sample, stretch, peak cache against brute force, settings round trip, an old song). `ReBuzz.Studio.Tests/NeoAudioArrangementTests.cs`: each gesture with the mouse or keys, then undo, redo, and the song saved and opened again as .nbl and as .bmx, plus the agent's tools. Gallery: `mac-036-arrangement-audio-clips.png`.
+
+**Limits.** Consolidate renders at one tempo (the song's now), so tempo changes inside the range are not followed. The fade lengths are in beats of the clip, so they scale with a stretch. At most 16 clips play at once (NA1's limit). The audio thread's scratch is 4096 frames.
