@@ -662,7 +662,7 @@ namespace ReBuzz.Studio.Tests
 
         // ------------------------------------------------------------------ feedback
 
-        [AvaloniaTest]
+        [AvaloniaTest, Category("Gallery")]
         public void TheArrangementShowsWhereAnythingWillGoAndWhyNotBeforeItIsDropped()
         {
             using var s = new ArrangementSurface();
@@ -709,7 +709,7 @@ namespace ReBuzz.Studio.Tests
             _ = beat;
         }
 
-        [AvaloniaTest]
+        [AvaloniaTest, Category("Gallery")]
         public void TheSessionLightsTheSlotsTheTrackAndTheLineForANewTrack()
         {
             using var s = new SessionSurface();
@@ -764,7 +764,7 @@ namespace ReBuzz.Studio.Tests
 
         // ------------------------------------------------------------------ the Machine View
 
-        [AvaloniaTest]
+        [AvaloniaTest, Category("Gallery")]
         public void TheMachineViewTakesAudioMidiAndPresetsThroughTheSameRules()
         {
             var (window, view) = OpenEmpty();
