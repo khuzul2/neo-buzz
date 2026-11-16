@@ -125,6 +125,13 @@ namespace ReBuzz.Studio.Views.Session
         }
 
         /// <summary>A brush of the dark theme's colour or the light theme's, following the theme (P4b).</summary>
+        /// <summary>The browser's seven collection tag colours (red, orange, yellow, green, blue, violet, grey), dark and light.</summary>
+        internal static readonly IBrush[] Tags =
+        {
+            Pair("#E5484D", "#C62828"), Pair("#F0883E", "#B85200"), Pair("#E3B341", "#8F6200"), Pair("#3FB950", "#1E7D32"),
+            Pair("#4C8DF6", "#1F5FC0"), Pair("#A371F7", "#6F42C1"), Pair("#8B949E", "#5F6872"),
+        };
+
         internal static IBrush Pair(string dark, string lightHex) => StudioTokens.Themed(() => Color.Parse(NeoBuzz.Editor.Tokens.IsLight ? lightHex : dark));
 
         /// <summary>A pen of the dark theme's colour or the light theme's, following the theme (P4b).</summary>

@@ -63,6 +63,67 @@ namespace ReBuzz.Studio.Views.Machines
             Focusable = true;
             ClipToBounds = true;
             PointerTouchPadGestureMagnify += OnPinch;
+            DragDrop.SetAllowDrop(this, true);
+            AddHandler(DragDrop.DragOverEvent, OnBrowserDragOver);
+            AddHandler(DragDrop.DragLeaveEvent, (s, e) => { dropOver = null; InvalidateVisual(); });
+            AddHandler(DragDrop.DropEvent, OnBrowserDrop);
+        }
+
+        // ---- BR1 (docs/specs/browser.md): the browser's items dropped on the canvas: on a machine's box they replace it (hot-swap), on empty canvas they are added.
+
+        /// <summary>The browser's model (set by MachineView): what a drop does is its Swap and AddDropped.</summary>
+        internal Views.Browser.MachineBrowserModel Browser { get; set; }
+
+        IMachine dropOver;
+
+        void OnBrowserDragOver(object sender, DragEventArgs e)
+        {
+            var data = Views.Browser.BrowserDragSource.Read(e.DataTransfer);
+            if (data == null) { e.DragEffects = DragDropEffects.None; return; }
+            var target = MachineAt(ToLogical(e.GetPosition(this)));
+            e.DragEffects = DragDropEffects.Copy;
+            if (target != dropOver) { dropOver = target; InvalidateVisual(); }
+            e.Handled = true;
+        }
+
+        void OnBrowserDrop(object sender, DragEventArgs e)
+        {
+            var data = Views.Browser.BrowserDragSource.Read(e.DataTransfer);
+            dropOver = null;
+            if (data == null) return;
+            DropBrowserItem(data, e.GetPosition(this));
+            e.Handled = true;
+        }
+
+        /// <summary>
+        /// A browser item dropped at a view point (tests call it). A machine, plug-in or preset on a machine's box replaces that machine
+        /// (connections, patterns kept where they fit; a preset of its own type loads instead): one undo step; on empty canvas it is added
+        /// there. What can't be done says why, on the canvas, for two seconds. Returns the machine that results, or null.
+        /// </summary>
+        internal IMachine DropBrowserItem(ReBuzz.Agent.Browser.BrowserDragData data, Point view)
+        {
+            if (Browser == null) return null;
+            var logical = ToLogical(view);
+            var target = MachineAt(logical);
+            string why;
+            IMachine made;
+            if (target != null) made = Browser.Swap(target, data, out why);
+            else
+            {
+                var at = CanvasMap.Clamp(map.PositionAt(logical));
+                made = Browser.AddDropped(data, (float)at.X, (float)at.Y, out why);
+            }
+            if (made != null) Select(new[] { made });
+            else if (why != null) Say(why, target != null ? BoxOf(target).Center : logical);
+            InvalidateVisual();
+            return made;
+        }
+
+        void Say(string why, Point at)
+        {
+            Refusal = why;
+            refusalAt = at;
+            DispatcherTimer.RunOnce(() => { if (Refusal == why) { Refusal = null; InvalidateVisual(); } }, TimeSpan.FromSeconds(2));
         }
 
         /// <summary>Raised when zoom or scroll change (the view's scroll bars and slider follow).</summary>
