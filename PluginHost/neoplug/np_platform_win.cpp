@@ -45,6 +45,40 @@ static const wchar_t* containerClass()
     return L"NeoPlugContainer";
 }
 
+// A floating window: its close button reports to the host (np_platform_on_close) and leaves the window, with the plugin's view in it,
+// for the host to release; without a callback it closes as any window does.
+typedef void (*CloseCb)(void*);
+static LRESULT CALLBACK floatProc(HWND h, UINT msg, WPARAM wp, LPARAM lp)
+{
+    if (msg == WM_CLOSE)
+    {
+        auto cb = (CloseCb)GetPropW(h, L"npCloseCb");
+        if (cb)
+        {
+            cb(GetPropW(h, L"npCloseUser"));
+            return 0;
+        }
+    }
+    return DefWindowProcW(h, msg, wp, lp);
+}
+
+static const wchar_t* floatClass()
+{
+    static bool done = false;
+    if (!done)
+    {
+        WNDCLASSW wc{};
+        wc.lpfnWndProc = floatProc;
+        wc.hInstance = GetModuleHandleW(nullptr);
+        wc.lpszClassName = L"NeoPlugFloat";
+        wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+        wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+        RegisterClassW(&wc);
+        done = true;
+    }
+    return L"NeoPlugFloat";
+}
+
 extern "C" {
 
 NP_API void* np_platform_container(void* parent, int width, int height)
@@ -64,11 +98,30 @@ NP_API void* np_platform_window(const char* title, int width, int height)
     for (const char* c = title ? title : "neoplug"; *c; c++) t += (wchar_t)(unsigned char)*c;
     RECT r{0, 0, width, height};
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
-    HWND w = CreateWindowExW(0, containerClass(), t.c_str(), WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_VISIBLE, 120, 120, r.right - r.left,
+    containerClass();
+    HWND w = CreateWindowExW(0, floatClass(), t.c_str(), WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_VISIBLE, 120, 120, r.right - r.left,
                              r.bottom - r.top, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
     ShowWindow(w, SW_SHOW);
     UpdateWindow(w);
     return w;
+}
+
+NP_API void np_platform_window_size(void* content, int width, int height)
+{
+    HWND w = (HWND)content;
+    if (!w) return;
+    RECT r{0, 0, width, height};
+    LONG style = GetWindowLongW(w, GWL_STYLE);
+    AdjustWindowRect(&r, style, FALSE);
+    SetWindowPos(w, nullptr, 0, 0, r.right - r.left, r.bottom - r.top, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+}
+
+NP_API void np_platform_on_close(void* content, void (*cb)(void*), void* user)
+{
+    HWND w = (HWND)content;
+    if (!w) return;
+    SetPropW(w, L"npCloseCb", (HANDLE)cb);
+    SetPropW(w, L"npCloseUser", (HANDLE)user);
 }
 
 struct DescribeCtx { std::string* out; int depth; };

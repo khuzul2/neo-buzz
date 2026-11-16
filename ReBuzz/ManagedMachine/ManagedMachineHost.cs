@@ -188,6 +188,8 @@ namespace ReBuzz.ManagedMachine
         public IBuzzMachine ManagedMachine => machine;
 
         // Fork (plugin-host.md §3.1): IBuzzMachineHostRuntime.
+        public bool SongLoading => (Machine?.Graph?.Buzz as ReBuzzCore)?.SongLoading ?? false;
+
         public void SetGlobalParameterInfo(int index, string name, string description, int min, int max, int def, bool visible)
         {
             if (Machine is not MachineCore mc || mc.ParameterGroupsList.Count < 2) return;

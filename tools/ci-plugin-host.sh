@@ -54,9 +54,11 @@ mkdir -p "$F"
 cp -R "$B/VST3/Release/again.vst3" "$B/VST3/Release/note-expression-synth.vst3" "$B/bin/neoplug-test.clap" "$F/"
 dirs=(--dir "$F")
 surge=()
+surgepath=""
+sep=:; [ "$RUNNER_OS" = Windows ] && sep=";"
 if [ -s "$T/surge.txt" ]; then
   while IFS='|' read -r p _; do
-    [ -n "$p" ] && dirs+=(--dir "$(dirname "$p")")
+    [ -n "$p" ] && dirs+=(--dir "$(dirname "$p")") && surgepath="$surgepath${surgepath:+$sep}$(dirname "$p")"
   done < "$T/surge.txt"
   surge=(--gen "Surge XT (VST3)" --gen "Surge XT (CLAP)" --fx "Surge XT Effects (VST3)" --fx "Surge XT Effects (CLAP)")
 else
@@ -69,6 +71,39 @@ G="$W/ReBuzz.Headless/bin/Release/net10.0/Gear/NeoPlug"
 export NEOPLUG_DEBUG=1
 $PY tools/plugin-host-test.py "$H" "$OUT/run" "${dirs[@]}" --lib "$G/$L" --scan "$G/neoplug-scan$X" \
   --gen "Note Expression Synth" --gen "Test Synth" "${surge[@]}" --fx "AGain VST3" --fx "Test Gain" --fixtures
+
+# The plug-in editors in the studio, in a real window (H3): Surge XT's own editors embedded in the studio's window (VST3 and CLAP), then
+# floating; each run opens, draws (colours in the view), resizes from the host, closes and reopens (Platform/PluginGuiCheck.cs).
+# Windows and macOS only: Linux has no editors to show.
+if [ "$RUNNER_OS" != Linux ]; then
+  echo "::group::Plug-in editors in the studio (Surge XT)"
+  dotnet build ReBuzz.Studio/ReBuzz.Studio.csproj -c Release -v:q "${win[@]}"
+  STUDIO="$W/ReBuzz.Studio/bin/Release/net10.0/ReBuzz.Studio"
+  [ "$RUNNER_OS" = Windows ] && STUDIO="$STUDIO.exe"
+  guifail=0
+  guicheck() {   # name, extra arguments...
+    local label="$1" plug="$2"; shift 2
+    local log="$OUT/plugin-gui-$label.log"
+    rm -f "$log"
+    NEOPLUG_LIB="$G/$L" NEOPLUG_SCAN="$G/neoplug-scan$X" NEOBUZZ_PLUGIN_PATH="$surgepath" NEOBUZZ_PLUGIN_STANDARD=0 \
+      NEOBUZZ_PLUGIN_DIR="$T/gui-plugin-data-$label" NEOBUZZ_PLUGIN_GUI_LOG="$log" \
+      "$STUDIO" --no-audio --settings "$T/gui-settings-$label" --plugin-gui-check "$plug" "$@" > "$OUT/plugin-gui-$label.out" 2>&1 &
+    local pid=$!
+    ( sleep 120; kill -9 "$pid" 2>/dev/null ) >/dev/null 2>&1 &   # macOS has no timeout(1)
+    local watcher=$!
+    local rc=0; wait "$pid" || rc=$?; echo "studio exit code $rc ($label)"
+    kill "$watcher" 2>/dev/null || true
+    cat "$log" 2>/dev/null || echo "(no log: the studio did not run the check)"
+    grep -q "plugin-gui: all passed" "$log" 2>/dev/null || { echo "--- studio output (tail)"; tail -n 25 "$OUT/plugin-gui-$label.out" | cut -c1-300; }
+    grep -q "plugin-gui: all passed" "$log" 2>/dev/null || guifail=1
+  }
+  guicheck vst3 "Surge XT (VST3)"
+  guicheck clap "Surge XT (CLAP)"
+  guicheck float "Surge XT (VST3)" --plugin-gui-floating
+  guicheck fx "Surge XT Effects (VST3)" --plugin-gui-fx
+  echo "::endgroup::"
+  [ "$guifail" = 0 ] || { echo "::error::a plug-in editor check failed (see plugin-gui-*.log)"; exit 1; }
+fi
 
 # 0 bytes a buffer on our side of the audio path (AudioHygieneTests, Linux only: its Gear is the studio flavour's).
 if [ "$RUNNER_OS" = Linux ]; then

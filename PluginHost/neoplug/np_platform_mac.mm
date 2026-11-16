@@ -3,6 +3,7 @@
 // a snapshot of the pixels, so CI can tell an embedded plugin view from an empty one.
 #import <Cocoa/Cocoa.h>
 #include <dlfcn.h>
+#include <objc/runtime.h>
 #include <set>
 #include <string>
 
@@ -26,6 +27,20 @@ static void ensureApp()
 @end
 @implementation NeoPlugContainer
 - (BOOL)isFlipped { return YES; }
+@end
+
+// A floating window's close button reports to the host (np_platform_on_close) and leaves the window for the host to release.
+@interface NeoPlugWindowDelegate : NSObject <NSWindowDelegate>
+@property (nonatomic) void (*callback)(void*);
+@property (nonatomic) void* user;
+@end
+@implementation NeoPlugWindowDelegate
+- (BOOL)windowShouldClose:(NSWindow*)sender
+{
+    if (!self.callback) return YES;
+    self.callback(self.user);
+    return NO;
+}
 @end
 
 static NSMutableArray* windows()
@@ -63,10 +78,31 @@ NP_API void* np_platform_window(const char* title, int width, int height)
     w.releasedWhenClosed = NO;
     NeoPlugContainer* v = [[NeoPlugContainer alloc] initWithFrame:NSMakeRect(0, 0, width, height)];
     w.contentView = v;
+    NeoPlugWindowDelegate* d = [NeoPlugWindowDelegate new];
+    w.delegate = d;
+    objc_setAssociatedObject(w, "npDelegate", d, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [w makeKeyAndOrderFront:nil];
     [NSApp activateIgnoringOtherApps:YES];
     [windows() addObject:w];
     return (__bridge_retained void*)v;
+}
+
+NP_API void np_platform_window_size(void* content, int width, int height)
+{
+    NSView* v = (__bridge NSView*)content;
+    if (v && v.window) [v.window setContentSize:NSMakeSize(width, height)];
+}
+
+NP_API void np_platform_on_close(void* content, void (*cb)(void*), void* user)
+{
+    NSView* v = (__bridge NSView*)content;
+    if (!v || !v.window) return;
+    NeoPlugWindowDelegate* d = (NeoPlugWindowDelegate*)v.window.delegate;
+    if ([d isKindOfClass:[NeoPlugWindowDelegate class]])
+    {
+        d.callback = cb;
+        d.user = user;
+    }
 }
 
 static void describe(NSView* v, int depth, std::string& out)

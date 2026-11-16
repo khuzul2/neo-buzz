@@ -126,6 +126,7 @@ namespace ReBuzz.Studio
             try
             {
                 var clock = System.Diagnostics.Stopwatch.StartNew();
+                Buzz.MachineInterface.PluginMainThread.Current ??= new Platform.StudioPluginMainThread();   // the UI thread is the plug-ins' main thread
                 // Windows: the main window is the parent the native machine hosts ask for (EngineHost step 2).
                 host.Services.ParentWindow = () => window.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
                 host.Start(step =>
@@ -135,6 +136,11 @@ namespace ReBuzz.Studio
                 });
                 _ = Shell.Design.StudioTheme.Settings;      // the saved theme (Preferences ▸ Appearance), once the settings store is there
                 _ = AfterStart(host);
+                if (Platform.PluginGuiCheck.PlugIn != null)
+                {
+                    _ = Platform.PluginGuiCheck.Run(host, desktop);
+                    return;
+                }
                 if (Program.Smoke)
                 {
                     // Quit once the window has drawn with the views in it.

@@ -156,6 +156,25 @@ NP_API int np_gui_support(np_plugin* p, const char* api);
 NP_API int np_gui_attach(np_plugin* p, void* parent, const char* api, int* width, int* height, char* err, int errlen);
 NP_API void np_gui_detach(np_plugin* p);
 
+/* GUI, ABI 3 (docs/specs/plugin-host.md H3). Every np_gui_* call comes from the thread that shows the GUI (Avalonia's UI thread);
+ * the library counts that thread as the plugin's main thread while a GUI is attached. Sizes are physical pixels on Windows and points
+ * on macOS. The plugin's own resize requests (VST3 IPlugFrame::resizeView, CLAP request_resize) come to resize_cb on that thread:
+ * the host sizes its container and window to (width, height) there; the library tells the plugin when the callback returns. */
+typedef void (*np_gui_resize_cb)(void* user, int width, int height);
+typedef void (*np_gui_closed_cb)(void* user);   /* the plugin asks for its window to close (CLAP gui.closed) */
+NP_API void np_gui_set_callbacks(np_plugin* p, np_gui_resize_cb resize_cb, np_gui_closed_cb closed_cb, void* user);
+NP_API int np_gui_size(np_plugin* p, int* width, int* height);          /* the view's current size; 0 = ok */
+NP_API int np_gui_can_resize(np_plugin* p);                              /* 1 if the user may resize the view */
+/* Host-initiated resize: in = wanted size, out = the size the plugin took (it may adjust to its constraints); 0 = ok. */
+NP_API int np_gui_set_size(np_plugin* p, int* width, int* height);
+/* The display scale (1.0 = 96 dpi); call before np_gui_attach. Windows only: macOS views are in points. */
+NP_API int np_gui_set_scale(np_plugin* p, double scale);
+
+/* Audio outputs, ABI 3: a plugin's output buses (VST3) or ports (CLAP). np_process_ex's out takes the selected one (default 0, the main). */
+NP_API int np_out_count(np_plugin* p);
+NP_API int np_out_info(np_plugin* p, int index, char* name, int len, int* channels);
+NP_API void np_out_select(np_plugin* p, int index);   /* any thread; takes effect at the next block */
+
 /* Platform helpers for the spike (macOS: NSView / NSWindow; Windows: HWND). */
 NP_API void* np_platform_container(void* parent, int width, int height); /* a child view to host a plugin view */
 NP_API void np_platform_resize(void* view, int width, int height);         /* sets a container's size */
@@ -167,10 +186,14 @@ NP_API int np_platform_describe(void* view, char* buf, int len);           /* th
 NP_API int np_platform_snapshot(void* view, const char* path, int rgb, char* stats, int len);
 NP_API void np_platform_run(double seconds);                               /* runs the platform event loop */
 NP_API void np_platform_release(void* handle);
+/* Floating windows (from np_platform_window): sets the window's client size; and a callback for its close button, which then only
+ * reports (the window stays until np_platform_release). */
+NP_API void np_platform_window_size(void* content, int width, int height);
+NP_API void np_platform_on_close(void* content, void (*cb)(void*), void* user);
 
 NP_API const char* np_version(void);
 /* The library's ABI number (managed callers refuse a different one). */
-#define NP_ABI 2
+#define NP_ABI 3
 NP_API int np_abi(void);
 
 #ifdef __cplusplus

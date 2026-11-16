@@ -18,6 +18,7 @@
 #include "public.sdk/source/vst/utility/stringconvert.h"
 #include "pluginterfaces/base/funknownimpl.h"
 #include "pluginterfaces/gui/iplugview.h"
+#include "pluginterfaces/gui/iplugviewcontentscalesupport.h"
 #include "pluginterfaces/vst/ivstaudioprocessor.h"
 #include "pluginterfaces/vst/ivsteditcontroller.h"
 #include "pluginterfaces/vst/ivstevents.h"
@@ -101,11 +102,22 @@ public:
 class Frame : public U::Implements<U::Directly<IPlugFrame>>
 {
 public:
+    explicit Frame(Plugin* o) : owner(o) {}
+    // The plugin asks for another size: the host sizes its container and window (the callback), then tells the plugin.
     tresult PLUGIN_API resizeView(IPlugView* view, ViewRect* r) override
     {
         if (!view || !r) return kInvalidArgument;
-        return view->onSize(r);
+        if (hostResizing) return kResultOk;   // our own onSize is answering: nothing to ask the host
+        ViewRect want = *r;
+        if (view->checkSizeConstraint(&want) == kResultOk) *r = want;
+        if (owner) owner->guiRequestResize(r->getWidth(), r->getHeight());
+        hostResizing = true;
+        tresult t = view->onSize(r);
+        hostResizing = false;
+        return t;
     }
+    Plugin* owner;
+    bool hostResizing = false;
 };
 
 class Vst3Plugin : public Plugin
@@ -225,7 +237,7 @@ public:
         processor->setBusArrangements(nIn ? ins.data() : nullptr, nIn, nOut ? outs.data() : nullptr, nOut);
         if (mainIn >= 0) component->activateBus(kAudio, kInput, mainIn, true);
         if (auxIn >= 0) component->activateBus(kAudio, kInput, auxIn, true);
-        if (mainOut >= 0) component->activateBus(kAudio, kOutput, mainOut, true);
+        for (int i = 0; i < nOut; i++) component->activateBus(kAudio, kOutput, i, true);
         if (component->getBusCount(kEvent, kInput) > 0) component->activateBus(kEvent, kInput, 0, true);
         if (component->getBusCount(kEvent, kOutput) > 0) component->activateBus(kEvent, kOutput, 0, true);
 
@@ -353,7 +365,7 @@ public:
     bool paramSet(uint32_t id, double v) override
     {
         controller->setParamNormalized(id, v);
-        return toProcessor.push(id, v);
+        return toProcessor.pushShared(id, v);
     }
 
     // A plug-in may report a parameter's old value in its output changes after the host set it (its processor applies the
@@ -568,9 +580,11 @@ public:
                 io.out_count++;
             }
         bool silent = true;
-        if (mainOut >= 0 && mainOut < data.numOutputs)
+        int outBus = outSel.load(std::memory_order_relaxed);
+        if (outBus < 0 || outBus >= data.numOutputs) outBus = mainOut;
+        if (outBus >= 0 && outBus < data.numOutputs)
         {
-            auto& bus = data.outputs[mainOut];
+            auto& bus = data.outputs[outBus];
             foldOut(out, outCh, (const float* const*)bus.channelBuffers32, bus.numChannels, frames);
             uint64 all = bus.numChannels >= 64 ? ~0ull : ((1ull << bus.numChannels) - 1);
             silent = bus.numChannels == 0 || (bus.silenceFlags & all) == all;
@@ -704,6 +718,7 @@ public:
     {
         FIDString t = platformType(api);
         if (!t) return 0;
+        trace("vst3: createView");
         if (!view) view = owned(controller->createView(ViewType::kEditor));
         if (!view) return 0;
         // A VST3 view embeds in a parent; a floating window is the host's own window around it.
@@ -719,9 +734,17 @@ public:
         if (!view) view = owned(controller->createView(ViewType::kEditor));
         if (!view) { err = "the plugin has no editor"; return false; }
         if (view->isPlatformTypeSupported(t) != kResultTrue) { err = std::string("editor does not support ") + t; return false; }
-        if (!frame) frame = owned(new Frame());
+        if (!frame) frame = owned(new Frame(this));
+        trace("vst3: setFrame");
         view->setFrame(frame);
+        if (guiScale != 1.0)
+        {
+            auto scale = U::cast<IPlugViewContentScaleSupport>(view);
+            if (scale) scale->setContentScaleFactor((float)guiScale);
+        }
+        trace("vst3: attached()");
         if (view->attached(parent, t) != kResultOk) { err = "attached() failed"; return false; }
+        trace("vst3: attached() returned");
         attached = true;
         ViewRect r{};
         view->getSize(&r);
@@ -740,12 +763,58 @@ public:
             view = nullptr;
         }
     }
+
+    bool guiSize(int& w, int& h) override
+    {
+        if (!view) return false;
+        ViewRect r{};
+        if (view->getSize(&r) != kResultOk) return false;
+        w = r.getWidth();
+        h = r.getHeight();
+        return true;
+    }
+
+    bool guiCanResize() override { return view && view->canResize() == kResultTrue; }
+
+    bool guiSetSize(int& w, int& h) override
+    {
+        if (!view) return false;
+        ViewRect r(0, 0, w, h);
+        if (view->checkSizeConstraint(&r) == kResultOk) { w = r.getWidth(); h = r.getHeight(); }
+        else r = ViewRect(0, 0, w, h);
+        if (frame) frame->hostResizing = true;
+        tresult t = view->onSize(&r);
+        if (frame) frame->hostResizing = false;
+        return t == kResultOk || t == kResultTrue;
+    }
+
+    void guiSetScale(double scale) override
+    {
+        Plugin::guiSetScale(scale);
+        if (view)
+        {
+            auto sc = U::cast<IPlugViewContentScaleSupport>(view);
+            if (sc) sc->setContentScaleFactor((float)guiScale);
+        }
+    }
+
+    // Output buses (ABI 3): every bus the plugin has is active; np_process_ex's out takes the selected one.
+    int outCount() override { return component ? component->getBusCount(kAudio, kOutput) : 0; }
+
+    bool outInfo(int index, std::string& name, int& channels) override
+    {
+        BusInfo bi{};
+        if (!component || component->getBusInfo(kAudio, kOutput, index, bi) != kResultOk) return false;
+        name = utf8(bi.name);
+        channels = bi.channelCount;
+        return true;
+    }
 };
 
 tresult PLUGIN_API Handler::performEdit(ParamID id, ParamValue v)
 {
     dbgParam("controller edit", id, v);
-    owner->toProcessor.push(id, v);
+    owner->toProcessor.pushShared(id, v);
     return kResultOk;
 }
 
