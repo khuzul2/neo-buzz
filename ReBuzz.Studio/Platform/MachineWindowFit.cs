@@ -12,6 +12,7 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Layout;
 
 namespace ReBuzz.Studio.Platform
 {
@@ -75,13 +76,32 @@ namespace ReBuzz.Studio.Platform
             window.ScalingChanged += (s, e) => Apply(window);
         }
 
-        /// <summary>Sets the window's largest size from the work area.</summary>
+        /// <summary>
+        /// Sets the window's largest size from the work area. A fixed window is sized to its content again: where the
+        /// content fits it sizes to it (so a larger screen gives it back its whole size); where it doesn't, it takes
+        /// the work area and the content scrolls inside. A maximum set on a window that is already sized doesn't shrink
+        /// it, so the size is set here, not left to the next layout.
+        /// </summary>
         public static void Apply(Window window)
         {
             var area = WorkArea?.Invoke(window);
             if (area is not Size a) return;
             window.MaxWidth = Math.Max(240, a.Width - FrameWidth);
             window.MaxHeight = Math.Max(160, a.Height - FrameHeight);
+            if (window.CanResize || window.Content is not Control content) return;
+            content.Measure(Size.Infinity);
+            var want = content.DesiredSize;
+            if (want.Width <= window.MaxWidth && want.Height <= window.MaxHeight)
+            {
+                // A size set when it was clamped would hold it small: drop it, and size to the content again.
+                window.ClearValue(Layoutable.WidthProperty);
+                window.ClearValue(Layoutable.HeightProperty);
+                window.SizeToContent = SizeToContent.WidthAndHeight;
+                return;
+            }
+            window.SizeToContent = SizeToContent.Manual;
+            window.Width = Math.Min(want.Width, window.MaxWidth);
+            window.Height = Math.Min(want.Height, window.MaxHeight);
         }
     }
 }

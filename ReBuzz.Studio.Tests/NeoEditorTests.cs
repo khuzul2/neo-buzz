@@ -456,12 +456,19 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(window.MaxHeight, Is.EqualTo(1080 - MachineWindowFit.FrameHeight));
                 size = new Size(1280, 600);
                 MachineWindowFit.Apply(window);
-                window.UpdateLayout();
+                Dispatcher.UIThread.RunJobs();
+                window.CaptureRenderedFrame();
                 Assert.That(window.MaxHeight, Is.EqualTo(600 - MachineWindowFit.FrameHeight), "clamped to the smaller screen");
                 Assert.That(window.ClientSize.Height, Is.LessThanOrEqualTo(600 - MachineWindowFit.FrameHeight + 0.5));
                 Assert.That(window.CanResize, Is.False, "still fixed");
                 var scroller = StudioMachineUiHost.ContentOf(window)!.GetVisualAncestors().OfType<ScrollViewer>().First();
                 Assert.That(scroller.Extent.Height, Is.GreaterThan(scroller.Viewport.Height), "the rest scrolls inside the window");
+                size = new Size(1920, 1080);
+                MachineWindowFit.Apply(window);
+                Dispatcher.UIThread.RunJobs();
+                window.CaptureRenderedFrame();
+                Assert.That(window.ClientSize.Height, Is.GreaterThan(600), "a larger screen gives it its whole size back");
+                Assert.That(window.CanResize, Is.False, "and it stays fixed");
             }
             finally
             {
