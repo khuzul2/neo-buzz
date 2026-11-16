@@ -158,7 +158,8 @@ namespace NeoBuzz.Plug
         public int ServerPid { get; private set; }
         PlugState lastGood;                                  // the state a reload starts from: the last one saved, loaded or taken in the background
         int changes, snapped;
-        long snapAt;
+        long snapAt = Environment.TickCount64;
+        long lastRender;   // when a block last came in (the audio is running): the snapshot waits, its state save holds the gate
         IntPtr workgroupSet;
         /// <summary>Raised on PlugMain when the placement or the crash state changed (the machine refreshes its menu and manifest).</summary>
         public event Action PlacementChanged;
@@ -681,6 +682,9 @@ namespace NeoBuzz.Plug
             long now = Environment.TickCount64;
             int c = Volatile.Read(ref changes);
             if (c == snapped || now - snapAt < 15000 || awaitState) return;
+            // The save holds the gate, and a block that finds it taken is silent: while audio runs it waits (at most a minute), so a render
+            // and a song playing do not lose a block to it, and two runs of one song stay the same samples.
+            if (now - Volatile.Read(ref lastRender) < 250 && now - snapAt < 60000) return;
             snapAt = now;
             snapped = c;
             try
@@ -974,6 +978,7 @@ namespace NeoBuzz.Plug
                     else if (!effect) Array.Clear(output, 0, n);
                     return effect && input != null;
                 }
+                Volatile.Write(ref lastRender, Environment.TickCount64);
                 var master = host.MasterInfo;
                 int ne = 0;
                 bool playing = false;
@@ -1042,7 +1047,11 @@ namespace NeoBuzz.Plug
                 for (int i = 0; i < Slots && ne < events.Length - 1; i++)
                 {
                     int v = Interlocked.Exchange(ref pending[i], -1);
-                    if (v >= 0) Volatile.Write(ref wroteAt[i], Environment.TickCount64);   // the plug-in takes it in this block: the pump waits for it to show
+                    if (v >= 0)
+                    {
+                        Volatile.Write(ref wroteAt[i], Environment.TickCount64);   // the plug-in takes it in this block: the pump waits for it to show
+                        Volatile.Write(ref toController[i], 0);   // and it tells its own controller of it: a copy sent by the pump would arrive blocks late (in a sandbox, after newer values) and put an old value back
+                    }
                     if (v >= 0 && bound[i]) events[ne++] = new PlugNative.Event { type = PlugNative.EvParam, param_id = slotId[i], value = ToValue(i, v) };
                 }
                 SortByFrame(events, ne);

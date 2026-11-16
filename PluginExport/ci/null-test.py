@@ -380,6 +380,7 @@ if len(outs) > 1:
             full = null(pf_before[nm], pf_after[nm]); d = null(pf_before[nm], pf_after[nm], skip6) if skip6 else full
             results["nulls"][f"{ext}/{nm}"] = d
             print(f"     {ext}: {nm} fresh after - fresh before: max |diff| {d['max_abs_diff']:.3g}, bit identical {d['bit_identical']}")
+            if d["max_abs_diff"] > tol6: print("     " + where(pf_before[nm], pf_after[nm]))
             check(full["peak_native"] > 0.01, f"{ext}: {nm}: the render before saving is audible (peak {full['peak_native']:.3f})")
             check(d["max_abs_diff"] <= tol6, f"{ext}: {nm}: a fresh instance after reopening renders the same as a fresh one before saving within {tol6:g}" + (f" after {skip6} s" if skip6 else "") + f" (max |diff| {d['max_abs_diff']:.3g})")
 
