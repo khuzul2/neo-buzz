@@ -284,13 +284,13 @@ namespace ReBuzz.Studio.Tests
                 var ru = view.List.ControlBounds(uni);
                 var ou = view.List.TranslatePoint(new Point(ru.X, ru.Center.Y), window)!.Value;
                 Assert.That(Near(f, (int)(ou.X + ru.Width * 0.12), (int)ou.Y, StudioTokens.Accent), Is.True, "filled from the left up to the value");
-                Assert.That(Near(f, (int)(ou.X + ru.Width * 0.6), (int)ou.Y, StudioTokens.SurfaceControl), Is.True, "the rail beyond it");
+                Assert.That(Near(f, (int)(ou.X + ru.Width * 0.6), (int)ou.Y, StudioTokens.ControlTrack), Is.True, "the rail beyond it");
 
                 Row(bi);
                 f = Frame(window);
                 var rb = view.List.ControlBounds(bi);
                 var ob = view.List.TranslatePoint(new Point(rb.X, rb.Center.Y), window)!.Value;
-                Assert.That(Near(f, (int)(ob.X + rb.Width * 0.1), (int)ob.Y, StudioTokens.SurfaceControl), Is.True, "left of zero is not filled");
+                Assert.That(Near(f, (int)(ob.X + rb.Width * 0.1), (int)ob.Y, StudioTokens.ControlTrack), Is.True, "left of zero is not filled");
                 Assert.That(Near(f, (int)(ob.X + rb.Width * 0.62), (int)ob.Y, StudioTokens.Accent), Is.True, "from zero to the value");
                 Studio.Screenshot(window, "device-neo-poly");
             }

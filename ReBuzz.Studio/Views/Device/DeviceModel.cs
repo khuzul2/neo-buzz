@@ -74,11 +74,15 @@ namespace ReBuzz.Studio.Views.Device
             catch (Exception) { text = null; }
             if (string.IsNullOrWhiteSpace(text)) text = raw.ToString(CultureInfo.InvariantCulture);
             text = text.Trim();
-            if (Unit.Length > 0 && Kind == DeviceKind.Slider && !HasLetterOrPercent(text)) text += " " + Unit;
+            if (Unit.Length > 0 && Kind == DeviceKind.Slider && !HasLetterOrPercent(text) && !SaysUnit(text, Unit)) text += " " + Unit;
             return text;
         }
 
         static bool HasLetterOrPercent(string s) => s.Any(c => char.IsLetter(c) || c == '%');
+
+        /// <summary>The machine's text already carries the unit ("0°" with the unit "°": Dye Essence's phase showed "0° °").</summary>
+        static bool SaysUnit(string text, string unit) =>
+            text.Contains(unit, StringComparison.OrdinalIgnoreCase) || unit.Any(c => !char.IsLetterOrDigit(c) && text.Contains(c));
 
         public bool Matches(string[] words)
         {
@@ -153,10 +157,27 @@ namespace ReBuzz.Studio.Views.Device
     /// <summary>The macro strip: up to eight parameters as big knobs' worth of sliders side by side.</summary>
     internal sealed class MacroItem : DeviceItem
     {
-        public const double StripHeight = 56;
-        public MacroItem(IReadOnlyList<DeviceParam> cells) { Cells = cells; }
+        public const double StripHeight = 56, CompactHeight = 32;
+        /// <summary>The narrowest a cell goes before the strip wraps onto another row (no cell is ever dropped).</summary>
+        public const double MinCell = 104;
+        public MacroItem(IReadOnlyList<DeviceParam> cells, bool compact = false) { Cells = cells; Compact = compact; }
         public IReadOnlyList<DeviceParam> Cells { get; }
-        public override double Height => StripHeight;
+        /// <summary>One 32 pt row, the label inside the cell (the docked page's bar); else cells with their label over them, wrapping.</summary>
+        public bool Compact { get; }
+        /// <summary>Cells in a row at the width it was fitted to, and the rows that makes.</summary>
+        public int PerRow { get; private set; } = DeviceLayout.MacroCount;
+        public int Rows => Math.Max(1, (Cells.Count + PerRow - 1) / PerRow);
+        public double CellHeight => Compact ? CompactHeight : StripHeight;
+        public override double Height => Rows * CellHeight;
+
+        /// <summary>Fits the strip to a width: a row holds as many cells as are at least <see cref="MinCell"/> wide; true when that changed.</summary>
+        public bool Fit(double width)
+        {
+            int per = Compact ? Math.Max(1, Cells.Count) : Math.Clamp((int)(width / MinCell), 1, Math.Max(1, Cells.Count));
+            if (per == PerRow) return false;
+            PerRow = per;
+            return true;
+        }
     }
 
     /// <summary>The machine's parameters grouped and classified, built once per view.</summary>
@@ -321,7 +342,22 @@ namespace ReBuzz.Studio.Views.Device
         }
 
         /// <summary>A state parameter a view shows (notes, triggers and internals are played, not set).</summary>
-        static bool IsShown(IParameter p) => p.Flags.HasFlag(ParameterFlags.State) && p.Type != ParameterType.Note && p.Type != ParameterType.Internal;
+        static bool IsShown(IParameter p) => p.Flags.HasFlag(ParameterFlags.State) && p.Type != ParameterType.Note && p.Type != ParameterType.Internal
+            && !IsHidden(p);
+
+        /// <summary>
+        /// A parameter its machine hides at run time (Neo Plug's slots with no plug-in parameter bound): hidden by its metadata, or, before the
+        /// machine has said so (a Neo Plug nothing is loaded in), still carrying the description it was declared with.
+        /// </summary>
+        static bool IsHidden(IParameter p) =>
+            p is IParameterMetadata { IsVisible: false } || p.Description == "Unused" || (p.Description?.Contains("named once a plug-in is loaded", StringComparison.Ordinal) ?? false);
+
+        /// <summary>How many parameters the machine hides at run time (Neo Plug's unbound slots): what the layout's signature watches.</summary>
+        public static int HiddenCount(IMachine machine) =>
+            machine.ParameterGroups.Sum(g => g.Parameters.Count(IsHidden));
+
+        /// <summary>A machine whose parameters are hidden because nothing is loaded in it (Neo Plug before a plug-in is loaded): it has no value to show but its Output.</summary>
+        public bool NothingLoaded => HiddenCount(Machine) > 0 && All.All(p => p.IsTrack || p.Name == "Output");
 
         /// <summary>Words of a parameter's name that make it a macro without a manifest role, most wanted first.</summary>
         static readonly string[] MacroWords =

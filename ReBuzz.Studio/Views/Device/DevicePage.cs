@@ -27,6 +27,16 @@ namespace ReBuzz.Studio.Views.Device
         readonly bool floating;
         readonly DeviceView view;
         readonly Border body = new Border();
+        readonly Grid bar;
+        readonly (TextBlock Title, StackPanel Tabs, StackPanel Right) barParts;
+        DeviceList barMacros;
+        bool narrow;
+
+        /// <summary>Under this width the bar wraps onto two lines.</summary>
+        public const double NarrowBar = 520;
+
+        /// <summary>The docked page puts the macros in the bar from this width (they share its one row with the search).</summary>
+        public const double BarMacrosMin = 1100;
         readonly Button editorButton, parametersButton, floatButton, classicButton;
         readonly TextBlock title;
         Avalonia.Controls.Control editorContent;
@@ -62,13 +72,17 @@ namespace ReBuzz.Studio.Views.Device
 
             var tabs = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { editorButton, parametersButton } };
             var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { classicButton, floatButton } };
-            var bar = new DockPanel { Height = 32, Margin = new Thickness(8, 0, 8, 0), LastChildFill = false };
-            DockPanel.SetDock(right, Dock.Right);
-            bar.Children.Add(right);
+            // One row of 32 pt: name, tabs, (docked) the macros, search, Float. Under NarrowBar it wraps to two: the search takes the second.
+            bar = new Grid { Margin = new Thickness(8, 0, 8, 0), ColumnDefinitions = new ColumnDefinitions("Auto,Auto,*,Auto,Auto"), RowDefinitions = new RowDefinitions("32,Auto") };
+            title.MaxWidth = 240;
+            barParts = (title, tabs, right);
             bar.Children.Add(title);
             bar.Children.Add(tabs);
+            bar.Children.Add(right);
             view.Toolbar.Margin = new Thickness(12, 0, 8, 0);
             bar.Children.Add(view.Toolbar);
+            bar.SizeChanged += (s, e) => LayoutBar(e.NewSize.Width);
+            LayoutBar(double.PositiveInfinity);
             var root = new DockPanel { LastChildFill = true };
             DockPanel.SetDock(bar, Dock.Top);
             root.Children.Add(bar);
@@ -76,6 +90,51 @@ namespace ReBuzz.Studio.Views.Device
             Content = root;
             bool wantEditor = HasEditor(machine) && Read(EditorKey, false);
             SetEditor(wantEditor, remember: false);
+        }
+
+        /// <summary>Whether the bar is on two lines (a page narrower than <see cref="NarrowBar"/>).</summary>
+        public bool BarWrapped => narrow;
+
+        public Avalonia.Controls.Control Bar => bar;
+
+        /// <summary>The bar's macro strip while the docked page holds it there (one row with the search); null when the view shows it.</summary>
+        public DeviceList BarMacros => barMacros;
+
+        void LayoutBar(double width)
+        {
+            bool wrap = width < NarrowBar;
+            narrow = wrap;
+            void At(Avalonia.Controls.Control c, int row, int col, int span = 1)
+            {
+                Grid.SetRow(c, row);
+                Grid.SetColumn(c, col);
+                Grid.SetColumnSpan(c, span);
+            }
+            barParts.Title.MaxWidth = wrap ? 96 : 240;     // the name gives way before the buttons do
+            At(barParts.Title, 0, 0);
+            At(barParts.Tabs, 0, 1);
+            At(barParts.Right, 0, 4);
+            if (wrap) At(view.Toolbar, 1, 0, 5);
+            else At(view.Toolbar, 0, 3);
+            view.Toolbar.Margin = wrap ? new Thickness(0, 0, 0, 4) : new Thickness(12, 0, 8, 0);
+            view.Toolbar.MaxWidth = wrap && !double.IsInfinity(width) ? Math.Max(120, width) : double.PositiveInfinity;   // the search shrinks to the line
+            // Docked and wide: the macros share the bar's one row; else they stay a strip in the view (wrapping, never dropping a cell).
+            bool inBar = !floating && width >= BarMacrosMin && !editorMode;
+            if (inBar && barMacros == null)
+            {
+                view.MacrosCompact = true;
+                barMacros = view.TakeMacroStrip();
+                barMacros.VerticalAlignment = VerticalAlignment.Center;
+                bar.Children.Add(barMacros);
+            }
+            else if (!inBar && barMacros != null)
+            {
+                bar.Children.Remove(barMacros);
+                barMacros = null;
+                view.MacrosCompact = false;
+                view.ReturnMacroStrip();
+            }
+            if (barMacros != null) At(barMacros, 0, 2);
         }
 
         public IMachine Machine => machine;
@@ -136,6 +195,7 @@ namespace ReBuzz.Studio.Views.Device
             }
             else body.Child = view;
             view.Toolbar.IsVisible = !editorMode;
+            if (barMacros != null) barMacros.IsVisible = !editorMode && view.Layout.Macros.Count > 0;
             Mark(editorButton, editorMode);
             Mark(parametersButton, !editorMode);
             Mark(floatButton, false);

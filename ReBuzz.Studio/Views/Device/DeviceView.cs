@@ -25,6 +25,7 @@ namespace ReBuzz.Studio.Views.Device
         readonly TextBox search;
         readonly ScrollViewer scroller;
         readonly Border explain;
+        readonly StackPanel nothing;
         readonly TextBlock explainTitle, explainValue, explainHow, explainSound, count;
         readonly HashSet<string> collapsed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         readonly DispatcherTimer poll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
@@ -67,13 +68,23 @@ namespace ReBuzz.Studio.Views.Device
                 }
             };
             count = new TextBlock { FontSize = StudioTokens.FontCaption, Foreground = StudioTokens.TextSecondaryBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
-            Toolbar = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Children = { search, count } };
+            // The search takes what room it is given (up to its MaxWidth), so the bar's second line never runs past the page.
+            var toolbar = new Grid { VerticalAlignment = VerticalAlignment.Center, ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto") };
+            search.MinWidth = 96;
+            Grid.SetColumn(count, 1);
+            toolbar.Children.Add(search);
+            toolbar.Children.Add(count);
+            Toolbar = toolbar;
             // A canvas modulator's output (ux-overhaul.md P5b): drag it onto a knob, a row here, a machine's editor.
             if (ModulationBoard.Of(machine) is { } modulator)
-                ((StackPanel)Toolbar).Children.Add(new NeoBuzz.Editor.ModSourceHandle(modulator, NeoBuzz.Editor.KnobModel.ModulationRing, 214) { Margin = new Thickness(8, 0, 0, 0) });
+            {
+                var handle = new NeoBuzz.Editor.ModSourceHandle(modulator, NeoBuzz.Editor.KnobModel.ModulationRing, 214) { Margin = new Thickness(8, 0, 0, 0) };
+                Grid.SetColumn(handle, 2);
+                toolbar.Children.Add(handle);
+            }
 
             list = new DeviceList(machine);
-            macros = new DeviceList(machine) { Height = MacroItem.StripHeight };
+            macros = new DeviceList(machine);
             list.HeaderClicked += s => { if (!collapsed.Remove(s.Name)) collapsed.Add(s.Name); Refill(); };
             list.FocusChanged += p => FocusChanged(list, p);
             macros.FocusChanged += p => FocusChanged(macros, p);
@@ -117,14 +128,23 @@ namespace ReBuzz.Studio.Views.Device
             root.Children.Add(macros);
             DockPanel.SetDock(explain, Dock.Bottom);
             root.Children.Add(explain);
-            root.Children.Add(scroller);
+            nothing = new StackPanel
+            {
+                Margin = new Thickness(16), Spacing = 6, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, IsVisible = false,
+                Children =
+                {
+                    new TextBlock { Text = NothingLoadedText, FontSize = StudioTokens.FontBody + 1, FontWeight = FontWeight.SemiBold, Foreground = StudioTokens.TextPrimaryBrush },
+                    new TextBlock { Text = "Its parameters appear here once a plug-in is loaded.", FontSize = StudioTokens.FontBody, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap },
+                },
+            };
+            root.Children.Add(new Grid { Children = { scroller, nothing } });     // the last child fills
             Content = root;
             ShowExplain(null);
             Refill();
         }
 
         /// <summary>What decides the layout besides the machine's parameters: its track and input counts.</summary>
-        string Signature() => string.Join(",", machine.ParameterGroups.Select(g => g.TrackCount)) + (machine.HasStereoInput ? "s" : "m");
+        string Signature() => string.Join(",", machine.ParameterGroups.Select(g => g.TrackCount)) + (machine.HasStereoInput ? "s" : "m") + "/" + DeviceLayout.HiddenCount(machine);
 
         /// <summary>Tracks or inputs came or went: the groups and the table are made again.</summary>
         void Rebuild()
@@ -137,6 +157,42 @@ namespace ReBuzz.Studio.Views.Device
         const double Pad = 12;
         const double ExplainHeight = 72, ExplainLineHeight = 28;
         public const string ExplainPrompt = "Click a parameter to see what it does.";
+        public const string NothingLoadedText = "Load a plug-in";
+
+        /// <summary>The macro strip is one 32 pt row for the docked page's bar (its label inside the cell), else cells with the label over them that wrap.</summary>
+        public bool MacrosCompact
+        {
+            get => macrosCompact;
+            set
+            {
+                if (macrosCompact == value) return;
+                macrosCompact = value;
+                Refill();
+            }
+        }
+
+        bool macrosCompact;
+
+        /// <summary>The "Load a plug-in" note shows where a machine has parameters but all are hidden (Neo Plug before a plug-in is loaded).</summary>
+        public bool NothingLoadedShown => nothing.IsVisible;
+
+        /// <summary>Takes the macro strip out of the view, for the docked page's bar; <see cref="ReturnMacroStrip"/> puts it back.</summary>
+        public DeviceList TakeMacroStrip()
+        {
+            if (macros.Parent is Panel p) p.Children.Remove(macros);
+            return macros;
+        }
+
+        public void ReturnMacroStrip()
+        {
+            if (macros.Parent is Panel old) old.Children.Remove(macros);
+            var root = (DockPanel)Content;
+            if (!root.Children.Contains(macros))
+            {
+                DockPanel.SetDock(macros, Dock.Top);
+                root.Children.Insert(0, macros);
+            }
+        }
 
         public static string FindKeyLabel => OperatingSystem.IsMacOS() ? "⌘F" : "Ctrl+F";
 
@@ -193,8 +249,10 @@ namespace ReBuzz.Studio.Views.Device
         {
             var items = layout.Items(Query, collapsed);
             list.SetItems(items);
-            macros.SetItems(layout.Macros.Count > 0 ? new DeviceItem[] { new MacroItem(layout.Macros) } : Array.Empty<DeviceItem>());
+            macros.SetItems(layout.Macros.Count > 0 ? new DeviceItem[] { new MacroItem(layout.Macros, MacrosCompact) } : Array.Empty<DeviceItem>());
             macros.IsVisible = layout.Macros.Count > 0;
+            scroller.IsVisible = !layout.NothingLoaded;
+            nothing.IsVisible = layout.NothingLoaded;
             if (list.Focused == null && macros.Focused == null && ExplainFocused) ShowExplain(null);
             int shown = items.Sum(i => i switch { ParamItem => 1, TableItem t => t.Columns.Count, _ => 0 });
             int all = layout.Sections.Sum(s => s.IsTable ? s.Params.Count : s.Params.Count);

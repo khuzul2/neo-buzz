@@ -104,12 +104,19 @@ namespace ReBuzz.Studio.Views.Device
         {
             CloseEditor();
             items = list.ToList();
-            tops = new double[items.Count + 1];
-            for (int i = 0; i < items.Count; i++) tops[i + 1] = tops[i] + items[i].Height;
-            total = tops[^1];
+            if (items.OfType<MacroItem>().FirstOrDefault() is { } strip && Bounds.Width > 0) strip.Fit(Bounds.Width);
+            Layout();
+            MeasureNames();
             if (focus != null && !Contains(focus)) SetFocus(null);
             InvalidateMeasure();
             InvalidateVisual();
+        }
+
+        void Layout()
+        {
+            tops = new double[items.Count + 1];
+            for (int i = 0; i < items.Count; i++) tops[i + 1] = tops[i] + items[i].Height;
+            total = tops[^1];
         }
 
         bool Contains(DeviceParam p) => items.Any(i => i is ParamItem pi && pi.Param == p || i is MacroItem mi && mi.Cells.Contains(p) || i is TableItem ti && ti.Section.TableCells.Contains(p));
@@ -169,6 +176,12 @@ namespace ReBuzz.Studio.Views.Device
             editor.Measure(new Size(200, 22));
             double need = items.OfType<TableItem>().Select(t => Pad * 2 + LabelColumn + MinColumn * t.Columns.Count).DefaultIfEmpty(0).Max();
             double w = double.IsInfinity(available.Width) ? Math.Max(240, need) : Math.Max(available.Width, need);
+            // The macro strip wraps to the width it has: more rows, never fewer cells.
+            if (items.OfType<MacroItem>().FirstOrDefault() is { } strip && strip.Fit(w))
+            {
+                Layout();
+                InvalidateVisual();
+            }
             return new Size(w, total);
         }
 
@@ -185,9 +198,26 @@ namespace ReBuzz.Studio.Views.Device
             public double Name, ControlX, ControlW, ValueX, ValueW;
         }
 
-        static Cols ColumnsOf(double width)
+        /// <summary>The widest a name column goes (a longer name is cut, its tooltip says it whole).</summary>
+        public const double MaxNameColumn = 160;
+        const double MinNameColumn = 56;
+
+        /// <summary>The name column: as wide as the longest name shown, up to <see cref="MaxNameColumn"/>.</summary>
+        public double NameColumn => nameColumn;
+        double nameColumn = MinNameColumn;
+
+        void MeasureNames()
         {
-            double nameW = Math.Clamp(width * 0.34, 110, 240);
+            double widest = 0;
+            foreach (var item in items)
+                if (item is ParamItem pi)
+                    widest = Math.Max(widest, Text(pi.Param.Name, StudioTokens.FontBody, StudioTokens.TextPrimaryBrush, 1000).WidthIncludingTrailingWhitespace);
+            nameColumn = Math.Clamp(Math.Ceiling(widest) + 6, MinNameColumn, MaxNameColumn);
+        }
+
+        Cols ColumnsOf(double width)
+        {
+            double nameW = Math.Min(nameColumn, Math.Max(MinNameColumn, width * 0.5));
             double valueW = 96;
             double controlX = Pad + nameW + 8;
             double controlW = Math.Max(48, width - Pad - valueW - 8 - controlX);
@@ -269,8 +299,8 @@ namespace ReBuzz.Studio.Views.Device
 
         static Rect CellRect(MacroItem m, int index, double width)
         {
-            double w = width / Math.Max(4, Math.Min(m.Cells.Count, DeviceLayout.MacroCount));
-            return new Rect(index * w, 0, w, MacroItem.StripHeight);
+            double w = width / Math.Max(1, m.PerRow);
+            return new Rect(index % m.PerRow * w, index / m.PerRow * m.CellHeight, w, m.CellHeight);
         }
 
         Rect TableCellRect(TableItem t, double top, int track, int columnIndex, double width)
@@ -286,20 +316,24 @@ namespace ReBuzz.Studio.Views.Device
 
         static IBrush Brush(Color c) => StudioTokens.Brush(c);
 
-        FormattedText Text(string s, double size, IBrush brush, double width, bool bold = false, TextAlignment align = TextAlignment.Left)
+        static readonly FontFeatureCollection Tabular = FontFeatureCollection.Parse("tnum");
+
+        FormattedText Text(string s, double size, IBrush brush, double width, bool bold = false, TextAlignment align = TextAlignment.Left, bool tabular = false)
         {
-            return new FormattedText(s ?? "", Culture, FlowDirection.LeftToRight, bold ? Bold : Font, size, brush)
+            var ft = new FormattedText(s ?? "", Culture, FlowDirection.LeftToRight, bold ? Bold : Font, size, brush)
             {
                 MaxTextWidth = Math.Max(1, width),
                 MaxLineCount = 1,
                 Trimming = TextTrimming.CharacterEllipsis,
                 TextAlignment = align,
             };
+            if (tabular) ft.SetFontFeatures(Tabular);    // the digits are all as wide: decimals line up down a column
+            return ft;
         }
 
-        void Draw(DrawingContext ctx, string s, double x, double y, double width, double height, double size, IBrush brush, bool bold = false, TextAlignment align = TextAlignment.Left)
+        void Draw(DrawingContext ctx, string s, double x, double y, double width, double height, double size, IBrush brush, bool bold = false, TextAlignment align = TextAlignment.Left, bool tabular = false)
         {
-            var ft = Text(s, size, brush, width, bold, align);
+            var ft = Text(s, size, brush, width, bold, align, tabular);
             ctx.DrawText(ft, new Point(x, y + (height - ft.Height) / 2));
         }
 
@@ -348,7 +382,7 @@ namespace ReBuzz.Studio.Views.Device
             int raw = p.Value;
             var area = new Rect(c.ControlX, y + 3, c.ControlW, DeviceItem.RowHeight - 6);
             DrawControl(ctx, p, raw, area);
-            if (editing != p) Draw(ctx, TextOf(p, raw), c.ValueX, y, c.ValueW, DeviceItem.RowHeight, StudioTokens.FontBody, StudioTokens.TextPrimaryBrush, align: TextAlignment.Right);
+            if (editing != p) Draw(ctx, TextOf(p, raw), c.ValueX, y, c.ValueW, DeviceItem.RowHeight, StudioTokens.FontBody, StudioTokens.TextPrimaryBrush, align: TextAlignment.Right, tabular: true);
         }
 
         /// <summary>The control of one parameter in <paramref name="area"/>: a slider filled from zero, segments or a toggle.</summary>
@@ -422,7 +456,7 @@ namespace ReBuzz.Studio.Views.Device
         {
             const double bar = 6;
             var rail = new Rect(area.X, area.Center.Y - bar / 2, area.Width, bar);
-            ctx.DrawRectangle(StudioTokens.SurfaceControlBrush, new Pen(StudioTokens.SurfaceBorderBrush, 1), rail, 3, 3);
+            ctx.DrawRectangle(StudioTokens.ControlTrackBrush, null, rail, 3, 3);       // 3:1 against the panel (WCAG 1.4.11), as a knob's track
             double a = p.ZeroFraction, b = p.Fraction(raw);
             double x0 = rail.X + Math.Min(a, b) * rail.Width, x1 = rail.X + Math.Max(a, b) * rail.Width;
             if (x1 - x0 >= 1) ctx.DrawRectangle(StudioTokens.AccentBrush, null, new Rect(x0, rail.Y, x1 - x0, bar), 3, 3);
@@ -452,7 +486,7 @@ namespace ReBuzz.Studio.Views.Device
         }
 
         /// <summary>A table cell or a macro: the value as a bar from zero with its text over it (a choice or a switch: the text alone).</summary>
-        void DrawCell(DrawingContext ctx, DeviceParam p, Rect cell)
+        void DrawCell(DrawingContext ctx, DeviceParam p, Rect cell, string label = null)
         {
             int raw = p.Value;
             bool isFocus = p == focus;
@@ -462,7 +496,7 @@ namespace ReBuzz.Studio.Views.Device
                 double a = p.ZeroFraction, b = p.Fraction(raw);
                 double x0 = cell.X + Math.Min(a, b) * cell.Width, x1 = cell.X + Math.Max(a, b) * cell.Width;
                 if (x1 - x0 >= 1) ctx.DrawRectangle(StudioTokens.SelectionFillBrush, null, new Rect(x0, cell.Y + 1, x1 - x0, cell.Height - 2), 2, 2);
-                ctx.FillRectangle(StudioTokens.AccentBrush, new Rect(Math.Clamp(cell.X + b * cell.Width - 1, cell.X + 1, cell.Right - 3), cell.Y + 1, 2, cell.Height - 2));
+                ctx.FillRectangle(StudioTokens.AccentBrush, new Rect(Math.Clamp(cell.X + b * cell.Width - 1, cell.X + 1, Math.Max(cell.X + 1, cell.Right - 3)), cell.Y + 1, 2, Math.Max(0, cell.Height - 2)));
             }
             else if (p.Kind == DeviceKind.Toggle && raw != p.Min)
                 ctx.DrawRectangle(StudioTokens.SelectionFillBrush, null, cell.Deflate(1), 2, 2);
@@ -472,7 +506,18 @@ namespace ReBuzz.Studio.Views.Device
                 // under the text so the marker line never runs through it (it looked overprinted).
                 string text = TextOf(p, raw);
                 if (cell.Width < 90 && text.IndexOf(" · ", StringComparison.Ordinal) is int dot and > 0) text = text.Substring(dot + 3);
-                var ft = Text(text, StudioTokens.FontCaption, StudioTokens.TextPrimaryBrush, cell.Width - 8, align: TextAlignment.Center);
+                if (label != null)
+                {
+                    // The bar's one row: its name at the left, its value at the right.
+                    var value = Text(text, StudioTokens.FontCaption, StudioTokens.TextPrimaryBrush, cell.Width * 0.5, align: TextAlignment.Right, tabular: true);
+                    double lw = Math.Max(10, cell.Width - Math.Min(value.WidthIncludingTrailingWhitespace, cell.Width * 0.5) - 14);
+                    var name = Text(label, StudioTokens.FontCaption, StudioTokens.TextSecondaryBrush, lw);
+                    ctx.DrawRectangle(StudioTokens.SurfaceControlBrush, null, new Rect(cell.X + 2, cell.Y + 2, cell.Width - 4, cell.Height - 4), 3, 3);
+                    ctx.DrawText(name, new Point(cell.X + 6, cell.Y + (cell.Height - name.Height) / 2));
+                    ctx.DrawText(value, new Point(cell.Right - 6 - value.MaxTextWidth, cell.Y + (cell.Height - value.Height) / 2));
+                    return;
+                }
+                var ft = Text(text, StudioTokens.FontCaption, StudioTokens.TextPrimaryBrush, cell.Width - 8, align: TextAlignment.Center, tabular: true);
                 if (p.Kind == DeviceKind.Slider)
                 {
                     double w = Math.Min(cell.Width - 4, ft.Width + 8);
@@ -488,6 +533,11 @@ namespace ReBuzz.Studio.Views.Device
             {
                 var r = CellRect(m, i, width).Deflate(new Thickness(4, 4));
                 var p = m.Cells[i];
+                if (m.Compact)
+                {
+                    DrawCell(ctx, p, r, p.MacroLabel);
+                    continue;
+                }
                 Draw(ctx, p.MacroLabel, r.X + 2, r.Y, r.Width - 4, 16, StudioTokens.FontCaption, StudioTokens.TextSecondaryBrush);
                 DrawCell(ctx, p, new Rect(r.X, r.Y + 20, r.Width, r.Height - 20));
             }
@@ -544,10 +594,13 @@ namespace ReBuzz.Studio.Views.Device
                 }
                 case MacroItem mi:
                 {
-                    double w = width / Math.Max(4, mi.Cells.Count);
-                    int k = (int)Math.Clamp(pt.X / w, 0, mi.Cells.Count - 1);
+                    double w = width / Math.Max(1, mi.PerRow);
+                    int row = (int)Math.Clamp((pt.Y - y) / mi.CellHeight, 0, mi.Rows - 1);
+                    int k = row * mi.PerRow + (int)Math.Clamp(pt.X / w, 0, mi.PerRow - 1);
+                    if (k >= mi.Cells.Count) return none;
                     var r = CellRect(mi, k, width).Deflate(new Thickness(4, 4));
-                    if (pt.Y < r.Y + 20) return new Hit { Part = Part.Name, Param = mi.Cells[k], Area = r };
+                    if (mi.Compact) return new Hit { Part = Part.Cell, Param = mi.Cells[k], Area = r };
+                    if (pt.Y - y < r.Y + 20) return new Hit { Part = Part.Name, Param = mi.Cells[k], Area = r };
                     return new Hit { Part = Part.Cell, Param = mi.Cells[k], Area = new Rect(r.X, r.Y + 20, r.Width, r.Height - 20) };
                 }
             }
@@ -603,13 +656,26 @@ namespace ReBuzz.Studio.Views.Device
                 InvalidateVisual();
                 return;
             }
-            var h = HitTest(pt).Param;
+            var hit = HitTest(pt);
+            var h = hit.Param;
+            string tip = hit.Part == Part.Name && h != null ? NameTip(h) : null;
+            if (tip != nameTip)
+            {
+                nameTip = tip;
+                ToolTip.SetTip(this, tip);
+            }
             if (h != hover)
             {
                 hover = h;
                 InvalidateVisual();
             }
         }
+
+        string nameTip;
+
+        /// <summary>A name's tooltip: the machine's own name for the parameter (the cut one, whole), and its description.</summary>
+        public static string NameTip(DeviceParam p) =>
+            p.Description.Length > 0 && !string.Equals(p.Description, p.FullName, StringComparison.OrdinalIgnoreCase) ? p.FullName + "\n" + p.Description : p.FullName;
 
         protected override void OnPointerExited(PointerEventArgs e)
         {
