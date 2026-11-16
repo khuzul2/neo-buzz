@@ -59,6 +59,7 @@ namespace ReBuzz.Studio.Views.Machines
             Children.Add(bar);
 
             // The canvas fills the view; the amp control's layer is above it (WPF's ampCanvas).
+            Canvas.Browser = Model;
             popup = new Views.Browser.MachineBrowserPopup(Model);
             var layer = new Avalonia.Controls.Canvas { Children = { Amp, popup } };
             starters = BuildStarters();

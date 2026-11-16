@@ -305,6 +305,9 @@ namespace ReBuzz.Audio
                         }
                     }
 
+                    // Fork (docs/specs/browser.md, BR1): the browser's audio preview, mixed in beside the wave preview.
+                    global::ReBuzz.Core.BrowserPreview.MixInto(buzzCore, buffer, workBufferOffset, framesToProcess);
+
                     // Master Tap
                     buzzCore.MasterTapSamples(buffer, workBufferOffset, framesToProcess * 2);
                     buzzCore.MasterTapSamplesMultiChannel(buffer, workBufferOffset, framesToProcess * 2);

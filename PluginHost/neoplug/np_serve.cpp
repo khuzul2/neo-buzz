@@ -267,6 +267,7 @@ void handle(uint32_t op, int instId, Rd& r, Wr& w, int32_t& rc, bool& quit)
     }
     case OpAuxChannels: rc = np_aux_channels(p); break;
     case OpReset: np_reset(p); publish(in); break;
+    case OpFlush: np_flush(p); publish(in); break;   // the host holds its block gate: no block of this instance is running
     case OpStateSave:
     {
         int n = np_state_save(p, nullptr, 0);

@@ -1,0 +1,45 @@
+{
+ "id": "org.neobuzz.neo-learn-additive",
+ "name": "Neo Learn Additive",
+ "folder": "NeoLearnAdditive",
+ "namespace": "NeoBuzz.LearnAdd",
+ "engine": "(learn)",
+ "machine": "NeoLearnAdditiveMachine",
+ "editor": "NeoLearnAdditiveEditor",
+ "map": "AdditiveMap",
+ "kind": "instrument",
+ "features": [
+  "synthesizer"
+ ],
+ "au": "NLAd",
+ "description": "Additive synth: partials from the spectrum's tilt and balance",
+ "process": "learn",
+ "tempo": true,
+ "idle": false,
+ "tailSeconds": 10,
+ "test": {
+  "changes": [
+   [
+    "SpectralTilt",
+    "raw:300"
+   ]
+  ],
+  "settle": 0.0,
+  "tolerance": 0.003
+ },
+ "extra": [
+  "NeoWave/Engine/Tables.cs",
+  "NeoWave/Engine/WavReader.cs",
+  "NeoSampler/Engine/Interpolation.cs",
+  "NeoSampler/Engine/SampleData.cs",
+  "NeoClipper/Engine/*.cs",
+  "NeoLearn/Engine/*.cs",
+  "NeoBuzz.Analysis/Loudness.cs",
+  "NeoBuzz.Analysis/GainMatch.cs"
+ ],
+ "extraEditor": [
+  "NeoLearn/LearnEditor.cs"
+ ],
+ "gear": "Neo Learn Additive",
+ "tables": true
+}

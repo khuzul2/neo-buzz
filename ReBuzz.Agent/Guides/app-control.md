@@ -63,6 +63,14 @@ The person sees every call, so treat it as a conversation: show them what you ar
 - `window_layout()` reads where everything is; with `width`, `height` or `maximised` it resizes the window.
 - While the transport records, nothing opens a window or takes the keyboard: the pattern editor and machine windows are refused (`transport(action="stop")` first). Switching a view, selecting and panels still work.
 
+## The browser (studio mode)
+
+The browser panel on the left is one search over everything a person can drag into a song. You can use it too.
+
+- `browser_search(query="kick 808", kind="audio")` finds sample files by name and folder; `kind` is also `machine`, `plugin` (the plug-ins of Neo Plug's scan), `preset` (factory presets: the result's `id` is the gear and `preset` its name), `midi` and `pattern`. Every word must match; results come best first with their length, rate and tempo.
+- `browser_places(op="add", path="/Users/me/Samples", wait_seconds=10)` adds a folder to the browser's Places: its audio and MIDI files are indexed in the background and watched for changes. `op="list"` shows each place with how many files it holds and the scan's progress; `op="remove"` takes one out (the files stay).
+- `machine_swap(machine="Lead", gear="Neo Poly")` is the browser's hot-swap: the gear takes the machine's place, connections, position and name kept, patterns made again by name and length, one undo step. A generator is swapped for a generator, an effect for an effect. For a classic machine's Neo successor with its settings converted use `machine_replace`.
+
 ## Song properties and the bars
 
 `song_set(tempo_bpm=124, ticks_per_beat=4, speed=0)` is Edit, Song Properties: tempo 16 to 500, ticks per beat 1 to 32, and the playback speed offset (0 is normal, -1000 to 1000). Set ticks per beat before writing patterns: patterns keep their length in ticks. `song_meter` reads the bar list; `song_meter(from="9.1", bar_beats=3)` makes the bars 3 beats long from there on. Both are one undo step. The Sequence tab's vertical tracker is the setting `appearance.VerticalTracker`: `settings_set(key="appearance.VerticalTracker", value=true)`.

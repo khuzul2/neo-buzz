@@ -52,6 +52,9 @@ FEATURES = [
     ("Tools (P6b)", "Debug console", "ux-overhaul.md §9 row 9", [], "none: the agent's own log is the agent-logs folder; the engine's warnings reach a tool as its error text"),
     ("Tools (P6b)", "MIDI focus bar and the on-screen piano keyboard", "ux-overhaul.md §9 row 11", ["midi_play", "select"], "the focus follows select; the keyboard is a way to play, midi_play plays"),
     ("Plug-ins (H1 to H3)", "The plug-in host and its preferences", "plugin-host.md", ["gear_list", "machine_add", "machine_describe", "machine_command"], "placement (in process or a sandbox) and the crash state are in machine_describe; Placement and Reload plug-in are machine_command items; the Preferences page and plug-in editors are the studio's only"),
+    ("Browser (BR1)", "One search over machines, plug-ins, presets, patterns and indexed sample folders", "browser.md", ["browser_search"], "the panel's search; kind narrows it"),
+    ("Browser (BR1)", "Places: the folders the browser indexes", "browser.md", ["browser_places"], "list, add, remove; the scan runs in the background"),
+    ("Browser (BR1)", "Hot-swap: other gear in a machine's place", "browser.md", ["machine_swap"], "the Machine View's drop on a machine's box; one undo step"),
     ("Dropped", "Wireless, machine templates and the Create Template window", "ux-overhaul.md §9 row 14", [], "dropped in the studio too"),
 ]
 

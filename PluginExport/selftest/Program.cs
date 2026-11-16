@@ -33,6 +33,12 @@ namespace NeoExport
 
         static int Main()
         {
+            if (Environment.GetEnvironmentVariable("NEO_TIME_TABLES") == "1")
+            {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                while (!new NeoBuzz.DyeEssence.DyeEngine(new ParamValues(NeoBuzz.DyeEssence.Params.Table)).TablesBuilding == false) { }
+                Console.WriteLine($"tables: {sw.ElapsedMilliseconds} ms"); return 0;
+            }
             Check(sizeof(ClapPlugin) == 96 && sizeof(ClapDescriptor) == 88 && sizeof(ClapFactory) == 24, "plugin, descriptor, factory sizes");
             Check(sizeof(ClapEventHeader) == 16 && sizeof(ClapEventParamValue) == 56 && sizeof(ClapEventTransport) == 104 && sizeof(ClapEventNote) == 40 && sizeof(ClapEventParamGesture) == 20 && sizeof(ClapEventMidi) == 24, "event sizes");
             Check(sizeof(ClapProcess) == 64 && sizeof(ClapAudioBuffer) == 32 && sizeof(ClapInputEvents) == 24 && sizeof(ClapOutputEvents) == 16, "process, buffer, event list sizes");
@@ -59,12 +65,13 @@ namespace NeoExport
             var info = Registry.All[which];
             Console.WriteLine($"--- {info.Name}");
             var d = fac->Descriptor(fac, (uint)which);
-            Check(Marshal.PtrToStringUTF8((IntPtr)d->Name) == info.Name && info.Name.StartsWith("Neo "), "descriptor name starts with Neo");
+            Check(Marshal.PtrToStringUTF8((IntPtr)d->Name) == info.Name && (info.Name.StartsWith("Neo ") || info.Name == "Dye Essence"), "descriptor name is a Neo name or Dye Essence");
             var p = fac->Create(fac, null, d->Id);
             Check(p != null && p->Init(p) == 1 && p->Activate(p, 48000, 1, 256) == 1, "create, init, activate");
 
             // reference: the engine on its own through the same adapter
             var refEng = info.Make(); var table = refEng.Table; var refValues = new ParamValues(table); refEng.Create(refValues); refEng.SetSampleRate(48000);
+            { var sw = System.Diagnostics.Stopwatch.StartNew(); var pinst = System.Runtime.CompilerServices.Unsafe.As<Instance>(GCHandle.FromIntPtr((IntPtr)p->PluginData).Target); while ((pinst.Eng.Preparing || refEng.Preparing) && sw.ElapsedMilliseconds < 30000) System.Threading.Thread.Sleep(10); Check(!pinst.Eng.Preparing && !refEng.Preparing, "tables built (" + sw.ElapsedMilliseconds + " ms after activation)"); }
 
             var pe = (ClapPluginParams*)Ext(p, "clap.params");
             Check(pe != null && pe->Count(p) == (uint)table.Length, $"{table.Length} parameters match the machine's table");

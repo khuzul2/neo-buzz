@@ -67,6 +67,8 @@ namespace NeoExport
             XDestroyImage(img); img = IntPtr.Zero;
         }
 
+        public double BackingScale => 1;
+        public void TestInject(int kind, double x, double y) { }   // the Linux test drives the window with XTest (neohost gui)
         public void Resize(int width, int height) { w = width; h = height; if (dpy != IntPtr.Zero) { XResizeWindow(dpy, win, (uint)width, (uint)height); XFlush(dpy); } }
         public void SetVisible(bool v) { if (dpy == IntPtr.Zero) return; if (v) XMapWindow(dpy, win); else XUnmapWindow(dpy, win); XFlush(dpy); }
 

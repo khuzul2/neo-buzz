@@ -163,6 +163,7 @@ namespace NeoBuzz.Plug
         static JsonArray Quirks(PlugCore core)
         {
             var quirks = new JsonArray();
+            core.CheckCrashed();
             if (core.Crashed)
                 quirks.Add($"CRASHED: the plug-in's sandbox ended ({core.CrashReason}). The slot is silent and the song plays on. machine_command(command=\"Reload plug-in\") starts it again from its last state.");
             quirks.Add("Placement: " + core.PlacementText() + ". machine_command(command=\"Placement > Sandbox per plug-in\") (or \"In process\", \"Sandbox per instance\", \"Sandbox shared\", \"Default\") moves it; it is reloaded from its state.");
