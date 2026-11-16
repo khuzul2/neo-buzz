@@ -75,9 +75,9 @@ namespace ReBuzz.Studio.Views.Device
             barParts = (title, tabs, right);
             bar.Children.Add(title);
             bar.Children.Add(tabs);
-            bar.Children.Add(right);
             view.Toolbar.Margin = new Thickness(12, 0, 8, 0);
-            bar.Children.Add(view.Toolbar);
+            bar.Children.Add(view.Toolbar);       // tab order is reading order: the search, then the buttons at the right
+            bar.Children.Add(right);
             bar.SizeChanged += (s, e) => LayoutBar(e.NewSize.Width);
             LayoutBar(double.PositiveInfinity);
             var root = new DockPanel { LastChildFill = true };

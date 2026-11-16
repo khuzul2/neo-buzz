@@ -190,7 +190,7 @@ namespace ReBuzz.Studio.Views.Device
 
         static Button Option(string text, string tip)
         {
-            var b = StudioButtons.KeepFocus(new Button { Content = text, BorderThickness = new Thickness(1), MinHeight = 0, Height = 24, Padding = new Thickness(8, 0), FontSize = StudioTokens.FontCaption + 1 });
+            var b = StudioButtons.KeepFocus(new Button { Content = text, BorderThickness = new Thickness(1) });
             ToolTip.SetTip(b, tip);
             Avalonia.Automation.AutomationProperties.SetName(b, text);
             return b;
@@ -381,7 +381,7 @@ namespace ReBuzz.Studio.Views.Device
             foreach (var s in layout.Chips(Query, changedOnly))
             {
                 var section = s;
-                var chip = StudioButtons.KeepFocus(new Button { Content = section.Name, MinHeight = 0, Height = 22, Padding = new Thickness(8, 0), FontSize = StudioTokens.FontCaption + 1, BorderThickness = new Thickness(1), BorderBrush = StudioTokens.SurfaceBorderBrush, Background = Brushes.Transparent, Foreground = StudioTokens.TextSecondaryBrush });
+                var chip = StudioButtons.KeepFocus(new Button { Content = section.Name, BorderThickness = new Thickness(1), BorderBrush = StudioTokens.SurfaceBorderBrush, Background = Brushes.Transparent, Foreground = StudioTokens.TextSecondaryBrush });
                 ToolTip.SetTip(chip, "Jump to " + section.Name);
                 Avalonia.Automation.AutomationProperties.SetName(chip, section.Name);
                 chip.Click += (a, b) => JumpTo(section);
