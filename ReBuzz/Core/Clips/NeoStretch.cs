@@ -340,7 +340,13 @@ namespace ReBuzz.Core.Clips
         {
             var a = NeoStretch.Create(mono ? 1 : 2, sampleRate);
             var b = a == null ? null : NeoStretch.Create(mono ? 1 : 2, sampleRate);
-            return b == null ? null : new ProVoice(a, b, NeoStretch.Create(mono ? 1 : 2, sampleRate), mono);
+            if (b == null) return null;
+            var voice = new ProVoice(a, b, NeoStretch.Create(mono ? 1 : 2, sampleRate), mono);
+            // Handed to the worker here, off the audio thread: the first request for a spare can come from the audio thread (nothing has asked
+            // from the UI before the engine's first block), and adding a voice allocates and may start the worker's thread.
+            voice.queued = true;
+            ProWorker.Add(voice);
+            return voice;
         }
 
         /// <summary>Playing, or fading out.</summary>

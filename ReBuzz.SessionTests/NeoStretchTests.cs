@@ -469,6 +469,13 @@ namespace ReBuzz.SessionTests
             var rng = new Random(3);
             double beat = 0;
             long allocated = 0;
+            var where = new List<string>();
+            string bad = null;
+            // GetAllocatedBytesForCurrentThread counts in allocation contexts (up to 8 KB): a collection another thread starts mid-loop moves a context
+            // boundary and shows as a few KB with nothing allocated (CI saw 6344 and 7816 bytes once each, never in a single run). With no collection
+            // possible the count is exact, so a real allocation on the render path still fails; the loop itself allocates nothing.
+            bool noGc = false;
+            try { noGc = GC.TryStartNoGCRegion(64_000_000); } catch (InvalidOperationException) { }
             for (int block = 0; block < 4000; block++)
             {
                 double bps = (90 + 80 * rng.NextDouble()) / 60 / Rate;
@@ -478,11 +485,14 @@ namespace ReBuzz.SessionTests
                 Array.Clear(l); Array.Clear(r);
                 if (block % 211 == 210) voice.Stop(l, r, 0, 300);
                 else voice.Render(p, beat, bps, Rate, l, r, 0, 1 + (block * 7) % 300);
-                if (block > 200) allocated += GC.GetAllocatedBytesForCurrentThread() - before;
+                if (block > 200) { long d = GC.GetAllocatedBytesForCurrentThread() - before; allocated += d; if (d != 0) where.Add($"block {block}: {d} bytes"); }
                 beat += 300 * bps;
-                foreach (float v in l) Assert.That(float.IsFinite(v) && Math.Abs(v) < 8 && (v == 0 || Math.Abs(v) > 1e-30f), Is.True, $"block {block}: {v}");
+                foreach (float v in l)
+                    if (!(float.IsFinite(v) && Math.Abs(v) < 8 && (v == 0 || Math.Abs(v) > 1e-30f))) bad ??= $"block {block}: {v}";
             }
-            Assert.That(allocated, Is.EqualTo(0L), "managed bytes allocated while rendering");
+            if (noGc && System.Runtime.GCSettings.LatencyMode == System.Runtime.GCLatencyMode.NoGCRegion) GC.EndNoGCRegion();
+            Assert.That(bad, Is.Null, "finite, not subnormal, bounded");
+            Assert.That(allocated, Is.EqualTo(0L), "managed bytes allocated while rendering: " + string.Join("; ", where));
         }
 
         [Test]
