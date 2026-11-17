@@ -115,10 +115,14 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        /// <summary>Run just before a frame is captured: a live input keeps feeding so its meter is lit in the shot.</summary>
+        static System.Action LiveBeforeCapture;
+
         static Bitmap Frame(TopLevel top)
         {
             foreach (var v in top.GetVisualDescendants()) v.InvalidateVisual();
             Settle();
+            LiveBeforeCapture?.Invoke();
             var frame = top.CaptureRenderedFrame();
             Assert.That(frame, Is.Not.Null, "the window drew");
             return frame!;
@@ -2039,8 +2043,10 @@ namespace ReBuzz.Studio.Tests
                     Core.EngineInput.Push(data, 256, 4);
                     work.MainAudioFillBuffer(buffer, 0, 512);
                 }
-                Settle();
+                System.Threading.Thread.Sleep(25);
+                foreach (var v in window.GetVisualDescendants().OfType<ReBuzz.Studio.Views.Session.TrackInputView>()) v.Poll();
             }
+            LiveBeforeCapture = () => { ReBuzz.Studio.Views.Session.TrackInputView.PausePolling = false; Feed(2048); ReBuzz.Studio.Views.Session.TrackInputView.PausePolling = true; };
             try
             {
                 Core.EngineInput.Configure(4, new[] { "Mic 1", "Mic 2", "Line 3", "Line 4" }, 44100, 128);
@@ -2082,9 +2088,9 @@ namespace ReBuzz.Studio.Tests
                     session.RefreshState();
                     Feed(11025);
                     System.Threading.Thread.Sleep(80);
-                    Feed(2048);
                     session.RefreshState();
                     Settle();
+                    Feed(2048);
                     Shot(window, "038-session-io-row", "Session: the I/O row under the mixer strips (the toolbar's I/O button): Audio From, MIDI From, the arm dot and the MIDI channel, Monitor (In, Auto, Off) and the input meter, live while the track is armed or monitored (Voice listens to Mic 1 and its meter moves; Lead takes MIDI from one device).", "The toolbar's I/O button.");
                 });
                 Try("039-arrangement-header-inputs", () =>
@@ -2104,13 +2110,15 @@ namespace ReBuzz.Studio.Tests
                     window.Inspector.ShowTab(ReBuzz.Studio.Views.Inspector.InspectorPanel.SelectionTab);
                     StudioSelection.For(Core).Set(voice, null, window);
                     Settle();
-                    Feed(4096);
                     window.RefreshNow();
+                    Feed(4096);
                     Shot(window, "048-inspector-input", "The Inspector's Input section for the selected machine (Voice): the arm dot, Audio From, MIDI From and channel, Monitor and the input meter.", "Select a track's machine; the Inspector's Selection tab.");
                 });
             }
             finally
             {
+                LiveBeforeCapture = null;
+                ReBuzz.Studio.Views.Session.TrackInputView.PausePolling = false;
                 Core.EngineInput.Close();
                 Close(window);
             }

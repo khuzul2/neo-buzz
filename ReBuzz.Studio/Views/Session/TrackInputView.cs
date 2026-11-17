@@ -166,7 +166,7 @@ namespace ReBuzz.Studio.Views.Session
             meter.ClearClip = () => core.SessionLayout?.InputMeterOf(machine)?.ClearClip();
 
             Child = kind == InputLayoutKind.Compact ? BuildCompact() : kind == InputLayoutKind.Strip ? BuildStrip() : BuildFull();
-            poll.Tick += (s, e) => Tick();
+            poll.Tick += (s, e) => { if (!PausePolling) Tick(); };
         }
 
         internal Button ArmButton => arm;
@@ -294,6 +294,9 @@ namespace ReBuzz.Studio.Views.Session
         }
 
         /// <summary>One poll: the meter, and the choosers if what they show changed (a timer does this; tests call it).</summary>
+        /// <summary>Tests that capture a picture hold the timers so a still frame keeps the level it was fed.</summary>
+        internal static bool PausePolling;
+
         internal void Poll() => Tick();
 
         void Tick()
