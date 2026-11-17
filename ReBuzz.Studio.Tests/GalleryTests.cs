@@ -1589,13 +1589,15 @@ namespace ReBuzz.Studio.Tests
                 }
 
                 // Every Neo machine's editor, as a double click opens it.
-                var neo = Core.MachineDLLs.Values.Where(d => d?.Info != null && d.Name.StartsWith("Neo ") && !d.Name.StartsWith("Neo Learn ") && !d.Name.StartsWith("Neo Plug") && d.Name != "Neo Patch" && d.Info.Type != MachineType.Master)
+                var neo = Core.MachineDLLs.Values.Where(d => d?.Info != null && d.Name.StartsWith("Neo ") && !d.Name.StartsWith("Neo Learn ") && !d.Name.StartsWith("Neo Plug") && d.Name != "Neo Patch" && d.Name != "Neo Tune" && d.Info.Type != MachineType.Master)
                     .Select(d => d.Name).OrderBy(x => x, System.StringComparer.Ordinal).ToList();
                 // Dye Essence, a Neo-family machine with its own name (docs/specs/dye-essence.md), after them (the others keep their numbers).
                 if (Core.MachineDLLs.ContainsKey("Dye Essence")) neo.Add("Dye Essence");
                 // Neo Learn Subtractive (docs/specs/neo-learn.md), after Dye Essence for the same reason.
                 foreach (var learn in new[] { "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" })
                     if (Core.MachineDLLs.ContainsKey(learn)) neo.Add(learn);
+                // Neo Tune (docs/specs/neo-tune.md), after them for the same reason (Neo Utility, Neo Verb and Neo Wave keep their numbers).
+                if (Core.MachineDLLs.ContainsKey("Neo Tune")) neo.Add("Neo Tune");
                 int i = 0;
                 foreach (var gear in neo)
                 {
@@ -1613,6 +1615,70 @@ namespace ReBuzz.Studio.Tests
                         while (busy?.GetValue(m.ManagedMachine) is true && clock.ElapsedMilliseconds < 5000) Thread.Sleep(20);
                         Wait(200);
                         Shot(editor!, id, $"{gear}'s editor ({m.Name}), as a double click opens it: a window of its own." + KeyboardUnder(m), "Double-click the machine in the Machine View.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+
+                // Neo Tune with a voice sung through it (docs/specs/neo-tune.md §6): the live pitch display (the voice in grey, the corrected voice in
+                // the accent colour, the scale's notes lit on the piano roll) and the scale keyboard after a click turned the scale into Custom.
+                if (Core.MachineDLLs.ContainsKey("Neo Tune"))
+                {
+                    void Sing(MachineCore m, double seconds, double flat)
+                    {
+                        var instance = m.ManagedMachine;
+                        var work = instance.GetType().GetMethod("Work", new[] { typeof(Buzz.MachineInterface.Sample[]), typeof(Buzz.MachineInterface.Sample[]), typeof(int), typeof(Buzz.MachineInterface.WorkModes) })!;
+                        int rate = ReBuzzCore.masterInfo.SamplesPerSec;
+                        var input = new Buzz.MachineInterface.Sample[256];
+                        var output = new Buzz.MachineInterface.Sample[256];
+                        int[] steps = { 0, 2, 4, 7, 9, 7, 4, 2 };
+                        double phase = 0;
+                        long n = 0;
+                        for (int block = 0; block < seconds * rate / 256; block++)
+                        {
+                            for (int k = 0; k < 256; k++, n++)
+                            {
+                                double t = n / (double)rate;
+                                double midi = 57 + steps[(int)(t / 0.6) % steps.Length] - flat + 0.25 * System.Math.Sin(2 * System.Math.PI * 5.5 * t) * System.Math.Min(1, (t % 0.6) / 0.3);
+                                phase += 2 * System.Math.PI * 440.0 * System.Math.Pow(2, (midi - 69) / 12) / rate;
+                                double v = 0;
+                                for (int h = 1; h <= 12; h++) v += System.Math.Sin(h * phase) / (h * h * 0.6 + 1);
+                                input[k] = new Buzz.MachineInterface.Sample((float)(v * 7000), (float)(v * 7000));
+                            }
+                            lock (ReBuzzCore.AudioLock) work.Invoke(instance, new object[] { output, input, 256, Buzz.MachineInterface.WorkModes.WM_READWRITE });
+                        }
+                    }
+                    Try("580-neo-tune-live", () =>
+                    {
+                        var m = Add("Neo Tune", "Tune");
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Sing(m, 5.5, 0.3);
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, "580-neo-tune-live", "Neo Tune with a slightly flat voice sung through it (C major, Retune speed 25 ms): the live display shows the voice (grey) and the corrected voice (amber) over the last seconds on a piano roll with the scale's notes lit, the target note and the correction in cents at the top right, and the scale keyboard under it (the root marked).", "Double-click the machine; play a voice through it.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                    Try("581-neo-tune-custom-scale", () =>
+                    {
+                        var m = Core.SongCore.MachinesList.First(x => x.Name == "Tune");
+                        // The parameters (the editor shows them) and the machine's own properties (the engine takes them at once: no tick runs here).
+                        void Set(string name, string property, int raw)
+                        {
+                            m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == name).SetValue(0, raw);
+                            m.ManagedMachine.GetType().GetProperty(property)!.SetValue(m.ManagedMachine, raw);
+                        }
+                        Set("Scale", "Scale", 12);                      // Custom
+                        Set("Custom notes", "Notes", 0b010010101001);   // C minor pentatonic: C, E flat, F, G, B flat
+                        Set("Retune speed", "Retune", 0);
+                        Set("Keep vibrato", "VibKeep", 0);
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Sing(m, 5.5, 0.0);
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, "581-neo-tune-custom-scale", "Neo Tune on a Custom scale (the notes clicked on the keyboard) with Retune speed 0 and Keep vibrato 0 (hard): the voice is held to the lit notes only, the stepped corrected line against the sung one.", "Click the keys of the scale keyboard to enable or mute notes; set Retune speed and Keep vibrato to 0.");
                         Core.UiHost.CloseWindows(m);
                     });
                 }
