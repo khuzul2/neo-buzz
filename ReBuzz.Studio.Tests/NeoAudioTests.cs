@@ -277,5 +277,33 @@ namespace ReBuzz.Studio.Tests
             var missing = Tool("audio_import", new JsonObject { ["path"] = Work("nothing.wav") });
             Assert.That(missing["isError"]?.GetValue<bool>(), Is.True, "no such file");
         }
+
+        [AvaloniaTest]
+        public void TheProWarpIsSetByTheAgentAndSurvivesASaveAndAReopen()
+        {
+            using var untitled = SnapshotTests.Untitled(out _);
+            using var rig = new SessionRig();
+            var core = rig.Core;
+            using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
+            string file = Tones("pro.wav", 440, 660);
+            var imported = Tool("audio_import", new JsonObject { ["path"] = file, ["slot"] = 1 })["structuredContent"]!.AsObject();
+            string machine = (string)imported["machine"], pattern = (string)imported["pattern"];
+
+            var set = Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["warp"] = "pro", ["transpose"] = 4 });
+            Assert.That(set["isError"]?.GetValue<bool>() ?? false, Is.False, set.ToJsonString());
+            var get = Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["pattern"] = pattern })["structuredContent"]!.AsObject();
+            Assert.That((string)get["warp"], Is.EqualTo("Pro"));
+            // Where the native library is not beside the app the clip plays as Complex and says so; where it is, there is nothing to say.
+            Assert.That((string)get["warp_playing"] ?? "Complex", Is.EqualTo("Complex"));
+            Assert.That(core.SessionLayout.ClipOf(core.SongCore.MachinesList.First(m => m.Name == machine).PatternsList.First(p => p.Name == pattern)).Audio.Warp, Is.EqualTo("Pro"));
+
+            string path = Work("pro.nbl");
+            core.SaveSongCopy(path);
+            core.NewSong();
+            Reopen(core, path);
+            var back = Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["pattern"] = pattern })["structuredContent"]!.AsObject();
+            Assert.That((string)back["warp"], Is.EqualTo("Pro"), "saved as Complex with a marker, read as Pro");
+            Assert.That((int)back["transpose"], Is.EqualTo(4));
+        }
     }
 }

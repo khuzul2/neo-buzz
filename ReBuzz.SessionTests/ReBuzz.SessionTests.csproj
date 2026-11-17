@@ -48,11 +48,14 @@
     <Compile Include="..\ReBuzz\Core\Clips\ClipVoice.cs" Link="Engine\ClipVoice.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\Fft.cs" Link="Engine\Fft.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\PhaseVocoder.cs" Link="Engine\PhaseVocoder.cs" />
+    <Compile Include="..\ReBuzz\Core\Clips\NeoStretch.cs" Link="Engine\NeoStretch.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\AudioAsset.cs" Link="Engine\AudioAsset.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\PeakCache.cs" Link="Engine\PeakCache.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\Resampler.cs" Link="Engine\Resampler.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\AudioImporter.cs" Link="Engine\AudioImporter.cs" />
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Common\libsndfile\SoundFile.cs" Link="Engine\SoundFile.cs" />
+    <!-- Stem separation (docs/specs/stem-separation.md): the transform, the chunker, the model files and the ONNX Runtime passes. -->
+    <Compile Include="..\ReBuzz\Core\AudioLibrary\Stems\*.cs" Link="Engine\Stems\%(Filename)%(Extension)" />
     <!-- Song Notes' formats (docs/specs/machine-safety.md §3.5): Markdown, the RTF reader, Info's saved state. -->
     <Compile Include="..\ReBuzz\Core\Notes\NotesMarkdown.cs;..\ReBuzz\Core\Notes\RtfToMarkdown.cs;..\ReBuzz\Core\Notes\InfoMachineState.cs" Link="Engine\%(Filename)%(Extension)" />
     <!-- The seams for hosts without Windows or a UI toolkit (docs/specs/mac-engine.md M0), with the interfaces they implement. -->
@@ -62,10 +65,25 @@
     <Compile Include="..\ReBuzz\Core\IRegistryEx.cs;..\ReBuzz\Core\IRegistryKey.cs;..\ReBuzz\Core\IUiDispatcher.cs;..\ReBuzz\Core\IUiSignal.cs;..\ReBuzz\Core\IUiTimer.cs;..\ReBuzz\Core\IUserMessages.cs;..\ReBuzzGUI\BuzzGUI.Common\IRegistryStore.cs" Link="Platform\%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <!-- Neo Audio's Pro warp mode (docs/specs/neo-audio.md section 11): the native neostretch library, once built with CMake
+       (NeoStretch/CMakeLists.txt, into build/NeoStretch), beside the tests, where NativeLibraries looks first. Without it the tests of
+       Pro that need it fail by name (NeoStretchTests), they are not skipped. -->
+  <ItemGroup>
+    <None Include="..\build\NeoStretch\libneostretch.so" Condition="Exists('..\build\NeoStretch\libneostretch.so')" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+    <None Include="..\build\NeoStretch\libneostretch.dylib" Condition="Exists('..\build\NeoStretch\libneostretch.dylib')" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+    <None Include="..\build\NeoStretch\neostretch.dll" Condition="Exists('..\build\NeoStretch\neostretch.dll')" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+    <None Include="..\build\NeoStretch\Release\neostretch.dll" Condition="Exists('..\build\NeoStretch\Release\neostretch.dll')" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.29.0" />
     <PackageReference Include="NUnit" Version="4.4.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="5.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Stems\Data\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

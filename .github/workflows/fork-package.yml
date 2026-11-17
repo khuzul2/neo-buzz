@@ -452,6 +452,15 @@ jobs:
       with:
         dotnet-version: '10.0.x'
 
+    # Neo Audio's Pro warp mode (docs/specs/neo-audio.md section 11): neostretch.dll with MSVC, its own test, and beside the studio's tests.
+    - name: NeoStretch (CMake, MSVC)
+      shell: pwsh
+      run: |
+        cmake -S NeoStretch -B build/NeoStretch -A x64
+        cmake --build build/NeoStretch --config Release
+        ctest --test-dir build/NeoStretch -C Release --output-on-failure
+        if ($LASTEXITCODE -ne 0) { throw "neostretch-test failed" }
+
     - name: Studio tests (headless, Windows)
       shell: pwsh
       run: dotnet test ReBuzz.Studio.Tests -p:ReBuzzCleanBuild=true --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath studio-test.log
@@ -543,6 +552,13 @@ jobs:
       with:
         dotnet-version: '10.0.x'
 
+    # Neo Audio's Pro warp mode (docs/specs/neo-audio.md section 11): the neostretch library built and tested on this platform too.
+    - name: NeoStretch (CMake)
+      run: |
+        cmake -S NeoStretch -B build/NeoStretch
+        cmake --build build/NeoStretch -j 3
+        ctest --test-dir build/NeoStretch --output-on-failure
+
     - name: Build rebuzz-headless
       run: |
         git submodule update --init --depth 1 3rdParty/serilog/serilog
@@ -584,6 +600,13 @@ jobs:
     - uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
+
+    # Neo Audio's Pro warp mode (docs/specs/neo-audio.md section 11): the neostretch library built and tested on this platform too.
+    - name: NeoStretch (CMake)
+      run: |
+        cmake -S NeoStretch -B build/NeoStretch
+        cmake --build build/NeoStretch -j 3
+        ctest --test-dir build/NeoStretch --output-on-failure
 
     - name: Build rebuzz-headless (osx-arm64)
       run: |

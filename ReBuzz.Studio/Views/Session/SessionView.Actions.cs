@@ -606,6 +606,8 @@ namespace ReBuzz.Studio.Views.Session
                 menu.Items.Add(Item("Rename…", () => _ = RenameClip(pattern), KeyOf("Cmd+R")));
                 menu.Items.Add(Item("Duplicate", () => DuplicateClip(cell.Track, cell.Scene), KeyOf("Cmd+D")));
                 menu.Items.Add(Item("Send to Arrangement", () => SendToArrangement(cell), null, () => buzz.Arrangement != null));
+                if (layout.IsAudioClip(pattern))
+                    menu.Items.Add(Item("Separate stems…", () => _ = ReBuzz.Studio.Shell.StemFlow.SeparateClip(pattern), tag: "Separate stems"));
                 menu.Items.Add(ColorMenu("Colour", PatternColors.Get(pattern), i => layout.SetClipColor(pattern, i), MachineColourName));
                 int notes = layout.RecordedNoteCount(pattern);
                 if (notes > 0)

@@ -11,7 +11,7 @@ namespace ReBuzz.SessionTests
     public class AudioHardeningTests
     {
         const int Rate = 44100;
-        static readonly WarpMode[] Modes = { WarpMode.Off, WarpMode.Repitch, WarpMode.Beats, WarpMode.Complex };
+        static readonly WarpMode[] Modes = { WarpMode.Off, WarpMode.Repitch, WarpMode.Beats, WarpMode.Complex, WarpMode.Pro };
 
         static AudioSource Tone(double seconds, int rate = Rate, bool stereo = true, double freq = 220)
         {
@@ -137,14 +137,14 @@ namespace ReBuzz.SessionTests
 
         [Test, Combinatorial]
         public void EveryModeIsFiniteAtTempoAndTranspositionExtremes(
-            [Values(0, 1, 2, 3)] int mode, [Values(20, 999)] double bpm, [Values(-48, 0, 48)] double semitones, [Values(true, false)] bool stereo)
+            [Values(0, 1, 2, 3, 4)] int mode, [Values(20, 999)] double bpm, [Values(-48, 0, 48)] double semitones, [Values(true, false)] bool stereo)
         {
             var s = Tone(1.5, Rate, stereo);
             PlayFinite(new ClipVoice(), Clip(s, 100, Modes[mode], semitones), bpm, 6);
         }
 
         [Test, Combinatorial]
-        public void VeryShortAndEmptyClipsPlayInEveryMode([Values(0, 1, 2, 63, 64, 100, 2047, 2049)] int samples, [Values(0, 1, 2, 3)] int mode)
+        public void VeryShortAndEmptyClipsPlayInEveryMode([Values(0, 1, 2, 63, 64, 100, 2047, 2049)] int samples, [Values(0, 1, 2, 3, 4)] int mode)
         {
             var x = new float[samples];
             for (int i = 0; i < x.Length; i++) x[i] = (float)(0.5 * Math.Sin(i * 0.3));
@@ -216,14 +216,14 @@ namespace ReBuzz.SessionTests
         // ---- Sample rates ----------------------------------------------------------------------
 
         [Test, Combinatorial]
-        public void AudioAndOutputAtAnyRatePlayFinite([Values(8000, 22050, 48000, 96000, 192000)] int audioRate, [Values(0, 1, 2, 3)] int mode, [Values(8000, 44100, 192000)] int outputRate)
+        public void AudioAndOutputAtAnyRatePlayFinite([Values(8000, 22050, 48000, 96000, 192000)] int audioRate, [Values(0, 1, 2, 3, 4)] int mode, [Values(8000, 44100, 192000)] int outputRate)
         {
             var s = Clicks(120, 4, audioRate);
             PlayFinite(new ClipVoice(), Clip(s, 120, Modes[mode]), 120, 4, outputRate);
         }
 
         [Test]
-        public void TheOutputRateChangingMidPlayCrossfadesAndStaysFinite([Values(0, 1, 2, 3)] int mode)
+        public void TheOutputRateChangingMidPlayCrossfadesAndStaysFinite([Values(0, 1, 2, 3, 4)] int mode)
         {
             var p = Clip(Clicks(120, 8), 120, Modes[mode]);
             var voice = new ClipVoice();
@@ -247,7 +247,7 @@ namespace ReBuzz.SessionTests
         // ---- Loop and clip ends ----------------------------------------------------------------
 
         [Test, Combinatorial]
-        public void LoopingAcrossTheClipsEndNeverJumpsInAnyMode([Values(1, 2, 3)] int mode, [Values(0.0, 0.37)] double offset)
+        public void LoopingAcrossTheClipsEndNeverJumpsInAnyMode([Values(1, 2, 3, 4)] int mode, [Values(0.0, 0.37)] double offset)
         {
             // A steady tone looped: where the end meets the start the output stays smooth (a click is a step far over the tone's own).
             var s = Tone(2, Rate, false, 200);
@@ -353,7 +353,7 @@ namespace ReBuzz.SessionTests
         // ---- Soak ------------------------------------------------------------------------------
 
         /// <summary>
-        /// Eight clips in every warp mode (thirty-two voices), each at its own tempo, transposition and loop, tempo sweeping from
+        /// Eight clips in every warp mode (forty voices), each at its own tempo, transposition and loop, tempo sweeping from
         /// 60 to 180 BPM and back, for ten minutes of render time in blocks of 256: 0 bytes allocated, no NaN, no runaway level.
         /// </summary>
         [Test, Category("Soak")]
@@ -403,7 +403,7 @@ namespace ReBuzz.SessionTests
             }
             Assert.That(bad, Is.EqualTo(0), "NaN or infinity");
             Assert.That(allocated, Is.EqualTo(0L), "bytes allocated while rendering");
-            Assert.That(peak, Is.LessThan(40), "32 voices at 0.7 of 0.8: a runaway would be far over");
+            Assert.That(peak, Is.LessThan(50), "40 voices at 0.7 of 0.8: a runaway would be far over");
         }
     }
 }

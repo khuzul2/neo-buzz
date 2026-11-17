@@ -136,7 +136,9 @@ namespace ReBuzz.Agent.Mcp
                         errors.Add($"{Where(path)}: expected text");
                         return;
                     }
-                    if (schema["enum"] is JsonArray choices && !choices.Any(c => c!.GetValue<string>() == s))
+                    // "x-ignoreCase": a mode name given in any case is accepted (the tool matches it the same way: warp "pro").
+                    var how = schema["x-ignoreCase"]?.GetValue<bool>() == true ? System.StringComparison.OrdinalIgnoreCase : System.StringComparison.Ordinal;
+                    if (schema["enum"] is JsonArray choices && !choices.Any(c => System.String.Equals(c!.GetValue<string>(), s, how)))
                         errors.Add($"{Where(path)}: \"{s}\" is not one of {string.Join(", ", choices.Select(c => c!.GetValue<string>()))}");
                     return;
                 case "number":

@@ -90,6 +90,15 @@
     <Copy SourceFiles="@(_NeoPlugNative)" DestinationFolder="$(OutDir)Gear/NeoPlug" SkipUnchangedFiles="true" Condition="Exists('%(FullPath)')" />
   </Target>
 
+  <!-- Fork (docs/specs/neo-audio.md section 11, NA5): the native library behind Neo Audio's Pro warp mode, once built with CMake
+       (NeoStretch/CMakeLists.txt, into build/NeoStretch), beside the app, where NativeLibraries looks first. Without it Pro clips play as Complex. -->
+  <Target Name="NeoStretchNative" AfterTargets="Build">
+    <ItemGroup>
+      <_NeoStretch Include="$(MSBuildThisFileDirectory)..\build\NeoStretch\libneostretch.so;$(MSBuildThisFileDirectory)..\build\NeoStretch\libneostretch.dylib;$(MSBuildThisFileDirectory)..\build\NeoStretch\neostretch.dll;$(MSBuildThisFileDirectory)..\build\NeoStretch\Release\neostretch.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_NeoStretch)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('%(FullPath)')" />
+  </Target>
+
   <!-- A publish (the Mac app bundle, studio-mvp.md §3.9) takes the gear and the helper too. -->
   <Target Name="PublishGear" AfterTargets="Publish">
     <ItemGroup>
@@ -103,5 +112,9 @@
     </ItemGroup>
     <Copy SourceFiles="@(_PublishLicences)" DestinationFiles="@(_PublishLicences->'$(PublishDir)Licenses/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
     <Copy SourceFiles="$(OutDir)ReBuzzLink.exe" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" Condition="Exists('$(OutDir)ReBuzzLink.exe')" />
+    <ItemGroup>
+      <_NeoStretchOut Include="$(OutDir)libneostretch.so;$(OutDir)libneostretch.dylib;$(OutDir)neostretch.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_NeoStretchOut)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" Condition="Exists('%(FullPath)')" />
   </Target>
 </Project>
