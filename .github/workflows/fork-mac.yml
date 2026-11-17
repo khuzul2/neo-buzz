@@ -273,6 +273,8 @@ jobs:
         GALLERY_DIR: ${{ github.workspace }}/gallery/headless
       run: |
         git submodule update --init --depth 1 3rdParty/serilog/serilog
+        # DD1 gave three ordinary tests the Gallery category; with them in the filter NUnit leaves the Explicit GalleryTests out, so each is run by its own filter.
+        dotnet test ReBuzz.Studio.Tests -c Release --filter "FullyQualifiedName~ReBuzz.Studio.Tests.GalleryTests" --logger "console;verbosity=normal" 2>&1 | grep -E "gallery\]|Passed |Failed |Total tests|error" || true
         dotnet test ReBuzz.Studio.Tests -c Release --filter TestCategory=Gallery --logger "console;verbosity=normal" 2>&1 | grep -E "gallery\]|Passed |Failed |Total tests|error" || true
 
     # Fork (ux-overhaul.md P4b): the same gallery in the Light theme, beside the dark one (GALLERY_THEME=light).
@@ -283,6 +285,8 @@ jobs:
         GALLERY_DIR: ${{ github.workspace }}/gallery/headless-light
         GALLERY_THEME: light
       run: |
+        # DD1 gave three ordinary tests the Gallery category; with them in the filter NUnit leaves the Explicit GalleryTests out, so each is run by its own filter.
+        dotnet test ReBuzz.Studio.Tests -c Release --filter "FullyQualifiedName~ReBuzz.Studio.Tests.GalleryTests" --logger "console;verbosity=normal" 2>&1 | grep -E "gallery\]|Passed |Failed |Total tests|error" || true
         dotnet test ReBuzz.Studio.Tests -c Release --filter TestCategory=Gallery --logger "console;verbosity=normal" 2>&1 | grep -E "gallery\]|Passed |Failed |Total tests|error" || true
 
     # P3g polish: the Machine View's frame time on the big song (49 machines, 46 wires), meters off and on, alternated twice, and the Window's
