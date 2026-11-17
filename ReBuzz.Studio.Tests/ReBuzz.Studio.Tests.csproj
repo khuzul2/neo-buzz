@@ -48,6 +48,8 @@
   <!-- The stem tests' little ONNX models (the same builder ReBuzz.SessionTests uses). -->
   <ItemGroup>
     <Compile Include="..\ReBuzz.SessionTests\Stems\TinyOnnx.cs" Link="Stems\TinyOnnx.cs" />
+    <!-- Convert to MIDI (pitch.md section 9): the synthetic melodies, chords and drum loops ReBuzz.SessionTests uses. -->
+    <Compile Include="..\ReBuzz.SessionTests\Convert\ConvertSignals.cs" Link="Convert\ConvertSignals.cs" />
   </ItemGroup>
 
   <!-- The audio hygiene tests describe a buffer that allocated as the engine's and the machines' tests do (AllocationWindow). -->
