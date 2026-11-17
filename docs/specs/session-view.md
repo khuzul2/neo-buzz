@@ -708,6 +708,7 @@ An independent review of 0.7.1 and of the paths 0.8 builds on (MIDI in and out, 
 
 **Known, left for later.**
 - MIDI devices are still keyed by their WinMM index, which shifts when devices are plugged in.
+  - Done in NA4a (neo-audio.md section 12): devices carry a stable name through `SendMIDIInput(device, data)`, and an armed track's MIDI From and channel route by it. The arm state, now with each track's inputs, is shown in the Machine View, the mixer's I/O row, the Arrangement header and the Inspector; arm is still not saved or undoable, the inputs are saved.
 - The MIDI input's timestamps are still dropped. 0.8 stamps its clock input itself.
 
 ---

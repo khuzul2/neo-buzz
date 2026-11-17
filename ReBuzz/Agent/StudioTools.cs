@@ -453,6 +453,8 @@ namespace ReBuzz.Agent
                 Req("dropouts", Integer("Buffers that missed their deadline since " + Product.Name + " started")),
                 Req("worst_overrun_ms", Number("How far past its deadline the slowest of those buffers ran")),
                 Req("stream_underruns", Integer("Blocks in which a clip streamed from disk played silence for audio the disk had not delivered in time (neo-audio.md, NA1b), since start or the last reset")),
+                Opt("input_channels", Integer("Channels of the audio input device, when one is open")),
+                Opt("input_underrun_frames", Integer("Frames of the input the engine found missing (silence) since the device opened; more than a few is a dropout in a recording")),
                 Req("played_seconds", Number("Audio the device has taken since " + Product.Name + " started: its clock, which runs in real time while it plays")))),
             Opt("safety", SafetySchema()),
             Opt("warnings", Array(String("A message"), "Messages " + Product.Name + " raised during the call")));
@@ -527,6 +529,11 @@ namespace ReBuzz.Agent
                 ["stream_underruns"] = ReBuzz.Core.AudioLibrary.StreamStats.Underruns,
                 ["played_seconds"] = Math.Round(System.Threading.Interlocked.Read(ref ReBuzzCore.PlayedFrames) / (double)rate, 3),
             };
+            if (core.EngineInput.IsOpen)
+            {
+                audio["input_channels"] = core.EngineInput.Channels;
+                audio["input_underrun_frames"] = core.EngineInput.UnderrunFrames;
+            }
             if (ReBuzz.Platform.AudioWorkgroup.Attached) audio["workgroup_threads"] = ReBuzz.Platform.AudioWorkgroup.JoinedThreads;
             return audio;
         }

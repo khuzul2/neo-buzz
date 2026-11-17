@@ -210,6 +210,22 @@ namespace ReBuzz.Studio.Tests
             if (runJobs) Dispatcher.UIThread.RunJobs();
         }
 
+        /// <summary>Renders <paramref name="frames"/> frames, as the audio thread would, and returns what the master played (interleaved, ±1).</summary>
+        public float[] RunFrames(int frames)
+        {
+            var heard = new float[frames * 2];
+            int done = 0;
+            while (done < frames)
+            {
+                int n = Math.Min(frames - done, buffer.Length / 2);
+                work.MainAudioFillBuffer(buffer, 0, n * 2);
+                Array.Copy(buffer, 0, heard, done * 2, n * 2);
+                done += n;
+            }
+            Dispatcher.UIThread.RunJobs();
+            return heard;
+        }
+
         /// <summary>Renders up to the start of session tick <paramref name="clock"/>.</summary>
         public void PlayTo(long clock)
         {

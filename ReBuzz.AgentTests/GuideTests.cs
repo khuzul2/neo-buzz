@@ -132,6 +132,7 @@ namespace ReBuzz.AgentTests
             ["transport"] = new[] { "action", "at", "loop" },
             ["session_launch"] = new[] { "scene", "machine", "pattern", "stop", "immediate", "back_to_arrangement" },
             ["session_record"] = new[] { "action", "machine", "scene", "bars" },
+            ["track_input"] = new[] { "action", "machine", "audio_from", "midi_from", "channel", "monitor" },
             ["midi_play"] = new[] { "machine", "notes", "start", "stop" },
             ["meters_read"] = new[] { "machines", "window_seconds", "clear_clip" },
             ["machine_readings"] = new[] { "machine" },

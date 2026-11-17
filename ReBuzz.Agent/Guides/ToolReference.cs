@@ -25,7 +25,7 @@ namespace ReBuzz.Agent.Guides
             ("Neo Patch", new[] { "patch_*" }),
             ("Patterns and notes", new[] { "pattern_*", "notes_*", "theory" }),
             ("Arrangement and automation", new[] { "arrangement_*", "automation_*" }),
-            ("Session View and live play", new[] { "session_*", "transport", "midi_play", "meters_read", "machine_readings" }),
+            ("Session View and live play", new[] { "session_*", "transport", "midi_play", "track_input", "meters_read", "machine_readings" }),
             ("Render and analysis", new[] { "render", "analyze", "analyze_mix", "compare", "plot", "target_build", "eq_fit" }),
             ("Waves", new[] { "wave_*" }),
             ("App control", new[] { "settings_*", "midi_bind", "midi_bindings_list", "midi_unbind", "midi_learn", "audio_*", "export_audio", "master_record", "app_status", "view_show", "machine_open_editor", "select", "panel_set", "window_layout", "browser_search", "browser_places", "drop_item" }),

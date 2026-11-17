@@ -419,6 +419,12 @@ namespace ReBuzz.Core
         internal int OutputLatencySamples { get; set; }
 
         /// <summary>
+        /// Fork (docs/specs/neo-audio.md "Inputs and arm"): the audio device's input, owned by the engine: the drivers push what the device
+        /// captured, the engine takes each block's frames out of it, audio machines read them.
+        /// </summary>
+        internal EngineInput EngineInput { get; } = new EngineInput();
+
+        /// <summary>
         /// Gets or sets whether the host is currently playing.
         /// Setting to true prepares playback synchronized on the next tick.
         /// Setting to false stops playback, stops all machines and clears solo state.
@@ -1921,7 +1927,13 @@ namespace ReBuzz.Core
         /// Entry point for MIDI input from devices. Routes incoming MIDI messages
         /// to the focused machine/editor and other machines depending on settings.
         /// </summary>
-        public void SendMIDIInput(int data)
+        public void SendMIDIInput(int data) => SendMIDIInput(MidiDevice.Unknown, data);
+
+        /// <summary>
+        /// Fork (docs/specs/neo-audio.md "Inputs and arm"): MIDI input from a known device. A track armed for one device hears only
+        /// that device; a message with no device (<see cref="MidiDevice.Unknown"/>) is heard by tracks listening to all inputs.
+        /// </summary>
+        public void SendMIDIInput(MidiDevice device, int data)
         {
             // Fork (0.8 groundwork): active sensing (0xFE, every 300 ms from many keyboards) means
             // nothing here; clock and other real-time bytes go to the machines but not to the UI
@@ -1934,7 +1946,7 @@ namespace ReBuzz.Core
             if ((realTime || status == 0xF2) && SessionSync?.OnClockInput(data) == true) return;
             try
             {
-                RouteMidiInput(data);
+                RouteMidiInput(device, data);
             }
             catch (Exception e)
             {
@@ -1954,7 +1966,7 @@ namespace ReBuzz.Core
             });
         }
 
-        void RouteMidiInput(int data)
+        void RouteMidiInput(MidiDevice device, int data)
         {
             // Fork: notes and CCs mapped to the Session View control the session only
             // (docs/specs/session-view.md 0.2). The session handles them here, on the MIDI thread
@@ -1962,7 +1974,7 @@ namespace ReBuzz.Core
             bool sessionOnly = SessionMidi?.OnMidiThread(data) == true;
 
             // Fork (0.7): armed tracks take the keyboard: their machines play it and it is recorded.
-            if (!sessionOnly && SessionCore.OnMidiInput(data))
+            if (!sessionOnly && SessionCore.OnMidiInput(device, data))
                 return;
 
             if (!sessionOnly && midiFocusMachine != null && !midiFocusMachine.DLL.IsMissing)
@@ -2875,6 +2887,8 @@ namespace ReBuzz.Core
         public event Action<float[], int, int> AudioReceived;
         internal void AudioInputAvalable(float[] samples, int frames, int channels)
         {
+            // Fork (docs/specs/neo-audio.md "Inputs and arm"): the engine's own input, then the old event ("ReBuzz Audio In" still works).
+            EngineInput.Push(samples, frames, channels);
             AudioReceived?.Invoke(samples, frames, channels);
         }
 

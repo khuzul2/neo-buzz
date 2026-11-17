@@ -20,9 +20,13 @@ namespace ReBuzz.Midi
 
         public string ProductName { get; private set; }
 
-        public MidiInDevice(IBuzz buzz)
+        // Fork (docs/specs/neo-audio.md "Inputs and arm"): where messages go instead of the core's plain MIDI input (MidiEngine's, which names the device).
+        private readonly Action<int> received;
+
+        public MidiInDevice(IBuzz buzz, Action<int> received = null)
         {
             this.buzz = buzz;
+            this.received = received;
         }
 
         public void CreateMidiIn(int selectedDeviceIndex)
@@ -87,7 +91,10 @@ namespace ReBuzz.Midi
 
         private void MidiIn_MessageReceived(object sender, MidiInMessageEventArgs e)
         {
-            buzz.SendMIDIInput(e.RawMessage);
+            if (received != null)
+                received(e.RawMessage);
+            else
+                buzz.SendMIDIInput(e.RawMessage);
 
             //midiMessages.Enqueue(e.RawMessage);
             //midiMessageReceivedEvent.Set();

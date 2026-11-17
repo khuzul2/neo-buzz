@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Fork addition (docs/specs/pitch.md §7): scores the shared pitch engine on real recordings, for the pitch-eval workflow
+    (.github/workflows/pitch-eval.yml). Links the shared DSP library and nothing else, so it builds and runs anywhere .NET does.
+    The data are downloaded by the workflow on the runner and read from there; nothing is committed. Not part of ReBuzz.sln.
+
+      run it with: dotnet run, configuration Release, project tools/PitchEval (the arguments are in Program.cs)
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>NeoBuzz.PitchEval</RootNamespace>
+    <Optimize>true</Optimize>
+    <TieredPGO>false</TieredPGO>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Machines\NeoBuzz.Dsp\**\*.cs" Link="Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

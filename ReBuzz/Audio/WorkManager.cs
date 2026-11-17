@@ -275,6 +275,9 @@ namespace ReBuzz.Audio
                     // delay compensation before this block's work (the same samples every run).
                     buzzCore.ApplyLatencyIfDirty();
 
+                    // Fork (docs/specs/neo-audio.md "Inputs and arm"): the device's input for these frames, for the audio machines that read it.
+                    buzzCore.EngineInput.BeginBlock(framesToProcess);
+
                     // Call work
                     ReadWork(buffer, workBufferOffset, framesToProcess);
                     Mark("ReadWork");
