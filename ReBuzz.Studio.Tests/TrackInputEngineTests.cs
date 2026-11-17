@@ -65,6 +65,7 @@ namespace ReBuzz.Studio.Tests
             rig = new SessionRig();
             var r = rig;
             var core = r.Core;
+            core.MasterVolume = 1;                          // levels as the machines make them (other tests leave it lower; the rig puts it back)
             core.SafeMaster.LimiterOn = true;               // a test of the Safety page before may have left a ceiling below 0 dB
             core.SafeMaster.CeilingDb = 0;
             core.SafeMaster.Reset();                        // the master's limiter keeps no gain reduction from a test before
