@@ -190,7 +190,21 @@ namespace NeoBuzz.DyeEssence
             for (int i = 0; i < SampleSources.Count; i++) SampleSources.Get(i);
         }
 
-        internal DyeEngine Engine { get; }
+        internal DyeEngine Engine { get; private set; }
+
+        /// <summary>
+        /// An offline render starts from a machine as made (NeoSynthBase.ResetForRender): a new engine, so the voices, the oscillators' random
+        /// phases (a seed that moves on with every note), the LFOs, the filters and the effects' memory are what they were when the machine was
+        /// new, with the state that belongs to the song (drawn shapes, pattern, routing, imported tables and samples) put back on it.
+        /// Without this two renders of one song differed (a unison patch by 3 dB of SDR) and so did a mix and the sum of its soloed parts
+        /// (docs/specs/stem-separation.md section 5).
+        /// </summary>
+        internal override void Restart()
+        {
+            Engine = new DyeEngine(Values);
+            rate = 0;
+            MachineState = state;
+        }
 
         /// <summary>Slot <paramref name="slot"/>'s user table's name ("" when none is loaded).</summary>
         internal string UserTableName(int slot) => state.Get(slot).Name;
