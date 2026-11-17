@@ -55,6 +55,7 @@ namespace ReBuzz.Core.Clips
         ClipPlayback[] active = new ClipPlayback[MaxClips];
         ClipPlayback[] next = new ClipPlayback[MaxClips];
         int activeCount, nextCount;
+        readonly SeekBudget seeks = new SeekBudget();          // the Pro starts a block may do inline (neo-audio.md section 11)
 
         /// <summary>The longest block it mixes (the audio settings' largest buffer; the engine's blocks are 256 at most).</summary>
         public const int DefaultMaxBlock = 4096;
@@ -84,6 +85,7 @@ namespace ReBuzz.Core.Clips
             Array.Clear(Left, 0, n);
             Array.Clear(Right, 0, n);
             nextCount = 0;
+            seeks.Left = SeekBudget.PerBlock;
             return n;
         }
 
@@ -97,6 +99,7 @@ namespace ReBuzz.Core.Clips
             var p = clip?.Params;
             if (p == null || nextCount >= MaxClips || Array.IndexOf(next, clip, 0, nextCount) >= 0) return;
             int count = Math.Min(n, Frames);
+            clip.Voice.Budget = seeks;
             var fades = p.Fades;
             if (fades.Active && !double.IsNaN(clipPos) && !double.IsNaN(clipLeft))
             {

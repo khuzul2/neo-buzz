@@ -1,6 +1,7 @@
 // Agent server (docs/specs/neo-audio.md, NA1): audio in the song. audio_import brings a WAV, AIFF, FLAC, OGG or MP3 file into the song's
 // audio store and puts it on a Neo Audio track (in a Session slot, in the arrangement, or both); audio_clip_get and audio_clip_set read
-// and change an audio clip's warp, tempo, transposition, gain, region and loop.
+// and change an audio clip's warp, tempo, transposition, gain, region and loop; audio_separate splits a clip or a file into stems on new tracks
+// (docs/specs/stem-separation.md).
 
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,7 @@ using ReBuzz.Agent.Model;
 using ReBuzz.Agent.Mcp;
 using ReBuzz.Core;
 using ReBuzz.Core.AudioLibrary;
+using ReBuzz.Core.AudioLibrary.Stems;
 using ReBuzz.Core.Session;
 using static ReBuzz.Agent.Mcp.Schema;
 
@@ -24,6 +26,14 @@ namespace ReBuzz.Agent
     internal static class AudioClipTools
     {
         static readonly string[] Warps = SessionDocument.AudioSettings.WarpModes;
+
+        /// <summary>The warp mode's schema: the names, in any case ("pro" is "Pro").</summary>
+        static JsonObject WarpSchema()
+        {
+            var s = String("Warp mode (any case)", Warps);
+            s["x-ignoreCase"] = true;
+            return s;
+        }
         static readonly string[] Preserves = SessionDocument.AudioSettings.PreserveModes;
 
         static SessionLayout Layout(ReBuzzCore core) =>
@@ -64,6 +74,9 @@ namespace ReBuzz.Agent
                 ["length_beats"] = SongModel.Beats(core, p.Length),
                 ["warp_markers"] = new JsonArray(a.Markers.Select(x => (JsonNode)new JsonObject { ["sample"] = x.Sample, ["beat"] = x.Beat }).ToArray()),
             };
+            // Pro needs the native neostretch library; without it the clip plays as Complex (neo-audio.md section 11).
+            if (a.Warp == "Pro" && !ReBuzz.Core.Clips.NeoStretch.Available)
+                o["warp_playing"] = "Complex";
             var info = layout.AudioInfo(p);
             if (info is { } i)
                 o["audio"] = new JsonObject
@@ -193,7 +206,7 @@ namespace ReBuzz.Agent
                 Name = "audio_clip_get",
                 Title = "Read an audio clip",
                 Description =
-                    "An audio clip's settings: warp mode (Off, Repitch, Beats, Complex), what Beats preserves, tempo, transposition (semitones) and detune (cents), gain (dB), " +
+                    "An audio clip's settings: warp mode (Off, Repitch, Beats, Complex, Pro), what Beats preserves, tempo, transposition (semitones) and detune (cents), gain (dB), " +
                     "loop and region (beats), warp markers, its length, and its audio (id, name, seconds, rate, channels, beats). " +
                     "Example: audio_clip_get(machine=\"Drums audio\", pattern=\"loop\").",
                 Input = Object(null, ClipTarget()),
@@ -218,7 +231,7 @@ namespace ReBuzz.Agent
                 Title = "Set an audio clip",
                 Description =
                     "Changes an audio clip, one undo step. warp: Off (its own speed), Repitch (a turntable), Beats (slices on transients; drums, loops), Complex " +
-                    "(a phase vocoder; any material). preserve (Beats): Transients, 1/4, 1/8, 1/16. tempo_bpm is the audio's tempo (without warp markers the clip's length " +
+                    "(a phase vocoder; any material), Pro (Signalsmith Stretch: the best quality for any material, at more CPU; it plays as Complex where its native library is missing). preserve (Beats): Transients, 1/4, 1/8, 1/16. tempo_bpm is the audio's tempo (without warp markers the clip's length " +
                     "follows it: 4 beats at 120 BPM are 8 at 60); detect_tempo=true finds it again. transpose -48..48 semitones, detune -50..50 cents, gain_db -70..24. " +
                     "loop on or off; region = {start_beats, loop_start_beats, loop_end_beats} inside the clip (loop_end 0 is its end). warp_markers = [{sample, beat}] " +
                     "(at least 2; [] clears them). Arrangement audio clips (NA2): fade_in_beats and fade_out_beats (the fades in the arrangement; 0 none), reverse " +
@@ -227,7 +240,7 @@ namespace ReBuzz.Agent
                     "unless warp is given. Example: audio_clip_set(machine=\"Drums audio\", pattern=\"loop\", warp=\"Complex\", transpose=-2, gain_db=-3).",
                 Input = Object(null, ClipTarget().Concat(new[]
                 {
-                    Opt("warp", String("Warp mode", Warps)),
+                    Opt("warp", WarpSchema()),
                     Opt("preserve", String("What Beats keeps", Preserves)),
                     Opt("tempo_bpm", Number("The audio's tempo", 1, 999)),
                     Opt("detect_tempo", Boolean("Find the tempo again from the audio")),
@@ -299,6 +312,103 @@ namespace ReBuzz.Agent
                         return ClipJson(core, layout, m, p);
                     }, c.Cancellation);
                     return ToolResult.Ok($"{r["machine"]} \"{r["pattern"]}\": {r["warp"]}, {r["tempo_bpm"]} BPM, {r["transpose"]} st {r["detune"]} ct, {r["gain_db"]} dB, {r["length_beats"]} beats.", r);
+                },
+            });
+
+            tools.Add(new ToolDef
+            {
+                Name = "audio_separate",
+                Title = "Separate stems",
+                Description =
+                    "Splits an audio clip of the song (machine + pattern) or an audio file (path) into stems with a local model, and puts each stem on a new Neo Audio track named after it " +
+                    "(\"Bass - <source>\"): one clip per stem, in the source clip's Session scene and at its arrangement positions, with its warp, tempo, gain and region (a file: scene slot " +
+                    "from 1, default 1, and/or at_beats). The stems' audio goes into the song's audio store; one undo step. quality: Fast = Demucs htdemucs, Balanced = htdemucs_ft " +
+                    "(four times the work), Best = BS-RoFormer (the slowest). A model must be installed (Gear/Models/Stems, or the folder in Preferences; Install models... takes the " +
+                    "\"NeoBuzz Live Stem Models\" zip). stems: any of vocals, drums, bass, other, or all (default). Results are cached per audio and model, so a repeat is instant. " +
+                    "It takes a while: about a minute per minute of audio on a fast CPU for Fast, several for Best; progress is reported, and cancelling stops it. " +
+                    "Example: audio_separate(machine=\"Drums audio\", pattern=\"loop\", quality=\"Fast\", stems=[\"drums\", \"bass\"]).",
+                Input = Object(null,
+                    Opt("machine", String("The Neo Audio machine of the clip to separate")),
+                    Opt("pattern", String("The audio clip's pattern")),
+                    Opt("path", String("An audio file to separate instead of a clip (WAV, AIFF, FLAC, OGG, MP3)")),
+                    Opt("quality", String("Fast, Balanced or Best (default Fast)", "Fast", "Balanced", "Best")),
+                    Opt("stems", Array(String("A stem", "vocals", "drums", "bass", "other", "all"), "Which stems (default all four)")),
+                    Opt("slot", Integer("A file: the Session scene for the new clips, from 1 (default 1)", 1, 999)),
+                    Opt("at_beats", Number("A file: also place the new clips in the arrangement at this position, in beats", 0))),
+                Output = Object(null,
+                    Req("model", String("The model that ran")), Req("from_cache", Boolean("The result was cached")), Req("seconds", Number("Seconds it took")),
+                    Req("tracks", Array(Object(null, Req("stem", String("The stem")), Req("machine", String("The new Neo Audio machine")), Req("pattern", String("Its clip"))), "The new tracks"))),
+                Annotations = ToolAnnotations.Write,
+                Handler = async c =>
+                {
+                    string machineName = c.String("machine"), patternName = c.String("pattern"), path = c.String("path");
+                    if ((patternName != null) == (path != null))
+                        throw new ToolError("Give a clip (machine and pattern) or a path to a file, one of the two.");
+                    if (patternName != null && machineName == null) throw new ToolError("A clip needs its machine as well as its pattern.");
+                    string qname = c.String("quality") ?? "Fast";
+                    if (!Enum.TryParse<StemQuality>(qname, true, out var quality)) throw new ToolError("quality: Fast, Balanced or Best.");
+                    string[] stems;
+                    try { stems = StemSeparator.Normalise(c.List("stems")?.Select(x => x?.GetValue<string>())); }
+                    catch (ArgumentException e) { throw new ToolError(e.Message); }
+                    string missing = StemModels.Missing(quality);
+                    if (missing != null) throw new ToolError(missing);
+                    var source = await host.Engine("audio_separate", false, _ =>
+                    {
+                        var layout = Layout(core);
+                        if (!layout.CanMakeAudioTracks) throw new ToolError("The Neo Audio machine isn't installed, so there are no audio tracks.");
+                        StemSource s;
+                        string error;
+                        if (path != null)
+                            s = layout.StemSourceOfFile(path, out error);
+                        else
+                        {
+                            var m = SongModel.Machine(core, machineName);
+                            s = layout.StemSourceOfClip(SongModel.Pattern(m, patternName), out error);
+                        }
+                        return s ?? throw new ToolError(error);
+                    }, c.Cancellation);
+                    StemResult result;
+                    try
+                    {
+                        result = await Layout(core).SeparateAsync(source, quality, stems, f => c.Progress(f, 1, "Separating stems"), c.Cancellation);
+                    }
+                    catch (OperationCanceledException) { throw; }
+                    catch (Exception e) when (e is InvalidOperationException or ArgumentException or InvalidDataException)
+                    {
+                        throw new ToolError("Couldn't separate: " + e.Message);
+                    }
+                    var r = await host.Engine("audio_separate", true, _ =>
+                    {
+                        var layout = Layout(core);
+                        var doc = layout.Ensure();
+                        var before = doc.CloneLayout();
+                        var ticks = c.Number("at_beats") is double beats && path != null ? new[] { SongModel.Ticks(core, beats) } : null;
+                        var outcomes = layout.ApplyStems(source, result, c.Int("slot") is int sl ? sl - 1 : null, ticks, out string error)
+                            ?? throw new ToolError(error);
+                        var after = layout.Document.CloneLayout();
+                        AgentActions.Do(core, new DelegateAction(() => layout.Restore(after), () => layout.Restore(before)));
+                        var list = new JsonArray();
+                        foreach (var o in outcomes)
+                        {
+                            var t = new JsonObject
+                            {
+                                ["stem"] = o.Stem, ["machine"] = o.Machine.Name, ["pattern"] = o.Pattern.Name, ["asset"] = o.Asset.Id,
+                                ["length_beats"] = SongModel.Beats(core, o.Pattern.Length),
+                            };
+                            if (o.Scene >= 0) t["slot"] = o.Scene + 1;
+                            if (o.Ticks.Count > 0) t["at_beats"] = new JsonArray(o.Ticks.Select(x => (JsonNode)JsonValue.Create(SongModel.Beats(core, x))).ToArray());
+                            list.Add(t);
+                        }
+                        return list;
+                    }, c.Cancellation);
+                    var model = StemModels.For(quality)!;
+                    var output = new JsonObject
+                    {
+                        ["model"] = model.Id, ["from_cache"] = result.FromCache, ["seconds"] = Math.Round(result.Seconds, 1), ["tracks"] = r,
+                    };
+                    return ToolResult.Ok($"Separated \"{source.Name}\" with {model.Title} ({qname}) into {string.Join(", ", r.Select(t => t!["stem"]!.GetValue<string>()))}" +
+                        (result.FromCache ? " (from the cache)" : $" in {result.Seconds:0.#} s") + ": " +
+                        string.Join(", ", r.Select(t => $"{t!["machine"]}")) + ".", output);
                 },
             });
         }

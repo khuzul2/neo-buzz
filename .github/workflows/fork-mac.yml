@@ -32,6 +32,7 @@ on:
       - 'tools/song-roundtrip.py'
       - 'tools/headless-midi.py'
       - 'LinkHelper/**'
+      - 'NeoStretch/**'
       - 'ReBuzz.AgentEval/**'
       - 'eval/**'
       - 'ReBuzz/Core/Session/**'
@@ -80,6 +81,15 @@ jobs:
         cmake -S LinkHelper -B build/LinkHelper
         cmake --build build/LinkHelper -j 3
         file build/LinkHelper/ReBuzzLink
+
+    # Neo Audio's Pro warp mode (docs/specs/neo-audio.md section 11): the neostretch library, a C ABI over Signalsmith Stretch, built
+    # with CMake and tested by its own test (no allocation in the audio calls, finite output, alignment); the session tests copy it
+    # beside themselves, so the Pro tests run against it.
+    - name: NeoStretch (CMake)
+      run: |
+        cmake -S NeoStretch -B build/NeoStretch
+        cmake --build build/NeoStretch -j 3
+        ctest --test-dir build/NeoStretch --output-on-failure
 
     # With the CoreMIDI loopback (virtual ports; the runner has no MIDI devices) and the Link helper.
     - name: Session View core and platform seams

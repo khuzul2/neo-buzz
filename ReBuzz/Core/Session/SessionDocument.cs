@@ -187,7 +187,7 @@ namespace ReBuzz.Core.Session
         /// </summary>
         public sealed class AudioSettings
         {
-            public static readonly string[] WarpModes = { "Off", "Repitch", "Beats", "Complex" };
+            public static readonly string[] WarpModes = { "Off", "Repitch", "Beats", "Complex", "Pro" };
             public static readonly string[] PreserveModes = { "Transients", "1/4", "1/8", "1/16" };
 
             /// <summary>
@@ -238,7 +238,10 @@ namespace ReBuzz.Core.Session
             {
                 var e = new XElement("Audio", new XAttribute("wave", Wave), new XAttribute("bpm", Num(Bpm)));
                 if (!string.IsNullOrEmpty(Asset)) e.SetAttributeValue("asset", Asset);
-                if (Warp != "Beats") e.SetAttributeValue("warp", Warp);
+                // Pro (NA5) is written as Complex with pro="true": a build that does not know Pro reads Complex, the best mode it has, and
+                // ignores the attribute; one that does reads Pro. No format version changes (an unknown attribute is no reason to refuse a file).
+                if (Warp == "Pro") { e.SetAttributeValue("warp", "Complex"); e.SetAttributeValue("pro", "true"); }
+                else if (Warp != "Beats") e.SetAttributeValue("warp", Warp);
                 if (Preserve != "Transients") e.SetAttributeValue("preserve", Preserve);
                 if (GainDb != 0) e.SetAttributeValue("gain", Num(GainDb));
                 if (Transpose != 0) e.SetAttributeValue("transpose", Transpose);
@@ -257,6 +260,7 @@ namespace ReBuzz.Core.Session
             {
                 if (e == null) return null;
                 string warp = (string)e.Attribute("warp") ?? "Beats";
+                if (warp == "Complex" && (string)e.Attribute("pro") == "true") warp = "Pro";
                 string preserve = (string)e.Attribute("preserve") ?? "Transients";
                 var a = new AudioSettings
                 {

@@ -57,9 +57,11 @@ FEATURES = [
     ("Neo Audio (NA1)", "Audio files in the song: import, warp, tempo, transpose, gain, loop, region", "neo-audio.md", ["audio_import", "audio_clip_get", "audio_clip_set"], "the audio is kept in the song (an .nbl embeds it), not in the wavetable"),
     ("Drag and drop (DD1)", "Dropping a browser item or a file on the Arrangement, the Session or the Machine View, by the same rules", "drag-drop.md", ["drop_item"], "the drag itself is the person's; drop_item does what the drop does, plan=true says what it would do"),
     ("Neo Audio (NA2)", "Audio clips in the arrangement: waveforms, move across audio tracks, trim, stretch, loop, fades, crossfades, gain, split, consolidate, reverse", "neo-audio.md §10", ["arrangement_clip", "audio_clip_set", "audio_clip_get"], "arrangement_clip ops fade, gain, crossfade, reverse, stretch, consolidate and to_machine are the Arrange view's gestures; the waveform drawing is the studio's only"),
+    ("Neo Audio (NA5)", "Pro warp mode: Signalsmith Stretch time-stretch and pitch shift for any material, in Session and the arrangement", "neo-audio.md §11", ["audio_clip_set", "audio_clip_get"], "audio_clip_set warp=\"pro\"; audio_clip_get reports it, and warp_playing when the native library is missing and the clip plays as Complex"),
     ("Browser (BR1)", "One search over machines, plug-ins, presets, patterns and indexed sample folders", "browser.md", ["browser_search"], "the panel's search; kind narrows it"),
     ("Browser (BR1)", "Places: the folders the browser indexes", "browser.md", ["browser_places"], "list, add, remove; the scan runs in the background"),
     ("Browser (BR1)", "Hot-swap: other gear in a machine's place", "browser.md", ["machine_swap"], "the Machine View's drop on a machine's box; one undo step"),
+    ("Neo Audio (stems)", "Separate stems: a clip or a file into vocals, drums, bass and other on new audio tracks", "stem-separation.md", ["audio_separate"], "the Separate stems and Install models dialogs and the Preferences page are the studio's only"),
     ("Dropped", "Wireless, machine templates and the Create Template window", "ux-overhaul.md §9 row 14", [], "dropped in the studio too"),
 ]
 

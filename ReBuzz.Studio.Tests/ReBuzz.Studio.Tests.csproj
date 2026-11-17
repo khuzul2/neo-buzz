@@ -45,6 +45,11 @@
     <Compile Include="..\Machines\NeoBuzz.Analysis\Yin.cs;..\Machines\NeoBuzz.Analysis\Fft.cs" Link="Analysis\%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <!-- The stem tests' little ONNX models (the same builder ReBuzz.SessionTests uses). -->
+  <ItemGroup>
+    <Compile Include="..\ReBuzz.SessionTests\Stems\TinyOnnx.cs" Link="Stems\TinyOnnx.cs" />
+  </ItemGroup>
+
   <!-- The audio hygiene tests describe a buffer that allocated as the engine's and the machines' tests do (AllocationWindow). -->
   <ItemGroup>
     <Compile Include="..\ReBuzzTests\Automation\GuardPolicy.cs" Link="Automation\GuardPolicy.cs" />

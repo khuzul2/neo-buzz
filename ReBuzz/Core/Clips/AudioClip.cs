@@ -192,7 +192,12 @@ namespace ReBuzz.Core.Clips
         /// <summary>Slices at transients (or a grid), each played at its own speed from where it falls: drums and loops.</summary>
         Beats,
         /// <summary>A phase vocoder: any material, pitch kept.</summary>
-        Complex
+        Complex,
+        /// <summary>
+        /// Signalsmith Stretch (neo-audio.md section 11, the native neostretch library): a higher quality stretch and pitch shift of any
+        /// material. Plays as Complex when the library is missing. Last, so the values of the others stay what they were.
+        /// </summary>
+        Pro
     }
 
     /// <summary>

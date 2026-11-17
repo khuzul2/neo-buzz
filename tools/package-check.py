@@ -135,6 +135,11 @@ if sfiles:
     pa_lic = read(os.path.join("Licenses", "PortAudio-LICENSE.txt"))
     check("PortAudio" in pa_lic and "Permission is hereby granted" in pa_lic, "PortAudio's licence text ships (Licenses\\PortAudio-LICENSE.txt)")
     check("ReBuzzLink.exe" in sfiles, "the Ableton Link helper is beside the studio (the Session View's Link)")
+    # NA5 (docs/specs/neo-audio.md section 11): the Pro warp mode's native library, beside the studio's engine and beside the WPF app's.
+    check("neostretch.dll" in sfiles, "neostretch.dll (Neo Audio's Pro warp mode) is beside the studio")
+    check(os.path.isfile(os.path.join(wpf_dir, "neostretch.dll")), "neostretch.dll is beside the WPF app too")
+    check("Signalsmith" in read(os.path.join("Licenses", "SignalsmithStretch-LICENSE.txt")) and "MIT License" in read(os.path.join("Licenses", "SignalsmithStretch-LICENSE.txt")),
+          "Signalsmith Stretch's MIT licence ships (Licenses\\SignalsmithStretch-LICENSE.txt)")
     check("PortAudio" in read(os.path.join("Licenses", "NOTICE.txt")), "Licenses\\NOTICE.txt names PortAudio")
     cfg = sread("ReBuzz.Studio.runtimeconfig.json")
     check(re.search(r'"System.Runtime.TieredCompilation.QuickJitForLoops":\s*false', cfg) is not None, "the studio's runtimeconfig has the audio thread's JIT setting")
