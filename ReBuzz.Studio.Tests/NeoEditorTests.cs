@@ -60,7 +60,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo De-esser", "NeoDeEsserEditor", "neo-deesser-editor", 833, 300),
             ("Neo Gate", "NeoGateEditor", "neo-gate-editor", 1000, 277),
             ("Neo Spectral", "NeoSpectralEditor", "neo-spectral-editor", 1004, 300),
-            ("Neo Tune", "NeoTuneEditor", "neo-tune-editor", 1000, 300),
+            ("Neo Tune", "NeoTuneEditor", "neo-tune-editor", 1137, 321),
             ("Neo Dither", "NeoDitherEditor", "neo-dither-editor", 667, 277),
             ("Neo Strip", "NeoStripEditor", "neo-strip-editor", 966, 605),
         };
@@ -475,6 +475,74 @@ namespace ReBuzz.Studio.Tests
             {
                 MachineWindowFit.WorkArea = area;
                 Remove(poly);
+            }
+        }
+
+        [AvaloniaTest]
+        public void NeoTuneDrawsTheVoiceAndTheCorrectedVoiceAndItsKeyboardMutesANote()
+        {
+            // neo-tune.md §6: a voice sung through the machine (its Work, offline) is drawn on the piano roll, the voice in grey and the
+            // corrected voice in the accent colour; a click on a key of the scale keyboard mutes that note (the scale turns into Custom
+            // with the notes it had, without that one), and a second click enables it again.
+            var m = Add("Neo Tune", "Tune Live");
+            try
+            {
+                var window = OpenEditor(m);
+                WaitReady(m, window);
+                var instance = m.ManagedMachine;
+                var work = instance.GetType().GetMethod("Work", new[] { typeof(Buzz.MachineInterface.Sample[]), typeof(Buzz.MachineInterface.Sample[]), typeof(int), typeof(Buzz.MachineInterface.WorkModes) })!;
+                int rate = ReBuzzCore.masterInfo.SamplesPerSec;
+                Global(m, "Retune speed").SetValue(0, 0);
+                var input = new Buzz.MachineInterface.Sample[256];
+                var output = new Buzz.MachineInterface.Sample[256];
+                double phase = 0;
+                long n = 0;
+                // 6 s of a vowel-like voice: harmonics that fall off, 5.5 Hz vibrato of +/-30 cents, a note every 0.75 s on a slightly flat A major scale.
+                int[] steps = { 0, 2, 4, 5, 7, 9, 11, 12 };
+                for (int block = 0; block < 6 * rate / 256; block++)
+                {
+                    for (int i = 0; i < 256; i++, n++)
+                    {
+                        double t = n / (double)rate;
+                        double midi = 57 + steps[(int)(t / 0.75) % steps.Length] - 0.35 + 0.3 * Math.Sin(2 * Math.PI * 5.5 * t);
+                        double f = 440.0 * Math.Pow(2, (midi - 69) / 12);
+                        phase += 2 * Math.PI * f / rate;
+                        double v = 0;
+                        for (int h = 1; h <= 12; h++) v += Math.Sin(h * phase) / (h * h * 0.6 + 1);
+                        input[i] = new Buzz.MachineInterface.Sample((float)(v * 7000), (float)(v * 7000));
+                    }
+                    lock (ReBuzzCore.AudioLock) work.Invoke(instance, new object[] { output, input, 256, Buzz.MachineInterface.WorkModes.WM_READWRITE });
+                }
+                Dispatcher.UIThread.RunJobs();
+                var frame = Frame(window, "neo-tune-editor-live");
+                var roll = Controls(window, "GraphView").Single(g => Math.Abs(g.Bounds.Width - 380) < 1 && Math.Abs(g.Bounds.Height - 150) < 1);
+                var area = BoundsIn(roll, window);
+                uint accent = 0xE8A33D, grey = 0x8A92A0;
+                int corrected = Count(frame, area, accent, 60), heard = Count(frame, area, grey, 40);
+                TestContext.Out.WriteLine($"Neo Tune's roll: {corrected} accent pixels, {heard} grey");
+                Assert.That(corrected, Is.GreaterThan(150), "the corrected voice is drawn");
+                Assert.That(heard, Is.GreaterThan(40), "the voice is drawn");
+
+                // The scale keyboard: C major from C (the default), then a click on E (the third white key) mutes it.
+                var keys = Controls(window, "InteractiveGraph").Single(g => Math.Abs(g.Bounds.Width - 380) < 1 && Math.Abs(g.Bounds.Height - 46) < 1);
+                var scale = Global(m, "Scale");
+                var notes = Global(m, "Custom notes");
+                Assert.That(scale.GetValue(0), Is.EqualTo(1), "Major to start with");
+                double x = 2 + 2.5 * (380 - 4) / 7.0, y = 2 + (46 - 4) * 0.85;
+                Click(window, At(keys, window, x, y));
+                Dispatcher.UIThread.RunJobs();
+                int cMajor = 0b101010110101;
+                Assert.That(scale.GetValue(0), Is.EqualTo(12), "the scale turned into Custom");
+                Assert.That(notes.GetValue(0), Is.EqualTo(cMajor & ~(1 << 4)), "C major without E");
+                Click(window, At(keys, window, x, y));
+                Dispatcher.UIThread.RunJobs();
+                Assert.That(notes.GetValue(0), Is.EqualTo(cMajor), "E enabled again");
+                Frame(window, "neo-tune-editor-custom");
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                Remove(m);
             }
         }
 

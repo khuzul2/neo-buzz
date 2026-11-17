@@ -19,7 +19,7 @@ namespace NeoBuzz.PitchEval
         {
             public string Name, Preset;
             public int Range;          // 0 Low latency, 1 Quality
-            public bool Major;         // major in the key the file name gives (scales and arpeggios), else chromatic
+            public bool Major;         // major, the key listened for (Key from Listen; scales and arpeggios only), else chromatic
         }
 
         static readonly Setting[] Settings =
@@ -28,7 +28,7 @@ namespace NeoBuzz.PitchEval
             new() { Name = "Hard tune, Low latency, chromatic", Preset = "hard", Range = 0 },
             new() { Name = "Natural, Quality, chromatic", Preset = "natural", Range = 1 },
             new() { Name = "Subtle, Quality, chromatic", Preset = "subtle", Range = 1 },
-            new() { Name = "Hard tune, Quality, major in the file's key", Preset = "hard", Range = 1, Major = true },
+            new() { Name = "Hard tune, Quality, major, key listened for", Preset = "hard", Range = 1, Major = true },
         };
 
         sealed class Acc
@@ -49,7 +49,7 @@ namespace NeoBuzz.PitchEval
 
         // ------------------------------------------------------------------------------------------------ settings
 
-        static void Apply(ParamValues v, Setting s, int scale, int root)
+        static void Apply(ParamValues v, Setting s, int scale, int root, bool listen = false)
         {
             void Set(int p, double value) => v.Set(p, Params.Table[p].Raw(value));
             Set(P.Amount, s.Preset == "subtle" ? 55 : 100);
@@ -59,12 +59,13 @@ namespace NeoBuzz.PitchEval
             v.Set(P.Range, s.Range);
             v.Set(P.Scale, scale);
             v.Set(P.Key, root);
+            v.Set(P.Source, listen ? 1 : 0);
         }
 
-        static float[] RenderTune(float[] x, int rate, Setting s, int scale, int root, out int latency)
+        static float[] RenderTune(float[] x, int rate, Setting s, int scale, int root, out int latency, out int listened)
         {
             var v = new ParamValues(Params.Table);
-            Apply(v, s, scale, root);
+            Apply(v, s, scale, root, s.Major);
             var e = new TuneEngine(v);
             e.SetSampleRate(rate);
             latency = e.Latency;
@@ -85,18 +86,9 @@ namespace NeoBuzz.PitchEval
                     if (at >= 0 && at < o.Length) { o[at] = l[i]; written++; }
                 }
             }
+            listened = e.Root;
             return o;
         }
-
-        static string KeyToken(string fileName)
-        {
-            var t = Path.GetFileNameWithoutExtension(fileName).Split('_');
-            for (int i = 2; i < t.Length - 1; i++)
-                if (t[i].Length == 1 && t[i][0] >= 'a' && t[i][0] <= 'g') return t[i];
-            return null;
-        }
-
-        static int RootOf(string key) => key switch { "c" => 0, "d" => 2, "e" => 4, "f" => 5, "g" => 7, "a" => 9, "b" => 11, _ => 0 };
 
         // ------------------------------------------------------------------------------------------------ measuring
 
@@ -216,17 +208,17 @@ namespace NeoBuzz.PitchEval
                     // 20 s at most per file: the rest adds nothing but time.
                     if (x.Length > rate * 20) Array.Resize(ref x, rate * 20);
                     var list = new List<(Setting, string, Acc)>();
-                    string key = KeyToken(chunk[i].E.Name);
                     foreach (var s in Settings)
                     {
-                        int scale = 0, root = 0;
+                        int scale = 0;
                         if (s.Major)
                         {
-                            if (key == null || !(chunk[i].Group.StartsWith("scales") || chunk[i].Group.StartsWith("arpeggios"))) continue;
-                            scale = 1; root = RootOf(key);
+                            if (!(chunk[i].Group.StartsWith("scales") || chunk[i].Group.StartsWith("arpeggios"))) continue;
+                            scale = 1;
                         }
-                        var y = RenderTune(x, rate, s, scale, root, out _);
-                        list.Add((s, chunk[i].Group, Measure(x, y, rate, TuneScales.Mask(scale, root, 0))));
+                        var y = RenderTune(x, rate, s, scale, 0, out _, out int root);
+                        // The scale the output is held to is the one on the key the machine listened for (a scale or an arpeggio has one key).
+                        list.Add((s, chunk[i].Group, Measure(x, y, rate, TuneScales.Mask(scale, Math.Max(0, root), 0))));
                     }
                     res[i] = list.ToArray();
                 });
@@ -244,7 +236,7 @@ namespace NeoBuzz.PitchEval
 
             md.AppendLine("## Neo Tune on VocalSet");
             md.AppendLine();
-            md.AppendLine($"{selected.Count} recordings from VocalSet 1.1 (the subset of the techniques below, at most 20 s each), through the engine of Neo Tune as the machine runs it (256-sample blocks, 44.1 kHz material as recorded). The output is shifted back by the reported latency and its pitch measured with the shared tracker (Voice range, Quality). **Error** is the distance in cents of the pitch from the nearest note of the scale, over the frames where the input is voiced and active and the output is voiced too; \"before\" is the same measure on the input. The settings use the scale named: chromatic (the nearest semitone, the strictest and the one that does not depend on the key), or major in the key that the file name gives (scales and arpeggios). **Within 10 / 25 ct** are the shares of frames inside that distance. **Voiced kept** is the share of voiced, active input frames that are voiced in the output; **false voiced** is the share of unvoiced, active input frames that the output calls voiced (breath and consonants must pass through as they were). **Artefact proxy**: the spectral flux (mean change in dB of the 100 Hz - 8 kHz spectrum from one 5.8 ms hop to the next, frames of 1024) of the output against the input over the active frames, and **clicks**, the rate per minute of one-hop rises of the 4 - 10 kHz band over 12 dB: a bad grain join shows as flux and clicks the input does not have.");
+            md.AppendLine($"{selected.Count} recordings from VocalSet 1.1 (the subset of the techniques below, at most 20 s each), through the engine of Neo Tune as the machine runs it (256-sample blocks, 44.1 kHz material as recorded). The output is shifted back by the reported latency and its pitch measured with the shared tracker (Voice range, Quality). **Error** is the distance in cents of the pitch from the nearest note of the scale, over the frames where the input is voiced and active and the output is voiced too; \"before\" is the same measure on the input. The settings use the scale named: chromatic (the nearest semitone, the strictest and the one that does not depend on the key), or major on the key the machine listened for (Key from Listen; scales and arpeggios, whose notes keep to one key). **Within 10 / 25 ct** are the shares of frames inside that distance. **Voiced kept** is the share of voiced, active input frames that are voiced in the output; **false voiced** is the share of unvoiced, active input frames that the output calls voiced (breath and consonants must pass through as they were). **Artefact proxy**: the spectral flux (mean change in dB of the 100 Hz - 8 kHz spectrum from one 5.8 ms hop to the next, frames of 1024) of the output against the input over the active frames, and **clicks**, the rate per minute of one-hop rises of the 4 - 10 kHz band over 12 dB: a bad grain join shows as flux and clicks the input does not have.");
             md.AppendLine();
             foreach (var s in Settings)
             {
@@ -321,7 +313,7 @@ namespace NeoBuzz.PitchEval
                 var seg = new float[len];
                 Array.Copy(x, start, seg, 0, len);
                 var set = new Setting { Name = label, Preset = preset, Range = 1 };
-                var y = RenderTune(seg, rate, set, 0, 0, out _);
+                var y = RenderTune(seg, rate, set, 0, 0, out _, out _);
                 n++;
                 string baseName = $"{n:00}-{pick.Singer}-{pick.Group.Replace(", ", "-").Replace(' ', '-')}-{preset}";
                 WriteWav(Path.Combine(dir, baseName + "-before.wav"), seg, rate);
