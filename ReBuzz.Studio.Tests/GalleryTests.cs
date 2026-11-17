@@ -2035,9 +2035,9 @@ namespace ReBuzz.Studio.Tests
                 Import(drums, 1);
                 var chops = Import(vox, 0);
                 Import(vox, 2);
-                var arranged = Import(vox, 1);
-                layout.SetSlot(layout.FirstTrackOf(vox), 1, null);
-                var laneV = Core.Song.Sequences.First(q => q.Machine == vox);
+                var arranged = Import(drums, 2);
+                layout.SetSlot(layout.FirstTrackOf(drums), 2, null);
+                var laneV = Core.Song.Sequences.First(q => q.Machine == drums);   // the Arrangement's clip is on the visible Drum Loop lane
                 var editor = new ClipEditor(Core);
                 Assert.That(editor.Place(laneV, arranged, 16 * 4), Is.Null);
                 var asset = layout.ViewOf(inSession).Asset;
