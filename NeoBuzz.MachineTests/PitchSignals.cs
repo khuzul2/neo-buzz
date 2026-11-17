@@ -117,6 +117,7 @@ namespace NeoBuzz.MachineTests
             public double Jitter = 0.006, Shimmer = 0.04, Aspiration = 0.01, VibratoCents = 0, VibratoHz = 5.5, VibratoDelay = 0.3;
             public double ScoopCents = 0, ScoopSeconds = 0.08;
             public double Level = 0.5;
+            public double HighLift = 0;
             public double[] Formants = VowelsLow[0];
             public ulong Seed = 7;
             public double GlideTo = 0, GlideStart = 0.2, GlideSeconds = 0.3;
@@ -162,6 +163,8 @@ namespace NeoBuzz.MachineTests
             }
             double asp = o.Aspiration;
             for (int i = 0; i < g.Length; i++) g[i] += asp * rng.Gauss() * 0.05;
+            // Real voices carry more high-frequency energy than a pulse with this tilt (measured on VocalSet vowels, docs/specs/pitch.md section 5): a first-order lift.
+            if (o.HighLift != 0) { double p1 = 0; for (int i = 0; i < g.Length; i++) { double cur = g[i]; g[i] = cur - o.HighLift * p1; p1 = cur; } }
             // The formant cascade.
             double[] y = g;
             for (int k = 0; k < 3; k++)

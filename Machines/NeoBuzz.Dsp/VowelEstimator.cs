@@ -8,8 +8,9 @@
 //    least 250 Hz above it; for a display and for the offline tools), and what the weights come from, the shape of the envelope:
 //    its highest point in three regions, Low (180-500 Hz), Mid (500-1400) and High (1700-3400), in dB. The three vowels differ in
 //    which regions stand out, and a pair of formants too close to be two peaks (the first two of "aa", of "oo") still shows
-//    in which regions are high: aa has Mid above both others; oo has Low far above High and not below Mid; ee has Low and
-//    High above Mid (the valley between its first two formants).
+//    in which regions are high. Measured on VocalSet vowels (8 singers; L-M, H-M, L-H in dB): aa has Mid well above Low (-10 ... -16)
+//    and High not far under Mid; oo has Low above High (+7 ... +21) and High far under Mid (under -5); ee has High at or above
+//    Mid (above 0) and Low not far under Mid.
 //  - The weights are smooth (logistic) scores of those dB differences, each 0 ... 1; they need not add to 1: a vowel between
 //    two shows two middling weights, silence none. Smoothed with a one-pole (50 ms); unvoiced input lets them fall.
 // Limits (the spec's): LPC finds a harmonic and not a formant above about 300 Hz of f0, a whisper has no voiced frame, and the
@@ -129,9 +130,9 @@ namespace NeoBuzz.Dsp
                 {
                     state.F1 = (float)f1; state.F2 = (float)f2;
                     double lm = lowDb - midDb, hm = highDb - midDb, lh = lowDb - highDb;
-                    ta = Logistic((-lm - 3) / 3.0) * Logistic((-hm - 14) / 4.0);
-                    to = Logistic((lh - 30) / 5.0) * Logistic((lm + 3) / 3.0);
-                    te = Logistic((hm + 18) / 4.0) * Logistic(lm / 4.0);
+                    ta = Logistic((-lm - 8) / 2.0) * Logistic((14 - lh) / 3.0);
+                    to = Logistic((lh - 6) / 3.0) * Logistic((lm + 8) / 3.0) * Logistic((-hm - 4) / 3.0);
+                    te = Logistic((hm + 1) / 3.0) * Logistic((lm + 8) / 2.5);
                 }
             }
             state.Valid = ok;

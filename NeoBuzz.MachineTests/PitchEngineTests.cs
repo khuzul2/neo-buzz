@@ -355,7 +355,7 @@ namespace NeoBuzz.MachineTests
                 for (int v = 0; v < 3; v++)
                     foreach (double f0 in f0s)
                     {
-                        var s = PitchSignals.Voice(sr, f0, 0.6, new PitchSignals.VoiceOptions { Formants = table[v], VibratoCents = 30, VibratoDelay = 0.1, Seed = seed++ });
+                        var s = PitchSignals.Voice(sr, f0, 0.6, new PitchSignals.VoiceOptions { Formants = table[v], HighLift = 0.95, VibratoCents = 30, VibratoDelay = 0.1, Seed = seed++ });
                         var ve = new VowelEstimator(sr);
                         VowelResult res = default;
                         for (int pos = 0; pos + 256 <= s.X.Length; pos += 256)
@@ -377,11 +377,11 @@ namespace NeoBuzz.MachineTests
         public void VowelWeightsFallWhenTheVoiceStopsAndFollowTheSmoothing()
         {
             const double sr = 48000;
-            var s = PitchSignals.Voice(sr, 130.8, 1.0, new PitchSignals.VoiceOptions { Formants = PitchSignals.VowelsLow[0], Seed = 4 });
+            var s = PitchSignals.Voice(sr, 130.8, 1.0, new PitchSignals.VoiceOptions { Formants = PitchSignals.VowelsLow[0], Seed = 4, HighLift = 0.95 });
             var ve = new VowelEstimator(sr);
             VowelResult res = default;
             for (int pos = 0; pos + 480 <= s.X.Length; pos += 480) { ve.Push(s.X, pos, 480); res = ve.Update(true); }
-            Assert.That(res.Aa, Is.GreaterThan(0.6));
+            Assert.That(res.Aa, Is.GreaterThan(0.5));
             Assert.That(res.Valid, Is.True);
             // Unvoiced: the weights fall away (the one-pole: under 5 % after three time constants).
             for (int i = 0; i < 20; i++) { ve.Push(new float[480], 0, 480); res = ve.Update(false); }

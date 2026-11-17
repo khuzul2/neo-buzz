@@ -38,7 +38,7 @@ namespace NeoBuzz.PitchEval
         public static void Run(string zipPath, int maxPerGroupPerSinger, StringBuilder md)
         {
             using var zip = ZipFile.OpenRead(zipPath);
-            var rx = new Regex(@"^FULL/([fm]\d+)/(long_tones|scales|arpeggios|excerpts)/([a-z_]+)/([^/]+)\.wav$");
+            var rx = new Regex(@"^FULL/((?:fe)?male\d+)/(long_tones|scales|arpeggios|excerpts)/([a-z_]+)/([^/]+)\.wav$");
             var selected = new List<(ZipArchiveEntry E, string Group, string Singer, string Vowel)>();
             foreach (var grp in Groups)
             {
@@ -141,7 +141,7 @@ namespace NeoBuzz.PitchEval
             for (int i = 0; i < q.Count; i++) if (q.Rms[i] > ActiveRms) { r.Active++; if (q.Voiced[i]) r.VoicedQ++; }
             for (int i = 0; i < l.Count; i++) if (l.Rms[i] > ActiveRms && l.Voiced[i]) r.VoicedL++;
             // Scale LL's voiced count to Q's hop so the shares compare.
-            r.VoicedL = (long)(r.VoicedL * (double)q.Tracker.Hop / l.Tracker.Hop);
+            r.VoicedL = (long)(r.VoicedL * (double)l.Tracker.Hop / q.Tracker.Hop);
             Jumps(q, out r.ConsecQ, out r.OctJumpQ);
             Jumps(l, out r.ConsecL, out r.OctJumpL);
             // Agreement: for each Q estimate the nearest LL estimate.
@@ -175,7 +175,7 @@ namespace NeoBuzz.PitchEval
             {
                 var ve = new VowelEstimator(rate);
                 int block = 256, k = 0;
-                double[] sum = new double[3]; int n = 0;
+                double[] sum = new double[3]; int n = 0; double slm = 0, shm = 0, slh = 0;
                 for (int pos = 0; pos + block <= x.Length; pos += block)
                 {
                     ve.Push(x, pos, block);
@@ -185,10 +185,11 @@ namespace NeoBuzz.PitchEval
                     if ((pos / block) % 2 == 1)
                     {
                         var res = ve.Update(voiced);
-                        if (voiced) { sum[0] += res.Aa; sum[1] += res.Oo; sum[2] += res.Ee; n++; }
+                        if (voiced) { var rg = ve.Regions; slm += rg.Low - rg.Mid; shm += rg.High - rg.Mid; slh += rg.Low - rg.High; sum[0] += res.Aa; sum[1] += res.Oo; sum[2] += res.Ee; n++; }
                     }
                 }
                 if (n > 0) for (int c = 0; c < 3; c++) r.VowelMean[c] = sum[c] / n;
+                if (Environment.GetEnvironmentVariable("PITCHEVAL_VDBG") != null && n > 0) Console.Error.WriteLine($"VDBG {singer} {vowel} lm {slm / n:F1} hm {shm / n:F1} lh {slh / n:F1} aa {sum[0] / n:F2} oo {sum[1] / n:F2} ee {sum[2] / n:F2}");
                 r.VowelFrames = n;
             }
             return r;
