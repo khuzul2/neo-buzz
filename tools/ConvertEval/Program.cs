@@ -93,31 +93,36 @@ namespace NeoBuzz.ConvertEval
 
     internal static class Melody
     {
-        /// <summary>The reference notes of an annotated f0 track: runs of voiced frames of one semitone (the median f0 in cents decides), cut where the rounded pitch changes for 3 frames or the voice stops; runs under 50 ms are dropped.</summary>
+        /// <summary>The reference notes of an annotated f0 track: runs of voiced frames that stay within 0.8 semitone of the run's median pitch (cut when three frames in a row leave it, or the voice stops); runs under 50 ms are dropped.</summary>
         internal static List<Ref> NotesOf(List<double> t, List<double> f0)
         {
             var notes = new List<Ref>();
+            int n = f0.Count;
+            double Midi(int k) => 69 + 12 * Math.Log2(f0[k] / 440);
             int i = 0;
-            while (i < f0.Count)
+            while (i < n)
             {
                 if (f0[i] <= 0) { i++; continue; }
-                int s = i;
-                var run = new List<double>();
-                int cur = (int)Math.Round(69 + 12 * Math.Log2(f0[i] / 440));
-                int off = 0;
-                while (i < f0.Count && f0[i] > 0)
+                int start = i, end = i;                       // end: the last frame in the note
+                var pitches = new List<double> { Midi(i) };
+                int away = 0;
+                double median = pitches[0];
+                for (int k = i + 1; k < n && f0[k] > 0; k++)
                 {
-                    int m = (int)Math.Round(69 + 12 * Math.Log2(f0[i] / 440));
-                    if (m != cur) { off++; if (off >= 3) break; } else off = 0;
-                    run.Add(69 + 12 * Math.Log2(f0[i] / 440));
-                    i++;
-                    if (off == 0 && run.Count > 3) cur = (int)Math.Round(run.OrderBy(v => v).ElementAt(run.Count / 2));
+                    double m = Midi(k);
+                    if (Math.Abs(m - median) > 0.8)
+                    {
+                        if (++away >= 3) break;
+                        continue;
+                    }
+                    away = 0;
+                    pitches.Add(m);
+                    end = k;
+                    var sorted = pitches.OrderBy(v => v).ToList();
+                    median = sorted[sorted.Count / 2];
                 }
-                int e = i - off;
-                i = Math.Max(e, s + 1);
-                var core = run.Take(Math.Max(1, e - s)).OrderBy(v => v).ToList();
-                double median = core[core.Count / 2];
-                if (t[Math.Min(e, t.Count) - 1] - t[s] >= 0.05) notes.Add(new Ref(t[s], t[Math.Min(e, t.Count) - 1], median));
+                if (t[end] - t[start] >= 0.05) notes.Add(new Ref(t[start], t[end], median));
+                i = end + 1;
             }
             return notes;
         }
@@ -177,7 +182,7 @@ namespace NeoBuzz.ConvertEval
             });
             md.AppendLine("## Melody: MDB-stem-synth");
             md.AppendLine();
-            md.AppendLine($"{files.Count} resynthesised solo stems ({audioSeconds / 60:0} minutes of audio, converted in {work:0} s of work: {audioSeconds / Math.Max(work, 1e-9):0}x real time per core). The reference notes are cut from the annotated f0 (runs of one semitone, at least 50 ms); a note is right when its onset is within 50 ms of a reference's and its pitch within 50 cents of that note's median f0.");
+            md.AppendLine($"{files.Count} resynthesised solo stems ({audioSeconds / 60:0} minutes of audio, converted in {work:0} s of work: {audioSeconds / Math.Max(work, 1e-9):0}x real time per core). The reference notes are cut from the annotated f0 (runs that stay within 0.8 semitone of their median, at least 50 ms); a note is right when its onset is within 50 ms of a reference's and its pitch within 50 cents of that note's median f0.");
             md.AppendLine();
             md.AppendLine("| | reference | found | precision | recall | F-measure |");
             md.AppendLine("|---|---:|---:|---:|---:|---:|");
