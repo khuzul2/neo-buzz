@@ -293,6 +293,9 @@ namespace ReBuzz.Studio.Views.Session
             }
         }
 
+        /// <summary>One poll: the meter, and the choosers if what they show changed (a timer does this; tests call it).</summary>
+        internal void Poll() => Tick();
+
         void Tick()
         {
             var layout = core.SessionLayout;

@@ -65,12 +65,14 @@ namespace ReBuzz.Studio.Tests
             rig = new SessionRig();
             var r = rig;
             var core = r.Core;
+            core.SafeMaster.Reset();                        // the master's limiter keeps no gain reduction from a test before
             return new Cleanup(() =>
             {
                 r.Dispose();
                 core.EngineInput.Close();
                 core.OutputLatencySamples = 0;
                 core.SessionControllers = null;
+                core.SafeMaster.Reset();
                 untitled.Dispose();
             });
         }
@@ -471,6 +473,66 @@ namespace ReBuzz.Studio.Tests
             Assert.That(layout.TrackInputOf(a).Audio, Is.EqualTo(AudioFrom.Stereo(0)), "back to the new track's default");
             stack.Redo();
             Assert.That(layout.TrackInputOf(a).Audio, Is.EqualTo(AudioFrom.Mono(1)));
+        }
+
+        // ------------------------------------------------------------------ the agent
+
+        static System.Text.Json.Nodes.JsonObject Tool(string tool, System.Text.Json.Nodes.JsonObject args = null)
+        {
+            var message = new System.Text.Json.Nodes.JsonObject
+            {
+                ["jsonrpc"] = "2.0", ["id"] = 1, ["method"] = "tools/call",
+                ["params"] = new System.Text.Json.Nodes.JsonObject { ["name"] = tool, ["arguments"] = args ?? new System.Text.Json.Nodes.JsonObject() },
+            };
+            var task = Studio.Host.Agent.Host.Server.HandleAsync(message, new ReBuzz.Agent.Mcp.McpSession(), _ => System.Threading.Tasks.Task.CompletedTask, System.Threading.CancellationToken.None);
+            var until = DateTime.UtcNow.AddSeconds(60);
+            while (!task.IsCompleted)
+            {
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                if (DateTime.UtcNow > until) Assert.Fail($"{tool} didn't answer in time");
+                System.Threading.Thread.Sleep(2);
+            }
+            return task.GetAwaiter().GetResult()["result"]!.AsObject();
+        }
+
+        [AvaloniaTest]
+        public void TheAgentReadsAndSetsInputsAndArmsAudioTracks()
+        {
+            using var setup = Setup(out var rig);
+            new FakeInput(rig.Core, 4);
+            var layout = rig.Layout;
+            var voice = NewTrack(rig, "Voice");
+            var lead = rig.Add("Neo Poly", "Lead");
+            var got = Tool("track_input", new System.Text.Json.Nodes.JsonObject { ["action"] = "get" });
+            Assert.That(got["isError"]?.GetValue<bool>() ?? false, Is.False, got.ToJsonString());
+            var s = got["structuredContent"]!.AsObject();
+            Assert.That(s["audio_inputs"]!["channels"]!.AsArray().Count, Is.EqualTo(4));
+            var tracks = s["tracks"]!.AsArray();
+            Assert.That(tracks.Select(t => (string)t!["machine"]), Is.SupersetOf(new[] { "Voice", "Lead" }));
+            Assert.That((string)tracks.First(t => (string)t!["machine"] == "Voice")!["audio_from"], Is.EqualTo("in:1-2"), "the new track's default");
+
+            var set = Tool("track_input", new System.Text.Json.Nodes.JsonObject { ["action"] = "set", ["machine"] = "Voice", ["audio_from"] = "in:3", ["monitor"] = "in" });
+            Assert.That(set["isError"]?.GetValue<bool>() ?? false, Is.False, set.ToJsonString());
+            Assert.That(layout.TrackInputOf(voice).Audio, Is.EqualTo(AudioFrom.Mono(2)));
+            Assert.That(layout.MonitorOf(voice), Is.EqualTo(1));
+            var lset = Tool("track_input", new System.Text.Json.Nodes.JsonObject { ["action"] = "set", ["machine"] = "Lead", ["midi_from"] = "device:Pads", ["channel"] = 2 });
+            Assert.That(lset["isError"]?.GetValue<bool>() ?? false, Is.False, lset.ToJsonString());
+            var input = layout.TrackInputOf(lead);
+            Assert.That((input.Midi, input.Device, input.Channel), Is.EqualTo((MidiFromKind.Device, "Pads", 2)));
+
+            Assert.That(Tool("track_input", new System.Text.Json.Nodes.JsonObject { ["action"] = "set", ["machine"] = "Voice", ["audio_from"] = "in:9" })["isError"]?.GetValue<bool>(), Is.True, "the device has 4 inputs");
+            Assert.That(Tool("track_input", new System.Text.Json.Nodes.JsonObject { ["action"] = "set", ["machine"] = "Lead", ["audio_from"] = "in:1" })["isError"]?.GetValue<bool>(), Is.True, "a generator takes no audio input");
+            Assert.That(Tool("track_input", new System.Text.Json.Nodes.JsonObject { ["action"] = "set", ["machine"] = "Voice", ["audio_from"] = "track:Voice" })["isError"]?.GetValue<bool>(), Is.True, "not itself");
+
+            // Arm for an audio track too.
+            var arm = Tool("session_record", new System.Text.Json.Nodes.JsonObject { ["action"] = "arm", ["machine"] = "Voice" });
+            Assert.That(arm["isError"]?.GetValue<bool>() ?? false, Is.False, arm.ToJsonString());
+            Assert.That(layout.IsMachineArmed(voice), Is.True);
+            Tool("session_record", new System.Text.Json.Nodes.JsonObject { ["action"] = "disarm", ["machine"] = "Voice" });
+            Assert.That(layout.IsMachineArmed(voice), Is.False);
+            var master = Tool("session_record", new System.Text.Json.Nodes.JsonObject { ["action"] = "arm", ["machine"] = "Master" });
+            Assert.That(master["isError"]?.GetValue<bool>(), Is.True);
+
         }
     }
 }

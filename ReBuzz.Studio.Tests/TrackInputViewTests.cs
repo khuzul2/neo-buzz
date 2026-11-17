@@ -135,6 +135,9 @@ namespace ReBuzz.Studio.Tests
 
             // The Arrangement's R.
             w.Show("Arrangement");
+            if (!w.Sequence.IsArrangementMode) w.Sequence.SetArrangementMode(true);
+            Settle();
+            w.Window.RefreshNow();
             var r = w.Sequence.GetVisualDescendants().OfType<ToggleButton>().First(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Arm Voice for recording");
             Assert.That(r.IsChecked, Is.True, "the Arrangement's R follows");
             MachineViewTests.Click(w.Window, r.TranslatePoint(new Point(10, 10), w.Window)!.Value);
@@ -205,18 +208,20 @@ namespace ReBuzz.Studio.Tests
             }
             Feed(8000, f => 0f);
             System.Threading.Thread.Sleep(30);
+            row.Poll();
             Assert.That(row.Meter.Level, Is.EqualTo(0).Within(0.01));
             Feed(8000, f => 0.5f * (float)Math.Sin(f * 0.1));
             System.Threading.Thread.Sleep(60);
+            row.Poll();
             rig.Settle();
             Assert.That(row.Meter.Level, Is.GreaterThan(0.5), "the meter shows the input while the track is armed");
             rig.Screenshot("session-io-row");
             layout.SetMachineArmed(voice, false);
             Feed(8000, f => 0.5f * (float)Math.Sin(f * 0.1));
             System.Threading.Thread.Sleep(60);
+            row.Poll();
             rig.Settle();
             Assert.That(row.Meter.Level, Is.LessThan(0.5), "and goes quiet when it is neither armed nor monitored");
-        }
         }
     }
 }

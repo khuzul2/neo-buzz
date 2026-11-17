@@ -244,7 +244,8 @@ namespace ReBuzz.Core.Session
                 var (l, r) = player?.TakePeak() ?? (0f, 0f);
                 bool live = IsMachineArmed(machine) || MonitorOf(machine) == 1;
                 float peak = live ? Math.Max(l, r) : 0;
-                entry.Model.Update(peak, Math.Min(1.0, (now - entry.Time) / 1000.0), InputMeterScale);
+                if (live) entry.Model.Update(peak, Math.Min(1.0, (now - entry.Time) / 1000.0), InputMeterScale);
+                else entry.Model.Reset();                                    // neither armed nor monitored: the meter is off
                 entry = (now, entry.Model, peak);
                 if (meters.Count > 256) meters.Clear();
                 meters[machine] = entry;

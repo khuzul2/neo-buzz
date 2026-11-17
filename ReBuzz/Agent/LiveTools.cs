@@ -455,7 +455,7 @@ namespace ReBuzz.Agent
                         Opt("underrun_frames", Integer("Frames the engine found missing (silence) since the device opened")),
                         Opt("overrun_frames", Integer("Frames dropped because the engine ran behind")))),
                     Req("midi_devices", Array(String("A MIDI input that is open"), "Devices to choose from")),
-                    Opt("changed", Array(String("What changed")))),
+                    Opt("changed", Array(String("What changed"), "What set changed"))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
@@ -520,7 +520,7 @@ namespace ReBuzz.Agent
                                 ["underrun_frames"] = inp.UnderrunFrames,
                                 ["overrun_frames"] = inp.OverrunFrames,
                             },
-                            ["midi_devices"] = new JsonArray((core.MidiInOutEngine?.OpenInputNames() ?? Array.Empty<string>()).Select(n => (JsonNode)n).ToArray()),
+                            ["midi_devices"] = new JsonArray((core.MidiInOutEngine?.OpenInputNames() ?? System.Array.Empty<string>()).Select(n => (JsonNode)n).ToArray()),
                         };
                         if (action == "set") result["changed"] = changed;
                         return result;

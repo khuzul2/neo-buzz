@@ -109,6 +109,7 @@ namespace ReBuzz.Core.Session
                 AudioFromKind.None => "None",
                 AudioFromKind.Mono => Name(Channel),
                 AudioFromKind.Stereo => channelNames != null && Channel + 1 < channelNames.Count && !string.IsNullOrWhiteSpace(channelNames[Channel]) && !string.IsNullOrWhiteSpace(channelNames[Channel + 1])
+                    && !(Name(Channel) == "In " + (Channel + 1) && Name(Channel + 1) == "In " + (Channel + 2))
                     ? Name(Channel) + " / " + Name(Channel + 1)
                     : "In " + (Channel + 1) + "/" + (Channel + 2),
                 AudioFromKind.Track => "Track: " + Machine,
