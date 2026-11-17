@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Buzz.MachineInterface;
 using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
@@ -34,6 +35,7 @@ namespace NeoBuzz.Plug
         string requested = "";
         string manifestJson;
         int manifestRevision = -1;
+        bool manifestCrashed;
 
         public NeoPlugMachine(IBuzzMachineHost host)
         {
@@ -220,7 +222,16 @@ namespace NeoBuzz.Plug
             catch (Exception) { return null; }
         }
 
-        public int ManifestRevision => core.Revision;
+        /// <summary>The engine's manifest cache (SongModel.Manifest) asks this and calls ManifestJson only when it changed: so a death the pump has not
+        /// noticed yet (it bumps Revision up to 20 ms later) has to be noticed here, or the cached pre-crash manifest is served.</summary>
+        public int ManifestRevision
+        {
+            get
+            {
+                if (!core.Missing && core.IsOpen) core.CheckCrashed();
+                return Volatile.Read(ref core.Revision);
+            }
+        }
 
         /// <summary>The menu's choice of output: through the machine's parameter, so the song, undo and the agent see it.</summary>
         void SetOutput(int bus)
@@ -241,8 +252,9 @@ namespace NeoBuzz.Plug
                 if (core.Missing || !core.IsOpen) return null;
                 // The cached manifest is keyed by Revision, which the pump bumps when it notices a dead sandbox (20 ms later): ask first.
                 core.CheckCrashed();
-                int rev = core.Revision;
-                if (manifestRevision != rev || manifestJson == null)
+                bool crashedNow = core.Crashed;
+                int rev = Volatile.Read(ref core.Revision);
+                if (manifestRevision != rev || manifestJson == null || manifestCrashed != crashedNow)
                 {
                     try
                     {
@@ -250,6 +262,7 @@ namespace NeoBuzz.Plug
                         if (core.Crashed) { if (manifestJson == null) return null; manifestJson = PlugManifest.Patch(manifestJson, core); }
                         else manifestJson = PlugMain.Invoke(() => PlugManifest.Build(core, Gear, Effect), 30000);
                         manifestRevision = rev;
+                        manifestCrashed = crashedNow;
                     }
                     catch (Exception) { return null; }
                 }

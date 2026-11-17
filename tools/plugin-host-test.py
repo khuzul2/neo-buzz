@@ -230,6 +230,15 @@ for n in names:
     lufs, silent = lv1.get(n, (None, None))
     check(silent is False, f"{n} is audible in r1 ({lufs} LUFS)")
 
+# Evidence for the noisy plug-ins' tolerance below: the same session rendered again, no reopen. Where these differ too, the difference is the plug-in's
+# rand() sequence moving on (Surge XT's oscillator phases), not the song's state; the reopened render is held to the same bound as this one.
+ok, _, rc = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": names, "name": "control"})
+lvc = probe_levels(rc) if ok else {}
+for n in names:
+    a0, c0 = lv1.get(n, (None, None))[0], lvc.get(n, (None, None))[0]
+    if isinstance(a0, (int, float)) and isinstance(c0, (int, float)) and abs(a0 - c0) >= 0.05:
+        print(f"     note {n}: two renders of the same session differ by {abs(a0 - c0):.2f} LU ({a0} vs {c0})", flush=True)
+
 song = os.path.join(work, "h1.bmxml")
 check(call("song_save", path=song, overwrite=True)[0], "song_save")
 check(call("song_open", path=song, discard_unsaved=True)[0], "song_open")
@@ -240,7 +249,7 @@ ok, text, cmp = call("compare", a=r1.get("id", "r1"), b=r2.get("id", "r2"))
 identical = ok and "No measurable difference" in text
 loud_same = True
 # H2: a plug-in with a noise table built from rand() (Note Expression Synth's brown noise, Surge XT's oscillator phases) renders a little differently
-# each time it is created in a server process of its own (in the app's process the sequence happens to repeat); its loudness is within 1 LU.
+# each time it is created (a server process of its own starts the sequence afresh; in the app's process it moves on with every instance made); its loudness is within 1 LU.
 placed = os.environ.get("NEOPLUG_PLACEMENT", "")
 sandboxed = placed in ("plugin", "instance", "shared") or (sys.platform == "win32" and placed in ("", "plugin", "instance", "shared"))
 def noisy(plugin): return any(k in plugin for k in ("Note Expression Synth", "Surge XT"))
@@ -250,7 +259,7 @@ for k, (mn, kind, plugin) in enumerate(machines):
     noisy_machine[mn] = noisy(plugin) or (0 <= j < len(gens) and noisy(machines[j][2]))
 for n in names:
     a, b = lv1.get(n, (None, None))[0], lv2.get(n, (None, None))[0]
-    tol = 1.0 if sandboxed and noisy_machine.get(n) else 0.3
+    tol = 1.0 if noisy_machine.get(n) else 0.3   # (in process too: song_open makes new instances, and the process-wide rand() has moved on since r1)
     same = a is not None and (a == b or (isinstance(a, (int, float)) and isinstance(b, (int, float)) and abs(a - b) < tol))
     loud_same &= same or n in known_machines
     check_known(same, f"{n}: {a} LUFS before, {b} after", n)

@@ -67,6 +67,7 @@ namespace ReBuzz.Studio.Views.Sequence
             geo.TickWidth = state.Zoom;
             Overlay = new ArrangementOverlay(this) { IsHitTestVisible = false };
             PointerTouchPadGestureMagnify += OnPinch;
+            InitDrop();         // DD1 (ArrangementCanvas.Drop.cs)
         }
 
         public ArrangementOverlay Overlay { get; }
@@ -1344,6 +1345,7 @@ namespace ReBuzz.Studio.Views.Sequence
                     ctx.FillRectangle(Look.Param, new Rect(Math.Floor(geo.XOf(canvas.CursorTime)), y, 1, row.Height));
                 }
                 canvas.DrawRecording(ctx);
+                canvas.DrawDrop(ctx, tracks);
                 if (canvas.Ghost is { } g)
                 {
                     ctx.DrawRectangle(Look.ResizeFill, Look.ResizePen, g.Rect.Deflate(0.5));

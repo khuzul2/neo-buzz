@@ -22,20 +22,7 @@ namespace ReBuzz.Studio.Views.Machines
 
         public IInstrument Instrument { get; }
 
-        public string DisplayName
-        {
-            get
-            {
-                if (Instrument.Name.Length > 0)
-                {
-                    string name = Path.GetFileName(Instrument.Name);
-                    if (Instrument.Name.StartsWith("VST3/")) name += "(vst3)";
-                    return name;
-                }
-                var dll = Instrument.MachineDLL.Name;
-                return Instrument.MachineDLL.IsOutOfProcess ? dll + " (32-bit)" : dll;
-            }
-        }
+        public string DisplayName => ReBuzz.Core.Drop.GearNames.Display(Instrument);
     }
 
     internal static class MachineEdits

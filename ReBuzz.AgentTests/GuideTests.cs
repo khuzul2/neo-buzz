@@ -169,6 +169,8 @@ namespace ReBuzz.AgentTests
             // BR1 (docs/specs/browser.md: ReBuzz.Agent/App/BrowserTools.cs, ReBuzz/Agent/ReplaceTools.cs)
             ["browser_search"] = new[] { "query", "kind", "limit" },
             ["browser_places"] = new[] { "op", "path", "wait_seconds" },
+            // DD1 (docs/specs/drag-drop.md: ReBuzz/Agent/DropTools.cs)
+            ["drop_item"] = new[] { "view", "kind", "id", "path", "paths", "preset", "target", "plan" },
             ["machine_swap"] = new[] { "machine", "gear", "plugin" },
             ["master_record"] = new[] { "op", "path", "bits", "loop", "overwrite" },
         };
