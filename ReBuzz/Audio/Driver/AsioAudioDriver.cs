@@ -72,8 +72,28 @@ namespace ReBuzz.Audio
             {
                 Name = deviceName,
                 Type = AudioEngine.AudioOutType.ASIO,
-                WaveFormat = audioWaveProvider.WaveFormat
+                WaveFormat = audioWaveProvider.WaveFormat,
+                // Fork (docs/specs/neo-audio.md "Inputs and arm"): the engine's input: the driver's channel names and its input latency.
+                Channels = asioDevice.Capabilities.AllInputChannels.Length,
+                ChannelNames = InputNames(),
+                LatencyFrames = SafeLatency()
             };
+        }
+
+        string[] InputNames()
+        {
+            var infos = asioDevice.Capabilities.InputChannelInfos;
+            int n = asioDevice.Capabilities.AllInputChannels.Length;
+            var names = new string[n];
+            for (int i = 0; i < n; i++)
+                names[i] = infos != null && i < infos.Length ? infos[i].name : null;
+            return names;
+        }
+
+        int SafeLatency()
+        {
+            try { return asioDevice.InputLatencySamples; }
+            catch (Exception) { return 0; }
         }
 
         private void InitDuplexWithFallback()

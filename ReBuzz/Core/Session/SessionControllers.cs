@@ -56,6 +56,8 @@ namespace ReBuzz.Core.Session
             public ControllerScript Script;
             public IControllerPort Port;
             public string Label;
+            /// <summary>The MIDI input the surface plays through (its name), or null when it isn't known.</summary>
+            public string InputName;
             public SurfaceState State;
             public LedFrame Shown;
             public volatile bool Shift;
@@ -87,6 +89,24 @@ namespace ReBuzz.Core.Session
         public IReadOnlyList<string> ScriptProblems => scriptProblems;
 
         internal IReadOnlyList<Connection> Connections => connections;
+
+        volatile string[] claimed = Array.Empty<string>();
+
+        /// <summary>
+        /// Whether a MIDI input is a connected control surface's (any thread). A track listening to all inputs leaves such a device out:
+        /// its pads and knobs run the session (docs/specs/neo-audio.md "Inputs and arm").
+        /// </summary>
+        public bool ClaimsInput(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+            var names = claimed;
+            for (int i = 0; i < names.Length; i++)
+                if (string.Equals(names[i], name, StringComparison.OrdinalIgnoreCase)) return true;
+            return false;
+        }
+
+        void PublishClaims() =>
+            claimed = connections.Where(c => !c.Broken && !string.IsNullOrEmpty(c.InputName)).Select(c => c.InputName).ToArray();
 
         /// <summary>The controllers turned on (connected or waiting for their ports).</summary>
         public IReadOnlyCollection<string> Wanted => wanted;
@@ -197,18 +217,19 @@ namespace ReBuzz.Core.Session
                 return $"{candidate.Script.Name}: its ports ({candidate.InputName}, {candidate.OutputName}) didn't open ({e.Message}). " +
                        "If " + Product.Name + "'s MIDI settings have them on, turn them off there: the controller needs them to itself.";
             }
-            Attach(candidate.Script, port, $"{candidate.Script.Name} ({candidate.InputName})");
+            Attach(candidate.Script, port, $"{candidate.Script.Name} ({candidate.InputName})", candidate.InputName);
             return null;
         }
 
         /// <summary>Starts driving a controller through a port (UI thread).</summary>
-        internal Connection Attach(ControllerScript script, IControllerPort port, string label)
+        internal Connection Attach(ControllerScript script, IControllerPort port, string label, string inputName = null)
         {
             var c = new Connection
             {
                 Script = script,
                 Port = port,
                 Label = label,
+                InputName = inputName,
                 State = new SurfaceState(script.Width, script.Height)
             };
             try
@@ -221,6 +242,7 @@ namespace ReBuzz.Core.Session
             }
             port.Received += m => OnInput(c, m);
             connections.Add(c);
+            PublishClaims();
             EnsureTimer();
             Refresh(c);
             RaiseChanged();
@@ -231,6 +253,7 @@ namespace ReBuzz.Core.Session
         internal void Detach(Connection c)
         {
             connections.Remove(c);
+            PublishClaims();
             if (!c.Broken)
             {
                 try

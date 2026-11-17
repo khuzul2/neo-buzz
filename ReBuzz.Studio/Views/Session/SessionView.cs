@@ -62,6 +62,7 @@ namespace ReBuzz.Studio.Views.Session
         int spareRows;                    // empty rows under the last scene, as many as fit (FitRows)
         readonly ScrollViewer mixerPanel;
         readonly FlatButton mixerButton;
+        readonly FlatButton ioButton;
         readonly FlatButton clipButton;
         readonly ClipPanel clipPanel;
         internal ClipPanel ClipPanelView => clipPanel;
@@ -254,6 +255,8 @@ namespace ReBuzz.Studio.Views.Session
             right.Children.Add(clipButton);
             mixerButton = new FlatButton("Mixer", ToggleMixer, $"Show or hide the mixer under the grid ({Shell.Commands.StudioKeymap.Get("view.mixer").KeyLabel()})\nReturn tracks and the cue output: ⚙");
             right.Children.Add(mixerButton);
+            ioButton = new FlatButton("I/O", ToggleIO, "Show or hide each track's inputs under its mixer strip: Audio From, MIDI From, channel, Monitor and the input meter");
+            right.Children.Add(ioButton);
             settingsButton = new FlatButton("⚙", () => ShowSettingsMenu(settingsButton), "New clip length, recording, sync, controllers, mixer returns and cue output, MIDI mapping, keyboard shortcuts") { Margin = new Thickness(0) };
             right.Children.Add(settingsButton);
             Grid.SetColumn(right, 1);
@@ -873,6 +876,7 @@ namespace ReBuzz.Studio.Views.Session
         internal FlatButton UndoButton => undoButton;
         internal FlatButton RedoButton => redoButton;
         internal FlatButton MixerButton => mixerButton;
+        internal FlatButton IOButton => ioButton;
         internal FlatButton ClipButton => clipButton;
         internal FlatButton FollowButton => followButton;
         internal FlatButton UndoLaunchButton => undoLaunchButton;

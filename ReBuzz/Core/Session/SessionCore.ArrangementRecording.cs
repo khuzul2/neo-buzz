@@ -82,7 +82,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Under the gate (MIDI thread): a stamped message into the ring for every arrangement window it belongs to. True if one was queued.</summary>
-        bool StampArrangement(int data, long time, int fraction, MachineCore only)
+        bool StampArrangement(int data, long time, int fraction, MachineCore only, MachineCore[] among = null)
         {
             var windows = arrangementWindows;
             bool queued = false;
@@ -90,6 +90,7 @@ namespace ReBuzz.Core.Session
             {
                 var w = windows[i];
                 if (only != null && !ReferenceEquals(w.Track.MachineCore, only)) continue;
+                if (!Takes(among, w.Track)) continue;
                 if (!w.Locate(time, out int pass, out long songTime)) continue;
                 long position = songTime - (long)w.Origin * TakeTime.TimeBase;
                 if (position < 0) continue;

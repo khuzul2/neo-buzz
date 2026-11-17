@@ -632,6 +632,12 @@ namespace ReBuzz.Core
         /// </summary>
         internal volatile float CrossfadeGain = 1f;
 
+        /// <summary>
+        /// Fork (docs/specs/neo-audio.md "Inputs and arm"): set while a Neo Audio track takes this machine's output as its audio source (resampling
+        /// a track): the machine's output after its mixer is copied into it each block (MachineWorkInstance).
+        /// </summary>
+        internal volatile ReBuzz.Core.Session.TrackTap SessionTap;
+
         // Audio thread scratch for SessionCore.ResolveGains (0.5.1).
         internal long GainBestStamp;
         internal float GainBest = 1f;

@@ -141,6 +141,9 @@ namespace ReBuzz.Studio.Views.Machines
         /// <summary>The mute LED: 8×8 at 2,2 in the box (MachineControl.xaml, ledButton).</summary>
         public static Rect Led(Rect box) => new Rect(box.X + 2, box.Y + 2, 8, 8);
 
+        /// <summary>Fork (docs/specs/neo-audio.md "Inputs and arm"): the arm dot of a machine that can be armed, at the foot of the box, left.</summary>
+        public static Rect ArmDot(Rect box) => new Rect(box.X + 3, box.Bottom - 19, 12, 12);
+
         /// <summary>The delete button: 9×9, 3 in from the top right (deleteButton).</summary>
         public static Rect DeleteButton(Rect box) => new Rect(box.Right - 3 - 9, box.Y + 3, 9, 9);
 

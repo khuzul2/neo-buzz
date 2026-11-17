@@ -1,4 +1,5 @@
 using BuzzGUI.Interfaces;
+using ReBuzz.Midi;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -291,6 +292,7 @@ namespace ReBuzz.Core.Session
         // What each held note's press went to: the armed machines then, or the MIDI focus
         // routing (an empty array). A release goes the same way (0.6.3).
         static readonly MachineCore[] FocusRouted = Array.Empty<MachineCore>();
+        // Armed tracks were there but none listens to the device the press came from: nothing plays, and its release goes nowhere either.
         readonly MachineCore[][] heldNotes = new MachineCore[16 * 128][];
         readonly MachineCore[][] heldPedals = new MachineCore[16][];
 
@@ -298,7 +300,14 @@ namespace ReBuzz.Core.Session
         /// MIDI thread: plays and records the input of armed tracks. True when it went to armed
         /// tracks' machines; false leaves it to the usual routing (MIDI focus, channels).
         /// </summary>
-        internal bool OnMidiInput(int data)
+        internal bool OnMidiInput(int data) => OnMidiInput(MidiDevice.Unknown, data);
+
+        /// <summary>
+        /// As <see cref="OnMidiInput(int)"/>, from a known device (docs/specs/neo-audio.md "Inputs and arm"): each armed track hears only what
+        /// its MIDI From and channel say, and two armed tracks listening to the same source both play (layering). While any track is armed
+        /// what none of them takes (a device no armed track listens to, or armed audio tracks without a MIDI source) goes to the selected machine as when nothing is armed.
+        /// </summary>
+        internal bool OnMidiInput(MidiDevice device, int data)
         {
             int status = data & 0xFF;
             if (status >= 0xF0) return false;            // system messages go where they always did
@@ -315,28 +324,29 @@ namespace ReBuzz.Core.Session
 
             var state = arm;
             var machines = state.Machines;
+            var listening = machines;
             if (noteOff)
             {
                 var pressed = Interlocked.Exchange(ref held, null);
                 if (pressed != null)
                 {
-                    if (pressed.Length == 0) return false;
+                    if (pressed.Length == 0) return false;          // nobody armed took the press: the usual routing gets the release too
                     machines = pressed;
                 }
-                else if (machines.Length == 0)
+                else
                 {
-                    return false;
+                    machines = Accepting(machines, device, channel);
+                    if (machines.Length == 0) return false;
                 }
             }
             else
             {
-                if (machines.Length == 0)
-                {
-                    if (noteOn) Volatile.Write(ref held, FocusRouted);
-                    return false;
-                }
-                if (noteOn) Volatile.Write(ref held, machines);
+                machines = Accepting(machines, device, channel);
+                // Nothing armed takes it (none armed, only audio tracks armed, or a device no armed track listens to): the selected machine plays it.
+                if (noteOn) Volatile.Write(ref held, machines.Length == 0 ? FocusRouted : machines);
+                if (machines.Length == 0) return false;
             }
+            bool all = ReferenceEquals(machines, listening);
 
             for (int i = 0; i < machines.Length; i++)
             {
@@ -349,7 +359,7 @@ namespace ReBuzz.Core.Session
 
             bool kept = kind == 0x80 || kind == 0x90 || kind == 0xA0 || kind == 0xB0 || kind == 0xD0 || kind == 0xE0;
             if (kept && !buzz.SongLoading)
-                Stamp(data & 0xFFFFFF, recordWindows, state);
+                Stamp(data & 0xFFFFFF, recordWindows, state, null, all ? null : machines);
             return true;
         }
 
@@ -364,6 +374,8 @@ namespace ReBuzz.Core.Session
         {
             var state = arm;
             if (machine == null || Array.IndexOf(state.Machines, machine) < 0) return false;
+            // docs/specs/neo-audio.md "Inputs and arm": a track listening to one device doesn't take the keyboard under the machine's window.
+            if (!MidiRouting.AcceptsKeyboard(RouteOf(machine)?.Input) || !MidiRouting.TakesMidi(SessionLayout.HasAudioInput(machine), RouteOf(machine)?.Input)) return false;
             int kind = data & 0xF0;
             var dll = machine.DLL;
             if (dll != null && !dll.IsMissing && !dll.IsCrashed && machine.Ready)
@@ -375,7 +387,8 @@ namespace ReBuzz.Core.Session
         }
 
         /// <param name="only">The machine whose armed tracks take it (the machine keyboard); null: every armed track.</param>
-        void Stamp(int data, RecordWindow[] windows, ArmState state, MachineCore only = null)
+        /// <param name="among">The machines whose armed tracks take it (the ones listening to its source); null: every armed track.</param>
+        void Stamp(int data, RecordWindow[] windows, ArmState state, MachineCore only = null, MachineCore[] among = null)
         {
             bool queued = false;
             lock (gate)
@@ -386,7 +399,7 @@ namespace ReBuzz.Core.Session
                     // Stopped: Capture MIDI (0.7.1) places a phrase by when it was played.
                     long now = Timestamp();
                     for (int i = 0; i < state.Rings.Length; i++)
-                        if (only == null || ReferenceEquals(state.Tracks[i].MachineCore, only))
+                        if ((only == null || ReferenceEquals(state.Tracks[i].MachineCore, only)) && Takes(among, state.Tracks[i]))
                             state.Rings[i].Add(data, long.MinValue, now);
                     return;
                 }
@@ -395,13 +408,14 @@ namespace ReBuzz.Core.Session
                 int fraction = (int)(time - tick * TakeTime.TimeBase);
                 // Capture MIDI: every armed track keeps what it is played, recording or not.
                 for (int i = 0; i < state.Rings.Length; i++)
-                    if (only == null || ReferenceEquals(state.Tracks[i].MachineCore, only))
+                    if ((only == null || ReferenceEquals(state.Tracks[i].MachineCore, only)) && Takes(among, state.Tracks[i]))
                         state.Rings[i].Add(data, time);
-                if (StampArrangement(data, time, fraction, only)) queued = true;      // daw-modes.md AR5
+                if (StampArrangement(data, time, fraction, only, among)) queued = true;      // daw-modes.md AR5
                 for (int i = 0; i < windows.Length; i++)
                 {
                     var w = windows[i];
                     if (only != null && !ReferenceEquals(w.Track.MachineCore, only)) continue;
+                    if (!Takes(among, w.Track)) continue;
                     if (time < w.From || time >= w.Until) continue;
                     if (!scheduler.TryGetPlayingAt(w.Track, tick, out var clip, out int position, out int end, out long start)) continue;
                     if (w.Take != null && !ReferenceEquals(clip, w.Take)) continue;
@@ -431,6 +445,8 @@ namespace ReBuzz.Core.Session
             if (queued && Interlocked.Exchange(ref drainPosted, 1) == 0)
                 buzz.dispatcher.BeginInvoke(drain ??= OnDrain);
         }
+
+        static bool Takes(MachineCore[] among, SequenceCore track) => among == null || Array.IndexOf(among, track.MachineCore) >= 0;
 
         /// <summary>
         /// Set (on the thread making the change) while a native machine's own window moves a

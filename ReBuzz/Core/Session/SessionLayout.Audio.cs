@@ -139,6 +139,8 @@ namespace ReBuzz.Core.Session
                 if (machine == null) return null;
                 if (master != null)
                     song.ConnectMachines(machine, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                var defaults = new TrackInput { Audio = DefaultAudioFrom() };
+                Edit(doc => doc.SetInput(machine.Name, defaults));
             }
             finally
             {
@@ -543,6 +545,24 @@ namespace ReBuzz.Core.Session
 
         int SampleRate => Math.Max(1, ReBuzzCore.masterInfo?.SamplesPerSec ?? 44100);
 
+        /// <summary>
+        /// Frames a take drops at its start so it lines up with what was heard: a device input comes back the output latency plus its own
+        /// late, a track source the tap's delay, a hardware input wired through ReBuzz Audio In the output latency. None for the rest.
+        /// </summary>
+        long CaptureSkip(IMachine machine)
+        {
+            var from = TrackInputOf(machine).Audio;
+            switch (from.Kind)
+            {
+                case AudioFromKind.Track: return TrackTap.Delay;
+                case AudioFromKind.Mono:
+                case AudioFromKind.Stereo:
+                    return Engine.LatencyCompensation ? buzz.OutputLatencySamples + buzz.EngineInput.LatencyFrames : 0;
+                case AudioFromKind.None: return 0;
+                default: return Engine.LatencyCompensation && HearsHardware(machine) ? buzz.OutputLatencySamples : 0;
+            }
+        }
+
         /// <summary>The ReBuzz Audio In machine: an audio track fed by it records a hardware input.</summary>
         const string AudioInName = "ReBuzz Audio In";
 
@@ -621,7 +641,7 @@ namespace ReBuzz.Core.Session
             // arrives the output latency after it (the input's own isn't known). The master, and
             // machines played by the engine, are in time with what it renders.
             bool master = InputOf(machine) == 1;
-            long skip = !master && Engine.LatencyCompensation && HearsHardware(machine) ? buzz.OutputLatencySamples : 0;
+            long skip = master ? 0 : CaptureSkip(machine);
             long length = bars > 0 ? FramesOf(ticks, bpm, tpb) : long.MaxValue;
             var capture = new AudioCapture(SampleRate, skip, length, (long)MaxAudioTakeMinutes * 60 * SampleRate, FramesOf(tpb, bpm, tpb));
             var t = new AudioTake { Track = seq, Take = take, Capture = capture, PendingId = pendingId, Name = waveName, Bpm = bpm, TicksPerBeat = tpb, UntilStopped = bars == 0 };
