@@ -26,6 +26,14 @@ namespace ReBuzz.Agent
     internal static class AudioClipTools
     {
         static readonly string[] Warps = SessionDocument.AudioSettings.WarpModes;
+
+        /// <summary>The warp mode's schema: the names, in any case ("pro" is "Pro").</summary>
+        static JsonObject WarpSchema()
+        {
+            var s = String("Warp mode (any case)", Warps);
+            s["x-ignoreCase"] = true;
+            return s;
+        }
         static readonly string[] Preserves = SessionDocument.AudioSettings.PreserveModes;
 
         static SessionLayout Layout(ReBuzzCore core) =>
@@ -66,6 +74,9 @@ namespace ReBuzz.Agent
                 ["length_beats"] = SongModel.Beats(core, p.Length),
                 ["warp_markers"] = new JsonArray(a.Markers.Select(x => (JsonNode)new JsonObject { ["sample"] = x.Sample, ["beat"] = x.Beat }).ToArray()),
             };
+            // Pro needs the native neostretch library; without it the clip plays as Complex (neo-audio.md section 11).
+            if (a.Warp == "Pro" && !ReBuzz.Core.Clips.NeoStretch.Available)
+                o["warp_playing"] = "Complex";
             var info = layout.AudioInfo(p);
             if (info is { } i)
                 o["audio"] = new JsonObject
@@ -195,7 +206,7 @@ namespace ReBuzz.Agent
                 Name = "audio_clip_get",
                 Title = "Read an audio clip",
                 Description =
-                    "An audio clip's settings: warp mode (Off, Repitch, Beats, Complex), what Beats preserves, tempo, transposition (semitones) and detune (cents), gain (dB), " +
+                    "An audio clip's settings: warp mode (Off, Repitch, Beats, Complex, Pro), what Beats preserves, tempo, transposition (semitones) and detune (cents), gain (dB), " +
                     "loop and region (beats), warp markers, its length, and its audio (id, name, seconds, rate, channels, beats). " +
                     "Example: audio_clip_get(machine=\"Drums audio\", pattern=\"loop\").",
                 Input = Object(null, ClipTarget()),
@@ -220,7 +231,7 @@ namespace ReBuzz.Agent
                 Title = "Set an audio clip",
                 Description =
                     "Changes an audio clip, one undo step. warp: Off (its own speed), Repitch (a turntable), Beats (slices on transients; drums, loops), Complex " +
-                    "(a phase vocoder; any material). preserve (Beats): Transients, 1/4, 1/8, 1/16. tempo_bpm is the audio's tempo (without warp markers the clip's length " +
+                    "(a phase vocoder; any material), Pro (Signalsmith Stretch: the best quality for any material, at more CPU; it plays as Complex where its native library is missing). preserve (Beats): Transients, 1/4, 1/8, 1/16. tempo_bpm is the audio's tempo (without warp markers the clip's length " +
                     "follows it: 4 beats at 120 BPM are 8 at 60); detect_tempo=true finds it again. transpose -48..48 semitones, detune -50..50 cents, gain_db -70..24. " +
                     "loop on or off; region = {start_beats, loop_start_beats, loop_end_beats} inside the clip (loop_end 0 is its end). warp_markers = [{sample, beat}] " +
                     "(at least 2; [] clears them). Arrangement audio clips (NA2): fade_in_beats and fade_out_beats (the fades in the arrangement; 0 none), reverse " +
@@ -229,7 +240,7 @@ namespace ReBuzz.Agent
                     "unless warp is given. Example: audio_clip_set(machine=\"Drums audio\", pattern=\"loop\", warp=\"Complex\", transpose=-2, gain_db=-3).",
                 Input = Object(null, ClipTarget().Concat(new[]
                 {
-                    Opt("warp", String("Warp mode", Warps)),
+                    Opt("warp", WarpSchema()),
                     Opt("preserve", String("What Beats keeps", Preserves)),
                     Opt("tempo_bpm", Number("The audio's tempo", 1, 999)),
                     Opt("detect_tempo", Boolean("Find the tempo again from the audio")),

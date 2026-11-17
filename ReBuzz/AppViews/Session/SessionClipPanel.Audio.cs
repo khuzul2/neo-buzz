@@ -20,7 +20,7 @@ namespace ReBuzz.AppViews.Session
             {
                 internal static readonly (string Value, string Label)[] Warps =
                 {
-                    ("Beats", "Beats"), ("Complex", "Complex"), ("Repitch", "Re-Pitch"), ("Off", "Off (unwarped)"),
+                    ("Beats", "Beats"), ("Complex", "Complex"), ("Pro", "Pro"), ("Repitch", "Re-Pitch"), ("Off", "Off (unwarped)"),
                 };
 
                 internal static readonly (string Value, string Label)[] Preserves =
@@ -53,6 +53,7 @@ namespace ReBuzz.AppViews.Session
                         ToolTip = "How the clip follows the song's tempo (its warp mode):\n" +
                                   "Beats: cut at its transients (or a grid), each piece played on its beat at its own speed: drums, loops.\n" +
                                   "Complex: stretched by a phase vocoder, pitch kept: any material.\n" +
+                                  "Pro: a higher quality stretch and pitch shift of any material, for more CPU (plays as Complex where its library is missing).\n" +
                                   "Re-Pitch: faster or slower with the tempo, its pitch with it (a turntable).\n" +
                                   "Off: plays at its own speed from the clip's start, whatever the tempo."
                     };
@@ -78,7 +79,7 @@ namespace ReBuzz.AppViews.Session
 
                     gain = Box("Clip gain in dB (−70 to +24)", CommitFields);
                     transpose = Box("Transpose in semitones (−48 to 48). Beats and Off: played faster or slower, as a sampler would;\n" +
-                                    "Complex: the pitch alone. Re-Pitch has none: the tempo sets its pitch.", CommitFields);
+                                    "Complex and Pro: the pitch alone. Re-Pitch has none: the tempo sets its pitch.", CommitFields);
                     detune = Box("Detune in cents (−50 to 50)", CommitFields);
                     transposeRow = Row("Transpose", transpose);
                     detuneRow = Row("Detune (ct)", detune);

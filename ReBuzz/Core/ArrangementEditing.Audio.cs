@@ -226,7 +226,7 @@ namespace ReBuzz.Core
             if (!IsAudio(item?.Pattern)) return "Only audio clips stretch.";
             var s = item.Spec;
             var audio = AudioOf(item.Pattern);
-            if (audio.Warp == "Off") return "Warp is off, so the clip plays at its own speed: turn warp on (Beats, Repitch or Complex) to stretch it.";
+            if (audio.Warp == "Off") return "Warp is off, so the clip plays at its own speed: turn warp on (Beats, Repitch, Complex or Pro) to stretch it.";
             if (s.Loop) return "Switch the loop off to stretch the clip (a looped clip's edge repeats the loop).";
             int newLength = Math.Max(1, newEnd - s.Time);
             if (newLength == s.Length) return null;

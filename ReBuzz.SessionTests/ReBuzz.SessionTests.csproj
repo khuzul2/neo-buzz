@@ -48,6 +48,7 @@
     <Compile Include="..\ReBuzz\Core\Clips\ClipVoice.cs" Link="Engine\ClipVoice.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\Fft.cs" Link="Engine\Fft.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\PhaseVocoder.cs" Link="Engine\PhaseVocoder.cs" />
+    <Compile Include="..\ReBuzz\Core\Clips\NeoStretch.cs" Link="Engine\NeoStretch.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\AudioAsset.cs" Link="Engine\AudioAsset.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\PeakCache.cs" Link="Engine\PeakCache.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\Resampler.cs" Link="Engine\Resampler.cs" />
@@ -62,6 +63,16 @@
     <!-- The app's name (NeoBuzz Live), which the seams' messages and CoreMIDI's names use. -->
     <Compile Include="..\ReBuzz.Agent\Product.cs" Link="Platform\Product.cs" />
     <Compile Include="..\ReBuzz\Core\IRegistryEx.cs;..\ReBuzz\Core\IRegistryKey.cs;..\ReBuzz\Core\IUiDispatcher.cs;..\ReBuzz\Core\IUiSignal.cs;..\ReBuzz\Core\IUiTimer.cs;..\ReBuzz\Core\IUserMessages.cs;..\ReBuzzGUI\BuzzGUI.Common\IRegistryStore.cs" Link="Platform\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!-- Neo Audio's Pro warp mode (docs/specs/neo-audio.md section 11): the native neostretch library, once built with CMake
+       (NeoStretch/CMakeLists.txt, into build/NeoStretch), beside the tests, where NativeLibraries looks first. Without it the tests of
+       Pro that need it fail by name (NeoStretchTests), they are not skipped. -->
+  <ItemGroup>
+    <None Include="..\build\NeoStretch\libneostretch.so" Condition="Exists('..\build\NeoStretch\libneostretch.so')" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+    <None Include="..\build\NeoStretch\libneostretch.dylib" Condition="Exists('..\build\NeoStretch\libneostretch.dylib')" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+    <None Include="..\build\NeoStretch\neostretch.dll" Condition="Exists('..\build\NeoStretch\neostretch.dll')" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+    <None Include="..\build\NeoStretch\Release\neostretch.dll" Condition="Exists('..\build\NeoStretch\Release\neostretch.dll')" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

@@ -293,7 +293,7 @@ namespace ReBuzz.Agent
                             case "stretch":
                             {
                                 var it = FindClip(core, editor, seq, c, name);
-                                Check(editor.Stretch(it, Pos("end")), "Say where the clip should now end (end), and use warp Beats, Repitch or Complex with the loop off.");
+                                Check(editor.Stretch(it, Pos("end")), "Say where the clip should now end (end), and use warp Beats, Repitch, Complex or Pro with the loop off.");
                                 done = "stretched";
                                 break;
                             }

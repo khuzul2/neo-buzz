@@ -19,6 +19,11 @@ namespace ReBuzz.Core.Clips
         public const double SliceLoopSeconds = 0.08;
 
         volatile PhaseVocoder vocoder;      // made on the UI thread when a clip in Complex mode is given (Prepare)
+        volatile ProVoice pro;              // likewise for Pro (null when the native library is missing: the clip plays as Complex)
+        bool proRestart;                    // Pro: the next block starts the stretcher from its beat
+        bool proRaw;                        // Pro, waiting for its start (the block's seek was spent): playing as Repitch meanwhile
+        /// <summary>The inline Pro starts the block may still do; set by the mixer (null: no limit).</summary>
+        internal SeekBudget Budget;
         AudioClipParams current;
         double expected = double.NaN;      // the beat the next block should start on
         bool sounding;
@@ -48,7 +53,7 @@ namespace ReBuzz.Core.Clips
         long clockTime;
 
         /// <summary>Whether it sounds (or fades out).</summary>
-        public bool IsSounding => sounding || tail.Left > 0 || older.Left > 0;
+        public bool IsSounding => sounding || tail.Left > 0 || older.Left > 0 || (pro?.Fading ?? false);
 
         /// <summary>
         /// UI thread, before the params are handed to the audio thread: what they need made
@@ -58,7 +63,26 @@ namespace ReBuzz.Core.Clips
         {
             if (p?.Mode == WarpMode.Complex && vocoder == null)
                 vocoder = new PhaseVocoder();
+            if (p?.Mode == WarpMode.Pro)
+            {
+                bool mono = ReferenceEquals(p.Source.Left, p.Source.Right);
+                var have = pro;
+                if (have == null || have.Mono != mono)
+                {
+                    var made = NeoStretch.Available ? ProVoice.Create(mono, p.Source.SampleRate) : null;
+                    if (made != null) pro = made;
+                }
+                // No native library (or no memory for it): Pro plays as Complex, which needs its vocoder.
+                if (pro == null && vocoder == null) vocoder = new PhaseVocoder();
+                pro?.Anticipate(p);
+            }
         }
+
+        /// <summary>Tests: waits for the Pro spare to be ready.</summary>
+        internal bool WaitForProSpare(int milliseconds) => pro?.WaitForSpare(milliseconds) ?? false;
+
+        /// <summary>The mode a clip plays in: Pro without its stretcher is Complex.</summary>
+        WarpMode Effective(AudioClipParams p) => p.Mode == WarpMode.Pro && pro == null ? WarpMode.Complex : p.Mode;
 
         /// <summary>
         /// Adds a block of the clip into the buffers: <paramref name="beat"/> is the clip's beat
@@ -81,13 +105,16 @@ namespace ReBuzz.Core.Clips
                 bool sameAudio = sounding && current != null && ReferenceEquals(p.Source, current.Source) && p.Mode == current.Mode;
                 if (continuous && sameAudio && Unmoved(current, p, beat))
                     current = p;                               // gain, pitch: the audio goes on where it is
-                else if (sameAudio && p.Mode == WarpMode.Complex && vocoder != null)
+                else if (sameAudio && Effective(p) == WarpMode.Complex && vocoder != null)
                     Glide(p, beat);                            // a loop going round: the vocoder's frames overlap it
                 else
                     Start(p, beat);
             }
             double rate = p.Source.SampleRate / (double)Math.Max(1, outputRate);
-            switch (p.Mode)
+            ProVoice.NoteTempo(beatsPerSample, outputRate);
+            var fading = pro;
+            if (fading != null && fading.Fading) fading.RenderFading(left, right, offset, count);       // what a jump or a stop left sounding
+            switch (Effective(p))
             {
                 case WarpMode.Off:
                     {
@@ -112,6 +139,9 @@ namespace ReBuzz.Core.Clips
                     break;
                 case WarpMode.Complex:
                     RenderComplex(p, beat, beatsPerSample, rate, left, right, offset, count);
+                    break;
+                case WarpMode.Pro:
+                    RenderPro(p, beat, beatsPerSample, rate, left, right, offset, count);
                     break;
             }
             time += count;
@@ -140,6 +170,8 @@ namespace ReBuzz.Core.Clips
             tail.Left = 0;
             older.Left = 0;
             lastSource = double.NaN;
+            pro?.Silence();
+            proRaw = false;
         }
 
         /// <summary>The clip stopped: what sounded fades out (into these buffers, and the next ones until it has).</summary>
@@ -148,15 +180,18 @@ namespace ReBuzz.Core.Clips
             if (sounding)
             {
                 BeginTail();
+                pro?.BeginFade();
                 sounding = false;
                 expected = double.NaN;
             }
-            for (int i = 0; i < count && IsSounding; i++) Tails(left, right, offset + i);
+            if (pro != null && pro.Fading) pro.RenderFading(left, right, offset, count);
+            for (int i = 0; i < count && (tail.Left > 0 || older.Left > 0); i++) Tails(left, right, offset + i);
         }
 
         void Start(AudioClipParams p, double beat)
         {
             if (sounding) BeginTail();
+            if (sounding && current != null && Effective(current) == WarpMode.Pro) pro?.BeginFade();      // Pro fades through its own stretcher
             current = p;
             sounding = true;
             time = 0;
@@ -164,7 +199,9 @@ namespace ReBuzz.Core.Clips
             slice = -1;
             startSource = p.Map.SampleAt(beat);
             lastSource = double.NaN;
-            if (p.Mode == WarpMode.Complex) vocoder?.Reset();
+            if (Effective(p) == WarpMode.Complex) vocoder?.Reset();
+            proRestart = Effective(p) == WarpMode.Pro;
+            proRaw = false;
         }
 
         /// <summary>
@@ -317,6 +354,42 @@ namespace ReBuzz.Core.Clips
             if (i < count) v.Render(p.Source, this, ratio, left, right, offset + i, count - i, p.Gain);
             lastSource = SourceAt(v.Time - 1);
             lastStep = p.Map.SamplesPerBeat(beat) * beatsPerSample;
+        }
+
+        /// <summary>Pro: Signalsmith Stretch (<see cref="ProVoice"/>), started from the beat on a jump, reading ahead of it by its latencies.</summary>
+        void RenderPro(AudioClipParams p, double beat, double beatsPerSample, double rate, float[] left, float[] right, int offset, int count)
+        {
+            var v = pro;
+            if (v == null) return;
+            if (proRestart)
+            {
+                var started = v.Restart(p, beat, beatsPerSample, rate, Budget);
+                if (started != ProVoice.Started.Later)
+                {
+                    proRestart = false;
+                    if (proRaw)
+                    {
+                        BeginTail();                  // the stand-in fades out under the stretcher
+                        proRaw = false;
+                    }
+                }
+                else proRaw = true;
+            }
+            if (proRaw)
+            {
+                // The block's seek went to another clip: this one plays plainly (as Repitch) until its turn, a block or two.
+                for (int i = 0; i < count; i++)
+                {
+                    Tails(left, right, offset + i);
+                    double b = beat + i * beatsPerSample;
+                    Put(p, p.Map.SampleAt(b), p.Map.SamplesPerBeat(b) * beatsPerSample, left, right, offset + i, 1);
+                }
+                return;
+            }
+            for (int i = 0; i < count && (tail.Left > 0 || older.Left > 0); i++) Tails(left, right, offset + i);
+            v.Render(p, beat, beatsPerSample, rate, left, right, offset, count);
+            // A raw copy of the audio at the end of this block is what a fade-out falls back on if its own stretcher is not there.
+            lastSource = double.NaN;
         }
 
         readonly float[] oneL = new float[1], oneR = new float[1];
