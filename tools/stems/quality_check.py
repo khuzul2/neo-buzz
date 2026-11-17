@@ -151,7 +151,7 @@ try:
     for quality in ("Fast", "Balanced", "Best"):
         print(f"== {quality}")
         t0 = time.time()
-        ok, text, out = call("audio_separate", path=mixfile, quality=quality, slot=1)
+        ok, text, out = call("audio_separate", path=mixfile, quality=quality, slot=1, at_beats=0)
         wall = time.time() - t0
         row = {"ok": ok}
         if not ok:
