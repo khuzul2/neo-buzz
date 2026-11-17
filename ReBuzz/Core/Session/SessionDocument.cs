@@ -354,6 +354,8 @@ namespace ReBuzz.Core.Session
         public string CrossfaderCurve { get => Settings.CrossfaderCurve; set => Settings.CrossfaderCurve = value; }
         /// <summary>Whether the mixer section is shown under the grid.</summary>
         public bool ShowMixer { get => Settings.ShowMixer; set => Settings.ShowMixer = value; }
+        /// <summary>Whether the mixer strips show their input row (Audio From, MIDI From, Monitor, meter).</summary>
+        public bool ShowIO { get => Settings.ShowIO; set => Settings.ShowIO = value; }
         /// <summary>Whether the clip panel is shown beside the grid (0.5).</summary>
         public bool ShowClipPanel { get => Settings.ShowClipPanel; set => Settings.ShowClipPanel = value; }
         /// <summary>Machine groups shown folded (by name).</summary>
@@ -768,6 +770,7 @@ namespace ReBuzz.Core.Session
         XElement MixerXml(Func<string, bool> keep)
         {
             var e = new XElement("Mixer", new XAttribute("show", ShowMixer ? "true" : "false"));
+            if (ShowIO) e.SetAttributeValue("io", "true");
             if (!string.IsNullOrEmpty(CueMachine) && keep(CueMachine)) e.SetAttributeValue("cue", CueMachine);
             e.Add(Returns.Where(keep).Select(r => new XElement("Return", new XAttribute("machine", r))));
             e.Add(CollapsedGroups.OrderBy(g => g, StringComparer.Ordinal).Select(g => new XElement("Collapsed", new XAttribute("group", g))));
@@ -822,6 +825,7 @@ namespace ReBuzz.Core.Session
                 if (root.Element("Mixer") is XElement mixer)
                 {
                     doc.ShowMixer = (string)mixer.Attribute("show") != "false";
+                    doc.ShowIO = (string)mixer.Attribute("io") == "true";
                     doc.CueMachine = (string)mixer.Attribute("cue") ?? "";
                     foreach (var r in mixer.Elements("Return"))
                         if ((string)r.Attribute("machine") is string name && name.Length > 0 && !doc.Returns.Contains(name))
@@ -907,6 +911,7 @@ namespace ReBuzz.Core.Session
         public double CrossfaderPosition { get; set; } = 0.5;
         public string CrossfaderCurve { get; set; } = "Dipless";
         public bool ShowMixer { get; set; } = true;
+        public bool ShowIO { get; set; }
         public bool ShowClipPanel { get; set; } = true;
         public HashSet<string> CollapsedGroups { get; } = new HashSet<string>();
         public string CueMachine { get; set; } = "";

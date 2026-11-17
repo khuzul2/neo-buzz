@@ -39,6 +39,7 @@ namespace ReBuzz.Agent
             Transport(tools, host);
             Launch(tools, host);
             Record(tools, host);
+            TrackInputTool(tools, host);
             MidiPlay(tools, host);
             Meters(tools, host);
             Readings(tools, host);
@@ -316,10 +317,12 @@ namespace ReBuzz.Agent
                         switch (action)
                         {
                             case "arm":
-                                layout.SetArmed(Track(), true);
+                                Track();
+                                if (!layout.SetMachineArmed(m, true)) throw new ToolError($"{m.Name} can't be armed: only audio tracks (Neo Audio) and generators (machines that take notes) can.");
                                 break;
                             case "disarm":
-                                layout.SetArmed(Track(), false);
+                                Track();
+                                layout.SetMachineArmed(m, false);
                                 host.ArmedByAgent.Remove(m.Name);
                                 break;
                             case "start":
@@ -391,6 +394,143 @@ namespace ReBuzz.Agent
                         _ => "",
                     };
                     return ToolResult.Ok(line + StateLine(r["state"]!.AsObject()), r);
+                },
+            });
+        }
+
+        // ------------------------------------------------------------------ track inputs (NA4a)
+
+        static JsonObject InputOf(SessionLayout layout, IMachine m)
+        {
+            var input = layout.TrackInputOf(m);
+            var o = new JsonObject { ["machine"] = m.Name, ["armed"] = layout.IsMachineArmed(m) };
+            if (SessionLayout.HasAudioInput(m))
+            {
+                o["audio_from"] = input.Audio.ToText();
+                o["audio_from_label"] = layout.AudioLabel(input.Audio);
+                o["monitor"] = layout.MonitorOf(m) switch { 1 => "in", 2 => "off", _ => "auto" };
+            }
+            o["midi_from"] = input.Midi switch { MidiFromKind.Device => "device:" + input.Device, MidiFromKind.Keyboard => "keyboard", _ => "all" };
+            o["midi_from_label"] = layout.MidiLabel(m);
+            o["channel"] = input.Channel;
+            return o;
+        }
+
+        static void TrackInputTool(ToolRegistry tools, AgentHost host)
+        {
+            var core = host.Core;
+            tools.Add(new ToolDef
+            {
+                Name = "track_input",
+                Title = "Track inputs",
+                Description =
+                    "What a track listens to and how it arms (Neo Audio's Audio From, Monitor; a machine's MIDI From and channel). action=get lists the tracks that can be armed " +
+                    "with their inputs (give machine for one), the audio input device (its channels and names, latency, dropped frames) and the MIDI devices. " +
+                    "action=set changes what is given, one undo step each: audio_from \"none\", \"in:3\" (a mono input, in both sides), \"in:1-2\" (a stereo pair), " +
+                    "\"track:Name\" (another track's output, to resample it) or \"wired\" (what is connected to it; old songs); midi_from \"all\" (every device except " +
+                    "control surfaces), \"device:Name\" (saved by name, resumes when plugged in) or \"keyboard\" (the computer keyboard); channel 0 (all) to 16; monitor " +
+                    "\"in\", \"auto\" (while armed) or \"off\". Arming is session_record(action=\"arm\"). An armed track hears only its source. " +
+                    "Example: track_input(action=\"set\", machine=\"Vocals\", audio_from=\"in:1\", monitor=\"in\").",
+                Input = Object(null,
+                    Req("action", String("What to do", "get", "set")),
+                    Opt("machine", String("The track's machine (get: one; set: required)")),
+                    Opt("audio_from", String("Neo Audio: none, in:N, in:N-N+1, track:Name or wired")),
+                    Opt("midi_from", String("all, device:Name or keyboard")),
+                    Opt("channel", Integer("MIDI channel: 0 for all, 1 to 16", 0, 16)),
+                    Opt("monitor", String("Neo Audio: in, auto or off", "in", "auto", "off"))),
+                Output = Object(null,
+                    Req("tracks", Array(Object(null,
+                        Req("machine", String("Track")),
+                        Req("armed", Boolean("Armed")),
+                        Opt("audio_from", String("Neo Audio: none, in:N, in:N-N+1, track:Name or wired")),
+                        Opt("audio_from_label", String("As the views name it (In 1/2, Track: Name, Wired inputs)")),
+                        Opt("monitor", String("in, auto or off")),
+                        Req("midi_from", String("all, device:Name or keyboard")),
+                        Req("midi_from_label", String("As the views name it; a missing device says (not connected)")),
+                        Req("channel", Integer("MIDI channel, 0 for all"))), "Tracks that can be armed")),
+                    Req("audio_inputs", Object(null,
+                        Req("open", Boolean("An input device is open")),
+                        Req("channels", Array(String("Name, in:N order"), "The device's input channels")),
+                        Opt("latency_frames", Integer("The device's input latency")),
+                        Opt("underrun_frames", Integer("Frames the engine found missing (silence) since the device opened")),
+                        Opt("overrun_frames", Integer("Frames dropped because the engine ran behind")))),
+                    Req("midi_devices", Array(String("A MIDI input that is open"), "Devices to choose from")),
+                    Opt("changed", Array(String("What changed")))),
+                Annotations = ToolAnnotations.Write,
+                Handler = async c =>
+                {
+                    string action = c.RequiredString("action");
+                    if (action != "get" && action != "set") throw new ToolError("action: get or set.");
+                    var r = await host.Engine("track_input", true, _ =>
+                    {
+                        var layout = core.SessionLayout ?? throw new ToolError($"This {Product.Name} has no Session View.");
+                        layout.Ensure();
+                        MachineCore m = c.String("machine") is string name ? SongModel.Machine(core, name) : null;
+                        var changed = new JsonArray();
+                        if (action == "set")
+                        {
+                            if (m == null) throw new ToolError("set needs machine.");
+                            if (!SessionLayout.CanArm(m)) throw new ToolError($"{m.Name} has no inputs: audio tracks (Neo Audio) and generators have.");
+                            if (c.String("audio_from") is string af)
+                            {
+                                if (!SessionLayout.HasAudioInput(m)) throw new ToolError($"{m.Name} takes no audio input; only Neo Audio does. Its MIDI From and channel can be set.");
+                                if (!AudioFrom.TryParse(af, out var from)) throw new ToolError("audio_from: none, in:N, in:N-N+1 (neighbours), track:Name or wired.");
+                                if (from.Kind == AudioFromKind.Track && SongModel.Machine(core, from.Machine) == null) throw new ToolError($"audio_from: there is no machine named {from.Machine}.");
+                                if (from.Kind == AudioFromKind.Track && string.Equals(from.Machine, m.Name, StringComparison.Ordinal)) throw new ToolError("audio_from: a track can't listen to itself.");
+                                if (from.IsDevice && from.ChannelsNeeded > core.EngineInput.Channels)
+                                    throw new ToolError($"audio_from {af}: the input device has {core.EngineInput.Channels} channel(s)" + (core.EngineInput.IsOpen ? "." : " (none is open; Preferences > Audio).") + " Choose from track_input(action=\"get\").");
+                                if (layout.SetAudioFrom(m, from)) changed.Add("audio_from");
+                            }
+                            if (c.String("midi_from") is string mf)
+                            {
+                                var kind = MidiFromKind.All;
+                                string device = "";
+                                if (mf.Equals("keyboard", StringComparison.OrdinalIgnoreCase)) kind = MidiFromKind.Keyboard;
+                                else if (mf.StartsWith("device:", StringComparison.OrdinalIgnoreCase) && mf.Length > 7) { kind = MidiFromKind.Device; device = mf.Substring(7).Trim(); }
+                                else if (!mf.Equals("all", StringComparison.OrdinalIgnoreCase)) throw new ToolError("midi_from: all, device:Name or keyboard.");
+                                if (layout.SetMidiFrom(m, kind, device)) changed.Add("midi_from");
+                            }
+                            if (c.Int("channel") is int ch)
+                            {
+                                if (ch < 0 || ch > 16) throw new ToolError("channel: 0 (all) to 16.");
+                                if (layout.SetMidiChannel(m, ch)) changed.Add("channel");
+                            }
+                            if (c.String("monitor") is string mon)
+                            {
+                                if (!SessionLayout.HasAudioInput(m)) throw new ToolError($"{m.Name} has no Monitor; only Neo Audio does.");
+                                int mode = mon.ToLowerInvariant() switch { "in" => 1, "auto" => 0, "off" => 2, _ => throw new ToolError("monitor: in, auto or off.") };
+                                if (layout.SetMonitor(m, mode)) changed.Add("monitor");
+                            }
+                        }
+                        var tracks = new JsonArray();
+                        var seen = new HashSet<IMachine>();
+                        foreach (var machine in core.SongCore.Machines)
+                            if (SessionLayout.CanArm(machine) && (m == null || machine == m) && seen.Add(machine))
+                                tracks.Add(InputOf(layout, machine));
+                        var inp = core.EngineInput;
+                        var names = new JsonArray(layout.AudioChannelNames().Select(n => (JsonNode)n).ToArray());
+                        var result = new JsonObject
+                        {
+                            ["tracks"] = tracks,
+                            ["audio_inputs"] = new JsonObject
+                            {
+                                ["open"] = inp.IsOpen,
+                                ["channels"] = names,
+                                ["latency_frames"] = inp.LatencyFrames,
+                                ["underrun_frames"] = inp.UnderrunFrames,
+                                ["overrun_frames"] = inp.OverrunFrames,
+                            },
+                            ["midi_devices"] = new JsonArray((core.MidiInOutEngine?.OpenInputNames() ?? Array.Empty<string>()).Select(n => (JsonNode)n).ToArray()),
+                        };
+                        if (action == "set") result["changed"] = changed;
+                        return result;
+                    }, c.Cancellation);
+                    var list = r["tracks"]!.AsArray();
+                    string line = action == "set"
+                        ? (r["changed"]!.AsArray().Count == 0 ? "Nothing changed. " : "Changed " + string.Join(", ", r["changed"]!.AsArray().Select(x => (string)x)) + ". ")
+                        : "";
+                    var parts = list.Select(t => $"{t!["machine"]}: " + (t["audio_from"] != null ? $"audio {t["audio_from"]}, monitor {t["monitor"]}, " : "") + $"midi {t["midi_from"]} ch {t["channel"]}" + ((bool)t["armed"]! ? ", armed" : ""));
+                    return ToolResult.Ok(line + (list.Count == 0 ? "No track can be armed yet." : string.Join("; ", parts) + "."), r);
                 },
             });
         }

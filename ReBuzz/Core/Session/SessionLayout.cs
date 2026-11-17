@@ -529,6 +529,14 @@ namespace ReBuzz.Core.Session
             ContentChanged();
         }
 
+        public void SetShowIO(bool show)
+        {
+            var doc = Ensure();
+            if (doc.ShowIO == show) return;
+            doc.ShowIO = show;
+            ContentChanged();
+        }
+
         public void SetShowClipPanel(bool show)
         {
             var doc = Ensure();

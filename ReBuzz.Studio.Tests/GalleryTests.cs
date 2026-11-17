@@ -2012,6 +2012,111 @@ namespace ReBuzz.Studio.Tests
             AfterAll();
         }
 
+        // ------------------------------------------------------------------ 037-039, 048: track inputs and arm (neo-audio.md "Inputs and arm")
+
+        [AvaloniaTest, Order(8)]
+        public void TrackInputs()
+        {
+            BeforeAll();
+            var demo = LoadDemo();
+            var window = Open();
+            var work = new WorkManager(Core, new WorkThreadEngine(1), 0, BuzzGUI.Common.Global.EngineSettings);
+            var buffer = new float[512];
+            long fed = 0;
+            // The input device is simulated: four inputs with a driver's names, a voice on the first.
+            void Feed(int frames)
+            {
+                for (int done = 0; done < frames; done += 256)
+                {
+                    var data = new float[256 * 4];
+                    for (int i = 0; i < 256; i++)
+                    {
+                        double t = (fed + i) / 44100.0;
+                        double swell = 0.35 + 0.25 * System.Math.Sin(t * 2.3);
+                        data[i * 4] = (float)(swell * System.Math.Sin(2 * System.Math.PI * 196 * t));
+                    }
+                    fed += 256;
+                    Core.EngineInput.Push(data, 256, 4);
+                    work.MainAudioFillBuffer(buffer, 0, 512);
+                }
+                Settle();
+            }
+            try
+            {
+                Core.EngineInput.Configure(4, new[] { "Mic 1", "Mic 2", "Line 3", "Line 4" }, 44100, 128);
+                var layout = Core.SessionLayout;
+                layout.Ensure();
+                var voice = (MachineCore)layout.NewAudioTrack("Voice");
+                layout.SetAudioFrom(voice, AudioFrom.Mono(0));
+                layout.SetMonitor(voice, 1);
+                layout.SetMidiFrom(demo.Lead, MidiFromKind.Device, "USB Keyboard");
+                layout.SetMachineArmed(voice, true);
+                layout.SetMachineArmed(demo.Lead, true);
+                Settle();
+                Try("037-machine-arm-dot", () =>
+                {
+                    var view = Tab<MachineView>(window, "Machines");
+                    window.ShowView("Machines");
+                    Settle();
+                    window.RefreshNow();
+                    Shot(window, "037-machine-arm-dot", "Machine View: a dot at the foot of every machine that can be armed (Neo Audio and generators): red on Voice and Lead (armed), grey on the others. Click it to arm; right-click it for the Input menu.", "The dot on a machine's box.");
+                    var dot = view.FromCanvas(MachineGeometry.ArmDot(view.Canvas.BoxOf(voice)).Center, window);
+                    Click(window, dot, MouseButton.Right);
+                    var menu = view.Canvas.OpenMenu;
+                    Assert.That(menu?.IsOpen, Is.True, "a right click on the dot opens the Input menu");
+                    var audio = menu.Items.OfType<MenuItem>().First(i => (string)i.Header == "Audio From");
+                    audio.IsSubMenuOpen = true;
+                    Settle();
+                    Shot(window, "037-machine-input-menu", "The Input menu of Voice's dot: Arm, Audio From (None, the device's inputs by the driver's names, In 1/2 pairs, the other tracks, Wired inputs), MIDI From, Channel, Monitor.", "Right-click the dot.");
+                    menu.Close();
+                    Settle();
+                });
+                Try("038-session-io-row", () =>
+                {
+                    var session = Tab<SessionView>(window, "Session");
+                    window.ShowView("Session");
+                    layout.SetShowMixer(true);
+                    layout.SetShowIO(true);
+                    Settle();
+                    window.RefreshNow();
+                    session.RefreshState();
+                    Feed(11025);
+                    System.Threading.Thread.Sleep(80);
+                    Feed(2048);
+                    session.RefreshState();
+                    Settle();
+                    Shot(window, "038-session-io-row", "Session: the I/O row under the mixer strips (the toolbar's I/O button): Audio From, MIDI From, the arm dot and the MIDI channel, Monitor (In, Auto, Off) and the input meter, live while the track is armed or monitored (Voice listens to Mic 1 and its meter moves; Lead takes MIDI from one device).", "The toolbar's I/O button.");
+                });
+                Try("039-arrangement-header-inputs", () =>
+                {
+                    var seq = Tab<SequenceView>(window, "Arrangement");
+                    window.ShowView("Sequence");
+                    seq.SetArrangementMode(true);
+                    Settle();
+                    Feed(4096);
+                    Shot(window, "039-arrangement-header-inputs", "Arrangement: an expanded track header of a machine that can be armed has its input chooser (Audio From for an audio track, MIDI From for a generator) and the input meter under the buttons; the R arms, as every other dot does.", "The track header.");
+                    seq.SetArrangementMode(false);
+                });
+                Try("048-inspector-input", () =>
+                {
+                    window.ShowView("Machines");
+                    window.Inspector.Open();
+                    window.Inspector.ShowTab(ReBuzz.Studio.Views.Inspector.InspectorPanel.SelectionTab);
+                    StudioSelection.For(Core).Set(voice, null, window);
+                    Settle();
+                    Feed(4096);
+                    window.RefreshNow();
+                    Shot(window, "048-inspector-input", "The Inspector's Input section for the selected machine (Voice): the arm dot, Audio From, MIDI From and channel, Monitor and the input meter.", "Select a track's machine; the Inspector's Selection tab.");
+                });
+            }
+            finally
+            {
+                Core.EngineInput.Close();
+                Close(window);
+            }
+            AfterAll();
+        }
+
         [AvaloniaTest, Order(6)]
         public void SongsAndStates()
         {
