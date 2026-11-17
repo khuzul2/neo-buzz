@@ -12,9 +12,6 @@ name: Stem models
 # Install the zip with Preferences > Stems > Install models...
 
 on:
-  push:
-    branches: [ audio/stem-separation ]   # TEMPORARY (round 6): a workflow can be dispatched only once it is on main; remove after the first run
-    paths: [ '.github/workflows/stem-models.yml' ]
   workflow_dispatch:
     inputs:
       models:
