@@ -6,6 +6,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 using ReBuzz.Platform;
 
 namespace ReBuzz.Core.Clips
@@ -210,20 +211,125 @@ namespace ReBuzz.Core.Clips
             public float Gain = 1;
             public readonly float[] L = new float[Chunk], R = new float[Chunk];
             public int Have, Used;              // the FIFO: [Used, Have)
+            // The spare's job and what came of it (spare stretcher, below).
+            public AudioClipParams ReqParams;
+            public double ReqBeat, ReqBps, ReqRate;
+            public long From;
+            public int Length;
+            public double Factor;
         }
 
-        Stream current, fading;
+        Stream current, fading, spare;
         readonly float[] inL = new float[MaxIn], inR = new float[MaxIn];
         readonly bool mono;
         bool active;
         int fadeIn;                 // samples of the fade in that are left
         int fadeLeft;
 
-        ProVoice(NeoStretch a, NeoStretch b, bool mono)
+        ProVoice(NeoStretch a, NeoStretch b, NeoStretch c, bool mono)
         {
             current = new Stream { S = a };
             fading = new Stream { S = b };
+            spare = new Stream { S = c };              // null stretcher: no spare (no memory for a third), starts are all inline
             this.mono = mono;
+        }
+
+        // ---- The spare: a start's seek made ahead, off the audio thread -------------------------------
+        //
+        // A start (a launch, a loop going round) costs the library's output seek, about a millisecond: several in one block would not fit it.
+        // So a third stretcher is sought ahead by a worker thread, at the beat the last start was at (a launch and a loop start in the same
+        // place, nearly always) and the tempo the engine last ran at; a start that finds it ready and matching (same audio, same beat and
+        // input length, same pitch) takes it as its own stretcher, for no work at all, and asks for the next. Hand-over by one state word,
+        // no locks: 0 idle (the voice's), 5 being written, 1 requested, 2 the worker's, 3 ready, 6 being taken.
+        int spareState;
+        bool queued;
+        /// <summary>Tests: false turns the worker's preparing off, so every start is unanticipated.</summary>
+        internal static volatile bool Prefetch = true;
+        static double tempoBps, tempoRate;
+        // Tests: how starts went (the spare's, done in the block, put off to a later block).
+        internal static long SpareStarts, InlineStarts, LaterStarts;
+
+        /// <summary>The tempo and output rate the engine last ran at: the guess a clip's first spare is made for.</summary>
+        public static void NoteTempo(double beatsPerSample, int outputRate)
+        {
+            Volatile.Write(ref tempoBps, beatsPerSample);
+            Volatile.Write(ref tempoRate, outputRate);
+        }
+
+        /// <summary>Asks for the spare to be sought at <paramref name="beat"/> of <paramref name="p"/> (<paramref name="rate"/>: source rate over output rate), unless it is busy or ready already.</summary>
+        void RequestSpare(AudioClipParams p, double beat, double bps, double rate)
+        {
+            if (!Prefetch || spare.S == null || p == null || !(bps > 0) || !(rate > 0) || !double.IsFinite(beat)) return;
+            if (Interlocked.CompareExchange(ref spareState, 5, 0) != 0) return;
+            var sp = spare;                              // read once the state is ours: nobody swaps it now
+            sp.ReqParams = p;
+            sp.ReqBeat = beat;
+            sp.ReqBps = bps;
+            sp.ReqRate = rate;
+            Volatile.Write(ref spareState, 1);
+            if (!queued)
+            {
+                queued = true;
+                ProWorker.Add(this);
+            }
+        }
+
+        /// <summary>UI thread, with new params: the first spare, for a start at the clip's beginning at the tempo the engine last ran at.</summary>
+        public void Anticipate(AudioClipParams p)
+        {
+            double bps = Volatile.Read(ref tempoBps), rate = Volatile.Read(ref tempoRate);
+            if (bps > 0 && rate > 0 && p != null) RequestSpare(p, 0, bps, p.Source.SampleRate / rate);
+        }
+
+        /// <summary>Worker thread: does the requested seek, if there is one. Whether it did.</summary>
+        internal bool Work(float[] scratchL, float[] scratchR)
+        {
+            if (Interlocked.CompareExchange(ref spareState, 2, 1) != 1) return false;
+            var st = spare;
+            bool ok = false;
+            try
+            {
+                var p = st.ReqParams;
+                var s = st.S;
+                Plan(s, p, st.ReqBeat, st.ReqBps, out long from, out int length);
+                SetPitch(s, p, st.ReqRate);
+                Copy(p.Source.Left, from, length, scratchL);
+                if (!mono) Copy(p.Source.Right, from, length, scratchR);
+                if (s.Seek(scratchL, mono ? scratchL : scratchR, length))
+                {
+                    st.Source = p.Source;
+                    st.From = from;
+                    st.Length = length;
+                    st.Factor = p.PitchRatio * st.ReqRate;
+                    st.Used = st.Have = 0;
+                    ok = true;
+                }
+            }
+            catch
+            {
+            }
+            Volatile.Write(ref spareState, ok ? 3 : 0);
+            return true;
+        }
+
+        /// <summary>Where a start's input begins and how much of it the seek reads (the audio from the beat up to the latencies ahead).</summary>
+        static void Plan(NeoStretch s, AudioClipParams p, double beat, double bps, out long from, out int length)
+        {
+            from = Index(p.Map.SampleAt(beat));
+            long ahead = Index(p.Map.SampleAt(beat + s.OutputLatency * bps)) + s.InputLatency;
+            length = (int)Math.Clamp(ahead - from, s.InputLatency, MaxIn);
+        }
+
+        /// <summary>Tests: waits until the spare is ready (or the time is up). Whether it is.</summary>
+        internal bool WaitForSpare(int milliseconds)
+        {
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            while (Volatile.Read(ref spareState) != 3)
+            {
+                if (clock.ElapsedMilliseconds > milliseconds) return false;
+                Thread.Sleep(1);
+            }
+            return true;
         }
 
         /// <summary>Whether this voice makes mono stretchers (one channel; half the work).</summary>
@@ -234,7 +340,7 @@ namespace ReBuzz.Core.Clips
         {
             var a = NeoStretch.Create(mono ? 1 : 2, sampleRate);
             var b = a == null ? null : NeoStretch.Create(mono ? 1 : 2, sampleRate);
-            return b == null ? null : new ProVoice(a, b, mono);
+            return b == null ? null : new ProVoice(a, b, NeoStretch.Create(mono ? 1 : 2, sampleRate), mono);
         }
 
         /// <summary>Playing, or fading out.</summary>
@@ -288,32 +394,83 @@ namespace ReBuzz.Core.Clips
             }
         }
 
+        /// <summary>How a start went.</summary>
+        public enum Started { Yes, Later, Failed }
+
         /// <summary>
         /// A start from <paramref name="beat"/> (a launch, a jump): what played fades out and the audio from the beat is sought, so that the next
-        /// sample rendered is the audio at the beat.
+        /// sample rendered is the audio at the beat. The seek is the spare's when it is ready for exactly this start (no work); otherwise it is
+        /// done here, if the block's <paramref name="budget"/> has a seek left (null: no limit), and if not the answer is <see cref="Started.Later"/>:
+        /// ask again next block, and play something else meanwhile.
         /// </summary>
-        public void Restart(AudioClipParams p, double beat, double beatsPerSample, double rate)
+        public Started Restart(AudioClipParams p, double beat, double beatsPerSample, double rate, SeekBudget budget = null)
         {
+            var sp = spare;
+            long from;
+            int length;
+            Plan((sp.S ?? current.S), p, beat, beatsPerSample, out from, out length);
+            double factor = p.PitchRatio * rate;
+            if (sp.S != null)
+            {
+                int state = Volatile.Read(ref spareState);
+                if (state == 3 && Interlocked.CompareExchange(ref spareState, 6, 3) == 3)
+                {
+                    bool fits = ReferenceEquals(sp.Source, p.Source) && sp.From == from && sp.Length == length && sp.Factor == factor;
+                    if (fits)
+                    {
+                        // The spare becomes the playing stretcher; what played fades out in its own; the one that was fading is the new spare.
+                        Stream free;
+                        if (active)
+                        {
+                            free = fading;
+                            fading = current;
+                            fading.Acc = 0;
+                            fadeLeft = Fade;
+                        }
+                        else free = current;
+                        current = sp;
+                        spare = free;
+                        current.Pos = from + length;
+                        current.Rate = Math.Clamp(p.Map.SamplesPerBeat(beat) * beatsPerSample, 0, MaxIn / (double)Chunk);
+                        current.Gain = p.Gain;
+                        active = true;
+                        fadeIn = Fade;
+                        Volatile.Write(ref spareState, 0);
+                        RequestSpare(p, beat, beatsPerSample, rate);
+                        Interlocked.Increment(ref SpareStarts);
+                        return Started.Yes;
+                    }
+                    Volatile.Write(ref spareState, 0);                // not for this start: the next request will be
+                }
+                else if (state == 1)
+                    Interlocked.CompareExchange(ref spareState, 0, 1);       // asked for, not begun: never mind
+            }
+            if (budget != null && budget.Left <= 0)
+            {
+                Interlocked.Increment(ref LaterStarts);
+                return Started.Later;
+            }
+            if (budget != null) budget.Left--;
             BeginFade();
             var c = current;
             var s = c.S;
             c.Source = p.Source;
             c.Used = c.Have = 0;
             SetPitch(s, p, rate);
-            long from = Index(p.Map.SampleAt(beat));
-            long ahead = Index(p.Map.SampleAt(beat + s.OutputLatency * beatsPerSample)) + s.InputLatency;
-            int length = (int)Math.Clamp(ahead - from, s.InputLatency, MaxIn);
             Fill(c.Source, from, length);
             if (!s.Seek(inL, inR, length))
             {
                 active = false;
-                return;
+                return Started.Failed;
             }
             c.Pos = from + length;
             c.Rate = Math.Clamp(p.Map.SamplesPerBeat(beat) * beatsPerSample, 0, MaxIn / (double)Chunk);
             c.Gain = p.Gain;
             active = true;
             fadeIn = Fade;
+            RequestSpare(p, beat, beatsPerSample, rate);
+            Interlocked.Increment(ref InlineStarts);
+            return Started.Yes;
         }
 
         /// <summary>The next <paramref name="count"/> samples from <paramref name="beat"/>, added in (times the clip's gain, faded in after a start).</summary>
@@ -399,5 +556,52 @@ namespace ReBuzz.Core.Clips
         static long Index(double position) => double.IsFinite(position) ? (long)Math.Round(Math.Clamp(position, -1e12, 1e12)) : 0;
 
         static float Clean(float x) => !float.IsFinite(x) ? 0f : Math.Abs(x) < 1e-30f ? 0f : x;
+    }
+
+    /// <summary>The starts a block may do inline (see <see cref="ProVoice.Restart"/>): the mixer's, refilled each block.</summary>
+    internal sealed class SeekBudget
+    {
+        /// <summary>Inline seeks a mixer allows in one block: about a millisecond each, so one fits any block.</summary>
+        public const int PerBlock = 1;
+        public int Left = PerBlock;
+    }
+
+    /// <summary>The thread that makes the spares' seeks (ProVoice): one for all voices, asleep but for a tick every couple of milliseconds.</summary>
+    internal static class ProWorker
+    {
+        static readonly object gate = new object();
+        static WeakReference<ProVoice>[] voices = Array.Empty<WeakReference<ProVoice>>();
+        static Thread thread;
+
+        public static void Add(ProVoice v)
+        {
+            lock (gate)
+            {
+                var live = new System.Collections.Generic.List<WeakReference<ProVoice>>();
+                foreach (var w in voices)
+                    if (w.TryGetTarget(out _)) live.Add(w);
+                live.Add(new WeakReference<ProVoice>(v));
+                voices = live.ToArray();
+                if (thread == null)
+                {
+                    thread = new Thread(Run) { IsBackground = true, Name = "Neo Audio Pro worker", Priority = ThreadPriority.BelowNormal };
+                    thread.Start();
+                }
+            }
+        }
+
+        static void Run()
+        {
+            var l = new float[ProVoice.MaxIn];
+            var r = new float[ProVoice.MaxIn];
+            while (true)
+            {
+                bool did = false;
+                var list = voices;
+                foreach (var w in list)
+                    if (w.TryGetTarget(out var v)) did |= v.Work(l, r);
+                if (!did) Thread.Sleep(2);
+            }
+        }
     }
 }

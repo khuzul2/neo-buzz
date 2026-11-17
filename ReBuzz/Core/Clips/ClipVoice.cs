@@ -21,6 +21,9 @@ namespace ReBuzz.Core.Clips
         volatile PhaseVocoder vocoder;      // made on the UI thread when a clip in Complex mode is given (Prepare)
         volatile ProVoice pro;              // likewise for Pro (null when the native library is missing: the clip plays as Complex)
         bool proRestart;                    // Pro: the next block starts the stretcher from its beat
+        bool proRaw;                        // Pro, waiting for its start (the block's seek was spent): playing as Repitch meanwhile
+        /// <summary>The inline Pro starts the block may still do; set by the mixer (null: no limit).</summary>
+        internal SeekBudget Budget;
         AudioClipParams current;
         double expected = double.NaN;      // the beat the next block should start on
         bool sounding;
@@ -71,8 +74,12 @@ namespace ReBuzz.Core.Clips
                 }
                 // No native library (or no memory for it): Pro plays as Complex, which needs its vocoder.
                 if (pro == null && vocoder == null) vocoder = new PhaseVocoder();
+                pro?.Anticipate(p);
             }
         }
+
+        /// <summary>Tests: waits for the Pro spare to be ready.</summary>
+        internal bool WaitForProSpare(int milliseconds) => pro?.WaitForSpare(milliseconds) ?? false;
 
         /// <summary>The mode a clip plays in: Pro without its stretcher is Complex.</summary>
         WarpMode Effective(AudioClipParams p) => p.Mode == WarpMode.Pro && pro == null ? WarpMode.Complex : p.Mode;
@@ -104,6 +111,7 @@ namespace ReBuzz.Core.Clips
                     Start(p, beat);
             }
             double rate = p.Source.SampleRate / (double)Math.Max(1, outputRate);
+            ProVoice.NoteTempo(beatsPerSample, outputRate);
             var fading = pro;
             if (fading != null && fading.Fading) fading.RenderFading(left, right, offset, count);       // what a jump or a stop left sounding
             switch (Effective(p))
@@ -163,6 +171,7 @@ namespace ReBuzz.Core.Clips
             older.Left = 0;
             lastSource = double.NaN;
             pro?.Silence();
+            proRaw = false;
         }
 
         /// <summary>The clip stopped: what sounded fades out (into these buffers, and the next ones until it has).</summary>
@@ -192,6 +201,7 @@ namespace ReBuzz.Core.Clips
             lastSource = double.NaN;
             if (Effective(p) == WarpMode.Complex) vocoder?.Reset();
             proRestart = Effective(p) == WarpMode.Pro;
+            proRaw = false;
         }
 
         /// <summary>
@@ -353,9 +363,30 @@ namespace ReBuzz.Core.Clips
             if (v == null) return;
             if (proRestart)
             {
-                v.Restart(p, beat, beatsPerSample, rate);
-                proRestart = false;
+                var started = v.Restart(p, beat, beatsPerSample, rate, Budget);
+                if (started != ProVoice.Started.Later)
+                {
+                    proRestart = false;
+                    if (proRaw)
+                    {
+                        BeginTail();                  // the stand-in fades out under the stretcher
+                        proRaw = false;
+                    }
+                }
+                else proRaw = true;
             }
+            if (proRaw)
+            {
+                // The block's seek went to another clip: this one plays plainly (as Repitch) until its turn, a block or two.
+                for (int i = 0; i < count; i++)
+                {
+                    Tails(left, right, offset + i);
+                    double b = beat + i * beatsPerSample;
+                    Put(p, p.Map.SampleAt(b), p.Map.SamplesPerBeat(b) * beatsPerSample, left, right, offset + i, 1);
+                }
+                return;
+            }
+            for (int i = 0; i < count && (tail.Left > 0 || older.Left > 0); i++) Tails(left, right, offset + i);
             v.Render(p, beat, beatsPerSample, rate, left, right, offset, count);
             // A raw copy of the audio at the end of this block is what a fade-out falls back on if its own stretcher is not there.
             lastSource = double.NaN;

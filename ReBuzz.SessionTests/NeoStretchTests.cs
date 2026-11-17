@@ -596,6 +596,121 @@ namespace ReBuzz.SessionTests
             foreach (float v in x) w.Write((short)Math.Clamp(Math.Round(v * scale * 32767), -32768, 32767));
         }
 
+
+        // ---- Sixteen starts in one block (the audio thread's budget) ----------------------------------
+
+        const int BurstRate = 48000;
+
+        /// <summary>
+        /// Sixteen Pro clips (one drum loop) all start in block 0 of a mixer: the worst block's time, and the mixed output. Each clip
+        /// is its own ClipPlayback, as on a scene launch.
+        /// </summary>
+        static (double WorstMs, float[] Mix) Burst(WarpMode mode, int blocks, bool waitForSpares)
+        {
+            const int Block = 256, Clips = 16;
+            double bpm = 120, bps = bpm / 60.0 / BurstRate;
+            var src = Drums(bpm, 8, BurstRate);
+            var p = Clip(src, bpm, mode);
+            ProVoice.NoteTempo(bps, BurstRate);
+            var clips = Enumerable.Range(0, Clips).Select(_ => new ClipPlayback { Params = p }).ToArray();
+            if (waitForSpares)
+                foreach (var c in clips) Assert.That(c.Voice.WaitForProSpare(5000), Is.True, "the spare gets ready");
+            var mixer = new ClipMixer();
+            var mix = new float[blocks * Block];
+            double worst = 0;
+            var clock = new Stopwatch();
+            for (int k = 0; k < blocks; k++)
+            {
+                clock.Restart();
+                mixer.Begin(Block);
+                foreach (var c in clips) mixer.Play(c, k * Block * bps, bps, BurstRate, Block);
+                mixer.End(Block, bps, BurstRate);
+                clock.Stop();
+                worst = Math.Max(worst, clock.Elapsed.TotalMilliseconds);
+                Array.Copy(mixer.Left, 0, mix, k * Block, Block);
+            }
+            return (worst, mix);
+        }
+
+        /// <summary>A budget of half a 256-sample block at 48 kHz (5.3 ms): the rest is the engine's, the other machines' and the driver's.</summary>
+        const double BlockBudgetMs = 0.5 * 256 * 1000.0 / BurstRate;
+
+        static double WorstOf(int runs, Func<double> run) => Enumerable.Range(0, runs).Min(_ => run());       // the best of a few: a busy CI machine adds, never takes away
+
+        [Test]
+        public void SixteenProClipsStartingInOneBlockNeverCostMoreThanTheBlocksBudgetEvenWithoutAnySpare()
+        {
+            Assert.That(NeoStretch.Available, Is.True, "the library is built before the tests");
+            bool was = ProVoice.Prefetch;
+            ProVoice.Prefetch = false;                   // every start is a surprise
+            try
+            {
+                Burst(WarpMode.Pro, 8, false);          // the library and the JIT, warm
+                long inline0 = ProVoice.InlineStarts, later0 = ProVoice.LaterStarts, spare0 = ProVoice.SpareStarts;
+                double worst = WorstOf(3, () => Burst(WarpMode.Pro, 60, false).WorstMs);
+                TestContext.WriteLine($"worst block of 16 unanticipated Pro starts: {worst:F2} ms (budget {BlockBudgetMs:F2} ms)");
+                Assert.That(worst, Is.LessThan(BlockBudgetMs), "one seek a block, the others wait their turn");
+                Assert.That(ProVoice.SpareStarts - spare0, Is.EqualTo(0));
+                Assert.That(ProVoice.InlineStarts - inline0, Is.EqualTo(3 * 16), "all sixteen got their start, in turn");
+                Assert.That(ProVoice.LaterStarts - later0, Is.GreaterThan(0), "and the later ones waited");
+
+                // Settled (a quarter of a second on), every onset is where Repitch puts it, within a millisecond.
+                var pro = Burst(WarpMode.Pro, 200, false).Mix;
+                var rep = Burst(WarpMode.Repitch, 200, false).Mix;
+                var a = Onsets(pro, BurstRate).Where(i => i > BurstRate / 4).ToList();
+                var b = Onsets(rep, BurstRate).Where(i => i > BurstRate / 4).ToList();
+                Assert.That(a.Count, Is.EqualTo(b.Count), "the same hits");
+                Assert.That(a.Count, Is.GreaterThan(2));
+                for (int i = 0; i < a.Count; i++)
+                    Assert.That(Math.Abs(a[i] - b[i]), Is.LessThan(BurstRate / 1000.0), $"hit {i}: {a[i]} against {b[i]}");
+            }
+            finally { ProVoice.Prefetch = was; }
+        }
+
+        [Test]
+        public void SixteenProClipsStartingInOneBlockWithTheirSparesReadyStartAtOnceAndLineUp()
+        {
+            Assert.That(NeoStretch.Available, Is.True);
+            Burst(WarpMode.Pro, 8, true);
+            long inline0 = ProVoice.InlineStarts, later0 = ProVoice.LaterStarts, spare0 = ProVoice.SpareStarts;
+            var best = Enumerable.Range(0, 3).Select(_ => Burst(WarpMode.Pro, 200, true)).OrderBy(r => r.WorstMs).First();
+            TestContext.WriteLine($"worst block of 16 anticipated Pro starts: {best.WorstMs:F2} ms (budget {BlockBudgetMs:F2} ms)");
+            Assert.That(best.WorstMs, Is.LessThan(BlockBudgetMs));
+            Assert.That(ProVoice.SpareStarts - spare0, Is.EqualTo(3 * 16), "every start was a spare's");
+            Assert.That(ProVoice.InlineStarts - inline0, Is.EqualTo(0));
+            Assert.That(ProVoice.LaterStarts - later0, Is.EqualTo(0));
+            var rep = Burst(WarpMode.Repitch, 200, false).Mix;
+            var a = Onsets(best.Mix, BurstRate);
+            var b = Onsets(rep, BurstRate);
+            Assert.That(a.Count, Is.EqualTo(b.Count));
+            for (int i = 0; i < a.Count; i++)
+                Assert.That(Math.Abs(a[i] - b[i]), Is.LessThan(BurstRate / 1000.0), $"hit {i}: {a[i]} against {b[i]}");
+        }
+
+        [Test]
+        public void ALoopGoingRoundInProFindsItsSpareToo()
+        {
+            Assert.That(NeoStretch.Available, Is.True);
+            double bpm = 120, bps = bpm / 60.0 / BurstRate;
+            var p = Clip(Drums(bpm, 4, BurstRate), bpm, WarpMode.Pro);
+            ProVoice.NoteTempo(bps, BurstRate);
+            var clip = new ClipPlayback { Params = p };
+            Assert.That(clip.Voice.WaitForProSpare(5000), Is.True);
+            var mixer = new ClipMixer();
+            long spare0 = ProVoice.SpareStarts;
+            for (int round = 0; round < 3; round++)
+            {
+                for (int k = 0; k < 40; k++)
+                {
+                    mixer.Begin(256);
+                    mixer.Play(clip, k * 256 * bps, bps, BurstRate, 256);        // the loop goes back to the beat 0 each round
+                    mixer.End(256, bps, BurstRate);
+                }
+                Assert.That(clip.Voice.WaitForProSpare(5000), Is.True, "the next spare is made while it plays");
+            }
+            Assert.That(ProVoice.SpareStarts - spare0, Is.EqualTo(3));
+        }
+
         // ---- A library that is not there --------------------------------------------------------------
 
         [Test]
