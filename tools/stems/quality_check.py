@@ -85,6 +85,16 @@ def read_wav(path):
     return x[:n * ch].reshape(n, ch).T.copy(), rate
 
 
+def write_wav(path, x, rate):
+    """float32 stereo WAV from [channels, n]."""
+    data = np.ascontiguousarray(x.T.astype("<f4")).tobytes()
+    ch = x.shape[0]
+    with open(path, "wb") as f:
+        f.write(b"RIFF" + struct.pack("<I", 36 + len(data)) + b"WAVE")
+        f.write(b"fmt " + struct.pack("<IHHIIHH", 16, 3, ch, rate, rate * ch * 4, ch * 4, 32))
+        f.write(b"data" + struct.pack("<I", len(data)) + data)
+
+
 def sdr(ref, est):
     n = min(ref.shape[-1], est.shape[-1])
     ref, est = ref[..., :n].astype(np.float64), est[..., :n].astype(np.float64)
@@ -145,9 +155,15 @@ try:
         call("notes_write", machine=name, pattern="A", notes=notes)
         call("arrangement_place", machine=name, pattern="A", at=[0])
 
+    rates = []
+
     def render(label, **kw):
         ok, _, r = call("render", **{"from": 0, "to": B, "tail_seconds": 0, "name": label, **kw})
-        return read_wav(r["file"])[0] if ok and r.get("file") else None
+        if not (ok and r.get("file")):
+            return None
+        x, rate = read_wav(r["file"])
+        rates.append(rate)
+        return x
 
     mix = render("mix")
     solo = {n: render("solo-" + n.lower(), solo=[n]) for n, _, _ in parts}
@@ -175,7 +191,15 @@ try:
         raise RuntimeError(f"the engine's mix is not the sum of its soloed parts ({mixing} dB, wanted 60): the references would be wrong")
     seconds = n / 44100
     report["audio_seconds"] = round(seconds, 1)
-    mixfile = call("render", **{"from": 0, "to": B, "tail_seconds": 0, "name": "mix-for-separation"})[2].get("file")
+    # The render is a block or two longer than the song (here 32.003 s for 64 beats at 120 BPM). Imported as it is, Neo Audio takes the file for a
+    # loop of 64 beats and fits its 128 extra samples into them, so its stems run 1e-4 fast: 0 samples early at the start and 128 at the end (a mean lag
+    # of 54 samples, 3.5 dB of SDR on any stem that were perfect). The mix is cut to exactly its beats before it is separated: 1411200 samples, 120 BPM.
+    rate = rates[0]
+    exact = int(round(B * 60.0 / args.bpm * rate))
+    mixfile = os.path.join(os.path.abspath(args.work), "mix-for-separation.wav")
+    write_wav(mixfile, mix[:, :exact], rate)
+    n = min(n, exact)
+    refs = {k: v[:, :n] for k, v in refs.items()}
 
     for quality in ("Fast", "Balanced", "Best"):
         print(f"== {quality}")
