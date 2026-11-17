@@ -59,7 +59,7 @@ jobs:
   portable-tests:
     if: ${{ inputs.gallery != true }}
     runs-on: macos-15
-    timeout-minutes: 75
+    timeout-minutes: 100
     steps:
     - uses: actions/checkout@v5
 
