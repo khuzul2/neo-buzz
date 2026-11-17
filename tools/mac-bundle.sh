@@ -54,7 +54,8 @@ cp "$root/build/NeoStretch/libneostretch.dylib" "$macos/libneostretch.dylib"
 chmod u+w "$macos/libneostretch.dylib"
 install_name_tool -id "@loader_path/libneostretch.dylib" "$macos/libneostretch.dylib"
 # it links nothing of ours or Homebrew's: the system's libraries only, or the bundle would fail to load it on another Mac
-if otool -L "$macos/libneostretch.dylib" | tail -n +2 | grep -v "^[[:space:]]*\(@loader_path/libneostretch.dylib\|/usr/lib/\|/System/\)"; then
+# (a universal binary lists each architecture under a header line ending in a colon: those are not dependencies)
+if otool -L "$macos/libneostretch.dylib" | grep -v ':$' | grep -v "^[[:space:]]*\(@loader_path/libneostretch.dylib\|/usr/lib/\|/System/\)"; then
   echo "libneostretch.dylib links something that is not a system library" >&2; exit 1
 fi
 
