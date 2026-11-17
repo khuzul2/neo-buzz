@@ -38,9 +38,14 @@ namespace ReBuzz.Studio.Views.Device
         IReadOnlyList<DeviceCard> lastCards = Array.Empty<DeviceCard>();
         List<int> lastColumns = new();
         double splitHeight = -1;
+        // What the height model was short by, measured on the real cards (fonts and themes differ from the model's numbers), added to the chrome.
+        double chromeFix;
+        int calibrations;
+        bool verifying;
+        ScrollViewer tableScroller;
 
         /// <summary>The height of a card's frame around its content: the section's margin, border, padding and title.</summary>
-        public const double CardChrome = 44, CardChromeWidth = 30, ScrollBarRoom = 12;
+        public const double CardChrome = 44, CardChromeWidth = 30, ScrollBarRoom = 18;
 
         public DeviceCards(IMachine machine, NeoColor accent)
         {
@@ -56,6 +61,7 @@ namespace ReBuzz.Studio.Views.Device
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 Focusable = false,
+                AllowAutoHide = false,       // the sideways bar takes its own row: it never lies over the cards' last row
             };
             Child = scroller;
             SizeChanged += (s, e) => { if (sideways && Math.Abs(e.NewSize.Height - splitHeight) > 1 && lastCards.Count > 0) SetCards(lastCards, tableSection, lastColumns); };
@@ -110,6 +116,7 @@ namespace ReBuzz.Studio.Views.Device
         /// <summary>Shows these cards, and the track table's columns after them.</summary>
         public void SetCards(IReadOnlyList<DeviceCard> cards, DeviceSection tableSection, List<int> tableColumns)
         {
+            if (!verifying) calibrations = 0;
             lastCards = cards;
             lastColumns = tableColumns;
             splitHeight = sideways ? Bounds.Height : -1;
@@ -126,7 +133,7 @@ namespace ReBuzz.Studio.Views.Device
             if (sideways)
             {
                 // Scrolls down only where the panel can't hold even a card with one row of knobs.
-                double least = CardChrome + KnobRowHeight(cards.SelectMany(c => c.Knobs).Take(1).ToList());
+                double least = CardChrome + chromeFix + KnobRowHeight(cards.SelectMany(c => c.Knobs).Take(1).ToList());
                 scroller.VerticalScrollBarVisibility = !double.IsInfinity(room) && room < least ? ScrollBarVisibility.Auto : ScrollBarVisibility.Disabled;
             }
             this.tableSection = tableSection;
@@ -134,11 +141,46 @@ namespace ReBuzz.Studio.Views.Device
             if (tableSection != null && tableColumns.Count > 0)
             {
                 table.SetItems(new DeviceItem[] { new TableItem(tableSection, tableColumns) });
-                tableCardControl ??= new Section(tableSection.Name, accent, table) { VerticalAlignment = VerticalAlignment.Top };
+                if (tableScroller == null)
+                {
+                    tableScroller = new ScrollViewer
+                    {
+                        Content = table,
+                        HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                        VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                        AllowAutoHide = false,
+                        Focusable = false,
+                    };
+                    tableCardControl = new Section(tableSection.Name, accent, tableScroller) { VerticalAlignment = VerticalAlignment.Top };
+                }
+                // Docked, the table card is cut to the panel like the others: what doesn't fit scrolls inside the card.
+                tableScroller.MaxHeight = double.IsInfinity(room) ? double.PositiveInfinity : Math.Max(DeviceItem.RowHeight * 2, room - CardChrome - chromeFix);
                 tableCard = tableCardControl;
                 Host.Children.Add(tableCard);
             }
             scroller.Offset = default;
+            if (sideways && !verifying) { LayoutUpdated -= Verify; LayoutUpdated += Verify; }
+        }
+
+        /// <summary>
+        /// After the first layout of docked cards: a card taller than the room means the model's chrome was short on this machine's fonts;
+        /// add the difference and split again (a few times at most), so nothing clips under the bar.
+        /// </summary>
+        void Verify(object sender, EventArgs e)
+        {
+            if (!sideways || shown.Count == 0 || Bounds.Height < 1) return;
+            LayoutUpdated -= Verify;
+            if (shown.Any(s => !s.Control.IsMeasureValid)) { LayoutUpdated += Verify; return; }
+            double room = RoomHeight;
+            double over = Math.Max(shown.Max(s => s.Control.DesiredSize.Height), tableCard?.DesiredSize.Height ?? 0) - room;
+            if (over <= 0.5 || calibrations >= 3 || chromeFix > 40) return;
+            calibrations++;
+            chromeFix += Math.Ceiling(over);
+            verifying = true;
+            try { SetCards(lastCards, tableSection, lastColumns); }
+            finally { verifying = false; }
+            LayoutUpdated -= Verify;
+            LayoutUpdated += Verify;
         }
 
         double KnobRowHeight(IReadOnlyList<DeviceParam> knobs) => knobs.Count == 0 ? DeviceKnob.Diameter + 34 : knobs.Max(k => CellOf(k).Height);
@@ -155,7 +197,7 @@ namespace ReBuzz.Studio.Views.Device
         /// <summary>The height of a card holding these choices and knobs, in <paramref name="cols"/> columns.</summary>
         double HeightOf(IReadOnlyList<DeviceParam> choices, IReadOnlyList<DeviceParam> knobs, int cols, double knobRow)
         {
-            double h = CardChrome, x = 0, row = 0;
+            double h = CardChrome + chromeFix, x = 0, row = 0;
             foreach (var c in choices)
             {
                 var cell = CellOf(c);
@@ -198,7 +240,7 @@ namespace ReBuzz.Studio.Views.Device
                 foreach (var k in knobs)
                 {
                     kk.Add(k);
-                    if (kk.Count > 1 && (kk.Count - 1) % DeviceCard.Columns == 0 && HeightOf(cc, kk, ColsFor(cc, kk), knobRow) > room)
+                    if ((kk.Count > 1 || cc.Count > 0) && (kk.Count - 1) % DeviceCard.Columns == 0 && HeightOf(cc, kk, ColsFor(cc, kk), knobRow) > room)
                     {
                         kk.RemoveAt(kk.Count - 1);
                         chunks.Add((cc, kk));
@@ -319,99 +361,69 @@ namespace ReBuzz.Studio.Views.Device
     }
 
     /// <summary>
-    /// The floating cards: each is as wide as its content needs and they flow in rows; a row's leftover width goes to its cards as extra
-    /// columns (up to what their knobs can use), so the width of the window is filled, not left empty at the right.
+    /// The floating cards, as a masonry: the window is cut into equal columns (as many as the widest card's content allows), each card
+    /// goes to the shortest column (the leftmost on a tie), so the order reads left to right, top to bottom and no short card leaves a gap
+    /// under it. A card takes as many columns of knobs as its column has room for (up to what its knobs can use), so the columns fill the
+    /// width. A card without a <see cref="CardInfo"/> (the track table) is as wide as it is and spans the columns it needs.
     /// </summary>
     internal sealed class CardFlow : Panel
     {
-        public IReadOnlyList<(int First, int Count)> Rows { get; private set; } = Array.Empty<(int, int)>();
+        /// <summary>The cards of each column, top to bottom, as indexes of the visible children (tests).</summary>
+        public IReadOnlyList<IReadOnlyList<int>> Columns { get; private set; } = Array.Empty<IReadOnlyList<int>>();
 
         static CardInfo InfoOf(Control c) => c.Tag as CardInfo;
+
+        List<Rect> placed = new();
 
         protected override Size MeasureOverride(Size available)
         {
             double width = double.IsInfinity(available.Width) ? 1e6 : available.Width;
             var kids = Children.OfType<Control>().Where(c => c.IsVisible).ToList();
-            var rows = new List<List<Control>>();
-            var row = new List<Control>();
-            double used = 0;
-            foreach (var c in kids)
+            foreach (var c in kids) if (InfoOf(c) == null) { c.Width = double.NaN; c.Measure(Size.Infinity); }
+            // The column: the widest a card needs at its narrowest, as many of them as the width holds, then shared out evenly.
+            double need = kids.Select(c => InfoOf(c) is { } i ? i.Width(i.MinCols) : 0).DefaultIfEmpty(0).Max();
+            int k = need <= 0 || width >= 1e6 ? 1 : Math.Max(1, (int)Math.Floor(width / need));
+            double colW = need <= 0 ? width : (width >= 1e6 ? need : width / k);
+            if (colW > width) colW = width;
+            var heights = new double[k];
+            var cols = Enumerable.Range(0, k).Select(_ => new List<int>()).ToList();
+            placed = new List<Rect>();
+            double widest = 0;
+            for (int n = 0; n < kids.Count; n++)
             {
-                var info = InfoOf(c);
-                double w = info != null ? info.Width(info.MinCols) : c.DesiredSize.Width;
-                if (info == null) { c.Measure(Size.Infinity); w = c.DesiredSize.Width; }
-                if (row.Count > 0 && used + w > width) { rows.Add(row); row = new List<Control>(); used = 0; }
-                row.Add(c);
-                used += w;
-                if (info != null) info.Cols = info.MinCols;
-            }
-            if (row.Count > 0) rows.Add(row);
-            foreach (var r in rows)
-            {
-                double left = width - r.Sum(c => InfoOf(c) is { } i ? i.Width(i.Cols) : c.DesiredSize.Width);
-                bool grew = true;
-                while (left >= DeviceCell.CellWidth && grew)
+                var c = kids[n];
+                int span = 1;
+                if (InfoOf(c) is { } info)
                 {
-                    grew = false;
-                    foreach (var c in r.Where(c => InfoOf(c) is { } i && i.Cols < i.MaxCols).OrderByDescending(c => InfoOf(c).MaxCols - InfoOf(c).Cols))
-                    {
-                        if (left < DeviceCell.CellWidth) break;
-                        InfoOf(c).Cols++;
-                        left -= DeviceCell.CellWidth;
-                        grew = true;
-                    }
+                    int fit = (int)Math.Floor((colW - DeviceCards.CardChromeWidth + 0.5) / DeviceCell.CellWidth);
+                    info.Cols = Math.Clamp(fit, info.MinCols, Math.Max(info.MinCols, info.MaxCols));
+                    info.SetCols(info.Cols);
+                    c.Width = colW - 8 >= info.Width(info.Cols) - 8 ? colW - 8 : double.NaN;      // 8: the card's margin
                 }
-            }
-            // What a full row still has left (less than a column) is shared by its cards' frames, so the rows end at the right edge.
-            for (int r = 0; r < rows.Count; r++)
-            {
-                double left = width - rows[r].Sum(c => InfoOf(c) is { } i ? i.Width(i.Cols) : c.DesiredSize.Width);
-                bool full = r < rows.Count - 1 && left > 0 && rows[r].All(c => InfoOf(c) != null);
-                foreach (var c in rows[r])
-                    if (InfoOf(c) is { } info) info.Extra = full ? left / rows[r].Count : 0;
-            }
-            double height = 0, widest = 0;
-            var spans = new List<(int, int)>();
-            int at = 0;
-            foreach (var r in rows)
-            {
-                double rowH = 0, rowW = 0;
-                foreach (var c in r)
+                else span = Math.Min(k, Math.Max(1, (int)Math.Ceiling((c.DesiredSize.Width - 0.5) / colW)));
+                c.Measure(Size.Infinity);
+                double h = c.DesiredSize.Height;
+                int best = 0;
+                double top = double.MaxValue;
+                for (int s = 0; s + span <= k; s++)
                 {
-                    if (InfoOf(c) is { } info)
-                    {
-                        info.SetCols(info.Cols);
-                        c.Width = info.Extra > 0.5 ? info.Width(info.Cols) + info.Extra - 8 : double.NaN;     // 8: the card's margin
-                    }
-                    c.Measure(Size.Infinity);
-                    rowH = Math.Max(rowH, c.DesiredSize.Height);
-                    rowW += c.DesiredSize.Width;
+                    double y = 0;
+                    for (int j = s; j < s + span; j++) y = Math.Max(y, heights[j]);
+                    if (y < top - 0.5) { top = y; best = s; }
                 }
-                height += rowH;
-                widest = Math.Max(widest, rowW);
-                spans.Add((at, r.Count));
-                at += r.Count;
+                placed.Add(new Rect(best * colW, top, c.DesiredSize.Width, h));
+                for (int j = best; j < best + span; j++) heights[j] = top + h;
+                cols[best].Add(n);
+                widest = Math.Max(widest, best * colW + c.DesiredSize.Width);
             }
-            Rows = spans;
-            return new Size(Math.Min(widest, width), height);
+            Columns = cols.Where(l => l.Count > 0).Select(l => (IReadOnlyList<int>)l).ToList();
+            return new Size(Math.Min(Math.Max(widest, 0), width), heights.DefaultIfEmpty(0).Max());
         }
 
         protected override Size ArrangeOverride(Size finalSize)
         {
             var kids = Children.OfType<Control>().Where(c => c.IsVisible).ToList();
-            double y = 0;
-            foreach (var (first, count) in Rows)
-            {
-                double x = 0, rowH = 0;
-                for (int i = first; i < first + count && i < kids.Count; i++)
-                {
-                    var c = kids[i];
-                    c.Arrange(new Rect(x, y, c.DesiredSize.Width, c.DesiredSize.Height));
-                    x += c.DesiredSize.Width;
-                    rowH = Math.Max(rowH, c.DesiredSize.Height);
-                }
-                y += rowH;
-            }
+            for (int i = 0; i < kids.Count && i < placed.Count; i++) kids[i].Arrange(placed[i]);
             return finalSize;
         }
     }

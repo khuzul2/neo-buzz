@@ -1762,7 +1762,7 @@ namespace ReBuzz.Studio.Tests
 
                 // The Device panel (ux-overhaul.md, the parameter panel): cards of knobs docked (one row, scrolling sideways) and floating
                 // (wrapping), for four machines, and the Inspector with the macros and the pinned parameters.
-                foreach (var (gear, slug) in new[] { ("Neo Filter", "neo-filter"), ("Neo Poly", "neo-poly"), ("Neo Drums", "neo-drums"), ("Dye Essence", "dye-essence") })
+                foreach (var (gear, slug) in new[] { ("Neo Filter", "neo-filter"), ("Neo Poly", "neo-poly"), ("Neo Drums", "neo-drums"), ("Dye Essence", "dye-essence"), ("Neo EQ", "neo-eq"), ("Pedal Gain Multi", "pedal-gain-multi") })
                 {
                     Try("454-device-docked-" + slug, () =>
                     {
@@ -1772,7 +1772,7 @@ namespace ReBuzz.Studio.Tests
                         var w = new Window { Width = 1100, Height = 330, Content = page };
                         w.Show();
                         Settle();
-                        Shot(w, "454-device-docked-" + slug, $"The Device panel docked for {gear}: its sections as cards of knobs in one row that scrolls sideways, a chip per section, search, Changed only, Knobs | List.", "Select the machine; Detail ▸ Device.");
+                        Shot(w, "454-device-docked-" + slug, $"The Device panel docked for {gear}: its sections as cards of knobs in one row that scrolls sideways (every card whole above the bar, the track table cut to the panel), a chip per section, search, Changed only, Knobs | List; the keys toggle (note icon) sits by Presets.", "Select the machine; Detail ▸ Device.");
                         w.Close();
                     });
                     Try("455-device-floating-" + slug, () =>
@@ -1783,7 +1783,7 @@ namespace ReBuzz.Studio.Tests
                         var w = new Window { Width = gear == "Dye Essence" ? 1440 : 900, Height = gear == "Dye Essence" ? 820 : 620, Content = page };
                         w.Show();
                         Settle();
-                        Shot(w, "455-device-floating-" + slug, $"The Device panel floating for {gear}: cards sized to their content flowing to fill the width, choices on top of each card, one colour, sentence-case labels, a \"+N\" menu for the chips that don't fit.", "Right-click a machine ▸ Parameters…, or Float in the Device panel.");
+                        Shot(w, "455-device-floating-" + slug, $"The Device panel floating for {gear}: cards in columns, each to the shortest column (no gaps under short cards), choices on top of each card, one colour, sentence-case labels, a \"+N\" menu for the chips that don't fit.", "Right-click a machine ▸ Parameters…, or Float in the Device panel.");
                         w.Close();
                     });
                 }
@@ -1809,7 +1809,7 @@ namespace ReBuzz.Studio.Tests
                     Settle();
                     var cell = page.Parameters.Cards.Shown.SelectMany(s => s.Card.Knobs).Take(2).Select(p => page.Parameters.Cards.Cell(p)!).Last();
                     Click(w, DeviceTestKit.Centre(w, cell.Face), MouseButton.Right);
-                    Shot(w, "458-device-knob-menu", "A knob's menu: Reset, Type a Value, Pin to Inspector, Automate (adds the parameter's arrangement lane), Modulate (a modulator or the matrix), Lock and Hide (ticks), MIDI binding, Keyboard Sends MIDI Notes. The List rows have the same menu.", "Right-click a knob or a row in the Device panel.");
+                    Shot(w, "458-device-knob-menu", "A knob's menu: Reset, Type a Value, Pin to Inspector, Automate (adds the parameter's arrangement lane), Modulate (a modulator or the matrix), Lock and Hide (ticks), MIDI binding. Keyboard Sends MIDI Notes is now in the bar and the Presets menu. The List rows have the same menu.", "Right-click a knob or a row in the Device panel.");
                     w.Close();
                 });
                 Try("459-device-edit-features", () =>
