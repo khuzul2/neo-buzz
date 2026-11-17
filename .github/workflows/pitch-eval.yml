@@ -1,0 +1,129 @@
+name: Pitch evaluation
+
+# The shared pitch engine (docs/specs/pitch.md, phase PT1) scored on real recordings. By hand only (workflow_dispatch). The data are
+# downloaded here, on the runner, from Zenodo, each file checked against the checksum Zenodo publishes for it; they are never
+# committed and never uploaded. What the run keeps is a Markdown report (the job summary and an artifact) and a CSV of the
+# per-stem figures.
+#  - MDB-stem-synth (zenodo.org/records/1481172, CC BY-NC 4.0, 1.8 GB): raw pitch and chroma accuracy, voicing recall and false
+#    alarm, overall accuracy, per stem and overall, for each range and for Low latency against Quality.
+#  - Amateur Vocal Percussion (zenodo.org/record/5036529, CC BY 4.0, 231 MB): onset F-measure and latency, trigger accuracy trained
+#    on 10 hits per class per participant.
+#  - VocalSet 1.1 (zenodo.org/records/1442513, CC BY 4.0, 2 GB zip read in place): a subset of techniques and vowels; voicing, octave
+#    jumps, held-note stability, Low latency against Quality, and the vowel estimator on the labelled vowels.
+# The tool is tools/PitchEval (it links Machines/NeoBuzz.Dsp and nothing else).
+
+on:
+  workflow_dispatch:
+    inputs:
+      mdb:
+        description: 'MDB-stem-synth'
+        type: boolean
+        default: true
+      avp:
+        description: 'Amateur Vocal Percussion'
+        type: boolean
+        default: true
+      vocalset:
+        description: 'VocalSet'
+        type: boolean
+        default: true
+      mdb_limit:
+        description: 'MDB-stem-synth: evaluate only this many stems, evenly spread (0 = all 230)'
+        type: string
+        default: '0'
+      vocalset_per_group:
+        description: 'VocalSet: files per singer and technique'
+        type: string
+        default: '2'
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    defaults:
+      run:
+        shell: bash
+    env:
+      DATA: /mnt/pitch-eval-data
+    steps:
+    - uses: actions/checkout@v5
+
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Build the evaluation tool
+      run: dotnet build tools/PitchEval -c Release -nologo
+
+    - name: Room for the data
+      run: |
+        sudo mkdir -p "$DATA"
+        sudo chown "$USER" "$DATA"
+        df -h / /mnt | cat
+
+    # fetch <record> <file name> <destination>: Zenodo's API for the file's URL and md5, then the check.
+    - name: Download and check the data
+      run: |
+        set -euo pipefail
+        fetch() {
+          local rec="$1" name="$2" dest="$3"
+          local meta md5 try
+          # Zenodo's API now and then answers with an error body: ask again (up to 8 times) until the file's checksum is in the answer.
+          for try in 1 2 3 4 5 6 7 8; do
+            meta=$(curl -sS --retry 5 -L "https://zenodo.org/api/records/$rec" || true)
+            md5=$(echo "$meta" | python3 -c "import json,sys; d=json.load(sys.stdin); print([f['checksum'].split(':')[1] for f in d['files'] if f['key']=='$name'][0])" 2>/dev/null || true)
+            [ -n "$md5" ] && break
+            echo "record $rec: no usable answer (try $try)"; sleep $((try * 10))
+          done
+          [ -n "$md5" ] || { echo "no checksum for $name"; return 1; }
+          echo "$rec $name md5 $md5; licence: $(echo "$meta" | python3 -c "import json,sys; print(json.load(sys.stdin)['metadata']['license'])" 2>/dev/null || echo unknown)"
+          curl -sS --retry 8 --retry-delay 5 -C - -L -o "$dest" "https://zenodo.org/api/records/$rec/files/$name/content"
+          echo "$md5  $dest" | md5sum -c -
+        }
+        if [ "${{ github.event.inputs.mdb }}" != "false" ]; then
+          fetch 1481172 MDB-stem-synth.tar.gz "$DATA/mdb.tar.gz"
+          mkdir -p "$DATA/mdb"
+          tar -xzf "$DATA/mdb.tar.gz" -C "$DATA/mdb" --exclude='*/._*'
+          rm "$DATA/mdb.tar.gz"
+        fi
+        if [ "${{ github.event.inputs.avp }}" != "false" ]; then
+          fetch 5036529 AVP_Dataset.zip "$DATA/avp.zip"
+          mkdir -p "$DATA/avp"
+          unzip -q "$DATA/avp.zip" -x '__MACOSX/*' -d "$DATA/avp"
+          rm "$DATA/avp.zip"
+        fi
+        if [ "${{ github.event.inputs.vocalset }}" != "false" ]; then
+          fetch 1442513 VocalSet11.zip "$DATA/vocalset.zip"
+        fi
+        df -h /mnt | cat
+
+    - name: Evaluate
+      run: |
+        set -euo pipefail
+        args=(--out pitch-eval-report.md --csv pitch-eval-stems.csv)
+        [ "${{ github.event.inputs.mdb }}" != "false" ] && args+=(--mdb "$DATA/mdb/MDB-stem-synth" --mdb-limit "${{ github.event.inputs.mdb_limit || '0' }}")
+        [ "${{ github.event.inputs.avp }}" != "false" ] && args+=(--avp "$DATA/avp")
+        [ "${{ github.event.inputs.vocalset }}" != "false" ] && args+=(--vocalset "$DATA/vocalset.zip" --vocalset-per-group "${{ github.event.inputs.vocalset_per_group || '2' }}")
+        dotnet run -c Release --no-build --project tools/PitchEval -- "${args[@]}"
+
+    - name: Job summary
+      if: always()
+      run: |
+        if [ -f pitch-eval-report.md ]; then
+          # The summary is capped at 1 MiB: the per-stem table is in the artifact whole.
+          head -c 900000 pitch-eval-report.md >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+    # Only the report and the per-stem CSV (figures, no audio).
+    - name: Upload the report
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: pitch-eval-report
+        path: |
+          pitch-eval-report.md
+          pitch-eval-stems.csv
+        if-no-files-found: ignore
