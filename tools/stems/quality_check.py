@@ -85,6 +85,16 @@ def read_wav(path):
     return x[:n * ch].reshape(n, ch).T.copy(), rate
 
 
+def write_wav(path, x, rate):
+    """float32 stereo WAV from [channels, n]."""
+    data = np.ascontiguousarray(x.T.astype("<f4")).tobytes()
+    ch = x.shape[0]
+    with open(path, "wb") as f:
+        f.write(b"RIFF" + struct.pack("<I", 36 + len(data)) + b"WAVE")
+        f.write(b"fmt " + struct.pack("<IHHIIHH", 16, 3, ch, rate, rate * ch * 4, ch * 4, 32))
+        f.write(b"data" + struct.pack("<I", len(data)) + data)
+
+
 def sdr(ref, est):
     n = min(ref.shape[-1], est.shape[-1])
     ref, est = ref[..., :n].astype(np.float64), est[..., :n].astype(np.float64)
@@ -92,6 +102,18 @@ def sdr(ref, est):
     if num < 1e-12:
         return None
     return float(10 * math.log10(num / max(den, 1e-20)))
+
+
+def best_lag(ref, est, window=2048):
+    """The shift in samples of est against ref (positive: est is late) that correlates best, within the window: 0 when they line up."""
+    n = min(len(ref), len(est))
+    if n < 4 * window or np.sum(ref[:n].astype(np.float64) ** 2) < 1e-9:
+        return None
+    size = 1 << (2 * n - 1).bit_length()
+    c = np.fft.irfft(np.fft.rfft(est[:n].astype(np.float64), size) * np.conj(np.fft.rfft(ref[:n].astype(np.float64), size)), size)
+    lags = np.concatenate([np.arange(0, window + 1), np.arange(-window, 0)])
+    vals = np.concatenate([c[:window + 1], c[size - window:]])
+    return int(lags[int(np.argmax(vals))])
 
 
 def db(x):
@@ -133,9 +155,15 @@ try:
         call("notes_write", machine=name, pattern="A", notes=notes)
         call("arrangement_place", machine=name, pattern="A", at=[0])
 
+    rates = []
+
     def render(label, **kw):
         ok, _, r = call("render", **{"from": 0, "to": B, "tail_seconds": 0, "name": label, **kw})
-        return read_wav(r["file"])[0] if ok and r.get("file") else None
+        if not (ok and r.get("file")):
+            return None
+        x, rate = read_wav(r["file"])
+        rates.append(rate)
+        return x
 
     mix = render("mix")
     solo = {n: render("solo-" + n.lower(), solo=[n]) for n, _, _ in parts}
@@ -143,10 +171,35 @@ try:
         raise RuntimeError("the song did not render")
     n = min(x.shape[-1] for x in [mix, *solo.values()])
     refs = {"drums": solo["Drums"][:, :n], "bass": solo["Bass"][:, :n], "other": solo["Pad"][:, :n] + solo["Lead"][:, :n]}
-    print("mixing check: mix vs sum of parts SDR", sdr(mix[:, :n], sum(solo[k][:, :n] for k in solo)))
+    # The references are only worth anything if the engine's mix is the sum of its soloed parts: the same song rendered whole and part by
+    # part (docs/specs/stem-separation.md section 5). A render is the same samples every time, so this is a float rounding away from exact
+    # (about 140 dB or more); under 60 dB the machines are not repeating (a machine that is not reset for a render, as Dye Essence was) or
+    # something is out of line (gain, latency, pan law, master processing) and every SDR below would measure that and not the model.
+    parts_sum = sum(solo[k][:, :n] for k in solo)
+    mixing = sdr(mix[:, :n], parts_sum)
+    again = render("mix-again")
+    repeat = sdr(mix[:, :n], again[:, :n]) if again is not None else None
+    report["mixing_check_db"] = None if mixing is None else round(mixing, 1)
+    report["render_repeat_db"] = None if repeat is None else round(repeat, 1)
+    print(f"mixing check: mix vs sum of its soloed parts SDR {mixing} dB; the mix rendered twice {repeat if repeat is None else round(repeat, 1)} dB (wanted at least 60)")
+    if mixing is None or mixing < 60:
+        shifts = {}
+        for lag in (-64, -16, -4, -1, 0, 1, 4, 16, 64):
+            a, b = mix[0, 1000:n - 1000], parts_sum[0, 1000 + lag:n - 1000 + lag]
+            shifts[lag] = None if (v := sdr(a, b)) is None else round(v, 1)
+        print("  the sum of the parts shifted by that many samples:", shifts)
+        raise RuntimeError(f"the engine's mix is not the sum of its soloed parts ({mixing} dB, wanted 60): the references would be wrong")
     seconds = n / 44100
     report["audio_seconds"] = round(seconds, 1)
-    mixfile = call("render", **{"from": 0, "to": B, "tail_seconds": 0, "name": "mix-for-separation"})[2].get("file")
+    # The render is a block or two longer than the song (here 32.003 s for 64 beats at 120 BPM). Imported as it is, Neo Audio takes the file for a
+    # loop of 64 beats and fits its 128 extra samples into them, so its stems run 1e-4 fast: 0 samples early at the start and 128 at the end (a mean lag
+    # of 54 samples, 3.5 dB of SDR on any stem that were perfect). The mix is cut to exactly its beats before it is separated: 1411200 samples, 120 BPM.
+    rate = rates[0]
+    exact = int(round(B * 60.0 / args.bpm * rate))
+    mixfile = os.path.join(os.path.abspath(args.work), "mix-for-separation.wav")
+    write_wav(mixfile, mix[:, :exact], rate)
+    n = min(n, exact)
+    refs = {k: v[:, :n] for k, v in refs.items()}
 
     for quality in ("Fast", "Balanced", "Best"):
         print(f"== {quality}")
@@ -172,6 +225,7 @@ try:
             entry = {"level_db": db(est)}
             if t["stem"] in refs:
                 entry["sdr_db"] = None if (v := sdr(refs[t["stem"]][:, :m], est[:, :m])) is None else round(v, 2)
+                entry["lag_samples"] = best_lag(refs[t["stem"]][0, :m], est[0, :m])
             row["stems"][t["stem"]] = entry
         report["models"][quality] = row
         call("undo")
@@ -185,13 +239,14 @@ finally:
     except Exception:
         proc.kill()
 
-print("\n| model | stem | SDR dB | level dBFS | seconds per minute of audio |\n|---|---|---|---|---|")
+print(f"\nmixing check {report.get('mixing_check_db')} dB (mix against the sum of its soloed parts), the mix rendered twice {report.get('render_repeat_db')} dB")
+print("\n| model | stem | SDR dB | lag samples | level dBFS | seconds per minute of audio |\n|---|---|---|---|---|---|")
 for q, row in report["models"].items():
     if not row.get("ok"):
-        print(f"| {q} | - | failed: {row.get('error', '')[:60]} | | |")
+        print(f"| {q} | - | failed: {row.get('error', '')[:60]} | | | |")
         continue
     for stem, e in row["stems"].items():
-        print(f"| {q} ({row['model']}) | {stem} | {e.get('sdr_db', 'n/a')} | {e['level_db']} | {row['seconds_per_minute']} |")
+        print(f"| {q} ({row['model']}) | {stem} | {e.get('sdr_db', 'n/a')} | {e.get('lag_samples', 'n/a')} | {e['level_db']} | {row['seconds_per_minute']} |")
 if args.report:
     json.dump(report, open(args.report, "w"), indent=1)
 sys.exit(0)

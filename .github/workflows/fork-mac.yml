@@ -59,7 +59,7 @@ jobs:
   portable-tests:
     if: ${{ inputs.gallery != true }}
     runs-on: macos-15
-    timeout-minutes: 75
+    timeout-minutes: 100
     steps:
     - uses: actions/checkout@v5
 
@@ -87,9 +87,11 @@ jobs:
     # beside themselves, so the Pro tests run against it.
     - name: NeoStretch (CMake)
       run: |
-        cmake -S NeoStretch -B build/NeoStretch
+        cmake -S NeoStretch -B build/NeoStretch "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
         cmake --build build/NeoStretch -j 3
         ctest --test-dir build/NeoStretch --output-on-failure
+        # universal: Intel Macs play Pro too (docs/specs/neo-audio.md section 11)
+        lipo -info build/NeoStretch/libneostretch.dylib | tee /dev/stderr | grep -q "x86_64" && lipo -info build/NeoStretch/libneostretch.dylib | grep -q "arm64"
 
     # With the CoreMIDI loopback (virtual ports; the runner has no MIDI devices) and the Link helper.
     - name: Session View core and platform seams

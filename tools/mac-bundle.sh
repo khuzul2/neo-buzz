@@ -28,10 +28,14 @@ cmake -S "$root/ReBuzzEngine/portable" -B "$root/build/native-host" -DCMAKE_OSX_
 cmake --build "$root/build/native-host" -j 3
 
 # Neo Audio's Pro warp mode (docs/specs/neo-audio.md section 11): the neostretch library (a C ABI over Signalsmith Stretch, MIT), for
-# arm64 like the rest, built here and carried beside the app. The Mac is Apple silicon only in this bundle, so there is no x64 build to match.
-cmake -S "$root/NeoStretch" -B "$root/build/NeoStretch" -DCMAKE_OSX_ARCHITECTURES=arm64 >/dev/null
+# a universal binary (arm64 and x86_64), so an Intel Mac running a development build of the studio plays Pro too and not Complex
+# (the app itself is osx-arm64 only; the library costs nothing to build for both).
+cmake -S "$root/NeoStretch" -B "$root/build/NeoStretch" "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64" >/dev/null
 cmake --build "$root/build/NeoStretch" -j 3 --target neostretch
 test -f "$root/build/NeoStretch/libneostretch.dylib"
+lipo -info "$root/build/NeoStretch/libneostretch.dylib"
+lipo -info "$root/build/NeoStretch/libneostretch.dylib" | grep -q arm64 && lipo -info "$root/build/NeoStretch/libneostretch.dylib" | grep -q x86_64 \
+  || { echo "libneostretch.dylib is not universal (arm64 and x86_64)" >&2; exit 1; }
 
 dotnet publish "$root/ReBuzz.Studio/ReBuzz.Studio.csproj" -c Release -r osx-arm64 --self-contained -p:UseAppHost=true -nologo -v:q -o "$macos"
 mv "$macos/ReBuzz.Studio" "$macos/$name"
@@ -50,7 +54,8 @@ cp "$root/build/NeoStretch/libneostretch.dylib" "$macos/libneostretch.dylib"
 chmod u+w "$macos/libneostretch.dylib"
 install_name_tool -id "@loader_path/libneostretch.dylib" "$macos/libneostretch.dylib"
 # it links nothing of ours or Homebrew's: the system's libraries only, or the bundle would fail to load it on another Mac
-if otool -L "$macos/libneostretch.dylib" | tail -n +2 | grep -v "^[[:space:]]*\(@loader_path/libneostretch.dylib\|/usr/lib/\|/System/\)"; then
+# (a universal binary lists each architecture under a header line ending in a colon: those are not dependencies)
+if otool -L "$macos/libneostretch.dylib" | grep -v ':$' | grep -v "^[[:space:]]*\(@loader_path/libneostretch.dylib\|/usr/lib/\|/System/\)"; then
   echo "libneostretch.dylib links something that is not a system library" >&2; exit 1
 fi
 

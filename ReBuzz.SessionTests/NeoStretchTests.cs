@@ -225,6 +225,56 @@ namespace ReBuzz.SessionTests
             Assert.That(Frequency(x, (int)(0.7 * Rate), x.Length - (int)(0.4 * Rate)), Is.EqualTo(300).Within(3));
         }
 
+        /// <summary>
+        /// The frequency of the strongest tone within a semitone either side of <paramref name="near"/>, from a Hann-windowed DFT scan in 0.25-cent steps:
+        /// unlike zero crossings it is not moved by the clicks of a slice's seam.
+        /// </summary>
+        static double Peak(float[] x, int from, int to, double near)
+        {
+            int n = to - from;
+            var w = new double[n];
+            for (int i = 0; i < n; i++) w[i] = x[from + i] * (0.5 - 0.5 * Math.Cos(2 * Math.PI * i / (n - 1)));
+            double best = 0, bestHz = near;
+            for (double c = -100; c <= 100; c += 0.25)
+            {
+                double hz = near * Math.Pow(2, c / 1200), step = 2 * Math.PI * hz / Rate, re = 0, im = 0;
+                for (int i = 0; i < n; i++) { double a = step * i; re += w[i] * Math.Cos(a); im += w[i] * Math.Sin(a); }
+                double power = re * re + im * im;
+                if (power > best) { best = power; bestHz = hz; }
+            }
+            return bestHz;
+        }
+
+        /// <summary>The cents between two frequencies.</summary>
+        static double Cents(double a, double b) => 1200 * Math.Log2(a / b);
+
+        /// <summary>
+        /// A Pro start that gets no seek (the budget is spent and no spare is ready) stands in until its turn. The stand-in is Beats, which
+        /// keeps the pitch right at any tempo and with a transposition: here it is a sine at 0.8x tempo and at +7 semitones, against Pro's own output.
+        /// </summary>
+        [Test]
+        public void TheStandInForAProStartWithNoSeekHasProsPitchAtAnotherTempoAndWithATranspose([Values(96.0, 120.0)] double bpm, [Values(0.0, 7.0)] double semitones)
+        {
+            NeedsTheLibrary();
+            bool was = ProVoice.Prefetch;
+            ProVoice.Prefetch = false;
+            try
+            {
+                var p = Clip(Tone(8, 220), 120, WarpMode.Pro, semitones);            // 16 beats at 120 BPM
+                int from = (int)(0.6 * Rate);
+                var pro = Play(p, bpm, 0, 6);
+                int to = pro.Length - (int)(0.3 * Rate);
+                var standIn = new ClipVoice { Budget = new SeekBudget { Left = 0 } };          // the block's seek is never there: it stays the stand-in
+                var x = Play(p, bpm, 0, 6, 256, Rate, standIn);
+                double want = 220 * Math.Pow(2, semitones / 12), proHz = Peak(pro, from, to, want), standHz = Peak(x, from, to, want);
+                TestContext.WriteLine($"{bpm} BPM, {semitones} st: Pro {proHz:F2} Hz, stand-in {standHz:F2} Hz, wanted {want:F2} Hz ({Cents(standHz, proHz):F1} cents apart)");
+                Assert.That(Cents(proHz, want), Is.EqualTo(0).Within(3), "Pro is right");
+                Assert.That(Cents(standHz, proHz), Is.EqualTo(0).Within(8), "the stand-in matches Pro's pitch within a few cents (a slice that runs out loops its end: a few cents of seam; Repitch at 0.8x would be 386 cents off)");
+                Assert.That(Rms(x, from, to), Is.GreaterThan(0.2), "and it sounds");
+            }
+            finally { ProVoice.Prefetch = was; }
+        }
+
         // ---- Latency ---------------------------------------------------------------------------------
 
         [Test]
@@ -419,6 +469,13 @@ namespace ReBuzz.SessionTests
             var rng = new Random(3);
             double beat = 0;
             long allocated = 0;
+            var where = new List<string>();
+            string bad = null;
+            // GetAllocatedBytesForCurrentThread counts in allocation contexts (up to 8 KB): a collection another thread starts mid-loop moves a context
+            // boundary and shows as a few KB with nothing allocated (CI saw 6344 and 7816 bytes once each, never in a single run). With no collection
+            // possible the count is exact, so a real allocation on the render path still fails; the loop itself allocates nothing.
+            bool noGc = false;
+            try { noGc = GC.TryStartNoGCRegion(64_000_000); } catch (InvalidOperationException) { }
             for (int block = 0; block < 4000; block++)
             {
                 double bps = (90 + 80 * rng.NextDouble()) / 60 / Rate;
@@ -428,11 +485,14 @@ namespace ReBuzz.SessionTests
                 Array.Clear(l); Array.Clear(r);
                 if (block % 211 == 210) voice.Stop(l, r, 0, 300);
                 else voice.Render(p, beat, bps, Rate, l, r, 0, 1 + (block * 7) % 300);
-                if (block > 200) allocated += GC.GetAllocatedBytesForCurrentThread() - before;
+                if (block > 200) { long d = GC.GetAllocatedBytesForCurrentThread() - before; allocated += d; if (d != 0) where.Add($"block {block}: {d} bytes"); }
                 beat += 300 * bps;
-                foreach (float v in l) Assert.That(float.IsFinite(v) && Math.Abs(v) < 8 && (v == 0 || Math.Abs(v) > 1e-30f), Is.True, $"block {block}: {v}");
+                foreach (float v in l)
+                    if (!(float.IsFinite(v) && Math.Abs(v) < 8 && (v == 0 || Math.Abs(v) > 1e-30f))) bad ??= $"block {block}: {v}";
             }
-            Assert.That(allocated, Is.EqualTo(0L), "managed bytes allocated while rendering");
+            if (noGc && System.Runtime.GCSettings.LatencyMode == System.Runtime.GCLatencyMode.NoGCRegion) GC.EndNoGCRegion();
+            Assert.That(bad, Is.Null, "finite, not subnormal, bounded");
+            Assert.That(allocated, Is.EqualTo(0L), "managed bytes allocated while rendering: " + string.Join("; ", where));
         }
 
         [Test]
