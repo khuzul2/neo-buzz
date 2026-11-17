@@ -438,6 +438,37 @@ namespace ReBuzz.Core.Session
             return audio.Bpm;
         }
 
+        /// <summary>
+        /// Makes a change to an audio clip (NA3): the one place the agent's audio_clip_set and the studio's Audio page both go through, as one undo
+        /// step. Returns why it can't be made, or null. The pattern's own loop and region are the Session slot's; an arrangement clip's are the clip's
+        /// (<see cref="ClipEditor"/>). <paramref name="label"/> names the history step.
+        /// </summary>
+        internal string EditAudio(IPattern pattern, AudioClipEdit edit, ClipEditor editor, string label = null)
+        {
+            if (pattern?.Machine == null || edit == null) return "No clip.";
+            if (!IsClipPlayer(pattern.Machine) || ClipOf(pattern)?.Audio == null) return $"\"{pattern.Name}\" of {pattern.Machine.Name} is not an audio clip (audio_import makes one).";
+            string why = edit.Check();
+            if (why != null) return why;
+            string result = null;
+            UndoStack.BeginActionGroup();
+            try
+            {
+                if (label != null) UndoStack.Label(label);
+                var settings = ClipOf(pattern).Clone();
+                edit.ApplyTo(settings);
+                SetAudio(pattern, settings.Audio);
+                SetClipSettings(pattern, settings);
+                if (edit.DetectTempo) DetectTempo(pattern);
+                if (edit.Reverse is bool reverse && reverse != AudioOf(pattern).Reverse)
+                    result = (editor ?? new ClipEditor(buzz)).ReversePattern(pattern);
+            }
+            finally
+            {
+                UndoStack.EndActionGroup();
+            }
+            return result;
+        }
+
         /// <summary>What the clip panel shows of an audio clip's audio: the asset's name, seconds, rate and channels; null if it is gone.</summary>
         public (string Wave, double Seconds, int Rate, int Channels, double Beats)? AudioInfo(IPattern pattern)
         {

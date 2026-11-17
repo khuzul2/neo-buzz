@@ -46,6 +46,7 @@ namespace ReBuzz.Studio.Shell
         Views.Inspector.InspectorPanel inspector;
         Views.Browser.BrowserPanel browser;
         Views.Detail.DetailPanel detail;
+        Views.Audio.AudioClipPage audioPage;
         readonly Grid centre = new Grid { RowDefinitions = new RowDefinitions("*,Auto") };
         readonly DispatcherTimer refresh = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         readonly Command undo, redo;
@@ -249,8 +250,16 @@ namespace ReBuzz.Studio.Shell
             EmptyStates.AddMachine = AddMachine;          // the empty states' "Add machine…" (P3i)
             tabs.SelectionChanged += (s, e) => { if (e.Source == tabs) inspector?.Refresh(); };
             browser = new Views.Browser.BrowserPanel(host.Core, host.Registry, p => PatternView.Edit(p));
+            // Fork (neo-audio.md NA3): the Audio page of the detail panel, for the audio clip selected in the Session or the Arrangement.
+            audioPage = host.Core != null ? new Views.Audio.AudioClipPage(host.Core) { ViewShown = () => SelectedTitle } : null;
             detail = new Views.Detail.DetailPanel(host.Registry, tracker ?? new TextBlock { Text = "The Tracker failed to start.", Foreground = StudioTokens.ErrorTextBrush, Margin = new Thickness(12) },
-                host.Core != null ? new Views.Device.DeviceDock(host.Core) : null);
+                host.Core != null ? new Views.Device.DeviceDock(host.Core) : null, audioPage);
+            if (audioPage != null)
+            {
+                Views.Audio.AudioClipPage.Opener = OpenAudio;
+                StudioSelection.For(host.Core).Changed += FollowAudioSelection;
+                inspector.ShowAudio = () => { if (StudioSelection.For(host.Core).Pattern is { } p) OpenAudio(p); };
+            }
             // Fork (ux-overhaul.md P3e): a double click on a machine with no editor of its own opens its device view here.
             Platform.StudioMachineUiHost.DeviceOpener = OpenDevice;
             { var weak = new WeakReference<MainWindow>(this); Views.Device.DeviceMenus.ShowArrangement = () => { if (weak.TryGetTarget(out var w)) w.ShowView("Arrangement"); }; }     // fork: the Device menu's Automate shows the lane
@@ -874,6 +883,30 @@ namespace ReBuzz.Studio.Shell
             return true;
         }
 
+        /// <summary>A double click on an audio clip (or the inspector's button): selects it and shows the Audio page (true when the page took it).</summary>
+        bool OpenAudio(IPattern pattern)
+        {
+            if (audioPage == null || detail == null || host.Core == null || pattern?.Machine == null) return false;
+            if (host.Core.SessionLayout?.IsAudioClip(pattern) != true) return false;
+            StudioSelection.For(host.Core).Set(pattern.Machine, pattern, this);
+            detail.ShowAudio(detail.IsMaximised);
+            audioPage.Refresh(force: true);
+            return true;
+        }
+
+        /// <summary>
+        /// Selecting an audio clip with the detail panel open shows its Audio page (the Tracker has nothing to show for it); selecting another
+        /// pattern puts the Tracker or the piano roll back.
+        /// </summary>
+        void FollowAudioSelection(object source)
+        {
+            if (detail == null || host.Core == null || !detail.IsOpen) return;
+            var selection = StudioSelection.For(host.Core);
+            bool audioClip = selection.Pattern != null && host.Core.SessionLayout?.IsAudioClip(selection.Pattern) == true;
+            if (audioClip && !detail.IsAudio && !detail.IsDevice) detail.ShowAudio(detail.IsMaximised);
+            else if (!audioClip && detail.IsAudio && selection.Pattern != null) detail.LeaveAudio();
+        }
+
         internal void ShowPianoRoll()
         {
             if (detail == null) return;
@@ -908,6 +941,7 @@ namespace ReBuzz.Studio.Shell
             if (core == null) return;
             transport.Refresh();
             inspector?.Refresh();
+            if (detail?.IsAudio == true && detail.IsOpen) audioPage?.Refresh();
             browser?.Refresh();
             undo.Refresh();
             redo.Refresh();
@@ -1048,6 +1082,12 @@ namespace ReBuzz.Studio.Shell
             inspector?.Dispose();
             browser?.Dispose();
             if (Platform.StudioMachineUiHost.DeviceOpener == (Func<IMachine, bool>)OpenDevice) Platform.StudioMachineUiHost.DeviceOpener = null;
+            if (audioPage != null)
+            {
+                if (Views.Audio.AudioClipPage.Opener == (Func<IPattern, bool>)OpenAudio) Views.Audio.AudioClipPage.Opener = null;
+                if (host.Core != null) StudioSelection.For(host.Core).Changed -= FollowAudioSelection;
+                audioPage.Dispose();
+            }
             if (host.Agent != null) host.Agent.Changed -= Refresh;
             base.OnClosed(e);
         }

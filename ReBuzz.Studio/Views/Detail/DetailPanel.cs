@@ -19,12 +19,14 @@ namespace ReBuzz.Studio.Views.Detail
         public const string TrackerTab = "Tracker";
         public const string RollTab = "Piano roll";
         public const string DeviceTab = "Device";
+        public const string AudioTab = "Audio";
 
         internal const string RegistrySection = "Studio";
         internal const string OpenKey = "DetailOpen";
         internal const string HeightKey = "DetailHeight";
         internal const string RollKey = "DetailPianoRoll";       // the Piano roll page is the one shown (P3b)
         internal const string DeviceKey = "DetailDevice";        // the Device page is the one shown (P3e)
+        internal const string AudioKey = "DetailAudio";          // the Audio page is the one shown (NA3)
 
         public const double DefaultHeight = 340;
         public const double MinPanelHeight = 120;
@@ -35,20 +37,23 @@ namespace ReBuzz.Studio.Views.Detail
         readonly Avalonia.Controls.Control page;
         readonly Border grip;
         readonly Avalonia.Controls.Control device;
-        readonly Button trackerButton, rollButton, deviceButton, maximiseButton, collapseButton;
+        readonly Avalonia.Controls.Control audio;
+        readonly Button trackerButton, rollButton, deviceButton, audioButton, maximiseButton, collapseButton;
         readonly Panel content;
-        bool open, maximised, rollPage, devicePage;
+        bool open, maximised, rollPage, devicePage, audioPage;
         double height;
 
-        public DetailPanel(IRegistryEx registry, Avalonia.Controls.Control tracker, Avalonia.Controls.Control deviceView = null)
+        public DetailPanel(IRegistryEx registry, Avalonia.Controls.Control tracker, Avalonia.Controls.Control deviceView = null, Avalonia.Controls.Control audioView = null)
         {
             this.registry = registry;
             page = tracker;
             device = deviceView;
+            audio = audioView;
             open = Read(OpenKey, false);
             height = Math.Clamp(Read(HeightKey, DefaultHeight), MinPanelHeight, MaxPanelHeight);
             rollPage = Read(RollKey, false);
             devicePage = device != null && Read(DeviceKey, false);
+            audioPage = audio != null && !devicePage && Read(AudioKey, false);
 
             Background = StudioTokens.SurfacePanelBrush;
             BorderBrush = StudioTokens.SurfaceBorderBrush;
@@ -73,13 +78,19 @@ namespace ReBuzz.Studio.Views.Detail
             ToolTip.SetTip(deviceButton, Shell.Commands.StudioKeymap.Tip("view.device"));
             deviceButton.Click += (s, e) => ChooseDevice();
 
+            // Fork (neo-audio.md NA3): the Audio page, the clip panel of an audio clip selected in the Session or the Arrangement.
+            audioButton = StudioButtons.KeepFocus(new Button { Content = AudioTab, BorderThickness = new Thickness(1), IsVisible = audio != null });
+            AutomationProperties.SetName(audioButton, AudioTab);
+            ToolTip.SetTip(audioButton, "The selected audio clip: warp, tempo, pitch, gain, fades, loop and the warp markers");
+            audioButton.Click += (s, e) => ChooseAudio();
+
             maximiseButton = Glyph("⤢", Shell.Commands.StudioKeymap.Tip("view.maximise"), "Maximise Tracker", ToggleMaximised);
             collapseButton = Glyph("⌄", "Hide the detail (" + Shell.Commands.StudioKeymap.Get("view.detail").KeyLabel() + ")", "Hide detail", Close);
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { maximiseButton, collapseButton } };
             var bar = new DockPanel { Height = BarHeight, Margin = new Thickness(8, 0, 6, 0), LastChildFill = true };
             DockPanel.SetDock(buttons, Dock.Right);
             bar.Children.Add(buttons);
-            var tabsRow = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Children = { trackerButton, rollButton, deviceButton } };
+            var tabsRow = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Children = { trackerButton, rollButton, deviceButton, audioButton } };
             bar.Children.Add(tabsRow);
             Avalonia.Input.KeyboardNavigation.SetTabIndex(tabsRow, 0);
             Avalonia.Input.KeyboardNavigation.SetTabIndex(buttons, 1);
@@ -87,6 +98,7 @@ namespace ReBuzz.Studio.Views.Detail
 
             content = new Panel { Children = { page } };
             if (device != null) content.Children.Add(device);
+            if (audio != null) content.Children.Add(audio);
             var frame = new DockPanel { LastChildFill = true };
             frame.Children.Add(bar);
             frame.Children.Add(content);
@@ -104,9 +116,42 @@ namespace ReBuzz.Studio.Views.Detail
         /// <summary>A page's button: shows that page; clicking the page that is shown hides the panel.</summary>
         void Choose(bool roll)
         {
-            if (open && !devicePage && rollPage == roll) Close();
+            if (open && !devicePage && !audioPage && rollPage == roll) Close();
             else ShowPage(roll, maximised);
         }
+
+        void ChooseAudio()
+        {
+            if (open && audioPage) Close();
+            else ShowAudio(maximised);
+        }
+
+        /// <summary>Opens the panel on the Audio page (the selected audio clip), docked or maximised.</summary>
+        public void ShowAudio(bool maximise = false)
+        {
+            if (audio == null) return;
+            SetAudioPage(true);
+            Set(true, maximise);
+        }
+
+        void SetAudioPage(bool on)
+        {
+            if (audioPage == on || on && audio == null) return;
+            audioPage = on;
+            if (on && devicePage) { devicePage = false; Write(DeviceKey, false); }
+            Write(AudioKey, on);
+            Apply();
+        }
+
+        /// <summary>Back to the Tracker or the piano roll, whichever was shown before the Audio page.</summary>
+        public void LeaveAudio() => SetAudioPage(false);
+
+        /// <summary>Whether the Audio page is the one shown.</summary>
+        public bool IsAudio => audioPage;
+
+        public Avalonia.Controls.Control AudioPage => audio;
+
+        internal Button AudioButton => audioButton;
 
         void ChooseDevice()
         {
@@ -126,6 +171,7 @@ namespace ReBuzz.Studio.Views.Detail
         {
             if (devicePage == on || on && device == null) return;
             devicePage = on;
+            if (on && audioPage) { audioPage = false; Write(AudioKey, false); }
             Write(DeviceKey, on);
             Apply();
         }
@@ -148,6 +194,7 @@ namespace ReBuzz.Studio.Views.Detail
         public void SetPage(bool roll)
         {
             SetDevice(false);
+            SetAudioPage(false);
             if (rollPage == roll) return;
             rollPage = roll;
             Write(RollKey, roll);
@@ -155,7 +202,7 @@ namespace ReBuzz.Studio.Views.Detail
             Apply();
         }
 
-        public bool IsPianoRoll => rollPage && !devicePage;
+        public bool IsPianoRoll => rollPage && !devicePage && !audioPage;
 
         /// <summary>The layout around it changed (shown, hidden, maximised, sized): the window rearranges its rows.</summary>
         public event Action Changed;
@@ -224,18 +271,20 @@ namespace ReBuzz.Studio.Views.Detail
         void Apply()
         {
             content.IsVisible = open;
-            page.IsVisible = !devicePage;
+            page.IsVisible = !devicePage && !audioPage;
             if (device != null) device.IsVisible = devicePage;
+            if (audio != null) audio.IsVisible = audioPage;
             grip.IsVisible = open && !maximised;
             Height = !open ? BarHeight : maximised ? double.NaN : height;
             maximiseButton.Content = maximised ? "⤡" : "⤢";
             ToolTip.SetTip(maximiseButton, maximised ? "Back to the panel (" + Shell.Commands.StudioKeymap.Get("view.maximise").KeyLabel() + ")" : Shell.Commands.StudioKeymap.Tip("view.maximise"));
-            string what = devicePage ? "Device" : rollPage ? "Piano roll" : "Tracker";
+            string what = audioPage ? "Audio" : devicePage ? "Device" : rollPage ? "Piano roll" : "Tracker";
             AutomationProperties.SetName(maximiseButton, maximised ? "Restore " + what : "Maximise " + what);
             collapseButton.Content = "⌄";
-            Mark(trackerButton, open && !rollPage && !devicePage);
-            Mark(rollButton, open && rollPage && !devicePage);
+            Mark(trackerButton, open && !rollPage && !devicePage && !audioPage);
+            Mark(rollButton, open && rollPage && !devicePage && !audioPage);
             Mark(deviceButton, open && devicePage);
+            Mark(audioButton, open && audioPage);
             Changed?.Invoke();
         }
 

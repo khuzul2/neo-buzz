@@ -504,6 +504,13 @@ namespace ReBuzz.Studio.Tests
             Dialogs.TextResponder = null;
         }
 
+        /// <summary>Whether the machine's DLL has a GUI factory, which is what an editor window is made from.</summary>
+        static bool HasEditorWindow(string machine)
+        {
+            try { return Core.MachineDLLs.TryGetValue(machine, out var dll) && dll?.GUIFactory != null; }
+            catch { return false; }
+        }
+
         static T Tab<T>(MainWindow window, string title) where T : class =>
             window.Tabs.Items.OfType<TabItem>().First(t => (string)t.Header == title).Content as T;
 
@@ -1593,6 +1600,8 @@ namespace ReBuzz.Studio.Tests
                 foreach (var gear in neo)
                 {
                     string id = $"{400 + i++:000}-editor-{gear.ToLowerInvariant().Replace(' ', '-')}";
+                    // A machine with no editor window of its own (Neo Audio: its settings are the Audio page and the Device panel) has no shot here; its number stays free.
+                    if (!HasEditorWindow(gear)) continue;
                     Try(id, () =>
                     {
                         var m = demo.Generators.Concat(new[] { demo.Drive, demo.Comp, demo.Delay, demo.Verb, demo.Eq, demo.Limiter }).FirstOrDefault(x => x?.DLL.Name == gear) ?? Add(gear, gear.Replace("Neo ", ""));
@@ -1766,7 +1775,7 @@ namespace ReBuzz.Studio.Tests
 
                 // The Device panel (ux-overhaul.md, the parameter panel): cards of knobs docked (one row, scrolling sideways) and floating
                 // (wrapping), for four machines, and the Inspector with the macros and the pinned parameters.
-                foreach (var (gear, slug) in new[] { ("Neo Filter", "neo-filter"), ("Neo Poly", "neo-poly"), ("Neo Drums", "neo-drums"), ("Dye Essence", "dye-essence") })
+                foreach (var (gear, slug) in new[] { ("Neo Filter", "neo-filter"), ("Neo Poly", "neo-poly"), ("Neo Drums", "neo-drums"), ("Dye Essence", "dye-essence"), ("Neo EQ", "neo-eq"), ("Pedal Gain Multi", "pedal-gain-multi") })
                 {
                     Try("454-device-docked-" + slug, () =>
                     {
@@ -1776,7 +1785,7 @@ namespace ReBuzz.Studio.Tests
                         var w = new Window { Width = 1100, Height = 330, Content = page };
                         w.Show();
                         Settle();
-                        Shot(w, "454-device-docked-" + slug, $"The Device panel docked for {gear}: its sections as cards of knobs in one row that scrolls sideways, a chip per section, search, Changed only, Knobs | List.", "Select the machine; Detail ▸ Device.");
+                        Shot(w, "454-device-docked-" + slug, $"The Device panel docked for {gear}: its sections as cards of knobs in one row that scrolls sideways (every card whole above the bar, the track table cut to the panel), a chip per section, search, Changed only, Knobs | List; the keys toggle (note icon) sits by Presets.", "Select the machine; Detail ▸ Device.");
                         w.Close();
                     });
                     Try("455-device-floating-" + slug, () =>
@@ -1787,7 +1796,7 @@ namespace ReBuzz.Studio.Tests
                         var w = new Window { Width = gear == "Dye Essence" ? 1440 : 900, Height = gear == "Dye Essence" ? 820 : 620, Content = page };
                         w.Show();
                         Settle();
-                        Shot(w, "455-device-floating-" + slug, $"The Device panel floating for {gear}: cards sized to their content flowing to fill the width, choices on top of each card, one colour, sentence-case labels, a \"+N\" menu for the chips that don't fit.", "Right-click a machine ▸ Parameters…, or Float in the Device panel.");
+                        Shot(w, "455-device-floating-" + slug, $"The Device panel floating for {gear}: cards in columns, each to the shortest column (no gaps under short cards), choices on top of each card, one colour, sentence-case labels, a \"+N\" menu for the chips that don't fit.", "Right-click a machine ▸ Parameters…, or Float in the Device panel.");
                         w.Close();
                     });
                 }
@@ -1813,7 +1822,7 @@ namespace ReBuzz.Studio.Tests
                     Settle();
                     var cell = page.Parameters.Cards.Shown.SelectMany(s => s.Card.Knobs).Take(2).Select(p => page.Parameters.Cards.Cell(p)!).Last();
                     Click(w, DeviceTestKit.Centre(w, cell.Face), MouseButton.Right);
-                    Shot(w, "458-device-knob-menu", "A knob's menu: Reset, Type a Value, Pin to Inspector, Automate (adds the parameter's arrangement lane), Modulate (a modulator or the matrix), Lock and Hide (ticks), MIDI binding, Keyboard Sends MIDI Notes. The List rows have the same menu.", "Right-click a knob or a row in the Device panel.");
+                    Shot(w, "458-device-knob-menu", "A knob's menu: Reset, Type a Value, Pin to Inspector, Automate (adds the parameter's arrangement lane), Modulate (a modulator or the matrix), Lock and Hide (ticks), MIDI binding. Keyboard Sends MIDI Notes is now in the bar and the Presets menu. The List rows have the same menu.", "Right-click a knob or a row in the Device panel.");
                     w.Close();
                 });
                 Try("459-device-edit-features", () =>
@@ -2016,110 +2025,101 @@ namespace ReBuzz.Studio.Tests
             AfterAll();
         }
 
-        // ------------------------------------------------------------------ 037-039, 048: track inputs and arm (neo-audio.md "Inputs and arm")
-
-        [AvaloniaTest, Order(8)]
-        public void TrackInputs()
+        [AvaloniaTest, Order(7)]
+        public void AudioPages()
         {
             BeforeAll();
-            var demo = LoadDemo();
+            LoadDemo();
             var window = Open();
-            var work = new WorkManager(Core, new WorkThreadEngine(1), 0, BuzzGUI.Common.Global.EngineSettings);
-            var buffer = new float[512];
-            long fed = 0;
-            // The input device is simulated: four inputs with a driver's names, a voice on the first.
-            void Feed(int frames)
-            {
-                for (int done = 0; done < frames; done += 256)
-                {
-                    var data = new float[256 * 4];
-                    for (int i = 0; i < 256; i++)
-                    {
-                        double t = (fed + i) / 44100.0;
-                        double swell = 0.35 + 0.25 * System.Math.Sin(t * 2.3);
-                        data[i * 4] = (float)(swell * System.Math.Sin(2 * System.Math.PI * 196 * t));
-                    }
-                    fed += 256;
-                    Core.EngineInput.Push(data, 256, 4);
-                    work.MainAudioFillBuffer(buffer, 0, 512);
-                }
-                System.Threading.Thread.Sleep(25);
-                foreach (var v in window.GetVisualDescendants().OfType<ReBuzz.Studio.Views.Session.TrackInputView>()) v.Poll();
-            }
-            LiveBeforeCapture = () => { ReBuzz.Studio.Views.Session.TrackInputView.PausePolling = false; Feed(2048); ReBuzz.Studio.Views.Session.TrackInputView.PausePolling = true; };
             try
             {
-                Core.EngineInput.Configure(4, new[] { "Mic 1", "Mic 2", "Line 3", "Line 4" }, 44100, 128);
                 var layout = Core.SessionLayout;
                 layout.Ensure();
-                var voice = (MachineCore)layout.NewAudioTrack("Voice");
-                layout.SetAudioFrom(voice, AudioFrom.Mono(0));
-                layout.SetMonitor(voice, 1);
-                layout.SetMidiFrom(demo.Lead, MidiFromKind.Device, "USB Keyboard");
-                layout.SetMachineArmed(voice, true);
-                layout.SetMachineArmed(demo.Lead, true);
-                Settle();
-                Try("560-machine-arm-dot", () =>
+                var drums = layout.NewAudioTrack("Drum Loop");
+                var vox = layout.NewAudioTrack("Chops");
+                string file = DrumLoop("page-loop.wav");
+                IPattern Import(IMachine m, int scene)
                 {
-                    var view = Tab<MachineView>(window, "Machines");
-                    window.ShowView("Machines");
+                    var pattern = layout.ImportAudio(layout.FirstTrackOf(m), scene, file, out string error);
+                    Assert.That(pattern, Is.Not.Null, error);
+                    return pattern;
+                }
+                var inSession = Import(drums, 0);
+                Import(drums, 1);
+                var chops = Import(vox, 0);
+                Import(vox, 2);
+                var arranged = Import(drums, 2);
+                layout.SetSlot(layout.FirstTrackOf(drums), 2, null);
+                var laneV = Core.Song.Sequences.First(q => q.Machine == drums);   // the Arrangement's clip is on the visible Drum Loop lane
+                var editor = new ClipEditor(Core);
+                Assert.That(editor.Place(laneV, arranged, 16 * 4), Is.Null);
+                var asset = layout.ViewOf(inSession).Asset;
+                for (int i = 0; i < 300 && asset.Peaks == null; i++) { asset.PeaksOrBuild(); System.Threading.Thread.Sleep(10); Dispatcher.UIThread.RunJobs(); }
+                Settle();
+
+                Try("039-session-audio-slots", () =>
+                {
+                    window.ShowView("Session");
                     Settle();
-                    window.RefreshNow();
-                    Shot(window, "560-machine-arm-dot", "Machine View: a dot at the foot of every machine that can be armed (Neo Audio and generators): red on Voice and Lead (armed), grey on the others. Click it to arm; right-click it for the Input menu.", "The dot on a machine's box.");
-                    var dot = view.FromCanvas(MachineGeometry.ArmDot(view.Canvas.BoxOf(voice)).Center, window);
-                    Click(window, dot, MouseButton.Right);
-                    var menu = view.Canvas.OpenMenu;
-                    Assert.That(menu?.IsOpen, Is.True, "a right click on the dot opens the Input menu");
-                    var audio = menu.Items.OfType<MenuItem>().First(i => (string)i.Header == "Audio From");
-                    audio.IsSubMenuOpen = true;
-                    Settle();
-                    Shot(window, "561-machine-input-menu", "The Input menu of Voice's dot: Arm, Audio From (None, the device's inputs by the driver's names, In 1/2 pairs, the other tracks, Wired inputs), MIDI From, Channel, Monitor.", "Right-click the dot.");
-                    menu.Close();
-                    Settle();
+                    Shot(window, "039-session-audio-slots", "The Session grid with audio clips (neo-audio.md, NA3): each slot of an audio clip draws a mini waveform from the peak cache through its warp, scaled by its gain, with the playing position over it.", "Drop or import audio into a slot.");
                 });
-                Try("562-session-io-row", () =>
+                Try("038-session-audio-page", () =>
                 {
                     var session = Tab<SessionView>(window, "Session");
                     window.ShowView("Session");
-                    layout.SetShowMixer(true);
-                    layout.SetShowIO(true);
+                    Click(window, Centre(session.SlotAt(layout.FirstTrackOf(drums), 0), window, 0.6, 0.5));
+                    window.Detail.ShowAudio();
                     Settle();
-                    window.RefreshNow();
-                    session.RefreshState();
-                    Feed(11025);
-                    System.Threading.Thread.Sleep(80);
-                    session.RefreshState();
-                    Settle();
-                    Feed(2048);
-                    Shot(window, "562-session-io-row", "Session: the I/O row under the mixer strips (the toolbar's I/O button): Audio From, MIDI From, the arm dot and the MIDI channel, Monitor (In, Auto, Off) and the input meter, live while the track is armed or monitored (Voice listens to Mic 1 and its meter moves; Lead takes MIDI from one device).", "The toolbar's I/O button.");
+                    Shot(window, "038-session-audio-page", "The Audio page of the clip panel for a Session clip (NA3): the waveform with its loop and region handles, warp mode, tempo with halve, double and detect, transpose, detune, gain, reverse and loop, the start and loop region in bars, beats and ticks.", "Select an audio clip in the Session, then the Audio button of the detail panel, or double-click the clip.");
                 });
-                Try("563-arrangement-header-inputs", () =>
+                Try("037-arrangement-audio-page", () =>
                 {
                     var seq = Tab<SequenceView>(window, "Arrangement");
                     window.ShowView("Sequence");
                     seq.SetArrangementMode(true);
                     Settle();
-                    Feed(4096);
-                    Shot(window, "563-arrangement-header-inputs", "Arrangement: an expanded track header of a machine that can be armed has its input chooser (Audio From for an audio track, MIDI From for a generator) and the input meter under the buttons; the R arms, as every other dot does.", "The track header.");
+                    var item = editor.Read(laneV).First();
+                    var r = seq.Arrangement.ClipRect(item);
+                    Click(window, seq.Arrangement.TranslatePoint(new Point(r.X + r.Width * 0.3, r.Y + r.Height * 0.8), window)!.Value);
+                    window.Detail.ShowAudio();
+                    Settle();
+                    Shot(window, "037-arrangement-audio-page", "The same Audio page for a clip selected in the Arrangement (NA3): the fades are here, and the clip's own loop and region are the arranged clip's.", "Select an audio clip in the Arrangement; the Audio page follows the selection.");
                     seq.SetArrangementMode(false);
                 });
-                Try("564-inspector-input", () =>
+                Try("461-warp-marker-editing", () =>
                 {
-                    window.ShowView("Machines");
-                    window.Inspector.Open();
-                    window.Inspector.ShowTab(ReBuzz.Studio.Views.Inspector.InspectorPanel.SelectionTab);
-                    StudioSelection.For(Core).Set(voice, null, window);
+                    var session = Tab<SequenceView>(window, "Arrangement");
+                    window.ShowView("Session");
+                    var sv = Tab<SessionView>(window, "Session");
+                    Click(window, Centre(sv.SlotAt(layout.FirstTrackOf(drums), 0), window, 0.6, 0.5));
+                    window.Detail.ShowAudio();
                     Settle();
-                    window.RefreshNow();
-                    Feed(4096);
-                    Shot(window, "564-inspector-input", "The Inspector's Input section for the selected machine (Voice): the arm dot, Audio From, MIDI From and channel, Monitor and the input meter.", "Select a track's machine; the Inspector's Selection tab.");
+                    var page = (ReBuzz.Studio.Views.Audio.AudioClipPage)window.Detail.AudioPage;
+                    page.Refresh(force: true);
+                    Settle();
+                    var wave = page.Wave;
+                    wave.SetZoom(40);
+                    Settle();
+                    Point At(double beat) => Centre(wave, window, 0, 0.5) + new Vector(wave.X(beat) - wave.Bounds.Width / 2 * 0, 0);
+                    void Double(Point p) { MachineViewTests.DoubleClick(window, p); Settle(); }
+                    Double(At(1.1));
+                    Double(At(3.2));
+                    Double(At(5.0));
+                    var marks = layout.AudioOf(inSession).Markers.OrderBy(m => m.Beat).ToList();
+                    if (marks.Count > 3)
+                    {
+                        // Drag the second marker a beat on, as a user warps it.
+                        var from = At(marks[2].Beat);
+                        window.MouseMove(from); window.MouseDown(from, MouseButton.Left);
+                        for (int i = 1; i <= 4; i++) window.MouseMove(from + new Vector(wave.PixelsPerBeat * 0.25 * i, 0), RawInputModifiers.LeftMouseButton);
+                        window.MouseUp(from + new Vector(wave.PixelsPerBeat, 0), MouseButton.Left);
+                        Settle();
+                    }
+                    Shot(window, "461-warp-marker-editing", "Editing warp markers on the Audio page (NA3): double-click adds a marker pinned to a transient when one is near, a drag warps the audio between markers and snaps to the beat grid (Shift is free), double-click or Del removes one.", "Double-click the waveform; drag a marker; Del.");
                 });
             }
             finally
             {
-                LiveBeforeCapture = null;
-                ReBuzz.Studio.Views.Session.TrackInputView.PausePolling = false;
-                Core.EngineInput.Close();
                 Close(window);
             }
             AfterAll();
@@ -2245,6 +2245,115 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 NewSong();
+                Close(window);
+            }
+            AfterAll();
+        }
+
+        // ------------------------------------------------------------------ 560-564: track inputs and arm (neo-audio.md "Inputs and arm")
+
+        [AvaloniaTest, Order(8)]
+        public void TrackInputs()
+        {
+            BeforeAll();
+            var demo = LoadDemo();
+            var window = Open();
+            var work = new WorkManager(Core, new WorkThreadEngine(1), 0, BuzzGUI.Common.Global.EngineSettings);
+            var buffer = new float[512];
+            long fed = 0;
+            // The input device is simulated: four inputs with a driver's names, a voice on the first.
+            void Feed(int frames)
+            {
+                for (int done = 0; done < frames; done += 256)
+                {
+                    var data = new float[256 * 4];
+                    for (int i = 0; i < 256; i++)
+                    {
+                        double t = (fed + i) / 44100.0;
+                        double swell = 0.35 + 0.25 * System.Math.Sin(t * 2.3);
+                        data[i * 4] = (float)(swell * System.Math.Sin(2 * System.Math.PI * 196 * t));
+                    }
+                    fed += 256;
+                    Core.EngineInput.Push(data, 256, 4);
+                    work.MainAudioFillBuffer(buffer, 0, 512);
+                }
+                System.Threading.Thread.Sleep(25);
+                foreach (var v in window.GetVisualDescendants().OfType<ReBuzz.Studio.Views.Session.TrackInputView>()) v.Poll();
+            }
+            LiveBeforeCapture = () => { ReBuzz.Studio.Views.Session.TrackInputView.PausePolling = false; Feed(2048); ReBuzz.Studio.Views.Session.TrackInputView.PausePolling = true; };
+            try
+            {
+                Core.EngineInput.Configure(4, new[] { "Mic 1", "Mic 2", "Line 3", "Line 4" }, 44100, 128);
+                var layout = Core.SessionLayout;
+                layout.Ensure();
+                var voice = (MachineCore)layout.NewAudioTrack("Voice");
+                layout.SetAudioFrom(voice, AudioFrom.Mono(0));
+                layout.SetMonitor(voice, 1);
+                layout.SetMidiFrom(demo.Lead, MidiFromKind.Device, "USB Keyboard");
+                layout.SetMachineArmed(voice, true);
+                layout.SetMachineArmed(demo.Lead, true);
+                Settle();
+                Try("560-machine-arm-dot", () =>
+                {
+                    var view = Tab<MachineView>(window, "Machines");
+                    window.ShowView("Machines");
+                    Settle();
+                    window.RefreshNow();
+                    Shot(window, "560-machine-arm-dot", "Machine View: a dot at the foot of every machine that can be armed (Neo Audio and generators): red on Voice and Lead (armed), grey on the others. Click it to arm; right-click it for the Input menu.", "The dot on a machine's box.");
+                    var dot = view.FromCanvas(MachineGeometry.ArmDot(view.Canvas.BoxOf(voice)).Center, window);
+                    Click(window, dot, MouseButton.Right);
+                    var menu = view.Canvas.OpenMenu;
+                    Assert.That(menu?.IsOpen, Is.True, "a right click on the dot opens the Input menu");
+                    var audio = menu.Items.OfType<MenuItem>().First(i => (string)i.Header == "Audio From");
+                    audio.IsSubMenuOpen = true;
+                    Settle();
+                    Shot(window, "561-machine-input-menu", "The Input menu of Voice's dot: Arm, Audio From (None, the device's inputs by the driver's names, In 1/2 pairs, the other tracks, Wired inputs), MIDI From, Channel, Monitor.", "Right-click the dot.");
+                    menu.Close();
+                    Settle();
+                });
+                Try("562-session-io-row", () =>
+                {
+                    var session = Tab<SessionView>(window, "Session");
+                    window.ShowView("Session");
+                    layout.SetShowMixer(true);
+                    layout.SetShowIO(true);
+                    Settle();
+                    window.RefreshNow();
+                    session.RefreshState();
+                    Feed(11025);
+                    System.Threading.Thread.Sleep(80);
+                    session.RefreshState();
+                    Settle();
+                    Feed(2048);
+                    Shot(window, "562-session-io-row", "Session: the I/O row under the mixer strips (the toolbar's I/O button): Audio From, MIDI From, the arm dot and the MIDI channel, Monitor (In, Auto, Off) and the input meter, live while the track is armed or monitored (Voice listens to Mic 1 and its meter moves; Lead takes MIDI from one device).", "The toolbar's I/O button.");
+                });
+                Try("563-arrangement-header-inputs", () =>
+                {
+                    var seq = Tab<SequenceView>(window, "Arrangement");
+                    window.ShowView("Sequence");
+                    seq.SetArrangementMode(true);
+                    Settle();
+                    Feed(4096);
+                    Shot(window, "563-arrangement-header-inputs", "Arrangement: an expanded track header of a machine that can be armed has its input chooser (Audio From for an audio track, MIDI From for a generator) and the input meter under the buttons; the R arms, as every other dot does.", "The track header.");
+                    seq.SetArrangementMode(false);
+                });
+                Try("564-inspector-input", () =>
+                {
+                    window.ShowView("Machines");
+                    window.Inspector.Open();
+                    window.Inspector.ShowTab(ReBuzz.Studio.Views.Inspector.InspectorPanel.SelectionTab);
+                    StudioSelection.For(Core).Set(voice, null, window);
+                    Settle();
+                    window.RefreshNow();
+                    Feed(4096);
+                    Shot(window, "564-inspector-input", "The Inspector's Input section for the selected machine (Voice): the arm dot, Audio From, MIDI From and channel, Monitor and the input meter.", "Select a track's machine; the Inspector's Selection tab.");
+                });
+            }
+            finally
+            {
+                LiveBeforeCapture = null;
+                ReBuzz.Studio.Views.Session.TrackInputView.PausePolling = false;
+                Core.EngineInput.Close();
                 Close(window);
             }
             AfterAll();

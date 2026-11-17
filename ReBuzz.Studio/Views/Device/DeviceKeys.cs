@@ -35,8 +35,14 @@ namespace ReBuzz.Studio.Views.Device
             {
                 try { StudioHost.Current?.Registry?.Write(Key, value, Section); }
                 catch (Exception) { /* a setting that can't be saved is not worth a failed click */ }
+                EnabledChanged?.Invoke();
             }
         }
+
+        /// <summary>The setting changed (the panel bar's toggle and the Presets menu show the same state).</summary>
+        public static event Action EnabledChanged;
+
+        public const string Tip = "The computer's keys play the machine while this panel has the keyboard focus (the old window's setting)";
 
         readonly IMachine machine;
         readonly Control owner;

@@ -48,7 +48,7 @@ namespace ReBuzz.Studio.Views.Inspector
         readonly SongNotesView notes;
 
         readonly Border grip;
-        readonly Button selectionButton, songButton, historyButton, collapseButton, railButton, patternButton, notesButton;
+        readonly Button selectionButton, songButton, historyButton, collapseButton, railButton, patternButton, notesButton, audioButton;
         readonly Grid frame;
         readonly DockPanel full;
         readonly Avalonia.Controls.Control rail;
@@ -124,6 +124,8 @@ namespace ReBuzz.Studio.Views.Inspector
             hint = new TextBlock { FontSize = 12, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
             patternButton = ActionButton("Open in Tracker", "Edit this pattern in the Tracker", () => showView("Pattern"));
             notesButton = ActionButton("Song notes", "Write about the song: the Song tab", () => ShowTab(SongTab, focus: true));
+            audioButton = ActionButton("Audio settings…", "Warp, tempo, pitch, gain, fades and warp markers of this audio clip: the detail panel's Audio page", () => ShowAudio?.Invoke());
+            audioButton.IsVisible = false;
             explainTitle = new TextBlock { FontSize = 12, FontWeight = FontWeight.SemiBold, Foreground = StudioTokens.TextPrimaryBrush, TextWrapping = TextWrapping.Wrap };
             explainBadge = new TextBlock { FontSize = 11, Foreground = StudioTokens.AccentBrush, Margin = new Thickness(0, 2, 0, 0) };
             explainHow = new TextBlock { FontSize = 12, Foreground = StudioTokens.TextPrimaryBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) };
@@ -143,7 +145,7 @@ namespace ReBuzz.Studio.Views.Inspector
             var top = new StackPanel
             {
                 Margin = new Thickness(12, 0, 12, 8),
-                Children = { heading, subtitle, facts, device, inputSection, explain, hint, patternButton, notesButton },
+                Children = { heading, subtitle, facts, device, inputSection, explain, hint, patternButton, audioButton, notesButton },
             };
             DockPanel.SetDock(top, Dock.Top);
             selectionPage = new DockPanel { LastChildFill = true };
@@ -225,6 +227,9 @@ namespace ReBuzz.Studio.Views.Inspector
 
         /// <summary>Shown (as opposed to the rail only).</summary>
         public bool IsOpen => open;
+
+        /// <summary>Shows the selected audio clip on the detail panel's Audio page (set by the window).</summary>
+        public Action ShowAudio { get; set; }
 
         /// <summary>Whether the window shows the Session View now (its clips are the point there; set by the window).</summary>
         public Func<bool> SessionShown { get; set; }
@@ -395,13 +400,7 @@ namespace ReBuzz.Studio.Views.Inspector
             else
             {
                 title = machine.Name;
-                sub = machine.DLL?.Info?.Type switch
-                {
-                    MachineType.Generator => "Generator",
-                    MachineType.Effect => "Effect",
-                    MachineType.Master => "Master",
-                    _ => "Machine",
-                };
+                sub = TypeLabel(machine);
                 rows.Add(("Type", machine.DLL?.Name ?? ""));
                 rows.Add(("Patterns", machine.Patterns.Count.ToString()));
                 rows.Add(("Wires", $"{machine.Inputs.Count} in, {machine.Outputs.Count} out"));
@@ -411,6 +410,7 @@ namespace ReBuzz.Studio.Views.Inspector
                 {
                     rows.Add(("Pattern", pattern.Name));
                     rows.Add(("Length", $"{pattern.Length} ticks, {pattern.Length / (double)tpb:0.##} beats"));
+                    if (core.SessionLayout?.AudioOf(pattern) is { } audio) AudioRows(rows, audio);
                 }
             }
 
@@ -435,7 +435,9 @@ namespace ReBuzz.Studio.Views.Inspector
                 }
                 hint.Text = machine == null ? "Select a machine, a pattern or a clip in any view to see its settings here." : "";
                 hint.IsVisible = machine == null;
-                patternButton.IsVisible = pattern != null;
+                bool audioClip = pattern != null && core.SessionLayout?.IsAudioClip(pattern) == true;
+                patternButton.IsVisible = pattern != null && !audioClip;
+                audioButton.IsVisible = audioClip;
                 notesButton.IsVisible = machine == null;
             }
 
@@ -448,6 +450,8 @@ namespace ReBuzz.Studio.Views.Inspector
                 bool hasTrack = TrackOf(machine) != null;
                 // Only the cards the selection needs: a machine alone, in a view that isn't the Session's, has no clip to show.
                 bool wanted = hasTrack && (pattern != null || SessionShown?.Invoke() == true);
+                // NA3: an audio clip that is not in a slot (an Arrangement clip) has no launch settings: its panel is the detail panel's Audio page.
+                if (pattern != null && core.SessionLayout?.IsAudioClip(pattern) == true && ClipSlot() == null) wanted = false;
                 clip.IsVisible = wanted;
                 if (hasTrack) clip.Follow(ClipSlot());
             }
@@ -488,6 +492,32 @@ namespace ReBuzz.Studio.Views.Inspector
             explainHow.Text = card == null ? "Touch a control in the machine's window to see what it does." : "How  " + card.How;
             explainSound.Text = card == null ? "" : "Sound  " + card.Sound;
             explainSound.IsVisible = card != null;
+        }
+
+        /// <summary>
+        /// What a machine is, in a word: the DLL's type, except that Neo Audio is typed as an effect (its Work has an input, for recording
+        /// takes) though it is a generator, the audio tracks' source.
+        /// </summary>
+        internal static string TypeLabel(IMachine machine) =>
+            machine.DLL?.Info?.Type switch
+            {
+                MachineType.Master => "Master",
+                _ when ReBuzz.Core.Session.SessionLayout.IsClipPlayer(machine) => "Generator",
+                MachineType.Generator => "Generator",
+                MachineType.Effect => "Effect",
+                _ => "Machine",
+            };
+
+        /// <summary>An audio clip's settings as facts: warp, tempo, pitch, gain, markers.</summary>
+        static void AudioRows(List<(string, string)> rows, ReBuzz.Core.Session.SessionDocument.AudioSettings a)
+        {
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            rows.Add(("Warp", a.Warp == "Beats" && a.Preserve != "Transients" ? $"Beats, {a.Preserve}" : a.Warp));
+            rows.Add(("Tempo", a.Bpm.ToString("0.##", inv) + " BPM"));
+            if (a.Transpose != 0 || a.Detune != 0) rows.Add(("Pitch", $"{a.Transpose:+0;-0;0} st, {a.Detune:+0;-0;0} ct"));
+            if (a.GainDb != 0) rows.Add(("Gain", a.GainDb.ToString("+0.0#;-0.0#", inv) + " dB"));
+            if ((a.Markers?.Count ?? 0) >= 2) rows.Add(("Warp markers", a.Markers.Count.ToString(inv)));
+            if (a.Reverse) rows.Add(("Reverse", "on"));
         }
 
         /// <summary>The Explain card's lines (for tests): null when it is hidden.</summary>

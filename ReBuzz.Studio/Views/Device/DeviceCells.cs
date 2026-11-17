@@ -256,7 +256,7 @@ namespace ReBuzz.Studio.Views.Device
             f.ContextRequested += () => context?.Invoke(this);
             f.Touched += () => touched?.Invoke(p);
             if (face is DeviceKnob k) k.TypeRequested += BeginType;
-            Width = face.Width < CellWidth ? CellWidth : face.Width + 4;
+            Width = p.Kind == DeviceKind.Slider || face.Width < CellWidth ? CellWidth : face.Width + 4;     // a knob is one column wide: a wider one wraps the last knob of a row (PP3)
             Height = p.Kind == DeviceKind.Slider ? Math.Max(face.Height, DeviceKnob.Diameter + 18) : face.Height + 4;
             lockMark = new LockMark { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 1, 1, 0), IsVisible = false };
             face.HorizontalAlignment = HorizontalAlignment.Center;

@@ -71,6 +71,7 @@ namespace ReBuzz.Studio.Views.Session
             readonly TextBox sceneBeats;
             readonly FollowEditor sceneFollow;
             readonly FlatButton notesButton;
+            readonly Control[] regionParts;
             bool loading;
 
             (int Track, int Scene)? shownSlot;
@@ -159,6 +160,8 @@ namespace ReBuzz.Studio.Views.Session
                     HorizontalAlignment = HorizontalAlignment.Left
                 };
 
+                // NA3: an audio clip's loop and region are on the Audio page (the detail panel), with its waveform.
+                regionParts = new Control[] { Section("Region"), loop, Row(FieldLabel("Start"), start), Row(loopStartLabel, loopStart), Row(loopEndLabel, loopEnd), region };
                 body = new StackPanel
                 {
                     Children =
@@ -169,12 +172,12 @@ namespace ReBuzz.Studio.Views.Session
                         Row("Quantize", quantize),
                         legato,
                         velocity,
-                        Section("Region"),
-                        loop,
-                        Row(FieldLabel("Start"), start),
-                        Row(loopStartLabel, loopStart),
-                        Row(loopEndLabel, loopEnd),
-                        region,
+                        regionParts[0],
+                        regionParts[1],
+                        regionParts[2],
+                        regionParts[3],
+                        regionParts[4],
+                        regionParts[5],
                         Section("Follow action"),
                         clipFollow,
                         reset
@@ -294,6 +297,9 @@ namespace ReBuzz.Studio.Views.Session
                         : null);
                     hint.IsVisible = false;
                     body.IsVisible = true;
+                    bool audioClip = view.layout.IsAudioClip(shownPattern);
+                    foreach (var part in regionParts) part.IsVisible = !audioClip;
+                    notesButton.IsVisible = !audioClip;
 
                     mode.SelectedIndex = Math.Max(0, Array.FindIndex(Modes, m => m.Value == c.Mode));
                     quantize.SelectedIndex = Math.Max(0, Array.FindIndex(Quantizations, q => q.Value == c.Quantization));

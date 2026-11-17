@@ -258,7 +258,8 @@ namespace ReBuzz.Studio.Views.Sequence
                     _ => "Drag: move (to another audio track too) · Alt-drag: copy · Shift: no snap\nCtrl+E: split at the playhead · Ctrl+J: consolidate · R: reverse",
                 },
             };
-            return $"{item.Pattern.Name} · {BarBeat(item.Time)} · {item.End - item.Time} ticks · {view.Audio.Warp} · {seconds}\n{text}";
+            // The name on a line of its own: a short clip's label is cut to a few letters, and here it is whole.
+            return $"{item.Pattern.Name}\n{BarBeat(item.Time)} · {item.End - item.Time} ticks · {view.Audio.Warp} · {seconds}\n{text}";
         }
 
         void BeginAudioHandleDrag(ClipItem item, AudioHandle handle, Point p, PointerPressedEventArgs e)
