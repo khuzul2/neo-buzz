@@ -160,10 +160,14 @@ try:
             continue
         row.update({"model": out.get("model"), "seconds": out.get("seconds"), "wall_seconds": round(wall, 1),
                     "seconds_per_minute": round(float(out.get("seconds", wall)) * 60 / seconds, 1), "stems": {}})
+        # One render with a probe on every new track: each probe is that track's own output (solo does not isolate Neo Audio tracks' clips).
+        names = [t["machine"] for t in out.get("tracks", [])]
+        ok, _, rr = call("render", **{"from": 0, "to": B, "tail_seconds": 0, "name": "sep-" + quality.lower(), "probes": names})
+        files = {p["machine"]: p["file"] for p in rr.get("probes", [])} if ok else {}
         for t in out.get("tracks", []):
-            est = render("sep-" + quality.lower() + "-" + t["stem"], solo=[t["machine"]])
-            if est is None:
+            if t["machine"] not in files:
                 continue
+            est = read_wav(files[t["machine"]])[0]
             m = min(n, est.shape[-1])
             entry = {"level_db": db(est)}
             if t["stem"] in refs:
