@@ -94,6 +94,18 @@ def sdr(ref, est):
     return float(10 * math.log10(num / max(den, 1e-20)))
 
 
+def best_lag(ref, est, window=2048):
+    """The shift in samples of est against ref (positive: est is late) that correlates best, within the window: 0 when they line up."""
+    n = min(len(ref), len(est))
+    if n < 4 * window or np.sum(ref[:n].astype(np.float64) ** 2) < 1e-9:
+        return None
+    size = 1 << (2 * n - 1).bit_length()
+    c = np.fft.irfft(np.fft.rfft(est[:n].astype(np.float64), size) * np.conj(np.fft.rfft(ref[:n].astype(np.float64), size)), size)
+    lags = np.concatenate([np.arange(0, window + 1), np.arange(-window, 0)])
+    vals = np.concatenate([c[:window + 1], c[size - window:]])
+    return int(lags[int(np.argmax(vals))])
+
+
 def db(x):
     r = float(np.sqrt(np.mean(x.astype(np.float64) ** 2)))
     return round(20 * math.log10(max(r, 1e-9)), 1)
@@ -143,7 +155,24 @@ try:
         raise RuntimeError("the song did not render")
     n = min(x.shape[-1] for x in [mix, *solo.values()])
     refs = {"drums": solo["Drums"][:, :n], "bass": solo["Bass"][:, :n], "other": solo["Pad"][:, :n] + solo["Lead"][:, :n]}
-    print("mixing check: mix vs sum of parts SDR", sdr(mix[:, :n], sum(solo[k][:, :n] for k in solo)))
+    # The references are only worth anything if the engine's mix is the sum of its soloed parts: the same song rendered whole and part by
+    # part (docs/specs/stem-separation.md section 5). A render is the same samples every time, so this is a float rounding away from exact
+    # (about 140 dB or more); under 60 dB the machines are not repeating (a machine that is not reset for a render, as Dye Essence was) or
+    # something is out of line (gain, latency, pan law, master processing) and every SDR below would measure that and not the model.
+    parts_sum = sum(solo[k][:, :n] for k in solo)
+    mixing = sdr(mix[:, :n], parts_sum)
+    again = render("mix-again")
+    repeat = sdr(mix[:, :n], again[:, :n]) if again is not None else None
+    report["mixing_check_db"] = None if mixing is None else round(mixing, 1)
+    report["render_repeat_db"] = None if repeat is None else round(repeat, 1)
+    print(f"mixing check: mix vs sum of its soloed parts SDR {mixing} dB; the mix rendered twice {repeat if repeat is None else round(repeat, 1)} dB (wanted at least 60)")
+    if mixing is None or mixing < 60:
+        shifts = {}
+        for lag in (-64, -16, -4, -1, 0, 1, 4, 16, 64):
+            a, b = mix[0, 1000:n - 1000], parts_sum[0, 1000 + lag:n - 1000 + lag]
+            shifts[lag] = None if (v := sdr(a, b)) is None else round(v, 1)
+        print("  the sum of the parts shifted by that many samples:", shifts)
+        raise RuntimeError(f"the engine's mix is not the sum of its soloed parts ({mixing} dB, wanted 60): the references would be wrong")
     seconds = n / 44100
     report["audio_seconds"] = round(seconds, 1)
     mixfile = call("render", **{"from": 0, "to": B, "tail_seconds": 0, "name": "mix-for-separation"})[2].get("file")
@@ -172,6 +201,7 @@ try:
             entry = {"level_db": db(est)}
             if t["stem"] in refs:
                 entry["sdr_db"] = None if (v := sdr(refs[t["stem"]][:, :m], est[:, :m])) is None else round(v, 2)
+                entry["lag_samples"] = best_lag(refs[t["stem"]][0, :m], est[0, :m])
             row["stems"][t["stem"]] = entry
         report["models"][quality] = row
         call("undo")
@@ -185,13 +215,14 @@ finally:
     except Exception:
         proc.kill()
 
-print("\n| model | stem | SDR dB | level dBFS | seconds per minute of audio |\n|---|---|---|---|---|")
+print(f"\nmixing check {report.get('mixing_check_db')} dB (mix against the sum of its soloed parts), the mix rendered twice {report.get('render_repeat_db')} dB")
+print("\n| model | stem | SDR dB | lag samples | level dBFS | seconds per minute of audio |\n|---|---|---|---|---|---|")
 for q, row in report["models"].items():
     if not row.get("ok"):
-        print(f"| {q} | - | failed: {row.get('error', '')[:60]} | | |")
+        print(f"| {q} | - | failed: {row.get('error', '')[:60]} | | | |")
         continue
     for stem, e in row["stems"].items():
-        print(f"| {q} ({row['model']}) | {stem} | {e.get('sdr_db', 'n/a')} | {e['level_db']} | {row['seconds_per_minute']} |")
+        print(f"| {q} ({row['model']}) | {stem} | {e.get('sdr_db', 'n/a')} | {e.get('lag_samples', 'n/a')} | {e['level_db']} | {row['seconds_per_minute']} |")
 if args.report:
     json.dump(report, open(args.report, "w"), indent=1)
 sys.exit(0)
