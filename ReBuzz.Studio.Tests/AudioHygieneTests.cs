@@ -1196,6 +1196,56 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void ANeoTuneWithEveryControlAllocatesNothing()
+        {
+            // neo-tune.md: Neo Tune (the scale, Retune speed, Amount, Transpose, Formant shift, Add vibrato, Range and Mix moved) over a pattern.
+            NewSong();
+            var m = AddPoly("Hygiene Tune Poly");
+            m.CreatePattern("00", 16);
+            var pattern = (PatternCore)m.Patterns.First();
+            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 48 + (i * 5) % 24, 100)).ToArray());
+            Arrange(m, pattern);
+            var tune = InsertAfter(m, "Neo Tune", "Hygiene Tune");
+            var tg = tune.ParameterGroupsList.SelectMany(g => g.ParametersList).ToList();
+            var scale = tg.First(p => p.Name == "Scale");
+            var retune = tg.First(p => p.Name == "Retune speed");
+            var amount = tg.First(p => p.Name == "Amount");
+            var transpose = tg.First(p => p.Name == "Transpose");
+            var formant = tg.First(p => p.Name == "Formant shift");
+            var vib = tg.First(p => p.Name == "Add vibrato");
+            var range = tg.First(p => p.Name == "Range");
+            var mix = tg.First(p => p.Name == "Mix");
+            try
+            {
+                int n = 0;
+                foreach (int algorithm in new[] { 0, 1, 2 })
+                {
+                    using var audio = new AudioThread(algorithm);
+                    lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                    var cost = Steady(audio, perBuffer: () =>
+                    {
+                        n++;
+                        if (n % 90 == 0) scale.SetValue(1 << 16, (n / 90) % 13);
+                        retune.SetValue(1 << 16, n % 1000);
+                        if (n % 60 == 0) amount.SetValue(1 << 16, 300 + (n / 60 % 8) * 100);
+                        if (n % 70 == 0) transpose.SetValue(1 << 16, 12 + (n / 70) % 25);
+                        if (n % 50 == 0) formant.SetValue(1 << 16, 6 + (n / 50) % 13);
+                        if (n % 80 == 0) vib.SetValue(1 << 16, (n / 80 % 3) * 300);
+                        if (n % 150 == 0) range.SetValue(1 << 16, (n / 150) % 3);
+                        if (n % 110 == 0) mix.SetValue(1 << 16, 500 + (n / 110 % 2) * 500);
+                    });
+                    AssertNoAllocation(cost, $"a pattern through a Neo Tune with every control (algorithm {algorithm})");
+                    lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                }
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                NewSong();
+            }
+        }
+
+        [AvaloniaTest]
         public void ANeoImagerANeoExciterANeoDitherAndANeoStripWithEveryControlAllocateNothing()
         {
             // mastering-tools.md §5.7 - §5.9: a pattern through Neo Imager (every band shaped, Recover on, a width moved every

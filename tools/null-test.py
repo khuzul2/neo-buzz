@@ -416,6 +416,9 @@ CASES = [
     fx("spectral-vocal", "Neo Spectral", "Vocal — Gentle Resonance Control"),
     fx("spectral-balance", "Neo Spectral", "Master — Gentle Balance"),
     fx("spectral-stabilize-delta", "Neo Spectral", "Mix Bus — Stabilize the Tone", [("Mix", "50%")], auto=[("Delta", [(2, "On")])]),
+    # Neo Tune (docs/specs/neo-tune.md): hard tune and the natural correction (the tracker and the grains are portable maths).
+    fx("tune-hard", "Neo Tune", "Lead — Hard Tune"),
+    fx("tune-natural", "Neo Tune", "Lead — Natural", [("Mix", "70%")]),
     # Neo Strip (docs/specs/mastering-tools.md §5.10, M5b): the five stages together, the gate, a stage switched on and off in a pattern, Delta.
     fx("strip-vocal", "Neo Strip", "Vocal — Up Front"),
     fx("strip-spoken-gate", "Neo Strip", "Vocal — Spoken Word (Gate and Tidy)", [("Gate threshold", "-30 dB")]),

@@ -10,9 +10,17 @@ name: Pitch evaluation
 #    on 10 hits per class per participant.
 #  - VocalSet 1.1 (zenodo.org/records/1442513, CC BY 4.0, 2 GB zip read in place): a subset of techniques and vowels; voicing, octave
 #    jumps, held-note stability, Low latency against Quality, and the vowel estimator on the labelled vowels.
+#  - Neo Tune (docs/specs/neo-tune.md §9) on the same VocalSet subset: the pitch of the corrected output against the nearest scale note
+#    before and after, voicing kept, an artefact proxy (spectral flux and high-band clicks), and six before/after excerpts (at most 8 s
+#    each, with the CC BY 4.0 attribution in their README) uploaded as the artifact neo-tune-excerpts for listening. No audio is committed.
 # The tool is tools/PitchEval (it links Machines/NeoBuzz.Dsp and nothing else).
 
 on:
+  # Temporary (NT1): the file is not on the default branch yet, so a dispatch cannot find it; a push of this marker file on the
+  # branch runs the Neo Tune evaluation (VocalSet only). Remove it when the workflow is merged.
+  push:
+    branches: [machines/neo-tune-nt1]
+    paths: ['.github/pitch-eval-nt1.trigger']
   workflow_dispatch:
     inputs:
       mdb:
@@ -25,6 +33,10 @@ on:
         default: true
       vocalset:
         description: 'VocalSet'
+        type: boolean
+        default: true
+      tune:
+        description: 'Neo Tune on VocalSet (needs the VocalSet download; writes the listening excerpts)'
         type: boolean
         default: true
       mdb_limit:
@@ -48,6 +60,11 @@ jobs:
         shell: bash
     env:
       DATA: /mnt/pitch-eval-data
+      # A push (the temporary trigger) runs the VocalSet parts only; a dispatch runs what its inputs say.
+      RUN_MDB: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.mdb != 'false' }}
+      RUN_AVP: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.avp != 'false' }}
+      RUN_VOCALSET: ${{ github.event_name == 'push' || github.event.inputs.vocalset != 'false' }}
+      RUN_TUNE: ${{ github.event_name == 'push' || github.event.inputs.tune != 'false' }}
     steps:
     - uses: actions/checkout@v5
 
@@ -83,19 +100,19 @@ jobs:
           curl -sS --retry 8 --retry-delay 5 -C - -L -o "$dest" "https://zenodo.org/api/records/$rec/files/$name/content"
           echo "$md5  $dest" | md5sum -c -
         }
-        if [ "${{ github.event.inputs.mdb }}" != "false" ]; then
+        if [ "$RUN_MDB" = "true" ]; then
           fetch 1481172 MDB-stem-synth.tar.gz "$DATA/mdb.tar.gz"
           mkdir -p "$DATA/mdb"
           tar -xzf "$DATA/mdb.tar.gz" -C "$DATA/mdb" --exclude='*/._*'
           rm "$DATA/mdb.tar.gz"
         fi
-        if [ "${{ github.event.inputs.avp }}" != "false" ]; then
+        if [ "$RUN_AVP" = "true" ]; then
           fetch 5036529 AVP_Dataset.zip "$DATA/avp.zip"
           mkdir -p "$DATA/avp"
           unzip -q "$DATA/avp.zip" -x '__MACOSX/*' -d "$DATA/avp"
           rm "$DATA/avp.zip"
         fi
-        if [ "${{ github.event.inputs.vocalset }}" != "false" ]; then
+        if [ "$RUN_VOCALSET" = "true" ] || [ "$RUN_TUNE" = "true" ]; then
           fetch 1442513 VocalSet11.zip "$DATA/vocalset.zip"
         fi
         df -h /mnt | cat
@@ -104,9 +121,12 @@ jobs:
       run: |
         set -euo pipefail
         args=(--out pitch-eval-report.md --csv pitch-eval-stems.csv)
-        [ "${{ github.event.inputs.mdb }}" != "false" ] && args+=(--mdb "$DATA/mdb/MDB-stem-synth" --mdb-limit "${{ github.event.inputs.mdb_limit || '0' }}")
-        [ "${{ github.event.inputs.avp }}" != "false" ] && args+=(--avp "$DATA/avp")
-        [ "${{ github.event.inputs.vocalset }}" != "false" ] && args+=(--vocalset "$DATA/vocalset.zip" --vocalset-per-group "${{ github.event.inputs.vocalset_per_group || '2' }}")
+        [ "$RUN_MDB" = "true" ] && args+=(--mdb "$DATA/mdb/MDB-stem-synth" --mdb-limit "${{ github.event.inputs.mdb_limit || '0' }}")
+        [ "$RUN_AVP" = "true" ] && args+=(--avp "$DATA/avp")
+        [ "$RUN_VOCALSET" = "true" ] && args+=(--vocalset "$DATA/vocalset.zip" --vocalset-per-group "${{ github.event.inputs.vocalset_per_group || '2' }}")
+        # Neo Tune on the same subset; the excerpts go to a folder that is uploaded as its own artifact (nothing is committed).
+        [ "$RUN_TUNE" = "true" ] && args+=(--tune "$DATA/vocalset.zip" --tune-excerpts neo-tune-excerpts)
+        true
         dotnet run -c Release --no-build --project tools/PitchEval -- "${args[@]}"
 
     - name: Job summary
@@ -126,4 +146,14 @@ jobs:
         path: |
           pitch-eval-report.md
           pitch-eval-stems.csv
+        if-no-files-found: ignore
+
+    # Six before/after excerpts (at most 8 s each) of VocalSet (CC BY 4.0, the attribution is in their README) for listening.
+    # An artifact of the run only: never committed.
+    - name: Upload the listening excerpts
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: neo-tune-excerpts
+        path: neo-tune-excerpts
         if-no-files-found: ignore
