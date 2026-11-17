@@ -191,7 +191,7 @@ namespace NeoBuzz.Dsp
             if (best < 0) return r;
             // Posterior of the winner under equal priors and the whitened squared distances (temperature 2 Dim / 8: the shrunk covariance is optimistic).
             double zsum = 0;
-            for (int c = 0; c < MaxClasses; c++) if (m.Has[c]) zsum += Math.Exp(-(d2[c] - bestD) * 0.5 / 4.0);
+            for (int c = 0; c < MaxClasses; c++) if (m.Has[c]) zsum += PortableMath.Exp(-(d2[c] - bestD) * 0.5 / 4.0);
             float posterior = (float)(1.0 / zsum);
             float rel = (float)Math.Sqrt(bestD) / m.Ref[best];
             r.Distance = rel;

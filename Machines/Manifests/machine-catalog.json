@@ -1386,7 +1386,7 @@
     "chords",
     "drums"
    ],
-   "use_for": "Sing or beatbox into a microphone and play any synth or drum machine with it: pitch to notes (locked to a key, with bend), trained sounds to drum notes, chords that follow you, and the voice level and vowels as controllers."
+   "use_for": "Play a synth or drums with your voice: sung pitch to notes in a key, trained beatbox sounds to drum notes, chords, and voice level and vowels as controllers."
   }
  }
 }

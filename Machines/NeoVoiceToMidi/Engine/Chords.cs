@@ -12,6 +12,7 @@
 // Allocation-free (the names are made by ChordName, off the audio thread).
 
 using System;
+using NeoBuzz.Dsp;
 
 namespace NeoBuzz.VoiceToMidi
 {
@@ -181,7 +182,7 @@ namespace NeoBuzz.VoiceToMidi
 
         public void Decay(double seconds)
         {
-            double f = Math.Pow(0.5, seconds / HalfLife);
+            double f = PortableMath.Pow(0.5, seconds / HalfLife);
             for (int i = 0; i < 12; i++) hist[i] *= f;
         }
 

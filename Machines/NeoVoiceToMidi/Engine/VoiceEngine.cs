@@ -222,7 +222,7 @@ namespace NeoBuzz.VoiceToMidi
             minNoteSamples = (int)(V(P.MinNote) * 0.001 * rate);
             legato = B(P.Legato);
             pitchCh = I(P.PitchCh) - 1;
-            thresholdLin = (float)Math.Pow(10.0, V(P.Level) / 20.0);
+            thresholdLin = (float)PortableMath.Pow(10.0, V(P.Level) / 20.0);
             releaseHold = (int)(0.025 * rate);
             triggersOn = B(P.Triggers);
             accurate = I(P.Window) == 1;
@@ -324,9 +324,9 @@ namespace NeoBuzz.VoiceToMidi
             double ss = 0;
             for (int i = 0; i < n; i++) ss += (double)x[i] * x[i];
             float rms = (float)Math.Sqrt(ss / Math.Max(1, n));
-            float ka = (float)(1.0 - Math.Exp(-n / (0.005 * rate))), kr = (float)(1.0 - Math.Exp(-n / (0.06 * rate)));
+            float ka = (float)(1.0 - PortableMath.Exp(-n / (0.005 * rate))), kr = (float)(1.0 - PortableMath.Exp(-n / (0.06 * rate)));
             lvl += (rms > lvl ? ka : kr) * (rms - lvl);
-            LevelDb = lvl > 1e-6f ? 20f * MathF.Log10(lvl) : -120f;
+            LevelDb = lvl > 1e-6f ? 20f * PortableMathF.Log10(lvl) : -120f;
 
             // Pitch.
             int got = tracker.Process(x, 0, n, frames, 0);
@@ -444,7 +444,7 @@ namespace NeoBuzz.VoiceToMidi
         int Velocity(float peak)
         {
             if (fixedVel) return Math.Clamp(fixedVelocity, 1, 127);
-            double db = peak > 1e-6f ? 20.0 * Math.Log10(peak) : -120;
+            double db = peak > 1e-6f ? 20.0 * PortableMath.Log10(peak) : -120;
             double t = Math.Clamp((db - velSoftDb) / (velLoudDb - velSoftDb), 0.0, 1.0);
             return Math.Clamp((int)Math.Round(velMin + t * (fixedVelocity - velMin)), 1, 127);
         }
