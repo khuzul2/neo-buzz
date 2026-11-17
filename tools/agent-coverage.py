@@ -60,6 +60,7 @@ FEATURES = [
     ("Browser (BR1)", "One search over machines, plug-ins, presets, patterns and indexed sample folders", "browser.md", ["browser_search"], "the panel's search; kind narrows it"),
     ("Browser (BR1)", "Places: the folders the browser indexes", "browser.md", ["browser_places"], "list, add, remove; the scan runs in the background"),
     ("Browser (BR1)", "Hot-swap: other gear in a machine's place", "browser.md", ["machine_swap"], "the Machine View's drop on a machine's box; one undo step"),
+    ("Neo Audio (stems)", "Separate stems: a clip or a file into vocals, drums, bass and other on new audio tracks", "stem-separation.md", ["audio_separate"], "the Separate stems and Install models dialogs and the Preferences page are the studio's only"),
     ("Dropped", "Wireless, machine templates and the Create Template window", "ux-overhaul.md §9 row 14", [], "dropped in the studio too"),
 ]
 

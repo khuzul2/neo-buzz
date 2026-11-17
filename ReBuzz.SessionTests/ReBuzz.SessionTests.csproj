@@ -53,6 +53,8 @@
     <Compile Include="..\ReBuzz\Core\AudioLibrary\Resampler.cs" Link="Engine\Resampler.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\AudioImporter.cs" Link="Engine\AudioImporter.cs" />
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Common\libsndfile\SoundFile.cs" Link="Engine\SoundFile.cs" />
+    <!-- Stem separation (docs/specs/stem-separation.md): the transform, the chunker, the model files and the ONNX Runtime passes. -->
+    <Compile Include="..\ReBuzz\Core\AudioLibrary\Stems\*.cs" Link="Engine\Stems\%(Filename)%(Extension)" />
     <!-- Song Notes' formats (docs/specs/machine-safety.md §3.5): Markdown, the RTF reader, Info's saved state. -->
     <Compile Include="..\ReBuzz\Core\Notes\NotesMarkdown.cs;..\ReBuzz\Core\Notes\RtfToMarkdown.cs;..\ReBuzz\Core\Notes\InfoMachineState.cs" Link="Engine\%(Filename)%(Extension)" />
     <!-- The seams for hosts without Windows or a UI toolkit (docs/specs/mac-engine.md M0), with the interfaces they implement. -->
@@ -64,8 +66,13 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.29.0" />
     <PackageReference Include="NUnit" Version="4.4.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="5.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Stems\Data\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

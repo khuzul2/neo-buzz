@@ -52,6 +52,12 @@
     <PreBuildEvent>powershell -Command "((Get-Date).ToUniversalTime()).ToString('s') | Out-File '$(MSBuildProjectDirectory)\..\ReBuzz\BuildDate.txt'"</PreBuildEvent>
   </PropertyGroup>
 
+  <!-- Fork (docs/specs/stem-separation.md): ONNX Runtime (MIT) runs the stem-separation models, on the CPU everywhere (CoreML on request on macOS).
+       The models themselves are not in the repository or the package. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.29.0" />
+  </ItemGroup>
+
   <ItemGroup>
     <!-- Portable builds (net10.0) of the machine API: engine-split.md §4. Not copied: the app
          ships the Windows builds, which machines bind to. -->

@@ -1115,6 +1115,8 @@ namespace ReBuzz.Studio.Views.Sequence
                     Item("Insert (All Tracks)", InsertAll, Gesture(Key.I), hasTrack),
                     Item("Delete (All Tracks)", DeleteAll, new KeyGesture(IsMac ? Key.Back : Key.Delete, (IsMac ? KeyModifiers.Meta : KeyModifiers.Control) | KeyModifiers.Shift), hasTrack),
                     Item("Duplicate", () => Duplicate(), Gesture(Key.D), hasTarget),
+                    // Fork (docs/specs/stem-separation.md): an audio clip into stems on new tracks.
+                    Item("Separate Stems…", () => _ = ReBuzz.Studio.Shell.StemFlow.SeparateClip(c.CursorPattern), null, c.CursorPattern != null && core.SessionLayout?.IsAudioClip(c.CursorPattern) == true),
                     new Separator(),
                     colour,
                     new Separator(),

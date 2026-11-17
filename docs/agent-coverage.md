@@ -201,6 +201,7 @@ The features built since K3 and the tools that cover them (`FEATURES` in `tools/
 | Browser (BR1) | One search over machines, plug-ins, presets, patterns and indexed sample folders | browser.md | browser_search | the panel's search; kind narrows it |
 | Browser (BR1) | Places: the folders the browser indexes | browser.md | browser_places | list, add, remove; the scan runs in the background |
 | Browser (BR1) | Hot-swap: other gear in a machine's place | browser.md | machine_swap | the Machine View's drop on a machine's box; one undo step |
+| Neo Audio (stems) | Separate stems: a clip or a file into vocals, drums, bass and other on new audio tracks | stem-separation.md | audio_separate | the Separate stems and Install models dialogs and the Preferences page are the studio's only |
 | Dropped | Wireless, machine templates and the Create Template window | ux-overhaul.md §9 row 14 | **none** | dropped in the studio too |
 
 ## Tools
@@ -224,6 +225,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | audio_clip_set | 3 | 4 | yes |
 | audio_devices | 2 | 0 | yes |
 | audio_import | 3 | 2 | yes |
+| audio_separate | 2 | 2 | yes |
 | audio_set | 3 | 5 | yes |
 | audio_status | 5 | 1 | yes |
 | automation_read | 2 | 2 | yes |
