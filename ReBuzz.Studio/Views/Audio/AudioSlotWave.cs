@@ -33,7 +33,6 @@ namespace ReBuzz.Studio.Views.Audio
             this.view = view;
             beats = Math.Max(1e-6, lengthBeats);
             IsHitTestVisible = false;
-            Opacity = 0.5;
         }
 
         /// <summary>The colour of the waveform and of the playing position (the slot's text colour, so it reads on any clip colour).</summary>

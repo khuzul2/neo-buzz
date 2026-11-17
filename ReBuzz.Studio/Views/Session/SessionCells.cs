@@ -353,7 +353,7 @@ namespace ReBuzz.Studio.Views.Session
                 Background = background;
                 label.Foreground = text;
                 if (flags != null) flags.Foreground = text;
-                if (wave != null) wave.Foreground = text;
+                if (wave != null) wave.Foreground = WaveShade(background);
                 IBrush stateBrush = null;
                 bool waiting = false;
                 switch (state)
@@ -405,6 +405,12 @@ namespace ReBuzz.Studio.Views.Session
             /// <summary>What the slot shows now, for tests: its glyph and outline.</summary>
             internal string Glyph => glyph?.Text;
             internal Audio.AudioSlotWave Wave => wave;
+
+            /// <summary>The waveform's colour: a darker shade of the clip's own colour at about 45% alpha, so it sits behind the name and the glyph, which stay at full contrast.</summary>
+            static IBrush WaveShade(IBrush background) =>
+                background is ISolidColorBrush c
+                    ? SessionPalette.BrushOf(Color.FromArgb(115, (byte)(c.Color.R * 0.4), (byte)(c.Color.G * 0.4), (byte)(c.Color.B * 0.4)))
+                    : SessionPalette.Text;
             internal IBrush Outline => BorderBrush;
             internal IBrush GlyphColour => glyph?.Foreground;
             internal IBrush ChipColour => chip?.Background;

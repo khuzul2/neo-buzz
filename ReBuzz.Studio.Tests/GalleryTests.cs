@@ -500,6 +500,13 @@ namespace ReBuzz.Studio.Tests
             Dialogs.TextResponder = null;
         }
 
+        /// <summary>Whether the machine's DLL has a GUI factory, which is what an editor window is made from.</summary>
+        static bool HasEditorWindow(string machine)
+        {
+            try { return Core.MachineDLLs.TryGetValue(machine, out var dll) && dll?.GUIFactory != null; }
+            catch { return false; }
+        }
+
         static T Tab<T>(MainWindow window, string title) where T : class =>
             window.Tabs.Items.OfType<TabItem>().First(t => (string)t.Header == title).Content as T;
 
@@ -1589,6 +1596,8 @@ namespace ReBuzz.Studio.Tests
                 foreach (var gear in neo)
                 {
                     string id = $"{400 + i++:000}-editor-{gear.ToLowerInvariant().Replace(' ', '-')}";
+                    // A machine with no editor window of its own (Neo Audio: its settings are the Audio page and the Device panel) has no shot here; its number stays free.
+                    if (!HasEditorWindow(gear)) continue;
                     Try(id, () =>
                     {
                         var m = demo.Generators.Concat(new[] { demo.Drive, demo.Comp, demo.Delay, demo.Verb, demo.Eq, demo.Limiter }).FirstOrDefault(x => x?.DLL.Name == gear) ?? Add(gear, gear.Replace("Neo ", ""));
