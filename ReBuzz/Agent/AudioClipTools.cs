@@ -264,44 +264,34 @@ namespace ReBuzz.Agent
                         var layout = Layout(core);
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
                         var p = SongModel.Pattern(m, c.RequiredString("pattern"));
-                        var settings = layout.ClipOf(p)?.Clone() ?? new SessionDocument.ClipSettings();
-                        var a = settings.Audio ?? throw new ToolError($"\"{p.Name}\" of {m.Name} is not an audio clip (audio_import makes one).");
+                        if (layout.ClipOf(p)?.Audio == null) throw new ToolError($"\"{p.Name}\" of {m.Name} is not an audio clip (audio_import makes one).");
                         var doc = layout.Ensure();
                         var before = doc.CloneLayout();
-                        if (c.String("warp") is string warp)
-                            a.Warp = Warps.FirstOrDefault(w => string.Equals(w, warp, StringComparison.OrdinalIgnoreCase)) ?? throw new ToolError($"warp: one of {string.Join(", ", Warps)}.");
-                        if (c.String("preserve") is string pr)
-                            a.Preserve = Preserves.FirstOrDefault(w => string.Equals(w, pr, StringComparison.OrdinalIgnoreCase)) ?? throw new ToolError($"preserve: one of {string.Join(", ", Preserves)}.");
-                        if (c.Number("tempo_bpm") is double bpm)
+                        // The change is the one the studio's Audio page makes (SessionLayout.EditAudio): both reach the model by the same calls.
+                        var edit = new AudioClipEdit
                         {
-                            a.Bpm = Math.Clamp(bpm, 1, 999);
-                            if (a.Warp == "Off" && c.String("warp") == null) a.Warp = "Beats";       // a tempo is what a file with none was waiting for
-                        }
-                        if (c.Bool("detect_tempo") == true && a.Warp == "Off" && c.String("warp") == null) a.Warp = "Beats";
-                        if (c.Number("fade_in_beats") is double fi) { a.FadeIn = Math.Max(0, fi); if (fi <= 0) a.CrossIn = false; }
-                        if (c.Number("fade_out_beats") is double fo) a.FadeOut = Math.Max(0, fo);
-                        if (c.Int("transpose") is int tr) a.Transpose = Math.Clamp(tr, -48, 48);
-                        if (c.Int("detune") is int dt) a.Detune = Math.Clamp(dt, -50, 50);
-                        if (c.Number("gain_db") is double g) a.GainDb = Math.Clamp(g, -70, 24);
+                            Warp = c.String("warp"),
+                            Preserve = c.String("preserve"),
+                            TempoBpm = c.Number("tempo_bpm"),
+                            DetectTempo = c.Bool("detect_tempo") == true,
+                            FadeIn = c.Number("fade_in_beats"),
+                            FadeOut = c.Number("fade_out_beats"),
+                            Transpose = c.Int("transpose"),
+                            Detune = c.Int("detune"),
+                            GainDb = c.Number("gain_db"),
+                            Loop = c.Bool("loop"),
+                            Reverse = c.Bool("reverse"),
+                        };
                         if (c.Arguments["warp_markers"] is JsonArray ms)
-                        {
-                            a.Markers = ms.Select(x => (x!["sample"]!.GetValue<double>(), x["beat"]!.GetValue<double>())).Where(x => double.IsFinite(x.Item1) && double.IsFinite(x.Item2)).ToList();
-                            if (a.Markers.Count == 1) throw new ToolError("warp_markers needs at least 2 markers (or [] for none).");
-                        }
-                        if (c.Bool("loop") is bool loop) settings.Loop = loop;
+                            edit.Markers = ms.Select(x => (x!["sample"]!.GetValue<double>(), x["beat"]!.GetValue<double>())).ToList();
                         if (c.Arguments["region"] is JsonObject region)
                         {
-                            if (region["start_beats"] != null) settings.Start = Math.Max(0, SongModel.Ticks(core, region["start_beats"]!.GetValue<double>()));
-                            if (region["loop_start_beats"] != null) settings.LoopStart = Math.Max(0, SongModel.Ticks(core, region["loop_start_beats"]!.GetValue<double>()));
-                            if (region["loop_end_beats"] != null) settings.LoopEnd = Math.Max(0, SongModel.Ticks(core, region["loop_end_beats"]!.GetValue<double>()));
+                            if (region["start_beats"] != null) edit.Start = Math.Max(0, SongModel.Ticks(core, region["start_beats"]!.GetValue<double>()));
+                            if (region["loop_start_beats"] != null) edit.LoopStart = Math.Max(0, SongModel.Ticks(core, region["loop_start_beats"]!.GetValue<double>()));
+                            if (region["loop_end_beats"] != null) edit.LoopEnd = Math.Max(0, SongModel.Ticks(core, region["loop_end_beats"]!.GetValue<double>()));
                         }
-                        settings.Audio = a;
-                        layout.SetAudio(p, a);
-                        layout.SetClipSettings(p, settings);
-                        if (c.Bool("detect_tempo") == true) layout.DetectTempo(p);
                         var editor = new ClipEditor(core);
-                        if (c.Bool("reverse") is bool reverse && reverse != layout.AudioOf(p).Reverse)
-                            Check(editor.ReversePattern(p));
+                        Check(layout.EditAudio(p, edit, editor));
                         if (c.Number("stretch_to_beats") is double stretch)
                         {
                             var use = editor.ClipsOf(p).FirstOrDefault() ?? throw new ToolError($"\"{p.Name}\" isn't placed in the arrangement: stretch_to_beats stretches the clip there (audio_import with at_beats, or arrangement_clip add).");

@@ -40,6 +40,7 @@ namespace ReBuzz.Studio.Views.Session
             readonly TextBlock glyph;
             readonly TextBlock label;
             readonly TextBlock flags;
+            readonly Audio.AudioSlotWave wave;        // NA3: an audio clip's mini waveform
             readonly Control stopButton;      // empty slot: stops the track
             readonly Control recordButton;    // empty slot of an armed track: records a take (0.7)
             Point? pressPoint;
@@ -83,6 +84,14 @@ namespace ReBuzz.Studio.Views.Session
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(22) });
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                // NA3: an audio clip's slot shows its waveform (from the peak cache, warped, times the gain), behind the rest.
+                if (pattern != null && settings?.Audio != null && view.layout.ViewOf(pattern) is { } audioView)
+                {
+                    wave = new Audio.AudioSlotWave(audioView, pattern.Length / (double)Math.Max(1, view.buzz.TPB));
+                    Grid.SetColumnSpan(wave, 3);
+                    grid.Children.Add(wave);
+                }
 
                 if (pattern != null)
                 {
@@ -344,6 +353,7 @@ namespace ReBuzz.Studio.Views.Session
                 Background = background;
                 label.Foreground = text;
                 if (flags != null) flags.Foreground = text;
+                if (wave != null) wave.Foreground = WaveShade(background);
                 IBrush stateBrush = null;
                 bool waiting = false;
                 switch (state)
@@ -383,15 +393,24 @@ namespace ReBuzz.Studio.Views.Session
                     int pos = session.GetClipPosition(Sequence);
                     int len = Math.Max(1, Pattern.Length);
                     progress.Width = pos < 0 ? 0 : Math.Max(0, Bounds.Width - 4) * (pos + 1) / len;
+                    wave?.SetPosition(pos < 0 ? -1 : (double)pos / len);
                 }
                 else
                 {
                     progress.Width = 0;
+                    wave?.SetPosition(-1);
                 }
             }
 
             /// <summary>What the slot shows now, for tests: its glyph and outline.</summary>
             internal string Glyph => glyph?.Text;
+            internal Audio.AudioSlotWave Wave => wave;
+
+            /// <summary>The waveform's colour: a darker shade of the clip's own colour at about 45% alpha, so it sits behind the name and the glyph, which stay at full contrast.</summary>
+            static IBrush WaveShade(IBrush background) =>
+                background is ISolidColorBrush c
+                    ? SessionPalette.BrushOf(Color.FromArgb(115, (byte)(c.Color.R * 0.4), (byte)(c.Color.G * 0.4), (byte)(c.Color.B * 0.4)))
+                    : SessionPalette.Text;
             internal IBrush Outline => BorderBrush;
             internal IBrush GlyphColour => glyph?.Foreground;
             internal IBrush ChipColour => chip?.Background;

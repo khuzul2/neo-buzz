@@ -35,7 +35,7 @@ namespace ReBuzz.Studio.Views.Device
         /// <summary>Under this width the bar wraps onto two lines.</summary>
         public const double NarrowBar = 520;
 
-        readonly Button editorButton, parametersButton, floatButton, presetsButton;
+        readonly Button editorButton, parametersButton, floatButton, presetsButton, keysButton;
         readonly TextBlock title;
         Avalonia.Controls.Control editorContent;
         bool editorMode;
@@ -70,11 +70,14 @@ namespace ReBuzz.Studio.Views.Device
             parametersButton.Click += (s, e) => SetEditor(false, remember: true);
             floatButton = Tab(floating ? "Dock" : "Float", floating ? "Back to the Detail panel" : "Open this machine's device in its own window");
             floatButton.Click += (s, e) => FloatToggled?.Invoke();
+            keysButton = Tab("\u266A", "Keyboard sends MIDI notes: the computer's keys play the machine while this panel has the keyboard focus");
+            AutomationProperties.SetName(keysButton, "Keyboard Sends MIDI Notes");
+            keysButton.Click += (s, e) => DeviceKeys.Enabled = !DeviceKeys.Enabled;
             presetsButton = Tab("Presets", "Apply a preset, randomize or morph the unlocked parameters, edit the presets, copy and paste one");
             presetsButton.Click += (s, e) => DeviceMenus.Presets(machine, this, () => view.Refresh()).Open(presetsButton);
 
             var tabs = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { editorButton, parametersButton } };
-            var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { presetsButton, floatButton } };
+            var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { keysButton, presetsButton, floatButton } };
             // One row of 32 pt: name, tabs, search, Presets, Float. Under NarrowBar it wraps to two: the search takes the second.
             bar = new Grid { Margin = new Thickness(8, 0, 8, 0), ColumnDefinitions = new ColumnDefinitions("Auto,Auto,*,Auto,Auto"), RowDefinitions = new RowDefinitions("32,Auto") };
             title.MaxWidth = 240;
@@ -101,12 +104,22 @@ namespace ReBuzz.Studio.Views.Device
         {
             base.OnAttachedToVisualTree(e);
             keys.Attach();
+            DeviceKeys.EnabledChanged += RefreshKeys;
+            RefreshKeys();
         }
 
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
             base.OnDetachedFromVisualTree(e);
             keys.Detach();
+            DeviceKeys.EnabledChanged -= RefreshKeys;
+        }
+
+        void RefreshKeys()
+        {
+            bool on = DeviceKeys.Enabled;
+            Mark(keysButton, on);
+            ToolTip.SetTip(keysButton, "Keyboard sends MIDI notes (" + (on ? "on" : "off") + "): the computer's keys play the machine while this panel has the keyboard focus");
         }
 
         /// <summary>Whether the bar is on two lines (a page narrower than <see cref="NarrowBar"/>).</summary>
@@ -124,7 +137,7 @@ namespace ReBuzz.Studio.Views.Device
                 Grid.SetColumn(c, col);
                 Grid.SetColumnSpan(c, span);
             }
-            barParts.Title.MaxWidth = wrap ? 96 : 240;     // the name gives way before the buttons do
+            barParts.Title.MaxWidth = wrap ? 64 : 240;     // the name gives way before the buttons do
             At(barParts.Title, 0, 0);
             At(barParts.Tabs, 0, 1);
             At(barParts.Right, 0, 4);
@@ -151,6 +164,9 @@ namespace ReBuzz.Studio.Views.Device
         public Button FloatButton => floatButton;
 
         public Button PresetsButton => presetsButton;
+
+        /// <summary>The panel bar's Keyboard Sends MIDI Notes toggle.</summary>
+        public Button KeysButton => keysButton;
 
         /// <summary>The Float button (Dock in a window) was pressed.</summary>
         public event Action FloatToggled;
@@ -197,6 +213,7 @@ namespace ReBuzz.Studio.Views.Device
             Mark(parametersButton, !editorMode);
             Mark(floatButton, false);
             Mark(presetsButton, false);
+            RefreshKeys();
         }
 
         static void Mark(Button b, bool on)

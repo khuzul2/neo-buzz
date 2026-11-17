@@ -258,6 +258,9 @@ namespace ReBuzz.Studio.Views.Session
 
         internal void SlotDoubleClicked(SlotCell cell, KeyModifiers mods)
         {
+            // NA3: an audio clip has no notes: a double click shows its Audio page (the detail panel).
+            if (cell.Pattern != null && layout.IsAudioClip(cell.Pattern) && Audio.AudioClipPage.Opener?.Invoke(cell.Pattern) == true)
+                return;
             // Until the pattern editor is in the studio (S6), a clip's notes open in the piano roll.
             if (cell.Pattern != null && (mods.HasFlag(KeyModifiers.Control) || !StudioViews.Has("Pattern")))
                 EditNotes(cell.Sequence, cell.Pattern);

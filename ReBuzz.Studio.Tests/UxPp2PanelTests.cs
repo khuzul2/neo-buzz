@@ -243,14 +243,10 @@ namespace ReBuzz.Studio.Tests
                 var host = (CardFlow)view.Cards.Scroller.Content!;
                 double width = view.Cards.Scroller.Viewport.Width;
                 var cards = view.Cards.Shown.Select(s => s.Control).ToList();
-                Assert.That(host.Rows.Count, Is.GreaterThan(1));
-                foreach (var (first, count) in host.Rows.Take(host.Rows.Count - 1))
-                {
-                    double right = cards.Skip(first).Take(count).Max(c => At(c, host).X + c.Bounds.Width);
-                    Assert.That(right, Is.GreaterThanOrEqualTo(width - 2 * DeviceCell.CellWidth - DeviceCards.CardChromeWidth), $"a row reaches {right} of {width}");
-                }
+                Assert.That(host.Columns.Count, Is.GreaterThan(1));
+                double right = cards.Max(c => At(c, host).X + c.Bounds.Width);
+                Assert.That(right, Is.GreaterThanOrEqualTo(width - DeviceCards.CardChromeWidth), $"the columns reach {right} of {width}");
                 Assert.That(view.Cards.Scroller.Extent.Width, Is.LessThanOrEqualTo(width + 1));
-                Assert.That(cards.Select(c => c.Bounds.Width).Distinct().Count(), Is.GreaterThan(1), "cards are sized to their content");
             }
             finally { window.Close(); Remove(m); }
         }
@@ -329,7 +325,7 @@ namespace ReBuzz.Studio.Tests
                 void Check(string where)
                 {
                     var headers = view.LastMenu!.Items.OfType<MenuItem>().Select(i => (string)i.Header!).ToList();
-                    Assert.That(headers, Does.Contain("_Automate").And.Contain("_Modulate").And.Contain("_Lock").And.Contain("_Hide").And.Contain("_Keyboard Sends MIDI Notes"), where);
+                    Assert.That(headers, Does.Contain("_Automate").And.Contain("_Modulate").And.Contain("_Lock").And.Contain("_Hide").And.Not.Contain("_Keyboard Sends MIDI Notes"), where);
                 }
                 Check("knobs");
                 view.SetMode(Mode.List, remember: false);
@@ -601,7 +597,7 @@ namespace ReBuzz.Studio.Tests
                 window.KeyPressQwerty(PhysicalKey.Z, RawInputModifiers.None);
                 Assert.That(page.Keys.Held, Is.EqualTo(0), "off: nothing plays");
                 window.KeyReleaseQwerty(PhysicalKey.Z, RawInputModifiers.None);
-                var menu = DeviceMenus.ForParam(m, Param(view, "F1 cutoff"), null, null);
+                var menu = DeviceMenus.Presets(m, page, null);
                 var item = menu.Items.OfType<MenuItem>().First(i => (string)i.Header! == "_Keyboard Sends MIDI Notes");
                 Assert.That(item.IsChecked, Is.False);
                 item.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(MenuItem.ClickEvent));

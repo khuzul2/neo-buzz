@@ -500,6 +500,13 @@ namespace ReBuzz.Studio.Tests
             Dialogs.TextResponder = null;
         }
 
+        /// <summary>Whether the machine's DLL has a GUI factory, which is what an editor window is made from.</summary>
+        static bool HasEditorWindow(string machine)
+        {
+            try { return Core.MachineDLLs.TryGetValue(machine, out var dll) && dll?.GUIFactory != null; }
+            catch { return false; }
+        }
+
         static T Tab<T>(MainWindow window, string title) where T : class =>
             window.Tabs.Items.OfType<TabItem>().First(t => (string)t.Header == title).Content as T;
 
@@ -1589,6 +1596,8 @@ namespace ReBuzz.Studio.Tests
                 foreach (var gear in neo)
                 {
                     string id = $"{400 + i++:000}-editor-{gear.ToLowerInvariant().Replace(' ', '-')}";
+                    // A machine with no editor window of its own (Neo Audio: its settings are the Audio page and the Device panel) has no shot here; its number stays free.
+                    if (!HasEditorWindow(gear)) continue;
                     Try(id, () =>
                     {
                         var m = demo.Generators.Concat(new[] { demo.Drive, demo.Comp, demo.Delay, demo.Verb, demo.Eq, demo.Limiter }).FirstOrDefault(x => x?.DLL.Name == gear) ?? Add(gear, gear.Replace("Neo ", ""));
@@ -1762,7 +1771,7 @@ namespace ReBuzz.Studio.Tests
 
                 // The Device panel (ux-overhaul.md, the parameter panel): cards of knobs docked (one row, scrolling sideways) and floating
                 // (wrapping), for four machines, and the Inspector with the macros and the pinned parameters.
-                foreach (var (gear, slug) in new[] { ("Neo Filter", "neo-filter"), ("Neo Poly", "neo-poly"), ("Neo Drums", "neo-drums"), ("Dye Essence", "dye-essence") })
+                foreach (var (gear, slug) in new[] { ("Neo Filter", "neo-filter"), ("Neo Poly", "neo-poly"), ("Neo Drums", "neo-drums"), ("Dye Essence", "dye-essence"), ("Neo EQ", "neo-eq"), ("Pedal Gain Multi", "pedal-gain-multi") })
                 {
                     Try("454-device-docked-" + slug, () =>
                     {
@@ -1772,7 +1781,7 @@ namespace ReBuzz.Studio.Tests
                         var w = new Window { Width = 1100, Height = 330, Content = page };
                         w.Show();
                         Settle();
-                        Shot(w, "454-device-docked-" + slug, $"The Device panel docked for {gear}: its sections as cards of knobs in one row that scrolls sideways, a chip per section, search, Changed only, Knobs | List.", "Select the machine; Detail ▸ Device.");
+                        Shot(w, "454-device-docked-" + slug, $"The Device panel docked for {gear}: its sections as cards of knobs in one row that scrolls sideways (every card whole above the bar, the track table cut to the panel), a chip per section, search, Changed only, Knobs | List; the keys toggle (note icon) sits by Presets.", "Select the machine; Detail ▸ Device.");
                         w.Close();
                     });
                     Try("455-device-floating-" + slug, () =>
@@ -1783,7 +1792,7 @@ namespace ReBuzz.Studio.Tests
                         var w = new Window { Width = gear == "Dye Essence" ? 1440 : 900, Height = gear == "Dye Essence" ? 820 : 620, Content = page };
                         w.Show();
                         Settle();
-                        Shot(w, "455-device-floating-" + slug, $"The Device panel floating for {gear}: cards sized to their content flowing to fill the width, choices on top of each card, one colour, sentence-case labels, a \"+N\" menu for the chips that don't fit.", "Right-click a machine ▸ Parameters…, or Float in the Device panel.");
+                        Shot(w, "455-device-floating-" + slug, $"The Device panel floating for {gear}: cards in columns, each to the shortest column (no gaps under short cards), choices on top of each card, one colour, sentence-case labels, a \"+N\" menu for the chips that don't fit.", "Right-click a machine ▸ Parameters…, or Float in the Device panel.");
                         w.Close();
                     });
                 }
@@ -1809,7 +1818,7 @@ namespace ReBuzz.Studio.Tests
                     Settle();
                     var cell = page.Parameters.Cards.Shown.SelectMany(s => s.Card.Knobs).Take(2).Select(p => page.Parameters.Cards.Cell(p)!).Last();
                     Click(w, DeviceTestKit.Centre(w, cell.Face), MouseButton.Right);
-                    Shot(w, "458-device-knob-menu", "A knob's menu: Reset, Type a Value, Pin to Inspector, Automate (adds the parameter's arrangement lane), Modulate (a modulator or the matrix), Lock and Hide (ticks), MIDI binding, Keyboard Sends MIDI Notes. The List rows have the same menu.", "Right-click a knob or a row in the Device panel.");
+                    Shot(w, "458-device-knob-menu", "A knob's menu: Reset, Type a Value, Pin to Inspector, Automate (adds the parameter's arrangement lane), Modulate (a modulator or the matrix), Lock and Hide (ticks), MIDI binding. Keyboard Sends MIDI Notes is now in the bar and the Presets menu. The List rows have the same menu.", "Right-click a knob or a row in the Device panel.");
                     w.Close();
                 });
                 Try("459-device-edit-features", () =>
@@ -2003,6 +2012,106 @@ namespace ReBuzz.Studio.Tests
                     Click(window, seq.Arrangement.TranslatePoint(new Point(seq.Arrangement.Geometry.XOf(16 * 4 + 20), seq.Arrangement.YOf(seq.Arrangement.RowOf(laneD)) + 28), window)!.Value);
                     Shot(window, "036-arrangement-audio-clips", "Neo Audio clips in the Arrangement (neo-audio.md, NA2): waveforms drawn along the beats from a peak cache, warp markers, fade corners and the gain handle on the selected clip, a crossfade where two clips overlap, a clip stretched with Alt+drag of its right edge, a reversed clip (the \"rev\" badge), a turned-down clip.", "Drag a WAV onto the Arrangement, or audio_import; the handles on a selected clip.");
                     seq.SetArrangementMode(false);
+                });
+            }
+            finally
+            {
+                Close(window);
+            }
+            AfterAll();
+        }
+
+        [AvaloniaTest, Order(7)]
+        public void AudioPages()
+        {
+            BeforeAll();
+            LoadDemo();
+            var window = Open();
+            try
+            {
+                var layout = Core.SessionLayout;
+                layout.Ensure();
+                var drums = layout.NewAudioTrack("Drum Loop");
+                var vox = layout.NewAudioTrack("Chops");
+                string file = DrumLoop("page-loop.wav");
+                IPattern Import(IMachine m, int scene)
+                {
+                    var pattern = layout.ImportAudio(layout.FirstTrackOf(m), scene, file, out string error);
+                    Assert.That(pattern, Is.Not.Null, error);
+                    return pattern;
+                }
+                var inSession = Import(drums, 0);
+                Import(drums, 1);
+                var chops = Import(vox, 0);
+                Import(vox, 2);
+                var arranged = Import(drums, 2);
+                layout.SetSlot(layout.FirstTrackOf(drums), 2, null);
+                var laneV = Core.Song.Sequences.First(q => q.Machine == drums);   // the Arrangement's clip is on the visible Drum Loop lane
+                var editor = new ClipEditor(Core);
+                Assert.That(editor.Place(laneV, arranged, 16 * 4), Is.Null);
+                var asset = layout.ViewOf(inSession).Asset;
+                for (int i = 0; i < 300 && asset.Peaks == null; i++) { asset.PeaksOrBuild(); System.Threading.Thread.Sleep(10); Dispatcher.UIThread.RunJobs(); }
+                Settle();
+
+                Try("039-session-audio-slots", () =>
+                {
+                    window.ShowView("Session");
+                    Settle();
+                    Shot(window, "039-session-audio-slots", "The Session grid with audio clips (neo-audio.md, NA3): each slot of an audio clip draws a mini waveform from the peak cache through its warp, scaled by its gain, with the playing position over it.", "Drop or import audio into a slot.");
+                });
+                Try("038-session-audio-page", () =>
+                {
+                    var session = Tab<SessionView>(window, "Session");
+                    window.ShowView("Session");
+                    Click(window, Centre(session.SlotAt(layout.FirstTrackOf(drums), 0), window, 0.6, 0.5));
+                    window.Detail.ShowAudio();
+                    Settle();
+                    Shot(window, "038-session-audio-page", "The Audio page of the clip panel for a Session clip (NA3): the waveform with its loop and region handles, warp mode, tempo with halve, double and detect, transpose, detune, gain, reverse and loop, the start and loop region in bars, beats and ticks.", "Select an audio clip in the Session, then the Audio button of the detail panel, or double-click the clip.");
+                });
+                Try("037-arrangement-audio-page", () =>
+                {
+                    var seq = Tab<SequenceView>(window, "Arrangement");
+                    window.ShowView("Sequence");
+                    seq.SetArrangementMode(true);
+                    Settle();
+                    var item = editor.Read(laneV).First();
+                    var r = seq.Arrangement.ClipRect(item);
+                    Click(window, seq.Arrangement.TranslatePoint(new Point(r.X + r.Width * 0.3, r.Y + r.Height * 0.8), window)!.Value);
+                    window.Detail.ShowAudio();
+                    Settle();
+                    Shot(window, "037-arrangement-audio-page", "The same Audio page for a clip selected in the Arrangement (NA3): the fades are here, and the clip's own loop and region are the arranged clip's.", "Select an audio clip in the Arrangement; the Audio page follows the selection.");
+                    seq.SetArrangementMode(false);
+                });
+                Try("461-warp-marker-editing", () =>
+                {
+                    var session = Tab<SequenceView>(window, "Arrangement");
+                    window.ShowView("Session");
+                    var sv = Tab<SessionView>(window, "Session");
+                    Click(window, Centre(sv.SlotAt(layout.FirstTrackOf(drums), 0), window, 0.6, 0.5));
+                    window.Detail.ShowAudio();
+                    Settle();
+                    var page = (ReBuzz.Studio.Views.Audio.AudioClipPage)window.Detail.AudioPage;
+                    page.Refresh(force: true);
+                    Settle();
+                    var wave = page.Wave;
+                    wave.SetZoom(40);
+                    Settle();
+                    Point At(double beat) => Centre(wave, window, 0, 0.5) + new Vector(wave.X(beat) - wave.Bounds.Width / 2 * 0, 0);
+                    void Double(Point p) { MachineViewTests.DoubleClick(window, p); Settle(); }
+                    Double(At(1.1));
+                    Double(At(3.2));
+                    Double(At(5.0));
+                    var marks = layout.AudioOf(inSession).Markers.OrderBy(m => m.Beat).ToList();
+                    if (marks.Count > 3)
+                    {
+                        // Drag the second marker a beat on, as a user warps it.
+                        var from = At(marks[2].Beat);
+                        window.MouseMove(from); window.MouseDown(from, MouseButton.Left);
+                        for (int i = 1; i <= 4; i++) window.MouseMove(from + new Vector(wave.PixelsPerBeat * 0.25 * i, 0), RawInputModifiers.LeftMouseButton);
+                        window.MouseUp(from + new Vector(wave.PixelsPerBeat, 0), MouseButton.Left);
+                        Settle();
+                    }
+                    Shot(window, "461-warp-marker-editing", "Editing warp markers on the Audio page (NA3): double-click adds a marker pinned to a transient when one is near, a drag warps the audio between markers and snaps to the beat grid (Shift is free), double-click or Del removes one.", "Double-click the waveform; drag a marker; Del.");
                 });
             }
             finally

@@ -692,6 +692,8 @@ namespace ReBuzz.Studio.Views.Sequence
         public void ChoosePattern(IPattern p, bool activate)
         {
             if (p == null) return;
+            // NA3: an audio clip has no notes to edit: opening it shows its Audio page.
+            if (activate && core.SessionLayout?.IsAudioClip(p) == true && Audio.AudioClipPage.Opener?.Invoke(p) == true) return;
             try
             {
                 core.SetPatternEditorPattern(p);
@@ -709,6 +711,7 @@ namespace ReBuzz.Studio.Views.Sequence
         public void OpenPianoRoll(IPattern p)
         {
             if (p == null) return;
+            if (core.SessionLayout?.IsAudioClip(p) == true && Audio.AudioClipPage.Opener?.Invoke(p) == true) return;   // NA3: an audio clip has no notes, its Audio page opens
             try
             {
                 core.SetPatternEditorPattern(p);

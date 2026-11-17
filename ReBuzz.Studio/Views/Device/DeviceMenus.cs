@@ -122,8 +122,6 @@ namespace ReBuzz.Studio.Views.Device
             items.Add(new MenuItem { Header = "_Bind to MIDI Controller", ItemsSource = bindItems });
             items.Add(Item("_Unbind All", () => machine.UnbindAllMIDIControllers()));
             items.Add(new MenuItem { Header = "_Attributes", IsEnabled = machine.Attributes.Count > 0, ItemsSource = AttributeItems(machine) });
-            items.Add(Check("_Keyboard Sends MIDI Notes", DeviceKeys.Enabled, () => DeviceKeys.Enabled = !DeviceKeys.Enabled, true,
-                "The computer's keys play the machine while this panel has the keyboard focus (the old window's setting)"));
             int tracks = machine.TrackCount;
             if (machine.DLL.Info.MaxTracks > machine.DLL.Info.MinTracks)
             {
@@ -185,6 +183,7 @@ namespace ReBuzz.Studio.Views.Device
             items.Add(Item("Randomize a _Little", () => DeviceFunctions.Run(core, machine, ParameterFunction.Nudge, 0.3, changed), DeviceFunctions.HasTargets(core, machine)));
             items.Add(Item("_Morph Between A and B...", () => DeviceFunctions.OpenMorph(machine, owner, changed), DeviceFunctions.HasTargets(core, machine)));
             items.Add(new Separator());
+            items.Add(Check("_Keyboard Sends MIDI Notes", DeviceKeys.Enabled, () => DeviceKeys.Enabled = !DeviceKeys.Enabled, true, DeviceKeys.Tip));
             items.Add(Item("_Presets...", () => OpenPresets(machine, owner)));
             var paste = Item("_Paste Preset", async () => await Paste(machine, owner, changed), false);
             items.Add(Item("_Copy Preset (ASCII)", async () => await Copy(machine, owner, false)));
