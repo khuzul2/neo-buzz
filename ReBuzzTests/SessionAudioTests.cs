@@ -294,6 +294,7 @@ namespace NeoBuzz.NeoAudio
             var player = (MachineCore)rig.Layout.NewAudioTrack()!;
             var hum = rig.Driver.MachineFor(rig.Hum!);
             rig.Core.SongCore.ConnectMachines(hum, player, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            rig.Layout.SetAudioFrom(player, AudioFrom.Wired);                  // a new track listens to the device (or nothing); these wire its input
             int track = rig.Layout.FirstTrackOf(player);
 
             Assert.That(rig.Play(0.1).Skip(1000).Max(v => Math.Abs(v)), Is.EqualTo(0f), "auto, not armed: not heard");
@@ -390,6 +391,7 @@ namespace NeoBuzz.NeoAudio
             var player = (MachineCore)rig.Layout.NewAudioTrack()!;
             var hum = rig.Driver.MachineFor(rig.Hum!);
             rig.Core.SongCore.ConnectMachines(hum, player, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            rig.Layout.SetAudioFrom(player, AudioFrom.Wired);                  // a new track listens to the device (or nothing); these wire its input
             int track = rig.Layout.FirstTrackOf(player);
             rig.Layout.SetArmed(track, true);
             return (player, track);

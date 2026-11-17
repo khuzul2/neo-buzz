@@ -258,6 +258,9 @@ namespace ReBuzz.Studio.Views.Machines
             ModulationBoard.Changed += OnModulationChanged;
             modsDirty = true;
             StartMeters();
+            armTimer.Tick -= OnArmTick;
+            armTimer.Tick += OnArmTick;
+            armTimer.Start();
             Watch(core.SongCore);
             core.PropertyChanged += OnCoreChanged;
             StudioSelection.For(core).Changed += FollowSelection;
@@ -267,6 +270,8 @@ namespace ReBuzz.Studio.Views.Machines
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
             ModulationBoard.Changed -= OnModulationChanged;
+            armTimer.Stop();
+            armTimer.Tick -= OnArmTick;
             StopMeters();
             core.PropertyChanged -= OnCoreChanged;
             StudioSelection.For(core).Changed -= FollowSelection;
@@ -394,6 +399,22 @@ namespace ReBuzz.Studio.Views.Machines
         readonly Dictionary<IMachineConnection, double> wireLevels = new Dictionary<IMachineConnection, double>();
         readonly Dictionary<IMachine, double> boxLevels = new Dictionary<IMachine, double>();
         bool metersRunning;
+
+        // Fork (docs/specs/neo-audio.md "Inputs and arm"): the arm dots follow the state the other views change.
+        readonly Avalonia.Threading.DispatcherTimer armTimer = new() { Interval = TimeSpan.FromMilliseconds(120) };
+        string armKey = "";
+
+        void OnArmTick(object sender, EventArgs e)
+        {
+            var layout = core.SessionLayout;
+            string key = layout == null ? "" : string.Join(",", core.SongCore.Machines.Where(SessionLayout.CanArm).Where(layout.IsMachineArmed).Select(m => m.Name));
+            if (key == armKey) return;
+            armKey = key;
+            Redraw();
+        }
+
+        /// <summary>Whether the machine's box wears an arm dot.</summary>
+        static bool Armable(IMachine m) => SessionLayout.CanArm(m);
 
         void StartMeters()
         {
@@ -1045,6 +1066,15 @@ namespace ReBuzz.Studio.Views.Machines
                 ctx.FillRectangle(level > 0.9 ? StripYellow : StripGreen, strip);
             }
 
+            // Fork (docs/specs/neo-audio.md "Inputs and arm"): the arm dot: grey, red when armed (click: arm; right-click: Input).
+            if (Armable(m) && core.SessionLayout is { } armLayout)
+            {
+                bool armed = armLayout.IsMachineArmed(m);
+                var dot = MachineGeometry.ArmDot(box);
+                ctx.DrawEllipse(armed ? Shell.Design.StudioTokens.RecordBrush : colours["MV Machine Text"], null, dot.Deflate(armed ? 1 : 3));
+                if (!armed) ctx.DrawEllipse(null, new Pen(colours["MV Machine Text"], 1), dot.Deflate(1.5));
+            }
+
             // Mode: .NET / 32, the MIDI channel, oversampling (ModeText), Arial 8 at 13,2.
             string mode = ModeText(m);
             if (mode != null)
@@ -1305,6 +1335,13 @@ namespace ReBuzz.Studio.Views.Machines
                     BeginSelect(p, add: true, e);
                     return;
                 }
+                if (Armable(machine) && core.SessionLayout is { } armLayout && MachineGeometry.ArmDot(box).Inflate(2).Contains(p))
+                {
+                    // The arm dot: arms the machine (no sequence yet: it gets one), as the other views' do.
+                    armLayout.SetMachineArmed(machine, !armLayout.IsMachineArmed(machine));
+                    Redraw();
+                    return;
+                }
                 if (!machine.IsControlMachine && MachineGeometry.Led(box).Contains(p))
                 {
                     // The LED is the mute button (MuteCommand).
@@ -1456,6 +1493,13 @@ namespace ReBuzz.Studio.Views.Machines
                 var machine = MachineAt(p);
                 var group = machine == null ? GroupAt(p) : null;
                 if (machine == null && group == null && WireAt(p) != null) return;
+                if (machine != null && Armable(machine) && MachineGeometry.ArmDot(BoxOf(machine)).Inflate(2).Contains(p))
+                {
+                    OpenMenu = Views.Session.TrackInputMenu.Build(core, machine);
+                    OpenMenu.Open(this);
+                    e.Handled = true;
+                    return;
+                }
                 OpenMenu = machine != null ? Menus?.ForMachine(machine, SelectionOr(machine))
                     : group != null ? Menus?.ForGroup(group)
                     : Menus?.ForCanvas(p);

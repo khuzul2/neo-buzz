@@ -240,7 +240,8 @@ namespace ReBuzz.Studio.Views.Sequence
             }
 
             var machine = row.Machine;
-            var grid = new Grid { Margin = new Thickness(4, 2), RowDefinitions = new RowDefinitions(row.Folded ? "*" : "*,*") };
+            bool inputs = row.IsFirstLane && !row.Folded && SessionLayout.CanArm(machine);
+            var grid = new Grid { Margin = new Thickness(4, 2), RowDefinitions = new RowDefinitions(row.Folded ? "*" : inputs ? "*,*,Auto" : "*,*") };
             if (row.IsFirstLane)
             {
                 var fold = Toggle(row.Folded ? "▸" : "▾", $"Fold {machine.Name}", row.Folded ? "Show this track's lanes" : "Fold this track to one row");
@@ -275,6 +276,13 @@ namespace ReBuzz.Studio.Views.Sequence
                     var bottom = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, 0), Children = { mute, solo, add, auto } };
                     Grid.SetRow(bottom, 1);
                     grid.Children.Add(bottom);
+                }
+                if (inputs)
+                {
+                    // The input choosers and the meter (docs/specs/neo-audio.md "Inputs and arm"): one state with the other views'.
+                    var input = new Views.Session.TrackInputView(core, machine, Views.Session.InputLayoutKind.Compact) { VerticalAlignment = VerticalAlignment.Bottom };
+                    Grid.SetRow(input, 2);
+                    grid.Children.Add(input);
                 }
             }
             else

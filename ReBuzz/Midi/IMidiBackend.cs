@@ -19,6 +19,13 @@ namespace ReBuzz.Midi
         /// <summary>Opens and starts an input; its short messages go to the core's MIDI input.</summary>
         IMidiInput OpenInput(int index);
 
+        /// <summary>
+        /// Opens and starts an input whose short messages go to <paramref name="received"/> (MidiEngine's, which tells the core which device
+        /// they came from: docs/specs/neo-audio.md "Inputs and arm"). A backend that doesn't take a sink delivers to the core as it did,
+        /// without a device.
+        /// </summary>
+        IMidiInput OpenInput(int index, Action<int> received) => OpenInput(index);
+
         IMidiOutput OpenOutput(int index);
 
         /// <summary>A control surface's own input and output (SessionControllers).</summary>

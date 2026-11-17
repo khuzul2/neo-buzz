@@ -83,10 +83,12 @@ namespace ReBuzz.Midi
         public int OutputCount => devices.Outputs.Length;
         public string OutputName(int index) => devices.Outputs[index].Name;
 
-        public IMidiInput OpenInput(int index)
+        public IMidiInput OpenInput(int index) => OpenInput(index, null);
+
+        public IMidiInput OpenInput(int index, Action<int> received)
         {
             var port = devices.Inputs[index];
-            return Logged(port.Name, () => new Input(port.Name, new CoreMidi.Input(port.Ref, toCore)));
+            return Logged(port.Name, () => new Input(port.Name, new CoreMidi.Input(port.Ref, received ?? toCore)));
         }
 
         public IMidiOutput OpenOutput(int index)

@@ -134,7 +134,11 @@ namespace ReBuzz.Midi
                 }
                 old?.Close();
 
-                var midiIn = backend.OpenInput(selectedDeviceIndex);
+                // Fork (docs/specs/neo-audio.md "Inputs and arm"): its messages say which device they came from (the name is the identity).
+                string name = null;
+                try { name = backend.InputName(selectedDeviceIndex); } catch (Exception) { }
+                var device = new MidiDevice(selectedDeviceIndex, name ?? "");
+                var midiIn = backend.OpenInput(selectedDeviceIndex, message => buzz.SendMIDIInput(device, message));
                 lock (midiInLock)
                 {
                     midiIns[selectedDeviceIndex] = midiIn;
@@ -301,6 +305,12 @@ namespace ReBuzz.Midi
         internal IEnumerable<int> GetMidiInputDevices()
         {
             lock (midiInLock) return midiIns.Keys.ToList();
+        }
+
+        /// <summary>The names of the MIDI inputs that are open (what a track can listen to).</summary>
+        internal IReadOnlyList<string> OpenInputNames()
+        {
+            lock (midiInLock) return midiIns.Values.Select(d => d.ProductName).Where(n => !string.IsNullOrEmpty(n)).Distinct().OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
         }
 
         internal void OpenMidiInDevices()

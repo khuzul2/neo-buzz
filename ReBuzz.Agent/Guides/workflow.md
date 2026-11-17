@@ -33,6 +33,7 @@ Build, listen, measure, adjust. Never claim a result you haven't rendered and me
 - `meters_read(machines=["Bass"], window_seconds=2)`: loudness and peaks now, measured as analyze measures renders.
 - `midi_play(machine="Keys", notes=[…])` plays a phrase on the next bar for the user to hear.
 - `session_record(action="start", machine="Keys", bars=4)` records a take of what is played on the keyboard (the user, or midi_play); `session_record(action="capture")` keeps what armed tracks were just played.
+- `track_input(action="set", machine="Vocals", audio_from="in:1", monitor="in")` chooses what an audio track listens to (an input of the sound card, another track, or what is wired to it) and midi_from and channel what a generator's armed track hears; `track_input(action="get")` lists the inputs the machine has.
 - `machine_readings(machine="Analyzer")` reads an analysis machine where the user put it.
 
 These change what plays, not the song: they aren't undo steps.

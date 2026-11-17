@@ -15,6 +15,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
+using ReBuzz.Core.Session;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Shell.Design;
 using ReBuzz.Studio.Views.Notes;
@@ -56,6 +57,9 @@ namespace ReBuzz.Studio.Views.Inspector
         readonly HistoryTab historyPage;
         readonly TextBlock heading, subtitle, hint;
         readonly InspectorDevice device;
+        // Fork (docs/specs/neo-audio.md "Inputs and arm"): the Input section of a machine that can be armed.
+        readonly StackPanel inputSection = new() { Margin = new Thickness(0, 10, 0, 0), IsVisible = false };
+        IMachine inputFor;
         readonly Grid facts;
         // Explain (neo-learn.md §5.3): the focused control of a machine whose editor has Explain text.
         readonly Border explain;
@@ -67,6 +71,22 @@ namespace ReBuzz.Studio.Views.Inspector
         string tab;
         string lastFacts;
         bool disposed;
+
+        /// <summary>The Input section: what the selected machine's tracks listen to (the same choosers as the other views), for a machine that can be armed.</summary>
+        void ShowInput(IMachine machine)
+        {
+            var armable = machine != null && SessionLayout.CanArm(machine) ? machine : null;
+            if (armable == inputFor) return;
+            inputFor = armable;
+            inputSection.Children.Clear();
+            inputSection.IsVisible = armable != null;
+            if (armable == null) return;
+            inputSection.Children.Add(new TextBlock { Text = "INPUT", FontSize = StudioTokens.FontCaption, FontWeight = FontWeight.SemiBold, Foreground = StudioTokens.TextSecondaryBrush, Margin = new Thickness(0, 0, 0, 4) });
+            inputSection.Children.Add(new TrackInputView(core, armable, InputLayoutKind.Full));
+            AutomationProperties.SetName(inputSection, "Input");
+        }
+
+        internal Avalonia.Controls.Control InputSection => inputSection;
 
         public InspectorPanel(ReBuzzCore core, IRegistryEx registry, Action<string> showView, SessionView session, SongNotesView notes)
         {
@@ -125,7 +145,7 @@ namespace ReBuzz.Studio.Views.Inspector
             var top = new StackPanel
             {
                 Margin = new Thickness(12, 0, 12, 8),
-                Children = { heading, subtitle, facts, device, explain, hint, patternButton, audioButton, notesButton },
+                Children = { heading, subtitle, facts, device, inputSection, explain, hint, patternButton, audioButton, notesButton },
             };
             DockPanel.SetDock(top, Dock.Top);
             selectionPage = new DockPanel { LastChildFill = true };
@@ -422,6 +442,7 @@ namespace ReBuzz.Studio.Views.Inspector
             }
 
             device.Show(machine);
+            ShowInput(machine);
             RefreshExplain(machine);
 
             if (clip != null)

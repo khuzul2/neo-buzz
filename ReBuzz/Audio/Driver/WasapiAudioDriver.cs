@@ -205,7 +205,10 @@ namespace ReBuzz.Audio
                 {
                     Name = deviceName,
                     Type = AudioEngine.AudioOutType.Wasapi,
-                    WaveFormat = wasapiRecorder.WaveFormat
+                    WaveFormat = wasapiRecorder.WaveFormat,
+                    // Fork (docs/specs/neo-audio.md "Inputs and arm"): the engine's input: the capture buffer is the latency (WASAPI has no channel names).
+                    Channels = wasapiRecorder.WaveFormat.Channels,
+                    LatencyFrames = (int)((long)latency * SampleRate / 1000)
                 };
 
                 if (wasapiDeviceSamplerate != wasapiRecorder.WaveFormat.SampleRate)

@@ -30,9 +30,11 @@ namespace ReBuzz.Midi
         public int OutputCount => MidiOut.NumberOfDevices;
         public string OutputName(int index) => MidiOut.DeviceInfo(index).ProductName;
 
-        public IMidiInput OpenInput(int index)
+        public IMidiInput OpenInput(int index) => OpenInput(index, null);
+
+        public IMidiInput OpenInput(int index, Action<int> received)
         {
-            var midiIn = new MidiInDevice(buzz);
+            var midiIn = new MidiInDevice(buzz, received);
             midiIn.CreateMidiIn(index);
             return midiIn;
         }

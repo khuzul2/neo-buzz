@@ -182,6 +182,8 @@ namespace ReBuzz.Studio.Views.Session
             mixerSection.IsVisible = doc.ShowMixer;
             masterSection.IsVisible = doc.ShowMixer;
             mixerButton.SetLit(doc.ShowMixer ? SessionPalette.Fader : null);
+            ioButton.SetLit(doc.ShowMixer && doc.ShowIO ? SessionPalette.Fader : null);
+            ioButton.IsEnabled = doc.ShowMixer;
             if (!doc.ShowMixer)
             {
                 UpdateMetering();
@@ -216,6 +218,13 @@ namespace ReBuzz.Studio.Views.Session
         }
 
         void ToggleMixer() => layout.SetShowMixer(!layout.Ensure().ShowMixer);
+
+        void ToggleIO()
+        {
+            var doc = layout.Ensure();
+            if (!doc.ShowMixer) layout.SetShowMixer(true);
+            layout.SetShowIO(!doc.ShowIO);
+        }
 
         /// <summary>The crossfader's menu (0.6): its curve and MIDI learn.</summary>
         internal void ShowCrossfaderMenu(Control anchor)
@@ -525,6 +534,15 @@ namespace ReBuzz.Studio.Views.Session
                 Padding = new Thickness(4, 4, 4, 3);
 
                 var stack = new StackPanel();
+
+                // Inputs (docs/specs/neo-audio.md "Inputs and arm"): the I/O row, for the strips of machines that can be armed; the others keep the space.
+                if (view.layout.Document?.ShowIO == true)
+                {
+                    if (kind == StripKind.Track && SessionLayout.CanArm(machine))
+                        stack.Children.Add(new TrackInputView(view.buzz, machine, InputLayoutKind.Strip) { Margin = new Thickness(0, 0, 0, 6) });
+                    else
+                        stack.Children.Add(new Border { Height = TrackInputView.StripHeight + 6 });
+                }
 
                 // Sends (tracks only; others keep the space so the rows line up)
                 for (int r = 0; r < returns.Count; r++)
