@@ -25,6 +25,9 @@ namespace ReBuzz.Audio
     {
         internal const string Section = "PortAudio";
 
+        /// <summary>The most input channels it opens (the engine takes up to <see cref="EngineInput.MaxChannels"/>).</summary>
+        const int MaxInputChannels = 32;
+
         private readonly string deviceName;
         private readonly ReBuzzCore buzzCore;
         private readonly EngineSettings engineSettings;
@@ -100,7 +103,10 @@ namespace ReBuzz.Audio
                     {
                         Name = PortAudioDriverFactory.Label(inputDevice),
                         Type = AudioEngine.AudioOutType.PortAudio,
-                        WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(SampleRate, inputChannels)
+                        WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(SampleRate, inputChannels),
+                        // docs/specs/neo-audio.md "Inputs and arm": the engine's input: the device's channels and latency (PortAudio has no channel names).
+                        Channels = inputChannels,
+                        LatencyFrames = (int)Math.Round(stream.InputLatency * SampleRate)
                     };
                 }
                 buzzCore.DCWriteLine($"PortAudio {PortAudio.VersionText}: {PortAudioDriverFactory.Label(output)}, {SampleRate} Hz, " +
@@ -115,7 +121,7 @@ namespace ReBuzz.Audio
 
         private PortAudio.Stream Open(PortAudio.Device output, PortAudio.Device input)
         {
-            inputChannels = input == null ? 0 : Math.Min(2, input.Inputs);
+            inputChannels = input == null ? 0 : Math.Min(MaxInputChannels, input.Inputs);       // neo-audio.md "Inputs and arm": every channel the engine can use
             try
             {
                 return new PortAudio.Stream(output.Index, input?.Index ?? PortAudio.NoDevice, inputChannels, SampleRate, BufferSize,

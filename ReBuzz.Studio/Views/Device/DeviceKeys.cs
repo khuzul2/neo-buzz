@@ -95,7 +95,7 @@ namespace ReBuzz.Studio.Views.Device
             if (Core is { } core)
             {
                 core.MIDIFocusMachine = machine;
-                core.SendMIDIInput(MIDI.Encode(MIDI.NoteOn, note, 100));
+                core.SendMIDIInput(ReBuzz.Midi.MidiDevice.Keyboard, MIDI.Encode(MIDI.NoteOn, note, 100));
             }
             down[i] = note;
         }
@@ -105,7 +105,7 @@ namespace ReBuzz.Studio.Views.Device
             int i = PianoKeys.IndexOf(e.PhysicalKey);
             if (i < 0 || !down.TryGetValue(i, out int note)) return;
             down.Remove(i);
-            Core?.SendMIDIInput(MIDI.Encode(MIDI.NoteOff, note, 0));
+            Core?.SendMIDIInput(ReBuzz.Midi.MidiDevice.Keyboard, MIDI.Encode(MIDI.NoteOff, note, 0));
         }
 
         void TextInput(object sender, TextInputEventArgs e)
@@ -124,7 +124,7 @@ namespace ReBuzz.Studio.Views.Device
 
         public void NotesOff()
         {
-            foreach (var note in down.Values) Core?.SendMIDIInput(MIDI.Encode(MIDI.NoteOff, note, 0));
+            foreach (var note in down.Values) Core?.SendMIDIInput(ReBuzz.Midi.MidiDevice.Keyboard, MIDI.Encode(MIDI.NoteOff, note, 0));
             down.Clear();
         }
     }

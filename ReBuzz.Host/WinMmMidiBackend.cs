@@ -47,11 +47,9 @@ namespace ReBuzz.Host
             catch (Exception) { return 0; }
         }
 
-        public IMidiInput OpenInput(int index)
-        {
-            var input = new Input(index, toCore, log);
-            return input;
-        }
+        public IMidiInput OpenInput(int index) => OpenInput(index, null);
+
+        public IMidiInput OpenInput(int index, Action<int> received) => new Input(index, received ?? toCore, log);
 
         public IMidiOutput OpenOutput(int index) => new Output(index);
 

@@ -3,6 +3,8 @@ using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core.Clips;
 using System;
+using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace ReBuzz.Core.Session
 {
@@ -20,7 +22,36 @@ namespace ReBuzz.Core.Session
         {
             public readonly ClipMixer Mixer = new ClipMixer();
             public readonly float[] InputLeft = new float[ClipMixer.DefaultMaxBlock], InputRight = new float[ClipMixer.DefaultMaxBlock];
+            /// <summary>The block's audio from a source other than the wired input (a device's channels, a track's tap), in Buzz's sample scale.</summary>
+            public readonly Sample[] Source = new Sample[Math.Max(ClipMixer.DefaultMaxBlock, ReBuzz.Audio.EngineInput.MaxBlock)];
+            float peakLeft, peakRight;
+
+            /// <summary>Audio thread: what this block's input reached (Buzz's sample scale, 32768 is full scale).</summary>
+            public void NotePeak(float left, float right)
+            {
+                AtomicMax(ref peakLeft, left);
+                AtomicMax(ref peakRight, right);
+            }
+
+            /// <summary>The loudest input sample of each side since the last call (any thread), and forgets it.</summary>
+            public (float Left, float Right) TakePeak() => (Interlocked.Exchange(ref peakLeft, 0f), Interlocked.Exchange(ref peakRight, 0f));
+
+            static void AtomicMax(ref float target, float value)
+            {
+                float seen = Volatile.Read(ref target);
+                while (value > seen)
+                {
+                    float was = Interlocked.CompareExchange(ref target, value, seen);
+                    if (was == seen) return;
+                    seen = was;
+                }
+            }
         }
+
+        static readonly ConditionalWeakTable<IMachine, PlayerState> players = new ConditionalWeakTable<IMachine, PlayerState>();
+
+        /// <summary>The clip player state of a Neo Audio, or null before it first worked.</summary>
+        internal static PlayerState PlayerOf(IMachine machine) => machine != null && players.TryGetValue(machine, out var p) ? p : null;
 
         /// <summary>
         /// A take recording while its pattern plays: the master output (resampling) or its
@@ -92,9 +123,12 @@ namespace ReBuzz.Core.Session
         {
             var player = (PlayerState)state;
             var buzz = (machine as MachineCore)?.Graph?.Buzz as ReBuzzCore;
+            if (!players.TryGetValue(machine, out _)) players.Add(machine, player);
             var mixer = player.Mixer;
             bool sound;
             int frames = mixer.Begin(n);          // never more than it was made for: a longer block's end is silent, nothing is allocated
+            // docs/specs/neo-audio.md "Inputs and arm": where this track's audio comes from (the wired input, an input device, another track, nothing).
+            var audio = Source(buzz, machine, player, input, n, mode, out bool hasInput);
             if (buzz != null && buzz.Playing)
             {
                 var mi = ReBuzzCore.masterInfo;
@@ -112,7 +146,7 @@ namespace ReBuzz.Core.Session
                     if (capture != null && !capture.IsDone && capture.LastBlock != ReBuzzCore.GlobalState.AudioFrame)
                     {
                         capture.StartAt(beat);
-                        Record(player, capture, input, n, mode);
+                        Record(player, capture, audio, n, hasInput);
                         capture.LastBlock = ReBuzzCore.GlobalState.AudioFrame;
                     }
                     // An arrangement clip with fades knows where it is in its clip (WorkManager.UpdatePatternPositions).
@@ -130,7 +164,7 @@ namespace ReBuzz.Core.Session
             else
                 sound = mixer.End(frames);
 
-            bool hear = (mode & WorkModes.WM_READ) != 0 &&
+            bool hear = hasInput &&
                         (monitor == 1 || (monitor == 0 && buzz != null && buzz.SessionCore.IsArmedMachine(machine)));
             if (!sound && !hear)
             {
@@ -145,10 +179,10 @@ namespace ReBuzz.Core.Session
             for (int i = 0; i < n; i++)
             {
                 float l = i < frames ? Clean(left[i] * 32768f) : 0f, r = i < frames ? Clean(right[i] * 32768f) : 0f;
-                if (hear)
+                if (hear && i < audio.Length)
                 {
-                    l += input[i].L;
-                    r += input[i].R;
+                    l += audio[i].L;
+                    r += audio[i].R;
                 }
                 output[i].L = l;
                 output[i].R = r;
@@ -166,10 +200,68 @@ namespace ReBuzz.Core.Session
             return false;
         }
 
-        /// <summary>A take of the track's input records this block (silence when nothing comes in).</summary>
-        static void Record(PlayerState player, AudioCapture capture, Sample[] input, int n, WorkModes mode)
+        /// <summary>
+        /// The block's input of a Neo Audio: the wired input (as before), nothing, channels of the input device (a mono one centred to both
+        /// sides) or the tap of a track. <paramref name="hasInput"/> is false when there is none: nothing is heard and takes record silence.
+        /// The input meter takes its peak here.
+        /// </summary>
+        static Sample[] Source(ReBuzzCore buzz, IMachine machine, PlayerState player, Sample[] input, int n, WorkModes mode, out bool hasInput)
         {
-            if ((mode & WorkModes.WM_READ) == 0)
+            var route = buzz?.SessionCore.RouteOf(machine);
+            var from = route?.Input.Audio ?? AudioFrom.Wired;
+            Sample[] audio = input;
+            hasInput = false;
+            switch (from.Kind)
+            {
+                case AudioFromKind.Wired:
+                    hasInput = (mode & WorkModes.WM_READ) != 0;
+                    break;
+                case AudioFromKind.Mono:
+                case AudioFromKind.Stereo:
+                    {
+                        var device = buzz?.EngineInput;
+                        if (device == null || !device.IsOpen || n > player.Source.Length) break;
+                        var buffer = player.Source;
+                        var left = device.Channel(from.Channel);
+                        var right = from.Kind == AudioFromKind.Stereo ? device.Channel(from.Channel + 1) : left;
+                        int m = Math.Min(n, device.BlockFrames);
+                        for (int i = 0; i < m; i++)
+                        {
+                            buffer[i].L = left[i] * 32768f;
+                            buffer[i].R = right[i] * 32768f;
+                        }
+                        for (int i = m; i < n; i++) buffer[i] = default;
+                        audio = buffer;
+                        hasInput = true;
+                        break;
+                    }
+                case AudioFromKind.Track:
+                    if (route.Tap != null && n <= player.Source.Length)
+                    {
+                        route.Tap.Read(player.Source, n);
+                        audio = player.Source;
+                        hasInput = true;
+                    }
+                    break;
+            }
+            if (hasInput)
+            {
+                float l = 0, r = 0;
+                for (int i = 0; i < n && i < audio.Length; i++)
+                {
+                    float a = audio[i].L < 0 ? -audio[i].L : audio[i].L, b = audio[i].R < 0 ? -audio[i].R : audio[i].R;
+                    if (a > l) l = a;
+                    if (b > r) r = b;
+                }
+                if (l > 0 || r > 0) player.NotePeak(l, r);
+            }
+            return audio;
+        }
+
+        /// <summary>A take of the track's input records this block (silence when nothing comes in).</summary>
+        static void Record(PlayerState player, AudioCapture capture, Sample[] input, int n, bool hasInput)
+        {
+            if (!hasInput)
             {
                 capture.WriteSilence(n);
                 return;

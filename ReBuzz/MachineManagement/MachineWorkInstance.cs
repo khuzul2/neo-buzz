@@ -96,6 +96,8 @@ namespace ReBuzz.MachineManagement
                     isActive = WorkMachineNative(nSamples);
                 }
             }
+            // Fork (docs/specs/neo-audio.md "Inputs and arm"): a track resampled by a Neo Audio keeps this block of its output.
+            Machine.SessionTap?.Capture(Machine, nSamples);
             Stage("work done");
             long dtEnd = Stopwatch.GetTimestamp();
             long timeDelta = dtEnd - dtStart;

@@ -32,6 +32,13 @@ namespace ReBuzz.Audio.Engine
             public string Name;
             public AudioOutType Type;
             public NAudio.Wave.WaveFormat WaveFormat { get; internal set; }
+
+            /// <summary>Fork (docs/specs/neo-audio.md "Inputs and arm"): input channels the device delivers (0 when the WaveFormat is all there is).</summary>
+            public int Channels { get; set; }
+            /// <summary>The driver's names of the channels, where it has them (else "In 1", "In 2"...).</summary>
+            public string[] ChannelNames { get; set; }
+            /// <summary>Frames from a sound at the converter to the engine seeing it, as the driver reports it (0 when it doesn't).</summary>
+            public int LatencyFrames { get; set; }
         }
 
         public AudioOutDevice SelectedOutDevice { get; private set; }
@@ -126,6 +133,7 @@ namespace ReBuzz.Audio.Engine
                         SelectedOutDevice = currentDriver.DeviceInfo;
                         SelectedInDevice = currentDriver.InputDeviceInfo;
                         SampleRateIn = currentDriver.SampleRate;
+                        ConfigureInput(SelectedInDevice, currentDriver.SampleRate);
 
                         // Fork (0.4.1): output latency for the Session View's launch timing. WASAPI
                         // runs with a 2 x BufferSize buffer, ASIO with BufferSize; the fill thread
@@ -157,6 +165,7 @@ namespace ReBuzz.Audio.Engine
 
             try
             {
+                buzzCore.EngineInput.Flush();
                 currentDriver.Start();
             }
             catch (Exception e)
@@ -203,10 +212,18 @@ namespace ReBuzz.Audio.Engine
             }
         }
 
+        /// <summary>The engine's input (docs/specs/neo-audio.md "Inputs and arm"): the device's channels, their names and latency, or none.</summary>
+        void ConfigureInput(AudioInDevice input, int sampleRate)
+        {
+            int channels = input == null ? 0 : input.Channels > 0 ? input.Channels : input.WaveFormat?.Channels ?? 0;
+            buzzCore.EngineInput.Configure(channels, input?.ChannelNames, sampleRate, input?.LatencyFrames ?? 0);
+        }
+
         public void ReleaseAudioDriver()
         {
             currentDriver?.Dispose();
             currentDriver = null;
+            buzzCore.EngineInput.Close();
 
             SelectedOutDevice = null;
             SelectedInDevice = null;

@@ -848,6 +848,7 @@ namespace ReBuzz.Core.Session
                 // engine's is the truth (MIDI moves it directly, 0.6.1).
                 core.UseCrossfader(doc, song, crossfaderFromDocument);
                 if (doc != null) crossfaderFromDocument = false;
+                PublishInputs(core, doc);
             }
             RefreshAudio();                                                 // 1.0: audio clips play as now set
         }

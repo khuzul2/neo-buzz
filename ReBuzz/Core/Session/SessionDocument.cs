@@ -376,6 +376,23 @@ namespace ReBuzz.Core.Session
         public List<Scene> Scenes { get; } = new List<Scene>();
         public List<Track> Tracks { get; } = new List<Track>();
 
+        /// <summary>
+        /// What each machine's tracks listen to (docs/specs/neo-audio.md "Inputs and arm"), by machine name. A machine with no entry has
+        /// the defaults: audio from what is wired, MIDI from all inputs. Edits are undo steps; arm is not kept here.
+        /// </summary>
+        public Dictionary<string, TrackInput> Inputs { get; } = new Dictionary<string, TrackInput>(StringComparer.Ordinal);
+
+        /// <summary>A machine's inputs (a copy; the defaults if it has none).</summary>
+        public TrackInput GetInput(string machine) => machine != null && Inputs.TryGetValue(machine, out var i) ? i.Clone() : new TrackInput();
+
+        /// <summary>Stores a machine's inputs; the defaults remove the entry.</summary>
+        public void SetInput(string machine, TrackInput input)
+        {
+            if (string.IsNullOrEmpty(machine)) return;
+            if (input == null || input.IsDefault) Inputs.Remove(machine);
+            else Inputs[machine] = input.Clone();
+        }
+
         // ------------------------------------------------------------------ identity (0.6.1)
 
         /// <summary>
@@ -406,6 +423,7 @@ namespace ReBuzz.Core.Session
             foreach (var key in Clips.Keys.Where(k => k.Machine == retired || k.Pattern == retired).ToList())
                 Clips.Remove(key);
             Crossfade.Remove(retired);
+            Inputs.Remove(retired);
             Returns.Remove(retired);
             if (CueMachine == retired) CueMachine = "";
         }
@@ -674,6 +692,11 @@ namespace ReBuzz.Core.Session
             }
             if (Crossfade.Remove(oldName, out var side))
                 Crossfade[newName] = side;
+            if (Inputs.Remove(oldName, out var input))
+                Inputs[newName] = input;
+            foreach (var other in Inputs.Values)
+                if (other.Audio.Kind == AudioFromKind.Track && other.Audio.Machine == oldName)
+                    other.Audio = AudioFrom.Track(newName);
             for (int i = 0; i < Returns.Count; i++)
                 if (Returns[i] == oldName) Returns[i] = newName;
             if (CueMachine == oldName) CueMachine = newName;
@@ -734,7 +757,11 @@ namespace ReBuzz.Core.Session
                     Clips.Where(c => Keep(c.Key.Machine) && Keep(c.Key.Pattern))
                          .OrderBy(c => c.Key.Machine, StringComparer.Ordinal).ThenBy(c => c.Key.Pattern, StringComparer.Ordinal)
                          .Select(c => c.Value.ToXml(c.Key.Machine, c.Key.Pattern))),
-                SongMidi?.ToXml());
+                SongMidi?.ToXml(),
+                !Inputs.Keys.Any(Keep) ? null : new XElement("Inputs",
+                    Inputs.Where(i => Keep(i.Key) && !i.Value.IsDefault)
+                          .OrderBy(i => i.Key, StringComparer.Ordinal)
+                          .Select(i => i.Value.ToXml(i.Key))));
             return new XDocument(root);
         }
 
@@ -828,6 +855,9 @@ namespace ReBuzz.Core.Session
                     if (!string.IsNullOrEmpty(machine) && !string.IsNullOrEmpty(pattern))
                         doc.SetClip(machine, pattern, ClipSettings.FromXml(c));
                 }
+                foreach (var i in root.Element("Inputs")?.Elements("Input") ?? Enumerable.Empty<XElement>())
+                    if ((string)i.Attribute("machine") is string machineName && machineName.Length > 0)
+                        doc.SetInput(machineName, TrackInput.FromXml(i));
                 foreach (var t in root.Element("Tracks")?.Elements("Track") ?? Enumerable.Empty<XElement>())
                 {
                     var track = new Track
