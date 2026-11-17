@@ -62,12 +62,14 @@ q = load(os.path.join(reports, "quality.json"))
 if q:
     lines += ["", "## Quality check on the engine's own audio", "",
               f"A {q.get('audio_seconds')} s mix of Neo Drums, a Dye Essence bass, a Neo Poly pad and a Dye Essence lead, separated by each model; "
-              "SDR against the parts that were mixed (drums, bass, other = pad + lead). Nothing is asserted; this is a measurement on a GitHub runner.", "",
-              "| Model | Stem | SDR (dB) | Seconds per minute of audio |", "|---|---|---|---|"]
+              "SDR against the parts that were mixed (drums, bass, other = pad + lead). The references are checked first: the engine's mix against the sum of "
+              f"its soloed parts is {q.get('mixing_check_db')} dB SDR and the mix rendered twice {q.get('render_repeat_db')} dB (at least 60 wanted, or the check stops). "
+              "Lag is the shift in samples of the separated stem against its reference (0: aligned). Nothing else is asserted; this is a measurement on a GitHub runner.", "",
+              "| Model | Stem | SDR (dB) | Lag (samples) | Seconds per minute of audio |", "|---|---|---|---|---|"]
     for name, row in q.get("models", {}).items():
         if not row.get("ok"):
-            lines.append(f"| {name} | failed | | |")
+            lines.append(f"| {name} | failed | | | |")
             continue
         for stem, e in row["stems"].items():
-            lines.append(f"| {name} ({row.get('model')}) | {stem} | {e.get('sdr_db', 'n/a')} | {row['seconds_per_minute']} |")
+            lines.append(f"| {name} ({row.get('model')}) | {stem} | {e.get('sdr_db', 'n/a')} | {e.get('lag_samples', 'n/a')} | {row['seconds_per_minute']} |")
 open(out, "w").write("\n".join(lines) + "\n")

@@ -107,9 +107,11 @@ namespace ReBuzz.Studio.Tests
         [TestCase("Neo FM6")]
         [TestCase("Neo Wave")]
         [TestCase("Neo Drums")]
+        [TestCase("Dye Essence")]   // its unison voices start from random phases: the seed moved on with every note and was not reset (docs/specs/stem-separation.md section 5)
         public void TwoRendersOfTheSameSongInOneProcessAreTheSameBytes(string gear)
         {
             var window = SongWith(gear);
+            if (gear == "Dye Essence") Call("preset_load", Args(("machine", "Voice"), ("preset", "Lead \u2014 Wide Unison")));
             using var restore = Studio.AfterTest(() => Restore(window, null));
             string first = Call("render", Args(("name", "a")))["file"]!.GetValue<string>();
             string second = Call("render", Args(("name", "b")))["file"]!.GetValue<string>();

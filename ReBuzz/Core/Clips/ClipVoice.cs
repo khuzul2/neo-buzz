@@ -21,7 +21,7 @@ namespace ReBuzz.Core.Clips
         volatile PhaseVocoder vocoder;      // made on the UI thread when a clip in Complex mode is given (Prepare)
         volatile ProVoice pro;              // likewise for Pro (null when the native library is missing: the clip plays as Complex)
         bool proRestart;                    // Pro: the next block starts the stretcher from its beat
-        bool proRaw;                        // Pro, waiting for its start (the block's seek was spent): playing as Repitch meanwhile
+        bool proRaw;                        // Pro, waiting for its start (the block's seek was spent): playing as Beats meanwhile
         /// <summary>The inline Pro starts the block may still do; set by the mixer (null: no limit).</summary>
         internal SeekBudget Budget;
         AudioClipParams current;
@@ -377,13 +377,9 @@ namespace ReBuzz.Core.Clips
             }
             if (proRaw)
             {
-                // The block's seek went to another clip: this one plays plainly (as Repitch) until its turn, a block or two.
-                for (int i = 0; i < count; i++)
-                {
-                    Tails(left, right, offset + i);
-                    double b = beat + i * beatsPerSample;
-                    Put(p, p.Map.SampleAt(b), p.Map.SamplesPerBeat(b) * beatsPerSample, left, right, offset + i, 1);
-                }
+                // The block's seek went to another clip: this one plays as Beats (pitch and time right at any tempo, and cheap) until
+                // its turn, a block or two; the stretcher's start then fades it out. Repitch would be the wrong pitch off the clip's tempo.
+                RenderBeats(p, beat, beatsPerSample, rate * p.PitchRatio, left, right, offset, count);
                 return;
             }
             for (int i = 0; i < count && (tail.Left > 0 || older.Left > 0); i++) Tails(left, right, offset + i);
