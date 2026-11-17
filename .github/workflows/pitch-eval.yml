@@ -74,10 +74,16 @@ jobs:
         set -euo pipefail
         fetch() {
           local rec="$1" name="$2" dest="$3"
-          local meta md5
-          meta=$(curl -sS --retry 5 -L "https://zenodo.org/api/records/$rec")
-          md5=$(echo "$meta" | python3 -c "import json,sys; d=json.load(sys.stdin); print([f['checksum'].split(':')[1] for f in d['files'] if f['key']=='$name'][0])")
-          echo "$rec $name md5 $md5; licence: $(echo "$meta" | python3 -c "import json,sys; print(json.load(sys.stdin)['metadata']['license'])")"
+          local meta md5 try
+          # Zenodo's API now and then answers with an error body: ask again (up to 8 times) until the file's checksum is in the answer.
+          for try in 1 2 3 4 5 6 7 8; do
+            meta=$(curl -sS --retry 5 -L "https://zenodo.org/api/records/$rec" || true)
+            md5=$(echo "$meta" | python3 -c "import json,sys; d=json.load(sys.stdin); print([f['checksum'].split(':')[1] for f in d['files'] if f['key']=='$name'][0])" 2>/dev/null || true)
+            [ -n "$md5" ] && break
+            echo "record $rec: no usable answer (try $try)"; sleep $((try * 10))
+          done
+          [ -n "$md5" ] || { echo "no checksum for $name"; return 1; }
+          echo "$rec $name md5 $md5; licence: $(echo "$meta" | python3 -c "import json,sys; print(json.load(sys.stdin)['metadata']['license'])" 2>/dev/null || echo unknown)"
           curl -sS --retry 8 --retry-delay 5 -C - -L -o "$dest" "https://zenodo.org/api/records/$rec/files/$name/content"
           echo "$md5  $dest" | md5sum -c -
         }
