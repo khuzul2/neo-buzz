@@ -158,7 +158,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>The input a new audio track starts with: In 1/2 when a device with two inputs is open, In 1 for one, else none.</summary>
-        AudioFrom DefaultAudioFrom() => EngineIn.Channels >= 2 ? AudioFrom.Stereo(1) : EngineIn.Channels == 1 ? AudioFrom.Mono(1) : AudioFrom.None;
+        AudioFrom DefaultAudioFrom() => EngineIn.Channels >= 2 ? AudioFrom.Stereo(0) : EngineIn.Channels == 1 ? AudioFrom.Mono(0) : AudioFrom.None;
 
         // ------------------------------------------------------------------ choices
 
@@ -178,8 +178,8 @@ namespace ReBuzz.Core.Session
         {
             var list = new List<AudioFrom> { AudioFrom.None };
             int n = EngineIn.Channels;
-            for (int i = 1; i <= n; i++) list.Add(AudioFrom.Mono(i));
-            for (int i = 1; i + 1 <= n; i += 2) list.Add(AudioFrom.Stereo(i));
+            for (int i = 0; i < n; i++) list.Add(AudioFrom.Mono(i));
+            for (int i = 0; i + 1 < n; i += 2) list.Add(AudioFrom.Stereo(i));
             foreach (var other in TrackSources(machine))
                 list.Add(AudioFrom.Track(other.Name));
             list.Add(AudioFrom.Wired);
