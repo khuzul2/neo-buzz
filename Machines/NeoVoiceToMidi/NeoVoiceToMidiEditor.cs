@@ -51,7 +51,7 @@ namespace NeoBuzz.VoiceToMidi
             var live = new Section("Live", AccentColor, Layout.Column(roll, chordStrip));
 
             // ---- key and scale
-            var keys = new InteractiveGraph(260, 56, (g, r) => DrawKeys(g, r, ctx, engine), new ClickInput((x, y, fine) => ClickKey(x, ctx, fine)), animate: true);
+            var keys = new InteractiveGraph(260, 74, (g, r) => DrawKeys(g, r, ctx, engine), new ClickInput((x, y, fine) => ClickKey(x, ctx, fine)), animate: true);
             var key = new Section("Key", AccentColor, Layout.Column(
                 new ParamChoice(ctx, P.Lock, "Lock", 54),
                 Layout.Row(new ParamDropdown(ctx, P.Root, "Root", 70), new ParamDropdown(ctx, P.Scale, "Scale", 120)),
@@ -60,6 +60,7 @@ namespace NeoBuzz.VoiceToMidi
             // ---- input and pitch
             var input = new Section("Input", AccentColor, Layout.Column(
                 Layout.Row(new ParamKnob(ctx, P.Monitor), new ParamKnob(ctx, P.Level)),
+                Layout.Gap(1, 8),
                 new ParamChoice(ctx, P.Range, "Range", 66)));
             var pitch = new Section("Pitch", AccentColor, Layout.Column(
                 Layout.Row(new ParamChoice(ctx, P.Pitch, "Pitch", 40), new ParamChoice(ctx, P.Legato, "Legato", 40), new ParamChoice(ctx, P.VelMode, "Velocity", 56)),
@@ -200,13 +201,13 @@ namespace NeoBuzz.VoiceToMidi
             double w = r.Width / 12.0;
             for (int pc = 0; pc < 12; pc++)
             {
-                var cell = new NeoRect(r.X + pc * w + 1, r.Y + (BlackKey[pc] ? 0 : 14), w - 2, BlackKey[pc] ? 30 : r.Height - 14);
+                var cell = new NeoRect(r.X + pc * w + 1, r.Y + (BlackKey[pc] ? 0 : 14), w - 2, BlackKey[pc] ? 28 : r.Height - 30);
                 bool inScale = (mask & (1 << pc)) != 0, off = (muted & (1 << pc)) != 0;
                 NeoColor fill = off ? NeoColor.FromRgb(0x2A, 0x2E, 0x36) : inScale ? (pc == root ? AccentColor : NeoColor.FromRgb(0xA8, 0x5A, 0x50)) : Palette.Track;
                 g.Rect(cell, fill, new NeoStroke(Palette.PanelEdge, 1, false), 2);
                 g.Text(Scales.NoteNames[pc], cell.X + cell.Width / 2, cell.Bottom - 14, 8, off ? Palette.DimText : Palette.Text, false, NeoAlign.Center);
             }
-            g.Text("click: mute   shift-click: Custom scale", r.X, r.Y, 8, Palette.DimText);
+            g.Text("click: mute   shift-click: Custom scale", r.X, r.Bottom - 12, 8, Palette.DimText);
         }
 
         bool ClickKey(double x, EditorContext ctx, bool shift)

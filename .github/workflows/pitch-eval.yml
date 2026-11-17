@@ -13,9 +13,6 @@ name: Pitch evaluation
 # The tool is tools/PitchEval (it links Machines/NeoBuzz.Dsp and nothing else).
 
 on:
-  # Temporary (VM1): the file is not on the default branch yet, so a dispatch cannot find it; a push to this branch runs AVP and VocalSet. Removed before the merge.
-  push:
-    branches: [machines/neo-voice-to-midi-vm1]
   workflow_dispatch:
     inputs:
       mdb:
@@ -86,7 +83,7 @@ jobs:
           curl -sS --retry 8 --retry-delay 5 -C - -L -o "$dest" "https://zenodo.org/api/records/$rec/files/$name/content"
           echo "$md5  $dest" | md5sum -c -
         }
-        if [ "${{ github.event_name == 'push' && 'false' || github.event.inputs.mdb }}" != "false" ]; then
+        if [ "${{ github.event.inputs.mdb }}" != "false" ]; then
           fetch 1481172 MDB-stem-synth.tar.gz "$DATA/mdb.tar.gz"
           mkdir -p "$DATA/mdb"
           tar -xzf "$DATA/mdb.tar.gz" -C "$DATA/mdb" --exclude='*/._*'
@@ -107,7 +104,7 @@ jobs:
       run: |
         set -euo pipefail
         args=(--out pitch-eval-report.md --csv pitch-eval-stems.csv)
-        [ "${{ github.event_name == 'push' && 'false' || github.event.inputs.mdb }}" != "false" ] && args+=(--mdb "$DATA/mdb/MDB-stem-synth" --mdb-limit "${{ github.event.inputs.mdb_limit || '0' }}")
+        [ "${{ github.event.inputs.mdb }}" != "false" ] && args+=(--mdb "$DATA/mdb/MDB-stem-synth" --mdb-limit "${{ github.event.inputs.mdb_limit || '0' }}")
         [ "${{ github.event.inputs.avp }}" != "false" ] && args+=(--avp "$DATA/avp")
         [ "${{ github.event.inputs.vocalset }}" != "false" ] && args+=(--vocalset "$DATA/vocalset.zip" --vocalset-per-group "${{ github.event.inputs.vocalset_per_group || '2' }}")
         dotnet run -c Release --no-build --project tools/PitchEval -- "${args[@]}"
