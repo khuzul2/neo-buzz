@@ -19,6 +19,7 @@ The audio track of the Session View and the arrangement: it plays audio clips (a
 - Each clip's transpose (-48 to +48 semitones) and detune (cents): pitch without changing speed in Beats, Complex and Pro.
 - Each clip's gain (0 dB): -70 to +24 dB.
 - Each clip's loop and region: where it starts and what part repeats.
+- Long audio (NA1b) is not kept in memory: audio over the streaming threshold (8 MB of floats, about 22 seconds of stereo) is decoded once into a cache folder and read from there while it plays. `audio_clip_get` reports it under `audio`: `storage` (`memory`, `filling` while the cache is written and it plays from memory, `streaming`, `repairing`, `failed`), `streams`, `cache_progress`, `underruns` and `missed_samples` (blocks, and samples, that played silence because the disk had not delivered in time), and `resident_mb`. `studio_status` has `stream_underruns` for the whole song. Preferences > Audio shows the cache and clears it.
 - In the arrangement (NA2): every audio clip has a pattern of its own, with its own settings (copies share the audio only). Fade in and out, gain, reverse and a crossfade are set per clip: `audio_clip_set(machine="Drums audio", pattern="loop", fade_in_beats=1, fade_out_beats=2, reverse=true)`, or on the clip: `arrangement_clip(op="fade", ...)`, `op="gain"`, `op="crossfade"`, `op="reverse"`.
 
 ## Starting points
@@ -35,6 +36,7 @@ The audio track of the Session View and the arrangement: it plays audio clips (a
 ## Pitfalls
 
 - Silent with no clip playing (the profile's health warn); that is not a fault.
+- A streamed clip that underruns plays silence for what is missing and goes on; nothing waits for the disk. The starts of every streamed asset, of each clip's start and loop start, and of each warp marker are kept in memory, so launches are instant, and a queued launch reads ahead during the quantization wait; a jump to somewhere else with no warning (scrubbing) can underrun once. If the cache file is removed or damaged it is written again from the song file (save the song once so that file has the audio).
 - The audio belongs to the song, not to the wavetable: an old song's wave-based clips are moved into the song on load, and the wave stays as it was. Saving as .bmx writes the audio into free waves; what does not fit is listed in the export report.
 - Input master records everything the song plays, including this track: mute it first to avoid doubling.
 - Beats mode on sustained material smears; use Complex or Pro for pads and voices, Repitch for a deliberate speed change.

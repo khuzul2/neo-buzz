@@ -105,6 +105,8 @@ namespace ReBuzz.Core.Session
             foreach (var p in audioKeys.Keys)
                 if (p.SessionAudio != null) p.SessionAudio.Params = null;
             audioKeys.Clear();
+            foreach (var pinned in pinnedAssets) pinned.Value.PinClip(pinned.Key, null, null);
+            pinnedAssets.Clear();
         }
 
         // ------------------------------------------------------------------ audio tracks
@@ -210,6 +212,7 @@ namespace ReBuzz.Core.Session
             {
                 var asset = AudioImporter.Import(path, SampleRate);
                 if (asset.Frames == 0) throw new InvalidDataException("it holds no audio");
+                asset.Recipe = new FileRecipe(path, SampleRate);         // how a lost cache file is made again
                 return Assets.Add(asset);
             }
             catch (Exception e)
@@ -382,8 +385,9 @@ namespace ReBuzz.Core.Session
             var layer = song.Wavetable.Waves[index]?.Layers.FirstOrDefault();
             if (layer == null) return false;
             layer.SampleRate = source.SampleRate;
-            layer.SetDataAsFloat(source.Left, 0, 1, 0, 0, source.Length);
-            if (stereo) layer.SetDataAsFloat(source.Right, 0, 1, 1, 0, source.Length);
+            var (l, r) = source.ToArrays();                 // exact: the cache file's audio too (neo-audio.md, NA1b)
+            layer.SetDataAsFloat(l, 0, 1, 0, 0, source.Length);
+            if (stereo) layer.SetDataAsFloat(r, 0, 1, 1, 0, source.Length);
             layer.InvalidateData();
             return true;
         }
@@ -890,14 +894,49 @@ namespace ReBuzz.Core.Session
                     {
                         playback.Params = null;               // never stops the layout; the clip is silent
                     }
+                    PinClip(pattern, w?.Asset, playback.Params, entry.Value);
                     audioKeys[pattern] = key;
                 }
             }
             foreach (var gone in audioKeys.Keys.Where(p => !live.Contains(p)).ToList())
             {
                 if (gone.SessionAudio != null) gone.SessionAudio.Params = null;
+                PinClip(gone, null, null, null);
                 audioKeys.Remove(gone);
             }
+        }
+
+        readonly Dictionary<PatternCore, AudioAsset> pinnedAssets = new Dictionary<PatternCore, AudioAsset>();
+
+        /// <summary>
+        /// A streamed asset keeps the audio a clip may start from in memory (neo-audio.md, NA1b): the start of the audio (the asset's own pin), the
+        /// clip's start marker and loop start through its warp map, and each warp marker, each for the head's length, so a launch is instant.
+        /// </summary>
+        void PinClip(PatternCore pattern, AudioAsset asset, AudioClipParams p, SessionDocument.ClipSettings settings)
+        {
+            if (pinnedAssets.TryGetValue(pattern, out var old) && !ReferenceEquals(old, asset))
+            {
+                old.PinClip(pattern, null, null);
+                pinnedAssets.Remove(pattern);
+            }
+            if (asset == null || p == null || !StreamingPolicy.ShouldStream(asset.Frames, asset.Channels)) return;
+            long head = Math.Max(1024, (long)(StreamingPolicy.HeadMilliseconds / 1000.0 * p.Source.SampleRate));
+            var ranges = new List<(long From, long To)>();
+            void At(double sample)
+            {
+                if (!double.IsFinite(sample) || Math.Abs(sample) > 1e12) return;
+                ranges.Add(((long)sample - 4096, (long)sample + head));
+            }
+            double tpb = Math.Max(1, buzz.TPB);
+            At(p.Map.SampleAt(0));
+            if (settings != null)
+            {
+                At(p.Map.SampleAt(settings.Start / tpb));
+                At(p.Map.SampleAt(settings.LoopStart / tpb));
+            }
+            foreach (var m in p.Map.Markers.Take(48)) At(m.Sample);
+            asset.PinClip(pattern, p.Source, ranges);
+            pinnedAssets[pattern] = asset;
         }
     }
 

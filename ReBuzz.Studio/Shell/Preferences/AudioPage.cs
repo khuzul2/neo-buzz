@@ -12,6 +12,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using ReBuzz.Audio;
+using ReBuzz.Core.AudioLibrary;
 using ReBuzz.Host;
 using ReBuzz.Core;
 using ReBuzz.Platform;
@@ -38,6 +39,12 @@ namespace ReBuzz.Studio.Shell.Preferences
         readonly IRegistryEx registry;
         readonly ComboBox output = Choices(), input = Choices(), rate = Choices(220), buffer = Choices(220);
         readonly ComboBox threads = Choices(120), algorithm = Choices(220);
+        // Disk streaming (neo-audio.md, NA1b): not registry settings (a small file in the cache folder), so they are not in the agent's list.
+        static readonly int[] StreamThresholdsMb = { 4, 8, 16, 32, 64, 0 };
+        static readonly int[] CacheLimitsGb = { 1, 2, 4, 8, 16, 64 };
+        readonly ComboBox streamThreshold = Choices(220), cacheLimit = Choices(220);
+        readonly TextBlock cacheText = new TextBlock { TextWrapping = Avalonia.Media.TextWrapping.Wrap };
+        readonly Button clearCache = new Button { Content = "Clear" };
         readonly TextBlock status = new TextBlock { TextWrapping = Avalonia.Media.TextWrapping.Wrap };
         readonly TextBlock missing;
         Button asioPanel;
@@ -77,6 +84,15 @@ namespace ReBuzz.Studio.Shell.Preferences
             Row("Render threads", threads, "With Multithreading on (Advanced ▸ Engine flags). Takes effect after a restart.");
             Row("Work algorithm", algorithm, $"The default is {Algorithms[DefaultAlgorithm]}. Takes effect after a restart.");
 
+            Heading("Disk streaming");
+            Row("Audio cache", new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 8, Children = { cacheText, clearCache } },
+                "Long audio is decoded once into the cache folder and read from there while it plays, so it does not sit in memory; the cache is shared by songs and made again from the song when a file is lost. Clear removes what this song is not using.");
+            Row("Stream audio longer than", streamThreshold, "Shorter audio stays in memory. Takes effect for audio added after the change.");
+            Row("Cache size limit", cacheLimit, "The oldest files this song is not using go first.");
+            clearCache.Click += (s, e) => { AudioCache.Clear(); ShowCache(); };
+            OnPick(streamThreshold, i => { StreamingPolicy.ThresholdBytes = StreamThresholdsMb[i] == 0 ? long.MaxValue / 4 : StreamThresholdsMb[i] * 1024L * 1024; StreamingPolicy.Save(); });
+            OnPick(cacheLimit, i => { StreamingPolicy.CacheLimitBytes = CacheLimitsGb[i] * 1024L * 1024 * 1024; StreamingPolicy.Save(); AudioCache.Trim(); ShowCache(); });
+
             OnPick(output, i => Choose("audio.Device", "AudioDriver", outputs[i], "Settings"));
             OnPick(input, i => Choose("audio.Input", "Input", inputs[i], PortAudioDriver.Section));
             OnPick(rate, i => Choose("audio.SampleRate", "SampleRate", Rates[i], PortAudioDriver.Section));
@@ -95,6 +111,20 @@ namespace ReBuzz.Studio.Shell.Preferences
         }
 
         public ComboBox OutputBox => output;
+        public TextBlock CacheText => cacheText;
+        public Button ClearCacheButton => clearCache;
+        public ComboBox StreamThresholdBox => streamThreshold;
+        public ComboBox CacheLimitBox => cacheLimit;
+
+        /// <summary>The cache's size, its files, and what the song streams.</summary>
+        void ShowCache()
+        {
+            long bytes = AudioCache.SizeBytes();
+            int used = ReBuzz.Core.AudioLibrary.StreamPrefetcher.OpenIds().Count;
+            string size = bytes >= 1L << 30 ? $"{bytes / (double)(1L << 30):0.0} GB" : $"{bytes / (double)(1L << 20):0.#} MB";
+            cacheText.Text = $"{size} in {AudioCache.FileCount()} file{(AudioCache.FileCount() == 1 ? "" : "s")}, {used} in use by this song; " +
+                $"{StreamStats.Underruns} underrun{(StreamStats.Underruns == 1 ? "" : "s")} since the last reset.";
+        }
         public ComboBox InputBox => input;
         public ComboBox RateBox => rate;
         public ComboBox BufferBox => buffer;
@@ -151,6 +181,13 @@ namespace ReBuzz.Studio.Shell.Preferences
                 int savedBuffer = registry.Read("BufferSize", DefaultBuffer, PortAudioDriver.Section);
                 buffer.ItemsSource = Buffers.Select(b => $"{b} frames ({b * 1000.0 / msRate:0.#} ms)").ToList();
                 buffer.SelectedIndex = Array.IndexOf(Buffers, savedBuffer) is int bi && bi >= 0 ? bi : Array.IndexOf(Buffers, DefaultBuffer);
+
+                streamThreshold.ItemsSource = StreamThresholdsMb.Select(m => m == 0 ? "Never (keep all audio in memory)" : $"{m} MB of audio (about {m * 1048576 / 8 / 48000} s of stereo)").ToList();
+                long thresholdMb = StreamingPolicy.ThresholdBytes / (1024 * 1024);
+                streamThreshold.SelectedIndex = StreamingPolicy.ThresholdBytes > 1L << 40 ? StreamThresholdsMb.Length - 1 : Math.Max(0, Array.IndexOf(StreamThresholdsMb, (int)thresholdMb));
+                cacheLimit.ItemsSource = CacheLimitsGb.Select(g => $"{g} GB").ToList();
+                cacheLimit.SelectedIndex = Math.Max(0, Array.IndexOf(CacheLimitsGb, (int)(StreamingPolicy.CacheLimitBytes >> 30)));
+                ShowCache();
 
                 threads.ItemsSource = Enumerable.Range(1, 8).Select(n => n.ToString()).ToList();
                 threads.SelectedIndex = Math.Clamp(registry.Read("AudioThreads", DefaultThreads, "Settings"), 1, 8) - 1;

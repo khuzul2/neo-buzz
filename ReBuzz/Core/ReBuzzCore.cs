@@ -2448,6 +2448,7 @@ namespace ReBuzz.Core
             System.Threading.Interlocked.Exchange(ref DriverResets, 0);
             System.Threading.Interlocked.Exchange(ref DeadlineMisses, 0);
             System.Threading.Interlocked.Exchange(ref DeadlineWorstOverrunUs, 0);
+            AudioLibrary.StreamStats.Reset();           // NA1b: blocks a streamed clip played silence
         }
 
         public MachineCore CreateMaster()

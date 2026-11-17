@@ -8,6 +8,7 @@
 // nothing clicks. A new setting that leaves the audio where it is (gain, transposition) goes on.
 
 using System;
+using ReBuzz.Core.AudioLibrary;
 
 namespace ReBuzz.Core.Clips
 {
@@ -18,6 +19,8 @@ namespace ReBuzz.Core.Clips
         /// <summary>A Beats slice that runs out loops at most this long a stretch of its end.</summary>
         public const double SliceLoopSeconds = 0.08;
 
+        readonly StreamHint hint = StreamPrefetcher.NewHint();     // what the prefetch thread is told of this voice (neo-audio.md, NA1b)
+        readonly StreamHint hintAhead = StreamPrefetcher.NewHint(); // and, from the UI thread, where a queued launch will start
         volatile PhaseVocoder vocoder;      // made on the UI thread when a clip in Complex mode is given (Prepare)
         volatile ProVoice pro;              // likewise for Pro (null when the native library is missing: the clip plays as Complex)
         bool proRestart;                    // Pro: the next block starts the stretcher from its beat
@@ -65,7 +68,7 @@ namespace ReBuzz.Core.Clips
                 vocoder = new PhaseVocoder();
             if (p?.Mode == WarpMode.Pro)
             {
-                bool mono = ReferenceEquals(p.Source.Left, p.Source.Right);
+                bool mono = p.Source.IsMono;
                 var have = pro;
                 if (have == null || have.Mono != mono)
                 {
@@ -112,6 +115,8 @@ namespace ReBuzz.Core.Clips
             }
             double rate = p.Source.SampleRate / (double)Math.Max(1, outputRate);
             ProVoice.NoteTempo(beatsPerSample, outputRate);
+            var stream = p.Source.Stream;                  // a streamed source: what is not in memory yet is silence, and is counted
+            long missedBefore = stream != null ? stream.MissedSamples : 0;
             var fading = pro;
             if (fading != null && fading.Fading) fading.RenderFading(left, right, offset, count);       // what a jump or a stop left sounding
             switch (Effective(p))
@@ -146,6 +151,49 @@ namespace ReBuzz.Core.Clips
             }
             time += count;
             expected = beat + count * beatsPerSample;
+            if (stream != null)
+            {
+                if (stream.MissedSamples != missedBefore) stream.NoteUnderrun();
+                PublishHint(p, beat, beatsPerSample, outputRate, count);
+            }
+        }
+
+        /// <summary>
+        /// Streamed audio: tells the prefetch thread where this voice reads and how far ahead it will (the window is the voice's playing time
+        /// <see cref="StreamingPolicy.ReadAheadSeconds"/> at the speed it reads, with the reach of the mode: Pro reads up to its input
+        /// latency and chunk ahead of the clip's beat, Complex a frame around it). Two windows: where the voice actually read (Beats plays a slice
+        /// from its own start), and where the warp map puts the beat.
+        /// </summary>
+        void PublishHint(AudioClipParams p, double beat, double beatsPerSample, int outputRate, int count)
+        {
+            double s0 = p.Map.SampleAt(beat), s1 = p.Map.SampleAt(beat + count * beatsPerSample);
+            double mapStep = Math.Abs(s1 - s0) / Math.Max(1, count);
+            double step = !double.IsNaN(lastSource) && lastStep > 0 && double.IsFinite(lastStep) ? lastStep : mapStep;
+            if (!double.IsFinite(s0) || !double.IsFinite(s1) || !double.IsFinite(step) || Math.Abs(s0) > 1e12 || Math.Abs(s1) > 1e12) return;
+            double horizon = StreamingPolicy.ReadAheadSeconds * outputRate;
+            long behind = Math.Max(4096, (long)(0.2 * p.Source.SampleRate));
+            long guard = Effective(p) == WarpMode.Pro ? ProVoice.MaxIn + 4096 : Effective(p) == WarpMode.Complex ? 4 * PhaseVocoder.Size : 64;
+            double cap = 30.0 * p.Source.SampleRate;                    // never ask for more than 30 seconds of source
+            long aheadActual = (long)Math.Min(cap, step * horizon) + guard;
+            long aheadMap = (long)Math.Min(cap, mapStep * horizon) + guard;
+            long at = !double.IsNaN(lastSource) && Math.Abs(lastSource) < 1e12 ? (long)lastSource : (long)s1;
+            long lo = (long)Math.Min(s0, s1), hi = (long)Math.Max(s0, s1);
+            p.Source.Hint(hint, at, at - behind, at + aheadActual, lo - behind, hi + aheadMap);
+        }
+
+        /// <summary>
+        /// UI thread: a clip is about to start at <paramref name="beat"/> (a launch queued for the next bar, the arrangement's lookahead): the
+        /// prefetch thread reads where it will start, ahead of the window the pins hold.
+        /// </summary>
+        public void Anticipate(AudioClipParams p, double beat, double beatsPerSample, int outputRate)
+        {
+            if (p == null || !p.Source.IsStreaming || !(beatsPerSample > 0) || outputRate <= 0) return;
+            double s = p.Map.SampleAt(beat);
+            double step = Math.Abs(p.Map.SamplesPerBeat(beat) * beatsPerSample);
+            if (!double.IsFinite(s) || !double.IsFinite(step) || Math.Abs(s) > 1e12) return;
+            long behind = (long)(0.1 * p.Source.SampleRate);
+            long ahead = (long)Math.Min(30.0 * p.Source.SampleRate, step * StreamingPolicy.ReadAheadSeconds * outputRate) + ProVoice.MaxIn + 4096;
+            p.Source.Hint(hintAhead, (long)s, (long)s - behind, (long)s + ahead, 0, 0);
         }
 
         /// <summary>Whether new params of the same audio and mode leave it where it plays at this beat.</summary>
@@ -165,6 +213,7 @@ namespace ReBuzz.Core.Clips
         /// <summary>The voice is silent at once, with no fade (a crossfade tail that has faded to nothing by its own envelope).</summary>
         public void Silence()
         {
+            hint.Clear();
             sounding = false;
             expected = double.NaN;
             tail.Left = 0;
@@ -179,6 +228,7 @@ namespace ReBuzz.Core.Clips
         {
             if (sounding)
             {
+                hint.Clear();
                 BeginTail();
                 pro?.BeginFade();
                 sounding = false;

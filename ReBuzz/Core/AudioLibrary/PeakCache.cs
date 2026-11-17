@@ -22,6 +22,11 @@ namespace ReBuzz.Core.AudioLibrary
 
         readonly float[][] lows, highs;
         readonly AudioSource source;
+        const int RangeBlock = 4096;
+        readonly object rangeGate = new object();
+        float[] rangeL, rangeR;
+        long rangeAt = -1;
+        int rangeCount;
 
         PeakCache(AudioSource source, float[][] lows, float[][] highs)
         {
@@ -46,26 +51,37 @@ namespace ReBuzz.Core.AudioLibrary
             int blocks = (int)((n + BaseBlock - 1) / BaseBlock);
             var lo = new float[blocks];
             var hi = new float[blocks];
-            bool mono = ReferenceEquals(source.Left, source.Right);
-            for (int b = 0; b < blocks; b++)
+            bool mono = source.IsMono;
+            // Read in pieces (exact: from memory or the cache file), 4096 blocks at a time.
+            const int PieceBlocks = 4096;
+            var gl = new float[PieceBlocks * BaseBlock];
+            var gr = mono ? gl : new float[PieceBlocks * BaseBlock];
+            for (int b0 = 0; b0 < blocks; b0 += PieceBlocks)
             {
-                if ((b & 1023) == 0) cancel.ThrowIfCancellationRequested();
-                int from = b * BaseBlock, to = (int)Math.Min(n, from + (long)BaseBlock);
-                float mn = float.MaxValue, mx = float.MinValue;
-                for (int i = from; i < to; i++)
+                cancel.ThrowIfCancellationRequested();
+                long start = (long)b0 * BaseBlock;
+                int got = (int)Math.Min(gl.Length, n - start);
+                source.CopyExact(0, start, gl.AsSpan(0, got));
+                if (!mono) source.CopyExact(1, start, gr.AsSpan(0, got));
+                for (int b = b0; b < Math.Min(blocks, b0 + PieceBlocks); b++)
                 {
-                    float l = source.Left[i];
-                    if (l < mn) mn = l;
-                    if (l > mx) mx = l;
-                    if (!mono)
+                    int from = (b - b0) * BaseBlock, to = Math.Min(got, from + BaseBlock);
+                    float mn = float.MaxValue, mx = float.MinValue;
+                    for (int i = from; i < to; i++)
                     {
-                        float r = source.Right[i];
-                        if (r < mn) mn = r;
-                        if (r > mx) mx = r;
+                        float l = gl[i];
+                        if (l < mn) mn = l;
+                        if (l > mx) mx = l;
+                        if (!mono)
+                        {
+                            float r = gr[i];
+                            if (r < mn) mn = r;
+                            if (r > mx) mx = r;
+                        }
                     }
+                    lo[b] = mn;
+                    hi[b] = mx;
                 }
-                lo[b] = mn;
-                hi[b] = mx;
             }
             lowList.Add(lo);
             highList.Add(hi);
@@ -120,12 +136,25 @@ namespace ReBuzz.Core.AudioLibrary
             long span = b - a + 1;
             if (span <= BaseBlock * 2)
             {
-                for (long i = a; i <= b; i++)
+                lock (rangeGate)
                 {
-                    float l = source.Left[i], r = source.Right[i];
-                    float lo = Math.Min(l, r), hi = Math.Max(l, r);
-                    if (lo < min) min = lo;
-                    if (hi > max) max = hi;
+                    // Exact reads, a few thousand samples at a time (a zoomed waveform asks for neighbours one after another).
+                    if (rangeAt < 0 || a < rangeAt || b >= rangeAt + rangeCount)
+                    {
+                        rangeL ??= new float[RangeBlock];
+                        rangeR ??= new float[RangeBlock];
+                        rangeAt = Math.Max(0, a - 256);
+                        rangeCount = (int)Math.Min(RangeBlock, n - rangeAt);
+                        source.CopyExact(0, rangeAt, rangeL.AsSpan(0, rangeCount));
+                        source.CopyExact(1, rangeAt, rangeR.AsSpan(0, rangeCount));
+                    }
+                    for (long i = a; i <= b; i++)
+                    {
+                        float l = rangeL[i - rangeAt], r = rangeR[i - rangeAt];
+                        float lo = Math.Min(l, r), hi = Math.Max(l, r);
+                        if (lo < min) min = lo;
+                        if (hi > max) max = hi;
+                    }
                 }
                 if (min > max) min = max = 0;
                 return;

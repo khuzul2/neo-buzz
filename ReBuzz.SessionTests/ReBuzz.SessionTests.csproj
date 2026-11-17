@@ -50,6 +50,8 @@
     <Compile Include="..\ReBuzz\Core\Clips\PhaseVocoder.cs" Link="Engine\PhaseVocoder.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\NeoStretch.cs" Link="Engine\NeoStretch.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\AudioAsset.cs" Link="Engine\AudioAsset.cs" />
+    <Compile Include="..\ReBuzz\Core\AudioLibrary\AudioCache.cs" Link="Engine\AudioCache.cs" />
+    <Compile Include="..\ReBuzz\Core\AudioLibrary\StreamedAudio.cs" Link="Engine\StreamedAudio.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\PeakCache.cs" Link="Engine\PeakCache.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\Resampler.cs" Link="Engine\Resampler.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\AudioImporter.cs" Link="Engine\AudioImporter.cs" />

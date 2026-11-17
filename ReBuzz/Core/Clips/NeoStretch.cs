@@ -293,8 +293,8 @@ namespace ReBuzz.Core.Clips
                 var s = st.S;
                 Plan(s, p, st.ReqBeat, st.ReqBps, out long from, out int length);
                 SetPitch(s, p, st.ReqRate);
-                Copy(p.Source.Left, from, length, scratchL);
-                if (!mono) Copy(p.Source.Right, from, length, scratchR);
+                p.Source.CopyExact(0, from, scratchL.AsSpan(0, length));
+                if (!mono) p.Source.CopyExact(1, from, scratchR.AsSpan(0, length));
                 if (s.Seek(scratchL, mono ? scratchL : scratchR, length))
                 {
                     st.Source = p.Source;
@@ -538,24 +538,9 @@ namespace ReBuzz.Core.Clips
         /// <summary>Source samples [<paramref name="from"/>, +<paramref name="n"/>) into the input scratch, silence outside the audio.</summary>
         void Fill(AudioSource src, long from, int n)
         {
-            Copy(src.Left, from, n, inL);
-            if (!mono) Copy(src.Right, from, n, inR);
-        }
-
-        static void Copy(float[] from, long start, int n, float[] to)
-        {
             if (n <= 0) return;
-            long end = start + n;
-            if (start >= from.Length || end <= 0)
-            {
-                Array.Clear(to, 0, n);
-                return;
-            }
-            int lead = (int)Math.Max(0, -start);
-            int tail = (int)Math.Max(0, end - from.Length);
-            if (lead > 0) Array.Clear(to, 0, lead);
-            Array.Copy(from, start + lead, to, lead, n - lead - tail);
-            if (tail > 0) Array.Clear(to, n - tail, tail);
+            src.CopyTo(0, from, inL.AsSpan(0, n));
+            if (!mono) src.CopyTo(1, from, inR.AsSpan(0, n));
         }
 
         /// <summary>A source position as a sample index: nothing a clip could play is beyond 1e12.</summary>

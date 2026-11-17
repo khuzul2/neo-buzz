@@ -27,6 +27,7 @@ namespace ReBuzz.Core.Clips
         /// </summary>
         public static List<double> Onsets(AudioSource source)
         {
+            source = source.ForAnalysis();           // exact reads, whether the audio is in memory or in the cache file (NA1b)
             var flux = SpectralFlux(source);
             var onsets = new List<double>();
             if (flux.Length < 3) return onsets;
@@ -133,6 +134,7 @@ namespace ReBuzz.Core.Clips
         public static (double Bpm, double Beats) Tempo(AudioSource source, int beatsPerBar, out bool found)
         {
             found = false;
+            source = source.ForAnalysis();
             double seconds = source.Seconds;
             if (seconds <= 0) return (120, 1);
             beatsPerBar = Math.Max(1, beatsPerBar);

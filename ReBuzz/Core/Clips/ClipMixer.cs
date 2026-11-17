@@ -29,6 +29,12 @@ namespace ReBuzz.Core.Clips
         /// <summary>Audio thread only.</summary>
         public ClipVoice Voice { get; } = new ClipVoice();
 
+        /// <summary>
+        /// A launch of this clip is queued (Session quantization gives lead time): a streamed clip's audio from <paramref name="beat"/> is read
+        /// ahead now. Any thread but the audio thread's block.
+        /// </summary>
+        public void Anticipate(double beat, double beatsPerSample, int sampleRate) => Voice.Anticipate(current, beat, beatsPerSample, sampleRate);
+
         // Audio thread only (NA2): where the clip's beat goes on from, and how much of its crossfade tail is left (beats).
         internal double NextBeat;
         internal double TailLeft;

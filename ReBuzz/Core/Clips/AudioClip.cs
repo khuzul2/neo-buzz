@@ -6,21 +6,71 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ReBuzz.Core.AudioLibrary;
 
 namespace ReBuzz.Core.Clips
 {
-    /// <summary>Audio, as a clip plays it: two channels of floats (-1 to 1) at a sample rate. Never modified.</summary>
+    /// <summary>
+    /// Audio, as a clip plays it: two channels of floats (-1 to 1) at a sample rate. Never modified. The samples are in memory, or (neo-audio.md,
+    /// NA1b) read from the decoded cache file through the prefetch thread: the same object switches from one to the other while it plays, so
+    /// nothing that holds it changes. <see cref="L"/>, <see cref="R"/>, <see cref="Read"/> and <see cref="CopyTo"/> are the audio thread's reads
+    /// (no I/O, no lock; a sample not in memory is silence and is counted); <see cref="CopyExact"/> and <see cref="ForAnalysis"/> are for every
+    /// other thread (they may wait for the disk).
+    /// </summary>
     internal sealed class AudioSource
     {
+        volatile float[] left, right;           // null once the audio is read from the stream only (or in a reversed view)
+        volatile StreamedAudio stream;          // the cache file, once there is one
+        readonly AudioSource parent;            // a reversed view of another source: sample i is the parent's Length - 1 - i
+        readonly int length;
+        readonly bool mono;
+        readonly AudioSource exactOf;           // an exact view (analysis, peaks): reads blocks through exactOf.CopyExact
+        float[] blockL, blockR;
+        long blockAt = -1;
+        int blockCount;
+
         public AudioSource(float[] left, float[] right, int sampleRate)
         {
             // Audio that came from a file or a recording can hold NaN or infinity (a damaged float file): one such
             // sample would poison the phase vocoder's state for good, so they are silenced here, once, off the audio thread.
-            bool mono = right == null || ReferenceEquals(left, right);
-            Left = Clean(left ?? Array.Empty<float>());
-            Right = mono ? Left : Clean(right);
+            mono = right == null || ReferenceEquals(left, right);
+            this.left = Clean(left ?? Array.Empty<float>());
+            this.right = mono ? this.left : Clean(right);
+            length = this.left.Length;
             SampleRate = Math.Max(1, sampleRate);
         }
+
+        AudioSource(StreamedAudio s)
+        {
+            stream = s;
+            length = (int)Math.Min(int.MaxValue, s.Frames);
+            mono = s.Channels < 2;
+            SampleRate = Math.Max(1, s.SampleRate);
+        }
+
+        AudioSource(AudioSource mirrorOf, bool mirror)
+        {
+            parent = mirrorOf;
+            length = mirrorOf.length;
+            mono = mirrorOf.mono;
+            SampleRate = mirrorOf.SampleRate;
+        }
+
+        AudioSource(float[] l, float[] r, int rate, bool unchecked_)
+        {
+            left = l; right = r; mono = ReferenceEquals(l, r); length = l.Length; SampleRate = rate;
+        }
+
+        AudioSource(AudioSource exact)
+        {
+            exactOf = exact;
+            length = exact.length;
+            mono = exact.mono;
+            SampleRate = exact.SampleRate;
+        }
+
+        /// <summary>Audio that is only in a cache file (a song opened with its cache): nothing in memory.</summary>
+        internal static AudioSource FromStream(StreamedAudio s) => new AudioSource(s);
 
         /// <summary>The array itself when every sample is finite, else a copy with the others silenced.</summary>
         static float[] Clean(float[] x)
@@ -35,20 +85,65 @@ namespace ReBuzz.Core.Clips
             return y;
         }
 
-        public float[] Left { get; }
-        public float[] Right { get; }
+        /// <summary>The samples as arrays (for code that needs them all; a streamed source makes a copy, which is its whole size).</summary>
+        public float[] Left => left ?? ToArrays().Left;
+        public float[] Right => right ?? ToArrays().Right;
+
         public int SampleRate { get; }
-        public int Length => Left.Length;
+        public int Length => length;
         public double Seconds => Length / (double)SampleRate;
+        public bool IsMono => mono;
+
+        /// <summary>The cache file this reads from (or will), or null while the audio is only in memory.</summary>
+        public StreamedAudio Stream => parent != null ? parent.Stream : stream;
+
+        /// <summary>The audio is in memory as arrays (reads do not go through pages).</summary>
+        public bool InMemory => parent != null ? parent.InMemory : left != null;
+
+        /// <summary>A cache file is attached: voices tell the prefetch thread where they read.</summary>
+        public bool IsStreaming => Stream != null;
+
+        /// <summary>This source plays the audio backwards (a view of another).</summary>
+        public bool IsReversedView => parent != null;
 
         /// <summary>
-        /// The same audio played backwards (a copy; made off the audio thread). Sample <c>i</c> of the original is sample <c>Length - 1 - i</c> of
-        /// the copy, so a clip's reverse plays this with a mirrored map (<see cref="WarpMap.Mirrored"/>).
+        /// Attaches the cache file the audio is also in. The samples stay in memory until <see cref="DropMemory"/>, so nothing changes for what
+        /// plays; the prefetch thread starts reading what the voices will need.
+        /// </summary>
+        internal void Attach(StreamedAudio s) => stream = s;
+
+        /// <summary>The samples in memory are let go: reads are pages from here on. Only once the pages that are wanted are resident.</summary>
+        internal void DropMemory()
+        {
+            if (stream == null) return;
+            left = null;
+            right = null;
+        }
+
+        /// <summary>Bytes of floats this holds in memory (0 once streamed; a reversed view holds none).</summary>
+        public long MemoryBytes
+        {
+            get
+            {
+                if (parent != null || exactOf != null) return 0;
+                var a = left;
+                if (a == null) return 0;
+                return (long)a.Length * 4 * (mono ? 1 : 2);
+            }
+        }
+
+        /// <summary>
+        /// The same audio played backwards. Sample <c>i</c> of the original is sample <c>Length - 1 - i</c> of the result, so a clip's reverse plays
+        /// this with a mirrored map (<see cref="WarpMap.Mirrored"/>). A short source is copied; one that would stream is a view of it (a copy would
+        /// be as big as the audio), so it follows the audio into the cache.
         /// </summary>
         public AudioSource Reversed()
         {
-            bool mono = ReferenceEquals(Left, Right);
-            var l = (float[])Left.Clone();
+            if (parent != null) return parent;
+            if (stream != null || StreamingPolicy.ShouldStream(length, mono ? 1 : 2))
+                return new AudioSource(this, true);
+            var a = Left;
+            var l = (float[])a.Clone();
             Array.Reverse(l);
             if (mono) return new AudioSource(l, l, SampleRate);
             var r = (float[])Right.Clone();
@@ -56,12 +151,36 @@ namespace ReBuzz.Core.Clips
             return new AudioSource(l, r, SampleRate);
         }
 
-        /// <summary>A sample, 0 outside the audio.</summary>
-        public float L(long i) => i >= 0 && i < Left.Length ? Left[i] : 0f;
-        public float R(long i) => i >= 0 && i < Right.Length ? Right[i] : 0f;
+        // ------------------------------------------------------------------ the audio thread's reads
+
+        /// <summary>A sample, 0 outside the audio (and for audio not in memory yet, which is counted).</summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public float L(long i)
+        {
+            var a = left;
+            if (a != null) return (ulong)i < (ulong)a.Length ? a[i] : 0f;
+            return Slow(0, i);
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public float R(long i)
+        {
+            var a = right;
+            if (a != null) return (ulong)i < (ulong)a.Length ? a[i] : 0f;
+            return Slow(1, i);
+        }
+
+        float Slow(int channel, long i)
+        {
+            if ((ulong)i >= (ulong)length) return 0f;
+            if (parent != null) return channel == 0 ? parent.L(length - 1 - i) : parent.R(length - 1 - i);
+            if (exactOf != null) return Block(channel, i);
+            var s = stream;
+            return s == null ? 0f : s.Sample(channel, i);
+        }
 
         /// <summary>Mono, for analysis.</summary>
-        public float Mono(long i) => i >= 0 && i < Left.Length ? 0.5f * (Left[i] + Right[i]) : 0f;
+        public float Mono(long i) => i >= 0 && i < length ? 0.5f * (L(i) + R(i)) : 0f;
 
         /// <summary>
         /// A sample between samples (cubic Hermite through the four around it), both channels.
@@ -78,7 +197,7 @@ namespace ReBuzz.Core.Clips
             long i = (long)Math.Floor(position);
             float t = (float)(position - i);
             left = Hermite(L(i - 1), L(i), L(i + 1), L(i + 2), t);
-            right = ReferenceEquals(Right, Left) ? left : Hermite(R(i - 1), R(i), R(i + 1), R(i + 2), t);
+            right = mono ? left : Hermite(R(i - 1), R(i), R(i + 1), R(i + 2), t);
         }
 
         static float Hermite(float y0, float y1, float y2, float y3, float t)
@@ -88,6 +207,164 @@ namespace ReBuzz.Core.Clips
             float c3 = 0.5f * (y3 - y0) + 1.5f * (y1 - y2);
             return ((c3 * t + c2) * t + c1) * t + y1;
         }
+
+        /// <summary>
+        /// Copies samples of a channel (0 left, 1 right) from <paramref name="start"/>: silence outside the audio and, for a streamed source, for
+        /// what is not in memory (counted). The audio thread's bulk read.
+        /// </summary>
+        public void CopyTo(int channel, long start, Span<float> destination)
+        {
+            var a = channel > 0 ? right : left;
+            if (a != null)
+            {
+                CopyArray(a, start, destination);
+                return;
+            }
+            if (parent != null || exactOf != null)
+            {
+                for (int k = 0; k < destination.Length; k++) destination[k] = channel > 0 ? R(start + k) : L(start + k);
+                return;
+            }
+            var s = stream;
+            if (s == null) destination.Clear();
+            else s.CopyTo(channel, start, destination);
+        }
+
+        static void CopyArray(float[] from, long start, Span<float> to)
+        {
+            int n = to.Length;
+            if (n <= 0) return;
+            long end = start + n;
+            if (start >= from.Length || end <= 0)
+            {
+                to.Clear();
+                return;
+            }
+            int lead = (int)Math.Max(0, -start);
+            int tail = (int)Math.Max(0, end - from.Length);
+            if (lead > 0) to.Slice(0, lead).Clear();
+            from.AsSpan((int)(start + lead), n - lead - tail).CopyTo(to.Slice(lead, n - lead - tail));
+            if (tail > 0) to.Slice(n - tail).Clear();
+        }
+
+        // ------------------------------------------------------------------ every other thread's reads
+
+        /// <summary>
+        /// Copies samples exactly (from the cache file if they are not in memory; this may wait for the disk, so not the audio thread).
+        /// Silence outside the audio.
+        /// </summary>
+        public void CopyExact(int channel, long start, Span<float> destination)
+        {
+            var a = channel > 0 ? right : left;
+            if (a != null)
+            {
+                CopyArray(a, start, destination);
+                return;
+            }
+            if (parent != null)
+            {
+                // The parent's range read backwards: [start, start + n) of this is [length - start - n, length - start) of the parent.
+                int n = destination.Length;
+                long from = length - start - n;
+                var tmp = new float[n];
+                parent.CopyExact(channel, from, tmp);
+                for (int k = 0; k < n; k++) destination[k] = tmp[n - 1 - k];
+                return;
+            }
+            if (exactOf != null)
+            {
+                exactOf.CopyExact(channel, start, destination);
+                return;
+            }
+            var s = stream;
+            if (s == null) destination.Clear();
+            else s.ReadExact(channel, start, destination);
+        }
+
+        /// <summary>The whole audio as arrays (a copy of its size; a mono source gives one array twice).</summary>
+        public (float[] Left, float[] Right) ToArrays()
+        {
+            var l = new float[length];
+            CopyExact(0, 0, l);
+            if (mono) return (l, l);
+            var r = new float[length];
+            CopyExact(1, 0, r);
+            return (l, r);
+        }
+
+        /// <summary>
+        /// A source for code that reads the whole audio off the audio thread (analysis, peaks, saving): the same samples, always exact. For a source in
+        /// memory it shares the arrays (so letting the memory go meanwhile does not touch it); for a streamed one it reads blocks from the file.
+        /// Not for several threads at once (it holds a block).
+        /// </summary>
+        public AudioSource ForAnalysis()
+        {
+            if (exactOf != null) return this;
+            if (parent != null) return new AudioSource(parent.ForAnalysis(), true);
+            var a = left;
+            if (a != null) return new AudioSource(a, right, SampleRate, true);
+            return new AudioSource(this);
+        }
+
+        const int BlockFrames = 16384;
+
+        float Block(int channel, long i)
+        {
+            {
+                if (blockAt < 0 || i < blockAt || i >= blockAt + blockCount)
+                {
+                    blockL ??= new float[BlockFrames];
+                    if (!mono) blockR ??= new float[BlockFrames];
+                    long at = i - i % BlockFrames;
+                    blockCount = (int)Math.Min(BlockFrames, length - at);
+                    exactOf.CopyExact(0, at, blockL.AsSpan(0, blockCount));
+                    if (!mono) exactOf.CopyExact(1, at, blockR.AsSpan(0, blockCount));
+                    blockAt = at;
+                }
+                int k = (int)(i - blockAt);
+                return channel > 0 && !mono ? blockR[k] : blockL[k];
+            }
+        }
+
+        // ------------------------------------------------------------------ for the prefetch thread
+
+        /// <summary>
+        /// A voice reading this source says where: it is at <paramref name="at"/> and wants [aFrom, aTo) and [bFrom, bTo) (frames of this source,
+        /// either range may be empty). Mapped to the cache file (a reversed view's frames are mirrored). Audio thread, no lock.
+        /// </summary>
+        public void Hint(StreamHint hint, long at, long aFrom, long aTo, long bFrom, long bTo)
+        {
+            var s = Stream;
+            if (s == null)
+            {
+                hint.Clear();
+                return;
+            }
+            if (parent != null)
+            {
+                long m = length - 1;
+                hint.Set(s, m - at, m + 1 - aTo, m + 1 - aFrom, m + 1 - bTo, m + 1 - bFrom);
+                return;
+            }
+            hint.Set(s, at, aFrom, aTo, bFrom, bTo);
+        }
+
+        /// <summary>
+        /// The frames of these ranges (of this source) stay in memory while <paramref name="owner"/> holds them: the starts of a clip's loop and
+        /// markers, so a launch does not wait for the disk. Replaces the owner's earlier ranges.
+        /// </summary>
+        public void Pin(object owner, IReadOnlyList<(long From, long To)> ranges)
+        {
+            var s = Stream;
+            if (s == null) return;
+            if (parent != null && ranges != null)
+            {
+                long m = length;
+                ranges = ranges.Select(r => (m - r.To, m - r.From)).ToList();
+            }
+            s.SetPins(owner, ranges);
+        }
+
     }
 
     /// <summary>A warp marker: this sample of the audio is heard on this beat of the clip.</summary>

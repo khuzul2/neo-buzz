@@ -254,8 +254,22 @@ namespace ReBuzz.Core.Session
                 }
             }
             if (!stopped)
+            {
                 StartTransportIfStopped();
+                AnticipateAudio(pat, options);
+            }
             RaiseTrackStateChanged(seq);
+        }
+
+        /// <summary>A queued launch of an audio clip that streams from disk: its first audio is read ahead during the quantization wait (neo-audio.md, NA1b).</summary>
+        void AnticipateAudio(PatternCore pat, LaunchOptions options)
+        {
+            var clip = pat?.SessionAudio;
+            var mi = ReBuzzCore.masterInfo;
+            if (clip?.Params == null || mi == null) return;
+            int samplesPerTick = mi.SamplesPerTick > 0 ? mi.SamplesPerTick : 1;
+            int ticksPerBeat = mi.TicksPerBeat > 0 ? mi.TicksPerBeat : 4;
+            clip.Anticipate(Math.Max(0, options?.StartOffset ?? 0) / (double)ticksPerBeat, 1.0 / ((double)samplesPerTick * ticksPerBeat), mi.SamplesPerSec);
         }
 
         /// <summary>Release of the clip's launch control (0.5): Gate stops it, Repeat stops repeating.</summary>

@@ -87,11 +87,20 @@ namespace ReBuzz.Agent
                     ["sample_rate"] = i.Rate,
                     ["channels"] = i.Channels,
                     ["beats"] = Math.Round(i.Beats, 3),
+                    // NA1b: whether the audio is read from the decoded cache file (long audio is) and how well that is going.
+                    ["storage"] = Storage(layout.ViewOf(p)?.Asset),
+                    ["streams"] = layout.ViewOf(p)?.Asset is { Storage: AssetStorage.Streaming or AssetStorage.Repairing },
+                    ["cache_progress"] = Math.Round(layout.ViewOf(p)?.Asset?.CacheProgress ?? 0, 3),
+                    ["underruns"] = layout.ViewOf(p)?.Asset?.StreamStats.Underruns ?? 0,
+                    ["missed_samples"] = layout.ViewOf(p)?.Asset?.StreamStats.Missed ?? 0,
+                    ["resident_mb"] = Math.Round((layout.ViewOf(p)?.Asset?.ResidentBytes ?? 0) / 1048576.0, 2),
                 };
             else
                 o["audio"] = JsonValue.Create((string)null);
             return o;
         }
+
+        static string Storage(ReBuzz.Core.AudioLibrary.AudioAsset asset) => asset == null ? "none" : asset.Storage.ToString().ToLowerInvariant();
 
         static void Check(string why)
         {
@@ -207,7 +216,8 @@ namespace ReBuzz.Agent
                 Title = "Read an audio clip",
                 Description =
                     "An audio clip's settings: warp mode (Off, Repitch, Beats, Complex, Pro), what Beats preserves, tempo, transposition (semitones) and detune (cents), gain (dB), " +
-                    "loop and region (beats), warp markers, its length, and its audio (id, name, seconds, rate, channels, beats). " +
+                    "loop and region (beats), warp markers, its length, and its audio (id, name, seconds, rate, channels, beats; storage: memory, filling, streaming, repairing or failed, streams, cache_progress, " +
+                    "underruns and missed_samples of a streamed asset, resident_mb: long audio is read from a decoded cache file, and an underrun is a block that played silence for audio the disk had not delivered in time). " +
                     "Example: audio_clip_get(machine=\"Drums audio\", pattern=\"loop\").",
                 Input = Object(null, ClipTarget()),
                 Output = Object(null, Req("machine", String("Machine")), Req("pattern", String("Pattern")), Req("warp", String("Warp mode"))),
