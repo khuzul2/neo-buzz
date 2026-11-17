@@ -13,10 +13,6 @@ name: Pitch evaluation
 # The tool is tools/PitchEval (it links Machines/NeoBuzz.Dsp and nothing else).
 
 on:
-  # TEMPORARY-PUSH-TRIGGER: a new workflow file cannot be dispatched until it is on the default branch; removed again after the first run.
-  push:
-    branches: [dsp/pitch-pt1]
-    paths: ['.github/pitch-eval-run.txt']
   workflow_dispatch:
     inputs:
       mdb:

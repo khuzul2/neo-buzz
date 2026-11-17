@@ -65,7 +65,7 @@ Sines, sawtooth and pulse trains in every range: raw pitch accuracy above 99 %, 
 
 ### 2.5 CPU and memory
 
-Per 256-sample block at 48 kHz (block = 5333 us): Voice 53 us (1.0 %), Guitar 53 us, Bass 55 us, Full 73 us (1.4 %), Voice Low latency 71 us (1.3 %), measured on the CI-class machine of the development session. Zero allocations per block (a test counts `GC.GetAllocatedBytesForCurrentThread`).
+Per 256-sample block at 48 kHz (block = 5333 us): Voice 53 us (1.0 %), Guitar 53 us, Bass 55 us, Full 73 us (1.4 %), Voice Low latency 71 us (1.3 %), measured in the test suite on the development machine (2 cores); the evaluation runner (4 cores) processed all five configurations at 46 to 103 times real time. Zero allocations per block (a test counts `GC.GetAllocatedBytesForCurrentThread`).
 
 ## 3. The onset detector
 
@@ -105,7 +105,7 @@ Synthetic kit, 10 examples per class, three seeds: with hits 120-250 ms apart 3 
 - The audio is low-passed (4th-order Butterworth) and decimated to about 10 kHz, pre-emphasised (0.97), the newest 28 ms Hann-windowed; linear prediction by autocorrelation with a 100 Hz Gaussian lag window and a -50 dB noise floor, Levinson-Durbin at order fs/1000 + 2 (12 at 9.6 kHz). The envelope comes from a 512-point FFT of the predictor.
 - The formants F1 (first peak in 200-1100 Hz) and F2 (next peak in 700-3400 Hz at least 250 Hz above F1) are for display and the offline tools.
 - The weights do not come from the peaks (two formants closer than the LPC resolution merge, as in "aa" and "oo") but from the envelope's highest point in three regions, Low (180-500 Hz), Mid (500-1400), High (1700-3400), in dB: `lm = L - M`, `hm = H - M`, `lh = L - H`. `Aa = s((-lm - 8)/2) s((14 - lh)/3)`, `Oo = s((lh - 6)/3) s((lm + 8)/3) s((-hm - 4)/3)`, `Ee = s((hm + 1)/3) s((lm + 8)/2.5)` with `s` the logistic function. On VocalSet vowels (eight singers, long tones) the region differences were: /a/ L-M -10 to -16 dB, /u/ L-H +7 to +21 and H-M mostly under -9, /i/ H-M mostly above 0. The constants were set on those 24 files and on the synthetic vowels together (the synthetic test voice has a first-order high-frequency lift so that its spectrum falls in the measured ranges), so the figures in section 7 for the same singers are not independent; the workflow's larger subset is the check. The weights are independent scores in 0 ... 1; a vowel between two shows two middling weights, silence none. Unvoiced input lets them fall (under 0.05 within 200 ms).
-- Synthetic vowels (the test voice at several pitches, with the lift above): 24 of 24 right. Real voices in section 7: about 80 to 90 % of files right on the eight tuning singers; /u/ and /i/ are the weak ones.
+- Synthetic vowels (the test voice at several pitches, with the lift above): 24 of 24 right. Real voices in section 7: 87 % of 337 files right on VocalSet (section 7.3), /u/ the weakest.
 - Limits: LPC finds a harmonic and not a formant when f0 is above about 300 Hz (a soprano's "ee" is unreliable); a whisper has no voiced frame; the three prototypes are an average adult's, so a very deep voice or a child's shifts all three; a second voice or a loud accompaniment ruins it.
 
 ## 6. The evaluation
@@ -122,7 +122,75 @@ The metrics follow mir_eval's melody definitions; each estimate is aligned to th
 
 ## 7. Measured on real recordings
 
-LOCAL_RESULTS_PLACEHOLDER
+Workflow run 44071427967 (head `d77b4dda`; the first full run, 44054292755, gave the same MDB and AVP figures, its VocalSet step found no files because the zip names singers `female1`, not `f1`; fixed). Reports as artifact `pitch-eval-report` of the run; the full per-stem table is in it.
+
+### 7.1 MDB-stem-synth (230 stems, 934 min)
+
+Raw pitch accuracy (50 cents), raw chroma accuracy, voicing recall, voicing false alarm, overall accuracy, octave errors (share of reference-voiced frames). "In range" is the stems whose median pitch lies inside the range's limits.
+
+| Range | stems | RPA | RCA | VR | VFA | OA | Oct |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Voice, Quality, all stems | 230 | 81.8 % | 87.7 % | 83.5 % | 0.3 % | 91.3 % | 5.9 % |
+| Voice, Quality, in range (70-1100 Hz) | 201 | 89.7 % | 93.2 % | 91.5 % | 0.3 % | 95.1 % | 3.5 % |
+| Voice, Low latency, in range (100-1100 Hz) | 160 | 93.3 % | 95.5 % | 96.2 % | 0.0 % | 97.5 % | 2.2 % |
+| Guitar, in range (80-1200 Hz) | 181 | 91.8 % | 94.4 % | 93.2 % | 0.3 % | 96.2 % | 2.5 % |
+| Bass, in range (38-400 Hz) | 174 | 91.5 % | 95.0 % | 95.7 % | 0.7 % | 94.6 % | 3.5 % |
+| Full, all stems | 230 | 94.4 % | 95.3 % | 96.3 % | 0.8 % | 96.5 % | 0.9 % |
+
+Low latency against Quality on the stems in Low latency's range: RPA 93.3 % against 95.2 %, octave errors 2.2 % against 1.9 %. Reading: Full is the best all-round setting on these stems (they are synthesised instruments and voices over two and a half octaves, and the 40 ms window sees the lowest notes); the range-limited trackers are for when the source is known, they cost less latency, and a stem outside the range does badly by construction (a 63 Hz voice in the Voice range, a 700 Hz flute in Bass).
+
+### 7.2 Amateur Vocal Percussion (280 recordings, 28 participants, 9778 hits; MacBook built-in microphone)
+
+Onsets (a hit is found within 50 ms of the annotation):
+
+| Threshold | Min. interval | precision | recall | F-measure | offset median | report delay median |
+|---:|---:|---:|---:|---:|---:|---:|
+| 4.0 (default) | 40 ms | 48.2 % | 96.5 % | 64.3 % | +2.8 ms | 3.4 ms |
+| 4.0 | 100 ms | 67.7 % | 93.5 % | 78.5 % | +2.7 ms | 3.4 ms |
+| 4.0 | 120 ms | 71.1 % | 92.0 % | 80.2 % | +2.7 ms | 3.4 ms |
+
+Recall by class at the default: kick 98.9 %, snare 97.9 %, closed hat 95.7 %, open hat 92.6 %. Precision is low at 40 ms because the vowel after a consonant ("boom", "pff") fires a second onset 50-80 ms later; the annotators marked one event. A voice front end should use a 100-120 ms minimum interval; a percussion front end 40 ms.
+
+Triggers, 10 hits per class per participant to train (the first ten detected), the rest to test; "of detected" counts only hits the detector found, "end to end" all annotated hits:
+
+| Test | Classes | Hits | Of detected | End to end | Rejected |
+|---|---:|---:|---:|---:|---:|
+| rest of the class recordings | 4 | 4300 | 78.1 % | 73.7 % | 1.6 % |
+| rest of the class recordings | 3 (kick, snare, hat) | 4300 | 84.3 % | 79.5 % | 1.7 % |
+| improvisation (all four in a rhythm) | 4 | 3237 | 64.1 % | 62.1 % | 4.2 % |
+| improvisation | 3 | 3237 | 71.7 % | 69.4 % | 4.5 % |
+| trained on Personal, tested on Fixed (everyone says the same four) | 4 | 3319 | 37.6 % | 36.4 % | 9.1 % |
+
+Feature window (4 classes, same recordings): 12 ms 74.4 %, 18 ms (default) 78.1 %, 25 ms 79.8 %, 35 ms 81.3 % of detected; classified 9, 15, 22 and 32 ms after the onset. Real beatboxing by novices is much less separable than the synthetic kit (section 4.1): the classifier is a usable "learn my sounds" engine for one person's own set (the machines should show the confidence and the reject, and let the user re-record a class), not a universal one: a model trained on one person's sounds does not carry to another's (Personal to Fixed 37.6 %).
+
+### 7.3 VocalSet 1.1 (378 recordings, 72 min, 20 singers: 9 female, 11 male; up to 2 files per singer and technique, the straight long tones a, i and u)
+
+No f0 truth: the Quality tracker is the reference for Low latency; an octave jump is two consecutive voiced estimates 10-14 semitones apart (stepwise scales and arpeggios contain none, so each is an error).
+
+| Technique | voiced (Quality) | voiced (Low latency) | octave jumps per 1000 (Q / LL) | LL agrees with Q |
+|---|---:|---:|---:|---:|
+| long tones, straight | 99.8 % | 99.5 % | 0.24 / 0.37 | 99.2 % |
+| long tones, messa di voce | 99.8 % | 99.7 % | 0.37 / 0.27 | 99.0 % |
+| scales, straight | 99.8 % | 99.7 % | 0.22 / 0.27 | 98.7 % |
+| arpeggios, straight | 99.6 % | 99.8 % | 0.33 / 0.29 | 98.9 % |
+| arpeggios, vibrato | 95.5 % | 99.7 % | 1.83 / 0.93 | 97.4 % |
+| arpeggios, belt | 96.4 % | 99.6 % | 0.76 / 0.48 | 98.8 % |
+| arpeggios, breathy | 99.9 % | 99.7 % | 0.04 / 0.17 | 99.2 % |
+| arpeggios, vocal fry | 85.7 % | 82.7 % | 6.65 / 20.07 | 79.7 % |
+| excerpts, straight | 97.5 % | 97.2 % | 0.35 / 0.46 | 98.7 % |
+| all | 97.6 % | 97.8 % | 0.85 / 1.64 | 97.6 % |
+
+Held-note standard deviation inside straight long tones (0.6 s or longer, ends trimmed): 19.4 cents median (female 12.9, male 22.2). Vocal fry is the weak case for both trackers (the voice is a slow train of separate pulses and the period is not well defined) and Low latency's 20 jumps per 1000 there is its worst figure. Normal singing is clean: under 1 octave jump per 1000 estimates in every technique but vibrato (1.8) and fry.
+
+Vowels (each file's weights averaged over its voiced estimates, the largest taken; a, u, i are taken as aa, oo, ee): a 86.8 % of 159, i 90.4 % of 157, u 66.7 % of 21; 87.2 % of 337 overall (female 88.0 %, male 86.6 %). The constants were fitted on eight of these singers, so this is not independent of the fit (section 5). /u/ is the weak vowel: it is called ee seven times of 21 (not investigated further).
+
+### 7.4 What the numbers do not say
+
+The synthetic tests (sections 2.4, 3, 4.1, 5) check the algorithms against known truth; the real sets check them against recordings that are not the algorithms' own. MDB's stems are synthesised from real multitracks; AVP is novices through a laptop microphone; VocalSet is trained singers in a studio, one language. Nothing here covers a noisy room, a headset, a phone or a second voice.
+
+### 7.5 Licences
+
+MDB-stem-synth: CC BY-NC 4.0 (Salamon, Bittner, Bonada, Bosch, Gomez, Bello), used for measurement only; Amateur Vocal Percussion: CC BY 4.0 (Delgado, McDonald, Xu, Sandler); VocalSet: CC BY 4.0 (Wilkins, Seetharaman, Wahl, Pardo). The licence is read from each Zenodo record when the workflow runs and printed in its log. The workflow stores none of the audio.
 
 ## 8. Limits and what the machines should do
 
