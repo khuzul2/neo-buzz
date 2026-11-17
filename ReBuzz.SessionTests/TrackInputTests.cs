@@ -90,6 +90,50 @@ namespace ReBuzz.SessionTests
             Assert.That(MidiRouting.Accepts(ch, Pads, 3, false), Is.False);
         }
 
+        // ------------------------------------------------------------------ MIDI From a machine (Neo Voice to MIDI)
+
+        [Test]
+        public void AMachineTrackTakesOnlyThatMachineByNameAndAChannelFilters()
+        {
+            var voice = MidiDevice.Machine("Voice 1");
+            var t = new TrackInput { Midi = MidiFromKind.Machine, Device = "voice 1" };
+            Assert.That(voice.IsMachine, Is.True);
+            Assert.That(voice.IsDevice, Is.False, "a machine is not a MIDI device");
+            Assert.That(MidiRouting.Accepts(t, voice, 0, false), Is.True);
+            Assert.That(MidiRouting.Accepts(t, MidiDevice.Machine("Voice 2"), 0, false), Is.False);
+            Assert.That(MidiRouting.Accepts(t, Keys, 0, false), Is.False, "a machine track hears no device");
+            Assert.That(MidiRouting.Accepts(t, MidiDevice.Keyboard, 0, false), Is.False);
+            Assert.That(MidiRouting.AcceptsKeyboard(t), Is.False);
+            var ch = new TrackInput { Midi = MidiFromKind.Machine, Device = "Voice 1", Channel = 10 };
+            Assert.That(MidiRouting.Accepts(ch, voice, 9, false), Is.True, "channel 10 is 9 in the message");
+            Assert.That(MidiRouting.Accepts(ch, voice, 0, false), Is.False);
+        }
+
+        [Test]
+        public void AMachinesMidiNeverReachesAllInputsOrATrackWithNoEntry()
+        {
+            var voice = MidiDevice.Machine("Voice 1");
+            Assert.That(MidiRouting.Accepts(new TrackInput(), voice, 0, false), Is.False, "All inputs are for devices");
+            Assert.That(MidiRouting.Accepts(null, voice, 0, false), Is.False);
+            Assert.That(MidiRouting.Accepts(new TrackInput { Midi = MidiFromKind.Device, Device = "Voice 1" }, voice, 0, false), Is.False, "a device named like a machine is not the machine");
+            Assert.That(MidiRouting.Accepts(new TrackInput { Midi = MidiFromKind.Keyboard }, voice, 0, false), Is.False);
+        }
+
+        [Test]
+        public void AMachineSourceRoundTripsThroughTheDocument()
+        {
+            var d = new SessionDocument();
+            d.SetInput("Lead", new TrackInput { Midi = MidiFromKind.Machine, Device = "Voice 1", Channel = 2 });
+            var copy = Load(new MemoryStream(d.ToBytes()))!;
+            var input = copy.GetInput("Lead");
+            Assert.That(input.Midi, Is.EqualTo(MidiFromKind.Machine));
+            Assert.That(input.Device, Is.EqualTo("Voice 1"));
+            Assert.That(input.Channel, Is.EqualTo(2));
+            Assert.That(input.SameAs(d.GetInput("Lead")), Is.True);
+            Assert.That(input.MidiLabel, Is.EqualTo("Machine: Voice 1"));
+            Assert.That(new TrackInput { Midi = MidiFromKind.Machine, Device = "Voice 2" }.SameAs(input), Is.False);
+        }
+
         // ------------------------------------------------------------------ saved form
 
         [Test]

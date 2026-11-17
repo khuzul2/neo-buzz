@@ -93,6 +93,8 @@ namespace NeoBuzz.MachineTests
             // mastering-tools.md §5.16: the resonance suppressor.
             ["Neo Spectral"] = (NeoBuzz.Spectral.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Spectral.SpectralEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             ["Neo Strip"] = (NeoBuzz.Strip.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Strip.StripEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
+            // voice-to-midi.md: Neo Voice to MIDI passes its input through at the Monitor level (its presets set what it plays as MIDI).
+            ["Neo Voice to MIDI"] = (NeoBuzz.VoiceToMidi.Params.Table, (v, x) => { float g = (float)v.Value(NeoBuzz.VoiceToMidi.P.Monitor); var y = new float[x.Length]; for (int i = 0; i < x.Length; i++) y[i] = x[i] * g; return y; }),
         };
 
         /// <summary>A Neo Learn machine's factory preset: its host plays the chord (the built-in tables are built first).</summary>

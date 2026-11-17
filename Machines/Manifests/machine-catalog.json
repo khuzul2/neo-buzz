@@ -1376,6 +1376,17 @@
     "vocal"
    ],
    "use_for": "Smooth harsh resonances that move: a dynamic, spectrum-wide suppressor for vocals, guitars, buses and masters."
+  },
+  "Neo Voice to MIDI": {
+   "category": "Control",
+   "tags": [
+    "midi",
+    "vocal",
+    "notes",
+    "chords",
+    "drums"
+   ],
+   "use_for": "Sing or beatbox into a microphone and play any synth or drum machine with it: pitch to notes (locked to a key, with bend), trained sounds to drum notes, chords that follow you, and the voice level and vowels as controllers."
   }
  }
 }

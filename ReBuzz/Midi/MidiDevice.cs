@@ -23,10 +23,19 @@ namespace ReBuzz.Midi
 
         public bool IsKeyboard => Index == -2;
 
+        /// <summary>Fork (docs/specs/voice-to-midi.md §7): a machine that makes MIDI (Neo Voice to MIDI), named by the machine's name.</summary>
+        public static MidiDevice Machine(string machineName) => new MidiDevice(-3, machineName ?? "");
+
+        /// <summary>A machine's own MIDI (see <see cref="Machine"/>).</summary>
+        public bool IsMachine => Index == -3;
+
         /// <summary>A hardware (or virtual port) input, named.</summary>
-        public bool IsDevice => !IsUnknown && !IsKeyboard;
+        public bool IsDevice => !IsUnknown && !IsKeyboard && !IsMachine;
 
         /// <summary>Whether a saved device name means this device (the name is the identity, compared without case).</summary>
         public bool Named(string name) => IsDevice && string.Equals(Name, name, StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>Whether a saved machine name means this machine source.</summary>
+        public bool NamedMachine(string name) => IsMachine && string.Equals(Name, name, StringComparison.OrdinalIgnoreCase);
     }
 }

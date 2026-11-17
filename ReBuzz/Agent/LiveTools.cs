@@ -412,7 +412,7 @@ namespace ReBuzz.Agent
             }
             if (!SessionLayout.HasAudioInput(m))
             {
-                o["midi_from"] = input.Midi switch { MidiFromKind.Device => "device:" + input.Device, MidiFromKind.Keyboard => "keyboard", _ => "all" };
+                o["midi_from"] = input.Midi switch { MidiFromKind.Device => "device:" + input.Device, MidiFromKind.Keyboard => "keyboard", MidiFromKind.Machine => "machine:" + input.Device, _ => "all" };
                 o["midi_from_label"] = layout.MidiLabel(m);
                 o["channel"] = input.Channel;
             }
@@ -431,14 +431,14 @@ namespace ReBuzz.Agent
                     "with their inputs (give machine for one), the audio input device (its channels and names, latency, dropped frames) and the MIDI devices. " +
                     "action=set changes what is given, one undo step each: audio_from \"none\", \"in:3\" (a mono input, in both sides), \"in:1-2\" (a stereo pair), " +
                     "\"track:Name\" (another track's output, to resample it) or \"wired\" (what is connected to it; old songs); midi_from \"all\" (every device except " +
-                    "control surfaces), \"device:Name\" (saved by name, resumes when plugged in) or \"keyboard\" (the computer keyboard); channel 0 (all) to 16; monitor " +
+                    "control surfaces), \"device:Name\" (saved by name, resumes when plugged in) or \"keyboard\" (the computer keyboard) or \"machine:Name\" (the MIDI of a machine that makes it, such as Neo Voice to MIDI); channel 0 (all) to 16; monitor " +
                     "\"in\", \"auto\" (while armed) or \"off\". Arming is session_record(action=\"arm\"). An armed track hears only its source. " +
                     "Example: track_input(action=\"set\", machine=\"Vocals\", audio_from=\"in:1\", monitor=\"in\").",
                 Input = Object(null,
                     Req("action", String("What to do", "get", "set")),
                     Opt("machine", String("The track's machine (get: one; set: required)")),
                     Opt("audio_from", String("Neo Audio: none, in:N, in:N-N+1, track:Name or wired")),
-                    Opt("midi_from", String("all, device:Name or keyboard")),
+                    Opt("midi_from", String("all, device:Name, keyboard or machine:Name (a machine that makes MIDI, Neo Voice to MIDI)")),
                     Opt("channel", Integer("MIDI channel: 0 for all, 1 to 16", 0, 16)),
                     Opt("monitor", String("Neo Audio: in, auto or off", "in", "auto", "off"))),
                 Output = Object(null,
@@ -448,7 +448,7 @@ namespace ReBuzz.Agent
                         Opt("audio_from", String("Neo Audio: none, in:N, in:N-N+1, track:Name or wired")),
                         Opt("audio_from_label", String("As the views name it (In 1/2, Track: Name, Wired inputs)")),
                         Opt("monitor", String("in, auto or off")),
-                        Req("midi_from", String("all, device:Name or keyboard")),
+                        Req("midi_from", String("all, device:Name, keyboard or machine:Name")),
                         Req("midi_from_label", String("As the views name it; a missing device says (not connected)")),
                         Req("channel", Integer("MIDI channel, 0 for all"))), "Tracks that can be armed")),
                     Req("audio_inputs", Object(null,
@@ -492,7 +492,14 @@ namespace ReBuzz.Agent
                                 string device = "";
                                 if (mf.Equals("keyboard", StringComparison.OrdinalIgnoreCase)) kind = MidiFromKind.Keyboard;
                                 else if (mf.StartsWith("device:", StringComparison.OrdinalIgnoreCase) && mf.Length > 7) { kind = MidiFromKind.Device; device = mf.Substring(7).Trim(); }
-                                else if (!mf.Equals("all", StringComparison.OrdinalIgnoreCase)) throw new ToolError("midi_from: all, device:Name or keyboard.");
+                                else if (mf.StartsWith("machine:", StringComparison.OrdinalIgnoreCase) && mf.Length > 8)
+                                {
+                                    kind = MidiFromKind.Machine; device = mf.Substring(8).Trim();
+                                    var source = SongModel.Machine(core, device);
+                                    if (source == null || source.ManagedMachine is not IMachineMidiSource) throw new ToolError($"midi_from: {device} is not a machine that makes MIDI (Neo Voice to MIDI is).");
+                                    if (ReferenceEquals(source, m)) throw new ToolError("midi_from: a track can't listen to itself.");
+                                }
+                                else if (!mf.Equals("all", StringComparison.OrdinalIgnoreCase)) throw new ToolError("midi_from: all, device:Name, keyboard or machine:Name (a machine that makes MIDI, such as Neo Voice to MIDI).");
                                 if (layout.SetMidiFrom(m, kind, device)) changed.Add("midi_from");
                             }
                             if (c.Int("channel") is int ch)

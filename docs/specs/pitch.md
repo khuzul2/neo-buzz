@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Built (PT1): pitch tracker, onset detector, trigger features and classifier, vowel estimator, the evaluation tool and its workflow. No machine uses it yet. |
+| Status | Built (PT1): pitch tracker, onset detector, trigger features and classifier, vowel estimator, the evaluation tool and its workflow. Neo Voice to MIDI (VM1, [`voice-to-midi.md`](voice-to-midi.md)) uses it. |
 | Branch | `dsp/pitch-pt1` |
 | Code | `Machines/NeoBuzz.Dsp/PitchTracker.cs`, `OnsetDetector.cs`, `TriggerClassifier.cs`, `VowelEstimator.cs` (all `internal`, namespace `NeoBuzz.Dsp`); tests `NeoBuzz.MachineTests/PitchTests.cs`, `PitchEngineTests.cs`, `PitchSignals.cs`; evaluation `tools/PitchEval`, `.github/workflows/pitch-eval.yml` |
 | Builds on | `ComplexFft`, `Biquad`, `PortableMath` of the same library (the portable maths rule applies: the audio files use no `Math.Sin/Cos/Exp/Log/Pow`) |

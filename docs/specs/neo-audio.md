@@ -187,7 +187,7 @@ What a track listens to, and how a track is armed, are one state for every view.
 - Inspector: an Input section for the selected machine.
 - One control (`TrackInputView`) is all three; every view follows the others (the arm dots poll the shared state).
 
-**Agent.** `track_input(action=get|set, machine, audio_from, midi_from, channel, monitor)` lists the tracks that can be armed with their inputs, the input device (channels, latency, dropped frames) and the MIDI devices. `session_record(action=arm|disarm)` works for audio tracks as for generators.
+**Agent.** `track_input(action=get|set, machine, audio_from, midi_from, channel, monitor)` (`midi_from` is `all`, `device:<name>`, `keyboard` or `machine:<name>`, a machine that makes MIDI such as Neo Voice to MIDI, [`voice-to-midi.md`](voice-to-midi.md) section 7) lists the tracks that can be armed with their inputs, the input device (channels, latency, dropped frames) and the MIDI devices. `session_record(action=arm|disarm)` works for audio tracks as for generators.
 
 **Tests.** `ReBuzz.SessionTests/TrackInputTests.cs` (text forms, routing, the saved form, the meter, the ring) and `ReBuzz.Studio.Tests/TrackInputEngineTests.cs` (a fake input device feeding the ring: mono and stereo selection, monitor modes, meter, resampling a track, a take from In 1 within 1 ms after a simulated round trip; fake MIDI devices: two identities to two armed tracks, layering, a control surface left out of All inputs, a device that is not connected and comes back, a channel; save and reopen; an old song; undo) and `TrackInputViewTests.cs` (the views and the gallery).
 
