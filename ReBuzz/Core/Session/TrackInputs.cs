@@ -211,6 +211,12 @@ namespace ReBuzz.Core.Session
             }
         }
 
+        /// <summary>
+        /// Whether an armed track listens for MIDI at all: a note or MIDI machine does; an audio track (a mic on Neo Audio) never does (it has no use for notes),
+        /// so arming a mic leaves the keyboard to the selected machine.
+        /// </summary>
+        public static bool TakesMidi(bool audioTrack, TrackInput input) => !audioTrack;
+
         /// <summary>Whether the computer keyboard under a machine's window plays its track (the keyboard's, or all inputs').</summary>
         public static bool AcceptsKeyboard(TrackInput input) => input == null || input.Midi != MidiFromKind.Device;
     }

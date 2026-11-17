@@ -81,7 +81,7 @@ namespace ReBuzz.Studio.Views.Session
     internal enum InputLayoutKind { Full, Strip, Compact }
 
     /// <summary>
-    /// The inputs of a machine's tracks: the arm dot, Audio From (an audio track), MIDI From and its channel, Monitor and the input meter.
+    /// The inputs of a machine's tracks: the arm dot, Audio From (an audio track; it takes no MIDI) or MIDI From and its channel (a note or MIDI machine), Monitor and the input meter.
     /// Compact keeps one chooser and the meter (the Arrangement's header).
     /// </summary>
     internal sealed class TrackInputView : Border
@@ -203,6 +203,8 @@ namespace ReBuzz.Studio.Views.Session
             top.Children.Add(arm);
             var rows = new StackPanel { Spacing = 4 };
             if (audio) rows.Children.Add(Labelled("Audio", audioBox));
+            if (!audio)
+            {
             var midiRow = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,56"), ColumnSpacing = 4 };
             Grid.SetColumn(midiBox, 0);
             var ch = new TextBlock { Text = "Ch", FontSize = StudioTokens.MinFontSize, Foreground = SessionPalette.LabelText, VerticalAlignment = VerticalAlignment.Center };
@@ -212,6 +214,7 @@ namespace ReBuzz.Studio.Views.Session
             midiRow.Children.Add(ch);
             midiRow.Children.Add(channelBox);
             rows.Children.Add(Labelled("MIDI", midiRow));
+            }
             top.Children.Add(rows);
             stack.Children.Add(top);
             if (audio)
@@ -243,11 +246,11 @@ namespace ReBuzz.Studio.Views.Session
         {
             var stack = new StackPanel { Spacing = 3, Height = StripHeight };
             if (audio) stack.Children.Add(audioBox);
-            stack.Children.Add(midiBox);
+            if (!audio) stack.Children.Add(midiBox);
             var row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), ColumnSpacing = 4 };
             Grid.SetColumn(channelBox, 1);
             row.Children.Add(arm);
-            row.Children.Add(channelBox);
+            if (!audio) row.Children.Add(channelBox);
             stack.Children.Add(row);
             if (audio)
             {
@@ -402,6 +405,8 @@ namespace ReBuzz.Studio.Views.Session
                 }
                 menu.Items.Add(audio);
             }
+            if (!SessionLayout.HasAudioInput(machine))
+            {
             var midi = new MenuItem { Header = "MIDI From" };
             midi.Items.Add(Radio("All inputs", input.Midi == MidiFromKind.All, () => layout.SetMidiFrom(machine, MidiFromKind.All), "midi"));
             foreach (var (name, connected) in layout.MidiDevices(machine))
@@ -419,6 +424,7 @@ namespace ReBuzz.Studio.Views.Session
                 channel.Items.Add(Radio(c == 0 ? "All" : c.ToString(), input.Channel == c, () => layout.SetMidiChannel(machine, c), "channel"));
             }
             menu.Items.Add(channel);
+            }
             if (SessionLayout.HasAudioInput(machine))
             {
                 var monitor = new MenuItem { Header = "Monitor" };

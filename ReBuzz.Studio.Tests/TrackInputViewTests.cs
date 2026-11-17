@@ -92,7 +92,8 @@ namespace ReBuzz.Studio.Tests
             var menu = canvas.OpenMenu;
             Assert.That(menu?.IsOpen, Is.True);
             var headers = menu!.Items.OfType<MenuItem>().Select(i => (string)i.Header).ToList();
-            Assert.That(headers, Is.SupersetOf(new[] { "Audio From", "MIDI From", "Channel", "Monitor" }));
+            Assert.That(headers, Is.SupersetOf(new[] { "Audio From", "Monitor" }));
+            Assert.That(headers, Does.Not.Contain("MIDI From").And.Not.Contain("Channel"), "an audio track takes no MIDI");
             var audio = menu.Items.OfType<MenuItem>().First(i => (string)i.Header == "Audio From");
             Assert.That(audio.Items.OfType<MenuItem>().Select(i => (string)i.Header), Is.EquivalentTo(new[] { "None", "In 1", "In 2", "In 1/2", "Track: Lead", "Wired inputs" }));
             menu.Close();
@@ -169,12 +170,13 @@ namespace ReBuzz.Studio.Tests
 
             voice.AudioBox.SelectedIndex = 1 + 1;                               // None, In 1, In 2...
             Assert.That(Layout.TrackInputOf(w.Voice).Audio, Is.EqualTo(AudioFrom.Mono(1)), "In 2");
-            voice = InputViews(w.Session).First(r => r.AudioBox.Parent != null);
-            voice.MidiBox.SelectedIndex = voice.MidiBox.ItemCount - 1;
-            Assert.That(Layout.TrackInputOf(w.Voice).Midi, Is.EqualTo(MidiFromKind.Keyboard), "the last choice is the computer keyboard");
-            voice = InputViews(w.Session).First(r => r.AudioBox.Parent != null);
-            voice.ChannelBox.SelectedIndex = 4;
-            Assert.That(Layout.TrackInputOf(w.Voice).Channel, Is.EqualTo(4));
+            var lead = InputViews(w.Session).First(r => r.AudioBox.Parent == null);       // the generator's row has MIDI From and a channel
+            lead.MidiBox.SelectedIndex = lead.MidiBox.ItemCount - 1;
+            Assert.That(Layout.TrackInputOf(w.Lead).Midi, Is.EqualTo(MidiFromKind.Keyboard), "the last choice is the computer keyboard");
+            lead = InputViews(w.Session).First(r => r.AudioBox.Parent == null);
+            lead.ChannelBox.SelectedIndex = 4;
+            Assert.That(Layout.TrackInputOf(w.Lead).Channel, Is.EqualTo(4));
+            Assert.That(voice.MidiBox.Parent, Is.Null, "the audio track's row has no MIDI From");
             voice = InputViews(w.Session).First(r => r.AudioBox.Parent != null);
             MachineViewTests.Click(w.Window, voice.MonitorButtons[0].TranslatePoint(new Point(8, 8), w.Window)!.Value);
             Assert.That(Layout.MonitorOf(w.Voice), Is.EqualTo(1), "In");

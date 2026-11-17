@@ -2059,13 +2059,13 @@ namespace ReBuzz.Studio.Tests
                 layout.SetMachineArmed(voice, true);
                 layout.SetMachineArmed(demo.Lead, true);
                 Settle();
-                Try("037-machine-arm-dot", () =>
+                Try("560-machine-arm-dot", () =>
                 {
                     var view = Tab<MachineView>(window, "Machines");
                     window.ShowView("Machines");
                     Settle();
                     window.RefreshNow();
-                    Shot(window, "037-machine-arm-dot", "Machine View: a dot at the foot of every machine that can be armed (Neo Audio and generators): red on Voice and Lead (armed), grey on the others. Click it to arm; right-click it for the Input menu.", "The dot on a machine's box.");
+                    Shot(window, "560-machine-arm-dot", "Machine View: a dot at the foot of every machine that can be armed (Neo Audio and generators): red on Voice and Lead (armed), grey on the others. Click it to arm; right-click it for the Input menu.", "The dot on a machine's box.");
                     var dot = view.FromCanvas(MachineGeometry.ArmDot(view.Canvas.BoxOf(voice)).Center, window);
                     Click(window, dot, MouseButton.Right);
                     var menu = view.Canvas.OpenMenu;
@@ -2073,11 +2073,11 @@ namespace ReBuzz.Studio.Tests
                     var audio = menu.Items.OfType<MenuItem>().First(i => (string)i.Header == "Audio From");
                     audio.IsSubMenuOpen = true;
                     Settle();
-                    Shot(window, "037-machine-input-menu", "The Input menu of Voice's dot: Arm, Audio From (None, the device's inputs by the driver's names, In 1/2 pairs, the other tracks, Wired inputs), MIDI From, Channel, Monitor.", "Right-click the dot.");
+                    Shot(window, "561-machine-input-menu", "The Input menu of Voice's dot: Arm, Audio From (None, the device's inputs by the driver's names, In 1/2 pairs, the other tracks, Wired inputs), MIDI From, Channel, Monitor.", "Right-click the dot.");
                     menu.Close();
                     Settle();
                 });
-                Try("038-session-io-row", () =>
+                Try("562-session-io-row", () =>
                 {
                     var session = Tab<SessionView>(window, "Session");
                     window.ShowView("Session");
@@ -2091,19 +2091,19 @@ namespace ReBuzz.Studio.Tests
                     session.RefreshState();
                     Settle();
                     Feed(2048);
-                    Shot(window, "038-session-io-row", "Session: the I/O row under the mixer strips (the toolbar's I/O button): Audio From, MIDI From, the arm dot and the MIDI channel, Monitor (In, Auto, Off) and the input meter, live while the track is armed or monitored (Voice listens to Mic 1 and its meter moves; Lead takes MIDI from one device).", "The toolbar's I/O button.");
+                    Shot(window, "562-session-io-row", "Session: the I/O row under the mixer strips (the toolbar's I/O button): Audio From, MIDI From, the arm dot and the MIDI channel, Monitor (In, Auto, Off) and the input meter, live while the track is armed or monitored (Voice listens to Mic 1 and its meter moves; Lead takes MIDI from one device).", "The toolbar's I/O button.");
                 });
-                Try("039-arrangement-header-inputs", () =>
+                Try("563-arrangement-header-inputs", () =>
                 {
                     var seq = Tab<SequenceView>(window, "Arrangement");
                     window.ShowView("Sequence");
                     seq.SetArrangementMode(true);
                     Settle();
                     Feed(4096);
-                    Shot(window, "039-arrangement-header-inputs", "Arrangement: an expanded track header of a machine that can be armed has its input chooser (Audio From for an audio track, MIDI From for a generator) and the input meter under the buttons; the R arms, as every other dot does.", "The track header.");
+                    Shot(window, "563-arrangement-header-inputs", "Arrangement: an expanded track header of a machine that can be armed has its input chooser (Audio From for an audio track, MIDI From for a generator) and the input meter under the buttons; the R arms, as every other dot does.", "The track header.");
                     seq.SetArrangementMode(false);
                 });
-                Try("048-inspector-input", () =>
+                Try("564-inspector-input", () =>
                 {
                     window.ShowView("Machines");
                     window.Inspector.Open();
@@ -2112,7 +2112,7 @@ namespace ReBuzz.Studio.Tests
                     Settle();
                     window.RefreshNow();
                     Feed(4096);
-                    Shot(window, "048-inspector-input", "The Inspector's Input section for the selected machine (Voice): the arm dot, Audio From, MIDI From and channel, Monitor and the input meter.", "Select a track's machine; the Inspector's Selection tab.");
+                    Shot(window, "564-inspector-input", "The Inspector's Input section for the selected machine (Voice): the arm dot, Audio From, MIDI From and channel, Monitor and the input meter.", "Select a track's machine; the Inspector's Selection tab.");
                 });
             }
             finally

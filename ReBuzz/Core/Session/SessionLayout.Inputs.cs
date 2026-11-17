@@ -95,6 +95,7 @@ namespace ReBuzz.Core.Session
 
         public bool SetMidiFrom(IMachine machine, MidiFromKind kind, string device = "")
         {
+            if (HasAudioInput(machine)) return false;                   // an audio track takes no MIDI
             var input = TrackInputOf(machine);
             input.Midi = kind;
             input.Device = kind == MidiFromKind.Device ? device ?? "" : "";
@@ -104,6 +105,7 @@ namespace ReBuzz.Core.Session
         /// <summary>The MIDI channel an armed track listens to: 0 all, 1 to 16.</summary>
         public bool SetMidiChannel(IMachine machine, int channel)
         {
+            if (HasAudioInput(machine)) return false;
             var input = TrackInputOf(machine);
             input.Channel = Math.Clamp(channel, 0, 16);
             return SetInput(machine, input);

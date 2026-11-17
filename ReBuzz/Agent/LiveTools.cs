@@ -410,9 +410,12 @@ namespace ReBuzz.Agent
                 o["audio_from_label"] = layout.AudioLabel(input.Audio);
                 o["monitor"] = layout.MonitorOf(m) switch { 1 => "in", 2 => "off", _ => "auto" };
             }
-            o["midi_from"] = input.Midi switch { MidiFromKind.Device => "device:" + input.Device, MidiFromKind.Keyboard => "keyboard", _ => "all" };
-            o["midi_from_label"] = layout.MidiLabel(m);
-            o["channel"] = input.Channel;
+            if (!SessionLayout.HasAudioInput(m))
+            {
+                o["midi_from"] = input.Midi switch { MidiFromKind.Device => "device:" + input.Device, MidiFromKind.Keyboard => "keyboard", _ => "all" };
+                o["midi_from_label"] = layout.MidiLabel(m);
+                o["channel"] = input.Channel;
+            }
             return o;
         }
 
@@ -481,6 +484,8 @@ namespace ReBuzz.Agent
                                     throw new ToolError($"audio_from {af}: the input device has {core.EngineInput.Channels} channel(s)" + (core.EngineInput.IsOpen ? "." : " (none is open; Preferences > Audio).") + " Choose from track_input(action=\"get\").");
                                 if (layout.SetAudioFrom(m, from)) changed.Add("audio_from");
                             }
+                            if ((c.String("midi_from") != null || c.Int("channel") != null) && SessionLayout.HasAudioInput(m))
+                                throw new ToolError($"{m.Name} is an audio track: it takes no MIDI. Set audio_from and monitor.");
                             if (c.String("midi_from") is string mf)
                             {
                                 var kind = MidiFromKind.All;

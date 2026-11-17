@@ -387,6 +387,47 @@ namespace ReBuzz.Studio.Tests
             Assert.That(NotesIn(rig, take), Is.EqualTo(new[] { 64 }), "channel 3 only");
         }
 
+        [AvaloniaTest]
+        public void AnArmedMicLeavesTheKeyboardToTheSelectedMachine()
+        {
+            using var setup = Setup(out var rig);
+            var layout = rig.Layout;
+            layout.Ensure();
+            new FakeInput(rig.Core, 2);
+            var mic = NewTrack(rig, "Mic");
+            layout.SetMachineArmed(mic, true);
+            var keys = new MidiDevice(0, "Keys");
+            var sc = rig.Core.SessionCore;
+            Assert.That(sc.OnMidiInput(keys, NoteOn(60)), Is.False, "only an audio track is armed: the selected machine plays");
+            Assert.That(sc.OnMidiInput(keys, NoteOff(60)), Is.False, "and its release goes the same way");
+
+            Assert.That(layout.SetMidiFrom(mic, MidiFromKind.Device, "Keys"), Is.False, "an audio track takes no MIDI source");
+            Assert.That(layout.SetMidiChannel(mic, 3), Is.False);
+
+            var lead = rig.Add("Neo Poly", "Lead");                                   // with a generator armed too, it takes the keyboard
+            layout.SetMachineArmed(lead, true);
+            Assert.That(sc.OnMidiInput(keys, NoteOn(62)), Is.True);
+            Assert.That(sc.OnMidiInput(keys, NoteOff(62)), Is.True);
+        }
+
+        [AvaloniaTest]
+        public void ADeviceNoArmedTrackListensToFallsBackToTheSelectedMachine()
+        {
+            using var setup = Setup(out var rig);
+            var layout = rig.Layout;
+            layout.Ensure();
+            var lead = rig.Add("Neo Poly", "Lead");
+            Assert.That(layout.SetMidiFrom(lead, MidiFromKind.Device, "Keys"), Is.True);
+            layout.SetMachineArmed(lead, true);
+            var sc = rig.Core.SessionCore;
+            var keys = new MidiDevice(1, "Keys");
+            var pads = new MidiDevice(0, "Pads");
+            Assert.That(sc.OnMidiInput(pads, NoteOn(40)), Is.False, "a pad controller is not dead because a keyboard track is armed");
+            Assert.That(sc.OnMidiInput(keys, NoteOn(60)), Is.True, "the keyboard plays the armed track");
+            Assert.That(sc.OnMidiInput(pads, NoteOff(40)), Is.False, "the pad's release goes where its press went");
+            Assert.That(sc.OnMidiInput(keys, NoteOff(60)), Is.True);
+        }
+
         // ------------------------------------------------------------------ saved with the song
 
         static void Reopen(ReBuzzCore core, string path)

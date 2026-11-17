@@ -293,7 +293,6 @@ namespace ReBuzz.Core.Session
         // routing (an empty array). A release goes the same way (0.6.3).
         static readonly MachineCore[] FocusRouted = Array.Empty<MachineCore>();
         // Armed tracks were there but none listens to the device the press came from: nothing plays, and its release goes nowhere either.
-        static readonly MachineCore[] Unheard = new MachineCore[0];
         readonly MachineCore[][] heldNotes = new MachineCore[16 * 128][];
         readonly MachineCore[][] heldPedals = new MachineCore[16][];
 
@@ -306,7 +305,7 @@ namespace ReBuzz.Core.Session
         /// <summary>
         /// As <see cref="OnMidiInput(int)"/>, from a known device (docs/specs/neo-audio.md "Inputs and arm"): each armed track hears only what
         /// its MIDI From and channel say, and two armed tracks listening to the same source both play (layering). While any track is armed
-        /// the keyboard is theirs, as before: what none of them takes plays nothing.
+        /// what none of them takes (a device no armed track listens to, or armed audio tracks without a MIDI source) goes to the selected machine as when nothing is armed.
         /// </summary>
         internal bool OnMidiInput(MidiDevice device, int data)
         {
@@ -331,30 +330,21 @@ namespace ReBuzz.Core.Session
                 var pressed = Interlocked.Exchange(ref held, null);
                 if (pressed != null)
                 {
-                    if (ReferenceEquals(pressed, FocusRouted)) return false;
-                    if (pressed.Length == 0) return true;
+                    if (pressed.Length == 0) return false;          // nobody armed took the press: the usual routing gets the release too
                     machines = pressed;
-                }
-                else if (machines.Length == 0)
-                {
-                    return false;
                 }
                 else
                 {
                     machines = Accepting(machines, device, channel);
-                    if (machines.Length == 0) return true;
+                    if (machines.Length == 0) return false;
                 }
             }
             else
             {
-                if (machines.Length == 0)
-                {
-                    if (noteOn) Volatile.Write(ref held, FocusRouted);
-                    return false;
-                }
                 machines = Accepting(machines, device, channel);
-                if (noteOn) Volatile.Write(ref held, machines.Length == 0 ? Unheard : machines);
-                if (machines.Length == 0) return true;
+                // Nothing armed takes it (none armed, only audio tracks armed, or a device no armed track listens to): the selected machine plays it.
+                if (noteOn) Volatile.Write(ref held, machines.Length == 0 ? FocusRouted : machines);
+                if (machines.Length == 0) return false;
             }
             bool all = ReferenceEquals(machines, listening);
 
@@ -385,7 +375,7 @@ namespace ReBuzz.Core.Session
             var state = arm;
             if (machine == null || Array.IndexOf(state.Machines, machine) < 0) return false;
             // docs/specs/neo-audio.md "Inputs and arm": a track listening to one device doesn't take the keyboard under the machine's window.
-            if (!MidiRouting.AcceptsKeyboard(RouteOf(machine)?.Input)) return false;
+            if (!MidiRouting.AcceptsKeyboard(RouteOf(machine)?.Input) || !MidiRouting.TakesMidi(SessionLayout.HasAudioInput(machine), RouteOf(machine)?.Input)) return false;
             int kind = data & 0xF0;
             var dll = machine.DLL;
             if (dll != null && !dll.IsMissing && !dll.IsCrashed && machine.Ready)

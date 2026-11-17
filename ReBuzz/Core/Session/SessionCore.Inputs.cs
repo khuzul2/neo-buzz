@@ -85,6 +85,7 @@ namespace ReBuzz.Core.Session
             for (int i = 0; i < armed.Length; i++)
             {
                 table.TryGetValue(armed[i], out var route);
+                if (!MidiRouting.TakesMidi(SessionLayout.HasAudioInput(armed[i]), route?.Input)) continue;
                 if (!MidiRouting.Accepts(route?.Input, device, channel, claimed)) continue;
                 taken ??= new MachineCore[armed.Length];
                 taken[count++] = armed[i];
