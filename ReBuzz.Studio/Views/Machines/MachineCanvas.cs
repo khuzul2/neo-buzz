@@ -75,48 +75,93 @@ namespace ReBuzz.Studio.Views.Machines
         internal Views.Browser.MachineBrowserModel Browser { get; set; }
 
         IMachine dropOver;
+        ReBuzz.Core.Drop.DropPlan dropPlan;
+        Point dropLogical;
+
+        /// <summary>DD1: what the drag over the canvas would do (the router's plan), or null.</summary>
+        internal ReBuzz.Core.Drop.DropPlan DropFeedback => dropPlan;
 
         void OnBrowserDragOver(object sender, DragEventArgs e)
         {
-            var data = Views.Browser.BrowserDragSource.Read(e.DataTransfer);
-            if (data == null) { e.DragEffects = DragDropEffects.None; return; }
-            var target = MachineAt(ToLogical(e.GetPosition(this)));
-            e.DragEffects = DragDropEffects.Copy;
-            if (target != dropOver) { dropOver = target; InvalidateVisual(); }
+            var items = Views.Drop.DropSupport.Read(e.DataTransfer);
+            if (items.Count == 0) { e.DragEffects = DragDropEffects.None; EndDropFeedback(); return; }
+            var plan = ShowDropAt(items, e.GetPosition(this));
+            e.DragEffects = Views.Drop.DropSupport.Effects(plan);
             e.Handled = true;
         }
 
+        void EndDropFeedback()
+        {
+            if (dropOver == null && dropPlan == null) return;
+            dropOver = null;
+            dropPlan = null;
+            InvalidateVisual();
+        }
+
+        ReBuzz.Core.Drop.DropTarget TargetAtView(Point view)
+        {
+            var logical = ToLogical(view);
+            var target = MachineAt(logical);
+            var at = CanvasMap.Clamp(map.PositionAt(logical));
+            return new ReBuzz.Core.Drop.DropTarget { View = ReBuzz.Core.Drop.DropView.Machine, Machine = target, X = (float)at.X, Y = (float)at.Y };
+        }
+
+        /// <summary>Shows the drag feedback at a view point, as a drag over it would; returns the router's plan.</summary>
+        internal ReBuzz.Core.Drop.DropPlan ShowDropAt(IReadOnlyList<ReBuzz.Agent.Browser.BrowserDragData> items, Point view)
+        {
+            var target = TargetAtView(view);
+            dropOver = target.Machine;
+            dropLogical = ToLogical(view);
+            dropPlan = new ReBuzz.Core.Drop.DropRouter(core).Plan(items, target);
+            InvalidateVisual();
+            return dropPlan;
+        }
+
+        internal void ClearDropFeedback() => EndDropFeedback();
+
         void OnBrowserDrop(object sender, DragEventArgs e)
         {
-            var data = Views.Browser.BrowserDragSource.Read(e.DataTransfer);
-            dropOver = null;
-            if (data == null) return;
-            DropBrowserItem(data, e.GetPosition(this));
+            var items = Views.Drop.DropSupport.Read(e.DataTransfer);
+            EndDropFeedback();
+            if (items.Count == 0) return;
+            DropItems(items, e.GetPosition(this));
             e.Handled = true;
         }
 
         /// <summary>
-        /// A browser item dropped at a view point (tests call it). A machine, plug-in or preset on a machine's box replaces that machine
-        /// (connections, patterns kept where they fit; a preset of its own type loads instead): one undo step; on empty canvas it is added
-        /// there. What can't be done says why, on the canvas, for two seconds. Returns the machine that results, or null.
+        /// Browser items or files dropped at a view point (tests call it), through the DropRouter: on a machine's box they replace it (hot-swap:
+        /// connections, patterns kept where they fit; a preset of its own type loads instead), an effect is added where it falls, a generator on
+        /// empty canvas is a new machine and track wired to the Master, audio is a new audio track (a sampler takes it as a sample), a MIDI file
+        /// is notes in a new pattern. One undo step. What can't be done says why, on the canvas, for two seconds.
         /// </summary>
-        internal IMachine DropBrowserItem(ReBuzz.Agent.Browser.BrowserDragData data, Point view)
+        internal ReBuzz.Core.Drop.DropResult DropItems(IReadOnlyList<ReBuzz.Agent.Browser.BrowserDragData> items, Point view)
         {
-            if (Browser == null) return null;
+            var target = TargetAtView(view);
             var logical = ToLogical(view);
-            var target = MachineAt(logical);
-            string why;
-            IMachine made;
-            if (target != null) made = Browser.Swap(target, data, out why);
-            else
+            return Views.Drop.DropSupport.Run(core, items, target, this, view, r =>
             {
-                var at = CanvasMap.Clamp(map.PositionAt(logical));
-                made = Browser.AddDropped(data, (float)at.X, (float)at.Y, out why);
-            }
-            if (made != null) Select(new[] { made });
-            else if (why != null) Say(why, target != null ? BoxOf(target).Center : logical);
-            InvalidateVisual();
-            return made;
+                if (r.Ok && r.Machine != null) Select(new[] { r.Machine });
+                else if (!r.Ok && r.Message != null) Say(r.Message, target.Machine != null ? BoxOf(target.Machine).Center : logical);
+                InvalidateVisual();
+            });
+        }
+
+        /// <summary>
+        /// A browser item dropped at a view point (the browser's first drop path). Returns the machine that results, or null.
+        /// </summary>
+        internal IMachine DropBrowserItem(ReBuzz.Agent.Browser.BrowserDragData data, Point view) =>
+            DropItems(new[] { data }, view) is { Ok: true } r ? r.Machine : null;
+
+        /// <summary>The lit box, the refusal's red box, and what the drop would do, in the canvas's own coordinates.</summary>
+        void DrawDrop(DrawingContext ctx)
+        {
+            if (dropPlan == null) return;
+            bool refused = !dropPlan.Allowed && dropPlan.Choices == null;
+            var lit = dropPlan.Target ?? (refused ? dropOver : null);
+            if (lit != null) Views.Drop.DropSupport.DrawLit(ctx, BoxOf(lit), refused);
+            else if (dropPlan.Allowed)
+                ctx.DrawEllipse(null, new Pen(Shell.Design.StudioTokens.AccentBrush, 2), dropLogical, 14, 14);
+            Views.Drop.DropSupport.DrawLabel(ctx, dropLogical, dropPlan.Choices != null ? dropPlan.ChoiceTitle : dropPlan.Allowed ? dropPlan.Describe : dropPlan.Refusal, refused, new Rect(0, 0, map.Width, map.Height));
         }
 
         void Say(string why, Point at)
@@ -930,6 +975,7 @@ namespace ReBuzz.Studio.Views.Machines
                 if (refused)
                     ctx.DrawRectangle(null, new Pen(bad, 2), box.Deflate(1));
             }
+            DrawDrop(ctx);
             string words = connectWhy ?? Refusal;
             if (words != null)
             {

@@ -17,7 +17,7 @@ The left bar's Browser panel finds anything to put in a song: machines, plug-ins
 - Not done: previewing a machine or preset by playing a phrase (needs a scratch machine on the audio thread; left out).
 
 ## Drag data (shared with DD1)
-Format `neobuzz-browser-item` (version 1), JSON: `kind` (machine, plugin, preset, audio, midi, pattern), `id` (gear name; file path; `Machine/Pattern`; a song wave is `wave:N`), optional `preset`, `label`. `BrowserDragData.Format()/Parse()`; Studio reads and writes it with `BrowserDragSource`. Every result row is draggable. Arrangement and Session drops are DD1's.
+Format `neobuzz-browser-item` (version 1), JSON: `kind` (machine, plugin, preset, audio, midi, pattern), `id` (gear name; file path; `Machine/Pattern`; a song wave is `wave:N`), optional `preset`, `label`. `BrowserDragData.Format()/Parse()`; Studio reads and writes it with `BrowserDragSource`. Every result row is draggable. Arrangement, Session and Machine View drops are DD1's: [drag-drop.md](drag-drop.md).
 
 ## Hot-swap (Machine view)
 - Drop on a machine box replaces it (`MachineEditing.HotSwap`: replace, restore the name, recreate pattern names and lengths, one undo step). A preset on a machine of the same gear loads the preset. A drop on empty canvas adds the machine.

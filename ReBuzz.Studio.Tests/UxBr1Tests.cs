@@ -351,7 +351,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(view.Canvas.DropBrowserItem(new BrowserDragData(BrowserKind.Machine, "Neo Comp"), ViewPoint(view, Machine("Master"))), Is.Null);
                 Assert.That(view.Canvas.Refusal, Does.Contain("Master"));
                 Assert.That(view.Canvas.DropBrowserItem(new BrowserDragData(BrowserKind.Audio, "/x/kick.wav"), ViewPoint(view, trim)), Is.Null);
-                Assert.That(view.Canvas.Refusal, Does.Contain("Arrangement"), "audio goes to the arrangement (DD1)");
+                Assert.That(view.Canvas.Refusal, Does.Contain("No file"), "audio is the drop router's now (DD1): a file that isn't there is refused");
                 Assert.That(Graph(), Is.EqualTo(before), "nothing changed");
             }
             finally
