@@ -36,6 +36,7 @@ namespace ReBuzz.Studio.Tests
             registry.Write("DetailOpen", false, "Studio");
             registry.Write("DetailPianoRoll", false, "Studio");
             registry.Write("DetailDevice", false, "Studio");
+            registry.Write("DetailAudio", false, "Studio");
             registry.Write("DeviceEditor", false, "Studio");
             registry.Write("BrowserOpen", false, "Studio");
         }

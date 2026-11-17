@@ -125,3 +125,19 @@ The audit covered `AudioClip`, `ClipVoice`, `PhaseVocoder`, `AudioAnalysis`, `Au
 **Tests.** `ReBuzz.SessionTests/AudioClipEditingTests.cs` (fades, gain, crossfade against the expected envelope, tail after stop, allocation, reverse sample for sample, stretch, peak cache against brute force, settings round trip, an old song). `ReBuzz.Studio.Tests/NeoAudioArrangementTests.cs`: each gesture with the mouse or keys, then undo, redo, and the song saved and opened again as .nbl and as .bmx, plus the agent's tools. Gallery: `mac-036-arrangement-audio-clips.png`.
 
 **Limits.** Consolidate renders at one tempo (the song's now), so tempo changes inside the range are not followed. The fade lengths are in beats of the clip, so they scale with a stretch. At most 16 clips play at once (NA1's limit). The audio thread's scratch is 4096 frames.
+
+## 11. NA3 as built: the Audio page, warp markers, waveforms in the Session
+
+**The page.** Selecting an audio clip in the Session or in the Arrangement shows its **Audio** page in the detail panel (the Tracker and the piano roll have nothing for it); double-clicking the clip, or the Inspector's "Audio settings", opens it. It has the waveform with the clip's region handles (start, loop start, loop end) and the warp markers, and controls for warp (the model's own modes) and what Beats keeps, tempo (with halve, double and Detect), transpose, detune, gain, fade in and out (Arrangement only: fades play there), reverse, loop and the region in bars.beats.ticks. In the Session the loop and region are the slot's clip settings; in the Arrangement they belong to the arranged clip (`ClipEditor.SetLoop`, `SetRegion`).
+
+**One write path.** Every edit is one `AudioClipEdit` handed to `SessionLayout.EditAudio`, which is also what `audio_clip_set` calls: the same validation, one undo group, the same result. A test makes the same change by the page and by the tool and compares.
+
+**Warp markers.** Double-click adds a marker (pinned to a transient of `AudioAnalysis` when one is within a few pixels; the audio's two ends are pinned first, so nothing moves), a drag warps the audio between its neighbours and snaps to the beat grid (Shift is free; the grid follows the zoom), double-click, right-click or Del removes one. A drag is one undo step, committed on release.
+
+**Session slots.** A slot of an audio clip draws a mini waveform from the PeakCache (a column every two pixels through the clip's warp map and gain) into a geometry that is kept until the slot is resized, the peaks arrive or the audio changes; a frame draws that geometry and one line, so a grid of slots costs nothing while it plays.
+
+**Fixes.** The Inspector says "Generator" for Neo Audio (it was "Effect"); a short Arrangement audio clip shows its whole name on the first line of its tooltip.
+
+**Tests.** `ReBuzz.Studio.Tests/NeoAudioClipPageTests.cs` (each control: value, undo, redo, saved and opened again as .nbl; markers by mouse and keys with and without snap; both views; the agent against the page; the slots). Gallery: `mac-037`, `038`, `039`, `461`.
+
+**Limits.** No drops (DD1), recording (NA4), Pro mode (NA5) or disk streaming. Removing the last inner marker leaves the two pinned ends (the map stays straight). Detect finds a tempo only where the audio has one.

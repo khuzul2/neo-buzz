@@ -589,6 +589,33 @@ namespace ReBuzz.Core
             return null;
         }
 
+        /// <summary>
+        /// NA3: the clip's region as the Audio page sets it: where in the pattern it starts playing (<paramref name="start"/>), and the loop's start and end
+        /// (<paramref name="loopEnd"/> 0 or the pattern's length is its end), in pattern ticks; null leaves one as it is. Without a loop the clip can't
+        /// play past the new region, so it is cut to it. One undo step.
+        /// </summary>
+        public string SetRegion(ClipItem item, int? start, int? loopStart, int? loopEnd)
+        {
+            var was = item.Spec;
+            int p = was.PatternLength;
+            int end = Math.Max(0, loopEnd ?? was.LoopEnd);
+            if (end >= p) end = 0;
+            int regionEnd = end > 0 ? Math.Max(1, end) : p;
+            var s = was with
+            {
+                Start = Math.Clamp(start ?? was.Start, 0, regionEnd - 1),
+                LoopStart = Math.Clamp(loopStart ?? was.LoopStart, 0, regionEnd - 1),
+                LoopEnd = end,
+            };
+            if (!s.Loop) s = s with { Length = Math.Max(1, Math.Min(s.Length, s.MaxLength)) };
+            if (s == was) return null;
+            var plan = new Plan(this);
+            plan.Remove(item);
+            plan.Write(item.Sequence, s);
+            Commit(plan);
+            return null;
+        }
+
         /// <summary>Gives the clip a pattern of its own (a copy of the one it shares).</summary>
         public string MakeUnique(ClipItem item)
         {
