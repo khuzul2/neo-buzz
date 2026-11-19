@@ -52,6 +52,19 @@
     <PreBuildEvent>powershell -Command "((Get-Date).ToUniversalTime()).ToString('s') | Out-File '$(MSBuildProjectDirectory)\..\ReBuzz\BuildDate.txt'"</PreBuildEvent>
   </PropertyGroup>
 
+  <!-- Fork (docs/specs/pitch.md section 9): Convert to MIDI runs the shared pitch engine (PT1: the tracker, the onset detector and the classifier, with
+       what they use) offline, and Basic Pitch (Spotify, Apache-2.0; 3rdParty/basic-pitch, with its licence and notice) for harmony: 230 KB of model, embedded. -->
+  <ItemGroup>
+    <Compile Include="..\Machines\NeoBuzz.Dsp\PitchTracker.cs" Link="Dsp\PitchTracker.cs" />
+    <Compile Include="..\Machines\NeoBuzz.Dsp\OnsetDetector.cs" Link="Dsp\OnsetDetector.cs" />
+    <Compile Include="..\Machines\NeoBuzz.Dsp\TriggerClassifier.cs" Link="Dsp\TriggerClassifier.cs" />
+    <Compile Include="..\Machines\NeoBuzz.Dsp\ComplexFft.cs" Link="Dsp\ComplexFft.cs" />
+    <Compile Include="..\Machines\NeoBuzz.Dsp\PortableMath.cs" Link="Dsp\PortableMath.cs" />
+    <Compile Include="..\Machines\NeoBuzz.Dsp\Filters.cs" Link="Dsp\Filters.cs" />
+    <Compile Include="..\Machines\NeoBuzz.Dsp\DspMath.cs" Link="Dsp\DspMath.cs" />
+    <EmbeddedResource Include="..\3rdParty\basic-pitch\nmp.onnx" LogicalName="ReBuzz.BasicPitch.nmp.onnx" Link="BasicPitch\nmp.onnx" />
+  </ItemGroup>
+
   <!-- Fork (docs/specs/stem-separation.md): ONNX Runtime (MIT) runs the stem-separation models, on the CPU everywhere (CoreML on request on macOS).
        The models themselves are not in the repository or the package. -->
   <ItemGroup>

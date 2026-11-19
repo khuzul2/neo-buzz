@@ -1387,6 +1387,17 @@
     "drums"
    ],
    "use_for": "Play a synth or drums with your voice: sung pitch to notes in a key, trained beatbox sounds to drum notes, chords, and voice level and vowels as controllers."
+  },
+  "Neo Tune": {
+   "category": "Modulation",
+   "tags": [
+    "pitch-shift",
+    "vocal",
+    "lead",
+    "monophonic",
+    "midi"
+   ],
+   "use_for": "Pitch correction for a lead vocal or a solo line: moves the voice to a key and scale (or to MIDI notes), hard or natural, with formant control, transpose and added vibrato."
   }
  }
 }

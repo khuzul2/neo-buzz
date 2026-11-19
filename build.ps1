@@ -928,6 +928,8 @@ $components = @(
     [pscustomobject]@{ Name = "PortAudio (${studioRel}portaudio.dll, built from source with CMake: MME, DirectSound, WASAPI and WDM-KS, no ASIO; see $audioBuildNote)"; Licence = 'MIT'; Text = ([IO.Path]::Combine($StudioStage, 'PortAudio-LICENSE.txt')); As = 'PortAudio-LICENSE.txt'; File = 'Studio\portaudio.dll' },
     [pscustomobject]@{ Name = 'Concentus 2.2.2 (Concentus.dll, the Opus preview; NuGet, from 3rdParty\concentus)'; Licence = 'BSD-3-Clause'; Text = '3rdParty\concentus\LICENSE'; As = 'Concentus-LICENSE.txt'; File = 'Concentus.dll' },
     [pscustomobject]@{ Name = 'Signalsmith Stretch 1.3.2 (neostretch.dll, the Pro warp mode; vendored in NeoStretch\third_party)'; Licence = 'MIT'; Text = 'NeoStretch\third_party\signalsmith-stretch\LICENSE.txt'; As = 'SignalsmithStretch-LICENSE.txt'; File = 'neostretch.dll' },
+    [pscustomobject]@{ Name = 'Basic Pitch (Spotify; the model nmp.onnx, embedded in ReBuzz.Engine.dll: Convert to MIDI, harmony; from 3rdParty\basic-pitch)'; Licence = 'Apache-2.0'; Text = '3rdParty\basic-pitch\LICENSE'; As = 'BasicPitch-LICENSE.txt'; File = 'ReBuzz.Engine.dll' },
+    [pscustomobject]@{ Name = 'Basic Pitch NOTICE (the notice of the model above, which Apache-2.0 asks to travel with it)'; Licence = 'Apache-2.0'; Text = '3rdParty\basic-pitch\NOTICE'; As = 'BasicPitch-NOTICE.txt'; File = 'ReBuzz.Engine.dll' },
     [pscustomobject]@{ Name = 'Signalsmith Linear 0.6.6 (inside neostretch.dll; vendored in NeoStretch\third_party)'; Licence = 'MIT'; Text = 'NeoStretch\third_party\signalsmith-linear\LICENSE.txt'; As = 'SignalsmithLinear-LICENSE.txt'; File = 'neostretch.dll' }
 )
 $notice.Add('')

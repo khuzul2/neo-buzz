@@ -2,7 +2,7 @@
 // dataset and VocalSet, and writes a Markdown report. The workflow .github/workflows/pitch-eval.yml downloads the data on the
 // runner; nothing here is committed or uploaded but the report (and a CSV of the per-stem figures).
 //
-//   PitchEval [--mdb DIR] [--avp DIR] [--vocalset ZIP] [--out report.md] [--csv stems.csv] [--mdb-limit N] [--avp-participants N] [--vocalset-per-group N]
+//   PitchEval [--mdb DIR] [--avp DIR] [--vocalset ZIP] [--tune ZIP] [--tune-excerpts DIR] [--out report.md] [--csv stems.csv] [--mdb-limit N] [--avp-participants N] [--vocalset-per-group N]
 
 using System.Text;
 
@@ -14,7 +14,7 @@ namespace NeoBuzz.PitchEval
         {
             if (args.Length == 3 && args[0] == "--onsets") { Avp.Debug(args[1], args[2]); return 0; }
             if (args.Length == 4 && args[0] == "--track") { Dbg.Track(args[1], args[2], int.Parse(args[3])); return 0; }
-            string mdb = null, avp = null, vs = null, outPath = "pitch-eval.md", csvPath = null;
+            string mdb = null, avp = null, vs = null, tune = null, excerpts = null, outPath = "pitch-eval.md", csvPath = null;
             int mdbLimit = 0, avpLimit = 0, vsPer = 2;
             for (int i = 0; i < args.Length; i++)
             {
@@ -25,6 +25,8 @@ namespace NeoBuzz.PitchEval
                     case "--mdb": mdb = Next(); break;
                     case "--avp": avp = Next(); break;
                     case "--vocalset": vs = Next(); break;
+                    case "--tune": tune = Next(); break;
+                    case "--tune-excerpts": excerpts = Next(); break;
                     case "--out": outPath = Next(); break;
                     case "--csv": csvPath = Next(); break;
                     case "--mdb-limit": mdbLimit = int.Parse(Next()); break;
@@ -43,6 +45,7 @@ namespace NeoBuzz.PitchEval
             if (mdb != null) Mdb.Run(mdb, mdbLimit, md, csv);
             if (avp != null) Avp.Run(avp, avpLimit, md);
             if (vs != null) VocalSet.Run(vs, vsPer, md);
+            if (tune != null) TuneEval.Run(tune, vsPer, excerpts, md);
             md.AppendLine("## Data and licences");
             md.AppendLine();
             md.AppendLine("Licence of each record as its Zenodo page states it, checked when the workflow was written (docs/specs/pitch.md §7.5):");

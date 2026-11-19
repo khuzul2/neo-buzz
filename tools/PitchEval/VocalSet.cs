@@ -13,7 +13,7 @@ namespace NeoBuzz.PitchEval
     internal static class VocalSet
     {
         // category/technique folders used, with a short label.
-        static readonly (string Path, string Label)[] Groups =
+        internal static readonly (string Path, string Label)[] Groups =
         {
             ("long_tones/straight", "long tones, straight"),
             ("long_tones/messa", "long tones, messa di voce"),
@@ -36,9 +36,9 @@ namespace NeoBuzz.PitchEval
             public FirstNote.Result First;
         }
 
-        public static void Run(string zipPath, int maxPerGroupPerSinger, StringBuilder md)
+        /// <summary>The files the evaluations read: per technique and singer up to <paramref name="maxPerGroupPerSinger"/>, vowels a, i, u first.</summary>
+        internal static List<(ZipArchiveEntry E, string Group, string Singer, string Vowel)> Select(ZipArchive zip, int maxPerGroupPerSinger)
         {
-            using var zip = ZipFile.OpenRead(zipPath);
             var rx = new Regex(@"^FULL/((?:fe)?male\d+)/(long_tones|scales|arpeggios|excerpts)/([a-z_]+)/([^/]+)\.wav$");
             var selected = new List<(ZipArchiveEntry E, string Group, string Singer, string Vowel)>();
             foreach (var grp in Groups)
@@ -52,6 +52,13 @@ namespace NeoBuzz.PitchEval
                     foreach (var t in ordered) selected.Add((t.E, grp.Label, singerGroup.Key, V(t.E.Name)));
                 }
             }
+            return selected;
+        }
+
+        public static void Run(string zipPath, int maxPerGroupPerSinger, StringBuilder md)
+        {
+            using var zip = ZipFile.OpenRead(zipPath);
+            var selected = Select(zip, maxPerGroupPerSinger);
             Console.WriteLine($"VocalSet: {selected.Count} files selected from {zip.Entries.Count} entries");
             var results = new List<FileResult>();
             var sw = System.Diagnostics.Stopwatch.StartNew();

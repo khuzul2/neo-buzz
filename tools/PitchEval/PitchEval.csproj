@@ -2,7 +2,7 @@
 
   <!--
     Fork addition (docs/specs/pitch.md §7): scores the shared pitch engine on real recordings, for the pitch-eval workflow
-    (.github/workflows/pitch-eval.yml). Links the shared DSP library and the Neo Voice to MIDI engine (no host types) and nothing else, so it builds and runs anywhere .NET does.
+    (.github/workflows/pitch-eval.yml). Links the shared DSP library, Neo Tune's engine and the Neo Voice to MIDI engine (no host types) and nothing else, so it builds and runs anywhere .NET does.
     The data are downloaded by the workflow on the runner and read from there; nothing is committed. Not part of ReBuzz.sln.
 
       run it with: dotnet run, configuration Release, project tools/PitchEval (the arguments are in Program.cs)
@@ -22,6 +22,8 @@
   <ItemGroup>
     <Compile Include="..\..\Machines\NeoBuzz.Dsp\**\*.cs" Link="Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\..\Machines\NeoVoiceToMidi\Engine\**\*.cs" Link="VoiceToMidi\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- Neo Tune's engine (docs/specs/neo-tune.md §9): the corrector as the machine runs it, evaluated on VocalSet (Tune.cs). -->
+    <Compile Include="..\..\Machines\NeoTune\Engine\*.cs" Link="Tune\%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>
