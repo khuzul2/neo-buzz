@@ -69,30 +69,115 @@ namespace NeoBuzz.MachineTests
 
         // ---------------------------------------------------------------- pitch
 
-        [TestCase(0, "Low latency")]
-        [TestCase(1, "Quality")]
-        public void SungNotesPlayTheRightNotesAndTheLatencyIsMeasured(int range, string name)
+        [TestCase(0, 0, "Low latency, Fast")]
+        [TestCase(1, 0, "Quality, Fast")]
+        [TestCase(0, 1, "Low latency, Stable")]
+        [TestCase(1, 1, "Quality, Stable")]
+        public void SungNotesPlayTheRightNotesAndTheLatencyIsMeasured(int range, int response, string name)
         {
-            var (e, v) = Make(v => { v.Set(P.Range, range); v.Set(P.Triggers, 0); v.Set(P.Lock, 0); });
+            var (e, v) = Make(v => { v.Set(P.Range, range); v.Set(P.Response, response); v.Set(P.Triggers, 0); v.Set(P.Lock, 0); });
             var notes = new[] { 57, 60, 64, 67, 62, 69, 72, 55 };
             var (x, truth) = Melody(notes);
             var evs = Play(e, x);
             var ons = NoteOns(evs);
-            int right = 0; var delays = new List<double>();
+            int right = 0, finalRight = 0; var delays = new List<double>();
             foreach (var (start, note) in truth)
             {
                 var hit = ons.FirstOrDefault(o => o.At / (double)Rate >= start - 0.01 && o.At / (double)Rate < start + 0.5);
                 if (hit == null) continue;
                 // Pitch notes carry the Octave shift (0 by default).
-                if (hit.Data1 == note) { right++; delays.Add((hit.At / (double)Rate - start) * 1000); }
+                if (hit.Data1 == note) right++;
+                delays.Add((hit.At / (double)Rate - start) * 1000);
+                // What sounds 120 ms into the note, after any correction.
+                var last = ons.LastOrDefault(o => o.At / (double)Rate >= start - 0.01 && o.At / (double)Rate < start + 0.12);
+                if (last != null && last.Data1 == note) finalRight++;
             }
             delays.Sort();
             double median = delays.Count == 0 ? 0 : delays[delays.Count / 2], worst = delays.Count == 0 ? 0 : delays[^1];
-            Say($"VM1 pitch ({name}): {right}/{truth.Count} notes right, note-on delay median {F(median)} ms, worst {F(worst)} ms, {ons.Count} note-ons");
-            Assert.That(right, Is.GreaterThanOrEqualTo(truth.Count - 1));
-            Assert.That(ons.Count, Is.LessThanOrEqualTo(truth.Count + 1), "no extra notes");
-            Assert.That(median, Is.LessThan(range == 0 ? 80 : 120));
+            Say($"VM1 pitch ({name}): {finalRight}/{truth.Count} notes right at 120 ms ({right} on the first note-on, {truth.Count - right} wrong first), note-on delay median {F(median)} ms, worst {F(worst)} ms, {ons.Count} note-ons, {e.Corrections} corrections");
+            Assert.That(finalRight, Is.GreaterThanOrEqualTo(truth.Count - 1));
+            if (response == 0)
+            {
+                Assert.That(median, Is.LessThanOrEqualTo(range == 0 ? 20 : 30));
+                Assert.That(worst, Is.LessThanOrEqualTo(range == 0 ? 35 : 45));
+                Assert.That(ons.Count, Is.LessThanOrEqualTo(truth.Count + e.Corrections + 1), "no extra notes besides the corrections");
+            }
+            else
+            {
+                Assert.That(ons.Count, Is.LessThanOrEqualTo(truth.Count + 1), "no extra notes");
+                Assert.That(median, Is.LessThan(range == 0 ? 80 : 120));
+            }
             Assert.That(e.NoteLatencySeconds(Hz(60)) * 1000, Is.LessThan(range == 0 ? 60 : 90));
+        }
+
+        [TestCase(0)]
+        [TestCase(1)]
+        public void NoteOnDelayWithTriggersOnAndTrainedSounds(int range)
+        {
+            var (e, _) = Make(v => { v.Set(P.Range, range); v.Set(P.Lock, 0); });
+            for (int c = 0; c < 3; c++) Train(e, c, 15, (ulong)(70 + c));
+            e.Classifier.Train();
+            e.Reset();
+            var notes = new[] { 57, 60, 64, 67, 62, 69, 72, 55 };
+            var (x, truth) = Melody(notes);
+            var evs = Play(e, x);
+            var ons = NoteOns(evs);
+            var delays = new List<double>(); int right = 0;
+            foreach (var (start, note) in truth)
+            {
+                var hit = ons.FirstOrDefault(o => o.At / (double)Rate >= start - 0.01 && o.At / (double)Rate < start + 0.5);
+                if (hit == null) continue;
+                delays.Add((hit.At / (double)Rate - start) * 1000);
+                var last = ons.LastOrDefault(o => o.At / (double)Rate >= start - 0.01 && o.At / (double)Rate < start + 0.12);
+                if (last != null && last.Data1 == note) right++;
+            }
+            delays.Sort();
+            int trig = NoteOns(evs, MidiStream.Trigger).Count;
+            Say($"VM1 pitch with Triggers on, 3 sounds trained ({(range == 0 ? "Low latency" : "Quality")}, Fast): {right}/{truth.Count} right at 120 ms, note-on delay median {F(delays.Count == 0 ? 0 : delays[delays.Count / 2])} ms, worst {F(delays.Count == 0 ? 0 : delays[^1])} ms, {trig} trigger notes from the voice");
+            Assert.That(right, Is.GreaterThanOrEqualTo(truth.Count - 1));
+            Assert.That(trig, Is.EqualTo(0), "sung notes are not hits");
+            Assert.That(delays[delays.Count / 2], Is.LessThanOrEqualTo(range == 0 ? 20 : 30));
+            Assert.That(delays[^1], Is.LessThanOrEqualTo(range == 0 ? 35 : 45));
+        }
+
+        [TestCase(0)]
+        [TestCase(1)]
+        public void NoteOnDelayBrokenDownByStage(int range)
+        {
+            // Where the delay goes: the tracker's first voiced estimate (the window), then what the engine adds, then the host's block.
+            var notes = new[] { 57, 60, 64, 67, 62, 69, 72, 55 };
+            var (x, truth) = Melody(notes);
+            var tr = new PitchTracker(Rate, PitchRange.Voice, range == 0 ? PitchQuality.LowLatency : PitchQuality.Quality);
+            var frames = new PitchEstimate[tr.MaxFrames(256) + 4];
+            var firstVoiced = new List<double>();
+            long pos = 0; int next = 0;
+            for (int p0 = 0; p0 < x.Length; p0 += 256)
+            {
+                int n = Math.Min(256, x.Length - p0);
+                int got = tr.Process(x, p0, n, frames, 0);
+                for (int i = 0; i < got; i++)
+                    if (next < truth.Count && frames[i].Voiced && frames[i].EndSample / (double)Rate >= truth[next].Start)
+                    {
+                        firstVoiced.Add((frames[i].EndSample / (double)Rate - truth[next].Start) * 1000); next++;
+                    }
+                pos += n;
+            }
+            var (e, _) = Make(v => { v.Set(P.Range, range); v.Set(P.Response, 0); v.Set(P.Triggers, 0); v.Set(P.Lock, 0); });
+            var ons = NoteOns(Play(e, x));
+            var engine = new List<double>(); var wrongFirst = 0;
+            foreach (var (start, note) in truth)
+            {
+                var hit = ons.FirstOrDefault(o => o.At / (double)Rate >= start - 0.01 && o.At / (double)Rate < start + 0.5);
+                if (hit == null) continue;
+                engine.Add((hit.At / (double)Rate - start) * 1000);
+                if (hit.Data1 != note) wrongFirst++;
+            }
+            firstVoiced.Sort(); engine.Sort();
+            double Med(List<double> l) => l.Count == 0 ? 0 : l[l.Count / 2];
+            Say($"VM1 delay stages ({(range == 0 ? "Low latency" : "Quality")}, Fast): tracker first voiced estimate median {F(Med(firstVoiced))} ms (worst {F(firstVoiced.Count == 0 ? 0 : firstVoiced[^1])}), " +
+                $"note-on median {F(Med(engine))} ms (worst {F(engine.Count == 0 ? 0 : engine[^1])}); voicing hysteresis, stickiness and min note length add 0 to the first note; " +
+                $"the host adds up to one block (256 samples = {F(256 * 1000.0 / Rate)} ms); first notes wrong: {wrongFirst} of {engine.Count}");
+            Assert.That(Med(engine) - Med(firstVoiced), Is.LessThanOrEqualTo(VoiceEngine.FastWaitMs), "the engine adds at most its wait for a clean estimate");
         }
 
         [Test]
@@ -352,10 +437,11 @@ namespace NeoBuzz.MachineTests
             Assert.That(e2.Classifier.Serialize(), Is.EqualTo(text));
         }
 
-        [Test]
-        public void VoicedSoundsGoToThePitchAndPercussiveOnesToTheTriggersAtOnce()
+        [TestCase(0)]
+        [TestCase(1)]
+        public void VoicedSoundsGoToThePitchAndPercussiveOnesToTheTriggersAtOnce(int response)
         {
-            var (e, _) = Make(v => { v.Set(P.Overlap, 0); v.Set(P.Gap, 50); });
+            var (e, _) = Make(v => { v.Set(P.Overlap, 0); v.Set(P.Gap, 50); v.Set(P.Response, response); });
             for (int c = 0; c < 3; c++) Train(e, c, 15, (ulong)(60 + c));
             e.Classifier.Train();
             e.Reset();
@@ -369,7 +455,19 @@ namespace NeoBuzz.MachineTests
             Say($"VM1 both at once: {pitch} pitch notes, {trig} trigger notes");
             Assert.That(pitch, Is.GreaterThanOrEqualTo(1));
             Assert.That(trig, Is.GreaterThanOrEqualTo(2));
-            Assert.That(NoteOns(evs).All(o => o.At < (Rate / 4 + voice.Length + Rate / 8)), Is.True, "no pitch note from the beatbox");
+            long voiceEnd = Rate / 4 + voice.Length + Rate / 8;
+            if (response == 1) Assert.That(NoteOns(evs).All(o => o.At < voiceEnd), Is.True, "Stable: no pitch note from the beatbox");
+            else
+            {
+                // Fast plays at once and a hit named a trigger cuts its pitch note: at most a blip of 80 ms (the hit is named about 60 ms after it starts).
+                foreach (var on in NoteOns(evs).Where(o => o.At >= voiceEnd))
+                {
+                    var off = evs.FirstOrDefault(m => m.Stream == MidiStream.Pitch && m.Kind == MidiKind.NoteOff && m.Data1 == on.Data1 && m.At >= on.At);
+                    Assert.That(off, Is.Not.Null);
+                    Assert.That((off.At - on.At) * 1000.0 / Rate, Is.LessThanOrEqualTo(80), "a pitch note from a hit is cut once the hit is named");
+                }
+                Say($"VM1 Fast, pitch notes from the beatbox: {NoteOns(evs).Count(o => o.At >= voiceEnd)} blips");
+            }
         }
 
         // ---------------------------------------------------------------- real time

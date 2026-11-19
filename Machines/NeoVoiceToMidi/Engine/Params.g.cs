@@ -30,75 +30,76 @@ namespace NeoBuzz.VoiceToMidi
         public const int Loud = 19;
         public const int MinNote = 20;
         public const int Legato = 21;
-        public const int PitchCh = 22;
-        public const int Triggers = 23;
-        public const int Window = 24;
-        public const int Sensitivity = 25;
-        public const int Gap = 26;
-        public const int Overlap = 27;
-        public const int Length = 28;
-        public const int TrigCh = 29;
-        public const int T1Note = 30;
-        public const int T1Vel = 31;
-        public const int T1Sens = 32;
-        public const int T2Note = 33;
-        public const int T2Vel = 34;
-        public const int T2Sens = 35;
-        public const int T3Note = 36;
-        public const int T3Vel = 37;
-        public const int T3Sens = 38;
-        public const int T4Note = 39;
-        public const int T4Vel = 40;
-        public const int T4Sens = 41;
-        public const int T5Note = 42;
-        public const int T5Vel = 43;
-        public const int T5Sens = 44;
-        public const int T6Note = 45;
-        public const int T6Vel = 46;
-        public const int T6Sens = 47;
-        public const int T7Note = 48;
-        public const int T7Vel = 49;
-        public const int T7Sens = 50;
-        public const int T8Note = 51;
-        public const int T8Vel = 52;
-        public const int T8Sens = 53;
-        public const int Chords = 54;
-        public const int ChordFollow = 55;
-        public const int ChordType = 56;
-        public const int Inversion = 57;
-        public const int Spread = 58;
-        public const int ChordOct = 59;
-        public const int ChordCh = 60;
-        public const int ChordVel = 61;
-        public const int LvlOn = 62;
-        public const int LvlCC = 63;
-        public const int LvlMin = 64;
-        public const int LvlMax = 65;
-        public const int LvlLo = 66;
-        public const int LvlHi = 67;
-        public const int LvlCh = 68;
-        public const int AaOn = 69;
-        public const int AaCC = 70;
-        public const int AaMin = 71;
-        public const int AaMax = 72;
-        public const int AaLo = 73;
-        public const int AaHi = 74;
-        public const int AaCh = 75;
-        public const int OoOn = 76;
-        public const int OoCC = 77;
-        public const int OoMin = 78;
-        public const int OoMax = 79;
-        public const int OoLo = 80;
-        public const int OoHi = 81;
-        public const int OoCh = 82;
-        public const int EeOn = 83;
-        public const int EeCC = 84;
-        public const int EeMin = 85;
-        public const int EeMax = 86;
-        public const int EeLo = 87;
-        public const int EeHi = 88;
-        public const int EeCh = 89;
-        public const int Count = 90;
+        public const int Response = 22;
+        public const int PitchCh = 23;
+        public const int Triggers = 24;
+        public const int Window = 25;
+        public const int Sensitivity = 26;
+        public const int Gap = 27;
+        public const int Overlap = 28;
+        public const int Length = 29;
+        public const int TrigCh = 30;
+        public const int T1Note = 31;
+        public const int T1Vel = 32;
+        public const int T1Sens = 33;
+        public const int T2Note = 34;
+        public const int T2Vel = 35;
+        public const int T2Sens = 36;
+        public const int T3Note = 37;
+        public const int T3Vel = 38;
+        public const int T3Sens = 39;
+        public const int T4Note = 40;
+        public const int T4Vel = 41;
+        public const int T4Sens = 42;
+        public const int T5Note = 43;
+        public const int T5Vel = 44;
+        public const int T5Sens = 45;
+        public const int T6Note = 46;
+        public const int T6Vel = 47;
+        public const int T6Sens = 48;
+        public const int T7Note = 49;
+        public const int T7Vel = 50;
+        public const int T7Sens = 51;
+        public const int T8Note = 52;
+        public const int T8Vel = 53;
+        public const int T8Sens = 54;
+        public const int Chords = 55;
+        public const int ChordFollow = 56;
+        public const int ChordType = 57;
+        public const int Inversion = 58;
+        public const int Spread = 59;
+        public const int ChordOct = 60;
+        public const int ChordCh = 61;
+        public const int ChordVel = 62;
+        public const int LvlOn = 63;
+        public const int LvlCC = 64;
+        public const int LvlMin = 65;
+        public const int LvlMax = 66;
+        public const int LvlLo = 67;
+        public const int LvlHi = 68;
+        public const int LvlCh = 69;
+        public const int AaOn = 70;
+        public const int AaCC = 71;
+        public const int AaMin = 72;
+        public const int AaMax = 73;
+        public const int AaLo = 74;
+        public const int AaHi = 75;
+        public const int AaCh = 76;
+        public const int OoOn = 77;
+        public const int OoCC = 78;
+        public const int OoMin = 79;
+        public const int OoMax = 80;
+        public const int OoLo = 81;
+        public const int OoHi = 82;
+        public const int OoCh = 83;
+        public const int EeOn = 84;
+        public const int EeCC = 85;
+        public const int EeMin = 86;
+        public const int EeMax = 87;
+        public const int EeLo = 88;
+        public const int EeHi = 89;
+        public const int EeCh = 90;
+        public const int Count = 91;
     }
 
     internal static class Params
@@ -119,7 +120,7 @@ namespace NeoBuzz.VoiceToMidi
             new ParamDef(P.Muted, "Muted", "Muted notes", 0, 4095, 0, MapKind.Int, a: 0, b: 0, group: "Pitch", description: "Notes never played, one bit per note from C to B: the voice goes to the nearest note that is on", how: "Holds the notes that never play, one bit each from C to B (click a key on the keyboard).", sound: "A muted note is replaced by the nearest note that is on, so the melody avoids it."),
             new ParamDef(P.Octave, "Octave", "Octave", 0, 6, 3, MapKind.Int, a: -3, b: 0, flag: true, unit: "oct", group: "Pitch", description: "Octave shift of the pitch notes", how: "Shifts the pitch notes by whole octaves, from -3 to +3.", sound: "The same tune plays higher or lower on the synth without singing in another register."),
             new ParamDef(P.Stick, "Stick", "Stickiness", 0, 100, 25, MapKind.Linear, a: 0, b: 100, unit: "cents", digits: 0, group: "Pitch", description: "How far past the middle between two notes the voice must go before the note changes (a hysteresis)", how: "Sets how far past the middle between two notes the voice must go before the note changes, from 0 to 100 cents.", sound: "More stickiness holds a wobbly note steady; none follows every small move."),
-            new ParamDef(P.Settle, "Settle", "Settle", 0, 200, 30, MapKind.Linear, a: 0, b: 200, unit: "ms", digits: 0, group: "Pitch", description: "How long a new note must be held before it plays or replaces the one sounding", how: "Sets how long a new note must be held before it plays or replaces the one sounding, from 0 to 200 ms.", sound: "Longer settling removes grace notes and slides at the cost of a later note start."),
+            new ParamDef(P.Settle, "Settle", "Settle", 0, 200, 30, MapKind.Linear, a: 0, b: 200, unit: "ms", digits: 0, group: "Pitch", description: "How long a new note must be held before it replaces the one sounding (and, in Stable response, before it first plays)", how: "Sets how long a new note must be held before it replaces the one sounding, from 0 to 200 ms; in Stable response it also delays the first note.", sound: "Longer settling removes grace notes and slides at the cost of a later note start."),
             new ParamDef(P.Bend, "Bend", "Pitch bend", 0, 12, 0, MapKind.Enum, names: new[] { "Off", "±1 st", "±2 st", "±3 st", "±4 st", "±5 st", "±6 st", "±7 st", "±8 st", "±9 st", "±10 st", "±11 st", "±12 st" }, group: "Pitch", description: "Pitch bend range: the voice's distance from the note is sent as bend. Set the same range on the synth", how: "Sets the pitch bend range from off to plus or minus 12 semitones.", sound: "The voice's distance from its note moves the synth's pitch by this much; set the synth to the same range."),
             new ParamDef(P.BendMode, "BendMode", "Bend mode", 0, 1, 0, MapKind.Enum, names: new[] { "Free", "Anchored" }, group: "Pitch", description: "Free: bend follows every wobble. Anchored: the note stays put until the voice moves farther than the Anchor from its middle, then it bends", how: "Chooses Free bend or Anchored bend.", sound: "Free follows every wobble; Anchored keeps the note still until the voice leaves it, then bends."),
             new ParamDef(P.Anchor, "Anchor", "Anchor", 5, 100, 35, MapKind.Linear, a: 5, b: 100, unit: "cents", digits: 0, group: "Pitch", description: "Anchored bend: how far from the note's middle the voice must move before the bend starts", how: "Sets how far from the note's middle the voice must move, from 5 to 100 cents, before the bend starts.", sound: "A larger anchor keeps vibrato from bending the note; a small one bends at once."),
@@ -130,6 +131,7 @@ namespace NeoBuzz.VoiceToMidi
             new ParamDef(P.Loud, "Loud", "Loud level", 0, 40, 28, MapKind.Linear, a: -40, b: 0, unit: "dB", digits: 0, group: "Pitch", description: "Dynamic: the voice level that gives the loudest velocity", how: "Sets the voice level, from -40 to 0 dB, that gives the loudest velocity.", sound: "Lower it so ordinary singing reaches full velocity."),
             new ParamDef(P.MinNote, "MinNote", "Min note length", 0, 100, 12, MapKind.Linear, a: 0, b: 500, unit: "ms", digits: 0, group: "Pitch", description: "A note lasts at least this long, however short the voice was", how: "Sets the shortest a note lasts, from 0 to 100 ms mapped to 0 to 500 ms.", sound: "Short sung notes still last long enough for the synth to sound."),
             new ParamDef(P.Legato, "Legato", "Legato", 0, 1, 0, MapKind.Switch, group: "Pitch", description: "A new note starts before the old one stops (for mono synths with legato), instead of after", how: "Starts a new note before the old one stops when switched on.", sound: "Mono synths then glide between notes instead of retriggering."),
+            new ParamDef(P.Response, "Response", "Response", 0, 1, 0, MapKind.Enum, names: new[] { "Fast", "Stable" }, group: "Pitch", description: "Fast plays the first note as soon as the voice is pitched; Stable waits Settle ms first", how: "Chooses when a new note starts: Fast plays it at the first pitched sound and corrects it within 80 ms if the voice settled on another note; Stable waits Settle ms of the same note before playing it.", sound: "Fast feels immediate for live playing and may retrigger once on a wobbly start; Stable never plays a wrong first note but answers later."),
             new ParamDef(P.PitchCh, "PitchCh", "Pitch channel", 0, 15, 0, MapKind.Int, a: 1, b: 0, group: "Pitch", description: "MIDI channel of the pitch notes", how: "Sets the MIDI channel of the pitch notes, from 1 to 16.", sound: "It selects which synth or part plays the sung line."),
             new ParamDef(P.Triggers, "Triggers", "Triggers", 0, 1, 1, MapKind.Switch, group: "Triggers", description: "Trained sounds play notes", how: "Switches the trained sounds playing notes on or off.", sound: "Off leaves only the pitch part."),
             new ParamDef(P.Window, "Window", "Window", 0, 1, 1, MapKind.Enum, names: new[] { "Fast", "Accurate" }, group: "Triggers", description: "The slice of each hit the classifier hears: Fast 18 ms (about 15 ms after the hit) or Accurate 30 ms (about 27 ms, a few points more right)", how: "Chooses the slice of each hit the classifier hears: Fast (18 ms) or Accurate (30 ms).", sound: "Accurate names sounds a few points more reliably and plays about 12 ms later."),

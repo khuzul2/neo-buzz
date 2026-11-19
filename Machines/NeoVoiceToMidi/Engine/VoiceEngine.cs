@@ -1,7 +1,8 @@
 #nullable disable
 // Neo Voice to MIDI (docs/specs/voice-to-midi.md): the engine. Mono audio in, MIDI events out; no ReBuzz types.
 //  - Pitch: PitchTracker (Voice range, Low latency or Quality) -> the nearest note allowed by the key (Set, Song, Suggested; muted notes out)
-//    -> a note after Settle ms of the same candidate, changed only past Stickiness cents of advantage held for Settle ms, off after the voice
+//    -> Fast response: a note at the first pitched estimate (corrected within 80 ms if the nearest note was another); Stable: after Settle ms of
+//    the same candidate. A running note changes only past Stickiness cents of advantage held for Settle ms; off after the voice
 //    has been silent 25 ms and the note has lasted Min note length; velocity from the voice level; pitch bend free or anchored; legato.
 //  - Triggers: OnsetDetector (Sensitivity, Min gap) -> VoiceFeatures (Fast 18 ms or Accurate 30 ms) -> VoiceClassifier (trained sounds) ->
 //    a note of that sound with its velocity, off after the trigger length. Learning one sound: every onset's features go to a queue the
@@ -54,10 +55,10 @@ namespace NeoBuzz.VoiceToMidi
         int evCount;
 
         // Settings read once per block.
-        bool pitchOn, triggersOn, chordsOn, bendOn, legato, fixedVel, accurate, triggersWin, anchored, sevenths, melody;
+        bool fastResponse, pitchOn, triggersOn, chordsOn, bendOn, legato, fixedVel, accurate, triggersWin, anchored, sevenths, melody;
         int lockMode, keyRoot, scale, custom, muted, octave, bendRange, pitchCh, trigCh, chordCh, chordInv, chordSpread, chordOct;
         float stickSemis, anchorSemis, thresholdLin, velSoftDb, velLoudDb;
-        int fixedVelocity, velMin, trigLenSamples, settleSamples, minNoteSamples, releaseHold, gapSamples;
+        int fixedVelocity, velMin, trigLenSamples, settleSamples, correctSamples, fastWaitSamples, minNoteSamples, releaseHold, gapSamples;
         float chordVelShare;
         int activeMask = Scales.All;
 
@@ -78,7 +79,8 @@ namespace NeoBuzz.VoiceToMidi
         int curNote = -1;                 // the quantised note sounding (before the octave shift), -1 none
         int sentNote = -1;                // the note number sent (after the shift)
         long curOnAt;
-        int pendNote = -1; long pendSince; float pendPeak;
+        long noteStartAt;                 // when the voice's first note of this run played (the correction window counts from here)
+        int pendNote = -1; long pendSince, fastSince; float pendPeak;
         int switchNote = -1; long switchSince;
         long lastVoicedAt;
         bool pendingOff; long pendDue;
@@ -188,7 +190,12 @@ namespace NeoBuzz.VoiceToMidi
         }
 
         /// <summary>Samples from the start of a note's voice to its note on at best: the pitch window plus Settle (for the readings).</summary>
-        public double NoteLatencySeconds(double hz = 220) => (tracker ?? trackerQ).DetectionSeconds(hz) + settleSamples / (double)rate;
+        public double NoteLatencySeconds(double hz = 220) => (tracker ?? trackerQ).DetectionSeconds(hz) + (fastResponse ? FastWaitMs * 0.001 : settleSamples / (double)rate);
+        /// <summary>How long the first note may still be corrected after it played (Fast response), in ms.</summary>
+        public const double CorrectionMs = 80;
+        /// <summary>Fast response: the clarity (0 to 1) that lets the first note play, and the longest wait for it after the first pitched estimate, in ms.</summary>
+        public const float FastConfidence = 0.93f;
+        public const double FastWaitMs = 12;
         public int Rate => rate;
         public PitchTracker CurrentTracker => tracker;
 
@@ -210,6 +217,9 @@ namespace NeoBuzz.VoiceToMidi
             octave = I(P.Octave);
             stickSemis = V(P.Stick) / 100f;
             settleSamples = (int)(V(P.Settle) * 0.001 * rate);
+            fastResponse = I(P.Response) == 0;
+            correctSamples = (int)(CorrectionMs * 0.001 * rate);
+            fastWaitSamples = (int)(FastWaitMs * 0.001 * rate);
             bendRange = I(P.Bend);
             bendOn = bendRange > 0;
             anchored = I(P.BendMode) == 1;
@@ -328,13 +338,7 @@ namespace NeoBuzz.VoiceToMidi
             lvl += (rms > lvl ? ka : kr) * (rms - lvl);
             LevelDb = lvl > 1e-6f ? 20f * PortableMathF.Log10(lvl) : -120f;
 
-            // Pitch.
-            int got = tracker.Process(x, 0, n, frames, 0);
-            for (int i = 0; i < got; i++) Estimate(in frames[i]);
-            // A note whose off is due.
-            CheckOff(end);
-
-            // Triggers.
+            // Onsets first: a percussive hit is known before the pitch of its first frames can start a note (Fast response plays at once).
             int found = onsets.Process(x, 0, n, onsetBuf, 0);
             for (int i = 0; i < found && queued < queue.Length; i++)
             {
@@ -344,6 +348,13 @@ namespace NeoBuzz.VoiceToMidi
                 // Overlap: an onset is a sound to name before the voice may start a note; a new onset ends the last one's suppression.
                 if (Learning < 0 && !triggersWin) onsetPendingUntil = 0;
             }
+            // Pitch.
+            int got = tracker.Process(x, 0, n, frames, 0);
+            for (int i = 0; i < got; i++) Estimate(in frames[i]);
+            // A note whose off is due.
+            CheckOff(end);
+
+            // Triggers.
             ServiceQueue(end);
             ServiceOffs(end);
 
@@ -400,16 +411,28 @@ namespace NeoBuzz.VoiceToMidi
                 finder.Add(sungPc, hop); suggester.Add(sungPc, hop);
                 if (curNote < 0)
                 {
+                    if (pendNote < 0) fastSince = t;
                     if (cand != pendNote) { pendNote = cand; pendSince = t; pendPeak = e.Rms; }
                     else pendPeak = Math.Max(pendPeak, e.Rms);
-                    bool held = triggersOn && triggersWin && onsetPendingUntil > t && Learning < 0;
-                    if (t - pendSince >= settleSamples && !held) StartNote(cand, t, pendPeak, e.Midi);
+                    // Stable holds a note back while an onset is being named; Fast plays at once and a hit named a trigger cuts it (Trigger).
+                    bool held = !fastResponse && triggersOn && triggersWin && onsetPendingUntil > t && Learning < 0;
+                    // Fast: the first pitched estimate plays at once (Settle and Stickiness only filter what comes after); Stable waits Settle ms.
+                    // The first estimates of an onset can be an octave out: Fast waits for a clean one (Confidence), at most FastWaitMs.
+                    bool ready = fastResponse ? e.Confidence >= FastConfidence || t - fastSince >= fastWaitSamples : t - pendSince >= settleSamples;
+                    if (ready && !held) StartNote(cand, t, pendPeak, e.Midi);
                 }
                 else
                 {
                     pendingOff = false;
                     pendPeak = Math.Max(pendPeak * 0.999f, e.Rms);
-                    if (cand != curNote)
+                    if (fastResponse && cand != curNote && t - noteStartAt < correctSamples && !bendOn)
+                    {
+                        // The first estimate can be a note off: within the correction window the nearest note wins as soon as two estimates agree
+                        // (with Pitch bend on, the bend already follows the voice, so the note is left alone).
+                        if (cand != switchNote) { switchNote = cand; switchSince = t; pendPeak = Math.Max(pendPeak, e.Rms); }
+                        else if (t - switchSince >= 2 * hop * rate) { long keep = noteStartAt; ChangeNote(cand, t, pendPeak, e.Midi, cand % 12 == curNote % 12); noteStartAt = keep; Corrections++; }
+                    }
+                    else if (cand != curNote)
                     {
                         double advantage = Math.Abs(e.Midi - curNote) - Math.Abs(e.Midi - cand);
                         if (advantage >= stickSemis)
@@ -453,7 +476,7 @@ namespace NeoBuzz.VoiceToMidi
 
         void StartNote(int note, long t, float peak, double sung)
         {
-            curNote = note; curOnAt = t; pendNote = -1; switchNote = -1; pendingOff = false; bendOut = false;
+            curNote = note; curOnAt = t; noteStartAt = t; pendNote = -1; switchNote = -1; pendingOff = false; bendOut = false;
             int vel = Velocity(peak);
             if (bendOn && lastBend != 8192) SendBend(8192, t, true);
             sentNote = Shift(note); noteChannel = pitchCh;
@@ -464,8 +487,10 @@ namespace NeoBuzz.VoiceToMidi
         }
 
         public int LastNoteVelocity { get; private set; }
+        /// <summary>How many first notes were corrected within the window (Fast response).</summary>
+        public int Corrections { get; private set; }
 
-        void ChangeNote(int note, long t, float peak, double sung)
+        void ChangeNote(int note, long t, float peak, double sung, bool keepChord = false)
         {
             int old = sentNote, oldCh = noteChannel;
             bool oldSent = noteSent;
@@ -484,8 +509,7 @@ namespace NeoBuzz.VoiceToMidi
                 Emit(MidiKind.NoteOn, MidiStream.Pitch, noteChannel, sentNote, vel, t);
             }
             noteSent = pitchEmit;
-            StopChord(t);
-            PlayChord(note, vel, t);
+            if (!keepChord) { StopChord(t); PlayChord(note, vel, t); }
             LastNoteVelocity = vel;
         }
 

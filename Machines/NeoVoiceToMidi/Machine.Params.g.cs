@@ -40,7 +40,7 @@ namespace NeoBuzz.VoiceToMidi
         [ParameterDecl(Name = "Stickiness", Description = "How far past the middle between two notes the voice must go before the note changes (a hysteresis)", MinValue = 0, MaxValue = 100, DefValue = 25)]
         public int Stick { get => Values[P.Stick]; set => Values.Set(P.Stick, value); }
 
-        [ParameterDecl(Name = "Settle", Description = "How long a new note must be held before it plays or replaces the one sounding", MinValue = 0, MaxValue = 200, DefValue = 30)]
+        [ParameterDecl(Name = "Settle", Description = "How long a new note must be held before it replaces the one sounding (and, in Stable response, before it first plays)", MinValue = 0, MaxValue = 200, DefValue = 30)]
         public int Settle { get => Values[P.Settle]; set => Values.Set(P.Settle, value); }
 
         [ParameterDecl(Name = "Pitch bend", Description = "Pitch bend range: the voice's distance from the note is sent as bend. Set the same range on the synth", MinValue = 0, MaxValue = 12, DefValue = 0)]
@@ -72,6 +72,9 @@ namespace NeoBuzz.VoiceToMidi
 
         [ParameterDecl(Name = "Legato", Description = "A new note starts before the old one stops (for mono synths with legato), instead of after", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int Legato { get => Values[P.Legato]; set => Values.Set(P.Legato, value); }
+
+        [ParameterDecl(Name = "Response", Description = "Fast plays the first note as soon as the voice is pitched; Stable waits Settle ms first", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int Response { get => Values[P.Response]; set => Values.Set(P.Response, value); }
 
         [ParameterDecl(Name = "Pitch channel", Description = "MIDI channel of the pitch notes", MinValue = 0, MaxValue = 15, DefValue = 0)]
         public int PitchCh { get => Values[P.PitchCh]; set => Values.Set(P.PitchCh, value); }

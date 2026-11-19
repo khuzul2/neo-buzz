@@ -33,6 +33,7 @@ namespace NeoBuzz.PitchEval
             public List<double> RunStd = new();
             public double[] VowelMean = new double[3]; public int VowelFrames; public double Lm, Hm, Lh;
             public double Seconds;
+            public FirstNote.Result First;
         }
 
         public static void Run(string zipPath, int maxPerGroupPerSinger, StringBuilder md)
@@ -122,6 +123,7 @@ namespace NeoBuzz.PitchEval
             }
             md.AppendLine();
             HeldOutVowels(results, md);
+            FirstNote.Report(results.Where(r => r.First != null).Select(r => r.First).ToList(), md);
         }
 
         /// <summary>
@@ -254,6 +256,7 @@ namespace NeoBuzz.PitchEval
             // Held notes: runs of voiced Q estimates.
             if (group.StartsWith("long tones, straight"))
             {
+                r.First = FirstNote.Run(x, rate);
                 int s = -1;
                 for (int i = 0; i <= q.Count; i++)
                 {

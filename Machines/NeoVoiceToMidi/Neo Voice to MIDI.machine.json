@@ -227,8 +227,8 @@
    "a": 0.0,
    "b": 200.0,
    "unit": "ms",
-   "description": "How long a new note must be held before it plays or replaces the one sounding",
-   "how": "Sets how long a new note must be held before it plays or replaces the one sounding, from 0 to 200 ms.",
+   "description": "How long a new note must be held before it replaces the one sounding (and, in Stable response, before it first plays)",
+   "how": "Sets how long a new note must be held before it replaces the one sounding, from 0 to 200 ms; in Stable response it also delays the first note.",
    "sound": "Longer settling removes grace notes and slides at the cost of a later note start."
   },
   {
@@ -404,6 +404,23 @@
   },
   {
    "index": 22,
+   "id": "Response",
+   "name": "Response",
+   "group": "Pitch",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Fast",
+    "Stable"
+   ],
+   "description": "Fast plays the first note as soon as the voice is pitched; Stable waits Settle ms first",
+   "how": "Chooses when a new note starts: Fast plays it at the first pitched sound and corrects it within 80 ms if the voice settled on another note; Stable waits Settle ms of the same note before playing it.",
+   "sound": "Fast feels immediate for live playing and may retrigger once on a wobbly start; Stable never plays a wrong first note but answers later."
+  },
+  {
+   "index": 23,
    "id": "PitchCh",
    "name": "Pitch channel",
    "group": "Pitch",
@@ -417,7 +434,7 @@
    "sound": "It selects which synth or part plays the sung line."
   },
   {
-   "index": 23,
+   "index": 24,
    "id": "Triggers",
    "name": "Triggers",
    "group": "Triggers",
@@ -434,7 +451,7 @@
    "sound": "Off leaves only the pitch part."
   },
   {
-   "index": 24,
+   "index": 25,
    "id": "Window",
    "name": "Window",
    "group": "Triggers",
@@ -451,7 +468,7 @@
    "sound": "Accurate names sounds a few points more reliably and plays about 12 ms later."
   },
   {
-   "index": 25,
+   "index": 26,
    "id": "Sensitivity",
    "name": "Sensitivity",
    "group": "Triggers",
@@ -465,7 +482,7 @@
    "sound": "Higher values catch quiet hits and risk catching breaths and clicks."
   },
   {
-   "index": 26,
+   "index": 27,
    "id": "Gap",
    "name": "Min gap",
    "group": "Triggers",
@@ -481,7 +498,7 @@
    "sound": "About 110 ms stops the vowel after a consonant counting as a second hit."
   },
   {
-   "index": 27,
+   "index": 28,
    "id": "Overlap",
    "name": "Overlap",
    "group": "Triggers",
@@ -498,7 +515,7 @@
    "sound": "Triggers win keeps a kick from also playing a low note; Both lets the voice play its pitch too."
   },
   {
-   "index": 28,
+   "index": 29,
    "id": "Length",
    "name": "Trigger length",
    "group": "Triggers",
@@ -514,7 +531,7 @@
    "sound": "Short notes suit drums that ring by themselves; long ones suit sustained sounds."
   },
   {
-   "index": 29,
+   "index": 30,
    "id": "TrigCh",
    "name": "Trigger channel",
    "group": "Triggers",
@@ -528,7 +545,7 @@
    "sound": "Channel 10 is the drum channel of most drum machines."
   },
   {
-   "index": 30,
+   "index": 31,
    "id": "T1Note",
    "name": "Sound 1 note",
    "group": "Triggers",
@@ -542,7 +559,7 @@
    "sound": "Choose the drum or note you want that sound to play; defaults follow the usual drum map."
   },
   {
-   "index": 31,
+   "index": 32,
    "id": "T1Vel",
    "name": "Sound 1 velocity",
    "group": "Triggers",
@@ -556,7 +573,7 @@
    "sound": "Zero makes harder hits play louder; a number makes every hit the same."
   },
   {
-   "index": 32,
+   "index": 33,
    "id": "T1Sens",
    "name": "Sound 1 sensitivity",
    "group": "Triggers",
@@ -570,7 +587,7 @@
    "sound": "Higher values play it more readily but let other sounds through as it; lower ones play only clear hits."
   },
   {
-   "index": 33,
+   "index": 34,
    "id": "T2Note",
    "name": "Sound 2 note",
    "group": "Triggers",
@@ -584,7 +601,7 @@
    "sound": "Choose the drum or note you want that sound to play; defaults follow the usual drum map."
   },
   {
-   "index": 34,
+   "index": 35,
    "id": "T2Vel",
    "name": "Sound 2 velocity",
    "group": "Triggers",
@@ -598,7 +615,7 @@
    "sound": "Zero makes harder hits play louder; a number makes every hit the same."
   },
   {
-   "index": 35,
+   "index": 36,
    "id": "T2Sens",
    "name": "Sound 2 sensitivity",
    "group": "Triggers",
@@ -612,7 +629,7 @@
    "sound": "Higher values play it more readily but let other sounds through as it; lower ones play only clear hits."
   },
   {
-   "index": 36,
+   "index": 37,
    "id": "T3Note",
    "name": "Sound 3 note",
    "group": "Triggers",
@@ -626,7 +643,7 @@
    "sound": "Choose the drum or note you want that sound to play; defaults follow the usual drum map."
   },
   {
-   "index": 37,
+   "index": 38,
    "id": "T3Vel",
    "name": "Sound 3 velocity",
    "group": "Triggers",
@@ -640,7 +657,7 @@
    "sound": "Zero makes harder hits play louder; a number makes every hit the same."
   },
   {
-   "index": 38,
+   "index": 39,
    "id": "T3Sens",
    "name": "Sound 3 sensitivity",
    "group": "Triggers",
@@ -654,7 +671,7 @@
    "sound": "Higher values play it more readily but let other sounds through as it; lower ones play only clear hits."
   },
   {
-   "index": 39,
+   "index": 40,
    "id": "T4Note",
    "name": "Sound 4 note",
    "group": "Triggers",
@@ -668,7 +685,7 @@
    "sound": "Choose the drum or note you want that sound to play; defaults follow the usual drum map."
   },
   {
-   "index": 40,
+   "index": 41,
    "id": "T4Vel",
    "name": "Sound 4 velocity",
    "group": "Triggers",
@@ -682,7 +699,7 @@
    "sound": "Zero makes harder hits play louder; a number makes every hit the same."
   },
   {
-   "index": 41,
+   "index": 42,
    "id": "T4Sens",
    "name": "Sound 4 sensitivity",
    "group": "Triggers",
@@ -696,7 +713,7 @@
    "sound": "Higher values play it more readily but let other sounds through as it; lower ones play only clear hits."
   },
   {
-   "index": 42,
+   "index": 43,
    "id": "T5Note",
    "name": "Sound 5 note",
    "group": "Triggers",
@@ -710,7 +727,7 @@
    "sound": "Choose the drum or note you want that sound to play; defaults follow the usual drum map."
   },
   {
-   "index": 43,
+   "index": 44,
    "id": "T5Vel",
    "name": "Sound 5 velocity",
    "group": "Triggers",
@@ -724,7 +741,7 @@
    "sound": "Zero makes harder hits play louder; a number makes every hit the same."
   },
   {
-   "index": 44,
+   "index": 45,
    "id": "T5Sens",
    "name": "Sound 5 sensitivity",
    "group": "Triggers",
@@ -738,7 +755,7 @@
    "sound": "Higher values play it more readily but let other sounds through as it; lower ones play only clear hits."
   },
   {
-   "index": 45,
+   "index": 46,
    "id": "T6Note",
    "name": "Sound 6 note",
    "group": "Triggers",
@@ -752,7 +769,7 @@
    "sound": "Choose the drum or note you want that sound to play; defaults follow the usual drum map."
   },
   {
-   "index": 46,
+   "index": 47,
    "id": "T6Vel",
    "name": "Sound 6 velocity",
    "group": "Triggers",
@@ -766,7 +783,7 @@
    "sound": "Zero makes harder hits play louder; a number makes every hit the same."
   },
   {
-   "index": 47,
+   "index": 48,
    "id": "T6Sens",
    "name": "Sound 6 sensitivity",
    "group": "Triggers",
@@ -780,7 +797,7 @@
    "sound": "Higher values play it more readily but let other sounds through as it; lower ones play only clear hits."
   },
   {
-   "index": 48,
+   "index": 49,
    "id": "T7Note",
    "name": "Sound 7 note",
    "group": "Triggers",
@@ -794,7 +811,7 @@
    "sound": "Choose the drum or note you want that sound to play; defaults follow the usual drum map."
   },
   {
-   "index": 49,
+   "index": 50,
    "id": "T7Vel",
    "name": "Sound 7 velocity",
    "group": "Triggers",
@@ -808,7 +825,7 @@
    "sound": "Zero makes harder hits play louder; a number makes every hit the same."
   },
   {
-   "index": 50,
+   "index": 51,
    "id": "T7Sens",
    "name": "Sound 7 sensitivity",
    "group": "Triggers",
@@ -822,7 +839,7 @@
    "sound": "Higher values play it more readily but let other sounds through as it; lower ones play only clear hits."
   },
   {
-   "index": 51,
+   "index": 52,
    "id": "T8Note",
    "name": "Sound 8 note",
    "group": "Triggers",
@@ -836,7 +853,7 @@
    "sound": "Choose the drum or note you want that sound to play; defaults follow the usual drum map."
   },
   {
-   "index": 52,
+   "index": 53,
    "id": "T8Vel",
    "name": "Sound 8 velocity",
    "group": "Triggers",
@@ -850,7 +867,7 @@
    "sound": "Zero makes harder hits play louder; a number makes every hit the same."
   },
   {
-   "index": 53,
+   "index": 54,
    "id": "T8Sens",
    "name": "Sound 8 sensitivity",
    "group": "Triggers",
@@ -864,7 +881,7 @@
    "sound": "Higher values play it more readily but let other sounds through as it; lower ones play only clear hits."
   },
   {
-   "index": 54,
+   "index": 55,
    "id": "Chords",
    "name": "Chords",
    "group": "Chords",
@@ -881,7 +898,7 @@
    "sound": "On, every sung note also plays a chord of the key on its own channel."
   },
   {
-   "index": 55,
+   "index": 56,
    "id": "ChordFollow",
    "name": "Chord follows",
    "group": "Chords",
@@ -898,7 +915,7 @@
    "sound": "Root builds on the note you sing; Melody picks the chord of the key that contains it."
   },
   {
-   "index": 56,
+   "index": 57,
    "id": "ChordType",
    "name": "Chord type",
    "group": "Chords",
@@ -915,7 +932,7 @@
    "sound": "Sevenths sound jazzier and richer; triads are plain and strong."
   },
   {
-   "index": 57,
+   "index": 58,
    "id": "Inversion",
    "name": "Inversion",
    "group": "Chords",
@@ -934,7 +951,7 @@
    "sound": "Auto keeps successive chords close together for smooth movement."
   },
   {
-   "index": 58,
+   "index": 59,
    "id": "Spread",
    "name": "Voicing",
    "group": "Chords",
@@ -952,7 +969,7 @@
    "sound": "Close is tight and thick; Wide is airy and spread over more than an octave."
   },
   {
-   "index": 59,
+   "index": 60,
    "id": "ChordOct",
    "name": "Chord octave",
    "group": "Chords",
@@ -968,7 +985,7 @@
    "sound": "Lower registers make a pad under the voice; higher ones make a shimmer above."
   },
   {
-   "index": 60,
+   "index": 61,
    "id": "ChordCh",
    "name": "Chord channel",
    "group": "Chords",
@@ -982,7 +999,7 @@
    "sound": "It selects which synth or part plays the chords."
   },
   {
-   "index": 61,
+   "index": 62,
    "id": "ChordVel",
    "name": "Chord velocity",
    "group": "Chords",
@@ -996,7 +1013,7 @@
    "sound": "Lower values keep the chords behind the melody."
   },
   {
-   "index": 62,
+   "index": 63,
    "id": "LvlOn",
    "name": "Level on",
    "group": "Expression",
@@ -1013,7 +1030,7 @@
    "sound": "On, the voice level moves the controller's target, such as a filter or volume."
   },
   {
-   "index": 63,
+   "index": 64,
    "id": "LvlCC",
    "name": "Level controller",
    "group": "Expression",
@@ -1027,7 +1044,7 @@
    "sound": "Pick the number the synth's target is mapped to (74 is often the filter cutoff)."
   },
   {
-   "index": 64,
+   "index": 65,
    "id": "LvlMin",
    "name": "Level min",
    "group": "Expression",
@@ -1041,7 +1058,7 @@
    "sound": "Raising it makes the controller reach its low value sooner."
   },
   {
-   "index": 65,
+   "index": 66,
    "id": "LvlMax",
    "name": "Level max",
    "group": "Expression",
@@ -1055,7 +1072,7 @@
    "sound": "Lowering it makes the controller reach its high value sooner."
   },
   {
-   "index": 66,
+   "index": 67,
    "id": "LvlLo",
    "name": "Level low value",
    "group": "Expression",
@@ -1069,7 +1086,7 @@
    "sound": "Swap it with the high value to turn the control upside down."
   },
   {
-   "index": 67,
+   "index": 68,
    "id": "LvlHi",
    "name": "Level high value",
    "group": "Expression",
@@ -1083,7 +1100,7 @@
    "sound": "Lower it to limit how far the control moves its target."
   },
   {
-   "index": 68,
+   "index": 69,
    "id": "LvlCh",
    "name": "Level channel",
    "group": "Expression",
@@ -1097,7 +1114,7 @@
    "sound": "It selects which synth or part the control moves."
   },
   {
-   "index": 69,
+   "index": 70,
    "id": "AaOn",
    "name": "Vowel aa on",
    "group": "Expression",
@@ -1114,7 +1131,7 @@
    "sound": "On, the vowel aa moves the controller's target, such as a filter or volume."
   },
   {
-   "index": 70,
+   "index": 71,
    "id": "AaCC",
    "name": "Vowel aa controller",
    "group": "Expression",
@@ -1128,7 +1145,7 @@
    "sound": "Pick the number the synth's target is mapped to (74 is often the filter cutoff)."
   },
   {
-   "index": 71,
+   "index": 72,
    "id": "AaMin",
    "name": "Vowel aa min",
    "group": "Expression",
@@ -1142,7 +1159,7 @@
    "sound": "Raising it makes the controller reach its low value sooner."
   },
   {
-   "index": 72,
+   "index": 73,
    "id": "AaMax",
    "name": "Vowel aa max",
    "group": "Expression",
@@ -1156,7 +1173,7 @@
    "sound": "Lowering it makes the controller reach its high value sooner."
   },
   {
-   "index": 73,
+   "index": 74,
    "id": "AaLo",
    "name": "Vowel aa low value",
    "group": "Expression",
@@ -1170,7 +1187,7 @@
    "sound": "Swap it with the high value to turn the control upside down."
   },
   {
-   "index": 74,
+   "index": 75,
    "id": "AaHi",
    "name": "Vowel aa high value",
    "group": "Expression",
@@ -1184,7 +1201,7 @@
    "sound": "Lower it to limit how far the control moves its target."
   },
   {
-   "index": 75,
+   "index": 76,
    "id": "AaCh",
    "name": "Vowel aa channel",
    "group": "Expression",
@@ -1198,7 +1215,7 @@
    "sound": "It selects which synth or part the control moves."
   },
   {
-   "index": 76,
+   "index": 77,
    "id": "OoOn",
    "name": "Vowel oo on",
    "group": "Expression",
@@ -1215,7 +1232,7 @@
    "sound": "On, the vowel oo moves the controller's target, such as a filter or volume."
   },
   {
-   "index": 77,
+   "index": 78,
    "id": "OoCC",
    "name": "Vowel oo controller",
    "group": "Expression",
@@ -1229,7 +1246,7 @@
    "sound": "Pick the number the synth's target is mapped to (74 is often the filter cutoff)."
   },
   {
-   "index": 78,
+   "index": 79,
    "id": "OoMin",
    "name": "Vowel oo min",
    "group": "Expression",
@@ -1243,7 +1260,7 @@
    "sound": "Raising it makes the controller reach its low value sooner."
   },
   {
-   "index": 79,
+   "index": 80,
    "id": "OoMax",
    "name": "Vowel oo max",
    "group": "Expression",
@@ -1257,7 +1274,7 @@
    "sound": "Lowering it makes the controller reach its high value sooner."
   },
   {
-   "index": 80,
+   "index": 81,
    "id": "OoLo",
    "name": "Vowel oo low value",
    "group": "Expression",
@@ -1271,7 +1288,7 @@
    "sound": "Swap it with the high value to turn the control upside down."
   },
   {
-   "index": 81,
+   "index": 82,
    "id": "OoHi",
    "name": "Vowel oo high value",
    "group": "Expression",
@@ -1285,7 +1302,7 @@
    "sound": "Lower it to limit how far the control moves its target."
   },
   {
-   "index": 82,
+   "index": 83,
    "id": "OoCh",
    "name": "Vowel oo channel",
    "group": "Expression",
@@ -1299,7 +1316,7 @@
    "sound": "It selects which synth or part the control moves."
   },
   {
-   "index": 83,
+   "index": 84,
    "id": "EeOn",
    "name": "Vowel ee on",
    "group": "Expression",
@@ -1316,7 +1333,7 @@
    "sound": "On, the vowel ee moves the controller's target, such as a filter or volume."
   },
   {
-   "index": 84,
+   "index": 85,
    "id": "EeCC",
    "name": "Vowel ee controller",
    "group": "Expression",
@@ -1330,7 +1347,7 @@
    "sound": "Pick the number the synth's target is mapped to (74 is often the filter cutoff)."
   },
   {
-   "index": 85,
+   "index": 86,
    "id": "EeMin",
    "name": "Vowel ee min",
    "group": "Expression",
@@ -1344,7 +1361,7 @@
    "sound": "Raising it makes the controller reach its low value sooner."
   },
   {
-   "index": 86,
+   "index": 87,
    "id": "EeMax",
    "name": "Vowel ee max",
    "group": "Expression",
@@ -1358,7 +1375,7 @@
    "sound": "Lowering it makes the controller reach its high value sooner."
   },
   {
-   "index": 87,
+   "index": 88,
    "id": "EeLo",
    "name": "Vowel ee low value",
    "group": "Expression",
@@ -1372,7 +1389,7 @@
    "sound": "Swap it with the high value to turn the control upside down."
   },
   {
-   "index": 88,
+   "index": 89,
    "id": "EeHi",
    "name": "Vowel ee high value",
    "group": "Expression",
@@ -1386,7 +1403,7 @@
    "sound": "Lower it to limit how far the control moves its target."
   },
   {
-   "index": 89,
+   "index": 90,
    "id": "EeCh",
    "name": "Vowel ee channel",
    "group": "Expression",
@@ -1459,7 +1476,7 @@
   {
    "key": "note_latency_ms",
    "unit": "ms",
-   "description": "How long after the voice starts a note plays: the pitch window plus Settle"
+   "description": "How long after the voice starts a note plays: the pitch window plus the Response delay"
   }
  ]
 }

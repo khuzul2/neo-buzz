@@ -14,12 +14,29 @@ An effect with one input and one output. The audio passes through at `Monitor` (
 
 ## 2. Pitch
 
-- `Range`: Low latency or Quality (the PT1 voice trackers, about 7.5 and 17.7 ms). The first note starts about 40 to 50 ms after the voice (the analysis window plus `Settle` 30 ms): the tests print a median of 43 ms (Low latency) and 47 ms (Quality) on synthetic voices.
+- `Range`: Low latency or Quality (the PT1 voice trackers, about 7.5 and 17.7 ms). `Response` (Fast, the default, or Stable) decides how soon the first note plays: Fast plays it at the first clean pitched estimate (section 2.1), a median of 14 ms (Low latency) and 21 ms (Quality) after the voice on synthetic voices; Stable waits `Settle` 30 ms and plays at a median of 43 and 47 ms.
 - `Lock`: Off (every semitone), Set key (`Root`, `Scale`: 13 scales and Custom), Song key (the song's `Key` association, else the set key), Suggest (a Krumhansl-Schmuckler key from a decaying histogram of the notes sung so far, re-evaluated every second). `Muted notes` (one bit per pitch class) are skipped: the nearest note that is on is played.
-- A note starts when a candidate has been the nearest allowed note for `Settle` ms. A running note changes only when the voice is nearer the new note by `Stickiness` (a hysteresis in cents) for `Settle` ms. The note ends 25 ms after the voice stops, and not before `Min note length`. `Legato` sends the new note on before the old note off. `Octave` shifts the notes.
+- A note starts at the first clean pitched estimate (Fast) or when a candidate has been the nearest allowed note for `Settle` ms (Stable). A running note changes only when the voice is nearer the new note by `Stickiness` (a hysteresis in cents) for `Settle` ms. The note ends 25 ms after the voice stops, and not before `Min note length`. `Legato` sends the new note on before the old note off. `Octave` shifts the notes.
 - `Pitch bend` (off, plus or minus 1 to 12 semitones): the voice's distance from the note's centre as a 14-bit bend. `Anchored` sends nothing until the distance passes `Anchor` cents, then follows it, and returns to centre when the distance falls under half the anchor.
 - Velocity: Dynamic (from the note's peak level between `Soft level` and `Loud level`) or Fixed.
 - The note machine also runs when only `Chords` is on (the pitch notes are then not sent).
+
+### 2.1 Where the note-on delay goes
+
+Measured on the synthetic voices of `VoiceToMidiTests` (`NoteOnDelayBrokenDownByStage`), median from the start of the voice:
+
+| Stage | Low latency | Quality | Notes |
+|---|---:|---:|---|
+| Tracker: first voiced estimate | 9.4 ms | 12.7 ms | the analysis window (7.5 and 17.7 ms) is mostly filled by then |
+| Wait for a clean estimate (Fast) | +4.7 ms | +8.1 ms | the first estimate of an onset is often an octave out, so Fast waits for clarity 0.93 or 12 ms at most |
+| Voicing hysteresis | 0 | 0 | none after the first voiced estimate (release only: 25 ms after the voice stops) |
+| Stickiness | 0 | 0 | filters note changes only, never the first note |
+| Min note length | 0 | 0 | delays note offs only |
+| Settle | 0 (Fast) / 30 ms (Stable) | 0 / 30 ms | note changes always wait; the first note only in Stable |
+| Note-on | 14.1 ms | 20.8 ms | median; worst 17.8 and 25.8 ms |
+| Block dispatch (host) | up to 5.3 ms | up to 5.3 ms | a 256-sample block; the event carries its sample offset, the target hears it in its next block |
+
+Before this change Stable was the only behaviour: 42.6 and 46.6 ms. With Triggers on (the default) Stable also holds a note back while an onset is being named (about 37 ms in all); Fast does not hold, and cuts the pitch note when the hit is named.
 
 ## 3. Triggers
 
@@ -49,7 +66,7 @@ Reported latency is 0 (the audio passes through): the MIDI is late by the figure
 
 ## 9. Measured
 
-Synthetic tests (`VoiceToMidiTests`, deterministic): 8 of 8 sung notes right in both ranges, no extra notes, median note-on delay 42.6 ms (Low latency) and 46.6 ms (Quality), worst 51.7 and 70.6 ms; key lock puts the out-of-key notes on the nearest key note; the suggested key for an A minor melody is A minor; the chords of a C major scale are C, Dm, Em, F, G, Am and Bdim; the level controller stays inside its range and channel; kit triggers: 3 sounds 100 % and 4 sounds 86.7 % at 15 examples, 8 sounds 80 % at 20 examples.
+Synthetic tests (`VoiceToMidiTests`, deterministic): 8 of 8 sung notes right at 120 ms in both ranges and both responses; Fast: median note-on delay 14.1 ms (Low latency) and 20.8 ms (Quality), worst 17.8 and 25.8 ms, one first note of eight wrong in each range (an octave error in the first 10 ms, corrected 8 ms later); the same with Triggers on and three trained sounds; Stable: 42.6 and 46.6 ms, worst 51.7 and 70.6 ms, no wrong first notes; key lock puts the out-of-key notes on the nearest key note; the suggested key for an A minor melody is A minor; the chords of a C major scale are C, Dm, Em, F, G, Am and Bdim; the level controller stays inside its range and channel; kit triggers: 3 sounds 100 % and 4 sounds 86.7 % at 15 examples, 8 sounds 80 % at 20 examples.
 
 Real recordings (the `pitch-eval.yml` workflow; AVP is the Amateur Vocal Percussion set, VocalSet is read from its zip in place; nothing is committed):
 
@@ -67,7 +84,7 @@ Vowels on singers the estimator was not fitted on: the workflow's "Vowels on hel
 
 ## 10. Limits
 
-- A sung pitch plays notes 40 to 50 ms late; fast runs below about 100 ms per note blur. Low latency changes little because the settling time dominates; set `Settle` lower for speed.
+- Fast response can play a wrong first note (an octave error in the first 10 to 20 ms of a voice, mostly on voices with a strong second harmonic) and corrects it with a retrigger within 80 ms (with Pitch bend on the bend follows the voice instead and the note is left); a hit named a trigger cuts the pitch note it started, a blip of up to about 60 ms, so a beatboxer who wants no stray notes picks Stable. The first note's velocity comes from the first 10 to 20 ms of the voice, so it reads a little low on a slow attack. Stable plays notes 40 to 50 ms late.
 - LPC-based vowels fail above about 300 Hz of f0; the vowel controllers are for speaking-range and low singing voices.
 - The trigger classifier is per person: sounds trained by one voice do not carry to another. It does not detect a hit hidden by the voice's own sustained note.
 - Pitch bend range must be set on the receiving synth to the same value.

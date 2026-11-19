@@ -2,7 +2,7 @@
 
 Neo Voice to MIDI listens to a voice (a microphone through Neo Audio, or any audio) and plays MIDI from it. The audio passes through at `Monitor` (0% is silent, 100% is the input as it came). It has no sound of its own: send its MIDI to a synth or a drum machine, and the synth makes the sound.
 
-- Pitch: the sung note becomes a note on `Pitch channel`. `Range` Low latency (about 8 ms of analysis, from 100 Hz) or Quality (about 18 ms, from 70 Hz). `Lock` Off plays every semitone, Set key uses `Root` and `Scale`, Song key follows the song's Key entry, Suggest finds the key from what you sang. `Muted notes` (click the key/scale keyboard) are never played: the voice goes to the nearest note that is on. `Stickiness` and `Settle` stop a wobbling voice changing notes; `Min note length` and `Legato` shape the notes; `Octave` shifts them.
+- Pitch: the sung note becomes a note on `Pitch channel`. `Range` Low latency (about 8 ms of analysis, from 100 Hz) or Quality (about 18 ms, from 70 Hz). `Lock` Off plays every semitone, Set key uses `Root` and `Scale`, Song key follows the song's Key entry, Suggest finds the key from what you sang. `Muted notes` (click the key/scale keyboard) are never played: the voice goes to the nearest note that is on. `Response` Fast (the default) plays the first note at once, about 14 ms (Low latency) or 21 ms (Quality) after the voice starts, and corrects a wrong first note within 80 ms; Stable waits `Settle` ms first and is safer for beatboxing. `Stickiness` and `Settle` stop a wobbling voice changing notes; `Min note length` and `Legato` shape the notes; `Octave` shifts them.
 - Pitch bend: `Pitch bend` sets the range (set the same range on the synth). `Bend mode` Anchored keeps the note still until the voice leaves it by `Anchor` cents, then bends.
 - Triggers: up to eight sounds you train (a kick, a snare, a click, a "tss"). Press Train on a pad and say the sound 10 to 20 times; it stops at 20. Each sound has its own `Sound n note`, velocity and sensitivity. The sound that is a trigger plays a drum note; a sung vowel plays the pitch; with `Overlap` Both the voice also plays its pitch. `Window` Accurate (30 ms) is a few points more right than Fast (18 ms).
 - Chords: `Chords` plays a diatonic chord of the key on `Chord channel` under every sung note (`Chord follows` Root, or Melody for the chord that fits the sung note), triads or sevenths, with an inversion (Auto keeps them close) and a spread. The editor shows the chord and the chords that fit what you sang.
@@ -21,7 +21,8 @@ Neo Voice to MIDI listens to a voice (a microphone through Neo Audio, or any aud
 | Range | Quality | Low latency answers sooner and tracks less well |
 | Lock | Set key | notes land on the key; Suggest learns it |
 | Stickiness | 25 cents | a hysteresis: how far past the middle before the note changes |
-| Settle | 30 ms | how long a note must be held before it plays |
+| Response | Fast | Fast plays the first note at the first clean pitch; Stable waits Settle |
+| Settle | 30 ms | how long a new note must be held before it replaces the one sounding |
 | Level | -50 dB | the quietest voice that plays a note; raise it in a noisy room |
 | Window | Accurate | the trigger classifier's slice of each hit |
 | Min gap | 110 ms | the shortest time between two hits; a voice needs 100 to 120 ms |
@@ -38,7 +39,7 @@ Neo Voice to MIDI listens to a voice (a microphone through Neo Audio, or any aud
 - A noisy room: the pitch part follows noise as a note. Raise `Level`, or use `Lock` to keep it in a key.
 - The synth's pitch bend range must match `Pitch bend`, or the bends sound off.
 - Trigger notes go to channel 10 (the drum channel) by default; a bass synth listening on channel 1 will not play them.
-- Latency: a note starts about 40 to 50 ms after the voice does (the pitch window plus `Settle`); the readings give `note_latency_ms`.
+- Latency: with Response Fast a note starts about 14 ms (Low latency) or 21 ms (Quality) after the voice does, 40 to 50 ms with Stable; the readings give `note_latency_ms` (the longest to expect).
 
 ## Pairs well with
 

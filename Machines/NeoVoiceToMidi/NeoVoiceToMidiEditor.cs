@@ -63,13 +63,13 @@ namespace NeoBuzz.VoiceToMidi
                 Layout.Gap(1, 8),
                 new ParamChoice(ctx, P.Range, "Range", 66)));
             var pitch = new Section("Pitch", AccentColor, Layout.Column(
-                Layout.Row(new ParamChoice(ctx, P.Pitch, "Pitch", 40), new ParamChoice(ctx, P.Legato, "Legato", 40), new ParamChoice(ctx, P.VelMode, "Velocity", 56)),
+                Layout.Row(new ParamChoice(ctx, P.Pitch, "Pitch", 40), new ParamChoice(ctx, P.Legato, "Legato", 40), new ParamChoice(ctx, P.VelMode, "Velocity", 56), new ParamChoice(ctx, P.Response, "Response", 56)),
                 Layout.Row(new ParamKnob(ctx, P.Octave), new ParamKnob(ctx, P.Stick), new ParamKnob(ctx, P.Settle), new ParamKnob(ctx, P.MinNote)),
                 Layout.Row(new ParamKnob(ctx, P.Bend), new ParamKnob(ctx, P.Anchor), new ParamKnob(ctx, P.Fixed), new ParamKnob(ctx, P.PitchCh))));
 
             // ---- triggers
-            var pads = new InteractiveGraph(8 * 46, 52, (g, r) => DrawPads(g, r, machine), new ClickInput((x, y, fine) => ClickPad(x)), animate: true);
-            var status = new GraphView(8 * 46, 18, (g, r) => DrawTrainStatus(g, r, machine), animate: true);
+            var pads = new InteractiveGraph(8 * PadW, 52, (g, r) => DrawPads(g, r, machine), new ClickInput((x, y, fine) => ClickPad(x)), animate: true);
+            var status = new GraphView(8 * PadW, 18, (g, r) => DrawTrainStatus(g, r, machine), animate: true);
             var train = new ActionButton("Train", AccentColor, 70) { ToolTip = "Records one pass of the chosen sound: say it 10 to 20 times; it stops by itself at 20" };
             var stop = new ActionButton("Done", AccentColor, 60) { ToolTip = "Ends the pass and trains the sounds" };
             var forget = new ActionButton("Forget", AccentColor, 66) { ToolTip = "Forgets the chosen sound's examples" };
@@ -220,23 +220,25 @@ namespace NeoBuzz.VoiceToMidi
             return true;
         }
 
+        const int PadW = 60;
+
         void DrawPads(INeoCanvas g, NeoRect r, NeoVoiceToMidiMachine m)
         {
             var e = m?.Engine;
             for (int i = 0; i < 8; i++)
             {
-                var cell = new NeoRect(r.X + i * 46 + 2, r.Y + 2, 42, r.Height - 4);
+                var cell = new NeoRect(r.X + i * PadW + 2, r.Y + 2, PadW - 4, r.Height - 4);
                 bool lit = e != null && e.LitAt[i] > 0 && e.Total - e.LitAt[i] < e.Rate * 0.15 && e.Total >= e.LitAt[i];
                 int count = e?.Classifier.ExamplesOf(i) ?? 0;
                 g.Rect(cell, lit ? AccentColor : Palette.Track, new NeoStroke(i == selected ? Palette.Text : Palette.PanelEdge, i == selected ? 2 : 1, false), 4);
-                g.Text(m?.SoundName(i) ?? "", cell.X + 21, cell.Y + 6, 9, lit ? Palette.Background : Palette.Text, true, NeoAlign.Center, 40);
-                g.Text(count > 0 ? count + " ex" : "untrained", cell.X + 21, cell.Y + 28, 8, lit ? Palette.Background : Palette.DimText, false, NeoAlign.Center, 40);
+                g.Text(m?.SoundName(i) ?? "", cell.X + PadW / 2 - 2, cell.Y + 6, 9, lit ? Palette.Background : Palette.Text, true, NeoAlign.Center, PadW - 6);
+                g.Text(count > 0 ? count + " ex" : "untrained", cell.X + PadW / 2 - 2, cell.Y + 28, 8, lit ? Palette.Background : Palette.DimText, false, NeoAlign.Center, PadW - 6);
             }
         }
 
         bool ClickPad(double x)
         {
-            selected = Math.Clamp((int)(x / 46), 0, 7);
+            selected = Math.Clamp((int)(x / PadW), 0, 7);
             return true;
         }
 

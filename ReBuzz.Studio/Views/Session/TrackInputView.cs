@@ -205,7 +205,7 @@ namespace ReBuzz.Studio.Views.Session
             if (audio) rows.Children.Add(Labelled("Audio", audioBox));
             if (!audio)
             {
-            var midiRow = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,56"), ColumnSpacing = 4 };
+            var midiRow = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,48"), ColumnSpacing = 4 };
             Grid.SetColumn(midiBox, 0);
             var ch = new TextBlock { Text = "Ch", FontSize = StudioTokens.MinFontSize, Foreground = SessionPalette.LabelText, VerticalAlignment = VerticalAlignment.Center };
             Grid.SetColumn(ch, 1);
@@ -372,6 +372,8 @@ namespace ReBuzz.Studio.Views.Session
                 midiBox.ItemsSource = midiLabels;
                 int at = midiChoices.FindIndex(c => c.Kind == input.Midi && (c.Kind != MidiFromKind.Device || string.Equals(c.Device, input.Device, StringComparison.OrdinalIgnoreCase)) && (c.Kind != MidiFromKind.Machine || string.Equals(c.Device, input.Device, StringComparison.Ordinal)));
                 midiBox.SelectedIndex = Math.Max(0, at);
+                // The strip is narrow: the full label (a long machine name) is in the tooltip.
+                ToolTip.SetTip(midiBox, midiLabels[Math.Max(0, at)] + ": MIDI From (all inputs, one device, the computer keyboard, or a machine that makes MIDI such as Neo Voice to MIDI)");
                 channelBox.SelectedIndex = Math.Clamp(input.Channel, 0, 16);
             }
             finally
