@@ -65,6 +65,7 @@ namespace ReBuzz.Studio.Tests
             rig = new SessionRig();
             var r = rig;
             var core = r.Core;
+            var controllersWere = core.SessionControllers;      // the shared core keeps its controllers for the tests after this one (the Session menu test lists them)
             core.MasterVolume = 1;                          // levels as the machines make them (other tests leave it lower; the rig puts it back)
             core.SafeMaster.LimiterOn = true;               // a test of the Safety page before may have left a ceiling below 0 dB
             core.SafeMaster.CeilingDb = 0;
@@ -74,7 +75,7 @@ namespace ReBuzz.Studio.Tests
                 r.Dispose();
                 core.EngineInput.Close();
                 core.OutputLatencySamples = 0;
-                core.SessionControllers = null;
+                core.SessionControllers = controllersWere;
                 core.SafeMaster.Reset();
                 untitled.Dispose();
             });
