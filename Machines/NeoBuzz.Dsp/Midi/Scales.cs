@@ -1,11 +1,11 @@
 #nullable disable
-// Neo Voice to MIDI (docs/specs/voice-to-midi.md §2.2): scales as 12-bit masks (bit n = n semitones above the root, or above C for an
+// Shared by Neo Voice to MIDI and Neo Audio to MIDI (docs/specs/voice-to-midi.md §2.2): scales as 12-bit masks (bit n = n semitones above the root, or above C for an
 // absolute mask), the nearest allowed note, the key finder (Krumhansl-Schmuckler profiles on the notes sung so far) and a small key parser
 // for the song's key text ("A minor", "F#m", "Bb major"). Pure; no allocation after the tables are built.
 
 using System;
 
-namespace NeoBuzz.VoiceToMidi
+namespace NeoBuzz.Dsp
 {
     internal static class Scales
     {
