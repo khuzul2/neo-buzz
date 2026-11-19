@@ -337,6 +337,17 @@ namespace ReBuzz.Studio.Tests
             rig.Core.SongCore.ActionStack.Redo();
             Assert.That(Snap(), Is.EqualTo(comped), "and redo brings it back");
 
+        }
+
+        [AvaloniaTest]
+        public void SavingAndOpeningAgainKeepsTheTakesTheCompAndTheLaneState()
+        {
+            using var setup = new Setup2(out var rig);
+            var (device, track) = Rig(rig, 2);
+            RecordLoop(rig, device, track, 3, 2);
+            var editor = new ClipEditor(rig.Core);
+            Assert.That(editor.CompRanges(track, new[] { (1, 0, Bar), (3, Bar, 2 * Bar) }), Is.Null);
+            rig.Core.Arrangement.SetTakesHidden(track.Name, true);
             // Save and open again: the takes and the comp are as they were.
             string file = Path.Combine(setup.Folder, "takes.nbl");
             Directory.CreateDirectory(setup.Folder);
@@ -344,6 +355,7 @@ namespace ReBuzz.Studio.Tests
             rig.Core.Modified = false;
             Assert.That(rig.Core.TryOpenSongFile(file), Is.True);
             var machine = rig.Core.SongCore.MachinesList.First(m => m.Name == "Mic");
+            Assert.That(rig.Core.Arrangement.AreTakesHidden(machine.Name), Is.True, "the collapsed take lanes stay collapsed");
             var reopened = new ClipEditor(rig.Core);
             Assert.That(TakeLanes(rig, machine).Count, Is.EqualTo(3), "the take lanes come back as take lanes");
             Assert.That(reopened.Read(MainLane(rig, machine)).Select(i => (i.Time, i.End)), Is.EqualTo(new[] { (0, Bar), (Bar, 2 * Bar) }));

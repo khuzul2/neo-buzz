@@ -104,11 +104,12 @@ namespace ReBuzz.SessionTests
             {
                 Feed(capture, done, Rate);
                 // The test runs far faster than real time (a second of audio a second is all the writer has to keep up with): wait for it when it falls behind.
-                Thread.Sleep(5);
+                Thread.Sleep(20);                 // 20 ms a second of audio: 30 times real time, whatever else the machine is doing
                 int guard = 0;
                 while (capture.Written - file.Frames > 2L * AudioCapture.ChunkFrames && guard++ < 2000) Thread.Sleep(1);
             }
             long grown = GC.GetTotalMemory(false) - heap;
+            TestContext.Out.WriteLine("10-minute take: heap growth " + grown + " bytes (" + grown / 1024 + " KiB), peak resident chunks " + capture.PeakResidentChunks + ", audio " + total * 8 / (1024 * 1024) + " MiB");
             Assert.That(capture.PeakResidentChunks, Is.LessThanOrEqualTo(10), "a few chunks, whatever the length");
             Assert.That(grown, Is.LessThan(24L * 1024 * 1024), "a ten-minute take is 212 MB of audio: the heap grew " + grown);
             Assert.That(capture.Dropped, Is.EqualTo(0));
@@ -131,11 +132,18 @@ namespace ReBuzz.SessionTests
             Thread.Sleep(100);
             capture.Write(l, r, 512, 1f);
             long before = GC.GetAllocatedBytesForCurrentThread();
-            for (int i = 0; i < 3000; i++)               // about 35 seconds of audio: many chunks are crossed
+            int gen0 = GC.CollectionCount(0);
+            // A no-GC region over the loop: it throws (or the collection count moves) if the audio thread allocates.
+            bool region = GC.TryStartNoGCRegion(8 * 1024 * 1024);
+            try
             {
-                capture.Write(l, r, 512, 1f);
-                if (i % 80 == 0) Thread.Sleep(2);
+                for (int i = 0; i < 3000; i++)               // about 35 seconds of audio: many chunks are crossed
+                {
+                    capture.Write(l, r, 512, 1f);
+                    if (i % 80 == 0) Thread.Sleep(2);
+                }
             }
+            finally { if (region && System.Runtime.GCSettings.LatencyMode == System.Runtime.GCLatencyMode.NoGCRegion) GC.EndNoGCRegion(); }
             Assert.That(GC.GetAllocatedBytesForCurrentThread() - before, Is.EqualTo(0L), "Write() on the audio thread allocates nothing");
             capture.SetLength(capture.Written);
             capture.Close();
