@@ -56,6 +56,7 @@
     <Compile Include="..\ReBuzzTests\Automation\Throughput.cs" Link="Automation\Throughput.cs" />
     <!-- Neo Tune's objective quality measures (neo-tune.md section 12), shared with the pitch-eval tool. -->
     <Compile Include="..\tools\PitchEval\TuneQuality.cs" Link="Quality\TuneQuality.cs" />
+    <Compile Include="..\tools\PitchEval\TuneNotes.cs" Link="Quality\TuneNotes.cs" />
   </ItemGroup>
 
   <ItemGroup>

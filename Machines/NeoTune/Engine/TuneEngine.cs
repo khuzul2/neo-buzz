@@ -233,24 +233,52 @@ namespace NeoBuzz.Tune
 
         // ------------------------------------------------------------------ parameters
 
+        bool naturalDrives;
+        int naturalWrite;
+
+        /// <summary>Whether Natural alone changed since the last call (then the six fine controls follow it); true once per change. For the machine, to show the six new values.</summary>
+        public bool TakeNaturalWrite(out double natural)
+        {
+            natural = values.Value(P.Natural);
+            return Interlocked.Exchange(ref naturalWrite, 0) == 1;
+        }
+
+        /// <summary>True while the six fine controls follow Natural (it changed alone and none of them has been set since).</summary>
+        public bool NaturalDrives => naturalDrives;
+
+        /// <summary>The note stickiness in force (0 to 1).</summary>
+        internal double StickValue => stick;
+
+        /// <summary>The correction zone in force (cents).</summary>
+        internal double ZoneValue => zoneCents;
+
         void Update(bool force)
         {
             if (!force && !values.AnyDirty) return;
             int r = values.Choice(P.Range);
-            retuneSeconds = values.Value(P.Retune) * 0.001;
-            humanize = values.Value(P.Humanize);
+            // Natural as a parameter (docs/specs/neo-tune.md 11.1): in a tick where Natural changed and none of its six fine controls did (automation, a pattern, a
+            // knob card, a MIDI binding), the six follow Natural's map until one of them is set again. If any fine control changed in the same tick (a song load, a
+            // preset, the editor's one-step write) the fine values win, so what was saved is what plays.
+            bool fineDirty = false;
+            foreach (int c in TuneNatural.Controls) if (values.IsDirty(c)) fineDirty = true;
+            if (fineDirty) naturalDrives = false;
+            else if (values.IsDirty(P.Natural)) { naturalDrives = true; Volatile.Write(ref naturalWrite, 1); }
+            double nat = values.Value(P.Natural);
+            double Fine(int i) => naturalDrives ? TuneNatural.Value(i, nat) : values.Value(TuneNatural.Controls[i]);
+            retuneSeconds = Fine(0) * 0.001;
+            humanize = Fine(3);
             amount = values.Value(P.Amount);
             transpose = (int)values.Value(P.Transpose);
             preserve = values.On(P.Preserve);
             int fst = (int)values.Value(P.Formant);
             fshift = PortableMath.Exp2(fst / 12.0);
-            vibKeep = values.Value(P.VibKeep);
+            vibKeep = Fine(2);
             vibDepth = values.Value(P.VibDepth);
             vibRate = values.Value(P.VibRate);
             vibDelay = values.Value(P.VibDelay) * 0.001;
-            zoneCents = values.Value(P.Zone);
-            glide = values.Value(P.Glide);
-            stick = values.Value(P.Stick);
+            zoneCents = Fine(1);
+            glide = Fine(4);
+            stick = Fine(5);
             method = values.Choice(P.Method);
             scale = values.Choice(P.Scale);
             rootKey = values.Choice(P.Key);

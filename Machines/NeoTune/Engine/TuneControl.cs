@@ -26,17 +26,18 @@ namespace NeoBuzz.Tune
         readonly double[] hAbs = new double[HistSize], hDev = new double[HistSize];
         readonly double[] csAbs = new double[HistSize], csDev = new double[HistSize];
         readonly double[] cAbsTrack = new double[64], mcTrack = new double[64];
-        long hCount, hStart;
+        long hCount, hStart, winFloor;
+        int stepRun;
         double hBase;
 
         // ---- vibrato
         double slowDev, devSmooth, prevX, vibBand = 10, vibAmp, lastRise, runTime, zeroUp;
-        int vibState;
         readonly double[] vibPeriods = new double[4];
         int vibN;
         double vibPeriod;
         bool vibrato;
-        double cycMax, cycMin;
+        int vibDir, vibBad; double vibExt, vibExtT, vibLastT, vibLastV; bool vibHaveLast;
+        readonly double[] vibSwings = new double[4];
 
         // ---- target and smoothing
         readonly KeyListener listener = new KeyListener();
@@ -52,7 +53,7 @@ namespace NeoBuzz.Tune
 
         void ResetControl()
         {
-            hCount = hStart = 0; hBase = 0; exprAbs = 0;
+            hCount = hStart = winFloor = 0; stepRun = 0; hBase = 0; exprAbs = 0;
             ResetVibrato();
             runActive = false; unvoicedFor = 1; realFor = 1;
             curNote = pendNote = -1; pendTime = noteTime = 0;
@@ -65,7 +66,7 @@ namespace NeoBuzz.Tune
         void ResetVibrato()
         {
             slowDev = devSmooth = prevX = 0; vibBand = 10; vibAmp = 0; lastRise = zeroUp = runTime = 0;
-            vibState = 0; vibN = 0; vibPeriod = 0; vibrato = false; cycMax = -1e9; cycMin = 1e9;
+            vibN = 0; vibPeriod = 0; vibrato = false; vibDir = 0; vibBad = 0; vibHaveLast = false; vibExt = vibExtT = vibLastT = vibLastV = 0;
         }
 
         static double Smooth(double a, double b, double x)
@@ -144,7 +145,7 @@ namespace NeoBuzz.Tune
             if (!runActive)
             {
                 // A new run (after a real silence or unvoiced stretch): the history, the vibrato and the target start afresh.
-                hStart = hCount; hBase = m;
+                hStart = winFloor = hCount; hBase = m; stepRun = 0;
                 ResetVibrato(); exprAbs = 0;
                 curNote = pendNote = -1; pendTime = 0; noteTime = 0; smoothInit = false; lfoPhase = 0; devInst = 0;
                 runActive = true; firstFrame = true;
@@ -157,9 +158,11 @@ namespace NeoBuzz.Tune
             Volatile.Write(ref pubMask, mask);
 
             // The window the centre is averaged over: one vibrato period (or two when it is fast), else 50-100 ms.
-            double wSec = vibrato ? vibPeriod * (vibPeriod < 0.15 ? 2.0 : 1.0) : 0.07 + 0.07 * stick;
+            double stickN = Math.Max(0.0, (stick - 0.15) / 0.85);
+            // No vibrato found (yet): a short window, longer the more the pitch moves about its mean (a vibrato not yet measured must not leak into the centre).
+            double wSec = vibrato ? vibPeriod * (vibPeriod < 0.15 ? 2.0 : 1.0) : 0.025 + 0.11 * stickN;
             long age = hCount - hStart;     // frames of this run before the new one
-            int win = (int)Math.Max(1, Math.Min(Math.Round(wSec / dt), age + 1));
+            int win = (int)Math.Max(1, Math.Min(Math.Round(wSec / dt), hCount - Math.Max(hStart, winFloor) + 1));
             win = Math.Min(win, HistSize - 8);
 
             // 1. append the frame (its deviation against the note in force; the first frame of a run has no note yet)
@@ -181,10 +184,22 @@ namespace NeoBuzz.Tune
 
             // 2. the target: the note nearest the centre, with the hysteresis and the minimum time
             double mc = MeanAbs(win);
-            double hyst = 12 + 40 * stick + 1.5 * exprAbs;     // plus the swing of the expression: a wide vibrato must not flip the target
-            double dwell = 0.025 + 0.10 * stick;
+            // A step or a slide in the middle of a vibrato: the pitch has left the vibrato's range around the centre for 25 ms. The centre, a mean over a whole
+            // period, would still be on the old note for half a period: it starts afresh from the step, growing back to the period.
+            if (vibrato)
+            {
+                int nS = Math.Max(2, (int)Math.Round(0.025 / dt));
+                if (win > 2 * nS && age > 2 * nS)
+                {
+                    if (Math.Abs(MeanAbs(nS) - mc) * 100 > vibAmp + 100) { if (++stepRun >= nS) { winFloor = hCount - 2 * nS; stepRun = 0; win = 2 * nS; mc = MeanAbs(win); } }
+                    else stepRun = 0;
+                }
+            }
+            double hyst = 5 + 50 * stickN + (vibrato ? (hCount - winFloor < vibPeriod / dt ? 20.0 + 0.2 * vibAmp : 20.0) : vibN >= 1 ? Math.Min(30.0, 0.4 * vibSwings[0]) : 0.0);     // 5 ct at Natural 0; plus part of the swing while a vibrato is forming and not yet measured
+            double dwell = 0.005 + 0.130 * stickN;
+            if (vibrato) dwell = Math.Max(dwell, 0.3 * vibPeriod);
             mcTrack[(int)(hCount & 63)] = mc;
-            int back40 = Math.Clamp((int)Math.Round(0.04 / dt), 1, 60);
+            int back40 = Math.Clamp((int)Math.Round(0.06 / dt), 1, 60);
             double mcSpeed = age > back40 ? Math.Abs(mc - mcTrack[(int)((hCount - back40) & 63)]) * 100 / (back40 * dt) : 0;
             int cand = PickNote(mc, mask, hyst);
             if (curNote < 0 || cand < 0)
@@ -196,16 +211,16 @@ namespace NeoBuzz.Tune
             {
                 if (cand == pendNote) pendTime += dt; else { pendNote = cand; pendTime = dt; }
                 // A jump of two notes or more waits until the centre has settled (else the note it passes on the way would be picked); neighbours go on at once.
-                if (Math.Abs(cand - curNote) >= 2 && mcSpeed > 300) pendTime = 0;
+                if (glide > 0.3 && Math.Abs(cand - curNote) >= 2 && mcSpeed > 800) pendTime = 0;      // only the natural settings wait; the hard effect follows at once
                 if (pendTime >= dwell) SwitchNote(cand, pendTime, win, dt);
             }
             else { pendNote = -1; pendTime = 0; }
             noteTime += dt;
-            if (firstFrame && curNote >= 0) { devInst = (m - curNote) * 100; devSmooth = devInst; slowDev = devInst; firstFrame = false; }
+            if (firstFrame && curNote >= 0) { devInst = (m - curNote) * 100; devSmooth = slowDev = m * 100; firstFrame = false; }
             // the frame just written was measured against the old note: after a switch it is re-expressed in SwitchNote
 
             // 3. the vibrato: zero crossings of the deviation from its slow mean
-            if (curNote >= 0) UpdateVibrato((m - curNote) * 100, dt);
+            UpdateVibrato(m * 100, dt);      // on the absolute pitch: the target does not have to be right for the vibrato to be found
 
             // 4. the centre and the shift
             double outMidi = m, shiftSemis;
@@ -254,8 +269,8 @@ namespace NeoBuzz.Tune
                 }
                 // The centre is far from the note (the voice has left it and the new one is not decided yet): the correction lets go, so the
                 // voice is as sung while it travels and no large shift (and its artefacts) is made on the way.
-                double wj = target == 1 ? 1.0 : 1.0 - Smooth(110, 170, Math.Abs(c));   // a held MIDI note is a target the voice is meant to travel to
-                shiftSemis = wj * amount * Math.Clamp(sSmooth + flatten, target == 1 ? -12.0 : -1.0, target == 1 ? 12.0 : 1.0) + add;
+                double wj = target == 1 ? 1.0 : 1.0 - glide * Smooth(110, 170, Math.Abs(c));   // a held MIDI note is a target the voice is meant to travel to
+                shiftSemis = wj * amount * Math.Clamp(sSmooth + flatten, target == 1 ? -12.0 : -(1.0 + 1.5 * (1 - glide)), target == 1 ? 12.0 : 1.0 + 1.5 * (1 - glide)) + add;
                 outMidi = m + shiftSemis;
             }
             if (Math.Abs(shiftSemis) < 0.004) shiftSemis = 0;      // under 0.4 cent: nothing (the bypass: the output is the aligned input)
@@ -290,7 +305,7 @@ namespace NeoBuzz.Tune
                     double prev = i > hStart ? csDev[(int)((i - 1) & HistMask)] : 0;
                     csDev[k] = prev + hDev[k];
                 }
-                slowDev -= delta; devSmooth -= delta; devInst -= delta;     // the detector's means follow the note, so it is not thrown
+                devInst -= delta;
             }
             else if (cand >= 0)
             {
@@ -309,46 +324,55 @@ namespace NeoBuzz.Tune
             noteTime = Math.Max(0, pend);
         }
 
-        void UpdateVibrato(double dev, double dt)
+        /// <summary>
+        /// The vibrato, by its extrema (a vibrato is a run of alternating peaks and troughs about a tenth of a second apart, each swing at least 22 cents, whatever the
+        /// note it is on; a step or a slide gives one long half-swing and is not one). A peak or trough is confirmed when the pitch has come back from it by 18 cents.
+        /// Four alike (in length and size) make a vibrato; the period is twice the mean half-swing. Once found, it stays until two half-swings in a row are out of range or 0.35 s pass with no extremum.
+        /// </summary>
+        void UpdateVibrato(double y, double dt)
         {
-            devSmooth += (dev - devSmooth) * 0.6;
-            slowDev += (devSmooth - slowDev) * (1 - PortableMath.Exp(-dt / 0.30));
-            double x = devSmooth - slowDev;
-            if (x > cycMax) cycMax = x;
-            if (x < cycMin) cycMin = x;
-            // the zero crossing going up, placed between the two frames
-            if (prevX < 0 && x >= 0) zeroUp = runTime - dt * (x / Math.Max(1e-9, x - prevX));
-            if (vibState <= 0 && x > vibBand)
+            devSmooth += (y - devSmooth) * 0.6;
+            double v = devSmooth;
+            const double Delta = 18.0;
+            if (vibDir == 0) { vibExt = v; vibExtT = runTime; vibDir = 1; }
+            bool confirmed = false;
+            if (vibDir > 0)
             {
-                // a rising crossing is complete
-                if (vibState < 0 || vibState == 0)
+                if (v > vibExt) { vibExt = v; vibExtT = runTime; }
+                else if (vibExt - v >= Delta) { confirmed = true; }
+            }
+            else
+            {
+                if (v < vibExt) { vibExt = v; vibExtT = runTime; }
+                else if (v - vibExt >= Delta) { confirmed = true; }
+            }
+            if (confirmed)
+            {
+                if (vibHaveLast)
                 {
-                    double per = zeroUp - lastRise;
-                    if (lastRise > 0 && per > 0.10 && per < 0.32)
+                    double half = vibExtT - vibLastT, swing = Math.Abs(vibExt - vibLastV);
+                    bool ok = half >= 0.06 && half <= 0.19 && swing >= 22.0 && swing <= 700.0;
+                    if (ok)
                     {
-                        for (int i = vibPeriods.Length - 1; i > 0; i--) vibPeriods[i] = vibPeriods[i - 1];
-                        vibPeriods[0] = per;
+                        for (int i = vibPeriods.Length - 1; i > 0; i--) { vibPeriods[i] = vibPeriods[i - 1]; vibSwings[i] = vibSwings[i - 1]; }
+                        vibPeriods[0] = half; vibSwings[0] = swing;
                         if (vibN < vibPeriods.Length) vibN++;
-                        vibAmp = 0.5 * (cycMax - cycMin);
+                        vibBad = 0;
                     }
-                    else if (lastRise > 0) { vibN = 0; vibrato = false; }
-                    lastRise = zeroUp;
-                    cycMax = -1e9; cycMin = 1e9;
+                    else if (++vibBad >= 2) { vibN = 0; vibrato = false; }
+                    if (vibN >= 4)
+                    {
+                        // four half-swings alike in length and size: two periods of a vibrato (a scoop and its overshoot are not)
+                        double mn = 1e9, mx = 0, sum = 0, smn = 1e9, smx = 0, sw = 0;
+                        for (int i = 0; i < 4; i++) { mn = Math.Min(mn, vibPeriods[i]); mx = Math.Max(mx, vibPeriods[i]); sum += vibPeriods[i]; smn = Math.Min(smn, vibSwings[i]); smx = Math.Max(smx, vibSwings[i]); sw += vibSwings[i]; }
+                        if (mx / mn < 1.35 && smx / smn < 2.0) { vibrato = true; vibPeriod = 2.0 * sum / 4; vibAmp = 0.5 * sw / 4; }
+                    }
+                    else if (vibrato && vibN > 0) { vibPeriod = 2.0 * vibPeriods[0] * 0.5 + vibPeriod * 0.5; }
                 }
-                vibState = 1;
+                vibLastT = vibExtT; vibLastV = vibExt; vibHaveLast = true; lastRise = runTime;
+                vibDir = -vibDir; vibExt = v; vibExtT = runTime;
             }
-            else if (vibState >= 0 && x < -vibBand) vibState = -1;
-            prevX = x;
-            vibBand = Math.Max(8, 0.2 * vibAmp);
-            if (vibN >= 2)
-            {
-                double mn = 1e9, mx = 0, sum = 0;
-                int use = Math.Min(vibN, 3);
-                for (int i = 0; i < use; i++) { double v = vibPeriods[i]; mn = Math.Min(mn, v); mx = Math.Max(mx, v); sum += v; }
-                if (mx / mn < 1.3 && vibAmp >= 12) { vibrato = true; vibPeriod = sum / use; }
-                else vibrato = false;
-            }
-            if (vibrato && runTime - lastRise > 2.0 * vibPeriod) { vibrato = false; vibN = 0; }
+            if (vibrato && runTime - lastRise > 0.35) { vibrato = false; vibN = 0; }
         }
 
         void Display(double dt, double input, double corrected, double centre)

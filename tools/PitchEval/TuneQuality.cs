@@ -74,7 +74,7 @@ namespace NeoBuzz.Quality
     {
         // ------------------------------------------------------------------ filters
 
-        sealed class Biquad
+        internal sealed class Biquad
         {
             double b0, b1, b2, a1, a2, z1, z2;
             public static Biquad Low(double fs, double fc, double q = 0.7071) => Make(fs, fc, q, false);

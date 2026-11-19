@@ -13,6 +13,7 @@ namespace NeoBuzz.PitchEval
         static int Main(string[] args)
         {
             if (args.Length == 3 && args[0] == "--onsets") { Avp.Debug(args[1], args[2]); return 0; }
+            if (args.Length == 4 && args[0] == "--pack") { TuneGates.PackDir(args[1], args[2], args[3]); return 0; }
             if (args.Length == 4 && args[0] == "--track") { Dbg.Track(args[1], args[2], int.Parse(args[3])); return 0; }
             string mdb = null, avp = null, vs = null, tune = null, excerpts = null, outPath = "pitch-eval.md", csvPath = null;
             int mdbLimit = 0, avpLimit = 0, vsPer = 2;

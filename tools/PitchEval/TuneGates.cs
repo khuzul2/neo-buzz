@@ -182,6 +182,92 @@ namespace NeoBuzz.PitchEval
             }
         }
 
+
+        // ------------------------------------------------------------------------------------------------ inside the notes, per excerpt
+
+        /// <summary>Per excerpt and setting: the measures inside the notes (TuneNotes), as table rows; and, with <paramref name="csvDir"/>, the pitch tracks for plotting.</summary>
+        public static void InNotes(string id, float[] seg, int rate, int nt1Old, StringBuilder md, string csvDir)
+        {
+            var ti = QTrack.Run(seg, rate);
+            var sung = TuneNotes.Segments(ti);
+            var viIn = new List<double>();
+            double vibIn = TuneNotes.VibratoInside(ti, sung, viIn);
+            double ceIn = TuneNotes.CentreError(ti, sung);
+            var (flatIn, _) = TuneNotes.Flatness(ti, sung);
+            var variants = new List<Variant> { new() { Name = "NT1 old", Key = "nt1", Nt1 = nt1Old } };
+            foreach (var n in new[] { 0.0, 0.25, 0.5, 0.75, 1.0 }) variants.Add(new Variant { Name = $"NT2 N{n * 100:F0}", Key = $"n{n * 100:F0}", Natural = n });
+            var tracks = new List<(string, QTrack)> { ("in", ti) };
+            md.AppendLine($"| {id} | input | {sung.Count} / {TuneNotes.Long(sung).Count} | - | {Fmt.F(flatIn)} | - | {Fmt.F(ceIn)} | {Fmt.F(vibIn)} | - |");
+            foreach (var v in variants)
+            {
+                var y = Render(seg, rate, v);
+                var to = QTrack.Run(y, rate);
+                tracks.Add((v.Key, to));
+                var outSegs = TuneNotes.Segments(to);
+                if (Environment.GetEnvironmentVariable("NOTES") == v.Key) Console.WriteLine(id + " sung " + string.Join(" ", TuneNotes.Long(sung)) + "\n   out " + string.Join(" ", TuneNotes.Long(outSegs)));
+                var (flat, _) = TuneNotes.Flatness(to, outSegs);
+                var delays = TuneNotes.StepDelays(ti, to, sung);
+                double dmed = delays.Count == 0 ? double.NaN : delays.OrderBy(d => d).ToList()[delays.Count / 2] * 1000;
+                double ce = TuneNotes.CentreError(to, sung);
+                var viOut = new List<double>();
+                double vib = TuneNotes.VibratoInside(to, sung, viOut);
+                var ratios = new List<double>();
+                for (int k = 0; k < viIn.Count && k < viOut.Count; k++) if (!double.IsNaN(viIn[k]) && !double.IsNaN(viOut[k]) && viIn[k] > 15) ratios.Add(viOut[k] / viIn[k]);
+                double kept = ratios.Count == 0 ? double.NaN : 100 * ratios.OrderBy(r => r).ToList()[ratios.Count / 2];
+                md.AppendLine($"| {id} | {v.Name} | {outSegs.Count} / {TuneNotes.Long(outSegs).Count} | {Fmt.F(dmed, "F0")} ({delays.Count}) | {Fmt.F(flat)} | {Fmt.F(Mean(delays.Select(d => d * 1000)), "F0")} | {Fmt.F(ce)} | {Fmt.F(vib)} | {Fmt.F(kept, "F0")} |");
+            }
+            if (csvDir != null)
+            {
+                Directory.CreateDirectory(csvDir);
+                var sb = new StringBuilder("t");
+                foreach (var (k, _) in tracks) sb.Append(',').Append(k);
+                sb.AppendLine();
+                for (double x = 0; x < seg.Length / (double)rate; x += 0.005)
+                {
+                    sb.Append(x.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                    foreach (var (_, t) in tracks)
+                    {
+                        double c = double.NaN;
+                        int i = t.At(x);
+                        if (i >= 0 && t.Voiced[i]) c = t.Cents[i];
+                        sb.Append(',').Append(double.IsNaN(c) ? "" : (c / 100).ToString("F2", System.Globalization.CultureInfo.InvariantCulture));
+                    }
+                    sb.AppendLine();
+                }
+                File.WriteAllText(Path.Combine(csvDir, id + ".csv"), sb.ToString());
+                var sg = new StringBuilder("from,to,note\n");
+                foreach (var s in sung) sg.AppendLine($"{s.From:F3},{s.To:F3},{s.Note}");
+                File.WriteAllText(Path.Combine(csvDir, id + "-sung.csv"), sg.ToString());
+            }
+        }
+
+        /// <summary>Local use: the originals of a listening pack (a folder of *-original.wav) measured inside the notes, the report to a file and the pitch tracks to a folder.</summary>
+        public static void PackDir(string dir, string outMd, string csvDir)
+        {
+            string[] old = { "hard", "natural", "natural", "hard", "subtle", "natural" };
+            var md = new StringBuilder();
+            InNotesHeader(md);
+            int n = 0;
+            foreach (var f in Directory.GetFiles(dir, "*-original.wav").OrderBy(x => x))
+            {
+                var (x, rate) = Wav.Read(File.OpenRead(f));
+                var id = Path.GetFileName(f).Replace("-original.wav", "");
+                InNotes(id, x, rate, old[Math.Min(n, 5)] == "hard" ? 1 : old[Math.Min(n, 5)] == "natural" ? 2 : 3, md, csvDir);
+                n++;
+            }
+            File.WriteAllText(outMd, md.ToString());
+        }
+
+        public static void InNotesHeader(StringBuilder md)
+        {
+            md.AppendLine("### Inside the notes, per excerpt");
+            md.AppendLine();
+            md.AppendLine("Notes are runs of one semitone (150 ms median, a new note after 80 cents past the middle for 100 ms). **notes**: the number found, and the number of notes of at least 250 ms (sung: the input's). **step delay** (ms): the output's crossing of the midpoint between two sung notes against the input's, median (steps measured). **flat** (ct): median over notes of the median distance of the pitch from the note's median (the first 30 ms after a step skipped, notes under 100 ms ignored). **step mean** (ms). **centre error** (ct): the note median from the nearest semitone, per sung note. **vibrato inside** (ct, 4-8 Hz peak to peak inside each sung note) and the share of it kept (median output over input per note).");
+            md.AppendLine();
+            md.AppendLine("| Excerpt | setting | notes | step delay | flat (ct) | step mean | centre error (ct) | vibrato inside (ct) | kept % |");
+            md.AppendLine("|---|---|---:|---:|---:|---:|---:|---:|---:|");
+        }
+
         // ------------------------------------------------------------------------------------------------ the excerpts
 
         public static void Excerpts(ZipArchive zip, List<(ZipArchiveEntry E, string Group, string Singer, string Vowel)> selected, string dir, StringBuilder md)
@@ -197,17 +283,19 @@ namespace NeoBuzz.PitchEval
             var readme = new StringBuilder();
             readme.AppendLine("# Neo Tune NT2: listening pack");
             readme.AppendLine();
-            readme.AppendLine("Six excerpts of at most 8 seconds from VocalSet 1.1 (the same files and offsets as the NT1 pack), each as the original (`-original.wav`), NT1's output as it was (`-nt1-*.wav`, the setting NT1's pack used for that excerpt) and NT2 at Natural 0, 50 and 100 (`-nt2-natural-000/050/100.wav`). Mono, 16 bit, at the recording's rate, chromatic scale, Quality range, the machine's latency taken out, **every file scaled to the original's RMS** so the levels match. The `blind/` folder holds the same processed files under letters (A, B, C, ...) in a shuffled order per excerpt, with `blind/KEY.md` (do not open it until you have listened).");
+            readme.AppendLine("Six excerpts of at most 8 seconds from VocalSet 1.1 (the same files and offsets as the NT1 pack), each as the original (`-original.wav`), NT1's output as it was (`-nt1-*.wav`, the setting NT1's pack used for that excerpt) and NT2 at Natural 0, 50 and 100 (`-nt2-natural-000/050/100.wav`). Mono, 16 bit, at the recording's rate, chromatic scale, Quality range, the machine's latency taken out, **every file scaled to the original's RMS** so the levels match. The `blind/` folder holds the same processed files under letters (A, B, C, ...) in a shuffled order per excerpt, the key is in `blind-key/KEY.md`, beside the blind folder (do not open it until you have listened).");
             readme.AppendLine();
             readme.AppendLine("Attribution (Creative Commons Attribution 4.0 International, https://creativecommons.org/licenses/by/4.0/): the recordings are from **VocalSet: A Singing Voice Dataset** by Julia Wilkins, Prem Seetharaman, Alison Wahl and Bryan Pardo (https://zenodo.org/records/1442513), CC BY 4.0. The originals are excerpts (shortened, converted to mono 16 bit); the other files are modified: processed with Neo Tune, part of NeoBuzz Live. No endorsement by the authors is implied.");
             readme.AppendLine();
             readme.AppendLine("| Excerpt | Singer | Technique | From (s) | Length (s) | NT1 setting in the old pack |");
             readme.AppendLine("|---|---|---|---:|---:|---|");
-            var key = new StringBuilder("# Key to the blind folder\n\n| Excerpt | A | B | C | D | E |\n|---|---|---|---|---|---|\n");
+            var key = new StringBuilder("# Key to the blind folder (do not open before listening)\n\n| Excerpt | A | B | C | D | E |\n|---|---|---|---|---|---|\n");
             string[] oldSetting = { "hard", "natural", "natural", "hard", "subtle", "natural" };
-            Directory.CreateDirectory(Path.Combine(dir, "blind"));
+            Directory.CreateDirectory(Path.Combine(dir, "blind")); Directory.CreateDirectory(Path.Combine(dir, "blind-key"));
             int n = 0;
             var rng = new Random(2026);
+            var notesMd = new StringBuilder();
+            InNotesHeader(notesMd);
             foreach (var (group, voice) in plan)
             {
                 var pick = selected.FirstOrDefault(t => t.Group == group && t.Singer.StartsWith(voice) && !(voice == "male" && t.Singer.StartsWith("female")));
@@ -232,6 +320,7 @@ namespace NeoBuzz.PitchEval
                 int nt1 = oldSetting[n - 1] == "hard" ? 1 : oldSetting[n - 1] == "natural" ? 2 : 3;
                 outs.Add(($"nt1-{oldSetting[n - 1]}", Level(Render(seg, rate, Variants[nt1 - 1]), rms0)));
                 foreach (var v in Variants.Where(v => v.Nt1 == 0)) outs.Add((v.Key, Level(Render(seg, rate, v), rms0)));
+                InNotes(id, seg, rate, nt1, notesMd, Path.Combine(dir, "pitch-csv"));
                 TuneEval.WriteWav(Path.Combine(dir, id + "-original.wav"), seg, rate);
                 foreach (var (name, data) in outs) TuneEval.WriteWav(Path.Combine(dir, $"{id}-{name}.wav"), data, rate);
                 // Blind copies: the original is not among them; letters in a shuffled order.
@@ -248,7 +337,9 @@ namespace NeoBuzz.PitchEval
                 readme.AppendLine($"| {id} | {pick.Singer} | {pick.Group} | {start / (double)rate:F1} | {len / (double)rate:F1} | {oldSetting[n - 1]} |");
             }
             File.WriteAllText(Path.Combine(dir, "README.md"), readme.ToString());
-            File.WriteAllText(Path.Combine(dir, "blind", "KEY.md"), key.ToString());
+            File.WriteAllText(Path.Combine(dir, "blind-key", "KEY.md"), key.ToString());
+            md.Append(notesMd);
+            md.AppendLine();
             md.AppendLine("### Listening pack");
             md.AppendLine();
             md.AppendLine($"{n} excerpts (at most 8 s each; original, NT1's old output, NT2 at Natural 0, 50, 100; levels matched; a blind folder with a key) were written beside this report with the VocalSet attribution in their README (artifact `neo-tune-excerpts`).");
