@@ -31,8 +31,9 @@ namespace NeoBuzz.PitchEval
             public string Group, Voice, Singer, Vowel;
             public long Active, VoicedQ, VoicedL, Pairs, Agree, OctaveDisagree, ConsecQ, ConsecL, OctJumpQ, OctJumpL, BothVoiced;
             public List<double> RunStd = new();
-            public double[] VowelMean = new double[3]; public int VowelFrames;
+            public double[] VowelMean = new double[3]; public int VowelFrames; public double Lm, Hm, Lh;
             public double Seconds;
+            public FirstNote.Result First;
         }
 
         /// <summary>The files the evaluations read: per technique and singer up to <paramref name="maxPerGroupPerSinger"/>, vowels a, i, u first.</summary>
@@ -128,6 +129,103 @@ namespace NeoBuzz.PitchEval
                 md.AppendLine($"- {voice}: {r2} of {t2} right ({Fmt.P(t2 == 0 ? 0 : (double)r2 / t2)}).");
             }
             md.AppendLine();
+            HeldOutVowels(results, md);
+            FirstNote.Report(results.Where(r => r.First != null).Select(r => r.First).ToList(), md);
+        }
+
+        /// <summary>
+        /// The vowel estimator on singers it was not fitted on (docs/specs/voice-to-midi.md §9): PT1's constants were set on 24 files of eight
+        /// of these singers, so its overall figure is not independent. Here every singer is a test singer in turn for a logistic model refitted on
+        /// the others (leave-one-singer-out, on the three region differences), the figure for the PT1 weights is given per half (odd-numbered
+        /// singers and even-numbered ones, one of which holds most of the fitting singers) and per singer, so a reader can leave out any set.
+        /// </summary>
+        static void HeldOutVowels(List<FileResult> results, StringBuilder md)
+        {
+            var files = results.Where(r => "aiu".Contains(r.Vowel) && r.Vowel != "" && r.VowelFrames > 20).ToList();
+            if (files.Count < 30) return;
+            int Label(FileResult r) => r.Vowel == "a" ? 0 : r.Vowel == "u" ? 1 : 2;
+            int Pt1(FileResult r) => Array.IndexOf(r.VowelMean, r.VowelMean.Max());
+            int Num(FileResult r) => int.Parse(new string(r.Singer.Where(char.IsDigit).ToArray()));
+            md.AppendLine("#### Vowels on held-out singers");
+            md.AppendLine();
+            md.AppendLine("PT1's constants were set on 24 files of eight of these singers, so the figure above is partly in-sample. Two checks that do not depend on which eight: (1) the PT1 weights scored per half of the singers and per singer; (2) a model of the same three region differences (low minus mid, high minus mid, low minus high, in dB) **refitted without the test singer** (leave-one-singer-out, multinomial logistic, per-file means), so every singer is a held-out singer for it.");
+            md.AppendLine();
+            md.AppendLine("| Singers | files | PT1 weights right | refit, leave-one-singer-out, right |");
+            md.AppendLine("|---|---:|---:|---:|");
+            var loso = new Dictionary<FileResult, int>();
+            foreach (var singer in files.Select(f => f.Singer).Distinct())
+            {
+                var train = files.Where(f => f.Singer != singer).ToList();
+                var model = Logistic.Fit(train.Select(f => new[] { f.Lm, f.Hm, f.Lh }).ToList(), train.Select(Label).ToList(), 3);
+                foreach (var f in files.Where(f => f.Singer == singer)) loso[f] = model.Predict(new[] { f.Lm, f.Hm, f.Lh });
+            }
+            void Line(string name, IEnumerable<FileResult> fs)
+            {
+                var l = fs.ToList();
+                if (l.Count == 0) return;
+                md.AppendLine($"| {name} | {l.Count} | {Fmt.P(l.Count(f => Pt1(f) == Label(f)) / (double)l.Count)} | {Fmt.P(l.Count(f => loso[f] == Label(f)) / (double)l.Count)} |");
+            }
+            Line("all", files);
+            Line("odd-numbered singers", files.Where(f => Num(f) % 2 == 1));
+            Line("even-numbered singers", files.Where(f => Num(f) % 2 == 0));
+            Line("female", files.Where(f => f.Voice == "female"));
+            Line("male", files.Where(f => f.Voice == "male"));
+            foreach (var g in files.GroupBy(f => f.Vowel).OrderBy(g => g.Key)) Line("vowel " + g.Key + (g.Key == "a" ? " (aa)" : g.Key == "u" ? " (oo)" : " (ee)"), g);
+            md.AppendLine();
+            md.AppendLine("Per singer (PT1 weights / refit):");
+            md.AppendLine();
+            md.AppendLine("| Singer | files | PT1 | refit |");
+            md.AppendLine("|---|---:|---:|---:|");
+            foreach (var g in files.GroupBy(f => f.Singer).OrderBy(g => g.First().Voice).ThenBy(g => Num(g.First())))
+                md.AppendLine($"| {g.Key} | {g.Count()} | {g.Count(f => Pt1(f) == Label(f))} | {g.Count(f => loso[f] == Label(f))} |");
+            md.AppendLine();
+        }
+
+        sealed class Logistic
+        {
+            double[,] w; int dim, classes; double[] mean, scale;
+            public static Logistic Fit(List<double[]> x, List<int> y, int dim, int classes = 3)
+            {
+                var m = new Logistic { dim = dim, classes = classes, mean = new double[dim], scale = new double[dim], w = new double[classes, dim + 1] };
+                for (int d = 0; d < dim; d++)
+                {
+                    m.mean[d] = x.Average(v => v[d]);
+                    m.scale[d] = Math.Max(1e-6, Math.Sqrt(x.Average(v => (v[d] - m.mean[d]) * (v[d] - m.mean[d]))));
+                }
+                for (int it = 0; it < 400; it++)
+                {
+                    var g = new double[classes, dim + 1];
+                    for (int i = 0; i < x.Count; i++)
+                    {
+                        var p = m.Probs(x[i]);
+                        for (int c = 0; c < classes; c++)
+                        {
+                            double e = p[c] - (y[i] == c ? 1 : 0);
+                            for (int d = 0; d < dim; d++) g[c, d] += e * (x[i][d] - m.mean[d]) / m.scale[d];
+                            g[c, dim] += e;
+                        }
+                    }
+                    for (int c = 0; c < classes; c++)
+                        for (int d = 0; d <= dim; d++) m.w[c, d] -= 0.5 * (g[c, d] / x.Count + (d < dim ? 0.01 * m.w[c, d] : 0));
+                }
+                return m;
+            }
+            double[] Probs(double[] v)
+            {
+                var z = new double[classes];
+                double max = double.MinValue;
+                for (int c = 0; c < classes; c++)
+                {
+                    z[c] = w[c, dim];
+                    for (int d = 0; d < dim; d++) z[c] += w[c, d] * (v[d] - mean[d]) / scale[d];
+                    max = Math.Max(max, z[c]);
+                }
+                double sum = 0;
+                for (int c = 0; c < classes; c++) { z[c] = Math.Exp(z[c] - max); sum += z[c]; }
+                for (int c = 0; c < classes; c++) z[c] /= sum;
+                return z;
+            }
+            public int Predict(double[] v) { var p = Probs(v); int b = 0; for (int c = 1; c < classes; c++) if (p[c] > p[b]) b = c; return b; }
         }
 
         static string Row(string name, IEnumerable<FileResult> rs)
@@ -165,6 +263,7 @@ namespace NeoBuzz.PitchEval
             // Held notes: runs of voiced Q estimates.
             if (group.StartsWith("long tones, straight"))
             {
+                r.First = FirstNote.Run(x, rate);
                 int s = -1;
                 for (int i = 0; i <= q.Count; i++)
                 {
@@ -198,6 +297,7 @@ namespace NeoBuzz.PitchEval
                 if (n > 0) for (int c = 0; c < 3; c++) r.VowelMean[c] = sum[c] / n;
                 if (Environment.GetEnvironmentVariable("PITCHEVAL_VDBG") != null && n > 0) Console.Error.WriteLine($"VDBG {singer} {vowel} lm {slm / n:F1} hm {shm / n:F1} lh {slh / n:F1} aa {sum[0] / n:F2} oo {sum[1] / n:F2} ee {sum[2] / n:F2}");
                 r.VowelFrames = n;
+                if (n > 0) { r.Lm = slm / n; r.Hm = shm / n; r.Lh = slh / n; }
             }
             return r;
         }

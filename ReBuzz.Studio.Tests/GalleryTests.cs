@@ -2490,6 +2490,49 @@ namespace ReBuzz.Studio.Tests
                     Feed(4096);
                     Shot(window, "564-inspector-input", "The Inspector's Input section for the selected machine (Voice): the arm dot, Audio From, MIDI From and channel, Monitor and the input meter.", "Select a track's machine; the Inspector's Selection tab.");
                 });
+                Try("570-voice-to-midi-editor", () =>
+                {
+                    Core.SongCore.CreateMachine("Neo Voice to MIDI", null, "Voice MIDI", null, null, null, -1, 0.5f, 0.8f);
+                    var vm = Core.SongCore.MachinesList.First(m => m.Name == "Voice MIDI");
+                    var inst = vm.ManagedMachine!;
+                    inst.GetType().GetMethod("SetTarget")!.Invoke(inst, new object[] { demo.Lead.Name });
+                    vm.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == "Chords").SetValue(0, 1);
+                    // A sung phrase: A3, C4, E4 (the machine's Work, as the host calls it), so that the pitch line, the key and the chord show.
+                    var work = inst.GetType().GetMethod("Work")!;
+                    var input = new Buzz.MachineInterface.Sample[256];
+                    var output = new Buzz.MachineInterface.Sample[256];
+                    long frame = 0;
+                    foreach (double hz in new[] { 220.0, 261.63, 329.63 })
+                        for (int b = 0; b < 44100 * 0.5 / 256; b++)
+                        {
+                            for (int k = 0; k < 256; k++, frame++)
+                            {
+                                double t = frame / 44100.0, v = 0;
+                                for (int h = 1; h <= 8; h++) v += System.Math.Sin(2 * System.Math.PI * hz * h * t) / h;
+                                input[k].L = input[k].R = (float)(v * 0.25 * 32768);
+                            }
+                            work.Invoke(inst, new object[] { output, input, 256, Buzz.MachineInterface.WorkModes.WM_READWRITE });
+                        }
+                    Core.UiHost.OpenGui(vm, null);
+                    var w = StudioMachineUiHost.GuiWindowOf(vm);
+                    Assert.That(w, Is.Not.Null, "Neo Voice to MIDI's editor opened");
+                    Wait(200);
+                    Shot(w!, "570-voice-to-midi-editor", "Neo Voice to MIDI's editor after a sung phrase (A, C, E): the pitch line on the piano roll with the key's notes lit, the chord under it, the key and scale keyboard, the pitch knobs, the eight sound pads with the Train panel, the chords and the expression lanes, and where the MIDI goes.", "Open the machine's window.");
+                    Core.UiHost.CloseWindows(vm);
+                });
+                Try("571-session-midi-from-machine", () =>
+                {
+                    layout.SetMidiFrom(demo.Lead, MidiFromKind.Machine, "Voice MIDI");
+                    var session = Tab<SessionView>(window, "Session");
+                    window.ShowView("Session");
+                    layout.SetShowMixer(true);
+                    layout.SetShowIO(true);
+                    Settle();
+                    window.RefreshNow();
+                    session.RefreshState();
+                    Settle();
+                    Shot(window, "571-session-midi-from-machine", "Session: the I/O row with Lead's MIDI From set to a machine (Machine: Voice MIDI, Neo Voice to MIDI): an armed synth track records what the voice plays.", "Session > I/O row > MIDI From > Machine: Voice MIDI.");
+                });
             }
             finally
             {

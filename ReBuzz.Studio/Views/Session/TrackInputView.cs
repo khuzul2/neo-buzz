@@ -145,7 +145,7 @@ namespace ReBuzz.Studio.Views.Session
                 core.SessionLayout?.SetMidiChannel(machine, channelBox.SelectedIndex);
             };
             ToolTip.SetTip(audioBox, "Audio From: None, an input of the sound card (In 1, In 1/2...), another track (to resample it), or Wired inputs (what is connected to it)");
-            ToolTip.SetTip(midiBox, "MIDI From: all inputs (a control surface's pads stay its own), one device, or the computer keyboard");
+            ToolTip.SetTip(midiBox, "MIDI From: all inputs (a control surface's pads stay its own), one device, the computer keyboard, or a machine that makes MIDI (Neo Voice to MIDI)");
             ToolTip.SetTip(channelBox, "MIDI channel: All or 1 to 16");
             Avalonia.Automation.AutomationProperties.SetName(audioBox, "Audio From");
             Avalonia.Automation.AutomationProperties.SetName(midiBox, "MIDI From");
@@ -205,7 +205,7 @@ namespace ReBuzz.Studio.Views.Session
             if (audio) rows.Children.Add(Labelled("Audio", audioBox));
             if (!audio)
             {
-            var midiRow = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,56"), ColumnSpacing = 4 };
+            var midiRow = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,48"), ColumnSpacing = 4 };
             Grid.SetColumn(midiBox, 0);
             var ch = new TextBlock { Text = "Ch", FontSize = StudioTokens.MinFontSize, Foreground = SessionPalette.LabelText, VerticalAlignment = VerticalAlignment.Center };
             Grid.SetColumn(ch, 1);
@@ -315,7 +315,7 @@ namespace ReBuzz.Studio.Views.Session
         {
             var input = layout.TrackInputOf(machine);
             return string.Join("|", layout.IsMachineArmed(machine), layout.MonitorOf(machine), input.Audio.ToText(), input.Midi, input.Device, input.Channel,
-                layout.AudioChannelNames().Count, string.Join(",", layout.MidiDevices(machine).Select(d => d.Name + d.Connected)),
+                layout.AudioChannelNames().Count, string.Join(",", layout.MidiDevices(machine).Select(d => d.Name + d.Connected)), string.Join(",", layout.MidiMachines(machine).Select(d => d.Name + d.Present)),
                 audio ? string.Join(",", layout.TrackSources(machine).Select(m => m.Name)) : "");
         }
 
@@ -364,9 +364,16 @@ namespace ReBuzz.Studio.Views.Session
                 }
                 midiChoices.Add((MidiFromKind.Keyboard, ""));
                 midiLabels.Add(MidiDevice.KeyboardName);
+                foreach (var (name, present) in layout.MidiMachines(machine))
+                {
+                    midiChoices.Add((MidiFromKind.Machine, name));
+                    midiLabels.Add(TrackInput.MachinePrefix + name + (present ? "" : " (not in the song)"));
+                }
                 midiBox.ItemsSource = midiLabels;
-                int at = midiChoices.FindIndex(c => c.Kind == input.Midi && (c.Kind != MidiFromKind.Device || string.Equals(c.Device, input.Device, StringComparison.OrdinalIgnoreCase)));
+                int at = midiChoices.FindIndex(c => c.Kind == input.Midi && (c.Kind != MidiFromKind.Device || string.Equals(c.Device, input.Device, StringComparison.OrdinalIgnoreCase)) && (c.Kind != MidiFromKind.Machine || string.Equals(c.Device, input.Device, StringComparison.Ordinal)));
                 midiBox.SelectedIndex = Math.Max(0, at);
+                // The strip is narrow: the full label (a long machine name) is in the tooltip.
+                ToolTip.SetTip(midiBox, midiLabels[Math.Max(0, at)] + ": MIDI From (all inputs, one device, the computer keyboard, or a machine that makes MIDI such as Neo Voice to MIDI)");
                 channelBox.SelectedIndex = Math.Clamp(input.Channel, 0, 16);
             }
             finally
@@ -416,6 +423,12 @@ namespace ReBuzz.Studio.Views.Session
                     () => layout.SetMidiFrom(machine, MidiFromKind.Device, n), "midi"));
             }
             midi.Items.Add(Radio(MidiDevice.KeyboardName, input.Midi == MidiFromKind.Keyboard, () => layout.SetMidiFrom(machine, MidiFromKind.Keyboard), "midi"));
+            foreach (var (name, present) in layout.MidiMachines(machine))
+            {
+                string n = name;
+                midi.Items.Add(Radio(TrackInput.MachinePrefix + n + (present ? "" : " (not in the song)"), input.Midi == MidiFromKind.Machine && string.Equals(input.Device, n, StringComparison.Ordinal),
+                    () => layout.SetMidiFrom(machine, MidiFromKind.Machine, n), "midi"));
+            }
             menu.Items.Add(midi);
             var channel = new MenuItem { Header = "Channel" };
             for (int ch = 0; ch <= 16; ch++)

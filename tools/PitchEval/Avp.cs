@@ -131,6 +131,7 @@ namespace NeoBuzz.PitchEval
             md.AppendLine();
 
             Triggers(files, md);
+            VoiceTriggers.Run(dir, md);
         }
 
         /// <summary>For a look at one file: each detection against the annotations.</summary>

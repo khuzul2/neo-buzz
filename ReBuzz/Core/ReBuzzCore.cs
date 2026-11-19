@@ -68,7 +68,7 @@ namespace ReBuzz.Core
     /// The class is large because it brings together many subsystems; comments
     /// are added to explain high-level responsibilities and key public methods.
     /// </summary>
-    public class ReBuzzCore : IBuzz, INotifyPropertyChanged, ISessionHost, UiEventQueue.ITarget
+    public class ReBuzzCore : IBuzz, IMachineMidiBus, INotifyPropertyChanged, ISessionHost, UiEventQueue.ITarget
     {
         // Build and runtime info
         public static int buildNumber = int.Parse(BuildInfo.Number);
@@ -1964,6 +1964,23 @@ namespace ReBuzz.Core
                 MIDIActivity = true;
                 MIDIInput?.Invoke(data);
             });
+        }
+
+        /// <summary>
+        /// Fork (docs/specs/voice-to-midi.md §7): a machine's own MIDI (Neo Voice to MIDI) for the armed tracks whose MIDI From names that machine. It goes
+        /// to those tracks and nowhere else: not to All inputs, the MIDI focus, the selected machine, the session's mapped controls or the MIDI activity light.
+        /// </summary>
+        public void SendMachineMIDI(IMachine source, int data)
+        {
+            if (source == null || SessionCore == null) return;
+            try
+            {
+                SessionCore.OnMidiInput(MidiDevice.Machine(source.Name), data);
+            }
+            catch (Exception e)
+            {
+                DCWriteLine("Machine MIDI: " + e.Message, DCLogLevel.Warning);
+            }
         }
 
         void RouteMidiInput(MidiDevice device, int data)

@@ -1,0 +1,298 @@
+# Neo Voice to MIDI parameters (docs/specs/voice-to-midi.md). The order changes only with a version (machines.md §3.2): songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoVoiceToMidi
+namespace NeoBuzz.VoiceToMidi
+class NeoVoiceToMidiMachine
+summary Turns a voice into MIDI and lets it pass through (monitor blend 0 to 100 %). Pitch: the sung note, locked to a key or scale, with stickiness, octave shift, pitch bend (free or anchored), dynamic or fixed velocity, minimum note length and legato. Triggers: up to 8 sounds you train in one pass (voice percussion or any short sound) play notes at once with the pitch. Chords: diatonic chords that follow the sung root, with suggestions that fit the melody. Expression: the voice level and the vowels aa, oo and ee as MIDI controllers, each with thresholds, range and channel. The MIDI goes to a target machine, to an external MIDI device, and is a MIDI From source for armed tracks. Use it to play synths and drums with your voice, or to sing a melody into a clip.
+
+group Input
+Monitor "Monitor" 0 100 100 pct 0 | Dry voice at the output: 0 is silent, 100 % is the input as it came
+    how Sets how much of the dry voice reaches the output, from 0% (silent) to 100% (as it came in).
+    sound At 0% you hear only what the synth plays from the MIDI; a little dry voice makes a guide to sing against.
+Range "Range" 0 1 1 enum Low_latency Quality | Voice range: Low latency (about 8 ms, from 100 Hz) or Quality (about 18 ms, from 70 Hz)
+    how Chooses the pitch analysis: Low latency (about 8 ms, from 100 Hz) or Quality (about 18 ms, from 70 Hz).
+    sound Low latency answers sooner but can wobble on low voices; Quality is steadier and reaches lower notes.
+Level "Level" 0 50 20 lin -70 -20 dB 0 | The quietest voice that plays a note: under this level the pitch is not read
+    how Sets the quietest voice level, from -70 to -20 dB, that plays a note.
+    sound Raising it ignores room noise and breath; set too high it misses soft singing.
+group Pitch
+Pitch "Pitch" 0 1 1 switch | The sung pitch plays notes
+    how Switches the sung pitch playing notes on or off.
+    sound Off leaves the triggers, the chords and the controllers running without single notes.
+Lock "Lock" 0 3 0 enum Off Set_key Song_key Suggest | Off: every semitone. Set key: the Root and Scale. Song key: the key of the song (the song's Key entry), else Root and Scale. Suggest: the key found from the notes you sang so far
+    how Chooses how notes are kept to a key: Off, the Root and Scale, the song's key or a key found from what you sang.
+    sound Locked notes land on the key whatever the voice does; Off follows every semitone you sing.
+Root "Root" 0 11 0 enum C "C#" D "D#" E F "F#" G "G#" A "A#" B | The key's root note
+    how Sets the key's root note from C to B.
+    sound It moves every in-key note with it; the scale keyboard shows the result.
+Scale "Scale" 0 13 0 enum Major Minor Dorian Phrygian Lydian Mixolydian Locrian Harmonic_minor Melodic_minor Major_pentatonic Minor_pentatonic Blues Whole_tone Custom | The scale the voice is locked to
+    how Chooses the scale of the key from 14 choices, including a Custom set of notes.
+    sound Major sounds bright, minor darker, pentatonic and blues leave out the notes that clash.
+Custom "Custom notes" 0 4095 2741 int 0 | The notes of the Custom scale, one bit per note from C (bit 0) to B (bit 11)
+    how Holds the Custom scale's twelve notes, one bit each from C to B.
+    sound Only the notes you switch on in the keyboard can play when Scale is Custom.
+Muted "Muted notes" 0 4095 0 int 0 | Notes never played, one bit per note from C to B: the voice goes to the nearest note that is on
+    how Holds the notes that never play, one bit each from C to B (click a key on the keyboard).
+    sound A muted note is replaced by the nearest note that is on, so the melody avoids it.
+Octave "Octave" 0 6 3 int -3 oct signed | Octave shift of the pitch notes
+    how Shifts the pitch notes by whole octaves, from -3 to +3.
+    sound The same tune plays higher or lower on the synth without singing in another register.
+Stick "Stickiness" 0 100 25 lin 0 100 cents 0 | How far past the middle between two notes the voice must go before the note changes (a hysteresis)
+    how Sets how far past the middle between two notes the voice must go before the note changes, from 0 to 100 cents.
+    sound More stickiness holds a wobbly note steady; none follows every small move.
+Settle "Settle" 0 200 30 lin 0 200 ms 0 | How long a new note must be held before it replaces the one sounding (and, in Stable response, before it first plays)
+    how Sets how long a new note must be held before it replaces the one sounding, from 0 to 200 ms; in Stable response it also delays the first note.
+    sound Longer settling removes grace notes and slides at the cost of a later note start.
+Bend "Pitch bend" 0 12 0 enum Off "±1 st" "±2 st" "±3 st" "±4 st" "±5 st" "±6 st" "±7 st" "±8 st" "±9 st" "±10 st" "±11 st" "±12 st" | Pitch bend range: the voice's distance from the note is sent as bend. Set the same range on the synth
+    how Sets the pitch bend range from off to plus or minus 12 semitones.
+    sound The voice's distance from its note moves the synth's pitch by this much; set the synth to the same range.
+BendMode "Bend mode" 0 1 0 enum Free Anchored | Free: bend follows every wobble. Anchored: the note stays put until the voice moves farther than the Anchor from its middle, then it bends
+    how Chooses Free bend or Anchored bend.
+    sound Free follows every wobble; Anchored keeps the note still until the voice leaves it, then bends.
+Anchor "Anchor" 5 100 35 lin 5 100 cents 0 | Anchored bend: how far from the note's middle the voice must move before the bend starts
+    how Sets how far from the note's middle the voice must move, from 5 to 100 cents, before the bend starts.
+    sound A larger anchor keeps vibrato from bending the note; a small one bends at once.
+VelMode "Velocity" 0 1 0 enum Dynamic Fixed | Dynamic: from how loud you sing the note. Fixed: always the Fixed velocity
+    how Chooses note velocity from the voice (Dynamic) or always the Fixed velocity.
+    sound Dynamic plays soft singing softly; Fixed gives every note the same strength.
+Fixed "Fixed velocity" 1 127 100 int 0 | The velocity of every note in Fixed mode, and the loudest in Dynamic
+    how Sets the fixed velocity, and the loudest in Dynamic, from 1 to 127.
+    sound Higher values play louder or brighter on most synths.
+VelMin "Softest velocity" 1 127 25 int 0 | Dynamic: the velocity of the softest note
+    how Sets the velocity of the softest note in Dynamic mode, from 1 to 127.
+    sound A higher minimum keeps soft notes audible.
+Soft "Soft level" 0 50 20 lin -70 -20 dB 0 | Dynamic: the voice level that gives the softest velocity
+    how Sets the voice level, from -70 to -20 dB, that gives the softest velocity.
+    sound Raise it if quiet singing plays too loud a note.
+Loud "Loud level" 0 40 28 lin -40 0 dB 0 | Dynamic: the voice level that gives the loudest velocity
+    how Sets the voice level, from -40 to 0 dB, that gives the loudest velocity.
+    sound Lower it so ordinary singing reaches full velocity.
+MinNote "Min note length" 0 100 12 lin 0 500 ms 0 | A note lasts at least this long, however short the voice was
+    how Sets the shortest a note lasts, from 0 to 100 ms mapped to 0 to 500 ms.
+    sound Short sung notes still last long enough for the synth to sound.
+Legato "Legato" 0 1 0 switch | A new note starts before the old one stops (for mono synths with legato), instead of after
+    how Starts a new note before the old one stops when switched on.
+    sound Mono synths then glide between notes instead of retriggering.
+Response "Response" 0 1 0 enum Fast Stable | Fast plays the first note as soon as the voice is pitched; Stable waits Settle ms first
+    how Chooses when a new note starts: Fast plays it at the first pitched sound and corrects it within 80 ms if the voice settled on another note; Stable waits Settle ms of the same note before playing it.
+    sound Fast feels immediate for live playing and may retrigger once on a wobbly start; Stable never plays a wrong first note but answers later.
+PitchCh "Pitch channel" 0 15 0 int 1 | MIDI channel of the pitch notes
+    how Sets the MIDI channel of the pitch notes, from 1 to 16.
+    sound It selects which synth or part plays the sung line.
+group Triggers
+Triggers "Triggers" 0 1 1 switch | Trained sounds play notes
+    how Switches the trained sounds playing notes on or off.
+    sound Off leaves only the pitch part.
+Window "Window" 0 1 1 enum Fast Accurate | The slice of each hit the classifier hears: Fast 18 ms (about 15 ms after the hit) or Accurate 30 ms (about 27 ms, a few points more right)
+    how Chooses the slice of each hit the classifier hears: Fast (18 ms) or Accurate (30 ms).
+    sound Accurate names sounds a few points more reliably and plays about 12 ms later.
+Sensitivity "Sensitivity" 0 100 67 pct 0 | How soft a hit may be and still count (the onset threshold)
+    how Sets how soft a hit may be and still count, from 0 to 100%.
+    sound Higher values catch quiet hits and risk catching breaths and clicks.
+Gap "Min gap" 0 240 50 lin 60 300 ms 0 | The shortest time between two hits. 100 to 120 ms suits a voice (the vowel after a consonant is not a second hit)
+    how Sets the shortest time between two hits, from 60 to 300 ms.
+    sound About 110 ms stops the vowel after a consonant counting as a second hit.
+Overlap "Overlap" 0 1 0 enum Triggers_win Both | Triggers win: a sound taken for a trigger does not also play a pitch note. Both: the voice also plays its pitch
+    how Chooses whether a sound taken for a trigger also plays a pitch note: Triggers win or Both.
+    sound Triggers win keeps a kick from also playing a low note; Both lets the voice play its pitch too.
+Length "Trigger length" 0 490 50 lin 10 500 ms 0 | How long each trigger note is held before its note off
+    how Sets how long each trigger note is held, from 10 to 500 ms.
+    sound Short notes suit drums that ring by themselves; long ones suit sustained sounds.
+TrigCh "Trigger channel" 0 15 9 int 1 | MIDI channel of the trigger notes (10 is the drum channel)
+    how Sets the MIDI channel of the trigger notes, from 1 to 16.
+    sound Channel 10 is the drum channel of most drum machines.
+T1Note "Sound 1 note" 0 127 36 int 0 | MIDI note of sound 1 (Kick by default)
+    how Sets the MIDI note sound 1 plays, from 0 to 127.
+    sound Choose the drum or note you want that sound to play; defaults follow the usual drum map.
+T1Vel "Sound 1 velocity" 0 127 0 int 0 | 0: from how hard the hit was. 1 to 127: always this velocity
+    how Sets sound 1's velocity from 1 to 127, or 0 to take it from how hard the hit was.
+    sound Zero makes harder hits play louder; a number makes every hit the same.
+T1Sens "Sound 1 sensitivity" 0 100 50 pct 0 | How sure the classifier must be for sound 1: higher plays more of the doubtful hits
+    how Sets how sure the classifier must be to play sound 1, from 0 to 100%.
+    sound Higher values play it more readily but let other sounds through as it; lower ones play only clear hits.
+T2Note "Sound 2 note" 0 127 38 int 0 | MIDI note of sound 2 (Snare by default)
+    how Sets the MIDI note sound 2 plays, from 0 to 127.
+    sound Choose the drum or note you want that sound to play; defaults follow the usual drum map.
+T2Vel "Sound 2 velocity" 0 127 0 int 0 | 0: from how hard the hit was. 1 to 127: always this velocity
+    how Sets sound 2's velocity from 1 to 127, or 0 to take it from how hard the hit was.
+    sound Zero makes harder hits play louder; a number makes every hit the same.
+T2Sens "Sound 2 sensitivity" 0 100 50 pct 0 | How sure the classifier must be for sound 2: higher plays more of the doubtful hits
+    how Sets how sure the classifier must be to play sound 2, from 0 to 100%.
+    sound Higher values play it more readily but let other sounds through as it; lower ones play only clear hits.
+T3Note "Sound 3 note" 0 127 42 int 0 | MIDI note of sound 3 (Closed hat by default)
+    how Sets the MIDI note sound 3 plays, from 0 to 127.
+    sound Choose the drum or note you want that sound to play; defaults follow the usual drum map.
+T3Vel "Sound 3 velocity" 0 127 0 int 0 | 0: from how hard the hit was. 1 to 127: always this velocity
+    how Sets sound 3's velocity from 1 to 127, or 0 to take it from how hard the hit was.
+    sound Zero makes harder hits play louder; a number makes every hit the same.
+T3Sens "Sound 3 sensitivity" 0 100 50 pct 0 | How sure the classifier must be for sound 3: higher plays more of the doubtful hits
+    how Sets how sure the classifier must be to play sound 3, from 0 to 100%.
+    sound Higher values play it more readily but let other sounds through as it; lower ones play only clear hits.
+T4Note "Sound 4 note" 0 127 46 int 0 | MIDI note of sound 4 (Open hat by default)
+    how Sets the MIDI note sound 4 plays, from 0 to 127.
+    sound Choose the drum or note you want that sound to play; defaults follow the usual drum map.
+T4Vel "Sound 4 velocity" 0 127 0 int 0 | 0: from how hard the hit was. 1 to 127: always this velocity
+    how Sets sound 4's velocity from 1 to 127, or 0 to take it from how hard the hit was.
+    sound Zero makes harder hits play louder; a number makes every hit the same.
+T4Sens "Sound 4 sensitivity" 0 100 50 pct 0 | How sure the classifier must be for sound 4: higher plays more of the doubtful hits
+    how Sets how sure the classifier must be to play sound 4, from 0 to 100%.
+    sound Higher values play it more readily but let other sounds through as it; lower ones play only clear hits.
+T5Note "Sound 5 note" 0 127 39 int 0 | MIDI note of sound 5 (Clap by default)
+    how Sets the MIDI note sound 5 plays, from 0 to 127.
+    sound Choose the drum or note you want that sound to play; defaults follow the usual drum map.
+T5Vel "Sound 5 velocity" 0 127 0 int 0 | 0: from how hard the hit was. 1 to 127: always this velocity
+    how Sets sound 5's velocity from 1 to 127, or 0 to take it from how hard the hit was.
+    sound Zero makes harder hits play louder; a number makes every hit the same.
+T5Sens "Sound 5 sensitivity" 0 100 50 pct 0 | How sure the classifier must be for sound 5: higher plays more of the doubtful hits
+    how Sets how sure the classifier must be to play sound 5, from 0 to 100%.
+    sound Higher values play it more readily but let other sounds through as it; lower ones play only clear hits.
+T6Note "Sound 6 note" 0 127 37 int 0 | MIDI note of sound 6 (Rim by default)
+    how Sets the MIDI note sound 6 plays, from 0 to 127.
+    sound Choose the drum or note you want that sound to play; defaults follow the usual drum map.
+T6Vel "Sound 6 velocity" 0 127 0 int 0 | 0: from how hard the hit was. 1 to 127: always this velocity
+    how Sets sound 6's velocity from 1 to 127, or 0 to take it from how hard the hit was.
+    sound Zero makes harder hits play louder; a number makes every hit the same.
+T6Sens "Sound 6 sensitivity" 0 100 50 pct 0 | How sure the classifier must be for sound 6: higher plays more of the doubtful hits
+    how Sets how sure the classifier must be to play sound 6, from 0 to 100%.
+    sound Higher values play it more readily but let other sounds through as it; lower ones play only clear hits.
+T7Note "Sound 7 note" 0 127 49 int 0 | MIDI note of sound 7 (Crash by default)
+    how Sets the MIDI note sound 7 plays, from 0 to 127.
+    sound Choose the drum or note you want that sound to play; defaults follow the usual drum map.
+T7Vel "Sound 7 velocity" 0 127 0 int 0 | 0: from how hard the hit was. 1 to 127: always this velocity
+    how Sets sound 7's velocity from 1 to 127, or 0 to take it from how hard the hit was.
+    sound Zero makes harder hits play louder; a number makes every hit the same.
+T7Sens "Sound 7 sensitivity" 0 100 50 pct 0 | How sure the classifier must be for sound 7: higher plays more of the doubtful hits
+    how Sets how sure the classifier must be to play sound 7, from 0 to 100%.
+    sound Higher values play it more readily but let other sounds through as it; lower ones play only clear hits.
+T8Note "Sound 8 note" 0 127 51 int 0 | MIDI note of sound 8 (Ride by default)
+    how Sets the MIDI note sound 8 plays, from 0 to 127.
+    sound Choose the drum or note you want that sound to play; defaults follow the usual drum map.
+T8Vel "Sound 8 velocity" 0 127 0 int 0 | 0: from how hard the hit was. 1 to 127: always this velocity
+    how Sets sound 8's velocity from 1 to 127, or 0 to take it from how hard the hit was.
+    sound Zero makes harder hits play louder; a number makes every hit the same.
+T8Sens "Sound 8 sensitivity" 0 100 50 pct 0 | How sure the classifier must be for sound 8: higher plays more of the doubtful hits
+    how Sets how sure the classifier must be to play sound 8, from 0 to 100%.
+    sound Higher values play it more readily but let other sounds through as it; lower ones play only clear hits.
+group Chords
+Chords "Chords" 0 1 0 switch | The pitch also plays a chord on its own channel
+    how Switches the chords on or off.
+    sound On, every sung note also plays a chord of the key on its own channel.
+ChordFollow "Chord follows" 0 1 0 enum Root Melody | Root: the sung note is the chord's root (diatonic to the key). Melody: the chord of the key that fits the sung note
+    how Chooses whether the sung note is the chord's root or the chord that fits the sung note is played.
+    sound Root builds on the note you sing; Melody picks the chord of the key that contains it.
+ChordType "Chord type" 0 1 0 enum Triads Sevenths | Three or four notes
+    how Chooses triads (three notes) or sevenths (four notes).
+    sound Sevenths sound jazzier and richer; triads are plain and strong.
+Inversion "Inversion" 0 3 3 enum Root First Second Auto | Auto keeps the chords close to each other (smooth voice leading)
+    how Chooses the chord's inversion: Root, First, Second or Auto.
+    sound Auto keeps successive chords close together for smooth movement.
+Spread "Voicing" 0 2 0 enum Close Open Wide | Close: all within an octave. Open: the second note from the top an octave down. Wide: the root doubled an octave down
+    how Chooses how the chord notes are spread: Close, Open or Wide.
+    sound Close is tight and thick; Wide is airy and spread over more than an octave.
+ChordOct "Chord octave" 0 4 2 int -2 oct signed | Register of the chords (0 is the octave of middle C minus one)
+    how Sets the register of the chords, from -2 to +2 octaves.
+    sound Lower registers make a pad under the voice; higher ones make a shimmer above.
+ChordCh "Chord channel" 0 15 1 int 1 | MIDI channel of the chords
+    how Sets the MIDI channel of the chords, from 1 to 16.
+    sound It selects which synth or part plays the chords.
+ChordVel "Chord velocity" 0 100 80 pct 0 | The chords' velocity as a share of the pitch note's
+    how Sets the chords' velocity as a share of the note's velocity, from 0 to 100%.
+    sound Lower values keep the chords behind the melody.
+group Expression
+LvlOn "Level on" 0 1 0 switch | Level plays a controller
+    how Switches the voice level playing a MIDI controller on or off.
+    sound On, the voice level moves the controller's target, such as a filter or volume.
+LvlCC "Level controller" 0 126 10 int 1 | The controller number of Level
+    how Sets the controller number for the voice level, from 1 to 127.
+    sound Pick the number the synth's target is mapped to (74 is often the filter cutoff).
+LvlMin "Level min" 0 100 0 pct 0 | Level at or under this gives the low end of the range (share of -60 to 0 dB)
+    how Sets the amount of the voice level, from 0 to 100%, that gives the low end of the range.
+    sound Raising it makes the controller reach its low value sooner.
+LvlMax "Level max" 0 100 100 pct 0 | Level at or over this gives the high end of the range (share of -60 to 0 dB)
+    how Sets the amount of the voice level, from 0 to 100%, that gives the high end of the range.
+    sound Lowering it makes the controller reach its high value sooner.
+LvlLo "Level low value" 0 127 0 int 0 | The controller value at the min
+    how Sets the controller value sent at the low end of the voice level, from 0 to 127.
+    sound Swap it with the high value to turn the control upside down.
+LvlHi "Level high value" 0 127 127 int 0 | The controller value at the max
+    how Sets the controller value sent at the high end of the voice level, from 0 to 127.
+    sound Lower it to limit how far the control moves its target.
+LvlCh "Level channel" 0 15 0 int 1 | MIDI channel of Level
+    how Sets the MIDI channel of the controller for the voice level, from 1 to 16.
+    sound It selects which synth or part the control moves.
+AaOn "Vowel aa on" 0 1 0 switch | Vowel aa plays a controller
+    how Switches the vowel aa playing a MIDI controller on or off.
+    sound On, the vowel aa moves the controller's target, such as a filter or volume.
+AaCC "Vowel aa controller" 0 126 73 int 1 | The controller number of Vowel aa
+    how Sets the controller number for the vowel aa, from 1 to 127.
+    sound Pick the number the synth's target is mapped to (74 is often the filter cutoff).
+AaMin "Vowel aa min" 0 100 0 pct 0 | Vowel aa at or under this gives the low end of the range
+    how Sets the amount of the vowel aa, from 0 to 100%, that gives the low end of the range.
+    sound Raising it makes the controller reach its low value sooner.
+AaMax "Vowel aa max" 0 100 100 pct 0 | Vowel aa at or over this gives the high end of the range
+    how Sets the amount of the vowel aa, from 0 to 100%, that gives the high end of the range.
+    sound Lowering it makes the controller reach its high value sooner.
+AaLo "Vowel aa low value" 0 127 0 int 0 | The controller value at the min
+    how Sets the controller value sent at the low end of the vowel aa, from 0 to 127.
+    sound Swap it with the high value to turn the control upside down.
+AaHi "Vowel aa high value" 0 127 127 int 0 | The controller value at the max
+    how Sets the controller value sent at the high end of the vowel aa, from 0 to 127.
+    sound Lower it to limit how far the control moves its target.
+AaCh "Vowel aa channel" 0 15 0 int 1 | MIDI channel of Vowel aa
+    how Sets the MIDI channel of the controller for the vowel aa, from 1 to 16.
+    sound It selects which synth or part the control moves.
+OoOn "Vowel oo on" 0 1 0 switch | Vowel oo plays a controller
+    how Switches the vowel oo playing a MIDI controller on or off.
+    sound On, the vowel oo moves the controller's target, such as a filter or volume.
+OoCC "Vowel oo controller" 0 126 70 int 1 | The controller number of Vowel oo
+    how Sets the controller number for the vowel oo, from 1 to 127.
+    sound Pick the number the synth's target is mapped to (74 is often the filter cutoff).
+OoMin "Vowel oo min" 0 100 0 pct 0 | Vowel oo at or under this gives the low end of the range
+    how Sets the amount of the vowel oo, from 0 to 100%, that gives the low end of the range.
+    sound Raising it makes the controller reach its low value sooner.
+OoMax "Vowel oo max" 0 100 100 pct 0 | Vowel oo at or over this gives the high end of the range
+    how Sets the amount of the vowel oo, from 0 to 100%, that gives the high end of the range.
+    sound Lowering it makes the controller reach its high value sooner.
+OoLo "Vowel oo low value" 0 127 0 int 0 | The controller value at the min
+    how Sets the controller value sent at the low end of the vowel oo, from 0 to 127.
+    sound Swap it with the high value to turn the control upside down.
+OoHi "Vowel oo high value" 0 127 127 int 0 | The controller value at the max
+    how Sets the controller value sent at the high end of the vowel oo, from 0 to 127.
+    sound Lower it to limit how far the control moves its target.
+OoCh "Vowel oo channel" 0 15 0 int 1 | MIDI channel of Vowel oo
+    how Sets the MIDI channel of the controller for the vowel oo, from 1 to 16.
+    sound It selects which synth or part the control moves.
+EeOn "Vowel ee on" 0 1 0 switch | Vowel ee plays a controller
+    how Switches the vowel ee playing a MIDI controller on or off.
+    sound On, the vowel ee moves the controller's target, such as a filter or volume.
+EeCC "Vowel ee controller" 0 126 0 int 1 | The controller number of Vowel ee
+    how Sets the controller number for the vowel ee, from 1 to 127.
+    sound Pick the number the synth's target is mapped to (74 is often the filter cutoff).
+EeMin "Vowel ee min" 0 100 0 pct 0 | Vowel ee at or under this gives the low end of the range
+    how Sets the amount of the vowel ee, from 0 to 100%, that gives the low end of the range.
+    sound Raising it makes the controller reach its low value sooner.
+EeMax "Vowel ee max" 0 100 100 pct 0 | Vowel ee at or over this gives the high end of the range
+    how Sets the amount of the vowel ee, from 0 to 100%, that gives the high end of the range.
+    sound Lowering it makes the controller reach its high value sooner.
+EeLo "Vowel ee low value" 0 127 0 int 0 | The controller value at the min
+    how Sets the controller value sent at the low end of the vowel ee, from 0 to 127.
+    sound Swap it with the high value to turn the control upside down.
+EeHi "Vowel ee high value" 0 127 127 int 0 | The controller value at the max
+    how Sets the controller value sent at the high end of the vowel ee, from 0 to 127.
+    sound Lower it to limit how far the control moves its target.
+EeCh "Vowel ee channel" 0 15 0 int 1 | MIDI channel of Vowel ee
+    how Sets the MIDI channel of the controller for the vowel ee, from 1 to 16.
+    sound It selects which synth or part the control moves.
+
+# What the machine measures (NeoVoiceToMidiMachine.Readings, machine_readings).
+reading note number | The pitch note sounding now (MIDI number), 0 when none
+reading sung_midi number | The pitch the voice is singing, in fractional MIDI notes (0 when unvoiced)
+reading voiced flag | 1 while the voice is voiced
+reading key_root number | The key in use: its root, 0 (C) to 11 (B), -1 for none
+reading key_minor flag | 1 when the key in use is minor
+reading level_db dB | The voice level, dBFS
+reading vowel_aa number | The vowel weights, 0 to 1
+reading vowel_oo number | The vowel weight oo, 0 to 1
+reading vowel_ee number | The vowel weight ee, 0 to 1
+reading last_trigger number | The last sound that played (1 to 8), 0 when none yet
+reading trained_sounds number | How many sounds have training examples
+reading note_latency_ms ms | How long after the voice starts a note plays: the pitch window plus the Response delay
