@@ -65,6 +65,7 @@ FEATURES = [
     ("Browser (BR1)", "Places: the folders the browser indexes", "browser.md", ["browser_places"], "list, add, remove; the scan runs in the background"),
     ("Browser (BR1)", "Hot-swap: other gear in a machine's place", "browser.md", ["machine_swap"], "the Machine View's drop on a machine's box; one undo step"),
     ("Neo Audio (stems)", "Separate stems: a clip or a file into vocals, drums, bass and other on new audio tracks", "stem-separation.md", ["audio_separate"], "the Separate stems and Install models dialogs and the Preferences page are the studio's only"),
+    ("Neo Audio (Convert to MIDI)", "Convert to MIDI: an audio clip's melody, harmony or drums as a MIDI clip on a new track with an instrument, in the clip's scene and arrangement positions", "pitch.md section 9", ["audio_convert_to_midi"], "the Convert to MIDI menu of a Session slot, an arrangement clip and the Audio page; the dialog adds the quantize choice the tool has as a parameter"),
     ("Dropped", "Wireless, machine templates and the Create Template window", "ux-overhaul.md §9 row 14", [], "dropped in the studio too"),
 ]
 

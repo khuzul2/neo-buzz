@@ -141,6 +141,8 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Gate = new("Neo Gate", "Gate", false);
         // The resonance suppressor (docs/specs/mastering-tools.md §5.16).
         internal static readonly NeoInfo Spectral = new("Neo Spectral", "Spectral", false);
+        // The pitch corrector (docs/specs/neo-tune.md).
+        internal static readonly NeoInfo Tune = new("Neo Tune", "Tune", false);
         // The strip (docs/specs/mastering-tools.md §5.10).
         internal static readonly NeoInfo Strip = new("Neo Strip", "Strip", false);
 
@@ -1739,6 +1741,25 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void NeoTuneReportsItsRangeAsLatencyAndShowsItsEditor()
+        {
+            using var rig = new Rig(Tune);
+            rig.Play(0.5);
+            Assert.That(rig.Effect.Latency, Is.EqualTo((int)Math.Round(0.028 * rig.Rate)), "Quality: 28 ms");
+            rig.Param("Range").SetValue(0, 0);
+            rig.Play(0.5);
+            Assert.That(rig.Effect.Latency, Is.EqualTo((int)Math.Round(0.010 * rig.Rate)), "Low latency: 10 ms");
+            rig.Param("Range").SetValue(0, 2);
+            rig.Play(0.5);
+            Assert.That(rig.Effect.Latency, Is.EqualTo((int)Math.Round(0.036 * rig.Rate)), "Full: 36 ms");
+            var instance = rig.Effect.ManagedMachine;
+            var readings = (System.Collections.Generic.IReadOnlyDictionary<string, double>)instance.GetType().GetProperty("Readings")!.GetValue(instance)!;
+            Assert.That(readings.ContainsKey("input_hz"), Is.True);
+            Assert.That(readings["latency_samples"], Is.EqualTo(rig.Effect.Latency));
+            ShootEditor(rig.Effect, "neo-tune-editor");
+        }
+
+        [Test]
         public void NeoGateReportsItsLookaheadAsLatencyAndShowsItsEditor()
         {
             using var rig = new Rig(Gate);
@@ -1842,7 +1863,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, LearnSub, LearnFm, LearnWt, LearnAdd, LearnGrain, LearnPhys, LearnString, LearnFormant, LearnFold, LearnPd, LearnVector, LearnSampler, LearnSpectral, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip, Tape, DeEsser, Gate, Spectral, Patch })
+            foreach (var info in new[] { Tune, Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, LearnSub, LearnFm, LearnWt, LearnAdd, LearnGrain, LearnPhys, LearnString, LearnFormant, LearnFold, LearnPd, LearnVector, LearnSampler, LearnSpectral, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip, Tape, DeEsser, Gate, Spectral, Patch })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");

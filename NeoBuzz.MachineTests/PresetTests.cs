@@ -92,6 +92,8 @@ namespace NeoBuzz.MachineTests
             ["Neo Dither"] = (NeoBuzz.Dither.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Dither.DitherEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             // mastering-tools.md §5.16: the resonance suppressor.
             ["Neo Spectral"] = (NeoBuzz.Spectral.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Spectral.SpectralEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
+            // neo-tune.md: the pitch corrector.
+            ["Neo Tune"] = (NeoBuzz.Tune.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Tune.TuneEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             ["Neo Strip"] = (NeoBuzz.Strip.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Strip.StripEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
         };
 
