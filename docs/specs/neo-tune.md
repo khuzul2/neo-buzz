@@ -147,7 +147,27 @@ Eight: Lead (Hard effect 0, Pop polish 40, Natural 75, Transparent 100), Live (L
 
 ### 11.6 Measured on VocalSet and before/after NT1
 
-<<VOCALSET>>
+Pitch-eval run 44540700263 (branch `machines/neo-tune-nt2`): 218 VocalSet recordings (at most 12 s each), chromatic scale, Quality range; NT1 is the frozen engine with its three evaluation settings, NT2 at Natural 0, 50 and 100. Means over the files; the full tables per technique are in the run's report (`tools/PitchEval/TuneGates.cs` defines each metric).
+
+| Metric (all 218 files) | input | NT1 hard | NT1 natural | NT1 subtle | NT2 N 0 | NT2 N 50 | NT2 N 100 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Vibrato extent 4-8 Hz (ct) | 65.8 | 88.3 | 52.7 | 50.3 | 61.4 | 65.3 | 65.6 |
+| Jitter (%) | 1.43 | 1.70 | 1.54 | 1.57 | 1.54 | 1.52 | 1.47 |
+| Shimmer (%) | 2.89 | 3.07 | 2.98 | 2.99 | 2.96 | 2.94 | 2.94 |
+| Band above 5 kHz (dB) | - | -1.33 | -1.31 | -1.22 | -0.04 | -0.01 | -0.03 |
+| Sub-harmonic change (dB) | - | +2.26 | +1.72 | +1.83 | +0.66 | +0.37 | +0.20 |
+| Voiced kept (%) | - | 98.8 | 98.1 | 98.3 | 99.7 | 99.9 | 100.0 |
+| Note changes per file (sung 9.9) | 9.9 | 13.3 | 11.8 | 13.1 | 11.7 | 10.1 | 10.0 |
+| Bursts | 6.3 | 6.4 | 6.4 | 6.4 | 6.4 | 6.4 | 6.4 |
+
+On the vibrato arpeggios (where NT1's faults were seen): vibrato extent input 164.0, NT1 natural 94.4 (58 %), NT1 subtle 92.4, **NT2 N 50 159.9 (98 %), N 100 159.2 (97 %)**; sub-harmonic change NT1 hard +5.75 dB, **NT2 N 0 +0.98**; voiced kept NT1 natural 93.2 %, **NT2 99.2 - 99.9 %**; note changes sung 9.1, NT1 hard 13.6, **NT2 N 0 10.2, N 50 9.4, N 100 9.1**.
+
+**Gates against real recordings: met and not met.**
+- Met: band above 5 kHz within 0.5 dB (-0.04 to -0.01 dB at every Natural; NT1 lost 1.2 - 1.3 dB); jitter within 10 % of the input at Natural 100 (+2.8 %), shimmer within 2 %; sub-harmonics at most +1 dB at every Natural (NT1 up to +5.75); voiced kept at least 99 % (99.7 - 100 %; NT1 93 - 99 %); vibrato kept at Natural 50 and 100 (99 % and 100 % of the input's; NT1 natural 80 %, and 58 % on vibrato arpeggios); no extra bursts.
+- **Not met**: (1) the aligned null on real recordings at Natural 100 is 11.4 dB on average (57 dB on the vibrato arpeggios, but 2 - 7 dB on long tones and scales), not 30 dB: a real, out-of-tune voice is corrected, so the output is not the input, and the gate (30 dB) holds only for the in-tune synthetic voice (-200 dB); the brief's "real long tones" gate was meant for in-tune material, which VocalSet's long tones are not (their centre error is 25 ct). (2) The LTAS per third octave within 0.3 dB: the worst third-octave difference is 4.2 dB on average (1.2 dB on vibrato arpeggios at Natural 100, 7.1 on long tones), because the correction moves harmonics across the bands of a voice that is sung off pitch; it is a property of a corrected voice, not only of the engine, and the measurement does not separate the two. (3) The effect (Natural 0): the 4-8 Hz extent of the whole file fell only to 93 % of the input's, and the centre error is 5.4 ct (limit 3): the metric includes the steps of the sung notes and NT2 snaps after a 150 - 250 ms lag, and the note sequence still has 1.8 extra changes per file (11.7 against 9.9 sung, NT1 hard 13.3). The synthetic effect gate (11.3) passes; the expression inside the notes was not measured on VocalSet and is the next thing to measure. (4) Natural 0 on vibrato arpeggios has a +0.98 dB sub-harmonic change (inside the limit by 0.02 dB).
+
+The listening pack (artifact `neo-tune-excerpts`, never committed) holds the six NT1 excerpts as the original, NT1's old output and NT2 at Natural 0, 50 and 100 (levels matched, a blind folder with a key), so the verdict on the sound is the user's.
+
 
 ### 11.7 Limits of NT2
 
