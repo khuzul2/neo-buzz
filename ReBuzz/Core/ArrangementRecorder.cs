@@ -52,7 +52,7 @@ namespace ReBuzz.Core
         }
     }
 
-    internal sealed class ArrangementRecorder
+    internal sealed partial class ArrangementRecorder
     {
         sealed class TrackTake
         {
@@ -115,7 +115,7 @@ namespace ReBuzz.Core
         /// <summary>Recording is on, or its state changed (headers and buttons redraw).</summary>
         public event Action Changed;
 
-        public bool IsRecording => tracks.Count > 0;
+        public bool IsRecording => tracks.Count > 0 || audioTakes.Count > 0;
 
         public bool IsLoopRecording => IsRecording && loop;
 
@@ -126,7 +126,7 @@ namespace ReBuzz.Core
         public string Status { get; private set; }
 
         /// <summary>The tracks recording now: their main lane and the song tick their take begins at.</summary>
-        public IReadOnlyList<(ISequence Lane, int Origin)> Live => tracks.Values.Select(t => (t.Lane, t.Window.Origin)).ToList();
+        public IReadOnlyList<(ISequence Lane, int Origin)> Live => tracks.Values.Select(t => (t.Lane, t.Window.Origin)).Concat(audioTakes.Select(a => (a.Lane, a.Origin))).ToList();
 
         // ------------------------------------------------------------------ arming
 
@@ -159,6 +159,8 @@ namespace ReBuzz.Core
             if (session == null || buzz.SongLoading) return "The song isn't ready.";
             var armed = session.ArmedTracks.Select(s => s.Machine).Where(m => m != null).Distinct().ToList();
             if (armed.Count == 0) return "Arm a track first.";
+            var audioMachines = armed.Where(SessionLayout.IsClipPlayer).ToList();
+            armed = armed.Where(m => !SessionLayout.IsClipPlayer(m)).ToList();
             var song = buzz.SongCore;
             int loopStart = song.LoopStart, loopEnd = song.LoopEnd;
             if (loopRecording && loopEnd <= loopStart) return "Set a loop first.";
@@ -175,7 +177,9 @@ namespace ReBuzz.Core
                 windows.Add(window);
                 tracks[lane] = new TrackTake { Lane = lane, Machine = machine, Window = window };
             }
-            if (windows.Count == 0) return "The armed tracks have no main lane.";
+            string audioWhy = StartAudio(audioMachines, loopRecording, position, loopStart, loopEnd);
+            if (audioWhy != null) { tracks.Clear(); return audioWhy; }
+            if (windows.Count == 0 && audioTakes.Count == 0) return "The armed tracks have no main lane.";
             loop = loopRecording;
             Status = null;
             lastClock = -1;
@@ -185,6 +189,7 @@ namespace ReBuzz.Core
             buzz.PropertyChanged += OnBuzzChanged;
             song.PropertyChanged += OnSongChanged;
             session.SetArrangementWindows(windows.ToArray());
+            PublishAudio(session);
             if (!buzz.PlayRequested) buzz.Playing = true;
             Changed?.Invoke();
             return null;
@@ -208,6 +213,7 @@ namespace ReBuzz.Core
             if (!IsRecording) return;
             Detach();
             tracks.Clear();
+            AbandonAudio();
             Changed?.Invoke();
         }
 
@@ -272,6 +278,7 @@ namespace ReBuzz.Core
             var done = tracks.Values.ToList();
             Detach();
             tracks.Clear();
+            var audioDone = EndAudio();
             try
             {
                 var stack = buzz.SongCore.ActionStack;
@@ -279,7 +286,7 @@ namespace ReBuzz.Core
                 stack.BeginActionGroup();
                 try
                 {
-                    stack.Label(loop ? "Record takes" : "Record MIDI");
+                    stack.Label(loop ? "Record takes" : audioDone.Count > 0 && done.Count == 0 ? "Record audio" : "Record MIDI");
                     foreach (var t in done)
                     {
                         long end = endClock >= 0 ? endClock : Math.Max(t.LastTime, 0);
@@ -287,6 +294,7 @@ namespace ReBuzz.Core
                         t.Window.Locate(end, out int lastPass, out long endSong);
                         written += loop ? WriteTakes(t, lastPass) : WriteClip(t, endSong);
                     }
+                    written += WriteAudio(audioDone);
                 }
                 finally
                 {

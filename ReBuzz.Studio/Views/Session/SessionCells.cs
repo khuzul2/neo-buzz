@@ -40,6 +40,7 @@ namespace ReBuzz.Studio.Views.Session
             readonly TextBlock glyph;
             readonly TextBlock label;
             readonly TextBlock flags;
+            readonly Audio.RecordingWave liveWave;   // NA4b: the growing waveform of a take being recorded
             readonly Audio.AudioSlotWave wave;        // NA3: an audio clip's mini waveform
             readonly Control stopButton;      // empty slot: stops the track
             readonly Control recordButton;    // empty slot of an armed track: records a take (0.7)
@@ -91,6 +92,13 @@ namespace ReBuzz.Studio.Views.Session
                     wave = new Audio.AudioSlotWave(audioView, pattern.Length / (double)Math.Max(1, view.buzz.TPB));
                     Grid.SetColumnSpan(wave, 3);
                     grid.Children.Add(wave);
+                }
+
+                if (pattern != null && settings?.Audio != null)
+                {
+                    liveWave = new Audio.RecordingWave { IsVisible = false };
+                    Grid.SetColumnSpan(liveWave, 3);
+                    grid.Children.Add(liveWave);
                 }
 
                 if (pattern != null)
@@ -378,6 +386,13 @@ namespace ReBuzz.Studio.Views.Session
                 else if (glyph.Text != "▶")
                 {
                     glyph.Text = "▶";
+                }
+                if (liveWave != null)
+                {
+                    var cap = recording ? view.layout.LiveCaptureOf(Sequence, Pattern) : null;
+                    liveWave.IsVisible = cap != null;
+                    liveWave.Source = cap;
+                    if (cap != null) liveWave.InvalidateVisual();
                 }
                 bool lit = stateBrush != null && (!waiting || blinkOn);
                 chip.Background = stateBrush != null ? SessionPalette.StateChip : SessionPalette.Transparent;

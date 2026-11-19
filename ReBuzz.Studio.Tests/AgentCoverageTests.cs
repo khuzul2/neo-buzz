@@ -271,6 +271,42 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void TheTakesToolListsChoosesCompsAndDeletesUnusedTakes()
+        {
+            var window = Song(out var restore);
+            using var _ = restore;
+            Call("arrangement_lane", Args(("op", "add"), ("machine", "Bass")));
+            Call("arrangement_lane", Args(("op", "add"), ("machine", "Bass"), ("role", "take")));
+            Call("arrangement_lane", Args(("op", "add"), ("machine", "Bass"), ("role", "take")));
+            Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("lane", 1), ("pattern", "Verse"), ("at", 0)));
+            Call("pattern_create", Args(("machine", "Bass"), ("name", "Chorus"), ("length_beats", 4)));
+            Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("lane", 2), ("pattern", "Chorus"), ("at", 0)));
+
+            var list = Call("takes", Args(("op", "list"), ("machine", "Bass")));
+            var takes = list["takes"]!.AsArray();
+            Assert.That(takes.Count, Is.EqualTo(2), "one take on each take lane");
+            Assert.That(takes.Select(t => t!["take"]!.GetValue<int>()).ToArray(), Is.EqualTo(new[] { 1, 2 }));
+            Assert.That(takes.Select(t => t!["used"]!.GetValue<bool>()).ToArray(), Is.EqualTo(new[] { false, false }), "nothing is comped yet");
+
+            int steps = Steps;
+            Call("takes", Args(("op", "choose"), ("machine", "Bass"), ("take", 2)));
+            Assert.That(Steps, Is.EqualTo(steps + 1), "choosing a take is one undo step");
+            Assert.That(Lane("Bass", 0)["events"]!.AsArray(), Has.Count.EqualTo(1));
+            takes = Call("takes", Args(("op", "list"), ("machine", "Bass")))["takes"]!.AsArray();
+            Assert.That(takes.Select(t => t!["used"]!.GetValue<bool>()).ToArray(), Is.EqualTo(new[] { false, true }), "take 2 plays now");
+
+            Assert.That(Err("takes", Args(("op", "choose"), ("machine", "Bass"), ("take", 9))), Does.Contain("no take 9"));
+            Assert.That(Err("takes", Args(("op", "comp"), ("machine", "Bass"))), Does.Contain("ranges"));
+            Assert.That(Err("takes", Args(("op", "flatten"), ("machine", "Bass"))), Does.Contain("audio"));
+
+            var deleted = Call("takes", Args(("op", "delete_unused"), ("machine", "Bass")));
+            Assert.That(deleted["deleted"]!.GetValue<int>(), Is.EqualTo(1));
+            Assert.That(deleted["takes"]!.AsArray(), Has.Count.EqualTo(1), "the take nothing plays is gone");
+            Host.Core.SongCore.ActionStack.Undo();
+            Assert.That(Call("takes", Args(("op", "list"), ("machine", "Bass")))["takes"]!.AsArray(), Has.Count.EqualTo(2), "undo brings it back");
+        }
+
+        [AvaloniaTest]
         public void TheVerticalTrackerIsASettingTheAgentCanSet()
         {
             var window = Song(out var restore);

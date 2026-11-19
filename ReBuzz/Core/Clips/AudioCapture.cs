@@ -4,6 +4,7 @@
 // (ReBuzz.SessionTests links this file); the audio thread never allocates or waits.
 
 using System;
+using System.Collections.Concurrent;
 using System.Threading;
 
 namespace ReBuzz.Core.Clips
@@ -19,19 +20,36 @@ namespace ReBuzz.Core.Clips
     internal sealed class AudioCapture
     {
         public const int ChunkFrames = 1 << 16;
+        public const int PeakShift = 10;
+        public const int PeakFrames = 1 << PeakShift;
 
         readonly float[][] chunks;          // interleaved left, right
         readonly long capacity;
         long skip;
         long written;
+        // A peak per PeakFrames frames of what was kept, for drawing the take while it grows (the audio thread keeps them; nothing is allocated).
+        readonly float[] peaks;
         long length;
         long dropped;
         bool started;
 
+        // Temp-file mode (docs/specs/neo-audio.md "Takes and comping"): a writer thread makes the chunks ahead of the audio thread and writes the full
+        // ones to the take's file, giving them back, so a long take is a few chunks in RAM. The audio thread's side is the same lock-free chunk write.
+        TakeFile file;
+        Thread writer;
+        volatile bool writerStop;
+        readonly ConcurrentStack<float[]> pool = new ConcurrentStack<float[]>();
+        int flushedChunks;
+        int resident;
+        int peakResident;
+        bool completed;
+        readonly object completeGate = new object();
+
         /// <param name="lengthFrames">Frames to keep; long.MaxValue until stopped.</param>
         /// <param name="maxFrames">The most it keeps, until stopped.</param>
         /// <param name="framesPerBeat">Frames a beat of the take lasts: where <see cref="StartAt"/> starts.</param>
-        public AudioCapture(int sampleRate, long skipFrames, long lengthFrames, long maxFrames, double framesPerBeat = 0)
+        /// <param name="spill">The take's temp file: the audio goes there as it records instead of staying in RAM (null: it stays).</param>
+        public AudioCapture(int sampleRate, long skipFrames, long lengthFrames, long maxFrames, double framesPerBeat = 0, TakeFile spill = null)
         {
             SampleRate = Math.Max(1, sampleRate);
             FramesPerBeat = Math.Max(0, framesPerBeat);
@@ -39,8 +57,30 @@ namespace ReBuzz.Core.Clips
             capacity = Math.Max(1, lengthFrames == long.MaxValue ? maxFrames : Math.Min(lengthFrames, Math.Max(1, maxFrames)));
             length = lengthFrames == long.MaxValue ? long.MaxValue : Math.Clamp(lengthFrames, 0, capacity);
             chunks = new float[(int)((capacity + ChunkFrames - 1) / ChunkFrames)][];
-            Prepare(lengthFrames == long.MaxValue ? 8L * SampleRate : capacity);
+            peaks = new float[(int)((capacity >> PeakShift) + 2)];
+            file = spill;
+            if (file != null)
+            {
+                PrepareChunks(AheadFrames);
+                writer = new Thread(WriterLoop) { IsBackground = true, Name = "Take writer", Priority = ThreadPriority.AboveNormal };
+                writer.Start();
+            }
+            else
+                Prepare(lengthFrames == long.MaxValue ? 8L * SampleRate : capacity);
         }
+
+        /// <summary>Seconds of chunks the writer thread keeps ready ahead of the audio thread (tests that render far faster than real time raise it).</summary>
+        public static int SpillAheadSeconds = 3;
+
+        long AheadFrames => (long)Math.Max(1, SpillAheadSeconds) * SampleRate;
+
+        /// <summary>The take's temp file, while it records into one.</summary>
+        public TakeFile File => file;
+
+        /// <summary>Chunks in memory now (the most is <see cref="PeakResidentChunks"/>): bounded when the take goes to a file.</summary>
+        public int ResidentChunks => Volatile.Read(ref resident);
+
+        public int PeakResidentChunks => Volatile.Read(ref peakResident);
 
         public int SampleRate { get; }
 
@@ -77,10 +117,106 @@ namespace ReBuzz.Core.Clips
         /// <summary>UI thread: chunks for the next <paramref name="framesAhead"/> frames.</summary>
         public void Prepare(long framesAhead)
         {
+            if (file != null) return;            // the writer thread makes them (two makers could replace a chunk the audio thread is writing)
+            PrepareChunks(framesAhead);
+        }
+
+        void PrepareChunks(long framesAhead)
+        {
             long upTo = Math.Min(capacity, Written + Math.Max(0, framesAhead));
-            for (int c = 0; (long)c * ChunkFrames < upTo && c < chunks.Length; c++)
+            int first = file != null ? flushedChunks : 0;
+            for (int c = first; (long)c * ChunkFrames < upTo && c < chunks.Length; c++)
                 if (Volatile.Read(ref chunks[c]) == null)
-                    Volatile.Write(ref chunks[c], new float[ChunkFrames * 2]);
+                {
+                    if (!pool.TryPop(out var chunk)) chunk = new float[ChunkFrames * 2];
+                    Volatile.Write(ref chunks[c], chunk);
+                    int now = Interlocked.Increment(ref resident);
+                    if (now > peakResident) Volatile.Write(ref peakResident, now);
+                }
+        }
+
+        void WriterLoop()
+        {
+            while (!writerStop)
+            {
+                try { Service(); }
+                catch (Exception ex) when (ex is System.IO.IOException || ex is ObjectDisposedException || ex is UnauthorizedAccessException) { }
+                Thread.Sleep(20);
+            }
+        }
+
+        /// <summary>Writer thread: chunks ahead, full chunks to the file.</summary>
+        void Service()
+        {
+            lock (completeGate)
+            {
+                if (completed) return;
+                PrepareChunks(AheadFrames);
+                FlushChunks(false, 0);
+            }
+        }
+
+        /// <summary>Writes the chunks that are full (or, <paramref name="all"/>, every frame up to <paramref name="frames"/>) and gives them back.</summary>
+        void FlushChunks(bool all, long frames)
+        {
+            bool wrote = false;
+            while (flushedChunks < chunks.Length)
+            {
+                int c = flushedChunks;
+                long start = (long)c * ChunkFrames;
+                long end = all ? Math.Min(start + ChunkFrames, frames) : start + ChunkFrames;
+                if (all ? start >= frames : Written < end) break;
+                var chunk = Volatile.Read(ref chunks[c]);
+                int count = (int)(end - start);
+                if (chunk == null) file.AppendSilence(count);
+                else file.Append(chunk, count);
+                wrote = true;
+                if (chunk != null)
+                {
+                    Volatile.Write(ref chunks[c], null);
+                    Interlocked.Decrement(ref resident);
+                    Array.Clear(chunk, 0, chunk.Length);       // a recycled chunk starts as silence (frames never written stay silent)
+                    pool.Push(chunk);
+                }
+                flushedChunks++;
+                if (!all && end < start + ChunkFrames) break;
+            }
+            if (wrote) file.Flush();
+        }
+
+        /// <summary>
+        /// UI thread: the take is over (<see cref="Length"/> is known, or <paramref name="frames"/> are what it keeps): stops the writer
+        /// and puts every frame in the file. The audio thread must be done with it.
+        /// </summary>
+        public void Complete(long frames)
+        {
+            if (file == null) return;
+            lock (completeGate)
+            {
+                if (completed) return;
+                completed = true;
+            }
+            writerStop = true;
+            writer?.Join(2000);
+            long keep = Math.Clamp(frames, 0, Math.Min(capacity, Written));
+            lock (completeGate)
+                FlushChunks(true, keep);
+            // Frames the take keeps beyond what came in (a fixed length stopped early) are silence in the file too.
+            long want = Math.Clamp(frames, 0, capacity);
+            if (file.Frames < want && want < long.MaxValue / 8) file.AppendSilence((int)Math.Min(int.MaxValue, want - file.Frames));
+            file.Flush();
+        }
+
+        /// <summary>The take is committed (or abandoned): its temp file goes (<paramref name="keepFile"/>: stays for recovery) and the writer stops.</summary>
+        public void Close(bool keepFile = false)
+        {
+            writerStop = true;
+            writer?.Join(2000);
+            lock (completeGate) completed = true;
+            var f = file;
+            file = null;
+            f?.Close(!keepFile);
+            while (pool.TryPop(out _)) { }
         }
 
         /// <summary>UI thread: how many frames it keeps (a recording until stopped, stopped).</summary>
@@ -149,11 +285,25 @@ namespace ReBuzz.Core.Clips
             int i = (int)(frame % ChunkFrames) * 2;
             chunk[i] = float.IsFinite(l) ? l : 0f;       // an input's NaN or infinity must not reach the take's clip
             chunk[i + 1] = float.IsFinite(r) ? r : 0f;
+            float m = Math.Max(Math.Abs(chunk[i]), Math.Abs(chunk[i + 1]));
+            int b = (int)(frame >> PeakShift);
+            if (b < peaks.Length && m > peaks[b]) peaks[b] = m;
         }
+
+        /// <summary>The loudest frame of each <see cref="PeakFrames"/> frames kept so far (the last one still growing).</summary>
+        public int PeakCount => (int)Math.Min(peaks.Length, (Written >> PeakShift) + 1);
+
+        public float PeakAt(int index) => index >= 0 && index < peaks.Length ? Volatile.Read(ref peaks[index]) : 0f;
 
         /// <summary>UI thread: the first <paramref name="frames"/> frames as two channels (silence where none was kept).</summary>
         public (float[] Left, float[] Right) Collect(long frames)
         {
+            if (file != null)
+            {
+                long keep = Math.Min(frames, Math.Min(capacity, int.MaxValue));
+                Complete(keep);
+                return file.ReadAll(keep);
+            }
             int n = (int)Math.Clamp(frames, 0, Math.Min(capacity, int.MaxValue));
             var left = new float[n];
             var right = new float[n];
