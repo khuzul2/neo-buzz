@@ -24,6 +24,7 @@ namespace NeoBuzz.AudioToMidi
         int selected;
         readonly List<(long At, int Cls)> hits = new List<(long, int)>();
         int seenSerial;
+        bool drumModeShown;
 
         protected override string Title => "Neo Audio to MIDI";
         protected override NeoColor Accent => AccentColor;
@@ -70,6 +71,11 @@ namespace NeoBuzz.AudioToMidi
             forget.Click += () => machine?.ClearDrum(selected);
             var perDrum = new UIElement[3];
             for (int i = 0; i < 3; i++)
+            {
+                var def = Params.Table[P.KickVel + 4 * i];
+                def.Describer = v => v == 0 ? "Dynamic" : v.ToString();
+            }
+            for (int i = 0; i < 3; i++)
                 perDrum[i] = Layout.Column(new ParamKnob(ctx, P.KickNote + 4 * i, null, 40), new ParamKnob(ctx, P.KickVel + 4 * i, null, 40), new ParamKnob(ctx, P.KickSens + 4 * i, null, 40), new ParamKnob(ctx, P.KickGap + 4 * i, null, 40));
             var drums = new Section("Drums", AccentColor, Layout.Column(
                 Layout.Row(new ParamKnob(ctx, P.Length, null, 36), new ParamKnob(ctx, P.DrumCh, null, 36)),
@@ -110,7 +116,8 @@ namespace NeoBuzz.AudioToMidi
         void DrawRoll(INeoCanvas g, NeoRect r, AudioMidiEngine e, EditorContext ctx)
         {
             g.Rect(r, Palette.Panel, NeoStroke.None);
-            bool drumMode = e != null ? e.DrumMode : ctx.Value(P.Mode) >= 1;
+            bool drumMode = ctx.Value(P.Mode) >= 1;
+            drumModeShown = drumMode;
             if (drumMode) DrawDrumLanes(g, r, e);
             else DrawMelodyRoll(g, r, e);
         }
@@ -170,7 +177,7 @@ namespace NeoBuzz.AudioToMidi
                 }
                 if (m.Sounding) g.Text(Scales.NoteNames[((m.CurrentNote % 12) + 12) % 12], r.Right - 4, r.Y + 3, 12, Palette.Text, true, NeoAlign.Right);
             }
-            g.Text("line: input pitch   bars: notes sent", r.X + 4, r.Y + 3, 8, Palette.DimText);
+            g.Text("line: input pitch   bars: notes sent", r.Right - 4, r.Bottom - 12, 8, Palette.DimText, false, NeoAlign.Right);
         }
 
         void DrawDrumLanes(INeoCanvas g, NeoRect r, AudioMidiEngine e)
@@ -250,7 +257,7 @@ namespace NeoBuzz.AudioToMidi
             if (e == null) return;
             string text = e.Learning >= 0
                 ? $"Calibrating {NeoAudioToMidiMachine.DrumNames[e.Learning]}: {e.LearnedThisPass} of {AudioMidiEngine.CalibrationHits} heard"
-                : !e.DrumMode ? "Set Mode to Drums to calibrate"
+                : !drumModeShown ? "Set Mode to Drums to calibrate"
                 : e.Classifier.ClassesTrained >= 3 ? "Calibrated: the kit is recognised from your hits" : "Built in rules; choose a drum, press Calibrate, hit it five times";
             g.Text(text, r.X + 2, r.Y + 3, 10, Palette.DimText, false, NeoAlign.Left, r.Width - 4);
         }

@@ -42,7 +42,7 @@ namespace NeoBuzz.AudioToMidi
         public const double CorrectionMs = 80;
         /// <summary>Fast, over a note that is still sounding: the share of the tracker's window that must be after the onset before an estimate counts (the rest is the old note).</summary>
         public const double FreshShare = 0.5;
-        const double ArmTimeoutMs = 150, DoubleOnsetMs = 50, ReleaseHoldMs = 25, StillRingingMs = 120, StableMinMs = 40, SameNoteGuardMs = 300, ShortNoteMs = 50, AfterOffMs = 250, RestartGuardMs = 60;
+        const double ArmTimeoutMs = 150, DoubleOnsetMs = 50, ReleaseHoldMs = 25, StillRingingMs = 120, StableMinMs = 40, SameNoteGuardMs = 300, ShortNoteMs = 50, RestartGuardMs = 60;
 
         readonly MidiBlock block;
 
@@ -141,7 +141,7 @@ namespace NeoBuzz.AudioToMidi
             if (firstSince < 0) firstSince = t;
             long waited = t - firstSince;
             bool go;
-            if (Fast) go = e.Confidence >= FastConfidence || (agree && e.Confidence >= FastAgreeConfidence) || (waited >= (long)(FastWaitMs * 0.001 * Rate) && e.Confidence >= 0.4f);
+            if (Fast) go = (agree && e.Confidence >= FastAgreeConfidence) || (waited >= (long)(FastWaitMs * 0.001 * Rate) && e.Confidence >= 0.4f);
             else go = t - armAt >= (long)(StableMinMs * 0.001 * Rate) && ((agree && e.Confidence >= StableConfidence) || (waited >= (long)(StableWaitMs * 0.001 * Rate) && e.Confidence >= 0.5f));
             if (!go) return;
             Begin(Scales.Nearest(m, ActiveMask), t, armPeak);
