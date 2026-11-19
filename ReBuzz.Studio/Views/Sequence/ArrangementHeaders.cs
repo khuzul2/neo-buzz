@@ -198,6 +198,32 @@ namespace ReBuzz.Studio.Views.Sequence
             return flyout;
         }
 
+        /// <summary>The track header's Takes menu (NA4b).</summary>
+        MenuFlyout TakesMenu(IMachine machine)
+        {
+            var flyout = new MenuFlyout { Placement = PlacementMode.RightEdgeAlignedTop };
+            flyout.Opening += (s, e) =>
+            {
+                var editor = new ClipEditor(core);
+                var takes = editor.TakesOf(machine);
+                var show = new MenuItem { Header = "Take lanes", ToggleType = MenuItemToggleType.CheckBox, IsChecked = core.Arrangement?.AreTakesHidden(machine.Name) != true };
+                AutomationProperties.SetName(show, $"Show take lanes of {machine.Name}");
+                show.Click += (_, _) => core.Arrangement?.SetTakesHidden(machine.Name, core.Arrangement.AreTakesHidden(machine.Name) != true);
+                var unused = new MenuItem { Header = "Delete unused takes", IsEnabled = takes.Any(t => !t.Used) };
+                AutomationProperties.SetName(unused, $"Delete unused takes of {machine.Name}");
+                unused.Click += (_, _) => { editor.DeleteUnusedTakes(machine); Rebuild(); };
+                var flatten = new MenuItem { Header = "Flatten comp", IsEnabled = takes.Any(t => editor.IsAudio(t.Clip.Pattern)) };
+                AutomationProperties.SetName(flatten, $"Flatten the comp of {machine.Name}");
+                flatten.Click += (_, _) => editor.FlattenComp(machine, null, null, out _);
+                flyout.Items.Clear();
+                flyout.Items.Add(show);
+                flyout.Items.Add(new Separator());
+                flyout.Items.Add(unused);
+                flyout.Items.Add(flatten);
+            };
+            return flyout;
+        }
+
         /// <summary>A parameter lane's header: its name, the record switch (knob moves go into the lane while the song plays) and a button that takes the lane away.</summary>
         Control ParameterCell(ArrangementRow row, SequenceLook look, Func<string, bool, TextBlock> label)
         {
@@ -274,6 +300,14 @@ namespace ReBuzz.Studio.Views.Sequence
                     add.Click += (s, e) => AddLaneRequested?.Invoke(machine);
                     switches[machine] = (mute, solo);
                     var bottom = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, 0), Children = { mute, solo, add, auto } };
+                    if (row.Lanes.Any(l => core.Arrangement?.RoleOf(l) == LaneRole.Take))
+                    {
+                        // NA4b: the takes menu: show or collapse the take lanes, delete the takes the comp doesn't play, flatten the comp.
+                        var takes = PlainButton("\u2026", $"Takes of {machine.Name}", "Takes: show the take lanes, delete the unused takes, flatten the comp");
+                        Style(takes, look);
+                        takes.Flyout = TakesMenu(machine);
+                        bottom.Children.Add(takes);
+                    }
                     Grid.SetRow(bottom, 1);
                     grid.Children.Add(bottom);
                 }

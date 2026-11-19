@@ -27,6 +27,7 @@ namespace ReBuzz.Core
         readonly ReBuzzCore buzz;
         readonly Dictionary<ISequence, LaneRole> roles = new Dictionary<ISequence, LaneRole>();
         readonly HashSet<string> folded = new HashSet<string>(StringComparer.Ordinal);
+        readonly HashSet<string> takesHidden = new HashSet<string>(StringComparer.Ordinal);
         readonly List<(string Machine, Session.ColumnKey Key)> lanes = new List<(string, Session.ColumnKey)>();
 
         internal ArrangementStore(ReBuzzCore buzz)
@@ -108,14 +109,24 @@ namespace ReBuzz.Core
             if (on ? folded.Add(machine) : folded.Remove(machine)) Changed?.Invoke();
         }
 
+        /// <summary>NA4b: whether a track's take lanes are collapsed (hidden under the track; the takes stay and nothing plays differently).</summary>
+        public bool AreTakesHidden(string machine) => machine != null && takesHidden.Contains(machine);
+
+        public void SetTakesHidden(string machine, bool on)
+        {
+            if (machine == null) return;
+            if (on ? takesHidden.Add(machine) : takesHidden.Remove(machine)) Changed?.Invoke();
+        }
+
         /// <summary>A new song: every lane main, nothing folded.</summary>
         public void Clear()
         {
             Recorder.Clear();
             Takes.Reset();
-            if (roles.Count == 0 && folded.Count == 0 && lanes.Count == 0) return;
+            if (roles.Count == 0 && folded.Count == 0 && lanes.Count == 0 && takesHidden.Count == 0) return;
             ClearRoles();
             folded.Clear();
+            takesHidden.Clear();
             lanes.Clear();
             Changed?.Invoke();
         }
@@ -139,6 +150,8 @@ namespace ReBuzz.Core
             var machines = new HashSet<string>(buzz.SongCore.MachinesList.Select(m => m.Name));
             foreach (var name in folded.Where(present.Contains).OrderBy(n => n, StringComparer.Ordinal))
                 root.Add(new XElement("Folded", new XAttribute("machine", name)));
+            foreach (var name in takesHidden.Where(present.Contains).OrderBy(n => n, StringComparer.Ordinal))
+                root.Add(new XElement("TakesHidden", new XAttribute("machine", name)));
             var seen = new HashSet<(string, Session.ColumnKey)>();
             foreach (var (machine, key) in lanes)
                 if (machines.Contains(machine) && seen.Add((machine, key)))
@@ -150,6 +163,7 @@ namespace ReBuzz.Core
         {
             ClearRoles();
             folded.Clear();
+            takesHidden.Clear();
             lanes.Clear();
             Recorder.Clear();
             Takes.Reset();
@@ -166,6 +180,8 @@ namespace ReBuzz.Core
             }
             foreach (var x in root.Elements("Folded"))
                 if ((string)x.Attribute("machine") is { Length: > 0 } name) folded.Add(name);
+            foreach (var x in root.Elements("TakesHidden"))
+                if ((string)x.Attribute("machine") is { Length: > 0 } name) takesHidden.Add(name);
             foreach (var x in root.Elements("Param"))
             {
                 int Num(string a) => int.TryParse((string)x.Attribute(a), NumberStyles.Integer, CultureInfo.InvariantCulture, out int n) ? n : -1;

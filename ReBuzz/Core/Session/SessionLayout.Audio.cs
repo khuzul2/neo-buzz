@@ -771,6 +771,9 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Whether an audio take records (or waits to) on the track.</summary>
+        /// <summary>NA4b: the capture of the audio take recording into this slot (its peaks draw the growing waveform), or null.</summary>
+        internal AudioCapture LiveCaptureOf(ISequence track, IPattern clip) => track is SequenceCore seq && audioTakes.TryGetValue(seq, out var t) && ReferenceEquals(t.Take, clip) ? t.Capture : null;
+
         bool IsAudioRecording(ISequence track) => track is SequenceCore seq && audioTakes.ContainsKey(seq);
 
         bool IsAudioTake(IPattern clip) => clip != null && audioTakes.Values.Any(t => ReferenceEquals(t.Take, clip));

@@ -18,6 +18,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
+using ReBuzz.Core.Clips;
 using ReBuzz.Studio.Shell.Design;
 
 namespace ReBuzz.Studio.Views.Sequence
@@ -786,6 +787,35 @@ namespace ReBuzz.Studio.Views.Sequence
                 double x = geo.XOf(origin);
                 var r = new Rect(x, YOf(row) + ClipInset, Math.Max(SequenceGeometry.MinBlockWidth, geo.XOf(to) - x), row.Height - 2 * ClipInset);
                 ctx.DrawRectangle(Look.Record, Look.RecordPen, r.Deflate(0.5));
+            }
+            DrawLiveAudio(ctx, takes);
+        }
+
+        /// <summary>NA4b: an audio track that records shows its waveform growing from where the take began (the peaks the audio thread keeps).</summary>
+        void DrawLiveAudio(DrawingContext ctx, ArrangementRecorder takes)
+        {
+            double rate = Math.Max(1, ReBuzzCore.masterInfo?.SamplesPerSec ?? 44100);
+            double framesPerTick = rate * 60.0 / (Math.Max(1, core.BPM) * Math.Max(1, core.TPB));
+            foreach (var (lane, start, capture) in takes.LiveAudio)
+            {
+                var row = RowOf(lane);
+                if (row == null || capture == null) continue;
+                double mid = YOf(row) + row.Height / 2, half = row.Height / 2 - ClipInset - 2;
+                int count = capture.PeakCount;
+                if (count <= 0) continue;
+                double x0 = geo.XOf(start);
+                var pen = Look.RecordPen;
+                for (double x = Math.Max(x0, SequenceGeometry.HeaderWidth); x < Overlay.Bounds.Width + SequenceGeometry.HeaderWidth + 4096 && x < x0 + 1e6; x += 1)
+                {
+                    int t0 = (int)geo.TimeAt(x), t1 = (int)geo.TimeAt(x + 1);
+                    long f0 = (long)Math.Max(0, (t0 - start) * framesPerTick), f1 = (long)Math.Max(f0 + 1, (Math.Max(t1, t0 + 1) - start) * framesPerTick);
+                    int b0 = (int)(f0 >> AudioCapture.PeakShift), b1 = (int)Math.Min(count - 1, f1 >> AudioCapture.PeakShift);
+                    if (b0 >= count) break;
+                    float peak = 0;
+                    for (int b = b0; b <= b1; b++) peak = Math.Max(peak, capture.PeakAt(b));
+                    double h = Math.Min(half, Math.Max(1, peak * half));
+                    ctx.DrawLine(pen, new Point(x, mid - h), new Point(x, mid + h));
+                }
             }
         }
 

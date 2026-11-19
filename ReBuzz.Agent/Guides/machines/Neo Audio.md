@@ -56,3 +56,4 @@ None needed: it is the Session Clip Player renamed. A song that names Session Cl
 - [ ] `machine_describe(machine="Drums audio")`: its parameters are `Monitor` and `Input`.
 - [ ] `audio_clip_get(machine="Drums audio", pattern="loop")`: the warp, tempo and audio are listed.
 - [ ] `meters_read(machines=["Drums audio"])`: a launched clip shows a level.
+- Take and comp (NA4b): an armed Neo Audio track records into the Arrangement with `arrangement_takes(op="arm", machine=…)` then `op="start"` (`loop=true`: every pass of the song loop is a take on a take lane, the newest also plays); then `takes(op="list", machine=…)`, `takes(op="comp", machine=…, ranges=[{take, from, to}])`, `takes(op="choose", machine=…, take=2)`, `takes(op="flatten", machine=…)` (renders the comp into one clip) and `takes(op="delete_unused", machine=…)`. A Session take is `session_record`. Recordings are unwarped with the tempo they were made at (`audio_clip_set` `warp` turns it on).

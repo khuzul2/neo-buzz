@@ -383,6 +383,7 @@ namespace ReBuzz.Agent
 
             AutomationTool(tools, host);
             TakesTool(tools, host);
+            TakeLanesTool(tools, host);
 
             tools.Add(new ToolDef
             {
@@ -646,6 +647,127 @@ namespace ReBuzz.Agent
 
         // ------------------------------------------------------------------ takes and comping
 
+        // ------------------------------------------------------------------ takes (NA4b)
+
+        static JsonNode TakeJson(ReBuzzCore core, ClipEditor editor, TakeInfo t) => new JsonObject
+        {
+            ["take"] = t.Number,
+            ["lane"] = LanesOf(core, t.Clip.Pattern.Machine).IndexOf(t.Lane),
+            ["pattern"] = t.Clip.Pattern.Name,
+            ["from"] = Math.Round(SongModel.Beats(core, t.Clip.Time), 4),
+            ["to"] = Math.Round(SongModel.Beats(core, t.Clip.End), 4),
+            ["kind"] = editor.IsAudio(t.Clip.Pattern) ? "audio" : "midi",
+            ["used"] = t.Used,
+        };
+
+        static void TakeLanesTool(ToolRegistry tools, AgentHost host)
+        {
+            var core = host.Core;
+            tools.Add(new ToolDef
+            {
+                Name = "takes",
+                Title = "Takes and comping",
+                Description =
+                    "A track's takes (the clips on its take lanes, recorded by loop recording in the Arrange view, or put there by hand) and the comp on its main lane. " +
+                    "Takes are numbered from 1 in lane order. op=list shows them with whether the main lane plays each (used). op=choose plays one take on the main lane " +
+                    "(take, optionally from/to to take only that range). op=comp takes several ranges at once, ranges=[{take, from, to}]: audio pieces are clips of the take's " +
+                    "asset trimmed to the range, with a crossfade of a few milliseconds at each cut, nothing is copied or destroyed and one undo step undoes the whole comp. " +
+                    "op=flatten renders what the main lane plays (the comp, crossfades and all) into one new audio asset and clip (from/to optional; audio only). " +
+                    "op=delete_unused deletes the takes the main lane doesn't play, and their empty lanes. Recording itself is arrangement_takes (arm, start with loop=true, stop) " +
+                    "or session_record. Example: takes(op=\"comp\", machine=\"Vocals\", ranges=[{take:1, from:\"1.1\", to:\"3.1\"}, {take:3, from:\"3.1\", to:\"5.1\"}]).",
+                Input = Object(null,
+                    Req("op", String("What to do", "list", "choose", "comp", "flatten", "delete_unused")),
+                    Req("machine", String("The track's machine")),
+                    Opt("take", Integer("choose: the take's number (from list)", 1)),
+                    Opt("from", Position("choose, flatten: the range's start (default: the whole take, or the whole comp)")),
+                    Opt("to", Position("choose, flatten: the range's end, exclusive")),
+                    Opt("ranges", Array(Object(null,
+                        Req("take", Integer("The take's number", 1)),
+                        Req("from", Position("Start")),
+                        Req("to", Position("End, exclusive"))), "comp: ranges of takes, in song time"))),
+                Output = Object(null,
+                    Req("machine", String("The machine")),
+                    Req("takes", Array(Object(null,
+                        Req("take", Integer("Number")),
+                        Req("lane", Integer("Lane number (arrangement_get)")),
+                        Req("pattern", String("Its pattern")),
+                        Req("from", Number("Start, beats")),
+                        Req("to", Number("End, beats")),
+                        Req("kind", String("audio or midi")),
+                        Req("used", Boolean("The main lane plays some of it"))), "The takes")),
+                    Opt("main", Array(Object(null,
+                        Req("from", Number("Start, beats")),
+                        Req("to", Number("End, beats")),
+                        Req("pattern", String("Pattern"))), "The main lane's clips")),
+                    Opt("deleted", Integer("delete_unused: takes deleted"))),
+                Annotations = ToolAnnotations.Write,
+                Handler = async c =>
+                {
+                    string op = c.RequiredString("op");
+                    var r = await host.Engine("takes", op != "list", _ =>
+                    {
+                        var m = SongModel.Machine(core, c.RequiredString("machine"));
+                        var editor = new ClipEditor(core);
+                        int? deleted = null;
+                        switch (op)
+                        {
+                            case "list": break;
+                            case "choose":
+                            {
+                                int take = c.Int("take") ?? throw new ToolError("choose needs take (a number from takes(op=\"list\")).");
+                                int? from = c.Arguments["from"] == null ? null : SongModel.ParseTicks(core, c.Arguments["from"], "from");
+                                int? to = c.Arguments["to"] == null ? null : SongModel.ParseTicks(core, c.Arguments["to"], "to");
+                                Check(editor.ChooseTake(m, take, from, to));
+                                break;
+                            }
+                            case "comp":
+                            {
+                                if (c.Arguments["ranges"] is not JsonArray arr || arr.Count == 0) throw new ToolError("comp needs ranges: [{take, from, to}, ...].");
+                                var ranges = new List<(int Take, int From, int To)>();
+                                foreach (var node in arr)
+                                {
+                                    var o = node as JsonObject ?? throw new ToolError("Each range is {take, from, to}.");
+                                    if (o["take"] == null || o["from"] == null || o["to"] == null) throw new ToolError("Each range needs take, from and to.");
+                                    ranges.Add((o["take"]!.GetValue<int>(), SongModel.ParseTicks(core, o["from"], "from"), SongModel.ParseTicks(core, o["to"], "to")));
+                                }
+                                Check(editor.CompRanges(m, ranges), "takes(op=\"list\") shows the takes and where they are.");
+                                break;
+                            }
+                            case "flatten":
+                            {
+                                int? from = c.Arguments["from"] == null ? null : SongModel.ParseTicks(core, c.Arguments["from"], "from");
+                                int? to = c.Arguments["to"] == null ? null : SongModel.ParseTicks(core, c.Arguments["to"], "to");
+                                Check(editor.FlattenComp(m, from, to, out IPattern flat));
+                                break;
+                            }
+                            case "delete_unused": deleted = editor.DeleteUnusedTakes(m); break;
+                            default: throw new ToolError("op: list, choose, comp, flatten or delete_unused.");
+                        }
+                        var o2 = new JsonObject
+                        {
+                            ["machine"] = m.Name,
+                            ["takes"] = new JsonArray(editor.TakesOf(m).Select(t => TakeJson(core, editor, t)).ToArray()),
+                        };
+                        if (editor.MainLaneOf(m) is { } main)
+                            o2["main"] = new JsonArray(editor.Read(main).Select(i => (JsonNode)new JsonObject
+                            {
+                                ["from"] = Math.Round(SongModel.Beats(core, i.Time), 4), ["to"] = Math.Round(SongModel.Beats(core, i.End), 4), ["pattern"] = i.Pattern.Name,
+                            }).ToArray());
+                        if (deleted != null) o2["deleted"] = deleted;
+                        return o2;
+                    }, c.Cancellation);
+                    var takes = r["takes"]!.AsArray();
+                    string text = op switch
+                    {
+                        "delete_unused" => $"Deleted {r["deleted"]} unused take(s); {takes.Count} left.",
+                        "list" => takes.Count == 0 ? $"{r["machine"]} has no takes." : $"{r["machine"]} has {takes.Count} take(s): " + string.Join(", ", takes.Select(t => $"{t!["take"]} (lane {t["lane"]}, {t["from"]}-{t["to"]}{((bool)t["used"]! ? ", used" : "")})")) + ".",
+                        _ => $"Done. {takes.Count} take(s), {takes.Count(t => (bool)t!["used"]!)} used by the comp.",
+                    };
+                    return ToolResult.Ok(text, r);
+                },
+            });
+        }
+
         static void TakesTool(ToolRegistry tools, AgentHost host)
         {
             var core = host.Core;
@@ -655,7 +777,7 @@ namespace ReBuzz.Agent
                 Title = "Record takes and comp",
                 Description =
                     "Takes in the arrangement (the Arrange view's ● Rec and comping). op: arm / disarm (a machine's track takes the keyboard for recording), " +
-                    "start (record the armed tracks from the play position; loop=true records each pass of the song loop as a take on a take lane), " +
+                    "start (record the armed tracks from the play position; loop=true records each pass of the song loop as a take on a take lane; an armed audio track records its Audio From into a take that goes to a temp file as it records), " +
                     "stop (writes what was played as clips and stops the transport), status, comp (puts the range from..to of a take lane's clip onto " +
                     "a main lane, trimmed, no notes copied: take_lane and to_lane are lane numbers from arrangement_get). arm/start/stop need studio mode " +
                     "(someone plays, or midi_play); comp works anywhere. comp is one undo step; recorded takes are on the song's history as one step too. " +

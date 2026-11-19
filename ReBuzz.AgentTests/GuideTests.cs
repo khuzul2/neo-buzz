@@ -164,6 +164,8 @@ namespace ReBuzz.AgentTests
             ["arrangement_lane"] = new[] { "op", "machine", "role", "lane", "remove_clips" },
             ["arrangement_automation"] = new[] { "op", "machine", "param", "track", "from", "to", "points", "shape", "allow_unsafe" },
             ["arrangement_takes"] = new[] { "op", "machine", "loop", "take_lane", "to_lane", "from", "to" },
+            // NA4b (neo-audio.md "Takes and comping": ReBuzz/Agent/ArrangementTools.cs)
+            ["takes"] = new[] { "op", "machine", "take", "from", "to", "ranges" },
             ["machine_clone"] = new[] { "machines", "with_patterns" },
             ["machine_group"] = new[] { "op", "group", "name", "new_name", "machines" },
             ["machine_latency"] = new[] { "machine", "override_samples", "clear", "clear_all" },

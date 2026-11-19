@@ -983,6 +983,8 @@ public sealed class MyPadsScript : ControllerScript
 
 **Not automated.** How it sounds: the measures above stand in for listening. Real audio inputs. Drag and drop from Explorer, and the warp marker editor's mouse handling.
 
+**NA4b notes (audio recording).** An armed audio track's slot records like a MIDI one: the record dot, then the growing waveform while the take is written to a temp file; the finished take is an unwarped clip with its tempo stamped. Arrangement take lanes and comping are in neo-audio.md section 14.
+
 ## 6. Parity matrix
 
 | Ableton Session View feature | Phase | Status |

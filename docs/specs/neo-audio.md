@@ -208,3 +208,18 @@ What a track listens to, and how a track is armed, are one state for every view.
 **Tests.** `ReBuzz.Studio.Tests/NeoAudioClipPageTests.cs` (each control: value, undo, redo, saved and opened again as .nbl; markers by mouse and keys with and without snap; both views; the agent against the page; the slots). Gallery: `mac-037`, `038`, `039`, `461`.
 
 **Limits.** No drops (DD1), recording (NA4), Pro mode (NA5) or disk streaming. Removing the last inner marker leaves the two pinned ends (the map stays straight). Detect finds a tempo only where the audio has one.
+
+
+## 14. Takes and comping (NA4b)
+
+**Session.** An armed Neo Audio track records its Audio From into the slot (record button, slot record, launch quantization, fixed length and count-in as the MIDI path). The take is aligned after the round-trip compensation (NA4a), becomes a normal audio clip with warp Off and the tempo it was recorded at (so it can be warped later), and does not overdub. The slot shows the red record dot and a waveform that grows from the capture's peaks.
+
+**Temp-file takes.** The audio thread writes into chunks prepared ahead (no allocation, no I/O, no lock); a writer thread keeps a few seconds of chunks ready and flushes the full ones to a stereo float32 WAV in the take folder (`<settings>/Takes`, `TakeFile`). The WAV header is updated at every flush and a JSON beside it keeps name, tempo, rate and process id, so a crash leaves a valid file. On stop the take is committed as a store asset (hash, compressed in the .nbl as every asset) and the temp file is deleted. Long takes stay out of RAM: the take reads its audio back from the file, and the store's streaming reader (NA1b) takes over once the asset is committed. At the next launch the Studio offers "Recover takes" (Recover, Discard, Decide later): a recovered take becomes a clip on a "Recovered" track.
+
+**Arrangement.** Record with several armed audio and MIDI tracks writes from the play position or the loop. Each loop pass is a take: the engine marks the loop wraps with the capture frame so every pass is sample-exact. The newest take is placed on the track itself (it plays) and every pass gets a take lane (`LaneRole.Take`). A track that resamples another refuses to record here. MIDI loop recording makes takes here (overdub stays the Session default).
+
+**Take lanes and comping.** The track header's "..." menu toggles the take lanes (saved in the song as `TakesHidden`), "Delete unused takes" removes the lanes whose clips no comp plays, and "Flatten comp" renders the comp into one asset. A comp is made by swiping a range on a take lane (the Comp gesture); the cut is a 5 ms tail on the earlier piece and a fade-in of the same size on the later one. A comp is one undo step, saved with the song, and the takes stay untouched. Agent: `takes` (list, choose, comp by ranges, flatten, delete_unused).
+
+**Tests.** `ReBuzz.SessionTests/TakeFileTests.cs`, `ReBuzz.Studio.Tests/NeoAudioTakesTests.cs` (sample-accurate Session take, 3-pass loop, several tracks, comp samples with crossfades, engine render equals the flattened comp, undo/redo and save/reopen, delete unused and flatten, crash recovery, zero allocation on the audio thread, 10-minute take with bounded RAM), the agent tool in `AgentCoverageTests`, gallery 590 to 593.
+
+**Limits.** Takes are stereo float32 (a mono input is duplicated). The classic ReBuzz.exe window does not offer "Recover takes" yet (the Studio does). A resampling track cannot record in the Arrangement.
