@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Fork addition (docs/specs/pitch.md section 9.6): scores Convert to MIDI (the converters in ReBuzz/Core/AudioLibrary/AudioToMidi, as the app runs them)
+    on real recordings, for the convert job of .github/workflows/pitch-eval.yml. Links the converters, the PT1 files they use and the Basic Pitch model
+    (embedded, as in ReBuzz.Engine); nothing else of ReBuzz. The data are fetched by tools/convert/fetch_data.py and the workflow; nothing is committed.
+    Not part of ReBuzz.sln.
+
+      run it with: dotnet run, configuration Release, project tools/ConvertEval (the arguments are in Program.cs)
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>NeoBuzz.ConvertEval</RootNamespace>
+    <Optimize>true</Optimize>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Machines\NeoBuzz.Dsp\PitchTracker.cs;..\..\Machines\NeoBuzz.Dsp\OnsetDetector.cs;..\..\Machines\NeoBuzz.Dsp\TriggerClassifier.cs;..\..\Machines\NeoBuzz.Dsp\ComplexFft.cs;..\..\Machines\NeoBuzz.Dsp\PortableMath.cs;..\..\Machines\NeoBuzz.Dsp\Filters.cs;..\..\Machines\NeoBuzz.Dsp\DspMath.cs" Link="Dsp\%(Filename)%(Extension)" />
+    <Compile Include="..\..\ReBuzz\Core\AudioLibrary\Resampler.cs" Link="Engine\Resampler.cs" />
+    <Compile Include="..\..\ReBuzz\Core\AudioLibrary\AudioToMidi\*.cs" Link="Engine\AudioToMidi\%(Filename)%(Extension)" />
+    <Compile Include="..\PitchEval\Wav.cs" Link="Wav.cs" />
+    <EmbeddedResource Include="..\..\3rdParty\basic-pitch\nmp.onnx" LogicalName="ReBuzz.BasicPitch.nmp.onnx" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.29.0" />
+  </ItemGroup>
+
+</Project>

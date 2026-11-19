@@ -1,0 +1,68 @@
+# Neo Tune factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoTune
+machine "Neo Tune"
+
+preset "Lead — Hard Tune"
+comment "Instant retune to the scale: the stepped, robotic pitch-corrected sound; the singer's vibrato is flattened"
+Retune = 0
+Humanize = 0
+Amount = 100
+VibKeep = 0
+Range = Quality
+
+preset "Lead — Natural"
+comment "A quick, light correction that keeps the singer's vibrato and the drift of held notes"
+Retune = 60
+Humanize = 40
+Amount = 100
+VibKeep = 100
+Range = Quality
+
+preset "Lead — Subtle"
+comment "Moves the voice only part of the way and slowly: fixes a flat or sharp note without any audible effect"
+Retune = 120
+Humanize = 60
+Amount = 55
+VibKeep = 100
+Range = Quality
+
+preset "Live — Low Latency Natural"
+comment "Natural correction with the short, 10 ms tracker for playing through the machine live"
+Retune = 50
+Humanize = 40
+Amount = 100
+VibKeep = 100
+Range = Low latency
+
+preset "Special — MIDI-led"
+comment "The voice sings the notes held on the machine's MIDI input (the nearest held note, in the voice's own octave); the key and scale are ignored"
+Target = MIDI
+MidiOctave = Nearest
+Retune = 15
+Humanize = 0
+Amount = 100
+VibKeep = 50
+Range = Quality
+
+preset "Special — Robot"
+comment "Hard tune a fifth down with the vowel colour moved up: a small mechanical voice"
+Scale = Minor pentatonic
+Retune = 0
+Humanize = 0
+Amount = 100
+Transpose = -7
+Preserve = Off
+Formant = 5
+VibKeep = 0
+Range = Quality
+
+preset "Special — Thick"
+comment "Half dry, half hard-tuned with a slow vibrato added: a doubled, steadier voice"
+Retune = 20
+Humanize = 20
+Amount = 100
+VibKeep = 20
+VibDepth = 25
+VibRate = 5.5
+VibDelay = 400
+Mix = 50
+Range = Quality

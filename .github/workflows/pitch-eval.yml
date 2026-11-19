@@ -10,7 +10,16 @@ name: Pitch evaluation
 #    on 10 hits per class per participant.
 #  - VocalSet 1.1 (zenodo.org/records/1442513, CC BY 4.0, 2 GB zip read in place): a subset of techniques and vowels; voicing, octave
 #    jumps, held-note stability, Low latency against Quality, and the vowel estimator on the labelled vowels.
+#  - Neo Tune (docs/specs/neo-tune.md §9) on the same VocalSet subset: the pitch of the corrected output against the nearest scale note
+#    before and after, voicing kept, an artefact proxy (spectral flux and high-band clicks), and six before/after excerpts (at most 8 s
+#    each, with the CC BY 4.0 attribution in their README) uploaded as the artifact neo-tune-excerpts for listening. No audio is committed.
 # The tool is tools/PitchEval (it links Machines/NeoBuzz.Dsp and nothing else).
+#
+# The convert job (docs/specs/pitch.md section 9.6) scores Convert to MIDI, the converters as the app runs them (tools/ConvertEval):
+#  - MDB-stem-synth again: note F-measure of the melody converter (onset +-50 ms, pitch +-50 cents; the reference notes cut from the annotated f0).
+#  - Groove MIDI Dataset (Magenta, CC BY 4.0), the test split read by HTTP range requests (tools/convert/fetch_data.py): per-class onset F-measure of the drum converter.
+#  - MAESTRO v3.0.0 (Magenta, CC BY-NC-SA 4.0), 60-second excerpts by range requests: note F-measure of the harmony converter (Basic Pitch),
+#    and its agreement with the Python basic_pitch package on the same files and model.
 
 on:
   workflow_dispatch:
@@ -27,6 +36,18 @@ on:
         description: 'VocalSet'
         type: boolean
         default: true
+      tune:
+        description: 'Neo Tune on VocalSet (needs the VocalSet download; writes the listening excerpts)'
+        type: boolean
+        default: true
+      convert:
+        description: 'Convert to MIDI (melody on MDB-stem-synth, drums on the Groove MIDI Dataset, harmony on MAESTRO)'
+        type: boolean
+        default: true
+      maestro_count:
+        description: 'Convert to MIDI: MAESTRO excerpts (60 s each)'
+        type: string
+        default: '10'
       mdb_limit:
         description: 'MDB-stem-synth: evaluate only this many stems, evenly spread (0 = all 230)'
         type: string
@@ -41,6 +62,7 @@ permissions:
 
 jobs:
   evaluate:
+    if: ${{ github.event.inputs.mdb != 'false' || github.event.inputs.avp != 'false' || github.event.inputs.vocalset != 'false' }}
     runs-on: ubuntu-latest
     timeout-minutes: 240
     defaults:
@@ -48,6 +70,11 @@ jobs:
         shell: bash
     env:
       DATA: /mnt/pitch-eval-data
+      # What the dispatch inputs say.
+      RUN_MDB: ${{ github.event.inputs.mdb != 'false' }}
+      RUN_AVP: ${{ github.event.inputs.avp != 'false' }}
+      RUN_VOCALSET: ${{ github.event.inputs.vocalset != 'false' }}
+      RUN_TUNE: ${{ github.event.inputs.tune != 'false' }}
     steps:
     - uses: actions/checkout@v5
 
@@ -83,19 +110,19 @@ jobs:
           curl -sS --retry 8 --retry-delay 5 -C - -L -o "$dest" "https://zenodo.org/api/records/$rec/files/$name/content"
           echo "$md5  $dest" | md5sum -c -
         }
-        if [ "${{ github.event.inputs.mdb }}" != "false" ]; then
+        if [ "$RUN_MDB" = "true" ]; then
           fetch 1481172 MDB-stem-synth.tar.gz "$DATA/mdb.tar.gz"
           mkdir -p "$DATA/mdb"
           tar -xzf "$DATA/mdb.tar.gz" -C "$DATA/mdb" --exclude='*/._*'
           rm "$DATA/mdb.tar.gz"
         fi
-        if [ "${{ github.event.inputs.avp }}" != "false" ]; then
+        if [ "$RUN_AVP" = "true" ]; then
           fetch 5036529 AVP_Dataset.zip "$DATA/avp.zip"
           mkdir -p "$DATA/avp"
           unzip -q "$DATA/avp.zip" -x '__MACOSX/*' -d "$DATA/avp"
           rm "$DATA/avp.zip"
         fi
-        if [ "${{ github.event.inputs.vocalset }}" != "false" ]; then
+        if [ "$RUN_VOCALSET" = "true" ] || [ "$RUN_TUNE" = "true" ]; then
           fetch 1442513 VocalSet11.zip "$DATA/vocalset.zip"
         fi
         df -h /mnt | cat
@@ -104,9 +131,12 @@ jobs:
       run: |
         set -euo pipefail
         args=(--out pitch-eval-report.md --csv pitch-eval-stems.csv)
-        [ "${{ github.event.inputs.mdb }}" != "false" ] && args+=(--mdb "$DATA/mdb/MDB-stem-synth" --mdb-limit "${{ github.event.inputs.mdb_limit || '0' }}")
-        [ "${{ github.event.inputs.avp }}" != "false" ] && args+=(--avp "$DATA/avp")
-        [ "${{ github.event.inputs.vocalset }}" != "false" ] && args+=(--vocalset "$DATA/vocalset.zip" --vocalset-per-group "${{ github.event.inputs.vocalset_per_group || '2' }}")
+        [ "$RUN_MDB" = "true" ] && args+=(--mdb "$DATA/mdb/MDB-stem-synth" --mdb-limit "${{ github.event.inputs.mdb_limit || '0' }}")
+        [ "$RUN_AVP" = "true" ] && args+=(--avp "$DATA/avp")
+        [ "$RUN_VOCALSET" = "true" ] && args+=(--vocalset "$DATA/vocalset.zip" --vocalset-per-group "${{ github.event.inputs.vocalset_per_group || '2' }}")
+        # Neo Tune on the same subset; the excerpts go to a folder that is uploaded as its own artifact (nothing is committed).
+        [ "$RUN_TUNE" = "true" ] && args+=(--tune "$DATA/vocalset.zip" --tune-excerpts neo-tune-excerpts)
+        true
         dotnet run -c Release --no-build --project tools/PitchEval -- "${args[@]}"
 
     - name: Job summary
@@ -126,4 +156,102 @@ jobs:
         path: |
           pitch-eval-report.md
           pitch-eval-stems.csv
+        if-no-files-found: ignore
+
+    # Six before/after excerpts (at most 8 s each) of VocalSet (CC BY 4.0, the attribution is in their README) for listening.
+    # An artifact of the run only: never committed.
+    - name: Upload the listening excerpts
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: neo-tune-excerpts
+        path: neo-tune-excerpts
+        if-no-files-found: ignore
+
+  convert:
+    if: ${{ github.event.inputs.convert != 'false' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    defaults:
+      run:
+        shell: bash
+    env:
+      DATA: /mnt/convert-eval-data
+    steps:
+    - uses: actions/checkout@v5
+
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+
+    - name: Build the evaluation tool
+      run: dotnet build tools/ConvertEval -c Release -nologo
+
+    - name: Room for the data
+      run: |
+        sudo mkdir -p "$DATA"
+        sudo chown "$USER" "$DATA"
+        df -h / /mnt | cat
+
+    # MDB-stem-synth as in the evaluate job: Zenodo's API for the file's md5, then the check.
+    - name: Download and check MDB-stem-synth
+      run: |
+        set -euo pipefail
+        rec=1481172; name=MDB-stem-synth.tar.gz; dest="$DATA/mdb.tar.gz"
+        for try in 1 2 3 4 5 6 7 8; do
+          meta=$(curl -sS --retry 5 -L "https://zenodo.org/api/records/$rec" || true)
+          md5=$(echo "$meta" | python3 -c "import json,sys; d=json.load(sys.stdin); print([f['checksum'].split(':')[1] for f in d['files'] if f['key']=='$name'][0])" 2>/dev/null || true)
+          [ -n "$md5" ] && break
+          echo "record $rec: no usable answer (try $try)"; sleep $((try * 10))
+        done
+        [ -n "$md5" ] || { echo "no checksum for $name"; exit 1; }
+        curl -sS --retry 8 --retry-delay 5 -C - -L -o "$dest" "https://zenodo.org/api/records/$rec/files/$name/content"
+        echo "$md5  $dest" | md5sum -c -
+        mkdir -p "$DATA/mdb"
+        tar -xzf "$dest" -C "$DATA/mdb" --exclude='*/._*'
+        rm "$dest"
+
+    # The Groove MIDI Dataset's test split and MAESTRO's excerpts, by range requests into the published zips.
+    - name: Fetch the drum and piano data
+      run: |
+        set -euo pipefail
+        pip install --quiet remotezip mido
+        python3 -I tools/convert/fetch_data.py --gmd "$DATA/gmd" --gmd-per-drummer 2 --maestro "$DATA/maestro" --maestro-count "${{ github.event.inputs.maestro_count || '10' }}"
+        du -sh "$DATA"/* | cat
+
+    # The upstream package, from its source (Apache-2.0), on the model file the app embeds: the reference the port is checked against.
+    - name: Basic Pitch reference
+      run: |
+        set -euo pipefail
+        git clone --depth 1 https://github.com/spotify/basic-pitch.git "$RUNNER_TEMP/basic-pitch"
+        git -C "$RUNNER_TEMP/basic-pitch" rev-parse HEAD
+        pip install --quiet numpy scipy librosa resampy pretty_midi mir_eval onnxruntime typing_extensions
+        cmp "$RUNNER_TEMP/basic-pitch/basic_pitch/saved_models/icassp_2022/nmp.onnx" 3rdParty/basic-pitch/nmp.onnx
+        python3 -I tools/convert/basic_pitch_reference.py --model 3rdParty/basic-pitch/nmp.onnx --upstream "$RUNNER_TEMP/basic-pitch" --out "$DATA/maestro-reference.json" "$DATA"/maestro/*.wav
+
+    - name: Evaluate
+      run: |
+        set -euo pipefail
+        dotnet run -c Release --no-build --project tools/ConvertEval -- --out convert-eval-report.md \
+          --mdb "$DATA/mdb/MDB-stem-synth" --mdb-limit "${{ github.event.inputs.mdb_limit || '0' }}" \
+          --gmd "$DATA/gmd" --maestro "$DATA/maestro" --reference "$DATA/maestro-reference.json"
+
+    - name: Job summary
+      if: always()
+      run: |
+        if [ -f convert-eval-report.md ]; then
+          head -c 900000 convert-eval-report.md >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+    # Only the report (figures, no audio).
+    - name: Upload the report
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: convert-eval-report
+        path: convert-eval-report.md
         if-no-files-found: ignore
