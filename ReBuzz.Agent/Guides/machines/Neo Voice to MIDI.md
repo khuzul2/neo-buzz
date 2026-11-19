@@ -21,8 +21,7 @@ Neo Voice to MIDI listens to a voice (a microphone through Neo Audio, or any aud
 | Range | Quality | Low latency answers sooner and tracks less well |
 | Lock | Set key | notes land on the key; Suggest learns it |
 | Stickiness | 25 cents | a hysteresis: how far past the middle before the note changes |
-| Response | Fast | Fast plays the first note at the first clean pitch; Stable waits Settle |
-| Settle | 30 ms | how long a new note must be held before it replaces the one sounding |
+| Settle | 30 ms | how long a new note must be held before it replaces the one sounding (and, with Stable, before it first plays) |
 | Level | -50 dB | the quietest voice that plays a note; raise it in a noisy room |
 | Window | Accurate | the trigger classifier's slice of each hit |
 | Min gap | 110 ms | the shortest time between two hits; a voice needs 100 to 120 ms |
