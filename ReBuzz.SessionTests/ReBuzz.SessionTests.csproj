@@ -47,12 +47,15 @@
     <Compile Include="..\ReBuzz\Core\Clips\AudioClip.cs" Link="Engine\AudioClip.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\AudioAnalysis.cs" Link="Engine\AudioAnalysis.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\AudioCapture.cs" Link="Engine\AudioCapture.cs" />
+    <Compile Include="..\ReBuzz\Core\Clips\TakeFile.cs" Link="Engine\TakeFile.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\ClipMixer.cs" Link="Engine\ClipMixer.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\ClipVoice.cs" Link="Engine\ClipVoice.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\Fft.cs" Link="Engine\Fft.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\PhaseVocoder.cs" Link="Engine\PhaseVocoder.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\NeoStretch.cs" Link="Engine\NeoStretch.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\AudioAsset.cs" Link="Engine\AudioAsset.cs" />
+    <Compile Include="..\ReBuzz\Core\AudioLibrary\AudioCache.cs" Link="Engine\AudioCache.cs" />
+    <Compile Include="..\ReBuzz\Core\AudioLibrary\StreamedAudio.cs" Link="Engine\StreamedAudio.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\PeakCache.cs" Link="Engine\PeakCache.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\Resampler.cs" Link="Engine\Resampler.cs" />
     <Compile Include="..\ReBuzz\Core\AudioLibrary\AudioImporter.cs" Link="Engine\AudioImporter.cs" />

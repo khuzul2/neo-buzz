@@ -22,7 +22,7 @@ namespace ReBuzz.Studio.Tests
         const int Rate = 44100;
 
         /// <summary>The input device: opened with some channels, fed in step with the rendering.</summary>
-        sealed class FakeInput
+        internal sealed class FakeInput
         {
             readonly ReBuzzCore core;
             long fed;
@@ -59,12 +59,13 @@ namespace ReBuzz.Studio.Tests
         static float Peak(float[] interleaved, int side, int skip = 2000) =>
             Enumerable.Range(skip, interleaved.Length / 2 - skip).Max(i => Math.Abs(interleaved[i * 2 + side]));
 
-        static IDisposable Setup(out SessionRig rig)
+        internal static IDisposable Setup(out SessionRig rig)
         {
             var untitled = SnapshotTests.Untitled(out _);
             rig = new SessionRig();
             var r = rig;
             var core = r.Core;
+            var controllersWere = core.SessionControllers;      // the shared core keeps its controllers for the tests after this one (the Session menu test lists them)
             core.MasterVolume = 1;                          // levels as the machines make them (other tests leave it lower; the rig puts it back)
             core.SafeMaster.LimiterOn = true;               // a test of the Safety page before may have left a ceiling below 0 dB
             core.SafeMaster.CeilingDb = 0;
@@ -74,7 +75,7 @@ namespace ReBuzz.Studio.Tests
                 r.Dispose();
                 core.EngineInput.Close();
                 core.OutputLatencySamples = 0;
-                core.SessionControllers = null;
+                core.SessionControllers = controllersWere;
                 core.SafeMaster.Reset();
                 untitled.Dispose();
             });
@@ -87,7 +88,7 @@ namespace ReBuzz.Studio.Tests
             public void Dispose() => action();
         }
 
-        static MachineCore NewTrack(SessionRig rig, string name, AudioFrom? from = null)
+        internal static MachineCore NewTrack(SessionRig rig, string name, AudioFrom? from = null)
         {
             rig.Layout.Ensure();
             var m = (MachineCore)rig.Layout.NewAudioTrack(name)!;

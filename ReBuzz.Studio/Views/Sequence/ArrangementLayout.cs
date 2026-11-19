@@ -59,8 +59,13 @@ namespace ReBuzz.Studio.Views.Sequence
                     rows.Add(new ArrangementRow { Kind = ArrangementRowKind.Lane, Machine = g.Key, Lanes = lanes, LaneNumber = 1, Folded = true, Height = FoldedHeight });
                     continue;
                 }
+                bool hideTakes = store?.AreTakesHidden(g.Key.Name) == true;
                 for (int i = 0; i < lanes.Count; i++)
+                {
+                    // NA4b: collapsed take lanes have no row (their numbers stay: LaneNumber counts all the machine's lanes).
+                    if (hideTakes && i > 0 && store.RoleOf(lanes[i]) == LaneRole.Take) continue;
                     rows.Add(new ArrangementRow { Kind = ArrangementRowKind.Lane, Machine = g.Key, Lane = lanes[i], Lanes = lanes, LaneNumber = i + 1, Height = i == 0 && SessionLayout.CanArm(g.Key) ? LaneHeight + InputRowHeight : LaneHeight });
+                }
                 // AR4: the parameters chosen for this track, under its lanes.
                 if (store != null)
                     foreach (var (machine, key) in store.ParameterLanes)

@@ -53,6 +53,35 @@ namespace ReBuzz.Studio.Shell
             return false;
         }
 
+        /// <summary>
+        /// Offers the takes a crash left (audio that was recording to its temp file): Recover puts them as clips on a new "Recovered" track,
+        /// Discard… deletes them once confirmed, Decide Later keeps them for next time. True when they were recovered.
+        /// </summary>
+        public static async Task<bool> OfferTakeRecovery(ReBuzzCore core)
+        {
+            try
+            {
+                var takes = core.Arrangement?.Takes.LeftoverTakes();
+                if (takes == null || takes.Count == 0) return false;
+                string seconds = string.Join(", ", takes.Take(4).Select(t => $"{t.Name} ({t.Frames / (double)Math.Max(1, t.SampleRate):0.#} s)")) + (takes.Count > 4 ? ", ..." : "");
+                var answer = await Dialogs.Ask(
+                    $"{Product.Name} didn't close normally while audio was recording. {takes.Count} take{(takes.Count == 1 ? "" : "s")} can be recovered: {seconds}.\n\n" +
+                    "Recover puts them on a new track in the song; Decide Later keeps them for next time.",
+                    "Recover takes", UserButtons.YesNoCancel, DialogChoices.Recover);
+                if (answer == UserAnswer.Yes) return core.Arrangement.Takes.Recover(takes) > 0;
+                if (answer == UserAnswer.No &&
+                    await Dialogs.Ask($"Discard {takes.Count} recorded take{(takes.Count == 1 ? "" : "s")}? They can't be brought back.", "Discard takes", UserButtons.YesNo,
+                        new DialogChoices { Labels = new() { [UserAnswer.Yes] = "Discard", [UserAnswer.No] = "Keep" }, Default = UserAnswer.Yes, Safe = UserAnswer.No }) == UserAnswer.Yes)
+                    foreach (var take in takes)
+                        ReBuzz.Core.Clips.TakeFile.Discard(take);
+            }
+            catch (Exception e)
+            {
+                core.DCWriteLine("Take recovery: " + e.Message, BuzzGUI.Interfaces.DCLogLevel.Warning);
+            }
+            return false;
+        }
+
         /// <summary>Autosaves unsaved changes (when it is time to) once a minute from now on.</summary>
         public static void Start(ReBuzzCore core)
         {

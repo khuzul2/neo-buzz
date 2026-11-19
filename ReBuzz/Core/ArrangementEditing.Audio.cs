@@ -333,6 +333,15 @@ namespace ReBuzz.Core
             return result;
         }
 
+        /// <summary>An offline render must not go through the audio thread's lossy page reads: a streamed source is read exactly into memory for the render (NA1b).</summary>
+        internal static AudioClipParams Exact(AudioClipParams p)
+        {
+            if (!p.Source.IsStreaming && !p.Source.IsReversedView) return p;
+            var (l, r) = p.Source.ToArrays();
+            var source = new AudioSource(l, p.Source.IsMono ? null : r, p.Source.SampleRate);
+            return new AudioClipParams(source, p.Map, p.Mode, p.Slices, p.Gain, p.Semitones) { Fades = p.Fades };
+        }
+
         /// <summary>The lane's audio clips as they play in a range of ticks, offline, at the song's tempo: the engine's mixer and voices, each clip with a voice of its own.</summary>
         (float[] Left, float[] Right) RenderLane(ISequence lane, List<ClipItem> items, int from, int to)
         {
@@ -360,7 +369,7 @@ namespace ReBuzz.Core
                     if (!playbacks.TryGetValue(pattern, out playback))
                     {
                         var p = Layout.ParamsOfPattern(pattern);
-                        playbacks[pattern] = playback = p == null ? null : new ClipPlayback { Params = p };
+                        playbacks[pattern] = playback = p == null ? null : new ClipPlayback { Params = Exact(p) };
                     }
                 }
                 for (long at = tickStart; at < tickEnd; at += 256)

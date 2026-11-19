@@ -28,6 +28,7 @@ using BuzzGUI.Interfaces;
 using ReBuzz.Core.AudioLibrary.AudioToMidi;
 using ReBuzz.Audio;
 using ReBuzz.Core;
+using ReBuzz.Core.AudioLibrary;
 using ReBuzz.Core.Keyboards;
 using ReBuzz.Core.Session;
 using ReBuzz.Gallery;
@@ -1413,6 +1414,36 @@ namespace ReBuzz.Studio.Tests
                     ReBuzz.Agent.App.SettingsService.Apply(prefs.Model.App, threads, was, ReBuzz.Agent.App.SettingsService.AgentSource);
                     Settle();
                 });
+                Try("326-prefs-audio-streaming", () =>
+                {
+                    // NA1b: the Disk streaming section (the last on the Audio page), with a cache of two files made for the picture in a folder of its own.
+                    string folder = AudioCache.DataFolder;
+                    string temp = Path.Combine(Path.GetTempPath(), "neobuzz-gallery-cache-" + Environment.ProcessId);
+                    try
+                    {
+                        Directory.CreateDirectory(temp);
+                        AudioCache.DataFolder = temp;
+                        File.WriteAllBytes(Path.Combine(temp, "0123456789abcdef.nbdc"), new byte[5 * 1024 * 1024]);
+                        File.WriteAllBytes(Path.Combine(temp, "fedcba9876543210.nbdc"), new byte[3 * 1024 * 1024]);
+                        prefs.ShowPage("Audio");
+                        prefs.Page<AudioPage>().ShowCache();
+                        Settle();
+                        if (prefs.Selected is ScrollViewer scroll)
+                        {
+                            scroll.Offset = new Vector(0, scroll.Extent.Height);
+                            Settle();
+                        }
+                        Shot(prefs, "326-prefs-audio-streaming", "Preferences ▸ Audio ▸ Disk streaming (NA1b): the audio cache's size and files with Clear, the length from which audio streams, and the cache size limit.",
+                            $"{Product.Name} ▸ Preferences… ▸ Audio, scrolled to Disk streaming.", notes: "The two cache files are made for the picture (8 MB of nothing) in a folder of their own; the device lists are as in the other Audio shots. " + Devices);
+                    }
+                    finally
+                    {
+                        AudioCache.DataFolder = folder;
+                        try { Directory.Delete(temp, true); } catch (IOException) { }
+                        prefs.Page<AudioPage>().ShowCache();
+                        Settle();
+                    }
+                });
                 Try("323-prefs-restore-question", () =>
                 {
                     prefs.ShowPage("Advanced");
@@ -2464,6 +2495,108 @@ namespace ReBuzz.Studio.Tests
             {
                 LiveBeforeCapture = null;
                 ReBuzz.Studio.Views.Session.TrackInputView.PausePolling = false;
+                Core.EngineInput.Close();
+                Close(window);
+            }
+            AfterAll();
+        }
+
+        // ------------------------------------------------------------------ 590-593: audio takes and comping (neo-audio.md "Takes and comping")
+
+        [AvaloniaTest, Order(9)]
+        public void AudioTakes()
+        {
+            BeforeAll();
+            var demo = LoadDemo();
+            var window = Open();
+            var work = new WorkManager(Core, new WorkThreadEngine(1), 0, BuzzGUI.Common.Global.EngineSettings);
+            var buffer = new float[512];
+            long fed = 0;
+            string takes = Path.Combine(SongFolder, "takes");
+            ReBuzz.Core.Clips.TakeFile.Directory = takes;
+            Core.EngineInput.Configure(2, new[] { "In 1", "In 2" }, 44100, 128);
+            void Feed(int frames)
+            {
+                for (int done = 0; done < frames; done += 256)
+                {
+                    var data = new float[256 * 2];
+                    for (int i = 0; i < 256; i++)
+                    {
+                        double t = (fed + i) / 44100.0;
+                        double swell = 0.45 + 0.35 * System.Math.Sin(t * 3.1);
+                        data[i * 2] = data[i * 2 + 1] = (float)(swell * System.Math.Sin(2 * System.Math.PI * 220 * t));
+                    }
+                    fed += 256;
+                    Core.EngineInput.Push(data, 256, 2);
+                    work.MainAudioFillBuffer(buffer, 0, 512);
+                }
+                Core.SessionLayout.PollTakes();
+                System.Threading.Thread.Sleep(30);
+            }
+            try
+            {
+                var layout = Core.SessionLayout;
+                layout.Ensure();
+                Core.OutputLatencySamples = 0;
+                Core.BPM = 120;
+                var voice = (MachineCore)layout.NewAudioTrack("Voice");
+                layout.SetAudioFrom(voice, AudioFrom.Stereo(0));
+                layout.SetMachineArmed(voice, true);
+                Settle();
+                Try("590-session-recording-slot", () =>
+                {
+                    var session = Tab<SessionView>(window, "Session");
+                    window.ShowView("Session");
+                    layout.SetRecordBars(2);
+                    var take = layout.RecordTake(layout.FirstTrackOf(voice), 0);
+                    Assert.That(take, Is.Not.Null);
+                    Core.Playing = true;
+                    for (int i = 0; i < 60; i++) Feed(2048);
+                    Settle();
+                    window.RefreshNow();
+                    session.RefreshState();
+                    Shot(window, "590-session-recording-slot", "Session: an armed audio track records into its slot (the record button or the slot's record): the slot is red with the record dot and the waveform grows as the take is written to a temp file, so a long take never sits in memory. It becomes a normal, unwarped clip with the tempo it was played at.", "Arm the track, then the record button.");
+                    for (int i = 0; i < 200 && layout.IsRecordingClip(take); i++) Feed(4096);
+                    Core.Playing = false;
+                    Feed(2048);
+                });
+                Try("591-arrangement-recording-takes", () =>
+                {
+                    var seq = Tab<SequenceView>(window, "Arrangement");
+                    window.ShowView("Sequence");
+                    seq.SetArrangementMode(true);
+                    Core.SongCore.SongEnd = 64;
+                    Core.SongCore.LoopStart = 0;
+                    Core.SongCore.LoopEnd = 64;
+                    Core.SongCore.PlayPosition = 0;
+                    var rec = Core.Arrangement.Takes;
+                    rec.SetArmed(voice, true);
+                    Assert.That(rec.Start(true), Is.Null);
+                    var entry = Core.SessionCore.ArrangementAudio.Single();
+                    for (int guard = 0; entry.MarkCount < 1 && guard < 800; guard++) Feed(2048);
+                    for (int i = 0; i < 90; i++) Feed(2048);
+                    Settle();
+                    window.RefreshNow();
+                    Shot(window, "591-arrangement-recording-takes", "Arrangement: loop recording an armed audio track. The second pass is drawn growing in red over the loop; each finished pass is already a take.", "Arrange mode, arm the track, loop on, record.");
+                    for (int guard = 0; entry.MarkCount < 3 && guard < 800; guard++) Feed(2048);
+                    Assert.That(rec.Stop(), Is.Null);
+                    Core.Playing = false;
+                    Settle();
+                    window.RefreshNow();
+                    Shot(window, "592-arrangement-take-lanes", "Arrangement: the three takes under the track, the newest on the track itself (it plays). The track header's take button toggles the lanes, deletes the unused takes and flattens the comp.", "The take button in the track header.");
+                });
+                Try("593-arrangement-comp", () =>
+                {
+                    var editor = new ClipEditor(Core);
+                    Assert.That(editor.CompRanges(voice, new[] { (1, 0, 32), (3, 32, 64) }), Is.Null);
+                    Settle();
+                    window.RefreshNow();
+                    Shot(window, "593-arrangement-comp", "Arrangement: a comp of take 1 for the first half of the loop and take 3 for the second, joined by a short crossfade at the cut. Non-destructive: the takes stay on their lanes and Undo brings the old comp back.", "Shift-drag a range on a take lane, or the takes tool.");
+                    Tab<SequenceView>(window, "Arrangement").SetArrangementMode(false);
+                });
+            }
+            finally
+            {
                 Core.EngineInput.Close();
                 Close(window);
             }

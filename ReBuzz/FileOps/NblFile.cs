@@ -86,7 +86,7 @@ namespace ReBuzz.FileOps
             {
                 var manifest = JsonNode.Parse(reader.Manifest) as JsonObject ?? throw new InvalidDataException("The song file's manifest isn't a JSON object.");
                 if ((string)manifest["format"] != FormatName) throw new InvalidDataException("Not a NeoBuzz Live song.");
-                var ctx = new NblReadContext(reader);
+                var ctx = new NblReadContext(reader) { Path = path };
                 NblMigrations.Default.Migrate(manifest, ctx);
                 audioAssets = NblAudio.Read(manifest, ctx);
                 (stream, carry) = ToBmxLayout(manifest, ctx, import);
@@ -258,6 +258,9 @@ namespace ReBuzz.FileOps
                 var blobs = new NblBlobSet();
                 var manifest = BuildManifest(buzz, parts, blobs, buzz.NativeCarry);
                 NblContainer.WriteAtomic(filename, Encoding.UTF8.GetBytes(manifest.ToJsonString(ManifestJson)), blobs);
+                // The audio of the song is in this file now: it is where a cache file lost later is made again from (unless an earlier file still is).
+                foreach (var a in buzz.SessionLayout?.ReferencedAssets() ?? Array.Empty<ReBuzz.Core.AudioLibrary.AudioAsset>())
+                    if (a.Recipe == null || !a.Recipe.Available) a.Recipe = new NblRecipe(filename, a.Id);
             }
             finally
             {

@@ -166,6 +166,7 @@ namespace ReBuzz.Studio
         static async Task AfterStart(StudioHost host)
         {
             if (!Program.Smoke) await Autosave.OfferRecovery(host.Core);
+            if (!Program.Smoke) await Autosave.OfferTakeRecovery(host.Core);
             if (Program.Song != null) await SongFiles.Open(Program.Song);
             Autosave.Start(host.Core);
         }

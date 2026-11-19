@@ -105,6 +105,8 @@ namespace ReBuzz.Core.Session
             foreach (var p in audioKeys.Keys)
                 if (p.SessionAudio != null) p.SessionAudio.Params = null;
             audioKeys.Clear();
+            foreach (var pinned in pinnedAssets) pinned.Value.PinClip(pinned.Key, null, null);
+            pinnedAssets.Clear();
         }
 
         // ------------------------------------------------------------------ audio tracks
@@ -212,6 +214,7 @@ namespace ReBuzz.Core.Session
             {
                 var asset = AudioImporter.Import(path, SampleRate);
                 if (asset.Frames == 0) throw new InvalidDataException("it holds no audio");
+                asset.Recipe = new FileRecipe(path, SampleRate);         // how a lost cache file is made again
                 return Assets.Add(asset);
             }
             catch (Exception e)
@@ -384,8 +387,9 @@ namespace ReBuzz.Core.Session
             var layer = song.Wavetable.Waves[index]?.Layers.FirstOrDefault();
             if (layer == null) return false;
             layer.SampleRate = source.SampleRate;
-            layer.SetDataAsFloat(source.Left, 0, 1, 0, 0, source.Length);
-            if (stereo) layer.SetDataAsFloat(source.Right, 0, 1, 1, 0, source.Length);
+            var (l, r) = source.ToArrays();                 // exact: the cache file's audio too (neo-audio.md, NA1b)
+            layer.SetDataAsFloat(l, 0, 1, 0, 0, source.Length);
+            if (stereo) layer.SetDataAsFloat(r, 0, 1, 1, 0, source.Length);
             layer.InvalidateData();
             return true;
         }
@@ -563,6 +567,9 @@ namespace ReBuzz.Core.Session
             }
         }
 
+        /// <summary>Frames an audio take of this machine drops at its start so it lines up (the round trip of what it records).</summary>
+        internal long CaptureSkipOf(IMachine machine) => Engine == null || InputOf(machine) == 1 ? 0 : CaptureSkip(machine);
+
         /// <summary>The ReBuzz Audio In machine: an audio track fed by it records a hardware input.</summary>
         const string AudioInName = "ReBuzz Audio In";
 
@@ -628,7 +635,7 @@ namespace ReBuzz.Core.Session
                     d.SetSlot(track, scene, take.Name);
                     d.SetClip(machine.Name, take.Name, new SessionDocument.ClipSettings
                     {
-                        Audio = new SessionDocument.AudioSettings { Asset = pendingId, Bpm = bpm, Warp = "Beats" }
+                        Audio = new SessionDocument.AudioSettings { Asset = pendingId, Bpm = bpm, Warp = "Off" }
                     });
                 });
             }
@@ -643,7 +650,7 @@ namespace ReBuzz.Core.Session
             bool master = InputOf(machine) == 1;
             long skip = master ? 0 : CaptureSkip(machine);
             long length = bars > 0 ? FramesOf(ticks, bpm, tpb) : long.MaxValue;
-            var capture = new AudioCapture(SampleRate, skip, length, (long)MaxAudioTakeMinutes * 60 * SampleRate, FramesOf(tpb, bpm, tpb));
+            var capture = new AudioCapture(SampleRate, skip, length, (long)MaxAudioTakeMinutes * 60 * SampleRate, FramesOf(tpb, bpm, tpb), TakeFile.Create(waveName, SampleRate, bpm));
             var t = new AudioTake { Track = seq, Take = take, Capture = capture, PendingId = pendingId, Name = waveName, Bpm = bpm, TicksPerBeat = tpb, UntilStopped = bars == 0 };
             t.Capturing = new SessionClipEngine.TakeCapture(take, capture, master);
             if (!master) (take.SessionAudio ??= new ClipPlayback()).Capture = capture;
@@ -743,12 +750,14 @@ namespace ReBuzz.Core.Session
             long frames = Math.Min(t.Capture.Length, t.Capture.Written);
             if (frames > 0 && !t.Take.IsDeleted)
             {
+                // The take's temp file is committed into the song's store as an asset, then the file goes (a crash before this leaves it to recover).
                 var (left, right) = t.Capture.Collect(t.Capture.Length == long.MaxValue ? frames : t.Capture.Length);
                 var asset = Assets.Add(new AudioAsset(t.Name, "", null, new AudioSource(left, right, t.Capture.SampleRate), 2));
                 Assets.Alias(t.PendingId, asset.Id);
                 if (t.Capture.Dropped > 0)
                     buzz.DCWriteLine($"Session: audio take {t.Name}: {t.Capture.Dropped} frames lost (the UI was too slow)", DCLogLevel.Warning);
             }
+            t.Capture.Close();
             RefreshAudio();
             UpdatePollTimer();
             RecordingChanged?.Invoke();
@@ -757,12 +766,18 @@ namespace ReBuzz.Core.Session
         void ResetAudioTakes()
         {
             foreach (var t in audioTakes.Values)
+            {
                 if (t.Take.SessionAudio != null) t.Take.SessionAudio.Capture = null;
+                t.Capture.Close();
+            }
             audioTakes.Clear();
             if (Engine != null) Engine.TakeCaptures = null;
         }
 
         /// <summary>Whether an audio take records (or waits to) on the track.</summary>
+        /// <summary>NA4b: the capture of the audio take recording into this slot (its peaks draw the growing waveform), or null.</summary>
+        internal AudioCapture LiveCaptureOf(ISequence track, IPattern clip) => track is SequenceCore seq && audioTakes.TryGetValue(seq, out var t) && ReferenceEquals(t.Take, clip) ? t.Capture : null;
+
         bool IsAudioRecording(ISequence track) => track is SequenceCore seq && audioTakes.ContainsKey(seq);
 
         bool IsAudioTake(IPattern clip) => clip != null && audioTakes.Values.Any(t => ReferenceEquals(t.Take, clip));
@@ -910,14 +925,49 @@ namespace ReBuzz.Core.Session
                     {
                         playback.Params = null;               // never stops the layout; the clip is silent
                     }
+                    PinClip(pattern, w?.Asset, playback.Params, entry.Value);
                     audioKeys[pattern] = key;
                 }
             }
             foreach (var gone in audioKeys.Keys.Where(p => !live.Contains(p)).ToList())
             {
                 if (gone.SessionAudio != null) gone.SessionAudio.Params = null;
+                PinClip(gone, null, null, null);
                 audioKeys.Remove(gone);
             }
+        }
+
+        readonly Dictionary<PatternCore, AudioAsset> pinnedAssets = new Dictionary<PatternCore, AudioAsset>();
+
+        /// <summary>
+        /// A streamed asset keeps the audio a clip may start from in memory (neo-audio.md, NA1b): the start of the audio (the asset's own pin), the
+        /// clip's start marker and loop start through its warp map, and each warp marker, each for the head's length, so a launch is instant.
+        /// </summary>
+        void PinClip(PatternCore pattern, AudioAsset asset, AudioClipParams p, SessionDocument.ClipSettings settings)
+        {
+            if (pinnedAssets.TryGetValue(pattern, out var old) && !ReferenceEquals(old, asset))
+            {
+                old.PinClip(pattern, null, null);
+                pinnedAssets.Remove(pattern);
+            }
+            if (asset == null || p == null || !StreamingPolicy.ShouldStream(asset.Frames, asset.Channels)) return;
+            long head = Math.Max(1024, (long)(StreamingPolicy.HeadMilliseconds / 1000.0 * p.Source.SampleRate));
+            var ranges = new List<(long From, long To)>();
+            void At(double sample)
+            {
+                if (!double.IsFinite(sample) || Math.Abs(sample) > 1e12) return;
+                ranges.Add(((long)sample - 4096, (long)sample + head));
+            }
+            double tpb = Math.Max(1, buzz.TPB);
+            At(p.Map.SampleAt(0));
+            if (settings != null)
+            {
+                At(p.Map.SampleAt(settings.Start / tpb));
+                At(p.Map.SampleAt(settings.LoopStart / tpb));
+            }
+            foreach (var m in p.Map.Markers.Take(48)) At(m.Sample);
+            asset.PinClip(pattern, p.Source, ranges);
+            pinnedAssets[pattern] = asset;
         }
     }
 

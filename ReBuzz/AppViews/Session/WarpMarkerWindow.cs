@@ -171,7 +171,7 @@ namespace ReBuzz.AppViews.Session
             {
                 if (dragging >= 0) return;               // a drag in progress isn't disturbed
                 audio = settings;
-                source = audioSource;
+                source = audioSource?.ForAnalysis();         // exact reads for drawing: not the audio thread's (streamed audio, NA1b)
                 transients = found ?? Array.Empty<double>();
                 markers = settings.Markers.Count >= 2 ? settings.Markers.OrderBy(m => m.Beat).ToList() : new List<(double, double)>();
                 map = MapNow();
