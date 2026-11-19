@@ -12,6 +12,7 @@
 //    added vibrato. At Keep 100 % the singer's vibrato, drift and scoops are exactly as sung.
 
 using System;
+using System.Threading;
 using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Tune
