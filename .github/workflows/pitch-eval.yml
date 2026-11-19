@@ -166,6 +166,8 @@ jobs:
       with:
         name: neo-tune-excerpts
         path: neo-tune-excerpts
+        if-no-files-found: ignore
+
   convert:
     if: ${{ github.event.inputs.convert != 'false' }}
     runs-on: ubuntu-latest
