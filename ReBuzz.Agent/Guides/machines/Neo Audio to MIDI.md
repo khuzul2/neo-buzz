@@ -25,7 +25,6 @@ Neo Audio to MIDI listens to an instrument (a guitar or a bass through Neo Audio
 | Sensitivity | 50% | how soft an attack may be; lower for a noisy instrument |
 | Pitch bend | Off | on: slides and bends are sent as bend (match the synth's range) |
 | Retrigger | On | a new pluck of the sounding note plays it again |
-| Kick interval | 50 ms | the shortest time between two kicks (the snare's is 30 ms, the hat's 15) |
 
 ## Starting points
 
