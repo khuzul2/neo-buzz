@@ -22,7 +22,7 @@ namespace ReBuzz.Studio.Tests
         const int Rate = 44100;
 
         /// <summary>The input device: opened with some channels, fed in step with the rendering.</summary>
-        sealed class FakeInput
+        internal sealed class FakeInput
         {
             readonly ReBuzzCore core;
             long fed;
@@ -59,7 +59,7 @@ namespace ReBuzz.Studio.Tests
         static float Peak(float[] interleaved, int side, int skip = 2000) =>
             Enumerable.Range(skip, interleaved.Length / 2 - skip).Max(i => Math.Abs(interleaved[i * 2 + side]));
 
-        static IDisposable Setup(out SessionRig rig)
+        internal static IDisposable Setup(out SessionRig rig)
         {
             var untitled = SnapshotTests.Untitled(out _);
             rig = new SessionRig();
@@ -87,7 +87,7 @@ namespace ReBuzz.Studio.Tests
             public void Dispose() => action();
         }
 
-        static MachineCore NewTrack(SessionRig rig, string name, AudioFrom? from = null)
+        internal static MachineCore NewTrack(SessionRig rig, string name, AudioFrom? from = null)
         {
             rig.Layout.Ensure();
             var m = (MachineCore)rig.Layout.NewAudioTrack(name)!;

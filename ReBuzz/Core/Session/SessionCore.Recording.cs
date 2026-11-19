@@ -59,6 +59,15 @@ namespace ReBuzz.Core.Session
             set => takeCaptures = value ?? Array.Empty<SessionClipEngine.TakeCapture>();
         }
 
+        volatile ArrangementAudioTake[] arrangementAudio = Array.Empty<ArrangementAudioTake>();
+
+        /// <summary>NA4b: audio recording into the arrangement (published whole by the UI thread; read by the audio thread).</summary>
+        internal ArrangementAudioTake[] ArrangementAudio
+        {
+            get => arrangementAudio;
+            set => arrangementAudio = value ?? Array.Empty<ArrangementAudioTake>();
+        }
+
         /// <summary>Whether a track of this machine is armed (any thread; no allocation).</summary>
         internal bool IsArmedMachine(IMachine machine) => machine is MachineCore m && Array.IndexOf(arm.Machines, m) >= 0;
 

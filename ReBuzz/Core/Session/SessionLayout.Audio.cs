@@ -563,6 +563,9 @@ namespace ReBuzz.Core.Session
             }
         }
 
+        /// <summary>Frames an audio take of this machine drops at its start so it lines up (the round trip of what it records).</summary>
+        internal long CaptureSkipOf(IMachine machine) => Engine == null || InputOf(machine) == 1 ? 0 : CaptureSkip(machine);
+
         /// <summary>The ReBuzz Audio In machine: an audio track fed by it records a hardware input.</summary>
         const string AudioInName = "ReBuzz Audio In";
 
@@ -628,7 +631,7 @@ namespace ReBuzz.Core.Session
                     d.SetSlot(track, scene, take.Name);
                     d.SetClip(machine.Name, take.Name, new SessionDocument.ClipSettings
                     {
-                        Audio = new SessionDocument.AudioSettings { Asset = pendingId, Bpm = bpm, Warp = "Beats" }
+                        Audio = new SessionDocument.AudioSettings { Asset = pendingId, Bpm = bpm, Warp = "Off" }
                     });
                 });
             }
@@ -643,7 +646,7 @@ namespace ReBuzz.Core.Session
             bool master = InputOf(machine) == 1;
             long skip = master ? 0 : CaptureSkip(machine);
             long length = bars > 0 ? FramesOf(ticks, bpm, tpb) : long.MaxValue;
-            var capture = new AudioCapture(SampleRate, skip, length, (long)MaxAudioTakeMinutes * 60 * SampleRate, FramesOf(tpb, bpm, tpb));
+            var capture = new AudioCapture(SampleRate, skip, length, (long)MaxAudioTakeMinutes * 60 * SampleRate, FramesOf(tpb, bpm, tpb), TakeFile.Create(waveName, SampleRate, bpm));
             var t = new AudioTake { Track = seq, Take = take, Capture = capture, PendingId = pendingId, Name = waveName, Bpm = bpm, TicksPerBeat = tpb, UntilStopped = bars == 0 };
             t.Capturing = new SessionClipEngine.TakeCapture(take, capture, master);
             if (!master) (take.SessionAudio ??= new ClipPlayback()).Capture = capture;
@@ -743,12 +746,14 @@ namespace ReBuzz.Core.Session
             long frames = Math.Min(t.Capture.Length, t.Capture.Written);
             if (frames > 0 && !t.Take.IsDeleted)
             {
+                // The take's temp file is committed into the song's store as an asset, then the file goes (a crash before this leaves it to recover).
                 var (left, right) = t.Capture.Collect(t.Capture.Length == long.MaxValue ? frames : t.Capture.Length);
                 var asset = Assets.Add(new AudioAsset(t.Name, "", null, new AudioSource(left, right, t.Capture.SampleRate), 2));
                 Assets.Alias(t.PendingId, asset.Id);
                 if (t.Capture.Dropped > 0)
                     buzz.DCWriteLine($"Session: audio take {t.Name}: {t.Capture.Dropped} frames lost (the UI was too slow)", DCLogLevel.Warning);
             }
+            t.Capture.Close();
             RefreshAudio();
             UpdatePollTimer();
             RecordingChanged?.Invoke();
@@ -757,7 +762,10 @@ namespace ReBuzz.Core.Session
         void ResetAudioTakes()
         {
             foreach (var t in audioTakes.Values)
+            {
                 if (t.Take.SessionAudio != null) t.Take.SessionAudio.Capture = null;
+                t.Capture.Close();
+            }
             audioTakes.Clear();
             if (Engine != null) Engine.TakeCaptures = null;
         }

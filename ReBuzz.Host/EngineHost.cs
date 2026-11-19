@@ -115,6 +115,7 @@ namespace ReBuzz.Host
             RegistryEx.Store = registry;
             MachineDLLScanner.CacheFolder = folder;
             SongAutosave.Folder = Path.Combine(folder, "Autosave");
+            ReBuzz.Core.Clips.TakeFile.Directory = Path.Combine(folder, "Takes");      // takes record to temp files here (NA4b)
             return registry;
         }
 

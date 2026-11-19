@@ -652,6 +652,7 @@ namespace ReBuzz.Core
             if (item == null) return "There's no take at the start of the range.";
             to = Math.Min(to, item.End);
             if (to <= from) return "Pick a range inside the take.";
+            if (IsAudio(item.Pattern)) return CompAudio(item, from, to, main);
             var spec = new ClipSpec(0, item.Pattern, from, to - from, item.Spec.PatternPositionAt(from) ?? 0, 0, 0, false, item.Spec.Gain);
             var plan = new Plan(this);
             plan.Overwrite(main, from, to);

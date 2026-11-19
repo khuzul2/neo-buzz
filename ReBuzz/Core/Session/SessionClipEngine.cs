@@ -90,9 +90,21 @@ namespace ReBuzz.Core.Session
         internal static void AfterMix(ReBuzzCore buzz, float[] buffer, int offset, int frames)
         {
             var captures = buzz.SessionCore.TakeCaptures;
-            if (captures.Length == 0 || !buzz.Playing) return;
-            var mi = ReBuzzCore.masterInfo;
+            var recording = buzz.SessionCore.ArrangementAudio;
+            if (!buzz.Playing) return;
             int block = ReBuzzCore.GlobalState.AudioFrame;
+            // NA4b: an arrangement stream of a track that didn't work this block (muted) records silence, so it keeps its time.
+            for (int i = 0; i < recording.Length; i++)
+            {
+                var take = recording[i];
+                if (take.Started && !take.Capture.IsDone && take.LastBlock != block)
+                {
+                    take.Capture.WriteSilence(frames);
+                    take.LastBlock = block;
+                }
+            }
+            if (captures.Length == 0) return;
+            var mi = ReBuzzCore.masterInfo;
             for (int i = 0; i < captures.Length; i++)
             {
                 var c = captures[i];
@@ -132,6 +144,18 @@ namespace ReBuzz.Core.Session
             if (buzz != null && buzz.Playing)
             {
                 var mi = ReBuzzCore.masterInfo;
+                // NA4b: an arrangement recording of this track writes what it hears (the first block at its start tick begins the stream).
+                var recording = buzz.SessionCore.ArrangementAudio;
+                for (int r = 0; r < recording.Length; r++)
+                {
+                    var take = recording[r];
+                    if (!ReferenceEquals(take.Machine, machine) || take.Capture.IsDone) continue;
+                    if (take.Begin(buzz.SongCore.PlayPosition, mi.PosInTick, mi.SamplesPerTick))
+                    {
+                        Record(player, take.Capture, audio, n, hasInput);
+                        take.LastBlock = ReBuzzCore.GlobalState.AudioFrame;
+                    }
+                }
                 int samplesPerTick = mi.SamplesPerTick > 0 ? mi.SamplesPerTick : 1;
                 int ticksPerBeat = mi.TicksPerBeat > 0 ? mi.TicksPerBeat : 4;
                 double beatsPerSample = 1.0 / ((double)samplesPerTick * ticksPerBeat);
@@ -259,7 +283,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>A take of the track's input records this block (silence when nothing comes in).</summary>
-        static void Record(PlayerState player, AudioCapture capture, Sample[] input, int n, bool hasInput)
+        internal static void Record(PlayerState player, AudioCapture capture, Sample[] input, int n, bool hasInput)
         {
             if (!hasInput)
             {
