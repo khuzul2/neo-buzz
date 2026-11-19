@@ -328,7 +328,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | song_recent | 1 | 1 | yes |
 | song_save | 8 | 7 | yes |
 | song_set | 7 | 9 | yes |
-| studio_status | 11 | 0 | yes |
+| studio_status | 12 | 0 | yes |
 | target_build | 1 | 2 | yes |
 | theory | 4 | 13 | yes |
 | track_input | 3 | 5 | yes |

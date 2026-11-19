@@ -101,8 +101,8 @@ namespace ReBuzz.Core.Session
                 string key;
                 if (source.Asset != null)
                 {
-                    left = source.Asset.Source.Left;
-                    right = source.Asset.Channels > 1 ? source.Asset.Source.Right : left;
+                    (left, right) = source.Asset.Source.ToArrays();            // exact, from memory or the cache file
+                    if (source.Asset.Channels < 2) right = left;
                     rate = source.Asset.SampleRate;
                     key = source.Asset.Id;
                 }
@@ -110,8 +110,8 @@ namespace ReBuzz.Core.Session
                 {
                     var asset = AudioImporter.Import(source.Path, songRate);
                     source.Asset = asset;                                  // not in the store: only a file's stems are added
-                    left = asset.Source.Left;
-                    right = asset.Channels > 1 ? asset.Source.Right : left;
+                    (left, right) = asset.Source.ToArrays();
+                    if (asset.Channels < 2) right = left;
                     rate = asset.SampleRate;
                     key = asset.Id;
                 }

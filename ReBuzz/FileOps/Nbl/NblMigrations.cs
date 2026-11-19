@@ -15,6 +15,9 @@ namespace ReBuzz.FileOps.Nbl
 
         public NblReadContext(NblContainer.Reader reader) { this.reader = reader; }
 
+        /// <summary>The file being read (a long audio asset remembers it, to make its cache again from the blobs).</summary>
+        public string Path { get; init; }
+
         public byte[] Get(string hash) => added.TryGetValue(hash, out var b) ? b : reader.Get(hash);
 
         /// <summary>A blob a step writes (the manifest then names it by the returned hash).</summary>

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Built (NA1, NA2): engine review, the Neo Audio machine, the song's audio store, the import pipeline. Streaming for long files (NA1b) is not built; the seam for it is. NA5 adds the Pro warp mode (section 11). |
+| Status | Built (NA1, NA2): engine review, the Neo Audio machine, the song's audio store, the import pipeline. Disk streaming for long files is built (NA1b, section 13). NA5 adds the Pro warp mode (section 11). |
 | Branch | `audio/neo-audio-na1`, `audio/neo-audio-na2`, `audio/neo-audio-na5` |
 | Related | [session-view.md](session-view.md) §1.0 (audio clips), [daw-modes.md](daw-modes.md) §4.4, [native-format.md](native-format.md) §12, [machines.md](machines.md) §3.2 |
 
@@ -28,7 +28,7 @@ Two decisions of the brief shape the rest. The audio of a clip belongs to the **
 |---|---|
 | `AudioAsset` | Id (content-addressed: SHA-256 of rate, channels and samples, 16 hex digits), name, source path, SHA-256 of the source file, channels (1 or 2), decoded float data at one sample rate, the wave it was migrated from (or -1). |
 | `AudioAssetStore` | The song's assets (`ReBuzzCore.AudioAssets`): add (the same audio is one asset), get (follows aliases, used by a take whose audio does not exist yet), clear, replace. Cleared by New Song. |
-| `IAudioAssetReader` | How the engine reads an asset: `Frames`, `Channels`, `SampleRate`, `Read(frame, channel, span)` (silence outside the audio) and `InMemory`. NA1 has one reader, in memory; NA1b adds a streaming one without the engine changing. |
+| `IAudioAssetReader` | How the engine reads an asset: `Frames`, `Channels`, `SampleRate`, `Read(frame, channel, span)` (silence outside the audio) and `InMemory`. Two readers: in memory, and (NA1b) one over the decoded cache file. The engine reads `AudioSource`, which switches between the two behind a stable object (section 13). |
 
 Clips name their asset in the clip settings (`SessionDocument.AudioSettings.Asset`, saved in the SessionView sub-section). The old `Wave` field stays for clips an older song made.
 
@@ -91,7 +91,7 @@ The audit covered `AudioClip`, `ClipVoice`, `PhaseVocoder`, `AudioAnalysis`, `Au
 
 ## 9. Limits
 
-- Everything is in memory (floats); 30 minutes of stereo at 48 kHz is about 690 MB, so long files wait for NA1b's streaming reader.
+- Audio over the streaming threshold (8 MiB of floats by default, about 22 s of stereo at 48 kHz) streams from the decoded cache (section 13); shorter audio is in memory as floats.
 - Only two channels are kept of a file with more.
 - A clip made before this version keeps its wave, which is not removed after the migration (a song saved as .nbl holds both until the wave is deleted).
 - The Classic WPF clip panel still prints the wave's name for a clip that has none (it is frozen).
@@ -208,3 +208,27 @@ What a track listens to, and how a track is armed, are one state for every view.
 **Tests.** `ReBuzz.Studio.Tests/NeoAudioClipPageTests.cs` (each control: value, undo, redo, saved and opened again as .nbl; markers by mouse and keys with and without snap; both views; the agent against the page; the slots). Gallery: `mac-037`, `038`, `039`, `461`.
 
 **Limits.** No drops (DD1), recording (NA4), Pro mode (NA5) or disk streaming. Removing the last inner marker leaves the two pinned ends (the map stays straight). Detect finds a tempo only where the audio has one.
+
+## 13. NA1b as built: disk streaming
+
+**Decoded cache.** One file per asset in `LocalApplicationData/NeoBuzz/AudioCache/<asset id>.nbdc`, keyed by the asset id (the SHA-256 of rate, channels and samples, so it is shared across songs and survives reopen). Format `NBDC0001`: a 128-byte header, a CRC32 per (page, channel) piece, then 4096-aligned pages of 8192 frames (the channels' pieces one after another, so one read fetches a page). It is written as `.part` and renamed when whole. `AudioCache` (ReBuzz/Core/AudioLibrary/AudioCache.cs) also holds the size, `Clear`, `Trim` and `Touch`.
+
+**One source, two backings.** `AudioSource` keeps its identity but is switchable: float arrays, or a page table over a `StreamedAudio`. The engine and voices are unchanged. An asset over the threshold is imported or loaded into memory, plays from it, and a background job writes the cache, opens it, waits until the head and pins are resident (`WaitSettled`) and only then drops the floats: the switch is bit-identical and has no click. `AssetStorage` is Memory, Filling, Streaming, Repairing or Failed; progress is reported while filling. A song opened with a valid cache file builds the asset straight from it (no decode, no memory peak). `AudioAssetStore.Add`, `ReplaceWith` and the store API are unchanged.
+
+**Audio thread.** Reads take a `Volatile.Read` of a `Page[]` table. A missing page is silence plus an `Interlocked` count of missed samples; a voice turns that into one underrun per block and recovers on the next block. No I/O, lock or allocation. Everything that is not the audio thread (analysis, peaks, save, `ToArrays`, `ForAnalysis`, offline render for Consolidate) uses exact reads of the file, never the lossy path. A reversed long source is a mirrored view, not a copy.
+
+**Prefetch.** One `StreamPrefetcher` thread (BelowNormal, 2 ms tick) reads the voices' hints (seqlock, written by the audio thread) and loads pages in stages: near the playhead, the read-ahead window (2 s, widened by speed, reverse, loop wraps and warp), then the pins. It keeps a 96 MB resident budget (soft: pins never go, and a page wanted in the last second stays, because slice and crossfade tails read where a voice's window has just left), evicting the least recently wanted pages beyond that, and recycles pages through a 2 s pool. `ClipVoice.Anticipate` and `SessionCore.AnticipateAudio` hint a queued launch from the UI thread, so a quantised launch finds its pages.
+
+**Pins.** The first 500 ms of every streamed asset, and, for each clip using it, map sample 0, Start, LoopStart and up to 48 warp markers (each from 4096 frames before to 500 ms after). Arrangement lookahead is covered by these pins plus the playhead window, not by a separate scan.
+
+**Policy and settings.** `streaming.txt` (key=value, in the cache folder's parent): ThresholdBytes 8 MiB, HeadMilliseconds 500, ReadAheadSeconds 2, ResidentBytes 96 MiB, CacheLimitBytes 4 GiB, Enabled. `NEO_STREAMING_OFF=1` turns streaming off. Preferences > Audio > Disk streaming shows the cache size, Clear, the threshold and the limit. The limit is enforced by LRU on files the open song does not use.
+
+**Repair.** A missing cache file is copied back from the open handle when it was only unlinked; a damaged piece (CRC) or a lost file makes the asset Repairing and the cache is made again from its recipe while it plays silence for what is not there: `NblRecipe` (decodes the song file's blob page by page and checks the id) or `FileRecipe` (re-imports the source file).
+
+**Agent.** `audio_clip_get` reports storage, streams, cache_progress, underruns, missed_samples and resident_mb; `studio_status` has `stream_underruns`. `ResetAudioDropoutCounters` resets the stream counters.
+
+**Measured** (Debug build, 2 cores, no native Pro library): 30 minutes of stereo at 48 kHz is 659 MB of floats; streamed it adds 1 MB of managed memory (4 MB after playing, 3.7 MB of pages resident). 16 streamed voices (8 Repitch, 4 Beats, 2 Complex, 2 Pro) with random seeks, loops, reverse and warp for 30 s in real time at 256-frame blocks: 0 underruns, 0 missed samples, 0 bytes allocated, worst block 41.5 ms (Debug DSP), worst prefetch pass 38 ms. The same for 3 minutes (Soak): 0 underruns, 0 missed samples (worst block 35 ms in Debug on 2 cores). An earlier build had exactly 3 underruns (320 samples) in this run, the same ones on every machine: a Beats voice changing slice reads the old slice's tail about 0.2 s behind the new position, and the page holding it was evicted at once because the pins alone are over the budget. Pages wanted in the last second now stay (`StreamPrefetcher.EvictGraceMs`). The 10-minute all-modes soak (10 voices at 2.5 times real time) also has 0 underruns once each clip's own start is pinned as `SessionLayout.PinClip` does (a reversed clip's start is the audio's end, which nothing else pins). Per block, streamed against memory: Repitch 0.078 / 0.045 ms, Beats 0.064 / 0.035 ms, Complex 0.627 / 0.523 ms.
+
+**Tests.** `ReBuzz.SessionTests/NeoAudioStreamingTests.cs` (format, damage, reads, reversed view, bit-identical switch in each warp mode, cold start, unwarned jump, rebuild, trim, settings, eviction, pins, the 30-minute asset, zero allocation, the 16-voice run, and two Soak tests: 3 minutes of 16 voices and 10 minutes in every mode) and `ReBuzz.Studio.Tests/NeoAudioStreamingSongTests.cs` (save, reopen from the cache and from the blobs, rebuild; short audio stays in memory).
+
+**Limits.** An asset with no recipe (not imported from a file, not yet saved) whose cache is damaged cannot be made again and plays silence. A first open with no cache decodes to memory before switching (a transient peak). Saving .nbl still builds its container in memory. A jump with no warning (a seek the hints did not see) can underrun once. Consolidate reads a streamed clip into memory for the render.
