@@ -66,5 +66,20 @@ namespace NeoBuzz.Tune
 
         [ParameterDecl(Name = "Mix", Description = "Wet against dry; at 0 % the output is the delayed input, bit for bit", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
         public int Mix { get => Values[P.Mix]; set => Values.Set(P.Mix, value); }
+
+        [ParameterDecl(Name = "Natural", Description = "How natural the correction sounds: 0 % is the hard, robotic effect, 100 % is a transparent correction that keeps the singer's expression. Moving it sets Retune speed, Correction zone, Keep vibrato, Humanize, Transition and Note stickiness together", MinValue = 0, MaxValue = 1000, DefValue = 600)]
+        public int Natural { get => Values[P.Natural]; set => Values.Set(P.Natural, value); }
+
+        [ParameterDecl(Name = "Correction zone", Description = "How far from a note the correction still pulls: movement outside the zone passes through as sung (100 cents and more: no zone, every pitch is corrected)", MinValue = 0, MaxValue = 1000, DefValue = 760)]
+        public int Zone { get => Values[P.Zone]; set => Values.Set(P.Zone, value); }
+
+        [ParameterDecl(Name = "Transition", Description = "Between notes: 0 % snaps at the midpoint, 100 % leaves the singer's own glide untouched", MinValue = 0, MaxValue = 1000, DefValue = 600)]
+        public int Glide { get => Values[P.Glide]; set => Values.Set(P.Glide, value); }
+
+        [ParameterDecl(Name = "Note stickiness", Description = "How hard it is to leave a note: how far past the midpoint, and for how long, the pitch has to be before the target changes", MinValue = 0, MaxValue = 1000, DefValue = 600)]
+        public int Stick { get => Values[P.Stick]; set => Values.Set(P.Stick, value); }
+
+        [ParameterDecl(Name = "Method", Description = "Auto: period splicing for small corrections, PSOLA when formants or a large transpose are used. Splice or PSOLA: always that engine", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int Method { get => Values[P.Method]; set => Values.Set(P.Method, value); }
     }
 }

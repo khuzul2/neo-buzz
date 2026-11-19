@@ -1,27 +1,18 @@
 #nullable disable
-// Neo Tune (docs/specs/neo-tune.md): pitch correction by pitch-synchronous overlap-add (TD-PSOLA) on the shared pitch tracker
-// (docs/specs/pitch.md).
-//  - The input (the sum or the left channel) goes through the tracker, one estimate per hop. Each estimate runs the control
-//    stage: the note the voice is nearest to (in the key's scale, the notes a MIDI keyboard holds, or the key the voice
-//    itself suggests), the glide to it (retune speed, humanize, the singer's vibrato kept or an added one), the amount, the
-//    transpose: the result is a shift in semitones, stored in a contour with the tracker's f0, stamped at the middle of the
-//    audio the estimate heard.
-//  - Analysis marks: one per period of the voiced stretch, each placed where the waveform around it best matches the waveform
-//    around the previous mark (a normalised correlation over 0.6 period in a window of ±0.2 period around the predicted
-//    position), so every grain starts at the same phase of the cycle.
-//  - Synthesis: grain centres are laid at the corrected period, f_out = f_in · 2^(shift/12) (read at the grain's own time, so
-//    jitter of the tracker does not reach the output: a hard-tuned note has marks exactly one period of the note apart,
-//    placed with fractional-sample accuracy). Each grain is the input around the nearest analysis mark, a Hann window of two
-//    periods (at most Pcap: the Low latency and Quality grain lengths), read with a cubic interpolation, and added into an
-//    accumulator together with the window's weight; an output sample is the sum over the weights', so the level does not
-//    depend on how the grains overlap.
-//  - Formants: the grain is read at a speed φ (the window and its content are scaled by 1/φ): φ = 2^(Formant shift/12) with
-//    Formant preserve on, and the pitch ratio times that with it off (the spectral envelope then rides the pitch: a sped-up
-//    or slowed voice). The envelope is the grain's own, no spectral analysis.
-//  - Unvoiced sounds and silence pass through as the delayed input; a gate crossfades (2.5 ms) between that and the grains
-//    where the contour says voiced, and an onset detector holds it dry for a few milliseconds at a hard attack (Transients).
-//  - Latency (reported): the lookahead the grains and the tracker need: 10 ms for Low latency (grains up to 8 ms), 28 ms
-//    for Quality (24 ms) and 36 ms for Full.
+// Neo Tune (docs/specs/neo-tune.md): pitch correction on the shared pitch tracker (docs/specs/pitch.md). NT2 splits the work in three:
+//  - Control stage (TuneControl.cs): per tracker estimate, the pitch is split into the note CENTRE and the expression around it. The
+//    centre is a moving average over one measured vibrato period (zero crossings of the deviation), so a 4-8 Hz vibrato does not leak
+//    into it; the target note is chosen on the centre (cents past the midpoint and a minimum time, the Stickiness control), and the
+//    shift applied to the INPUT is goal - centre, weighted by the correction zone and by how fast the centre moves, smoothed by the
+//    retune speed (slower on a sustained note: Humanize), plus (1 - Keep) of the expression to flatten it. The singer's vibrato,
+//    drift and scoops pass through untouched at high Natural; at Natural 0 everything is flattened and the target snaps.
+//  - Marks (here): one analysis mark per period of a voiced stretch, placed by waveform correlation; shared by both engines.
+//  - Engines (TuneSynth.cs): SPLICE resamples the input at the pitch ratio from a delay line and keeps the reader in step by repeating or
+//    dropping whole periods at the marks (the method of US 5,973,252: no grain overlap, no comb filtering, formants move with the ratio, which is
+//    inaudible for corrections under about 1 semitone); PSOLA (grains of two periods at the true mark intervals times the ratio) is for
+//    formant control and large transposes. Method Auto picks by the settings. Both read the input through a 16-tap sinc (TuneSinc.cs).
+//  - Voicing continuity: a gap in the tracker's voicing of less than 70 ms inside a note keeps the last pitch and ratio; at real unvoiced
+//    sounds and silence the ratio ramps to 1 in 20 ms. The output is never the dry voice inside a voiced note.
 // Allocation-free after SetSampleRate; the portable maths, fixed order; the same bits for any block size.
 
 using System;
@@ -31,11 +22,11 @@ using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Tune
 {
-    internal sealed class TuneEngine
+    internal sealed partial class TuneEngine
     {
         public const int MaxBlock = 256;
 
-        // The three ranges: tracker, longest grain (seconds, two of the shortest period it holds whole), latency (seconds).
+        // The three ranges: longest grain (seconds) and latency (seconds). The latency is the tracker's: its span and a period.
         static readonly double[] CapSeconds = { 0.008, 0.024, 0.028 };
         static readonly double[] LatencySeconds = { 0.010, 0.028, 0.036 };
 
@@ -61,11 +52,11 @@ namespace NeoBuzz.Tune
         long outPos;
         readonly float[] mono = new float[MaxBlock];
 
-        // ---- contour
+        // ---- contour (the tracker's f0 and the shift in semitones, stamped at the middle of the audio an estimate heard)
         readonly long[] cT = new long[ContourSize];
         readonly float[] cF = new float[ContourSize], cShift = new float[ContourSize];
         long cCount;
-        long gPtr, sPtr, mPtr, mScan;
+        long gPtr, sPtr, mPtr, mScan, rPtr;
 
         // ---- analysis marks
         readonly double[] mT = new double[MarkSize];
@@ -76,32 +67,16 @@ namespace NeoBuzz.Tune
         readonly float[] refw = new float[512];
         double[] score = new double[1];
 
-        // ---- synthesis
-        float[] num, den;
-        int olaMask;
-        bool synthActive;
-        int synthRun;
-        double sNext;
-        readonly float[] hann = new float[HannSize + 2];
-        double hgMax;
-
-        // ---- gate
+        // ---- gate (the Transients dry hold)
         double gate;
         double gateStep;
         long holdFrom, holdUntil = long.MinValue;
 
-        // ---- control stage
-        readonly KeyListener listener = new KeyListener();
-        bool wasVoiced;
-        double unvoicedFor;
-        int curNote = -1;
-        double noteTime;
-        double slow, slow2, mOut;
-        bool smoothInit;
-        double lfoPhase;
-        double lastEnd;
-        int listenRoot = -1;
-        double lastMidiIn;
+        // ---- settings (Update)
+        double retuneSeconds, humanize, amount, vibKeep, vibDepth, vibRate, vibDelay, fshift, zoneCents, glide, stick;
+        int transpose, scale, rootKey, customMask, source, target, midiOctave, inputSel, method;
+        bool preserve, transients, useSplice;
+        double mix;
 
         // ---- MIDI target
         readonly object midiLock = new object();
@@ -110,24 +85,19 @@ namespace NeoBuzz.Tune
         readonly bool[] held = new bool[128];
         int heldCount;
 
-        // ---- settings (Update)
-        double retuneSeconds, humanize, amount, vibKeep, vibDepth, vibRate, vibDelay, fshift;
-        int transpose, scale, rootKey, customMask, source, target, midiOctave, inputSel;
-        bool preserve, transients;
-        double mix;
-
         // ---- published
-        double pubInHz, pubNote, pubCorrection;
+        double pubInHz, pubNote, pubCorrection, pubCentre, pubZone;
         int pubVoiced, pubMask;
-        readonly float[] dispIn = new float[DisplaySize], dispOut = new float[DisplaySize];
+        readonly float[] dispIn = new float[DisplaySize], dispOut = new float[DisplaySize], dispCentre = new float[DisplaySize];
         long dispCount;
         double dispClock;
-        double dispIn0, dispOut0;
+        double dispIn0, dispOut0, dispCentre0;
         double dispStep;
 
         public TuneEngine(ParamValues values)
         {
             this.values = values;
+            hann = new float[HannSize + 2];
             for (int i = 0; i <= HannSize + 1; i++)
                 hann[i] = i > HannSize ? 0f : (float)(0.5 * (1.0 + PortableMath.Cos(Math.PI * i / HannSize)));
         }
@@ -141,7 +111,12 @@ namespace NeoBuzz.Tune
         public double TargetNote => Volatile.Read(ref pubNote);
         public double CorrectionCents => Volatile.Read(ref pubCorrection);
         public bool Voiced => Volatile.Read(ref pubVoiced) != 0;
-
+        /// <summary>The note centre now as a MIDI number (0 when not voiced): the pitch with the vibrato taken out.</summary>
+        public double CentreMidi => Volatile.Read(ref pubCentre);
+        /// <summary>The correction zone around the target, cents (100 and over: none).</summary>
+        public double ZoneCents => Volatile.Read(ref pubZone);
+        /// <summary>True while the splice engine is the one in use (Method Auto picks it for small corrections without formant or transpose).</summary>
+        public bool UsingSplice => useSplice;
 
         /// <summary>The notes the voice may land on now (a mask of pitch classes, C = bit 0), for the editor's keyboard and roll.</summary>
         public int NoteMask => Volatile.Read(ref pubMask);
@@ -154,13 +129,16 @@ namespace NeoBuzz.Tune
         public const int HistorySize = DisplaySize;
         public double HistoryRate => 60;
 
-        /// <summary>Input pitch (MIDI, 0 when unvoiced) and corrected pitch of the history entry <paramref name="index"/> (absolute, newest = HistoryCount − 1).</summary>
+        /// <summary>Input pitch (MIDI, 0 when unvoiced) and corrected pitch of the history entry <paramref name="index"/> (absolute, newest = HistoryCount - 1).</summary>
         public void History(long index, out float input, out float corrected)
         {
             int i = (int)(index & (DisplaySize - 1));
             input = dispIn[i];
             corrected = dispOut[i];
         }
+
+        /// <summary>The note centre (MIDI, 0 when unvoiced) of a history entry.</summary>
+        public float HistoryCentre(long index) => dispCentre[(int)(index & (DisplaySize - 1))];
 
         public IReadOnlyDictionary<string, double> Readings() => new Dictionary<string, double>
         {
@@ -169,6 +147,8 @@ namespace NeoBuzz.Tune
             ["correction_cents"] = Math.Round(CorrectionCents, 1),
             ["voiced"] = Voiced ? 1 : 0,
             ["latency_samples"] = latency,
+            ["centre_note"] = Math.Round(CentreMidi, 2),
+            ["engine"] = useSplice ? 0 : 1,
         };
 
         /// <summary>A MIDI note for the MIDI target (velocity 0 releases).</summary>
@@ -235,16 +215,17 @@ namespace NeoBuzz.Tune
             for (int i = 0; i < trackers.Length; i++) trackers[i].Reset();
             onsets.Reset();
             inCount = 0;
-            cCount = 0; gPtr = sPtr = mPtr = mScan = 0;
+            cCount = 0; gPtr = sPtr = mPtr = mScan = rPtr = 0;
             mCount = 0; markRun = false; runId = 0; synthActive = false; synthRun = 0;
             gate = 0; holdUntil = long.MinValue; holdFrom = 0;
-            wasVoiced = false; unvoicedFor = 1; curNote = -1; smoothInit = false; lfoPhase = 0; lastEnd = 0;
-            listener.Reset(); listenRoot = -1;
+            ResetControl();
             outPos = -latency;
-            pubInHz = pubNote = pubCorrection = 0; pubVoiced = 0;
-            dispCount = 0; dispClock = 0; dispIn0 = dispOut0 = 0;
+            ResetSplice();
+            pubInHz = pubNote = pubCorrection = pubCentre = 0; pubVoiced = 0;
+            dispCount = 0; dispClock = 0; dispIn0 = dispOut0 = dispCentre0 = 0;
             Array.Clear(dispIn, 0, DisplaySize);
             Array.Clear(dispOut, 0, DisplaySize);
+            Array.Clear(dispCentre, 0, DisplaySize);
             lock (midiLock) { midiRead = midiWrite = 0; }
             Array.Clear(held, 0, 128);
             heldCount = 0;
@@ -252,20 +233,53 @@ namespace NeoBuzz.Tune
 
         // ------------------------------------------------------------------ parameters
 
+        bool naturalDrives;
+        int naturalWrite;
+
+        /// <summary>Whether Natural alone changed since the last call (then the six fine controls follow it); true once per change. For the machine, to show the six new values.</summary>
+        public bool TakeNaturalWrite(out double natural)
+        {
+            natural = values.Value(P.Natural);
+            return Interlocked.Exchange(ref naturalWrite, 0) == 1;
+        }
+
+        /// <summary>True while the six fine controls follow Natural (it changed alone and none of them has been set since).</summary>
+        public bool NaturalDrives => naturalDrives;
+
+        /// <summary>The note stickiness in force (0 to 1).</summary>
+        internal double StickValue => stick;
+
+        /// <summary>The correction zone in force (cents).</summary>
+        internal double ZoneValue => zoneCents;
+
         void Update(bool force)
         {
             if (!force && !values.AnyDirty) return;
             int r = values.Choice(P.Range);
-            retuneSeconds = values.Value(P.Retune) * 0.001;
-            humanize = values.Value(P.Humanize);
+            // Natural as a parameter (docs/specs/neo-tune.md 11.1): in a tick where Natural changed and none of its six fine controls did (automation, a pattern, a
+            // knob card, a MIDI binding), the six follow Natural's map until one of them is set again. If any fine control changed in the same tick (a song load, a
+            // preset, the editor's one-step write) the fine values win, so what was saved is what plays.
+            bool fineDirty = false;
+            foreach (int c in TuneNatural.Controls) if (values.IsDirty(c)) fineDirty = true;
+            if (fineDirty) naturalDrives = false;
+            else if (values.IsDirty(P.Natural)) { naturalDrives = true; Volatile.Write(ref naturalWrite, 1); }
+            double nat = values.Value(P.Natural);
+            double Fine(int i) => naturalDrives ? TuneNatural.Value(i, nat) : values.Value(TuneNatural.Controls[i]);
+            retuneSeconds = Fine(0) * 0.001;
+            humanize = Fine(3);
             amount = values.Value(P.Amount);
             transpose = (int)values.Value(P.Transpose);
             preserve = values.On(P.Preserve);
-            fshift = PortableMath.Exp2(values.Value(P.Formant) / 12.0);
-            vibKeep = values.Value(P.VibKeep);
+            int fst = (int)values.Value(P.Formant);
+            fshift = PortableMath.Exp2(fst / 12.0);
+            vibKeep = Fine(2);
             vibDepth = values.Value(P.VibDepth);
             vibRate = values.Value(P.VibRate);
             vibDelay = values.Value(P.VibDelay) * 0.001;
+            zoneCents = Fine(1);
+            glide = Fine(4);
+            stick = Fine(5);
+            method = values.Choice(P.Method);
             scale = values.Choice(P.Scale);
             rootKey = values.Choice(P.Key);
             customMask = (int)values.Value(P.Notes);
@@ -275,14 +289,17 @@ namespace NeoBuzz.Tune
             inputSel = values.Choice(P.Input);
             transients = values.On(P.Transients);
             mix = values.Value(P.Mix);
+            bool splice = method == 1 || (method == 0 && fst == 0 && Math.Abs(transpose) <= 2 && values.Choice(P.Target) == 0);
+            bool change = false;
             if (r != range || force)
             {
-                bool change = r != range;
+                change = r != range;
                 range = Math.Clamp(r, 0, 2);
                 latency = (int)Math.Round(LatencySeconds[range] * sr);
                 capSamples = CapSeconds[range] * sr;
-                if (change && ring != null) { Reset(); }
             }
+            if (splice != useSplice) { useSplice = splice; change = !force; }
+            if (change && ring != null) Reset();
             values.Clean();
         }
 
@@ -333,14 +350,14 @@ namespace NeoBuzz.Tune
                 holdUntil = Math.Max(holdUntil, at + (long)(0.008 * sr));
             }
 
-            // 3. marks, grains, output
+            // 3. marks, then the engine and the output
             GenerateMarks();
             long tEnd = inCount - latency;
-            PlaceGrains(tEnd);
+            if (!useSplice) PlaceGrains(tEnd);
             Emit(left, right, offset, c, tEnd);
         }
 
-        // ------------------------------------------------------------------ the control stage
+        // ------------------------------------------------------------------ MIDI
 
         void DrainMidi()
         {
@@ -373,127 +390,6 @@ namespace NeoBuzz.Tune
             return TuneScales.Mask(scale, root, customMask);
         }
 
-        int PickNote(double m, int mask)
-        {
-            if (target == 1)
-            {
-                if (heldCount == 0) return -1;
-                if (midiOctave == 0) return TuneScales.Nearest(m, mask);
-                int bestN = -1;
-                double bestD = 1e9;
-                for (int n = 0; n < 128; n++)
-                {
-                    if (!held[n]) continue;
-                    double d = Math.Abs(m - n);
-                    if (d < bestD) { bestD = d; bestN = n; }
-                }
-                return bestN;
-            }
-            int nearest = TuneScales.Nearest(m, mask);
-            if (nearest < 0) return -1;
-            // Stay on the current note until another is clearly closer (15 cents past the halfway point).
-            if (curNote >= 0 && curNote != nearest && curNote < 128 && ((mask >> (curNote % 12)) & 1) != 0
-                && Math.Abs(m - curNote) <= Math.Abs(m - nearest) + 0.15) return curNote;
-            return nearest;
-        }
-
-        void Control(in PitchEstimate e, PitchTracker tracker)
-        {
-            double dt = lastEnd == 0 ? tracker.Hop / sr : (e.EndSample - lastEnd) / sr;
-            lastEnd = e.EndSample;
-            if (dt <= 0 || dt > 0.1) dt = tracker.Hop / sr;
-            double tau = e.Voiced && e.F0 > 0 ? sr / e.F0 : sr / Math.Max(e.RawF0, 100.0);
-            long centre = e.EndSample - (long)((tracker.Window + tau) * 0.5);
-
-            long slot = cCount & ContourMask;
-            cT[slot] = centre;
-            if (!e.Voiced)
-            {
-                unvoicedFor += dt;
-                wasVoiced = false;
-                cF[slot] = 0; cShift[slot] = 0;
-                cCount++;
-                Volatile.Write(ref pubVoiced, 0);
-                Display(dt, 0, 0);
-                return;
-            }
-
-            double m = e.Midi;
-            if (!wasVoiced && unvoicedFor > 0.12)
-            {
-                curNote = -1; smoothInit = false; noteTime = 0; lfoPhase = 0;
-            }
-            unvoicedFor = 0;
-            wasVoiced = true;
-            lastMidiIn = m;
-            listener.Add(m, e.Confidence, dt);
-            if (source == 1) listenRoot = listener.Estimate(scale);
-
-            int mask = EffectiveMask();
-            Volatile.Write(ref pubMask, mask);
-            int note = PickNote(m, mask);
-            if (note != curNote)
-            {
-                curNote = note;
-                noteTime = 0;
-                if (note >= 0) { double dv = Math.Clamp((m - note) * 100, -200, 200); slow = slow2 = dv; }
-            }
-            noteTime += dt;
-
-            double outMidi;
-            if (curNote < 0)
-            {
-                // No note to go to (an empty scale, no key held): the voice as sung, glided to the way the note would.
-                outMidi = m;
-                mOut = m;
-                smoothInit = true;
-            }
-            else
-            {
-                double dev = Math.Clamp((m - curNote) * 100, -200, 200);
-                slow += (dev - slow) * (1 - PortableMath.Exp(-dt / 0.12));
-                slow2 += (slow - slow2) * (1 - PortableMath.Exp(-dt / 0.40));
-                double drift = slow - slow2;
-                double vib = dev - slow;
-                double goal = curNote + humanize * drift / 100.0;
-                if (!smoothInit || retuneSeconds <= 1e-6) { mOut = goal; smoothInit = true; }
-                else mOut += (goal - mOut) * (1 - PortableMath.Exp(-dt / retuneSeconds));
-                outMidi = mOut + vibKeep * Math.Clamp(vib, -150, 150) / 100.0;
-                if (vibDepth > 0)
-                {
-                    lfoPhase += vibRate * dt;
-                    lfoPhase -= Math.Floor(lfoPhase);
-                    double ramp = Math.Clamp((noteTime - vibDelay) / 0.3, 0, 1);
-                    outMidi += ramp * vibDepth / 100.0 * PortableMath.Sin(2 * Math.PI * lfoPhase);
-                }
-            }
-            double shift = amount * (outMidi - m) + transpose;
-            shift = Math.Clamp(shift, -48, 48);
-            cF[slot] = (float)e.F0;
-            cShift[slot] = (float)shift;
-            cCount++;
-
-            Volatile.Write(ref pubInHz, e.F0);
-            Volatile.Write(ref pubNote, curNote < 0 ? 0 : curNote);
-            Volatile.Write(ref pubCorrection, (outMidi - m) * amount * 100);
-            Volatile.Write(ref pubVoiced, 1);
-            Display(dt, m, m + shift);
-        }
-
-        void Display(double dt, double input, double corrected)
-        {
-            dispClock += dt;
-            dispIn0 = input; dispOut0 = corrected;
-            while (dispClock >= dispStep)
-            {
-                dispClock -= dispStep;
-                int i = (int)(dispCount & (DisplaySize - 1));
-                dispIn[i] = (float)dispIn0;
-                dispOut[i] = (float)dispOut0;
-                Volatile.Write(ref dispCount, dispCount + 1);
-            }
-        }
-
         // ------------------------------------------------------------------ the contour
 
         /// <summary>The tracker's f0 and the shift at time t (the entry before it and the next, blended when both are voiced).</summary>
@@ -504,6 +400,7 @@ namespace NeoBuzz.Tune
             long floor = Math.Max(0, cCount - ContourSize + 8);
             if (ptr < floor) ptr = floor;
             while (ptr + 1 < cCount && cT[(ptr + 1) & ContourMask] <= t) ptr++;
+            while (ptr > floor && cT[ptr & ContourMask] > t) ptr--;
             int s0 = (int)(ptr & ContourMask);
             double t0 = cT[s0];
             if (ptr + 1 < cCount)
@@ -525,6 +422,28 @@ namespace NeoBuzz.Tune
             }
             if (cF[s0] > 0) { f = cF[s0]; shift = cShift[s0]; return true; }
             return false;
+        }
+
+        /// <summary>The shift at time t whether or not the voice is voiced there (the unvoiced entries carry the ramp to 0), and whether it is.</summary>
+        bool ShiftAt(double t, ref long ptr, out double shift)
+        {
+            shift = 0;
+            if (cCount == 0) return false;
+            long floor = Math.Max(0, cCount - ContourSize + 8);
+            if (ptr < floor) ptr = floor;
+            while (ptr + 1 < cCount && cT[(ptr + 1) & ContourMask] <= t) ptr++;
+            while (ptr > floor && cT[ptr & ContourMask] > t) ptr--;
+            int s0 = (int)(ptr & ContourMask);
+            if (ptr + 1 < cCount)
+            {
+                int s1 = (int)((ptr + 1) & ContourMask);
+                double t0 = cT[s0], t1 = cT[s1];
+                double u = t1 > t0 ? Math.Clamp((t - t0) / (t1 - t0), 0, 1) : 0;
+                shift = cShift[s0] + u * (cShift[s1] - cShift[s0]);
+                return (u < 0.5 ? cF[s0] : cF[s1]) > 0;
+            }
+            shift = cShift[s0];
+            return cF[s0] > 0;
         }
 
         // ------------------------------------------------------------------ analysis marks
@@ -604,7 +523,7 @@ namespace NeoBuzz.Tune
             double eref = 0;
             for (int j = -hw; j <= hw; j += step)
             {
-                float v = Src(last + j);
+                float v = Interp(last + j);
                 refw[terms++] = v;
                 eref += (double)v * v;
             }
@@ -639,150 +558,40 @@ namespace NeoBuzz.Tune
             return centre + bestI - rg + frac;
         }
 
-        // ------------------------------------------------------------------ grains
-
-        float Src(double pos)
+        /// <summary>The sample at a fractional position, by the 16-tap sinc (zeros outside what the ring holds).</summary>
+        float Interp(double pos)
         {
             long p = (long)Math.Floor(pos);
-            if (p < 1 || p + 2 >= inCount || p < inCount - ring.Length + 8) return 0f;
             double f = pos - p;
-            float y0 = ring[(int)((p - 1) & ringMask)], y1 = ring[(int)(p & ringMask)], y2 = ring[(int)((p + 1) & ringMask)], y3 = ring[(int)((p + 2) & ringMask)];
-            double c0 = y1, c1 = 0.5 * (y2 - y0), c2 = y0 - 2.5 * y1 + 2 * y2 - 0.5 * y3, c3 = 0.5 * (y3 - y0) + 1.5 * (y1 - y2);
-            return (float)(((c3 * f + c2) * f + c1) * f + c0);
-        }
-
-        float Hann(double u)
-        {
-            double x = u * HannSize;
-            int i = (int)x;
-            if (i >= HannSize) return 0f;
-            double f = x - i;
-            return (float)(hann[i] + f * (hann[i + 1] - hann[i]));
-        }
-
-        /// <summary>The newest mark of run <paramref name="run"/> nearest in time to <paramref name="s"/>, or −1.</summary>
-        double NearestMark(double s, int run)
-        {
-            double best = -1;
-            double bd = double.MaxValue;
-            long floor = Math.Max(0, mCount - MarkSize + 4);
-            for (long i = mCount - 1; i >= floor; i--)
+            long lo = Math.Max(0, inCount - ring.Length + 8);
+            double ph = f * TuneSinc.Phases;
+            int i = (int)ph;
+            float u = (float)(ph - i);
+            var tab = TuneSinc.Table;
+            int b0 = i * TuneSinc.Taps, b1 = b0 + TuneSinc.Taps;
+            float s0 = 0f, s1 = 0f;
+            if (p - 7 >= lo && p + 8 < inCount)
             {
-                int ri = mRun[(int)(i & MarkMask)];
-                if (ri > run) continue;
-                if (ri < run) break;
-                double t = mT[(int)(i & MarkMask)];
-                double d = Math.Abs(t - s);
-                if (d < bd) { bd = d; best = t; }
-                else if (t < s) break;
-            }
-            return best;
-        }
-
-        void PlaceGrains(long tEnd)
-        {
-            for (int guard = 0; guard < 4096; guard++)
-            {
-                if (!synthActive)
+                int idx = (int)((p - 7) & ringMask);
+                for (int k = 0; k < TuneSinc.Taps; k++)
                 {
-                    // The first mark of the next run.
-                    long floor = Math.Max(0, mCount - MarkSize + 4);
-                    long found = -1;
-                    for (long i = mCount - 1; i >= floor; i--)
-                    {
-                        int ri = mRun[(int)(i & MarkMask)];
-                        if (ri <= synthRun) break;
-                        found = i;
-                    }
-                    if (found < 0) return;
-                    synthRun = mRun[(int)(found & MarkMask)];
-                    sNext = mT[(int)(found & MarkMask)];
-                    sPtr = 0;
-                    synthActive = true;
-                }
-                if (!ContourAt(sNext, ref sPtr, out double f, out double shiftSemis))
-                {
-                    // Unvoiced where the next grain would go: if the contour is that far, the run is over.
-                    if (sPtr + 1 < cCount || sNext < inCount - latency - 2 * hgMax) { synthActive = false; continue; }
-                    return;
-                }
-                double ratio = PortableMath.Exp2(shiftSemis / 12.0);
-                double fOut = Math.Clamp(f * ratio, 20.0, sr * 0.25);
-                ratio = fOut / f;
-                double pin = sr / f, pout = sr / fOut;
-                double phi = preserve ? fshift : ratio * fshift;
-                phi = Math.Clamp(phi, 0.25, 4.0);
-                double hs = Math.Min(pin, capSamples);
-                double hg = Math.Min(Math.Max(hs / phi, 0.55 * pout), hgMax);
-                if (sNext - hg >= tEnd) return;
-                double a = NearestMark(sNext, synthRun);
-                if (a < 0) return;
-                long kLo = (long)Math.Ceiling(sNext - hg), kHi = (long)Math.Floor(sNext + hg);
-                if (kLo < outPos) kLo = outPos;
-                double invHg = 1.0 / hg;
-                for (long k = kLo; k <= kHi; k++)
-                {
-                    double u = k - sNext;
-                    float w = Hann(Math.Abs(u) * invHg);
-                    if (w <= 0f) continue;
-                    float v = Src(a + phi * u);
-                    int oi = (int)(k & olaMask);
-                    num[oi] += w * v;
-                    den[oi] += w;
-                }
-                sNext += pout;
-            }
-        }
-
-        // ------------------------------------------------------------------ output
-
-        bool VoicedAt(long t)
-        {
-            if (cCount == 0) return false;
-            long floor = Math.Max(0, cCount - ContourSize + 8);
-            if (gPtr < floor) gPtr = floor;
-            while (gPtr + 1 < cCount && cT[(int)((gPtr + 1) & ContourMask)] <= t) gPtr++;
-            int s0 = (int)(gPtr & ContourMask);
-            if (gPtr + 1 < cCount)
-            {
-                int s1 = (int)((gPtr + 1) & ContourMask);
-                return (cT[s1] - t < t - cT[s0] ? cF[s1] : cF[s0]) > 0;
-            }
-            return cF[s0] > 0;
-        }
-
-        void Emit(float[] left, float[] right, int offset, int c, long tEnd)
-        {
-            float wet = (float)mix;
-            for (int i = 0; i < c; i++)
-            {
-                long t = outPos + i;
-                int oi = (int)(t & olaMask);
-                float nu = num[oi], de = den[oi];
-                num[oi] = 0f; den[oi] = 0f;
-                bool voiced = VoicedAt(t) && de > 0.02f;
-                bool dryHold = transients && t >= holdFrom && t < holdUntil;
-                double target = voiced && !dryHold ? 1.0 : 0.0;
-                if (gate < target) gate = Math.Min(target, gate + gateStep);
-                else if (gate > target) gate = Math.Max(target, gate - gateStep);
-                int di = (int)(t & ringMask);
-                float dl = t >= 0 ? dryL[di] : 0f, dr = t >= 0 ? dryR[di] : 0f;
-                float w = 0f;
-                if (gate > 0)
-                {
-                    float shaped = (float)(gate * Math.Min(1.0, de * 6.0));
-                    w = (float)(wet * shaped);
-                    float v = nu / Math.Max(de, 1e-3f);
-                    left[offset + i] = dl + w * (v - dl);
-                    right[offset + i] = dr + w * (v - dr);
-                }
-                else
-                {
-                    left[offset + i] = dl;
-                    right[offset + i] = dr;
+                    float x = ring[(idx + k) & ringMask];
+                    s0 += tab[b0 + k] * x;
+                    s1 += tab[b1 + k] * x;
                 }
             }
-            outPos += c;
+            else
+            {
+                for (int k = 0; k < TuneSinc.Taps; k++)
+                {
+                    long q = p - 7 + k;
+                    if (q < lo || q >= inCount) continue;
+                    float x = ring[(int)(q & ringMask)];
+                    s0 += tab[b0 + k] * x;
+                    s1 += tab[b1 + k] * x;
+                }
+            }
+            return s0 + u * (s1 - s0);
         }
     }
 }

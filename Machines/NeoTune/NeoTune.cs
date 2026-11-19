@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Buzz.MachineInterface;
 using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
@@ -52,10 +53,32 @@ namespace NeoBuzz.Tune
             }
             if (n > TuneEngine.MaxBlock) throw new InvalidOperationException("block larger than 256");
             Engine.Process(left, right, n);
+            if (Engine.TakeNaturalWrite(out double nat)) ShowNatural(nat);
             return Join(left, right, output, n) || hasInput;
         }
 
         public int GetLatency() => Engine.Latency;
+
+        /// <summary>Natural was moved alone (automation, a pattern, a knob card, a binding): the six fine controls follow it in the engine; here the host's
+        /// displayed values are made to match (not recorded into patterns), so the knobs show what plays. Where the host refuses, the knobs keep their last values.</summary>
+        void ShowNatural(double n)
+        {
+            try
+            {
+                var machine = host?.Machine;
+                var list = machine?.ParameterGroups?.FirstOrDefault(g => g.Type == ParameterGroupType.Global)?.Parameters;
+                if (list == null) return;
+                for (int i = 0; i < TuneNatural.Controls.Length; i++)
+                {
+                    int idx = TuneNatural.Controls[i];
+                    if (idx < list.Count) list[idx].SetValue(1 << 16, Params.Table[idx].Raw(TuneNatural.Value(i, n)));
+                }
+                machine.SendControlChanges();
+            }
+            catch (Exception)
+            {
+            }
+        }
 
         /// <summary>MIDI notes for the MIDI target (the held notes are the notes the voice may land on).</summary>
         public void MidiNote(int channel, int value, int velocity) => Engine.MidiNote(value, velocity);
@@ -81,7 +104,7 @@ namespace NeoBuzz.Tune
                     ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
                         "Neo Tune — pitch correction for one voice or a melodic line. It follows the pitch, moves it to the nearest note of a " +
                         "key and scale (or to the notes a keyboard holds) at the retune speed you set, and re-synthesises the sound with " +
-                        "pitch-synchronous overlap-add so the voice keeps its colour. Formant preserve and shift, Transpose, Keep and Add " +
+                        "period splicing or pitch-synchronous overlap-add so the voice keeps its colour. The Natural knob (0 % hard effect, 100 % transparent) sets the six fine controls. Formant preserve and shift, Transpose, Keep and Add " +
                         "vibrato, Humanize, Amount and Mix. Latency 10 / 28 / 36 ms by Range, reported to the app.\n\n" +
                         "Part of neo-buzz (docs/specs/neo-tune.md).", "Neo Tune"),
                 },

@@ -240,23 +240,23 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
-        public void ARetuneSpeedGlidesToTheNextNoteLikeAOnePole()
+        public void ARetuneSpeedCorrectsAStepInTheCentreLikeAOnePole()
         {
-            // A3 then, at 1.0 s, B3 (200 cents up) in 20 ms.
-            var x = Voice(Hz(57), 3.0, o => { o.GlideTo = Hz(59); o.GlideStart = 1.0; o.GlideSeconds = 0.02; });
-            foreach (var (ms, lo, hi) in new[] { (0.0, 0.93, 1.07), (100.0, 0.45, 0.80), (300.0, 0.12, 0.45) })
+            // A3 at 15 cents flat, then at 1.0 s the voice moves 35 cents (in 20 ms) to 20 cents sharp: a change of the centre inside the note.
+            // Natural-style settings (the expression kept, no zone): the retune speed is how fast the new error is taken out.
+            double Remaining(double ms)
             {
-                var (e, _) = Make(v => { Hard()(v); Set(v, P.Retune, ms); });
+                var x = Voice(Hz(57) * Math.Pow(2, -15 / 1200.0), 3.0, o => { o.GlideTo = Hz(57) * Math.Pow(2, 20 / 1200.0); o.GlideStart = 1.0; o.GlideSeconds = 0.02; });
+                var (e, _) = Make(v => { Set(v, P.Retune, ms); Set(v, P.Humanize, 0); Set(v, P.VibKeep, 1); Set(v, P.Glide, 0); Set(v, P.Zone, 100); v.Set(P.Scale, 0); });
                 var y = Aligned(Render(e, x), e.Latency);
-                var p = Pitch(y);
-                double at = 1.0 + 0.02 + 0.1;
-                var near = p.Where(q => Math.Abs(q.T - at) < 0.02).Select(q => Cents(q.Hz, Hz(57)) / 200).ToList();
-                double frac = Median(near);
-                Say($"retune {ms} ms: {F(frac * 100)} % of the step 0.12 s after it");
-                if (ms == 0) { Assert.That(frac, Is.InRange(lo, hi)); continue; }
-                // A one-pole with the time constant reaches 1 - exp(-t / tau) of the step t after it started.
-                Assert.That(frac, Is.InRange(lo, hi), $"{ms} ms: expected near {F(100 * (1 - Math.Exp(-(0.12 - 0.012) / (ms * 0.001))))} %");
+                var near = Pitch(y).Where(q => Math.Abs(q.T - 1.40) < 0.04).Select(q => Cents(q.Hz, Hz(57))).ToList();
+                return Median(near);
             }
+            double r0 = Remaining(0), r100 = Remaining(100), r300 = Remaining(300);
+            Say($"error left 0.4 s after a 35-cent step: retune 0 ms {F(r0)}, 100 ms {F(r100)}, 300 ms {F(r300)} cents (sung 20)");
+            Assert.That(Math.Abs(r0), Is.LessThan(7));
+            Assert.That(Math.Abs(r100), Is.GreaterThan(Math.Abs(r0) + 1).And.LessThan(15));
+            Assert.That(Math.Abs(r300), Is.GreaterThan(Math.Abs(r100) + 3));
         }
 
         [Test]
@@ -278,22 +278,21 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
-        public void HumanizeKeepsTheSlowDriftOfAHeldNote()
+        public void HumanizeRetunesASustainedNoteMoreSlowlyAndSoKeepsMoreOfItsDrift()
         {
-            // 25 cents of slow drift (0.8 Hz) around A3.
+            // 25 cents of slow drift (0.8 Hz) around A3, a retune speed of 40 ms: Humanize lengthens it up to four times on a held note.
             var x = Voice(Hz(57), 5.0, o => { o.VibratoCents = 25; o.VibratoHz = 0.8; o.VibratoDelay = 0; });
             double Depth(float[] y) { var e = Errors(y, 57, 1.5, 4.8); return (Pct(e, 0.95) - Pct(e, 0.05)) / 2; }
             double din = Depth(x);
             var res = new List<double>();
             foreach (double h in new[] { 0.0, 0.5, 1.0 })
             {
-                var (e, _) = Make(v => { Hard()(v); Set(v, P.Humanize, h); });
+                var (e, _) = Make(v => { Set(v, P.Retune, 40); Set(v, P.Humanize, h); Set(v, P.VibKeep, 1); Set(v, P.Glide, 0); Set(v, P.Zone, 100); v.Set(P.Scale, 0); });
                 res.Add(Depth(Aligned(Render(e, x), e.Latency)));
             }
-            Say($"drift depth: input {F(din)}; humanize 0 {F(res[0])}, 50 % {F(res[1])}, 100 % {F(res[2])}");
-            Assert.That(res[0], Is.LessThan(5));
-            Assert.That(res[2], Is.GreaterThan(res[1] + 2).And.GreaterThan(0.4 * din));
-            Assert.That(res[1], Is.GreaterThan(res[0] + 2));
+            Say($"drift depth: input {F(din)}; humanize 0 {F(res[0])}, 50 % {F(res[1])}, 100 % {F(res[2])} cents");
+            Assert.That(res[1], Is.GreaterThan(res[0] + 1.5));
+            Assert.That(res[2], Is.GreaterThan(res[1] + 1.5).And.GreaterThan(0.5 * din));
         }
 
         [Test]
@@ -483,7 +482,8 @@ namespace NeoBuzz.MachineTests
             var x = new float[Rate / 2];
             x[10000] = 0.8f;
             var y = Render(e, x);
-            int at = Array.FindIndex(y, v => Math.Abs(v) > 0.01f);
+            int at = 0;
+            for (int i = 1; i < y.Length; i++) if (Math.Abs(y[i]) > Math.Abs(y[at])) at = i;
             Say($"range {range}: {e.Latency} samples = {F(1000.0 * e.Latency / Rate)} ms; a click came out {at - 10000} samples late");
             Assert.That(at - 10000, Is.EqualTo(e.Latency));
         }
@@ -503,11 +503,11 @@ namespace NeoBuzz.MachineTests
                 for (int i = click - 24; i < click + 288; i++) { double d = y[i] - x[i]; err += d * d; sig += (double)x[i] * x[i]; }
                 return 10 * Math.Log10(sig / Math.Max(err, 1e-12));
             }
-            var (on, _) = Make(v => { Hard()(v); v.Set(P.Transients, 1); });
+            var (on, _) = Make(v => { Hard()(v); v.Set(P.Method, 2); v.Set(P.Transients, 1); });
             var yOn = Aligned(Render(on, x), on.Latency);
-            var (off, _) = Make(v => { Hard()(v); v.Set(P.Transients, 0); });
+            var (off, _) = Make(v => { Hard()(v); v.Set(P.Method, 2); v.Set(P.Transients, 0); });
             var yOff = Aligned(Render(off, x), off.Latency);
-            var (low, _) = Make(v => { Hard(0, 0)(v); v.Set(P.Transients, 1); });
+            var (low, _) = Make(v => { Hard(0, 0)(v); v.Set(P.Method, 2); v.Set(P.Transients, 1); });
             var yLow = Aligned(Render(low, x), low.Latency);
             Say($"the burst followed to {F(Follow(yOn))} dB with Transients on (Low latency {F(Follow(yLow))}), {F(Follow(yOff))} dB off");
             Assert.That(Follow(yOn), Is.GreaterThan(Follow(yOff) + 6).And.GreaterThan(15), "Quality: the lookahead lets the dry gate open before the attack");
@@ -693,6 +693,8 @@ namespace NeoBuzz.MachineTests
                 if (b % 120 == 77) e.MidiNote(60 + (b - 70) % 12, 0);
                 if (b % 400 == 399) v.Set(P.Range, (b / 400) % 3);
                 if (b % 90 == 0) v.Set(P.Target, (b / 90) % 2);
+                if (b % 130 == 0) v.Set(P.Method, (b / 130) % 3);
+                if (b % 77 == 0) TuneNatural.Apply(v, (b / 77 % 5) / 4.0);
                 Array.Copy(x, pos, bl, 0, 256);
                 Array.Copy(x, pos, br, 0, 256);
                 e.Process(bl, br, 256);

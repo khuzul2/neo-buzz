@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PresetDictionary>
-  <Item Key="Lead — Hard Tune">
+  <Item Key="Lead — Hard effect">
     <Preset Machine="Neo Tune">
       <Parameters>
         <Parameter Name="Key from" Group="1" Index="0" Track="0" Value="0" />
@@ -23,9 +23,47 @@
         <Parameter Name="Input" Group="1" Index="17" Track="0" Value="0" />
         <Parameter Name="Transients" Group="1" Index="18" Track="0" Value="1" />
         <Parameter Name="Mix" Group="1" Index="19" Track="0" Value="1000" />
+        <Parameter Name="Natural" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Correction zone" Group="1" Index="21" Track="0" Value="1000" />
+        <Parameter Name="Transition" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="Note stickiness" Group="1" Index="23" Track="0" Value="150" />
+        <Parameter Name="Method" Group="1" Index="24" Track="0" Value="0" />
       </Parameters>
       <Attributes />
-      <Comment>Instant retune to the scale: the stepped, robotic pitch-corrected sound; the singer's vibrato is flattened</Comment>
+      <Comment>Natural 0 %: instant retune to the scale, no correction zone, the note flat and stepped; the singer's vibrato is erased</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Lead — Pop polish">
+    <Preset Machine="Neo Tune">
+      <Parameters>
+        <Parameter Name="Key from" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Key" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Scale" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Custom notes" Group="1" Index="3" Track="0" Value="2741" />
+        <Parameter Name="Retune speed" Group="1" Index="4" Track="0" Value="182" />
+        <Parameter Name="Humanize" Group="1" Index="5" Track="0" Value="400" />
+        <Parameter Name="Amount" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Transpose" Group="1" Index="7" Track="0" Value="24" />
+        <Parameter Name="Formant preserve" Group="1" Index="8" Track="0" Value="1" />
+        <Parameter Name="Formant shift" Group="1" Index="9" Track="0" Value="12" />
+        <Parameter Name="Keep vibrato" Group="1" Index="10" Track="0" Value="670" />
+        <Parameter Name="Add vibrato" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Vibrato rate" Group="1" Index="12" Track="0" Value="588" />
+        <Parameter Name="Vibrato delay" Group="1" Index="13" Track="0" Value="300" />
+        <Parameter Name="Target" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="MIDI octave" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Range" Group="1" Index="16" Track="0" Value="1" />
+        <Parameter Name="Input" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Transients" Group="1" Index="18" Track="0" Value="1" />
+        <Parameter Name="Mix" Group="1" Index="19" Track="0" Value="1000" />
+        <Parameter Name="Natural" Group="1" Index="20" Track="0" Value="400" />
+        <Parameter Name="Correction zone" Group="1" Index="21" Track="0" Value="840" />
+        <Parameter Name="Transition" Group="1" Index="22" Track="0" Value="400" />
+        <Parameter Name="Note stickiness" Group="1" Index="23" Track="0" Value="490" />
+        <Parameter Name="Method" Group="1" Index="24" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Natural 40 %: a quick, clearly corrected note that still lets some of the singer's movement through</Comment>
     </Preset>
   </Item>
   <Item Key="Lead — Natural">
@@ -35,8 +73,8 @@
         <Parameter Name="Key" Group="1" Index="1" Track="0" Value="0" />
         <Parameter Name="Scale" Group="1" Index="2" Track="0" Value="1" />
         <Parameter Name="Custom notes" Group="1" Index="3" Track="0" Value="2741" />
-        <Parameter Name="Retune speed" Group="1" Index="4" Track="0" Value="387" />
-        <Parameter Name="Humanize" Group="1" Index="5" Track="0" Value="400" />
+        <Parameter Name="Retune speed" Group="1" Index="4" Track="0" Value="364" />
+        <Parameter Name="Humanize" Group="1" Index="5" Track="0" Value="750" />
         <Parameter Name="Amount" Group="1" Index="6" Track="0" Value="1000" />
         <Parameter Name="Transpose" Group="1" Index="7" Track="0" Value="24" />
         <Parameter Name="Formant preserve" Group="1" Index="8" Track="0" Value="1" />
@@ -51,21 +89,26 @@
         <Parameter Name="Input" Group="1" Index="17" Track="0" Value="0" />
         <Parameter Name="Transients" Group="1" Index="18" Track="0" Value="1" />
         <Parameter Name="Mix" Group="1" Index="19" Track="0" Value="1000" />
+        <Parameter Name="Natural" Group="1" Index="20" Track="0" Value="750" />
+        <Parameter Name="Correction zone" Group="1" Index="21" Track="0" Value="700" />
+        <Parameter Name="Transition" Group="1" Index="22" Track="0" Value="750" />
+        <Parameter Name="Note stickiness" Group="1" Index="23" Track="0" Value="790" />
+        <Parameter Name="Method" Group="1" Index="24" Track="0" Value="0" />
       </Parameters>
       <Attributes />
-      <Comment>A quick, light correction that keeps the singer's vibrato and the drift of held notes</Comment>
+      <Comment>Natural 75 %: corrects only the centre of each note, slowly and only once it has settled; the vibrato, drift and glides are the singer's own</Comment>
     </Preset>
   </Item>
-  <Item Key="Lead — Subtle">
+  <Item Key="Lead — Transparent">
     <Preset Machine="Neo Tune">
       <Parameters>
         <Parameter Name="Key from" Group="1" Index="0" Track="0" Value="0" />
         <Parameter Name="Key" Group="1" Index="1" Track="0" Value="0" />
         <Parameter Name="Scale" Group="1" Index="2" Track="0" Value="1" />
         <Parameter Name="Custom notes" Group="1" Index="3" Track="0" Value="2741" />
-        <Parameter Name="Retune speed" Group="1" Index="4" Track="0" Value="548" />
-        <Parameter Name="Humanize" Group="1" Index="5" Track="0" Value="600" />
-        <Parameter Name="Amount" Group="1" Index="6" Track="0" Value="550" />
+        <Parameter Name="Retune speed" Group="1" Index="4" Track="0" Value="500" />
+        <Parameter Name="Humanize" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Amount" Group="1" Index="6" Track="0" Value="1000" />
         <Parameter Name="Transpose" Group="1" Index="7" Track="0" Value="24" />
         <Parameter Name="Formant preserve" Group="1" Index="8" Track="0" Value="1" />
         <Parameter Name="Formant shift" Group="1" Index="9" Track="0" Value="12" />
@@ -79,9 +122,14 @@
         <Parameter Name="Input" Group="1" Index="17" Track="0" Value="0" />
         <Parameter Name="Transients" Group="1" Index="18" Track="0" Value="1" />
         <Parameter Name="Mix" Group="1" Index="19" Track="0" Value="1000" />
+        <Parameter Name="Natural" Group="1" Index="20" Track="0" Value="1000" />
+        <Parameter Name="Correction zone" Group="1" Index="21" Track="0" Value="600" />
+        <Parameter Name="Transition" Group="1" Index="22" Track="0" Value="1000" />
+        <Parameter Name="Note stickiness" Group="1" Index="23" Track="0" Value="1000" />
+        <Parameter Name="Method" Group="1" Index="24" Track="0" Value="0" />
       </Parameters>
       <Attributes />
-      <Comment>Moves the voice only part of the way and slowly: fixes a flat or sharp note without any audible effect</Comment>
+      <Comment>Natural 100 %: the gentlest correction: an in-tune voice comes out unchanged and only a clearly off note is moved</Comment>
     </Preset>
   </Item>
   <Item Key="Live — Low Latency Natural">
@@ -91,8 +139,8 @@
         <Parameter Name="Key" Group="1" Index="1" Track="0" Value="0" />
         <Parameter Name="Scale" Group="1" Index="2" Track="0" Value="1" />
         <Parameter Name="Custom notes" Group="1" Index="3" Track="0" Value="2741" />
-        <Parameter Name="Retune speed" Group="1" Index="4" Track="0" Value="354" />
-        <Parameter Name="Humanize" Group="1" Index="5" Track="0" Value="400" />
+        <Parameter Name="Retune speed" Group="1" Index="4" Track="0" Value="364" />
+        <Parameter Name="Humanize" Group="1" Index="5" Track="0" Value="750" />
         <Parameter Name="Amount" Group="1" Index="6" Track="0" Value="1000" />
         <Parameter Name="Transpose" Group="1" Index="7" Track="0" Value="24" />
         <Parameter Name="Formant preserve" Group="1" Index="8" Track="0" Value="1" />
@@ -107,9 +155,14 @@
         <Parameter Name="Input" Group="1" Index="17" Track="0" Value="0" />
         <Parameter Name="Transients" Group="1" Index="18" Track="0" Value="1" />
         <Parameter Name="Mix" Group="1" Index="19" Track="0" Value="1000" />
+        <Parameter Name="Natural" Group="1" Index="20" Track="0" Value="750" />
+        <Parameter Name="Correction zone" Group="1" Index="21" Track="0" Value="700" />
+        <Parameter Name="Transition" Group="1" Index="22" Track="0" Value="750" />
+        <Parameter Name="Note stickiness" Group="1" Index="23" Track="0" Value="790" />
+        <Parameter Name="Method" Group="1" Index="24" Track="0" Value="0" />
       </Parameters>
       <Attributes />
-      <Comment>Natural correction with the short, 10 ms tracker for playing through the machine live</Comment>
+      <Comment>Natural 75 % with the short, 10 ms tracker for playing through the machine live</Comment>
     </Preset>
   </Item>
   <Item Key="Special — MIDI-led">
@@ -135,6 +188,11 @@
         <Parameter Name="Input" Group="1" Index="17" Track="0" Value="0" />
         <Parameter Name="Transients" Group="1" Index="18" Track="0" Value="1" />
         <Parameter Name="Mix" Group="1" Index="19" Track="0" Value="1000" />
+        <Parameter Name="Natural" Group="1" Index="20" Track="0" Value="200" />
+        <Parameter Name="Correction zone" Group="1" Index="21" Track="0" Value="1000" />
+        <Parameter Name="Transition" Group="1" Index="22" Track="0" Value="200" />
+        <Parameter Name="Note stickiness" Group="1" Index="23" Track="0" Value="300" />
+        <Parameter Name="Method" Group="1" Index="24" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>The voice sings the notes held on the machine's MIDI input (the nearest held note, in the voice's own octave); the key and scale are ignored</Comment>
@@ -163,6 +221,11 @@
         <Parameter Name="Input" Group="1" Index="17" Track="0" Value="0" />
         <Parameter Name="Transients" Group="1" Index="18" Track="0" Value="1" />
         <Parameter Name="Mix" Group="1" Index="19" Track="0" Value="1000" />
+        <Parameter Name="Natural" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Correction zone" Group="1" Index="21" Track="0" Value="1000" />
+        <Parameter Name="Transition" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="Note stickiness" Group="1" Index="23" Track="0" Value="150" />
+        <Parameter Name="Method" Group="1" Index="24" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>Hard tune a fifth down with the vowel colour moved up: a small mechanical voice</Comment>
@@ -191,6 +254,11 @@
         <Parameter Name="Input" Group="1" Index="17" Track="0" Value="0" />
         <Parameter Name="Transients" Group="1" Index="18" Track="0" Value="1" />
         <Parameter Name="Mix" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Natural" Group="1" Index="20" Track="0" Value="600" />
+        <Parameter Name="Correction zone" Group="1" Index="21" Track="0" Value="760" />
+        <Parameter Name="Transition" Group="1" Index="22" Track="0" Value="600" />
+        <Parameter Name="Note stickiness" Group="1" Index="23" Track="0" Value="600" />
+        <Parameter Name="Method" Group="1" Index="24" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>Half dry, half hard-tuned with a slow vibrato added: a doubled, steadier voice</Comment>
