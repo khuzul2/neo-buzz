@@ -1,7 +1,8 @@
 ## How it sounds
 
-A pitch corrector for one voice or one melodic line. It follows the pitch of the input, moves it to the nearest note of a key and scale (or to the notes held on its MIDI input), and re-synthesises the sound with pitch-synchronous overlap-add, so the singer's timbre stays the singer's. `Retune speed` 0 ms is the hard, stepped, robotic sound; 20 to 80 ms is natural correction; 400 ms lets the voice slide between notes. Breaths, s and t sounds, and silence pass through unchanged, and the sharp start of a consonant is kept as sung.
+A pitch corrector for one voice or one melodic line. It follows the pitch of the input, moves it to the nearest note of a key and scale (or to the notes held on its MIDI input), and re-synthesises the sound with a period-synchronous resample-and-splice engine (small corrections, no formant change) or pitch-synchronous overlap-add (Formant, a large Transpose or MIDI-led), so the singer's timbre stays the singer's. The `Natural` control is the main knob: 0 % is the hard tune effect (instant retune, vibrato erased, stepped notes), 100 % a transparent correction that moves only the centre of each settled note and passes vibrato, drift, scoops and glides through untouched. Breaths, s and t sounds, and silence pass through unchanged, and the sharp start of a consonant is kept as sung.
 
+- `Natural` is a one-knob summary of six fine controls: `Retune speed`, `Correction zone`, `Keep vibrato`, `Humanize`, `Transition` (snap to glide) and `Note stickiness`. The machine does not read `Natural` itself: to use it, set `Natural` and also write the six fine controls in the same `param_set` call (values by Natural n from 0 to 1: Retune speed 100*n^2.2 ms, Correction zone 100-40n cents, Keep vibrato min(100, n/0.6*100) %, Humanize n*100 %, Transition n*100 %, Note stickiness 15+85n %), or load a preset; the editor's knob does this in one undo step. `Method` Auto picks splice for Formant 0, Transpose within 2 semitones and the scale target, otherwise overlap-add; the engines can be forced.
 - `Key from` Set uses `Key` and `Scale`; Listen works the key out from the notes sung so far (the app has no song-wide key yet). `Scale` Custom uses the 12 notes of `Custom notes`, which the editor's keyboard sets by clicking notes (a click on any scale turns it into Custom).
 - `Humanize` keeps the slow drift of a held note; `Keep vibrato` passes the singer's own vibrato through (0 % flattens it under a hard retune); `Add vibrato`, `Vibrato rate` and `Vibrato delay` put a steady vibrato on a note that is held flat. `Amount` moves the voice only part of the way to the note (in cents).
 - `Transpose` moves the corrected voice by up to 24 semitones. `Formant preserve` On keeps the vowel colour where it was when the pitch moves; `Formant shift` moves it up (a smaller voice) or down (a larger one) by up to 12 semitones. The extremes turn robotic.
@@ -18,8 +19,9 @@ A pitch corrector for one voice or one melodic line. It follows the pitch of the
 | Parameter | Value | Why |
 |---|---|---|
 | Scale | Major | the notes the voice may land on; fewer notes pull harder |
-| Retune speed | 60 ms | quick but natural; 0 ms is the hard effect |
-| Humanize | 40 % | keeps the drift of long notes |
+| Natural | 75 % | 0 % hard effect, 100 % transparent; set the six fine controls with it |
+| Retune speed | 53 ms | quick but natural; 0 ms is the hard effect |
+| Humanize | 75 % | keeps the drift of long notes |
 | Keep vibrato | 100 % | leave the singer's vibrato; 0 % flattens it |
 | Amount | 100 % | lower it to hide the correction |
 | Formant preserve | On | the vowel stays put when the pitch moves |
@@ -27,7 +29,7 @@ A pitch corrector for one voice or one melodic line. It follows the pitch of the
 
 ## Starting points
 
-- "Lead — Natural" (60 ms, vibrato kept), "Lead — Subtle" (55 % amount, slow), "Lead — Hard Tune" (0 ms, vibrato flattened), "Live — Low Latency Natural" (the 10 ms tracker).
+- "Lead — Hard effect" (Natural 0), "Lead — Pop polish" (40), "Lead — Natural" (75), "Lead — Transparent" (100), "Live — Low Latency Natural" (75 with the 10 ms tracker).
 - "Special — MIDI-led" (the voice sings the held notes), "Special — Robot" (a fifth down, vowel up, hard), "Special — Thick" (half dry, a slow vibrato added).
 
 ## Pitfalls

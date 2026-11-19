@@ -1,44 +1,76 @@
 # Neo Tune factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoTune
 machine "Neo Tune"
 
-preset "Lead — Hard Tune"
-comment "Instant retune to the scale: the stepped, robotic pitch-corrected sound; the singer's vibrato is flattened"
-Retune = 0
-Humanize = 0
-Amount = 100
+preset "Lead — Hard effect"
+comment "Natural 0 %: instant retune to the scale, no correction zone, the note flat and stepped; the singer's vibrato is erased"
+Natural = 0
+Retune = 0.0
+Zone = 100
 VibKeep = 0
+Humanize = 0
+Glide = 0
+Stick = 15
+Amount = 100
+Range = Quality
+
+preset "Lead — Pop polish"
+comment "Natural 40 %: a quick, clearly corrected note that still lets some of the singer's movement through"
+Natural = 40
+Retune = 13.3
+Zone = 84
+VibKeep = 67
+Humanize = 40
+Glide = 40
+Stick = 49
+Amount = 100
 Range = Quality
 
 preset "Lead — Natural"
-comment "A quick, light correction that keeps the singer's vibrato and the drift of held notes"
-Retune = 60
-Humanize = 40
-Amount = 100
+comment "Natural 75 %: corrects only the centre of each note, slowly and only once it has settled; the vibrato, drift and glides are the singer's own"
+Natural = 75
+Retune = 53.1
+Zone = 70
 VibKeep = 100
+Humanize = 75
+Glide = 75
+Stick = 79
+Amount = 100
 Range = Quality
 
-preset "Lead — Subtle"
-comment "Moves the voice only part of the way and slowly: fixes a flat or sharp note without any audible effect"
-Retune = 120
-Humanize = 60
-Amount = 55
+preset "Lead — Transparent"
+comment "Natural 100 %: the gentlest correction: an in-tune voice comes out unchanged and only a clearly off note is moved"
+Natural = 100
+Retune = 100.0
+Zone = 60
 VibKeep = 100
+Humanize = 100
+Glide = 100
+Stick = 100
+Amount = 100
 Range = Quality
 
 preset "Live — Low Latency Natural"
-comment "Natural correction with the short, 10 ms tracker for playing through the machine live"
-Retune = 50
-Humanize = 40
-Amount = 100
+comment "Natural 75 % with the short, 10 ms tracker for playing through the machine live"
+Natural = 75
+Retune = 53.1
+Zone = 70
 VibKeep = 100
+Humanize = 75
+Glide = 75
+Stick = 79
+Amount = 100
 Range = Low latency
 
 preset "Special — MIDI-led"
 comment "The voice sings the notes held on the machine's MIDI input (the nearest held note, in the voice's own octave); the key and scale are ignored"
 Target = MIDI
 MidiOctave = Nearest
+Natural = 20
 Retune = 15
+Zone = 100
 Humanize = 0
+Glide = 20
+Stick = 30
 Amount = 100
 VibKeep = 50
 Range = Quality
@@ -46,8 +78,12 @@ Range = Quality
 preset "Special — Robot"
 comment "Hard tune a fifth down with the vowel colour moved up: a small mechanical voice"
 Scale = Minor pentatonic
+Natural = 0
 Retune = 0
+Zone = 100
 Humanize = 0
+Glide = 0
+Stick = 15
 Amount = 100
 Transpose = -7
 Preserve = Off

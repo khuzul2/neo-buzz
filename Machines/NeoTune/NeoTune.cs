@@ -81,7 +81,7 @@ namespace NeoBuzz.Tune
                     ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
                         "Neo Tune — pitch correction for one voice or a melodic line. It follows the pitch, moves it to the nearest note of a " +
                         "key and scale (or to the notes a keyboard holds) at the retune speed you set, and re-synthesises the sound with " +
-                        "pitch-synchronous overlap-add so the voice keeps its colour. Formant preserve and shift, Transpose, Keep and Add " +
+                        "period splicing or pitch-synchronous overlap-add so the voice keeps its colour. The Natural knob (0 % hard effect, 100 % transparent) sets the six fine controls. Formant preserve and shift, Transpose, Keep and Add " +
                         "vibrato, Humanize, Amount and Mix. Latency 10 / 28 / 36 ms by Range, reported to the app.\n\n" +
                         "Part of neo-buzz (docs/specs/neo-tune.md).", "Neo Tune"),
                 },

@@ -46,26 +46,42 @@ namespace NeoBuzz.Tune
             var keys = new InteractiveGraph(GraphW, KeysH, (g, r) => DrawKeys(g, r, ctx, machine), new KeysInput(ctx, machine), animate: true);
             var display = Layout.Column(roll, Layout.Gap(1, 4), keys);
 
+            // Natural: the main knob. Moving it by hand rewrites the six fine controls in the same undo step (a preset or automation moves only Natural).
+            var natural = new ParamKnob(ctx, P.Natural, diameter: 84);
+            natural.UserChanged += _ =>
+            {
+                double n = Params.Table[P.Natural].Value(natural.Binding.Value);
+                for (int i = 0; i < TuneNatural.Controls.Length; i++)
+                {
+                    int idx = TuneNatural.Controls[i];
+                    ctx.Set(idx, Params.Table[idx].Raw(TuneNatural.Value(i, n)));
+                }
+                ctx.RaiseChanged();
+            };
+
             var correction = Layout.Column(
-                Layout.Row(new ParamKnob(ctx, P.Retune, diameter: 50), new ParamKnob(ctx, P.Humanize, diameter: 50)),
-                Layout.Row(new ParamKnob(ctx, P.Amount, diameter: 50), new ParamKnob(ctx, P.Transpose, diameter: 50)));
+                Layout.Row(new ParamKnob(ctx, P.Retune, diameter: 46), new ParamKnob(ctx, P.Zone, diameter: 46), new ParamKnob(ctx, P.Humanize, diameter: 46)),
+                Layout.Row(new ParamKnob(ctx, P.VibKeep, diameter: 46), new ParamKnob(ctx, P.Glide, diameter: 46), new ParamKnob(ctx, P.Stick, diameter: 46)));
 
             var voice = Layout.Column(
                 Layout.Row(new ParamChoice(ctx, P.Preserve, "Formant preserve", 0), Layout.Gap(6), new ParamKnob(ctx, P.Formant, diameter: 46)),
-                Layout.Row(new ParamKnob(ctx, P.VibKeep, diameter: 46), new ParamKnob(ctx, P.VibDepth, diameter: 46)),
-                Layout.Row(new ParamKnob(ctx, P.VibRate, diameter: 46), new ParamKnob(ctx, P.VibDelay, diameter: 46)));
+                Layout.Row(new ParamKnob(ctx, P.Amount, diameter: 46), new ParamKnob(ctx, P.Transpose, diameter: 46)),
+                Layout.Row(new ParamKnob(ctx, P.VibDepth, diameter: 46), new ParamKnob(ctx, P.VibRate, diameter: 46), new ParamKnob(ctx, P.VibDelay, diameter: 46)));
 
             var engine = Layout.Column(
                 new ParamChoice(ctx, P.Range, "Range", 64, vertical: true),
+                Layout.Gap(1, 4),
+                new ParamChoice(ctx, P.Method, "Method", 44),
                 Layout.Gap(1, 4),
                 new ParamChoice(ctx, P.Input, "Input", 44),
                 Layout.Gap(1, 4),
                 Layout.Row(new ParamChoice(ctx, P.Transients, "Transients", 0), Layout.Gap(4), new ParamKnob(ctx, P.Mix, diameter: 46)));
 
             return Layout.Row(
+                new Section("Natural", AccentColor, natural),
                 new Section("Key", AccentColor, key),
                 new Section("Pitch", AccentColor, display),
-                new Section("Correction", AccentColor, correction),
+                new Section("Fine controls", AccentColor, correction),
                 new Section("Voice", AccentColor, voice),
                 new Section("Engine", AccentColor, engine));
         }
@@ -115,9 +131,16 @@ namespace NeoBuzz.Tune
                 }
             }
 
+            // The correction zone: the band around the note the voice is on, inside which the correction works (none at Natural 0).
+            if (e != null && e.Voiced && e.ZoneCents < 99.5)
+            {
+                double tn = Math.Round(e.TargetNote), half = e.ZoneCents / 100.0;
+                g.Rect(new NeoRect(plot.Left, Y(tn + half), plot.Width, Math.Max(1, Y(tn - half) - Y(tn + half))), AccentColor.WithAlpha(0x22), new NeoStroke(AccentColor.WithAlpha(0x60), 1, false));
+            }
             if (count > 0)
             {
                 DrawLine(g, plot, e, first, count, shown, Y, 0, InputColor, 1.5);
+                DrawLine(g, plot, e, first, count, shown, Y, 2, Palette.Text.WithAlpha(0xB0), 1);   // the note centre the correction works on
                 DrawLine(g, plot, e, first, count, shown, Y, 1, AccentColor, 2);
             }
             else g.Text("play a voice through it", plot.Left + 8, plot.Top + 6, 10, Palette.DimText);
@@ -138,7 +161,7 @@ namespace NeoBuzz.Tune
             for (long i = first; i < count; i++)
             {
                 e.History(i, out float inp, out float cor);
-                double m = which == 0 ? inp : cor;
+                double m = which == 0 ? inp : which == 1 ? cor : e.HistoryCentre(i);
                 if (m <= 0) { pen = false; continue; }
                 double x = x0 + (i - first) * dx;
                 if (!pen) path.MoveTo(x, y(m)); else path.LineTo(x, y(m));

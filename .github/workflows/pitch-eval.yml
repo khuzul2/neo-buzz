@@ -10,14 +10,11 @@ name: Pitch evaluation
 #    on 10 hits per class per participant.
 #  - VocalSet 1.1 (zenodo.org/records/1442513, CC BY 4.0, 2 GB zip read in place): a subset of techniques and vowels; voicing, octave
 #    jumps, held-note stability, Low latency against Quality, and the vowel estimator on the labelled vowels.
-#  - Neo Tune (docs/specs/neo-tune.md §9) on the same VocalSet subset: the pitch of the corrected output against the nearest scale note
-#    before and after, voicing kept, an artefact proxy (spectral flux and high-band clicks), and six before/after excerpts (at most 8 s
-#    each, with the CC BY 4.0 attribution in their README) uploaded as the artifact neo-tune-excerpts for listening. No audio is committed.
-# The tool is tools/PitchEval (it links Machines/NeoBuzz.Dsp and nothing else).
-#
-# The convert job (docs/specs/pitch.md section 9.6) scores Convert to MIDI, the converters as the app runs them (tools/ConvertEval):
-#  - MDB-stem-synth again: note F-measure of the melody converter (onset +-50 ms, pitch +-50 cents; the reference notes cut from the annotated f0).
-#  - Groove MIDI Dataset (Magenta, CC BY 4.0), the test split read by HTTP range requests (tools/convert/fetch_data.py): per-class onset F-measure of the drum converter.
+#  - Neo Tune (docs/specs/neo-tune.md §9 and §11) on the same VocalSet subset: the pitch of the corrected output against the nearest scale note
+#    before and after, voicing kept, an artefact proxy, and the NT2 quality gates (vibrato kept, jitter and shimmer, long-term spectrum,
+#    sub-harmonics, bursts, note sequence, null) for NT1 (the engine frozen in tools/PitchEval/TuneNt1) and NT2 at Natural 0, 50 and 100.
+#    A listening pack (six excerpts of at most 8 s: original, NT1's old output, NT2 at Natural 0/50/100, levels matched, a blind folder with a
+#    key, the CC BY 4.0 attribution in the README) is uploaded as the artifact neo-tune-excerpts. No audio is committed.
 #  - MAESTRO v3.0.0 (Magenta, CC BY-NC-SA 4.0), 60-second excerpts by range requests: note F-measure of the harmony converter (Basic Pitch),
 #    and its agreement with the Python basic_pitch package on the same files and model.
 
