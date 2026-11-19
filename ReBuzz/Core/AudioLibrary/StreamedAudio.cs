@@ -31,6 +31,7 @@ namespace ReBuzz.Core.AudioLibrary
         {
             public readonly float[] Data;
             public long Wanted;                 // prefetch thread: the tick it was last wanted at
+            public long WantedMs;               // and when (a page is not evicted for a moment after: tails and crossfades read where a voice has just left)
             public long Freed;                  // prefetch thread: when it was evicted
             public Page(int floats) { Data = new float[floats]; }
         }
@@ -386,6 +387,7 @@ namespace ReBuzz.Core.AudioLibrary
                 return false;
             }
             page.Wanted = tick;
+            page.WantedMs = Environment.TickCount64;
             Volatile.Write(ref table[index], page);
             Interlocked.Increment(ref residentPages);
             Interlocked.Increment(ref loaded);
@@ -684,12 +686,12 @@ namespace ReBuzz.Core.AudioLibrary
                 {
                     if (!ReferenceEquals(r.S, s)) continue;
                     int p0 = (int)Math.Max(0, r.From >> AudioCache.PageShift), p1 = (int)Math.Min(s.PageCount - 1, (Math.Max(r.From, r.To - 1)) >> AudioCache.PageShift);
-                    for (int p = p0; p <= p1; p++) { var pg = s.PageAt(p); if (pg != null) pg.Wanted = tick; }
+                    for (int p = p0; p <= p1; p++) { var pg = s.PageAt(p); if (pg != null) { pg.Wanted = tick; pg.WantedMs = now; } }
                 }
-                for (int p = 0; p < s.PageCount; p++) if (pinned[p]) { var pg = s.PageAt(p); if (pg != null) pg.Wanted = tick; }
+                for (int p = 0; p < s.PageCount; p++) if (pinned[p]) { var pg = s.PageAt(p); if (pg != null) { pg.Wanted = tick; pg.WantedMs = now; } }
             }
 
-            Evict(all);
+            Evict(all, now);
             if (now - lastFileCheck > 1500)
             {
                 lastFileCheck = now;
@@ -705,8 +707,10 @@ namespace ReBuzz.Core.AudioLibrary
             return s.Load(page, () => Make(s.Channels), tick);
         }
 
-        /// <summary>Pages over the budget go, the ones not wanted for longest first (never the ones wanted this pass).</summary>
-        static void Evict(StreamedAudio[] all)
+        /// <summary>Pages over the budget go, the ones not wanted for longest first (never the ones wanted this pass or within the last second: a slice's or a crossfade's tail reads where the voice's window has just left).</summary>
+        internal static int EvictGraceMs = 1000;
+
+        static void Evict(StreamedAudio[] all, long now)
         {
             long total = 0;
             foreach (var s in all) total += s.ResidentBytes;
@@ -717,7 +721,7 @@ namespace ReBuzz.Core.AudioLibrary
                 for (int p = 0; p < s.PageCount; p++)
                 {
                     var pg = s.PageAt(p);
-                    if (pg != null && pg.Wanted < tick) candidates.Add((s, p, pg.Wanted));
+                    if (pg != null && pg.Wanted < tick && now - pg.WantedMs > EvictGraceMs) candidates.Add((s, p, pg.Wanted));
                 }
             candidates.Sort((a, b) => a.Wanted.CompareTo(b.Wanted));
             foreach (var c in candidates)

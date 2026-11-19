@@ -16,6 +16,7 @@ using NUnit.Framework;
 using ReBuzz.Agent.Mcp;
 using ReBuzz.Core;
 using ReBuzz.Core.AudioLibrary;
+using ReBuzz.Core.Clips;
 using ReBuzz.FileOps;
 using ReBuzz.FileOps.Nbl;
 using ReBuzz.MachineManagement;
@@ -209,6 +210,55 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Directory.GetFiles(cache), Is.Empty, "no cache file for audio that stays in memory");
             var status = Tool("studio_status")["structuredContent"]!.AsObject();
             if (status["audio"] is JsonObject audio) Assert.That((long)audio["stream_underruns"], Is.GreaterThanOrEqualTo(0));
+        }
+
+        /// <summary>
+        /// Consolidate and every offline render read a clip's audio through ClipEditor.Exact: for a streamed clip that is the exact audio in memory,
+        /// not the audio thread's lossy page reads, so the render equals the render of the same audio held in memory (no holes where pages were not loaded).
+        /// </summary>
+        [AvaloniaTest]
+        public void AnOfflineRenderOfAStreamedClipEqualsTheRenderOfTheSameAudioInMemory()
+        {
+            string cache = Work("cache-" + Guid.NewGuid().ToString("N").Substring(0, 6));
+            using var settings = new Settings(cache);
+            using var untitled = SnapshotTests.Untitled(out _);
+            using var rig = new SessionRig();
+            var core = rig.Core;
+            using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
+            var layout = rig.Layout;
+            layout.Ensure();
+            var machine = layout.NewAudioTrack("Long")!;
+            var clip = layout.ImportAudio(layout.FirstTrackOf(machine), 0, Tones("render.wav", 14), out string error);
+            Assert.That(clip, Is.Not.Null, error);
+            var asset = core.AudioAssets.All.Single();
+            Assert.That(WaitFor(() => asset.Storage == AssetStorage.Streaming, 60_000), Is.True);
+            var streamed = layout.ParamsOfPattern(clip!);
+            Assert.That(streamed.Source.IsStreaming, Is.True, "the clip plays from the cache");
+
+            var exact = ClipEditor.Exact(streamed);
+            Assert.That(exact.Source.IsStreaming, Is.False, "an offline render holds the audio");
+            var (l, r) = streamed.Source.ToArrays();
+            var memory = new AudioClipParams(new AudioSource(l, r, streamed.Source.SampleRate), streamed.Map, streamed.Mode, streamed.Slices, streamed.Gain, streamed.Semitones) { Fades = streamed.Fades };
+
+            // Straight through the streamed source with nothing prefetched (what the audio thread would read) leaves holes; the exact one does not.
+            var a = new ClipMixer(); var b = new ClipMixer();
+            var pa = new ClipPlayback { Params = exact }; var pb = new ClipPlayback { Params = memory };
+            int rate = 44100, blocks = 600;
+            double bps = 2.0 / rate;                                  // 120 bpm
+            double peak = 0;
+            for (int i = 0; i < blocks; i++)
+            {
+                a.Begin(256); b.Begin(256);
+                a.Play(pa, i * 256 * bps, bps, rate, 256); b.Play(pb, i * 256 * bps, bps, rate, 256);
+                a.End(256, bps, rate); b.End(256, bps, rate);
+                for (int k = 0; k < 256; k++)
+                {
+                    Assert.That(a.Left[k], Is.EqualTo(b.Left[k]), $"block {i} sample {k}");
+                    Assert.That(a.Right[k], Is.EqualTo(b.Right[k]));
+                    peak = Math.Max(peak, Math.Abs(a.Left[k]));
+                }
+            }
+            Assert.That(peak, Is.GreaterThan(0.05), "the render is not silent");
         }
     }
 }

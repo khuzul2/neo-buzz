@@ -48,6 +48,7 @@ namespace ReBuzz.SessionTests
             AudioCache.DataFolder = savedFolder;
             StreamingPolicy.ThresholdBytes = savedThreshold;
             StreamingPolicy.ResidentBytes = savedResident;
+            StreamPrefetcher.EvictGraceMs = 1000;
             StreamingPolicy.CacheLimitBytes = savedLimit;
             StreamingPolicy.HeadMilliseconds = savedHead;
             StreamingPolicy.ReadAheadSeconds = savedAhead;
@@ -519,6 +520,7 @@ namespace ReBuzz.SessionTests
         public void PagesNotWantedAreEvictedOverTheBudgetAndPinnedOnesStay()
         {
             StreamingPolicy.ResidentBytes = 8 * 1024 * 1024;
+            StreamPrefetcher.EvictGraceMs = 50;
             var asset = Asset(120, 13);
             Stream(asset);
             var s = asset.Cache!;
@@ -761,25 +763,22 @@ namespace ReBuzz.SessionTests
             Assert.That(r.Missed, Is.EqualTo(0L));
         }
 
-        /// <summary>
-        /// The same for minutes (the soak group, with the ten-minute test of AudioHardeningTests). The 30 s test above must be exact; over minutes on a
-        /// shared CI box the measured margin is reported and bounded: at most one block in 2000 (0.05%) may miss, and only a few hundred samples in all.
-        /// </summary>
+        /// <summary>The same for minutes (the soak group, with the ten-minute test of AudioHardeningTests).</summary>
         [Test, Category("Soak")]
-        public void SixteenStreamedVoicesForThreeMinutesInRealTimeStayWithinTheUnderrunMargin()
+        public void SixteenStreamedVoicesForThreeMinutesInRealTimeHaveNoUnderruns()
         {
             var r = Sixteen(180, 6);
             TestContext.Out.WriteLine($"16 voices, 180 s real time at {Block}-frame blocks: underruns {r.Underruns}, missed samples {r.Missed}, worst block {r.WorstMs:0.00} ms, " +
                 $"99.9% {r.P999Ms:0.00} ms, over half a block {r.Slow}/{r.Blocks}, worst prefetch pass {r.PrefetchWorstMs:0.0} ms");
-            Assert.That(r.Underruns, Is.LessThanOrEqualTo(r.Blocks / 2000), "blocks that played silence for audio the disk had not delivered");
-            Assert.That(r.Missed, Is.LessThanOrEqualTo(r.Blocks / 2000 * 2048L), "samples of silence in all");
+            Assert.That(r.Underruns, Is.EqualTo(0L), "blocks that played silence for audio the disk had not delivered");
+            Assert.That(r.Missed, Is.EqualTo(0L));
         }
 
         /// <summary>
         /// The streaming group of the soak (with AudioHardeningTests' ten minutes): ten voices, two in every warp mode, half of them reversed, on two
         /// streamed assets, looping and at different tempos (sweeping from 60 to 180 BPM), for ten minutes of render time in blocks of 256 (a
         /// millisecond of sleep a block, so the prefetch thread has the disk's time too): 0 bytes allocated while rendering, no NaN, a bounded peak.
-        /// The underruns are counted and reported (the clips run at about 2.5 times real time here).
+        /// No underruns either, though the clips run at about 2.5 times real time here.
         /// </summary>
         [Test, Category("Soak")]
         public void TenMinutesOfStreamedClipsInEveryWarpModeAllocateNothingAndStayFinite()
@@ -796,6 +795,7 @@ namespace ReBuzz.SessionTests
                     var map = WarpMap.Straight(src.Length, src.Seconds * 120 / 60);
                     var slices = Enumerable.Range(0, (int)map.Beats).Select(b => map.SampleAt(b)).ToArray();
                     var p = new AudioClipParams(src, map, mode, slices, 0.5f, new[] { 0, 7, -5, 12, 0 }[k % 5]);
+                    assets[i].PinClip(2000 + k, src, new List<(long, long)> { (-4096, (long)(StreamingPolicy.HeadMilliseconds / 1000.0 * Rate)) });      // the clip's own start (a reversed clip's is the audio's end), as SessionLayout pins it
                     var v = new ClipVoice();
                     v.Prepare(p);
                     voices.Add((v, p, 0.8 + 0.05 * k));
@@ -830,6 +830,7 @@ namespace ReBuzz.SessionTests
             }
             TestContext.Out.WriteLine($"streamed soak: underruns {assets.Sum(a => a.StreamStats.Underruns)}, missed samples {assets.Sum(a => a.StreamStats.Missed)}, peak {peak:0.00}, resident {assets.Sum(a => a.ResidentBytes) / 1048576.0:0.0} MB");
             Assert.That(bad, Is.EqualTo(0), "NaN or infinity");
+            Assert.That(assets.Sum(a => a.StreamStats.Underruns), Is.EqualTo(0L), "blocks that played silence for audio the disk had not delivered");
             Assert.That(allocated, Is.EqualTo(0L), "bytes allocated while rendering streamed voices");
             Assert.That(peak, Is.LessThan(50), "a runaway would be far over");
         }

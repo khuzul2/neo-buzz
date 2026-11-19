@@ -117,7 +117,7 @@ namespace ReBuzz.Studio.Shell.Preferences
         public ComboBox CacheLimitBox => cacheLimit;
 
         /// <summary>The cache's size, its files, and what the song streams.</summary>
-        void ShowCache()
+        public void ShowCache()
         {
             long bytes = AudioCache.SizeBytes();
             int used = ReBuzz.Core.AudioLibrary.StreamPrefetcher.OpenIds().Count;

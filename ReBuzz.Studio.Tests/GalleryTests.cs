@@ -27,6 +27,7 @@ using Avalonia.VisualTree;
 using BuzzGUI.Interfaces;
 using ReBuzz.Audio;
 using ReBuzz.Core;
+using ReBuzz.Core.AudioLibrary;
 using ReBuzz.Core.Keyboards;
 using ReBuzz.Core.Session;
 using ReBuzz.Gallery;
@@ -1411,6 +1412,36 @@ namespace ReBuzz.Studio.Tests
                         "Ask the agent to change a setting (settings_set) while Preferences is open.", notes: Devices);
                     ReBuzz.Agent.App.SettingsService.Apply(prefs.Model.App, threads, was, ReBuzz.Agent.App.SettingsService.AgentSource);
                     Settle();
+                });
+                Try("326-prefs-audio-streaming", () =>
+                {
+                    // NA1b: the Disk streaming section (the last on the Audio page), with a cache of two files made for the picture in a folder of its own.
+                    string folder = AudioCache.DataFolder;
+                    string temp = Path.Combine(Path.GetTempPath(), "neobuzz-gallery-cache-" + Environment.ProcessId);
+                    try
+                    {
+                        Directory.CreateDirectory(temp);
+                        AudioCache.DataFolder = temp;
+                        File.WriteAllBytes(Path.Combine(temp, "0123456789abcdef.nbdc"), new byte[5 * 1024 * 1024]);
+                        File.WriteAllBytes(Path.Combine(temp, "fedcba9876543210.nbdc"), new byte[3 * 1024 * 1024]);
+                        prefs.ShowPage("Audio");
+                        prefs.Page<AudioPage>().ShowCache();
+                        Settle();
+                        if (prefs.Selected is ScrollViewer scroll)
+                        {
+                            scroll.Offset = new Vector(0, scroll.Extent.Height);
+                            Settle();
+                        }
+                        Shot(prefs, "326-prefs-audio-streaming", "Preferences ▸ Audio ▸ Disk streaming (NA1b): the audio cache's size and files with Clear, the length from which audio streams, and the cache size limit.",
+                            $"{Product.Name} ▸ Preferences… ▸ Audio, scrolled to Disk streaming.", notes: "The two cache files are made for the picture (8 MB of nothing) in a folder of their own; the device lists are as in the other Audio shots. " + Devices);
+                    }
+                    finally
+                    {
+                        AudioCache.DataFolder = folder;
+                        try { Directory.Delete(temp, true); } catch (IOException) { }
+                        prefs.Page<AudioPage>().ShowCache();
+                        Settle();
+                    }
                 });
                 Try("323-prefs-restore-question", () =>
                 {

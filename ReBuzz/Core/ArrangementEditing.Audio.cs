@@ -334,7 +334,7 @@ namespace ReBuzz.Core
         }
 
         /// <summary>An offline render must not go through the audio thread's lossy page reads: a streamed source is read exactly into memory for the render (NA1b).</summary>
-        static AudioClipParams Exact(AudioClipParams p)
+        internal static AudioClipParams Exact(AudioClipParams p)
         {
             if (!p.Source.IsStreaming && !p.Source.IsReversedView) return p;
             var (l, r) = p.Source.ToArrays();
