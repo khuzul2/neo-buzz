@@ -17,18 +17,18 @@ namespace NeoBuzz.PitchEval
     {
         sealed class Setting
         {
-            public string Name, Preset;
+            public string Name; public double Natural;
             public int Range;          // 0 Low latency, 1 Quality
             public bool Major;         // major, the key listened for (Key from Listen; scales and arpeggios only), else chromatic
         }
 
         static readonly Setting[] Settings =
         {
-            new() { Name = "Hard tune, Quality, chromatic", Preset = "hard", Range = 1 },
-            new() { Name = "Hard tune, Low latency, chromatic", Preset = "hard", Range = 0 },
-            new() { Name = "Natural, Quality, chromatic", Preset = "natural", Range = 1 },
-            new() { Name = "Subtle, Quality, chromatic", Preset = "subtle", Range = 1 },
-            new() { Name = "Hard tune, Quality, major, key listened for", Preset = "hard", Range = 1, Major = true },
+            new() { Name = "Natural 0 (hard effect), Quality, chromatic", Natural = 0.0, Range = 1 },
+            new() { Name = "Natural 0 (hard effect), Low latency, chromatic", Natural = 0.0, Range = 0 },
+            new() { Name = "Natural 50, Quality, chromatic", Natural = 0.5, Range = 1 },
+            new() { Name = "Natural 100 (transparent), Quality, chromatic", Natural = 1.0, Range = 1 },
+            new() { Name = "Natural 0 (hard effect), Quality, major, key listened for", Natural = 0.0, Range = 1, Major = true },
         };
 
         sealed class Acc
@@ -51,11 +51,8 @@ namespace NeoBuzz.PitchEval
 
         static void Apply(ParamValues v, Setting s, int scale, int root, bool listen = false)
         {
-            void Set(int p, double value) => v.Set(p, Params.Table[p].Raw(value));
-            Set(P.Amount, s.Preset == "subtle" ? 55 : 100);
-            Set(P.Retune, s.Preset == "hard" ? 0 : s.Preset == "natural" ? 60 : 120);
-            Set(P.Humanize, s.Preset == "hard" ? 0 : s.Preset == "natural" ? 40 : 60);
-            Set(P.VibKeep, s.Preset == "hard" ? 0 : 100);
+            v.Set(P.Amount, Params.Table[P.Amount].Raw(100));
+            TuneNatural.Apply(v, s.Natural);
             v.Set(P.Range, s.Range);
             v.Set(P.Scale, scale);
             v.Set(P.Key, root);
@@ -234,7 +231,8 @@ namespace NeoBuzz.PitchEval
                 if ((b / Batch) % 5 == 0) Console.WriteLine($"  {Math.Min(b + Batch, selected.Count)}/{selected.Count} files, {sw.Elapsed.TotalSeconds:F0} s");
             }
 
-            md.AppendLine("## Neo Tune on VocalSet");
+            TuneGates.Run(selected, md);
+            md.AppendLine("## Neo Tune on VocalSet (pitch error, voicing, flux; NT2 at Natural 0, 50 and 100)");
             md.AppendLine();
             md.AppendLine($"{selected.Count} recordings from VocalSet 1.1 (the subset of the techniques below, at most 20 s each), through the engine of Neo Tune as the machine runs it (256-sample blocks, 44.1 kHz material as recorded). The output is shifted back by the reported latency and its pitch measured with the shared tracker (Voice range, Quality). **Error** is the distance in cents of the pitch from the nearest note of the scale, over the frames where the input is voiced and active and the output is voiced too; \"before\" is the same measure on the input. The settings use the scale named: chromatic (the nearest semitone, the strictest and the one that does not depend on the key), or major on the key the machine listened for (Key from Listen; scales and arpeggios, whose notes keep to one key). **Within 10 / 25 ct** are the shares of frames inside that distance. **Voiced kept** is the share of voiced, active input frames that are voiced in the output; **false voiced** is the share of unvoiced, active input frames that the output calls voiced (breath and consonants must pass through as they were). **Artefact proxy**: the spectral flux (mean change in dB of the 100 Hz - 8 kHz spectrum from one 5.8 ms hop to the next, frames of 1024) of the output against the input over the active frames, and **clicks**, the rate per minute of one-hop rises of the 4 - 10 kHz band over 12 dB: a bad grain join shows as flux and clicks the input does not have.");
             md.AppendLine();
@@ -270,64 +268,10 @@ namespace NeoBuzz.PitchEval
             return $"| {name} | {a.Files} | {a.BothVoiced} | {Fmt.F(Fmt.Median(a.DevIn))} / {Fmt.F(a.AbsIn / n)} | {Fmt.F(Fmt.Median(a.DevOut))} / {Fmt.F(a.AbsOut / n)} | {Share(a.In10)} > {Share(a.Out10)} | {Share(a.In25)} > {Share(a.Out25)} | {Fmt.P(a.OutVoicedOfIn / (double)Math.Max(1, a.InVoiced))} | {Fmt.P(a.OutVoicedOfUnvoiced / (double)Math.Max(1, a.InUnvoiced))} | {Fmt.F(a.FluxIn / Math.Max(1, a.FluxN), "F2")} / {Fmt.F(a.FluxOut / Math.Max(1, a.FluxN), "F2")} | {Fmt.F(Fmt.Pct(a.FluxInAll, 0.99), "F1")} / {Fmt.F(Fmt.Pct(a.FluxOutAll, 0.99), "F1")} | {Fmt.F(a.ClickIn * 60 / Math.Max(1e-9, a.ClickSeconds), "F1")} / {Fmt.F(a.ClickOut * 60 / Math.Max(1e-9, a.ClickSeconds), "F1")} |";
         }
 
-        // ------------------------------------------------------------------------------------------------ the excerpts
-
         static void Excerpts(ZipArchive zip, List<(ZipArchiveEntry E, string Group, string Singer, string Vowel)> selected, string dir, StringBuilder md)
-        {
-            Directory.CreateDirectory(dir);
-            var plan = new (string Group, string Voice, string Preset, string Label)[]
-            {
-                ("scales, straight", "female", "hard", "Hard tune"),
-                ("scales, straight", "male", "natural", "Natural"),
-                ("arpeggios, vibrato", "female", "natural", "Natural"),
-                ("arpeggios, vibrato", "male", "hard", "Hard tune"),
-                ("excerpts, straight", "female", "subtle", "Subtle"),
-                ("excerpts, straight", "male", "natural", "Natural"),
-            };
-            var readme = new StringBuilder();
-            readme.AppendLine("# Neo Tune: before and after");
-            readme.AppendLine();
-            readme.AppendLine("Six excerpts of at most 8 seconds from VocalSet 1.1, each as the original (`-before.wav`) and run through Neo Tune (`-after.wav`), mono, 16 bit, at the recording's rate. The \"after\" files are aligned with the \"before\" files (the machine's latency taken out) and use the chromatic scale (every semitone) with the setting named.");
-            readme.AppendLine();
-            readme.AppendLine("Attribution (Creative Commons Attribution 4.0 International, https://creativecommons.org/licenses/by/4.0/): the recordings are from **VocalSet: A Singing Voice Dataset** by Julia Wilkins, Prem Seetharaman, Alison Wahl and Bryan Pardo (https://zenodo.org/records/1442513), CC BY 4.0. The \"before\" files are excerpts of the original recordings (shortened, converted to mono 16 bit); the \"after\" files are modified: processed with Neo Tune, part of NeoBuzz Live. No endorsement by the authors is implied.");
-            readme.AppendLine();
-            readme.AppendLine("| File | Singer | Technique | Setting | From (s) | Length (s) |");
-            readme.AppendLine("|---|---|---|---|---:|---:|");
-            int n = 0;
-            foreach (var (group, voice, preset, label) in plan)
-            {
-                var pick = selected.FirstOrDefault(t => t.Group == group && t.Singer.StartsWith(voice == "female" ? "female" : "male") && !(voice == "male" && t.Singer.StartsWith("female")));
-                if (pick.E == null) continue;
-                using var s = pick.E.Open();
-                var ms = new MemoryStream((int)pick.E.Length);
-                s.CopyTo(ms);
-                var (x, rate) = Wav.Read(new MemoryStream(ms.ToArray()));
-                // From the first moment of singing (over -40 dBFS in 50 ms), up to 8 s.
-                int start = 0, win = rate / 20;
-                for (int i = 0; i + win < x.Length; i += win / 2)
-                {
-                    double e = 0; for (int k = 0; k < win; k++) e += x[i + k] * x[i + k];
-                    if (Math.Sqrt(e / win) > 0.01) { start = Math.Max(0, i - win); break; }
-                }
-                int len = Math.Min(8 * rate, x.Length - start);
-                var seg = new float[len];
-                Array.Copy(x, start, seg, 0, len);
-                var set = new Setting { Name = label, Preset = preset, Range = 1 };
-                var y = RenderTune(seg, rate, set, 0, 0, out _, out _);
-                n++;
-                string baseName = $"{n:00}-{pick.Singer}-{pick.Group.Replace(", ", "-").Replace(' ', '-')}-{preset}";
-                WriteWav(Path.Combine(dir, baseName + "-before.wav"), seg, rate);
-                WriteWav(Path.Combine(dir, baseName + "-after.wav"), y, rate);
-                readme.AppendLine($"| {baseName}-before / -after | {pick.Singer} | {pick.Group} | {label} (chromatic) | {start / (double)rate:F1} | {len / (double)rate:F1} |");
-            }
-            File.WriteAllText(Path.Combine(dir, "README.md"), readme.ToString());
-            md.AppendLine($"### Listening excerpts");
-            md.AppendLine();
-            md.AppendLine($"{n} excerpts (at most 8 s each) were written beside this report, before and after, with the VocalSet attribution in their README (artifact `neo-tune-excerpts`).");
-            md.AppendLine();
-        }
+            => TuneGates.Excerpts(zip, selected, dir, md);
 
-        static void WriteWav(string path, float[] x, int rate)
+        internal static void WriteWav(string path, float[] x, int rate)
         {
             using var fs = File.Create(path);
             using var w = new BinaryWriter(fs);

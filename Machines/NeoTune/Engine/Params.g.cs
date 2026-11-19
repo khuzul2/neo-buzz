@@ -28,7 +28,12 @@ namespace NeoBuzz.Tune
         public const int Input = 17;
         public const int Transients = 18;
         public const int Mix = 19;
-        public const int Count = 20;
+        public const int Natural = 20;
+        public const int Zone = 21;
+        public const int Glide = 22;
+        public const int Stick = 23;
+        public const int Method = 24;
+        public const int Count = 25;
     }
 
     internal static class Params
@@ -58,6 +63,11 @@ namespace NeoBuzz.Tune
             new ParamDef(P.Input, "Input", "Input", 0, 1, 0, MapKind.Enum, names: new[] { "Sum", "Left" }, group: "Engine", description: "Which channel the voice is taken from: the sum of left and right, or the left channel only", how: "Chooses the input: the two channels added, or the left channel only.", sound: "The corrected voice is always mono; the dry sound stays in stereo."),
             new ParamDef(P.Transients, "Transients", "Transients", 0, 1, 1, MapKind.Switch, group: "Engine", description: "Keeps the sharp start of a sound (a b, d or p) as sung instead of re-synthesising it", how: "Lets the first few milliseconds of a hard consonant or a plucked note pass through unprocessed.", sound: "On keeps consonants crisp; off treats them like the rest of the voice."),
             new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Wet against dry; at 0 % the output is the delayed input, bit for bit", how: "Blends the corrected voice with the original (delayed to match).", sound: "Parallel use keeps the character of the singer while the tuning shows through."),
+            new ParamDef(P.Natural, "Natural", "Natural", 0, 1000, 600, MapKind.Percent, group: "Natural", description: "How natural the correction sounds: 0 % is the hard, robotic effect, 100 % is a transparent correction that keeps the singer's expression. Moving it sets Retune speed, Correction zone, Keep vibrato, Humanize, Transition and Note stickiness together", how: "Sets how natural the correction sounds, from the hard effect (0 %) to a transparent one (100 %). In the editor it rewrites the fine controls below it in one step; they can then be edited by hand.", sound: "0 % snaps every note flat and instant; about 40 % is a pop polish; about 75 % corrects the centre of each note and leaves the vibrato, scoops and glides; 100 % is as transparent as it gets."),
+            new ParamDef(P.Zone, "Zone", "Correction zone", 0, 1000, 760, MapKind.Linear, a: 0, b: 100, unit: "cents", digits: 0, group: "Natural", description: "How far from a note the correction still pulls: movement outside the zone passes through as sung (100 cents and more: no zone, every pitch is corrected)", how: "Sets the zone around each note, from 0 to 100 cents, within which the correction applies; fades out beyond it.", sound: "A narrow zone lets scoops, slides and expressive bends through and corrects only the pitch that settles near a note; 100 corrects everything."),
+            new ParamDef(P.Glide, "Glide", "Transition", 0, 1000, 600, MapKind.Percent, group: "Natural", description: "Between notes: 0 % snaps at the midpoint, 100 % leaves the singer's own glide untouched", how: "Sets how note changes are handled, from a snap (0 %) to the singer's own glide kept (100 %): the correction fades while the pitch of the note centre is moving fast.", sound: "Snap sounds like the effect; glide keeps slides between notes as sung."),
+            new ParamDef(P.Stick, "Stick", "Note stickiness", 0, 1000, 600, MapKind.Percent, group: "Natural", description: "How hard it is to leave a note: how far past the midpoint, and for how long, the pitch has to be before the target changes", how: "Sets the hysteresis (in cents past the midpoint) and the minimum time before the target note changes, from low (0 %) to high (100 %).", sound: "High stickiness stops a wide vibrato or a wobble from flipping between neighbouring notes; low follows quick note changes."),
+            new ParamDef(P.Method, "Method", "Method", 0, 2, 0, MapKind.Enum, names: new[] { "Auto", "Splice", "PSOLA" }, group: "Engine", description: "Auto: period splicing for small corrections, PSOLA when formants or a large transpose are used. Splice or PSOLA: always that engine", how: "Chooses how the sound is re-synthesised: Auto, the splice engine (resample and repeat or drop whole periods, the most transparent) or PSOLA (grains, with formant control).", sound: "Splice keeps the singer's voice almost untouched for corrections under about 2 semitones; PSOLA can move formants and transpose widely."),
         };
     }
 }
