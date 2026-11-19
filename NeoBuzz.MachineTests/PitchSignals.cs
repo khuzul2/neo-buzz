@@ -234,7 +234,7 @@ namespace NeoBuzz.MachineTests
 
         public static readonly string[] KitNames = { "kick", "snare", "closed hat", "open hat", "k click", "tom", "clap", "rim" };
 
-        static void Burst(float[] x, int at, double sr, SynthRng rng, double lo, double hi, double tau, double amp, int len)
+        internal static void Burst(float[] x, int at, double sr, SynthRng rng, double lo, double hi, double tau, double amp, int len)
         {
             // Band-limited noise: a high-pass and a low-pass one-pole pair.
             double a = Math.Exp(-2 * Math.PI * lo / sr), b = Math.Exp(-2 * Math.PI * hi / sr);
@@ -249,7 +249,7 @@ namespace NeoBuzz.MachineTests
             }
         }
 
-        static void Tone(float[] x, int at, double sr, double f0, double f1, double sweepTau, double decayTau, double amp, int len, SynthRng rng)
+        internal static void Tone(float[] x, int at, double sr, double f0, double f1, double sweepTau, double decayTau, double amp, int len, SynthRng rng)
         {
             double ph = rng.Next();
             for (int i = 0; i < len && at + i < x.Length; i++)

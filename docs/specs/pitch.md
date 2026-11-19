@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Built (PT1): pitch tracker, onset detector, trigger features and classifier, vowel estimator, the evaluation tool and its workflow. Convert to MIDI (AM2, section 9) uses the tracker, the detector and the maths under them. Neo Voice to MIDI (VM1, [`voice-to-midi.md`](voice-to-midi.md)) uses the whole engine. |
+| Status | Built (PT1): pitch tracker, onset detector, trigger features and classifier, vowel estimator, the evaluation tool and its workflow. Convert to MIDI (AM2, section 9) uses the tracker, the detector and the maths under them. Neo Voice to MIDI (VM1, [`voice-to-midi.md`](voice-to-midi.md)) uses the whole engine; Neo Audio to MIDI (AM1, [`audio-to-midi.md`](audio-to-midi.md)) uses the tracker, the onset detector and the trainer on instruments. |
 | Branch | `dsp/pitch-pt1` |
 | Code | `Machines/NeoBuzz.Dsp/PitchTracker.cs`, `OnsetDetector.cs`, `TriggerClassifier.cs`, `VowelEstimator.cs` (all `internal`, namespace `NeoBuzz.Dsp`); tests `NeoBuzz.MachineTests/PitchTests.cs`, `PitchEngineTests.cs`, `PitchSignals.cs`; evaluation `tools/PitchEval`, `.github/workflows/pitch-eval.yml` |
 | Builds on | `ComplexFft`, `Biquad`, `PortableMath` of the same library (the portable maths rule applies: the audio files use no `Math.Sin/Cos/Exp/Log/Pow`) |

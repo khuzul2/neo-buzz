@@ -15,6 +15,14 @@ name: Pitch evaluation
 #    each, with the CC BY 4.0 attribution in their README) uploaded as the artifact neo-tune-excerpts for listening. No audio is committed.
 # The tool is tools/PitchEval (it links Machines/NeoBuzz.Dsp and nothing else).
 #
+# The am1 job (docs/specs/audio-to-midi.md section 8) scores Neo Audio to MIDI's engine as the machine runs it (tools/PitchEval --am1-*):
+#  - GuitarSet (zenodo.org/records/3371780, CC BY 4.0): the hexaphonic pickup's per-string lines (a spread of the recordings, read by range requests
+#    into the zip: tools/am1/fetch_guitarset.py) against the JAMS note annotation of each string: Melody note F-measure and latency, Fast and Stable.
+#  - IDMT-SMT-Drums (zenodo.org/records/7544164, CC BY-NC-ND 4.0, 287 MB; evaluation only): kick, snare and hat F-measure and timing in the drum mixes,
+#    with the built-in rules and calibrated from five hits of each drum of the same kit.
+#  - MDB-stem-synth again: Melody note F-measure and the pitch right on the voiced frames.
+#  - Piano-roll plots (annotated against played) of three excerpts of each mode, uploaded as the artifact am1-plots.
+#
 # The convert job (docs/specs/pitch.md section 9.6) scores Convert to MIDI, the converters as the app runs them (tools/ConvertEval):
 #  - MDB-stem-synth again: note F-measure of the melody converter (onset +-50 ms, pitch +-50 cents; the reference notes cut from the annotated f0).
 #  - Groove MIDI Dataset (Magenta, CC BY 4.0), the test split read by HTTP range requests (tools/convert/fetch_data.py): per-class onset F-measure of the drum converter.
@@ -48,6 +56,14 @@ on:
         description: 'Convert to MIDI: MAESTRO excerpts (60 s each)'
         type: string
         default: '10'
+      am1:
+        description: 'Neo Audio to MIDI (GuitarSet, IDMT-SMT-Drums and MDB-stem-synth through the machine engine, with piano-roll plots)'
+        type: boolean
+        default: true
+      guitarset_every:
+        description: 'Neo Audio to MIDI: one GuitarSet recording in this many (360 in all; the tuning files are not among them)'
+        type: string
+        default: '3'
       mdb_limit:
         description: 'MDB-stem-synth: evaluate only this many stems, evenly spread (0 = all 230)'
         type: string
@@ -254,4 +270,99 @@ jobs:
       with:
         name: convert-eval-report
         path: convert-eval-report.md
+        if-no-files-found: ignore
+
+  am1:
+    if: ${{ github.event.inputs.am1 != 'false' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    defaults:
+      run:
+        shell: bash
+    env:
+      DATA: /mnt/am1-eval-data
+    steps:
+    - uses: actions/checkout@v5
+
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+
+    - name: Build the evaluation tool
+      run: dotnet build tools/PitchEval -c Release -nologo
+
+    - name: Room for the data
+      run: |
+        sudo mkdir -p "$DATA"
+        sudo chown "$USER" "$DATA"
+        df -h / /mnt | cat
+
+    # Zenodo's API for each file's md5, then the check (as the evaluate job does).
+    - name: Download and check IDMT-SMT-Drums and MDB-stem-synth
+      run: |
+        set -euo pipefail
+        fetch() {
+          local rec="$1" name="$2" dest="$3"
+          local meta md5 try
+          for try in 1 2 3 4 5 6 7 8; do
+            meta=$(curl -sS --retry 5 -L "https://zenodo.org/api/records/$rec" || true)
+            md5=$(echo "$meta" | python3 -c "import json,sys; d=json.load(sys.stdin); print([f['checksum'].split(':')[1] for f in d['files'] if f['key']=='$name'][0])" 2>/dev/null || true)
+            [ -n "$md5" ] && break
+            echo "record $rec: no usable answer (try $try)"; sleep $((try * 10))
+          done
+          [ -n "$md5" ] || { echo "no checksum for $name"; return 1; }
+          echo "$rec $name md5 $md5; licence: $(echo "$meta" | python3 -c "import json,sys; print(json.load(sys.stdin)['metadata']['license'])" 2>/dev/null || echo unknown)"
+          curl -sS --retry 8 --retry-delay 5 -C - -L -o "$dest" "https://zenodo.org/api/records/$rec/files/$name/content"
+          echo "$md5  $dest" | md5sum -c -
+        }
+        fetch 7544164 IDMT-SMT-DRUMS-V2.zip "$DATA/idmt.zip"
+        mkdir -p "$DATA/idmt"
+        unzip -q "$DATA/idmt.zip" -x '__MACOSX/*' -d "$DATA/idmt"
+        rm "$DATA/idmt.zip"
+        fetch 1481172 MDB-stem-synth.tar.gz "$DATA/mdb.tar.gz"
+        mkdir -p "$DATA/mdb"
+        tar -xzf "$DATA/mdb.tar.gz" -C "$DATA/mdb" --exclude='*/._*'
+        rm "$DATA/mdb.tar.gz"
+        df -h /mnt | cat
+
+    # GuitarSet's annotations and a spread of the hexaphonic recordings, by range requests.
+    - name: Fetch GuitarSet
+      run: |
+        set -euo pipefail
+        pip install --quiet remotezip matplotlib
+        python3 -I tools/am1/fetch_guitarset.py "$DATA/gs" --every "${{ github.event.inputs.guitarset_every || '3' }}" --offset 1
+        du -sh "$DATA"/* | cat
+
+    - name: Evaluate
+      run: |
+        set -euo pipefail
+        mkdir -p am1-plots
+        dotnet run -c Release --no-build --project tools/PitchEval -- --out am1-eval-report.md \
+          --am1-guitarset "$DATA/gs" --am1-idmt "$DATA/idmt" --am1-mdb "$DATA/mdb/MDB-stem-synth" --mdb-limit "${{ github.event.inputs.mdb_limit || '0' }}" \
+          --am1-plots am1-plots
+
+    - name: Piano-roll plots
+      run: python3 -I tools/am1/plot_rolls.py am1-plots
+
+    - name: Job summary
+      if: always()
+      run: |
+        if [ -f am1-eval-report.md ]; then
+          head -c 900000 am1-eval-report.md >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+    # Only the report and the plots (figures: note and hit times, no audio).
+    - name: Upload the report and the plots
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: am1-eval
+        path: |
+          am1-eval-report.md
+          am1-plots/*.png
+          am1-plots/*.json
         if-no-files-found: ignore
