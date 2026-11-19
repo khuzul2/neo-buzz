@@ -146,10 +146,11 @@ namespace NeoBuzz.PitchEval
 
         sealed class Excerpt { public string Title, Mode; public double From, To; public List<(double S, double E, double M)> Truth = new(); public List<(double S, double E, double M)> Out = new(); public List<(double T, int Cls)> TruthHits = new(), OutHits = new(); }
 
-        public static void Guitar(string dir, int every, int offset, StringBuilder md, string plotsDir)
+        public static void Guitar(string dir, int every, int offset, StringBuilder md, string plotsDir, string players = "")
         {
             string audio = Directory.Exists(Path.Combine(dir, "audio")) ? Path.Combine(dir, "audio") : dir, ann = Directory.Exists(Path.Combine(dir, "annotation")) ? Path.Combine(dir, "annotation") : dir;
             var files = Directory.GetFiles(audio, "*_hex_cln.wav", SearchOption.AllDirectories).OrderBy(f => f, StringComparer.Ordinal).ToList();
+            if (players.Length > 0) files = files.Where(f => players.Split(',').Contains(Path.GetFileName(f).Substring(0, 2))).ToList();
             if (every > 1) files = files.Where((f, k) => k % every == offset).ToList();
             Console.WriteLine($"GuitarSet: {files.Count} recordings");
             var cfgs = new (string Name, int Response)[] { ("Guitar range, Fast", 0), ("Guitar range, Stable", 1) };
@@ -203,7 +204,7 @@ namespace NeoBuzz.PitchEval
                     if (++done % 10 == 0) Console.WriteLine($"  {done}/{files.Count}");
                 }
             });
-            md.AppendLine("## Neo Audio to MIDI, Melody mode: GuitarSet single strings");
+            md.AppendLine("## Neo Audio to MIDI, Melody mode: GuitarSet single strings (hexaphonic, secondary)");
             md.AppendLine();
             md.AppendLine($"{files.Count} recordings ({lines} string lines, {seconds / 60:0} minutes) of GuitarSet's hexaphonic pickup (debleeded, 6 channels, one string each), against the JAMS note annotation of each string. The engine is the machine's (Melody, Guitar range, default settings, 256-sample blocks); a note is right when its onset is within 50 ms of an annotated note's and its pitch within 50 cents of it. Latency is the note on's time less the annotated onset (the annotation's own accuracy is a few tens of milliseconds). Octave errors are notes at the right time an octave out; extra notes are notes that match nothing.");
             md.AppendLine();
@@ -218,6 +219,85 @@ namespace NeoBuzz.PitchEval
             md.AppendLine("F-measure by string (Fast / Stable): " + string.Join("; ", Enumerable.Range(0, 6).Select(s => $"{new[] { "low E", "A", "D", "G", "B", "high E" }[s]} {Pc(perStr[0][s].F)} / {Pc(perStr[1][s].F)}")));
             md.AppendLine();
             WriteExcerpts(plotsDir, excerpts.OrderBy(x => x.Title, StringComparer.Ordinal).Take(3).ToList(), "gs");
+        }
+
+
+        // ---------------------------------------------------------------------------------------------------------------- GuitarSet, a single-note line
+
+        /// <summary>Every string's notes merged into one line; where notes overlap the earlier one's end is trimmed to the next onset.</summary>
+        static List<Truth> MergedNotes(string jams)
+        {
+            var all = JamsNotes(jams).SelectMany(l => l).OrderBy(t => t.Start).ToList();
+            for (int i = 0; i + 1 < all.Count; i++) if (all[i].End > all[i + 1].Start) all[i].End = all[i + 1].Start;
+            return all;
+        }
+
+        /// <summary>The headline: the solo takes (a single-note line) as mono audio (mic, pickup mix) against the merged notes of all strings, Fast and Stable.</summary>
+        public static void GuitarMono(string dir, string players, StringBuilder md, string plotsDir)
+        {
+            string audio = Path.Combine(dir, "audio"), ann = Path.Combine(dir, "annotation");
+            var keep = new HashSet<string>(players.Split(',', StringSplitOptions.RemoveEmptyEntries));
+            var takes = Directory.GetFiles(audio, "*_solo_mic.wav").Select(f => Path.GetFileName(f).Replace("_mic.wav", "")).Where(n => keep.Count == 0 || keep.Contains(n.Substring(0, 2))).OrderBy(n => n, StringComparer.Ordinal).ToList();
+            Console.WriteLine($"GuitarSet solo takes ({(players.Length == 0 ? "all players" : "players " + players)}): {takes.Count}");
+            var kinds = new[] { ("mic", "_mic.wav"), ("pickup mix", "_mix.wav") };
+            var cfgs = new[] { ("Fast", 0), ("Stable", 1) };
+            var acc = new Acc[kinds.Length, cfgs.Length]; var wide = new Acc[kinds.Length, cfgs.Length];
+            for (int k = 0; k < kinds.Length; k++) for (int c = 0; c < cfgs.Length; c++) { acc[k, c] = new Acc(); wide[k, c] = new Acc(); }
+            var excerpts = new List<Excerpt>(); var sync = new object(); int done = 0;
+            Parallel.For(0, takes.Count, new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount) }, ti =>
+            {
+                string name = takes[ti];
+                var truth = MergedNotes(Path.Combine(ann, name + ".jams"));
+                for (int k = 0; k < kinds.Length; k++)
+                {
+                    string f = Path.Combine(audio, name + kinds[k].Item2);
+                    if (!File.Exists(f)) continue;
+                    var (x, rate) = Wav.Read(f);
+                    double sec = x.Length / (double)rate;
+                    for (int c = 0; c < cfgs.Length; c++)
+                    {
+                        int resp = cfgs[c].Item2;
+                        var e = NewEngine(rate, v => { v.Set(P.Mode, 0); v.Set(P.Range, 0); v.Set(P.Response, resp); });
+                        var (notes, _) = Run(x, rate, e);
+                        if (Environment.GetEnvironmentVariable("AM1_DUMPTAKE") == name + kinds[k].Item2 && c == 0)
+                            lock (sync) foreach (var n in notes)
+                            {
+                                var near = truth.OrderBy(t => Math.Abs(t.Start - n.Start)).First();
+                                bool ok = Math.Abs(near.Start - n.Start) <= 0.05 && Math.Abs(near.Midi - n.Pitch) <= 0.5;
+                                double lv = 0; int a0 = (int)(n.Start * rate), a1 = Math.Min(x.Length, a0 + (int)(0.03 * rate)); for (int q = a0; q < a1; q++) lv = Math.Max(lv, Math.Abs(x[q]));
+                                Console.WriteLine($"{(ok ? "ok " : "EXT")} t={n.Start:F3} note={n.Pitch} len={n.End - n.Start:F2} db={20 * Math.Log10(lv + 1e-9):F0} near dt={near.Start - n.Start:F3} dm={near.Midi - n.Pitch:F1}");
+                            }
+                        var a = Match(notes, truth, sec); var w = Match(notes, truth, sec, 0.1);
+                        lock (sync)
+                        {
+                            acc[k, c].Add(a); wide[k, c].Add(w);
+                            if (k == 0 && c == 0 && ti % Math.Max(1, takes.Count / 3) == 0 && excerpts.Count < 3)
+                            {
+                                double from = Math.Min(4, Math.Max(0, sec - 8));
+                                var ex = new Excerpt { Title = $"GuitarSet {name}, mic, Melody, Guitar range, Fast", Mode = "melody", From = from, To = from + 8 };
+                                foreach (var t in truth) if (t.End > from && t.Start < from + 8) ex.Truth.Add((t.Start, t.End, t.Midi));
+                                foreach (var n in notes) if (n.End > from && n.Start < from + 8) ex.Out.Add((n.Start, n.End, n.Pitch));
+                                excerpts.Add(ex);
+                            }
+                        }
+                    }
+                }
+                lock (sync) if (++done % 10 == 0) Console.WriteLine($"  {done}/{takes.Count}");
+            });
+            md.AppendLine("## Neo Audio to MIDI, Melody mode: GuitarSet solo takes (a single-note line)");
+            md.AppendLine();
+            md.AppendLine($"{takes.Count} solo takes ({(players.Length == 0 ? "all players" : "players " + players)}), mono audio (the microphone, the pickup mix) against every string's notes merged into one line (an earlier note is trimmed to the next onset). The engine is the machine's (Melody, Guitar range, default settings). A note is right when its onset is within 50 ms of a truth note's and its pitch within 50 cents; F exact is the same with the semitone exact. Extra notes are notes that match nothing.");
+            md.AppendLine();
+            md.AppendLine("| audio | response | notes ref | notes out | precision | recall | F-measure | F exact semitone | F at 100 ms | latency median | p95 | octave errors | extra notes / min |");
+            md.AppendLine("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|");
+            for (int k = 0; k < kinds.Length; k++)
+                for (int c = 0; c < cfgs.Length; c++)
+                {
+                    var a = acc[k, c];
+                    md.AppendLine($"| {kinds[k].Item1} | {cfgs[c].Item1} | {a.Ref} | {a.Out} | {Pc(a.P)} | {Pc(a.R)} | **{Pc(a.F)}** | {Pc(a.FExact)} | {Pc(wide[k, c].F)} | {Ms(Median(a.Latency))} | {Ms(Pctl(a.Latency, 0.95))} | {a.Octave} | {a.ChatterPerMinute:F1} |");
+                }
+            md.AppendLine();
+            WriteExcerpts(plotsDir, excerpts.OrderBy(x => x.Title, StringComparer.Ordinal).ToList(), "gs");
         }
 
         // ---------------------------------------------------------------------------------------------------------------- IDMT-SMT-Drums
@@ -307,7 +387,7 @@ namespace NeoBuzz.PitchEval
             Console.WriteLine($"IDMT-SMT-Drums: {mixes.Count} mixes");
             string[] kits = { "RealDrum", "TechnoDrum", "WaveDrum" };
             var plain = new Dictionary<string, DrumAcc>(); var calib = new Dictionary<string, DrumAcc>();
-            foreach (var k in kits.Append("all")) { plain[k] = new DrumAcc(); calib[k] = new DrumAcc(); }
+            foreach (var k in kits.Append("all").Append("odd")) { plain[k] = new DrumAcc(); calib[k] = new DrumAcc(); }
             var excerpts = new List<Excerpt>();
             double seconds = 0; int done = 0, withTraining = 0;
             var sync = new object();
@@ -354,8 +434,8 @@ namespace NeoBuzz.PitchEval
                 }
                 lock (sync)
                 {
-                    plain[kit].Add(a0); plain["all"].Add(a0);
-                    if (a1 != null) { calib[kit].Add(a1); calib["all"].Add(a1); withTraining++; }
+                    plain[kit].Add(a0); plain["all"].Add(a0); bool odd = int.Parse(stem.Substring(stem.LastIndexOf('_') + 1)) % 2 == 1; if (odd) plain["odd"].Add(a0);
+                    if (a1 != null) { calib[kit].Add(a1); calib["all"].Add(a1); if (odd) calib["odd"].Add(a1); withTraining++; }
                     seconds += x.Length / (double)rate;
                     // An excerpt of the first recording of each kit.
                     if (stem.EndsWith("_00") || stem.EndsWith("_01") && !excerpts.Any(q => q.Title.Contains(kit)))
@@ -373,16 +453,16 @@ namespace NeoBuzz.PitchEval
             });
             md.AppendLine("## Neo Audio to MIDI, Drums mode: IDMT-SMT-Drums");
             md.AppendLine();
-            md.AppendLine($"{mixes.Count} drum mixes ({seconds / 60:0} minutes; real, techno and wave kits) against the onset and class annotations (KD kick, SD snare, HH hat; the dataset has no other classes). The engine is the machine's (Drums mode, default notes 36, 38 and 42, default settings). A hit is right when its class matches and its onset is within 50 ms. Calibrated: five hits of each drum, taken from that kit's single-drum training recordings (`#KD#train`, `#SD#train`, `#HH#train`) by the machine's calibration pass ({withTraining} mixes had all three). The dataset is CC BY-NC-ND 4.0: used here for measurement only.");
+            md.AppendLine($"{mixes.Count} drum mixes ({seconds / 60:0} minutes; real, techno and wave kits) against the onset and class annotations (KD kick, SD snare, HH hat; the dataset has no other classes). The engine is the machine's (Drums mode, default notes 36, 38 and 42, default settings). A hit is right when its class matches and its onset is within 50 ms. Calibrated: five hits of each drum, taken from that kit's single-drum training recordings (`#KD#train`, `#SD#train`, `#HH#train`) by the machine's calibration pass ({withTraining} mixes had all three). The rule thresholds were fitted on the even-numbered takes (and, in an earlier pass, on all of them); the odd-numbered takes are the held-out rows. The dataset is CC BY-NC-ND 4.0: used here for measurement only.");
             md.AppendLine();
             md.AppendLine("| set | drum | reference | precision | recall | F-measure | offset median | offset p95 |");
             md.AppendLine("|---|---|---:|---:|---:|---:|---:|---:|");
             foreach (var (label, dict) in new[] { ("no calibration", plain), ("calibrated", calib) })
-                foreach (var k in kits.Append("all"))
+                foreach (var k in kits.Append("all").Append("odd"))
                     for (int c = 0; c < 3; c++)
                     {
                         var a = dict[k];
-                        md.AppendLine($"| {label}, {(k == "all" ? "all kits" : k)} | {ClassNames[c]} | {a.Ref[c]} | {Pc(a.P(c))} | {Pc(a.R(c))} | **{Pc(a.F(c))}** | {Ms(Median(a.Offset[c]))} | {Ms(Pctl(a.Offset[c], 0.95))} |");
+                        md.AppendLine($"| {label}, {(k == "all" ? "all kits" : k == "odd" ? "HELD-OUT: odd-numbered takes, all kits" : k)} | {ClassNames[c]} | {a.Ref[c]} | {Pc(a.P(c))} | {Pc(a.R(c))} | **{Pc(a.F(c))}** | {Ms(Median(a.Offset[c]))} | {Ms(Pctl(a.Offset[c], 0.95))} |");
                     }
             md.AppendLine();
             WriteExcerpts(plotsDir, excerpts.OrderBy(x => x.Title, StringComparer.Ordinal).Take(3).ToList(), "idmt");

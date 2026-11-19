@@ -182,7 +182,7 @@ namespace NeoBuzz.AudioToMidi
             ml.FixedVel = I(P.VelMode) == 1;
             ml.FixedVelocity = I(P.Fixed);
             ml.VelMin = velMin; ml.SoftDb = velSoftDb; ml.LoudDb = velLoudDb;
-            ml.Window = tracker.Window; ml.Hop = tracker.Hop;
+            ml.Window = tracker.Window; ml.Hop = tracker.Hop; ml.MinHz = tracker.MinHz; ml.MaxHz = tracker.MaxHz;
             ml.Bend.Range = I(P.Bend);
             ml.Bend.Anchored = I(P.BendMode) == 1;
             ml.Bend.AnchorSemis = V(P.Anchor) / 100f;

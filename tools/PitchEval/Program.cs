@@ -15,7 +15,7 @@ namespace NeoBuzz.PitchEval
             if (args.Length == 3 && args[0] == "--onsets") { Avp.Debug(args[1], args[2]); return 0; }
             if (args.Length == 4 && args[0] == "--track") { Dbg.Track(args[1], args[2], int.Parse(args[3])); return 0; }
             if (args.Length == 3 && args[0] == "--am1-map") { Am1.Map(args[1], args[2]); return 0; }
-            string am1Gs = null, am1Idmt = null, am1Mdb = null, plots = null; int gsEvery = 1, gsOffset = 0;
+            string am1Gs = null, am1Idmt = null, am1Mdb = null, plots = null; int gsEvery = 1, gsOffset = 0; string gsPlayers = ""; bool gsMono = false;
             string mdb = null, avp = null, vs = null, tune = null, excerpts = null, outPath = "pitch-eval.md", csvPath = null;
             int mdbLimit = 0, avpLimit = 0, vsPer = 2;
             for (int i = 0; i < args.Length; i++)
@@ -28,6 +28,8 @@ namespace NeoBuzz.PitchEval
                     case "--am1-idmt": am1Idmt = Next(); break;
                     case "--am1-mdb": am1Mdb = Next(); break;
                     case "--am1-plots": plots = Next(); break;
+                    case "--gs-players": gsPlayers = Next(); break;
+                    case "--gs-mono": gsMono = true; break;
                     case "--gs-every": gsEvery = int.Parse(Next()); break;
                     case "--gs-offset": gsOffset = int.Parse(Next()); break;
                     case "--mdb": mdb = Next(); break;
@@ -50,7 +52,8 @@ namespace NeoBuzz.PitchEval
             md.AppendLine();
             md.AppendLine($"Run {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC on {Environment.ProcessorCount} cores, .NET {Environment.Version}. The engine is `Machines/NeoBuzz.Dsp` (PitchTracker, OnsetDetector, TriggerFeatures and TriggerClassifier, VowelEstimator) as the machines will use it, fed 256 samples at a time. The data are downloaded on the runner and are not kept; the licences are in the last section.");
             md.AppendLine();
-            if (am1Gs != null) Am1.Guitar(am1Gs, gsEvery, gsOffset, md, plots);
+            if (am1Gs != null && gsMono) Am1.GuitarMono(am1Gs, gsPlayers, md, plots);
+            if (am1Gs != null) Am1.Guitar(am1Gs, gsEvery, gsOffset, md, plots, gsPlayers);
             if (am1Idmt != null) Am1.Drums(am1Idmt, md, plots);
             if (am1Mdb != null) Am1.Mdb(am1Mdb, mdbLimit, md);
             if (mdb != null) Mdb.Run(mdb, mdbLimit, md, csv);

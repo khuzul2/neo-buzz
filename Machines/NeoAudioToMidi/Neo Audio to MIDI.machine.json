@@ -272,7 +272,7 @@
    "group": "Melody",
    "min": 0,
    "max": 100,
-   "default": 6,
+   "default": 10,
    "kind": "linear",
    "a": 0.0,
    "b": 500.0,

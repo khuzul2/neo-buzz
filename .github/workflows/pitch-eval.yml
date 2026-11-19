@@ -61,9 +61,9 @@ on:
         type: boolean
         default: true
       guitarset_every:
-        description: 'Neo Audio to MIDI: one GuitarSet recording in this many (360 in all; the tuning files are not among them)'
+        description: 'Neo Audio to MIDI: one GuitarSet solo take of the held-out players 03 to 05 in this many (the tuning used players 00 to 02)'
         type: string
-        default: '3'
+        default: '2'
       mdb_limit:
         description: 'MDB-stem-synth: evaluate only this many stems, evenly spread (0 = all 230)'
         type: string
@@ -334,7 +334,7 @@ jobs:
       run: |
         set -euo pipefail
         pip install --quiet remotezip matplotlib
-        python3 -I tools/am1/fetch_guitarset.py "$DATA/gs" --every "${{ github.event.inputs.guitarset_every || '3' }}" --offset 1
+        python3 -I tools/am1/fetch_guitarset.py "$DATA/gs" --every "${{ github.event.inputs.guitarset_every || '2' }}" --offset 0 --players 03,04,05 --solo
         du -sh "$DATA"/* | cat
 
     - name: Evaluate
@@ -342,7 +342,7 @@ jobs:
         set -euo pipefail
         mkdir -p am1-plots
         dotnet run -c Release --no-build --project tools/PitchEval -- --out am1-eval-report.md \
-          --am1-guitarset "$DATA/gs" --am1-idmt "$DATA/idmt" --am1-mdb "$DATA/mdb/MDB-stem-synth" --mdb-limit "${{ github.event.inputs.mdb_limit || '0' }}" \
+          --am1-guitarset "$DATA/gs" --gs-mono --gs-players 03,04,05 --am1-idmt "$DATA/idmt" --am1-mdb "$DATA/mdb/MDB-stem-synth" --mdb-limit "${{ github.event.inputs.mdb_limit || '0' }}" \
           --am1-plots am1-plots
 
     - name: Piano-roll plots

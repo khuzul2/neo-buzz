@@ -30,18 +30,19 @@ namespace NeoBuzz.AudioToMidi
         public int SettleSamples, MinNoteSamples;
         public int ActiveMask = Scales.All;
         public bool FixedVel; public int FixedVelocity = 100, VelMin = 25; public float SoftDb = -50f, LoudDb = -12f;
+        public double MinHz = 80, MaxHz = 1200;      // the tracker's range: a candidate outside it is the pluck's noise, not a note
         public int Window = 912, Hop = 130;       // the tracker's, in samples
         public readonly PitchBendMap Bend = new PitchBendMap();
 
         // ---- constants (docs/specs/audio-to-midi.md §3.4)
         /// <summary>Fast: the clarity (0 to 1) that lets the first note play alone, or with two agreeing estimates at the lower one, and the longest wait after the first pitched estimate, in ms (Stable: two agreeing estimates at 0.8, over a whole window when a note still sounds).</summary>
-        public const float FastConfidence = 0.80f, FastAgreeConfidence = 0.55f, StableConfidence = 0.80f;
+        public static float FastConfidence = 0.95f; public const float FastAgreeConfidence = 0.55f, StableConfidence = 0.80f;
         public const double FastWaitMs = 25, StableWaitMs = 40;
         /// <summary>How long a first note may still be corrected, ms.</summary>
         public const double CorrectionMs = 80;
         /// <summary>Fast, over a note that is still sounding: the share of the tracker's window that must be after the onset before an estimate counts (the rest is the old note).</summary>
         public const double FreshShare = 0.5;
-        const double ArmTimeoutMs = 150, DoubleOnsetMs = 50, ReleaseHoldMs = 25, StillRingingMs = 120, AfterOffMs = 250, RestartGuardMs = 60;
+        const double ArmTimeoutMs = 150, DoubleOnsetMs = 50, ReleaseHoldMs = 25, StillRingingMs = 120, StableMinMs = 40, SameNoteGuardMs = 300, ShortNoteMs = 50, AfterOffMs = 250, RestartGuardMs = 60;
 
         readonly MidiBlock block;
 
@@ -69,7 +70,7 @@ namespace NeoBuzz.AudioToMidi
         // Tuning (static for the evaluation tool): a note must be within GateDb of the loudest recent one (a string's bleed, a ringing neighbour, are far under it);
         // a note started over one sounding must rise RiseRatio over the level it hears (a beating sustain is not a new pluck).
         public static float GateDb = -16f, RiseRatio = 1.2f;
-        float refLevel, endPeak;
+        float refLevel, endPeak; int lastEndNote = -1; bool lastWasShort;
 
         public MelodyNotes(MidiBlock block) { this.block = block; }
 
@@ -112,7 +113,8 @@ namespace NeoBuzz.AudioToMidi
             lastRms = e.Rms;
             refLevel *= (float)PortableMath.Exp(-Hop / (6.0 * Rate));
             bool onOk = e.Voiced && e.Rms >= OnLevel && e.Rms >= refLevel * Lin(GateDb);
-            bool keepOk = e.Voiced && e.Rms >= OnLevel * 0.5f;
+            // Keeping a note is relative to the note itself (its peak, in Sounding_), not to an absolute level: a voiced estimate or a confident candidate keeps it.
+            bool keepOk = e.Voiced || e.Confidence >= 0.5f;
             if (cur >= 0) peak = Math.Max(peak * 0.9995f, e.Rms);
 
             if (armed)
@@ -132,7 +134,7 @@ namespace NeoBuzz.AudioToMidi
             long need = Fast ? (armOver ? (long)(FreshShare * Window) : 0) : (armOver ? Window : 0);
             if (since < need) return;
             // The tracker's best candidate counts before it is called voiced: the pluck's first periods are clear well before the voicing decision settles.
-            if (e.RawF0 <= 0 || e.Rms < OnLevel) { prevOk = false; return; }
+            if (e.RawF0 < MinHz * 0.97 || e.RawF0 > MaxHz * 1.03 || e.Rms < OnLevel) { prevOk = false; return; }
             double m = 69 + 12 * PortableMath.Log2(e.RawF0 / 440.0);
             bool agree = prevOk && Math.Abs(m - prevM) < 0.5;
             prevM = m; prevOk = true;
@@ -140,7 +142,7 @@ namespace NeoBuzz.AudioToMidi
             long waited = t - firstSince;
             bool go;
             if (Fast) go = e.Confidence >= FastConfidence || (agree && e.Confidence >= FastAgreeConfidence) || (waited >= (long)(FastWaitMs * 0.001 * Rate) && e.Confidence >= 0.4f);
-            else go = (agree && e.Confidence >= StableConfidence) || (waited >= (long)(StableWaitMs * 0.001 * Rate) && e.Confidence >= 0.5f);
+            else go = t - armAt >= (long)(StableMinMs * 0.001 * Rate) && ((agree && e.Confidence >= StableConfidence) || (waited >= (long)(StableWaitMs * 0.001 * Rate) && e.Confidence >= 0.5f));
             if (!go) return;
             Begin(Scales.Nearest(m, ActiveMask), t, armPeak);
             armed = false;
@@ -152,6 +154,10 @@ namespace NeoBuzz.AudioToMidi
             // A note's own decay does not start another: the level must have risen over where the last one ended.
             if (t - offAt < (long)(RestartGuardMs * 0.001 * Rate) || e.Rms < offLevel * 2f) return;
             int c = Scales.Nearest(e.Midi, ActiveMask);
+            // A dropout inside a ringing note is not a new note: the same pitch restarts only on a real onset (an energy rise above the decay), never from here.
+            if (c == lastEndNote && t - offAt < (long)(SameNoteGuardMs * 0.001 * Rate)) return;
+            // A note that was retracted (shorter than ShortNoteMs) is not followed at once by another.
+            if (lastWasShort && t - offAt < (long)(2 * ShortNoteMs * 0.001 * Rate)) return;
             if (cand < 0) { firstSince = t; candSince = t; cand = c; candPeak = e.Rms; }
             candPeak = Math.Max(candPeak, e.Rms);
             if (Fast)
@@ -184,6 +190,7 @@ namespace NeoBuzz.AudioToMidi
                 return;
             }
             lastVoicedAt = t; pendingOff = false;
+            if (!e.Voiced) return;                      // kept by a confident candidate, but there is no pitch to follow
             int c = Scales.Nearest(e.Midi, ActiveMask);
             double dev = e.Midi - cur;
             bool bendOn = Bend.On;
@@ -286,6 +293,7 @@ namespace NeoBuzz.AudioToMidi
             if (cur < 0) return;
             block.Emit(MidiKind.NoteOff, MidiStream.Pitch, Channel, sent, 0, t);
             LogEndLast(t);
+            lastEndNote = cur; lastWasShort = t - onAt < (long)(ShortNoteMs * 0.001 * Rate);
             offAt = t; offLevel = Math.Max(lastRms, 1e-6f); endPeak = peak;
             cur = -1; sent = -1; pendingOff = false; switchNote = -1; cand = -1; firstSince = -1; lowSince = -1;
             Centre(t);

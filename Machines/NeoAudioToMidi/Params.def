@@ -48,7 +48,7 @@ Stick "Stickiness" 0 100 25 lin 0 100 cents 0 | How far past the middle between 
 Settle "Settle" 0 200 25 lin 0 200 ms 0 | How long a new pitch must be held before it replaces the note sounding (and, in Stable response, before a note first plays)
     how Sets how long a new pitch must be held before it replaces the note sounding, from 0 to 200 ms; in Stable response it also delays the first note.
     sound Longer settling removes grace notes and brief slides at the cost of a later note start.
-MinNote "Min note length" 0 100 6 lin 0 500 ms 0 | A note lasts at least this long, however short the sound was
+MinNote "Min note length" 0 100 10 lin 0 500 ms 0 | A note lasts at least this long, however short the sound was
     how Sets the shortest a note lasts, from 0 to 100 mapped to 0 to 500 ms.
     sound Short plucked notes still last long enough for the synth to sound.
 Release "Release" 0 34 14 lin 6 40 dB 0 | The note ends when the level falls this far under its peak (or the pitch is lost)

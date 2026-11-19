@@ -49,7 +49,7 @@ namespace NeoBuzz.AudioToMidi
         [ParameterDecl(Name = "Settle", Description = "How long a new pitch must be held before it replaces the note sounding (and, in Stable response, before a note first plays)", MinValue = 0, MaxValue = 200, DefValue = 25)]
         public int Settle { get => Values[P.Settle]; set => Values.Set(P.Settle, value); }
 
-        [ParameterDecl(Name = "Min note length", Description = "A note lasts at least this long, however short the sound was", MinValue = 0, MaxValue = 100, DefValue = 6)]
+        [ParameterDecl(Name = "Min note length", Description = "A note lasts at least this long, however short the sound was", MinValue = 0, MaxValue = 100, DefValue = 10)]
         public int MinNote { get => Values[P.MinNote]; set => Values.Set(P.MinNote, value); }
 
         [ParameterDecl(Name = "Release", Description = "The note ends when the level falls this far under its peak (or the pitch is lost)", MinValue = 0, MaxValue = 34, DefValue = 14)]
