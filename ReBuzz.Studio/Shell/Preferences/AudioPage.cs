@@ -43,7 +43,7 @@ namespace ReBuzz.Studio.Shell.Preferences
         static readonly int[] StreamThresholdsMb = { 4, 8, 16, 32, 64, 0 };
         static readonly int[] CacheLimitsGb = { 1, 2, 4, 8, 16, 64 };
         readonly ComboBox streamThreshold = Choices(220), cacheLimit = Choices(220);
-        readonly TextBlock cacheText = new TextBlock { TextWrapping = Avalonia.Media.TextWrapping.Wrap };
+        readonly TextBlock cacheText = new TextBlock { TextWrapping = Avalonia.Media.TextWrapping.Wrap, MaxWidth = 460, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center };
         readonly Button clearCache = new Button { Content = "Clear" };
         readonly TextBlock status = new TextBlock { TextWrapping = Avalonia.Media.TextWrapping.Wrap };
         readonly TextBlock missing;
@@ -182,7 +182,7 @@ namespace ReBuzz.Studio.Shell.Preferences
                 buffer.ItemsSource = Buffers.Select(b => $"{b} frames ({b * 1000.0 / msRate:0.#} ms)").ToList();
                 buffer.SelectedIndex = Array.IndexOf(Buffers, savedBuffer) is int bi && bi >= 0 ? bi : Array.IndexOf(Buffers, DefaultBuffer);
 
-                streamThreshold.ItemsSource = StreamThresholdsMb.Select(m => m == 0 ? "Never (keep all audio in memory)" : $"{m} MB of audio (about {m * 1048576 / 8 / 48000} s of stereo)").ToList();
+                streamThreshold.ItemsSource = StreamThresholdsMb.Select(m => m == 0 ? "Never (keep all audio in memory)" : $"{m} MB of audio (about {Math.Round(m * 1048576 / 8.0 / 48000)} s of stereo)").ToList();
                 long thresholdMb = StreamingPolicy.ThresholdBytes / (1024 * 1024);
                 streamThreshold.SelectedIndex = StreamingPolicy.ThresholdBytes > 1L << 40 ? StreamThresholdsMb.Length - 1 : Math.Max(0, Array.IndexOf(StreamThresholdsMb, (int)thresholdMb));
                 cacheLimit.ItemsSource = CacheLimitsGb.Select(g => $"{g} GB").ToList();

@@ -91,7 +91,7 @@ The audit covered `AudioClip`, `ClipVoice`, `PhaseVocoder`, `AudioAnalysis`, `Au
 
 ## 9. Limits
 
-- Audio over the streaming threshold (8 MiB of floats by default, about 25 s of stereo at 48 kHz) streams from the decoded cache (section 13); shorter audio is in memory as floats.
+- Audio over the streaming threshold (8 MiB of floats by default, about 22 s of stereo at 48 kHz) streams from the decoded cache (section 13); shorter audio is in memory as floats.
 - Only two channels are kept of a file with more.
 - A clip made before this version keeps its wave, which is not removed after the migration (a song saved as .nbl holds both until the wave is deleted).
 - The Classic WPF clip panel still prints the wave's name for a clip that has none (it is frozen).
