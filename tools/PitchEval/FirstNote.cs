@@ -17,9 +17,12 @@ namespace NeoBuzz.PitchEval
         {
             public bool Valid;
             public double[] DelayMs = new double[4];
-            public bool[] Got = new bool[4], FirstRight = new bool[4], At120Right = new bool[4];
+            public bool[] Got = new bool[4], FirstRight = new bool[4], FirstOctave = new bool[4], At120Right = new bool[4];
             public int[] Retriggers = new int[4];
         }
+
+        /// <summary>A note is right when it is within this many semitones of the sung median pitch (a note is half a semitone either side, plus the 25 cents of Stickiness).</summary>
+        const double Tolerance = 0.75;
 
         public static Result Run(float[] x, int rate)
         {
@@ -41,7 +44,7 @@ namespace NeoBuzz.PitchEval
                 if (q.Voiced[i] && q.End[i] >= t0 + 0.15 && q.End[i] < t0 + 0.5 && q.F0[i] > 0) midis.Add(69 + 12 * Math.Log2(q.F0[i] / 440.0));
             if (midis.Count < 20) return r;
             midis.Sort();
-            int reference = (int)Math.Round(midis[midis.Count / 2]);
+            double reference = midis[midis.Count / 2];
             if (reference < 0 || reference > 127) return r;
             r.Valid = true;
             for (int c = 0; c < 4; c++)
@@ -69,9 +72,10 @@ namespace NeoBuzz.PitchEval
                 if (list.Count == 0) continue;
                 r.Got[c] = true;
                 r.DelayMs[c] = (list[0].T - t0) * 1000;
-                r.FirstRight[c] = list[0].Note == reference;
+                r.FirstRight[c] = Math.Abs(list[0].Note - reference) <= Tolerance;
+                r.FirstOctave[c] = Math.Abs(list[0].Note - reference) >= 10.5;
                 var at120 = list.LastOrDefault(o => o.T < t0 + 0.12);
-                r.At120Right[c] = at120.T > 0 && at120.Note == reference;
+                r.At120Right[c] = at120.T > 0 && Math.Abs(at120.Note - reference) <= Tolerance;
                 r.Retriggers[c] = list.Count(o => o.T < t0 + 0.5) - 1;
             }
             return r;
@@ -82,16 +86,16 @@ namespace NeoBuzz.PitchEval
             rs = rs.Where(r => r.Valid).ToList();
             md.AppendLine("### First note, live (Neo Voice to MIDI engine, straight long tones)");
             md.AppendLine();
-            md.AppendLine($"{rs.Count} long tones with a steady pitch between 150 and 500 ms after the voice starts. VocalSet has no note truth, so the reference is the note the Quality tracker sings there (median of its voiced estimates, nearest semitone); the voice start is the first 2.7 ms window above -40 dBFS. **Delay** is voice start to the first note-on. **First wrong** is a first note-on that is not the reference; **wrong at 120 ms** is the note sounding 120 ms in, after any correction; **extra notes** counts note-ons after the first in the first 500 ms.");
+            md.AppendLine($"{rs.Count} long tones with a steady pitch between 150 and 500 ms after the voice starts. VocalSet has no note truth, so the reference is the pitch the Quality tracker sings there (median of its voiced estimates); a note is **right** when it is within 0.75 semitone of it (half a semitone either side, plus the 25 cents of Stickiness; Lock is Off); the voice start is the first 2.7 ms window above -40 dBFS. **Delay** is voice start to the first note-on. **First wrong** is a first note-on that is not right, **of which octave** is 11 semitones or more away; **wrong at 120 ms** is the note sounding 120 ms in, after any correction; **extra notes** counts note-ons after the first in the first 500 ms.");
             md.AppendLine();
-            md.AppendLine("| Setting | Delay median | Delay 90th | Delay worst | First wrong | Wrong at 120 ms | Files with extra notes |");
-            md.AppendLine("|---|---:|---:|---:|---:|---:|---:|");
+            md.AppendLine("| Setting | Delay median | Delay 90th | Delay worst | First wrong | of which octave | Wrong at 120 ms | Files with extra notes |");
+            md.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|");
             for (int c = 0; c < 4; c++)
             {
                 var g = rs.Where(r => r.Got[c]).ToList();
                 if (g.Count == 0) continue;
                 var d = g.Select(r => r.DelayMs[c]).OrderBy(v => v).ToList();
-                md.AppendLine($"| {Names[c]} | {Fmt.F(d[d.Count / 2])} ms | {Fmt.F(d[(int)(d.Count * 0.9)])} ms | {Fmt.F(d[^1])} ms | {Fmt.P(g.Count(r => !r.FirstRight[c]) / (double)g.Count)} | {Fmt.P(g.Count(r => !r.At120Right[c]) / (double)g.Count)} | {Fmt.P(g.Count(r => r.Retriggers[c] > 0) / (double)g.Count)} |");
+                md.AppendLine($"| {Names[c]} | {Fmt.F(d[d.Count / 2])} ms | {Fmt.F(d[(int)(d.Count * 0.9)])} ms | {Fmt.F(d[^1])} ms | {Fmt.P(g.Count(r => !r.FirstRight[c]) / (double)g.Count)} | {Fmt.P(g.Count(r => r.FirstOctave[c]) / (double)g.Count)} | {Fmt.P(g.Count(r => !r.At120Right[c]) / (double)g.Count)} | {Fmt.P(g.Count(r => r.Retriggers[c] > 0) / (double)g.Count)} |");
             }
             md.AppendLine();
         }

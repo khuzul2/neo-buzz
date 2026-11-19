@@ -61,9 +61,10 @@ namespace NeoBuzz.VoiceToMidi
             var input = new Section("Input", AccentColor, Layout.Column(
                 Layout.Row(new ParamKnob(ctx, P.Monitor), new ParamKnob(ctx, P.Level)),
                 Layout.Gap(1, 8),
-                new ParamChoice(ctx, P.Range, "Range", 66)));
+                new ParamChoice(ctx, P.Range, "Range", 66),
+                new ParamChoice(ctx, P.Response, "Response", 66)));
             var pitch = new Section("Pitch", AccentColor, Layout.Column(
-                Layout.Row(new ParamChoice(ctx, P.Pitch, "Pitch", 40), new ParamChoice(ctx, P.Legato, "Legato", 40), new ParamChoice(ctx, P.VelMode, "Velocity", 56), new ParamChoice(ctx, P.Response, "Response", 56)),
+                Layout.Row(new ParamChoice(ctx, P.Pitch, "Pitch", 40), new ParamChoice(ctx, P.Legato, "Legato", 40), new ParamChoice(ctx, P.VelMode, "Velocity", 56)),
                 Layout.Row(new ParamKnob(ctx, P.Octave), new ParamKnob(ctx, P.Stick), new ParamKnob(ctx, P.Settle), new ParamKnob(ctx, P.MinNote)),
                 Layout.Row(new ParamKnob(ctx, P.Bend), new ParamKnob(ctx, P.Anchor), new ParamKnob(ctx, P.Fixed), new ParamKnob(ctx, P.PitchCh))));
 
