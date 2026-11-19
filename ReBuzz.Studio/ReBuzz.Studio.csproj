@@ -66,6 +66,18 @@
     <Compile Include="..\Machines\NeoPlug\PlugPlacement.cs" Link="PlugIns\PlugPlacement.cs" />
   </ItemGroup>
 
+  <!-- Fork (docs/specs/pitch.md section 9): ReBuzz.Engine compiles these seven files of the DSP library itself (Convert to MIDI runs the shared pitch
+       engine offline); the engine's copy is the one this project uses (internals visible), so they are left out of the glob above. -->
+  <ItemGroup>
+    <Compile Remove="..\Machines\NeoBuzz.Dsp\PitchTracker.cs" />
+    <Compile Remove="..\Machines\NeoBuzz.Dsp\OnsetDetector.cs" />
+    <Compile Remove="..\Machines\NeoBuzz.Dsp\TriggerClassifier.cs" />
+    <Compile Remove="..\Machines\NeoBuzz.Dsp\ComplexFft.cs" />
+    <Compile Remove="..\Machines\NeoBuzz.Dsp\PortableMath.cs" />
+    <Compile Remove="..\Machines\NeoBuzz.Dsp\Filters.cs" />
+    <Compile Remove="..\Machines\NeoBuzz.Dsp\DspMath.cs" />
+  </ItemGroup>
+
   <!-- The Neo machines in Gear, with their editors on Avalonia (studio-mvp.md S1), and the Link helper. -->
   <PropertyGroup>
     <NeoGearFlavour>Studio</NeoGearFlavour>

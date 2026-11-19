@@ -59,6 +59,16 @@
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Common\libsndfile\SoundFile.cs" Link="Engine\SoundFile.cs" />
     <!-- Stem separation (docs/specs/stem-separation.md): the transform, the chunker, the model files and the ONNX Runtime passes. -->
     <Compile Include="..\ReBuzz\Core\AudioLibrary\Stems\*.cs" Link="Engine\Stems\%(Filename)%(Extension)" />
+    <!-- Convert to MIDI (docs/specs/pitch.md section 9): the converters, the shared pitch engine they use, and the Basic Pitch model. -->
+    <Compile Include="..\ReBuzz\Core\AudioLibrary\AudioToMidi\*.cs" Link="Engine\AudioToMidi\%(Filename)%(Extension)" />
+    <Compile Include="..\Machines\NeoBuzz.Dsp\PitchTracker.cs" Link="Engine\Dsp\PitchTracker.cs" />
+    <Compile Include="..\Machines\NeoBuzz.Dsp\OnsetDetector.cs" Link="Engine\Dsp\OnsetDetector.cs" />
+    <Compile Include="..\Machines\NeoBuzz.Dsp\TriggerClassifier.cs" Link="Engine\Dsp\TriggerClassifier.cs" />
+    <Compile Include="..\Machines\NeoBuzz.Dsp\ComplexFft.cs" Link="Engine\Dsp\ComplexFft.cs" />
+    <Compile Include="..\Machines\NeoBuzz.Dsp\PortableMath.cs" Link="Engine\Dsp\PortableMath.cs" />
+    <Compile Include="..\Machines\NeoBuzz.Dsp\Filters.cs" Link="Engine\Dsp\Filters.cs" />
+    <Compile Include="..\Machines\NeoBuzz.Dsp\DspMath.cs" Link="Engine\Dsp\DspMath.cs" />
+    <EmbeddedResource Include="..\3rdParty\basic-pitch\nmp.onnx" LogicalName="ReBuzz.BasicPitch.nmp.onnx" Link="Engine\nmp.onnx" />
     <!-- Song Notes' formats (docs/specs/machine-safety.md §3.5): Markdown, the RTF reader, Info's saved state. -->
     <Compile Include="..\ReBuzz\Core\Notes\NotesMarkdown.cs;..\ReBuzz\Core\Notes\RtfToMarkdown.cs;..\ReBuzz\Core\Notes\InfoMachineState.cs" Link="Engine\%(Filename)%(Extension)" />
     <!-- The seams for hosts without Windows or a UI toolkit (docs/specs/mac-engine.md M0), with the interfaces they implement. -->
@@ -87,6 +97,7 @@
 
   <ItemGroup>
     <None Include="Stems\Data\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Convert\Data\*.json" CopyToOutputDirectory="PreserveNewest" Link="Convert\Data\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

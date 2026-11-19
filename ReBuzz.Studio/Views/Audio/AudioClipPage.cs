@@ -61,7 +61,7 @@ namespace ReBuzz.Studio.Views.Audio
         readonly ComboBox warp, preserve;
         readonly Control preserveRow;
         readonly TextBox tempo, transpose, detune, gain, fadeIn, fadeOut, start, loopStart, loopEnd;
-        readonly Button halve, doubleIt, detect, clear, fit;
+        readonly Button halve, doubleIt, detect, clear, fit, convert;
         readonly CheckBox loop, reverse;
         readonly TextBlock regionText;
         readonly DispatcherTimer playTimer;
@@ -102,6 +102,9 @@ namespace ReBuzz.Studio.Views.Audio
             halve = Btn("÷2", "Half the tempo (the clip twice as long)", () => ScaleTempo(0.5), "Halve tempo");
             doubleIt = Btn("×2", "Double the tempo (the clip half as long)", () => ScaleTempo(2), "Double tempo");
             detect = Btn("Detect", "Find the tempo again from the audio (the warp markers are cleared)", () => Apply(new AudioClipEdit { DetectTempo = true }, "Detect tempo"), "Detect tempo");
+            // Fork (docs/specs/pitch.md section 9): the clip's notes as MIDI on a new track; the page's right-click menu offers the same.
+            var convertMenu = ConvertFlow.ButtonMenu(() => shown);
+            convert = Btn("Convert to MIDI ▾", "Find the melody, the harmony or the drums in the audio and put them on a new MIDI track, in a clip where this one is", () => convertMenu.Open(convert), "Convert to MIDI");
             transpose = Box("Transpose, semitones (-48 to 48)", CommitPitch, "Transpose");
             detune = Box("Detune, cents (-50 to 50)", CommitPitch, "Detune");
             gain = Box("Gain, dB (-70 to 24)", CommitGain, "Gain");
@@ -148,6 +151,7 @@ namespace ReBuzz.Studio.Views.Audio
                     Row("Transpose", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { transpose, Unit("semitones") } }),
                     Row("Detune", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { detune, Unit("cents") } }),
                     Row("Gain", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { gain, Unit("dB") } }),
+                    Row("MIDI", convert),
                 },
             };
             var left = new ScrollViewer
@@ -173,7 +177,7 @@ namespace ReBuzz.Studio.Views.Audio
             var headerText = new StackPanel { Orientation = Orientation.Horizontal, Children = { title, info, status } };
             header.Children.Add(headerText);
             DockPanel.SetDock(header, Dock.Top);
-            var frame = new DockPanel { LastChildFill = true };
+            var frame = new DockPanel { LastChildFill = true, ContextMenu = convertMenu };
             frame.Children.Add(header);
             DockPanel.SetDock(empty, Dock.Top);
             frame.Children.Add(empty);
@@ -213,6 +217,7 @@ namespace ReBuzz.Studio.Views.Audio
         internal TextBox LoopEndBox => loopEnd;
         internal Button ClearButton => clear;
         internal Button FitButton => fit;
+        internal Button ConvertButton => convert;
         internal string TitleText => title.Text;
         internal string InfoText => info.Text;
         internal string StatusText => status.Text;

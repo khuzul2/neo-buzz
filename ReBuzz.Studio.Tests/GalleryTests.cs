@@ -25,6 +25,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using BuzzGUI.Interfaces;
+using ReBuzz.Core.AudioLibrary.AudioToMidi;
 using ReBuzz.Audio;
 using ReBuzz.Core;
 using ReBuzz.Core.Keyboards;
@@ -2128,6 +2129,50 @@ namespace ReBuzz.Studio.Tests
                     window.ShowView("Session");
                     Settle();
                     Shot(window, "039-session-audio-slots", "The Session grid with audio clips (neo-audio.md, NA3): each slot of an audio clip draws a mini waveform from the peak cache through its warp, scaled by its gain, with the playing position over it.", "Drop or import audio into a slot.");
+                });
+                // Fork (docs/specs/pitch.md section 9): Convert to MIDI, from the clip's menu.
+                Try("048-convert-menu", () =>
+                {
+                    var session = Tab<SessionView>(window, "Session");
+                    window.ShowView("Session");
+                    Settle();
+                    Click(window, Centre(session.SlotAt(layout.FirstTrackOf(drums), 0), window, 0.6, 0.5), MouseButton.Right);
+                    var menu = session.LastMenu;
+                    Assert.That(menu?.IsOpen, Is.True, "a right click on an audio clip opens its menu");
+                    menus.Add(menu!);
+                    Hover(ItemOf(menu!, "Convert to MIDI"));
+                    Shot(window, "048-convert-menu", "Session: an audio clip's menu with Convert to MIDI ▸ Melody…, Harmony…, Drums… (pitch.md section 9); the Arrangement's clip menu and the Audio page's MIDI button offer the same three.", "Right-click an audio clip ▸ Convert to MIDI.");
+                    CloseMenus();
+                });
+                Try("049-convert-dialog", () =>
+                {
+                    var source = layout.ConvertSourceOfClip(inSession, out string error);
+                    Assert.That(source, Is.Not.Null, error);
+                    foreach (var (id, mode, what) in new[]
+                    {
+                        ("049-convert-dialog-melody", ConvertMode.Melody, "Convert to MIDI ▸ Melody…: what to listen for (any melody instrument, voice, guitar or bass), pitch bends, and the quantize grid and strength; Convert starts the job on a worker."),
+                        ("049-convert-dialog-drums", ConvertMode.Drums, "Convert to MIDI ▸ Drums…: the sensitivity and the quantize grid and strength; the result is a new Neo Drums track with the hits as General MIDI notes."),
+                    })
+                    {
+                        var dialog = new ReBuzz.Studio.Shell.ConvertFlow.ConvertWindow(layout, source, mode);
+                        dialog.Show();
+                        Settle();
+                        try { DialogShot(window, dialog, id, what, "Right-click an audio clip ▸ Convert to MIDI ▸ " + mode + "…."); }
+                        finally { dialog.Close(); }
+                    }
+                });
+                Try("049-convert-progress", () =>
+                {
+                    var source = layout.ConvertSourceOfClip(inSession, out string error);
+                    Assert.That(source, Is.Not.Null, error);
+                    var dialog = new ReBuzz.Studio.Shell.ConvertFlow.ConvertWindow(layout, source, ConvertMode.Harmony);
+                    dialog.Show();
+                    dialog.Bar.IsVisible = true;
+                    dialog.Bar.Value = 0.4;
+                    dialog.GoButton.IsEnabled = false;
+                    Settle();
+                    try { DialogShot(window, dialog, "049-convert-progress", "Convert to MIDI while the job runs (here: Harmony, 40 %): the options locked, a progress bar; Cancel stops it and changes nothing.", "Convert in the dialog."); }
+                    finally { dialog.Close(); }
                 });
                 Try("038-session-audio-page", () =>
                 {

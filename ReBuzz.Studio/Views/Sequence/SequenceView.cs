@@ -1120,6 +1120,8 @@ namespace ReBuzz.Studio.Views.Sequence
                     Item("Duplicate", () => Duplicate(), Gesture(Key.D), hasTarget),
                     // Fork (docs/specs/stem-separation.md): an audio clip into stems on new tracks.
                     Item("Separate Stems…", () => _ = ReBuzz.Studio.Shell.StemFlow.SeparateClip(c.CursorPattern), null, c.CursorPattern != null && core.SessionLayout?.IsAudioClip(c.CursorPattern) == true),
+                    // Fork (docs/specs/pitch.md section 9): an audio clip into MIDI on a new track.
+                    ReBuzz.Studio.Shell.ConvertFlow.Menu(() => c.CursorPattern, c.CursorPattern != null && core.SessionLayout?.IsAudioClip(c.CursorPattern) == true),
                     new Separator(),
                     colour,
                     new Separator(),

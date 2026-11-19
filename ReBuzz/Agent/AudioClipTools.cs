@@ -1,7 +1,7 @@
 // Agent server (docs/specs/neo-audio.md, NA1): audio in the song. audio_import brings a WAV, AIFF, FLAC, OGG or MP3 file into the song's
 // audio store and puts it on a Neo Audio track (in a Session slot, in the arrangement, or both); audio_clip_get and audio_clip_set read
 // and change an audio clip's warp, tempo, transposition, gain, region and loop; audio_separate splits a clip or a file into stems on new tracks
-// (docs/specs/stem-separation.md).
+// (docs/specs/stem-separation.md); audio_convert_to_midi turns a clip's melody, harmony or drums into a MIDI clip on a new track (docs/specs/pitch.md section 9).
 
 using System;
 using System.Collections.Generic;
@@ -17,6 +17,7 @@ using ReBuzz.Agent.Model;
 using ReBuzz.Agent.Mcp;
 using ReBuzz.Core;
 using ReBuzz.Core.AudioLibrary;
+using ReBuzz.Core.AudioLibrary.AudioToMidi;
 using ReBuzz.Core.AudioLibrary.Stems;
 using ReBuzz.Core.Session;
 using static ReBuzz.Agent.Mcp.Schema;
@@ -399,6 +400,126 @@ namespace ReBuzz.Agent
                     return ToolResult.Ok($"Separated \"{source.Name}\" with {model.Title} ({qname}) into {string.Join(", ", r.Select(t => t!["stem"]!.GetValue<string>()))}" +
                         (result.FromCache ? " (from the cache)" : $" in {result.Seconds:0.#} s") + ": " +
                         string.Join(", ", r.Select(t => $"{t!["machine"]}")) + ".", output);
+                },
+            });
+
+            tools.Add(new ToolDef
+            {
+                Name = "audio_convert_to_midi",
+                Title = "Convert audio to MIDI",
+                Description =
+                    "Finds the notes in an audio clip of the song (machine + pattern) and puts them on a new MIDI track: a clip of the same length, in the source clip's Session scene " +
+                    "and at its arrangement positions, with an instrument on the track (Neo Poly for melody and harmony, Neo Drums for drums); one undo step. It runs on this computer and " +
+                    "takes seconds (cancelling stops it). mode: melody = one note at a time (a voice, a lead, a bass line; tracked as pitch, with range any/voice/guitar/bass, min_note_ms, " +
+                    "smooth_ms and pitch_bends: a slide or vibrato stays one note and its movement becomes pitch-bend events, the instrument's bend range being two semitones); " +
+                    "harmony = several notes at once (chords, piano, guitar; the Basic Pitch model, with onset_threshold and frame_threshold, lower finds more); drums = kick, snare, closed " +
+                    "and open hat, toms and cymbals as General MIDI notes (36 kick, 38 snare, 42 closed hat, 46 open hat, 43/47/50 toms, 49 crash; drum_threshold, lower finds more hits). " +
+                    "quantize snaps the note starts to a grid (off, 1/4, 1/8, 1/16, 1/32) by strength 0 to 1. The audio is read as it is in the store: the clip's transpose is added to the pitches, " +
+                    "its detune rounded, its warp markers place the notes in beats, a reversed clip puts them backwards; its gain and fades don't matter. Accuracy: melody finds most notes of " +
+                    "a clean single line (see docs/specs/pitch.md section 9 for the measured numbers); drums are best at kick, snare and closed hat; open hats, toms and cymbals are weaker; " +
+                    "harmony is Basic Pitch's own accuracy. apply=false only reports the notes (up to 200, in beats) and changes nothing. " +
+                    "Example: audio_convert_to_midi(machine=\"Bass audio\", pattern=\"line\", mode=\"melody\", quantize=\"1/16\", strength=0.8).",
+                Input = Object(null,
+                    Req("machine", String("The Neo Audio machine of the clip")),
+                    Req("pattern", String("The audio clip's pattern")),
+                    Req("mode", String("What to find", "melody", "harmony", "drums")),
+                    Opt("range", String("Melody: what the tracker listens for (default any)", "any", "voice", "guitar", "bass")),
+                    Opt("min_note_ms", Number("Melody: shortest note in milliseconds (default 60)", 10, 2000)),
+                    Opt("smooth_ms", Number("Melody: the median filter over the pitch curve, milliseconds (default 30; 0 for none)", 0, 200)),
+                    Opt("pitch_bends", Boolean("Melody and harmony: keep slides and vibrato as pitch-bend events on one note (default false)")),
+                    Opt("onset_threshold", Number("Harmony: how sure the model must be of a note's start, 0 to 1 (default 0.5)", 0.05, 0.95)),
+                    Opt("frame_threshold", Number("Harmony: how sure it must be the note is sounding, 0 to 1 (default 0.3)", 0.05, 0.95)),
+                    Opt("drum_threshold", Number("Drums: the onset threshold (default 4; lower finds more hits)", 1, 20)),
+                    Opt("quantize", String("Snap note starts to a grid (default off)", "off", "1/4", "1/8", "1/16", "1/32")),
+                    Opt("strength", Number("Quantize strength, 0 to 1 (default 1)", 0, 1)),
+                    Opt("apply", Boolean("false: only report the notes (default true)"))),
+                Output = Object(null,
+                    Req("mode", String("The mode that ran")), Req("notes", Integer("How many notes (hits) were found")), Req("seconds", Number("Seconds it took")),
+                    Req("summary", String("What was found, in a line")),
+                    Opt("machine", String("The new MIDI machine")), Opt("pattern", String("Its clip")), Opt("instrument", String("The instrument on the track")),
+                    Opt("slot", Integer("The Session scene of the new clip, from 1")), Opt("at_beats", Array(Number("A position"), "Positions of the clip in the arrangement, in beats")),
+                    Opt("pitch_bends", Integer("Pitch-bend events written")),
+                    Opt("found", Array(Object(null, Req("start_beats", Number("Where it starts")), Req("length_beats", Number("How long")), Req("note", Integer("MIDI note")), Req("velocity", Integer("1 to 127"))), "With apply=false: the notes"))),
+                Annotations = ToolAnnotations.Write,
+                Handler = async c =>
+                {
+                    string machineName = c.String("machine"), patternName = c.String("pattern");
+                    if (!Enum.TryParse<ConvertMode>(c.String("mode") ?? "", true, out var mode)) throw new ToolError("mode: melody, harmony or drums.");
+                    var options = new ConvertOptions { Mode = mode };
+                    string range = (c.String("range") ?? "any").ToLowerInvariant();
+                    options.Range = range == "any" ? "full" : range;
+                    if (range is not ("any" or "voice" or "guitar" or "bass")) throw new ToolError("range: any, voice, guitar or bass.");
+                    if (c.Number("min_note_ms") is double mn) options.MinNoteMs = mn;
+                    if (c.Number("smooth_ms") is double sm) options.SmoothMs = sm;
+                    if (c.Bool("pitch_bends") is bool pb) options.PitchBends = pb;
+                    if (c.Number("onset_threshold") is double ot) options.OnsetThreshold = ot;
+                    if (c.Number("frame_threshold") is double ft) options.FrameThreshold = ft;
+                    if (c.Number("drum_threshold") is double dt) options.DrumThreshold = dt;
+                    var apply = new ConvertApply();
+                    string quantize = (c.String("quantize") ?? "off").ToLowerInvariant();
+                    apply.QuantizeDivision = quantize switch { "off" => 0, "1/4" => 1, "1/8" => 2, "1/16" => 4, "1/32" => 8, _ => throw new ToolError("quantize: off, 1/4, 1/8, 1/16 or 1/32.") };
+                    if (c.Number("strength") is double st) apply.QuantizeStrength = Math.Clamp(st, 0, 1);
+                    bool write = c.Bool("apply") ?? true;
+
+                    var source = await host.Engine("audio_convert_to_midi", false, _ =>
+                    {
+                        var layout = Layout(core);
+                        var m = SongModel.Machine(core, machineName);
+                        var s = layout.ConvertSourceOfClip(SongModel.Pattern(m, patternName), out string error);
+                        if (s == null) throw new ToolError(error);
+                        if (write && layout.ConvertBlocker(mode) is string blocker) throw new ToolError(blocker);
+                        return s;
+                    }, c.Cancellation);
+                    ConvertResult result;
+                    try
+                    {
+                        result = await Layout(core).ConvertAsync(source, options, f => c.Progress(f, 1, "Converting to MIDI"), c.Cancellation);
+                    }
+                    catch (OperationCanceledException) { throw; }
+                    catch (Exception e) when (e is InvalidOperationException or ArgumentException or InvalidDataException or System.IO.FileNotFoundException)
+                    {
+                        throw new ToolError("Couldn't convert: " + e.Message);
+                    }
+                    var output = new JsonObject
+                    {
+                        ["mode"] = mode.ToString().ToLowerInvariant(), ["notes"] = result.Notes.Count, ["seconds"] = Math.Round(result.WorkSeconds, 2), ["summary"] = result.Summary,
+                    };
+                    if (!write)
+                    {
+                        var found = await host.Engine("audio_convert_to_midi", false, _ =>
+                        {
+                            var layout = Layout(core);
+                            double bpm = Math.Max(1, layout.AudioOf(source.Clip)?.Bpm ?? 120);
+                            var list = new JsonArray();
+                            foreach (var n in result.Notes.Take(200))
+                                list.Add(new JsonObject
+                                {
+                                    ["start_beats"] = Math.Round(n.Start * bpm / 60, 3), ["length_beats"] = Math.Round(Math.Max(0, n.End - n.Start) * bpm / 60, 3),
+                                    ["note"] = n.Pitch, ["velocity"] = n.Velocity,
+                                });
+                            return list;
+                        }, c.Cancellation);
+                        output["found"] = found;
+                        return ToolResult.Ok(result.Summary + " (nothing was changed; the times are in beats of the clip's own tempo).", output);
+                    }
+                    var r = await host.Engine("audio_convert_to_midi", true, _ =>
+                    {
+                        var layout = Layout(core);
+                        var doc = layout.Ensure();
+                        var before = doc.CloneLayout();
+                        var outcome = layout.ApplyConversion(source, result, apply, out string error) ?? throw new ToolError(error);
+                        var after = layout.Document.CloneLayout();
+                        AgentActions.Do(core, new DelegateAction(() => layout.Restore(after), () => layout.Restore(before)));
+                        return outcome;
+                    }, c.Cancellation);
+                    output["machine"] = r.Machine.Name;
+                    output["pattern"] = r.Pattern.Name;
+                    output["instrument"] = r.Instrument;
+                    output["pitch_bends"] = r.Bends;
+                    output["notes"] = r.Notes;
+                    if (r.Scene >= 0) output["slot"] = r.Scene + 1;
+                    if (r.Ticks.Count > 0) output["at_beats"] = new JsonArray(r.Ticks.Select(x => (JsonNode)JsonValue.Create(SongModel.Beats(core, x))).ToArray());
+                    return ToolResult.Ok($"{result.Summary} {r.Instrument} plays {r.Notes} of them on the new track \"{r.Machine.Name}\" (clip \"{r.Pattern.Name}\").", output);
                 },
             });
         }
