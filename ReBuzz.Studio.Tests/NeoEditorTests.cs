@@ -60,7 +60,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo De-esser", "NeoDeEsserEditor", "neo-deesser-editor", 833, 300),
             ("Neo Gate", "NeoGateEditor", "neo-gate-editor", 1000, 277),
             ("Neo Spectral", "NeoSpectralEditor", "neo-spectral-editor", 1004, 300),
-            ("Neo Voice to MIDI", "NeoVoiceToMidiEditor", "neo-voice-to-midi-editor", 1200, 786),   // the live view, key, pitch, triggers with the Train panel, chords and expression
+            ("Neo Voice to MIDI", "NeoVoiceToMidiEditor", "neo-voice-to-midi-editor", 1200, 836),   // the live view, key, pitch, triggers with the Train panel, chords and expression
             ("Neo Dither", "NeoDitherEditor", "neo-dither-editor", 667, 277),
             ("Neo Strip", "NeoStripEditor", "neo-strip-editor", 966, 605),
         };

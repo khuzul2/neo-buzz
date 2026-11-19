@@ -82,6 +82,17 @@ The target (85 % or more for four classes with 15 examples) is met on average an
 
 Vowels on singers the estimator was not fitted on: the workflow's "Vowels on held-out singers" section (a leave-one-singer-out refit, and the PT1 weights per half of the singers and per singer); the figures are in the VM1 report.
 
+First note on real voices (`pitch-eval.yml`, VocalSet straight long tones, 59 files with a steady pitch; Lock off; `FirstNote.cs` runs the engine itself). VocalSet has no note truth, so a note-on is right when it is within 0.75 semitone of the median pitch the Quality tracker gives in the next 40 ms (the note at 120 ms: of its pitch at 100 to 140 ms), so a singer's scoop into the note is not held against the engine. Voice start is the first 2.7 ms window above -40 dBFS.
+
+| Setting | Delay median | First note wrong | of which an octave | Wrong at 120 ms |
+|---|---:|---:|---:|---:|
+| Low latency, Fast | 8.8 ms | 21.4 % | 0 | 28.6 % |
+| Quality, Fast | 10.6 ms | 13.6 % | 0 | 25.0 % |
+| Low latency, Stable | 40.1 ms | 2.2 % | 0 | 26.7 % |
+| Quality, Stable | 43.0 ms | 6.5 % | 0 | 23.9 % |
+
+Fast plays the first note a median of 31 ms (Low latency) and 32 ms (Quality) sooner than Stable. Its wrong first notes are the voice still on its way into the note (none an octave out), and the 120 ms note is within 2 points of Stable's (28.6 against 26.7 and 25.0 against 23.9). Delay is from the first window above -40 dBFS, so it is shorter here than on the synthetic voices, whose attack is slower; the 90th percentile (127 to 154 ms) is breathy starts where the voice is not pitched yet.
+
 ## 10. Limits
 
 - Fast response can play a wrong first note (an octave error in the first 10 to 20 ms of a voice, mostly on voices with a strong second harmonic) and corrects it with a retrigger within 80 ms (with Pitch bend on the bend follows the voice instead and the note is left); a hit named a trigger cuts the pitch note it started, a blip of up to about 60 ms, so a beatboxer who wants no stray notes picks Stable. The first note's velocity comes from the first 10 to 20 ms of the voice, so it reads a little low on a slow attack. Stable plays notes 40 to 50 ms late.
