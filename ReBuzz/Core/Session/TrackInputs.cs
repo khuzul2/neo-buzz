@@ -131,7 +131,9 @@ namespace ReBuzz.Core.Session
         /// <summary>One device, by name.</summary>
         Device,
         /// <summary>The computer keyboard (the machine keyboard's keys).</summary>
-        Keyboard
+        Keyboard,
+        /// <summary>A machine's own MIDI (Neo Voice to MIDI), by the machine's name: "Machine: name". Never part of All inputs.</summary>
+        Machine
     }
 
     /// <summary>
@@ -142,7 +144,7 @@ namespace ReBuzz.Core.Session
     {
         public AudioFrom Audio { get; set; } = AudioFrom.Wired;
         public MidiFromKind Midi { get; set; } = MidiFromKind.All;
-        /// <summary>The device of <see cref="MidiFromKind.Device"/> (its name).</summary>
+        /// <summary>The device of <see cref="MidiFromKind.Device"/> (its name), or the machine of <see cref="MidiFromKind.Machine"/>.</summary>
         public string Device { get; set; } = "";
         /// <summary>The MIDI channel it listens to: 0 for all, else 1 to 16.</summary>
         public int Channel { get; set; }
@@ -153,15 +155,20 @@ namespace ReBuzz.Core.Session
 
         public bool SameAs(TrackInput other) =>
             other != null && Audio == other.Audio && Midi == other.Midi && Channel == other.Channel &&
-            (Midi != MidiFromKind.Device || string.Equals(Device, other.Device, StringComparison.OrdinalIgnoreCase));
+            (Midi != MidiFromKind.Device || string.Equals(Device, other.Device, StringComparison.OrdinalIgnoreCase)) &&
+            (Midi != MidiFromKind.Machine || string.Equals(Device, other.Device, StringComparison.Ordinal));
 
         /// <summary>What the MIDI chooser shows: "All inputs", the device's name, "Computer keyboard".</summary>
         public string MidiLabel => Midi switch
         {
             MidiFromKind.Device => string.IsNullOrEmpty(Device) ? "All inputs" : Device,
             MidiFromKind.Keyboard => MidiDevice.KeyboardName,
+            MidiFromKind.Machine => string.IsNullOrEmpty(Device) ? "All inputs" : MachinePrefix + Device,
             _ => "All inputs"
         };
+
+        /// <summary>What the chooser shows before a machine's name.</summary>
+        public const string MachinePrefix = "Machine: ";
 
         public string ChannelLabel => Channel <= 0 ? "All" : Channel.ToString(CultureInfo.InvariantCulture);
 
@@ -169,8 +176,8 @@ namespace ReBuzz.Core.Session
         {
             var e = new XElement("Input", new XAttribute("machine", machine));
             if (Audio != AudioFrom.Wired) e.SetAttributeValue("audio", Audio.ToText());
-            if (Midi != MidiFromKind.All) e.SetAttributeValue("midi", Midi == MidiFromKind.Keyboard ? "keyboard" : "device");
-            if (Midi == MidiFromKind.Device) e.SetAttributeValue("device", Device ?? "");
+            if (Midi != MidiFromKind.All) e.SetAttributeValue("midi", Midi == MidiFromKind.Keyboard ? "keyboard" : Midi == MidiFromKind.Machine ? "machine" : "device");
+            if (Midi == MidiFromKind.Device || Midi == MidiFromKind.Machine) e.SetAttributeValue("device", Device ?? "");
             if (Channel != 0) e.SetAttributeValue("channel", Channel);
             return e;
         }
@@ -183,6 +190,7 @@ namespace ReBuzz.Core.Session
             string device = (string)e.Attribute("device") ?? "";
             if (midi == "keyboard") input.Midi = MidiFromKind.Keyboard;
             else if (midi == "device" && device.Length > 0) { input.Midi = MidiFromKind.Device; input.Device = device; }
+            else if (midi == "machine" && device.Length > 0) { input.Midi = MidiFromKind.Machine; input.Device = device; }
             if (int.TryParse((string)e.Attribute("channel"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int channel))
                 input.Channel = Math.Clamp(channel, 0, 16);
             return input;
@@ -198,10 +206,14 @@ namespace ReBuzz.Core.Session
         /// </summary>
         public static bool Accepts(TrackInput input, MidiDevice device, int channel, bool claimed)
         {
+            // A machine's own MIDI reaches only the tracks that name that machine: never All inputs, never a track with no entry.
+            if (device.IsMachine) return input != null && input.Midi == MidiFromKind.Machine && device.NamedMachine(input.Device) && (input.Channel <= 0 || channel == input.Channel - 1);
             if (input == null) return !claimed;
             if (input.Channel > 0 && channel != input.Channel - 1) return false;
             switch (input.Midi)
             {
+                case MidiFromKind.Machine:
+                    return false;
                 case MidiFromKind.Device:
                     return device.Named(input.Device);
                 case MidiFromKind.Keyboard:
@@ -218,7 +230,7 @@ namespace ReBuzz.Core.Session
         public static bool TakesMidi(bool audioTrack, TrackInput input) => !audioTrack;
 
         /// <summary>Whether the computer keyboard under a machine's window plays its track (the keyboard's, or all inputs').</summary>
-        public static bool AcceptsKeyboard(TrackInput input) => input == null || input.Midi != MidiFromKind.Device;
+        public static bool AcceptsKeyboard(TrackInput input) => input == null || (input.Midi != MidiFromKind.Device && input.Midi != MidiFromKind.Machine);
     }
 
     /// <summary>

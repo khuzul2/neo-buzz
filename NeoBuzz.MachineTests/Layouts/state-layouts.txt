@@ -49,4 +49,5 @@ NeoBuzz.Transient	0	17	03b3ae017f04a5a7
 NeoBuzz.Tune	0	20	cbee2b088009522f
 NeoBuzz.Utility	0	11	3eb4171cc6e8a4c2
 NeoBuzz.Verb	0	17	ee4d7f51739f6a7b
+NeoBuzz.VoiceToMidi	0	91	9871503cf4670345
 NeoBuzz.Wave	0	83	744dec7ce1d8d67c

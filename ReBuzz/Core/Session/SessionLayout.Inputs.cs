@@ -79,7 +79,7 @@ namespace ReBuzz.Core.Session
             input = input.Clone();
             if (!HasAudioInput(machine)) input.Audio = AudioFrom.Wired;
             if (input.Channel < 0 || input.Channel > 16) input.Channel = 0;
-            if (input.Midi != MidiFromKind.Device) input.Device = "";
+            if (input.Midi != MidiFromKind.Device && input.Midi != MidiFromKind.Machine) input.Device = "";
             bool changed = Edit(doc => doc.SetInput(machine.Name, input));
             if (changed) InputsChanged?.Invoke();
             return changed;
@@ -98,7 +98,7 @@ namespace ReBuzz.Core.Session
             if (HasAudioInput(machine)) return false;                   // an audio track takes no MIDI
             var input = TrackInputOf(machine);
             input.Midi = kind;
-            input.Device = kind == MidiFromKind.Device ? device ?? "" : "";
+            input.Device = kind == MidiFromKind.Device || kind == MidiFromKind.Machine ? device ?? "" : "";
             return SetInput(machine, input);
         }
 
@@ -217,10 +217,31 @@ namespace ReBuzz.Core.Session
             return list;
         }
 
-        /// <summary>The label of the machine's MIDI source: "All inputs", a device (or "name (not connected)"), "Computer keyboard".</summary>
+        /// <summary>
+        /// The machines that offer their own MIDI as a source (Neo Voice to MIDI: <see cref="IMachineMidiSource"/>), by name, and the one the machine is set to
+        /// when it is no longer in the song (Present false).
+        /// </summary>
+        public IReadOnlyList<(string Name, bool Present)> MidiMachines(IMachine machine = null)
+        {
+            var list = new List<(string, bool)>();
+            try
+            {
+                foreach (var m in buzz.Song.Machines)
+                    if (m != machine && m.ManagedMachine is IMachineMidiSource) list.Add((m.Name, true));
+            }
+            catch (InvalidOperationException) { }
+            var set = machine == null ? null : TrackInputOf(machine);
+            if (set != null && set.Midi == MidiFromKind.Machine && !string.IsNullOrEmpty(set.Device) && !list.Any(n => n.Item1 == set.Device))
+                list.Add((set.Device, false));
+            return list;
+        }
+
+        /// <summary>The label of the machine's MIDI source: "All inputs", a device (or "name (not connected)"), "Computer keyboard", "Machine: name".</summary>
         public string MidiLabel(IMachine machine)
         {
             var input = TrackInputOf(machine);
+            if (input.Midi == MidiFromKind.Machine && !string.IsNullOrEmpty(input.Device))
+                return MidiMachines(machine).Any(n => n.Name == input.Device && n.Present) ? input.MidiLabel : input.MidiLabel + " (not in the song)";
             if (input.Midi != MidiFromKind.Device) return input.MidiLabel;
             bool connected = (buzz.MidiInOutEngine?.OpenInputNames() ?? Array.Empty<string>()).Any(n => string.Equals(input.Device, n, StringComparison.OrdinalIgnoreCase));
             return connected ? input.Device : input.Device + " (not connected)";

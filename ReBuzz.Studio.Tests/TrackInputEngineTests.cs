@@ -301,6 +301,75 @@ namespace ReBuzz.Studio.Tests
             Assert.That(NotesIn(rig, t2), Is.EqualTo(new[] { 40 }), "Bass hears Pads only");
         }
 
+        // ------------------------------------------------------------------ Neo Voice to MIDI (docs/specs/voice-to-midi.md §7)
+
+        /// <summary>Plays a sung A3 (220 Hz, a harmonic tone) into Neo Voice to MIDI's Work, a block at a time, as the host would.</summary>
+        static void Sing(MachineCore voice, double seconds, ref long frame)
+        {
+            var instance = voice.ManagedMachine!;
+            var work = instance.GetType().GetMethod("Work")!;
+            var input = new Buzz.MachineInterface.Sample[256];
+            var output = new Buzz.MachineInterface.Sample[256];
+            int blocks = (int)(seconds * Rate / 256);
+            for (int b = 0; b < blocks; b++)
+            {
+                for (int i = 0; i < 256; i++, frame++)
+                {
+                    double t = frame / (double)Rate, v = 0;
+                    for (int h = 1; h <= 8; h++) v += Math.Sin(2 * Math.PI * 220 * h * t) / h;
+                    input[i].L = input[i].R = (float)(v * 0.25 * 32768);
+                }
+                work.Invoke(instance, new object[] { output, input, 256, Buzz.MachineInterface.WorkModes.WM_READWRITE });
+            }
+        }
+
+        [AvaloniaTest]
+        public void AnArmedTrackRecordsTheNotesOfAMachineNamedInItsMidiFrom()
+        {
+            using var setup = Setup(out var rig);
+            var layout = rig.Layout;
+            layout.Ensure();
+            var voice = rig.Add("Neo Voice to MIDI", "Voice MIDI", track: false);
+            var lead = rig.Add("Neo Poly", "Lead");
+            var bass = rig.Add("Neo Poly", "Bass");
+            Assert.That(layout.SetMidiFrom(lead, MidiFromKind.Machine, "Voice MIDI"), Is.True);
+            Assert.That(layout.MidiLabel(lead), Is.EqualTo("Machine: Voice MIDI"));
+            layout.SetRecordBars(2);
+            layout.SetMachineArmed(lead, true);
+            layout.SetMachineArmed(bass, true);                                     // All inputs: a machine's MIDI is not for it
+            var t1 = TakeOf(rig, lead, 0);
+            var t2 = TakeOf(rig, bass, 0);
+            rig.Core.Playing = true;
+            rig.RunTicks(2);
+            long frame = 0;
+            Sing(voice, 0.25, ref frame);
+            rig.RunTicks(2);
+            Sing(voice, 0.25, ref frame);
+            rig.RunTicks(4);
+            rig.PlayTo(SessionRig.Bar * 2 + 2);
+            layout.StopRecording(layout.SequenceOf(layout.FirstTrackOf(lead))!);
+            layout.StopRecording(layout.SequenceOf(layout.FirstTrackOf(bass))!);
+            Assert.That(NotesIn(rig, t1), Does.Contain(57), "a sung A3 is note 57");
+            Assert.That(NotesIn(rig, t2), Is.Empty, "All inputs take devices, not a machine");
+        }
+
+        [AvaloniaTest]
+        public void NotesGoToATargetMachineWithinTheNextBlock()
+        {
+            using var setup = Setup(out var rig);
+            rig.Layout.Ensure();
+            var voice = rig.Add("Neo Voice to MIDI", "Voice MIDI", track: false);
+            var lead = rig.Add("Neo Poly", "Lead");
+            voice.ManagedMachine!.GetType().GetMethod("SetTarget")!.Invoke(voice.ManagedMachine, new object[] { "Lead" });
+            Assert.That((bool)voice.ManagedMachine.GetType().GetProperty("TargetFound")!.GetValue(voice.ManagedMachine)!, Is.True, "the target is found by name");
+            var before = rig.RunFrames(4096);
+            Assert.That(before.Max(Math.Abs), Is.LessThan(0.001f), "silent before the voice");
+            long frame = 0;
+            Sing(voice, 0.2, ref frame);
+            var heard = rig.RunFrames(Rate / 4);
+            Assert.That(heard.Max(Math.Abs), Is.GreaterThan(0.005f), "Neo Poly plays the sung note");
+        }
+
         sealed class FakePort : IControllerPort
         {
             public event Action<int> Received;

@@ -1,0 +1,95 @@
+# Neo Voice to MIDI factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoVoiceToMidi
+# Where the MIDI goes (target machine, device) and the trained sounds are the machine's state: a preset you save keeps them.
+machine "Neo Voice to MIDI"
+state NeoVoiceToMidiState
+
+preset "Sing a Lead"
+Pitch = On
+Triggers = Off
+Chords = Off
+Lock = Suggest
+Stickiness = 30
+Settle = 30
+Legato = On
+Monitor = 20
+
+preset "Sing a Bass"
+Pitch = On
+Triggers = Off
+Chords = Off
+Lock = Set key
+Octave = -2
+Stickiness = 40
+Settle = 40
+Min note length = 80
+Legato = On
+Monitor = 20
+
+preset "Expressive Bend"
+Pitch = On
+Triggers = Off
+Chords = Off
+Lock = Off
+Pitch bend = ±2 st
+Bend mode = Anchored
+Anchor = 40
+Monitor = 20
+
+preset "Beatbox Kit"
+Pitch = Off
+Triggers = On
+Chords = Off
+Window = Accurate
+Min gap = 110
+Monitor = 20
+
+preset "Beatbox and Bass"
+Pitch = On
+Triggers = On
+Chords = Off
+Lock = Set key
+Octave = -2
+Overlap = Triggers win
+Min gap = 110
+Monitor = 20
+
+preset "Chords from the Voice"
+Pitch = Off
+Triggers = Off
+Chords = On
+Lock = Set key
+Chord type = Triads
+Inversion = Auto
+Monitor = 30
+
+preset "Jazz Chords (Sevenths)"
+Pitch = Off
+Triggers = Off
+Chords = On
+Lock = Set key
+Chord type = Sevenths
+Spread = Open
+Monitor = 30
+
+preset "Vowel Filter"
+Pitch = Off
+Triggers = Off
+Chords = Off
+Level on = On
+Level controller = 74
+Vowel aa on = On
+Vowel aa controller = 71
+Vowel oo on = On
+Vowel oo controller = 72
+Vowel ee on = On
+Vowel ee controller = 73
+Monitor = 100
+
+preset "Full Voice Band"
+Pitch = On
+Triggers = On
+Chords = On
+Lock = Suggest
+Overlap = Triggers win
+Min gap = 110
+Monitor = 40
