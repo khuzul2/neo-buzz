@@ -257,7 +257,7 @@ Melody is one voice: a chord gives the louder or the shorter period; a very nois
 
 ### 9.8 Licences
 
-Basic Pitch: Apache-2.0, Copyright 2022 Spotify AB (`3rdParty/basic-pitch/LICENSE` and `NOTICE`; the package's `Licenses` folder has both as `BasicPitch-LICENSE.txt` and `BasicPitch-NOTICE.txt`). The model's training data are not shipped. The evaluation data are CC BY-NC (MDB-stem-synth), CC BY 4.0 (Groove MIDI Dataset) and CC BY-NC-SA 4.0 (MAESTRO); they are used for measurement on the runner and never committed or uploaded. **The drum classifier's coefficients** (`DrumModelData.cs`) were fitted on the train and validation splits of the **Groove MIDI Dataset** (Jon Gillick, Adam Roberts, Jesse Engel, Douglas Eck, David Bamman, Magenta, *Learning to Groove with Inverse Sequence Transformations*, ICML 2019; Creative Commons Attribution 4.0 International, https://magenta.tensorflow.org/datasets/groove); the licence allows it with attribution, which this paragraph, `DrumModel.cs` and `DrumModelData.cs` give. The coefficients are a few thousand numbers; no audio or MIDI of the dataset is in the repository, the package or the artifacts.
+Basic Pitch: Apache-2.0, Copyright 2022 Spotify AB (`3rdParty/basic-pitch/LICENSE` and `NOTICE`; the package's `Licenses` folder has both as `BasicPitch-LICENSE.txt` and `BasicPitch-NOTICE.txt`). The model's training data are not shipped. The evaluation data are CC BY-NC (MDB-stem-synth), CC BY 4.0 (Groove MIDI Dataset) and CC BY-NC-SA 4.0 (MAESTRO); they are used for measurement on the runner and never committed or uploaded; the drum comparison on other kits (9.10) adds IDMT-SMT-Drums (CC BY-NC-ND 4.0) and MDB Drums (CC BY-NC-SA 4.0), measurement only. **The drum classifier's coefficients** (`DrumModelData.cs`) were fitted on the train and validation splits of the **Groove MIDI Dataset** (Jon Gillick, Adam Roberts, Jesse Engel, Douglas Eck, David Bamman, Magenta, *Learning to Groove with Inverse Sequence Transformations*, ICML 2019; Creative Commons Attribution 4.0 International, https://magenta.tensorflow.org/datasets/groove); the licence allows it with attribution, which this paragraph, `DrumModel.cs`, `DrumModelData.cs` and `3rdParty/groove-midi-dataset/NOTICE` give; the notice ships in the package as `Licenses\\GrooveMidiDataset-NOTICE.txt` and is listed in `Licenses\\NOTICE.txt` (`build.ps1`, the Basic Pitch way). The dataset is the only set the coefficients were fitted on (the synthetic loops are the repository's own). The coefficients are a few thousand numbers; no audio or MIDI of the dataset is in the repository, the package or the artifacts.
 
 ### 9.9 CD1: what was tried
 
@@ -274,3 +274,36 @@ Every try, on the development data (the Groove train and validation splits) and,
 - **Synthetic loops.** The first network turned the unit tests' synthetic snare into snare plus hat. 120 synthetic loops of that kit (hits mostly between each other) were added to the fitting only: the tests pass exactly, and the Groove figures did not move by more than a point.
 - **Open hat target (60 %) missed**: 55.1 % on the test split; the out-of-fold open hat on the development recordings is 58.7 %.
 - Not tried: partially fixed NMF/NMFD with templates adapted on the song (the network's context stage above did not help, and the label is the problem, not the template); reading ride and crash apart (one class in the evaluation).
+
+### 9.10 Drums on other kits (CD1)
+
+The Groove test split is another take on the kit the network was fitted on, so it overstates real use. The **convert** job therefore also runs the AM2 rules (kept in `tools/ConvertEval/Am2RuleDrums.cs`, unchanged, only as the comparison baseline) and the CD1 network on kits it never saw: **IDMT-SMT-Drums** (Dittmar and Gaertner, Fraunhofer IDMT; Zenodo 7544164; **CC BY-NC-ND 4.0**, measurement only: the real, techno and wave kits, the mixes with accompaniment; kick, snare, hat) and **MDB Drums** (Southall, Wu, Lerch, Hockman, ISMIR 2017; github.com/CarlSouthall/MDBDrums; **CC BY-NC-SA 4.0**, measurement only: 23 MedleyDB tracks on acoustic kits, as full mixes and as the drum stem alone; kick, snare, hat, tom, cymbal). The data are downloaded on the runner (IDMT checked against Zenodo's md5; MDB Drums by a sparse clone) and never committed or uploaded. Hat is closed and open together (these sets do not tell them apart), cymbal is crash and ride, a hit is right within 50 ms. CI run 44701586972, F-measure:
+
+| set | class | hits | AM2 rules | CD1 network |
+|---|---|---:|---:|---:|
+| IDMT-SMT-Drums real kit | kick | 302 | 54.7 % | 89.5 % |
+| IDMT-SMT-Drums real kit | snare | 265 | 57.7 % | 58.2 % |
+| IDMT-SMT-Drums real kit | hat | 722 | 54.7 % | 65.0 % |
+| IDMT-SMT-Drums real kit | all labelled classes | 1289 | 55.8 % | 68.6 % |
+| IDMT-SMT-Drums techno kit | kick | 289 | 47.9 % | 86.4 % |
+| IDMT-SMT-Drums techno kit | snare | 209 | 59.4 % | 80.7 % |
+| IDMT-SMT-Drums techno kit | hat | 551 | 68.4 % | 80.6 % |
+| IDMT-SMT-Drums techno kit | all labelled classes | 1049 | 61.4 % | 82.2 % |
+| IDMT-SMT-Drums wave kit | kick | 1588 | 93.1 % | 96.1 % |
+| IDMT-SMT-Drums wave kit | snare | 1025 | 67.1 % | 72.8 % |
+| IDMT-SMT-Drums wave kit | hat | 2976 | 55.4 % | 82.7 % |
+| IDMT-SMT-Drums wave kit | all labelled classes | 5589 | 70.0 % | 83.9 % |
+| MDB Drums full mix | kick | 1539 | 49.6 % | 55.5 % |
+| MDB Drums full mix | snare | 2654 | 24.6 % | 35.9 % |
+| MDB Drums full mix | hat | 2639 | 18.4 % | 65.5 % |
+| MDB Drums full mix | tom | 90 | 0.9 % | 7.5 % |
+| MDB Drums full mix | cymbal | 1002 | 0.5 % | 6.7 % |
+| MDB Drums full mix | all labelled classes | 7924 | 25.1 % | 46.1 % |
+| MDB Drums drum-only | kick | 1539 | 81.8 % | 92.5 % |
+| MDB Drums drum-only | snare | 2654 | 69.2 % | 75.4 % |
+| MDB Drums drum-only | hat | 2639 | 39.2 % | 80.2 % |
+| MDB Drums drum-only | tom | 90 | 1.6 % | 21.8 % |
+| MDB Drums drum-only | cymbal | 1002 | 15.1 % | 60.3 % |
+| MDB Drums drum-only | all labelled classes | 7924 | 54.0 % | 77.0 % |
+
+**Gate.** Per set, CD1 may not be more than 2 points under the AM2 rules on kick, snare and hat, and may not lose toms and cymbals where they are labelled. **It passes on all five sets** (the report's gate column): the largest change against it is IDMT real-kit snare, +0.5 points; everything else is better, kick and hat by 3 to 47 points. Because the gate passed, the training data were not widened (E-GMD would be the next step: CC BY 4.0, 43 kits, hold out whole kits). What the table also says, plainly: **absolute figures off the Groove kit are much lower than on it.** On an acoustic kit with the drum stem alone the network finds kick 92.5, hat 80.2, cymbal 60.3 %, snare 75.4, tom 21.8; in a full mix with the rest of the band under it kick is 55.5, snare 35.9, hat 65.5, tom 7.5 and cymbal 6.7 % (the rules were 49.6, 24.6, 18.4, 0.9 and 0.5 %). The IDMT real kit's snare is 58.2 % (precision 42 %: the mixes' other sounds are taken for snares); the techno and wave kits' snares are 80.7 and 72.8 %. So CD1 is a clear gain over the rules on every set tried, and still only reliable on clean drums; the toms are few (90 hits in MDB Drums). Speed in the same run: 98 to 114x on the stems and mixes of the IDMT and drum-only sets, 75x on MDB Drums' full mixes (above the 50x floor).
