@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 // The artefact detector (docs/specs/neo-tune.md section 12.1). It compares the output of a corrector with its input (latency-aligned, level-matched) and finds the clicks and
 // glitches a listener hears at note transitions, which NT2's own measure (the 99th percentile of 2 ms level jumps) did not see.
 //

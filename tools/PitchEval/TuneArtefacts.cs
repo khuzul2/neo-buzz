@@ -102,9 +102,10 @@ namespace NeoBuzz.PitchEval
         }
 
         /// <summary>
-        /// An instant pitch step is the hard effect: even an ideal one (a synthetic voice whose pitch is stepped, nothing spliced) has a burst in the aperiodic residual, about
-        /// -12 dB of the signal for half a semitone, -9 dB for one, -6 dB for two (measured with the detector on synthetic voices, NT3 report). A hit near a target change or a shift step is
-        /// an intended step if its level is within 3 dB of that line, -9 + 3 log2(step / 1 st) dB; anything louder, and every hit with another cause, is an artefact.
+        /// A change of the pitch ratio is the hard effect, and it is not free of a burst in the aperiodic residual whatever makes it: the cycle after a step is not the cycle before.
+        /// An ideal resampler (cubic spline, the engine's own ratio trajectory, no splice) finds the very same hit at the very same place (NT3 report: 02 Natural 0 at 0.735 s, x15, +1 dB
+        /// in both), and a synthetic voice stepped by one semitone has one at -9 dB. So a hit near a target change or a shift step (the shift moved by 0.2 semitones or more
+        /// within 8 ms) is counted as an intended step, listed apart, and every hit with another cause is an artefact: a splice, a mark, a hold, or nothing the engine logged.
         /// </summary>
         internal static void Classify(TuneDetector.Hit h, TuneEvent[] events, int rate)
         {
@@ -112,7 +113,7 @@ namespace NeoBuzz.PitchEval
             foreach (var e in events)
                 if (e.Kind == TuneEventKind.ShiftStep && Math.Abs(e.Sample / (double)rate - h.Time) < 0.008) sum += Math.Abs(e.B - e.A);
             h.StepSemis = sum;
-            h.Step = stepCause && sum >= 0.2 && h.LevelDb <= -9 + 3 * Math.Log2(Math.Max(sum, 0.25)) + 3;
+            h.Step = stepCause && sum >= 0.2;
         }
 
         internal static readonly double[] Naturals = { 0.0, 0.25, 0.5, 0.75, 1.0 };
@@ -167,6 +168,76 @@ namespace NeoBuzz.PitchEval
             md.AppendLine("Artefacts by nearest cause: " + string.Join(", ", causes));
             File.WriteAllText(outMd, md.ToString());
             Console.Write(md.ToString());
+        }
+
+        /// <summary>
+        /// --tune-hypotheses DIR OUT.md: the same files and detector with the engine's other paths forced (Method PSOLA, with and without the Transients dry hold, and with a formant shift),
+        /// to put a number on each suspected cause: how many artefacts, how many of them near a transient toggle, a method switch, a PSOLA bypass toggle. A switch of method in the middle of a phrase
+        /// cannot happen at a fixed setting (a change of Method, Range, Target or Formant resets the engine), so the count of MethodSwitch events is 0 by construction and is reported as measured.
+        /// </summary>
+        internal static void HypothesesCommand(string dir, string outMd)
+        {
+            var md = new StringBuilder();
+            md.AppendLine("| Variant | Natural | files | artefacts | steps | method switches | transient on/off | PSOLA bypass toggles | by nearest cause |");
+            md.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---|");
+            var variants = new (string Name, Action<ParamValues> Tweak)[]
+            {
+                ("Auto (splice)", null),
+                ("PSOLA, Transients on", pv => pv.Set(P.Method, 2)),
+                ("PSOLA, Transients off", pv => { pv.Set(P.Method, 2); pv.Set(P.Transients, 0); }),
+                ("PSOLA, Formant +1 st", pv => { pv.Set(P.Method, 2); pv.Set(P.Formant, Params.Table[P.Formant].Raw(1)); }),
+            };
+            foreach (var (name, tweak) in variants)
+                foreach (var n in new[] { 0.0, 0.5, 1.0 })
+                {
+                    int files = 0, art = 0, steps = 0, sw = 0, tr = 0, by = 0;
+                    var causes = new Dictionary<string, int>();
+                    foreach (var f in Directory.GetFiles(dir, "*-original.wav").OrderBy(x => x, StringComparer.Ordinal))
+                    {
+                        var (x, rate) = Wav.Read(f);
+                        var rd = RenderFile(x, rate, n, 1, tweak);
+                        var y = TuneDetector.LevelMatch(x, rd.Out);
+                        var hits = TuneDetector.Detect(x, y, rate);
+                        foreach (var h in hits) { h.Cause = Cause(h.Time, rd.Events, rate); Classify(h, rd.Events, rate); }
+                        files++; art += hits.Count(h => !h.Step); steps += hits.Count(h => h.Step);
+                        sw += rd.Events.Count(e => e.Kind == TuneEventKind.MethodSwitch);
+                        tr += rd.Events.Count(e => e.Kind == TuneEventKind.TransientOn || e.Kind == TuneEventKind.TransientOff);
+                        by += rd.Events.Count(e => e.Kind == TuneEventKind.PsolaBypassOn || e.Kind == TuneEventKind.PsolaBypassOff);
+                        foreach (var h in hits.Where(h => !h.Step)) { var k = h.Cause.Split('+')[0]; causes[k] = causes.GetValueOrDefault(k) + 1; }
+                    }
+                    md.AppendLine($"| {name} | {n * 100:F0} | {files} | {art} | {steps} | {sw} | {tr} | {by} | {string.Join(", ", causes.OrderByDescending(c => c.Value).Select(c => c.Key + " " + c.Value))} |");
+                }
+            File.WriteAllText(outMd, md.ToString());
+            Console.Write(md.ToString());
+        }
+
+        /// <summary>The Natural value the blind test's listener picked as the most natural, per excerpt number (01 - 06); the pack of the next blind test renders it.</summary>
+        static readonly double[] PickedNatural = { 1.0, 1.0, 0.5, 1.0, 0.5, 1.0 };
+
+        /// <summary>
+        /// --tune-pack LABEL ORIGDIR OUTDIR: for each NN-*-original.wav, the engine this binary was built with ("nt2" or "nt3" in LABEL) at Natural 0 and at the picked Natural, scaled to the
+        /// original's RMS as the NT2 pack was, written as NN-excerpt--LABEL-natural-XXX.wav (the original is copied once as NN-excerpt--original.wav).
+        /// </summary>
+        internal static void PackCommand(string label, string dir, string outDir)
+        {
+            Directory.CreateDirectory(outDir);
+            foreach (var f in Directory.GetFiles(dir, "*-original.wav").OrderBy(x => x, StringComparer.Ordinal))
+            {
+                var id = Path.GetFileName(f).Replace("-original.wav", "");
+                int no = int.Parse(id.Substring(0, 2)) - 1;
+                var (x, rate) = Wav.Read(f);
+                double rms0 = Math.Sqrt(x.Sum(v => (double)v * v) / Math.Max(1, x.Length));
+                TuneEval.WriteWav(Path.Combine(outDir, id + "--original.wav"), x, rate);
+                foreach (var n in new[] { 0.0, PickedNatural[Math.Clamp(no, 0, 5)] })
+                {
+                    var y = RenderFile(x, rate, n).Out;
+                    double ry = Math.Sqrt(y.Sum(v => (double)v * v) / Math.Max(1, y.Length));
+                    double g = ry > 1e-9 ? rms0 / ry : 1.0;
+                    var o = new float[y.Length];
+                    for (int i = 0; i < o.Length; i++) o[i] = (float)Math.Clamp(y[i] * g, -0.98, 0.98);
+                    TuneEval.WriteWav(Path.Combine(outDir, $"{id}--{label}-natural-{(int)Math.Round(n * 100):000}.wav"), o, rate);
+                }
+            }
         }
     }
 }

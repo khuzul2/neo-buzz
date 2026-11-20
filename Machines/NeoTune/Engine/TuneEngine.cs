@@ -195,6 +195,7 @@ namespace NeoBuzz.Tune
             ringMask = rs - 1;
             hgMax = 0.040 * sr;
             score = new double[(int)(0.4 * sr / 20) + 8];
+            scoreJ = new double[(int)(0.3 * sr / 20) + 16];
             int os = 1 << 12;
             while (os < (int)(2 * hgMax + 64)) os <<= 1;
             num = new float[os]; den = new float[os];
@@ -504,6 +505,21 @@ namespace NeoBuzz.Tune
                     return;
                 }
                 double p = sr / f;
+                // Marks smoothed across transitions: the period of a voice does not change by more than a quarter from one cycle to the next, and a tracker that blips
+                // at a note change (an octave error for a few frames, a late estimate) must not lay marks at half or twice the true spacing (the splice would then
+                // jump half a period: a click). The spacing of the marks just laid is the reference.
+                double prevSp = 0;
+                if (mCount >= 2)
+                {
+                    int i1 = (int)((mCount - 1) & MarkMask), i2 = (int)((mCount - 2) & MarkMask);
+                    if (mRun[i1] == mRun[i2]) prevSp = mT[i1] - mT[i2];
+                }
+                if (prevSp > 8)
+                {
+                    double ratio = p / prevSp;
+                    if (ratio < 0.58 && ratio > 0.42) p *= 2;
+                    else if (ratio > 1.7 && ratio < 2.4) p *= 0.5;
+                }
                 double pred = last + p;
                 int hw = Math.Max(4, (int)(0.3 * p)), rg = Math.Max(2, (int)(0.2 * p));
                 if (pred + rg + hw + 2 > inCount - 1) return;
