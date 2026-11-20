@@ -164,7 +164,7 @@ namespace NeoBuzz.AudioToMidi
             if (drumMode)
             {
                 onsets.Threshold = DrumTuning.ThrBase - DrumTuning.ThrSlope * V(P.Sensitivity);
-                onsets.RobustSpread = DrumTuning.Robust != 0;
+                onsets.RobustSpread = DrumTuning.Robust != 0; onsets.RobustMask = DrumTuning.RobustMask;
                 onsets.MinRatio = DrumTuning.MinRatio;
                 double minGap = Math.Min(V(P.KickGap), Math.Min(V(P.SnareGap), V(P.HatGap)));
                 onsets.MinIntervalSeconds = Math.Max(0.015, minGap * 0.001);

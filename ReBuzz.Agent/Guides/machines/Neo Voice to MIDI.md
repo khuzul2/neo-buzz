@@ -37,6 +37,7 @@ Neo Voice to MIDI listens to a voice (a microphone through Neo Audio, or any aud
 - Nothing is trained: the Triggers part plays nothing; the pitch part still works.
 - A noisy room: the pitch part follows noise as a note. Raise `Level`, or use `Lock` to keep it in a key.
 - The synth's pitch bend range must match `Pitch bend`, or the bends sound off.
+- `Record at attack` (on, in the Recording group): a track recording from `Machine: <name>` puts each note at the start of the sound, not when the note was sent (a median of about 7 ms against 14 ms in Fast, 3 ms against 47 ms in Stable Quality, on the test voice); live output is unchanged.
 - Trigger notes go to channel 10 (the drum channel) by default; a bass synth listening on channel 1 will not play them.
 - Latency: with Response Fast a note starts about 14 ms (Low latency) or 21 ms (Quality) after the voice does, 40 to 50 ms with Stable; the readings give `note_latency_ms` (the longest to expect).
 

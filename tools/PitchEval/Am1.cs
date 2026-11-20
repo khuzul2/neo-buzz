@@ -19,7 +19,7 @@ namespace NeoBuzz.PitchEval
 {
     internal static class Am1
     {
-        sealed class Note { public double Start, End; public int Pitch, Vel, Src; }
+        sealed class Note { public double Start, End; public int Pitch, Vel, Src, LagOn, LagOff; }
         sealed class Truth { public double Start, End, Midi; }
 
         /// <summary>Matching counts, latencies and octave errors of one configuration over many lines.</summary>
@@ -77,8 +77,8 @@ namespace NeoBuzz.PitchEval
                     }
                     else if (m.Stream == MidiStream.Pitch)
                     {
-                        if (m.Kind == MidiKind.NoteOn) { var n = new Note { Start = t, End = double.NaN, Pitch = m.Data1, Vel = m.Data2, Src = srcAt.TryGetValue(basePos + m.Offset, out var sv) ? sv : 0 }; notes.Add(n); open[m.Data1] = n; }
-                        else if (m.Kind == MidiKind.NoteOff && open.TryGetValue(m.Data1, out var n)) { n.End = t; open.Remove(m.Data1); }
+                        if (m.Kind == MidiKind.NoteOn) { var n = new Note { Start = t, End = double.NaN, Pitch = m.Data1, Vel = m.Data2, LagOn = m.Lag, Src = srcAt.TryGetValue(basePos + m.Offset, out var sv) ? sv : 0 }; notes.Add(n); open[m.Data1] = n; }
+                        else if (m.Kind == MidiKind.NoteOff && open.TryGetValue(m.Data1, out var n)) { n.End = t; n.LagOff = m.Lag; open.Remove(m.Data1); }
                     }
                 }
             }
@@ -92,6 +92,9 @@ namespace NeoBuzz.PitchEval
             foreach (var n in notes) if (double.IsNaN(n.End)) n.End = x.Length / (double)rate;
             return (notes, hits);
         }
+
+        /// <summary>The notes as a track recording from this machine with Record at attack on stamps them: each note on and off earlier by the lag it carries.</summary>
+        static List<Note> Recorded(List<Note> notes, int rate) => notes.Select(n => new Note { Start = n.Start - n.LagOn / (double)rate, End = n.End - n.LagOff / (double)rate, Pitch = n.Pitch, Vel = n.Vel, Src = n.Src }).ToList();
 
         static bool tuned;
         /// <summary>AM1_T="Name=value;Name=value": sets the public static fields of MelodyTuning and DrumTuning (the experiments of the AT1 round).</summary>
@@ -297,7 +300,7 @@ namespace NeoBuzz.PitchEval
             for (int c = 0; c < cfgs.Length; c++)
             {
                 var a = total[c];
-                md.AppendLine($"| {cfgs[c].Name} | {a.Ref} | {a.Out} | {Pc(a.P)} | {Pc(a.R)} | **{Pc(a.F)}** | {Pc(a.FExact)} | {Pc(wide[c].F)} | {Ms(Median(a.Latency))} | {Ms(Pctl(a.Latency, 0.95))} | {a.Octave} | {a.ChatterPerMinute:F1} |");
+                md.AppendLine($"| {cfgs[c].Name} | {a.Ref} | {a.Out} | {Pc(a.P)} | {Pc(a.R)} | **{Pc(a.F)}** | {Pc(a.FExact)} | {Pc(wide[c].F)} | {Ms(Median(a.Latency))} | {Ms(Pctl(a.Latency, 0.95))} | {a.Octave} | {a.ChatterPerMinute:F1} | {Pc(rec[k, c].F)} |");
             }
             md.AppendLine();
             if (Environment.GetEnvironmentVariable("AM1_SRC") != null)
@@ -334,8 +337,8 @@ namespace NeoBuzz.PitchEval
             if (Environment.GetEnvironmentVariable("AM1_KINDS") == "mix") kinds = new[] { ("pickup mix", "_mix.wav") };
             else if (Environment.GetEnvironmentVariable("AM1_KINDS") == "mic") kinds = new[] { ("mic", "_mic.wav") };
             var cfgs = new[] { ("Fast", 0), ("Stable", 1) };
-            var acc = new Acc[kinds.Length, cfgs.Length]; var wide = new Acc[kinds.Length, cfgs.Length];
-            for (int k = 0; k < kinds.Length; k++) for (int c = 0; c < cfgs.Length; c++) { acc[k, c] = new Acc(); wide[k, c] = new Acc(); }
+            var acc = new Acc[kinds.Length, cfgs.Length]; var wide = new Acc[kinds.Length, cfgs.Length]; var rec = new Acc[kinds.Length, cfgs.Length];
+            for (int k = 0; k < kinds.Length; k++) for (int c = 0; c < cfgs.Length; c++) { acc[k, c] = new Acc(); wide[k, c] = new Acc(); rec[k, c] = new Acc(); }
             var excerpts = new List<Excerpt>(); var sync = new object(); int done = 0;
             Parallel.For(0, takes.Count, new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount) }, ti =>
             {
@@ -368,10 +371,10 @@ namespace NeoBuzz.PitchEval
                                 double a0 = r.Start * rate; double lv = 0; for (int q = (int)a0; q < Math.Min(x.Length, (int)a0 + (int)(0.03 * rate)); q++) lv = Math.Max(lv, Math.Abs(x[q]));
                                 Console.WriteLine($"{(hit != null ? "HIT " : "MISS")} t={r.Start:F3} dur={r.End - r.Start:F2} midi={r.Midi:F0} db={20 * Math.Log10(lv + 1e-9):F0} " + (hit != null ? $"lat={hit.Start - r.Start:F3}" : near == null ? "" : $"nearest dt={near.Start - r.Start:F3} note={near.Pitch} src={near.Src}"));
                             }
-                        var a = Match(notes, truth, sec); var w = Match(notes, truth, sec, 0.1);
+                        var a = Match(notes, truth, sec); var w = Match(notes, truth, sec, 0.1); var rc = Match(Recorded(notes, rate), truth, sec);
                         lock (sync)
                         {
-                            acc[k, c].Add(a); wide[k, c].Add(w);
+                            acc[k, c].Add(a); wide[k, c].Add(w); rec[k, c].Add(rc);
                             if (k == 0 && c == 0 && ti % Math.Max(1, takes.Count / 3) == 0 && excerpts.Count < 3)
                             {
                                 double from = Math.Min(4, Math.Max(0, sec - 8));
@@ -389,8 +392,8 @@ namespace NeoBuzz.PitchEval
             md.AppendLine();
             md.AppendLine($"{takes.Count} solo takes ({(players.Length == 0 ? "all players" : "players " + players)}), mono audio (the microphone, the pickup mix) against every string's notes merged into one line (an earlier note is trimmed to the next onset). The engine is the machine's (Melody, Guitar range, default settings). A note is right when its onset is within 50 ms of a truth note's and its pitch within 50 cents; F exact is the same with the semitone exact. Extra notes are notes that match nothing.");
             md.AppendLine();
-            md.AppendLine("| audio | response | notes ref | notes out | precision | recall | F-measure | F exact semitone | F at 100 ms | latency median | p95 | octave errors | extra notes / min |");
-            md.AppendLine("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|");
+            md.AppendLine("| audio | response | notes ref | notes out | precision | recall | F-measure | F exact semitone | F at 100 ms | latency median | p95 | octave errors | extra notes / min | F recorded (Record at attack) |");
+            md.AppendLine("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|");
             for (int k = 0; k < kinds.Length; k++)
                 for (int c = 0; c < cfgs.Length; c++)
                 {

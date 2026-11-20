@@ -32,6 +32,8 @@ namespace NeoBuzz.AudioToMidi
     {
         /// <summary>The onset detector's robust spread (median and MAD) in Drums mode: 1 on, 0 the original mean and deviation.</summary>
         public static int Robust = 1;
+        /// <summary>Which of the onset detector's functions use it (bits: 0 whole spectrum, 1 low band, 2 middle band, 3 high band).</summary>
+        public static int RobustMask = 8;
         /// <summary>The onset threshold in deviations is ThrBase - ThrSlope x Sensitivity (the original is 8 and 6), and the multiple of the recent mean a function must also pass.</summary>
         public static float ThrBase = 8f, ThrSlope = 6f, MinRatio = 2.2f;
     }

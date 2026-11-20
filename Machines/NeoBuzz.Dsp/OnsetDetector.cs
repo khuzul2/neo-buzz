@@ -51,6 +51,8 @@ namespace NeoBuzz.Dsp
         /// median and the MAD stay at the floor between them. Off by default: the voice and the melody keep the original threshold.
         /// </summary>
         public bool RobustSpread;
+        /// <summary>With <see cref="RobustSpread"/>: the detection functions that use it, one bit each (0 whole spectrum, 1 low band, 2 middle band, 3 high band). The others keep the mean and standard deviation.</summary>
+        public int RobustMask = 15;
         /// <summary>The energy rise over two hops that fires on its own, dB.</summary>
         public float RiseDb = 9f;
         /// <summary>The energy rise of the part under 150 Hz that fires on its own, dB.</summary>
@@ -207,7 +209,7 @@ namespace NeoBuzz.Dsp
                 // The low band has a handful of bins, so its flux is the most uneven in steady noise: it asks for more.
                 float k = f == 1 ? Threshold * LowBandFactor : Threshold;
                 float thr;
-                if (RobustSpread && histCount >= 16)
+                if (RobustSpread && ((RobustMask >> f) & 1) != 0 && histCount >= 16)
                 {
                     double med = Median(fluxHist[f], histCount, sortA);
                     for (int q = 0; q < histCount; q++) sortB[q] = Math.Abs(fluxHist[f][q] - (float)med);

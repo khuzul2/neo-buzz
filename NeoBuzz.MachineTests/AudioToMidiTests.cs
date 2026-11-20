@@ -322,6 +322,16 @@ namespace NeoBuzz.MachineTests
             var free = NoteOns(Play(Make(v => v.Set(P.Mode, 1)).E, x), MidiStream.Trigger);
             var slow = NoteOns(Play(Make(v => { v.Set(P.Mode, 1); v.Set(P.HatGap, 120); v.Set(P.KickNote, 35); v.Set(P.SnareVel, 77); }).E, x), MidiStream.Trigger);
             int hatsFree = free.Count(n => n.Note == 42), hatsSlow = slow.Count(n => n.Note == 42);
+            // The hats that fall on the same sixteenth as a kick (the case a 14 ms before/after window loses): found within 50 ms, over every seed.
+            int onKick = 0, onKickFound = 0;
+            foreach (ulong seed in Seeds)
+            {
+                var (xs, ts) = DrumLoop(174, 8, seed);
+                var got = NoteOns(Play(Make(v => v.Set(P.Mode, 1)).E, xs), MidiStream.Trigger).Where(n => n.Note == 42).ToList();
+                foreach (var h in ts.Where(t => t.Class == 2 && ts.Any(k => k.Class == 0 && Math.Abs(k.Sample - t.Sample) < 0.001 * Rate)))
+                { onKick++; if (got.Any(g => Math.Abs(g.T - h.Sample / Rate) <= 0.05)) onKickFound++; }
+            }
+            Say($"AM1 hats on a kick's sixteenth at 174 bpm: {onKickFound} of {onKick} found ({(onKick == 0 ? 0 : 100.0 * onKickFound / onKick):F1} %)");
             Say($"AM1 hat interval: {hatsFree} hats at 15 ms, {hatsSlow} at 120 ms (loop at 174 bpm has {truth.Count(t => t.Class == 2)})");
             Assert.That(hatsSlow, Is.LessThan(hatsFree));
             Assert.That(slow.Any(n => n.Note == 35) && !slow.Any(n => n.Note == 36), "kick note moved");
