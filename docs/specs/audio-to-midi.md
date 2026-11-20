@@ -104,4 +104,35 @@ MDB-stem-synth (resynthesised voices and instruments, a stress test, not the mac
 - The microphone is poor: about 50 % F on GuitarSet's microphone takes, against 71 to 74 % on the pickup mix. Use a pickup or a DI.
 - Drop-D and lower tunings: Guitar range starts at 80 Hz, so the low D (73 Hz) is out of it; use Bass range.
 - Bass range is slower (a long window): Stable plays a note a median 47 ms late.
+- AT1 held-out: pickup mix 76 to 77 %, microphone about 50 %, low E 29 / 39 %; the drum classifier still mistakes a snare for a hat or a tom (IDMT held-out snare 79.4 %).
 - No plug-in export, no MPE, no on-device model: everything is a few KB of state.
+
+## 9. AT1: a tuning round
+
+What changed, with the held-out figures (GuitarSet players 03 to 05, IDMT odd takes; CI run 44695471371, job `am1`). Before is section 7.
+
+**Melody constants** (`MelodyTuning`, tried on the development split, players 00 to 02, pickup mix F Fast / Stable 59.4 / 58.5 before, 63.4 / 63.1 after):
+- Level gate 24 dB under the recent loudest (was 16), and a note over a sounding one must rise 1.5 times (was 1.2; 2.0 gave the same on the development data but cost the synthetic bass line its 50 ms gate).
+- Stable: at least 20 ms (was 40), confidence 0.7, wait 30 ms. The median latency falls from 31 ms to 13 to 15 ms.
+- Change confidence 0.8, correction confidence 0.9, an 8 ms settle for a note that starts without an onset.
+- Each note carries an attack estimate (the onset, or the first voiced estimate minus half the tracker's window).
+- The octave check by subharmonic summation (`OctaveCheck`, weight 0.84 a harmonic, Goertzel magnitudes) is built and **off** (`OctMargin` 0): on the development data it took Stable octave errors from 134 to 114 and cost 1.5 points of F in Fast.
+
+**Held-out results** (before, section 7, in brackets):
+
+| audio | response | F | latency median | octave errors | extra / min |
+|---|---|---:|---:|---:|---:|
+| pickup mix | Fast | 76.8 % (74.3) | 4.3 ms | 30 (39) | 50.0 (59.3) |
+| pickup mix | Stable | 76.0 % (71.2) | 13.2 ms (31.3) | 30 (29) | 45.7 (49.5) |
+| microphone | Fast | 49.1 % (49.0) | 13.2 ms | 496 (531) | 128.4 (158.0) |
+| microphone | Stable | 51.4 % (50.8) | 19.4 ms | 311 (176) | 107.2 (106.6) |
+
+Hexaphonic low E: Fast 28.6 % (23.7), Stable 38.8 % (40.0). All strings: Fast 74.3 %, Stable 75.5 %.
+
+**Drums**: the onset threshold uses the median and the median absolute deviation of the recent spread (`OnsetDetector.RobustSpread`, Drums mode only), so a dense run of equal hats no longer lifts the threshold above itself. Synthetic loops, hat F at 174 bpm 73.3 to 90.8 %, at 140 bpm 78.5 to 91.7 %, at 120 bpm 86.4 to 85.2 %. IDMT held-out: kick 91.1 to 89.3 %, snare 81.6 to 79.4 %, hat 83.0 to 85.1 %.
+
+**Recorded timing**: `MidiEvent.Lag` is the number of samples between a sound's attack and the event. The router passes it to `IMachineMidiBus.SendMachineMIDI(source, data, earlierSamples)` while `Record at attack` is on (default), and the session recorder places the note that many samples earlier. Live output and the device output are unchanged. Neo Voice to MIDI uses the same parameter.
+
+**Missed, in numbers**: melody 80 / 78 % on the pickup mix (76.0 / 76.8), low E 60 % (38.8), microphone 60 % (about 50), extra notes and octave errors halved (about 15 % fewer extras; octave errors 39 to 30 on the mix, higher on the microphone Stable), snare 90 % (79.4, down 2.2), kick no more than 1 point lower (down 1.8). Not measured: F on the recorded timestamps in `PitchEval` (the unit tests cover the placement: a synthetic guitar line in Stable, live F 95.0 %, recorded 97.9 %, median offset 0.1 ms).
+
+**Tried without gain** (development split unless noted): raising `Level` to -34 / -30 / -26 dB (low E Stable 46.7 / 55.2 % at -36 / -30 dB, but the mix falls to 62.3 / 60.5 / 55.8 % F at -34 / -30 / -26 dB); no idle-start notes (F 56.3 %); a change settle of 5 to 15 ms (no net gain), of 60 ms (collapses); no corrections (Fast 58.0 %); the octave check above; a longer recent-maximum memory, a larger fresh-share and over-confidence (marginal). E-GMD drums (CC BY 4.0, 60 files used) gave kick 80 %, snare 59 %, hat 16 to 29 % with this classifier, so the drum rules were not retuned on it; the snare-versus-tom features, per-band floors and per-kit threshold normalisation were not built.
