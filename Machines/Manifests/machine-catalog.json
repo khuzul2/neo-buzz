@@ -1388,6 +1388,16 @@
    ],
    "use_for": "Play a synth or drums with your voice: sung pitch to notes in a key, trained beatbox sounds to drum notes, chords, and voice level and vowels as controllers."
   },
+  "Neo Audio to MIDI": {
+   "category": "Control",
+   "tags": [
+    "midi",
+    "notes",
+    "drums",
+    "monophonic"
+   ],
+   "use_for": "Play a synth from a guitar, bass or keys and turn a drum kit into drum triggers: notes with velocity and pitch bend from a live mono instrument, and kick, snare and hat hits without training."
+  },
   "Neo Tune": {
    "category": "Modulation",
    "tags": [

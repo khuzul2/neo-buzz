@@ -62,6 +62,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Spectral", "NeoSpectralEditor", "neo-spectral-editor", 1004, 300),
             ("Neo Voice to MIDI", "NeoVoiceToMidiEditor", "neo-voice-to-midi-editor", 1200, 836),   // the live view, key, pitch, triggers with the Train panel, chords and expression
             ("Neo Tune", "NeoTuneEditor", "neo-tune-editor", 1364, 341),
+            ("Neo Audio to MIDI", "NeoAudioToMidiEditor", "neo-audio-to-midi-editor", 936, 883),   // the live roll, key, melody, drums with the Calibrate panel
             ("Neo Dither", "NeoDitherEditor", "neo-dither-editor", 667, 277),
             ("Neo Strip", "NeoStripEditor", "neo-strip-editor", 966, 605),
         };

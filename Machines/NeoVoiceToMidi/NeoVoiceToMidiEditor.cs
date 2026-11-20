@@ -13,19 +13,6 @@ using NeoBuzz.Editor;
 
 namespace NeoBuzz.VoiceToMidi
 {
-    /// <summary>Hands a surface's pointer to two functions (the keyboard and the pads).</summary>
-    internal sealed class ClickInput : IGraphInput
-    {
-        readonly Func<double, double, bool, bool> down;
-        public ClickInput(Func<double, double, bool, bool> down) { this.down = down; }
-        public bool Down(double x, double y, int clicks, bool fine) => down(x, y, fine);
-        public bool Move(double x, double y, bool fine) => false;
-        public bool Up() => false;
-        public bool Wheel(double x, double y, int delta, bool fine) => false;
-        public bool Leave() => false;
-        public bool Capturing => false;
-    }
-
     internal sealed class NeoVoiceToMidiEditor : NeoEditor
     {
         // Coral: a voice, clear of the meters' red and the gate's teal.

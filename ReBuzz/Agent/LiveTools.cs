@@ -431,14 +431,14 @@ namespace ReBuzz.Agent
                     "with their inputs (give machine for one), the audio input device (its channels and names, latency, dropped frames) and the MIDI devices. " +
                     "action=set changes what is given, one undo step each: audio_from \"none\", \"in:3\" (a mono input, in both sides), \"in:1-2\" (a stereo pair), " +
                     "\"track:Name\" (another track's output, to resample it) or \"wired\" (what is connected to it; old songs); midi_from \"all\" (every device except " +
-                    "control surfaces), \"device:Name\" (saved by name, resumes when plugged in) or \"keyboard\" (the computer keyboard) or \"machine:Name\" (the MIDI of a machine that makes it, such as Neo Voice to MIDI); channel 0 (all) to 16; monitor " +
+                    "control surfaces), \"device:Name\" (saved by name, resumes when plugged in) or \"keyboard\" (the computer keyboard) or \"machine:Name\" (the MIDI of a machine that makes it, such as Neo Voice to MIDI or Neo Audio to MIDI); channel 0 (all) to 16; monitor " +
                     "\"in\", \"auto\" (while armed) or \"off\". Arming is session_record(action=\"arm\"). An armed track hears only its source. " +
                     "Example: track_input(action=\"set\", machine=\"Vocals\", audio_from=\"in:1\", monitor=\"in\").",
                 Input = Object(null,
                     Req("action", String("What to do", "get", "set")),
                     Opt("machine", String("The track's machine (get: one; set: required)")),
                     Opt("audio_from", String("Neo Audio: none, in:N, in:N-N+1, track:Name or wired")),
-                    Opt("midi_from", String("all, device:Name, keyboard or machine:Name (a machine that makes MIDI, Neo Voice to MIDI)")),
+                    Opt("midi_from", String("all, device:Name, keyboard or machine:Name (a machine that makes MIDI: Neo Voice to MIDI, Neo Audio to MIDI)")),
                     Opt("channel", Integer("MIDI channel: 0 for all, 1 to 16", 0, 16)),
                     Opt("monitor", String("Neo Audio: in, auto or off", "in", "auto", "off"))),
                 Output = Object(null,
@@ -496,7 +496,7 @@ namespace ReBuzz.Agent
                                 {
                                     kind = MidiFromKind.Machine; device = mf.Substring(8).Trim();
                                     var source = SongModel.Machine(core, device);
-                                    if (source == null || source.ManagedMachine is not IMachineMidiSource) throw new ToolError($"midi_from: {device} is not a machine that makes MIDI (Neo Voice to MIDI is).");
+                                    if (source == null || source.ManagedMachine is not IMachineMidiSource) throw new ToolError($"midi_from: {device} is not a machine that makes MIDI (Neo Voice to MIDI and Neo Audio to MIDI are).");
                                     if (ReferenceEquals(source, m)) throw new ToolError("midi_from: a track can't listen to itself.");
                                 }
                                 else if (!mf.Equals("all", StringComparison.OrdinalIgnoreCase)) throw new ToolError("midi_from: all, device:Name, keyboard or machine:Name (a machine that makes MIDI, such as Neo Voice to MIDI).");

@@ -20,6 +20,60 @@ namespace NeoBuzz.PitchEval
             return Parse(all);
         }
 
+        /// <summary>Every channel on its own (GuitarSet's hexaphonic files hold one string per channel).</summary>
+        public static (float[][] Channels, int Rate) ReadChannels(string path)
+        {
+            var b = File.ReadAllBytes(path);
+            var (mono, rate, channels, fmtTag, bits, dataAt) = Layout(b);
+            int bytes = bits / 8;
+            int frames = (b.Length - dataAt) / (bytes * channels);
+            int dataLen = DataLength(b);
+            frames = dataLen / (bytes * channels);
+            var x = new float[channels][];
+            for (int c = 0; c < channels; c++) x[c] = new float[frames];
+            for (int i = 0; i < frames; i++)
+                for (int c = 0; c < channels; c++)
+                {
+                    int o = dataAt + (i * channels + c) * bytes;
+                    x[c][i] = bits == 16 ? BitConverter.ToInt16(b, o) / 32768f : bits == 24 ? ((b[o] << 8 | b[o + 1] << 16 | b[o + 2] << 24) >> 8) / 8388608f
+                        : fmtTag == 3 && bits == 32 ? BitConverter.ToSingle(b, o) : BitConverter.ToInt32(b, o) / 2147483648f;
+                }
+            return (x, rate);
+        }
+
+        static (int, int, int, int, int, int) Layout(byte[] b)
+        {
+            int pos = 12, fmtTag = 1, channels = 1, rate = 44100, bits = 16, dataAt = -1;
+            while (pos + 8 <= b.Length)
+            {
+                string id = Encoding.ASCII.GetString(b, pos, 4);
+                int len = BitConverter.ToInt32(b, pos + 4);
+                int body = pos + 8;
+                if (id == "fmt ")
+                {
+                    fmtTag = BitConverter.ToUInt16(b, body); channels = BitConverter.ToUInt16(b, body + 2); rate = BitConverter.ToInt32(b, body + 4); bits = BitConverter.ToUInt16(b, body + 14);
+                    if (fmtTag == 0xFFFE && len >= 26) fmtTag = BitConverter.ToUInt16(b, body + 24);
+                }
+                else if (id == "data") { dataAt = body; break; }
+                pos = body + len + (len & 1);
+            }
+            if (dataAt < 0) throw new InvalidDataException("no data chunk");
+            return (0, rate, channels, fmtTag, bits, dataAt);
+        }
+
+        static int DataLength(byte[] b)
+        {
+            int pos = 12;
+            while (pos + 8 <= b.Length)
+            {
+                string id = Encoding.ASCII.GetString(b, pos, 4);
+                int len = BitConverter.ToInt32(b, pos + 4);
+                if (id == "data") return len < 0 || pos + 8 + len > b.Length ? b.Length - pos - 8 : len;
+                pos += 8 + len + (len & 1);
+            }
+            return 0;
+        }
+
         static (float[], int) Parse(byte[] b)
         {
             if (b.Length < 44 || Encoding.ASCII.GetString(b, 0, 4) != "RIFF" || Encoding.ASCII.GetString(b, 8, 4) != "WAVE") throw new InvalidDataException("not a RIFF/WAVE file");

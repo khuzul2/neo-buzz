@@ -22,6 +22,8 @@
   <ItemGroup>
     <Compile Include="..\..\Machines\NeoBuzz.Dsp\**\*.cs" Link="Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\..\Machines\NeoVoiceToMidi\Engine\**\*.cs" Link="VoiceToMidi\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- Neo Audio to MIDI's engine (docs/specs/audio-to-midi.md §8): the notes and drum hits as the machine makes them, evaluated on GuitarSet, IDMT-SMT-Drums and MDB-stem-synth (Am1.cs). -->
+    <Compile Include="..\..\Machines\NeoAudioToMidi\Engine\**\*.cs" Link="AudioToMidi\%(RecursiveDir)%(Filename)%(Extension)" />
     <!-- Neo Tune's engine (docs/specs/neo-tune.md §9): the corrector as the machine runs it, evaluated on VocalSet (Tune.cs). -->
     <Compile Include="..\..\Machines\NeoTune\Engine\*.cs" Link="Tune\%(Filename)%(Extension)" />
     <!-- TuneQuality.cs (the metrics, also run by the machine tests) and TuneNt1\ (NT1's engine frozen as it shipped, for the before/after comparison) are compiled with the project (TuneGates.cs). -->

@@ -1,0 +1,66 @@
+# Neo Audio to MIDI factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoAudioToMidi
+# Where the MIDI goes (target machine, device) and the drum calibration are the machine's state: a preset you save keeps them.
+machine "Neo Audio to MIDI"
+state NeoAudioToMidiState
+
+preset "Guitar lead"
+Mode = Melody
+Range = Guitar
+Response = Fast
+Retrigger = On
+Lock = Off
+Pitch bend = ±2 st
+Bend mode = Free
+Stickiness = 25
+Settle = 20
+Min note length = 20
+Legato = Off
+Monitor = 100
+
+preset "Bass"
+Mode = Melody
+Range = Bass
+Response = Stable
+Retrigger = On
+Lock = Off
+Octave = 0
+Release = 18
+Min note length = 40
+Settle = 30
+Legato = Off
+Monitor = 100
+
+preset "Keys"
+Mode = Melody
+Range = Full
+Response = Stable
+Retrigger = On
+Lock = Off
+Pitch bend = Off
+Settle = 25
+Min note length = 30
+Legato = On
+Velocity = Dynamic
+Monitor = 100
+
+preset "Drum kit"
+Mode = Drums
+Kick note = 36
+Snare note = 38
+Hat note = 42
+Kick sensitivity = 50
+Snare sensitivity = 50
+Hat sensitivity = 50
+Hit length = 50
+Monitor = 100
+
+preset "Percussion"
+Mode = Drums
+Kick note = 64
+Snare note = 63
+Hat note = 70
+Kick interval = 60
+Snare interval = 40
+Hat interval = 25
+Hit length = 80
+Monitor = 100
