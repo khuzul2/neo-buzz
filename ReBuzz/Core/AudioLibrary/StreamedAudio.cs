@@ -60,6 +60,7 @@ namespace ReBuzz.Core.AudioLibrary
         // Prefetch thread state.
         internal long Settled;                  // ticks in a row in which every wanted page was resident
         internal long SettledSerial;
+        internal long HintsSeen;                // hints set for this stream by voices (a voice publishes only once the stream is attached: PL1)
         internal bool Wants;
 
         StreamedAudio(string id, string path, SafeFileHandle handle, int channels, int rate, long frames, uint[] crcs, long dataOffset)
@@ -469,6 +470,7 @@ namespace ReBuzz.Core.AudioLibrary
         public void Set(StreamedAudio s, long at, long aFrom, long aTo, long bFrom, long bTo)
         {
             Interlocked.Increment(ref seq);
+            if (s != null) Interlocked.Increment(ref s.HintsSeen);
             stream = s;
             pos = at;
             this.aFrom = aFrom; this.aTo = aTo;
@@ -733,6 +735,19 @@ namespace ReBuzz.Core.AudioLibrary
                 pg.Freed = Environment.TickCount64;
                 lock (graveyard) graveyard.Enqueue(pg);
             }
+        }
+
+        /// <summary>
+        /// Before the floats of an asset that plays go: waits (at most <paramref name="milliseconds"/>) until a voice has published what it will read from the
+        /// stream (a voice does so at the end of a block, and only once the stream is attached), then a moment more for the others. With no voice playing
+        /// that is the whole wait. Without it the stream was "settled" with nothing wanted, the memory went, and the next frame of a voice read pages the
+        /// prefetch thread had not been asked for: silence, counted, and a sample or more that differed (wave-45 Fork CI run 44652503440, PL1).
+        /// </summary>
+        internal static void WaitForVoices(StreamedAudio s, int milliseconds, int graceMilliseconds = 30)
+        {
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            while (clock.ElapsedMilliseconds < milliseconds && Volatile.Read(ref s.HintsSeen) == 0) Thread.Sleep(2);
+            if (Volatile.Read(ref s.HintsSeen) > 0) Thread.Sleep(graceMilliseconds);
         }
 
         /// <summary>Tests: waits until every open stream is settled (what its voices and pins want is in memory).</summary>

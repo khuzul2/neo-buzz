@@ -124,6 +124,28 @@ namespace ReBuzzTests
         [Test]
         public void NativeMachinesMoveOntoTheirSuccessorsWithinTolerance()
         {
+            // PL1: the native host (ReBuzzEngine64.exe) now and then dies on a runner, in ucrtbase (0xc0000409), in whichever native machine is running:
+            // Jeskola Reverb here (wave-43 package run 44578058473, attempt 1), FSM Chorus2 and FSM WahMan in the machine profile (runs 44514863570
+            // and 44519869036); never twice in a rerun. The server then does not answer. One retry with a fresh server, the crash logged and reported
+            // (the same crash twice in a row still fails: that is a machine, not a runner). docs/specs/machine-safety.md "Native host crashes on runners".
+            try
+            {
+                NativeMachinesMoveOntoTheirSuccessors();
+            }
+            catch (Exception e) when (e is not NUnit.Framework.InconclusiveException && IsHostCrash(e))
+            {
+                TestContext.Out.WriteLine("##[warning]Native host crash in NativeMachinesMoveOntoTheirSuccessorsWithinTolerance, retrying once with a fresh server: " +
+                                          e.Message.Split('\n')[0]);
+                NativeMachinesMoveOntoTheirSuccessors();
+            }
+        }
+
+        /// <summary>The server did not answer, or said its native host died: what a host crash looks like to a test.</summary>
+        static bool IsHostCrash(Exception e) =>
+            e.Message.Contains("No answer to tools/call", StringComparison.Ordinal) || e.Message.Contains("host process exited", StringComparison.Ordinal);
+
+        void NativeMachinesMoveOntoTheirSuccessors()
+        {
             using var client = StartAgent(out string bin);
             if (!Has(bin, "Effects", "Jeskola Reverb") || !File.Exists(Path.Combine(bin, "Gear", "Effects", "Neo Verb.NET.dll")))
                 Assert.Inconclusive("Jeskola Reverb or Neo Verb not in this build's Gear");

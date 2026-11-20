@@ -694,12 +694,15 @@ namespace ReBuzz.Studio.Views.Sequence
             // The name, the loop and the shared badge, in a strip above the preview.
             var textBrush = Look.BlockText ?? Brushes.Black;
             string name = spec.Pattern.Name + (segments.Count > 1 ? $" ×{segments.Count}" : "") + (spec.Gain < 1.0 ? $" {Math.Round(spec.Gain * 100)}%" : "");
+            // PL1: the name gets the room first; a badge that does not fit beside it shrinks to a small icon, and goes if even that does not fit.
             double badges = 0;
+            double nameWidth = Math.Min(Text(name, textBrush, 12).Width, Math.Max(1, w - 12));
+            double room = w - 12 - nameWidth;
             int n = UsesOf(spec.Pattern);
-            if (n > 1) badges += DrawBadge(ctx, w - 4 - badges, 3, $"{n}", Look.Param, textBrush);
-            if (spec.Loop) badges += DrawBadge(ctx, w - 4 - badges, 3, "loop", Look.Note, textBrush);
-            if (audio != null && audio.Reverse) badges += DrawBadge(ctx, w - 4 - badges, 3, "rev", Look.Param, textBrush);
-            if (audio != null && audio.Audio.Warp == "Off") badges += DrawBadge(ctx, w - 4 - badges, 3, "unwarped", Look.Off, textBrush);
+            if (n > 1) badges += DrawBadge(ctx, w - 4 - badges, 3, $"{n}", $"{n}", Look.Param, textBrush, room - badges);
+            if (spec.Loop) badges += DrawBadge(ctx, w - 4 - badges, 3, "loop", "\u21BB", Look.Note, textBrush, room - badges);
+            if (audio != null && audio.Reverse) badges += DrawBadge(ctx, w - 4 - badges, 3, "rev", "\u25C0", Look.Param, textBrush, room - badges);
+            if (audio != null && audio.Audio.Warp == "Off") badges += DrawBadge(ctx, w - 4 - badges, 3, "unwarped", "\u2260", Look.Off, textBrush, room - badges);
             ctx.DrawRectangle(Look.NameBack, Look.NameBackPen, new Rect(4.5, 2.5, Math.Max(0, w - 8 - badges), 15));
             ctx.DrawText(Text(name, textBrush, 12, maxWidth: Math.Max(1, w - 12 - badges)), new Point(6, 1));
 
@@ -712,10 +715,16 @@ namespace ReBuzz.Studio.Views.Sequence
         }
 
         /// <summary>A small pill at the right of a clip's name strip; returns its width with its gap.</summary>
-        static double DrawBadge(DrawingContext ctx, double right, double top, string text, IBrush back, IBrush fore)
+        static double DrawBadge(DrawingContext ctx, double right, double top, string text, string icon, IBrush back, IBrush fore, double room)
         {
             var ft = Text(text, fore, 10, true);
             double w = ft.Width + 8;
+            if (w + 3 > room)
+            {
+                ft = Text(icon, fore, 10, true);      // narrow: the small icon in place of the word
+                w = ft.Width + 8;
+                if (w + 3 > room) return 0;
+            }
             if (right - w < 14) return 0;
             ctx.DrawRectangle(back, Look.EventBorder, new Rect(right - w + 0.5, top + 0.5, w, 13), 3, 3);
             ctx.DrawText(ft, new Point(right - w + 4.5, top));

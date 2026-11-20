@@ -2665,6 +2665,10 @@ namespace ReBuzz.Studio.Tests
                     Settle();
                     window.RefreshNow();
                     session.RefreshState();
+                    // PL1: the slot shows the take's name (not "∿ 00"), and its waveform is in the lower half.
+                    var recSlot = session.SlotAt(layout.FirstTrackOf(voice), 0);
+                    Assert.That(recSlot.LabelText, Is.EqualTo("Voice take 1"), "the recording slot names the take");
+                    Assert.That(recSlot.LiveWave?.LowerHalf, Is.True, "the growing waveform is in the lower half");
                     Shot(window, "590-session-recording-slot", "Session: an armed audio track records into its slot (the record button or the slot's record): the slot is red with the record dot and the waveform grows as the take is written to a temp file, so a long take never sits in memory. It becomes a normal, unwarped clip with the tempo it was played at.", "Arm the track, then the record button.");
                     for (int i = 0; i < 200 && layout.IsRecordingClip(take); i++) Feed(4096);
                     Core.Playing = false;

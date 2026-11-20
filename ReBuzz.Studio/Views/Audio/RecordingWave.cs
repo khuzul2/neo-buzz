@@ -14,6 +14,9 @@ namespace ReBuzz.Studio.Views.Audio
 
         public RecordingWave() { IsHitTestVisible = false; }
 
+        /// <summary>PL1: draw in the lower half of the control (the slot's name reads above it).</summary>
+        public bool LowerHalf { get; set; }
+
         /// <summary>The take's capture while it records (null: nothing to draw).</summary>
         public AudioCapture Source { get; set; }
 
@@ -24,8 +27,10 @@ namespace ReBuzz.Studio.Views.Audio
         {
             Columns = 0;
             var cap = Source;
-            double w = Bounds.Width, h = Bounds.Height - 4;
+            double top = LowerHalf ? System.Math.Floor(Bounds.Height / 2) : 0;
+            double w = Bounds.Width, h = Bounds.Height - top - 4;
             if (cap == null || w < 4 || h < 4) return;
+            using var shift = ctx.PushTransform(Matrix.CreateTranslation(0, top));
             int count = cap.PeakCount;
             if (count <= 0) return;
             pen ??= new Pen(Brushes.White, 1.5);

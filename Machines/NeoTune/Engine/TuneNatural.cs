@@ -36,6 +36,21 @@ namespace NeoBuzz.Tune
             return a;
         }
 
+        /// <summary>
+        /// PL1: whether any of the six fine controls differs from what the Natural knob would set (<paramref name="raw"/> reads a parameter's raw value).
+        /// The editor shows an "edited" mark under the knob then. One raw step of rounding does not count.
+        /// </summary>
+        public static bool Edited(Func<int, int> raw)
+        {
+            double n = Params.Table[P.Natural].Value(raw(P.Natural));
+            for (int i = 0; i < Controls.Length; i++)
+            {
+                int idx = Controls[i];
+                if (Math.Abs(raw(idx) - Params.Table[idx].Raw(Value(i, n))) > 1) return true;
+            }
+            return false;
+        }
+
         /// <summary>Writes Natural <paramref name="n"/> (0 to 1) into the six fine controls of <paramref name="v"/> (and the Natural control itself).</summary>
         public static void Apply(ParamValues v, double n)
         {
