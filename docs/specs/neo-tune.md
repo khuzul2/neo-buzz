@@ -217,7 +217,7 @@ Still a hard, instant, stepped effect (step delay and flatness as in 11.6). The 
 
 ### 12.5 Excerpt 03 at Natural 100
 
-By the numbers the pitch of 03 at N100 is nearly the input's (note centre error 33.6 ct in, 30.4 out; vibrato kept 100 %; flatness 106 ct against 105-108). It was not tuned. What the blind test heard was the click at 4.7 s and 6.0 s (the voiced return crossfade) on a female arpeggio whose passing notes are short, so a glitch at a note change reads as a step of pitch. It is an inference from the detector and the metrics, not a listening result; the NT3 pack lets the user check it.
+By the numbers the pitch of 03 at N100 is nearly the input's (note centre error 60 ct in, 57 out in analyse2; vibrato kept 100 %; flatness 106 ct against 105-108). It was not tuned. What the blind test heard was the click at 4.7 s and 6.0 s (the voiced return crossfade) on a female arpeggio whose passing notes are short, so a glitch at a note change reads as a step of pitch. It is an inference from the detector and the metrics, not a listening result; the NT3 pack lets the user check it.
 
 ### 12.6 Detector results (before NT3 -> after, artefacts beyond intended steps, 6 files)
 
