@@ -340,6 +340,13 @@ namespace NeoBuzz.PitchEval
             File.WriteAllText(Path.Combine(dir, "blind-key", "KEY.md"), key.ToString());
             md.Append(notesMd);
             md.AppendLine();
+            // NT3: the artefact detector on the six excerpts at Natural 0, 25, 50, 75 and 100, each hit tied to the engine event that caused it (docs/specs/neo-tune.md section 12).
+            md.AppendLine("### Artefact detector (NT3): clicks and glitches against the input, per excerpt and Natural");
+            md.AppendLine();
+            md.AppendLine("A hit is a place where the output's aperiodic residual (the waveform less the mean of its neighbours one period away, 1 ms RMS) is more than 2.2 times the input's largest within 8 ms and at least 25 % of the local signal. **artefacts** exclude the intended pitch steps (a hit at a target change or a shift step of 0.2 semitones or more); the control is the input against a level-changed, fractionally delayed copy of itself and must find nothing.");
+            md.AppendLine();
+            TuneArtefacts.Run(dir, md);
+            md.AppendLine();
             md.AppendLine("### Listening pack");
             md.AppendLine();
             md.AppendLine($"{n} excerpts (at most 8 s each; original, NT1's old output, NT2 at Natural 0, 50, 100; levels matched; a blind folder with a key) were written beside this report with the VocalSet attribution in their README (artifact `neo-tune-excerpts`).");

@@ -20,7 +20,7 @@ namespace NeoBuzz.Tune
     internal sealed partial class TuneEngine
     {
         const int HistBits = 11, HistSize = 1 << HistBits, HistMask = HistSize - 1;
-        const double HoldGap = 0.07, RampSeconds = 0.020, SilenceRms = 0.002;
+        const double HoldGap = 0.07, RampSeconds = 0.020, SilenceRms = 0.002, SlewRate = 500.0;
 
         // ---- history of the current run
         readonly double[] hAbs = new double[HistSize], hDev = new double[HistSize];
@@ -50,6 +50,8 @@ namespace NeoBuzz.Tune
         double lfoPhase, lastEnd;
         int listenRoot = -1;
         double heldF0, heldShift;
+        long evCentreT;
+        bool evPrevVoiced;
 
         void ResetControl()
         {
@@ -113,6 +115,7 @@ namespace NeoBuzz.Tune
             if (dt <= 0 || dt > 0.1) dt = tracker.Hop / sr;
             double tau = e.Voiced && e.F0 > 0 ? sr / e.F0 : sr / Math.Max(e.RawF0, 100.0);
             long centreT = e.EndSample - (long)((tracker.Window + tau) * 0.5);
+            evCentreT = centreT;
 
             long slot = cCount & ContourMask;
             cT[slot] = centreT;
@@ -125,11 +128,14 @@ namespace NeoBuzz.Tune
                 {
                     // A gap inside a note (a low-confidence frame, a consonant's edge): keep the last pitch and ratio.
                     cF[slot] = (float)heldF0; cShift[slot] = (float)heldShift;
+                    if (evOn && unvoicedFor - dt <= 0) Log(centreT, TuneEventKind.PitchHold, heldShift);
                     cCount++;
                     Display(dt, dispIn0, dispOut0, dispCentre0);
                     return;
                 }
                 // A real unvoiced sound or silence: the ratio ramps to 1 in 20 ms and the grains give way to the input.
+                if (evOn && realFor == 0) Log(centreT, TuneEventKind.VoicedEnd, heldShift);
+                evPrevVoiced = false;
                 realFor += dt;
                 cF[slot] = 0;
                 cShift[slot] = (float)(heldShift * Math.Max(0.0, 1.0 - realFor / RampSeconds));
@@ -149,6 +155,7 @@ namespace NeoBuzz.Tune
                 ResetVibrato(); exprAbs = 0;
                 curNote = pendNote = -1; pendTime = 0; noteTime = 0; smoothInit = false; lfoPhase = 0; devInst = 0;
                 runActive = true; firstFrame = true;
+                if (evOn) Log(centreT, TuneEventKind.VoicedStart, m);
             }
             unvoicedFor = 0; realFor = 0;
             runTime += dt;
@@ -211,7 +218,7 @@ namespace NeoBuzz.Tune
             {
                 if (cand == pendNote) pendTime += dt; else { pendNote = cand; pendTime = dt; }
                 // A jump of two notes or more waits until the centre has settled (else the note it passes on the way would be picked); neighbours go on at once.
-                if (glide > 0.3 && Math.Abs(cand - curNote) >= 2 && mcSpeed > 800) pendTime = 0;      // only the natural settings wait; the hard effect follows at once
+                if (glide > 0.3 && Math.Abs(cand - curNote) >= 2 && mcSpeed > 800) pendTime = 0;      // only the natural settings wait; the hard effect follows at once (NT3 measured waiting at Natural 0: the step delay went from 90 to 150 ms and the notes were not flat, so it stays instant)
                 if (pendTime >= dwell) SwitchNote(cand, pendTime, win, dt);
             }
             else { pendNote = -1; pendTime = 0; }
@@ -252,7 +259,11 @@ namespace NeoBuzz.Tune
                 double wz = zoneCents >= 99.5 || target == 1 ? 1.0 : 1.0 - Smooth(zoneCents, zoneCents + 30, Math.Abs(c));
                 double wv = 1.0 - glide * Smooth(120, 360, speed);
                 double kf = Math.Clamp((vibKeep - 0.5) * 2, 0, 1);
-                double wa = 1.0 - kf * (1.0 - Smooth(0.05, 0.2, runTime));   // natural: the centre is trusted only after the first 50-200 ms of a run
+                // Natural: the centre is trusted only once the note has settled. NT2 trusted it after 50-200 ms of a run, and the first, still unsettled centre (a scoop up to the
+                // note, a breath) was corrected as if it were the note: a bend of 10 - 20 ct at the very start of a phrase, which the blind test heard as "the tuned effect at the
+                // beginning". Now nothing is corrected for the first 250 ms and the correction grows in until 600 ms from Natural 50 up (from 30 it waits a little less: ho).
+                double ho = Math.Clamp((humanize - 0.3) / 0.2, 0, 1);
+                double wa = 1.0 - Math.Max(kf, ho) * (1.0 - Smooth(0.05 + 0.20 * ho, 0.2 + 0.40 * ho, runTime));
                 double corr = -cEff * wz * wv * wa / 100.0;
                 double tauEff = retuneSeconds * (1.0 + 3.0 * humanize * Math.Min(1.0, noteTime / 0.4));
                 if (corr == 0) tauEff = Math.Min(tauEff, 0.04);     // nothing to correct: the correction is released quickly, so the voice is the input again
@@ -275,10 +286,19 @@ namespace NeoBuzz.Tune
             }
             if (Math.Abs(shiftSemis) < 0.004) shiftSemis = 0;      // under 0.4 cent: nothing (the bypass: the output is the aligned input)
             double shift = Math.Clamp(shiftSemis + transpose, -48, 48);
+            // The ratio may not change faster than SlewRate semitones a second: an instant retune is a ramp of 2 ms per semitone, which still sounds instant, but is not
+            // a step in the reader's speed (a step in speed is a step in the period of the next cycle: the cycle before it and the cycle after it are not alike, and that is
+            // heard as a tick at every hard note change). The first frame of a run starts from 0 (the ramp from the unvoiced stretch was made above).
+            if (evPrevVoiced)
+            {
+                double maxD = SlewRate * dt;
+                shift = heldShift + Math.Clamp(shift - heldShift, -maxD, maxD);
+            }
+            if (evOn && Math.Abs(shift - heldShift) > 0.12 && heldF0 > 0 && evPrevVoiced) Log(centreT, TuneEventKind.ShiftStep, heldShift, shift);
             cF[slot] = (float)e.F0;
             cShift[slot] = (float)shift;
             cCount++;
-            heldF0 = e.F0; heldShift = shift;
+            heldF0 = e.F0; heldShift = shift; evPrevVoiced = true;
 
             Volatile.Write(ref pubInHz, e.F0);
             Volatile.Write(ref pubNote, curNote < 0 ? 0 : curNote);
@@ -319,6 +339,7 @@ namespace NeoBuzz.Tune
                     csDev[k] = dd;
                 }
             }
+            if (evOn) Log(evCentreT, TuneEventKind.TargetChange, curNote, cand, pend, win);
             curNote = cand;
             pendNote = -1; pendTime = 0;
             noteTime = Math.Max(0, pend);

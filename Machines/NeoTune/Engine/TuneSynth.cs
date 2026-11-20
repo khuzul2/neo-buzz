@@ -30,10 +30,13 @@ namespace NeoBuzz.Tune
         double pGate = 1, pStep = 0.001;
 
         // ---- splice
+        const double EaseSpeed = 0.002;
         double rA, rB, rho = 1, spJ;
         bool fading, spInit;
         int fadeN, fadeLen, spCount, zeroRun;
         long spPtr;
+        double[] scoreJ = new double[1];
+        bool evBypass, evHold;
 
         void ResetSplice()
         {
@@ -77,14 +80,26 @@ namespace NeoBuzz.Tune
             bool voiced = ShiftAt(rA, ref rPtr, out double shift);
             if (shift > 12) shift = 12; else if (shift < -12) shift = -12;
             double e = rA - next;
+            if (evOn && (spCount & 255) == 1) Log(next, TuneEventKind.Trace, shift, e, fading ? 1 : 0);
             rho = shift == 0 ? 1.0 : PortableMath.Exp2(shift / 12.0);
             zeroRun = shift == 0 ? zeroRun + 8 : 0;
-            if (!fading && Math.Abs(e) > 1e-3 && next > 0 && shift == 0 && (!voiced || zeroRun > (int)(0.03 * sr)))
+            if (!fading && Math.Abs(e) > 1e-3 && next > 0 && shift == 0)
             {
-                // Back to the nominal position: in an unvoiced stretch (noise does not mind) or after the correction has been nil for 30 ms: one crossfade
-                // (a voiced note is joined over about a period and a half, the offset being less than half a period), and the output is the input again.
-                rB = next; fading = true; fadeN = 0;
-                fadeLen = voiced ? Math.Clamp((int)(1.5 * spJ), 32, (int)(0.012 * sr)) : Math.Max(16, (int)(0.002 * sr));
+                if (!voiced)
+                {
+                    // Back to the nominal position in an unvoiced stretch (noise does not mind): one short crossfade, and the output is the input again.
+                    rB = next; fading = true; fadeN = 0;
+                    fadeLen = Math.Max(16, (int)(0.002 * sr));
+                    if (evOn) Log((long)rA, TuneEventKind.SpliceReturn, e, fadeLen, SegmentMismatch(rA, rB, fadeLen), 0);
+                }
+                else if (zeroRun > (int)(0.03 * sr))
+                {
+                    // Inside a voiced note the offset is NOT joined by a crossfade (NT2 did, over about 1.5 periods, between waveforms a fraction of a period apart: the
+                    // cycles cancelled in part and the join was heard as a click). The correction has been nil for 30 ms: the reader eases to the input's position at
+                    // 0.2 % in speed (3.5 ct, below what a held note shows). The output is then the input again (the aligned null, a dry part mixed in).
+                    rho = e > 0 ? 1.0 - EaseSpeed : 1.0 + EaseSpeed;
+                    if (Math.Abs(e) < 2 * EaseSpeed * 8) { rA = next; rho = 1.0; if (evOn) Log(next, TuneEventKind.SpliceReturn, e, 0, 0, 1); }
+                }
             }
         }
 
@@ -114,13 +129,60 @@ namespace NeoBuzz.Tune
                     double lim = 0.55 * j;
                     if (e > lim || e < -lim)
                     {
-                        rB = rA + (e > 0 ? -j : j);
+                        // The splice is made where the next period matches the one a period away (correlation 0.85 or better), which a leap or a note change does not give for a few
+                        // periods: the reader may then run on to 0.9 of a period from the input (checked every 16 samples) rather than splice a waveform that is changing.
+                        bool late = Math.Abs(e) >= 0.9 * j;
+                        if (!late && (spCount & 15) != 0) return y;
+                        double corr = 1;
+                        double jump = AlignedJump(rA, e > 0 ? -j : j, out corr);
+                        if (!late && corr < 0.85) return y;
+                        rB = rA + jump;
                         fading = true; fadeN = 0;
-                        fadeLen = Math.Clamp((int)(0.25 * j), 16, Math.Max(16, (int)(0.003 * sr)));
+                        fadeLen = Math.Clamp((int)(0.5 * j), 24, Math.Max(24, (int)(0.006 * sr)));
+                        if (evOn) Log(next, TuneEventKind.SpliceJump, e > 0 ? -j : j, e, SegmentMismatch(rA, rB, fadeLen), fadeLen);
                     }
                 }
             }
             return y;
+        }
+
+        /// <summary>
+        /// The jump (samples, negative = back) that joins the reader at <paramref name="r"/> to the waveform one period away: the analysis marks give the spacing, but a mark is
+        /// placed on a period's correlation peak and the period itself changes from one cycle to the next (vibrato, a glide, a note change), so the spacing is only close. The
+        /// normalised correlation of the next period of the input against the same period displaced by the jump is searched within +-12 % of it (whole samples, then a parabola),
+        /// and the jump that makes the two segments equal is used: the join is then a splice of the same phase of the cycle, as the method needs.
+        /// </summary>
+        double AlignedJump(double r, double nominal, out double corr)
+        {
+            int j = (int)Math.Round(Math.Abs(nominal));
+            int span = Math.Max(2, (int)(0.12 * j));
+            int w = Math.Max(24, Math.Min(j, (int)(0.012 * sr)));
+            long a0 = (long)Math.Floor(r) - w / 4;
+            double sign = nominal < 0 ? -1 : 1;
+            int n = 2 * span + 1;
+            double best = double.MinValue; int bi = span;
+            for (int di = 0; di < n; di++)
+            {
+                long off = (long)(sign * (j + di - span));
+                double c = 0, ea = 0, eb = 0;
+                for (int k = 0; k < w; k++)
+                {
+                    float a = X(a0 + k), b = X(a0 + k + off);
+                    c += (double)a * b; ea += (double)a * a; eb += (double)b * b;
+                }
+                scoreJ[di] = c / Math.Sqrt(ea * eb + 1e-18);
+                if (scoreJ[di] > best) { best = scoreJ[di]; bi = di; }
+            }
+            double frac = 0;
+            if (bi > 0 && bi < n - 1)
+            {
+                double a = scoreJ[bi - 1], b = scoreJ[bi], c2 = scoreJ[bi + 1], d = a - 2 * b + c2;
+                if (d < -1e-12) frac = Math.Clamp(0.5 * (a - c2) / d, -0.5, 0.5);
+            }
+            corr = best;
+            // a weak correlation (a transient, noise): keep the marks' spacing
+            if (best < 0.5) return nominal;
+            return sign * (j + bi - span + frac);
         }
 
         // ------------------------------------------------------------------ PSOLA
@@ -228,11 +290,13 @@ namespace NeoBuzz.Tune
                     shaped = Math.Min(1f, de * 6f);
                     // a correction of exactly nothing is the input, aligned (the grains are close to it already: this hides the residue)
                     bool bypass = ShiftAt(t, ref gPtr, out double sh) && sh == 0;
+                    if (evOn && bypass != evBypass) { evBypass = bypass; Log(t, bypass ? TuneEventKind.PsolaBypassOn : TuneEventKind.PsolaBypassOff); }
                     double pt = bypass ? 0.0 : 1.0;
                     if (pGate < pt) pGate = Math.Min(pt, pGate + pStep); else if (pGate > pt) pGate = Math.Max(pt, pGate - pStep);
                     shaped *= (float)pGate;
                 }
                 bool dryHold = !useSplice && transients && t >= holdFrom && t < holdUntil;    // the splice engine keeps a transient as it is (no grains to smear it)
+                if (evOn && dryHold != evHold) { evHold = dryHold; Log(t, dryHold ? TuneEventKind.TransientOn : TuneEventKind.TransientOff); }
                 double tg = dryHold ? 0.0 : 1.0;
                 if (gate < tg) gate = Math.Min(tg, gate + gateStep);
                 else if (gate > tg) gate = Math.Max(tg, gate - gateStep);

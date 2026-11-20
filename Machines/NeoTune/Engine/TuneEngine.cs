@@ -195,6 +195,7 @@ namespace NeoBuzz.Tune
             ringMask = rs - 1;
             hgMax = 0.040 * sr;
             score = new double[(int)(0.4 * sr / 20) + 8];
+            scoreJ = new double[(int)(0.3 * sr / 20) + 16];
             int os = 1 << 12;
             while (os < (int)(2 * hgMax + 64)) os <<= 1;
             num = new float[os]; den = new float[os];
@@ -298,7 +299,7 @@ namespace NeoBuzz.Tune
                 latency = (int)Math.Round(LatencySeconds[range] * sr);
                 capSamples = CapSeconds[range] * sr;
             }
-            if (splice != useSplice) { useSplice = splice; change = !force; }
+            if (splice != useSplice) { useSplice = splice; change = !force; if (evOn) Log(outPos, TuneEventKind.MethodSwitch, splice ? 1 : 0); }
             if (change && ring != null) Reset();
             values.Clean();
         }
@@ -453,6 +454,11 @@ namespace NeoBuzz.Tune
         void AddMark(double t)
         {
             int i = (int)(mCount & MarkMask);
+            if (evOn && mCount > 1 && mRun[(int)((mCount - 1) & MarkMask)] == runId && mRun[(int)((mCount - 2) & MarkMask)] == runId)
+            {
+                double s1 = t - mT[(int)((mCount - 1) & MarkMask)], s0 = mT[(int)((mCount - 1) & MarkMask)] - mT[(int)((mCount - 2) & MarkMask)];
+                if (s1 > 1.12 * s0 || s1 < 0.88 * s0) Log((long)t, TuneEventKind.MarkOutlier, s1, s0);
+            }
             mT[i] = t;
             mRun[i] = runId;
             mCount++;
@@ -485,6 +491,7 @@ namespace NeoBuzz.Tune
                         if (v > bv) { bv = v; best = q; }
                     }
                     runId++;
+                    if (evOn) Log(best, TuneEventKind.MarkRunStart, runId);
                     AddMark(best);
                     markRun = true;
                     mPtr = mScan;
@@ -494,16 +501,31 @@ namespace NeoBuzz.Tune
                 if (!ContourAt(last + 1, ref mPtr, out double f, out _))
                 {
                     // The voice stopped (as far as the contour has got).
-                    if (mPtr + 1 < cCount) { markRun = false; mScan = mPtr + 1; continue; }
+                    if (mPtr + 1 < cCount) { markRun = false; mScan = mPtr + 1; if (evOn) Log((long)last, TuneEventKind.MarkRunEnd, runId); continue; }
                     return;
                 }
                 double p = sr / f;
+                // Marks smoothed across transitions: the period of a voice does not change by more than a quarter from one cycle to the next, and a tracker that blips
+                // at a note change (an octave error for a few frames, a late estimate) must not lay marks at half or twice the true spacing (the splice would then
+                // jump half a period: a click). The spacing of the marks just laid is the reference.
+                double prevSp = 0;
+                if (mCount >= 2)
+                {
+                    int i1 = (int)((mCount - 1) & MarkMask), i2 = (int)((mCount - 2) & MarkMask);
+                    if (mRun[i1] == mRun[i2]) prevSp = mT[i1] - mT[i2];
+                }
+                if (prevSp > 8)
+                {
+                    double ratio = p / prevSp;
+                    if (ratio < 0.58 && ratio > 0.42) p *= 2;
+                    else if (ratio > 1.7 && ratio < 2.4) p *= 0.5;
+                }
                 double pred = last + p;
                 int hw = Math.Max(4, (int)(0.3 * p)), rg = Math.Max(2, (int)(0.2 * p));
                 if (pred + rg + hw + 2 > inCount - 1) return;
                 // Is the voice still voiced at the predicted mark?
                 long probe = mPtr;
-                if (!ContourAt(pred, ref probe, out _, out _) && probe + 1 < cCount) { markRun = false; mScan = probe + 1; continue; }
+                if (!ContourAt(pred, ref probe, out _, out _) && probe + 1 < cCount) { markRun = false; mScan = probe + 1; if (evOn) Log((long)last, TuneEventKind.MarkRunEnd, runId); continue; }
                 double k = Refine(pred, last, hw, rg);
                 double minK = last + 0.5 * p;
                 if (k < minK) k = minK;
