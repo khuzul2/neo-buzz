@@ -22,6 +22,9 @@ namespace NeoBuzz.Machine
         long lastResolve;
         IBuzz buzzCache;
 
+        /// <summary>Record at attack: the bus gets each note with how far back its sound began, and a recording track places the note there. The target and the device always get the note when it is sent.</summary>
+        public volatile bool RecordAtAttack = true;
+
         public MidiRouter(IBuzzMachineHost host) { this.host = host; }
 
         public string TargetName => targetName;
@@ -151,7 +154,12 @@ namespace NeoBuzz.Machine
                         }
                     }
                     if (dev >= 0) Buzz.SendMIDIOutput(dev, data);
-                    bus?.SendMachineMIDI(self, data);
+                    if (bus != null)
+                    {
+                        int lag = e.RecordedLag(RecordAtAttack);
+                        if (lag > 0) bus.SendMachineMIDI(self, data, lag);
+                        else bus.SendMachineMIDI(self, data);
+                    }
                 }
                 catch (Exception) { }
             }

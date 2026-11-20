@@ -18,6 +18,11 @@ namespace NeoBuzz.Dsp
         public byte Channel;
         public byte Data1;
         public int Data2;
+        /// <summary>Samples between the sound that caused the event (a note's attack, a drum hit) and the event: 0 when the event is on time. A recording track stamps the event this much earlier (Record at attack).</summary>
+        public int Lag;
+
+        /// <summary>What the host's bus is told: the lag while Record at attack is on, else 0 (the message as it was sent).</summary>
+        public readonly int RecordedLag(bool recordAtAttack) => recordAtAttack ? Lag : 0;
     }
 
     /// <summary>The events of one block, in the order they were made until <see cref="SortByOffset"/>. Full: further events are dropped.</summary>
@@ -34,11 +39,15 @@ namespace NeoBuzz.Dsp
         public void Begin(long start, int length) { Count = 0; blockStart = start; blockLen = length; }
 
         /// <summary>Adds an event at stream position <paramref name="at"/> (its offset in the block is clamped to the block).</summary>
-        public void Emit(MidiKind kind, MidiStream stream, int channel, int d1, int d2, long at)
+        public void Emit(MidiKind kind, MidiStream stream, int channel, int d1, int d2, long at) => Emit(kind, stream, channel, d1, d2, at, at);
+
+        /// <summary>As above, for an event caused by a sound that began at stream position <paramref name="attack"/> (at or before <paramref name="at"/>): the event carries the difference as its <see cref="MidiEvent.Lag"/>.</summary>
+        public void Emit(MidiKind kind, MidiStream stream, int channel, int d1, int d2, long at, long attack)
         {
             if (Count >= Events.Length) return;
             int off = (int)Math.Clamp(at - blockStart, 0, Math.Max(0, blockLen - 1));
             ref var e = ref Events[Count++];
+            e.Lag = (int)Math.Clamp(blockStart + off - attack, 0, 1 << 20);        // from where the event really sits in the block
             e.Offset = off; e.Kind = kind; e.Stream = stream; e.Channel = (byte)(channel & 15); e.Data1 = (byte)Math.Clamp(d1, 0, 127); e.Data2 = d2;
             EventsSent++;
         }

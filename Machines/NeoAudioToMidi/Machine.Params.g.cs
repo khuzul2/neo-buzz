@@ -126,5 +126,8 @@ namespace NeoBuzz.AudioToMidi
 
         [ParameterDecl(Name = "Hat interval", Description = "The shortest time between two hat hits", MinValue = 0, MaxValue = 290, DefValue = 15)]
         public int HatGap { get => Values[P.HatGap]; set => Values.Set(P.HatGap, value); }
+
+        [ParameterDecl(Name = "Record at attack", Description = "An armed track that records from this machine places each note at its attack, not at the moment it was sent; the sound you hear and what the target plays are unchanged", MinValue = 0, MaxValue = 1, DefValue = 1)]
+        public int Attack { get => Values[P.Attack]; set => Values.Set(P.Attack, value); }
     }
 }

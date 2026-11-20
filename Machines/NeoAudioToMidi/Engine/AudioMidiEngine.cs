@@ -109,6 +109,7 @@ namespace NeoBuzz.AudioToMidi
             ringMask = ring.Length - 1;
             total = 0;
             melody.Rate = rate;
+            melody.Ring = ring; melody.RingMask = ringMask;
             mode = -1; range = -1;
             Reset();
         }
@@ -160,13 +161,20 @@ namespace NeoBuzz.AudioToMidi
             velLoudDb = Math.Max(V(P.Loud), velSoftDb + 1f);
             trigLenSamples = (int)(V(P.Length) * 0.001 * rate);
             drumCh = I(P.DrumCh) - 1;
-            onsets.Threshold = 8f - 6f * V(P.Sensitivity);
             if (drumMode)
             {
+                onsets.Threshold = DrumTuning.ThrBase - DrumTuning.ThrSlope * V(P.Sensitivity);
+                onsets.RobustSpread = DrumTuning.Robust != 0; onsets.RobustMask = DrumTuning.RobustMask;
+                onsets.MinRatio = DrumTuning.MinRatio;
                 double minGap = Math.Min(V(P.KickGap), Math.Min(V(P.SnareGap), V(P.HatGap)));
                 onsets.MinIntervalSeconds = Math.Max(0.015, minGap * 0.001);
             }
-            else onsets.MinIntervalSeconds = 0.045;
+            else
+            {
+                onsets.Threshold = 8f - 6f * V(P.Sensitivity);
+                onsets.RobustSpread = false; onsets.MinRatio = 2.2f;
+                onsets.MinIntervalSeconds = 0.045;
+            }
 
             var ml = melody;
             ml.Fast = I(P.Response) == 0;
@@ -217,6 +225,7 @@ namespace NeoBuzz.AudioToMidi
                     ref var e = ref frames[i];
                     Voiced = e.Voiced; SungMidi = e.Voiced ? (float)e.Midi : 0f;
                     lastVoiced = e.Voiced; lastLevel = e.Rms;
+                    EstimateProbe?.Invoke(in e);
                     melody.Estimate(in e);
                     if (e.Voiced && e.Rms >= thresholdLin) keyLock.Finder.Add((int)Math.Round(e.Midi), tracker.Hop / (double)rate);
                 }
@@ -259,6 +268,9 @@ namespace NeoBuzz.AudioToMidi
 
         /// <summary>For the evaluation tool only: sees every hit with its bands before it is named.</summary>
         public static ProbeHandler Probe;
+        public delegate void EstimateHandler(in PitchEstimate e);
+        /// <summary>For the evaluation tool only: sees every pitch estimate.</summary>
+        public static EstimateHandler EstimateProbe;
         public static float CalConfidence = 0.95f;
         public delegate void ProbeHandler(in OnsetEvent o, HitBands bands);
 
@@ -309,7 +321,7 @@ namespace NeoBuzz.AudioToMidi
             lastHit[cls] = o.Sample;
             int note = I(first), fixedV = I(first + 1);
             int vel = fixedV > 0 ? fixedV : VelocityMap.FromHit(o.LevelDb, velMin, velSoftDb, velLoudDb);
-            offs.Play(block, MidiStream.Trigger, drumCh, note, vel, at, trigLenSamples);
+            offs.Play(block, MidiStream.Trigger, drumCh, note, vel, at, trigLenSamples, Math.Min(at, o.Sample));
             LastHit = cls + 1; HitSerial++;
             Lit[cls] = true; LitAt[cls] = at;
         }

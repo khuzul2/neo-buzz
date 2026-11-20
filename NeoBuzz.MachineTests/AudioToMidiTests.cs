@@ -15,7 +15,7 @@ namespace NeoBuzz.MachineTests
         static void Say(string s) => TestContext.Out.WriteLine(s);
         static string F(double v, string fmt = "F1") => v.ToString(fmt, CultureInfo.InvariantCulture);
 
-        sealed record Out(double T, MidiKind Kind, MidiStream Stream, int Channel, int Data1, int Data2);
+        sealed record Out(double T, MidiKind Kind, MidiStream Stream, int Channel, int Data1, int Data2, int Lag = 0);
 
         static (AudioMidiEngine E, ParamValues V) Make(Action<ParamValues> setup = null)
         {
@@ -36,15 +36,19 @@ namespace NeoBuzz.MachineTests
                 int n = Math.Min(block, x.Length - pos);
                 Array.Copy(x, pos, buf, 0, n);
                 int count = e.Process(buf, n);
-                for (int i = 0; i < count; i++) { var m = e.Events[i]; list.Add(new Out((pos + m.Offset) / Rate, m.Kind, m.Stream, m.Channel, m.Data1, m.Data2)); }
+                for (int i = 0; i < count; i++) { var m = e.Events[i]; list.Add(new Out((pos + m.Offset) / Rate, m.Kind, m.Stream, m.Channel, m.Data1, m.Data2, m.Lag)); }
             }
             int c = e.Flush();
-            for (int i = 0; i < c; i++) { var m = e.Events[i]; list.Add(new Out((x.Length + m.Offset) / Rate, m.Kind, m.Stream, m.Channel, m.Data1, m.Data2)); }
+            for (int i = 0; i < c; i++) { var m = e.Events[i]; list.Add(new Out((x.Length + m.Offset) / Rate, m.Kind, m.Stream, m.Channel, m.Data1, m.Data2, m.Lag)); }
             return list;
         }
 
         static List<(double T, int Note, int Vel)> NoteOns(List<Out> evs, MidiStream stream = MidiStream.Pitch) =>
             evs.Where(m => m.Stream == stream && m.Kind == MidiKind.NoteOn).Select(m => (m.T, m.Data1, m.Data2)).ToList();
+
+        /// <summary>The note ons as a recording track places them (Record at attack): the time less the event's lag.</summary>
+        static List<(double T, int Note, int Vel)> RecordedNoteOns(List<Out> evs, MidiStream stream = MidiStream.Pitch) =>
+            evs.Where(m => m.Stream == stream && m.Kind == MidiKind.NoteOn).Select(m => (m.T - m.Lag / Rate, m.Data1, m.Data2)).ToList();
 
         /// <summary>Scores the notes: onset within <paramref name="tol"/> s and the same note. Matching is one to one, nearest in time first.</summary>
         sealed class Score
@@ -318,10 +322,112 @@ namespace NeoBuzz.MachineTests
             var free = NoteOns(Play(Make(v => v.Set(P.Mode, 1)).E, x), MidiStream.Trigger);
             var slow = NoteOns(Play(Make(v => { v.Set(P.Mode, 1); v.Set(P.HatGap, 120); v.Set(P.KickNote, 35); v.Set(P.SnareVel, 77); }).E, x), MidiStream.Trigger);
             int hatsFree = free.Count(n => n.Note == 42), hatsSlow = slow.Count(n => n.Note == 42);
+            // The hats that fall on the same sixteenth as a kick (the case a 14 ms before/after window loses): found within 50 ms, over every seed.
+            int onKick = 0, onKickFound = 0;
+            foreach (ulong seed in Seeds)
+            {
+                var (xs, ts) = DrumLoop(174, 8, seed);
+                var got = NoteOns(Play(Make(v => v.Set(P.Mode, 1)).E, xs), MidiStream.Trigger).Where(n => n.Note == 42).ToList();
+                foreach (var h in ts.Where(t => t.Class == 2 && ts.Any(k => k.Class == 0 && Math.Abs(k.Sample - t.Sample) < 0.001 * Rate)))
+                { onKick++; if (got.Any(g => Math.Abs(g.T - h.Sample / Rate) <= 0.05)) onKickFound++; }
+            }
+            Say($"AM1 hats on a kick's sixteenth at 174 bpm: {onKickFound} of {onKick} found ({(onKick == 0 ? 0 : 100.0 * onKickFound / onKick):F1} %)");
             Say($"AM1 hat interval: {hatsFree} hats at 15 ms, {hatsSlow} at 120 ms (loop at 174 bpm has {truth.Count(t => t.Class == 2)})");
             Assert.That(hatsSlow, Is.LessThan(hatsFree));
             Assert.That(slow.Any(n => n.Note == 35) && !slow.Any(n => n.Note == 36), "kick note moved");
             Assert.That(slow.Where(n => n.Note == 38).All(n => n.Vel == 77), "snare velocity fixed");
+        }
+
+
+        // ---------------------------------------------------------------- recorded timing (Record at attack)
+
+        [TestCase(0, "Fast")]
+        [TestCase(1, "Stable")]
+        public void RecordedNotesLandAtTheAttackAndLiveOutputIsUnchanged(int response, string label)
+        {
+            var live = new List<Score>(); var recorded = new List<Score>();
+            var liveOffsets = new List<double>();
+            foreach (ulong seed in Seeds)
+            {
+                var (x, truth) = GuitarLine(seed);
+                var evs = Play(Make(v => { v.Set(P.Range, 0); v.Set(P.Response, response); }).E, x);
+                live.Add(Match(truth, NoteOns(evs), x.Length / Rate));
+                recorded.Add(Match(truth, RecordedNoteOns(evs), x.Length / Rate));
+                // The lag is only a label: it never moves an event (the same run without reading it is the live output), and a note's off never lands before its on.
+                var ons = evs.Where(m => m.Stream == MidiStream.Pitch && m.Kind == MidiKind.NoteOn).ToList();
+                Assert.That(evs.All(m => m.Lag >= 0 && m.Lag < 0.2 * Rate), "lags are small and never negative");
+                Assert.That(ons.Count(m => m.Lag > 0), Is.GreaterThan(ons.Count / 2), "most notes carry a lag");
+                var open = new Dictionary<int, double>();
+                foreach (var m in evs.Where(m => m.Stream == MidiStream.Pitch && m.Kind != MidiKind.PitchBend))
+                {
+                    double rec = m.T - m.Lag / Rate;
+                    if (m.Kind == MidiKind.NoteOn) open[m.Data1] = rec;
+                    else if (open.TryGetValue(m.Data1, out var on)) { Assert.That(rec, Is.GreaterThanOrEqualTo(on - 1e-9), "a note off is never recorded before its note on"); open.Remove(m.Data1); }
+                }
+            }
+            var l = Merge(live); var r = Merge(recorded);
+            l.FWide = 0; r.FWide = 0;
+            Say($"AM1 recorded timing, guitar line {label}: live F {F(l.FMeasure * 100)} % (latency median {F(l.Median * 1000)} ms), recorded F {F(r.FMeasure * 100)} % (offset median {F(r.Median * 1000)} ms, worst {F(r.Worst * 1000)} ms)");
+            Assert.That(r.FMeasure, Is.GreaterThanOrEqualTo(l.FMeasure - 1e-9), "recording at the attack never costs notes");
+            Assert.That(Math.Abs(r.Median), Is.LessThan(0.015), "recorded notes land within 15 ms of the pluck (median)");
+            if (response == 1) Assert.That(r.Median, Is.LessThan(l.Median), "Stable's lateness is taken out");
+        }
+
+        [Test]
+        public void RecordedDrumHitsLandOnTheHitAndTheNoteKeepsItsLength()
+        {
+            var live = new List<double>(); var rec = new List<double>();
+            foreach (ulong seed in Seeds)
+            {
+                var (x, truth) = DrumLoop(120, 8, seed);
+                var evs = Play(Make(v => v.Set(P.Mode, 1)).E, x);
+                foreach (var (at, cls, ghost) in truth)
+                {
+                    var on = evs.Where(m => m.Stream == MidiStream.Trigger && m.Kind == MidiKind.NoteOn && m.Data1 == DrumNotes[cls] && Math.Abs(m.T - at / Rate) < 0.05).OrderBy(m => Math.Abs(m.T - at / Rate)).FirstOrDefault();
+                    if (on == null) continue;
+                    live.Add(on.T - at / Rate); rec.Add(on.T - on.Lag / Rate - at / Rate);
+                    var off = evs.FirstOrDefault(m => m.Stream == MidiStream.Trigger && m.Kind == MidiKind.NoteOff && m.Data1 == on.Data1 && m.T > on.T);
+                    if (off != null) Assert.That((off.T - off.Lag / Rate) - (on.T - on.Lag / Rate), Is.EqualTo(0.06).Within(0.003), "recorded length is the hit length (60 ms by default)");
+                }
+            }
+            double mLive = live.OrderBy(v => v).ElementAt(live.Count / 2), mRec = Math.Abs(rec.OrderBy(v => v).ElementAt(rec.Count / 2));
+            Say($"AM1 recorded drum hits: median offset from the hit {F(mLive * 1000)} ms live, {F(mRec * 1000)} ms recorded (worst recorded {F(rec.Max(Math.Abs) * 1000)} ms, {rec.Count} hits)");
+            Assert.That(mLive, Is.GreaterThan(0.010), "the note is sent after the hit");
+            Assert.That(mRec, Is.LessThan(0.004), "and recorded on it");
+        }
+
+        [Test]
+        public void ANoteOffQueueNoteCarriesItsLagToItsOff()
+        {
+            var b = new MidiBlock(); var q = new NoteOffQueue(8);
+            b.Begin(0, 4800);
+            q.Play(b, MidiStream.Trigger, 9, 38, 100, at: 1000, lengthSamples: 2400, attack: 600);
+            q.Service(b, MidiStream.Trigger, 4000);
+            Assert.That(b.Count, Is.EqualTo(2));
+            Assert.That(b.Events[0].Kind, Is.EqualTo(MidiKind.NoteOn));
+            Assert.That(b.Events[0].Lag, Is.EqualTo(400));
+            Assert.That(b.Events[1].Kind, Is.EqualTo(MidiKind.NoteOff));
+            Assert.That(b.Events[1].Offset, Is.EqualTo(3400), "the off is sent when it is due");
+            Assert.That(b.Events[1].Lag, Is.EqualTo(400), "and recorded the same length after the on");
+            // An attack later than the event is never a negative lag.
+            b.Begin(0, 4800);
+            b.Emit(MidiKind.NoteOn, MidiStream.Pitch, 0, 60, 90, 100, 900);
+            Assert.That(b.Events[0].Lag, Is.EqualTo(0));
+            // The bus gets the lag only while Record at attack is on.
+            Assert.That(new MidiEvent { Lag = 123 }.RecordedLag(true), Is.EqualTo(123));
+            Assert.That(new MidiEvent { Lag = 123 }.RecordedLag(false), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void RecordAtAttackIsAParameterOnByDefaultAndTheEngineReadsNothingFromIt()
+        {
+            var (e, v) = Make();
+            Assert.That(v[P.Attack], Is.EqualTo(1), "on by default");
+            var (x, _) = GuitarLine(31, 16);
+            var a = Play(e, x);
+            var (e2, v2) = Make(s => s.Set(P.Attack, 0));
+            var b = Play(e2, x);
+            Assert.That(b.Select(m => (m.T, m.Kind, m.Data1, m.Data2)), Is.EqualTo(a.Select(m => (m.T, m.Kind, m.Data1, m.Data2))), "the live events are the same either way: the machine only decides what the bus is told");
         }
 
         // ---------------------------------------------------------------- real time

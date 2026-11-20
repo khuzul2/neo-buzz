@@ -94,6 +94,7 @@
         <Parameter Name="Vowel ee low value" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="Vowel ee high value" Group="1" Index="89" Track="0" Value="127" />
         <Parameter Name="Vowel ee channel" Group="1" Index="90" Track="0" Value="0" />
+        <Parameter Name="Record at attack" Group="1" Index="91" Track="0" Value="1" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -193,6 +194,7 @@
         <Parameter Name="Vowel ee low value" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="Vowel ee high value" Group="1" Index="89" Track="0" Value="127" />
         <Parameter Name="Vowel ee channel" Group="1" Index="90" Track="0" Value="0" />
+        <Parameter Name="Record at attack" Group="1" Index="91" Track="0" Value="1" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -292,6 +294,7 @@
         <Parameter Name="Vowel ee low value" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="Vowel ee high value" Group="1" Index="89" Track="0" Value="127" />
         <Parameter Name="Vowel ee channel" Group="1" Index="90" Track="0" Value="0" />
+        <Parameter Name="Record at attack" Group="1" Index="91" Track="0" Value="1" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -391,6 +394,7 @@
         <Parameter Name="Vowel ee low value" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="Vowel ee high value" Group="1" Index="89" Track="0" Value="127" />
         <Parameter Name="Vowel ee channel" Group="1" Index="90" Track="0" Value="0" />
+        <Parameter Name="Record at attack" Group="1" Index="91" Track="0" Value="1" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -490,6 +494,7 @@
         <Parameter Name="Vowel ee low value" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="Vowel ee high value" Group="1" Index="89" Track="0" Value="127" />
         <Parameter Name="Vowel ee channel" Group="1" Index="90" Track="0" Value="0" />
+        <Parameter Name="Record at attack" Group="1" Index="91" Track="0" Value="1" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -589,6 +594,7 @@
         <Parameter Name="Vowel ee low value" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="Vowel ee high value" Group="1" Index="89" Track="0" Value="127" />
         <Parameter Name="Vowel ee channel" Group="1" Index="90" Track="0" Value="0" />
+        <Parameter Name="Record at attack" Group="1" Index="91" Track="0" Value="1" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -688,6 +694,7 @@
         <Parameter Name="Vowel ee low value" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="Vowel ee high value" Group="1" Index="89" Track="0" Value="127" />
         <Parameter Name="Vowel ee channel" Group="1" Index="90" Track="0" Value="0" />
+        <Parameter Name="Record at attack" Group="1" Index="91" Track="0" Value="1" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -787,6 +794,7 @@
         <Parameter Name="Vowel ee low value" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="Vowel ee high value" Group="1" Index="89" Track="0" Value="127" />
         <Parameter Name="Vowel ee channel" Group="1" Index="90" Track="0" Value="0" />
+        <Parameter Name="Record at attack" Group="1" Index="91" Track="0" Value="1" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -886,6 +894,7 @@
         <Parameter Name="Vowel ee low value" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="Vowel ee high value" Group="1" Index="89" Track="0" Value="127" />
         <Parameter Name="Vowel ee channel" Group="1" Index="90" Track="0" Value="0" />
+        <Parameter Name="Record at attack" Group="1" Index="91" Track="0" Value="1" />
       </Parameters>
       <Attributes />
       <Comment></Comment>

@@ -153,6 +153,7 @@ namespace NeoBuzz.AudioToMidi
             if (n > AudioMidiEngine.MaxBlock) throw new InvalidOperationException("block larger than 256");
             bool hasInput = (mode & WorkModes.WM_READ) != 0 && input != null && HasSignal(input, n);
             float monitor = (float)Values.Value(P.Monitor);
+            router.RecordAtAttack = Values.Value(P.Attack) > 0.5;
             if (hasInput)
             {
                 quietBlocks = 0;

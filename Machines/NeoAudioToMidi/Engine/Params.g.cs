@@ -48,7 +48,8 @@ namespace NeoBuzz.AudioToMidi
         public const int HatVel = 37;
         public const int HatSens = 38;
         public const int HatGap = 39;
-        public const int Count = 40;
+        public const int Attack = 40;
+        public const int Count = 41;
     }
 
     internal static class Params
@@ -98,6 +99,7 @@ namespace NeoBuzz.AudioToMidi
             new ParamDef(P.HatVel, "HatVel", "Hat velocity", 0, 127, 0, MapKind.Int, a: 0, b: 0, group: "Drums", description: "0: from how hard the hit was. 1 to 127: always this velocity", how: "Sets the hat's velocity from 1 to 127, or 0 to take it from how hard the hit was.", sound: "Zero makes harder hits play louder; a number makes every hit the same."),
             new ParamDef(P.HatSens, "HatSens", "Hat sensitivity", 0, 100, 50, MapKind.Percent, digits: 0, group: "Drums", description: "How readily a hit counts as a hat: higher plays more of the doubtful hits", how: "Sets how readily a hit counts as a hat, from 0 to 100%.", sound: "Higher values play more hat hits but let the snare's wires and cymbals through as one."),
             new ParamDef(P.HatGap, "HatGap", "Hat interval", 0, 290, 15, MapKind.Linear, a: 10, b: 300, unit: "ms", digits: 0, group: "Drums", description: "The shortest time between two hat hits", how: "Sets the shortest time between two hat hits, from 10 to 300 ms.", sound: "Hats run fast: a short interval lets sixteenths and thirty-seconds through."),
+            new ParamDef(P.Attack, "Attack", "Record at attack", 0, 1, 1, MapKind.Switch, group: "Recording", description: "An armed track that records from this machine places each note at its attack, not at the moment it was sent; the sound you hear and what the target plays are unchanged", how: "Switches recording at the attack on or off.", sound: "On, a recorded take lines up with the playing even when the note was sent a few tens of milliseconds after the attack; off records each note when it was sent."),
         };
     }
 }

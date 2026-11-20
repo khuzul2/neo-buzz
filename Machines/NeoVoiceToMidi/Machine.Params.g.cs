@@ -279,5 +279,8 @@ namespace NeoBuzz.VoiceToMidi
 
         [ParameterDecl(Name = "Vowel ee channel", Description = "MIDI channel of Vowel ee", MinValue = 0, MaxValue = 15, DefValue = 0)]
         public int EeCh { get => Values[P.EeCh]; set => Values.Set(P.EeCh, value); }
+
+        [ParameterDecl(Name = "Record at attack", Description = "An armed track that records from this machine places each note at its attack, not at the moment it was sent; the sound you hear and what the target plays are unchanged", MinValue = 0, MaxValue = 1, DefValue = 1)]
+        public int Attack { get => Values[P.Attack]; set => Values.Set(P.Attack, value); }
     }
 }

@@ -669,6 +669,23 @@
    "description": "The shortest time between two hat hits",
    "how": "Sets the shortest time between two hat hits, from 10 to 300 ms.",
    "sound": "Hats run fast: a short interval lets sixteenths and thirty-seconds through."
+  },
+  {
+   "index": 40,
+   "id": "Attack",
+   "name": "Record at attack",
+   "group": "Recording",
+   "min": 0,
+   "max": 1,
+   "default": 1,
+   "kind": "switch",
+   "choices": [
+    "Off",
+    "On"
+   ],
+   "description": "An armed track that records from this machine places each note at its attack, not at the moment it was sent; the sound you hear and what the target plays are unchanged",
+   "how": "Switches recording at the attack on or off.",
+   "sound": "On, a recorded take lines up with the playing even when the note was sent a few tens of milliseconds after the attack; off records each note when it was sent."
   }
  ]
 }

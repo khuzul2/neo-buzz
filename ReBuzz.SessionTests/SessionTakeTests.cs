@@ -30,6 +30,24 @@ namespace ReBuzz.SessionTests
         }
 
         [Test]
+        public void ANoteStampedAtItsAttackLandsThatManySamplesBeforeWhenItWasSent()
+        {
+            // AT1 (Record at attack): a machine's note is sent 960 samples (20 ms at 48 kHz) after the attack; 120 BPM, 4 ticks a beat: 6000 samples a tick.
+            const double samplesPerTick = 6000;
+            double heard = 12.25;
+            double at = TakeTime.Earlier(heard, samplesPerTick, 960);
+            Assert.That(heard - at, Is.EqualTo(960 / samplesPerTick).Within(1e-12));
+            long sent = (long)Math.Floor(heard * TB), recorded = (long)Math.Floor(at * TB);
+            Assert.That((sent - recorded) * samplesPerTick / TB, Is.EqualTo(960).Within(samplesPerTick / TB), "within one 1/240 tick of the 20 ms");
+            Assert.That(TakeTime.Earlier(heard, samplesPerTick, 0), Is.EqualTo(heard), "no lag: when it was sent");
+            Assert.That(TakeTime.Earlier(0.01, samplesPerTick, 96000), Is.EqualTo(0), "never before the start");
+            Assert.That(TakeTime.Earlier(-1, samplesPerTick, 960), Is.EqualTo(-1), "stopped stays stopped");
+            Assert.That(TakeTime.Earlier(heard, 0, 960), Is.EqualTo(heard), "an unknown tick length leaves it");
+            // Two notes sent in the order of their attacks stay in that order when each is moved back by its own lag.
+            Assert.That(TakeTime.Earlier(10.30, samplesPerTick, 900), Is.LessThan(TakeTime.Earlier(10.40, samplesPerTick, 400)));
+        }
+
+        [Test]
         public void At120BpmAStampLandsWithinOneSubTickOfWhenItWasHeard()
         {
             // 120 BPM, 4 ticks per beat, 44.1 kHz: 5512.5 samples per tick (5512 rendered), and
