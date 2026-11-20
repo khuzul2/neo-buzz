@@ -42,6 +42,11 @@ namespace NeoBuzz.Tune
         /// </summary>
         public static bool Edited(Func<int, int> raw)
         {
+            // A fresh machine (Natural and the six fine controls at their table defaults, the Init preset) is not marked: the defaults sit near
+            // Natural 60 % but cannot change without a layout version (machines.md section 3.4), and a new machine should not open "edited".
+            bool pristine = raw(P.Natural) == Params.Table[P.Natural].Default;
+            for (int i = 0; pristine && i < Controls.Length; i++) pristine = raw(Controls[i]) == Params.Table[Controls[i]].Default;
+            if (pristine) return false;
             double n = Params.Table[P.Natural].Value(raw(P.Natural));
             for (int i = 0; i < Controls.Length; i++)
             {
