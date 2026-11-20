@@ -300,7 +300,7 @@ namespace NeoBuzz.PitchEval
             for (int c = 0; c < cfgs.Length; c++)
             {
                 var a = total[c];
-                md.AppendLine($"| {cfgs[c].Name} | {a.Ref} | {a.Out} | {Pc(a.P)} | {Pc(a.R)} | **{Pc(a.F)}** | {Pc(a.FExact)} | {Pc(wide[c].F)} | {Ms(Median(a.Latency))} | {Ms(Pctl(a.Latency, 0.95))} | {a.Octave} | {a.ChatterPerMinute:F1} | {Pc(rec[k, c].F)} |");
+                md.AppendLine($"| {cfgs[c].Name} | {a.Ref} | {a.Out} | {Pc(a.P)} | {Pc(a.R)} | **{Pc(a.F)}** | {Pc(a.FExact)} | {Pc(wide[c].F)} | {Ms(Median(a.Latency))} | {Ms(Pctl(a.Latency, 0.95))} | {a.Octave} | {a.ChatterPerMinute:F1} |");
             }
             md.AppendLine();
             if (Environment.GetEnvironmentVariable("AM1_SRC") != null)
@@ -402,7 +402,7 @@ namespace NeoBuzz.PitchEval
                     if (Environment.GetEnvironmentVariable("AM1_SRC") != null) Console.WriteLine("TIMING dt histogram (25 ms bins from -200): " + string.Join(" ", Enumerable.Range(0, 16).Select(b => a.TimingDt.Count(q => q.Dt >= -0.2 + b * 0.025 && q.Dt < -0.2 + (b + 1) * 0.025))) + " | by src late (>50ms): " + string.Join(" ", Enumerable.Range(0, 6).Select(q2 => a.TimingDt.Count(q => q.Dt > 0.05 && q.Src == q2))) + " early (<-50ms): " + string.Join(" ", Enumerable.Range(0, 6).Select(q2 => a.TimingDt.Count(q => q.Dt < -0.05 && q.Src == q2))));
                     if (Environment.GetEnvironmentVariable("AM1_SRC") != null) Console.WriteLine($"DIAG {kinds[k].Item1} {cfgs[c].Item1}: misses: timing {a.Diag[0]}, other at time {a.Diag[1]}, nothing {a.Diag[2]}; extras: timing {a.Diag[3]}, octave {a.Diag[4]}, other-pitch {a.Diag[5]}, inside-note {a.Diag[6]}, gap {a.Diag[7]}");
                     if (Environment.GetEnvironmentVariable("AM1_SRC") != null) Console.WriteLine($"SRC {kinds[k].Item1} {cfgs[c].Item1}: " + string.Join(", ", new[] { "?", "onset", "nopeak", "change", "corr", "reonset" }.Select((nm, q) => $"{nm} {a.SrcHit[q]}/{a.SrcOut[q]}")));
-                    md.AppendLine($"| {kinds[k].Item1} | {cfgs[c].Item1} | {a.Ref} | {a.Out} | {Pc(a.P)} | {Pc(a.R)} | **{Pc(a.F)}** | {Pc(a.FExact)} | {Pc(wide[k, c].F)} | {Ms(Median(a.Latency))} | {Ms(Pctl(a.Latency, 0.95))} | {a.Octave} | {a.ChatterPerMinute:F1} |");
+                    md.AppendLine($"| {kinds[k].Item1} | {cfgs[c].Item1} | {a.Ref} | {a.Out} | {Pc(a.P)} | {Pc(a.R)} | **{Pc(a.F)}** | {Pc(a.FExact)} | {Pc(wide[k, c].F)} | {Ms(Median(a.Latency))} | {Ms(Pctl(a.Latency, 0.95))} | {a.Octave} | {a.ChatterPerMinute:F1} | {Pc(rec[k, c].F)} |");
                 }
             md.AppendLine();
             WriteExcerpts(plotsDir, excerpts.OrderBy(x => x.Title, StringComparer.Ordinal).ToList(), "gs");
