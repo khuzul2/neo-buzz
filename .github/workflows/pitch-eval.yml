@@ -127,7 +127,7 @@ jobs:
           done
           [ -n "$md5" ] || { echo "no checksum for $name"; return 1; }
           echo "$rec $name md5 $md5; licence: $(echo "$meta" | python3 -c "import json,sys; print(json.load(sys.stdin)['metadata']['license'])" 2>/dev/null || echo unknown)"
-          curl -sS --retry 8 --retry-delay 5 -C - -L -o "$dest" "https://zenodo.org/api/records/$rec/files/$name/content"
+          curl -sS --retry 8 --retry-delay 5 --speed-limit 20000 --speed-time 120 -C - -L -o "$dest" "https://zenodo.org/api/records/$rec/files/$name/content"
           echo "$md5  $dest" | md5sum -c -
         }
         if [ "$RUN_MDB" = "true" ]; then
@@ -229,7 +229,7 @@ jobs:
           echo "record $rec: no usable answer (try $try)"; sleep $((try * 10))
         done
         [ -n "$md5" ] || { echo "no checksum for $name"; exit 1; }
-        curl -sS --retry 8 --retry-delay 5 -C - -L -o "$dest" "https://zenodo.org/api/records/$rec/files/$name/content"
+        curl -sS --retry 8 --retry-delay 5 --speed-limit 20000 --speed-time 120 -C - -L -o "$dest" "https://zenodo.org/api/records/$rec/files/$name/content"
         echo "$md5  $dest" | md5sum -c -
         mkdir -p "$DATA/mdb"
         tar -xzf "$dest" -C "$DATA/mdb" --exclude='*/._*'
@@ -256,7 +256,7 @@ jobs:
           echo "record $rec: no usable answer (try $try)"; sleep $((try * 10))
         done
         [ -n "$md5" ] || { echo "no checksum for $name"; exit 1; }
-        curl -sS --retry 8 --retry-delay 5 -C - -L -o "$dest" "https://zenodo.org/api/records/$rec/files/$name/content"
+        curl -sS --retry 8 --retry-delay 5 --speed-limit 20000 --speed-time 120 -C - -L -o "$dest" "https://zenodo.org/api/records/$rec/files/$name/content"
         echo "$md5  $dest" | md5sum -c -
         mkdir -p "$DATA/idmt"
         unzip -q "$dest" '*#MIX.wav' '*#MIX.xml' -d "$DATA/idmt"
@@ -348,7 +348,7 @@ jobs:
           done
           [ -n "$md5" ] || { echo "no checksum for $name"; return 1; }
           echo "$rec $name md5 $md5; licence: $(echo "$meta" | python3 -c "import json,sys; print(json.load(sys.stdin)['metadata']['license'])" 2>/dev/null || echo unknown)"
-          curl -sS --retry 8 --retry-delay 5 -C - -L -o "$dest" "https://zenodo.org/api/records/$rec/files/$name/content"
+          curl -sS --retry 8 --retry-delay 5 --speed-limit 20000 --speed-time 120 -C - -L -o "$dest" "https://zenodo.org/api/records/$rec/files/$name/content"
           echo "$md5  $dest" | md5sum -c -
         }
         fetch 7544164 IDMT-SMT-DRUMS-V2.zip "$DATA/idmt.zip"
