@@ -36,6 +36,26 @@ namespace NeoBuzz.Tune
             return a;
         }
 
+        /// <summary>
+        /// PL1: whether any of the six fine controls differs from what the Natural knob would set (<paramref name="raw"/> reads a parameter's raw value).
+        /// The editor shows an "edited" mark under the knob then. One raw step of rounding does not count.
+        /// </summary>
+        public static bool Edited(Func<int, int> raw)
+        {
+            // A fresh machine (Natural and the six fine controls at their table defaults, the Init preset) is not marked: the defaults sit near
+            // Natural 60 % but cannot change without a layout version (machines.md section 3.4), and a new machine should not open "edited".
+            bool pristine = raw(P.Natural) == Params.Table[P.Natural].Default;
+            for (int i = 0; pristine && i < Controls.Length; i++) pristine = raw(Controls[i]) == Params.Table[Controls[i]].Default;
+            if (pristine) return false;
+            double n = Params.Table[P.Natural].Value(raw(P.Natural));
+            for (int i = 0; i < Controls.Length; i++)
+            {
+                int idx = Controls[i];
+                if (Math.Abs(raw(idx) - Params.Table[idx].Raw(Value(i, n))) > 1) return true;
+            }
+            return false;
+        }
+
         /// <summary>Writes Natural <paramref name="n"/> (0 to 1) into the six fine controls of <paramref name="v"/> (and the Natural control itself).</summary>
         public static void Apply(ParamValues v, double n)
         {

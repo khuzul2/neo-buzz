@@ -323,6 +323,17 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        [Test]
+        public void AMachineSourceIsShortInTheClosedChooserAndFullInTheList()
+        {
+            // PL1: "Machine: Voice MIDI" is cut in the narrow Session I/O strip; the closed box shows the machine's name with a glyph, the list and the tooltip the full label.
+            Assert.That(Views.Session.TrackInputView.ShortMidiLabel("Machine: Voice MIDI"), Is.EqualTo("\u25A3 Voice MIDI"));
+            Assert.That(Views.Session.TrackInputView.ShortMidiLabel("Machine: Voice MIDI (not in the song)"), Is.EqualTo("\u25A3 Voice MIDI (not in the song)"));
+            Assert.That(Views.Session.TrackInputView.ShortMidiLabel("All inputs"), Is.EqualTo("All inputs"));
+            Assert.That(Views.Session.TrackInputView.ShortMidiLabel("Computer keyboard"), Is.EqualTo("Computer keyboard"));
+            Assert.That(Views.Session.TrackInputView.ShortMidiLabel(null), Is.EqualTo(""));
+        }
+
         [AvaloniaTest]
         public void AnArmedTrackRecordsTheNotesOfAMachineNamedInItsMidiFrom()
         {

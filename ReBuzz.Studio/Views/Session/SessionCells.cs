@@ -44,6 +44,7 @@ namespace ReBuzz.Studio.Views.Session
             readonly Audio.AudioSlotWave wave;        // NA3: an audio clip's mini waveform
             readonly Control stopButton;      // empty slot: stops the track
             readonly Control recordButton;    // empty slot of an armed track: records a take (0.7)
+            readonly bool isAudioClip;
             Point? pressPoint;
             bool dragging;
 
@@ -66,6 +67,7 @@ namespace ReBuzz.Studio.Views.Session
                 Scene = scene;
                 Sequence = sequence;
                 Pattern = pattern;
+                isAudioClip = settings?.Audio != null;
 
                 Margin = new Thickness(0, 0, Gap, Gap);
                 BorderThickness = new Thickness(2);      // fork (ux-overhaul.md §3.1): a 2 pt outline for the state and the selection
@@ -89,14 +91,14 @@ namespace ReBuzz.Studio.Views.Session
                 // NA3: an audio clip's slot shows its waveform (from the peak cache, warped, times the gain), behind the rest.
                 if (pattern != null && settings?.Audio != null && view.layout.ViewOf(pattern) is { } audioView)
                 {
-                    wave = new Audio.AudioSlotWave(audioView, pattern.Length / (double)Math.Max(1, view.buzz.TPB));
+                    wave = new Audio.AudioSlotWave(audioView, pattern.Length / (double)Math.Max(1, view.buzz.TPB)) { LowerHalf = true };
                     Grid.SetColumnSpan(wave, 3);
                     grid.Children.Add(wave);
                 }
 
                 if (pattern != null && settings?.Audio != null)
                 {
-                    liveWave = new Audio.RecordingWave { IsVisible = false };
+                    liveWave = new Audio.RecordingWave { IsVisible = false, LowerHalf = true };
                     Grid.SetColumnSpan(liveWave, 3);
                     grid.Children.Add(liveWave);
                 }
@@ -387,6 +389,10 @@ namespace ReBuzz.Studio.Views.Session
                 {
                     glyph.Text = "▶";
                 }
+                // PL1: while a take records the slot shows its real name ("Voice take 1"; the record dot is the chip before it), not "∿ 00".
+                string shown = (isAudioClip ? "∿ " : "") + Pattern.Name;
+                if (recording && view.layout.TakeNameOf(Sequence, Pattern) is { } takeName) shown = takeName;
+                if (label.Text != shown) label.Text = shown;
                 if (liveWave != null)
                 {
                     var cap = recording ? view.layout.LiveCaptureOf(Sequence, Pattern) : null;
@@ -420,6 +426,9 @@ namespace ReBuzz.Studio.Views.Session
             /// <summary>What the slot shows now, for tests: its glyph and outline.</summary>
             internal string Glyph => glyph?.Text;
             internal Audio.AudioSlotWave Wave => wave;
+            /// <summary>The name the slot shows now (tests).</summary>
+            internal string LabelText => label?.Text;
+            internal Audio.RecordingWave LiveWave => liveWave;
 
             /// <summary>The waveform's colour: a darker shade of the clip's own colour at about 45% alpha, so it sits behind the name and the glyph, which stay at full contrast.</summary>
             static IBrush WaveShade(IBrush background) =>

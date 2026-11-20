@@ -511,6 +511,8 @@ namespace ReBuzz.Core.Session
             /// <summary>The id the clip names until the take is done (the store aliases it to the finished asset).</summary>
             public string PendingId;
             public string Name;
+            /// <summary>What the slot shows while it records: "Voice take 1" (not the pattern's number).</summary>
+            public string DisplayName;
             public double Bpm;
             public int TicksPerBeat;
             public bool UntilStopped;
@@ -651,7 +653,7 @@ namespace ReBuzz.Core.Session
             long skip = master ? 0 : CaptureSkip(machine);
             long length = bars > 0 ? FramesOf(ticks, bpm, tpb) : long.MaxValue;
             var capture = new AudioCapture(SampleRate, skip, length, (long)MaxAudioTakeMinutes * 60 * SampleRate, FramesOf(tpb, bpm, tpb), TakeFile.Create(waveName, SampleRate, bpm));
-            var t = new AudioTake { Track = seq, Take = take, Capture = capture, PendingId = pendingId, Name = waveName, Bpm = bpm, TicksPerBeat = tpb, UntilStopped = bars == 0 };
+            var t = new AudioTake { Track = seq, Take = take, Capture = capture, PendingId = pendingId, Name = waveName, DisplayName = $"{machine.Name} take {NextTakeNumber(machine.Name)}", Bpm = bpm, TicksPerBeat = tpb, UntilStopped = bars == 0 };
             t.Capturing = new SessionClipEngine.TakeCapture(take, capture, master);
             if (!master) (take.SessionAudio ??= new ClipPlayback()).Capture = capture;
             Engine.TakeCaptures = Engine.TakeCaptures.Append(t.Capturing).ToArray();
@@ -777,6 +779,19 @@ namespace ReBuzz.Core.Session
         /// <summary>Whether an audio take records (or waits to) on the track.</summary>
         /// <summary>NA4b: the capture of the audio take recording into this slot (its peaks draw the growing waveform), or null.</summary>
         internal AudioCapture LiveCaptureOf(ISequence track, IPattern clip) => track is SequenceCore seq && audioTakes.TryGetValue(seq, out var t) && ReferenceEquals(t.Take, clip) ? t.Capture : null;
+
+        readonly Dictionary<string, int> takeNumbers = new Dictionary<string, int>();
+
+        /// <summary>The next take number of a machine in this session (1, 2, ...), for the name the slot shows while it records.</summary>
+        int NextTakeNumber(string machine)
+        {
+            takeNumbers.TryGetValue(machine, out int n);
+            takeNumbers[machine] = ++n;
+            return n;
+        }
+
+        /// <summary>Polish (PL1): the name of the take recording into this slot ("Voice take 1"), or null when it is not a take being recorded.</summary>
+        internal string TakeNameOf(ISequence track, IPattern clip) => track is SequenceCore seq && audioTakes.TryGetValue(seq, out var t) && ReferenceEquals(t.Take, clip) ? t.DisplayName : null;
 
         bool IsAudioRecording(ISequence track) => track is SequenceCore seq && audioTakes.ContainsKey(seq);
 

@@ -144,6 +144,9 @@ namespace ReBuzz.Studio.Views.Session
                 if (building || channelBox.SelectedIndex < 0) return;
                 core.SessionLayout?.SetMidiChannel(machine, channelBox.SelectedIndex);
             };
+            // PL1: the strip is narrow, so the closed box shows a machine source by its name with a small glyph ("▣ Voice MIDI"); the list and the tooltip keep "Machine: Voice MIDI".
+            midiBox.SelectionBoxItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>((label, _) =>
+                new TextBlock { Text = ShortMidiLabel(label), TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center });
             ToolTip.SetTip(audioBox, "Audio From: None, an input of the sound card (In 1, In 1/2...), another track (to resample it), or Wired inputs (what is connected to it)");
             ToolTip.SetTip(midiBox, "MIDI From: all inputs (a control surface's pads stay its own), one device, the computer keyboard, or a machine that makes MIDI (Neo Voice to MIDI)");
             ToolTip.SetTip(channelBox, "MIDI channel: All or 1 to 16");
@@ -381,6 +384,10 @@ namespace ReBuzz.Studio.Views.Session
                 building = false;
             }
         }
+
+        /// <summary>The short form of a MIDI source for the closed chooser: "Machine: Voice MIDI" becomes "▣ Voice MIDI"; every other label stays.</summary>
+        internal static string ShortMidiLabel(string label) =>
+            label != null && label.StartsWith(TrackInput.MachinePrefix, StringComparison.Ordinal) ? "\u25A3 " + label.Substring(TrackInput.MachinePrefix.Length) : label ?? "";
 
         static string LabelOf(SessionLayout layout, AudioFrom from)
         {

@@ -260,6 +260,30 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
+        public void TheEditedMarkShowsWhenAFineControlDiffersFromNatural()
+        {
+            // PL1: Natural's own values are not "edited" at any Natural; one fine control moved by hand is; Natural written again is not.
+            // A fresh machine (every parameter at its default, the Init preset) is not marked either.
+            var fresh = new ParamValues(Params.Table);
+            Assert.That(TuneNatural.Edited(i => fresh[i]), Is.False, "a fresh machine");
+            foreach (double n in new[] { 0.0, 0.25, 0.6, 1.0 })
+            {
+                var v = new ParamValues(Params.Table);
+                TuneNatural.Apply(v, n);
+                Assert.That(TuneNatural.Edited(i => v[i]), Is.False, $"Natural {n}");
+                foreach (int idx in TuneNatural.Controls)
+                {
+                    var w = new ParamValues(Params.Table);
+                    TuneNatural.Apply(w, n);
+                    w.Set(idx, w[idx] < 500 ? w[idx] + 300 : w[idx] - 300);
+                    Assert.That(TuneNatural.Edited(i => w[i]), Is.True, $"Natural {n}, control {idx} moved");
+                    TuneNatural.Apply(w, n);
+                    Assert.That(TuneNatural.Edited(i => w[i]), Is.False, $"Natural {n}, control {idx} set back");
+                }
+            }
+        }
+
+        [Test]
         public void NaturalSettingsKeepTheSingersVibratoDepth()
         {
             var x = Voice(Hz(57), 4.0, o => { o.VibratoCents = 40; o.VibratoDelay = 0.2; });

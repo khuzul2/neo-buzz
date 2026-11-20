@@ -1050,6 +1050,11 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
                      _In_ LPTSTR    lpCmdLine,
                      _In_ int       nCmdShow)
 {
+    // PL1: a machine that crashes the host (ucrtbase, 0xc0000409, seen on CI runners) must end it at once: the parent sees the exit code, marks the
+	// machine crashed and goes on, instead of the process lingering in Windows Error Reporting for a minute with the parent's calls unanswered.
+	::SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+	_set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+
     //CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 	CoInitialize(NULL);
 
