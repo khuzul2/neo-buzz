@@ -18,6 +18,34 @@ using NeoBuzz.Dsp;
 
 namespace NeoBuzz.AudioToMidi
 {
+    /// <summary>AT1 melody tuning constants (docs/specs/audio-to-midi.md §3.5). Static so the evaluation tool can set them from the environment.</summary>
+    internal static class MelodyTuning
+    {
+        /// <summary>A pitch change over a sounding note (hammer-on, pull-off, slide) needs this clarity, and may not be an octave or a fifth jump unless NoOctaveBlock is 0.</summary>
+        public static float ChangeConf = 0.8f;
+        public static float ChangeSettleMs = 0f;
+        public static int ChangeNoOctave = 0;
+        /// <summary>Fast correction of a first note: the clarity the new pitch needs, and whether any change but an octave may correct it.</summary>
+        public static float CorrConf = 0.9f;
+        public static int CorrOctaveOnly = 0;
+        public static int CorrOff = 0;
+        /// <summary>A note may start without an onset (1) or not (0).</summary>
+        public static int IdleStart = 1;
+        /// <summary>Stable: how long a pitch without an onset is held before it starts a note (0: the Settle parameter), ms.</summary>
+        public static float IdleSettleMs = 8f;
+        /// <summary>Stable: the least time after the onset, the clarity two agreeing estimates need, and the longest wait at 0.5 clarity, ms.</summary>
+        public static float StableMinMs = 20f, StableConf = 0.70f, StableWaitMs = 30f;
+        /// <summary>Fast: the clarity two agreeing estimates need, and the longest wait, ms.</summary>
+        public static float FastAgreeConf = 0.55f, FastWaitMs = 25f;
+        /// <summary>The octave check (OctaveCheck): 0 off, else the margin by which half or double the tracker's pitch must outscore it. OctChange also checks a change over a sounding note.</summary>
+        public static float OctMargin = 0f;
+        /// <summary>Fast over a sounding note: the share of the pitch window that must lie after the onset, and the clarity two agreeing estimates then need.</summary>
+        public static float FreshShare = 0.5f, OverConf = 0.55f;
+        /// <summary>The time constant, seconds, of the memory of the loudest recent attack that the level gates measure against.</summary>
+        public static float RefTauSec = 6f;
+        public static int OctChange = 0;
+    }
+
     internal sealed class MelodyNotes
     {
         // ---- settings (the engine sets them each block)
@@ -33,6 +61,9 @@ namespace NeoBuzz.AudioToMidi
         public double MinHz = 80, MaxHz = 1200;      // the tracker's range: a candidate outside it is the pluck's noise, not a note
         public int Window = 912, Hop = 130;       // the tracker's, in samples
         public readonly PitchBendMap Bend = new PitchBendMap();
+        /// <summary>The engine's ring of the newest audio (for the octave check).</summary>
+        public float[] Ring; public int RingMask;
+        readonly OctaveCheck oct = new OctaveCheck();
 
         // ---- constants (docs/specs/audio-to-midi.md §3.4)
         /// <summary>Fast: the clarity (0 to 1) that lets the first note play alone, or with two agreeing estimates at the lower one, and the longest wait after the first pitched estimate, in ms (Stable: two agreeing estimates at 0.8, over a whole window when a note still sounds).</summary>
@@ -40,15 +71,13 @@ namespace NeoBuzz.AudioToMidi
         public const double FastWaitMs = 25, StableWaitMs = 40;
         /// <summary>How long a first note may still be corrected, ms.</summary>
         public const double CorrectionMs = 80;
-        /// <summary>Fast, over a note that is still sounding: the share of the tracker's window that must be after the onset before an estimate counts (the rest is the old note).</summary>
-        public const double FreshShare = 0.5;
         const double ArmTimeoutMs = 150, DoubleOnsetMs = 50, ReleaseHoldMs = 25, StillRingingMs = 120, StableMinMs = 40, SameNoteGuardMs = 300, ShortNoteMs = 50, RestartGuardMs = 60;
 
         readonly MidiBlock block;
 
         // ---- state
         int cur = -1, sent = -1;                   // the note sounding (before the shift), the number sent
-        long onAt, startAt, corrUntil;
+        long onAt, startAt, corrUntil, attackAt;
         float peak;
         bool armed, armOver;
         long armAt; float armPeak; double prevM; bool prevOk;
@@ -59,6 +88,8 @@ namespace NeoBuzz.AudioToMidi
         long offAt = long.MinValue / 2; float offLevel;
         float lastRms;
         public int Corrections { get; private set; }
+        /// <summary>For the evaluation tool: called at each note on with its time and what started it (1 onset from silence, 5 onset over a sounding note, 2 pitch without an onset, 3 a change, 4 a correction).</summary>
+        public Action<long, int> Probe;
         public int LastVelocity { get; private set; }
 
         // The notes as played, for the editor's roll (start, end, note), newest at LogHead - 1.
@@ -69,7 +100,7 @@ namespace NeoBuzz.AudioToMidi
 
         // Tuning (static for the evaluation tool): a note must be within GateDb of the loudest recent one (a string's bleed, a ringing neighbour, are far under it);
         // a note started over one sounding must rise RiseRatio over the level it hears (a beating sustain is not a new pluck).
-        public static float GateDb = -16f, RiseRatio = 1.2f;
+        public static float GateDb = -24f, RiseRatio = 1.5f;
         float refLevel, endPeak; int lastEndNote = -1; bool lastWasShort;
 
         public MelodyNotes(MidiBlock block) { this.block = block; }
@@ -111,7 +142,7 @@ namespace NeoBuzz.AudioToMidi
         {
             long t = e.EndSample;
             lastRms = e.Rms;
-            refLevel *= (float)PortableMath.Exp(-Hop / (6.0 * Rate));
+            refLevel *= (float)PortableMath.Exp(-Hop / (MelodyTuning.RefTauSec * Rate));
             bool onOk = e.Voiced && e.Rms >= OnLevel && e.Rms >= refLevel * Lin(GateDb);
             // Keeping a note is relative to the note itself (its peak, in Sounding_), not to an absolute level: a voiced estimate or a confident candidate keeps it.
             bool keepOk = e.Voiced || e.Confidence >= 0.5f;
@@ -122,7 +153,7 @@ namespace NeoBuzz.AudioToMidi
                 if (t - armAt > (long)(ArmTimeoutMs * 0.001 * Rate)) armed = false;
                 else { Armed(in e, onOk); return; }
             }
-            if (cur < 0) Idle(in e, onOk, t);
+            if (cur < 0) { if (MelodyTuning.IdleStart != 0) Idle(in e, onOk, t); }
             else Sounding_(in e, keepOk, t);
         }
 
@@ -131,20 +162,22 @@ namespace NeoBuzz.AudioToMidi
             long t = e.EndSample;
             long since = t - armAt;
             // The estimate must have heard enough of the new sound: over a note still sounding, half the window or more (Fast), the whole window (Stable); from silence any.
-            long need = Fast ? (armOver ? (long)(FreshShare * Window) : 0) : (armOver ? Window : 0);
+            long need = Fast ? (armOver ? (long)(MelodyTuning.FreshShare * Window) : 0) : (armOver ? Window : 0);
             if (since < need) return;
             // The tracker's best candidate counts before it is called voiced: the pluck's first periods are clear well before the voicing decision settles.
             if (e.RawF0 < MinHz * 0.97 || e.RawF0 > MaxHz * 1.03 || e.Rms < OnLevel) { prevOk = false; return; }
-            double m = 69 + 12 * PortableMath.Log2(e.RawF0 / 440.0);
+            double f0 = e.RawF0;
+            if (MelodyTuning.OctMargin > 0 && Ring != null) f0 = oct.Fix(Ring, RingMask, t, armAt - Rate / 500, f0, MinHz, MaxHz, Rate, MelodyTuning.OctMargin);
+            double m = 69 + 12 * PortableMath.Log2(f0 / 440.0);
             bool agree = prevOk && Math.Abs(m - prevM) < 0.5;
             prevM = m; prevOk = true;
             if (firstSince < 0) firstSince = t;
             long waited = t - firstSince;
             bool go;
-            if (Fast) go = (agree && e.Confidence >= FastAgreeConfidence) || (waited >= (long)(FastWaitMs * 0.001 * Rate) && e.Confidence >= 0.4f);
-            else go = t - armAt >= (long)(StableMinMs * 0.001 * Rate) && ((agree && e.Confidence >= StableConfidence) || (waited >= (long)(StableWaitMs * 0.001 * Rate) && e.Confidence >= 0.5f));
+            if (Fast) go = (agree && e.Confidence >= (armOver ? Math.Max(MelodyTuning.FastAgreeConf, MelodyTuning.OverConf) : MelodyTuning.FastAgreeConf)) || (waited >= (long)(MelodyTuning.FastWaitMs * 0.001 * Rate) && e.Confidence >= 0.4f);
+            else go = t - armAt >= (long)(MelodyTuning.StableMinMs * 0.001 * Rate) && ((agree && e.Confidence >= MelodyTuning.StableConf) || (waited >= (long)(MelodyTuning.StableWaitMs * 0.001 * Rate) && e.Confidence >= 0.5f));
             if (!go) return;
-            Begin(Scales.Nearest(m, ActiveMask), t, armPeak);
+            Begin(Scales.Nearest(m, ActiveMask), t, armPeak, armOver ? 5 : 1, armAt);
             armed = false;
         }
 
@@ -162,12 +195,12 @@ namespace NeoBuzz.AudioToMidi
             candPeak = Math.Max(candPeak, e.Rms);
             if (Fast)
             {
-                if (e.Confidence >= 0.93f || t - firstSince >= (long)(0.012 * Rate)) Begin(c, t, candPeak);
+                if (e.Confidence >= 0.93f || t - firstSince >= (long)(0.012 * Rate)) Begin(c, t, candPeak, 2, firstSince - Window / 2);
             }
             else
             {
                 if (c != cand) { cand = c; candSince = t; }
-                if (t - candSince >= SettleSamples) Begin(c, t, candPeak);
+                if (t - candSince >= (MelodyTuning.IdleSettleMs > 0 ? (long)(MelodyTuning.IdleSettleMs * 0.001 * Rate) : SettleSamples)) Begin(c, t, candPeak, 2, firstSince - Window / 2);
             }
         }
 
@@ -191,8 +224,11 @@ namespace NeoBuzz.AudioToMidi
             }
             lastVoicedAt = t; pendingOff = false;
             if (!e.Voiced) return;                      // kept by a confident candidate, but there is no pitch to follow
-            int c = Scales.Nearest(e.Midi, ActiveMask);
-            double dev = e.Midi - cur;
+            double midi = e.Midi;
+            if (MelodyTuning.OctChange != 0 && MelodyTuning.OctMargin > 0 && Ring != null && Math.Abs(midi - cur) >= 0.6)
+                midi = 69 + 12 * PortableMath.Log2(oct.Fix(Ring, RingMask, t, startAt - Rate / 500, e.F0, MinHz, MaxHz, Rate, MelodyTuning.OctMargin) / 440.0);
+            int c = Scales.Nearest(midi, ActiveMask);
+            double dev = midi - cur;
             bool bendOn = Bend.On;
             long hop = Hop;
             if (c != cur)
@@ -201,6 +237,9 @@ namespace NeoBuzz.AudioToMidi
                 bool bendFixes = bendOn && Math.Abs(dev) <= Bend.Range - 0.5;
                 if (inCorrection && Fast && !bendFixes)
                 {
+                    double ad = Math.Abs(c - cur);
+                    bool octv = Math.Abs(ad - 12) < 0.5 || Math.Abs(ad - 24) < 0.5;
+                    if (MelodyTuning.CorrOff != 0 || e.Confidence < MelodyTuning.CorrConf || (MelodyTuning.CorrOctaveOnly != 0 && !octv)) { switchNote = -1; return; }
                     // The first estimate can be another note: two agreeing ones within the window correct it.
                     if (c != switchNote) { switchNote = c; switchSince = t; }
                     else if (t - switchSince >= 2 * hop) { long keep = startAt; Change(c, t, Math.Max(peak, e.Rms), true); startAt = keep; Corrections++; }
@@ -217,17 +256,20 @@ namespace NeoBuzz.AudioToMidi
                 }
                 else
                 {
-                    double advantage = Math.Abs(e.Midi - cur) - Math.Abs(e.Midi - c);
-                    if (advantage >= StickSemis)
+                    double advantage = Math.Abs(midi - cur) - Math.Abs(midi - c);
+                    double adc = Math.Abs(c - cur);
+                    bool octc = Math.Abs(adc - 12) < 0.5 || Math.Abs(adc - 24) < 0.5;
+                    long settle = MelodyTuning.ChangeSettleMs > 0 ? (long)(MelodyTuning.ChangeSettleMs * 0.001 * Rate) : SettleSamples;
+                    if (advantage >= StickSemis && e.Confidence >= MelodyTuning.ChangeConf && !(MelodyTuning.ChangeNoOctave != 0 && octc))
                     {
                         if (c != switchNote) { switchNote = c; switchSince = t; }
-                        else if (t - switchSince >= SettleSamples) Change(c, t, Math.Max(peak, e.Rms), false);
+                        else if (t - switchSince >= settle) Change(c, t, Math.Max(peak, e.Rms), false);
                     }
                     else switchNote = -1;
                 }
             }
             else switchNote = -1;
-            if (cur >= 0 && bendOn && Bend.Next(e.Midi - cur, t, Rate, out int v)) block.Emit(MidiKind.PitchBend, MidiStream.Pitch, Channel, 0, v, t);
+            if (cur >= 0 && bendOn && Bend.Next(midi - cur, t, Rate, out int v)) block.Emit(MidiKind.PitchBend, MidiStream.Pitch, Channel, 0, v, t);
         }
 
         // ------------------------------------------------------------------------------------------------------------ notes
@@ -235,25 +277,31 @@ namespace NeoBuzz.AudioToMidi
         int Shift(int note) => Math.Clamp(note + 12 * Octave, 0, 127);
         int Velocity(float peakLin) => VelocityMap.FromPeak(peakLin, FixedVel, FixedVelocity, VelMin, SoftDb, LoudDb);
 
-        void Centre(long t)
+        void Centre(long t, long attack)
         {
-            if (Bend.Centre(t, out int v)) block.Emit(MidiKind.PitchBend, MidiStream.Pitch, Channel, 0, v, t);
+            if (Bend.Centre(t, out int v)) block.Emit(MidiKind.PitchBend, MidiStream.Pitch, Channel, 0, v, t, attack);
         }
 
-        void Begin(int note, long t, float peakLin)
+        /// <param name="attack">The stream position the sound began at (a plucked note's onset); a recording track places the note there (Record at attack). At most <paramref name="t"/>, after the note before's attack.</param>
+        void Begin(int note, long t, float peakLin, int src = 0, long attack = long.MaxValue)
         {
+            Probe?.Invoke(t, src);
             int old = sent;
             bool oldSounding = cur >= 0;
-            Centre(t);
+            if (oldSounding) attack = Math.Max(attack, attackAt + Rate / 1000);
+            else if (attack < offAt) attack = offAt;           // never before the note off of the note before (a recording would cut it)
+            attack = Math.Min(attack, t);
+            Centre(t, attack);
             int vel = Velocity(peakLin);
             int n = Shift(note);
             if (oldSounding)
             {
-                if (Legato) { block.Emit(MidiKind.NoteOn, MidiStream.Pitch, Channel, n, vel, t); block.Emit(MidiKind.NoteOff, MidiStream.Pitch, Channel, old, 0, t); }
-                else { block.Emit(MidiKind.NoteOff, MidiStream.Pitch, Channel, old, 0, t); block.Emit(MidiKind.NoteOn, MidiStream.Pitch, Channel, n, vel, t); }
+                if (Legato) { block.Emit(MidiKind.NoteOn, MidiStream.Pitch, Channel, n, vel, t, attack); block.Emit(MidiKind.NoteOff, MidiStream.Pitch, Channel, old, 0, t, attack); }
+                else { block.Emit(MidiKind.NoteOff, MidiStream.Pitch, Channel, old, 0, t, attack); block.Emit(MidiKind.NoteOn, MidiStream.Pitch, Channel, n, vel, t, attack); }
                 LogEndLast(t);
             }
-            else block.Emit(MidiKind.NoteOn, MidiStream.Pitch, Channel, n, vel, t);
+            else block.Emit(MidiKind.NoteOn, MidiStream.Pitch, Channel, n, vel, t, attack);
+            attackAt = attack;
             cur = note; sent = n; onAt = t; startAt = t; corrUntil = t + (long)(CorrectionMs * 0.001 * Rate);
             peak = Math.Max(peakLin, lastRms); pendingOff = false; cand = -1; firstSince = -1; switchNote = -1; lowSince = -1; lastVoicedAt = t;
             Bend.ResetAnchor();
@@ -265,7 +313,8 @@ namespace NeoBuzz.AudioToMidi
 
         void Change(int note, long t, float peakLin, bool correction)
         {
-            Begin(note, t, peakLin);
+            // A correction is the same attack as the first note's, one millisecond on; a change without an onset began about half a window before it was heard.
+            Begin(note, t, peakLin, correction ? 4 : 3, correction ? attackAt : switchSince - Window / 2);
             if (correction) peak = Math.Max(peak, peakLin);
         }
 
@@ -296,7 +345,7 @@ namespace NeoBuzz.AudioToMidi
             lastEndNote = cur; lastWasShort = t - onAt < (long)(ShortNoteMs * 0.001 * Rate);
             offAt = t; offLevel = Math.Max(lastRms, 1e-6f); endPeak = peak;
             cur = -1; sent = -1; pendingOff = false; switchNote = -1; cand = -1; firstSince = -1; lowSince = -1;
-            Centre(t);
+            Centre(t, t);
         }
     }
 }

@@ -76,19 +76,22 @@ namespace NeoBuzz.Dsp
 
     internal sealed class NoteOffQueue
     {
-        readonly int[] note, channel;
+        readonly int[] note, channel, lag;
         readonly long[] due;
         int count;
-        public NoteOffQueue(int capacity = 32) { note = new int[capacity]; channel = new int[capacity]; due = new long[capacity]; }
+        public NoteOffQueue(int capacity = 32) { note = new int[capacity]; channel = new int[capacity]; lag = new int[capacity]; due = new long[capacity]; }
         public int Count => count;
 
         /// <summary>A note on now and its off <paramref name="lengthSamples"/> later; the same note still sounding is ended first.</summary>
-        public void Play(MidiBlock b, MidiStream stream, int ch, int n, int velocity, long at, int lengthSamples)
+        public void Play(MidiBlock b, MidiStream stream, int ch, int n, int velocity, long at, int lengthSamples) => Play(b, stream, ch, n, velocity, at, lengthSamples, at);
+
+        /// <summary>As above for a hit whose sound began at <paramref name="attack"/> (at or before <paramref name="at"/>): the note on and the off that ends the old one carry the lag, and so does this note's own off, so a recording keeps the note's length.</summary>
+        public void Play(MidiBlock b, MidiStream stream, int ch, int n, int velocity, long at, int lengthSamples, long attack)
         {
             for (int i = 0; i < count; i++)
-                if (note[i] == n && channel[i] == ch) { b.Emit(MidiKind.NoteOff, stream, ch, n, 0, at); due[i] = long.MaxValue; }
-            b.Emit(MidiKind.NoteOn, stream, ch, n, velocity, at);
-            if (count < note.Length) { note[count] = n; channel[count] = ch; due[count] = at + Math.Max(lengthSamples, 1); count++; }
+                if (note[i] == n && channel[i] == ch) { b.Emit(MidiKind.NoteOff, stream, ch, n, 0, at, attack); due[i] = long.MaxValue; }
+            b.Emit(MidiKind.NoteOn, stream, ch, n, velocity, at, attack);
+            if (count < note.Length) { note[count] = n; channel[count] = ch; lag[count] = (int)Math.Clamp(at - attack, 0, 1 << 20); due[count] = at + Math.Max(lengthSamples, 1); count++; }
         }
 
         /// <summary>The note offs that fall due by <paramref name="now"/>.</summary>
@@ -98,8 +101,8 @@ namespace NeoBuzz.Dsp
             for (int i = 0; i < count; i++)
             {
                 if (due[i] == long.MaxValue) continue;
-                if (due[i] <= now) { b.Emit(MidiKind.NoteOff, stream, channel[i], note[i], 0, due[i]); continue; }
-                note[keep] = note[i]; channel[keep] = channel[i]; due[keep] = due[i]; keep++;
+                if (due[i] <= now) { b.Emit(MidiKind.NoteOff, stream, channel[i], note[i], 0, due[i], due[i] - lag[i]); continue; } // sent a block late: the lag grows by the delay, so the recording keeps the note's length
+                note[keep] = note[i]; channel[keep] = channel[i]; lag[keep] = lag[i]; due[keep] = due[i]; keep++;
             }
             count = keep;
         }

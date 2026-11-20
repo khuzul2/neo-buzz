@@ -99,7 +99,8 @@ namespace NeoBuzz.VoiceToMidi
         public const int EeLo = 88;
         public const int EeHi = 89;
         public const int EeCh = 90;
-        public const int Count = 91;
+        public const int Attack = 91;
+        public const int Count = 92;
     }
 
     internal static class Params
@@ -200,6 +201,7 @@ namespace NeoBuzz.VoiceToMidi
             new ParamDef(P.EeLo, "EeLo", "Vowel ee low value", 0, 127, 0, MapKind.Int, a: 0, b: 0, group: "Expression", description: "The controller value at the min", how: "Sets the controller value sent at the low end of the vowel ee, from 0 to 127.", sound: "Swap it with the high value to turn the control upside down."),
             new ParamDef(P.EeHi, "EeHi", "Vowel ee high value", 0, 127, 127, MapKind.Int, a: 0, b: 0, group: "Expression", description: "The controller value at the max", how: "Sets the controller value sent at the high end of the vowel ee, from 0 to 127.", sound: "Lower it to limit how far the control moves its target."),
             new ParamDef(P.EeCh, "EeCh", "Vowel ee channel", 0, 15, 0, MapKind.Int, a: 1, b: 0, group: "Expression", description: "MIDI channel of Vowel ee", how: "Sets the MIDI channel of the controller for the vowel ee, from 1 to 16.", sound: "It selects which synth or part the control moves."),
+            new ParamDef(P.Attack, "Attack", "Record at attack", 0, 1, 1, MapKind.Switch, group: "Recording", description: "An armed track that records from this machine places each note at its attack, not at the moment it was sent; the sound you hear and what the target plays are unchanged", how: "Switches recording at the attack on or off.", sound: "On, a recorded take lines up with the playing even when the note was sent a few tens of milliseconds after the attack; off records each note when it was sent."),
         };
     }
 }

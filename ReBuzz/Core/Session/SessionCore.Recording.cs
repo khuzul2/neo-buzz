@@ -316,7 +316,13 @@ namespace ReBuzz.Core.Session
         /// its MIDI From and channel say, and two armed tracks listening to the same source both play (layering). While any track is armed
         /// what none of them takes (a device no armed track listens to, or armed audio tracks without a MIDI source) goes to the selected machine as when nothing is armed.
         /// </summary>
-        internal bool OnMidiInput(MidiDevice device, int data)
+        internal bool OnMidiInput(MidiDevice device, int data) => OnMidiInput(device, data, 0);
+
+        /// <summary>
+        /// As above for a message whose cause lies <paramref name="earlierSamples"/> samples back (a machine's note at its attack, AT1): the armed machines play it now, the
+        /// recording stamps it that much earlier.
+        /// </summary>
+        internal bool OnMidiInput(MidiDevice device, int data, int earlierSamples)
         {
             int status = data & 0xFF;
             if (status >= 0xF0) return false;            // system messages go where they always did
@@ -368,7 +374,7 @@ namespace ReBuzz.Core.Session
 
             bool kept = kind == 0x80 || kind == 0x90 || kind == 0xA0 || kind == 0xB0 || kind == 0xD0 || kind == 0xE0;
             if (kept && !buzz.SongLoading)
-                Stamp(data & 0xFFFFFF, recordWindows, state, null, all ? null : machines);
+                Stamp(data & 0xFFFFFF, recordWindows, state, null, all ? null : machines, earlierSamples);
             return true;
         }
 
@@ -397,16 +403,20 @@ namespace ReBuzz.Core.Session
 
         /// <param name="only">The machine whose armed tracks take it (the machine keyboard); null: every armed track.</param>
         /// <param name="among">The machines whose armed tracks take it (the ones listening to its source); null: every armed track.</param>
-        void Stamp(int data, RecordWindow[] windows, ArmState state, MachineCore only = null, MachineCore[] among = null)
+        /// <param name="earlierSamples">The message is stamped this many samples before now (0: now).</param>
+        void Stamp(int data, RecordWindow[] windows, ArmState state, MachineCore only = null, MachineCore[] among = null, int earlierSamples = 0)
         {
             bool queued = false;
             lock (gate)
             {
                 double heard = HeardTicks();
+                if (heard >= 0 && earlierSamples > 0) heard = TakeTime.Earlier(heard, renderedSamplesPerTick, earlierSamples);
                 if (heard < 0)
                 {
                     // Stopped: Capture MIDI (0.7.1) places a phrase by when it was played.
                     long now = Timestamp();
+                    int srate = ReBuzzCore.masterInfo.SamplesPerSec;
+                    if (earlierSamples > 0 && srate > 0) now -= (long)(earlierSamples * (double)System.Diagnostics.Stopwatch.Frequency / srate);
                     for (int i = 0; i < state.Rings.Length; i++)
                         if ((only == null || ReferenceEquals(state.Tracks[i].MachineCore, only)) && Takes(among, state.Tracks[i]))
                             state.Rings[i].Add(data, long.MinValue, now);

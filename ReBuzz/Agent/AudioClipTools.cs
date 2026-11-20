@@ -426,7 +426,7 @@ namespace ReBuzz.Agent
                     "and open hat, toms and cymbals as General MIDI notes (36 kick, 38 snare, 42 closed hat, 46 open hat, 43/47/50 toms, 49 crash; drum_threshold, lower finds more hits). " +
                     "quantize snaps the note starts to a grid (off, 1/4, 1/8, 1/16, 1/32) by strength 0 to 1. The audio is read as it is in the store: the clip's transpose is added to the pitches, " +
                     "its detune rounded, its warp markers place the notes in beats, a reversed clip puts them backwards; its gain and fades don't matter. Accuracy: melody finds most notes of " +
-                    "a clean single line (see docs/specs/pitch.md section 9 for the measured numbers); drums are best at kick, snare and closed hat; open hats, toms and cymbals are weaker; " +
+                    "a clean single line (see docs/specs/pitch.md section 9 for the measured numbers); drums are good at kick, snare, closed hat, toms and cymbals on an electronic kit and weaker at open hats, and less sure on an acoustic kit; " +
                     "harmony is Basic Pitch's own accuracy. apply=false only reports the notes (up to 200, in beats) and changes nothing. " +
                     "Example: audio_convert_to_midi(machine=\"Bass audio\", pattern=\"line\", mode=\"melody\", quantize=\"1/16\", strength=0.8).",
                 Input = Object(null,
@@ -439,7 +439,7 @@ namespace ReBuzz.Agent
                     Opt("pitch_bends", Boolean("Melody and harmony: keep slides and vibrato as pitch-bend events on one note (default false)")),
                     Opt("onset_threshold", Number("Harmony: how sure the model must be of a note's start, 0 to 1 (default 0.5)", 0.05, 0.95)),
                     Opt("frame_threshold", Number("Harmony: how sure it must be the note is sounding, 0 to 1 (default 0.3)", 0.05, 0.95)),
-                    Opt("drum_threshold", Number("Drums: the onset threshold (default 4; lower finds more hits)", 1, 20)),
+                    Opt("drum_threshold", Number("Drums: how sure the classifier must be of a hit (default 4, as fitted; lower finds more hits, higher fewer)", 1, 20)),
                     Opt("quantize", String("Snap note starts to a grid (default off)", "off", "1/4", "1/8", "1/16", "1/32")),
                     Opt("strength", Number("Quantize strength, 0 to 1 (default 1)", 0, 1)),
                     Opt("apply", Boolean("false: only report the notes (default true)"))),

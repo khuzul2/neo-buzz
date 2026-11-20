@@ -28,6 +28,16 @@ namespace ReBuzz.Core.Session
             return Math.Max(0, renderedTicks - behind / samplesPerTick);
         }
 
+        /// <summary>
+        /// A heard position moved back by <paramref name="earlierSamples"/> (a note stamped at its attack, not when it was sent). Never before 0, and unchanged when the
+        /// length of a tick in samples is not known.
+        /// </summary>
+        public static double Earlier(double heardTicks, double samplesPerTick, double earlierSamples)
+        {
+            if (heardTicks < 0 || earlierSamples <= 0 || samplesPerTick <= 0) return heardTicks;
+            return Math.Max(0, heardTicks - earlierSamples / samplesPerTick);
+        }
+
         /// <summary>A position in ticks as pattern time (1/240 tick), rounded to the nearest unit.</summary>
         public static long ToTime(double ticks) => (long)Math.Round(ticks * TimeBase);
     }

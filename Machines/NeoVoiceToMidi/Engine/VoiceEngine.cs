@@ -236,11 +236,17 @@ namespace NeoBuzz.VoiceToMidi
 
         // ---------------------------------------------------------------------------------------------------------- events
 
-        void Emit(MidiKind kind, MidiStream stream, int channel, int d1, int d2, long at)
+        void Emit(MidiKind kind, MidiStream stream, int channel, int d1, int d2, long at) => Emit(kind, stream, channel, d1, d2, at, at);
+
+        void Emit(MidiKind kind, MidiStream stream, int channel, int d1, int d2, long at, long attack)
         {
             if (stream == MidiStream.Pitch && !pitchEmit && kind != MidiKind.NoteOff) return;
-            block.Emit(kind, stream, channel, d1, d2, at);
+            block.Emit(kind, stream, channel, d1, d2, at, attack);
         }
+
+        /// <summary>The stream position the sound of the note began at, as far as the engine knows: the first voiced estimate's window centre (a recording track places the note there: Record at attack).</summary>
+        long AttackOf(long since, long t) => Math.Max(Math.Min(since - tracker.Window / 2, t), curNote >= 0 ? curAttack + rate / 1000 : lastOffAt);
+        long curAttack, lastOffAt = long.MinValue / 2;
 
         // Pitch notes are sent while Pitch is on; the note machine also runs for the chords alone (a note on while Pitch is off is not sent, its note off never is).
         bool pitchEmit, noteSent;
@@ -339,7 +345,7 @@ namespace NeoBuzz.VoiceToMidi
                     // Fast: the first pitched estimate plays at once (Settle and Stickiness only filter what comes after); Stable waits Settle ms.
                     // The first estimates of an onset can be an octave out: Fast waits for a clean one (Confidence), at most FastWaitMs.
                     bool ready = fastResponse ? e.Confidence >= FastConfidence || t - fastSince >= fastWaitSamples : t - pendSince >= settleSamples;
-                    if (ready && !held) StartNote(cand, t, pendPeak, e.Midi);
+                    if (ready && !held) StartNote(cand, t, pendPeak, e.Midi, fastSince);
                 }
                 else
                 {
@@ -359,7 +365,7 @@ namespace NeoBuzz.VoiceToMidi
                         {
                             if (cand != switchNote) { switchNote = cand; switchSince = t; pendPeak = e.Rms; }
                             else pendPeak = Math.Max(pendPeak, e.Rms);
-                            if (t - switchSince >= settleSamples) ChangeNote(cand, t, pendPeak, e.Midi);
+                            if (t - switchSince >= settleSamples) ChangeNote(cand, t, pendPeak, e.Midi, false, switchSince);
                         }
                         else switchNote = -1;
                     }
@@ -388,15 +394,17 @@ namespace NeoBuzz.VoiceToMidi
 
         int Shift(int note) => Math.Clamp(note + 12 * octave, 0, 127);
 
-        void StartNote(int note, long t, float peak, double sung)
+        void StartNote(int note, long t, float peak, double sung, long since)
         {
+            long attack = AttackOf(since, t);
             curNote = note; curOnAt = t; noteStartAt = t; pendNote = -1; switchNote = -1; pendingOff = false; bend.ResetAnchor();
             int vel = Velocity(peak);
             CentreBend(t);
             sentNote = Shift(note); noteChannel = pitchCh;
-            Emit(MidiKind.NoteOn, MidiStream.Pitch, noteChannel, sentNote, vel, t);
+            Emit(MidiKind.NoteOn, MidiStream.Pitch, noteChannel, sentNote, vel, t, attack);
+            curAttack = attack;
             noteSent = pitchEmit;
-            PlayChord(note, vel, t);
+            PlayChord(note, vel, t, attack);
             LastNoteVelocity = vel;
         }
 
@@ -404,26 +412,29 @@ namespace NeoBuzz.VoiceToMidi
         /// <summary>How many first notes were corrected within the window (Fast response).</summary>
         public int Corrections { get; private set; }
 
-        void ChangeNote(int note, long t, float peak, double sung, bool keepChord = false)
+        void ChangeNote(int note, long t, float peak, double sung, bool keepChord = false, long since = long.MaxValue)
         {
+            long attack = since == long.MaxValue ? curAttack : AttackOf(since, t);
             int old = sentNote, oldCh = noteChannel;
             bool oldSent = noteSent;
             int vel = Velocity(peak);
             curNote = note; curOnAt = t; switchNote = -1; bend.ResetAnchor();
             CentreBend(t);
             sentNote = Shift(note); noteChannel = pitchCh;
+            if (since == long.MaxValue) attack = Math.Min(t, curAttack + rate / 1000);         // a correction: the first note's attack, a millisecond on
             if (legato)
             {
-                Emit(MidiKind.NoteOn, MidiStream.Pitch, noteChannel, sentNote, vel, t);
-                if (oldSent) Emit(MidiKind.NoteOff, MidiStream.Pitch, oldCh, old, 0, t);
+                Emit(MidiKind.NoteOn, MidiStream.Pitch, noteChannel, sentNote, vel, t, attack);
+                if (oldSent) Emit(MidiKind.NoteOff, MidiStream.Pitch, oldCh, old, 0, t, attack);
             }
             else
             {
-                if (oldSent) Emit(MidiKind.NoteOff, MidiStream.Pitch, oldCh, old, 0, t);
-                Emit(MidiKind.NoteOn, MidiStream.Pitch, noteChannel, sentNote, vel, t);
+                if (oldSent) Emit(MidiKind.NoteOff, MidiStream.Pitch, oldCh, old, 0, t, attack);
+                Emit(MidiKind.NoteOn, MidiStream.Pitch, noteChannel, sentNote, vel, t, attack);
             }
+            curAttack = attack;
             noteSent = pitchEmit;
-            if (!keepChord) { StopChord(t); PlayChord(note, vel, t); }
+            if (!keepChord) { StopChord(t); PlayChord(note, vel, t, attack); }
             LastNoteVelocity = vel;
         }
 
@@ -431,19 +442,19 @@ namespace NeoBuzz.VoiceToMidi
         {
             if (curNote < 0) return;
             if (noteSent) Emit(MidiKind.NoteOff, MidiStream.Pitch, noteChannel, sentNote, 0, t);
-            noteSent = false;
+            noteSent = false; lastOffAt = t;
             StopChord(t);
             curNote = -1; sentNote = -1; pendingOff = false; pendNote = -1; switchNote = -1;
             CentreBend(t);
         }
 
-        void PlayChord(int note, int vel, long t)
+        void PlayChord(int note, int vel, long t, long attack)
         {
             if (!chordsOn) return;
             int count = chordBuilder.Build(note, ActiveRoot, KeyNotes, melody, sevenths, chordInv, chordSpread, chordOct, chordTmp);
             int cv = Math.Clamp((int)Math.Round(vel * chordVelShare), 1, 127);
             chordChannel = chordCh;
-            for (int i = 0; i < count; i++) { chordNotes[i] = chordTmp[i]; Emit(MidiKind.NoteOn, MidiStream.Chord, chordChannel, chordNotes[i], cv, t); }
+            for (int i = 0; i < count; i++) { chordNotes[i] = chordTmp[i]; Emit(MidiKind.NoteOn, MidiStream.Chord, chordChannel, chordNotes[i], cv, t, attack); }
             chordCount = count;
         }
 
@@ -495,7 +506,7 @@ namespace NeoBuzz.VoiceToMidi
             int fixedV = I(P.T1Vel + 3 * cls);
             int vel = fixedV > 0 ? fixedV : VelocityMap.FromHit(o.LevelDb, velMin, velSoftDb, velLoudDb);
             // The same note still sounding: off first.
-            offs.Play(block, MidiStream.Trigger, trigCh, note, vel, at, trigLenSamples);
+            offs.Play(block, MidiStream.Trigger, trigCh, note, vel, at, trigLenSamples, Math.Min(at, o.Sample));
             LastTrigger = cls + 1; TriggerSerial++;
             Lit[cls] = true; LitAt[cls] = at;
             // A voiced sound taken for a trigger: no pitch note from it.
