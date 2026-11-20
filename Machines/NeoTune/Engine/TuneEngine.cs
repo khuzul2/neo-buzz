@@ -298,7 +298,7 @@ namespace NeoBuzz.Tune
                 latency = (int)Math.Round(LatencySeconds[range] * sr);
                 capSamples = CapSeconds[range] * sr;
             }
-            if (splice != useSplice) { useSplice = splice; change = !force; }
+            if (splice != useSplice) { useSplice = splice; change = !force; if (evOn) Log(outPos, TuneEventKind.MethodSwitch, splice ? 1 : 0); }
             if (change && ring != null) Reset();
             values.Clean();
         }
@@ -453,6 +453,11 @@ namespace NeoBuzz.Tune
         void AddMark(double t)
         {
             int i = (int)(mCount & MarkMask);
+            if (evOn && mCount > 1 && mRun[(int)((mCount - 1) & MarkMask)] == runId && mRun[(int)((mCount - 2) & MarkMask)] == runId)
+            {
+                double s1 = t - mT[(int)((mCount - 1) & MarkMask)], s0 = mT[(int)((mCount - 1) & MarkMask)] - mT[(int)((mCount - 2) & MarkMask)];
+                if (s1 > 1.12 * s0 || s1 < 0.88 * s0) Log((long)t, TuneEventKind.MarkOutlier, s1, s0);
+            }
             mT[i] = t;
             mRun[i] = runId;
             mCount++;
@@ -485,6 +490,7 @@ namespace NeoBuzz.Tune
                         if (v > bv) { bv = v; best = q; }
                     }
                     runId++;
+                    if (evOn) Log(best, TuneEventKind.MarkRunStart, runId);
                     AddMark(best);
                     markRun = true;
                     mPtr = mScan;
@@ -494,7 +500,7 @@ namespace NeoBuzz.Tune
                 if (!ContourAt(last + 1, ref mPtr, out double f, out _))
                 {
                     // The voice stopped (as far as the contour has got).
-                    if (mPtr + 1 < cCount) { markRun = false; mScan = mPtr + 1; continue; }
+                    if (mPtr + 1 < cCount) { markRun = false; mScan = mPtr + 1; if (evOn) Log((long)last, TuneEventKind.MarkRunEnd, runId); continue; }
                     return;
                 }
                 double p = sr / f;
@@ -503,7 +509,7 @@ namespace NeoBuzz.Tune
                 if (pred + rg + hw + 2 > inCount - 1) return;
                 // Is the voice still voiced at the predicted mark?
                 long probe = mPtr;
-                if (!ContourAt(pred, ref probe, out _, out _) && probe + 1 < cCount) { markRun = false; mScan = probe + 1; continue; }
+                if (!ContourAt(pred, ref probe, out _, out _) && probe + 1 < cCount) { markRun = false; mScan = probe + 1; if (evOn) Log((long)last, TuneEventKind.MarkRunEnd, runId); continue; }
                 double k = Refine(pred, last, hw, rg);
                 double minK = last + 0.5 * p;
                 if (k < minK) k = minK;

@@ -50,6 +50,8 @@ namespace NeoBuzz.Tune
         double lfoPhase, lastEnd;
         int listenRoot = -1;
         double heldF0, heldShift;
+        long evCentreT;
+        bool evPrevVoiced;
 
         void ResetControl()
         {
@@ -113,6 +115,7 @@ namespace NeoBuzz.Tune
             if (dt <= 0 || dt > 0.1) dt = tracker.Hop / sr;
             double tau = e.Voiced && e.F0 > 0 ? sr / e.F0 : sr / Math.Max(e.RawF0, 100.0);
             long centreT = e.EndSample - (long)((tracker.Window + tau) * 0.5);
+            evCentreT = centreT;
 
             long slot = cCount & ContourMask;
             cT[slot] = centreT;
@@ -125,11 +128,14 @@ namespace NeoBuzz.Tune
                 {
                     // A gap inside a note (a low-confidence frame, a consonant's edge): keep the last pitch and ratio.
                     cF[slot] = (float)heldF0; cShift[slot] = (float)heldShift;
+                    if (evOn && unvoicedFor - dt <= 0) Log(centreT, TuneEventKind.PitchHold, heldShift);
                     cCount++;
                     Display(dt, dispIn0, dispOut0, dispCentre0);
                     return;
                 }
                 // A real unvoiced sound or silence: the ratio ramps to 1 in 20 ms and the grains give way to the input.
+                if (evOn && realFor == 0) Log(centreT, TuneEventKind.VoicedEnd, heldShift);
+                evPrevVoiced = false;
                 realFor += dt;
                 cF[slot] = 0;
                 cShift[slot] = (float)(heldShift * Math.Max(0.0, 1.0 - realFor / RampSeconds));
@@ -149,6 +155,7 @@ namespace NeoBuzz.Tune
                 ResetVibrato(); exprAbs = 0;
                 curNote = pendNote = -1; pendTime = 0; noteTime = 0; smoothInit = false; lfoPhase = 0; devInst = 0;
                 runActive = true; firstFrame = true;
+                if (evOn) Log(centreT, TuneEventKind.VoicedStart, m);
             }
             unvoicedFor = 0; realFor = 0;
             runTime += dt;
@@ -275,10 +282,11 @@ namespace NeoBuzz.Tune
             }
             if (Math.Abs(shiftSemis) < 0.004) shiftSemis = 0;      // under 0.4 cent: nothing (the bypass: the output is the aligned input)
             double shift = Math.Clamp(shiftSemis + transpose, -48, 48);
+            if (evOn && Math.Abs(shift - heldShift) > 0.12 && heldF0 > 0 && evPrevVoiced) Log(centreT, TuneEventKind.ShiftStep, heldShift, shift);
             cF[slot] = (float)e.F0;
             cShift[slot] = (float)shift;
             cCount++;
-            heldF0 = e.F0; heldShift = shift;
+            heldF0 = e.F0; heldShift = shift; evPrevVoiced = true;
 
             Volatile.Write(ref pubInHz, e.F0);
             Volatile.Write(ref pubNote, curNote < 0 ? 0 : curNote);
@@ -319,6 +327,7 @@ namespace NeoBuzz.Tune
                     csDev[k] = dd;
                 }
             }
+            if (evOn) Log(evCentreT, TuneEventKind.TargetChange, curNote, cand, pend, win);
             curNote = cand;
             pendNote = -1; pendTime = 0;
             noteTime = Math.Max(0, pend);

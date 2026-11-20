@@ -34,6 +34,7 @@ namespace NeoBuzz.Tune
         bool fading, spInit;
         int fadeN, fadeLen, spCount, zeroRun;
         long spPtr;
+        bool evBypass, evHold;
 
         void ResetSplice()
         {
@@ -77,6 +78,7 @@ namespace NeoBuzz.Tune
             bool voiced = ShiftAt(rA, ref rPtr, out double shift);
             if (shift > 12) shift = 12; else if (shift < -12) shift = -12;
             double e = rA - next;
+            if (evOn && (spCount & 255) == 1) Log(next, TuneEventKind.Trace, shift, e, fading ? 1 : 0);
             rho = shift == 0 ? 1.0 : PortableMath.Exp2(shift / 12.0);
             zeroRun = shift == 0 ? zeroRun + 8 : 0;
             if (!fading && Math.Abs(e) > 1e-3 && next > 0 && shift == 0 && (!voiced || zeroRun > (int)(0.03 * sr)))
@@ -85,6 +87,7 @@ namespace NeoBuzz.Tune
                 // (a voiced note is joined over about a period and a half, the offset being less than half a period), and the output is the input again.
                 rB = next; fading = true; fadeN = 0;
                 fadeLen = voiced ? Math.Clamp((int)(1.5 * spJ), 32, (int)(0.012 * sr)) : Math.Max(16, (int)(0.002 * sr));
+                if (evOn) Log((long)rA, TuneEventKind.SpliceReturn, e, fadeLen, SegmentMismatch(rA, rB, fadeLen), voiced ? 1 : 0);
             }
         }
 
@@ -117,6 +120,7 @@ namespace NeoBuzz.Tune
                         rB = rA + (e > 0 ? -j : j);
                         fading = true; fadeN = 0;
                         fadeLen = Math.Clamp((int)(0.25 * j), 16, Math.Max(16, (int)(0.003 * sr)));
+                        if (evOn) Log(next, TuneEventKind.SpliceJump, e > 0 ? -j : j, e, SegmentMismatch(rA, rB, fadeLen), fadeLen);
                     }
                 }
             }
@@ -228,11 +232,13 @@ namespace NeoBuzz.Tune
                     shaped = Math.Min(1f, de * 6f);
                     // a correction of exactly nothing is the input, aligned (the grains are close to it already: this hides the residue)
                     bool bypass = ShiftAt(t, ref gPtr, out double sh) && sh == 0;
+                    if (evOn && bypass != evBypass) { evBypass = bypass; Log(t, bypass ? TuneEventKind.PsolaBypassOn : TuneEventKind.PsolaBypassOff); }
                     double pt = bypass ? 0.0 : 1.0;
                     if (pGate < pt) pGate = Math.Min(pt, pGate + pStep); else if (pGate > pt) pGate = Math.Max(pt, pGate - pStep);
                     shaped *= (float)pGate;
                 }
                 bool dryHold = !useSplice && transients && t >= holdFrom && t < holdUntil;    // the splice engine keeps a transient as it is (no grains to smear it)
+                if (evOn && dryHold != evHold) { evHold = dryHold; Log(t, dryHold ? TuneEventKind.TransientOn : TuneEventKind.TransientOff); }
                 double tg = dryHold ? 0.0 : 1.0;
                 if (gate < tg) gate = Math.Min(tg, gate + gateStep);
                 else if (gate > tg) gate = Math.Max(tg, gate - gateStep);
