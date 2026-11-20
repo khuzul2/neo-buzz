@@ -32,12 +32,12 @@ def notes_of(midi_bytes, t0=0.0, t1=1e9):
     return out
 
 
-def gmd(dest, per):
+def gmd(dest, per, split="test", all_types=False):
     from remotezip import RemoteZip
     random.seed(7)
     z = RemoteZip("https://storage.googleapis.com/magentadata/datasets/groove/groove-v1.0.0.zip")
     rows = list(csv.DictReader(io.TextIOWrapper(z.open("groove/info.csv"), "utf-8")))
-    rows = [r for r in rows if r["audio_filename"] and 15 < float(r["duration"]) < 50 and r["beat_type"] == "beat" and r["split"] == "test"]
+    rows = [r for r in rows if r["audio_filename"] and (5 < float(r["duration"]) < 60 if all_types else 15 < float(r["duration"]) < 50 and r["beat_type"] == "beat") and r["split"] in split.split(",")]
     by = collections.defaultdict(list)
     for r in rows:
         by[r["drummer"]].append(r)
@@ -84,7 +84,9 @@ def maestro(dest, count, start=20.0, length=60.0):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--gmd"); ap.add_argument("--gmd-per-drummer", type=int, default=2)
+    ap.add_argument("--gmd-all-types", action="store_true", help="development only: fills as well as beats, 5 to 60 s")
+    ap.add_argument("--gmd-split", default="test", help="test (the evaluation), or train,validation (development only)")
     ap.add_argument("--maestro"); ap.add_argument("--maestro-count", type=int, default=10)
     a = ap.parse_args()
-    if a.gmd: gmd(a.gmd, a.gmd_per_drummer)
+    if a.gmd: gmd(a.gmd, a.gmd_per_drummer, a.gmd_split, a.gmd_all_types)
     if a.maestro: maestro(a.maestro, a.maestro_count)
