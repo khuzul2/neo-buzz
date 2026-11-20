@@ -35,10 +35,10 @@ namespace ReBuzz.Studio.Views.Audio
             IsHitTestVisible = false;
         }
 
-        /// <summary>PL1: draw in the lower half of the control, so a clip's name reads over a quiet background above it.</summary>
+        /// <summary>PL1: draw in the lower part (from 58 % down) of the control, so a clip's name reads over a quiet background above it.</summary>
         public bool LowerHalf { get; set; }
 
-        double Top => LowerHalf ? Math.Floor(Bounds.Height / 2) : 0;
+        double Top => LowerHalf ? Math.Floor(Bounds.Height * 0.58) : 0;
 
         /// <summary>The colour of the waveform and of the playing position (the slot's text colour, so it reads on any clip colour).</summary>
         public IBrush Foreground
