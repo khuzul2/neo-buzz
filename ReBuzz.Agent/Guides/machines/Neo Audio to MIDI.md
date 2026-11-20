@@ -25,7 +25,6 @@ Neo Audio to MIDI listens to an instrument (a guitar or a bass through Neo Audio
 | Sensitivity | 50% | how soft an attack may be; lower for a noisy instrument |
 | Pitch bend | Off | on: slides and bends are sent as bend (match the synth's range) |
 | Retrigger | On | a new pluck of the sounding note plays it again |
-| Record at attack | On | a track recording from `Machine: <name>` puts each note at the attack (the sound's start), not when the note was sent; live output is unchanged |
 
 ## Starting points
 
@@ -41,6 +40,7 @@ Neo Audio to MIDI listens to an instrument (a guitar or a bass through Neo Audio
 - The synth's pitch bend range must match `Pitch bend`, or the bends sound off.
 - Accuracy, measured on real recordings it was not tuned on: a guitar through a pickup or DI gets about 76 to 77% of notes right (F-measure); a guitar through a microphone only about 50%, so use a pickup or a DI. The low E string is weakest, drop-D is below Guitar range (use Bass). Drums: kick 89%, hat 85%, snare 79%.
 - Latency: Guitar Fast plays a note a median of 5 to 16 ms after the pluck (worst about 46 ms), Bass range about 30 ms (worst about 47 ms), Stable about 15 to 21 ms, a hit's note about 16 ms. `machine_readings` gives `note_latency_ms`, the longest to expect.
+- `Record at attack` (on, in the Recording group): a track recording from `Machine: <name>` puts each note at the attack, not when the note was sent; live output is unchanged.
 - Drum notes go to channel 10 (the drum channel) by default; a bass synth listening on channel 1 will not play them.
 
 ## Pairs well with
