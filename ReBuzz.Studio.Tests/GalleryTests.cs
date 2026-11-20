@@ -2533,6 +2533,73 @@ namespace ReBuzz.Studio.Tests
                     Settle();
                     Shot(window, "571-session-midi-from-machine", "Session: the I/O row with Lead's MIDI From set to a machine (Machine: Voice MIDI, Neo Voice to MIDI): an armed synth track records what the voice plays.", "Session > I/O row > MIDI From > Machine: Voice MIDI.");
                 });
+                Try("574-audio-to-midi-melody", () =>
+                {
+                    Core.SongCore.CreateMachine("Neo Audio to MIDI", null, "Audio MIDI", null, null, null, -1, 0.5f, 0.8f);
+                    var am = Core.SongCore.MachinesList.First(m => m.Name == "Audio MIDI");
+                    var inst = am.ManagedMachine!;
+                    inst.GetType().GetMethod("SetTarget")!.Invoke(inst, new object[] { demo.Lead.Name });
+                    // A plucked phrase (E2 G2 A2 B2 D3 A2 as decaying harmonic tones), through the machine's Work as the host calls it.
+                    var work = inst.GetType().GetMethod("Work")!;
+                    var input = new Buzz.MachineInterface.Sample[256];
+                    var output = new Buzz.MachineInterface.Sample[256];
+                    long frame = 0;
+                    foreach (double hz in new[] { 82.41, 98.0, 110.0, 123.47, 146.83, 110.0 })
+                        for (int b = 0; b < 44100 * 0.45 / 256; b++)
+                        {
+                            for (int k = 0; k < 256; k++, frame++)
+                            {
+                                double t = (b * 256 + k) / 44100.0, v = 0;
+                                for (int h = 1; h <= 6; h++) v += System.Math.Sin(2 * System.Math.PI * hz * h * t) / h * System.Math.Exp(-t * (2.5 + h));
+                                input[k].L = input[k].R = (float)(v * 0.5 * 32768);
+                            }
+                            work.Invoke(inst, new object[] { output, input, 256, Buzz.MachineInterface.WorkModes.WM_READWRITE });
+                        }
+                    Core.UiHost.OpenGui(am, null);
+                    var w = StudioMachineUiHost.GuiWindowOf(am);
+                    Assert.That(w, Is.Not.Null, "Neo Audio to MIDI's editor opened");
+                    Wait(200);
+                    Shot(w!, "574-audio-to-midi-melody", "Neo Audio to MIDI's editor in Melody mode after a plucked bass phrase (E, G, A, B, D, A): the input's pitch as a line on the piano roll and the notes sent as bars, the key and scale keyboard, the melody knobs, the drum pads and the MIDI-to buttons.", "Add Neo Audio to MIDI (an effect); open its editor.");
+                    Core.UiHost.CloseWindows(am);
+                });
+                Try("575-audio-to-midi-drums", () =>
+                {
+                    var am = Core.SongCore.MachinesList.First(m => m.Name == "Audio MIDI");
+                    var inst = am.ManagedMachine!;
+                    am.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == "Mode").SetValue(0, 1);
+                    var work = inst.GetType().GetMethod("Work")!;
+                    var input = new Buzz.MachineInterface.Sample[256];
+                    var output = new Buzz.MachineInterface.Sample[256];
+                    var rng = new System.Random(5);
+                    // Two bars of a beat at 120 bpm: kick, hat, snare, hat (a kick as a falling sine, a snare as noise over a shell tone, a hat as high noise).
+                    int total = (int)(44100 * 2.0), hit = 0;
+                    var pattern = new (double T, int Cls)[] { (0.0, 0), (0.25, 2), (0.5, 1), (0.75, 2), (1.0, 0), (1.25, 2), (1.5, 1), (1.75, 2), (1.875, 2) };
+                    var signal = new float[total + 44100];
+                    foreach (var (t0, cls) in pattern)
+                    {
+                        int at = (int)(t0 * 44100) + 4410;
+                        for (int i = 0; i < 9000 && at + i < signal.Length; i++)
+                        {
+                            double t = i / 44100.0, v = 0;
+                            if (cls == 0) v = System.Math.Sin(2 * System.Math.PI * (50 + 110 * System.Math.Exp(-t / 0.025)) * t) * System.Math.Exp(-t / 0.09) * 0.8;
+                            else if (cls == 1) v = (System.Math.Sin(2 * System.Math.PI * 190 * t) * 0.6 + (rng.NextDouble() * 2 - 1) * 0.5) * System.Math.Exp(-t / 0.06);
+                            else v = (rng.NextDouble() * 2 - 1) * System.Math.Exp(-t / 0.02) * 0.35;
+                            signal[at + i] += (float)v;
+                        }
+                        hit++;
+                    }
+                    for (int pos = 0; pos + 256 <= signal.Length; pos += 256)
+                    {
+                        for (int k = 0; k < 256; k++) input[k].L = input[k].R = signal[pos + k] * 32768f * 0.8f;
+                        work.Invoke(inst, new object[] { output, input, 256, Buzz.MachineInterface.WorkModes.WM_READWRITE });
+                    }
+                    Core.UiHost.OpenGui(am, null);
+                    var w = StudioMachineUiHost.GuiWindowOf(am);
+                    Assert.That(w, Is.Not.Null, "Neo Audio to MIDI's editor opened in Drums mode");
+                    Wait(200);
+                    Shot(w!, "575-audio-to-midi-drums", "Neo Audio to MIDI's editor in Drums mode after two bars of a beat (kick, hat, snare, hat): a lane for each drum with the hits it played, the kick, snare and hat pads with the Calibrate panel and each drum's note, velocity, sensitivity and interval.", "Set Mode to Drums; open the editor; Calibrate takes five hits of the chosen drum.");
+                    Core.UiHost.CloseWindows(am);
+                });
             }
             finally
             {

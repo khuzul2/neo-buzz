@@ -37,12 +37,7 @@ namespace NeoBuzz.VoiceToMidi
         int rate;
         int quietBlocks;
         NeoVoiceToMidiState state = new NeoVoiceToMidiState();
-        volatile IMachine target;
-        volatile string targetName = "";
-        volatile int deviceIndex = -1;
-        volatile string deviceName = "";
-        long lastResolve;
-        IBuzz buzzCache;
+        readonly MidiRouter router;
         Timer pump;
         readonly object pumpLock = new object();
         readonly float[] drain = new float[VoiceFeatures.Dimension];
@@ -50,6 +45,7 @@ namespace NeoBuzz.VoiceToMidi
 
         public NeoVoiceToMidiMachine(IBuzzMachineHost host) : base(host, Params.Table)
         {
+            router = new MidiRouter(host);
             Engine = new VoiceEngine(Values);
             rate = SampleRate;
             Engine.SetSampleRate(rate);
@@ -63,8 +59,8 @@ namespace NeoBuzz.VoiceToMidi
         {
             get
             {
-                state.Target = targetName;
-                state.Device = deviceName;
+                state.Target = router.TargetName;
+                state.Device = router.DeviceName;
                 state.Training = Engine.Classifier.Count > 0 ? Engine.Classifier.Serialize() : "";
                 return state;
             }
@@ -96,91 +92,26 @@ namespace NeoBuzz.VoiceToMidi
             StateChanged?.Invoke();
         }
 
-        public string TargetName => targetName;
-        public string DeviceName => deviceName;
-        public bool TargetFound => target != null;
+        public string TargetName => router.TargetName;
+        public string DeviceName => router.DeviceName;
+        public bool TargetFound => router.TargetFound;
 
         public void SetTarget(string name)
         {
-            targetName = name ?? "";
-            target = null;
             Engine.Flush();
-            ResolveTarget(true);
+            router.SetTarget(name);
             StateChanged?.Invoke();
         }
 
         public void SetDevice(string name)
         {
-            deviceName = name ?? "";
-            deviceIndex = -1;
-            ResolveDevice();
+            router.SetDevice(name);
             StateChanged?.Invoke();
         }
 
-        IBuzz Buzz
-        {
-            get
-            {
-                if (buzzCache != null) return buzzCache;
-                try { buzzCache = host?.Machine?.Graph?.Buzz; } catch (Exception) { buzzCache = null; }
-                return buzzCache;
-            }
-        }
-
-        void ResolveTarget(bool force)
-        {
-            string name = targetName;
-            if (string.IsNullOrEmpty(name)) { target = null; return; }
-            try
-            {
-                var t = target;
-                if (t != null && t.Graph != null && t.Name == name && !force) return;
-                var machines = host.Machine.Graph.Machines;
-                for (int i = 0; i < machines.Count; i++)
-                {
-                    var m = machines[i];
-                    if (m.Name == name && !ReferenceEquals(m, host.Machine)) { target = m; return; }
-                }
-                target = null;
-            }
-            catch (Exception) { target = null; }
-        }
-
-        void ResolveDevice()
-        {
-            string name = deviceName;
-            if (string.IsNullOrEmpty(name)) { deviceIndex = -1; return; }
-            try
-            {
-                var outs = Buzz?.GetMidiOuts();
-                if (outs == null) return;
-                foreach (var o in outs)
-                    if (string.Equals(o.Item2, name, StringComparison.OrdinalIgnoreCase)) { deviceIndex = o.Item1; return; }
-                deviceIndex = -1;
-            }
-            catch (Exception) { deviceIndex = -1; }
-        }
-
         /// <summary>The machines the notes can go to (every machine but this one) and the external MIDI outputs, for the pickers.</summary>
-        public IEnumerable<string> TargetNames()
-        {
-            var list = new List<string>();
-            try
-            {
-                foreach (var m in host.Machine.Graph.Machines)
-                    if (!ReferenceEquals(m, host.Machine)) list.Add(m.Name);
-            }
-            catch (Exception) { }
-            return list;
-        }
-
-        public IEnumerable<string> DeviceNames()
-        {
-            var list = new List<string>();
-            try { foreach (var o in Buzz?.GetMidiOuts() ?? Array.Empty<Tuple<int, string>>()) list.Add(o.Item2); }
-            catch (Exception) { }
-            return list;
-        }
+        public IEnumerable<string> TargetNames() => router.TargetNames();
+        public IEnumerable<string> DeviceNames() => router.DeviceNames();
 
         // ---------------------------------------------------------------------------------------------------------- training
 
@@ -276,57 +207,17 @@ namespace NeoBuzz.VoiceToMidi
 
         void ResolveWhenDue()
         {
-            long now = Environment.TickCount64;
-            if (now - lastResolve < 1000) return;
-            lastResolve = now;
+            if (!router.ResolveWhenDue()) return;
             try
             {
                 // The song's key: the "Key" entry of the song's associations ("D minor", "F# major"); Lock = Song key follows it.
-                if (Buzz?.Song?.Associations != null && Buzz.Song.Associations.TryGetValue("Key", out var k)) Engine.SetSongKey(k as string);
+                var buzz = router.Buzz;
+                if (buzz?.Song?.Associations != null && buzz.Song.Associations.TryGetValue("Key", out var k)) Engine.SetSongKey(k as string);
             }
             catch (Exception) { }
-            if (!string.IsNullOrEmpty(targetName) && target == null || target != null && target.Graph == null) ResolveTarget(target != null);
-            if (!string.IsNullOrEmpty(deviceName) && deviceIndex < 0) ResolveDevice();
         }
 
-        void Send(int count)
-        {
-            if (count <= 0) return;
-            var events = Engine.Events;
-            var t = target;
-            int dev = deviceIndex;
-            var bus = Buzz as IMachineMidiBus;
-            var self = host?.Machine;
-            for (int i = 0; i < count; i++)
-            {
-                ref var e = ref events[i];
-                int status, d1, d2;
-                switch (e.Kind)
-                {
-                    case MidiKind.NoteOn: status = 0x90 | e.Channel; d1 = e.Data1; d2 = e.Data2; break;
-                    case MidiKind.NoteOff: status = 0x80 | e.Channel; d1 = e.Data1; d2 = 0; break;
-                    case MidiKind.Controller: status = 0xB0 | e.Channel; d1 = e.Data1; d2 = e.Data2; break;
-                    default: status = 0xE0 | e.Channel; d1 = e.Data2 & 127; d2 = e.Data2 >> 7; break;
-                }
-                int data = status | (d1 << 8) | (d2 << 16);
-                try
-                {
-                    if (t != null)
-                    {
-                        switch (e.Kind)
-                        {
-                            case MidiKind.NoteOn: t.SendMIDINote(e.Channel, e.Data1, Math.Max(1, e.Data2)); break;
-                            case MidiKind.NoteOff: t.SendMIDINote(e.Channel, e.Data1, 0); break;
-                            case MidiKind.Controller: t.SendMIDIControlChange(e.Data1, e.Channel, e.Data2); break;
-                            default: t.SendMIDIControlChange(0xE0, e.Channel, e.Data2); break;
-                        }
-                    }
-                    if (dev >= 0) Buzz.SendMIDIOutput(dev, data);
-                    bus?.SendMachineMIDI(self, data);
-                }
-                catch (Exception) { }
-            }
-        }
+        void Send(int count) => router.Send(Engine.Events, count);
 
         /// <summary>For agents (machine_readings).</summary>
         public IReadOnlyDictionary<string, double> Readings => Engine.Readings();
@@ -338,26 +229,7 @@ namespace NeoBuzz.VoiceToMidi
             get
             {
                 var items = new List<IMenuItem>();
-                var targets = new List<IMenuItem>
-                {
-                    new MenuItemVM { Text = "(none)", IsCheckable = true, IsChecked = targetName.Length == 0, Command = new SimpleCommand { CanExecuteDelegate = _ => true, ExecuteDelegate = _ => SetTarget("") } },
-                };
-                foreach (var name in TargetNames())
-                {
-                    string tn = name;
-                    targets.Add(new MenuItemVM { Text = tn, IsCheckable = true, IsChecked = targetName == tn, Command = new SimpleCommand { CanExecuteDelegate = _ => true, ExecuteDelegate = _ => SetTarget(tn) } });
-                }
-                items.Add(new MenuItemVM { Text = "Send MIDI to machine", Children = targets });
-                var devices = new List<IMenuItem>
-                {
-                    new MenuItemVM { Text = "(none)", IsCheckable = true, IsChecked = deviceName.Length == 0, Command = new SimpleCommand { CanExecuteDelegate = _ => true, ExecuteDelegate = _ => SetDevice("") } },
-                };
-                foreach (var name in DeviceNames())
-                {
-                    string dn = name;
-                    devices.Add(new MenuItemVM { Text = dn, IsCheckable = true, IsChecked = deviceName == dn, Command = new SimpleCommand { CanExecuteDelegate = _ => true, ExecuteDelegate = _ => SetDevice(dn) } });
-                }
-                items.Add(new MenuItemVM { Text = "Send MIDI to device", Children = devices });
+                items.AddRange(router.Menus(SetTarget, SetDevice));
                 items.Add(new MenuItemVM
                 {
                     Text = "Forget all trained sounds",

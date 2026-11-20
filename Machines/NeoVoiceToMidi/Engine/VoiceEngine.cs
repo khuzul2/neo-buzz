@@ -10,6 +10,7 @@
 //  - Chords: on each pitch note, the diatonic chord (ChordBuilder) on its own channel; suggestions from the notes sung lately.
 //  - Expression: the voice level and the vowels aa, oo, ee as controllers with min/max, range and channel.
 // Allocation-free per block after construction (Train, the learning drain and the readings are off the audio thread).
+// The parts Neo Audio to MIDI shares (events, key lock, velocity, bend, note-off queue, training pass, waiting hits) are in Machines/NeoBuzz.Dsp/Midi.
 
 using System;
 using System.Collections.Generic;
@@ -19,25 +20,17 @@ using NeoBuzz.Dsp;
 
 namespace NeoBuzz.VoiceToMidi
 {
-    internal enum MidiKind : byte { NoteOn, NoteOff, Controller, PitchBend }
-    internal enum MidiStream : byte { Pitch, Chord, Trigger, Expression }
-
-    /// <summary>One MIDI event. NoteOn: Data1 note, Data2 velocity. NoteOff: Data1 note. Controller: Data1 number, Data2 value. PitchBend: Data2 0 ... 16383 (8192 centre).</summary>
-    internal struct MidiEvent
-    {
-        public int Offset;
-        public MidiKind Kind;
-        public MidiStream Stream;
-        public byte Channel;
-        public byte Data1;
-        public int Data2;
-    }
-
     internal sealed class VoiceEngine
     {
         public const int MaxBlock = 256, MaxEvents = 128, Sounds = 8, LearnSlots = 64;
         public readonly ParamValues Values;
         readonly VoiceClassifier classifier = new VoiceClassifier(Sounds);
+        readonly MidiBlock block = new MidiBlock();
+        readonly KeyLock keyLock = new KeyLock();
+        readonly PitchBendMap bend = new PitchBendMap();
+        readonly NoteOffQueue offs = new NoteOffQueue(32);
+        readonly OnsetTrainer trainer = new OnsetTrainer(VoiceFeatures.Dimension);
+        readonly HitQueue pending = new HitQueue(16);
         public VoiceClassifier Classifier => classifier;
 
         int rate = 48000;
@@ -50,29 +43,22 @@ namespace NeoBuzz.VoiceToMidi
         float[] ring;
         int ringMask;
         long total;
-        long blockStart;
-        MidiEvent[] ev;
-        int evCount;
 
         // Settings read once per block.
-        bool fastResponse, pitchOn, triggersOn, chordsOn, bendOn, legato, fixedVel, accurate, triggersWin, anchored, sevenths, melody;
+        bool fastResponse, pitchOn, triggersOn, chordsOn, bendOn, legato, fixedVel, accurate, triggersWin, sevenths, melody;
         int lockMode, keyRoot, scale, custom, muted, octave, bendRange, pitchCh, trigCh, chordCh, chordInv, chordSpread, chordOct;
-        float stickSemis, anchorSemis, thresholdLin, velSoftDb, velLoudDb;
+        float stickSemis, thresholdLin, velSoftDb, velLoudDb;
         int fixedVelocity, velMin, trigLenSamples, settleSamples, correctSamples, fastWaitSamples, minNoteSamples, releaseHold, gapSamples;
         float chordVelShare;
         int activeMask = Scales.All;
 
         // Key.
-        readonly KeyFinder finder = new KeyFinder();
         readonly ChordSuggester suggester = new ChordSuggester();
-        public KeyFinder Finder => finder;
+        public KeyFinder Finder => keyLock.Finder;
         public ChordSuggester Suggester => suggester;
-        volatile string songKeyText = "";
-        int songRoot = -1, songScale;
-        string songKeyParsed = null;
         double keyClock, suggestClock;
-        public int ActiveRoot { get; private set; }
-        public int ActiveScale { get; private set; }
+        public int ActiveRoot => keyLock.ActiveRoot;
+        public int ActiveScale => keyLock.ActiveScale;
         public int ActiveMask => activeMask;
 
         // Pitch state.
@@ -84,13 +70,11 @@ namespace NeoBuzz.VoiceToMidi
         int switchNote = -1; long switchSince;
         long lastVoicedAt;
         bool pendingOff; long pendDue;
-        bool bendOut;                      // anchored: out of the anchor
-        int lastBend = 8192; long lastBendAt;
         int noteChannel = 0;
         public bool NoteSounding => curNote >= 0;
         public int CurrentNote => curNote;
         /// <summary>Something is still sounding or waiting (a note, a chord, a trigger's note off, an onset being classified): the machine keeps running.</summary>
-        public bool Busy => curNote >= 0 || chordCount > 0 || offCount > 0 || queued > 0 || pendingOff;
+        public bool Busy => curNote >= 0 || chordCount > 0 || offs.Count > 0 || pending.Count > 0 || pendingOff;
         double lastSung;                   // the last voiced fractional MIDI note
         bool lastVoiced;
         float lastLevel;                   // linear RMS
@@ -105,12 +89,7 @@ namespace NeoBuzz.VoiceToMidi
         public bool ChordSounding => chordCount > 0;
 
         // Triggers.
-        readonly OnsetEvent[] queue = new OnsetEvent[16];
-        int queued;
         readonly float[] feat = new float[VoiceFeatures.Dimension];
-        readonly int[] offNote = new int[32], offCh = new int[32];
-        readonly long[] offDue = new long[32];
-        int offCount;
         public int LastTrigger { get; private set; }
         public int TriggerSerial { get; private set; }
         /// <summary>The sung pitch (fractional MIDI, 0 unvoiced) every 5 ms, newest at <see cref="TrailHead"/> - 1, for the editor's piano roll.</summary>
@@ -124,14 +103,10 @@ namespace NeoBuzz.VoiceToMidi
         public readonly long[] LitAt = new long[Sounds];
 
         // Learning (audio thread produces, the machine's pump consumes).
-        public volatile int Learning = -1;
-        public int LearnTarget = 20;
-        readonly float[][] learnF = new float[LearnSlots][];
-        readonly int[] learnC = new int[LearnSlots];
-        int learnWrite, learnRead;
-        int learnedThisPass;
-        public volatile bool LearnDone;
-        public int LearnedThisPass => Volatile.Read(ref learnedThisPass);
+        public int Learning => trainer.Learning;
+        public int LearnTarget { get => trainer.Target; set => trainer.Target = value; }
+        public bool LearnDone => trainer.Done;
+        public int LearnedThisPass => trainer.Learned;
 
         // Expression.
         readonly float[] laneLast = new float[4];
@@ -145,17 +120,15 @@ namespace NeoBuzz.VoiceToMidi
         public volatile float LevelDb = -120, SungMidi;
         public volatile bool Voiced;
         public float VowelAa, VowelOo, VowelEe;
-        public long EventsSent;
+        public long EventsSent => block.EventsSent;
 
         public VoiceEngine(ParamValues values)
         {
             Values = values;
-            for (int i = 0; i < LearnSlots; i++) learnF[i] = new float[VoiceFeatures.Dimension];
-            ev = new MidiEvent[MaxEvents];
             SetSampleRate(48000);
         }
 
-        public void SetSongKey(string text) => songKeyText = text ?? "";
+        public void SetSongKey(string text) => keyLock.SetSongKey(text);
 
         public void SetSampleRate(int sampleRate)
         {
@@ -182,8 +155,8 @@ namespace NeoBuzz.VoiceToMidi
             trackerQ.Reset(); trackerL.Reset(); onsets.Reset(); vowels.Reset();
             Array.Clear(ring, 0, ring.Length);
             total = 0; lastVoicedAt = 0; curOnAt = 0; onsetPendingUntil = 0;   // the tracker's and the detector's sample counts restart with the ring's
-            curNote = -1; sentNote = -1; pendNote = -1; switchNote = -1; pendingOff = false; bendOut = false; lastBend = 8192;
-            queued = 0; offCount = 0; chordCount = 0; suppressPitch = false; onsetPendingUntil = 0;
+            curNote = -1; sentNote = -1; pendNote = -1; switchNote = -1; pendingOff = false; bend.ResetAnchor(); bend.Centre(0, out _);
+            pending.Clear(); offs.Clear(); chordCount = 0; suppressPitch = false; onsetPendingUntil = 0;
             vowelAcc = 0; lvl = 0;
             for (int i = 0; i < 4; i++) laneSent[i] = -1;
             chordBuilder.Reset();
@@ -222,8 +195,9 @@ namespace NeoBuzz.VoiceToMidi
             fastWaitSamples = (int)(FastWaitMs * 0.001 * rate);
             bendRange = I(P.Bend);
             bendOn = bendRange > 0;
-            anchored = I(P.BendMode) == 1;
-            anchorSemis = V(P.Anchor) / 100f;
+            bend.Range = bendRange;
+            bend.Anchored = I(P.BendMode) == 1;
+            bend.AnchorSemis = V(P.Anchor) / 100f;
             fixedVel = I(P.VelMode) == 1;
             fixedVelocity = I(P.Fixed);
             velMin = Math.Min(I(P.VelMin), fixedVelocity);
@@ -255,66 +229,19 @@ namespace NeoBuzz.VoiceToMidi
             activeMask = ComputeMask();
         }
 
-        int ComputeMask()
-        {
-            int mask, root = keyRoot, sc = scale;
-            switch (lockMode)
-            {
-                case 1: mask = Scales.KeyMask(keyRoot, scale, custom); break;
-                case 2:
-                    {
-                        string text = songKeyText;
-                        if (!ReferenceEquals(text, songKeyParsed))
-                        {
-                            songKeyParsed = text;
-                            songRoot = -1;
-                            if (Scales.TryParseKey(text, out int r, out int s)) { songRoot = r; songScale = s; }
-                        }
-                        if (songRoot >= 0) { root = songRoot; sc = songScale; mask = Scales.KeyMask(root, sc, custom); }
-                        else mask = Scales.KeyMask(keyRoot, scale, custom);
-                        break;
-                    }
-                case 3:
-                    if (finder.Known) { root = finder.Root; sc = finder.Scale; mask = Scales.KeyMask(root, sc, custom); }
-                    else mask = Scales.All;
-                    break;
-                default: mask = Scales.All; break;
-            }
-            ActiveRoot = root; ActiveScale = sc;
-            int allowed = mask & ~muted & Scales.All;
-            if (allowed == 0) allowed = Scales.All & ~muted;
-            if (allowed == 0) allowed = Scales.All;
-            return allowed;
-        }
+        int ComputeMask() => keyLock.Compute(lockMode, keyRoot, scale, custom, muted);
 
         /// <summary>The key's notes, before muting (for the editor: the chords, the piano roll's highlights).</summary>
-        public int KeyNotes
-        {
-            get
-            {
-                switch (lockMode)
-                {
-                    case 1: return Scales.KeyMask(keyRoot, scale, custom);
-                    case 2: return songRoot >= 0 ? Scales.KeyMask(songRoot, songScale, custom) : Scales.KeyMask(keyRoot, scale, custom);
-                    case 3: return finder.Known ? Scales.KeyMask(finder.Root, finder.Scale, custom) : Scales.All;
-                    default: return Scales.All;
-                }
-            }
-        }
+        public int KeyNotes => keyLock.KeyNotes;
 
         // ---------------------------------------------------------------------------------------------------------- events
 
         void Emit(MidiKind kind, MidiStream stream, int channel, int d1, int d2, long at)
         {
-            if (evCount >= ev.Length) return;
             if (stream == MidiStream.Pitch && !pitchEmit && kind != MidiKind.NoteOff) return;
-            int off = (int)Math.Clamp(at - blockStart, 0, Math.Max(0, blockLen - 1));
-            ref var e = ref ev[evCount++];
-            e.Offset = off; e.Kind = kind; e.Stream = stream; e.Channel = (byte)(channel & 15); e.Data1 = (byte)Math.Clamp(d1, 0, 127); e.Data2 = d2;
-            EventsSent++;
+            block.Emit(kind, stream, channel, d1, d2, at);
         }
 
-        int blockLen;
         // Pitch notes are sent while Pitch is on; the note machine also runs for the chords alone (a note on while Pitch is off is not sent, its note off never is).
         bool pitchEmit, noteSent;
 
@@ -324,8 +251,7 @@ namespace NeoBuzz.VoiceToMidi
         public int Process(float[] x, int n)
         {
             if (n > MaxBlock) n = MaxBlock;
-            evCount = 0;
-            blockStart = total; blockLen = n;
+            block.Begin(total, n);
             ReadSettings();
             for (int i = 0; i < n; i++) ring[(int)((total + i) & ringMask)] = x[i];
             long end = total + n;
@@ -340,9 +266,9 @@ namespace NeoBuzz.VoiceToMidi
 
             // Onsets first: a percussive hit is known before the pitch of its first frames can start a note (Fast response plays at once).
             int found = onsets.Process(x, 0, n, onsetBuf, 0);
-            for (int i = 0; i < found && queued < queue.Length; i++)
+            for (int i = 0; i < found; i++)
             {
-                queue[queued++] = onsetBuf[i];
+                if (!pending.Add(onsetBuf[i])) break;
                 var f = accurate ? featAccurate : featFast;
                 onsetPendingUntil = Math.Max(onsetPendingUntil, onsetBuf[i].Sample - f.Lead + f.Length + (long)(0.002 * rate));
                 // Overlap: an onset is a sound to name before the voice may start a note; a new onset ends the last one's suppression.
@@ -362,7 +288,7 @@ namespace NeoBuzz.VoiceToMidi
             double dt = n / (double)rate;
             suggester.Decay(dt);
             keyClock += dt; suggestClock += dt;
-            if (keyClock >= 1.0) { keyClock = 0; finder.Update(); }
+            if (keyClock >= 1.0) { keyClock = 0; keyLock.Finder.Update(); }
             if (suggestClock >= 0.25) { suggestClock = 0; suggester.Update(ActiveRoot, KeyNotes, sevenths); }
 
             Expression(x, n, end);
@@ -379,17 +305,11 @@ namespace NeoBuzz.VoiceToMidi
             }
 
             Volatile.Write(ref total, end);
-            // Sort by offset (stable insertion sort: a few events).
-            for (int i = 1; i < evCount; i++)
-            {
-                var t = ev[i]; int j = i - 1;
-                while (j >= 0 && ev[j].Offset > t.Offset) { ev[j + 1] = ev[j]; j--; }
-                ev[j + 1] = t;
-            }
-            return evCount;
+            block.SortByOffset();
+            return block.Count;
         }
 
-        public MidiEvent[] Events => ev;
+        public MidiEvent[] Events => block.Events;
 
         // ---------------------------------------------------------------------------------------------------------- pitch
 
@@ -408,7 +328,7 @@ namespace NeoBuzz.VoiceToMidi
                 lastVoicedAt = t;
                 int cand = Scales.Nearest(e.Midi, activeMask);
                 int sungPc = (int)Math.Round(e.Midi);
-                finder.Add(sungPc, hop); suggester.Add(sungPc, hop);
+                keyLock.Finder.Add(sungPc, hop); suggester.Add(sungPc, hop);
                 if (curNote < 0)
                 {
                     if (pendNote < 0) fastSince = t;
@@ -464,21 +384,15 @@ namespace NeoBuzz.VoiceToMidi
             if (pendingOff && curNote >= 0 && now >= pendDue) EndNote(pendDue);
         }
 
-        int Velocity(float peak)
-        {
-            if (fixedVel) return Math.Clamp(fixedVelocity, 1, 127);
-            double db = peak > 1e-6f ? 20.0 * PortableMath.Log10(peak) : -120;
-            double t = Math.Clamp((db - velSoftDb) / (velLoudDb - velSoftDb), 0.0, 1.0);
-            return Math.Clamp((int)Math.Round(velMin + t * (fixedVelocity - velMin)), 1, 127);
-        }
+        int Velocity(float peak) => VelocityMap.FromPeak(peak, fixedVel, fixedVelocity, velMin, velSoftDb, velLoudDb);
 
         int Shift(int note) => Math.Clamp(note + 12 * octave, 0, 127);
 
         void StartNote(int note, long t, float peak, double sung)
         {
-            curNote = note; curOnAt = t; noteStartAt = t; pendNote = -1; switchNote = -1; pendingOff = false; bendOut = false;
+            curNote = note; curOnAt = t; noteStartAt = t; pendNote = -1; switchNote = -1; pendingOff = false; bend.ResetAnchor();
             int vel = Velocity(peak);
-            if (bendOn && lastBend != 8192) SendBend(8192, t, true);
+            CentreBend(t);
             sentNote = Shift(note); noteChannel = pitchCh;
             Emit(MidiKind.NoteOn, MidiStream.Pitch, noteChannel, sentNote, vel, t);
             noteSent = pitchEmit;
@@ -495,8 +409,8 @@ namespace NeoBuzz.VoiceToMidi
             int old = sentNote, oldCh = noteChannel;
             bool oldSent = noteSent;
             int vel = Velocity(peak);
-            curNote = note; curOnAt = t; switchNote = -1; bendOut = false;
-            if (bendOn && lastBend != 8192) SendBend(8192, t, true);
+            curNote = note; curOnAt = t; switchNote = -1; bend.ResetAnchor();
+            CentreBend(t);
             sentNote = Shift(note); noteChannel = pitchCh;
             if (legato)
             {
@@ -520,7 +434,7 @@ namespace NeoBuzz.VoiceToMidi
             noteSent = false;
             StopChord(t);
             curNote = -1; sentNote = -1; pendingOff = false; pendNote = -1; switchNote = -1;
-            if (bendOn && lastBend != 8192) SendBend(8192, t, true);
+            CentreBend(t);
         }
 
         void PlayChord(int note, int vel, long t)
@@ -541,50 +455,29 @@ namespace NeoBuzz.VoiceToMidi
 
         void Bend(double dev, long t)
         {
-            if (!bendOn) return;
-            double d = dev;
-            if (anchored)
-            {
-                double a = anchorSemis;
-                double ad = Math.Abs(d);
-                if (!bendOut) { if (ad > a) bendOut = true; }
-                else if (ad < a * 0.5) bendOut = false;
-                d = bendOut ? Math.Sign(d) * Math.Max(0, ad - a * 0.5) : 0;
-            }
-            int v = (int)Math.Round(8192 + Math.Clamp(d / bendRange, -1.0, 1.0) * 8191);
-            SendBend(v, t, false);
+            if (bend.Next(dev, t, rate, out int v)) Emit(MidiKind.PitchBend, MidiStream.Pitch, noteChannel, 0, v, t);
         }
 
-        void SendBend(int v, long t, bool force)
+        void CentreBend(long t)
         {
-            if (!force && (Math.Abs(v - lastBend) < 24 || t - lastBendAt < (long)(0.004 * rate))) return;
-            lastBend = v; lastBendAt = t;
-            Emit(MidiKind.PitchBend, MidiStream.Pitch, noteChannel, 0, Math.Clamp(v, 0, 16383), t);
+            if (bend.Centre(t, out int v)) Emit(MidiKind.PitchBend, MidiStream.Pitch, noteChannel, 0, v, t);
         }
 
         // ---------------------------------------------------------------------------------------------------------- triggers
 
         void ServiceQueue(long now)
         {
-            if (queued == 0) return;
+            if (pending.Count == 0) return;
             var f = accurate ? featAccurate : featFast;
-            int keep = 0;
-            for (int i = 0; i < queued; i++)
+            while (pending.TakeReady(now, f.Lead, f.Length, out var o, out long ready))
             {
-                long ready = queue[i].Sample - f.Lead + f.Length;
-                if (ready > now) { queue[keep++] = queue[i]; continue; }
                 if (!triggersOn && Learning < 0) continue;
-                f.Extract(ring, ringMask, queue[i].Sample, feat);
+                f.Extract(ring, ringMask, o.Sample, feat);
                 int learn = Learning;
                 if (learn >= 0)
                 {
-                    int w = learnWrite;
-                    Array.Copy(feat, learnF[w % LearnSlots], VoiceFeatures.Dimension);
-                    learnC[w % LearnSlots] = learn;
-                    Volatile.Write(ref learnWrite, w + 1);
-                    int c = Interlocked.Increment(ref learnedThisPass);
                     LitAt[learn] = total; Lit[learn] = true;
-                    if (c >= LearnTarget) { Learning = -1; LearnDone = true; }
+                    trainer.Offer(learn, feat);
                     continue;
                 }
                 var r = classifier.Classify(feat);
@@ -592,27 +485,17 @@ namespace NeoBuzz.VoiceToMidi
                 float sens = V(P.T1Sens + 3 * r.Class);
                 float need = 0.6f - 0.5f * sens;
                 if (r.Confidence < need) { onsetPendingUntil = 0; continue; }
-                Trigger(r.Class, queue[i], Math.Max(ready, queue[i].ReportedAt));
+                Trigger(r.Class, o, Math.Max(ready, o.ReportedAt));
             }
-            queued = keep;
         }
 
         void Trigger(int cls, in OnsetEvent o, long at)
         {
             int note = I(P.T1Note + 3 * cls);
             int fixedV = I(P.T1Vel + 3 * cls);
-            int vel;
-            if (fixedV > 0) vel = fixedV;
-            else
-            {
-                double t = Math.Clamp((o.LevelDb - velSoftDb) / (velLoudDb - velSoftDb), 0.0, 1.0);
-                vel = Math.Clamp((int)Math.Round(velMin + t * (127 - velMin)), 1, 127);
-            }
+            int vel = fixedV > 0 ? fixedV : VelocityMap.FromHit(o.LevelDb, velMin, velSoftDb, velLoudDb);
             // The same note still sounding: off first.
-            for (int i = 0; i < offCount; i++)
-                if (offNote[i] == note && offCh[i] == trigCh) { Emit(MidiKind.NoteOff, MidiStream.Trigger, trigCh, note, 0, at); offDue[i] = long.MaxValue; }
-            Emit(MidiKind.NoteOn, MidiStream.Trigger, trigCh, note, vel, at);
-            if (offCount < offNote.Length) { offNote[offCount] = note; offCh[offCount] = trigCh; offDue[offCount] = at + Math.Max(trigLenSamples, 1); offCount++; }
+            offs.Play(block, MidiStream.Trigger, trigCh, note, vel, at, trigLenSamples);
             LastTrigger = cls + 1; TriggerSerial++;
             Lit[cls] = true; LitAt[cls] = at;
             // A voiced sound taken for a trigger: no pitch note from it.
@@ -625,43 +508,17 @@ namespace NeoBuzz.VoiceToMidi
             onsetPendingUntil = 0;
         }
 
-        void ServiceOffs(long now)
-        {
-            int keep = 0;
-            for (int i = 0; i < offCount; i++)
-            {
-                if (offDue[i] == long.MaxValue) continue;
-                if (offDue[i] <= now) { Emit(MidiKind.NoteOff, MidiStream.Trigger, offCh[i], offNote[i], 0, offDue[i]); continue; }
-                offNote[keep] = offNote[i]; offCh[keep] = offCh[i]; offDue[keep] = offDue[i]; keep++;
-            }
-            offCount = keep;
-        }
+        void ServiceOffs(long now) => offs.Service(block, MidiStream.Trigger, now);
 
         // ---------------------------------------------------------------------------------------------------------- learning
 
         /// <summary>Consumer (the machine's pump): the next learned example, or false.</summary>
-        public bool TakeLearned(out int cls, float[] features)
-        {
-            cls = -1;
-            int w = Volatile.Read(ref learnWrite);
-            if (learnRead >= w) return false;
-            if (w - learnRead > LearnSlots) learnRead = w - LearnSlots;
-            int slot = learnRead % LearnSlots;
-            cls = learnC[slot];
-            Array.Copy(learnF[slot], features, VoiceFeatures.Dimension);
-            learnRead++;
-            return true;
-        }
+        public bool TakeLearned(out int cls, float[] features) => trainer.Take(out cls, features);
 
         /// <summary>Starts a pass for one sound (0 ... 7): onsets in it are filed as that sound's examples until <see cref="LearnTarget"/> or <see cref="StopLearning"/>.</summary>
-        public void StartLearning(int sound)
-        {
-            Volatile.Write(ref learnedThisPass, 0);
-            LearnDone = false;
-            Learning = sound;
-        }
+        public void StartLearning(int sound) => trainer.Start(sound);
 
-        public void StopLearning() { Learning = -1; }
+        public void StopLearning() => trainer.Stop();
 
         // ---------------------------------------------------------------------------------------------------------- expression
 
@@ -699,13 +556,12 @@ namespace NeoBuzz.VoiceToMidi
         /// <summary>Ends everything sounding (transport stop, the machine going quiet, a new target): the events are in <see cref="Events"/>.</summary>
         public int Flush()
         {
-            evCount = 0; blockStart = total; blockLen = 1;
+            block.Begin(total, 1);
             ReadSettings();
             EndNote(total);
-            for (int i = 0; i < offCount; i++) if (offDue[i] != long.MaxValue) Emit(MidiKind.NoteOff, MidiStream.Trigger, offCh[i], offNote[i], 0, total);
-            offCount = 0;
+            offs.Flush(block, MidiStream.Trigger, total);
             for (int i = 0; i < 4; i++) laneSent[i] = -1;
-            return evCount;
+            return block.Count;
         }
 
         // ---------------------------------------------------------------------------------------------------------- readings
