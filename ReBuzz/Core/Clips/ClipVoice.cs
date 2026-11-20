@@ -23,6 +23,9 @@ namespace ReBuzz.Core.Clips
         readonly StreamHint hintAhead = StreamPrefetcher.NewHint(); // and, from the UI thread, where a queued launch will start
         volatile PhaseVocoder vocoder;      // made on the UI thread when a clip in Complex mode is given (Prepare)
         volatile ProVoice pro;              // likewise for Pro (null when the native library is missing: the clip plays as Complex)
+        // Complex material that is a bass line plays in the time domain too (PeriodicStretch.cs), as in Pro: the phase vocoder loses the cycle's shape.
+        PeriodicVoice periodic;             // made on the UI thread (Prepare) for a Complex clip
+        bool periodicRestart, periodicOn;
         bool proRestart;                    // Pro: the next block starts the stretcher from its beat
         bool proRaw;                        // Pro, waiting for its start (the block's seek was spent): playing as Beats meanwhile
         /// <summary>The inline Pro starts the block may still do; set by the mixer (null: no limit).</summary>
@@ -56,7 +59,7 @@ namespace ReBuzz.Core.Clips
         long clockTime;
 
         /// <summary>Whether it sounds (or fades out).</summary>
-        public bool IsSounding => sounding || tail.Left > 0 || older.Left > 0 || (pro?.Fading ?? false);
+        public bool IsSounding => sounding || tail.Left > 0 || older.Left > 0 || (pro?.Fading ?? false) || (periodic?.Fading ?? false);
 
         /// <summary>
         /// UI thread, before the params are handed to the audio thread: what they need made
@@ -66,6 +69,8 @@ namespace ReBuzz.Core.Clips
         {
             if (p?.Mode == WarpMode.Complex && vocoder == null)
                 vocoder = new PhaseVocoder();
+            if (p?.Mode == WarpMode.Complex && PeriodicAnalysis.Of(p.Source) != null && (periodic == null || periodic.Mono != p.Source.IsMono || periodic.Rate != p.Source.SampleRate))
+                periodic = new PeriodicVoice(p.Source.IsMono, p.Source.SampleRate);
             if (p?.Mode == WarpMode.Pro)
             {
                 bool mono = p.Source.IsMono;
@@ -77,6 +82,9 @@ namespace ReBuzz.Core.Clips
                 }
                 // No native library (or no memory for it): Pro plays as Complex, which needs its vocoder.
                 if (pro == null && vocoder == null) vocoder = new PhaseVocoder();
+                if (pro != null) PeriodicAnalysis.Of(p.Source);       // the time-domain path for a bass line: decided here, once, off the audio thread
+                else if (PeriodicAnalysis.Of(p.Source) != null && (periodic == null || periodic.Mono != p.Source.IsMono || periodic.Rate != p.Source.SampleRate))
+                    periodic = new PeriodicVoice(p.Source.IsMono, p.Source.SampleRate);   // Pro without its library plays as Complex, bass path included
                 pro?.Anticipate(p);
             }
         }
@@ -119,6 +127,7 @@ namespace ReBuzz.Core.Clips
             long missedBefore = stream != null ? stream.MissedSamples : 0;
             var fading = pro;
             if (fading != null && fading.Fading) fading.RenderFading(left, right, offset, count);       // what a jump or a stop left sounding
+            if (periodic != null && periodic.Fading) periodic.RenderFading(left, right, offset, count);
             switch (Effective(p))
             {
                 case WarpMode.Off:
@@ -220,6 +229,8 @@ namespace ReBuzz.Core.Clips
             older.Left = 0;
             lastSource = double.NaN;
             pro?.Silence();
+            periodic?.Silence();
+            periodicOn = false;
             proRaw = false;
         }
 
@@ -231,10 +242,12 @@ namespace ReBuzz.Core.Clips
                 hint.Clear();
                 BeginTail();
                 pro?.BeginFade();
+                if (periodicOn) { periodic.BeginFade(); periodicOn = false; }
                 sounding = false;
                 expected = double.NaN;
             }
             if (pro != null && pro.Fading) pro.RenderFading(left, right, offset, count);
+            if (periodic != null && periodic.Fading) periodic.RenderFading(left, right, offset, count);
             for (int i = 0; i < count && (tail.Left > 0 || older.Left > 0); i++) Tails(left, right, offset + i);
         }
 
@@ -250,6 +263,9 @@ namespace ReBuzz.Core.Clips
             startSource = p.Map.SampleAt(beat);
             lastSource = double.NaN;
             if (Effective(p) == WarpMode.Complex) vocoder?.Reset();
+            if (periodicOn) periodic.BeginFade();
+            periodicOn = false;
+            periodicRestart = Effective(p) == WarpMode.Complex && periodic != null;
             proRestart = Effective(p) == WarpMode.Pro;
             proRaw = false;
         }
@@ -378,6 +394,30 @@ namespace ReBuzz.Core.Clips
         /// <summary>Complex: the phase vocoder, reading the audio where the beat puts it, transposed (and resampled) by the ratio.</summary>
         void RenderComplex(AudioClipParams p, double beat, double beatsPerSample, double rate, float[] left, float[] right, int offset, int count)
         {
+            if (periodic != null)
+            {
+                if (periodicRestart)
+                {
+                    periodicRestart = false;
+                    periodicOn = PeriodicVoice.Qualifies(p, rate, periodic.Rate);
+                    if (periodicOn) periodic.Start(p, beat, beatsPerSample);
+                }
+                else if (periodicOn && !PeriodicVoice.Qualifies(p, rate, periodic.Rate))
+                {
+                    // Asked for something it does not do (a transposition): the vocoder takes over, from here.
+                    periodic.BeginFade();
+                    periodicOn = false;
+                    vocoder?.Reset();
+                    fadeIn = Fade;
+                }
+                if (periodicOn)
+                {
+                    for (int n0 = 0; n0 < count && (tail.Left > 0 || older.Left > 0); n0++) Tails(left, right, offset + n0);
+                    periodic.Render(p, beat, beatsPerSample, left, right, offset, count);
+                    lastSource = double.NaN;                  // what a fade-out would fall back on is the run's own
+                    return;
+                }
+            }
             var v = vocoder;
             if (v == null)
             {
