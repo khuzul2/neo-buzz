@@ -52,7 +52,7 @@ namespace NeoBuzz.ConvertEval
 
         static int Main(string[] args)
         {
-            string mdb = null, gmd = null, maestro = null, reference = null, outPath = "convert-eval-report.md", gmdDump = null, featDump = null, synthDir = null;
+            string mdb = null, gmd = null, maestro = null, reference = null, outPath = "convert-eval-report.md", gmdDump = null, featDump = null, synthDir = null, oodIdmt = null, oodMdb = null;
             double candThr = 2.0, candMs = 20;
             int mdbLimit = 0;
             for (int i = 0; i < args.Length; i++)
@@ -65,6 +65,8 @@ namespace NeoBuzz.ConvertEval
                     case "--mdb-limit": mdbLimit = int.Parse(Next()); break;
                     case "--gmd": gmd = Next(); break;
                     case "--gmd-dump": gmdDump = Next(); break;
+                    case "--ood-idmt": oodIdmt = Next(); break;
+                    case "--ood-mdb": oodMdb = Next(); break;
                     case "--synth": synthDir = Next(); break;
                     case "--feat-dump": featDump = Next(); break;
                     case "--cand-threshold": candThr = double.Parse(Next(), CultureInfo.InvariantCulture); break;
@@ -84,11 +86,20 @@ namespace NeoBuzz.ConvertEval
             md.AppendLine();
             if (mdb != null) Melody.Run(mdb, mdbLimit, md);
             if (gmd != null) Drums.Run(gmd, md, gmdDump);
+            if (oodIdmt != null || oodMdb != null)
+            {
+                var items = new List<OutOfDomain.Item>();
+                if (oodIdmt != null) items.AddRange(OutOfDomain.Idmt(oodIdmt));
+                if (oodMdb != null) items.AddRange(OutOfDomain.MdbDrums(oodMdb));
+                OutOfDomain.Run(items, md, "Drums on other kits (out of domain)");
+            }
             if (maestro != null) Harmony.Run(maestro, reference, md);
             md.AppendLine("## Data and licences");
             md.AppendLine();
             md.AppendLine("- **MDB-stem-synth** (https://zenodo.org/records/1481172), Salamon, Bittner, Bonada, Bosch, Gomez, Bello: CC BY-NC 4.0. Measurement only.");
             md.AppendLine("- **Groove MIDI Dataset** (https://magenta.tensorflow.org/datasets/groove), Gillick, Roberts, Engel, Eck, Bamman: CC BY 4.0. The recordings are of an electronic kit (Roland TD-11), so the drum figures are for electronic drum sounds.");
+            md.AppendLine("- **IDMT-SMT-Drums** (https://zenodo.org/records/7544164), Dittmar and Gaertner, Fraunhofer IDMT: CC BY-NC-ND 4.0. Measurement only.");
+            md.AppendLine("- **MDB Drums** (https://github.com/CarlSouthall/MDBDrums), Southall, Wu, Lerch, Hockman, ISMIR 2017: CC BY-NC-SA 4.0. Measurement only.");
             md.AppendLine("- **MAESTRO v3.0.0** (https://magenta.tensorflow.org/datasets/maestro), Hawthorne et al.: CC BY-NC-SA 4.0. Measurement only; 60-second excerpts.");
             md.AppendLine("- **Basic Pitch** (https://github.com/spotify/basic-pitch), Spotify: Apache-2.0; the model file and the Python package that is the reference.");
             File.WriteAllText(outPath, md.ToString());
