@@ -52,7 +52,8 @@ namespace NeoBuzz.ConvertEval
 
         static int Main(string[] args)
         {
-            string mdb = null, gmd = null, maestro = null, reference = null, outPath = "convert-eval-report.md";
+            string mdb = null, gmd = null, maestro = null, reference = null, outPath = "convert-eval-report.md", gmdDump = null, featDump = null, synthDir = null;
+            double candThr = 2.0, candMs = 20;
             int mdbLimit = 0;
             for (int i = 0; i < args.Length; i++)
             {
@@ -63,19 +64,26 @@ namespace NeoBuzz.ConvertEval
                     case "--mdb": mdb = Next(); break;
                     case "--mdb-limit": mdbLimit = int.Parse(Next()); break;
                     case "--gmd": gmd = Next(); break;
+                    case "--gmd-dump": gmdDump = Next(); break;
+                    case "--synth": synthDir = Next(); break;
+                    case "--feat-dump": featDump = Next(); break;
+                    case "--cand-threshold": candThr = double.Parse(Next(), CultureInfo.InvariantCulture); break;
+                    case "--cand-ms": candMs = double.Parse(Next(), CultureInfo.InvariantCulture); break;
                     case "--maestro": maestro = Next(); break;
                     case "--reference": reference = Next(); break;
                     case "--out": outPath = Next(); break;
                     default: Console.Error.WriteLine("unknown argument " + a); return 2;
                 }
             }
+            if (synthDir != null) { SynthKit.Write(synthDir); return 0; }
+            if (featDump != null) { FeatureDump.Run(gmd, featDump, candThr, candMs); return 0; }
             var md = new StringBuilder();
             md.AppendLine("# Convert to MIDI evaluation on real recordings");
             md.AppendLine();
             md.AppendLine($"Run {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC on {Environment.ProcessorCount} cores, .NET {Environment.Version}. The converters are `ReBuzz/Core/AudioLibrary/AudioToMidi` as the app runs them (defaults of the menu). The data are fetched on the runner and are not kept.");
             md.AppendLine();
             if (mdb != null) Melody.Run(mdb, mdbLimit, md);
-            if (gmd != null) Drums.Run(gmd, md);
+            if (gmd != null) Drums.Run(gmd, md, gmdDump);
             if (maestro != null) Harmony.Run(maestro, reference, md);
             md.AppendLine("## Data and licences");
             md.AppendLine();
@@ -200,10 +208,11 @@ namespace NeoBuzz.ConvertEval
 
     internal static class Drums
     {
+        internal static string GroupOf(int p) => Group(p);
         static string Group(int p) => p switch
         {
             36 => "kick", 38 or 37 or 40 => "snare", 42 or 44 or 22 => "closed hat", 46 or 26 => "open hat",
-            43 or 45 or 47 or 48 or 50 or 58 => "tom", 49 or 55 or 57 or 51 or 53 or 59 or 52 => "cymbal", _ => "other",
+            41 or 43 or 45 or 47 or 48 or 50 or 58 => "tom", 49 or 55 or 57 or 51 or 53 or 59 or 52 => "cymbal", _ => "other",
         };
 
         static string GroupOf(ConvertedNote n) => n.Label switch
@@ -212,9 +221,11 @@ namespace NeoBuzz.ConvertEval
             DrumConverter.Crash => "cymbal", _ => "tom",
         };
 
-        public static void Run(string dir, StringBuilder md)
+        public static void Run(string dir, StringBuilder md, string dump = null)
         {
             var files = Directory.GetFiles(dir, "*.wav").OrderBy(f => f, StringComparer.Ordinal).ToList();
+            if (dump != null) Directory.CreateDirectory(dump);
+            var confusion = new Confusion();
             Console.WriteLine($"GMD: {files.Count} recordings");
             var classes = new[] { "kick", "snare", "closed hat", "open hat", "tom", "cymbal" };
             var per = classes.ToDictionary(c => c, _ => new Counts());
@@ -235,6 +246,14 @@ namespace NeoBuzz.ConvertEval
                     per[cls].Add(c);
                     all.Add(c);
                 }
+                confusion.Add(r.Notes.Select(n => (n.Start, GroupOf(n))).ToList(), gt.Select(g => (g[0], Group((int)g[1]))).ToList());
+                if (dump != null)
+                    File.WriteAllText(Path.Combine(dump, Path.GetFileNameWithoutExtension(f) + ".out.json"), JsonSerializer.Serialize(new
+                    {
+                        truth = gt.Select(g => new object[] { g[0], Group((int)g[1]), (int)g[1] }),
+                        output = r.Notes.Select(n => new object[] { Math.Round(n.Start, 4), GroupOf(n), n.Pitch }),
+                        seconds = x.Length / (double)rate,
+                    }));
                 // Onsets alone: the times of the hits, whatever the class (a kick with a hat is one onset).
                 var foundTimes = r.Notes.GroupBy(n => Math.Round(n.Start, 3)).Select(g => new ConvertedNote { Start = g.Key }).ToList();
                 var refTimes = refs.GroupBy(q => Math.Round(q.On / 0.02) * 0.02).Select(g => new Ref(g.Min(q => q.On), g.Min(q => q.On), 0)).ToList();
@@ -249,6 +268,154 @@ namespace NeoBuzz.ConvertEval
             foreach (var cls in classes) md.AppendLine(per[cls].Row(cls));
             md.AppendLine(all.Row("all classes"));
             md.AppendLine(onsets.Row("onsets only (class ignored)"));
+            md.AppendLine();
+            md.AppendLine($"Speed: {audioSeconds / Math.Max(1e-9, work):0}x real time on one core.");
+            md.AppendLine();
+            confusion.Write(md);
+        }
+    }
+
+    /// <summary>Development tool: synthetic drum loops (the unit tests' kit, ConvertSignals.Hit) with exact hit lists, in the layout of the GMD folders, so that the classifier also knows the synthetic kit of the tests (training data only; no real audio).</summary>
+    internal static class SynthKit
+    {
+        public static void Write(string dir)
+        {
+            Directory.CreateDirectory(dir);
+            var rnd = new Random(11);
+            var notes = new Dictionary<string, int> { ["kick"] = 36, ["snare"] = 38, ["hat"] = 42, ["open"] = 46 };
+            for (int n = 0; n < 120; n++)
+            {
+                double bpm = 70 + rnd.Next(90), step = 60.0 / bpm / 2;          // 8th notes
+                int steps = 16;
+                double seconds = 0.4 + steps * step + 1.0;
+                var x = new float[(int)(ConvertSignalsRate * seconds)];
+                var truth = new List<double[]>();
+                for (int i = 0; i < steps; i++)
+                {
+                    double at = 0.3 + i * step;
+                    double Lv() => 0.15 + 0.85 * rnd.NextDouble();
+                    void Add(string d) { double lv = Lv(); ReBuzz.SessionTests.Convert.ConvertSignals.Hit(x, d, at, lv); truth.Add(new double[] { Math.Round(at, 4), notes[d], 100 }); }
+                    bool kick = i % 4 == 0 || rnd.NextDouble() < 0.15, snare = i % 4 == 2 || rnd.NextDouble() < 0.08;
+                    if (kick) Add("kick");
+                    if (snare) Add("snare");
+                    // Hats mostly between the other drums (as the tests' loop has them), sometimes with them.
+                    double r = rnd.NextDouble(), together = kick || snare ? 0.1 : 1.0;
+                    if (r < 0.7 * together) Add("hat"); else if (!kick && !snare && r < 0.8) Add("open");
+                }
+                string name = Path.Combine(dir, $"synth{n:00}");
+                WriteWav(name + ".wav", x, ConvertSignalsRate);
+                File.WriteAllText(name + ".json", JsonSerializer.Serialize(truth));
+            }
+        }
+        const int ConvertSignalsRate = ReBuzz.SessionTests.Convert.ConvertSignals.Rate;
+        static void WriteWav(string path, float[] x, int rate)
+        {
+            using var w = new BinaryWriter(File.Create(path));
+            w.Write("RIFF"u8.ToArray()); w.Write(36 + x.Length * 2); w.Write("WAVEfmt "u8.ToArray()); w.Write(16); w.Write((short)1); w.Write((short)1);
+            w.Write(rate); w.Write(rate * 2); w.Write((short)2); w.Write((short)16); w.Write("data"u8.ToArray()); w.Write(x.Length * 2);
+            foreach (var v in x) w.Write((short)Math.Clamp(v * 32767, -32768, 32767));
+        }
+    }
+
+    /// <summary>Development tool: candidates and their features, with the class labels of the nearest truth hits (for training the drum classifier offline).</summary>
+    internal static class FeatureDump
+    {
+        static readonly string[] Cls = { "kick", "snare", "closed hat", "open hat", "tom", "cymbal" };
+        public static void Run(string dir, string outDir, double thr, double ms)
+        {
+            Directory.CreateDirectory(outDir);
+            var recall = new long[Cls.Length]; var total = new long[Cls.Length]; long ncand = 0, nlab = 0;
+            foreach (var f in Directory.GetFiles(dir, "*.wav").OrderBy(f => f, StringComparer.Ordinal))
+            {
+                var (x, rate) = NeoBuzz.PitchEval.Wav.Read(f);
+                if (rate > 48000) { x = ReBuzz.Core.AudioLibrary.Resampler.Resample(x, rate, 48000); rate = 48000; }
+                var gt = JsonSerializer.Deserialize<double[][]>(File.ReadAllText(Path.ChangeExtension(f, ".json"))).Where(g => g[2] >= 20).ToList();
+                var cands = DrumConverter.Candidates(x, rate, thr, ms);
+                var fe = new DrumFeatures(rate);
+                var sb = new StringBuilder();
+                var hit = new bool[gt.Count];
+                var labels = new int[cands.Count, Cls.Length];
+                // Each truth hit labels the one candidate nearest to it (within 50 ms): a ring that fires a second candidate is not a second hit.
+                for (int g = 0; g < gt.Count; g++)
+                {
+                    int ci = Array.IndexOf(Cls, DrumsGroup((int)gt[g][1])); if (ci < 0) continue;
+                    int best = -1; double bd = 0.05;
+                    for (int i = 0; i < cands.Count; i++)
+                    {
+                        double d = Math.Abs(cands[i].Sample / (double)rate - gt[g][0]);
+                        if (d <= bd) { bd = d; best = i; }
+                    }
+                    if (best >= 0) { labels[best, ci] = 1; hit[g] = true; }
+                }
+                for (int i = 0; i < cands.Count; i++)
+                {
+                    double t = cands[i].Sample / (double)rate;
+                    double prev = i > 0 ? t - cands[i - 1].Sample / (double)rate : 9, next = i + 1 < cands.Count ? cands[i + 1].Sample / (double)rate - t : 9;
+                    var lab = new int[Cls.Length];
+                    for (int c = 0; c < Cls.Length; c++) lab[c] = labels[i, c];
+                    var v = fe.Extract(x, cands[i].Sample, prev, next);
+                    sb.Append(t.ToString("0.0000", CultureInfo.InvariantCulture)).Append(',').Append(string.Join("", lab));
+                    foreach (var q in v) sb.Append(',').Append(q.ToString("0.##", CultureInfo.InvariantCulture));
+                    sb.AppendLine();
+                    ncand++; if (lab.Any(l => l > 0)) nlab++;
+                }
+                for (int g = 0; g < gt.Count; g++)
+                {
+                    int ci = Array.IndexOf(Cls, DrumsGroup((int)gt[g][1])); if (ci < 0) continue;
+                    total[ci]++; if (hit[g]) recall[ci]++;
+                }
+                File.WriteAllText(Path.Combine(outDir, Path.GetFileNameWithoutExtension(f) + ".feat.csv"), sb.ToString());
+                File.WriteAllText(Path.Combine(outDir, Path.GetFileNameWithoutExtension(f) + ".truth.json"), JsonSerializer.Serialize(gt.Select(g => new object[] { g[0], DrumsGroup((int)g[1]) })));
+            }
+            Console.WriteLine($"candidates {ncand}, labelled {nlab}; candidate recall within 50 ms: " + string.Join(", ", Cls.Select((c, i) => $"{c} {100.0 * recall[i] / Math.Max(1, total[i]):0.0} % of {total[i]}")));
+        }
+        static string DrumsGroup(int p) => Drums.GroupOf(p);
+    }
+
+    /// <summary>Truth class against output class (hits within 50 ms), plus missed and extra. Same-class matches first (nearest in time, one to one), then the rest of the truth hits against the rest of the outputs.</summary>
+    internal sealed class Confusion
+    {
+        static readonly string[] Cls = { "kick", "snare", "closed hat", "open hat", "tom", "cymbal", "other" };
+        readonly long[,] m = new long[Cls.Length, Cls.Length + 1];   // [truth, output or missed]
+        readonly long[] extra = new long[Cls.Length];
+
+        public void Add(List<(double T, string C)> output, List<(double T, string C)> truth)
+        {
+            int ci(string c) => Array.IndexOf(Cls, c);
+            var uo = new bool[output.Count]; var ut = new bool[truth.Count];
+            for (int pass = 0; pass < 2; pass++)
+            {
+                var pairs = new List<(double d, int ti, int oi)>();
+                for (int i = 0; i < truth.Count; i++)
+                    for (int j = 0; j < output.Count; j++)
+                    {
+                        double d = Math.Abs(truth[i].T - output[j].T);
+                        if (d <= 0.05 && (pass == 1 || truth[i].C == output[j].C)) pairs.Add((d, i, j));
+                    }
+                foreach (var p in pairs.OrderBy(p => p.d))
+                {
+                    if (ut[p.ti] || uo[p.oi]) continue;
+                    ut[p.ti] = uo[p.oi] = true;
+                    m[ci(truth[p.ti].C), ci(output[p.oi].C)]++;
+                }
+            }
+            for (int i = 0; i < truth.Count; i++) if (!ut[i]) m[ci(truth[i].C), Cls.Length]++;
+            for (int j = 0; j < output.Count; j++) if (!uo[j]) extra[ci(output[j].C)]++;
+        }
+
+        public void Write(StringBuilder md)
+        {
+            md.AppendLine("Confusion matrix: rows are the drummer's hits by class, columns what the converter wrote for them (within 50 ms; same class first, then any); `missed` is a truth hit with no output near it, and the last row is outputs with no truth hit near them.");
+            md.AppendLine();
+            md.AppendLine("| truth \\ output | " + string.Join(" | ", Cls) + " | missed |");
+            md.AppendLine("|---|" + string.Concat(Enumerable.Repeat("---:|", Cls.Length + 1)));
+            for (int t = 0; t < Cls.Length; t++)
+            {
+                long tot = 0; for (int o = 0; o <= Cls.Length; o++) tot += m[t, o];
+                if (tot == 0) continue;
+                md.AppendLine($"| {Cls[t]} ({tot}) | " + string.Join(" | ", Enumerable.Range(0, Cls.Length + 1).Select(o => m[t, o].ToString())) + " |");
+            }
+            md.AppendLine("| extra | " + string.Join(" | ", extra.Select(v => v.ToString())) + " | |");
             md.AppendLine();
         }
     }
