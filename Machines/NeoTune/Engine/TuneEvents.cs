@@ -5,6 +5,7 @@
 // allocated by EnableEventLog (never from the audio thread); when it is full the newest events are counted as dropped.
 
 using System;
+using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Tune
 {
@@ -79,7 +80,7 @@ namespace NeoBuzz.Tune
                 d += (double)(a - b) * (a - b);
                 e += (double)a * a;
             }
-            return 10 * Math.Log10(d / e + 1e-12);
+            return 10 * PortableMath.Log10(d / e + 1e-12);
         }
     }
 }
