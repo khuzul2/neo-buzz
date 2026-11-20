@@ -300,6 +300,74 @@ namespace ReBuzz.SessionTests
             }
         }
 
+        /// <summary>
+        /// Plays a clip from memory beside the same samples never streamed, starting the switch to the cache at <paramref name="switchBlock"/>, one block every
+        /// <paramref name="sleepMs"/> ms (what the machine's audio thread leaves of it). Returns the first sample that differs (-1: none) and what was missed.
+        /// </summary>
+        (long FirstDifference, long Missed, long Underruns) SwitchRun(WarpMode mode, int switchBlock, int blocks, int sleepMs, double seconds, int seed)
+        {
+            var (l, r) = Arrays(seconds, seed, true);
+            var asset = new AudioAsset("sw" + seed, "", null, new AudioSource(l, r, Rate), 2);
+            made.Add(asset);
+            var reference = new AudioSource(l, r, Rate);
+            double bpm = 120;
+            var p = Clip(asset.Source, bpm, mode);
+            var q = Clip(reference, bpm, mode);
+            var voice = new ClipVoice();
+            var refVoice = new ClipVoice();
+            voice.Prepare(p);
+            refVoice.Prepare(q);
+            var got = new float[blocks * Block]; var gotR = new float[blocks * Block];
+            var want = new float[blocks * Block]; var wantR = new float[blocks * Block];
+            double bps = bpm / 60.0 / Rate;
+            Task? fill = null;
+            for (int b = 0; b < blocks; b++)
+            {
+                if (b == switchBlock) fill = asset.BeginStreaming();
+                voice.Render(p, b * Block * bps, bps, Rate, got, gotR, b * Block, Block);
+                refVoice.Render(q, b * Block * bps, bps, Rate, want, wantR, b * Block, Block);
+                if (sleepMs > 0 && b >= switchBlock - 1) Thread.Sleep(sleepMs);          // before the switch the voice runs free, to get past the cached head
+            }
+            Assert.That(fill!.Wait(30_000), Is.True);
+            long first = -1;
+            for (int i = 0; i < got.Length && first < 0; i++)
+                if (got[i].CompareTo(want[i]) != 0 || gotR[i].CompareTo(wantR[i]) != 0) first = i;
+            var stats = asset.StreamStats;
+            asset.ReleaseStream();
+            return (first, stats.Missed, stats.Underruns);
+        }
+
+        [Test]
+        public void ASlowVoiceIsNotLeftReadingWhatTheSwitchLetGo()
+        {
+            // The voice publishes what it will read only after the cache is attached, one block later; if the memory went before that
+            // (the prefetch thread had settled with no voice to read for), the next frame of the phase vocoder read pages that were not there:
+            // silence for its window's outer samples, a difference of one ulp (wave-45 Fork CI run 44652503440). Blocks 15 ms apart make it certain.
+            foreach (var mode in new[] { WarpMode.Complex, WarpMode.Beats, WarpMode.Repitch })
+            {
+                var (first, missed, underruns) = SwitchRun(mode, switchBlock: 110, blocks: 140, sleepMs: 40, seconds: 8, seed: 11);
+                Assert.That(first, Is.EqualTo(-1), $"{mode}: bit-identical (first difference at sample {first})");
+                Assert.That(missed, Is.EqualTo(0), $"{mode}: nothing was read that was not in memory");
+                Assert.That(underruns, Is.EqualTo(0L), $"{mode}: no underrun");
+            }
+        }
+
+        [Test]
+        public void TheSwitchIsBitIdenticalWhereverItFallsAgainstPagesAndBlocks()
+        {
+            // The switch at many blocks (so many places against the cache's page edges and the vocoder's frames), with the voice paced 2 ms apart after it.
+            // From block 100 on (sample 25600) the voice is past the 500 ms of the file that is always resident, and block 128 and 160 are page edges.
+            var offsets = Enumerable.Range(0, 15).Select(i => 100 + i * 5).Concat(new[] { 126, 127, 128, 129, 158, 159, 160, 161 }).ToArray();
+            foreach (var mode in new[] { WarpMode.Complex, WarpMode.Beats })
+                foreach (int at in offsets)
+                {
+                    var (first, missed, underruns) = SwitchRun(mode, at, at + 70, 2, 10, 20 + at);
+                    Assert.That(first, Is.EqualTo(-1), $"{mode}, switch at block {at}: bit-identical (first difference at sample {first})");
+                    Assert.That(missed, Is.EqualTo(0), $"{mode}, switch at block {at}: nothing missed");
+                    Assert.That(underruns, Is.EqualTo(0L), $"{mode}, switch at block {at}: no underrun");
+                }
+        }
+
         [Test]
         public void AColdStartOfAStreamedClipIsSampleAccurateAtTheStartAndAtAPinnedMarker()
         {

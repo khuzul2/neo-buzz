@@ -48,16 +48,33 @@ namespace NeoBuzz.Tune
 
             // Natural: the main knob. Moving it by hand rewrites the six fine controls in the same undo step (a preset or automation moves only Natural).
             var natural = new ParamKnob(ctx, P.Natural, diameter: 84);
-            natural.UserChanged += _ =>
+            void ApplyNatural(int naturalRaw)
             {
-                double n = Params.Table[P.Natural].Value(natural.Binding.Value);
+                double n = Params.Table[P.Natural].Value(naturalRaw);
                 for (int i = 0; i < TuneNatural.Controls.Length; i++)
                 {
                     int idx = TuneNatural.Controls[i];
                     ctx.Set(idx, Params.Table[idx].Raw(TuneNatural.Value(i, n)));
                 }
                 ctx.RaiseChanged();
+            }
+            natural.UserChanged += _ => ApplyNatural(natural.Binding.Value);
+
+            // PL1: a fine control moved by hand (or a preset that did) no longer matches Natural: a small "edited" mark under the knob; a click sets Natural's values again (one undo step).
+            var edited = new ActionButton("edited \u21BA", AccentColor, 84)
+            {
+                ToolTip = "A fine control differs from what Natural sets. Click to set the six fine controls from Natural again (one undo step).",
+                Visibility = Visibility.Collapsed
             };
+            edited.Click += () => { ApplyNatural(ctx.Raw(P.Natural)); ShowEdited(); };
+            void ShowEdited()
+            {
+                var shown = TuneNatural.Edited(ctx.Raw) ? Visibility.Visible : Visibility.Collapsed;
+                if (edited.Visibility != shown) edited.Visibility = shown;
+            }
+            ctx.Changed += ShowEdited;
+            Poll.Every(edited, 0.25, ShowEdited);   // a preset or automation can change the fine controls without the editor's own gesture
+            ShowEdited();
 
             var correction = Layout.Column(
                 Layout.Row(new ParamKnob(ctx, P.Retune, diameter: 46), new ParamKnob(ctx, P.Zone, diameter: 46), new ParamKnob(ctx, P.Humanize, diameter: 46)),
@@ -78,7 +95,7 @@ namespace NeoBuzz.Tune
                 Layout.Row(new ParamChoice(ctx, P.Transients, "Transients", 0), Layout.Gap(4), new ParamKnob(ctx, P.Mix, diameter: 46)));
 
             return Layout.Row(
-                new Section("Natural", AccentColor, natural),
+                new Section("Natural", AccentColor, Layout.Column(natural, Layout.Gap(1, 4), edited)),
                 new Section("Key", AccentColor, key),
                 new Section("Pitch", AccentColor, display),
                 new Section("Fine controls", AccentColor, correction),

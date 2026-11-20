@@ -35,6 +35,11 @@ namespace ReBuzz.Studio.Views.Audio
             IsHitTestVisible = false;
         }
 
+        /// <summary>PL1: draw in the lower part (from 58 % down) of the control, so a clip's name reads over a quiet background above it.</summary>
+        public bool LowerHalf { get; set; }
+
+        double Top => LowerHalf ? Math.Floor(Bounds.Height * 0.58) : 0;
+
         /// <summary>The colour of the waveform and of the playing position (the slot's text colour, so it reads on any clip colour).</summary>
         public IBrush Foreground
         {
@@ -64,12 +69,13 @@ namespace ReBuzz.Studio.Views.Audio
         /// <summary>For tests: how many times the geometry was made, and the tallest peak in it (in pixels).</summary>
         internal int Builds { get; private set; }
         internal double PeakHeight { get; private set; }
-        internal void ForceBuild() { double w = Bounds.Width, h = Bounds.Height - BottomRoom; if (w >= 4 && h >= 4) Build(w, h); }
+        internal void ForceBuild() { double w = Bounds.Width, h = Bounds.Height - Top - BottomRoom; if (w >= 4 && h >= 4) Build(w, h); }
 
         public override void Render(DrawingContext ctx)
         {
-            double w = Bounds.Width, h = Bounds.Height - BottomRoom;
+            double w = Bounds.Width, h = Bounds.Height - Top - BottomRoom;
             if (w < 4 || h < 4) return;
+            using var shift = ctx.PushTransform(Matrix.CreateTranslation(0, Top));
             if (geometry == null || Math.Abs(w - builtWidth) > 0.5 || Math.Abs(h - builtHeight) > 0.5 || (!builtWithPeaks && view.Asset.Peaks != null))
                 Build(w, h);
             if (geometry != null) ctx.DrawGeometry(brush, null, geometry);

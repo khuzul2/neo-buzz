@@ -267,6 +267,7 @@ namespace ReBuzz.Core.AudioLibrary
                     token.ThrowIfCancellationRequested();
                     Adopt(s);
                     // The pages the voices (and the pins) want are read before the floats go: what plays does not change.
+                    StreamPrefetcher.WaitForVoices(s, 300);
                     StreamPrefetcher.WaitSettled(s, 5000);
                     Source.DropMemory();
                     System.Threading.Volatile.Write(ref progress, 1);
