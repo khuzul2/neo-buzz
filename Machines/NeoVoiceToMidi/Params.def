@@ -282,6 +282,10 @@ EeHi "Vowel ee high value" 0 127 127 int 0 | The controller value at the max
 EeCh "Vowel ee channel" 0 15 0 int 1 | MIDI channel of Vowel ee
     how Sets the MIDI channel of the controller for the vowel ee, from 1 to 16.
     sound It selects which synth or part the control moves.
+group Recording
+Attack "Record at attack" 0 1 1 switch | An armed track that records from this machine places each note at its attack, not at the moment it was sent; the sound you hear and what the target plays are unchanged
+    how Switches recording at the attack on or off.
+    sound On, a recorded take lines up with the playing even when the note was sent a few tens of milliseconds after the attack; off records each note when it was sent.
 
 # What the machine measures (NeoVoiceToMidiMachine.Readings, machine_readings).
 reading note number | The pitch note sounding now (MIDI number), 0 when none

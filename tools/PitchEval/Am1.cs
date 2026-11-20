@@ -19,16 +19,20 @@ namespace NeoBuzz.PitchEval
 {
     internal static class Am1
     {
-        sealed class Note { public double Start, End; public int Pitch, Vel; }
+        sealed class Note { public double Start, End; public int Pitch, Vel, Src; }
         sealed class Truth { public double Start, End, Midi; }
 
         /// <summary>Matching counts, latencies and octave errors of one configuration over many lines.</summary>
         sealed class Acc
         {
             public int Ref, Out, Hit, HitExact, Octave;
+            public readonly int[] SrcOut = new int[6], SrcHit = new int[6];
+            public readonly int[] Diag = new int[12];
+            public readonly List<(double Dt, int Src)> TimingDt = new();
+            public readonly int[] Interval = new int[49];
             public double Seconds;
             public readonly List<double> Latency = new();
-            public void Add(Acc o) { Ref += o.Ref; Out += o.Out; Hit += o.Hit; HitExact += o.HitExact; Octave += o.Octave; Seconds += o.Seconds; Latency.AddRange(o.Latency); }
+            public void Add(Acc o) { for (int q = 0; q < 12; q++) Diag[q] += o.Diag[q]; TimingDt.AddRange(o.TimingDt); for (int q = 0; q < 49; q++) Interval[q] += o.Interval[q]; for (int q = 0; q < 6; q++) { SrcOut[q] += o.SrcOut[q]; SrcHit[q] += o.SrcHit[q]; } Ref += o.Ref; Out += o.Out; Hit += o.Hit; HitExact += o.HitExact; Octave += o.Octave; Seconds += o.Seconds; Latency.AddRange(o.Latency); }
             public double P => Out == 0 ? 0 : (double)Hit / Out;
             public double R => Ref == 0 ? 0 : (double)Hit / Ref;
             public double F => P + R == 0 ? 0 : 2 * P * R / (P + R);
@@ -59,6 +63,8 @@ namespace NeoBuzz.PitchEval
             var hits = new List<(double, int, int)>();
             var open = new Dictionary<int, Note>();
             var buf = new float[AudioMidiEngine.MaxBlock];
+            var srcAt = new Dictionary<long, int>();
+            e.Melody.Probe = (t, s) => srcAt[t] = s;
             void Take(long basePos, int count)
             {
                 for (int i = 0; i < count; i++)
@@ -71,7 +77,7 @@ namespace NeoBuzz.PitchEval
                     }
                     else if (m.Stream == MidiStream.Pitch)
                     {
-                        if (m.Kind == MidiKind.NoteOn) { var n = new Note { Start = t, End = double.NaN, Pitch = m.Data1, Vel = m.Data2 }; notes.Add(n); open[m.Data1] = n; }
+                        if (m.Kind == MidiKind.NoteOn) { var n = new Note { Start = t, End = double.NaN, Pitch = m.Data1, Vel = m.Data2, Src = srcAt.TryGetValue(basePos + m.Offset, out var sv) ? sv : 0 }; notes.Add(n); open[m.Data1] = n; }
                         else if (m.Kind == MidiKind.NoteOff && open.TryGetValue(m.Data1, out var n)) { n.End = t; open.Remove(m.Data1); }
                     }
                 }
@@ -87,11 +93,62 @@ namespace NeoBuzz.PitchEval
             return (notes, hits);
         }
 
+        static bool tuned;
+        /// <summary>AM1_T="Name=value;Name=value": sets the public static fields of MelodyTuning and DrumTuning (the experiments of the AT1 round).</summary>
+        static void ApplyTuning()
+        {
+            if (tuned) return;
+            lock (typeof(Am1))
+            {
+                if (tuned) return;
+                tuned = true;
+                string t = Environment.GetEnvironmentVariable("AM1_T");
+                if (string.IsNullOrEmpty(t)) return;
+                foreach (var kv in t.Split(';', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var p = kv.Split('=');
+                    var types = new[] { typeof(MelodyTuning), typeof(DrumTuning) };
+                    foreach (var ty in types)
+                    {
+                        var f = ty.GetField(p[0].Trim(), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                        if (f == null) continue;
+                        double v = double.Parse(p[1], CultureInfo.InvariantCulture);
+                        if (f.FieldType == typeof(float)) f.SetValue(null, (float)v);
+                        else if (f.FieldType == typeof(int)) f.SetValue(null, (int)Math.Round(v));
+                        else if (f.FieldType == typeof(double)) f.SetValue(null, v);
+                        Console.WriteLine($"tuning {p[0]} = {v}");
+                    }
+                }
+            }
+        }
+
+        /// <summary>AM1_TRACE="file.wav,from,to" (Melody): prints every pitch estimate and note on of the first matching take between two times (single-threaded use).</summary>
+        public static void Trace(string wavPath, double from, double to, int response)
+        {
+            var (x, rate) = Wav.Read(wavPath);
+            var e = NewEngine(rate, v => { v.Set(P.Mode, 0); v.Set(P.Range, 0); v.Set(P.Response, response); });
+            AudioMidiEngine.EstimateProbe = (in PitchEstimate p) =>
+            {
+                double t = p.EndSample / (double)rate;
+                if (t >= from && t <= to) Console.WriteLine($"est t={t:F3} raw={(p.RawF0 > 0 ? 69 + 12 * Math.Log2(p.RawF0 / 440) : 0):F2} midi={p.Midi:F2} conf={p.Confidence:F2} voiced={(p.Voiced ? 1 : 0)} rms={20 * Math.Log10(p.Rms + 1e-9):F0}");
+            };
+            e.Melody.Probe = (t, s) => { if (t / (double)rate >= from && t / (double)rate <= to) Console.WriteLine($"NOTE-ON t={t / (double)rate:F3} src={s}"); };
+            var buf = new float[256];
+            for (int pos = 0; pos < x.Length; pos += 256)
+            {
+                int n = Math.Min(256, x.Length - pos);
+                Array.Copy(x, pos, buf, 0, n);
+                e.Process(buf, n);
+            }
+            AudioMidiEngine.EstimateProbe = null;
+        }
+
         static AudioMidiEngine NewEngine(int rate, Action<ParamValues> setup)
         {
             if (double.TryParse(Environment.GetEnvironmentVariable("AM1_CONF"), CultureInfo.InvariantCulture, out var cf)) AudioMidiEngine.CalConfidence = (float)cf;
             if (double.TryParse(Environment.GetEnvironmentVariable("AM1_GATE"), CultureInfo.InvariantCulture, out var g)) MelodyNotes.GateDb = (float)g;
             if (double.TryParse(Environment.GetEnvironmentVariable("AM1_RISE"), CultureInfo.InvariantCulture, out var r)) MelodyNotes.RiseRatio = (float)r;
+            ApplyTuning();
             var e = new AudioMidiEngine(Values(setup));
             e.SetSampleRate(rate);
             return e;
@@ -115,6 +172,32 @@ namespace NeoBuzz.PitchEval
                 {
                     used[best] = true; a.Hit++; a.Latency.Add(notes[best].Start - r.Start);
                     if (notes[best].Pitch == (int)Math.Round(r.Midi)) a.HitExact++;
+                }
+            }
+            for (int i = 0; i < notes.Count; i++) { int q = Math.Clamp(notes[i].Src, 0, 5); a.SrcOut[q]++; if (used[i]) a.SrcHit[q]++; }
+            if (tol == 0.05)
+            {
+                // Diagnosis: why a reference was missed and why an output is extra.
+                var hitRef = new bool[refs.Count];
+                var ord = refs.OrderBy(r => r.Start).ToList();
+                for (int ri = 0; ri < ord.Count; ri++)
+                {
+                    var r = ord[ri];
+                    bool hit = notes.Where((n, i) => used[i]).Any(n => Math.Abs(n.Start - r.Start) <= tol && Math.Abs(n.Pitch - r.Midi) <= 0.5);
+                    if (hit) continue;
+                    if (notes.Any(n => Math.Abs(n.Pitch - r.Midi) <= 0.5 && Math.Abs(n.Start - r.Start) > tol && Math.Abs(n.Start - r.Start) <= 0.2)) { a.Diag[0]++; var nn = notes.Where(n => Math.Abs(n.Pitch - r.Midi) <= 0.5 && Math.Abs(n.Start - r.Start) <= 0.2).OrderBy(n => Math.Abs(n.Start - r.Start)).First(); a.TimingDt.Add((nn.Start - r.Start, nn.Src)); }      // right note, off in time
+                    else if (notes.Any(n => Math.Abs(n.Start - r.Start) <= tol)) { a.Diag[1]++; var nn = notes.Where(n => Math.Abs(n.Start - r.Start) <= tol).OrderBy(n => Math.Abs(n.Start - r.Start)).First(); a.Interval[Math.Clamp((int)Math.Round(nn.Pitch - r.Midi) + 24, 0, 48)]++; }                                                                         // something else at the time
+                    else a.Diag[2]++;                                                                                                                              // nothing
+                }
+                for (int i = 0; i < notes.Count; i++)
+                {
+                    if (used[i]) continue;
+                    var n = notes[i];
+                    if (refs.Any(r => Math.Abs(n.Pitch - r.Midi) <= 0.5 && Math.Abs(n.Start - r.Start) <= 0.2)) a.Diag[3]++;                                             // off in time
+                    else if (refs.Any(r => Math.Abs(n.Start - r.Start) <= tol && Math.Abs(((n.Pitch - r.Midi) % 12 + 12) % 12) is < 0.5 or > 11.5)) a.Diag[4]++;      // octave
+                    else if (refs.Any(r => Math.Abs(n.Start - r.Start) <= tol)) a.Diag[5]++;                                                                           // other pitch at an onset
+                    else if (refs.Any(r => r.Start < n.Start && r.End > n.Start)) a.Diag[6]++;                                                                      // inside a reference note
+                    else a.Diag[7]++;                                                                                                                                // in a gap
                 }
             }
             foreach (var r in refs)
@@ -172,6 +255,7 @@ namespace NeoBuzz.PitchEval
                 Excerpt best = null; int bestCount = -1;
                 for (int s = 0; s < 6 && s < ch.Length; s++)
                 {
+                    if (Environment.GetEnvironmentVariable("AM1_HEXSTR") is string only && only.Length > 0 && int.Parse(only) != s) continue;
                     double sec = ch[s].Length / (double)rate;
                     for (int c = 0; c < cfgs.Length; c++)
                     {
@@ -216,6 +300,13 @@ namespace NeoBuzz.PitchEval
                 md.AppendLine($"| {cfgs[c].Name} | {a.Ref} | {a.Out} | {Pc(a.P)} | {Pc(a.R)} | **{Pc(a.F)}** | {Pc(a.FExact)} | {Pc(wide[c].F)} | {Ms(Median(a.Latency))} | {Ms(Pctl(a.Latency, 0.95))} | {a.Octave} | {a.ChatterPerMinute:F1} |");
             }
             md.AppendLine();
+            if (Environment.GetEnvironmentVariable("AM1_SRC") != null)
+                for (int c = 0; c < cfgs.Length; c++)
+                    for (int st = 0; st < 6; st++)
+                    {
+                        var a = perStr[c][st];
+                        Console.WriteLine($"HEXSTR {cfgs[c].Name} string {st}: F {Pc(a.F)} P {Pc(a.P)} R {Pc(a.R)} ref {a.Ref} out {a.Out} lat {Ms(Median(a.Latency))}; misses: timing {a.Diag[0]}, other-at-time {a.Diag[1]}, nothing {a.Diag[2]}; extras: timing {a.Diag[3]}, octave {a.Diag[4]}, other-pitch {a.Diag[5]}, inside-note {a.Diag[6]}, gap {a.Diag[7]}; src " + string.Join(", ", new[] { "?", "onset", "nopeak", "change", "corr", "reonset" }.Select((nm, q) => $"{nm} {a.SrcHit[q]}/{a.SrcOut[q]}")) + " | interval " + string.Join(" ", Enumerable.Range(0, 49).Where(q => a.Interval[q] >= 8).Select(q => $"{q - 24}:{a.Interval[q]}")));
+                    }
             md.AppendLine("F-measure by string (Fast / Stable): " + string.Join("; ", Enumerable.Range(0, 6).Select(s => $"{new[] { "low E", "A", "D", "G", "B", "high E" }[s]} {Pc(perStr[0][s].F)} / {Pc(perStr[1][s].F)}")));
             md.AppendLine();
             WriteExcerpts(plotsDir, excerpts.OrderBy(x => x.Title, StringComparer.Ordinal).Take(3).ToList(), "gs");
@@ -240,6 +331,8 @@ namespace NeoBuzz.PitchEval
             var takes = Directory.GetFiles(audio, "*_solo_mic.wav").Select(f => Path.GetFileName(f).Replace("_mic.wav", "")).Where(n => keep.Count == 0 || keep.Contains(n.Substring(0, 2))).OrderBy(n => n, StringComparer.Ordinal).ToList();
             Console.WriteLine($"GuitarSet solo takes ({(players.Length == 0 ? "all players" : "players " + players)}): {takes.Count}");
             var kinds = new[] { ("mic", "_mic.wav"), ("pickup mix", "_mix.wav") };
+            if (Environment.GetEnvironmentVariable("AM1_KINDS") == "mix") kinds = new[] { ("pickup mix", "_mix.wav") };
+            else if (Environment.GetEnvironmentVariable("AM1_KINDS") == "mic") kinds = new[] { ("mic", "_mic.wav") };
             var cfgs = new[] { ("Fast", 0), ("Stable", 1) };
             var acc = new Acc[kinds.Length, cfgs.Length]; var wide = new Acc[kinds.Length, cfgs.Length];
             for (int k = 0; k < kinds.Length; k++) for (int c = 0; c < cfgs.Length; c++) { acc[k, c] = new Acc(); wide[k, c] = new Acc(); }
@@ -266,6 +359,14 @@ namespace NeoBuzz.PitchEval
                                 bool ok = Math.Abs(near.Start - n.Start) <= 0.05 && Math.Abs(near.Midi - n.Pitch) <= 0.5;
                                 double lv = 0; int a0 = (int)(n.Start * rate), a1 = Math.Min(x.Length, a0 + (int)(0.03 * rate)); for (int q = a0; q < a1; q++) lv = Math.Max(lv, Math.Abs(x[q]));
                                 Console.WriteLine($"{(ok ? "ok " : "EXT")} t={n.Start:F3} note={n.Pitch} len={n.End - n.Start:F2} db={20 * Math.Log10(lv + 1e-9):F0} near dt={near.Start - n.Start:F3} dm={near.Midi - n.Pitch:F1}");
+                            }
+                        if (Environment.GetEnvironmentVariable("AM1_MISS") == name + kinds[k].Item2 && c == int.Parse(Environment.GetEnvironmentVariable("AM1_MISSCFG") ?? "0"))
+                            lock (sync) foreach (var r in truth)
+                            {
+                                var hit = notes.Where(n => Math.Abs(n.Start - r.Start) <= 0.05 && Math.Abs(n.Pitch - r.Midi) <= 0.5).FirstOrDefault();
+                                var near = notes.OrderBy(n => Math.Abs(n.Start - r.Start)).FirstOrDefault();
+                                double a0 = r.Start * rate; double lv = 0; for (int q = (int)a0; q < Math.Min(x.Length, (int)a0 + (int)(0.03 * rate)); q++) lv = Math.Max(lv, Math.Abs(x[q]));
+                                Console.WriteLine($"{(hit != null ? "HIT " : "MISS")} t={r.Start:F3} dur={r.End - r.Start:F2} midi={r.Midi:F0} db={20 * Math.Log10(lv + 1e-9):F0} " + (hit != null ? $"lat={hit.Start - r.Start:F3}" : near == null ? "" : $"nearest dt={near.Start - r.Start:F3} note={near.Pitch} src={near.Src}"));
                             }
                         var a = Match(notes, truth, sec); var w = Match(notes, truth, sec, 0.1);
                         lock (sync)
@@ -294,6 +395,10 @@ namespace NeoBuzz.PitchEval
                 for (int c = 0; c < cfgs.Length; c++)
                 {
                     var a = acc[k, c];
+                    if (Environment.GetEnvironmentVariable("AM1_SRC") != null) Console.WriteLine("INTERVAL out-truth (semitones, -24..24, nonzero >=15): " + string.Join(" ", Enumerable.Range(0, 49).Where(q => a.Interval[q] >= 15).Select(q => $"{q - 24}:{a.Interval[q]}")));
+                    if (Environment.GetEnvironmentVariable("AM1_SRC") != null) Console.WriteLine("TIMING dt histogram (25 ms bins from -200): " + string.Join(" ", Enumerable.Range(0, 16).Select(b => a.TimingDt.Count(q => q.Dt >= -0.2 + b * 0.025 && q.Dt < -0.2 + (b + 1) * 0.025))) + " | by src late (>50ms): " + string.Join(" ", Enumerable.Range(0, 6).Select(q2 => a.TimingDt.Count(q => q.Dt > 0.05 && q.Src == q2))) + " early (<-50ms): " + string.Join(" ", Enumerable.Range(0, 6).Select(q2 => a.TimingDt.Count(q => q.Dt < -0.05 && q.Src == q2))));
+                    if (Environment.GetEnvironmentVariable("AM1_SRC") != null) Console.WriteLine($"DIAG {kinds[k].Item1} {cfgs[c].Item1}: misses: timing {a.Diag[0]}, other at time {a.Diag[1]}, nothing {a.Diag[2]}; extras: timing {a.Diag[3]}, octave {a.Diag[4]}, other-pitch {a.Diag[5]}, inside-note {a.Diag[6]}, gap {a.Diag[7]}");
+                    if (Environment.GetEnvironmentVariable("AM1_SRC") != null) Console.WriteLine($"SRC {kinds[k].Item1} {cfgs[c].Item1}: " + string.Join(", ", new[] { "?", "onset", "nopeak", "change", "corr", "reonset" }.Select((nm, q) => $"{nm} {a.SrcHit[q]}/{a.SrcOut[q]}")));
                     md.AppendLine($"| {kinds[k].Item1} | {cfgs[c].Item1} | {a.Ref} | {a.Out} | {Pc(a.P)} | {Pc(a.R)} | **{Pc(a.F)}** | {Pc(a.FExact)} | {Pc(wide[k, c].F)} | {Ms(Median(a.Latency))} | {Ms(Pctl(a.Latency, 0.95))} | {a.Octave} | {a.ChatterPerMinute:F1} |");
                 }
             md.AppendLine();
@@ -374,6 +479,141 @@ namespace NeoBuzz.PitchEval
                 while (e.TakeLearned(out int cls, f2)) e.Classifier.Add(cls, f2);
             }
             e.Classifier.Train();
+        }
+
+        // ---------------------------------------------------------------------------------------------------------------- E-GMD (drum development data)
+
+        /// <summary>The note ons of a standard MIDI file with their times in seconds (the tempo map applied).</summary>
+        static List<(double T, int Note, int Vel)> ReadMidiNotes(string path)
+        {
+            var b = File.ReadAllBytes(path);
+            int pos = 0;
+            int U16(int at) => (b[at] << 8) | b[at + 1];
+            int U32(int at) => (b[at] << 24) | (b[at + 1] << 16) | (b[at + 2] << 8) | b[at + 3];
+            if (b.Length < 14 || b[0] != 'M' || b[1] != 'T') throw new InvalidDataException("not a MIDI file: " + path);
+            int ntrk = U16(10), div = U16(12);
+            pos = 8 + U32(4);
+            var tempos = new List<(long Tick, int Us)>(); var ons = new List<(long Tick, int Note, int Vel)>();
+            for (int t = 0; t < ntrk && pos + 8 <= b.Length; t++)
+            {
+                int len = U32(pos + 4), p = pos + 8, end = Math.Min(b.Length, p + len);
+                pos = p + len;
+                long tick = 0; int running = 0;
+                int Var() { int v = 0; while (p < end) { int c = b[p++]; v = (v << 7) | (c & 127); if ((c & 128) == 0) break; } return v; }
+                while (p < end)
+                {
+                    tick += Var();
+                    int st = b[p];
+                    if (st < 0x80) st = running; else { p++; if (st < 0xF0) running = st; }
+                    if (st == 0xFF)
+                    {
+                        int type = b[p++]; int l = Var();
+                        if (type == 0x51 && l == 3) tempos.Add((tick, (b[p] << 16) | (b[p + 1] << 8) | b[p + 2]));
+                        p += l;
+                    }
+                    else if (st == 0xF0 || st == 0xF7) { int l = Var(); p += l; }
+                    else
+                    {
+                        int kind = st & 0xF0;
+                        int n1 = b[p++];
+                        int n2 = (kind == 0xC0 || kind == 0xD0) ? 0 : b[p++];
+                        if (kind == 0x90 && n2 > 0) ons.Add((tick, n1, n2));
+                    }
+                }
+            }
+            tempos = tempos.OrderBy(q => q.Tick).ToList();
+            if (tempos.Count == 0 || tempos[0].Tick > 0) tempos.Insert(0, (0, 500000));
+            double Seconds(long tick)
+            {
+                double sec = 0; long last = 0; int us = tempos[0].Us;
+                foreach (var (tk, u) in tempos) { if (tk >= tick) break; sec += (tk - last) * (double)us / 1e6 / div; last = tk; us = u; }
+                return sec + (tick - last) * (double)us / 1e6 / div;
+            }
+            return ons.OrderBy(o => o.Tick).Select(o => (Seconds(o.Tick), o.Note, o.Vel)).ToList();
+        }
+
+        /// <summary>E-GMD's note to our class: 0 kick, 1 snare (head or rim), 2 hat (closed or open), -1 any other drum (toms, cymbals, side stick, pedal hat).</summary>
+        static int EgmdClass(int note) => note == 36 ? 0 : note == 38 || note == 40 ? 1 : note == 42 || note == 22 || note == 46 || note == 26 ? 2 : -1;
+
+        /// <summary>E-GMD (Magenta, CC BY 4.0), a spread of kits from a manifest (set, audio, midi, kit, style per line): the drum rules developed on the "dev" set and checked on "val".</summary>
+        public static void Egmd(string dir, StringBuilder md)
+        {
+            var lines = File.ReadAllLines(Path.Combine(dir, "manifest.tsv")).Select(l => l.Split('\t')).Where(p => p.Length >= 4).ToList();
+            var accs = new Dictionary<string, DrumAcc>(); var tomSnare = new Dictionary<string, int[]>(); var seconds = new Dictionary<string, double>();
+            foreach (var set in new[] { "dev", "val" }) { accs[set] = new DrumAcc(); tomSnare[set] = new int[3]; seconds[set] = 0; }
+            var sync = new object(); int done = 0;
+            Parallel.For(0, lines.Count, new ParallelOptions { MaxDegreeOfParallelism = bandsCsv != null ? 1 : Math.Max(1, Environment.ProcessorCount) }, li =>
+            {
+                var p = lines[li];
+                string wav = Path.Combine(dir, p[1]), mid = Path.Combine(dir, p[2]);
+                if (!File.Exists(wav) || !File.Exists(mid)) return;
+                var notes = ReadMidiNotes(mid);
+                var truth = notes.Select(n => (n.T, Cls: EgmdClass(n.Note))).Where(n => n.Cls >= 0).ToList();
+                var truthVel = notes.Where(n => EgmdClass(n.Note) >= 0).Select(n => n.Vel).ToList();
+                var others = notes.Where(n => EgmdClass(n.Note) < 0).Select(n => n.T).ToList();
+                var (x, rate) = Wav.Read(wav);
+                var e = NewEngine(rate, v => { v.Set(P.Mode, 1); });
+                var (_, hits) = Run(x, rate, e);
+                if (bandsCsv != null)
+                {
+                    var rows = new List<string>(); var onsetTimes = new List<double>();
+                    AudioMidiEngine.ProbeHandler hook = (in OnsetEvent o, HitBands h) =>
+                    {
+                        double t = o.Sample / (double)rate; int lab = 0; onsetTimes.Add(t);
+                        foreach (var (tt, cc) in truth) if (Math.Abs(tt - t) <= 0.05) lab |= 1 << cc;
+                        foreach (var tt in others) if (Math.Abs(tt - t) <= 0.05) lab |= 8;
+                        rows.Add(string.Join(",", new[] { p[0] + ":" + p[3], lab.ToString(), h.S0.ToString("F3"), h.S1.ToString("F3"), h.S2.ToString("F3"), h.S3.ToString("F3"), h.R0.ToString("F1"), h.R1.ToString("F1"), h.R2.ToString("F1"), h.R3.ToString("F1"), h.Rise.ToString("F1"), h.LevelDb.ToString("F1"), Path.GetFileName(p[1]) }));
+                    };
+                    lock (bandsLock)
+                    {
+                        AudioMidiEngine.Probe = hook;
+                        var ep = NewEngine(rate, v => { v.Set(P.Mode, 1); });
+                        Run(x, rate, ep);
+                        AudioMidiEngine.Probe = null;
+                        File.AppendAllLines(bandsCsv, rows);
+                        for (int ti = 0; ti < truth.Count; ti++)
+                        {
+                            var (tt, cc) = truth[ti];
+                            File.AppendAllText(bandsCsv + ".truth", $"{p[0]}:{p[3]},{cc},{truthVel[ti]},{(onsetTimes.Any(q => Math.Abs(q - tt) <= 0.05) ? 1 : 0)},{(hits.Any(q => q.Note == Notes[cc] && Math.Abs(q.T - tt) <= 0.05) ? 1 : 0)}\n");
+                        }
+                    }
+                }
+                var a = ScoreDrums(truth, hits);
+                // Outputs that match nothing of their class but sit on another drum (a tom taken for a snare).
+                var cross = new int[3];
+                var usedH = new HashSet<int>();
+                foreach (var (t, c) in truth)
+                {
+                    int best = -1; double bd = 0.05;
+                    for (int i = 0; i < hits.Count; i++) if (!usedH.Contains(i) && hits[i].Note == Notes[c] && Math.Abs(hits[i].T - t) <= bd) { bd = Math.Abs(hits[i].T - t); best = i; }
+                    if (best >= 0) usedH.Add(best);
+                }
+                for (int i = 0; i < hits.Count; i++)
+                {
+                    if (usedH.Contains(i)) continue;
+                    int c = Array.IndexOf(Notes, hits[i].Note);
+                    if (c >= 0 && others.Any(o => Math.Abs(o - hits[i].T) <= 0.05)) cross[c]++;
+                }
+                lock (sync)
+                {
+                    accs[p[0]].Add(a); for (int c = 0; c < 3; c++) tomSnare[p[0]][c] += cross[c];
+                    seconds[p[0]] += x.Length / (double)rate;
+                    if (++done % 10 == 0) Console.WriteLine($"  E-GMD {done}/{lines.Count}");
+                }
+            });
+            md.AppendLine("## Neo Audio to MIDI, Drums mode: E-GMD (development data for the drum rules)");
+            md.AppendLine();
+            md.AppendLine("E-GMD (Magenta, CC BY 4.0: the licence allows fitting): one recording per kit from a spread of the 43 kits, MIDI as the labels (kick 36; snare 38 and 40; hat 42, 22 (edge), 46 and 26 (open edge); the rest, toms, cymbals, side stick and pedal hat, count as other drums). `dev` is the set the rules were developed on, `val` another recording per kit that was not looked at while developing. A hit is right when its class matches and its onset is within 50 ms. \"on other drums\" are outputs that match nothing of their class but sit on another drum's hit (a tom taken for a snare).");
+            md.AppendLine();
+            md.AppendLine("| set | drum | reference | precision | recall | F-measure | offset median | on other drums |");
+            md.AppendLine("|---|---|---:|---:|---:|---:|---:|---:|");
+            foreach (var set in new[] { "dev", "val" })
+                for (int c = 0; c < 3; c++)
+                {
+                    var a = accs[set];
+                    md.AppendLine($"| {set} ({seconds[set] / 60:0} min) | {ClassNames[c]} | {a.Ref[c]} | {Pc(a.P(c))} | {Pc(a.R(c))} | **{Pc(a.F(c))}** | {Ms(Median(a.Offset[c]))} | {tomSnare[set][c]} |");
+                }
+            md.AppendLine();
         }
 
         static readonly object bandsLock = new();

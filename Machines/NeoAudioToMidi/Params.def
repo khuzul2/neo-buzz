@@ -127,3 +127,7 @@ HatSens "Hat sensitivity" 0 100 50 pct 0 | How readily a hit counts as a hat: hi
 HatGap "Hat interval" 0 290 15 lin 10 300 ms 0 | The shortest time between two hat hits
     how Sets the shortest time between two hat hits, from 10 to 300 ms.
     sound Hats run fast: a short interval lets sixteenths and thirty-seconds through.
+group Recording
+Attack "Record at attack" 0 1 1 switch | An armed track that records from this machine places each note at its attack, not at the moment it was sent; the sound you hear and what the target plays are unchanged
+    how Switches recording at the attack on or off.
+    sound On, a recorded take lines up with the playing even when the note was sent a few tens of milliseconds after the attack; off records each note when it was sent.

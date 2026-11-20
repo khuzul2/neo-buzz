@@ -45,6 +45,12 @@ namespace NeoBuzz.Dsp
         public double MinIntervalSeconds = 0.04;
         /// <summary>A hop quieter than this (RMS, linear) can't fire. −54 dBFS.</summary>
         public float Gate = 0.002f;
+        /// <summary>
+        /// The threshold's spread is the median absolute deviation of the last 0.3 s (times 1.4826) around their median, not the standard deviation around the mean (AT1, Neo Audio to MIDI's drums):
+        /// a pattern of equal hits close together (hats on every sixteenth) is mostly made of its peaks, and their standard deviation lifts the threshold over the hits themselves, while the
+        /// median and the MAD stay at the floor between them. Off by default: the voice and the melody keep the original threshold.
+        /// </summary>
+        public bool RobustSpread;
         /// <summary>The energy rise over two hops that fires on its own, dB.</summary>
         public float RiseDb = 9f;
         /// <summary>The energy rise of the part under 150 Hz that fires on its own, dB.</summary>
@@ -59,6 +65,7 @@ namespace NeoBuzz.Dsp
         readonly float[][] fluxHist = { new float[History], new float[History], new float[History], new float[History] };
         readonly double[] fluxSum = new double[Functions], fluxSq = new double[Functions];
         readonly float[] flux = new float[Functions];
+        readonly float[] sortA = new float[History], sortB = new float[History];
         readonly int[] bandEdge = new int[4];
         readonly float[] dbHist = new float[4], lowHist = new float[6];
         Biquad lowPass;
@@ -199,7 +206,15 @@ namespace NeoBuzz.Dsp
                 double variance = histCount > 1 ? Math.Max(0, fluxSq[f] / histCount - mean * mean) : 0;
                 // The low band has a handful of bins, so its flux is the most uneven in steady noise: it asks for more.
                 float k = f == 1 ? Threshold * LowBandFactor : Threshold;
-                float thr = Math.Max((float)(mean + k * Math.Sqrt(variance)), (float)(MinRatio * mean)) + 0.003f;
+                float thr;
+                if (RobustSpread && histCount >= 16)
+                {
+                    double med = Median(fluxHist[f], histCount, sortA);
+                    for (int q = 0; q < histCount; q++) sortB[q] = Math.Abs(fluxHist[f][q] - (float)med);
+                    double mad = Median(sortB, histCount, sortB);
+                    thr = Math.Max((float)(med + k * 1.4826 * mad), (float)(MinRatio * mean)) + 0.003f;
+                }
+                else thr = Math.Max((float)(mean + k * Math.Sqrt(variance)), (float)(MinRatio * mean)) + 0.003f;
                 fluxRatio = Math.Max(fluxRatio, flux[f] / thr);
                 if (histCount == History) { float old = fluxHist[f][histPos]; fluxSum[f] -= old; fluxSq[f] -= (double)old * old; }
                 fluxHist[f][histPos] = flux[f];
@@ -230,6 +245,14 @@ namespace NeoBuzz.Dsp
                 return false;
             }
             return false;
+        }
+
+        /// <summary>The median of the first <paramref name="n"/> values (sorted in place in <paramref name="scratch"/>, which may be the source's copy).</summary>
+        static double Median(float[] values, int n, float[] scratch)
+        {
+            if (!ReferenceEquals(values, scratch)) Array.Copy(values, scratch, n);
+            Array.Sort(scratch, 0, n);
+            return (n & 1) == 1 ? scratch[n / 2] : 0.5 * (scratch[n / 2 - 1] + scratch[n / 2]);
         }
 
         bool Resolve(out OnsetEvent ev)

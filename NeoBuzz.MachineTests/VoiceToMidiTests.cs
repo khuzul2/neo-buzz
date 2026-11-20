@@ -14,7 +14,7 @@ namespace NeoBuzz.MachineTests
         static void Say(string s) => TestContext.Out.WriteLine(s);
         static string F(double v, string fmt = "F1") => v.ToString(fmt, CultureInfo.InvariantCulture);
 
-        sealed record Ev(long At, MidiKind Kind, MidiStream Stream, int Channel, int Data1, int Data2);
+        sealed record Ev(long At, MidiKind Kind, MidiStream Stream, int Channel, int Data1, int Data2, int Lag = 0);
 
         static (VoiceEngine E, ParamValues V) Make(Action<ParamValues> setup = null)
         {
@@ -38,11 +38,11 @@ namespace NeoBuzz.MachineTests
                 for (int i = 0; i < count; i++)
                 {
                     var m = e.Events[i];
-                    list.Add(new Ev(pos + m.Offset, m.Kind, m.Stream, m.Channel, m.Data1, m.Data2));
+                    list.Add(new Ev(pos + m.Offset, m.Kind, m.Stream, m.Channel, m.Data1, m.Data2, m.Lag));
                 }
             }
             int c = e.Flush();
-            for (int i = 0; i < c; i++) { var m = e.Events[i]; list.Add(new Ev(x.Length + m.Offset, m.Kind, m.Stream, m.Channel, m.Data1, m.Data2)); }
+            for (int i = 0; i < c; i++) { var m = e.Events[i]; list.Add(new Ev(x.Length + m.Offset, m.Kind, m.Stream, m.Channel, m.Data1, m.Data2, m.Lag)); }
             return list;
         }
 
@@ -68,6 +68,37 @@ namespace NeoBuzz.MachineTests
         static List<Ev> NoteOns(List<Ev> evs, MidiStream stream = MidiStream.Pitch) => evs.Where(e => e.Stream == stream && e.Kind == MidiKind.NoteOn).ToList();
 
         // ---------------------------------------------------------------- pitch
+
+        [TestCase(0, 0, "Low latency, Fast")]
+        [TestCase(1, 1, "Quality, Stable")]
+        public void RecordedVoiceNotesLandAtTheStartOfTheSound(int range, int response, string name)
+        {
+            var (e, v) = Make(v => { v.Set(P.Range, range); v.Set(P.Response, response); v.Set(P.Triggers, 0); v.Set(P.Lock, 0); });
+            Assert.That(v[P.Attack], Is.EqualTo(1), "Record at attack is on by default");
+            var (x, truth) = Melody(new[] { 57, 60, 64, 67, 62, 69, 72, 55 });
+            var evs = Play(e, x);
+            var ons = NoteOns(evs);
+            var live = new List<double>(); var rec = new List<double>();
+            foreach (var (start, note) in truth)
+            {
+                var hit = ons.FirstOrDefault(o => o.At / (double)Rate >= start - 0.01 && o.At / (double)Rate < start + 0.5);
+                if (hit == null) continue;
+                live.Add(hit.At / (double)Rate - start); rec.Add((hit.At - hit.Lag) / (double)Rate - start);
+            }
+            live.Sort(); rec.Sort();
+            double mLive = live[live.Count / 2], mRec = rec.OrderBy(Math.Abs).ElementAt(rec.Count / 2);
+            Say($"VM1 recorded timing ({name}): note-on delay median {F(mLive * 1000)} ms live, {F(mRec * 1000)} ms recorded (worst recorded {F(rec.Max(Math.Abs) * 1000)} ms over {rec.Count} notes)");
+            Assert.That(rec.Count, Is.GreaterThanOrEqualTo(truth.Count - 1));
+            Assert.That(Math.Abs(mRec), Is.LessThan(Math.Abs(mLive)), "recorded closer to the start than live");
+            Assert.That(rec.Max(Math.Abs), Is.LessThan(0.035), "within 35 ms of the start of the sound");
+            // A note off is never recorded before its note on.
+            double on = double.NaN;
+            foreach (var m in evs.Where(m => m.Stream == MidiStream.Pitch && m.Kind != MidiKind.PitchBend))
+            {
+                double t = (m.At - m.Lag) / (double)Rate;
+                if (m.Kind == MidiKind.NoteOn) on = t; else Assert.That(t, Is.GreaterThanOrEqualTo(on - 1e-9));
+            }
+        }
 
         [TestCase(0, 0, "Low latency, Fast")]
         [TestCase(1, 0, "Quality, Fast")]
