@@ -9,7 +9,34 @@ published zips (nothing is downloaded whole, nothing is committed or uploaded):
 
     fetch_data.py --gmd DIR [--gmd-per-drummer 2] --maestro DIR [--maestro-count 10]
 """
-import argparse, collections, csv, io, json, os, random, wave
+import argparse, collections, csv, io, json, os, random, time, wave
+
+
+class Zip:
+    """A RemoteZip that survives a broken connection: each read is retried (up to 6 times, the zip reopened) before it fails."""
+
+    def __init__(self, url):
+        self.url, self.z = url, None
+
+    def _zip(self):
+        from remotezip import RemoteZip
+        if self.z is None:
+            self.z = RemoteZip(self.url)
+        return self.z
+
+    def read(self, name):
+        for attempt in range(6):
+            try:
+                return self._zip().read(name)
+            except Exception as e:
+                if attempt == 5:
+                    raise
+                print(f"read {name}: {type(e).__name__}, retrying ({attempt + 1})", flush=True)
+                self.z = None
+                time.sleep(5 * (attempt + 1))
+
+    def open(self, name):
+        return io.BytesIO(self.read(name))
 
 
 def notes_of(midi_bytes, t0=0.0, t1=1e9):
@@ -33,9 +60,8 @@ def notes_of(midi_bytes, t0=0.0, t1=1e9):
 
 
 def gmd(dest, per, split="test", all_types=False):
-    from remotezip import RemoteZip
     random.seed(7)
-    z = RemoteZip("https://storage.googleapis.com/magentadata/datasets/groove/groove-v1.0.0.zip")
+    z = Zip("https://storage.googleapis.com/magentadata/datasets/groove/groove-v1.0.0.zip")
     rows = list(csv.DictReader(io.TextIOWrapper(z.open("groove/info.csv"), "utf-8")))
     rows = [r for r in rows if r["audio_filename"] and (5 < float(r["duration"]) < 60 if all_types else 15 < float(r["duration"]) < 50 and r["beat_type"] == "beat") and r["split"] in split.split(",")]
     by = collections.defaultdict(list)
@@ -56,8 +82,7 @@ def gmd(dest, per, split="test", all_types=False):
 
 
 def maestro(dest, count, start=20.0, length=60.0):
-    from remotezip import RemoteZip
-    z = RemoteZip("https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0.zip")
+    z = Zip("https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0.zip")
     rows = list(csv.DictReader(io.TextIOWrapper(z.open("maestro-v3.0.0/maestro-v3.0.0.csv"), "utf-8")))
     rows = [r for r in rows if r["split"] == "test" and float(r["duration"]) > start + length]
     rows.sort(key=lambda r: (r["year"], r["audio_filename"]))
