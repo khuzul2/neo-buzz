@@ -33,7 +33,7 @@ namespace ReBuzz.Studio.Views.Audio
             using var shift = ctx.PushTransform(Matrix.CreateTranslation(0, top));
             int count = cap.PeakCount;
             if (count <= 0) return;
-            pen ??= new Pen(Brushes.White, 1.5);
+            pen ??= new Pen(new SolidColorBrush(Color.FromArgb(110, 255, 255, 255)), 1.5); // PL1: faint, so the take name reads over it
             double mid = h / 2, half = h / 2 - 1;
             int cols = (int)(w / Column);
             for (int i = 0; i < cols; i++)

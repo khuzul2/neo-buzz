@@ -19,10 +19,10 @@ namespace NeoBuzz.Tune
         [ParameterDecl(Name = "Custom notes", Description = "Custom note mask: bit n is pitch class n, C = bit 0 (default C major); used when Scale is Custom", MinValue = 0, MaxValue = 4095, DefValue = 2741)]
         public int Notes { get => Values[P.Notes]; set => Values.Set(P.Notes, value); }
 
-        [ParameterDecl(Name = "Retune speed", Description = "How fast the pitch moves to the note: 0 ms is instant (hard), 400 ms is a slow glide", MinValue = 0, MaxValue = 1000, DefValue = 250)]
+        [ParameterDecl(Name = "Retune speed", Description = "How fast the pitch moves to the note: 0 ms is instant (hard), 400 ms is a slow glide", MinValue = 0, MaxValue = 1000, DefValue = 285)]
         public int Retune { get => Values[P.Retune]; set => Values.Set(P.Retune, value); }
 
-        [ParameterDecl(Name = "Humanize", Description = "How much of a held note's own slow drift is kept", MinValue = 0, MaxValue = 1000, DefValue = 300)]
+        [ParameterDecl(Name = "Humanize", Description = "How much of a held note's own slow drift is kept", MinValue = 0, MaxValue = 1000, DefValue = 600)]
         public int Humanize { get => Values[P.Humanize]; set => Values.Set(P.Humanize, value); }
 
         [ParameterDecl(Name = "Amount", Description = "How much of the correction is applied: 0 % leaves the voice as sung, 100 % moves it fully to the note", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
@@ -76,7 +76,7 @@ namespace NeoBuzz.Tune
         [ParameterDecl(Name = "Transition", Description = "Between notes: 0 % snaps at the midpoint, 100 % leaves the singer's own glide untouched", MinValue = 0, MaxValue = 1000, DefValue = 600)]
         public int Glide { get => Values[P.Glide]; set => Values.Set(P.Glide, value); }
 
-        [ParameterDecl(Name = "Note stickiness", Description = "How hard it is to leave a note: how far past the midpoint, and for how long, the pitch has to be before the target changes", MinValue = 0, MaxValue = 1000, DefValue = 600)]
+        [ParameterDecl(Name = "Note stickiness", Description = "How hard it is to leave a note: how far past the midpoint, and for how long, the pitch has to be before the target changes", MinValue = 0, MaxValue = 1000, DefValue = 660)]
         public int Stick { get => Values[P.Stick]; set => Values.Set(P.Stick, value); }
 
         [ParameterDecl(Name = "Method", Description = "Auto: period splicing for small corrections, PSOLA when formants or a large transpose are used. Splice or PSOLA: always that engine", MinValue = 0, MaxValue = 2, DefValue = 0)]
