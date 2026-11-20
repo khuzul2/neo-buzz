@@ -89,6 +89,11 @@ namespace ReBuzz.Core.Clips
         public float[] Left => left ?? ToArrays().Left;
         public float[] Right => right ?? ToArrays().Right;
 
+        /// <summary>The time-domain path's analysis of this audio (<see cref="PeriodicAnalysis"/>): made once, off the audio thread, by the voice's Prepare.</summary>
+        internal volatile PeriodicInfo Periodic;
+        internal volatile bool PeriodicTried;
+        internal readonly object PeriodicGate = new object();
+
         public int SampleRate { get; }
         public int Length => length;
         public double Seconds => Length / (double)SampleRate;

@@ -220,6 +220,9 @@ namespace ReBuzz.Core.Clips
         }
 
         Stream current, fading, spare;
+        // The time-domain path for a bass line (PeriodicStretch.cs): chosen per start (Restart), by what the audio is and what is asked of it.
+        PeriodicVoice per;
+        bool onPeriodic;
         readonly float[] inL = new float[MaxIn], inR = new float[MaxIn];
         readonly bool mono;
         bool active;
@@ -277,6 +280,7 @@ namespace ReBuzz.Core.Clips
         /// <summary>UI thread, with new params: the first spare, for a start at the clip's beginning at the tempo the engine last ran at.</summary>
         public void Anticipate(AudioClipParams p)
         {
+            if (per != null && p != null && PeriodicVoice.Qualifies(p, p.Source.SampleRate / Math.Max(1.0, Volatile.Read(ref tempoRate)), per.Rate)) return;       // no seek to make ahead
             double bps = Volatile.Read(ref tempoBps), rate = Volatile.Read(ref tempoRate);
             if (bps > 0 && rate > 0 && p != null) RequestSpare(p, 0, bps, p.Source.SampleRate / rate);
         }
@@ -346,23 +350,32 @@ namespace ReBuzz.Core.Clips
             // from the UI before the engine's first block), and adding a voice allocates and may start the worker's thread.
             voice.queued = true;
             ProWorker.Add(voice);
+            voice.per = new PeriodicVoice(mono, sampleRate);
             return voice;
         }
 
         /// <summary>Playing, or fading out.</summary>
-        public bool Sounding => active || fadeLeft > 0;
-        public bool Fading => fadeLeft > 0;
+        public bool Sounding => active || fadeLeft > 0 || (per != null && (per.Active || per.Fading));
+        public bool Fading => fadeLeft > 0 || (per != null && per.Fading);
 
         /// <summary>Everything is silent at once (a crossfade tail that has faded by its own envelope).</summary>
         public void Silence()
         {
             active = false;
             fadeLeft = 0;
+            onPeriodic = false;
+            per?.Silence();
         }
 
         /// <summary>What plays goes on as the fading one, over <see cref="Fade"/> samples (the streams swap: the next start reuses the one that has faded).</summary>
         public void BeginFade()
         {
+            if (onPeriodic)
+            {
+                per.BeginFade();
+                onPeriodic = false;
+                return;
+            }
             if (!active) return;
             (current, fading) = (fading, current);
             fading.Acc = 0;
@@ -373,6 +386,7 @@ namespace ReBuzz.Core.Clips
         /// <summary>The fading one's samples for this block, added in (before the playing one's).</summary>
         public void RenderFading(float[] left, float[] right, int offset, int count)
         {
+            if (per != null && per.Fading) per.RenderFading(left, right, offset, count);
             if (fadeLeft <= 0) return;
             var f = fading;
             int total = Math.Min(count, fadeLeft);
@@ -411,6 +425,15 @@ namespace ReBuzz.Core.Clips
         /// </summary>
         public Started Restart(AudioClipParams p, double beat, double beatsPerSample, double rate, SeekBudget budget = null)
         {
+            if (per != null && PeriodicVoice.Qualifies(p, rate, per.Rate))
+            {
+                // A bass line, stretched in the time domain: no seek, nothing to wait for.
+                BeginFade();
+                per.Start(p, beat, beatsPerSample);
+                onPeriodic = true;
+                return Started.Yes;
+            }
+            if (onPeriodic) BeginFade();
             var sp = spare;
             long from;
             int length;
@@ -482,6 +505,16 @@ namespace ReBuzz.Core.Clips
         /// <summary>The next <paramref name="count"/> samples from <paramref name="beat"/>, added in (times the clip's gain, faded in after a start).</summary>
         public void Render(AudioClipParams p, double beat, double beatsPerSample, double rate, float[] left, float[] right, int offset, int count)
         {
+            if (onPeriodic)
+            {
+                if (PeriodicVoice.Qualifies(p, rate, per.Rate))
+                {
+                    per.Render(p, beat, beatsPerSample, left, right, offset, count);
+                    return;
+                }
+                if (Restart(p, beat, beatsPerSample, rate) == Started.Failed) return;       // asked for something it cannot do now (a transposition): the stretcher
+                if (onPeriodic) return;
+            }
             if (!active) return;
             var c = current;
             c.Gain = p.Gain;
