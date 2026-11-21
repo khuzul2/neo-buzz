@@ -703,58 +703,20 @@ namespace ReBuzz.Core.AudioLibrary
 
             bool did = false;
             int budget = 12;                    // pages per pass: the thread stays responsive to new hints and the file checks
-            if (UrgencyOrder)
+            // The pages the voices' windows want, earliest deadline first across voices and files, then the pins (RB1: see Plan).
+            plan.Clear();
+            Plan(ranges, budget, plan);
+            foreach (var d in plan)
             {
-                // Earliest deadline first, across the voices and the files (RB1). Each missing page of each voice's windows has the fraction of
-                // that window's reach it lies at from the voice (a page the voice gets to sooner has the smaller one: a fast voice's window is
-                // longer, so its pages are each nearer in time), the pages behind it (tails) after those ahead; all of them in one order. The order
-                // before went voice by voice, so a voice whose next page was three ahead (the first one past a clip's pinned head, a quarter
-                // of a second at launch speeds) waited for the whole window of every voice before it in the list.
-                due.Clear();
-                foreach (var r in ranges)
-                {
-                    var rs = r.S;
-                    if (rs.IsDisposed || rs.Damaged) continue;
-                    int p0 = (int)Math.Max(0, r.From >> AudioCache.PageShift), p1 = (int)Math.Min(rs.PageCount - 1, (Math.Max(r.From, r.To - 1)) >> AudioCache.PageShift);
-                    int at = (int)Math.Clamp(r.Pos >> AudioCache.PageShift, p0, Math.Max(p0, p1));
-                    double ahead = Math.Max(1, p1 - at + 1), behind = Math.Max(1, at - p0 + 1);
-                    for (int p = at; p <= p1; p++) if (!rs.PageResident(p)) due.Add(((p - at) / ahead, rs, p));
-                    for (int p = at - 1; p >= p0; p--) if (!rs.PageResident(p)) due.Add((1 + (at - p) / behind, rs, p));
-                }
-                due.Sort(DueOrder);
-                foreach (var d in due)
-                {
-                    if (budget <= 0) break;
-                    did |= Want(d.S, d.Page, ref budget);
-                }
+                if (budget <= 0) break;
+                did |= Want(d.S, d.Page, ref budget);
             }
             foreach (var s in all)
             {
                 if (s.IsDisposed || s.Damaged) continue;
                 var pinned = s.PinnedPages();
-                if (UrgencyOrder)
-                {
-                    for (int p = 0; p < s.PageCount && budget > 0; p++)            // the pins, after what the voices are about to read
-                        if (pinned[p]) did |= Want(s, p, ref budget);
-                }
-                // 1. The nearest pages of each voice (a block's reads and the next), 2. the rest of the windows, 3. the pins.
-                else for (int stage = 0; stage < 3 && budget > 0; stage++)
-                {
-                    foreach (var r in ranges)
-                    {
-                        if (!ReferenceEquals(r.S, s)) continue;
-                        int p0 = (int)Math.Max(0, r.From >> AudioCache.PageShift), p1 = (int)Math.Min(s.PageCount - 1, (Math.Max(r.From, r.To - 1)) >> AudioCache.PageShift);
-                        int at = (int)Math.Clamp(r.Pos >> AudioCache.PageShift, p0, Math.Max(p0, p1));
-                        if (stage == 0) { p0 = Math.Max(p0, at - 1); p1 = Math.Min(p1, at + 2); }
-                        if (stage == 2) break;
-                        // Ahead first (nearest first), then behind.
-                        for (int p = at; p <= p1 && budget > 0; p++) did |= Want(s, p, ref budget);
-                        for (int p = at - 1; p >= p0 && budget > 0; p--) did |= Want(s, p, ref budget);
-                    }
-                    if (stage == 2)
-                        for (int p = 0; p < s.PageCount && budget > 0; p++)
-                            if (pinned[p]) did |= Want(s, p, ref budget);
-                }
+                for (int p = 0; p < s.PageCount && budget > 0; p++)
+                    if (pinned[p]) did |= Want(s, p, ref budget);
                 // Everything wanted is in memory (a pass in which nothing was left to read): the stream is settled.
                 bool missing = false;
                 foreach (var r in ranges)
@@ -790,10 +752,44 @@ namespace ReBuzz.Core.AudioLibrary
             return did;
         }
 
-        /// <summary>The order the prefetch thread reads pages in (RB1): by deadline across voices and files. False: voice by voice, the old order (tests).</summary>
-        internal static bool UrgencyOrder = Environment.GetEnvironmentVariable("NEOBUZZ_PREFETCH_ORDER") != "voice";
-        static readonly List<(double Key, StreamedAudio S, int Page)> due = new List<(double, StreamedAudio, int)>();
+        [ThreadStatic] static List<(double Key, StreamedAudio S, int Page)> dueScratch;          // per thread: the prefetch thread's, and a test's
+        [ThreadStatic] static HashSet<(StreamedAudio, int)> plannedScratch;
         static readonly Comparison<(double Key, StreamedAudio S, int Page)> DueOrder = (a, b) => a.Key.CompareTo(b.Key);
+        static readonly List<(StreamedAudio S, int Page)> plan = new List<(StreamedAudio, int)>();
+
+        /// <summary>
+        /// The pages to read next, earliest deadline first across the voices and the files (RB1), at most <paramref name="count"/>: the pages of
+        /// each range not in memory, each with the fraction of its window's reach it lies at from the voice (the pages ahead by their distance over
+        /// the window ahead, so a fast voice, whose window is longer, has its pages nearer in time; the pages behind it, tails, after all of those
+        /// ahead). The order before this went voice by voice, so a voice whose next page was the third ahead (the first past a clip's pinned head)
+        /// waited for the whole window of every voice before it in the list. Prefetch thread; tests call it with ranges they made.
+        /// </summary>
+        internal static void Plan(IReadOnlyList<(StreamedAudio S, long Pos, long From, long To)> ranges, int count, List<(StreamedAudio S, int Page)> into)
+        {
+            var due = dueScratch ??= new List<(double, StreamedAudio, int)>();
+            var planned = plannedScratch ??= new HashSet<(StreamedAudio, int)>();
+            due.Clear();
+            foreach (var r in ranges)
+            {
+                var rs = r.S;
+                if (rs.IsDisposed || rs.Damaged) continue;
+                int p0 = (int)Math.Max(0, r.From >> AudioCache.PageShift), p1 = (int)Math.Min(rs.PageCount - 1, (Math.Max(r.From, r.To - 1)) >> AudioCache.PageShift);
+                int at = (int)Math.Clamp(r.Pos >> AudioCache.PageShift, p0, Math.Max(p0, p1));
+                // The voice goes the way its window reaches further: up the file, or down it for a reversed view (its frames are mirrored).
+                int dir = at - p0 > p1 - at ? -1 : 1;
+                int end = dir > 0 ? p1 : p0, back = dir > 0 ? p0 : p1;
+                double ahead = Math.Max(1, Math.Abs(end - at) + 1), behind = Math.Max(1, Math.Abs(at - back) + 1);
+                for (int p = at; p != end + dir; p += dir) if (!rs.PageResident(p)) due.Add((Math.Abs(p - at) / ahead, rs, p));
+                for (int p = at - dir; p != back - dir; p -= dir) if (!rs.PageResident(p)) due.Add((1 + Math.Abs(at - p) / behind, rs, p));
+            }
+            due.Sort(DueOrder);
+            planned.Clear();
+            foreach (var d in due)
+            {
+                if (into.Count >= count) break;
+                if (planned.Add((d.S, d.Page))) into.Add((d.S, d.Page));
+            }
+        }
 
         static bool Want(StreamedAudio s, int page, ref int budget)
         {

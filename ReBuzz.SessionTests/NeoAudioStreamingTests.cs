@@ -1059,6 +1059,43 @@ namespace ReBuzz.SessionTests
             Assert.That(r.Missed, Is.EqualTo(0L));
         }
 
+        [Test]
+        public void ThePageAVoiceNeedsSoonestIsReadFirstWhoseWindowItIs()
+        {
+            // RB1. The prefetch thread went voice by voice: all of the first voice's window (12 pages a pass, a clip's window is two seconds
+            // or more of the source, 12 to 30 pages) before the next voice's first page. The page a voice needs soonest after a launch or a loop
+            // going round is the first past its pinned head (the head is 500 ms: pages 0 to 2), the third ahead, so it waited behind the other
+            // voices' windows while the voice read through the head in a quarter of a second at the soak's speeds. Now the pass reads by the
+            // fraction of its window a page is from its voice, across voices and files.
+            var a = LongAsset(40, 71);
+            var b = LongAsset(40, 72);
+            Stream(a); Stream(b);
+            var sa = a.Cache!; var sb = b.Cache!;
+            Assert.That(StreamPrefetcher.WaitSettled(sa, 20_000) && StreamPrefetcher.WaitSettled(sb, 20_000), Is.True, "the pinned heads are resident");
+            const int P = StreamedAudio.PageFrames;
+            var ranges = new List<(StreamedAudio S, long Pos, long From, long To)>
+            {
+                (sa, 20L * P, 20L * P - 4096, 32L * P),      // a slow voice in the middle of file a, listed first: 12 pages ahead of it
+                (sb, 0, 0, 30L * P),                          // a fast voice at the start of file b, 30 pages ahead: its page 3 is the first not resident
+            };
+            var plan = new List<(StreamedAudio S, int Page)>();
+            StreamPrefetcher.Plan(ranges, 12, plan);
+            string order = string.Join(" ", plan.Select(p => (ReferenceEquals(p.S, sa) ? "a" : "b") + p.Page));
+            Assert.That(plan.Count, Is.EqualTo(12), order + $"");
+            Assert.That(plan[0], Is.EqualTo((sa, 20)), "the slow voice's own page first: " + order);
+            Assert.That(plan[1], Is.EqualTo((sa, 21)), order);
+            Assert.That(plan[2], Is.EqualTo((sb, 3)), "then the fast voice's page 3 (a tenth of its window), before the slow voice's third (a sixth of its): " + order);
+            var all = new List<(StreamedAudio S, int Page)>();
+            StreamPrefetcher.Plan(ranges, 1000, all);
+            Assert.That(all.IndexOf((sa, 19)), Is.GreaterThan(all.IndexOf((sa, 31))), "what is behind a voice (tails) after everything ahead of every voice");
+            Assert.That(all.Distinct().Count(), Is.EqualTo(all.Count), "each page once");
+
+            // A reversed view's voice goes down the file: its window reaches below it, and the pages it reads next are the ones under it.
+            var down = new List<(StreamedAudio S, int Page)>();
+            StreamPrefetcher.Plan(new[] { (sa, 100L * P + 5, 80L * P, 100L * P + 4096) }, 3, down);
+            Assert.That(down, Is.EqualTo(new[] { (sa, 100), (sa, 99), (sa, 98) }), "a voice going down the file reads the page under it next: " + string.Join(" ", down.Select(p => p.Page)));
+        }
+
         /// <summary>The same for minutes (the soak group, with the ten-minute test of AudioHardeningTests).</summary>
         [Test, Category("Soak")]
         public void SixteenStreamedVoicesForThreeMinutesInRealTimeHaveNoUnderruns()

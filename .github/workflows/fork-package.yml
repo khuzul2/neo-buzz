@@ -33,6 +33,10 @@ on:
         description: 'Natives diagnosis (fix/ci-flakes-4): Infector repeated, work time of Jeskola Delay and NiNjA builds (full builds only)'
         type: boolean
         default: false
+      crash_selftest:
+        description: 'RB1: crash a program named ReBuzzEngine64.exe on purpose, to see that the crash dump is written, read and uploaded'
+        type: boolean
+        default: false
   push:
     tags: [ 'fork-v*' ]
 
@@ -139,6 +143,24 @@ jobs:
         Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps' | Format-List | Out-String | Write-Host
         "REBUZZ_CRASHDUMPS=$dumps" >> $env:GITHUB_ENV
         "REBUZZ_ENGINE_KEEP_WER=1" >> $env:GITHUB_ENV
+
+    # RB1: the dump pipeline end to end, with no real crash to wait for: a program named ReBuzzEngine64.exe that fails fast. The step
+    # "Native host crash dumps" at the end then finds, reads and uploads its dump like any other.
+    - name: Native host dump self-test
+      if: inputs.crash_selftest == true
+      shell: pwsh
+      run: |
+        $d = Join-Path $env:RUNNER_TEMP 'dump-selftest'
+        New-Item -ItemType Directory -Force $d | Out-Null
+        Push-Location $d
+        dotnet new console -n ReBuzzEngine64 --force | Out-Null
+        'System.Console.WriteLine("failing fast"); System.Environment.FailFast("RB1 self-test: a crash for the dump pipeline");' | Set-Content ReBuzzEngine64/Program.cs
+        dotnet publish ReBuzzEngine64 -c Release -o out | Out-Null
+        & .\out\ReBuzzEngine64.exe
+        Write-Host ('exit code 0x{0:X8}' -f $LASTEXITCODE)
+        Pop-Location
+        for ($i = 0; $i -lt 60 -and -not (Get-ChildItem $env:REBUZZ_CRASHDUMPS -Filter *.dmp -ErrorAction SilentlyContinue); $i++) { Start-Sleep 2 }
+        Get-ChildItem $env:REBUZZ_CRASHDUMPS | Format-Table Name, Length | Out-String | Write-Host
 
     # The UI gallery (docs/specs/ui-gallery.md, UiGalleryTests) draws ReBuzz's window at 1440×900: a screen that holds
     # it, so that menus open where they would for a user (the runner's is smaller; the gallery copes if this fails).
@@ -466,6 +488,10 @@ jobs:
         $cdb = @("${env:ProgramFiles(x86)}\Windows Kits\10\Debuggers\x64\cdb.exe", "$env:ProgramFiles\Windows Kits\10\Debuggers\x64\cdb.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
         if (-not $cdb) { $c = Get-Command cdb.exe -ErrorAction SilentlyContinue; if ($c) { $cdb = $c.Source } }
         $sym = Join-Path $env:RUNNER_TEMP 'symbols'
+        # What Windows Error Reporting itself recorded (the faulting module, the exception code and the offset in it), with or without cdb.
+        $events = Get-WinEvent -FilterHashtable @{ LogName = 'Application'; ProviderName = 'Application Error' } -MaxEvents 50 -ErrorAction SilentlyContinue |
+            Where-Object { $_.Message -match 'ReBuzzEngine' } | Select-Object -First 5
+        foreach ($e in $events) { Write-Host ("::notice title=Application Error (ReBuzzEngine)::" + (($e.Message -split "`r?`n" | Select-Object -First 12) -join ' | ')) }
         foreach ($f in $files) {
             Write-Host "::group::$($f.Name) ($([math]::Round($f.Length / 1MB)) MB)"
             if ($cdb) {
