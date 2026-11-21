@@ -161,6 +161,8 @@ namespace ReBuzz.Studio.Shell
                 if (inspector?.SongNotes is { } notes && inspector.IsOpen && FocusManager?.GetFocusedElement() is Visual focused && notes.IsVisualAncestorOf(focused))
                     return notes;
                 // The Tracker in the detail panel, when the keyboard is in it.
+                // The Audio page's waveform, when the keyboard is in it (WM1): Select All, Delete and Deselect are its markers', not the view behind it.
+                if (detail?.IsOpen == true && detail.IsAudio && detail.AudioPage is Views.Audio.AudioClipPage audioPage && audioPage.WaveFocused(FocusManager?.GetFocusedElement())) return audioPage;
                 if (detail?.IsOpen == true && InDetail(FocusManager?.GetFocusedElement())) return detail.Page as IStudioEditTarget;
                 return (tabs.SelectedItem as TabItem)?.Content as IStudioEditTarget;
             }
