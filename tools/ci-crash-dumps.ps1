@@ -36,21 +36,23 @@ if ($Mode -eq 'selftest') {
     $d = Join-Path $env:RUNNER_TEMP 'dump-selftest'
     New-Item -ItemType Directory -Force $d | Out-Null
     Push-Location $d
-    dotnet new console -n ReBuzzEngine64 --force | Out-Null
-    # RaiseFailFastException goes to Windows Error Reporting, as the C runtime's fast fail does (Environment.FailFast ends the process itself).
-    @'
-using System.Runtime.InteropServices;
-System.Console.WriteLine("failing fast");
-RaiseFailFastException(System.IntPtr.Zero, System.IntPtr.Zero, 0);
-[DllImport("kernel32.dll")] static extern void RaiseFailFastException(System.IntPtr record, System.IntPtr context, int flags);
-'@ | Set-Content ReBuzzEngine64/Program.cs
-    dotnet publish ReBuzzEngine64 -c Release -o out | Out-Null
-    & .\out\ReBuzzEngine64.exe
+    # The same crash the host had: the C runtime's abort(), a fast fail (0xc0000409) in ucrtbase, in a program named like the host.
+    Set-Content crash.c "#include <stdlib.h>`nint main(void) { abort(); return 0; }"
+    $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath
+    $bat = Join-Path $vs 'VC\Auxiliary\Build\vcvars64.bat'
+    cmd /c "`"$bat`" >nul && cl /nologo /Fe:ReBuzzEngine64.exe crash.c"
+    if ($LASTEXITCODE -ne 0) { throw 'cl failed' }
+    & .\ReBuzzEngine64.exe
     Write-Host ('exit code 0x{0:X8}' -f $LASTEXITCODE)
     $global:LASTEXITCODE = 0
     Pop-Location
-    for ($i = 0; $i -lt 90 -and -not (Get-ChildItem $dumps -Filter *.dmp -ErrorAction SilentlyContinue); $i++) { Start-Sleep 2 }
+    for ($i = 0; $i -lt 60 -and -not (Get-ChildItem $dumps -Filter *.dmp -ErrorAction SilentlyContinue); $i++) { Start-Sleep 2 }
     Get-ChildItem $dumps -ErrorAction SilentlyContinue | Format-Table Name, Length | Out-String | Write-Host
+    # If there is none: what Windows Error Reporting did see.
+    foreach ($q in "$env:ProgramData\Microsoft\Windows\WER\ReportQueue", "$env:ProgramData\Microsoft\Windows\WER\ReportArchive", "$env:LOCALAPPDATA\CrashDumps", "$env:LOCALAPPDATA\Microsoft\Windows\WER\ReportQueue") {
+        Write-Host ("$q : " + ((Get-ChildItem $q -ErrorAction SilentlyContinue | ForEach-Object Name | Select-Object -First 8) -join ', '))
+    }
+    Get-WinEvent -LogName Application -MaxEvents 12 -ErrorAction SilentlyContinue | ForEach-Object { '{0} {1} {2}' -f $_.TimeCreated.ToString('HH:mm:ss'), $_.ProviderName, (($_.Message -split "`r?`n")[0]) } | Write-Host
     return
 }
 
