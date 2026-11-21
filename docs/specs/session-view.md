@@ -898,7 +898,7 @@ public sealed class MyPadsScript : ControllerScript
 - Audio clips launch, stop, loop, follow and record into the arrangement as any clip does; the launch settings (region, legato, follow actions…) apply. Clips in the arrangement play too.
 
 *The clip panel's Audio section.*
-- Warp mode (Live's): **Beats** (the default: drums, loops), **Complex** (any material), **Re-Pitch** (a turntable), **Off** (its own speed from the clip's start).
+- Warp mode (Live's): **Beats** (drums, loops; the default until WP1c, and what a saved clip with no mode still means), **Complex** (any material), **Pro** (the default for a new clip since 2026-11-21: the best stretch for any material), **Re-Pitch** (a turntable), **Off** (its own speed from the clip's start).
 - What Beats keeps: the transients (and a beat grid where they are further apart than a beat), or a 1/4, 1/8 or 1/16 grid.
 - Tempo, with ÷2, ×2 and Detect. Without warp markers the clip's length follows it: 4 beats at 120 BPM are 8 at 60.
 - Gain (dB), transpose (semitones) and detune (cents).

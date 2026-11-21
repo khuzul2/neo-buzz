@@ -15,7 +15,7 @@ namespace ReBuzz.Core
         public string Warp;
         /// <summary>What Beats keeps, of <see cref="SessionDocument.AudioSettings.PreserveModes"/> (any case).</summary>
         public string Preserve;
-        /// <summary>The audio's tempo (1 to 999). On a clip whose warp is Off and none is given, warp goes to Beats: a tempo is what it was waiting for.</summary>
+        /// <summary>The audio's tempo (1 to 999). On a clip whose warp is Off and none is given, warp goes to the default (Pro): a tempo is what it was waiting for.</summary>
         public double? TempoBpm;
         /// <summary>Finds the tempo again from the audio (markers are cleared).</summary>
         public bool DetectTempo;
@@ -50,9 +50,9 @@ namespace ReBuzz.Core
             if (TempoBpm is double bpm)
             {
                 a.Bpm = Math.Clamp(bpm, 1, 999);
-                if (a.Warp == "Off" && Warp == null) a.Warp = "Beats";
+                if (a.Warp == "Off" && Warp == null) a.Warp = SessionDocument.AudioSettings.DefaultWarp;
             }
-            if (DetectTempo && a.Warp == "Off" && Warp == null) a.Warp = "Beats";
+            if (DetectTempo && a.Warp == "Off" && Warp == null) a.Warp = SessionDocument.AudioSettings.DefaultWarp;
             if (FadeIn is double fi) { a.FadeIn = Math.Max(0, fi); if (fi <= 0) a.CrossIn = false; }
             if (FadeOut is double fo) a.FadeOut = Math.Max(0, fo);
             if (Transpose is int tr) a.Transpose = Math.Clamp(tr, -48, 48);

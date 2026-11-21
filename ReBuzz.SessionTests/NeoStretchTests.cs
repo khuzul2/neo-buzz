@@ -833,7 +833,47 @@ namespace ReBuzz.SessionTests
                 Assert.That(e.Attribute("pro"), Is.Null);
                 Assert.That(SessionDocument.AudioSettings.FromXml(e).Warp, Is.EqualTo(warp));
             }
-            Assert.That(new SessionDocument.AudioSettings { Warp = "Beats" }.ToXml().Attribute("warp"), Is.Null, "Beats is still the default, written as nothing");
+            Assert.That(new SessionDocument.AudioSettings { Warp = "Beats" }.ToXml().Attribute("warp"), Is.Null, "Beats is what a missing attribute means, written as nothing");
+        }
+
+        [Test]
+        public void ANewClipStartsInProAndAnOldSongKeepsBeatsThroughSavingAndReopening()
+        {
+            Assert.That(SessionDocument.AudioSettings.DefaultWarp, Is.EqualTo("Pro"));
+            Assert.That(new SessionDocument.AudioSettings().Warp, Is.EqualTo("Pro"), "a new clip starts in Pro");
+            Assert.That(SessionDocument.AudioSettings.WarpWhenNotSaved, Is.EqualTo("Beats"));
+
+            // An old song: its clip was saved with no warp attribute (Beats was written as nothing), another with Complex.
+            var oldSong = XElement.Parse("<Audio wave='0' bpm='100' asset='old'/>");
+            Assert.That(oldSong.Attribute("warp"), Is.Null);
+            Assert.That(SessionDocument.AudioSettings.FromXml(oldSong).Warp, Is.EqualTo("Beats"), "no attribute: Beats, as it was saved");
+            Assert.That(SessionDocument.AudioSettings.FromXml(XElement.Parse("<Audio wave='0' bpm='100' warp='Complex'/>")).Warp, Is.EqualTo("Complex"), "a saved Complex is not Pro");
+
+            var doc = new SessionDocument();
+            doc.SetClip("Audio", "old", new SessionDocument.ClipSettings { Audio = SessionDocument.AudioSettings.FromXml(oldSong) });
+            doc.SetClip("Audio", "new", new SessionDocument.ClipSettings { Audio = new SessionDocument.AudioSettings { Asset = "n1", Bpm = 100 } });
+            doc.SetClip("Audio", "off", new SessionDocument.ClipSettings { Audio = new SessionDocument.AudioSettings { Asset = "n2", Bpm = 100, Warp = "Off" } });
+            var stream = new MemoryStream();
+            doc.Save(stream);
+            string xml = System.Text.Encoding.UTF8.GetString(stream.ToArray());
+
+            // Saved: the old clip's Beats is still written as nothing (what a missing attribute means), every other mode is written.
+            var saved = XDocument.Parse(xml).Descendants("Audio").ToDictionary(e => (string?)e.Attribute("asset") ?? "", e => e);
+            Assert.That(saved["old"].Attribute("warp"), Is.Null);
+            Assert.That(((string?)saved["n1"].Attribute("warp"), (string?)saved["n1"].Attribute("pro")), Is.EqualTo(("Complex", "true")), "Pro: written as Complex plus the marker");
+            Assert.That((string?)saved["n2"].Attribute("warp"), Is.EqualTo("Off"));
+
+            // Reopened: the same modes.
+            var back = SessionDocument.Load(new MemoryStream(stream.ToArray()));
+            Assert.That(back.GetClip("Audio", "old").Audio.Warp, Is.EqualTo("Beats"), "an old clip stays in Beats");
+            Assert.That(back.GetClip("Audio", "new").Audio.Warp, Is.EqualTo("Pro"), "a new clip stays in Pro");
+            Assert.That(back.GetClip("Audio", "off").Audio.Warp, Is.EqualTo("Off"));
+
+            // And saved again from the reopened song: nothing drifts.
+            var second = new MemoryStream();
+            back.Save(second);
+            string Clips(string text) => string.Join("\n", XDocument.Parse(text).Descendants("Audio").Select(e => e.ToString()));
+            Assert.That(Clips(System.Text.Encoding.UTF8.GetString(second.ToArray())), Is.EqualTo(Clips(xml)), "the clips are written the same");
         }
     }
 }

@@ -169,9 +169,14 @@ namespace ReBuzz.SessionTests
                             v = 0.6 * (phase - Math.Floor(phase) < 0.25 ? 1 : -1) + 0.4 * Math.Sin(2 * Math.PI * phase);
                             break;
                         case "filtered-saw":
+                        case "filtered-saw-2k":                   // the same, the cutoff opening to 2 kHz (WP1c: what the energy above 2 kHz does to the choice)
+                        case "filtered-saw-4k":
+                        case "filtered-saw-slow":                 // and the sweep slow (0.6 s): a filtered line whose shape hardly changes from one period to the next
+                        case "filtered-saw-static":               // and no sweep at all: the cutoff stays at 800 Hz
                             {
                                 free += f / Rate;
-                                double cutoff = 220 + 980 * Math.Exp(-i / (0.15 * Rate));
+                                double open = kind == "filtered-saw" || kind == "filtered-saw-slow" ? 980 : kind == "filtered-saw-2k" ? 1780 : 3780;
+                                double cutoff = kind == "filtered-saw-static" ? 800 : 220 + open * Math.Exp(-i / ((kind == "filtered-saw-slow" ? 0.6 : 0.15) * Rate));
                                 svf.Set(cutoff, Rate, 2.0);
                                 v = 1.4 * svf.Process((float)(2 * (free - Math.Floor(free)) - 1));
                                 break;
@@ -253,6 +258,49 @@ namespace ReBuzz.SessionTests
             }
         }
 
+        /// <summary>
+        /// WP1c, by hand: the five synthetic lines (saw+sub, filtered saw, square, pulse, 12-cent vibrato) at the given tempo factors (WP1C_TEMPOS, comma
+        /// list, default 0.8,1.1,1.25,1.5), <c>name-pct--mode.wav</c> (32-bit float, left channel): original, ideal (the generator at the target tempo),
+        /// pro-old (the stretcher alone), pro-path (the time-domain path forced on, whatever the selector says) and pro-now (Pro as it plays: the selector's
+        /// choice). Set WP1C_RENDER_DIR.
+        /// </summary>
+        [Test, Explicit("writes the WP1c renders; set WP1C_RENDER_DIR")]
+        public void WriteWp1cRenders()
+        {
+            string dir = Environment.GetEnvironmentVariable("WP1C_RENDER_DIR") ?? throw new InvalidOperationException("WP1C_RENDER_DIR");
+            Directory.CreateDirectory(dir);
+            var tempos = (Environment.GetEnvironmentVariable("WP1C_TEMPOS") ?? "0.8,1.1,1.25,1.5").Split(',').Select(t => double.Parse(t, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+            var lines = new (string Name, Func<double, AudioSource> Make)[]
+            {
+                ("saw-sub", t => NeoStretchTests.Bass(Bpm * t, 8)),
+                ("filtered-saw", t => SynthBass("filtered-saw", Bpm * t, 8)),
+                ("square", t => SynthBass("square", Bpm * t, 8)),
+                ("pulse", t => SynthBass("pulse", Bpm * t, 8)),
+                ("saw-vibrato", t => SynthBass("saw-vibrato", Bpm * t, 8)),
+                ("filtered-saw-2k", t => SynthBass("filtered-saw-2k", Bpm * t, 8)),
+                ("filtered-saw-4k", t => SynthBass("filtered-saw-4k", Bpm * t, 8)),
+                ("filtered-saw-slow", t => SynthBass("filtered-saw-slow", Bpm * t, 8)),
+                ("saw-noisy", t => SynthBass("saw-noisy", Bpm * t, 8)),
+                ("filtered-saw-static", t => SynthBass("filtered-saw-static", Bpm * t, 8)),
+            };
+            foreach (var (name, make) in lines)
+                foreach (double tempo in tempos)
+                {
+                    string group = $"{name}-{(int)Math.Round(tempo * 100)}";
+                    var source = make(1);
+                    int rate = source.SampleRate;
+                    Write(dir, group, "original", source.Left, rate);
+                    Write(dir, group, "ideal", make(tempo).Left, rate);
+                    Write(dir, group, "pro-now", NeoStretchTests.Play(NeoStretchTests.Clip(source, Bpm, WarpMode.Pro, 0), Bpm * tempo, 0, 8, 256, rate), rate);
+                    PeriodicVoice.Enabled = false;
+                    try { Write(dir, group, "pro-old", NeoStretchTests.Play(NeoStretchTests.Clip(new AudioSource(source.Left, source.Right, rate), Bpm, WarpMode.Pro, 0), Bpm * tempo, 0, 8, 256, rate), rate); }
+                    finally { PeriodicVoice.Enabled = true; }
+                    PeriodicAnalysis.Force = true;
+                    try { Write(dir, group, "pro-path", NeoStretchTests.Play(NeoStretchTests.Clip(new AudioSource(source.Left, source.Right, rate), Bpm, WarpMode.Pro, 0), Bpm * tempo, 0, 8, 256, rate), rate); }
+                    finally { PeriodicAnalysis.Force = false; }
+                }
+        }
+
         /// <summary>Prints what the selector measures on each kind of material: the generated ones and, from WP1B_REAL_DIR, the real excerpts.</summary>
         [Test, Explicit("prints the selector's features; set WP1B_REAL_DIR for the real excerpts")]
         public void PrintTheSelectorFeatures()
@@ -267,6 +315,10 @@ namespace ReBuzz.SessionTests
                 ("synth bass 6: saw+sub, eighth notes", SynthBass("saw-eighths", Bpm, 8)),
                 ("synth bass 7: saw+sub, noise -30 dB", SynthBass("saw-noisy", Bpm, 8)),
                 ("synth bass 8: saw+sub, vibrato 12 cents", SynthBass("saw-vibrato", Bpm, 8)),
+                ("synth bass 9: filtered saw, cutoff to 2 kHz", SynthBass("filtered-saw-2k", Bpm, 8)),
+                ("synth bass 10: filtered saw, cutoff to 4 kHz", SynthBass("filtered-saw-4k", Bpm, 8)),
+                ("synth bass 11: filtered saw, slow sweep", SynthBass("filtered-saw-slow", Bpm, 8)),
+                ("synth bass 12: filtered saw, no sweep", SynthBass("filtered-saw-static", Bpm, 8)),
                 ("drums", Excerpt("drums", Bpm, 1)),
                 ("pad", Excerpt("pad", Bpm, 1)),
             };
@@ -401,6 +453,86 @@ namespace ReBuzz.SessionTests
             }
             // A line too fast for the old frames (eighth notes at 120 BPM): stays with the stretcher as it did.
             Assert.That(PeriodicAnalysis.Of(SynthBass("saw-eighths", Bpm, 8))?.Use ?? false, Is.False);
+        }
+
+        [Test]
+        public void SpeedingUpTheSelectorKeepsTheLinesThePathIsBetterOnAndLeavesTheResonantOnesToTheStretcher()
+        {
+            // Where the path beats the stretcher at 10, 25 and 50 % faster (WP1c): a strong fundamental and weak, flat harmonics.
+            foreach (var (name, source) in new[] { ("saw+sub", Excerpt("bass", Bpm, 1)), ("square", SynthBass("square", Bpm, 8)), ("pulse", SynthBass("pulse", Bpm, 8)), ("noisy saw", SynthBass("saw-noisy", Bpm, 8)) })
+            {
+                var info = PeriodicAnalysis.Of(source)!;
+                Assert.That(info.Use && info.FasterOk, Is.True, $"{name}: low share {info.LowShare:F3}");
+            }
+            // Where it is not: a resonant low-passed saw (swept fast or slowly, opened wider, or held still) keeps the path slowing down, not speeding up.
+            foreach (var kind in new[] { "filtered-saw", "filtered-saw-2k", "filtered-saw-4k", "filtered-saw-slow", "filtered-saw-static" })
+            {
+                var info = PeriodicAnalysis.Of(SynthBass(kind, Bpm, 8))!;
+                Assert.That(info.Use, Is.True, $"{kind}: still the path's, slowing down");
+                Assert.That(info.FasterOk, Is.False, $"{kind}: low share {info.LowShare:F3}, the stretcher's when faster");
+            }
+            // The choice is made where the clip starts: the same clip is the path's at the audio's tempo and slower, the stretcher's faster.
+            var filtered = NeoStretchTests.Clip(SynthBass("filtered-saw", Bpm, 8), Bpm, WarpMode.Pro);
+            PeriodicAnalysis.Of(filtered.Source);
+            double perSample(double bpm) => bpm / 60.0 / Rate;
+            Assert.That(PeriodicVoice.Qualifies(filtered, 1.0, Rate, 0, perSample(Bpm * 0.8)), Is.True, "20 % slower");
+            Assert.That(PeriodicVoice.Qualifies(filtered, 1.0, Rate, 0, perSample(Bpm)), Is.True, "the same tempo");
+            Assert.That(PeriodicVoice.Qualifies(filtered, 1.0, Rate, 0, perSample(Bpm * 1.25)), Is.False, "25 % faster");
+            Assert.That(PeriodicVoice.Qualifies(filtered, 1.0, Rate, 0, perSample(Bpm * 1.25), playing: true), Is.True, "a voice already on the path stays on it until its next start");
+            var saw = NeoStretchTests.Clip(Excerpt("bass", Bpm, 1), Bpm, WarpMode.Pro);
+            PeriodicAnalysis.Of(saw.Source);
+            Assert.That(PeriodicVoice.Qualifies(saw, 1.0, Rate, 0, perSample(Bpm * 1.25)), Is.True, "saw+sub 25 % faster keeps the path");
+        }
+
+        [Test]
+        public void ARealBassStaysWithTheStretcherAtEveryTempo()
+        {
+            // The sampled basses of WP1b (WP1B_REAL_DIR, never in the repository) are left to the stretcher by the selector, faster as slower.
+            string? real = Environment.GetEnvironmentVariable("WP1B_REAL_DIR");
+            if (real == null) Assert.Ignore("WP1B_REAL_DIR is not set");
+            foreach (var (name, source) in RealExcerpts(real!).Where(e => e.Name.Contains("bass")))
+            {
+                var info = PeriodicAnalysis.Of(source);
+                Assert.That(info?.Use ?? false, Is.False, name);
+            }
+        }
+
+        [Test, Combinatorial]
+        public void AResonantLineGoesToTheStretcherWhenTheSongIsFasterAndPlaysAsItSampleForSample([Values(1.1, 1.25, 1.5)] double tempo, [Values("Pro", "Complex")] string modeName)
+        {
+            var mode = Enum.Parse<WarpMode>(modeName);
+            if (mode == WarpMode.Pro) NeedsTheLibrary();
+            foreach (var kind in new[] { "filtered-saw", "filtered-saw-static" })
+            {
+                var source = SynthBass(kind, Bpm, 8);
+                var now = NeoStretchTests.Play(NeoStretchTests.Clip(source, Bpm, mode), Bpm * tempo, 0, 8);
+                Assert.That(now, Is.EqualTo(RenderOld(source, Bpm, Bpm * tempo, 0, 8, mode)), $"{kind} {tempo} {modeName}: the stretcher, sample for sample");
+            }
+        }
+
+        [Test, Combinatorial]
+        public void ASlowerSongKeepsThePathOnEveryLineItHadItOn([Values(0.8, 0.9)] double tempo, [Values("Pro", "Complex")] string modeName)
+        {
+            var mode = Enum.Parse<WarpMode>(modeName);
+            if (mode == WarpMode.Pro) NeedsTheLibrary();
+            foreach (var kind in new[] { "filtered-saw", "square" })
+            {
+                var source = SynthBass(kind, Bpm, 8);
+                var now = NeoStretchTests.Play(NeoStretchTests.Clip(source, Bpm, mode), Bpm * tempo, 0, 8);
+                Assert.That(now, Is.Not.EqualTo(RenderOld(source, Bpm, Bpm * tempo, 0, 8, mode)), $"{kind} {tempo} {modeName}: the path");
+            }
+        }
+
+        [Test, Combinatorial]
+        public void ALineThePathIsBetterOnKeepsItWhenFaster([Values(1.1, 1.25, 1.5)] double tempo, [Values("Pro", "Complex")] string modeName)
+        {
+            var mode = Enum.Parse<WarpMode>(modeName);
+            if (mode == WarpMode.Pro) NeedsTheLibrary();
+            foreach (var source in new[] { Excerpt("bass", Bpm, 1), SynthBass("square", Bpm, 8), SynthBass("pulse", Bpm, 8) })
+            {
+                var now = NeoStretchTests.Play(NeoStretchTests.Clip(source, Bpm, mode), Bpm * tempo, 0, 8);
+                Assert.That(now, Is.Not.EqualTo(RenderOld(source, Bpm, Bpm * tempo, 0, 8, mode)), $"{tempo} {modeName}: the path");
+            }
         }
 
         [Test]

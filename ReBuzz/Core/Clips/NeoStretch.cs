@@ -280,7 +280,7 @@ namespace ReBuzz.Core.Clips
         /// <summary>UI thread, with new params: the first spare, for a start at the clip's beginning at the tempo the engine last ran at.</summary>
         public void Anticipate(AudioClipParams p)
         {
-            if (per != null && p != null && PeriodicVoice.Qualifies(p, p.Source.SampleRate / Math.Max(1.0, Volatile.Read(ref tempoRate)), per.Rate)) return;       // no seek to make ahead
+            if (per != null && p != null && PeriodicVoice.Qualifies(p, p.Source.SampleRate / Math.Max(1.0, Volatile.Read(ref tempoRate)), per.Rate, 0, Volatile.Read(ref tempoBps))) return;       // no seek to make ahead
             double bps = Volatile.Read(ref tempoBps), rate = Volatile.Read(ref tempoRate);
             if (bps > 0 && rate > 0 && p != null) RequestSpare(p, 0, bps, p.Source.SampleRate / rate);
         }
@@ -425,7 +425,7 @@ namespace ReBuzz.Core.Clips
         /// </summary>
         public Started Restart(AudioClipParams p, double beat, double beatsPerSample, double rate, SeekBudget budget = null)
         {
-            if (per != null && PeriodicVoice.Qualifies(p, rate, per.Rate))
+            if (per != null && PeriodicVoice.Qualifies(p, rate, per.Rate, beat, beatsPerSample))
             {
                 // A bass line, stretched in the time domain: no seek, nothing to wait for.
                 BeginFade();
@@ -507,7 +507,7 @@ namespace ReBuzz.Core.Clips
         {
             if (onPeriodic)
             {
-                if (PeriodicVoice.Qualifies(p, rate, per.Rate))
+                if (PeriodicVoice.Qualifies(p, rate, per.Rate, beat, beatsPerSample, playing: true))
                 {
                     per.Render(p, beat, beatsPerSample, left, right, offset, count);
                     return;
