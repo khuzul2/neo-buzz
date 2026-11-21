@@ -50,8 +50,8 @@ if ($Mode -eq 'selftest') {
         cmd /c "`"$bat`" >nul && cl /nologo /Fe:ReBuzzEngine64.exe crash.c >nul"
         if ($LASTEXITCODE -ne 0) { throw 'cl failed' }
         $em = Add-Type -MemberDefinition '[DllImport("kernel32.dll")] public static extern uint SetErrorMode(uint m);' -Name EM -Namespace Rb1 -PassThru
-        $mode = $em::SetErrorMode(0); [void]$em::SetErrorMode($mode)
-        Write-Host ("::group::variant $($v.Name): error mode of this process 0x{0:X}" -f $mode)
+        $prevMode = $em::SetErrorMode(0); [void]$em::SetErrorMode($prevMode)
+        Write-Host ("::group::variant $($v.Name): error mode of this process 0x{0:X}" -f $prevMode)
         & .\ReBuzzEngine64.exe
         Write-Host ('variant {0}: exit code 0x{1:X8}' -f $v.Name, $LASTEXITCODE)
         $global:LASTEXITCODE = 0
