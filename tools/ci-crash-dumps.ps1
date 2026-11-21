@@ -36,15 +36,30 @@ if ($Mode -eq 'selftest') {
     $d = Join-Path $env:RUNNER_TEMP 'dump-selftest'
     New-Item -ItemType Directory -Force $d | Out-Null
     Push-Location $d
-    # The same crash the host had: the C runtime's abort(), a fast fail (0xc0000409) in ucrtbase, in a program named like the host.
-    Set-Content crash.c "#include <stdlib.h>`nint main(void) { abort(); return 0; }"
+    # The same crash the host had: the C runtime's abort(), a fast fail (0xc0000409) in ucrtbase, in a program named like the host. Two of them: as
+    # it is (it inherits its parent's error mode, which a CI agent may have set to keep dialogs away: no report), and one that asks for reporting.
     $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath
     $bat = Join-Path $vs 'VC\Auxiliary\Build\vcvars64.bat'
-    cmd /c "`"$bat`" >nul && cl /nologo /Fe:ReBuzzEngine64.exe crash.c"
-    if ($LASTEXITCODE -ne 0) { throw 'cl failed' }
-    & .\ReBuzzEngine64.exe
-    Write-Host ('exit code 0x{0:X8}' -f $LASTEXITCODE)
-    $global:LASTEXITCODE = 0
+    $variants = @(
+        @{ Name = 'inherit'; Source = "#include <stdlib.h>`nint main(void) { abort(); return 0; }" },
+        @{ Name = 'reset'; Source = "#include <stdlib.h>`n#include <windows.h>`nint main(void) { SetErrorMode(0); _set_abort_behavior(_CALL_REPORTFAULT, _CALL_REPORTFAULT); abort(); return 0; }" })
+    foreach ($v in $variants) {
+        New-Item -ItemType Directory -Force $v.Name | Out-Null
+        Push-Location $v.Name
+        Set-Content crash.c $v.Source
+        cmd /c "`"$bat`" >nul && cl /nologo /Fe:ReBuzzEngine64.exe crash.c >nul"
+        if ($LASTEXITCODE -ne 0) { throw 'cl failed' }
+        $em = Add-Type -MemberDefinition '[DllImport("kernel32.dll")] public static extern uint SetErrorMode(uint m);' -Name EM -Namespace Rb1 -PassThru
+        $mode = $em::SetErrorMode(0); [void]$em::SetErrorMode($mode)
+        Write-Host ("::group::variant $($v.Name): error mode of this process 0x{0:X}" -f $mode)
+        & .\ReBuzzEngine64.exe
+        Write-Host ('variant {0}: exit code 0x{1:X8}' -f $v.Name, $LASTEXITCODE)
+        $global:LASTEXITCODE = 0
+        for ($i = 0; $i -lt 15 -and -not (Get-ChildItem $dumps -Filter *.dmp -ErrorAction SilentlyContinue); $i++) { Start-Sleep 2 }
+        Write-Host ('dumps so far: ' + ((Get-ChildItem $dumps -ErrorAction SilentlyContinue | ForEach-Object Name) -join ', '))
+        Write-Host '::endgroup::'
+        Pop-Location
+    }
     Pop-Location
     for ($i = 0; $i -lt 60 -and -not (Get-ChildItem $dumps -Filter *.dmp -ErrorAction SilentlyContinue); $i++) { Start-Sleep 2 }
     Get-ChildItem $dumps -ErrorAction SilentlyContinue | Format-Table Name, Length | Out-String | Write-Host
