@@ -13,6 +13,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using ReBuzz.Audio;
 using ReBuzz.Core.AudioLibrary;
+using ReBuzz.Core.Clips;
 using ReBuzz.Host;
 using ReBuzz.Core;
 using ReBuzz.Platform;
@@ -45,6 +46,8 @@ namespace ReBuzz.Studio.Shell.Preferences
         readonly ComboBox streamThreshold = Choices(220), cacheLimit = Choices(220);
         readonly TextBlock cacheText = new TextBlock { TextWrapping = Avalonia.Media.TextWrapping.Wrap, MaxWidth = 460, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center };
         readonly Button clearCache = new Button { Content = "Clear" };
+        // Auto-warp (neo-audio.md, AW1): a file the app keeps beside the streaming settings, not a registry setting.
+        readonly CheckBox autoWarp = new CheckBox { Content = "Auto-warp long files on import" };
         readonly TextBlock status = new TextBlock { TextWrapping = Avalonia.Media.TextWrapping.Wrap };
         readonly TextBlock missing;
         Button asioPanel;
@@ -84,6 +87,10 @@ namespace ReBuzz.Studio.Shell.Preferences
             Row("Render threads", threads, "With Multithreading on (Advanced ▸ Engine flags). Takes effect after a restart.");
             Row("Work algorithm", algorithm, $"The default is {Algorithms[DefaultAlgorithm]}. Takes effect after a restart.");
 
+            Heading("Warping");
+            Row("Auto-warp", autoWarp, $"On: an audio file longer than {AutoWarpPolicy.LongBars} bars that has a tempo is warped by its beats when it is imported, so a recording whose tempo drifts or changes lands on the song's grid (a steady file keeps one tempo, a loop stays as it is). The Audio page's Auto-warp button does it for a clip at any time.");
+            autoWarp.IsCheckedChanged += (s, e) => { if (!Filling) { AutoWarpPolicy.Enabled = autoWarp.IsChecked == true; AutoWarpPolicy.Save(); } };
+
             Heading("Disk streaming");
             Row("Audio cache", new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 8, Children = { cacheText, clearCache } },
                 "Long audio is decoded once into the cache folder and read from there while it plays, so it does not sit in memory; the cache is shared by songs and made again from the song when a file is lost. Clear removes what this song is not using.");
@@ -107,10 +114,13 @@ namespace ReBuzz.Studio.Shell.Preferences
         public override void RestoreOwn()
         {
             Model?.Restore("audio");
+            AutoWarpPolicy.Enabled = true;
+            AutoWarpPolicy.Save();
             Refresh();
         }
 
         public ComboBox OutputBox => output;
+        public CheckBox AutoWarpBox => autoWarp;
         public TextBlock CacheText => cacheText;
         public Button ClearCacheButton => clearCache;
         public ComboBox StreamThresholdBox => streamThreshold;
@@ -188,6 +198,7 @@ namespace ReBuzz.Studio.Shell.Preferences
                 cacheLimit.ItemsSource = CacheLimitsGb.Select(g => $"{g} GB").ToList();
                 cacheLimit.SelectedIndex = Math.Max(0, Array.IndexOf(CacheLimitsGb, (int)(StreamingPolicy.CacheLimitBytes >> 30)));
                 ShowCache();
+                autoWarp.IsChecked = AutoWarpPolicy.Enabled;
 
                 threads.ItemsSource = Enumerable.Range(1, 8).Select(n => n.ToString()).ToList();
                 threads.SelectedIndex = Math.Clamp(registry.Read("AudioThreads", DefaultThreads, "Settings"), 1, 8) - 1;

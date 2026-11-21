@@ -230,7 +230,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | arrangement_place | 10 | 9 | yes |
 | arrangement_takes | 3 | 2 | yes |
 | audio_clip_get | 3 | 1 | yes |
-| audio_clip_set | 3 | 5 | yes |
+| audio_clip_set | 3 | 7 | yes |
 | audio_convert_to_midi | 2 | 2 | yes |
 | audio_devices | 2 | 0 | yes |
 | audio_import | 3 | 2 | yes |

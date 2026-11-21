@@ -25,6 +25,12 @@ name: Pitch evaluation
 #  - MDB-stem-synth again: Melody note F-measure and the pitch right on the voiced frames.
 #  - Piano-roll plots (annotated against played) of three excerpts of each mode, uploaded as the artifact am1-plots.
 #
+# The autowarp job (docs/specs/neo-audio.md, AW1 as built) scores the beat and downbeat tracker behind Auto-warp (tools/AutoWarpEval, tools/autowarp):
+#  - Groove MIDI Dataset (CC BY 4.0) and Slakh2100 (Zenodo 4599666, CC BY 4.0), read by range requests and as a stream (tools/autowarp/fetch_data.py); the ground
+#    truth beats and downbeats come from the MIDI. The generated lines of the repo (steady, drift, step, ritardando; drums, mix, pad) and steady loops.
+#  - Beat F at +-70 ms, CMLt, AMLt (mir_eval, MIT), downbeat F and the grid error after warping, for auto-warp against today's steady detection; half of each set is held out.
+#  - Uploads the report, and the listening pack (two performances and the drift and step lines, steady against auto-warp, on a click) as the artifact autowarp-pack.
+#
 # The convert job (docs/specs/pitch.md section 9.6) scores Convert to MIDI, the converters as the app runs them (tools/ConvertEval):
 #  - MDB-stem-synth again: note F-measure of the melody converter (onset +-50 ms, pitch +-50 cents; the reference notes cut from the annotated f0).
 #  - Groove MIDI Dataset (Magenta, CC BY 4.0), the test split read by HTTP range requests (tools/convert/fetch_data.py): per-class onset F-measure of the drum converter.
@@ -62,6 +68,10 @@ on:
         default: '10'
       am1:
         description: 'Neo Audio to MIDI (GuitarSet, IDMT-SMT-Drums and MDB-stem-synth through the machine engine, with piano-roll plots)'
+        type: boolean
+        default: true
+      autowarp:
+        description: 'Auto-warp (beats and downbeats on Groove MIDI Dataset, Slakh2100 and the generated lines, against today steady-tempo detection)'
         type: boolean
         default: true
       guitarset_every:
@@ -397,4 +407,93 @@ jobs:
           am1-eval-report.md
           am1-plots/*.png
           am1-plots/*.json
+        if-no-files-found: ignore
+
+  autowarp:
+    if: ${{ github.event.inputs.autowarp != 'false' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    defaults:
+      run:
+        shell: bash
+    env:
+      DATA: /mnt/autowarp-eval-data
+    steps:
+    - uses: actions/checkout@v5
+
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+
+    - name: Build the evaluation tool
+      run: dotnet build tools/AutoWarpEval -c Release -nologo
+
+    - name: Room for the data
+      run: |
+        sudo mkdir -p "$DATA"
+        sudo chown "$USER" "$DATA"
+        df -h / /mnt | cat
+
+    # The Groove MIDI Dataset's recordings (range requests into the zip) and Slakh2100's test split (the tarball read as a stream).
+    - name: Fetch the Groove MIDI Dataset
+      run: |
+        set -euo pipefail
+        pip install --quiet numpy mir_eval soundfile pretty_midi remotezip requests
+        python3 -I tools/autowarp/fetch_data.py --gmd "$DATA/gmd"
+        du -sh "$DATA"/* | cat
+
+    # Slakh2100 is a stream of a very large tarball: if it fails, the report says so (no slakh figures) rather than losing the rest.
+    - name: Fetch Slakh2100
+      id: slakh
+      continue-on-error: true
+      run: |
+        set -euo pipefail
+        python3 -I tools/autowarp/fetch_data.py --slakh "$DATA/slakh"
+        du -sh "$DATA"/slakh | cat
+
+    - name: Evaluate
+      run: |
+        set -euo pipefail
+        T="dotnet run -c Release --no-build --project tools/AutoWarpEval --"
+        $T --generated --out "$DATA/generated.json"
+        $T --dir "$DATA/gmd" --set gmd --out "$DATA/gmd.json"
+        extra=""
+        if ls "$DATA"/slakh/*.wav > /dev/null 2>&1; then
+          $T --dir "$DATA/slakh" --set slakh --out "$DATA/slakh.json"
+          extra="$DATA/slakh.json"
+        else
+          echo "no Slakh2100 data (the fetch step: ${{ steps.slakh.outcome }})"
+        fi
+        python3 -I tools/autowarp/score.py "$DATA/generated.json" "$DATA/gmd.json" $extra --out autowarp-report.md --csv autowarp-per-file.csv
+        $T --pack autowarp-pack --gmd "$DATA/gmd"
+
+    - name: Job summary
+      if: always()
+      run: |
+        if [ -f autowarp-report.md ]; then
+          head -c 900000 autowarp-report.md >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+    # The report and the per-file figures (no data).
+    - name: Upload the report
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: autowarp-report
+        path: |
+          autowarp-report.md
+          autowarp-per-file.csv
+        if-no-files-found: ignore
+
+    # The listening pack: renders of two Groove MIDI Dataset performances (CC BY 4.0, Magenta) and the generated lines; a handful of files.
+    - name: Upload the listening pack
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: autowarp-pack
+        path: autowarp-pack/
         if-no-files-found: ignore

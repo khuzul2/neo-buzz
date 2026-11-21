@@ -146,7 +146,7 @@ namespace ReBuzz.AppViews.Session
                     HorizontalAlignment = HorizontalAlignment.Left
                 };
 
-                audio = new AudioEditor(CommitAudio, () => view.layout.DetectTempo(shownPattern), () => view.EditWarpMarkers(shownSequence, shownPattern));
+                audio = new AudioEditor(CommitAudio, () => view.layout.AutoWarp(shownPattern, 0, out _), () => view.EditWarpMarkers(shownSequence, shownPattern));
                 audioBody = new StackPanel { Children = { Section("Audio"), audio } };
 
                 body = new StackPanel

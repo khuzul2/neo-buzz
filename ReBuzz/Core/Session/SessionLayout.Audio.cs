@@ -185,7 +185,7 @@ namespace ReBuzz.Core.Session
             }
             var asset = ImportAsset(path, out error);
             if (asset == null) return null;
-            var (bpm, _) = AudioAnalysis.Tempo(asset.Source, Session.BeatsPerBar, out bool tempoFound);
+            var (bpm, beats) = AudioAnalysis.Tempo(asset.Source, Session.BeatsPerBar, out bool tempoFound);
 
             var machine = SequenceOf(track)?.Machine;
             if (!IsClipPlayer(machine))
@@ -203,6 +203,8 @@ namespace ReBuzz.Core.Session
             var settings = tempoFound
                 ? new SessionDocument.AudioSettings { Asset = asset.Id, Bpm = bpm }
                 : new SessionDocument.AudioSettings { Asset = asset.Id, Bpm = Math.Clamp(buzz.BPM, 1, 999), Warp = "Off" };
+            // A long file with a tempo is warped by its beats where the tempo moves (AW1; Preferences > Audio > Auto-warp long files); a loop stays straight.
+            if (tempoFound) AutoWarpOnImport(settings, asset.Source, beats);
             return AddAudioClip(track, scene, machine, asset.Name, settings);
         }
 
@@ -453,6 +455,13 @@ namespace ReBuzz.Core.Session
             if (!IsClipPlayer(pattern.Machine) || ClipOf(pattern)?.Audio == null) return $"\"{pattern.Name}\" of {pattern.Machine.Name} is not an audio clip (audio_import makes one).";
             string why = edit.Check();
             if (why != null) return why;
+            // Auto-warp (AW1): the beats first, nothing is changed when there are none.
+            AutoWarpResult warp = null;
+            if (edit.AutoWarp)
+            {
+                warp = AnalyseAutoWarp(pattern, edit.FromSeconds ?? 0, out why);
+                if (warp == null) return why;
+            }
             string result = null;
             UndoStack.BeginActionGroup();
             try
@@ -460,6 +469,7 @@ namespace ReBuzz.Core.Session
                 if (label != null) UndoStack.Label(label);
                 var settings = ClipOf(pattern).Clone();
                 edit.ApplyTo(settings);
+                if (warp != null) ApplyAutoWarp(settings.Audio, AudioSourceOf(pattern), warp, edit.FromSeconds ?? 0);
                 SetAudio(pattern, settings.Audio);
                 SetClipSettings(pattern, settings);
                 if (edit.DetectTempo) DetectTempo(pattern);

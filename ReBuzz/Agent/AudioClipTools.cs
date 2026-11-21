@@ -243,7 +243,10 @@ namespace ReBuzz.Agent
                 Description =
                     "Changes an audio clip, one undo step. warp: Off (its own speed), Repitch (a turntable), Beats (slices on transients; drums, loops), Complex " +
                     "(a phase vocoder; any material), Pro (the default for a new clip; Signalsmith Stretch: the best quality for any material, at more CPU; it plays as Complex where its native library is missing). preserve (Beats): Transients, 1/4, 1/8, 1/16. tempo_bpm is the audio's tempo (without warp markers the clip's length " +
-                    "follows it: 4 beats at 120 BPM are 8 at 60); detect_tempo=true finds it again. transpose -48..48 semitones, detune -50..50 cents, gain_db -70..24. " +
+                    "follows it: 4 beats at 120 BPM are 8 at 60); detect_tempo=true finds the one steady tempo again from the audio (the markers are cleared). " +
+                    "auto_warp=true finds the beats of the audio, follows a tempo that drifts or changes, and replaces the warp markers and the tempo (one undo step): a steady tempo gives one " +
+                    "tempo and the first downbeat as bar 1 (a loop of whole bars is left as it is), a moving tempo gives a marker on every bar and on the beats that drift within a bar; " +
+                    "from_seconds (with auto_warp) starts at the first downbeat at or after that second of the audio and keeps the markers before it; nothing changes, and the call says so, when no beats are found. transpose -48..48 semitones, detune -50..50 cents, gain_db -70..24. " +
                     "loop on or off; region = {start_beats, loop_start_beats, loop_end_beats} inside the clip (loop_end 0 is its end). warp_markers = [{sample, beat}] " +
                     "(at least 2; [] clears them). Arrangement audio clips (NA2): fade_in_beats and fade_out_beats (the fades in the arrangement; 0 none), reverse " +
                     "(true or false: the audio plays backwards, the same part of it), stretch_to_beats (the clip's length in the arrangement: the audio is warped to fill it; " +
@@ -254,7 +257,9 @@ namespace ReBuzz.Agent
                     Opt("warp", WarpSchema()),
                     Opt("preserve", String("What Beats keeps", Preserves)),
                     Opt("tempo_bpm", Number("The audio's tempo", 1, 999)),
-                    Opt("detect_tempo", Boolean("Find the tempo again from the audio")),
+                    Opt("detect_tempo", Boolean("Find the tempo again from the audio (one steady tempo; the markers are cleared)")),
+                    Opt("auto_warp", Boolean("Find the beats, follow the tempo where it moves, and replace the warp markers and the tempo (one undo step)")),
+                    Opt("from_seconds", Number("With auto_warp: start at the first downbeat at or after this second of the audio; the markers before it stay", 0)),
                     Opt("transpose", Integer("Semitones", -48, 48)),
                     Opt("detune", Integer("Cents", -50, 50)),
                     Opt("gain_db", Number("Gain, dB", -70, 24)),
@@ -285,6 +290,8 @@ namespace ReBuzz.Agent
                             Preserve = c.String("preserve"),
                             TempoBpm = c.Number("tempo_bpm"),
                             DetectTempo = c.Bool("detect_tempo") == true,
+                            AutoWarp = c.Bool("auto_warp") == true,
+                            FromSeconds = c.Number("from_seconds"),
                             FadeIn = c.Number("fade_in_beats"),
                             FadeOut = c.Number("fade_out_beats"),
                             Transpose = c.Int("transpose"),
