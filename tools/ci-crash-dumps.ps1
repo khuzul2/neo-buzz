@@ -20,7 +20,13 @@ if ($Mode -eq 'register') {
         New-ItemProperty -Path $key -Name DumpCount -PropertyType DWord -Value 4 -Force | Out-Null
     }
     Write-Host ('LocalDumps keys: ' + ((Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps' | ForEach-Object PSChildName) -join ', '))
-    Get-Service WerSvc -ErrorAction SilentlyContinue | Format-Table Name, Status, StartType | Out-String | Write-Host
+    # The runner image has the Windows Error Reporting service stopped (self-test run 44955501496: WerSvc Stopped, Manual, and no dump of a crash);
+    # WerFault needs it to write one, and Windows Error Reporting must not be switched off.
+    $wer = 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting'
+    Write-Host ('Windows Error Reporting: Disabled=' + (Get-ItemProperty $wer -Name Disabled -ErrorAction SilentlyContinue).Disabled + ' DontShowUI=' + (Get-ItemProperty $wer -Name DontShowUI -ErrorAction SilentlyContinue).DontShowUI)
+    Set-ItemProperty -Path $wer -Name Disabled -Value 0 -Type DWord
+    Start-Service WerSvc
+    Get-Service WerSvc | Format-Table Name, Status, StartType | Out-String | Write-Host
     "REBUZZ_CRASHDUMPS=$dumps" >> $env:GITHUB_ENV
     "REBUZZ_ENGINE_KEEP_WER=1" >> $env:GITHUB_ENV
     return
