@@ -43,6 +43,7 @@
         <Parameter Name="Hat velocity" Group="1" Index="37" Track="0" Value="0" />
         <Parameter Name="Hat sensitivity" Group="1" Index="38" Track="0" Value="50" />
         <Parameter Name="Hat interval" Group="1" Index="39" Track="0" Value="15" />
+        <Parameter Name="Record at attack" Group="1" Index="40" Track="0" Value="1" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -91,6 +92,7 @@
         <Parameter Name="Hat velocity" Group="1" Index="37" Track="0" Value="0" />
         <Parameter Name="Hat sensitivity" Group="1" Index="38" Track="0" Value="50" />
         <Parameter Name="Hat interval" Group="1" Index="39" Track="0" Value="15" />
+        <Parameter Name="Record at attack" Group="1" Index="40" Track="0" Value="1" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -139,6 +141,7 @@
         <Parameter Name="Hat velocity" Group="1" Index="37" Track="0" Value="0" />
         <Parameter Name="Hat sensitivity" Group="1" Index="38" Track="0" Value="50" />
         <Parameter Name="Hat interval" Group="1" Index="39" Track="0" Value="15" />
+        <Parameter Name="Record at attack" Group="1" Index="40" Track="0" Value="1" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -161,7 +164,7 @@
         <Parameter Name="Octave" Group="1" Index="11" Track="0" Value="3" />
         <Parameter Name="Stickiness" Group="1" Index="12" Track="0" Value="25" />
         <Parameter Name="Settle" Group="1" Index="13" Track="0" Value="25" />
-        <Parameter Name="Min note length" Group="1" Index="14" Track="0" Value="6" />
+        <Parameter Name="Min note length" Group="1" Index="14" Track="0" Value="10" />
         <Parameter Name="Release" Group="1" Index="15" Track="0" Value="14" />
         <Parameter Name="Legato" Group="1" Index="16" Track="0" Value="0" />
         <Parameter Name="Pitch bend" Group="1" Index="17" Track="0" Value="0" />
@@ -187,6 +190,7 @@
         <Parameter Name="Hat velocity" Group="1" Index="37" Track="0" Value="0" />
         <Parameter Name="Hat sensitivity" Group="1" Index="38" Track="0" Value="50" />
         <Parameter Name="Hat interval" Group="1" Index="39" Track="0" Value="15" />
+        <Parameter Name="Record at attack" Group="1" Index="40" Track="0" Value="1" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -209,7 +213,7 @@
         <Parameter Name="Octave" Group="1" Index="11" Track="0" Value="3" />
         <Parameter Name="Stickiness" Group="1" Index="12" Track="0" Value="25" />
         <Parameter Name="Settle" Group="1" Index="13" Track="0" Value="25" />
-        <Parameter Name="Min note length" Group="1" Index="14" Track="0" Value="6" />
+        <Parameter Name="Min note length" Group="1" Index="14" Track="0" Value="10" />
         <Parameter Name="Release" Group="1" Index="15" Track="0" Value="14" />
         <Parameter Name="Legato" Group="1" Index="16" Track="0" Value="0" />
         <Parameter Name="Pitch bend" Group="1" Index="17" Track="0" Value="0" />
@@ -235,6 +239,7 @@
         <Parameter Name="Hat velocity" Group="1" Index="37" Track="0" Value="0" />
         <Parameter Name="Hat sensitivity" Group="1" Index="38" Track="0" Value="50" />
         <Parameter Name="Hat interval" Group="1" Index="39" Track="0" Value="15" />
+        <Parameter Name="Record at attack" Group="1" Index="40" Track="0" Value="1" />
       </Parameters>
       <Attributes />
       <Comment></Comment>

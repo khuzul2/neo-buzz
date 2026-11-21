@@ -1970,12 +1970,15 @@ namespace ReBuzz.Core
         /// Fork (docs/specs/voice-to-midi.md §7): a machine's own MIDI (Neo Voice to MIDI) for the armed tracks whose MIDI From names that machine. It goes
         /// to those tracks and nowhere else: not to All inputs, the MIDI focus, the selected machine, the session's mapped controls or the MIDI activity light.
         /// </summary>
-        public void SendMachineMIDI(IMachine source, int data)
+        public void SendMachineMIDI(IMachine source, int data) => SendMachineMIDI(source, data, 0);
+
+        /// <summary>Fork (AT1): as above for a message whose cause lies <paramref name="earlierSamples"/> samples back; a recording track stamps it that much earlier.</summary>
+        public void SendMachineMIDI(IMachine source, int data, int earlierSamples)
         {
             if (source == null || SessionCore == null) return;
             try
             {
-                SessionCore.OnMidiInput(MidiDevice.Machine(source.Name), data);
+                SessionCore.OnMidiInput(MidiDevice.Machine(source.Name), data, earlierSamples);
             }
             catch (Exception e)
             {

@@ -64,4 +64,20 @@ public class ConvertDrumTests
         for (int i = 0; i < floor.Length; i++) floor[i] = (float)((rnd.NextDouble() * 2 - 1) * 0.002);
         Assert.That(Run(floor), Is.Empty, "a steady noise floor is not a hit");
     }
+
+    [Test]
+    public void TheClassifierFitsTheFeatureVector()
+    {
+        Assert.That(DrumModelData.Mean.Length, Is.EqualTo(DrumFeatures.Count));
+        Assert.That(DrumModelData.Sd.Length, Is.EqualTo(DrumFeatures.Count));
+        Assert.That(DrumModelData.Threshold.Length, Is.EqualTo(DrumModel.Classes));
+        for (int m = 0; m < DrumModelData.Hidden.Length; m++)
+        {
+            Assert.That(DrumModelData.W1[m].Length, Is.EqualTo(DrumModelData.Hidden[m] * DrumFeatures.Count));
+            Assert.That(DrumModelData.W2[m].Length, Is.EqualTo(DrumModel.Classes * DrumModelData.Hidden[m]));
+        }
+        var p = new float[DrumModel.Classes];
+        DrumModel.Predict(new float[DrumFeatures.Count], p);
+        Assert.That(p, Is.All.InRange(0f, 1f));
+    }
 }

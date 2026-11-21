@@ -25,6 +25,7 @@
     <Compile Include="..\..\ReBuzz\Core\AudioLibrary\Resampler.cs" Link="Engine\Resampler.cs" />
     <Compile Include="..\..\ReBuzz\Core\AudioLibrary\AudioToMidi\*.cs" Link="Engine\AudioToMidi\%(Filename)%(Extension)" />
     <Compile Include="..\PitchEval\Wav.cs" Link="Wav.cs" />
+    <Compile Include="..\..\ReBuzz.SessionTests\Convert\ConvertSignals.cs" Link="ConvertSignals.cs" />
     <EmbeddedResource Include="..\..\3rdParty\basic-pitch\nmp.onnx" LogicalName="ReBuzz.BasicPitch.nmp.onnx" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.29.0" />
   </ItemGroup>

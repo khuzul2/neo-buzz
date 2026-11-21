@@ -16,5 +16,11 @@ namespace BuzzGUI.Interfaces
     {
         /// <summary>A MIDI message (status | data1 &lt;&lt; 8 | data2 &lt;&lt; 16) from <paramref name="source"/> for the armed tracks that listen to it. Any thread.</summary>
         void SendMachineMIDI(IMachine source, int data);
+
+        /// <summary>
+        /// As above for a message whose cause (a note's attack, a drum hit) lies <paramref name="earlierSamples"/> samples back: the armed tracks hear it and play it now, as
+        /// before, but a recording track places it that much earlier (AT1, "Record at attack"). A bus that cannot place it earlier treats it as the plain call.
+        /// </summary>
+        void SendMachineMIDI(IMachine source, int data, int earlierSamples) => SendMachineMIDI(source, data);
     }
 }

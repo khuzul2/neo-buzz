@@ -263,7 +263,7 @@ namespace NeoBuzz.MachineTests
         public void TheEditedMarkShowsWhenAFineControlDiffersFromNatural()
         {
             // PL1: Natural's own values are not "edited" at any Natural; one fine control moved by hand is; Natural written again is not.
-            // A fresh machine (every parameter at its default) is not edited either: the fine controls' defaults are Natural 60 %'s values.
+            // A fresh machine (every parameter at its default, the Init preset) is not marked either.
             var fresh = new ParamValues(Params.Table);
             Assert.That(TuneNatural.Edited(i => fresh[i]), Is.False, "a fresh machine");
             foreach (double n in new[] { 0.0, 0.25, 0.6, 1.0 })

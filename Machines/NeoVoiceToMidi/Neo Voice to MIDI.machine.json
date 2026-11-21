@@ -1415,6 +1415,23 @@
    "description": "MIDI channel of Vowel ee",
    "how": "Sets the MIDI channel of the controller for the vowel ee, from 1 to 16.",
    "sound": "It selects which synth or part the control moves."
+  },
+  {
+   "index": 91,
+   "id": "Attack",
+   "name": "Record at attack",
+   "group": "Recording",
+   "min": 0,
+   "max": 1,
+   "default": 1,
+   "kind": "switch",
+   "choices": [
+    "Off",
+    "On"
+   ],
+   "description": "An armed track that records from this machine places each note at its attack, not at the moment it was sent; the sound you hear and what the target plays are unchanged",
+   "how": "Switches recording at the attack on or off.",
+   "sound": "On, a recorded take lines up with the playing even when the note was sent a few tens of milliseconds after the attack; off records each note when it was sent."
   }
  ],
  "readings": [
