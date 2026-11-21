@@ -258,7 +258,7 @@ namespace ReBuzz.Studio.Tests
             var s = imported["structuredContent"]!.AsObject();
             string machine = (string)s["machine"], pattern = (string)s["pattern"];
             Assert.That((int)s["slot"], Is.EqualTo(2));
-            Assert.That((string)s["clip"]["warp"], Is.EqualTo("Beats"));
+            Assert.That((string)s["clip"]["warp"], Is.EqualTo("Pro"), "a new clip starts in Pro");
             Assert.That((double)s["clip"]["audio"]["seconds"], Is.EqualTo(2).Within(0.05));
             Assert.That(core.AudioAssets.Count, Is.EqualTo(1));
 
@@ -304,6 +304,40 @@ namespace ReBuzz.Studio.Tests
             var back = Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["pattern"] = pattern })["structuredContent"]!.AsObject();
             Assert.That((string)back["warp"], Is.EqualTo("Pro"), "saved as Complex with a marker, read as Pro");
             Assert.That((int)back["transpose"], Is.EqualTo(4));
+        }
+
+        [AvaloniaTest]
+        public void ANewClipStartsInProAnOldClipKeepsItsModeAndASaveAndAReopenChangesNeitherOfThem()
+        {
+            using var untitled = SnapshotTests.Untitled(out _);
+            using var rig = new SessionRig();
+            var core = rig.Core;
+            using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
+            string file = Tones("default.wav", 440, 660);
+            (string Machine, string Pattern) Import(int slot)
+            {
+                var r = Tool("audio_import", new JsonObject { ["path"] = file, ["slot"] = slot })["structuredContent"]!.AsObject();
+                return ((string)r["machine"], (string)r["pattern"]);
+            }
+            string Warp((string Machine, string Pattern) c) => (string)Tool("audio_clip_get", new JsonObject { ["machine"] = c.Machine, ["pattern"] = c.Pattern })["structuredContent"]!["warp"];
+
+            var oldClip = Import(1);                       // a clip of an old song: Beats, which that song saved as no attribute at all
+            Tool("audio_clip_set", new JsonObject { ["machine"] = oldClip.Machine, ["pattern"] = oldClip.Pattern, ["warp"] = "Beats" });
+            var newClip = Import(2);                       // a clip made now
+            var unwarped = Import(3);                      // a file with no tempo is left as it is until a tempo is set: warp Off
+            Tool("audio_clip_set", new JsonObject { ["machine"] = unwarped.Machine, ["pattern"] = unwarped.Pattern, ["warp"] = "Off" });
+            Assert.That((Warp(oldClip), Warp(newClip), Warp(unwarped)), Is.EqualTo(("Beats", "Pro", "Off")));
+
+            string path = Work("modes.nbl");
+            core.SaveSongCopy(path);
+            core.NewSong();
+            Reopen(core, path);
+            Assert.That((Warp(oldClip), Warp(newClip), Warp(unwarped)), Is.EqualTo(("Beats", "Pro", "Off")), "after a save and a reopen");
+
+            // A tempo set on the unwarped clip is what it was waiting for: it follows the song now, in the mode a new clip starts in.
+            var set = Tool("audio_clip_set", new JsonObject { ["machine"] = unwarped.Machine, ["pattern"] = unwarped.Pattern, ["tempo_bpm"] = 100 });
+            Assert.That(set["isError"]?.GetValue<bool>() ?? false, Is.False, set.ToJsonString());
+            Assert.That(Warp(unwarped), Is.EqualTo("Pro"));
         }
     }
 }

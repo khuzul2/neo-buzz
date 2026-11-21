@@ -399,10 +399,10 @@ namespace ReBuzz.Core.Clips
                 if (periodicRestart)
                 {
                     periodicRestart = false;
-                    periodicOn = PeriodicVoice.Qualifies(p, rate, periodic.Rate);
+                    periodicOn = PeriodicVoice.Qualifies(p, rate, periodic.Rate, beat, beatsPerSample);
                     if (periodicOn) periodic.Start(p, beat, beatsPerSample);
                 }
-                else if (periodicOn && !PeriodicVoice.Qualifies(p, rate, periodic.Rate))
+                else if (periodicOn && !PeriodicVoice.Qualifies(p, rate, periodic.Rate, beat, beatsPerSample, playing: true))
                 {
                     // Asked for something it does not do (a transposition): the vocoder takes over, from here.
                     periodic.BeginFade();

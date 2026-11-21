@@ -17,8 +17,13 @@ namespace ReBuzz.Core.Clips
     /// <summary>What the analysis found: whether the audio is a bass line the time-domain path should stretch, and what it needs for it.</summary>
     internal sealed class PeriodicInfo
     {
-        /// <summary>Use the time-domain path for this audio.</summary>
+        /// <summary>Use the time-domain path for this audio (slowing down, or at the song's own tempo).</summary>
         public bool Use;
+        /// <summary>
+        /// The path is also better than the stretcher when the song goes faster than the audio (WP1c): <see cref="LowShare"/> is at least
+        /// <see cref="PeriodicAnalysis.MinLowFaster"/>. Only meaningful with <see cref="Use"/>.
+        /// </summary>
+        public bool FasterOk;
         /// <summary>The share of the loud frames that are one steady pitch (0 to 1) and of the energy that is below 500 Hz.</summary>
         public double VoicedShare, LowShare;
         /// <summary>
@@ -56,6 +61,13 @@ namespace ReBuzz.Core.Clips
         /// does not click and the path was no better by the distance.
         /// </summary>
         public const double MaxLow = 0.985;
+        /// <summary>
+        /// Speeding up (WP1c): the path takes a line only when at least this share of its energy is below 500 Hz. Measured (WP1c report): at 10, 25 and
+        /// 50 % faster the path beats the stretcher by the distance and by the clicks on lines with 95.4 to 97.9 % there (saw+sub, square, pulse, saw+sub
+        /// with noise), and loses on lines with 89.4 to 91.3 % there (a resonant low-passed saw: swept fast or slow, opened to 2 or 4 kHz, or held
+        /// still), where the stretcher barely clicks. Slowing down has no such limit: the path wins on both kinds.
+        /// </summary>
+        public const double MinLowFaster = 0.935;
         /// <summary>Audio longer than this plays through the stretcher (the analysis would be long, and so the decimated copy).</summary>
         public const double MaxSeconds = 240;
         /// <summary>The band whose period-to-period repeat is measured, in Hz, and how many of the voiced frames are measured at most.</summary>
@@ -281,6 +293,7 @@ namespace ReBuzz.Core.Clips
             {
                 MeasureFidelity(info, left, right, rate, voicedFrames, w8 * step, step);
                 info.Use = Force || (info.LowShare <= MaxLow && info.Fidelity >= MinFidelity && info.FidelityLow >= MinFidelityLow);
+                info.FasterOk = Force || info.LowShare >= MinLowFaster;
             }
             return info;
         }
@@ -750,15 +763,23 @@ namespace ReBuzz.Core.Clips
         /// <summary>Tests: false sends every clip to the stretcher, as before this path existed.</summary>
         internal static volatile bool Enabled = true;
 
-        /// <summary>Whether a clip is played by this path: Pro or Complex, the audio found a bass line, no transposition, the source rate this voice's.</summary>
-        public static bool Qualifies(AudioClipParams p, double rate, int voiceRate)
+        /// <summary>
+        /// Whether a clip is played by this path: Pro or Complex, the audio found a bass line, no transposition, the source rate this voice's, and,
+        /// where the song goes faster than the audio at <paramref name="beat"/> (more than 0.01 %), a line the path is better on then (<see cref="PeriodicInfo.FasterOk"/>).
+        /// A voice already on the path (<paramref name="playing"/>) is not asked about the tempo again: it stays until the next start, as it does
+        /// not switch back and forth when an automated tempo goes through the audio's own.
+        /// </summary>
+        public static bool Qualifies(AudioClipParams p, double rate, int voiceRate, double beat = 0, double beatsPerSample = 0, bool playing = false)
         {
             if (!Enabled || p == null || (p.Mode != WarpMode.Pro && p.Mode != WarpMode.Complex)) return false;
             var s = p.Source;
             if (s.SampleRate != voiceRate) return false;                // a source that goes to the stream cache while it plays keeps the verdict made in memory (reads go through CopyTo)
             if (Math.Abs(p.PitchRatio * rate - 1.0) > 1e-9) return false;
             var info = s.PeriodicTried ? s.Periodic : null;
-            return info != null && info.Use;
+            if (info == null || !info.Use) return false;
+            if (playing || info.FasterOk) return true;
+            double speed = p.Map.SamplesPerBeat(beat) * beatsPerSample;       // source samples per output sample: over 1 is faster
+            return !(speed > 1.0001);
         }
 
         public void Start(AudioClipParams p, double beat, double bps)
