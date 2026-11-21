@@ -199,7 +199,11 @@ namespace ReBuzz.Core.Session
             public int Wave { get; set; }
             /// <summary>The audio's tempo: its length in beats is its seconds times this over 60.</summary>
             public double Bpm { get; set; } = 120;
-            public string Warp { get; set; } = "Beats";
+            /// <summary>The warp mode a new audio clip starts in (the user's decision of 2026-11-21).</summary>
+            public const string DefaultWarp = "Pro";
+            /// <summary>What a saved clip with no <c>warp</c> attribute means: the mode every song made before Pro became the default was saved with.</summary>
+            public const string WarpWhenNotSaved = "Beats";
+            public string Warp { get; set; } = DefaultWarp;
             public string Preserve { get; set; } = "Transients";
             /// <summary>Warp markers: this audio sample is heard on this clip beat. Fewer than two: straight, from <see cref="Bpm"/>.</summary>
             public List<(double Sample, double Beat)> Markers { get; set; } = new List<(double, double)>();
@@ -241,7 +245,7 @@ namespace ReBuzz.Core.Session
                 // Pro (NA5) is written as Complex with pro="true": a build that does not know Pro reads Complex, the best mode it has, and
                 // ignores the attribute; one that does reads Pro. No format version changes (an unknown attribute is no reason to refuse a file).
                 if (Warp == "Pro") { e.SetAttributeValue("warp", "Complex"); e.SetAttributeValue("pro", "true"); }
-                else if (Warp != "Beats") e.SetAttributeValue("warp", Warp);
+                else if (Warp != WarpWhenNotSaved) e.SetAttributeValue("warp", Warp);       // written whenever it differs from what a missing attribute means
                 if (Preserve != "Transients") e.SetAttributeValue("preserve", Preserve);
                 if (GainDb != 0) e.SetAttributeValue("gain", Num(GainDb));
                 if (Transpose != 0) e.SetAttributeValue("transpose", Transpose);
@@ -259,7 +263,7 @@ namespace ReBuzz.Core.Session
             internal static AudioSettings FromXml(XElement e)
             {
                 if (e == null) return null;
-                string warp = (string)e.Attribute("warp") ?? "Beats";
+                string warp = (string)e.Attribute("warp") ?? WarpWhenNotSaved;           // an older song: no attribute is Beats, whatever a new clip starts in
                 if (warp == "Complex" && (string)e.Attribute("pro") == "true") warp = "Pro";
                 string preserve = (string)e.Attribute("preserve") ?? "Transients";
                 var a = new AudioSettings
@@ -267,7 +271,7 @@ namespace ReBuzz.Core.Session
                     Asset = (string)e.Attribute("asset") ?? "",
                     Wave = Math.Max(0, IntAttr(e, "wave", 0)),
                     Bpm = Math.Clamp(DoubleAttr(e, "bpm", 120), 1, 999),
-                    Warp = Array.IndexOf(WarpModes, warp) >= 0 ? warp : "Beats",
+                    Warp = Array.IndexOf(WarpModes, warp) >= 0 ? warp : WarpWhenNotSaved,
                     Preserve = Array.IndexOf(PreserveModes, preserve) >= 0 ? preserve : "Transients",
                     GainDb = Math.Clamp(DoubleAttr(e, "gain", 0), -70, 24),
                     Transpose = Math.Clamp(IntAttr(e, "transpose", 0), -48, 48),

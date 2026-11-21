@@ -166,7 +166,7 @@ namespace ReBuzz.Core.Session
 
         /// <summary>
         /// Imports an audio file (WAV, AIFF, FLAC, OGG, MP3; <see cref="AudioImporter"/>) as an asset of the song, converted to the song's
-        /// sample rate, and puts it in a slot as an audio clip at its tempo (found from its length and transients), warped in Beats mode.
+        /// sample rate, and puts it in a slot as an audio clip at its tempo (found from its length and transients), in the default warp mode (Pro).
         /// On a track that isn't an audio track, a new audio track gets it (in the same scene). The clip is one undo step of the session;
         /// the asset stays in the song. Null and a reason when it can't.
         /// </summary>

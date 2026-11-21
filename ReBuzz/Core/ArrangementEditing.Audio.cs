@@ -320,7 +320,7 @@ namespace ReBuzz.Core
                 var (left, right) = RenderLane(lane, items, from, to);
                 string name = items.Count == 1 ? items[0].Pattern.Name + " consolidated" : "Consolidated";
                 var asset = Layout.AddAsset(new AudioAsset(name, "", null, new AudioSource(left, right, Layout.RenderRate), 2));
-                var audio = new SessionDocument.AudioSettings { Asset = asset.Id, Bpm = Math.Clamp(core.BPM, 1, 999), Warp = "Beats" };
+                var audio = new SessionDocument.AudioSettings { Asset = asset.Id, Bpm = Math.Clamp(core.BPM, 1, 999) };
                 pattern = Layout.CreateAudioPattern(lane.Machine, name, audio);
                 if (pattern == null) { result = "The audio couldn't be made into a clip."; return; }
                 var spec = new ClipSpec(0, pattern, from, Math.Min(to - from, Math.Max(1, pattern.Length)), 0, 0, 0, false, 1.0);

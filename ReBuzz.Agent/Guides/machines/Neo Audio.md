@@ -3,7 +3,7 @@
 The audio track of the Session View and the arrangement: it plays audio clips (a WAV, AIFF, FLAC, OGG or MP3 file kept inside the song), warped to the song's tempo, and records takes from its input or from the master. It is silent until a clip plays. Two parameters: what you hear of the input, and what a take records.
 
 - A clip warps in one of five modes: Off (its own speed), Repitch (a turntable: tempo and pitch move together), Beats (slices on the transients, for drums and loops), Complex (a phase vocoder, for anything) and Pro (the best quality stretch and pitch shift, for anything, at more CPU). Transpose is -48 to +48 semitones, detune is in cents, gain in dB.
-- The tempo of an imported file is found when it is imported (a loop is taken as whole bars, other audio by its transients). A file with no tempo to find plays at its own speed (warp Off) until one is set: `audio_clip_set(..., tempo_bpm=96)` or `detect_tempo=true` turns warp to Beats. A clip follows the song's tempo unless its warp is Off.
+- The tempo of an imported file is found when it is imported (a loop is taken as whole bars, other audio by its transients). A file with no tempo to find plays at its own speed (warp Off) until one is set: `audio_clip_set(..., tempo_bpm=96)` or `detect_tempo=true` turns warp to Pro. A clip follows the song's tempo unless its warp is Off.
 
 ## Use it for
 
@@ -14,7 +14,7 @@ The audio track of the Session View and the arrangement: it plays audio clips (a
 
 - `Monitor` (auto): hear the input only while the track is armed; `in` always, `off` never.
 - `Input` (in): `in` records what is connected to the track; `master` records the song's output (resampling).
-- Each clip's warp (Beats for drums and loops): Off, Repitch, Beats, Complex or Pro; set it with `audio_clip_set`.
+- Each clip's warp: a new clip starts in Pro (songs saved earlier keep the mode they were saved with, Beats when none); Beats suits drums and loops. Off, Repitch, Beats, Complex or Pro; set it with `audio_clip_set`.
 - Each clip's tempo (found at import): the tempo of the audio, which sets the clip's length in beats; `detect_tempo` finds it again.
 - Each clip's transpose (-48 to +48 semitones) and detune (cents): pitch without changing speed in Beats, Complex and Pro.
 - Each clip's gain (0 dB): -70 to +24 dB.

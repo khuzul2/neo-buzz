@@ -119,7 +119,7 @@ namespace ReBuzz.Agent
                 Description =
                     "Brings an audio file (WAV, AIFF, FLAC, OGG or MP3) into the song as an audio clip on a Neo Audio track. The audio is decoded once and converted " +
                     "to the song's sample rate, kept in the song (embedded in the .nbl; not a wave of the wavetable), and its tempo is found from the audio " +
-                    "(a loop is taken as whole bars; anything else by its transients, else 120). The clip is warped in Beats mode at that tempo. " +
+                    "(a loop is taken as whole bars; anything else by its transients, else 120). The clip is warped at that tempo in Pro mode (the default for a new clip; a file with no tempo found is left unwarped, Off). " +
                     "track = a Neo Audio machine (default: a new audio track named after the file); slot = the Session scene to put it in, from 1 (default: the " +
                     "first empty scene of the track unless at_beats is given); at_beats = also (or only) place it in the arrangement at that position. One undo step. " +
                     "Example: audio_import(path=\"/music/loop.wav\", track=\"Drums audio\", slot=1, at_beats=0).",
@@ -242,12 +242,12 @@ namespace ReBuzz.Agent
                 Title = "Set an audio clip",
                 Description =
                     "Changes an audio clip, one undo step. warp: Off (its own speed), Repitch (a turntable), Beats (slices on transients; drums, loops), Complex " +
-                    "(a phase vocoder; any material), Pro (Signalsmith Stretch: the best quality for any material, at more CPU; it plays as Complex where its native library is missing). preserve (Beats): Transients, 1/4, 1/8, 1/16. tempo_bpm is the audio's tempo (without warp markers the clip's length " +
+                    "(a phase vocoder; any material), Pro (the default for a new clip; Signalsmith Stretch: the best quality for any material, at more CPU; it plays as Complex where its native library is missing). preserve (Beats): Transients, 1/4, 1/8, 1/16. tempo_bpm is the audio's tempo (without warp markers the clip's length " +
                     "follows it: 4 beats at 120 BPM are 8 at 60); detect_tempo=true finds it again. transpose -48..48 semitones, detune -50..50 cents, gain_db -70..24. " +
                     "loop on or off; region = {start_beats, loop_start_beats, loop_end_beats} inside the clip (loop_end 0 is its end). warp_markers = [{sample, beat}] " +
                     "(at least 2; [] clears them). Arrangement audio clips (NA2): fade_in_beats and fade_out_beats (the fades in the arrangement; 0 none), reverse " +
                     "(true or false: the audio plays backwards, the same part of it), stretch_to_beats (the clip's length in the arrangement: the audio is warped to fill it; " +
-                    "the clip must be placed there, warp not Off, loop off). Setting tempo_bpm, or detect_tempo, on a clip whose warp is Off (a file with no tempo found) turns warp to Beats " +
+                    "the clip must be placed there, warp not Off, loop off). Setting tempo_bpm, or detect_tempo, on a clip whose warp is Off (a file with no tempo found) turns warp to Pro (the default) " +
                     "unless warp is given. Example: audio_clip_set(machine=\"Drums audio\", pattern=\"loop\", warp=\"Complex\", transpose=-2, gain_db=-3).",
                 Input = Object(null, ClipTarget().Concat(new[]
                 {

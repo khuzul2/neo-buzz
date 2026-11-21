@@ -350,6 +350,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(inspector.SubtitleText, Is.EqualTo("Generator"), "Neo Audio is an audio source, not an effect");
             Assert.That(inspector.ClipPanel.IsVisible, Is.False, "an Arrangement audio clip has no launch settings, and no 'Select a clip' card");
             Assert.That(inspector.Facts.Select(f => f.Label), Does.Contain("Warp").And.Contain("Tempo"));
+            Assert.That(inspector.Facts.First(f => f.Label == "Warp").Value, Is.EqualTo("Pro"), "the Inspector shows the default a new clip starts in");
             Assert.That(inspector.PatternButton.IsVisible, Is.False, "the Tracker has nothing for an audio clip");
 
             rig.SelectInSession();
@@ -369,7 +370,9 @@ namespace ReBuzz.Studio.Tests
             var page = rig.OpenPage();
             var clip = rig.SessionClip;
             Assert.That(AudioClipPage.Warps.Select(w => w.Value), Is.EquivalentTo(SessionDocument.AudioSettings.WarpModes), "the list is the model's own: a new mode appears with its value");
-            Assert.That(page.PreserveShown, Is.True, "Beats keeps something");
+            Assert.That(Audio(clip).Warp, Is.EqualTo("Pro"), "a new clip starts in Pro");
+            Assert.That(AudioClipPage.Warps.ToList()[page.WarpBox.SelectedIndex].Value, Is.EqualTo("Pro"), "and the warp menu shows it");
+            Assert.That(page.PreserveShown, Is.False, "only Beats has something to keep");
             Steps(rig, clip, () => page.WarpBox.SelectedIndex = AudioClipPage.Warps.ToList().FindIndex(w => w.Value == "Complex"), save: false,
                 check: _ =>
                 {
@@ -377,7 +380,8 @@ namespace ReBuzz.Studio.Tests
                     Assert.That(page.PreserveShown, Is.False, "only Beats has something to keep");
                 });
             Settle();
-            Steps(rig, clip, () => page.WarpBox.SelectedIndex = AudioClipPage.Warps.ToList().FindIndex(w => w.Value == "Beats"), save: false);
+            Steps(rig, clip, () => page.WarpBox.SelectedIndex = AudioClipPage.Warps.ToList().FindIndex(w => w.Value == "Beats"), save: false,
+                check: _ => Assert.That(page.PreserveShown, Is.True, "Beats keeps something"));
             Steps(rig, clip, () => page.PreserveBox.SelectedIndex = 2, check: _ => Assert.That(Audio(clip).Preserve, Is.EqualTo("1/8")));
         }
 
