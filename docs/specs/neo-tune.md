@@ -221,9 +221,48 @@ By the numbers the pitch of 03 at N100 is nearly the input's (note centre error 
 
 ### 12.6 Detector results (before NT3 -> after, artefacts beyond intended steps, 6 files)
 
-N0 16 -> 11, N25 22 -> 15, N50 20 -> 6, N75 21 -> 0, N100 13 -> 0. The files the user flagged at N100 (03, 04, 06) are at 0 hits. What remains is on the male files at N0-N50 (mostly with no engine event nearby; some at TargetChange, PitchHold, SpliceJump, MarkOutlier): corrections of up to 2.5 st on arpeggio leaps and the sharp high-frequency pulses of a voice that itself changes at the note. The gate (none beyond the original's) is not met at N0, N25 and N50 on 02, 03, 04 and 06.
+N0 16 -> 14, N25 22 -> 20, N50 20 -> 6, N75 21 -> 0, N100 13 -> 0. The files the user flagged at N100 (03, 04, 06) are at 0 hits. What remains is on the male files at N0-N50 (mostly with no engine event nearby; some at TargetChange, PitchHold, SpliceJump, MarkOutlier): corrections of up to 2.5 st on arpeggio leaps and the sharp high-frequency pulses of a voice that itself changes at the note. The gate (none beyond the original's) is not met at N0, N25 and N50 on 02, 03, 04 and 06.
 
 ### 12.7 Limits of NT3
 
 - The remaining hits at N0-N50 above.
 - The ease means that for up to a few hundred ms after a note change at high Natural the output stays a few samples off the input's position (a fixed delay of the dry part; the null test aligns it).
+
+## 13. NT4: tracker blips, a limited second derivative, and attribution by a null render
+
+From the blind test of NT3 against NT2: Natural 5 of 6 for NT3 (1 tie); hard effect 3 wins and 3 ties ("pros and cons"; NT2 had a strong glitch in 03). The user asked for a last cleanup of the hard effect.
+
+### 13.1 Attribution (`tools/PitchEval/TuneArtefacts.cs`: `NullRender`, `Attribute`)
+
+The engine records its reading speed and position per output sample (`EnableReaderTrace`, evaluation only, off by default). The **null render** reads the input with the same sinc at the same speed per sample with no splice, no crossfade and no ease (where the engine is at the nominal position with speed 1 the null render is the input). A hit of the engine that the null render also has within 25 ms (half or more of the excess, the input's own residual looked up at the source position) is not made by the engine: "voice" when the shift is about constant around it, "ratio step" when it changes by 0.2 st or more within 8 ms. The rest are "engine". The method is approximate: the splice moves the reader by whole periods, so a ratio step lands on another cycle of the voice in the two renders, and a disturbance a few ms apart or of 2 against 1.5 times the threshold goes one way or the other. The old count (hits not near an intended step) is kept in the table beside it.
+
+### 13.2 What was found
+
+| Cause | Number | Verdict |
+|---|---|---|
+| **Tracker blips** (the shared tracker reports a harmonic or a multiple for 20-60 ms inside a note: 04 at 0.55 s, 130 -> 912 Hz for 58 ms -> 117 Hz; 01 at 2.03 s and 03 at 3.18 s an octave up; 02 at 5.16 s an octave down) | marks laid at 1/8 of the period (spacing 39-57 samples), four splice jumps inside 2 ms, a wrong note corrected (shift -1.6 then +1.6 st for 600 ms) | **Fixed.** A voiced frame more than 9 st from the pitch in force is held (last pitch and ratio, as in a gap) until the new pitch has stayed within 2 st for 90 ms; a real leap is delayed by that, a blip never passes. Hits not at an intended step 14/20/6 -> 8/16/5 at N0/25/50 (guard alone); total hits at N0 111 -> 91. The vibrato inside the notes of 04 at N0 fell 44 -> 17 ct (the wrong corrections were part of it). |
+| Phase of a ratio step in the cycle (a step only in the quiet part between pulses) | 3 windows tried: 14/12, 25/18, 17/14 hits against 14/12 | **No effect**, removed. |
+| Splice crossfade of a whole period instead of half | 17/19/7 against 14/20/6 | No gain. |
+| Jump correlation threshold 0.7 / 0.95 | 16/24/4 and 13/20/6 | No gain. |
+| Speed limit 250 / 1000 st/s | 10/23/6 and 15/22/6 (engine-made 11/16/2 and 18/15/1) | 250 is what NT3 found: the Natural 0 vibrato is flattened less; kept 500. |
+| **Second-derivative limit** of the ratio (accelerate and brake at 5 000 / 10 000 / 20 000 / 50 000 st/s^2, up to 500 st/s) | total hits at N0 (with the guard) 91 -> 53 / 68 / 75 / 82; step delay in 13.4 | **Adopted at 20 000 st/s^2**, engaged only when a step of more than 0.15 st arrives in one frame (a kept vibrato and slow retunes pass as before). A 1 st step now takes about 14 ms with no corner at either end. 10 000 and 5 000 gave fewer hits and a larger delay. |
+| PSOLA Transients switch glitch at N0 | | **Left.** The dry hold of a transient is a user switch of a non-default engine; removing the glitch means a crossfade of the hold and a second grain path, and it is not cheap. |
+
+### 13.3 Results (6 pack files; detector on every file at N0, N25, N50, N75, N100)
+
+| | NT3 | NT4 |
+|---|---|---|
+| Hits not at an intended step (NT3's count), N0 / N25 / N50 / N75 / N100 | 14 / 20 / 6 / 0 / 0 | 9 / 13 / 5 / 0 / 0 |
+| Engine-made by the null render, N0 / N25 / N50 | 12 / 18 / 1 | 12 / 7 / 2 |
+| Voice's own (null render, constant shift) | 2 / 2 / 3 | 2 / 2 / 1 |
+| All hits including ratio steps, N0 / N25 | 111 / 65 | 74 / 52 |
+
+The gate (no engine-made hit at N0, N25, N50) is **not met**. The remaining engine-made hits are mostly one step with a larger excess than the null render (2-8 against 0-3), on the male files; the tracker-blip hold in 04 at 0.59 s still has one (the input is odd there). The voice's own hits are in the report's table.
+
+### 13.4 Gates measured
+Vibrato inside the notes at N0 (analyse2, pyin): 03 152 -> 23 ct, 04 112 -> 7 ct (NT3 27 and 7). Notes flat (cents to note, out): 0.6 / 2.6 / 1.9 / 0.5 for 02, 03, 04, 06 (01 and 05 are not tracked by that script; the in-note centre error of the per-note table is 0.1-1.6 ct on all six, NT3 0.1-1.3). Median step delay at N0, pooled over the 37 steps: 20 ms for both (mean 28 -> 35 ms); per file 15/20/95/90/10/25 -> 20/20/100/110/15/30. **Natural 75 and 100 are not bit-identical to NT3**: 05 and 06 are, but the blip hold changes the reader's path on the files with a blip (null against NT3 -21.9 to +3.7 dB, the output shifted by a period); the detector is 0 at both. The limiter does not engage there.
+
+### 13.5 Limits of NT4
+- The attribution is approximate (13.1); 12 / 7 / 2 engine-made hits remain.
+- A real leap of 9 st or more is delayed by 90 ms (the old shift is held meanwhile).
+- No unit test of the blip guard (a synthetic tracker blip needs a tracker fault).

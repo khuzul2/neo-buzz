@@ -26,7 +26,8 @@ namespace NeoBuzz.Tune
         VoicedStart,       // a run began (the tracker went voiced after an unvoiced stretch)
         VoicedEnd,         // the shift ramp to 1 began (a real unvoiced sound or silence)
         PitchHold,         // a short gap in voicing was bridged with the last pitch and shift
-        Trace,             // every 256 output samples while the splice engine runs (A = shift in semitones, B = reader offset in samples, C = 1 when a crossfade is running)
+        PitchBlip,         // a tracker frame far from the pitch in force was held back (A = its f0, B = the held f0)
+        Trace,             // every 256 output samples while the splice engine runs (A = shift in semitones, B = reader offset in samples, C = 1 when a crossfade is running, D = the tracker's f0 at the reader, Hz)
     }
 
     internal struct TuneEvent
@@ -52,6 +53,17 @@ namespace NeoBuzz.Tune
         }
 
         public void DisableEventLog() { evOn = false; }
+
+        // The reader trace (NT4, evaluation only, never on the audio thread): the splice engine's reading speed and position for every output sample, so that an ideal resampler can be
+        // run along the same ratio path (the "null render" of tools/PitchEval/TuneArtefacts.cs, which says which artefacts the voice or the resampling would make with no splice at all).
+        float[] trRho;
+        double[] trPos;
+
+        /// <summary>Allocates the reader trace for <paramref name="samples"/> output samples (not for the audio thread).</summary>
+        public void EnableReaderTrace(int samples) { trRho = new float[samples]; trPos = new double[samples]; }
+
+        /// <summary>The reading speed and the reader position (input samples) per output sample, or nulls when the trace was not enabled.</summary>
+        public void ReaderTrace(out float[] rhoPerSample, out double[] positionPerSample) { rhoPerSample = trRho; positionPerSample = trPos; }
 
         /// <summary>The events logged so far, oldest first (a copy), and how many were dropped for want of room.</summary>
         public TuneEvent[] Events(out long dropped)
