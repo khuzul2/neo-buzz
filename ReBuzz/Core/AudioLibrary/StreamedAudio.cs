@@ -57,6 +57,21 @@ namespace ReBuzz.Core.AudioLibrary
         int pinsSeen = -1;
         bool[] pinned;                          // prefetch thread
 
+        // Diagnostics (RB1): when each page was last read in and last evicted, and the first few reads that missed, written where they happen with no
+        // allocation (the audio thread notes a miss), so that an underrun a test or a user reports says whether the page was never asked for, was
+        // evicted, or was asked for and late.
+        readonly long[] loadedAtMs, evictedAtMs;
+        readonly MissRecord[] missLog = new MissRecord[8];
+        int missRecords;
+
+        /// <summary>One read that found its page not in memory (see <see cref="MissReport"/>).</summary>
+        internal struct MissRecord
+        {
+            public long AtMs, Frame, LoadedMs, EvictedMs, Pass, PassStartedMs;
+            public int Page, Count, Resident;
+            public bool Pinned;
+        }
+
         // Prefetch thread state.
         internal long Settled;                  // ticks in a row in which every wanted page was resident
         internal long SettledSerial;
@@ -75,6 +90,8 @@ namespace ReBuzz.Core.AudioLibrary
             this.dataOffset = dataOffset;
             PageCount = AudioCache.PagesOf(frames);
             table = new Page[Math.Max(1, PageCount)];
+            loadedAtMs = new long[table.Length];
+            evictedAtMs = new long[table.Length];
             PinHead(StreamingPolicy.HeadMilliseconds);
         }
 
@@ -107,6 +124,40 @@ namespace ReBuzz.Core.AudioLibrary
         {
             Interlocked.Increment(ref underruns);
             Interlocked.Increment(ref StreamStats.UnderrunBlocks);
+        }
+
+        /// <summary>Audio thread, only on a miss: notes the first few (no allocation, no lock).</summary>
+        void NoteMiss(int index, long frame, int count)
+        {
+            int n = Interlocked.Increment(ref missRecords) - 1;
+            if (n >= missLog.Length) return;
+            var pins = pinned;
+            missLog[n] = new MissRecord
+            {
+                AtMs = Environment.TickCount64, Frame = frame, Count = count, Page = index,
+                LoadedMs = Volatile.Read(ref loadedAtMs[index]), EvictedMs = Volatile.Read(ref evictedAtMs[index]),
+                Pass = StreamPrefetcher.Pass, PassStartedMs = Volatile.Read(ref StreamPrefetcher.PassStartedMs),
+                Pinned = pins != null && index < pins.Length && pins[index], Resident = (int)Interlocked.Read(ref residentPages),
+            };
+        }
+
+        /// <summary>Tests and diagnostics: the first reads that missed, one line each: where, and what the prefetch thread had done with that page.</summary>
+        public string MissReport()
+        {
+            int n = Math.Min(Volatile.Read(ref missRecords), missLog.Length);
+            if (n == 0) return "no misses";
+            var sb = new StringBuilder();
+            sb.Append(Volatile.Read(ref missRecords)).Append(" read(s) missed, the first ").Append(n).Append(" (ms are TickCount64, ago = before the miss):");
+            for (int i = 0; i < n; i++)
+            {
+                var m = missLog[i];
+                sb.Append("\n  frame ").Append(m.Frame).Append(" x").Append(m.Count).Append(" in page ").Append(m.Page).Append('/').Append(PageCount)
+                  .Append(m.Pinned ? " (pinned)" : " (not pinned)")
+                  .Append(m.LoadedMs == 0 ? ", never loaded" : ", loaded " + (m.AtMs - m.LoadedMs) + " ms ago")
+                  .Append(m.EvictedMs == 0 ? ", never evicted" : ", evicted " + (m.AtMs - m.EvictedMs) + " ms ago")
+                  .Append("; prefetch pass #").Append(m.Pass).Append(" began ").Append(m.AtMs - m.PassStartedMs).Append(" ms ago; ").Append(m.Resident).Append(" pages resident");
+            }
+            return sb.ToString();
         }
 
         // ------------------------------------------------------------------ opening
@@ -193,6 +244,7 @@ namespace ReBuzz.Core.AudioLibrary
             if (page == null)
             {
                 Interlocked.Increment(ref missed);
+                NoteMiss((int)(frame >> PageShift), frame, 1);
                 return 0f;
             }
             int at = (int)(frame & PageMask);
@@ -227,6 +279,7 @@ namespace ReBuzz.Core.AudioLibrary
                 {
                     destination.Slice(done, take).Clear();
                     Interlocked.Add(ref missed, take);
+                    NoteMiss(index, p, take);
                 }
                 else
                     page.Data.AsSpan(chOffset + offset, take).CopyTo(destination.Slice(done, take));
@@ -389,6 +442,7 @@ namespace ReBuzz.Core.AudioLibrary
             }
             page.Wanted = tick;
             page.WantedMs = Environment.TickCount64;
+            Volatile.Write(ref loadedAtMs[index], page.WantedMs);
             Volatile.Write(ref table[index], page);
             Interlocked.Increment(ref residentPages);
             Interlocked.Increment(ref loaded);
@@ -400,6 +454,7 @@ namespace ReBuzz.Core.AudioLibrary
         {
             var page = table[index];
             if (page == null) return null;
+            Volatile.Write(ref evictedAtMs[index], Environment.TickCount64);
             Volatile.Write(ref table[index], null);
             Interlocked.Decrement(ref residentPages);
             return page;
@@ -518,6 +573,8 @@ namespace ReBuzz.Core.AudioLibrary
         /// <summary>Tests: the longest a pass took (milliseconds) and the most pages one pass read.</summary>
         internal static double WorstPassMs;
         internal static int Pass;
+        /// <summary>Diagnostics: when the pass that is running (or the last) began (TickCount64).</summary>
+        internal static long PassStartedMs;
 
         /// <summary>Bytes of pages held, those in the tables and those waiting to be reused.</summary>
         public static long ResidentBytes
@@ -607,6 +664,7 @@ namespace ReBuzz.Core.AudioLibrary
                 try
                 {
                     sw.Restart();
+                    Volatile.Write(ref PassStartedMs, Environment.TickCount64);
                     did = Pass1(ranges);
                     double ms = sw.Elapsed.TotalMilliseconds;
                     if (ms > WorstPassMs) WorstPassMs = ms;
@@ -645,12 +703,42 @@ namespace ReBuzz.Core.AudioLibrary
 
             bool did = false;
             int budget = 12;                    // pages per pass: the thread stays responsive to new hints and the file checks
+            if (UrgencyOrder)
+            {
+                // Earliest deadline first, across the voices and the files (RB1). Each missing page of each voice's windows has the fraction of
+                // that window's reach it lies at from the voice (a page the voice gets to sooner has the smaller one: a fast voice's window is
+                // longer, so its pages are each nearer in time), the pages behind it (tails) after those ahead; all of them in one order. The order
+                // before went voice by voice, so a voice whose next page was three ahead (the first one past a clip's pinned head, a quarter
+                // of a second at launch speeds) waited for the whole window of every voice before it in the list.
+                due.Clear();
+                foreach (var r in ranges)
+                {
+                    var rs = r.S;
+                    if (rs.IsDisposed || rs.Damaged) continue;
+                    int p0 = (int)Math.Max(0, r.From >> AudioCache.PageShift), p1 = (int)Math.Min(rs.PageCount - 1, (Math.Max(r.From, r.To - 1)) >> AudioCache.PageShift);
+                    int at = (int)Math.Clamp(r.Pos >> AudioCache.PageShift, p0, Math.Max(p0, p1));
+                    double ahead = Math.Max(1, p1 - at + 1), behind = Math.Max(1, at - p0 + 1);
+                    for (int p = at; p <= p1; p++) if (!rs.PageResident(p)) due.Add(((p - at) / ahead, rs, p));
+                    for (int p = at - 1; p >= p0; p--) if (!rs.PageResident(p)) due.Add((1 + (at - p) / behind, rs, p));
+                }
+                due.Sort(DueOrder);
+                foreach (var d in due)
+                {
+                    if (budget <= 0) break;
+                    did |= Want(d.S, d.Page, ref budget);
+                }
+            }
             foreach (var s in all)
             {
                 if (s.IsDisposed || s.Damaged) continue;
                 var pinned = s.PinnedPages();
+                if (UrgencyOrder)
+                {
+                    for (int p = 0; p < s.PageCount && budget > 0; p++)            // the pins, after what the voices are about to read
+                        if (pinned[p]) did |= Want(s, p, ref budget);
+                }
                 // 1. The nearest pages of each voice (a block's reads and the next), 2. the rest of the windows, 3. the pins.
-                for (int stage = 0; stage < 3 && budget > 0; stage++)
+                else for (int stage = 0; stage < 3 && budget > 0; stage++)
                 {
                     foreach (var r in ranges)
                     {
@@ -701,6 +789,11 @@ namespace ReBuzz.Core.AudioLibrary
             }
             return did;
         }
+
+        /// <summary>The order the prefetch thread reads pages in (RB1): by deadline across voices and files. False: voice by voice, the old order (tests).</summary>
+        internal static bool UrgencyOrder = Environment.GetEnvironmentVariable("NEOBUZZ_PREFETCH_ORDER") != "voice";
+        static readonly List<(double Key, StreamedAudio S, int Page)> due = new List<(double, StreamedAudio, int)>();
+        static readonly Comparison<(double Key, StreamedAudio S, int Page)> DueOrder = (a, b) => a.Key.CompareTo(b.Key);
 
         static bool Want(StreamedAudio s, int page, ref int budget)
         {

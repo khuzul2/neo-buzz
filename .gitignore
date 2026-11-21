@@ -409,3 +409,6 @@ FodyWeavers.xsd
 *.bmx.history/
 *.bmw.history/
 *.bmxml.history/
+
+# Crash dumps (RB1: the Fork package workflow collects them as artifacts; never committed)
+*.dmp

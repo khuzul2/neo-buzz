@@ -1125,8 +1125,10 @@ namespace ReBuzz.SessionTests
                 Thread.Sleep(1);
             }
             TestContext.Out.WriteLine($"streamed soak: underruns {assets.Sum(a => a.StreamStats.Underruns)}, missed samples {assets.Sum(a => a.StreamStats.Missed)}, peak {peak:0.00}, resident {assets.Sum(a => a.ResidentBytes) / 1048576.0:0.0} MB");
+            string misses = string.Join("\n", assets.Select((a, i) => $"asset {i}: {a.Cache?.MissReport()}"));
+            if (assets.Sum(a => a.StreamStats.Underruns) != 0) TestContext.Out.WriteLine(misses);
             Assert.That(bad, Is.EqualTo(0), "NaN or infinity");
-            Assert.That(assets.Sum(a => a.StreamStats.Underruns), Is.EqualTo(0L), "blocks that played silence for audio the disk had not delivered");
+            Assert.That(assets.Sum(a => a.StreamStats.Underruns), Is.EqualTo(0L), "blocks that played silence for audio the disk had not delivered\n" + misses);
             Assert.That(allocated, Is.EqualTo(0L), "bytes allocated while rendering streamed voices");
             Assert.That(peak, Is.LessThan(50), "a runaway would be far over");
         }

@@ -118,6 +118,28 @@ jobs:
       with:
         files: dist/*.zip
 
+    # RB1 (docs/specs/machine-safety.md section 6): the native host (ReBuzzEngine64.exe, ReBuzzEngine32.exe for the 32-bit bridge) died with
+    # 0xc0000409 in ucrtbase on a few runs, each time in another machine, and there was no dump. Windows Error Reporting writes a full dump
+    # of it from here on (the tests, the agent evaluation, the profiler and the studio smoke test all start it): "Native host crash dumps"
+    # below prints the faulting stack and module and uploads the files. REBUZZ_ENGINE_KEEP_WER keeps the host from opting out of
+    # Windows Error Reporting (its PL1 change, which ends it at once so the parent's calls do not wait a minute), as it would write no dump.
+    # Never committed: .gitignore has *.dmp.
+    - name: Windows Error Reporting dumps for the native host
+      shell: pwsh
+      run: |
+        $dumps = Join-Path $env:RUNNER_TEMP 'crashdumps'
+        New-Item -ItemType Directory -Force $dumps | Out-Null
+        foreach ($exe in 'ReBuzzEngine64.exe', 'ReBuzzEngine32.exe') {
+            $key = "HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps\$exe"
+            New-Item -Path $key -Force | Out-Null
+            New-ItemProperty -Path $key -Name DumpFolder -PropertyType ExpandString -Value $dumps -Force | Out-Null
+            New-ItemProperty -Path $key -Name DumpType -PropertyType DWord -Value 2 -Force | Out-Null      # 2: a full dump
+            New-ItemProperty -Path $key -Name DumpCount -PropertyType DWord -Value 4 -Force | Out-Null
+        }
+        Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps' | Format-List | Out-String | Write-Host
+        "REBUZZ_CRASHDUMPS=$dumps" >> $env:GITHUB_ENV
+        "REBUZZ_ENGINE_KEEP_WER=1" >> $env:GITHUB_ENV
+
     # The UI gallery (docs/specs/ui-gallery.md, UiGalleryTests) draws ReBuzz's window at 1440×900: a screen that holds
     # it, so that menus open where they would for a user (the runner's is smaller; the gallery copes if this fails).
     - name: Screen for the UI gallery
@@ -429,6 +451,50 @@ jobs:
         python tools/studio-windows-smoke.py "$pkg\NeoBuzzLive.exe" "$env:RUNNER_TEMP\studio-package-smoke" --song "ExternalMachines/source/buzztrax-buzzmachines/FSM/Infector/FSM_Infector_Demo.bmx" --native-gear "FSM Infector,Jeskola Bass 3,Jeskola Reverb"
         exit $LASTEXITCODE
 
+    # RB1: a dump of the native host, if one was written: the faulting module, the exception and the stack at the fault in the job log (cdb, from the
+    # Windows SDK's debugging tools if the runner has them), the list of loaded modules (which machine DLL the host had), and the files as an artifact.
+    - name: Native host crash dumps
+      id: dumps
+      if: always()
+      continue-on-error: true
+      shell: pwsh
+      run: |
+        $dir = $env:REBUZZ_CRASHDUMPS
+        $files = if ($dir) { @(Get-ChildItem $dir -Filter *.dmp -ErrorAction SilentlyContinue) } else { @() }
+        if (-not $files) { Write-Host 'No dump of ReBuzzEngine64.exe or ReBuzzEngine32.exe was written in this run.'; "found=false" >> $env:GITHUB_OUTPUT; exit 0 }
+        "found=true" >> $env:GITHUB_OUTPUT
+        $cdb = @("${env:ProgramFiles(x86)}\Windows Kits\10\Debuggers\x64\cdb.exe", "$env:ProgramFiles\Windows Kits\10\Debuggers\x64\cdb.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+        if (-not $cdb) { $c = Get-Command cdb.exe -ErrorAction SilentlyContinue; if ($c) { $cdb = $c.Source } }
+        $sym = Join-Path $env:RUNNER_TEMP 'symbols'
+        foreach ($f in $files) {
+            Write-Host "::group::$($f.Name) ($([math]::Round($f.Length / 1MB)) MB)"
+            if ($cdb) {
+                $txt = Join-Path $dir ($f.BaseName + '.txt')
+                & $cdb -z $f.FullName -y "srv*$sym*https://msdl.microsoft.com/download/symbols" -c ".lines -e; .ecxr; .echo ===STACK; kv 40; .echo ===ANALYZE; !analyze -v; .echo ===MODULES; lm; q" *> $txt
+                $lines = Get-Content $txt
+                $lines | Select-String -Pattern 'FAULTING_MODULE|MODULE_NAME|IMAGE_NAME|ExceptionCode|EXCEPTION_CODE|FAILURE_BUCKET_ID|SYMBOL_NAME' | Select-Object -First 12 | ForEach-Object { Write-Host $_.Line }
+                $from = [array]::IndexOf($lines, '===STACK'); if ($from -lt 0) { $from = 0 }
+                $lines | Select-Object -Skip $from -First 60 | ForEach-Object { Write-Host $_ }
+                Write-Host '--- machine and runtime modules loaded (not the system folder):'
+                $lines | Select-String -Pattern '\\(ReBuzzTestData|Gear|bin64|bin32)\\|\\Machines\\' | Select-Object -First 40 | ForEach-Object { Write-Host $_.Line }
+                Write-Host "::notice title=Native host crash ($($f.Name))::$((($lines | Select-String -Pattern 'FAULTING_MODULE|FAILURE_BUCKET_ID|SYMBOL_NAME' | Select-Object -First 3 | ForEach-Object { $_.Line.Trim() }) -join ' | '))"
+            }
+            else { Write-Host 'cdb.exe is not on this runner: the dump is in the artifact, to open with WinDbg.' }
+            Write-Host '::endgroup::'
+        }
+
+    - name: Upload native host crash dumps
+      if: always() && steps.dumps.outputs.found == 'true'
+      continue-on-error: true
+      uses: actions/upload-artifact@v6
+      with:
+        name: native-host-crash-dumps
+        path: |
+          ${{ env.REBUZZ_CRASHDUMPS }}/*.dmp
+          ${{ env.REBUZZ_CRASHDUMPS }}/*.txt
+        retention-days: 14
+        if-no-files-found: warn
+
   # NeoBuzz Live (the studio) on Windows (docs/specs/ux-overhaul.md P6): the studio (ReBuzz.Studio, Avalonia) on a Windows
   # runner. Its headless tests there, its headless UI gallery drawn on Windows (win-NNN-*.png, pushed to the branch
   # ci-artifacts-studio-windows), then it is published for win-x64 with PortAudio built from source with CMake
@@ -668,7 +734,7 @@ jobs:
 
     - name: Natives, Linux x64 vs Windows
       run: |
-        python3 -m pip install --break-system-packages numpy >/dev/null
+        bash tools/ci-pip.sh numpy
         python3 tools/native-cross.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/natives" --ref native-ref --json "$RUNNER_TEMP/natives.json"
 
     - name: Upload the results
@@ -714,7 +780,7 @@ jobs:
 
     - name: Natives, macOS arm64 vs Windows
       run: |
-        python3 -m pip install --break-system-packages numpy >/dev/null
+        bash tools/ci-pip.sh numpy
         python3 tools/native-cross.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/natives" --ref native-ref --json "$RUNNER_TEMP/natives.json"
 
     - name: Upload the results

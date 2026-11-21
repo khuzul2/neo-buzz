@@ -662,10 +662,11 @@ namespace ReBuzz.SessionTests
         const int BurstRate = 48000;
 
         /// <summary>
-        /// Sixteen Pro clips (one drum loop) all start in block 0 of a mixer: the worst block's time, and the mixed output. Each clip
-        /// is its own ClipPlayback, as on a scene launch.
+        /// Sixteen Pro clips (one drum loop) all start in block 0 of a mixer: the worst block's time (the audio thread's own CPU time where the
+        /// platform has it: <see cref="ThreadCpuClock"/>), the most seeks any one block made, and the mixed output. Each clip is its own
+        /// ClipPlayback, as on a scene launch.
         /// </summary>
-        static (double WorstMs, float[] Mix) Burst(WarpMode mode, int blocks, bool waitForSpares)
+        static (double WorstMs, int MostSeeksInABlock, float[] Mix, string Detail) Burst(WarpMode mode, int blocks, bool waitForSpares)
         {
             const int Block = 256, Clips = 16;
             double bpm = 120, bps = bpm / 60.0 / BurstRate;
@@ -678,24 +679,36 @@ namespace ReBuzz.SessionTests
             var mixer = new ClipMixer();
             var mix = new float[blocks * Block];
             double worst = 0;
-            var clock = new Stopwatch();
+            int mostSeeks = 0, worstAt = 0;
+            var times = new double[blocks];
             for (int k = 0; k < blocks; k++)
             {
-                clock.Restart();
+                long seeks0 = ProVoice.InlineStarts;
+                double t0 = ThreadCpuClock.NowMs();
                 mixer.Begin(Block);
                 foreach (var c in clips) mixer.Play(c, k * Block * bps, bps, BurstRate, Block);
                 mixer.End(Block, bps, BurstRate);
-                clock.Stop();
-                worst = Math.Max(worst, clock.Elapsed.TotalMilliseconds);
+                double took = ThreadCpuClock.NowMs() - t0;
+                times[k] = took;
+                if (took > worst) { worst = took; worstAt = k; }
+                mostSeeks = Math.Max(mostSeeks, (int)(ProVoice.InlineStarts - seeks0));
                 Array.Copy(mixer.Left, 0, mix, k * Block, Block);
             }
-            return (worst, mix);
+            var sorted = times.OrderBy(t => t).ToArray();
+            return (worst, mostSeeks, mix, $"worst at block {worstAt}; block times: median {sorted[sorted.Length / 2]:F2}, 90% {sorted[sorted.Length * 9 / 10]:F2}, 3 largest {string.Join(" ", sorted.TakeLast(3).Select(t => t.ToString("F2")))} ms");
         }
 
         /// <summary>A budget of half a 256-sample block at 48 kHz (5.3 ms): the rest is the engine's, the other machines' and the driver's.</summary>
         const double BlockBudgetMs = 0.5 * 256 * 1000.0 / BurstRate;
 
-        static double WorstOf(int runs, Func<double> run) => Enumerable.Range(0, runs).Min(_ => run());       // the best of a few: a busy CI machine adds, never takes away
+        /// <summary>The median of a few runs (RB1; the best of three was the rule before, which one run stalled three times over could still fail).</summary>
+        const int BudgetRuns = 5;
+
+        static T MedianRun<T>(int runs, Func<T> run, Func<T, double> measure)
+        {
+            var all = Enumerable.Range(0, runs).Select(_ => run()).OrderBy(measure).ToList();
+            return all[all.Count / 2];
+        }
 
         [Test]
         public void SixteenProClipsStartingInOneBlockNeverCostMoreThanTheBlocksBudgetEvenWithoutAnySpare()
@@ -707,11 +720,15 @@ namespace ReBuzz.SessionTests
             {
                 Burst(WarpMode.Pro, 8, false);          // the library and the JIT, warm
                 long inline0 = ProVoice.InlineStarts, later0 = ProVoice.LaterStarts, spare0 = ProVoice.SpareStarts;
-                double worst = WorstOf(3, () => Burst(WarpMode.Pro, 60, false).WorstMs);
-                TestContext.WriteLine($"worst block of 16 unanticipated Pro starts: {worst:F2} ms (budget {BlockBudgetMs:F2} ms)");
+                var runs = new List<(double WorstMs, int MostSeeksInABlock, float[] Mix, string Detail)>();
+                var run = MedianRun(BudgetRuns, () => { var r = Burst(WarpMode.Pro, 60, false); runs.Add(r); return r; }, r => r.WorstMs);
+                double worst = run.WorstMs;
+                TestContext.WriteLine("runs: " + string.Join(" | ", runs.Select(r => r.Detail)));
+                TestContext.WriteLine($"worst block of 16 unanticipated Pro starts: {worst:F2} ms, median of {BudgetRuns} runs, {(ThreadCpuClock.IsThreadTime ? "thread CPU time" : "wall clock")} (budget {BlockBudgetMs:F2} ms)");
                 Assert.That(worst, Is.LessThan(BlockBudgetMs), "one seek a block, the others wait their turn");
+                Assert.That(run.MostSeeksInABlock, Is.LessThanOrEqualTo(1), "the mixer's seek budget: one start's seek in a block, whatever the clock says");
                 Assert.That(ProVoice.SpareStarts - spare0, Is.EqualTo(0));
-                Assert.That(ProVoice.InlineStarts - inline0, Is.EqualTo(3 * 16), "all sixteen got their start, in turn");
+                Assert.That(ProVoice.InlineStarts - inline0, Is.EqualTo(BudgetRuns * 16), "all sixteen got their start, in turn");
                 Assert.That(ProVoice.LaterStarts - later0, Is.GreaterThan(0), "and the later ones waited");
 
                 // Settled (a quarter of a second on), every onset is where Repitch puts it, within a millisecond.
@@ -733,10 +750,11 @@ namespace ReBuzz.SessionTests
             Assert.That(NeoStretch.Available, Is.True);
             Burst(WarpMode.Pro, 8, true);
             long inline0 = ProVoice.InlineStarts, later0 = ProVoice.LaterStarts, spare0 = ProVoice.SpareStarts;
-            var best = Enumerable.Range(0, 3).Select(_ => Burst(WarpMode.Pro, 200, true)).OrderBy(r => r.WorstMs).First();
-            TestContext.WriteLine($"worst block of 16 anticipated Pro starts: {best.WorstMs:F2} ms (budget {BlockBudgetMs:F2} ms)");
+            var best = MedianRun(BudgetRuns, () => Burst(WarpMode.Pro, 200, true), r => r.WorstMs);
+            TestContext.WriteLine($"worst block of 16 anticipated Pro starts: {best.WorstMs:F2} ms, median of {BudgetRuns} runs, {(ThreadCpuClock.IsThreadTime ? "thread CPU time" : "wall clock")} (budget {BlockBudgetMs:F2} ms)");
             Assert.That(best.WorstMs, Is.LessThan(BlockBudgetMs));
-            Assert.That(ProVoice.SpareStarts - spare0, Is.EqualTo(3 * 16), "every start was a spare's");
+            Assert.That(best.MostSeeksInABlock, Is.EqualTo(0), "no seek on the audio thread at all");
+            Assert.That(ProVoice.SpareStarts - spare0, Is.EqualTo(BudgetRuns * 16), "every start was a spare's");
             Assert.That(ProVoice.InlineStarts - inline0, Is.EqualTo(0));
             Assert.That(ProVoice.LaterStarts - later0, Is.EqualTo(0));
             var rep = Burst(WarpMode.Repitch, 200, false).Mix;
