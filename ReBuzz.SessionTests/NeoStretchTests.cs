@@ -16,7 +16,7 @@ namespace ReBuzz.SessionTests
     {
         const int Rate = 44100;
 
-        static AudioSource Tone(double seconds, double freq = 220, int rate = Rate, bool stereo = false)
+        internal static AudioSource Tone(double seconds, double freq = 220, int rate = Rate, bool stereo = false)
         {
             var l = new float[(int)(seconds * rate)];
             for (int i = 0; i < l.Length; i++) l[i] = (float)(0.4 * Math.Sin(2 * Math.PI * freq * i / rate));
@@ -27,7 +27,7 @@ namespace ReBuzz.SessionTests
         }
 
         /// <summary>A kick and a hat on every beat of a bar of four at <paramref name="bpm"/>, for <paramref name="beats"/> beats: sharp onsets.</summary>
-        static AudioSource Drums(double bpm, int beats, int rate = Rate)
+        internal static AudioSource Drums(double bpm, int beats, int rate = Rate, double pitch = 1)
         {
             int perBeat = (int)Math.Round(rate * 60 / bpm);
             var x = new float[perBeat * beats];
@@ -38,7 +38,7 @@ namespace ReBuzz.SessionTests
                 double phase = 0;
                 for (int i = 0; i < rate / 8 && at + i < x.Length; i++)
                 {
-                    double f = 50 + 90 * Math.Exp(-i / (0.012 * rate));
+                    double f = pitch * (50 + 90 * Math.Exp(-i / (0.012 * rate)));
                     phase += 2 * Math.PI * f / rate;
                     x[at + i] += (float)(0.7 * Math.Sin(phase) * Math.Exp(-i / (0.05 * rate)));
                     x[at + i] += (float)(0.5 * (rng.NextDouble() * 2 - 1) * Math.Exp(-i / (0.004 * rate)));         // the click of the beater
@@ -50,14 +50,14 @@ namespace ReBuzz.SessionTests
             return new AudioSource(x, x, rate);
         }
 
-        static AudioClipParams Clip(AudioSource s, double bpm, WarpMode mode, double semitones = 0, float gain = 1f, ClipFades fades = default)
+        internal static AudioClipParams Clip(AudioSource s, double bpm, WarpMode mode, double semitones = 0, float gain = 1f, ClipFades fades = default)
         {
             var map = WarpMap.Straight(s.Length, s.Seconds * bpm / 60);
             return new AudioClipParams(s, map, mode, AudioAnalysis.Slices(s, map, AudioAnalysis.Onsets(s)), gain, semitones) { Fades = fades };
         }
 
         /// <summary>Plays a clip from <paramref name="from"/> for <paramref name="beats"/> beats at <paramref name="bpm"/>, in blocks, on one voice; the left channel.</summary>
-        static float[] Play(AudioClipParams p, double bpm, double from, double beats, int block = 256, int outRate = Rate, ClipVoice? voice = null)
+        internal static float[] Play(AudioClipParams p, double bpm, double from, double beats, int block = 256, int outRate = Rate, ClipVoice? voice = null)
         {
             voice ??= new ClipVoice();
             voice.Prepare(p);
@@ -558,14 +558,14 @@ namespace ReBuzz.SessionTests
 
         // ---- Blind-test renders (by hand) -------------------------------------------------------------
 
-        static AudioSource Bass(double bpm, int beats)
+        internal static AudioSource Bass(double bpm, int beats, double pitch = 1)
         {
             int perBeat = (int)Math.Round(Rate * 60 / bpm);
             var x = new float[perBeat * beats];
             double[] notes = { 55.0, 55.0, 65.41, 49.0, 55.0, 73.42, 65.41, 82.41 };
             for (int b = 0; b < beats; b++)
             {
-                double f = notes[b % notes.Length], phase = 0;
+                double f = pitch * notes[b % notes.Length], phase = 0;
                 for (int i = 0; i < perBeat && b * perBeat + i < x.Length; i++)
                 {
                     phase += f / Rate;
@@ -578,7 +578,7 @@ namespace ReBuzz.SessionTests
         }
 
         /// <summary>A vocal-like pad: detuned voices on a chord with formant-ish resonant peaks and a slow swell, stereo.</summary>
-        static AudioSource Pad(double bpm, int beats)
+        internal static AudioSource Pad(double bpm, int beats, double pitch = 1)
         {
             int perBeat = (int)Math.Round(Rate * 60 / bpm);
             int n = perBeat * beats;
@@ -591,7 +591,7 @@ namespace ReBuzz.SessionTests
                 foreach (double f in chords[c])
                     for (int v = -1; v <= 1; v++)
                     {
-                        double ff = f * Math.Pow(2, v * 0.004), phase = v * 0.3;
+                        double ff = pitch * f * Math.Pow(2, v * 0.004), phase = v * 0.3;
                         for (int i = from; i < to; i++)
                         {
                             phase += ff / Rate;
@@ -646,7 +646,7 @@ namespace ReBuzz.SessionTests
             File.WriteAllText(Path.Combine(dir, "key.md"), key.ToString());
         }
 
-        static void WriteWav(string path, float[] x, float scale)
+        internal static void WriteWav(string path, float[] x, float scale)
         {
             using var w = new BinaryWriter(File.Create(path));
             int bytes = x.Length * 2;
