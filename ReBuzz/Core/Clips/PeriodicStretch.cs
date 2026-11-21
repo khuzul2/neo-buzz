@@ -4,8 +4,11 @@
 // so a sawtooth-like bass loses the shape of its cycle and a click is heard once per period. This path keeps the cycle: waveform-similarity
 // overlap-add (Verhelst and Roelands, WSOLA) repeats or drops whole periods of the audio, and at each note's onset it starts a new frame
 // exactly there (so an attack is neither doubled nor smeared, and the notes land on their beats). Chosen automatically, once per audio, off the
-// audio thread (PeriodicAnalysis); anything it is not sure of stays with the stretcher. Pure (ReBuzz.SessionTests links this file); no
-// allocation after construction.
+// audio thread (PeriodicAnalysis), from the samples alone (so the same audio is chosen the same way from memory, from the cache file or in a
+// reversed view): a monophonic low line whose harmonics repeat from one period to the next like an oscillator's. A line that does not repeat
+// like that (a played instrument's noise, a drifting pitch or a changing timbre, a beating pair of oscillators) and anything else the analysis
+// is not sure of stays with the stretcher.
+// Pure (ReBuzz.SessionTests links this file); no allocation after construction.
 
 using System;
 
@@ -18,6 +21,16 @@ namespace ReBuzz.Core.Clips
         public bool Use;
         /// <summary>The share of the loud frames that are one steady pitch (0 to 1) and of the energy that is below 500 Hz.</summary>
         public double VoicedShare, LowShare;
+        /// <summary>
+        /// How exactly the harmonics above the fundamental (300 Hz to 4 kHz) repeat from one period to the next: the normalised autocorrelation of
+        /// that band at the period, as the energy-weighted median and the energy-weighted 10th percentile of the voiced frames (1 is a signal that
+        /// repeats to the sample, as a synthesiser's oscillator does; a played and sampled instrument has noise, a drifting pitch and a changing
+        /// timbre there and sits lower). <see cref="FidelityFrames"/> frames were measured.
+        /// </summary>
+        public double Fidelity, FidelityLow;
+        public int FidelityFrames;
+        /// <summary>Tests only (<see cref="PeriodicAnalysis.Diagnostics"/>): the frames measured, as (start sample, period, energy, band repeat).</summary>
+        public (int Start, int Period, double Energy, double Repeat)[] Measured = Array.Empty<(int, int, double, double)>();
         /// <summary>The longest period of the voiced frames (95th percentile), in samples: the search reaches half of it either way.</summary>
         public int MaxPeriod;
         /// <summary>The audio's mono mix, 4 samples averaged to 1 (padded with <see cref="Pad"/> zeros each end), for the coarse search.</summary>
@@ -31,12 +44,41 @@ namespace ReBuzz.Core.Clips
     {
         /// <summary>A frame is voiced from this normalised autocorrelation (McLeod's NSDF) up.</summary>
         public const double VoicedFrom = 0.85;
-        /// <summary>The audio is a bass line when this share of its loud frames is voiced and this share of its energy is below 500 Hz.</summary>
+        /// <summary>
+        /// The audio is a bass line when this share of its loud frames is voiced and this share of its energy is below 500 Hz; the path takes it
+        /// when, besides, it repeats like an oscillator (<see cref="MinFidelity"/>).
+        /// </summary>
         public const double MinVoiced = 0.65, MinLow = 0.85;
+        /// <summary>
+        /// The path is for lines with harmonics to lose: a phase vocoder breaks the phase between the harmonics of a period, and has little to break
+        /// in a line that is nearly all fundamental. The audio takes the path only when at least 1.5 % of its energy is above 500 Hz (a low share of
+        /// at most this). Measured (WP1b report): the generated lines have 2 to 9 % there; five sampled basses 0.2 to 0.8 %, where the stretcher
+        /// does not click and the path was no better by the distance.
+        /// </summary>
+        public const double MaxLow = 0.985;
         /// <summary>Audio longer than this plays through the stretcher (the analysis would be long, and so the decimated copy).</summary>
         public const double MaxSeconds = 240;
+        /// <summary>The band whose period-to-period repeat is measured, in Hz, and how many of the voiced frames are measured at most.</summary>
+        public const double FidelityFrom = 300, FidelityTo = 4000, MinBandShare = 1e-4;
+        public const int FidelityMaxFrames = 48;
+        /// <summary>Tests: keep the frames the fidelity was measured on in <see cref="PeriodicInfo.Measured"/>.</summary>
+        internal static volatile bool Diagnostics;
+        /// <summary>Tests (renders to compare the paths by ear): every low voiced line takes the path, whatever the repeat and the harmonics. Set before a source is first analysed.</summary>
+        internal static volatile bool Force;
+        /// <summary>
+        /// The audio repeats like an oscillator when the median of that repeat is at least the first and its 10th percentile at least the second.
+        /// Measured (WP1b report): generated lines (saw, square, pulse, filtered saw) 0.987 to 0.994 and 0.97 to 0.99; the same line with a pitch
+        /// swing or a second oscillator beating against it 0.90 to 0.96 and 0.81 to 0.84; sampled basses, a clean sustained one 0.99 to 1.00 and
+        /// 0.95 to 0.97, a noisy or slapped one 0.97 and 0.83 to 0.85.
+        /// </summary>
+        public const double MinFidelity = 0.98, MinFidelityLow = 0.90;
 
-        /// <summary>The analysis of a source, made once (off the audio thread) and kept with it; null for audio not in memory.</summary>
+        /// <summary>
+        /// The analysis of a source, made once (off the audio thread) and kept with it, null for audio the path cannot play (too short, too long, a
+        /// rate it does not do). It is a function of the samples alone: the same audio gives the same verdict whether it is in memory, in the cache
+        /// file (a streamed source is read exactly, off the audio thread) or in a reversed view, so a clip that goes to the cache while it plays,
+        /// or is first prepared after it has, keeps its path.
+        /// </summary>
         public static PeriodicInfo Of(AudioSource source)
         {
             if (source == null) return null;
@@ -44,10 +86,25 @@ namespace ReBuzz.Core.Clips
             {
                 if (!source.PeriodicTried)
                 {
-                    source.PeriodicTried = true;
-                    try { source.Periodic = Analyse(source); } catch { source.Periodic = null; }
+                    try
+                    {
+                        source.Periodic = Analyse(source);
+                        source.PeriodicTried = true;
+                    }
+                    catch (Exception e) when (e is System.IO.IOException || e is System.IO.InvalidDataException || e is ObjectDisposedException)
+                    {
+                        // The cache file cannot be read just now (it is being repaired, or the asset is being dropped): not decided, so the next
+                        // Prepare asks again, and until then the clip plays through the stretcher. A verdict made from a failed read would be a
+                        // different one from the same audio in memory.
+                        return null;
+                    }
+                    catch
+                    {
+                        source.Periodic = null;
+                        source.PeriodicTried = true;
+                    }
                 }
-                return source.Periodic;
+                return source.PeriodicTried ? source.Periodic : null;
             }
         }
 
@@ -110,10 +167,9 @@ namespace ReBuzz.Core.Clips
 
         static PeriodicInfo Analyse(AudioSource source)
         {
-            if (!source.InMemory || source.IsStreaming || source.IsReversedView) return null;
             int rate = source.SampleRate, length = source.Length;
             if (rate < 32000 || rate > 96000 || length < rate / 2 || length > MaxSeconds * rate) return null;
-            float[] left = source.Left, right = source.Right;
+            var (left, right) = SamplesOf(source);
             int n4 = length / 4;
             int hs = PeriodicRun.HopFor(rate);
             int pad = (hs + hs * 2) / 4 + 64;
@@ -181,6 +237,7 @@ namespace ReBuzz.Core.Clips
             }
             double quiet = maxEnergy * 1e-4;
             var voicedPeriods = new System.Collections.Generic.List<int>();
+            var voicedFrames = new System.Collections.Generic.List<(int Start, double Energy, int Period)>();
             double loud = 0, steady = 0;
             for (int f = 0; f < frames; f++)
             {
@@ -211,6 +268,7 @@ namespace ReBuzz.Core.Clips
                     voiced[f] = true;
                     periods[f] = pick * step;
                     voicedPeriods.Add(pick * step);
+                    voicedFrames.Add((s0 * step, energy[f], pick * step));
                 }
             }
             info.VoicedShare = loud > 0 ? steady / loud : 0;
@@ -219,8 +277,149 @@ namespace ReBuzz.Core.Clips
                 voicedPeriods.Sort();
                 info.MaxPeriod = voicedPeriods[Math.Min(voicedPeriods.Count - 1, (int)(0.95 * voicedPeriods.Count))];
             }
-            info.Use = info.VoicedShare >= MinVoiced && info.LowShare >= MinLow && voicedPeriods.Count >= 4;
+            if (info.VoicedShare >= MinVoiced && info.LowShare >= MinLow && voicedPeriods.Count >= 4)
+            {
+                MeasureFidelity(info, left, right, rate, voicedFrames, w8 * step, step);
+                info.Use = Force || (info.LowShare <= MaxLow && info.Fidelity >= MinFidelity && info.FidelityLow >= MinFidelityLow);
+            }
             return info;
+        }
+
+        /// <summary>The samples of a source as arrays, exact wherever they are (the arrays themselves for audio in memory; a copy of a cache file's or a reversed view's).</summary>
+        static (float[] Left, float[] Right) SamplesOf(AudioSource source)
+        {
+            if (source.InMemory && !source.IsReversedView) return (source.Left, source.Right);
+            return source.ToArrays();
+        }
+
+        /// <summary>
+        /// Fills <see cref="PeriodicInfo.Fidelity"/> and <see cref="PeriodicInfo.FidelityLow"/>: for up to <see cref="FidelityMaxFrames"/> voiced frames, spread
+        /// evenly, the normalised autocorrelation (2 sum a b over the energy of both) of the 300 Hz to 4 kHz band of the frame's mix at the lag nearest
+        /// the period where it is highest, the peak settled between samples by a parabola through its neighbours. Weighted by the frame's energy.
+        /// </summary>
+        static void MeasureFidelity(PeriodicInfo info, float[] left, float[] right, int rate, System.Collections.Generic.List<(int Start, double Energy, int Period)> frames, int window, int reach)
+        {
+            // Only the body of a note: a frame with a note's attack in it (or in the lag's reach) is the onset's, which the path handles by itself.
+            var steady = new System.Collections.Generic.List<(int Start, double Energy, int Period)>();
+            var onsets = info.Onsets;
+            foreach (var fr in frames)
+            {
+                int lo = fr.Start - rate / 50, hi = fr.Start + window + fr.Period + 2 * reach;
+                int a = 0, b = onsets.Length;
+                while (a < b)
+                {
+                    int mid = (a + b) / 2;
+                    if (onsets[mid] < lo) a = mid + 1; else b = mid;
+                }
+                if (a >= onsets.Length || onsets[a] > hi) steady.Add(fr);
+            }
+            frames = steady;
+            int count = frames.Count, take = Math.Min(count, FidelityMaxFrames);
+            var chain = new Biquad[4];
+            chain[0] = Biquad.Design(FidelityFrom, rate, 0.5412, true);
+            chain[1] = Biquad.Design(FidelityFrom, rate, 1.3065, true);
+            chain[2] = Biquad.Design(FidelityTo, rate, 0.5412, false);
+            chain[3] = Biquad.Design(FidelityTo, rate, 1.3065, false);
+            int warm = rate / 50;
+            var values = new System.Collections.Generic.List<(double Value, double Weight)>();
+            var kept = Diagnostics ? new System.Collections.Generic.List<(int, int, double, double)>() : null;
+            for (int i = 0; i < take; i++)
+            {
+                var fr = frames[(int)((long)i * count / take)];
+                double v = BandRepeat(left, right, fr.Start, window, fr.Period, reach + 2, warm, chain);
+                if (double.IsNaN(v)) continue;
+                values.Add((v, fr.Energy));
+                kept?.Add((fr.Start, fr.Period, fr.Energy, v));
+            }
+            if (kept != null) info.Measured = kept.ToArray();
+            info.FidelityFrames = values.Count;
+            if (values.Count == 0) return;
+            values.Sort((a, b) => a.Value.CompareTo(b.Value));
+            double total = 0;
+            foreach (var v in values) total += v.Weight;
+            info.Fidelity = WeightedAt(values, 0.5 * total);
+            info.FidelityLow = WeightedAt(values, 0.1 * total);
+        }
+
+        static double WeightedAt(System.Collections.Generic.List<(double Value, double Weight)> sorted, double mass)
+        {
+            double run = 0;
+            foreach (var v in sorted)
+            {
+                run += v.Weight;
+                if (run >= mass) return v.Value;
+            }
+            return sorted[^1].Value;
+        }
+
+        /// <summary>The best normalised autocorrelation of the band-limited mix of [start, start + window) at a lag within <paramref name="reach"/> of <paramref name="period"/>; NaN when the audio ends first.</summary>
+        static double BandRepeat(float[] left, float[] right, int start, int window, int period, int reach, int warm, Biquad[] chain)
+        {
+            int from = Math.Max(0, start - warm);
+            int to = start + window + period + reach + 2;
+            if (to > left.Length) return double.NaN;
+            int m = to - from, at = start - from;
+            var work = new double[m];
+            var state = new Biquad[chain.Length];
+            Array.Copy(chain, state, chain.Length);
+            for (int i = 0; i < m; i++)
+            {
+                double x = 0.5 * (left[from + i] + right[from + i]);
+                for (int k = 0; k < state.Length; k++) x = state[k].Process(x);
+                work[i] = x;
+            }
+            double ea = 0, ef = 0;
+            for (int j = 0; j < window; j++)
+            {
+                ea += work[at + j] * work[at + j];
+                double raw = 0.5 * (left[start + j] + right[start + j]);
+                ef += raw * raw;
+            }
+            // Nothing above the fundamental (under 40 dB of the frame is in the band: a sine's leak through the filter repeats, and means nothing).
+            if (ea < 1e-18 || ea < MinBandShare * ef) return double.NaN;
+            int lo = Math.Max(2, period - reach), hi = period + reach;
+            var r = new double[hi - lo + 1];
+            int best = 0;
+            for (int t = lo; t <= hi; t++)
+            {
+                double ab = 0, bb = 0;
+                for (int j = 0; j < window; j++)
+                {
+                    double b = work[at + t + j];
+                    ab += work[at + j] * b;
+                    bb += b * b;
+                }
+                r[t - lo] = 2 * ab / (ea + bb + 1e-30);
+                if (r[t - lo] > r[best]) best = t - lo;
+            }
+            double peak = r[best];
+            if (best > 0 && best < r.Length - 1)
+            {
+                double a = r[best - 1], b = r[best], c = r[best + 1], den = a - 2 * b + c;
+                if (den < 0) peak = b - 0.125 * (c - a) * (c - a) / den;
+            }
+            return Math.Min(1.0, peak);
+        }
+
+        /// <summary>A second-order section (RBJ cookbook), in double, transposed direct form II.</summary>
+        struct Biquad
+        {
+            double b0, b1, b2, a1, a2, z1, z2;
+
+            public static Biquad Design(double hz, int rate, double q, bool highPass)
+            {
+                double w0 = 2 * Math.PI * hz / rate, alpha = Math.Sin(w0) / (2 * q), c = Math.Cos(w0), a0 = 1 + alpha;
+                double p = highPass ? (1 + c) / 2 : (1 - c) / 2;
+                return new Biquad { b0 = p / a0, b1 = (highPass ? -(1 + c) : 1 - c) / a0, b2 = p / a0, a1 = -2 * c / a0, a2 = (1 - alpha) / a0 };
+            }
+
+            public double Process(double x)
+            {
+                double y = b0 * x + z1;
+                z1 = b1 * x - a1 * y + z2;
+                z2 = b2 * x - a2 * y;
+                return y;
+            }
         }
     }
 

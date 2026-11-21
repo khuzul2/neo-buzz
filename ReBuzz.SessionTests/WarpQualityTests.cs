@@ -133,6 +133,171 @@ namespace ReBuzz.SessionTests
             return (l, channels > 1 ? r : l, rate);
         }
 
+        // ---- The selector on more material (WP1b) -------------------------------------------------------
+
+        /// <summary>
+        /// Synthetic basses besides <see cref="NeoStretchTests.Bass"/>, on another line (a note a beat, from A1, E1, G1...): "square" (a square and a
+        /// sub sine, the phase restarting on each note), "pulse" (a quarter-width pulse and a sub), "filtered-saw" (a free-running sawtooth through
+        /// the repository's own state-variable low-pass, resonant, its cutoff falling from 1.2 kHz to 220 Hz over each note), "detuned" (two
+        /// sawtooths 6 cents apart, which beat: not strictly periodic) and "saw-eighths" (the first one's sawtooth and sub on a note every half
+        /// beat: a faster line); "saw-noisy" (the saw and sub with white noise 30 dB under the note, as a played instrument's bow, pick or key noise) and
+        /// "saw-vibrato" (the same line with the pitch swinging 12 cents at 5 Hz). Mono, at <see cref="Rate"/>.
+        /// </summary>
+        internal static AudioSource SynthBass(string kind, double bpm, int beats, double pitch = 1)
+        {
+            int perBeat = (int)Math.Round(Rate * 60 / bpm), perNote = kind == "saw-eighths" ? perBeat / 2 : perBeat;
+            int notesTotal = (int)Math.Round((double)perBeat * beats / perNote);
+            var x = new float[perBeat * beats];
+            double[] notes = { 55.00, 41.20, 49.00, 55.00, 61.74, 73.42, 65.41, 49.00 };
+            double free = 0, free2 = 0, clock = 0;
+            var noise = new Random(3);
+            var svf = new NeoBuzz.Dsp.Svf { Mode = NeoBuzz.Dsp.SvfMode.LowPass };
+            for (int n = 0; n < notesTotal; n++)
+            {
+                double f = pitch * notes[n % notes.Length], phase = 0;
+                for (int i = 0; i < perNote && n * perNote + i < x.Length; i++)
+                {
+                    double env = Math.Min(1, i / (0.004 * Rate)) * Math.Exp(-i / (0.35 * perBeat)), v;
+                    clock += 1.0 / Rate;
+                    phase += (kind == "saw-vibrato" ? f * Math.Pow(2, 12 / 1200.0 * Math.Sin(2 * Math.PI * 5 * clock)) : f) / Rate;
+                    switch (kind)
+                    {
+                        case "square":
+                            v = 0.6 * (phase - Math.Floor(phase) < 0.5 ? 1 : -1) + 0.4 * Math.Sin(2 * Math.PI * phase);
+                            break;
+                        case "pulse":
+                            v = 0.6 * (phase - Math.Floor(phase) < 0.25 ? 1 : -1) + 0.4 * Math.Sin(2 * Math.PI * phase);
+                            break;
+                        case "filtered-saw":
+                            {
+                                free += f / Rate;
+                                double cutoff = 220 + 980 * Math.Exp(-i / (0.15 * Rate));
+                                svf.Set(cutoff, Rate, 2.0);
+                                v = 1.4 * svf.Process((float)(2 * (free - Math.Floor(free)) - 1));
+                                break;
+                            }
+                        case "detuned":
+                            free += f / Rate;
+                            free2 += f * 1.0035 / Rate;
+                            v = 0.5 * (2 * (free - Math.Floor(free)) - 1) + 0.5 * (2 * (free2 - Math.Floor(free2)) - 1);
+                            break;
+                        case "saw-noisy":
+                            v = 0.6 * Math.Sin(2 * Math.PI * phase) + 0.4 * (2 * (phase - Math.Floor(phase)) - 1) + 0.03 * (noise.NextDouble() * 2 - 1);
+                            break;
+                        default:                                  // saw-eighths, saw-vibrato
+                            v = 0.6 * Math.Sin(2 * Math.PI * phase) + 0.4 * (2 * (phase - Math.Floor(phase)) - 1);
+                            break;
+                    }
+                    x[n * perNote + i] = (float)(0.45 * env * v);
+                }
+            }
+            return new AudioSource(x, x, Rate);
+        }
+
+        /// <summary>The excerpts of WP1B_REAL_DIR (mono 16-bit or float WAV files, never in the repository), by file name.</summary>
+        internal static (string Name, AudioSource Source)[] RealExcerpts(string dir)
+        {
+            return Directory.GetFiles(dir, "*.wav").OrderBy(f => f, StringComparer.Ordinal).Select(f =>
+            {
+                var (l, r, rate) = ReadWav(f);
+                return (Path.GetFileNameWithoutExtension(f), new AudioSource(l, r, rate));
+            }).ToArray();
+        }
+
+        /// <summary>
+        /// WP1b renders, by hand: for the generated synthetic basses (every <see cref="SynthBass"/> kind) and every excerpt in WP1B_REAL_DIR, at 20 %
+        /// slower and 25 % faster, <c>name-label--mode.wav</c> (32-bit float, left channel) for original, pro-old (the stretcher alone), pro-new (Pro as
+        /// it plays now: the path where the selector takes it), pro-forced (the path whatever the selector says), beats, complex-old, complex and, for the generated ones, ideal. Set WP1B_RENDER_DIR.
+        /// </summary>
+        [Test, Explicit("writes the WP1b renders; set WP1B_RENDER_DIR (and WP1B_REAL_DIR)")]
+        public void WriteWp1bRenders()
+        {
+            string dir = Environment.GetEnvironmentVariable("WP1B_RENDER_DIR") ?? throw new InvalidOperationException("WP1B_RENDER_DIR");
+            Directory.CreateDirectory(dir);
+            var items = new List<(string Name, AudioSource Source, Func<double, AudioSource>? Ideal)>();
+            foreach (var kind in new[] { "square", "pulse", "filtered-saw", "detuned", "saw-eighths", "saw-noisy", "saw-vibrato" })
+            {
+                string k = kind;
+                items.Add(("synth-" + k, SynthBass(k, Bpm, 8), t => SynthBass(k, Bpm * t, 8)));
+            }
+            string? real = Environment.GetEnvironmentVariable("WP1B_REAL_DIR");
+            if (real != null) items.AddRange(RealExcerpts(real).Select(e => (e.Name, e.Source, (Func<double, AudioSource>?)null)));
+            foreach (var (name, source, ideal) in items)
+            {
+                double beats = source.Seconds * Bpm / 60;
+                foreach (var (label, tempo) in new[] { ("20-slower", 0.8), ("25-faster", 1.25) })
+                {
+                    string group = $"{name}-{label}";
+                    int rate = source.SampleRate;
+                    Write(dir, group, "original", source.Left, rate);
+                    if (ideal != null) Write(dir, group, "ideal", ideal(tempo).Left, rate);
+                    Write(dir, group, "beats", NeoStretchTests.Play(NeoStretchTests.Clip(source, Bpm, WarpMode.Beats, 0), Bpm * tempo, 0, beats, 256, rate), rate);
+                    Write(dir, group, "complex", NeoStretchTests.Play(NeoStretchTests.Clip(source, Bpm, WarpMode.Complex, 0), Bpm * tempo, 0, beats, 256, rate), rate);
+                    Write(dir, group, "pro-new", NeoStretchTests.Play(NeoStretchTests.Clip(source, Bpm, WarpMode.Pro, 0), Bpm * tempo, 0, beats, 256, rate), rate);
+                    PeriodicVoice.Enabled = false;
+                    try
+                    {
+                        Write(dir, group, "pro-old", NeoStretchTests.Play(NeoStretchTests.Clip(source, Bpm, WarpMode.Pro, 0), Bpm * tempo, 0, beats, 256, rate), rate);
+                        Write(dir, group, "complex-old", NeoStretchTests.Play(NeoStretchTests.Clip(source, Bpm, WarpMode.Complex, 0), Bpm * tempo, 0, beats, 256, rate), rate);
+                    }
+                    finally { PeriodicVoice.Enabled = true; }
+                    // The path forced on (a fresh source, so the analysis is made again): to hear it where the selector leaves it out.
+                    PeriodicAnalysis.Force = true;
+                    try
+                    {
+                        var again = new AudioSource(source.Left, source.Right, rate);
+                        Write(dir, group, "pro-forced", NeoStretchTests.Play(NeoStretchTests.Clip(again, Bpm, WarpMode.Pro, 0), Bpm * tempo, 0, beats, 256, rate), rate);
+                    }
+                    finally { PeriodicAnalysis.Force = false; }
+                }
+            }
+        }
+
+        /// <summary>Prints what the selector measures on each kind of material: the generated ones and, from WP1B_REAL_DIR, the real excerpts.</summary>
+        [Test, Explicit("prints the selector's features; set WP1B_REAL_DIR for the real excerpts")]
+        public void PrintTheSelectorFeatures()
+        {
+            var rows = new List<(string Name, AudioSource Source)>
+            {
+                ("synth bass (saw+sub, NA5 blind test)", Excerpt("bass", Bpm, 1)),
+                ("synth bass 2: square+sub", SynthBass("square", Bpm, 8)),
+                ("synth bass 3: pulse 25 %+sub", SynthBass("pulse", Bpm, 8)),
+                ("synth bass 4: filtered saw", SynthBass("filtered-saw", Bpm, 8)),
+                ("synth bass 5: detuned saws", SynthBass("detuned", Bpm, 8)),
+                ("synth bass 6: saw+sub, eighth notes", SynthBass("saw-eighths", Bpm, 8)),
+                ("synth bass 7: saw+sub, noise -30 dB", SynthBass("saw-noisy", Bpm, 8)),
+                ("synth bass 8: saw+sub, vibrato 12 cents", SynthBass("saw-vibrato", Bpm, 8)),
+                ("drums", Excerpt("drums", Bpm, 1)),
+                ("pad", Excerpt("pad", Bpm, 1)),
+            };
+            var long180 = new float[Rate * 180];
+            var one = NeoStretchTests.Bass(Bpm, 8).Left;
+            for (int i = 0; i < long180.Length; i++) long180[i] = one[i % one.Length];
+            rows.Add(("synth bass, 180 s (a loop 45 times)", new AudioSource(long180, long180, Rate)));
+            string? real = Environment.GetEnvironmentVariable("WP1B_REAL_DIR");
+            if (real != null) rows.AddRange(RealExcerpts(real));
+            string? csv = Environment.GetEnvironmentVariable("WP1B_FRAMES_DIR");         // the measured frames and the audio, for the prototype that measures the other candidates
+            if (csv != null) { Directory.CreateDirectory(csv); PeriodicAnalysis.Diagnostics = true; }
+            try
+            {
+                foreach (var (name, source) in rows)
+                {
+                    var clock = System.Diagnostics.Stopwatch.StartNew();
+                    var info = PeriodicAnalysis.Of(source);
+                    clock.Stop();
+                    TestContext.Out.WriteLine(info == null
+                        ? $"{name,-46} no analysis"
+                        : $"{name,-46} voiced {info.VoicedShare:F3}  low {info.LowShare:F3}  fidelity {info.Fidelity:F3}  p10 {info.FidelityLow:F3}  frames {info.FidelityFrames,2}  use {info.Use}  ({clock.ElapsedMilliseconds} ms)");
+                    if (csv == null) continue;
+                    string file = new string(name.Select(c => char.IsLetterOrDigit(c) || c == '_' || c == '-' ? c : '_').ToArray());
+                    Write(csv, file, "audio", source.Left, source.SampleRate);
+                    File.WriteAllLines(Path.Combine(csv, file + ".csv"),
+                        (info?.Measured ?? Array.Empty<(int Start, int Period, double Energy, double Repeat)>()).Select(m => $"{m.Start},{m.Period},{m.Energy:R},{m.Repeat:R}"));
+                }
+            }
+            finally { PeriodicAnalysis.Diagnostics = false; }
+        }
+
         // ---- The time-domain path -----------------------------------------------------------------------
 
         static void NeedsTheLibrary()
@@ -214,6 +379,54 @@ namespace ReBuzz.SessionTests
                 Assert.That(info?.Use ?? false, Is.False, $"{name} stay with the stretcher (voiced {info?.VoicedShare:F2}, low {info?.LowShare:F2})");
             }
             Assert.That(PeriodicAnalysis.Of(NeoStretchTests.Tone(0.2)), Is.Null.Or.Property("Use").False, "a fraction of a second is nothing to analyse");
+        }
+
+        [Test]
+        public void TheSelectorTakesLinesThatRepeatLikeAnOscillatorAndLeavesPlayedOnesToTheStretcher()
+        {
+            // Strictly periodic lines: another waveform, a pulse, a filtered sawtooth, and the first one with a little noise under it.
+            foreach (var kind in new[] { "square", "pulse", "filtered-saw", "saw-noisy" })
+            {
+                var info = PeriodicAnalysis.Of(SynthBass(kind, Bpm, 8))!;
+                Assert.That(info.Use, Is.True, $"{kind}: voiced {info.VoicedShare:F2}, fidelity {info.Fidelity:F3}, lowest tenth {info.FidelityLow:F3}");
+                Assert.That(info.FidelityFrames, Is.GreaterThanOrEqualTo(8), $"{kind}: enough steady frames were measured");
+            }
+            // Not strictly periodic: two oscillators a few cents apart (they beat) and a pitch that swings (vibrato). Both are lines the old path plays as before.
+            foreach (var kind in new[] { "detuned", "saw-vibrato" })
+            {
+                var info = PeriodicAnalysis.Of(SynthBass(kind, Bpm, 8))!;
+                Assert.That(info.VoicedShare, Is.GreaterThanOrEqualTo(PeriodicAnalysis.MinVoiced), $"{kind}: a bass line by the old tests");
+                Assert.That(info.LowShare, Is.GreaterThanOrEqualTo(PeriodicAnalysis.MinLow), $"{kind}: and low");
+                Assert.That(info.Use, Is.False, $"{kind}: fidelity {info.Fidelity:F3}, lowest tenth {info.FidelityLow:F3}");
+            }
+            // A line too fast for the old frames (eighth notes at 120 BPM): stays with the stretcher as it did.
+            Assert.That(PeriodicAnalysis.Of(SynthBass("saw-eighths", Bpm, 8))?.Use ?? false, Is.False);
+        }
+
+        [Test]
+        public void ALineTheSelectorLeavesAloneRendersAsTheStretcherAlone()
+        {
+            NeedsTheLibrary();
+            foreach (var kind in new[] { "detuned", "saw-vibrato" })
+                foreach (var tempo in new[] { 0.8, 1.25 })
+                {
+                    var source = SynthBass(kind, Bpm, 8);
+                    var now = NeoStretchTests.Play(NeoStretchTests.Clip(source, Bpm, WarpMode.Pro), Bpm * tempo, 0, 8);
+                    Assert.That(now, Is.EqualTo(RenderOld(source, Bpm, Bpm * tempo, 0, 8)), $"{kind} at {tempo}: Pro is the stretcher, sample for sample");
+                    var c = NeoStretchTests.Play(NeoStretchTests.Clip(source, Bpm, WarpMode.Complex), Bpm * tempo, 0, 8);
+                    Assert.That(c, Is.EqualTo(RenderOld(source, Bpm, Bpm * tempo, 0, 8, WarpMode.Complex)), $"{kind} at {tempo}: and Complex is the phase vocoder");
+                }
+        }
+
+        [Test]
+        public void ABareSineBassHasNothingAboveTheFundamentalToRepeat()
+        {
+            // The band that is measured starts at 300 Hz: a sine bass has nothing there, and nothing for a time-domain path to keep (the
+            // phase vocoder does a sine exactly).
+            var sine = new float[44100 * 4];
+            for (int i = 0; i < sine.Length; i++) sine[i] = (float)(0.4 * Math.Sin(2 * Math.PI * 55 * i / 44100.0));
+            var info = PeriodicAnalysis.Of(new AudioSource(sine, sine, 44100));
+            Assert.That(info?.Use ?? false, Is.False, "a bare sine: no harmonics to repeat");
         }
 
         [Test, Combinatorial]

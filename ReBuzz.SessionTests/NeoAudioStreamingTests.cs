@@ -337,6 +337,234 @@ namespace ReBuzz.SessionTests
             return (first, stats.Missed, stats.Underruns);
         }
 
+        // ------------------------------------------------------------------ the time-domain path (WP1b)
+
+        /// <summary>A bass line the time-domain path takes (WarpQualityTests' synthesiser line), <paramref name="seconds"/> long, mono at 44.1 kHz.</summary>
+        /// <summary>The path plays a clip whose rate is the engine's (a tempo change only), so these tests render at the line's own rate.</summary>
+        const int BassRate = 44100;
+
+        static float[] BassLine(double seconds) => NeoStretchTests.Bass(120, (int)(seconds * 2)).Left;
+
+        static WarpMode[] PathModes() => NeoStretch.Available ? new[] { WarpMode.Complex, WarpMode.Pro } : new[] { WarpMode.Complex };
+
+        [Test]
+        public void TheTimeDomainChoiceIsTheSameWhetherTheAudioIsInMemoryInTheCacheOrReversed()
+        {
+            var l = BassLine(16);
+            var reference = new AudioSource(l, l, 44100);                         // never streamed
+            var want = PeriodicAnalysis.Of(reference)!;
+            Assert.That(want.Use, Is.True, "the generator's bass is a line the path takes");
+
+            // Analysed in memory, then streamed: the same object keeps its verdict.
+            var early = new AudioAsset("early", "", null, new AudioSource(l, l, 44100), 1);
+            made.Add(early);
+            var kept = PeriodicAnalysis.Of(early.Source);
+            Stream(early);
+            Assert.That(PeriodicAnalysis.Of(early.Source), Is.SameAs(kept), "decided once per source");
+
+            // Streamed first (the floats are gone): analysed from the cache file, the verdict and every number the same bits.
+            var late = new AudioAsset("late", "", null, new AudioSource(l, l, 44100), 1);
+            made.Add(late);
+            Stream(late);
+            Assert.That(late.Source.PeriodicTried, Is.False);
+            var got = PeriodicAnalysis.Of(late.Source)!;
+            Assert.That(got, Is.Not.Null, "a streamed source is analysed too");
+            AssertSameVerdict(got, want, "from the cache");
+            AssertSameVerdict(kept!, want, "in memory, before the switch");
+
+            // A reversed view of the streamed audio, and a reversed copy of the same audio in memory: the same verdict.
+            var view = late.Source.Reversed();
+            Assert.That(view.IsReversedView, Is.True);
+            long threshold = StreamingPolicy.ThresholdBytes;
+            StreamingPolicy.ThresholdBytes = 64L * 1024 * 1024;               // a source this short is reversed as a copy in memory
+            var copy = reference.Reversed();
+            StreamingPolicy.ThresholdBytes = threshold;
+            Assert.That(copy.IsReversedView, Is.False);
+            var viewInfo = PeriodicAnalysis.Of(view);
+            var copyInfo = PeriodicAnalysis.Of(copy);
+            Assert.That(viewInfo?.Use ?? false, Is.EqualTo(copyInfo?.Use ?? false), "reversed: a view of the cache and a copy in memory agree");
+            if (copyInfo != null) AssertSameVerdict(viewInfo!, copyInfo, "reversed, from the cache");
+
+            // Audio the path does not take is not taken from the cache either.
+            var padL = NeoStretchTests.Pad(120, 40).Left;
+            var pad = new AudioAsset("pad", "", null, new AudioSource(padL, padL, 44100), 1);
+            made.Add(pad);
+            Stream(pad);
+            Assert.That(PeriodicAnalysis.Of(pad.Source)?.Use ?? false, Is.False);
+            Assert.That(PeriodicAnalysis.Of(new AudioSource(padL, padL, 44100))?.Use ?? false, Is.False);
+        }
+
+        [Test]
+        public void ABassClipPlayedFromTheCacheAllocatesNothingAndKeepsItsBlockTime()
+        {
+            foreach (var mode in PathModes())
+            {
+                var l = BassLine(16);
+                var asset = new AudioAsset("budget-bass", "", null, new AudioSource(l, l, 44100), 1);
+                made.Add(asset);
+                Stream(asset);
+                var p = Clip(asset.Source, 120, mode);
+                var voice = new ClipVoice();
+                voice.Prepare(p);
+                Assert.That(PeriodicVoice.Qualifies(p, 1.0, BassRate), Is.True, $"{mode}: the clip takes the path");
+                var lb = new float[Block];
+                var rb = new float[Block];
+                double bps = 96 / 60.0 / BassRate, beat = 0, best = double.MaxValue, blockMs = Block * 1000.0 / BassRate;
+                for (int b = 0; b < 100; b++)                                   // past the cache's resident head, and the prefetch thread warm
+                {
+                    voice.Render(p, beat, bps, BassRate, lb, rb, 0, Block);
+                    beat += Block * bps;
+                    Thread.Sleep(2);
+                }
+                long allocated = GC.GetAllocatedBytesForCurrentThread();
+                for (int run = 0; run < 3; run++)                               // the best of three: another process taking the core is not this path's time
+                {
+                    double w = 0;
+                    for (int b = 0; b < 200; b++)
+                    {
+                        long t0 = Stopwatch.GetTimestamp();
+                        voice.Render(p, beat, bps, BassRate, lb, rb, 0, Block);
+                        long t1 = Stopwatch.GetTimestamp();
+                        w = Math.Max(w, (t1 - t0) * 1000.0 / Stopwatch.Frequency);
+                        beat += Block * bps;
+                        Thread.Sleep(2);                                        // the prefetch thread's time
+                    }
+                    best = Math.Min(best, w);
+                }
+                long bytes = GC.GetAllocatedBytesForCurrentThread() - allocated;
+                double worst = best;
+                TestContext.Out.WriteLine($"{mode} from the cache: worst block {worst:F3} ms of {blockMs:F1}; allocated {bytes} bytes; missed {asset.StreamStats.Missed}");
+                Assert.That(bytes, Is.EqualTo(0), $"{mode}: nothing allocated while it plays from the cache");
+                Assert.That(asset.StreamStats.Missed, Is.EqualTo(0));
+                Assert.That(asset.StreamStats.Underruns, Is.EqualTo(0L));
+                Assert.That(worst, Is.LessThan(blockMs), $"{mode}: a block in less than the block's time, from the cache");
+                asset.ReleaseStream();
+            }
+        }
+
+        [Test]
+        public void AStreamedSourceThatCannotBeReadIsUndecidedNotRefused()
+        {
+            var l = BassLine(16);
+            var asset = new AudioAsset("gone", "", null, new AudioSource(l, l, 44100), 1);
+            made.Add(asset);
+            Stream(asset);
+            asset.ReleaseStream();                                               // the cache file is let go before the first analysis
+            Assert.That(PeriodicAnalysis.Of(asset.Source), Is.Null);
+            Assert.That(asset.Source.PeriodicTried, Is.False, "no verdict was made from a failed read: it is asked again");
+            Assert.That(PeriodicVoice.Qualifies(Clip(asset.Source, 120, WarpMode.Complex), 1.0, BassRate), Is.False);
+        }
+
+        static void AssertSameVerdict(PeriodicInfo got, PeriodicInfo want, string what)
+        {
+            Assert.That(got.Use, Is.EqualTo(want.Use), what + ": use");
+            Assert.That(got.VoicedShare, Is.EqualTo(want.VoicedShare), what + ": voiced share");
+            Assert.That(got.LowShare, Is.EqualTo(want.LowShare), what + ": low share");
+            Assert.That(got.Fidelity, Is.EqualTo(want.Fidelity), what + ": fidelity");
+            Assert.That(got.FidelityLow, Is.EqualTo(want.FidelityLow), what + ": fidelity, lowest tenth");
+            Assert.That(got.MaxPeriod, Is.EqualTo(want.MaxPeriod), what + ": the longest period");
+            Assert.That(got.Onsets, Is.EqualTo(want.Onsets), what + ": the onsets");
+            Assert.That(got.Mid4, Is.EqualTo(want.Mid4), what + ": the decimated copy");
+        }
+
+        /// <summary>A bass clip played at <paramref name="playBpm"/> (the clip is at 120) from memory beside the same samples never streamed, the switch to the cache at <paramref name="switchBlock"/>.</summary>
+        (long FirstDifference, long Missed, long Underruns, bool PathUsed, bool DiffersFromStretcher) BassSwitchRun(WarpMode mode, int switchBlock, int blocks, int sleepMs, double playBpm, double seconds = 16)
+        {
+            var l = BassLine(seconds);
+            var asset = new AudioAsset("bass" + switchBlock, "", null, new AudioSource(l, l, 44100), 1);
+            made.Add(asset);
+            var reference = new AudioSource(l, l, 44100);
+            var p = Clip(asset.Source, 120, mode);
+            var q = Clip(reference, 120, mode);
+            var voice = new ClipVoice();
+            var refVoice = new ClipVoice();
+            voice.Prepare(p);
+            refVoice.Prepare(q);
+            bool used = PeriodicVoice.Qualifies(q, 1.0, BassRate);
+            var got = new float[blocks * Block]; var gotR = new float[blocks * Block];
+            var want = new float[blocks * Block]; var wantR = new float[blocks * Block];
+            double bps = playBpm / 60.0 / BassRate;
+            Task? fill = null;
+            for (int b = 0; b < blocks; b++)
+            {
+                if (b == switchBlock) fill = asset.BeginStreaming();
+                voice.Render(p, 8.0 + b * Block * bps, bps, BassRate, got, gotR, b * Block, Block);
+                refVoice.Render(q, 8.0 + b * Block * bps, bps, BassRate, want, wantR, b * Block, Block);
+                if (sleepMs > 0 && b >= switchBlock - 1) Thread.Sleep(sleepMs);
+            }
+            Assert.That(fill!.Wait(30_000), Is.True);
+            long first = -1;
+            for (int i = 0; i < got.Length && first < 0; i++)
+                if (got[i].CompareTo(want[i]) != 0 || gotR[i].CompareTo(wantR[i]) != 0) first = i;
+            var stats = asset.StreamStats;
+            bool streaming = !asset.Source.InMemory;
+            asset.ReleaseStream();
+            // The same clip through the stretcher alone: the path's audio is not that.
+            var old = new float[blocks * Block]; var oldR = new float[blocks * Block];
+            PeriodicVoice.Enabled = false;
+            try
+            {
+                var plain = new ClipVoice();
+                var q2 = Clip(reference, 120, mode);
+                plain.Prepare(q2);
+                for (int b = 0; b < blocks; b++) plain.Render(q2, 8.0 + b * Block * bps, bps, BassRate, old, oldR, b * Block, Block);
+            }
+            finally { PeriodicVoice.Enabled = true; }
+            return (first, stats.Missed, stats.Underruns, used && streaming, !old.AsSpan().SequenceEqual(want));
+        }
+
+        [Test]
+        public void SwitchingFromMemoryToTheCacheKeepsTheTimeDomainPathBitForBit()
+        {
+            // Beat 8 of a clip of 32 beats (16 s) on: past the cache file's resident head, so the switch is the voice's reads moving from the
+            // floats to the pages. At 96 BPM (20 % slower) and 150 (25 % faster) the audio is stretched, which is what the path is for.
+            foreach (var mode in PathModes())
+                foreach (var (bpm, at) in new[] { (96.0, 120), (150.0, 140), (96.0, 126), (96.0, 128) })
+                {
+                    var (first, missed, underruns, used, differs) = BassSwitchRun(mode, at, at + 80, 2, bpm);
+                    Assert.That(used, Is.True, $"{mode}: the clip is a time-domain clip and ended up streaming");
+                    Assert.That(differs, Is.True, $"{mode}: what plays is the path's audio, not the stretcher's");
+                    Assert.That(first, Is.EqualTo(-1), $"{mode} at {bpm} BPM, switch at block {at}: bit-identical to the same clip never streamed (first difference at sample {first})");
+                    Assert.That(missed, Is.EqualTo(0), $"{mode} at {bpm} BPM, switch at block {at}: nothing was read that was not in memory");
+                    Assert.That(underruns, Is.EqualTo(0L), $"{mode} at {bpm} BPM, switch at block {at}: no underrun");
+                }
+        }
+
+        [Test]
+        public void ABassClipFirstPreparedFromTheCacheTakesTheTimeDomainPathToo()
+        {
+            foreach (var mode in PathModes())
+            {
+                var l = BassLine(16);
+                var asset = new AudioAsset("cold-bass", "", null, new AudioSource(l, l, 44100), 1);
+                made.Add(asset);
+                Stream(asset);
+                var reference = new AudioSource(l, l, 44100);
+                var p = Clip(asset.Source, 120, mode);
+                var q = Clip(reference, 120, mode);
+                var voice = new ClipVoice();
+                var refVoice = new ClipVoice();
+                voice.Prepare(p);                                                // the first analysis of this source is from the cache file
+                refVoice.Prepare(q);
+                Assert.That(PeriodicVoice.Qualifies(p, 1.0, BassRate), Is.True, $"{mode}: the streamed clip qualifies");
+                int blocks = 500;
+                var got = new float[blocks * Block]; var gotR = new float[blocks * Block];
+                var want = new float[blocks * Block]; var wantR = new float[blocks * Block];
+                double bps = 96 / 60.0 / BassRate;
+                for (int b = 0; b < blocks; b++)
+                {
+                    voice.Render(p, b * Block * bps, bps, BassRate, got, gotR, b * Block, Block);
+                    refVoice.Render(q, b * Block * bps, bps, BassRate, want, wantR, b * Block, Block);
+                    Thread.Sleep(2);
+                }
+                Assert.That(got, Is.EqualTo(want), $"{mode}: the left channel is the same bits as from memory");
+                Assert.That(gotR, Is.EqualTo(wantR), $"{mode}: and the right");
+                Assert.That(asset.StreamStats.Missed, Is.EqualTo(0), $"{mode}: nothing was read that was not in memory");
+                Assert.That(asset.StreamStats.Underruns, Is.EqualTo(0L));
+                asset.ReleaseStream();
+            }
+        }
+
         [Test]
         public void ASlowVoiceIsNotLeftReadingWhatTheSwitchLetGo()
         {
