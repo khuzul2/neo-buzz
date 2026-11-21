@@ -182,3 +182,48 @@ The listening pack (artifact `neo-tune-excerpts`, never committed) holds the six
 - The PSOLA transient dry hold can click on a hard attack inside a note (Transients on).
 - NT1's evaluation setting "Natural" and "Subtle" were, through its clamping, Humanize 100 % and Amount 100 % (section 9); the comparison in 11.6 reproduces them as evaluated.
 - An optional reference corrector (an open-source real-time pitch corrector run as a measurement and listening reference only) was not added: it was out of the time given to this task.
+
+## 12. NT3: clean note transitions and the artefact detector
+
+From the blind test of the NT2 pack: clicks at note transitions at Natural 50 and 100, glitches at Natural 0 (04), an audible tuned onset at Natural 100 (02). NT2's own metric (the 99th percentile of the 2 ms jump) had missed all of them.
+
+### 12.1 The detector (`tools/PitchEval/TuneDetector.cs`, `TuneArtefacts.cs`)
+
+- A voiced sound repeats: x(t) is close to the mean of x(t-T) and x(t+T). The residual q = x - (x(t-T)+x(t+T))/2 on the 300 Hz high-passed signal is small in a clean voice and large at a join of waveforms a fraction of a period apart. T comes from the normalised autocorrelation, refined to a fraction of a sample, tried as T, 2T and T/2 so that the tracker does not flip between T and T/2.
+- The output is latency-aligned and level-matched to its input. A hit is the output's 1 ms residual envelope exceeding the input's maximum within +-8 ms by a factor of 2.2 or more and being at least 25 % of the local signal level. Hits within 10 ms merge. The input against a level-changed, fractionally delayed copy of itself gives 0 hits on all six files (the control rows).
+- An intended step (a pitch-ratio step at a target change, Natural 0) is intrinsic: an ideal resampler gives the same hit. The tool counts a hit within 8 ms of a TargetChange or ShiftStep with a total shift change of at least 0.2 st as a step, not an artefact. A synthetic 1 st step gives -9 dB; a 10 ms ramp of it gives none.
+- It agrees with the labels: the files the user flagged gave 29 (NT1 hard 01), 17 (NT1 natural 02), 2 (03 N100), 24 and 26 (01 and 04 N0) hits and the files not flagged near zero.
+
+### 12.2 The evaluation mode (`Engine/TuneEvents.cs`)
+
+`TuneEngine.EnableEventLog(capacity)` (never on the audio thread) logs, into a fixed array: splice jumps and returns (with the mismatch of the two segments in dB), method switches, target changes (with the dwell), shift steps, transient on/off, mark runs and outliers, PSOLA bypass toggles, voicing, pitch holds, and a trace of the shift and the reader offset every 256 samples. Off, the audio path does one null test per site; the output is bit-identical with the log on (test). `PitchEval --tune-artefacts DIR OUT.md [WAVDIR]` renders every file at Natural 0, 25, 50, 75 and 100 and ties each hit to the nearest event; `--tune-hypotheses`, `--tune-render`, `--tune-detect` and `--tune-pack` are the other entry points.
+
+### 12.3 Causes found and fixed
+
+| Hypothesis | Number (6 files, Auto) | Verdict |
+|---|---|---|
+| Voiced "return to nominal" crossfade | N100: 12 of 13 hits at SpliceReturn; N50: 7 of 20 | The cause of most clicks at N50-N100. NT2 crossfaded, over about 1.5 periods, between waveforms a fraction of a period apart whenever the correction became nil. Now: no crossfade in a voiced note; the reader eases back at 0.2 % in speed after 30 ms of no correction (and snaps when closer than 0.032 samples, the reader speed back to 1 so that it does not chatter). Unvoiced stretches keep a 2 ms crossfade. |
+| Splice at the wrong phase | N0: 5 of 16 at SpliceJump | Fixed: the jump is the correlation-aligned one (within +-12 % of the mark spacing, parabola), made when the next period correlates at 0.85 or better (or when the reader is 0.9 of a period off), crossfade 0.5 period (24 samples to 6 ms). Mismatch of a join under -15 dB (test). |
+| Pitch-mark octave blips at a note change | 1-3 per file | Fixed: a mark spacing near half or double the one before is taken as an octave error and doubled or halved. |
+| Target chatter | 1-5 hits at TargetChange at N25/N50 | Reduced by the ratio slew limit (500 st/s; 125 st/s was tried and made the Natural 0 vibrato flattening on 03 152 -> 38 ct against NT2's 27) on the shift while voiced; raising hysteresis or dwell at N0 made the step delay 50-90 ms and was reverted (the N0 hysteresis and dwell are NT2's). |
+| Auto Splice/PSOLA switching | 0 switches on all files | Not a cause: the Auto engine uses the splice engine on every file. |
+| Transient pass-through toggling | PSOLA only: 68 hits with Transients on, 35 off at N0 | A cause of about half of the PSOLA hits; the PSOLA path is 4-8 times worse than the splice engine, and is not the default. Left as is (Transients is a user switch). |
+| Formant preserve path | PSOLA +1 st formant: no more than PSOLA | Not a cause. |
+| Onset (02 N100) | NT2 started to bend after 50 ms | At Natural 50 and above the shift is held at nil for the first 50-250 ms of a voiced run (a weight that rises by the humanize amount); the start of a phrase is not bent (test: below 2 ct in the first 250 ms at N75 and N100, corrected to more than 10 ct after 1 s). |
+
+### 12.4 Natural 0
+
+Still a hard, instant, stepped effect (step delay and flatness as in 11.6). The steps are now ramped at 500 st/s (2 ms per semitone), which still sounds instant, and the splices inside a note are phase-aligned.
+
+### 12.5 Excerpt 03 at Natural 100
+
+By the numbers the pitch of 03 at N100 is nearly the input's (note centre error 60 ct in, 57 out in analyse2; vibrato kept 100 %; flatness 106 ct against 105-108). It was not tuned. What the blind test heard was the click at 4.7 s and 6.0 s (the voiced return crossfade) on a female arpeggio whose passing notes are short, so a glitch at a note change reads as a step of pitch. It is an inference from the detector and the metrics, not a listening result; the NT3 pack lets the user check it.
+
+### 12.6 Detector results (before NT3 -> after, artefacts beyond intended steps, 6 files)
+
+N0 16 -> 11, N25 22 -> 15, N50 20 -> 6, N75 21 -> 0, N100 13 -> 0. The files the user flagged at N100 (03, 04, 06) are at 0 hits. What remains is on the male files at N0-N50 (mostly with no engine event nearby; some at TargetChange, PitchHold, SpliceJump, MarkOutlier): corrections of up to 2.5 st on arpeggio leaps and the sharp high-frequency pulses of a voice that itself changes at the note. The gate (none beyond the original's) is not met at N0, N25 and N50 on 02, 03, 04 and 06.
+
+### 12.7 Limits of NT3
+
+- The remaining hits at N0-N50 above.
+- The ease means that for up to a few hundred ms after a note change at high Natural the output stays a few samples off the input's position (a fixed delay of the dry part; the null test aligns it).
