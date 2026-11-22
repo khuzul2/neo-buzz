@@ -29,7 +29,7 @@ using ReBuzzTests.Automation;
 
 namespace ReBuzz.Studio.Tests
 {
-    public class NeoAudioClipPageTests
+    public partial class NeoAudioClipPageTests
     {
         internal static ReBuzzCore Core => Studio.Host.Core;
         internal static SessionLayout Layout => Core.SessionLayout;
@@ -402,7 +402,7 @@ namespace ReBuzz.Studio.Tests
             Steps(rig, clip, () => rig.Click(rig.Of(page.HalveButton)), save: false, check: _ => Assert.That(Audio(clip).Bpm, Is.EqualTo(45).Within(1e-9)));
             Steps(rig, clip, () => rig.Click(rig.Of(page.DoubleButton)), save: false, check: _ => Assert.That(Audio(clip).Bpm, Is.EqualTo(90).Within(1e-9), "45 doubled"));
             Steps(rig, clip, () => page.Type(page.TempoBox, "120"), save: true, check: _ => Assert.That(Audio(clip).Bpm, Is.EqualTo(120).Within(1e-9)));
-            // Detect: the tempo is found from the audio (these tones have no clear one, so it may stay), the markers go, and one undo restores whatever it did.
+            // Auto-warp (the old Detect button): these tones have no pulse, so no beats are found and the clip is left as it was; undo is safe either way.
             page.Type(page.TempoBox, "100");
             string before = State("A", clip.Name);
             rig.Click(rig.Of(page.DetectButton));
