@@ -30,6 +30,10 @@ namespace ReBuzz.Core.Clips
         public double[] Low = Array.Empty<double>(), Full = Array.Empty<double>(), Change = Array.Empty<double>();
         /// <summary>The tempo over the whole piece: the median beat interval, in BPM (0 when there are no beats).</summary>
         public double MedianBpm;
+        /// <summary>From the beat model (AW2): the beats are at the model's own level (55 to 215 BPM), <see cref="Down"/> is the downbeat activation at each beat.</summary>
+        public bool FromModel;
+        public int ModelVersion;
+        public double[] Down;
         public bool Found => Beats.Length >= 4;
         /// <summary>Whether the audio is short enough to be one clip's worth of loop (kept for callers that ask).</summary>
         public double Seconds => Length / (double)Math.Max(1, Rate);
@@ -129,13 +133,56 @@ namespace ReBuzz.Core.Clips
         static readonly int[] Harmonics = { 1, 2, 4 };
         static readonly double[] HarmonicWeights = { 1.0, 0.6, 0.5 };
 
-        static readonly System.Runtime.CompilerServices.ConditionalWeakTable<AudioSource, Lazy<BeatTrack>> cache = new();
+        static readonly System.Runtime.CompilerServices.ConditionalWeakTable<AudioSource, Dictionary<int, Lazy<BeatTrack>>> cache = new();
 
-        /// <summary>The beats of the audio, once per source (also for a streamed one: it reads the file's exact samples). Never on the audio thread.</summary>
+        /// <summary>The beats of the audio, once per source and model version (also for a streamed one: it reads the file's exact samples). From the beat model when there is one and it is sure, else AW1's DSP tracker. Never on the audio thread.</summary>
         public static BeatTrack Of(AudioSource source)
         {
-            var lazy = cache.GetValue(source, s => new Lazy<BeatTrack>(() => Track(s.ForAnalysis()), System.Threading.LazyThreadSafetyMode.ExecutionAndPublication));
+            var net = BeatModel.Current;
+            int version = net?.Version ?? 0;
+            var perSource = cache.GetOrCreateValue(source);
+            Lazy<BeatTrack> lazy;
+            lock (perSource)
+            {
+                if (!perSource.TryGetValue(version, out lazy))
+                    perSource[version] = lazy = new Lazy<BeatTrack>(() => TrackBest(source, net), System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
+            }
             return lazy.Value;
+        }
+
+        /// <summary>AW2b: AW1's DSP track is kept when it is steady (every 16-beat window within this of the line through the beats) and the model's tempo agrees with it up to an octave or a 3:2 or 4:3 ratio. Set on the validation split.</summary>
+        internal static double DspSteadyTolerance = 0.005, DspAgreeTolerance = 0.04;
+        static readonly double[] AgreeRatios = { 1, 2, 0.5, 1.5, 2.0 / 3, 4.0 / 3, 0.75 };
+
+        static BeatTrack TrackBest(AudioSource source, BeatModelNet net)
+        {
+            if (net != null)
+            {
+                System.Threading.Interlocked.Increment(ref Runs);
+                BeatTrack t = null;
+                try { t = BeatModelTracker.Track(source, net); } catch (Exception) { t = null; }
+                if (t != null)
+                {
+                    BeatTrack d = Track(source.ForAnalysis());
+                    return PreferDsp(d, t) ? d : t;
+                }
+            }
+            return Track(source.ForAnalysis());
+        }
+
+        /// <summary>Whether AW1's track is steady and the model agrees with its tempo (up to the ratios of a metre): then AW1's answer stands.</summary>
+        internal static bool PreferDsp(BeatTrack dsp, BeatTrack model)
+        {
+            if (dsp == null || !dsp.Found || model == null || !model.Found || dsp.MedianBpm <= 0 || model.MedianBpm <= 0) return false;
+            var b = dsp.Beats;
+            int win = Math.Min(16, b.Length - 1);
+            if (win < 8) return false;
+            double per = (b[b.Length - 1] - b[0]) / (b.Length - 1);
+            for (int w = 0; w + win < b.Length; w += Math.Max(1, win / 4))
+                if (Math.Abs((b[w + win] - b[w]) / win / per - 1) > DspSteadyTolerance) return false;
+            double r = model.MedianBpm / dsp.MedianBpm;
+            foreach (double k in AgreeRatios) if (Math.Abs(r / k - 1) <= DspAgreeTolerance) return true;
+            return false;
         }
 
         sealed class Frames
