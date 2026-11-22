@@ -31,17 +31,17 @@ namespace ReBuzz.Studio.Tests
 {
     public partial class NeoAudioClipPageTests
     {
-        static ReBuzzCore Core => Studio.Host.Core;
-        static SessionLayout Layout => Core.SessionLayout;
+        internal static ReBuzzCore Core => Studio.Host.Core;
+        internal static SessionLayout Layout => Core.SessionLayout;
 
-        static void Settle()
+        internal static void Settle()
         {
             Dispatcher.UIThread.RunJobs();
             AvaloniaHeadlessPlatform.ForceRenderTimerTick();
             Dispatcher.UIThread.RunJobs();
         }
 
-        static string Work(string name)
+        internal static string Work(string name)
         {
             string dir = TestTemp.Path($"neo-audio-page-{Environment.ProcessId}");
             Directory.CreateDirectory(dir);
@@ -201,7 +201,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>A clip's settings as text, found by name (it survives a reopened song): audio, loop and region, length.</summary>
-        static string State(string machine, string pattern)
+        internal static string State(string machine, string pattern)
         {
             var m = Core.SongCore.MachinesList.First(x => x.Name == machine);
             var p = m.PatternsList.First(x => x.Name == pattern);
@@ -210,7 +210,7 @@ namespace ReBuzz.Studio.Tests
             return $"{c.Audio?.ToXml()}|loop {c.Loop} {c.Start} {c.LoopStart} {c.LoopEnd}|len {p.Length}|{arranged}";
         }
 
-        static void Reopen(string path)
+        internal static void Reopen(string path)
         {
             Core.Modified = false;
             Dialogs.Responder = (m, c, b) => UserAnswer.No;
@@ -219,7 +219,7 @@ namespace ReBuzz.Studio.Tests
             Settle();
         }
 
-        static string Saved(string machine, string pattern)
+        internal static string Saved(string machine, string pattern)
         {
             string file = Work("saved.nbl");
             if (File.Exists(file)) File.Delete(file);
@@ -229,7 +229,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>The control's change: it did something, one undo takes it all back, redo does it again, and the saved song keeps it.</summary>
-        static string Steps(Rig rig, IPattern clip, Action gesture, bool save = true, Action<string> check = null)
+        internal static string Steps(Rig rig, IPattern clip, Action gesture, bool save = true, Action<string> check = null)
         {
             string machine = clip.Machine.Name, name = clip.Name;
             string before = State(machine, name);
@@ -245,7 +245,7 @@ namespace ReBuzz.Studio.Tests
             return after;
         }
 
-        static JsonObject Tool(string tool, JsonObject args = null)
+        internal static JsonObject Tool(string tool, JsonObject args = null)
         {
             var message = new JsonObject
             {
@@ -263,13 +263,13 @@ namespace ReBuzz.Studio.Tests
             return task.GetAwaiter().GetResult()["result"]!.AsObject();
         }
 
-        static JsonObject Ok(JsonObject r)
+        internal static JsonObject Ok(JsonObject r)
         {
             Assert.That(r["isError"]?.GetValue<bool>() ?? false, Is.False, r.ToJsonString());
             return r["structuredContent"]!.AsObject();
         }
 
-        static void WriteWav(string path, int rate, float[] stereo)
+        internal static void WriteWav(string path, int rate, float[] stereo)
         {
             using var w = new BinaryWriter(File.Create(path));
             int bytes = stereo.Length * 4;
@@ -279,7 +279,7 @@ namespace ReBuzz.Studio.Tests
             foreach (float f in stereo) w.Write(f);
         }
 
-        static SessionDocument.AudioSettings Audio(IPattern p) => Layout.AudioOf(p);
+        internal static SessionDocument.AudioSettings Audio(IPattern p) => Layout.AudioOf(p);
 
         // ------------------------------------------------------------------ the page follows the selection
 
@@ -511,7 +511,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(shot, Is.Not.Null, "it draws");
         }
 
-        static Point WaveAt(Rig rig, double beat, double fy = 0.5)
+        internal static Point WaveAt(Rig rig, double beat, double fy = 0.5)
         {
             var wave = rig.Page.Wave;
             return rig.In(wave, 0, fy) + new Vector(wave.X(beat), 0);

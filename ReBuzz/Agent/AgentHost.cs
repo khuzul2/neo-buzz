@@ -70,6 +70,7 @@ namespace ReBuzz.Agent
             StateTools.Register(tools, this);
             CompositionTools.Register(tools, this);
             AudioClipTools.Register(tools, this);   // neo-audio.md (NA1): audio_import, audio_clip_get, audio_clip_set
+            AudioWarpTools.Register(tools, this);   // neo-audio.md (WM1): audio_warp_markers
             DropTools.Register(tools, this);        // drag-drop.md (DD1): drop_item
             WaveTools.Register(tools, this);
             LiveTools.Register(tools, this);

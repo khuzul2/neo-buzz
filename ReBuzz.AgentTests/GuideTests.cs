@@ -122,6 +122,8 @@ namespace ReBuzz.AgentTests
             ["audio_import"] = new[] { "path", "track", "slot", "at_beats" },
             ["audio_clip_get"] = new[] { "machine", "pattern" },
             ["audio_clip_set"] = new[] { "machine", "pattern", "warp", "preserve", "tempo_bpm", "detect_tempo", "auto_warp", "from_seconds", "transpose", "detune", "gain_db", "loop", "region", "warp_markers", "fade_in_beats", "fade_out_beats", "reverse", "stretch_to_beats" },
+            // WM1 (neo-audio.md: ReBuzz/Agent/AudioWarpTools.cs)
+            ["audio_warp_markers"] = new[] { "machine", "pattern", "action", "markers", "marker", "sample", "beat", "from_sample", "to_sample", "from_beat", "to_beat", "delta_beats", "delta_samples", "bpm", "bars", "strength", "grid_beats" },
             // stem separation (stem-separation.md: ReBuzz/Agent/AudioClipTools.cs)
             ["audio_separate"] = new[] { "machine", "pattern", "path", "quality", "stems", "slot", "at_beats" },
             // Convert to MIDI (pitch.md section 9: ReBuzz/Agent/AudioClipTools.cs)
