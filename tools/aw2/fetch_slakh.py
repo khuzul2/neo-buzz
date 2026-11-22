@@ -23,14 +23,19 @@ NAME = "slakh2100_flac_redux.tar.gz"
 
 
 class ResumableStream(io.RawIOBase):
-    def __init__(self, url, size, force_at=None, max_bytes=None):
+    def __init__(self, url, size, force_at=None, max_bytes=None, max_seconds=0):
         self.url, self.size, self.pos = url, size, 0
+        self.deadline = time.time() + max_seconds if max_seconds else 0
         self.resp, self.it, self.buf = None, None, b""
         self.reconnects, self.force_at, self.max_bytes = 0, force_at, max_bytes
         self.forced = False
 
     def readable(self):
         return True
+
+    def cut(self):
+        """A deliberate end of the stream: the byte limit or the time limit (the rest of the archive is not wanted)."""
+        return bool((self.max_bytes and self.pos >= self.max_bytes) or (self.deadline and time.time() > self.deadline))
 
     def _open(self):
         if self.resp is not None:
@@ -45,7 +50,7 @@ class ResumableStream(io.RawIOBase):
         if n is None or n < 0:
             n = 1 << 20
         while len(self.buf) < n:
-            if self.pos >= self.size or (self.max_bytes and self.pos >= self.max_bytes):
+            if self.pos >= self.size or self.cut():
                 break
             if self.force_at and not self.forced and self.pos >= self.force_at:
                 self.forced = True
@@ -74,7 +79,7 @@ class ResumableStream(io.RawIOBase):
         return out
 
 
-def stream(out, max_bytes, force_at, stem_share):
+def stream(out, max_bytes, force_at, stem_share, max_seconds=0):
     meta, files = zenodo_files(RECORD)
     lic = zenodo_licence(meta)
     assert licence_ok(lic), "Slakh2100 licence " + str(lic)
@@ -82,7 +87,7 @@ def stream(out, max_bytes, force_at, stem_share):
     print("Slakh2100 licence:", lic, f["size"], "bytes", flush=True)
     for d in ("mix", "meta", "stems"):
         os.makedirs(os.path.join(out, d), exist_ok=True)
-    rs = ResumableStream(f["links"]["self"], f["size"], force_at, max_bytes)
+    rs = ResumableStream(f["links"]["self"], f["size"], force_at, max_bytes, max_seconds)
     count = collections.Counter()
     try:
         with tarfile.open(fileobj=rs, mode="r|gz") as tar:
@@ -102,7 +107,7 @@ def stream(out, max_bytes, force_at, stem_share):
                 elif parts[-2] == "stems" and leaf.endswith(".flac") and split == "train" and (fnv(track) % 1000) < stem_share * 1000:
                     open(os.path.join(out, "stems", f"{tag}_{leaf}"), "wb").write(tar.extractfile(m).read()); count["stem"] += 1
     except (tarfile.ReadError, EOFError) as e:
-        if not (max_bytes and rs.pos >= max_bytes):         # a deliberate cut-off ends the stream mid-member
+        if not rs.cut():         # a deliberate cut-off (bytes or seconds) ends the stream mid-member
             raise
         print("cut off at the byte limit:", type(e).__name__, flush=True)
     print(json.dumps({"bytes": rs.pos, "reconnects": rs.reconnects, "forced": rs.forced, "members": dict(count)}), flush=True)
@@ -144,10 +149,10 @@ def build_items(out, dest):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("out"); ap.add_argument("--max-bytes", type=int, default=0); ap.add_argument("--force-reconnect-at", type=int, default=0)
-    ap.add_argument("--stem-share", type=float, default=0.05); ap.add_argument("--build-items")
+    ap.add_argument("--max-seconds", type=int, default=0); ap.add_argument("--stem-share", type=float, default=0.05); ap.add_argument("--build-items")
     a = ap.parse_args()
-    if not a.build_items or a.max_bytes or a.force_reconnect_at:
-        rs, count = stream(a.out, a.max_bytes, a.force_reconnect_at, a.stem_share)
+    if not a.build_items or a.max_bytes or a.force_reconnect_at or a.max_seconds:
+        rs, count = stream(a.out, a.max_bytes, a.force_reconnect_at, a.stem_share, a.max_seconds)
         if a.max_bytes:
             assert rs.forced or not a.force_reconnect_at, "the forced reconnect did not happen"
             assert not a.force_reconnect_at or rs.reconnects >= 1 or rs.forced

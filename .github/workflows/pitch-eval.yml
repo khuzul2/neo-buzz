@@ -120,6 +120,10 @@ on:
         description: 'AW2b: gigabytes of the Slakh2100 stream (random member order: a prefix is a uniform sample)'
         type: string
         default: '40'
+      aw2b_slakh_min:
+        description: 'AW2b: the most minutes of the Slakh2100 stream (the download speed varies)'
+        type: string
+        default: '240'
       aw2b_train:
         description: 'AW2b: training minutes per chained job (two jobs)'
         type: string
@@ -880,7 +884,7 @@ jobs:
         sudo mkdir -p /mnt/aw2 && sudo chown "$USER" /mnt/aw2
         cd tools/aw2
         start=$(date +%s)
-        python3 -u fetch_slakh.py /mnt/aw2/slakh --max-bytes $(( ${{ github.event.inputs.aw2b_slakh_gb }} * 1000000000 )) --stem-share 0 --build-items /mnt/aw2/items | tee ../../slakh-stream.txt
+        python3 -u fetch_slakh.py /mnt/aw2/slakh --max-bytes $(( ${{ github.event.inputs.aw2b_slakh_gb }} * 1000000000 )) --max-seconds $(( ${{ github.event.inputs.aw2b_slakh_min }} * 60 )) --stem-share 0 --build-items /mnt/aw2/items | tee ../../slakh-stream.txt
         echo "stream and items: $(( $(date +%s) - start )) s" | tee -a ../../slakh-stream.txt
         rm -rf /mnt/aw2/slakh
         mkdir -p ../../prep-out/shards ../../prep-out/eval ../../prep-out/licences
