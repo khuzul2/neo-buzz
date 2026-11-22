@@ -107,8 +107,11 @@ namespace ReBuzz.Studio.Tests
             var from = Audio(clip).Markers;
             Assert.That(from.Count(m => m.Sample < 20 * rate), Is.EqualTo(all.Count(m => m.Sample < 20 * rate)), "the markers before 20 s are kept");
 
-            // The tones file has no pulse: the agent is told, and nothing changes.
-            string tones = NeoAudioArrangementTests.Tones("no-beats.wav");
+            // A held tone has no pulse: the agent is told, and nothing changes.
+            var held = new float[44100 * 12 * 2];
+            for (int i = 0; i < held.Length / 2; i++) held[2 * i] = held[2 * i + 1] = (float)(0.3 * Math.Sin(2 * Math.PI * 220 * i / 44100.0));
+            string tones = Work("held.wav");
+            WriteWav(tones, 44100, held);
             var other = Layout.ImportAudio(Layout.FirstTrackOf(rig.B), 2, tones, out string error);
             Assert.That(other, Is.Not.Null, error);
             string before = State("B", other.Name);
