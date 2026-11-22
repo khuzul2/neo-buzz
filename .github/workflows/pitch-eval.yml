@@ -112,6 +112,10 @@ on:
         description: 'AW2b: full data, chained training, tuning on validation, evaluation (with the tools; turn the other jobs off)'
         type: boolean
         default: false
+      aw2b_pack:
+        description: 'AW2b: the listening pack and the timing of the model compiled into this build (BeatModelData.cs), on a few held-out items'
+        type: boolean
+        default: false
       aw2b_aam:
         description: 'AW2b: AAM mixes per zip of 1000 tracks (three zips)'
         type: string
@@ -553,7 +557,7 @@ jobs:
         if-no-files-found: ignore
 
   aw2-tools:
-    if: ${{ github.event.inputs.aw2 == 'true' || github.event.inputs.aw2b == 'true' }}
+    if: ${{ github.event.inputs.aw2 == 'true' || github.event.inputs.aw2b == 'true' || github.event.inputs.aw2b_pack == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -1067,3 +1071,61 @@ jobs:
         for id in $(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts --paginate --jq '.artifacts[] | select(.name=="aw2-tools" or .name=="aw2b-ckpt" or (.name|startswith("prep-")) or (.name|startswith("evalprep-"))) | .id'); do
           gh api -X DELETE repos/${{ github.repository }}/actions/artifacts/$id && echo "deleted $id"
         done
+
+  aw2b-pack:
+    if: ${{ github.event.inputs.aw2b_pack == 'true' }}
+    needs: aw2-tools
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+    - uses: actions/download-artifact@v7
+      with:
+        name: aw2-tools
+        path: aw2-tools
+    - name: Timing of the shipped model
+      run: |
+        dotnet aw2-tools/AutoWarpEval.dll --bench embedded 600 | tee timing-shipped.txt
+    - name: A few held-out items (the test split, by the same rules as the data jobs), the listening pack
+      run: |
+        set -euo pipefail
+        chmod +x aw2-tools/aw2warp
+        pip install --quiet numpy scipy soundfile remotezip requests
+        sudo mkdir -p /mnt/aw2 && sudo chown "$USER" /mnt/aw2
+        cd tools/aw2
+        for s in gmd guitarset candombe fsl10k; do python3 fetch.py $s /mnt/aw2/items-$s --limit 12; done
+        python3 fetch.py aam /mnt/aw2/items-aam --limit 6 --part 1
+        cd ../..
+        python3 - <<'PY'
+        import glob, json, os
+        pick = [("gmd", 2), ("guitarset", 1), ("candombe", 1), ("aam", 2), ("fsl10k", 2)]
+        bpms = [100, 110, 120, 128, 90, 140, 105, 115]
+        rows, readme = [], ["Auto-warp AW2b listening pack: each item is a held-out clip (never trained on), a 40 s window, played at its own song tempo against a click on the song's grid", "(a higher, louder tick on each bar line), warped with Signalsmith Stretch (the library of the app's Pro warp, so the pitch stays put).", "--aw1 is AW1's DSP tracker, --aw2 the shipped beat model with its DSP-or-model choice. Slakh2100 held-out items are not in the pack (the stream cannot be sampled by track); AAM stands in.", ""]
+        for ds, cnt in pick:
+            got = 0
+            for j in sorted(glob.glob(f"/mnt/aw2/items-{ds}/*.json")):
+                m = json.load(open(j))
+                if m["split"] != "test" or "__" in os.path.basename(j):
+                    continue
+                rows.append(f"{j[:-5]}.wav\t{bpms[len(rows) % 8]}")
+                readme.append(f"{len(rows):02d}-{os.path.basename(j)[:-5]}: {m['source']}; licence {m['licence']}; song tempo {bpms[(len(rows) - 1) % 8]} BPM")
+                got += 1
+                if got == cnt:
+                    break
+        open("pack-list.txt", "w").write("\n".join(rows) + "\n")
+        open("pack-readme.txt", "w").write("\n".join(readme) + "\n")
+        PY
+        dotnet aw2-tools/AutoWarpEval.dll --pack2 aw2-pack embedded aw2-tools/aw2warp pack-list.txt | tee pack-log.txt
+        cp pack-readme.txt aw2-pack/README.txt
+        cat pack-log.txt >> aw2-pack/README.txt
+    - uses: actions/upload-artifact@v6
+      if: always()
+      with:
+        name: aw2-pack
+        path: |
+          aw2-pack/
+          timing-shipped.txt
+        retention-days: 14

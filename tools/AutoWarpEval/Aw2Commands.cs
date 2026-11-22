@@ -55,6 +55,9 @@ namespace NeoBuzz.AutoWarpEval
             return 0;
         }
 
+        /// <summary>A model file, or "embedded": the weights compiled into this build (BeatModelData.cs).</summary>
+        public static BeatModelNet LoadModel(string path) => path == "embedded" ? (BeatModel.LoadEmbedded() ?? throw new InvalidOperationException("this build has no embedded beat model")) : BeatModelNet.Load(File.ReadAllBytes(path));
+
         public static int Feat(string list)
         {
             int n = 0;
@@ -99,7 +102,7 @@ namespace NeoBuzz.AutoWarpEval
 
         public static int Bench(string model, string seconds)
         {
-            var net = BeatModelNet.Load(File.ReadAllBytes(model));
+            var net = LoadModel(model);
             double secs = double.Parse(seconds, System.Globalization.CultureInfo.InvariantCulture);
             var one = WarpSignals.Make(WarpSignals.Tempo.Drift, WarpSignals.Style.Mix, 64, seed: 1);
             int reps = (int)Math.Ceiling(secs / 64.0);

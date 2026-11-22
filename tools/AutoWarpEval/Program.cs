@@ -54,6 +54,7 @@ namespace NeoBuzz.AutoWarpEval
                     case "--limit": limit = int.Parse(Next(), CultureInfo.InvariantCulture); break;
                     case "--beats-per-bar": bpb = int.Parse(Next(), CultureInfo.InvariantCulture); break;
                     case "--pack": return Pack.Run(args, i + 1);
+                    case "--pack2": return Pack2.Run(args, i + 1);
                     case "--dump":
                         {
                             var l = Variant(Enum.Parse<WarpSignals.Tempo>(Next(), true), Enum.Parse<WarpSignals.Style>(Next(), true), int.Parse(Next()));
@@ -98,7 +99,7 @@ namespace NeoBuzz.AutoWarpEval
                     default: throw new ArgumentException("unknown argument " + a);
                 }
             }
-            if (modelPath != null) { Aw2Model = BeatModelNet.Load(File.ReadAllBytes(modelPath)); Console.WriteLine($"model {modelPath}: version {Aw2Model.Version}, d {Aw2Model.D}"); }
+            if (modelPath != null) { Aw2Model = Aw2Commands.LoadModel(modelPath); Console.WriteLine($"model {modelPath}: version {Aw2Model.Version}, d {Aw2Model.D}"); }
             BeatModel.Use(null);                       // "auto" is AW1's DSP tracker; "aw2" scopes the model in
             var items = new List<Dictionary<string, object>>();
             if (generated)

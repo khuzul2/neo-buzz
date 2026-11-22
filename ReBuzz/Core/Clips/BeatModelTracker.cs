@@ -11,7 +11,7 @@ using System.Collections.Generic;
 
 namespace ReBuzz.Core.Clips
 {
-    /// <summary>The beat model the app holds (none until the weights are shipped: AW2b), and the switch the tests use to take it away.</summary>
+    /// <summary>The beat model the app holds (the shipped weights of AW2b, when BeatModelData.cs is part of the build), and the switch the tests use to take it away.</summary>
     internal static class BeatModel
     {
         static BeatModelNet embedded;
@@ -37,8 +37,15 @@ namespace ReBuzz.Core.Clips
             }
         }
 
-        /// <summary>The weights compiled into the app: none in the pilot (AW2a); the shipped model's generated data (BeatModelData.cs) replaces this.</summary>
-        static byte[] EmbeddedBytes() => null;
+        /// <summary>The weights compiled into the app: the generated data of the shipped model (BeatModelData.cs, found by name so a build or a test that does not link it simply has none: the DSP path).</summary>
+        static byte[] EmbeddedBytes()
+        {
+            var t = typeof(BeatModel).Assembly.GetType("ReBuzz.Core.Clips.BeatModelData");
+            return t?.GetMethod("Bytes")?.Invoke(null, null) as byte[];
+        }
+
+        /// <summary>The shipped model (the weights of BeatModelData.cs), or null when this build has none; the tools load it with --model embedded.</summary>
+        public static BeatModelNet LoadEmbedded() { var b = EmbeddedBytes(); return b == null ? null : BeatModelNet.Load(b); }
 
         /// <summary>Uses this model (null: none, the DSP path) for every thread until changed (the evaluation tools).</summary>
         public static void Use(BeatModelNet net) { global = net; globalSet = true; }
