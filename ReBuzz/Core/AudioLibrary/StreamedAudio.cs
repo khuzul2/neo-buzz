@@ -774,6 +774,7 @@ namespace ReBuzz.Core.AudioLibrary
                 var rs = r.S;
                 if (rs.IsDisposed || rs.Damaged) continue;
                 int p0 = (int)Math.Max(0, r.From >> AudioCache.PageShift), p1 = (int)Math.Min(rs.PageCount - 1, (Math.Max(r.From, r.To - 1)) >> AudioCache.PageShift);
+                if (p0 > p1) continue;                      // a window past the end of the file (a voice at a loop's wrap, a mirrored view): nothing to read; the old loops did not run for it either, this one would have gone out of the table and the pass thrown
                 int at = (int)Math.Clamp(r.Pos >> AudioCache.PageShift, p0, Math.Max(p0, p1));
                 // The voice goes the way its window reaches further: up the file, or down it for a reversed view (its frames are mirrored).
                 int dir = at - p0 > p1 - at ? -1 : 1;

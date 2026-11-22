@@ -1094,6 +1094,12 @@ namespace ReBuzz.SessionTests
             var down = new List<(StreamedAudio S, int Page)>();
             StreamPrefetcher.Plan(new[] { (sa, 100L * P + 5, 80L * P, 100L * P + 4096) }, 3, down);
             Assert.That(down, Is.EqualTo(new[] { (sa, 100), (sa, 99), (sa, 98) }), "a voice going down the file reads the page under it next: " + string.Join(" ", down.Select(p => p.Page)));
+
+            // A window wholly past the end of the file (a voice at a loop's wrap, a mirrored view's hint): no pages, and no exception (a pass that threw was swallowed
+            // by the prefetch thread's loop and repeated, with nothing read at all while that hint stood: the underruns of the ten-minute test on e03fcb8d, 3 of 3 runs).
+            var past = new List<(StreamedAudio S, int Page)>();
+            Assert.DoesNotThrow(() => StreamPrefetcher.Plan(new[] { (sa, (long)(sa.PageCount + 5) * P, (long)(sa.PageCount + 3) * P, (long)(sa.PageCount + 9) * P), (sa, 20L * P, 20L * P - 4096, 24L * P) }, 4, past));
+            Assert.That(past.All(p => p.Page >= 0 && p.Page < sa.PageCount), Is.True, string.Join(" ", past.Select(p => p.Page)));
         }
 
         /// <summary>The same for minutes (the soak group, with the ten-minute test of AudioHardeningTests).</summary>
