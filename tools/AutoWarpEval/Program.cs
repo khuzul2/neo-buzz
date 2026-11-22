@@ -20,15 +20,17 @@ using NeoBuzz.PitchEval;
 using ReBuzz.Core.Clips;
 using ReBuzz.SessionTests.AutoWarp;
 
+
 namespace NeoBuzz.AutoWarpEval
 {
     internal static class Program
     {
         const double SongBpm = 120;
+        internal static BeatModelNet Aw2Model;
 
         static int Main(string[] args)
         {
-            string outPath = "autowarp-results.json", dir = null, set = null;
+            string outPath = "autowarp-results.json", dir = null, set = null, modelPath = null;
             bool generated = false;
             int limit = int.MaxValue, bpb = 4;
             for (int i = 0; i < args.Length; i++)
@@ -41,9 +43,18 @@ namespace NeoBuzz.AutoWarpEval
                     case "--generated": generated = true; break;
                     case "--dir": dir = Next(); break;
                     case "--set": set = Next(); break;
+                    case "--model": modelPath = Next(); break;
+                    case "--parity": return Aw2Commands.Parity(Next());
+                    case "--pulses": return Aw2Commands.Pulses();
+                    case "--feat": return Aw2Commands.Feat(Next());
+                    case "--gen-train": { string gd = Next(); return Aw2Commands.GenTrain(gd, int.Parse(Next(), CultureInfo.InvariantCulture)); }
+                    case "--dsp-steady": BeatTracker.DspSteadyTolerance = double.Parse(Next(), CultureInfo.InvariantCulture); break;
+                    case "--dsp-agree": BeatTracker.DspAgreeTolerance = double.Parse(Next(), CultureInfo.InvariantCulture); break;
+                    case "--bench": return Aw2Commands.Bench(Next(), args.Length > i + 1 ? args[i + 1] : "600");
                     case "--limit": limit = int.Parse(Next(), CultureInfo.InvariantCulture); break;
                     case "--beats-per-bar": bpb = int.Parse(Next(), CultureInfo.InvariantCulture); break;
                     case "--pack": return Pack.Run(args, i + 1);
+                    case "--pack2": return Pack2.Run(args, i + 1);
                     case "--dump":
                         {
                             var l = Variant(Enum.Parse<WarpSignals.Tempo>(Next(), true), Enum.Parse<WarpSignals.Style>(Next(), true), int.Parse(Next()));
@@ -88,6 +99,8 @@ namespace NeoBuzz.AutoWarpEval
                     default: throw new ArgumentException("unknown argument " + a);
                 }
             }
+            if (modelPath != null) { Aw2Model = Aw2Commands.LoadModel(modelPath); Console.WriteLine($"model {modelPath}: version {Aw2Model.Version}, d {Aw2Model.D}"); }
+            BeatModel.Use(null);                       // "auto" is AW1's DSP tracker; "aw2" scopes the model in
             var items = new List<Dictionary<string, object>>();
             if (generated)
             {
@@ -124,7 +137,8 @@ namespace NeoBuzz.AutoWarpEval
                     int perBar = root.TryGetProperty("beats_per_bar", out var pb) ? pb.GetInt32() : bpb;
                     var (x, rate) = Wav.Read(wav);
                     string name = Path.GetFileNameWithoutExtension(wav);
-                    items.Add(Score(set ?? "data", name, HalfOf(name), x, rate, beats, downs, perBar));
+                    string half = root.TryGetProperty("split", out var sp) ? (sp.GetString() == "train" ? "dev" : sp.GetString() == "val" ? "val" : "test") : HalfOf(name);
+                    items.Add(Score(set ?? "data", name, half, x, rate, beats, downs, perBar));
                 }
             }
             File.WriteAllText(outPath, JsonSerializer.Serialize(items, new JsonSerializerOptions { WriteIndented = false }));
@@ -202,6 +216,20 @@ namespace NeoBuzz.AutoWarpEval
                 ? new WarpMap(auto.Markers.Select(m => new WarpMarker(m.Sample, m.Beat)))
                 : WarpMap.Straight(src.Length, seconds * (auto.Found ? auto.Bpm : todayBpm) / 60);
             var todayMap = WarpMap.Straight(src.Length, seconds * todayBpm / 60);
+            Dictionary<string, object> aw2 = null;
+            if (Aw2Model != null)
+            {
+                var src2 = new AudioSource(audio, audio, rate);
+                BeatModel.Use(Aw2Model);
+                var sw2 = Stopwatch.StartNew();
+                var r2 = AudioAnalysis.AutoWarp(src2, bpb);
+                double ms2 = sw2.Elapsed.TotalMilliseconds;
+                BeatModel.Use(null);
+                WarpMap map2 = r2.Found && r2.Markers.Count >= 2
+                    ? new WarpMap(r2.Markers.Select(m => new WarpMarker(m.Sample, m.Beat)))
+                    : WarpMap.Straight(src.Length, seconds * (r2.Found ? r2.Bpm : todayBpm) / 60);
+                aw2 = Method(map2, rate, src.Length, bpb, gtBeats, r2.Found ? r2.Bpm : 0, new Dictionary<string, object> { ["found"] = r2.Found, ["steady"] = r2.Steady, ["loop"] = r2.Loop, ["markers"] = r2.Markers.Count, ["analysis_ms"] = Math.Round(ms2, 1) });
+            }
             var item = new Dictionary<string, object>
             {
                 ["set"] = set, ["name"] = name, ["half"] = half, ["bpb"] = bpb, ["seconds"] = Math.Round(seconds, 2), ["analysis_ms"] = Math.Round(ms, 1),
@@ -209,6 +237,7 @@ namespace NeoBuzz.AutoWarpEval
                 ["auto"] = Method(autoMap, rate, src.Length, bpb, gtBeats, auto.Found ? auto.Bpm : 0, new Dictionary<string, object> { ["found"] = auto.Found, ["steady"] = auto.Steady, ["loop"] = auto.Loop, ["markers"] = auto.Markers.Count }),
                 ["today"] = Method(todayMap, rate, src.Length, bpb, gtBeats, todayBpm, new Dictionary<string, object> { ["found"] = todayFound }),
             };
+            if (aw2 != null) item["aw2"] = aw2;
             return item;
         }
 

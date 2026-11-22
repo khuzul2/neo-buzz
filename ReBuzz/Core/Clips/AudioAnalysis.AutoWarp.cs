@@ -53,12 +53,12 @@ namespace ReBuzz.Core.Clips
             int rate = source.SampleRate;
 
             // The tempo octave as Tempo has it: 80 to 160 BPM.
-            var (beats, low, full, change) = Octave(track);
+            var (beats, low, full, change) = track.FromModel ? (track.Beats, track.Low, track.Full, track.Change) : Octave(track);
             int n = beats.Length;
             if (n < 4) return result;
 
             // The downbeat: the phase of the beats per bar that is accented most over the piece.
-            int phase = DownbeatPhase(low, full, change, bpb);
+            int phase = track.FromModel ? ModelPhase(track.Down, bpb) : DownbeatPhase(low, full, change, bpb);
             double from = Math.Max(0, fromSeconds) * rate;
             int i0 = -1;
             for (int i = 0; i < n; i++)
@@ -88,7 +88,7 @@ namespace ReBuzz.Core.Clips
             {
                 // A loop of whole bars stays as it is (its start is its bar 1, its tempo the bars'): nothing changes for it.
                 double bars = BarsTempo(seconds, bpb);
-                if (bars > 0 && Math.Abs(bars - bpm) / bpm < 0.015 && from <= 0)
+                if (bars > 0 && (Math.Abs(bars - bpm) / bpm < 0.015 || (track.FromModel && (Math.Abs(bars - 2 * bpm) / bars < 0.015 || Math.Abs(bars - 0.5 * bpm) / bars < 0.015))) && from <= 0)
                 {
                     result.Bpm = bars;
                     result.Loop = true;
@@ -199,6 +199,17 @@ namespace ReBuzz.Core.Clips
             var zl = Z(low); var zf = Z(full); var zc = Z(change);
             var sum = new double[bpb];
             for (int i = 0; i < n; i++) sum[i % bpb] += WeightLow * zl[i] + WeightFull * zf[i] + WeightChange * zc[i];
+            int best = 0;
+            for (int p = 1; p < bpb; p++) if (sum[p] > sum[best] + 1e-9) best = p;
+            return best;
+        }
+
+        /// <summary>The model's bar phase: the phase of the beats whose downbeat activation is highest over the piece.</summary>
+        static int ModelPhase(double[] down, int bpb)
+        {
+            if (bpb <= 1) return 0;
+            var sum = new double[bpb];
+            for (int i = 0; i < down.Length; i++) sum[i % bpb] += down[i];
             int best = 0;
             for (int p = 1; p < bpb; p++) if (sum[p] > sum[best] + 1e-9) best = p;
             return best;

@@ -46,7 +46,7 @@
     <Compile Include="..\ReBuzz\Core\Control\BuiltInScripts.cs" Link="Engine\BuiltInScripts.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\AudioClip.cs" Link="Engine\AudioClip.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\AudioAnalysis.cs" Link="Engine\AudioAnalysis.cs" />
-    <Compile Include="..\ReBuzz\Core\Clips\AudioAnalysis.AutoWarp.cs;..\ReBuzz\Core\Clips\BeatTracker.cs;..\ReBuzz\Core\Clips\AutoWarpPolicy.cs" Link="Engine\%(Filename)%(Extension)" />
+    <Compile Include="..\ReBuzz\Core\Clips\AudioAnalysis.AutoWarp.cs;..\ReBuzz\Core\Clips\BeatTracker.cs;..\ReBuzz\Core\Clips\AutoWarpPolicy.cs;..\ReBuzz\Core\Clips\BeatFront.cs;..\ReBuzz\Core\Clips\BeatModelNet.cs;..\ReBuzz\Core\Clips\BeatModelTracker.cs" Link="Engine\%(Filename)%(Extension)" />
     <Compile Include="..\ReBuzz\Core\Clips\WarpEditing.cs" Link="Engine\WarpEditing.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\AudioCapture.cs" Link="Engine\AudioCapture.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\TakeFile.cs" Link="Engine\TakeFile.cs" />
@@ -111,4 +111,7 @@
     <Using Include="ReBuzzTests.Automation" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="AutoWarp\aw2-parity.bin" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
