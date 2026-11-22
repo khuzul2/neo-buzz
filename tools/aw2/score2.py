@@ -24,6 +24,13 @@ def main():
     rows = collections.defaultdict(list)
     per = []
     for it in items:
+        # Labels from the sets can repeat or be out of order (an annotator's duplicate, a tie in a hash): mir_eval wants them strictly increasing.
+        for key in ("gt_beats", "gt_downbeats"):
+            it[key] = sorted(set(it[key]))
+        for method in ("auto", "aw2"):
+            if method in it:
+                for key in ("beats", "downbeats"):
+                    it[method][key] = sorted(set(it[method][key]))
         for method in ("auto", "aw2"):
             if method not in it:
                 continue

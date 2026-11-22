@@ -704,6 +704,11 @@ jobs:
         python3 -u train.py ../../prep/shards --out ../../pilot.pt --minutes ${{ github.event.inputs.aw2_minutes }} --d ${{ github.event.inputs.aw2_width }} | tee ../../train.log
         python3 export.py --ckpt ../../pilot.pt --out ../../pilot.aw2m --version 1
         ls -la ../../pilot.aw2m
+    - uses: actions/upload-artifact@v6
+      with:
+        name: aw2-pilot-model
+        path: pilot.aw2m
+        retention-days: 7
     - name: Score AW1 against the pilot on the held-out items
       run: |
         set -euo pipefail
@@ -740,15 +745,11 @@ jobs:
         path: |
           aw2-pilot-report.md
           aw2-pilot-per-file.csv
+          results/
           timing-pilot.txt
           train.log
           prep/licences/
         retention-days: 14
-    - uses: actions/upload-artifact@v6
-      with:
-        name: aw2-pilot-model
-        path: pilot.aw2m
-        retention-days: 7
 
   aw2-cleanup:
     needs: [aw2-train]
