@@ -21,7 +21,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\ReBuzz\Core\Clips\AudioClip.cs;..\..\ReBuzz\Core\Clips\AudioAnalysis.cs;..\..\ReBuzz\Core\Clips\AudioAnalysis.AutoWarp.cs;..\..\ReBuzz\Core\Clips\BeatTracker.cs;..\..\ReBuzz\Core\Clips\Fft.cs;..\..\ReBuzz\Core\Clips\BeatFront.cs;..\..\ReBuzz\Core\Clips\BeatModelNet.cs;..\..\ReBuzz\Core\Clips\BeatModelTracker.cs" Link="Engine\%(Filename)%(Extension)" />
+    <Compile Include="..\..\ReBuzz\Core\Clips\AudioClip.cs;..\..\ReBuzz\Core\Clips\AudioAnalysis.cs;..\..\ReBuzz\Core\Clips\AudioAnalysis.AutoWarp.cs;..\..\ReBuzz\Core\Clips\BeatTracker.cs;..\..\ReBuzz\Core\Clips\Fft.cs;..\..\ReBuzz\Core\Clips\BeatFront.cs;..\..\ReBuzz\Core\Clips\BeatModelNet.cs;..\..\ReBuzz\Core\Clips\BeatModelTracker.cs;..\..\ReBuzz\Core\Clips\BeatModelData.cs" Link="Engine\%(Filename)%(Extension)" />
     <Compile Include="..\..\ReBuzz\Core\AudioLibrary\AudioCache.cs;..\..\ReBuzz\Core\AudioLibrary\StreamedAudio.cs" Link="Engine\%(Filename)%(Extension)" />
     <Compile Include="..\..\ReBuzz.SessionTests\AutoWarp\WarpSignals.cs" Link="WarpSignals.cs" />
     <Compile Include="..\PitchEval\Wav.cs" Link="Wav.cs" />

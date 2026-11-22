@@ -1,0 +1,1128 @@
+Freesound loops used to fit the AW2 beat model (id, author, title, licence, source). CC0 and CC BY 3.0 loops only; each CC BY 3.0 loop is credited to its author here.
+Freesound Loop Dataset (Ramires, Font, Serra; ISMIR 2020, Zenodo 3967852).
+id	author	title	licence	source
+136979	marcusvmanzoni	080bpm_SynthLoop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/136979/
+102378	sandyrb	IMPROV PERCS 041 2 BARS 130 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/102378/
+412840	GRD-music-	Bminor_Rock_BassGroove_120bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/412840/
+56156	infopablo	D2.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/56156/
+248244	copyc4t	Orchestral Brass Hits, note E, 140BPM	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/248244/
+262133	a7643PG	Bass02.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/262133/
+58581	KorgMS2000B	RHUMBA.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/58581/
+485394	Manuel.Ed	Djembe Loop 08 - 111 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/485394/
+56157	infopablo	D3.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/56157/
+218058	Jessetz	Industrial house loop (2) 122 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/218058/
+49746	Sub-d	bass and drum loop.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/49746/
+58580	KorgMS2000B	POP.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/58580/
+6057	Jovica	Rhythmmaker Randomized 140 bpm loop -60.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/6057/
+485395	Manuel.Ed	Djembe Loop 07 - 98 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/485395/
+412842	GRD-music-	Gminor_Funk_BassGroove_94bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/412842/
+412838	GRD-music-	Cminor_Funk_BassGroove_100bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/412838/
+124454	juskiddink	Western themetune.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/124454/
+467918	SGAK	tb-03_120bpm_random02.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/467918/
+183890	waveplay_old	simple house/minimal loop 120bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/183890/
+58583	KorgMS2000B	TANGO.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/58583/
+485396	Manuel.Ed	Djembe Loop 06 - 98 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/485396/
+381292	visual	Tunneldram 3.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/381292/
+467919	SGAK	tb-03_120bpm_random01.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/467919/
+157660	cheeseymofodude	On Road loop4.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/157660/
+403905	Dekpi	Bitcrushed Drums with wub 130 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/403905/
+213654	Garzul	138 bpm drum loop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/213654/
+58582	KorgMS2000B	SWING.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/58582/
+340482	daehedon	Junk Drum Kit Loop 3	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/340482/
+6025	Jovica	Rhythmmaker Randomized 140 bpm loop -28.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/6025/
+41279	Bsantos	loop1_120bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/41279/
+485397	Manuel.Ed	Djembe Loop 05 - 98 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/485397/
+412844	GRD-music-	Bminor_Funk_BassGroove_86bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/412844/
+102375	sandyrb	IMPROV PERCS 038 2 BARS 130 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/102375/
+37845	THE_bizniss	piano funk.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/37845/
+157661	cheeseymofodude	On Road loop3.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/157661/
+403904	Dekpi	Bitcrushed Drums 130 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/403904/
+340483	daehedon	Junk Drum Kit Loop 2	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/340483/
+34373	UncleSigmund	bass60bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/34373/
+71675	NoiseOfWave	156bpm-3 saw wave- harmonizer-short delay-reverb-.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/71675/
+485390	Manuel.Ed	Djembe Loop 04 - 98 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/485390/
+231464	Jovica	20140316_attackloop_120BPM_4_4_Analog_1_Kit_ConstructionKit_Bass2.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/231464/
+220540	--DeletedUser--	Var 2. LP 130bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/220540/
+459706	Slaking_97	Free Music Background Loop 002	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/459706/
+421778	@realdavidfloat	tuby bass horn glitchy electronic f e g f 120bpm-04 in  crispy.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/421778/
+421860	tailorvj	breakbeat-congas-01-135bpm-tailorvj.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/421860/
+414995	chiptraxxx	105-the_hill-02.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/414995/
+353041	ADnova	August_28_2016_02	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/353041/
+424062	@realdavidfloat	biggish saw synth e e g b 102 bpm-26.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/424062/
+6043	Jovica	Rhythmmaker Randomized 140 bpm loop -46.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/6043/
+485391	Manuel.Ed	Djembe Loop 03 - 98 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/485391/
+220541	--DeletedUser--	Var 3.LP 130bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/220541/
+82328	AlienXXX	Fairyland_120.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/82328/
+222403	Jovica	20140306_attackloop_120BPM_4_4_Acoustic_Kit_Distorted_loop2j.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/222403/
+421779	@realdavidfloat	tuby bass horn electronic f e g f 120bpm-04 in  crispy-02.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/421779/
+329131	DodgyLoops	CaliBounce_DodgyLoops_Dodgy_C.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/329131/
+414996	chiptraxxx	105-the_hill-01.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/414996/
+485392	Manuel.Ed	Djembe Loop 02 - 98 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/485392/
+59209	suonho	abstract-electrofunkbreakbeats_117bpm-dasnareverse.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/59209/
+329130	DodgyLoops	DigitalTribal_DodgyLoops_Dodgy_C.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/329130/
+485393	Manuel.Ed	Djembe Loop 01 - 98 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/485393/
+231469	Jovica	20140316_attackloop_120BPM_4_4_Analog_1_Kit_ConstructionKit_BassAmped1.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/231469/
+261324	Xinematix	Piano Chord Progression (F - 120 BPM).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/261324/
+243350	shiftyfour	rhythm4.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/243350/
+178771	DjFaraj	Jungle Drums based off of amen breaks.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/178771/
+24951	Schulze	SlideBass 80 bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/24951/
+370941	deep into perspectives	80bpmloops8bars04arp.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/370941/
+40047	Jovica	_130 BPM arpeggiated loop - E2 - variation 2.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/40047/
+200858	LoopPacks	dubstep8.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/200858/
+243491	shiftyfour	beat125bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/243491/
+340484	daehedon	Junk Drum Kit Loop 1	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/340484/
+56158	infopablo	D4.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/56158/
+163676	blaerg	BR_supernaut.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/163676/
+102373	sandyrb	IMPROV PERCS 036 2 BARS 130 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/102373/
+30195	johnnypanic	Ndustrialish150bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/30195/
+140838	Dr_JaKkHaMm3r	Chemical drum loop 170BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/140838/
+43242	NoiseCollector	91Gpat9999999b.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/43242/
+222407	Jovica	20140306_attackloop_120BPM_4_4_Acoustic_Kit_Distorted_loop3b.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/222407/
+220060	portwain	quiz game music loop BPM 90.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/220060/
+56159	infopablo	D5.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/56159/
+30196	johnnypanic	RnB130bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/30196/
+268714	jaffa1970	Hard House 2 Beat.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/268714/
+432398	@realdavidfloat	beat with snare 4 4 125bpm blobby type kick fizzy hats 3456-3474.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/432398/
+72154	zilverton	Groove 8-Audio.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/72154/
+163666	blaerg	BR_zappa (1).wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/163666/
+465684	robcro6010	F maj soft intro.Wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/465684/
+5834	Jovica	China Dream Convoloop l-02.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/5834/
+194818	csum	Theme loop 120bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/194818/
+102518	sandyrb	IMPROV PERCS 126 2 BARS 130 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/102518/
+151538	rap2h	1 - batterie.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/151538/
+101122	jordanielmills	93_Hip_Hop_drums.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/101122/
+395059	MustardPlug	breakbeat_hiphop_A3_4bar_96bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/395059/
+413090	stixthule	fx loop 670B 108bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/413090/
+163665	blaerg	BR_zappa (2).wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/163665/
+491278	Xinematix	Taiko Drumloop 002 [With Ending] (120)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/491278/
+434116	Xinematix	Action Percussion Ensemble Uptempo 002 (120 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/434116/
+268712	jaffa1970	Old School Break.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/268712/
+348577	FullMetalJedi	Tambourine180-1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/348577/
+194819	csum	LEAD playful 140bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/194819/
+151539	rap2h	7.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/151539/
+349498	tarane468	Drumloop 132 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/349498/
+115996	Jovica	THE REAL VIRUS 02 - SINETOPIA LFODELAYS 100 BPM - G#2.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/115996/
+72152	zilverton	Groove 5-Audio.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/72152/
+395058	MustardPlug	breakbeat_hiphop_A4_4bar_96bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/395058/
+491279	Xinematix	Taiko Drumloop 003 [With Ending Variation] (120)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/491279/
+434117	Xinematix	Action Percussion Ensemble Uptempo 001 (120 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/434117/
+262441	Xinematix	Natural Strings Chord Progression (Am - 120 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/262441/
+19071	aikighost	TechOddLoop3_LC_110bpm .wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/19071/
+72153	zilverton	Groove 6-Audio.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/72153/
+431449	eryps	Weird Drum Loop 176bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/431449/
+39453	THE_bizniss	ride rythym.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/39453/
+163663	blaerg	BR_elp2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/163663/
+200864	LoopPacks	hiphop-01.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/200864/
+43999	LS	tech loop 1.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/43999/
+441771	expt	120 bpm basic drums	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/441771/
+24936	VEXST	Jungle Break.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/24936/
+72150	zilverton	Groove 3-Audio.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/72150/
+413083	stixthule	fx lead 4008C 102bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/413083/
+491277	Xinematix	Taiko Drumloop 001 (120)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/491277/
+211555	waveplay_old	128 bpm trance (oldschool, cheesy 'epic' trance)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/211555/
+434115	Xinematix	Action Percussion Ensemble Uptempo 003 (120 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/434115/
+206174	billdancourtney	Sci-Fi Groove - 01.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/206174/
+222461	waveplay_old	120 bpm dubstep thinger	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/222461/
+262443	Xinematix	Synth Air Seq (120 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/262443/
+72151	zilverton	Groove 4-Audio.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/72151/
+39451	THE_bizniss	gotcha hi.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/39451/
+163661	blaerg	BR_elp3.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/163661/
+455582	XoArK	204 bpm breakbeat	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/455582/
+262442	Xinematix	Carpenter meets Tron Seq (120 BPM).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/262442/
+24934	VEXST	Breakment 2.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/24934/
+200949	LoopPacks	8bit110bpm-20.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/200949/
+353317	ADnova	Boss Intro 02	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/353317/
+413081	stixthule	dr_loop_6880A_114bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/413081/
+338951	AdRem1	152Bpm DnB Loop- Ad Rem Loop.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/338951/
+294465	jeff82mk	Wobble loop .wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/294465/
+262445	Xinematix	Rim Percussion (120 BPM).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/262445/
+323672	BartjeBral	FoundSoundForFreeSound_84bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/323672/
+338950	almela	SHAKER 120bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/338950/
+434118	Xinematix	Action Music Loop 001 (Am - 130)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/434118/
+140833	Dr_JaKkHaMm3r	Drum Loop 220BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/140833/
+262444	Xinematix	Space Adventure Seq (120 BPM).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/262444/
+98105	barryeuphorik	Riff_3_170BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/98105/
+417762	vykroft	Drum Beat 3 - 130bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/417762/
+491273	Xinematix	Metal Loop (120)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/491273/
+262447	Xinematix	Action Percussion Ensemble Fast 4 (170 BPM).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/262447/
+324985	ArcTis	Hat loop 172BPM	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/324985/
+235833	waveplay_old	140 bpm rave melody	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/235833/
+222390	Jovica	20140306_attackloop_120BPM_4_4_Acoustic_Kit_Distorted_loop1m.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/222390/
+140835	Dr_JaKkHaMm3r	Trip-hop drum loop 140BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/140835/
+262446	Xinematix	Action Percussion Variations (120 BPM).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/262446/
+137031	NenadSimic	SynTomBeat_113bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/137031/
+324984	ArcTis	HiTech Bassline with Hats loop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/324984/
+272362	orangefreesounds	Electro Groovy Synth Loop 120 bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/272362/
+242482	Upright	Warm Polysix.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/242482/
+271101	.Andre_Onate	263073__tresikner__phasedfill effected 01.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/271101/
+404053	TheFlakesMaster	Dance Bass	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/404053/
+132910	shitefromaheight	Strings 8 bar 140bpm *1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/132910/
+137054	fran_ky	126 Num Snare whirl.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/137054/
+216811	mauxuam	cloudcycle.stratus-hh.loop.5-87bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/216811/
+40101	Jovica	_130 BPM arpeggiated loop - G#5 - variation 2.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/40101/
+102512	sandyrb	IMPROV PERCS 120 2 BARS 130 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/102512/
+1981	RHumphries	rbh 126bpm tabla 01.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/1981/
+204742	hatchetgirl	justnotthasame.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/204742/
+274627	pstitz	Drum 'n Bass Loop 160BPM	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/274627/
+474383	Matematik_production	Morphine intro100 bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/474383/
+101264	wouter.hisschemoller	fast_hat_loop.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/101264/
+68128	raaghav81	Perc_deff_st_74bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/68128/
+474322	Disquantic	Regrooved_Minimal_by_DSQT.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/474322/
+216813	mauxuam	cloudcycle.chemtrails-drumloop.3-137bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/216813/
+484434	nowism	scientist 170-3.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/484434/
+31287	mollpe	114 4.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/31287/
+166177	afleetingspeck	Beat 5 - Loop (Wav)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/166177/
+260673	jputman	StepLoop2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/260673/
+68129	raaghav81	Perc_ebongo1_120bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/68129/
+351882	EathanMarkson	Tambourine Loop 100bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/351882/
+261201	Gius1987	B-BEAT022.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/261201/
+216812	mauxuam	cloudcycle.stratus-darkbeat-87bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/216812/
+474381	Matematik_production	Bass Analog intro 100 bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/474381/
+183900	bigfriendlyjiant	BeatBroken1 2b 135bpm.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/183900/
+260674	jputman	StepLoop1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/260674/
+398391	babalubabilly	pens in metal tin loop.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/398391/
+324983	ArcTis	HiTech Bassline loop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/324983/
+216809	mauxuam	cloudcycle.stratus-hh.loop.4-87bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/216809/
+216815	mauxuam	cloudcycle.chemtrails-drumloop.1-137bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/216815/
+474380	Matematik_production	Bass intro 100 bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/474380/
+1969	Jovica	140 bpm ATTACK LOOP 1 ELEMENT 3 mastererd 16 bit.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/1969/
+399325	Komit.	Chiptune Loop 100 BPM	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/399325/
+204746	hatchetgirl	ifuguesstheinstrumenthifivetou120.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/204746/
+216814	mauxuam	cloudcycle.chemtrails-drumloop.2-137bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/216814/
+5859	Jovica	China Dream Convoloop o-03.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/5859/
+205893	VectorSpace	Loop A02 - Drums, Sub, Vox	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/205893/
+44294	jerado	[jerado] RB_beat_221107_08.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/44294/
+68124	raaghav81	Perc_Filter2_120bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/68124/
+137052	fran_ky	120 Num AA# bonehook.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/137052/
+474386	neverenginelabs	118 AutoBerlin NeverEngine.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/474386/
+437414	frederic.font	Puckr music Level 2 - 149bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/437414/
+484430	nowism	scientist 170-8.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/484430/
+68125	raaghav81	Perc_TmbaLow_120bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/68125/
+475388	AnoCraft	Cinematic Taiko Loop.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/475388/
+382221	StefanoCrasso	E-Git Loop 01 78BPM  25-02-17.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/382221/
+260666	rcarpo	talking chords.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/260666/
+104502	kantouth	Funky 6s 133 6-8.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/104502/
+68126	raaghav81	Perc_Tumba1_120bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/68126/
+179541	Clinthammer	Whoah Bass 2 140bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/179541/
+382222	StefanoCrasso	E-Git Loop 02 78BPM  25-02-17.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/382222/
+263531	TheValdeproDude	Dubstep Loop 140 BPM	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/263531/
+68127	raaghav81	Perc_TumbaReverb_120bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/68127/
+179540	Clinthammer	Talker 140bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/179540/
+437413	frederic.font	Puckr music Level 3 - 221bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/437413/
+333218	Jovica	20160117-Arp-120bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/333218/
+41568	digifishmusic	Slip-Stick Cutting Loop 140 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/41568/
+231538	copyc4t	Alien Sci-Fi Alarm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/231538/
+350766	ReyHolliday	Rey Holliday - GTDWNstringloopBPM82.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/350766/
+261195	Gius1987	B-BEAT013.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/261195/
+13554	starpause	051228snarker.WAV	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/13554/
+183639	AlienXXX	Beatbox_01_Loop_016_DaBoom@120bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/183639/
+200956	LoopPacks	8bit110bpm-60.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/200956/
+200936	LoopPacks	8bit110bpm-55.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/200936/
+5787	Jovica	China Dream Convoloop f-03.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/5787/
+203088	luckylittleraven	scorpiofunkbassloop04.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/203088/
+179542	Clinthammer	Slider  140bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/179542/
+261192	Gius1987	B-BEAT007.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/261192/
+330889	edemson86	Hypo-Lead-150bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/330889/
+242555	zgump	Psy Trance Loop 140 Bpm 06.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/242555/
+68122	raaghav81	Perc-HighPass-SnrHat-140BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/68122/
+203089	luckylittleraven	scorpiofunkbassloop03.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/203089/
+262461	orangefreesounds	Delayed Piano Loop 120 bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/262461/
+179545	Clinthammer	durty mean shit 140bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/179545/
+331230	JoeHowell	Crystal Caves (Loop)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/331230/
+192443	DaveN	DrunkRiddim (120Bpm C)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/192443/
+68123	raaghav81	Perc_Filter1_120bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/68123/
+478856	daveanders	Agressive loop - 148BPM	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/478856/
+179544	Clinthammer	crziness 140bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/179544/
+418991	@realdavidfloat	44 beat kick snare dry 120bpm stick ride-04.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/418991/
+99554	mollpe	120 02a.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/99554/
+68132	raaghav81	Acc Gtr Rtm Chrds_CFGAm_112bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/68132/
+179547	Clinthammer	creep Bass 2 140bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/179547/
+179527	Clinthammer	riddm1 140bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/179527/
+221843	Jovica	20140306_attackloop_120BPM_4_4_23rd_century_loop4f.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/221843/
+120238	Ongitak	B6 Dubstep Loops 7c.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/120238/
+200960	LoopPacks	8bit110bpm-34.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/200960/
+5793	Jovica	China Dream Convoloop g-01.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/5793/
+455096	Xinematix	Emotional Symphony String Ensemble 001 (A#m - 70 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/455096/
+202537	gowers	140 Bpm Amen Break Original (Processed)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/202537/
+350858	sandufi	glitch loop.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/350858/
+418993	@realdavidfloat	44 beat kick snare dry 120bpm stick-02.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/418993/
+400662	waveplay_old	low-end trance drums/bass 130bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/400662/
+108540	jmguru	Noise_Beat1.flac	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/108540/
+455097	Xinematix	Suspend Piano (Am - 70 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/455097/
+102486	sandyrb	IMPROV PERCS 098 2 BARS 130 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/102486/
+440752	Nadia4Sound	Hip Hop Loop.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/440752/
+68130	raaghav81	Perc_ebongo2_120bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/68130/
+203099	Lemoncreme	Groove Music	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/203099/
+5163	Jovica	Rhythmmakerloop 125 bpm-17.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/5163/
+141884	DarkoZL	double_overtime_loop_140bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/141884/
+385031	DoctorToast	Drugs Work Glitch 125bpm 16 Bars.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/385031/
+455095	Xinematix	Emotional Symphony String Ensemble 001 with Tail (A#m - 70 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/455095/
+270735	bcnlab	Song1_RHODES_Fa_4:4_80bpms.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/270735/
+339982	FullMetalJedi	Jazz01-140bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/339982/
+167726	digitalvalues	88 BPM Loop 001 (Final).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/167726/
+221837	Jovica	20140306_attackloop_120BPM_4_4_23rd_century_loop3f.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/221837/
+385032	DoctorToast	The Head 130bpm 16 Bars.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/385032/
+199146	aikighost	ClickNBuzz_125bpm05_LoopCache_AbstractPercussion.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/199146/
+166084	afleetingspeck	House Hop Beat 3 - Loop (Wav)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/166084/
+167727	digitalvalues	82 BPM Top loop 001.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/167727/
+198494	waveplay_old	bass + snare + fx 70 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/198494/
+385033	DoctorToast	Rotten Dancer 90bpm 16 Bars.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/385033/
+239504	luckylittleraven	angry-sawtooth-wobble-down.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/239504/
+5798	Jovica	China Dream Convoloop g-06.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/5798/
+270727	bcnlab	Song1_PIANO_Do_4:4_80bpms.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/270727/
+241209	odditonic	Typewriter - 8 Bar 120 BPM Loop	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/241209/
+198495	waveplay_old	dubstep loop 140 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/198495/
+418998	@realdavidfloat	44 beat kick snare dry 120bpm stick-05.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/418998/
+239505	luckylittleraven	sawtooth-power-stop-a1-c0.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/239505/
+203094	luckylittleraven	scorpiofunkbassloop05.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/203094/
+217572	gusgus26	Glitch Beat 120BPM Vol. 3.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/217572/
+199143	aikighost	ClickNGlitch_120bpm01_LoopCache_AbstractPercussion.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/199143/
+183930	bigfriendlyjiant	Tha1 2b 120bpm.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/183930/
+339312	FullMetalJedi	Disco Beat 114 bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/339312/
+239506	luckylittleraven	sawtooth-power-down.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/239506/
+455099	Xinematix	Cross Driver Action Synth (Em - 70 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/455099/
+52742	mollpe	1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/52742/
+394758	breakbeets	Distorted 90bpm Drums.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/394758/
+203093	luckylittleraven	scorpiofunkbassloop06.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/203093/
+53567	KatHakaku	LSDJ - S2 D1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/53567/
+387181	AlexIero_1	AI_Hackers Loop 120 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/387181/
+239507	luckylittleraven	sawtooth-power-up.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/239507/
+150360	LoopTrooper	Encho Dry 127 bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/150360/
+485034	truscience	TS_Bell_Loop 140bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/485034/
+102481	sandyrb	IMPROV PERCS 093 2 BARS 130 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/102481/
+112810	juskiddink	lil' ol' dub.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/112810/
+270724	bcnlab	Song5_PIANO_Fa_3:4_120bpms.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/270724/
+53564	KatHakaku	LSDJ - S1 W4.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/53564/
+269560	shitefromaheight	Dubstep Wobble 11 Apr 2_1.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/269560/
+88168	tec_studio	Aquaticparksf2009m.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/88168/
+239500	luckylittleraven	sawtooth-wobble-down.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/239500/
+150361	LoopTrooper	Nanoncha Dry 127 bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/150361/
+203091	luckylittleraven	scorpiofunkbassloop01.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/203091/
+53565	KatHakaku	LSDJ - S1 W5.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/53565/
+447735	Pax11	Piano_asia (bminor-100bpm).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/447735/
+239501	luckylittleraven	sawtooth-wobble-up.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/239501/
+150362	LoopTrooper	Yo Yo Dry 127 bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/150362/
+150302	NenadSimic	SlyBeat_108bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/150302/
+270722	bcnlab	Song5_ORGAN_Do_3:4_120bpms.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/270722/
+270718	bcnlab	Song7_RHODES_Fa_3:4_80bpms.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/270718/
+209350	Vinnie_Palermo	HH_loop_94bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/209350/
+39870	jus	plucked TheCureish.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/39870/
+203090	luckylittleraven	scorpiofunkbassloop02.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/203090/
+143638	johnnypanic	MDrumLoop4.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/143638/
+167729	digitalvalues	82 BPM Hip-Hop loop 001.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/167729/
+411622	asciiface	Techno Drum 4/4 120bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/411622/
+128674	Ceox	Funky House 1 128.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/128674/
+157406	Snapper4298	112-hard-acid.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/157406/
+39871	jus	plucked TheCureish2.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/39871/
+209345	Vinnie_Palermo	HH_loop_93 bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/209345/
+143639	johnnypanic	MDrumLoop3.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/143639/
+248099	copyc4t	Attack Of The Drones loop, 120 BPM	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/248099/
+385040	StefanoCrasso	FX Beatbox Loop 112BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/385040/
+200407	p_ano	A loop culled II (125 bpm)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/200407/
+444923	ShortBusMusic	backside of the moon Elec git loop 1 90bpm.WAV	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/444923/
+200406	p_ano	A loop culled I (125 bpm)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/200406/
+209347	Vinnie_Palermo	HH_loop_90bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/209347/
+219254	radiopassiveboy	Tambourine_Loop_125bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/219254/
+53561	KatHakaku	LSDJ - S1 W1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/53561/
+166069	afleetingspeck	Hard Kit Beat 2 - Loop (Wav)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/166069/
+95081	daatg	90S.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/95081/
+244235	Donovango	Glitch beat loop.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/244235/
+148825	jimmy14k	128BPM LOOP, 4 4 j14k.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/148825/
+128671	Ceox	Funky House 4 128 (Background Loop).wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/128671/
+209346	Vinnie_Palermo	HH_loop_91 bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/209346/
+219265	radiopassiveboy	Tambourine_Loop_90bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/219265/
+25488	Raggaman	Flügel Bigbeat 04 - 132.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/25488/
+346217	Xinematix	Action Percussion Ensemble 3 The Division (110 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/346217/
+330873	edemson86	Hypo-Beat-150bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/330873/
+25489	Raggaman	Flügel Bigbeat 05 - 132.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/25489/
+138163	SouthernUK	Groovy Rhodes 02.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/138163/
+323459	ArcTis	Hardcore Kick 1 - Loop 175 BPM	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/323459/
+148105	njdunn	son.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/148105/
+324750	visual	CosmicWaterZ1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/324750/
+178176	c0mp0s3r	Tabla Loop Shuffle (4 bars - 105 bpm)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/178176/
+18428	ramjac	ramjackissconga1.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/18428/
+128673	Ceox	Funky House 2 126.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/128673/
+264278	jaffa1970	Disclosure Beat 130.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/264278/
+319319	druidbloke	zombies-001b-(120BPM).flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/319319/
+328287	24thelement	Oil Can't Loop.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/328287/
+239508	luckylittleraven	sawtooth-power-stop-g1-b0.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/239508/
+346219	Xinematix	Action Percussion Ensemble 1 The Division (110 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/346219/
+219250	radiopassiveboy	Tambourine_Loop_105bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/219250/
+389478	GioMilko	PO-12 009	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/389478/
+337764	turtlewithpants	70bpm  SlideBassInBLocrian - 07.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/337764/
+182680	bigfriendlyjiant	Woosh1 Up 4b 135bpm.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/182680/
+239509	luckylittleraven	sawtooth-power-stop-e1-g0.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/239509/
+346218	Xinematix	Action Percussion Ensemble 2 The Division (110 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/346218/
+70003	chipfork	bl lp02.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/70003/
+468519	SamplingSamTheMarylandMan	joyous 2.0 at 168 BPM (consolidated).wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/468519/
+351305	Teacoma	Simple House Beat.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/351305/
+219251	radiopassiveboy	Tambourine_Loop_100bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/219251/
+337767	turtlewithpants	70bpm  SlideBassInBLocrian - 10.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/337767/
+78622	Jovica	DISTOPIA LOOPZ 013 120 BPM.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/78622/
+413382	SSS_Samples	Bowsers Lair Loop (120 BPM: C Minor)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/413382/
+270711	bcnlab	Song7_SHAKER_Do_3:4_120bpms.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/270711/
+265575	Hard3eat	100 Bpm Loop 1	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/265575/
+474161	Screamr	boop beep twannggggg	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/474161/
+39388	delphidebrain	delphis PLASTIC CRUNCH LOOP 02 #120.WAV	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/39388/
+329322	DodgyLoops	Urban_Jungle_DodgyLoops_Dodgy_C.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/329322/
+385676	Scydan	Trip Acoustic Beat.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/385676/
+125364	DirtyJewbs	dubstep_loop_145BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/125364/
+39389	delphidebrain	delphis PLASTIC CRUNCH LOOP 03 #120.WAV	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/39389/
+203662	klemmy	just the beat of 023.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/203662/
+44368	jerado	[jerado] RB_281107_01.WAV	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/44368/
+328288	24thelement	Bear Clap Loop.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/328288/
+321983	mvrasseli	80's Back! - 4/4 - 118 BPM	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/321983/
+125365	DirtyJewbs	dubstep_riff_wobble_synth 160BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/125365/
+479205	envirOmaniac2	Sonic 500 Act 1 Zone 1 OST (Fire and Flames Zone)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/479205/
+431876	esares	120 BPM Drum Loop 1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/431876/
+481101	Mo71	drum loop 014 rev.flac	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/481101/
+254876	harrybates01	Electronic Beat 140 BPM	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/254876/
+138142	NenadSimic	Tight Beat_95bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/138142/
+188785	tim.kahn	distant bass.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/188785/
+213503	Goup_1	EDM Loop 130 BPM	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/213503/
+125366	DirtyJewbs	dubstep_wobble_bass 140BPM #2.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/125366/
+245110	Insidebeat	hip hop 5.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/245110/
+44920	S_A_H	club_130bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/44920/
+209349	Vinnie_Palermo	HH_loop_99bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/209349/
+319310	druidbloke	nix-beat-001-(120BPM).flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/319310/
+160372	day_tripper13	mLoops #3 93 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/160372/
+337762	turtlewithpants	70bpm  SlideBassInBLocrian - 01.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/337762/
+125367	DirtyJewbs	dubstep_wobble_bass 140BPM #3.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/125367/
+360375	Teacoma	Minimal Tech House Beat	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/360375/
+75410	j1987	tribal_90bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/75410/
+209348	Vinnie_Palermo	HH_loop_110bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/209348/
+431874	esares	106 BPM Drum Loop 1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/431874/
+319311	druidbloke	nix-dubstep-001b-(160BPM).flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/319311/
+265572	Hard3eat	100 Bpm Loop 4	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/265572/
+252451	Scydan	Trap Beat 130bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/252451/
+329591	parkourbrad1	House Beat 125bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/329591/
+431875	esares	120 BPM Drum Loop 2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/431875/
+265573	Hard3eat	100 Bpm Loop 3	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/265573/
+388842	JoaoSousa1988	Stone Beat (120) Snare	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/388842/
+121536	AniCator	gameloop_180_anicator.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/121536/
+319313	druidbloke	nix-drum-n-bass-002a (150BPM).flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/319313/
+223508	copyc4t	LuckyLittle_Sci-Fi_Alarm.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/223508/
+244342	Insidebeat	amen break slices 1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/244342/
+252453	Scydan	Jazzy Beat 75bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/252453/
+181605	tembelkaptan	cowbell_115bpm.flac	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/181605/
+239562	Bronxio	Drumloop A Basic One - 1 bar - 98 BPM (no swing)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/239562/
+256331	Kodack	beatbox 130bpm simple loop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/256331/
+39841	jult	cicades_134_BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/39841/
+199088	aikighost	ElektroBuzz_125bpm02_LoopCache_AbstractPercussion.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/199088/
+78693	Jovica	DISTOPIA LOOPZ 023 100 BPM.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/78693/
+415004	chiptraxxx	160-digital_vinyl_loop.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/415004/
+388840	JoaoSousa1988	Stone Beat (120)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/388840/
+76695	chicocorrea	CTCC FUZZ 02.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/76695/
+213524	Garzul	120 bpm distorded drum loop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/213524/
+275180	Elmo_cookies	Bass_Am_170BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/275180/
+221360	--DeletedUser--	Noisy Funk- 115 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/221360/
+319315	druidbloke	nix-electrovibes-002-(125BPM).flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/319315/
+388841	JoaoSousa1988	Stone Beat (120) Kick	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/388841/
+76694	chicocorrea	CTCC FUZZ 01.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/76694/
+431652	deep into perspectives	boxbeat80bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/431652/
+125372	DirtyJewbs	dubstep_wobble_bass_bitcrushed 140BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/125372/
+146687	thatjeffcarter	Valentine Tamale Drum Loop - 120bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/146687/
+160378	day_tripper13	mLoops #5 95 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/160378/
+76697	chicocorrea	CTCC FUZZ 04.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/76697/
+125371	DirtyJewbs	dubstep_wobble_bass 165BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/125371/
+179358	Dodgy C	Dodgy_C_FunkSoul_BuildABeat_Pt2_95bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/179358/
+319317	druidbloke	zombies-001-(120BPM).flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/319317/
+213523	Garzul	120 bpm distorded drum loop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/213523/
+125370	DirtyJewbs	dubstep_wobble_bass 155BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/125370/
+223457	copyc4t	LuckyLittleLoop.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/223457/
+212924	waveplay_old	118 bpm electrohouse warble effect	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/212924/
+39387	delphidebrain	delphis PLASTIC CRUNCH LOOP 01 #120.WAV	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/39387/
+173506	Snapper4298	105_freesound_collab2-break.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/173506/
+179359	Dodgy C	Dodgy_C_FunkSoul_BuildABeat_Pt1_95bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/179359/
+419000	@realdavidfloat	44 beat kick snare dry 120bpm stick.wav ride-03.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/419000/
+62039	hesed23	7x7tks&hesed(45).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/62039/
+39994	Jovica	_130 BPM arpeggiated loop - C0 - variation 3.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/39994/
+76699	chicocorrea	CTCC FUZZ 06.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/76699/
+242770	junkfood2121	Synth Loop 02	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/242770/
+193754	24thelement	Oblong - DOT STEM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/193754/
+55207	NoiseCollector	kidloop77bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/55207/
+183418	unfa	Beatbox Loop D'n'B 2 bars 165 BPM Take 2	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/183418/
+125368	DirtyJewbs	dubstep_wobble_bass 140BPM #4.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/125368/
+237363	fran_ky	126 The Shimmering D (polished).wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/237363/
+248137	copyc4t	Fake heartbeat (kick drum) 90 BPM	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/248137/
+248147	afleetingspeck	Heart Beat Synthetic With Loop.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/248147/
+198997	aikighost	ElctroClacks_125bpm05_LoopCache_AbstractPercussion.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/198997/
+86662	sandyrb	SHAKER LOOP 6BARS 100BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/86662/
+138201	Jovica	120 BPM DRUMLOOPS - 32 bit export-05.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/138201/
+330953	billdancourtney	Moog Filtatron 02.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/330953/
+397589	SSS_Samples	Revenge of the Toys (130 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/397589/
+191609	ceeqwa	funkapnea-78bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/191609/
+265290	gblanke	FingerSnaps-loop_110bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/265290/
+462873	melihucar	Waiting for	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/462873/
+183419	unfa	Beatbox Loop D'n'B 2 bars 165 BPM Take 3	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/183419/
+387906	Owl	Typewriter loop 2 129 bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/387906/
+125369	DirtyJewbs	dubstep_wobble_bass 140BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/125369/
+447129	Pax11	piano_pop1 (Amajor-100bpm).wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/447129/
+333626	wmquincy101	groove162.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/333626/
+244350	Insidebeat	original amen break2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/244350/
+423986	mikobuntu	168-BPM-4=BAR-JUNGLE-BEAT-LOOP.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/423986/
+183416	unfa	Beatbox Loop D'n'B 2 bars 165 BPM Take 4	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/183416/
+167068	k0s	Spiffy Spank	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/167068/
+218348	luckylittleraven	superhappycheesyloop1of2.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/218348/
+168672	NenadSimic	Tight snare Beat_155bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/168672/
+199080	aikighost	WoodenBeat_125bpm05_LoopCache_AbstractPercussion.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/199080/
+183417	unfa	Beatbox Loop D'n'B 2 bars 165 BPM Take 5	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/183417/
+33358	hello_flowers	9oBpM_FLoWErS_Evil Creams - 3.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/33358/
+43540	mkoenig	congo3_130.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/43540/
+202784	kasa90	Blips 110bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/202784/
+265295	gblanke	Waterblub-Loop01_110bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/265295/
+348654	staticpony1	Cargo Break (180 BPM).wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/348654/
+242717	goldendiaphragm	188-darbuka-doumbek groove loop 188 bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/242717/
+179357	Dodgy C	Dodgy_C_FunkSoul_BuildABeat_Pt3_95bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/179357/
+244339	Insidebeat	shunk1141.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/244339/
+244349	Insidebeat	original amen break1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/244349/
+265294	gblanke	Waterblub-Loop02_110bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/265294/
+348653	staticpony1	True Ghost Break (180 BPM).wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/348653/
+175841	mikobuntu	140-bpm-dub-loop1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/175841/
+146688	thatjeffcarter	Smooth Drum Loop 110bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/146688/
+199037	aikighost	DistortionTones_120bpm05_LoopCache_AbstractPercussion.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/199037/
+268201	jaffa1970	Dubstep  Beat 2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/268201/
+244338	Insidebeat	purple K.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/244338/
+348652	staticpony1	True Ghost Break 2 (180 BPM).wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/348652/
+243655	shiftyfour	16hh135groove.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/243655/
+146689	thatjeffcarter	Bongo Echo Loop 120bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/146689/
+382048	xtrgamr	Drum Machine-Like Loop.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/382048/
+486302	Anasas6	Piano loop 130bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/486302/
+474939	Disquantic	Linearity Beat Part 07 by DSQT 122Bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/474939/
+477224	Erokia	Synth Loop 32 - (90 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/477224/
+387908	Owl	Typewriter loop 5 93 bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/387908/
+65186	carbilicon	185 LOOP BLUED.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/65186/
+13153	Bitbeast	Wiss_3.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/13153/
+203532	Mattc90	Matt's Beatbox Loop (100bpm)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/203532/
+387909	Owl	Typewriter loop 3 100 bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/387909/
+243657	shiftyfour	135beat-qS.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/243657/
+13152	Bitbeast	Wiss_2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/13152/
+43547	mkoenig	noreason_140.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/43547/
+474943	Disquantic	Linearity Beat Part 09 by DSQT 122Bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/474943/
+189942	Robinhood76	bass loop 120 bpm rock eights a1.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/189942/
+165834	DiamondSoul	sparkle loop.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/165834/
+243656	shiftyfour	135beat-lS.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/243656/
+32256	-zin-	trance_pulse_140bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/32256/
+13151	Bitbeast	Wiss_1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/13151/
+189943	Robinhood76	bass loop 120 bpm rock eights a.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/189943/
+78614	Jovica	DISTOPIA LOOPZ 010 80 BPM.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/78614/
+203522	Jack_Master	Drum 1	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/203522/
+440341	DirtyArchives	23.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/440341/
+35478	boykind	renu_01_116bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/35478/
+419044	@realdavidfloat	kick snare loops reverb variations 120bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/419044/
+13150	Bitbeast	Tat-Tat_2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/13150/
+241958	Souchi66	Dubstep beat #3 (140 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/241958/
+238748	arseniiv	[20] s-piano.flac	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/238748/
+245099	Insidebeat	hiphop mpc-sp 3.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/245099/
+401819	inlinebeats	vox-loop-91.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/401819/
+62669	Sampleconstruct	spectronbeat.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/62669/
+218347	luckylittleraven	superhappycheesyloop2of2.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/218347/
+245098	Insidebeat	hiphop mpc-sp 2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/245098/
+107179	newshooze	ec1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/107179/
+172959	EXCONmusic	Hard Drum & Bass loop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/172959/
+484643	Loop_Cult	LCCPTL_120_Drum_Full_02.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/484643/
+218346	luckylittleraven	spacejamloop1of3.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/218346/
+44914	Dolfeus	New House rmx_class4.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/44914/
+4049	RealRhodesSounds	funkloop113bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/4049/
+159520	cheeseymofodude	On Rd Bruce Drums 1	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/159520/
+189946	Robinhood76	bass loop 120 bpm rock eights g.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/189946/
+176366	sakebeats	Without Me Electro Bass 130 Bpm Dry	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/176366/
+89608	MarleneAyni	bongoes.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/89608/
+245048	Insidebeat	hiphop mpc-sp.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/245048/
+189947	Robinhood76	bass loop 120 bpm rock eights e.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/189947/
+151008	Khoon	Rhythm 1 Clean Gated - 95 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/151008/
+433544	@realdavidfloat	house beat 116bpm with-01.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/433544/
+218372	copyc4t	NewsJingle-Intro.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/218372/
+443500	mahammed	Guitar with pieno melody.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/443500/
+189944	Robinhood76	bass loop 120 bpm rock eights d.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/189944/
+151009	Khoon	Rhythm 1 Clean - 95 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/151009/
+315848	AlienXXX	Nitrous PD_004.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/315848/
+343384	staticpony1	Synthetic Guitar Pluck (180 BPM)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/343384/
+44911	Dolfeus	Bgun_62_3.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/44911/
+32158	-zin-	piano_2_140bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/32158/
+189945	Robinhood76	bass loop 120 bpm rock eights c0.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/189945/
+151006	Khoon	Rhythm 1 Dist Gated - 95 BPM	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/151006/
+54353	GameGod0	gify - dnb loop jam14.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/54353/
+31899	bloomypetal	add a little bass.wav beat.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/31899/
+180655	luketande	loop2	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/180655/
+151007	Khoon	Rhythm 1 Dist - 95 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/151007/
+242720	goldendiaphragm	176-darbuka-doumbek DnB loop 176 bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/242720/
+414268	_BeepBoop_	hardcore helblinde loop 200bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/414268/
+242719	goldendiaphragm	176-tambourine loop 176 bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/242719/
+180657	luketande	beatloop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/180657/
+195299	Owl	Rainmaker shaker rolling 3_4 23 bars 155 bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/195299/
+329726	REVEREND.BLACK	REV GUITAR LOOPS 1 BPM 133.962814.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/329726/
+242968	Bronxio	Classic breakbeats - Apache middle break (processed, 2 bar)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/242968/
+242718	goldendiaphragm	188-darbuka-doumbek groove fill 188 bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/242718/
+45455	jesuswaffle	Synth 4.1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/45455/
+180656	luketande	loop1	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/180656/
+329727	REVEREND.BLACK	REV GUITAR LOOPS 16 BPM 133.962814.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/329727/
+107171	newshooze	Hop-1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/107171/
+347558	ItsYeezy01	hip hop snare and clap loop 87 bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/347558/
+414257	SSS_Samples	Chipland Loop (120 BPM-A Major)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/414257/
+28442	ERH	kbeat 120bpm loop 7.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/28442/
+432132	AudioPapkin	Crazy rhythm loop 120 BPM 0015.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/432132/
+329724	REVEREND.BLACK	REV GUITAR LOOPS 11 BPM 133.962814.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/329724/
+246082	casmarrav	86.145 BPM 391 Drums v1	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/246082/
+59774	Feeder74	Riff#01(100BPM).wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/59774/
+160429	day_tripper13	mLoops #11 97 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/160429/
+432133	AudioPapkin	Crazy rhythm loop 80 BPM 001.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/432133/
+468009	Royrsd	Loop Kick 03 Early Frenchcore 200 Bpm 1 Bar iElectribe.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/468009/
+329725	REVEREND.BLACK	REV GUITAR LOOPS 10 BPM 133.962814.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/329725/
+246081	casmarrav	86.145 BPM 391 Drums v2	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/246081/
+477877	MattiaGiovanetti	Blues Loop Lick @92bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/477877/
+107173	newshooze	Hop-3.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/107173/
+269243	JarAxe	Reverse piano extended	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/269243/
+188533	senkoro	MusicLoop1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/188533/
+150115	Vicces1212	Noisy dubstep loop 130bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/150115/
+165086	mikobuntu	dubbrk.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/165086/
+156867	stair	Cinematic Drum loop (120bpm)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/156867/
+414265	MYUZIKOfficial	synth 142.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/414265/
+107172	newshooze	Hop-2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/107172/
+150114	Vicces1212	Heavy glitch loop 140bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/150114/
+50437	laban	laban x0xb0x 20080322 134 BPM C50 R75 E75 D75 A75.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/50437/
+468013	Royrsd	Loop Kick 04 Early Frenchcore 200 Bpm 1 Bar iElectribe.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/468013/
+276804	Zetauri	Alien Killer From Nova-7 (Zetauri_AlienKiller_Basslines.wav)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/276804/
+199213	aikighost	BuzzyPercussion_120bpm01_LoopCache_AbstractPercussion.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/199213/
+264428	jaffa1970	Disclosure Beat 2 130.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/264428/
+468010	Royrsd	Loop Kick 02 Early Frenchcore 200 Bpm 1 Bar iElectribe.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/468010/
+349630	tarane468	Relaxed Drumloop 123 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/349630/
+32062	hello_flowers	hf-7303_110bpm_Tranceform!.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/32062/
+454704	CarlosCarty	Dizi_Loop_Carlos Carty_6_Dm_100BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/454704/
+423720	vincent sermonne	punk-rock groove 140 bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/423720/
+146169	thatjeffcarter	45 seconds drum loop 160.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/146169/
+468011	Royrsd	Loop Kick 01 Early Frenchcore 200 Bpm 1 Bar iElectribe.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/468011/
+432871	xtrgamr	LFS_Beat2_175BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/432871/
+207801	mikobuntu	funkdub.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/207801/
+363148	Teacoma	EDM Dance Beat	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/363148/
+189347	Goup_1	Bass.	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/189347/
+244974	xpansive	experimental electronic beat	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/244974/
+154912	Owl	Harvester loop 101 bpm 5 bars.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/154912/
+86760	Vicces1212	Techno1.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/86760/
+261422	Xinematix	Action Percussion Ensemble Fast 3 (170 BPM).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/261422/
+328719	AlienXXX	Riff_@_120_BPM_02_4bars.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/328719/
+124384	cubix	glitch loop 108bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/124384/
+147269	Strever953	120bpm Loop P101.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/147269/
+423722	@realdavidfloat	hihats 120bpm reverb snare-03.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/423722/
+404369	daf024	Rhythmic Rising  Breathing at 124 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/404369/
+156681	Snapper4298	Stezzer 102_1 break.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/156681/
+261423	Xinematix	Action Percussion Ensemble Fast 2 (170 BPM).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/261423/
+345402	Hoerspielwerkstatt_HEF	sydance8_123bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/345402/
+427915	Teacoma	Lo-Fi Beat	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/427915/
+21122	Jovica	Massive Loop -06.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/21122/
+199227	aikighost	SnaredArtifacts_120bpm01_LoopCache_AbstractPercussion.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/199227/
+2695	Jovica	115 BPM STAB LOOP 05 mastered 16 bit.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/2695/
+261420	Xinematix	Action Percussion Metallic 1 (120 BPM).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/261420/
+353853	dr_skitz	drum_kit_acoustic120.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/353853/
+86919	Jovica	75 bpm Acoustic Ultra Attack loop 2.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/86919/
+197707	marcusgar	Loop 2 - 150 bpm - 32Beats.wave	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/197707/
+17697	Rupert1073	gtr 2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/17697/
+261421	Xinematix	Metal On Metal Harmo Loop (120 BPM).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/261421/
+242963	Bronxio	Classic breakbeats - Apache (processed, 4 bar)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/242963/
+454703	CarlosCarty	Chinese Flute Dizi_Loop_Carlos Carty_7_Dm_100BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/454703/
+239051	AgoraphobicNosebleed	83 1 digital.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/239051/
+252040	gis_sweden	ReggaeLoop83bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/252040/
+199209	aikighost	BuzzBleeps_125bpm02_LoopCache_AbstractPercussion.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/199209/
+380164	connectik	h7.07.02.17.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/380164/
+238660	Jovica	20140525_attackloop_78BPM_4_4_Analog_2_Kit_mixdown2.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/238660/
+242964	Bronxio	Classic breakbeats - Apache (processed, 2 bar)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/242964/
+441170	vykroft	Glitch Drum loop 5c - 2 bars 85 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/441170/
+239056	AgoraphobicNosebleed	93 bpm glitchy222.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/239056/
+184685	klankbeeld	finger cymbals 130bpm 121402.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/184685/
+215048	godspine	Sinkhole Sample.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/215048/
+379605	connectik	H3.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/379605/
+167900	digitalvalues	85 BPM Hip-Hop Loop 001.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/167900/
+131380	tagirov	120BPM Bicycle Chain Loop dry	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/131380/
+345268	Hoerspielwerkstatt_HEF	beat8_90BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/345268/
+387367	MuSiCjUnK	110 escape pads .wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/387367/
+127338	jordanielmills	crushedrums_140.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/127338/
+404330	mahammed	New guitar Loop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/404330/
+261424	Xinematix	Action Percussion Ensemble Fast 1 (170 BPM).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/261424/
+132052	keplar	rhodes loop 1.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/132052/
+441172	vykroft	Glitch Drum loop 5e - 8 bars 85 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/441172/
+51201	ronlybonly	jungle1_175bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/51201/
+441173	vykroft	Glitch Drum loop 6a - 8 bars 85 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/441173/
+275460	Stereo Surgeon	Interstate Synth Stabs	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/275460/
+160430	day_tripper13	mLoops #10 120 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/160430/
+418404	@realdavidfloat	bass f e dd 120bpm delay-05.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/418404/
+244105	Bliss	140 BPM (Reggae / Dubstep beat crossover)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/244105/
+102009	RytmenPinnen	Fill6 1m 110bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/102009/
+132050	keplar	rhodes loop 3.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/132050/
+45741	torn.rugged.audio.35	east_river_twisted_88bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/45741/
+469513	CarlosCarty	Quena Arabian bamboo flute A canyon reverb 146bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/469513/
+321221	Kevcio	Amen Break G (165 BPM)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/321221/
+238671	Bronxio	Afro chords loop (ESG - UFO) - 1 bar - 100 BPM	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/238671/
+132051	keplar	rhodes loop 2.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/132051/
+479408	itsmochajones	dead-wrld-dope-trap-piano-keys-loop 150bpm Fm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/479408/
+178616	Goup_1	Amen Break (J.Lee 90 BPM Mix)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/178616/
+57660	Vres	song191.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/57660/
+239058	AgoraphobicNosebleed	93 bpm glitchy 444.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/239058/
+151330	rap2h	etrange.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/151330/
+402924	CharlyBeck	sd-128bpm-G-Klimper1-Processed.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/402924/
+379603	connectik	horlogisisme 2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/379603/
+352409	nesmartu	simple_trap_beat_with_deep_bass.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/352409/
+45742	torn.rugged.audio.35	jazz_follow_hardrise_155bpm3.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/45742/
+423079	monstera	trap bell loop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/423079/
+17698	Rupert1073	gtr 3.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/17698/
+345261	Hoerspielwerkstatt_HEF	beat1_90BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/345261/
+238672	Bronxio	Afro chords loop (ESG - UFO) - 2 bar - 100 BPM	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/238672/
+251250	yapppy	drum 130bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/251250/
+396765	User391915396	Suspense/Tension trap loop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/396765/
+124542	cubix	minimal glitchy loop nokick 128bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/124542/
+418749	@realdavidfloat	kick  hat tinny snare 120bpm01-10.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/418749/
+17699	Rupert1073	gtr 4.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/17699/
+345260	Hoerspielwerkstatt_HEF	beat2_90BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/345260/
+175550	alphasnk	flo x tetra p ii 93 bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/175550/
+174867	drielnox	Perc_Loop_001_126.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/174867/
+441179	vykroft	Glitch Drum loop 7a - 8 bars 85 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/441179/
+275418	hipihopi	Changestimate_mahdev_13_135bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/275418/
+345263	Hoerspielwerkstatt_HEF	beat7_90BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/345263/
+175551	alphasnk	flo x dirty south 120 bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/175551/
+56750	aji_	twostep_4_168.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/56750/
+275419	hipihopi	Changestimate_mahdev_12_135bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/275419/
+345262	Hoerspielwerkstatt_HEF	beat10_90BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/345262/
+220537	--DeletedUser--	Kick OHH Clap-LP 130 bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/220537/
+213868	waveplay_old	140 bpm vox warble effect (dubstep)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/213868/
+345265	Hoerspielwerkstatt_HEF	beat5_90BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/345265/
+161948	joesacco	Power Bass Electro House Synth (SAW+SQUARE).wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/161948/
+220536	--DeletedUser--	Kick OHH Cabasa-LP 130bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/220536/
+265152	dubbwebb	REESEY BASS 2, 90BPM, D	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/265152/
+345264	Hoerspielwerkstatt_HEF	beat6_90BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/345264/
+239625	_jack	Agressive sweep synth loop mod. 1 120 bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/239625/
+175546	alphasnk	flo x virus ohh 118 bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/175546/
+220535	--DeletedUser--	Kick HP-Loop130bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/220535/
+265076	Dodgy C	Dodgy_C_Laid_Back_Loop.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/265076/
+345267	Hoerspielwerkstatt_HEF	beat9_90BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/345267/
+141690	Jovica	120 BPM DRUMLOOPS - 32 bit export-32.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/141690/
+458029	inlinebeats	inline_-_drum-loop-hard-02.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/458029/
+53658	fran_ky	120 Bold plucks in fume.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/53658/
+216067	Go-qualia	ep7-kick.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/216067/
+345266	Hoerspielwerkstatt_HEF	beat4_90BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/345266/
+173021	Snapper4298	105_stezzer_break_1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/173021/
+177422	c0mp0s3r	Reggaeton groove (105 bpm - 4 bars).wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/177422/
+111072	brudelarge	Brushes Loop 77bpm by Canis et Circensis.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/111072/
+265078	orangefreesounds	Drum Loop Percussions 140 bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/265078/
+102021	RytmenPinnen	Hihat8 2m 110bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/102021/
+123889	Sorrow-Fox	Brake Real Drum Loop 1.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/123889/
+424043	@realdavidfloat	biggish saw synth d a b e 102 bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/424043/
+23042	kkz	emptinesslikedust.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/23042/
+243415	shiftyfour	groove135.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/243415/
+2715	Jovica	115 BPM STAB LOOP 25 mastered 16 bit.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/2715/
+22867	deleted_user_133379	LoopIt_Rock_01 (124.716 bpm).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/22867/
+234845	mikobuntu	steroids.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/234845/
+344082	mooncubedesign	Acoustic Guitar Loop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/344082/
+13645	starpause	060102yohaYohLoop128steps117bpmMulch.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/13645/
+237514	Akosombo	Rea-Acid-01-120bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/237514/
+21732	Anton	fast_8bar_key-d1.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/21732/
+102338	sandyrb	IMPROV PERCS 001 2 BARS 130 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/102338/
+102346	sandyrb	IMPROV PERCS 009 2 BARS 130 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/102346/
+441192	vykroft	Glitch Drum loop 9i - 8 bars 85 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/441192/
+102386	sandyrb	IMPROV PERCS 049 2 BARS 130 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/102386/
+342763	Npeo	Arpeggiated Synth Delay	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/342763/
+411593	Stohgs	Mysterious Ambient Pad Loop 84 bpm Dm.flac	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/411593/
+413679	Teacoma	Easy House Beat	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/413679/
+13643	starpause	060102swaveEnsPadNoteC8.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/13643/
+441190	vykroft	Glitch Drum loop 9g - 8 bars 85 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/441190/
+344081	mooncubedesign	Synth Loop - Wobble Wars 	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/344081/
+222456	waveplay_old	70 bpm dark dubstep 	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/222456/
+9360	lancelottjones	industrial.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/9360/
+200842	LoopPacks	Scratcher.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/200842/
+251249	yapppy	floating to nowhere synth 115bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/251249/
+13642	starpause	060102swaveEnsPadNoteC2.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/13642/
+270312	Dee_Vigga	DV Amen Break (133bpm).wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/270312/
+2711	Jovica	115 BPM STAB LOOP 21 mastered 16 bit.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/2711/
+28644	Nurykabe	120107loopgranul01.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/28644/
+348381	REVEREND.BLACK	CLN GUIT FX 130BPM 7.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/348381/
+261318	Xinematix	Electronic Moving Percussion Seq (120 BPM).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/261318/
+441191	vykroft	Glitch Drum loop 9h - 8 bars 85 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/441191/
+328637	Mowgly3	shot sound Bass.wav 125 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/328637/
+156082	digitalvalues	78BPM-Hip-Hip Beat 001.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/156082/
+448384	tec_studio	Beat n Bass 128 bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/448384/
+463559	robcro6010	Synth Loop	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/463559/
+328868	bigshovel	Basic Drum Loop 85 BPM	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/328868/
+270313	Dee_Vigga	DV Amen Break (175bpm).wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/270313/
+249545	yapppy	echoloop 90bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/249545/
+102342	sandyrb	IMPROV PERCS 005 4 BARS 130 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/102342/
+122303	StanGenda	Dub DrumVerse 130bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/122303/
+176625	flowerdove2168	AmpedTribalBassBit_C_130bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/176625/
+222426	Jovica	20140306_attackloop_120BPM_4_4_Acoustic_Kit_Distorted_loop4c.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/222426/
+156081	digitalvalues	82 BPM Hip-Hop Beat.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/156081/
+336305	visual	Elliot100-A.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/336305/
+169869	tichec	Drums_120bpm_openhat_loop1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/169869/
+231989	Jovica	20140316_attackloop_120BPM_4_4_Analog_1_Kit_ConstructionKit_Hihats19.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/231989/
+217108	gusgus26	Glitch Drum Loop 120 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/217108/
+122302	StanGenda	Dub Drum 130bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/122302/
+176624	flowerdove2168	AmpedTrbalBassBit-2_C_130bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/176624/
+222425	Jovica	20140306_attackloop_120BPM_4_4_Acoustic_Kit_Distorted_loop4d.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/222425/
+156080	digitalvalues	96BPM-Hip-Hop Beat.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/156080/
+41305	UncleSigmund	136bpmloop.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/41305/
+200897	LoopPacks	hiphop-38.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/200897/
+200847	LoopPacks	supertobot.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/200847/
+493726	Xinematix	Action Percussion Ensemble Midtempo 001 Full (100 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/493726/
+336306	visual	Daliapop-1B.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/336306/
+157779	Snapper4298	bass looper 102.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/157779/
+245257	waveplay_old	generic edm beat 128 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/245257/
+9364	lancelottjones	rythmmakerglitch.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/9364/
+220539	--DeletedUser--	Var 1.LP bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/220539/
+458040	inlinebeats	inlinebeats_-_lead-loop-96bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/458040/
+19787	Jovica	Aerobic Loop -02.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/19787/
+193344	Brubbrub	Clickyperc_TripHop_108bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/193344/
+493724	Xinematix	Action Percussion Ensemble Midtempo 001 P2 (100 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/493724/
+220538	--DeletedUser--	Kick-Loop LP 130 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/220538/
+45675	jesuswaffle	Synth 2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/45675/
+458041	inlinebeats	inlinebeats_-_kora-loop-89bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/458041/
+411594	Stohgs	Pad Loop - Lurking Eyes 120 bpm Dm.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/411594/
+123900	DirtyJewbs	Glitchdrumloop_140BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/123900/
+473670	flombles	perc hits.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/473670/
+177294	dav0r	d0 Organic Eggs Drumloop 85bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/177294/
+236003	Hugofski	Hectic 808 Drum Loop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/236003/
+493725	Xinematix	Action Percussion Ensemble Midtempo 001 P1 (100 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/493725/
+135524	Compusician	Loop 001.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/135524/
+202337	waveplay_old	house loop 120 bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/202337/
+56630	Natrousoxide	SimpleDrumLoop.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/56630/
+329127	DodgyLoops	BluesHipHop_DodgyLoops_Dodgy_C.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/329127/
+133438	DjDust	Kit909 House Loop Random Beatrepeat.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/133438/
+206123	billdancourtney	Street Knowledge - Beat 01.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/206123/
+493723	Xinematix	Action Percussion Ensemble Midtempo 001 P3 (100 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/493723/
+2718	Jovica	115 BPM STAB LOOP 28 mastered 16 bit.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/2718/
+266784	RetroBro	Old School Hip Hop Loop 100 BPM	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/266784/
+263869	Kevcio	Amen Break B (160 BPM) 	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/263869/
+474471	kendallbear	BearPornDrumLoop88BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/474471/
+485479	Manuel.Ed	Djembe Loop 09 - 120 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/485479/
+347751	jackheath	Beatbox loop at 87 BPM with effects	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/347751/
+43200	NoiseCollector	80bpmdevonicvariation3.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/43200/
+485478	Manuel.Ed	Djembe Loop 10 - 120 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/485478/
+102368	sandyrb	IMPROV PERCS 031 2 BARS 130 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/102368/
+189595	PsychoticSynthesis	Battery 250bpm_9.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/189595/
+232190	Exorcist	drum loop #001 (078 BPM).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/232190/
+43265	NoiseCollector	91loopypoopy3.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/43265/
+238334	Bronxio	Afro chords loop (ESG - UFO) with initial kick - 1 bar - 96 BPM	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/238334/
+6832	Jovica	110 bpm FM Rhythm -06.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/6832/
+189594	PsychoticSynthesis	Battery 250bpm_6.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/189594/
+43266	NoiseCollector	91loopypoopy4.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/43266/
+417759	vykroft	Drum Beat 5 - 95bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/417759/
+361910	SSS_Samples	Pluck Rise 140 BPM	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/361910/
+494504	appropriation303	Nov 2019 125bpm 001 a.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/494504/
+413752	Greek555	Bass 128 Bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/413752/
+6833	Jovica	110 bpm FM Rhythm -07.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/6833/
+6853	Jovica	110 bpm FM Rhythm -27.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/6853/
+90926	Blackie666	Loop175BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/90926/
+189587	PsychoticSynthesis	Battery 250bpm_10.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/189587/
+367703	T_Beau	Game_World.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/367703/
+171350	Puniho	Dare9 Guitar 90bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/171350/
+417758	vykroft	Drum Beat 4 - 95bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/417758/
+485475	Manuel.Ed	Djembe Loop 07 - 120 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/485475/
+90925	Blackie666	Loop155BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/90925/
+249472	Jovica	20140914_attackloop_160BPM_4_4_loop2.2.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/249472/
+152670	sumsun	House Beat 124bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/152670/
+43204	NoiseCollector	80bpmdrum.WAV	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/43204/
+361912	SSS_Samples	Trance Arp 140 BPM	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/361912/
+249449	Jovica	20140914_attackloop_160BPM_4_4_loop1.4.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/249449/
+189591	PsychoticSynthesis	Battery 250bpm_3.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/189591/
+169880	tichec	Bassguitar_120bpm_loop1_C.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/169880/
+404526	ADnova	ride it	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/404526/
+13496	Bitbeast	00_120_HissyGrit_1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/13496/
+72205	daatg	CG105Loop.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/72205/
+5883	Jovica	China Dream Convoloop r-03.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/5883/
+271070	AudioWizzards	Raw DUBSTEP bassline G 140 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/271070/
+165440	thatjeffcarter	wrecked piano drum loop 120bpm 10 bars.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/165440/
+485477	Manuel.Ed	Djembe Loop 05 - 120 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/485477/
+369646	freetunes88	Chords.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/369646/
+90923	Blackie666	Break180BPM2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/90923/
+133437	DjDust	Random Sounds Breakbeat Loop.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/133437/
+248202	copyc4t	Zarathustra Heartbeat (timpani, 90BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/248202/
+170451	bbd319	3.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/170451/
+212703	deleted_user_2627647	magical grace drum 120bpm weird.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/212703/
+189590	PsychoticSynthesis	Battery 250bpm_4.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/189590/
+465751	XHALE303	ACID 8	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/465751/
+474400	Erokia	Drums & Piano_2 - Amplified (Fragment 110 Bpm)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/474400/
+13497	Bitbeast	00_120_HissyGrit_2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/13497/
+485476	Manuel.Ed	Djembe Loop 06 - 120 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/485476/
+187650	Owl	Claydrum 109 bpm 8 bars.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/187650/
+132860	vartioh	GlitchDub1_140bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/132860/
+90922	Blackie666	Break180BPM1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/90922/
+170452	bbd319	2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/170452/
+431435	GenerationMachine	PsyLoopHorror.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/431435/
+189593	PsychoticSynthesis	Battery 250bpm_7.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/189593/
+403343	emceeciscokid	trap loop.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/403343/
+13494	Bitbeast	00_120_DirtClup_0.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/13494/
+485471	Manuel.Ed	Djembe Loop 03 - 125 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/485471/
+6854	Jovica	110 bpm FM Rhythm -28.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/6854/
+90921	Blackie666	Break175BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/90921/
+170453	bbd319	1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/170453/
+189588	PsychoticSynthesis	Battery 250bpm_1.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/189588/
+189592	PsychoticSynthesis	Battery 250bpm_2.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/189592/
+37819	LS	130 bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/37819/
+398209	tnk	Random fm loop - 120bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/398209/
+13495	Bitbeast	00_120_HissyGrit_0.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/13495/
+157659	cheeseymofodude	4 bar loop.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/157659/
+276672	tXgix	tXgDrX153.41-01.flac	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/276672/
+485470	Manuel.Ed	Djembe Loop 04 - 120 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/485470/
+72149	zilverton	Groove 2-Audio.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/72149/
+6841	Jovica	110 bpm FM Rhythm -15.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/6841/
+90920	Blackie666	Break155BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/90920/
+200904	LoopPacks	8bit110bpm-07.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/200904/
+189589	PsychoticSynthesis	Battery 250bpm_5.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/189589/
+152605	Technohippy	guigui loop 4 120bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/152605/
+192348	24thelement	Stereo DUB.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/192348/
+157658	cheeseymofodude	4 bar loop2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/157658/
+276671	tXgix	tXgDrX153.41-02.flac	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/276671/
+72148	zilverton	Groove 1-Audio.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/72148/
+414130	Greek555	Sample 121 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/414130/
+29764	Nurykabe	230107seqCberta.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/29764/
+332489	neehnahw	Calm Down	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/332489/
+192349	24thelement	Layered DUB.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/192349/
+194820	csum	BAS rope 149bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/194820/
+485472	Manuel.Ed	Djembe Loop 02 - 125 BPM.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/485472/
+431377	neverheardof.me	Chip Rock Drum Loop	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/431377/
+353038	matt141141	PsyTrance Bassline in G0 137bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/353038/
+152607	Technohippy	guigui loop 2 120bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/152607/
+5133	Jovica	ATTACK loop 140 bpm-19.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/5133/
+238884	Bronxio	Drumloop Pintura Abstracta - 4 bar - 80 BPM (no swing)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/238884/
+370758	Louigi_Verona	130-FishPerc.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/370758/
+152606	Technohippy	guigui loop 3 120bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/152606/
+347181	quetzalcontla	Vocal rhythm loop 125bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/347181/
+372583	Glitchedtones	120 Glitch Beat.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/372583/
+189599	zimbot	KickingLoop_110bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/189599/
+417756	vykroft	Drum Beat 3 - 95bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/417756/
+322551	vacuumfan7072	130bpm drum loop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/322551/
+183664	AlienXXX	Loop2_005_OverTheTopTomFill.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/183664/
+491285	Xinematix	Emotional Piano 005 (Am-80)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/491285/
+424129	@realdavidfloat	rave tunes 102 bpm-29.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/424129/
+253045	arseniiv	hg fs-240495 90 bpm 8 beats_000.flac	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/253045/
+417755	vykroft	Drum Beat 2 - 95bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/417755/
+41280	Bsantos	loop2.1_140bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/41280/
+491284	Xinematix	Emotional Piano 001 (D#-90)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/491284/
+5117	Jovica	ATTACK loop 140 bpm-03.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/5117/
+111301	juskiddink	Horse trotting.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/111301/
+144484	Strever953	Strever's Drums P106 100bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/144484/
+417754	vykroft	Drum Beat - 95bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/417754/
+41281	Bsantos	loop2_140bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/41281/
+372586	Glitchedtones	120 Metallic Beat 02.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/372586/
+491283	Xinematix	Emotional Piano 002 (D#m-80)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/491283/
+5138	Jovica	ATTACK loop 140 bpm-24.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/5138/
+262487	Skailor978	Drum & Bass Drums @173bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/262487/
+423474	Erokia	Synth Loop 28_2 - (140 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/423474/
+417733	Elefinity	Dnb Beat 1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/417733/
+209814	shitefromaheight	Piano 4 bar 140bpm *4.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/209814/
+372587	Glitchedtones	120 Metallic Beat 01.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/372587/
+233982	Puniho	Rembrandt.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/233982/
+90928	Blackie666	Loop180BPM2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/90928/
+183661	AlienXXX	Loop2_001.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/183661/
+491282	Xinematix	Emotional Piano 003 (D#m-80)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/491282/
+324944	Teacoma	Psytrance Triple Bass Loop 	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/324944/
+372584	Glitchedtones	120 Metallic Beat 04.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/372584/
+59254	suonho	abstract-electrofunkbreakbeats_089bpm-liquidi.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/59254/
+491281	Xinematix	Emotional Piano 004 (D#m-80)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/491281/
+345005	Stereo Surgeon	City Wind Synth Loop 2	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/345005/
+333330	wmquincy101	bucket_150bpm_2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/333330/
+452690	daf024	PERCUSSION Recorded Claps Loop 122 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/452690/
+372585	Glitchedtones	120 Metallic Beat 03.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/372585/
+264941	matze73	Filterloop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/264941/
+183663	AlienXXX	Loop2_002_Synth.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/183663/
+389773	ANARKYA	Darkness Cinematic 160 bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/389773/
+127879	fran_ky	100 Perleggio 2.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/127879/
+233709	x86cam	130BPM 32 Beat Loop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/233709/
+115601	day_tripper13	TR-808 127BPM 22 Bars.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/115601/
+452693	daf024	SYNTH Transition Sound FX in D 124 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/452693/
+241309	JarAxe	Dubstep segment (125 bpm)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/241309/
+5142	Jovica	ATTACK loop 140 bpm-28.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/5142/
+112175	LS	Rain on my buds74bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/112175/
+452692	daf024	PERCUSSION Recorded Shaker 123 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/452692/
+92062	AKUSTIKA	120 - MICRODISCO 1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/92062/
+253648	orangefreesounds	Retro music loop 120 bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/253648/
+184370	tresikner	TruthBeat2.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/184370/
+264772	arseniiv	sequence-8tet.flac	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/264772/
+369044	Br4dzdestroyer	bongo loop with hats_130bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/369044/
+219113	copyc4t	Speed-Limit-Drum-Loop-cowbell.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/219113/
+152608	Technohippy	guigui loop 1 120bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/152608/
+184371	tresikner	TruthBeat1.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/184371/
+192345	24thelement	Stereo DnB (1).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/192345/
+157657	cheeseymofodude	4 bar loop3.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/157657/
+349507	T_Beau	Euphoria_no_mod.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/349507/
+219112	copyc4t	Speed-Limit-Drum-Loop-etoms.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/219112/
+144238	Jovica	120 BPM DRUMLOOPS - 32 bit export-35.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/144238/
+329830	mikobuntu	120bpm-4bar-glitchyloop-.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/329830/
+192346	24thelement	Stereo DnB (2).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/192346/
+493117	josefpres	002 Example - bass riff loop 110 bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/493117/
+157656	cheeseymofodude	4 bar loop4.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/157656/
+5861	Jovica	China Dream Convoloop o-05.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/5861/
+219115	copyc4t	Speed-Limit-Drum-Loop-base.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/219115/
+442202	djphazer	boxed-break-20181004 (128bpm)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/442202/
+390879	CarlosCarty	Inca Spa loop 01.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/390879/
+269545	shitefromaheight	140bpm Piano Solo 11.Apr_12.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/269545/
+85271	fons	slow metal.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/85271/
+219114	copyc4t	Speed-Limit-Drum-Loop-clave-3-2.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/219114/
+339613	NOTOTO84	drumandbass drums.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/339613/
+424124	@realdavidfloat	rave tunes 102 bpm-16.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/424124/
+245757	gis_sweden	BD_QY10_120BPM_2s_loop.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/245757/
+122298	StanGenda	Drum loopHop 130bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/122298/
+246483	gis_sweden	120bpm12sAix1_G.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/246483/
+205806	VectorSpace	Loop A01b - Drums, Sub	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/205806/
+242590	lezaarth	drum_loop_4bars_100bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/242590/
+40962	M-RED	Drop_da_Beat_83BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/40962/
+269546	shitefromaheight	140bpm Piano Solo 11.Apr_11.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/269546/
+413261	GRD-music-	Fminor_Bass&DrumGroove_97bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/413261/
+5825	Jovica	China Dream Convoloop k-01.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/5825/
+128493	igjop	150bpm_bassMeat.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/128493/
+128741	gusgus26	cr78 beat 4/4 106 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/128741/
+23565	djduppy	duppyHipFunk04_120bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/23565/
+127880	fran_ky	100 Perleggio 1.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/127880/
+414043	Greek555	Sample 128 Bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/414043/
+402458	CyberMad	humming.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/402458/
+250225	DJE20	Kick Loop 140 BPM (Hands Up).wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/250225/
+269549	shitefromaheight	140bpm Piano Solo 11.Apr_4.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/269549/
+413260	GRD-music-	Gminor_Bass&DrumGroove_102bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/413260/
+413256	GRD-music-	F#minor_SLAP_BassGroove_100bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/413256/
+369890	akirill	Simple Breakbeat #2	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/369890/
+23564	djduppy	duppyHipFunk03_120bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/23564/
+457857	aframires	Dubstep Syncopated Drum Loop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/457857/
+47038	Sub-d	Funk guitar in E 1 bar 114b.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/47038/
+331295	djfroyd	Closed Hi-hat 128bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/331295/
+269548	shitefromaheight	140bpm Piano Solo 11.Apr_1.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/269548/
+476336	MattiaGiovanetti	Fantasy Drum Intro I	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/476336/
+413257	GRD-music-	Eminor_Funk_BassGroove_90bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/413257/
+410511	emceeciscokid	trap loop 2.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/410511/
+40768	UncleSigmund	loop120.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/40768/
+6973	Jovica	110 bpm FM Rhythm -50.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/6973/
+210769	waveplay_old	remix of electro.wav by LS	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/210769/
+250227	DJE20	Kick Loop 2 140 BPM (Hands Up).wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/250227/
+413254	GRD-music-	Aminor_Funk_BassGroove_83bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/413254/
+144864	Derek Lotek	strings loop 8 100bpm CPK.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/144864/
+23566	djduppy	duppyHipFunk05_120bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/23566/
+130581	DRUMHEAD62	fast215bpm .wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/130581/
+271146	.Andre_Onate	tape measure delay fx-dre 02_3	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/271146/
+199868	Bronxio	Drumloop - Free Try (wait a minute) (90 BPM)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/199868/
+434122	Xinematix	Action Percussion Ensemble Uptempo 004 (120 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/434122/
+174451	Link-Boy	old school bit -86BPM (rock-HIPhop).wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/174451/
+402457	CyberMad	flickering.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/402457/
+413255	GRD-music-	A#minor_Bass&DrumGroove_98bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/413255/
+144865	Derek Lotek	strings loop 5 100bpm CPK.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/144865/
+382297	nosegrind	loop1_130bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/382297/
+434121	Xinematix	Electronic Percussive Elements 001 (110 BPM)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/434121/
+174452	Link-Boy	old school bit -110BPM (street bit).wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/174452/
+57940	suonho	ambienta-soundtrack_crystal_KiQLess-089bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/57940/
+413252	GRD-music-	C#minor_Funk_BassGroove_110bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/413252/
+259297	jputman	Number 8 Loop.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/259297/
+240098	Bronxio	Drumloop The 'Bigbeat a 100' one - 1 bar - 100 BPM (no swing)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/240098/
+24941	VEXST	Tiny Kick Break.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/24941/
+5773	Jovica	China Dream Convoloop d-05.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/5773/
+59312	suonho	abstract-electrofunkbreakbeats_089bpm-duburby.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/59312/
+171846	PhilNSolo	8-kairatune-90bpm-4M.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/171846/
+5195	Jovica	Rhythmmakerloop 125 bpm-49.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/5195/
+413253	GRD-music-	Bminor_Funk_BassGroove_87bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/413253/
+240099	Bronxio	Drumloop 'Wey' - 4 bar - 90 BPM (no swing)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/240099/
+144863	Derek Lotek	synth loop 1 100bpm CPK.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/144863/
+5770	Jovica	China Dream Convoloop d-02.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/5770/
+59311	suonho	abstract-electrofunkbreakbeats_089bpm-dubthing.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/59311/
+198469	waveplay_old	140 bpm phaser drum beat	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/198469/
+414045	Greek555	Subbass #D 128 bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/414045/
+22128	nikolat	diztheeng_99bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/22128/
+239474	Bronxio	Drumloop 90 FD & more - 1 bar - 90 BPM (no swing).WAV	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/239474/
+86596	Jovica	80 bpm Kirst 23rd Century Attack loop 3.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/86596/
+442987	Mietech	synth snare 20er.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/442987/
+476866	MikeOscarFoxtrot	07152019_3 Bass and Drums Mix MMV3 41 BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/476866/
+59310	suonho	abstract-electrofunkbreakbeats_089bpm-dubimal.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/59310/
+139821	Jovica	120 BPM DRUMLOOPS - 32 bit export-09.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/139821/
+2267	Jovica	90 bpm ATTACK LOOP 3 hihats mastered 16 bit.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/2267/
+11116	JimPurbrick	NordSyncRandCharge120BPMPhrase.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/11116/
+144861	Derek Lotek	strings loop 10 100bpm CPK.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/144861/
+143641	johnnypanic	MDrumLoop.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/143641/
+427273	Elnosos	indian percussion loop 1.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/427273/
+400657	Jessetz	Edited Hard Kick	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/400657/
+249178	gis_sweden	120bpmEpsilon4s_G.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/249178/
+143640	johnnypanic	MDrumLoop2.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/143640/
+427272	Elnosos	indian percussion loop 2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/427272/
+183640	AlienXXX	Beatbox_01_Loop_015e_DaBoom@120bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/183640/
+249179	gis_sweden	120bpmEta6s_G.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/249179/
+264751	djnicke	House Loop 5.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/264751/
+211955	csum	GlitchLoop02_120bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/211955/
+353272	ADnova	Boss Intro 01	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/353272/
+151762	DjDust	Motif drums loop 97bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/151762/
+423385	crazymonke9	simple kalimba loop on 120 bpm	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/423385/
+471043	Hoerspielwerkstatt_HEF	lonely piano9_80bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/471043/
+371606	redafs	RnB Beat Loop (124 Bpm)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/371606/
+199860	Bronxio	Drumloop - Funky Drummer with swing	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/199860/
+264750	djnicke	House Loop 6.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/264750/
+211954	csum	GlitchLoop01_120bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/211954/
+246531	gis_sweden	120bpm_PannaNer2_tr.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/246531/
+246530	gis_sweden	120bpm8sWorm_tr.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/246530/
+104382	Keygenerator	Wobble_Loop_140_C2.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/104382/
+239517	luckylittleraven	sub-wobble-up-and-down.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/239517/
+249174	gis_sweden	120bpmAcantholabrus4s_G.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/249174/
+211956	csum	GlitchLoop03_120bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/211956/
+199109	aikighost	TinCanBeat_125bpm04_LoopCache_AbstractPercussion.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/199109/
+471036	Hoerspielwerkstatt_HEF	lonely piano2_60bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/471036/
+239516	luckylittleraven	sub-bass-wobble-slide-g1.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/239516/
+163175	OldFreshFX	OFX0019-12B_Top_Heavy_Loop_130bpm_www.oldfreshfx.com.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/163175/
+75159	Djeuphoria	insane break.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/75159/
+199873	Bronxio	Drumloop - Free Try 1 (90 BPM)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/199873/
+249185	gis_sweden	120bpmAbramis4s_G.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/249185/
+468504	kroshe	plastic.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/468504/
+222383	Jovica	20140306_attackloop_120BPM_4_4_Acoustic_Kit_Distorted_loop1f.flac	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/222383/
+269557	shitefromaheight	140bpm Piano Solo 11.Apr_9.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/269557/
+413258	GRD-music-	Ebminor_Bass&DrumGroove_109bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/413258/
+268116	soneproject	syndrum loop 128 bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/268116/
+199872	Bronxio	Drumloop - Classic Breakbeat 3 - Funky Drummer (90 BPM)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/199872/
+468505	kroshe	fez.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/468505/
+368598	djfroyd	Short horror sample.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/368598/
+161245	juskiddink	House beat 120.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/161245/
+269554	shitefromaheight	140bpm Piano Solo 11.Apr_5.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/269554/
+413259	GRD-music-	Dminor_Bass&DrumGroove_104bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/413259/
+246529	gis_sweden	120bpm4sGamma_G_ad.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/246529/
+217500	dippy_	100bpm 808-like drum loop	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/217500/
+85268	fons	marching stuff.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/85268/
+239514	luckylittleraven	sub-bass-wobble-slide-e1.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/239514/
+249183	gis_sweden	120bpm12sDelta_G.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/249183/
+468506	kroshe	davul.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/468506/
+339978	MaverickBlue	Seeker 300.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/339978/
+349229	ILJah	174_Rover_Bass_Loop_Me&Roland.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/349229/
+269555	shitefromaheight	140bpm Piano Solo 11.Apr_8.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/269555/
+275301	slivkro	DubStepBeatProcessedPro90.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/275301/
+181656	fabio_iaci	clickrythm22.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/181656/
+55086	james duckett	outiuty.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/55086/
+249182	gis_sweden	120bpm2sMagnhildBd.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/249182/
+468507	kroshe	african.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/468507/
+346374	EathanMarkson	120 bpm rising square arpegiated chords	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/346374/
+350814	Kalabasa25	rhythmic-scrash.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/350814/
+55085	james duckett	out5FX.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/55085/
+199867	Bronxio	Drumloop - Free Try 2 (90 BPM)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/199867/
+249181	gis_sweden	120bpm2sMagnhildHh.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/249181/
+468508	kroshe	tama.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/468508/
+448983	Pax11	Horns_ambient (120bpm).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/448983/
+434963	dekstromoramid	DrumBass_80sUpdown_Esus4_120BPM.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/434963/
+269553	shitefromaheight	140bpm Piano Solo 11.Apr_6.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/269553/
+69997	QLC	100 comin up 2.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/69997/
+269550	shitefromaheight	140bpm Piano Solo 11.Apr_3.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/269550/
+85264	fons	alien workshop.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/85264/
+365795	ollisuoranta	loose-guitar-01-100.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/365795/
+185489	klankbeeld	finger cymbals reverse 130bpm 121402.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/185489/
+244272	Donovango	Tom distort cowbell 130bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/244272/
+381170	connectik	h9.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/381170/
+323541	Rootsmessenger	rootsmessenger_spiral_loop_111bpm_freesound.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/323541/
+270709	bcnlab	Song5_BASS_Do_3:4_120bpms.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/270709/
+22130	nikolat	hunter_90bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/22130/
+269551	shitefromaheight	140bpm Piano Solo 11.Apr_14.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/269551/
+199114	aikighost	WoodenBeat_125bpm03_LoopCache_AbstractPercussion.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/199114/
+471039	Hoerspielwerkstatt_HEF	lonely piano7_60bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/471039/
+320637	MuSiCjUnK	155 - Dubby  Drums 8 Bars.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/320637/
+411619	asciiface	The Forge Bass Line (4/4 120bpm)	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/411619/
+199874	Bronxio	Drumloop - Free Try (basic) (90 BPM)	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/199874/
+242560	zgump	Psy Trance Loop 140 Bpm 07.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/242560/
+3092	jonnay	SynthSlapBassLoop.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/3092/
+199139	aikighost	MinimalBuzz_125bpm01_LoopCache_AbstractPercussion.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/199139/
+242561	zgump	Psy Trance Loop 145 Bpm 10.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/242561/
+38104	THE_bizniss	chord beat 3.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/38104/
+467337	stevysound	stevysound_ethnic_percussion_125bpm_144536.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/467337/
+27335	Nurykabe	181206woodloop01.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/27335/
+63642	Sampleconstruct	trashloop.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/63642/
+277267	SeryLis	Shaker_ TOCA_ 130bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/277267/
+448780	tec_studio	Crash Beat 128bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/448780/
+44036	LS	cybermebaby.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/44036/
+30217	irrlicht	loop1_120bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/30217/
+387461	Greek555	Synth 128 Bpm	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/387461/
+167182	ultradust	Udu Loop 80 BPM	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/167182/
+102884	Uknow Dude	Drum Loop 2 - 119 Bpm.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/102884/
+332931	suonho	Drummerboy - Hip Low Beat_100 Bpm.wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/332931/
+337824	hardwareshaba	Break_Dnb_174_Bpm_02.wav	http://creativecommons.org/publicdomain/zero/1.0/	https://freesound.org/s/337824/
+261561	Xinematix	Electronic Filter Percussion 2 (120 BPM).wav	http://creativecommons.org/licenses/by/3.0/	https://freesound.org/s/261561/

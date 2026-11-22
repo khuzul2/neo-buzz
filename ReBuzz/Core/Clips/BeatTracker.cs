@@ -151,7 +151,7 @@ namespace ReBuzz.Core.Clips
         }
 
         /// <summary>AW2b: AW1's DSP track is kept when it is steady (every 16-beat window within this of the line through the beats) and the model's tempo agrees with it up to an octave or a 3:2 or 4:3 ratio. Set on the validation split.</summary>
-        internal static double DspSteadyTolerance = 0.01, DspAgreeTolerance = 0.03;
+        internal static double DspSteadyTolerance = 0.005, DspAgreeTolerance = 0.04;
         static readonly double[] AgreeRatios = { 1, 2, 0.5, 1.5, 2.0 / 3, 4.0 / 3, 0.75 };
 
         static BeatTrack TrackBest(AudioSource source, BeatModelNet net)

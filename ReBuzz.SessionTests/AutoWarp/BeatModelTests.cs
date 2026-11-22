@@ -1,3 +1,4 @@
+using System.Linq;
 using ReBuzz.Core.Clips;
 
 namespace ReBuzz.SessionTests.AutoWarp
@@ -118,6 +119,38 @@ namespace ReBuzz.SessionTests.AutoWarp
             Assert.That(BeatTracker.PreferDsp(dsp, Line(133, 0)), Is.False, "another tempo: the model decides");
             Assert.That(BeatTracker.PreferDsp(Line(120, 0.06), Line(120, 0)), Is.False, "AW1 is not steady");
             Assert.That(BeatTracker.PreferDsp(null, Line(120, 0)), Is.False);
+        }
+
+        /// <summary>The generated file of the shipped weights (ReBuzz/Core/Clips/BeatModelData.cs), read as text from the source tree (this project does not link it, so the other tests stay on AW1's DSP path).</summary>
+        static BeatModelNet ShippedModel()
+        {
+            string dir = TestContext.CurrentContext.TestDirectory;
+            while (dir != null && !File.Exists(Path.Combine(dir, "ReBuzz", "Core", "Clips", "BeatModelData.cs"))) dir = Path.GetDirectoryName(dir);
+            Assert.That(dir, Is.Not.Null, "BeatModelData.cs is in the source tree");
+            var text = File.ReadAllText(Path.Combine(dir, "ReBuzz", "Core", "Clips", "BeatModelData.cs"));
+            var parts = System.Text.RegularExpressions.Regex.Matches(text, "^\\s+\"([A-Za-z0-9+/=]+)\",$", System.Text.RegularExpressions.RegexOptions.Multiline);
+            return BeatModelNet.Load(System.Convert.FromBase64String(string.Concat(parts.Select(m => m.Groups[1].Value))));
+        }
+
+        /// <summary>A regression test for the weights: the shipped model finds the beats of a generated drift line (held out: the training lines use other seeds) to within 10 ms for most of them.</summary>
+        [Test]
+        public void ShippedModelFollowsAGeneratedDriftLine()
+        {
+            var net = ShippedModel();
+            Assert.That(net.Version, Is.EqualTo(2));
+            var line = WarpSignals.Make(WarpSignals.Tempo.Drift, WarpSignals.Style.Mix, 64, rate: 22050, seed: 5, scale: 1.1);
+            var src = new AudioSource(line.Audio, line.Audio, line.Rate);
+            BeatTrack t;
+            using (BeatModel.Scope(net)) t = BeatTracker.Of(src);
+            Assert.That(t.Found);
+            int near = 0, total = 0;
+            foreach (double truth in line.Beats.Where(b => b > 3 && b < 60))
+            {
+                total++;
+                double best = t.Beats.Min(b => Math.Abs(b / line.Rate - truth));
+                if (best < 0.010) near++;
+            }
+            Assert.That(near / (double)total, Is.GreaterThan(0.85), $"{near} of {total} beats within 10 ms");
         }
     }
 }
