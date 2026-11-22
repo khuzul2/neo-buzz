@@ -565,7 +565,7 @@ jobs:
         if-no-files-found: ignore
 
   aw2-tools:
-    if: ${{ github.event.inputs.aw2 == 'true' || github.event.inputs.aw2b == 'true' || github.event.inputs.aw2b_pack == 'true' || github.event.inputs.aw2c_measure != 'false' && github.event.inputs.aw2c_measure != '' }}
+    if: ${{ github.event.inputs.aw2 == 'true' || github.event.inputs.aw2b == 'true' || github.event.inputs.aw2b_pack == 'true' || github.event.inputs.aw2c == 'true' || github.event.inputs.aw2c_measure == 'true' || github.event.inputs.aw2c_measure == 'check' }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
