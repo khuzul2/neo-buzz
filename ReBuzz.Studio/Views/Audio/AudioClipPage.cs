@@ -147,7 +147,7 @@ namespace ReBuzz.Studio.Views.Audio
                 {
                     Section("Audio"),
                     Row("Warp", warp), preserveRow,
-                    Row("Tempo", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3, Children = { tempo, halve, doubleIt, detect } }),
+                    Row("Tempo", new StackPanel { Orientation = Orientation.Vertical, Spacing = 4, Children = { new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3, Children = { tempo, halve, doubleIt } }, detect } }),
                     Row("Transpose", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { transpose, Unit("semitones") } }),
                     Row("Detune", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { detune, Unit("cents") } }),
                     Row("Gain", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { gain, Unit("dB") } }),
