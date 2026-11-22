@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 
 AUDIO = {"gtzan": "https://huggingface.co/datasets/marsyas/gtzan/resolve/main/data/genres.tar.gz",
-         "ballroom": "http://mtg.upf.edu/ismir2004/contest/tempoContest/data1.tar.gz"}
+         "ballroom": "https://mtg.upf.edu/ismir2004/contest/tempoContest/data1.tar.gz"}
 ANN = {"gtzan": "https://github.com/CPJKU/beat_this_annotations", "ballroom": "https://github.com/CPJKU/BallroomAnnotations"}
 EXT = (".wav", ".au", ".mp3", ".flac", ".ogg")
 
