@@ -67,7 +67,11 @@ namespace ReBuzzTests
         {
             RequireHelper();
             using var a = Peer(131.25);
-            Thread.Sleep(1000);                                     // Link: the older session (by over 0.5 s) is the one joined
+            // Link: the older session (by over 0.5 s) is the one joined. Older than the other's start, which is the first helper being up
+            // and enabled, not the Send calls having returned (a helper process can take longer than the second to start on a busy runner;
+            // package run 44618937877: the peers found each other and the second stayed at 120).
+            Assert.That(WaitFor(() => a.IsEnabled && Math.Abs(a.Tempo - 131.25) < 0.01, 10), Is.True, $"the first peer is up at its tempo: {a.Tempo}");
+            Thread.Sleep(1000);
             using var b = new LinkClient(Helper);
             Assert.That(b.Start(), Is.Null);
             b.Send(LinkProtocol.Quantum(4));
@@ -175,17 +179,37 @@ namespace ReBuzzTests
         {
             var ours = new TimelineCell();
             var sent = new ConcurrentQueue<(int Message, double At)>();
-            double t0 = HostClock.Now() + 300_000;                   // time for the thread to start on a busy runner
-            ours.Write(new Timeline(t0, 0, 120));
-            using (new MidiClockOutput(() => true, ours, m => sent.Enqueue((m, HostClock.Now()))))
+            // The line starts 300 ms after the clock's own thread first sees the transport play, and is written by that thread: the test
+            // used to choose t0 before the thread was made, and a runner that was 320 ms late starting it (PreciseWaiter, the scheduler) sent
+            // a Song Position (498 = 0xF2 | 1 << 8) and Continue to a line already running, not Start (package run 44514863570). That
+            // path is the sender's, tested with a fake clock in SyncTimeTests; this test is for the thread's timing.
+            double t0 = 0;
+            bool go = false, written = false;
+            bool Playing()
+            {
+                if (!Volatile.Read(ref go)) return false;
+                if (!written)
+                {
+                    Volatile.Write(ref t0, HostClock.Now() + 300_000);
+                    ours.Write(new Timeline(Volatile.Read(ref t0), 0, 120));
+                    written = true;
+                }
+                return true;
+            }
+            using (new MidiClockOutput(Playing, ours, m => sent.Enqueue((m, HostClock.Now()))))
+            {
+                Volatile.Write(ref go, true);
                 Thread.Sleep(900);
+            }
+            double t0Read = Volatile.Read(ref t0);
+            Assert.That(t0Read, Is.GreaterThan(0), "the clock's thread asked whether the transport plays");
             var list = sent.ToList();
             Assert.That(list[0].Message, Is.EqualTo(MidiClockSender.Start));
-            Assert.That(Math.Abs(list[0].At - (t0 - MidiClockSender.StartLead)), Is.LessThan(3000));
+            Assert.That(Math.Abs(list[0].At - (t0Read - MidiClockSender.StartLead)), Is.LessThan(3000));
             var pulses = list.Where(m => m.Message == MidiClockSender.Clock).ToList();
             double interval = 60e6 / (120 * 24);
             Assert.That(pulses.Count, Is.InRange(25, 31), "about 0.6 s of pulses");
-            var errors = pulses.Select((p, i) => Math.Abs(p.At - (t0 + i * interval))).OrderBy(e => e).ToList();
+            var errors = pulses.Select((p, i) => Math.Abs(p.At - (t0Read + i * interval))).OrderBy(e => e).ToList();
             TestContext.Out.WriteLine($"MIDI clock out timing: median {errors[errors.Count / 2]:F0} µs, worst {errors[^1]:F0} µs");
             Assert.That(errors[errors.Count / 2], Is.LessThan(1000), "median within a millisecond");
             // A shared runner can hold the thread up (16 ms seen once, then 39 ms on two pulses): a few

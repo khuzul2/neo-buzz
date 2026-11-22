@@ -136,7 +136,10 @@ jobs:
     # The classic Buzz machines rebuilt natively (docs/specs/cross-platform.md R1) and the portable host that runs them
     # out of process: ReBuzz.Host/AppGear.targets copies build/natives (Gear, Licenses) and build/native-host into
     # rebuzz-headless's output when it is built.
+    # always(): a failed test step above must not skip the build and make the classic-machine step fail for a missing host (RB1: in all
+    # 15 failed Linux jobs of the last 60 runs "Classic machines on Linux" failed only for that, silently, 3 s in, with no message).
     - name: Classic machines and native host (C++)
+      if: always()
       run: |
         python3 tools/build-natives-posix.py --out build/natives
         cmake -S ReBuzzEngine/portable -B build/native-host >/dev/null
@@ -159,8 +162,8 @@ jobs:
     - name: Classic machines on Linux
       if: always()
       run: |
-        python3 -m pip install --break-system-packages numpy >/dev/null
-        test -x ReBuzz.Headless/bin/Release/net10.0/rebuzz-native-host
+        bash tools/ci-pip.sh numpy
+        test -x ReBuzz.Headless/bin/Release/net10.0/rebuzz-native-host || { echo "::error::rebuzz-native-host is not beside rebuzz-headless: the step that builds it (C++) did not run or failed"; exit 1; }
         python3 tools/native-cross.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/natives" --json "$RUNNER_TEMP/natives.json"
 
     # The Pedal machines (docs/specs/studio-mvp.md S2), built for net10.0 without their WPF GUIs:

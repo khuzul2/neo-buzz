@@ -139,7 +139,7 @@ jobs:
     - name: Classic machines on macOS
       if: always()
       run: |
-        python3 -m pip install --break-system-packages numpy >/dev/null
+        bash tools/ci-pip.sh numpy
         test -x ReBuzz.Headless/bin/Release/net10.0/rebuzz-native-host
         python3 tools/native-cross.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/natives" --json "$RUNNER_TEMP/natives.json"
 

@@ -33,6 +33,10 @@ on:
         description: 'Natives diagnosis (fix/ci-flakes-4): Infector repeated, work time of Jeskola Delay and NiNjA builds (full builds only)'
         type: boolean
         default: false
+      crash_selftest:
+        description: 'RB1: crash a program named ReBuzzEngine64.exe on purpose, to see that the crash dump is written, read and uploaded'
+        type: boolean
+        default: false
   push:
     tags: [ 'fork-v*' ]
 
@@ -117,6 +121,16 @@ jobs:
       uses: softprops/action-gh-release@v3
       with:
         files: dist/*.zip
+
+    # RB1 (docs/specs/machine-safety.md section 6): the native host (ReBuzzEngine64.exe, ReBuzzEngine32.exe for the 32-bit bridge) died with
+    # 0xc0000409 in ucrtbase on a few runs, each time in another machine, and there was no dump. Windows Error Reporting writes a full dump
+    # of it from here on (the tests, the agent evaluation, the profiler and the studio smoke test all start it): "Native host crash dumps"
+    # below prints the faulting stack and module and uploads the files. REBUZZ_ENGINE_KEEP_WER keeps the host from opting out of
+    # Windows Error Reporting (its PL1 change, which ends it at once so the parent's calls do not wait a minute), as it would write no dump.
+    # Never committed: .gitignore has *.dmp.
+    - name: Windows Error Reporting dumps for the native host
+      shell: pwsh
+      run: ./tools/ci-crash-dumps.ps1 register
 
     # The UI gallery (docs/specs/ui-gallery.md, UiGalleryTests) draws ReBuzz's window at 1440×900: a screen that holds
     # it, so that menus open where they would for a user (the runner's is smaller; the gallery copes if this fails).
@@ -429,6 +443,59 @@ jobs:
         python tools/studio-windows-smoke.py "$pkg\NeoBuzzLive.exe" "$env:RUNNER_TEMP\studio-package-smoke" --song "ExternalMachines/source/buzztrax-buzzmachines/FSM/Infector/FSM_Infector_Demo.bmx" --native-gear "FSM Infector,Jeskola Bass 3,Jeskola Reverb"
         exit $LASTEXITCODE
 
+    # RB1: a dump of the native host, if one was written: the faulting module, the exception and the stack at the fault in the job log (cdb, from the
+    # Windows SDK's debugging tools if the runner has them), the list of loaded modules (which machine DLL the host had), and the files as an artifact.
+    - name: Native host crash dumps
+      id: dumps
+      if: always()
+      continue-on-error: true
+      shell: pwsh
+      run: ./tools/ci-crash-dumps.ps1 analyze
+
+    - name: Upload native host crash dumps
+      if: always() && steps.dumps.outputs.found == 'true'
+      continue-on-error: true
+      uses: actions/upload-artifact@v6
+      with:
+        name: native-host-crash-dumps
+        path: |
+          ${{ env.REBUZZ_CRASHDUMPS }}/*.dmp
+          ${{ env.REBUZZ_CRASHDUMPS }}/*.txt
+        retention-days: 14
+        if-no-files-found: warn
+
+  # RB1: the dump pipeline end to end with no real crash to wait for (dispatch input crash_selftest): a program named ReBuzzEngine64.exe
+  # that fails fast, then the same steps as the end of the package job (tools/ci-crash-dumps.ps1) on its dump.
+  crash-dump-selftest:
+    if: inputs.crash_selftest == true
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+    - name: Windows Error Reporting dumps for the native host
+      shell: pwsh
+      run: ./tools/ci-crash-dumps.ps1 register
+    - name: A program named ReBuzzEngine64.exe that fails fast
+      shell: pwsh
+      run: ./tools/ci-crash-dumps.ps1 selftest
+    - name: Native host crash dumps
+      id: dumps
+      if: always()
+      shell: pwsh
+      run: ./tools/ci-crash-dumps.ps1 analyze
+    - name: Upload native host crash dumps
+      if: always() && steps.dumps.outputs.found == 'true'
+      uses: actions/upload-artifact@v6
+      with:
+        name: native-host-crash-dumps-selftest
+        path: |
+          ${{ env.REBUZZ_CRASHDUMPS }}/*.dmp
+          ${{ env.REBUZZ_CRASHDUMPS }}/*.txt
+        retention-days: 3
+        if-no-files-found: warn
+
   # NeoBuzz Live (the studio) on Windows (docs/specs/ux-overhaul.md P6): the studio (ReBuzz.Studio, Avalonia) on a Windows
   # runner. Its headless tests there, its headless UI gallery drawn on Windows (win-NNN-*.png, pushed to the branch
   # ci-artifacts-studio-windows), then it is published for win-x64 with PortAudio built from source with CMake
@@ -668,7 +735,7 @@ jobs:
 
     - name: Natives, Linux x64 vs Windows
       run: |
-        python3 -m pip install --break-system-packages numpy >/dev/null
+        bash tools/ci-pip.sh numpy
         python3 tools/native-cross.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/natives" --ref native-ref --json "$RUNNER_TEMP/natives.json"
 
     - name: Upload the results
@@ -714,7 +781,7 @@ jobs:
 
     - name: Natives, macOS arm64 vs Windows
       run: |
-        python3 -m pip install --break-system-packages numpy >/dev/null
+        bash tools/ci-pip.sh numpy
         python3 tools/native-cross.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/natives" --ref native-ref --json "$RUNNER_TEMP/natives.json"
 
     - name: Upload the results

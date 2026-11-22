@@ -1052,8 +1052,20 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 {
     // PL1: a machine that crashes the host (ucrtbase, 0xc0000409, seen on CI runners) must end it at once: the parent sees the exit code, marks the
 	// machine crashed and goes on, instead of the process lingering in Windows Error Reporting for a minute with the parent's calls unanswered.
-	::SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
-	_set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+	// RB1: not when REBUZZ_ENGINE_KEEP_WER is set (the Fork package workflow, which turns on WER LocalDumps for this host to find out which machine
+	// and what stack: docs/specs/machine-safety.md section 6): a crash then goes through Windows Error Reporting, which writes the dump.
+	// The error mode is inherited, and a CI agent starts its steps with SEM_NOGPFAULTERRORBOX set (0x8003, seen on windows-latest), which keeps Windows Error
+	// Reporting from writing a dump: so the host resets it, and asks the C runtime to report.
+	if (::GetEnvironmentVariable(_T("REBUZZ_ENGINE_KEEP_WER"), NULL, 0) == 0)
+	{
+		::SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+		_set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+	}
+	else
+	{
+		::SetErrorMode(0);
+		_set_abort_behavior(_CALL_REPORTFAULT, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+	}
 
     //CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 	CoInitialize(NULL);
