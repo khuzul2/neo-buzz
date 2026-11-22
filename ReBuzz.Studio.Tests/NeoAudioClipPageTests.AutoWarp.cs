@@ -102,7 +102,7 @@ namespace ReBuzz.Studio.Tests
             var clip = rig.SessionClip;
             Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = "A", ["pattern"] = clip.Name, ["auto_warp"] = true }));
             var all = Audio(clip).Markers.ToList();
-            double rate = Layout.ClipAudioOf(Audio(clip)).Source.SampleRate;
+            double rate = Layout.ViewOf(clip)!.Asset.Source.SampleRate;
             Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = "A", ["pattern"] = clip.Name, ["auto_warp"] = true, ["from_seconds"] = 20 }));
             var from = Audio(clip).Markers;
             Assert.That(from.Count(m => m.Sample < 20 * rate), Is.EqualTo(all.Count(m => m.Sample < 20 * rate)), "the markers before 20 s are kept");

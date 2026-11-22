@@ -119,7 +119,9 @@ def main():
             out.append(f"| {s}: downbeat F (reported, no gate) | {fmt(mean([e['down'] for e in es]))} | - | - |")
     es = [e for e in rows.get(("generated", "test", "auto"), []) if e["name"].startswith(("drift", "step"))]
     if es:
-        gate("generated drift and step lines: grid error p95 (ms)", pct([e["grid"] for e in es], 95), 20, ge=False)
+        gate("generated drift and step lines, all styles: grid error p95 (ms)", pct([e["grid"] for e in es], 95), 20, ge=False)
+        gate("  of which drums and mix lines (ritardando included): grid error p95 (ms)", pct([e["grid"] for e in es if "-pad-" not in e["name"]], 95), 20, ge=False)
+        out.append(f"| (reported) pad lines (weak onsets): grid error p95 (ms) | {fmt(pct([e['grid'] for e in es if '-pad-' in e['name']], 95), 1)} | - | - |")
     es = [e for e in rows.get(("loops", "all", "auto"), [])]
     ts = {e["name"]: e for e in rows.get(("loops", "all", "today"), [])}
     if es:

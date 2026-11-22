@@ -4,9 +4,9 @@
 
   gmd     Groove MIDI Dataset v1.0.0 (Magenta, CC BY 4.0): recordings of a drummer playing to a click on an electronic kit, 4/4, with their MIDI.
           The ground truth: beats are the click's, from the MIDI's tempo (bar 1 is the MIDI's first beat). Writes NAME.wav and NAME.json.
-  slakh   Slakh2100 (Zenodo 4599666, CC BY 4.0): mixes rendered from MIDI, with the beats and downbeats of that MIDI's tempo and time signature maps
-          (only the pieces that are in 4/4 throughout). The tarball is read as a stream, front to back, until enough pieces are whole.
-          Writes NAME.wav (the mix, mono 44.1 kHz, at most --slakh-seconds long) and NAME.json.
+  slakh   BabySlakh (Zenodo 4603870, CC BY 4.0), the 20 pieces of Slakh2100 published as a small download: mixes rendered from MIDI, with the beats and downbeats
+          of that MIDI's tempo and time signature maps (only the pieces that are in 4/4 throughout).
+          Writes NAME.wav (the mix, mono 16 kHz, at most --slakh-seconds long) and NAME.json.
 
     fetch_data.py --gmd DIR [--gmd-per-drummer 3] [--gmd-split test,validation,train] --slakh DIR [--slakh-count 24] [--slakh-seconds 240]
 The JSON of each: {"beats": [seconds], "downbeats": [seconds], "beats_per_bar": 4, "bpm": ...}.
@@ -84,36 +84,56 @@ def gmd(dest, per, splits):
 
 
 def slakh(dest, count, max_seconds, wanted_splits=("test",)):
-    """Streams the tarball front to back and keeps each piece whose mix, MIDI and metadata have all gone by, in 4/4 throughout, until there are enough."""
-    import requests, soundfile, pretty_midi
-    meta = requests.get("https://zenodo.org/api/records/4599666", timeout=60).json()
-    f = [x for x in meta["files"] if x["key"].startswith("slakh2100_flac_redux")][0]
-    url = f["links"]["self"]
-    print("slakh:", f["key"], f["size"], "bytes; licence", meta["metadata"].get("license"), flush=True)
+    """BabySlakh (Zenodo 4603870, CC BY 4.0): the 20 pieces of Slakh2100 that its authors published as a small download (880 MB, 16 kHz mixes with their MIDI).
+    (The full Slakh2100 is one 100 GB tarball with no index, and a stream of it did not survive on the runner.) The file is fetched with resumed ranges and
+    checked against Zenodo's md5; each piece in 4/4 throughout is kept: its mix (at most max_seconds) and the beats and downbeats of its MIDI."""
+    import hashlib, requests, soundfile, pretty_midi
+    meta = requests.get("https://zenodo.org/api/records/4603870", timeout=60).json()
+    f = [x for x in meta["files"] if x["key"].startswith("babyslakh_16k")][0]
+    url, size, md5 = f["links"]["self"], f["size"], f["checksum"].split(":")[1]
+    print("slakh: BabySlakh", f["key"], size, "bytes; licence", meta["metadata"].get("license"), flush=True)
     os.makedirs(dest, exist_ok=True)
+    archive = os.path.join(dest, "babyslakh.tar.gz")
+    have = os.path.getsize(archive) if os.path.exists(archive) else 0
+    for attempt in range(30):
+        if have >= size:
+            break
+        try:
+            with requests.get(url, headers={"Range": f"bytes={have}-"}, stream=True, timeout=120) as r:
+                r.raise_for_status()
+                with open(archive, "ab") as out:
+                    for chunk in r.iter_content(1 << 20):
+                        out.write(chunk)
+                        have += len(chunk)
+        except Exception as e:
+            print(f"slakh: download {type(e).__name__} at {have}, resuming ({attempt + 1})", flush=True)
+            time.sleep(5 * (attempt + 1))
+            have = os.path.getsize(archive) if os.path.exists(archive) else 0
+    h = hashlib.md5()
+    with open(archive, "rb") as fh:
+        for block in iter(lambda: fh.read(1 << 22), b""):
+            h.update(block)
+    if h.hexdigest() != md5:
+        raise SystemExit(f"slakh: checksum {h.hexdigest()} is not {md5}")
     pending = collections.defaultdict(dict)       # track -> {mix: bytes, midi: bytes}
     done = 0
-    r = requests.get(url, stream=True, timeout=120)
-    r.raise_for_status()
-    tar = tarfile.open(fileobj=r.raw, mode="r|gz")
-    for m in tar:
-        if not m.isfile():
-            continue
-        parts = m.name.split("/")
-        # slakh2100_flac_redux/test/Track01709/{mix.flac, all_src.mid}
-        if len(parts) < 4 or parts[1] not in wanted_splits:
-            continue
-        track, base = parts[2], parts[3]
-        if len(parts) == 4 and base in ("mix.flac", "all_src.mid"):
-            pending[track][base] = tar.extractfile(m).read()
-        if "mix.flac" in pending[track] and "all_src.mid" in pending[track]:
+    with tarfile.open(archive, mode="r:gz") as tar:
+        for m in tar:
+            parts = m.name.split("/")
+            if not m.isfile() or len(parts) != 3 or parts[2] not in ("mix.wav", "mix.flac", "all_src.mid"):
+                continue
+            track = parts[1]
+            pending[track]["mix" if parts[2].startswith("mix") else "midi"] = tar.extractfile(m).read()
+            if "mix" not in pending[track] or "midi" not in pending[track]:
+                continue
             d = pending.pop(track)
             try:
-                pm = pretty_midi.PrettyMIDI(io.BytesIO(d["all_src.mid"]))
+                pm = pretty_midi.PrettyMIDI(io.BytesIO(d["midi"]))
                 sigs = {(t.numerator, t.denominator) for t in pm.time_signature_changes} or {(4, 4)}
                 if sigs != {(4, 4)}:
+                    print("slakh: skipped", track, "not 4/4", flush=True)
                     continue
-                x, rate = soundfile.read(io.BytesIO(d["mix.flac"]))
+                x, rate = soundfile.read(io.BytesIO(d["mix"]))
                 if x.ndim > 1:
                     x = x.mean(axis=1)
                 x = x[: int(max_seconds * rate)]
@@ -131,10 +151,7 @@ def slakh(dest, count, max_seconds, wanted_splits=("test",)):
                 print("slakh: skipped", track, type(e).__name__, e, flush=True)
             if done >= count:
                 break
-        if len(pending) > 40:                      # pieces whose other half never came in this order: let them go
-            for k in list(pending)[:20]:
-                pending.pop(k)
-    r.close()
+    os.remove(archive)
     print("slakh:", done, "pieces", flush=True)
 
 
