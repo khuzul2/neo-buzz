@@ -95,5 +95,29 @@ namespace ReBuzz.SessionTests.AutoWarp
             Assert.That(withModel.FromModel, Is.False);
             using (BeatModel.Scope(net)) Assert.That(ReferenceEquals(BeatTracker.Of(src), withModel), "the same version is analysed once");
         }
+
+        static BeatTrack Line(double bpm, double wobble, int n = 64)
+        {
+            var t = new BeatTrack { Rate = 44100, Length = 44100 * 200 };
+            var b = new double[n];
+            double at = 0;
+            for (int i = 0; i < n; i++) { b[i] = at; at += 44100 * 60.0 / bpm * (1 + wobble * Math.Sin(i * 0.15)); }
+            t.Beats = b;
+            t.MedianBpm = bpm;
+            return t;
+        }
+
+        /// <summary>AW2b: AW1's steady track stands when the model agrees up to an octave or a 3:2 ratio; an unsteady one, or a model that disagrees, goes to the model.</summary>
+        [Test]
+        public void SteadyDspWithAgreeingModelIsKept()
+        {
+            var dsp = Line(120, 0);
+            Assert.That(BeatTracker.PreferDsp(dsp, Line(120, 0)), Is.True);
+            Assert.That(BeatTracker.PreferDsp(dsp, Line(60, 0)), Is.True, "half time");
+            Assert.That(BeatTracker.PreferDsp(dsp, Line(180, 0)), Is.True, "3:2");
+            Assert.That(BeatTracker.PreferDsp(dsp, Line(133, 0)), Is.False, "another tempo: the model decides");
+            Assert.That(BeatTracker.PreferDsp(Line(120, 0.06), Line(120, 0)), Is.False, "AW1 is not steady");
+            Assert.That(BeatTracker.PreferDsp(null, Line(120, 0)), Is.False);
+        }
     }
 }

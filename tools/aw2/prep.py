@@ -9,7 +9,7 @@ copied to EVAL_DIR for the evaluation (and never trained on). Features are versi
 """
 import argparse, glob, json, os, shutil, subprocess, sys, tempfile
 import numpy as np
-from common import RATE, write_wav
+from common import RATE, write_wav, fnv
 import augment
 
 FEATURE_VERSION = 1
@@ -46,7 +46,11 @@ def main():
         meta = json.load(open(jp))
         name = os.path.basename(jp)[:-5]
         wav = jp[:-5] + ".wav"
-        if meta["split"] == "test":
+        base = name.split("__")[0]
+        # AW2b: a validation split apart from the test halves (thresholds and choices are set on it): Slakh's own, else one track in eight by hash (a track with its stem remixes).
+        if meta["split"] == "train" and meta["dataset"] != "slakh" and meta["dataset"] != "generated" and fnv(base) % 8 == 1:
+            meta["split"] = "val"
+        if meta["split"] in ("test", "val"):
             if a.eval_dir:
                 import soundfile as sf
                 x = read_wav(wav)[: int(a.max_test_seconds * RATE)]

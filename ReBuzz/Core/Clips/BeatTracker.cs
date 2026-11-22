@@ -150,6 +150,10 @@ namespace ReBuzz.Core.Clips
             return lazy.Value;
         }
 
+        /// <summary>AW2b: AW1's DSP track is kept when it is steady (every 16-beat window within this of the line through the beats) and the model's tempo agrees with it up to an octave or a 3:2 or 4:3 ratio. Set on the validation split.</summary>
+        internal static double DspSteadyTolerance = 0.01, DspAgreeTolerance = 0.03;
+        static readonly double[] AgreeRatios = { 1, 2, 0.5, 1.5, 2.0 / 3, 4.0 / 3, 0.75 };
+
         static BeatTrack TrackBest(AudioSource source, BeatModelNet net)
         {
             if (net != null)
@@ -157,9 +161,28 @@ namespace ReBuzz.Core.Clips
                 System.Threading.Interlocked.Increment(ref Runs);
                 BeatTrack t = null;
                 try { t = BeatModelTracker.Track(source, net); } catch (Exception) { t = null; }
-                if (t != null) return t;
+                if (t != null)
+                {
+                    BeatTrack d = Track(source.ForAnalysis());
+                    return PreferDsp(d, t) ? d : t;
+                }
             }
             return Track(source.ForAnalysis());
+        }
+
+        /// <summary>Whether AW1's track is steady and the model agrees with its tempo (up to the ratios of a metre): then AW1's answer stands.</summary>
+        internal static bool PreferDsp(BeatTrack dsp, BeatTrack model)
+        {
+            if (dsp == null || !dsp.Found || model == null || !model.Found || dsp.MedianBpm <= 0 || model.MedianBpm <= 0) return false;
+            var b = dsp.Beats;
+            int win = Math.Min(16, b.Length - 1);
+            if (win < 8) return false;
+            double per = (b[b.Length - 1] - b[0]) / (b.Length - 1);
+            for (int w = 0; w + win < b.Length; w += Math.Max(1, win / 4))
+                if (Math.Abs((b[w + win] - b[w]) / win / per - 1) > DspSteadyTolerance) return false;
+            double r = model.MedianBpm / dsp.MedianBpm;
+            foreach (double k in AgreeRatios) if (Math.Abs(r / k - 1) <= DspAgreeTolerance) return true;
+            return false;
         }
 
         sealed class Frames

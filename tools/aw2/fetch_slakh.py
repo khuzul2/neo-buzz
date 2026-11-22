@@ -135,7 +135,7 @@ def build_items(out, dest):
         except Exception as e:  # noqa: BLE001
             n["error " + type(e).__name__] += 1
             continue
-        split = "test" if tag.startswith("test_") else "train"
+        split = "test" if tag.startswith("test_") else "val" if tag.startswith("validation_") else "train"
         save_item(dest, "slakh_" + tag, x, beats, downs, 4, split, "slakh", "CC-BY-4.0", "Slakh2100 (Manilow et al.), " + tag)
         n[split] += 1
     print("slakh items:", dict(n), flush=True)

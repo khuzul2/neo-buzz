@@ -122,19 +122,20 @@ def aam_stems(out, tid, beats, downs, bpb, mt):
         save_item(out, f"aam_{tid}__{g}", mix, beats, downs, bpb, "train", "aam", "CC-BY-4.0", f"AAM track {tid}, stems {'+'.join(sorted(ks))}", {"stem_dropout": g})
 
 
-def aam(out, limit, stems=0):
+def aam(out, limit, stems=0, part=0):
     """AAM, Artificial Audio Multitracks (Zenodo 5794629, CC BY 4.0): mixes of tracks 0001-1000 (every third one, up to LIMIT), beats and downbeats from the beatinfo files
     (bar count and quarter count). One in ten (by hash) is the test."""
     meta, files = zenodo_files(5794629)
     lic = zenodo_licence(meta)
     assert licence_ok(lic), "AAM licence " + str(lic)
     import requests
-    ann = zipfile.ZipFile(io.BytesIO(retry(lambda: requests.get(files["0001-1000-annotations-v1.1.0.zip"]["links"]["self"], timeout=300).content, what="annotations")))
-    z = Zip(files["0001-1000-audio-mixes.zip"]["links"]["self"])
-    multitracks = Zip(files["0001-1000-audio-multitracks.zip"]["links"]["self"]) if stems else None
+    rng = f"{part * 1000 + 1:04d}-{part * 1000 + 1000:04d}"          # AW2b: the three zips of 1000 tracks are parts 0, 1 and 2
+    ann = zipfile.ZipFile(io.BytesIO(retry(lambda: requests.get(files[rng + "-annotations-v1.1.0.zip"]["links"]["self"], timeout=300).content, what="annotations")))
+    z = Zip(files[rng + "-audio-mixes.zip"]["links"]["self"])
+    multitracks = Zip(files[rng + "-audio-multitracks.zip"]["links"]["self"]) if stems else None
     n = collections.Counter()
     names = sorted(x for x in z.names() if x.endswith("_mix.flac"))
-    names = [x for i, x in enumerate(names) if i % 3 == 1]
+    names = [x for i, x in enumerate(names) if i % (3 if part == 0 and limit <= 100 else 4) == 1]      # the pilot's pick for 100 tracks; AW2b's 250 per zip
     for name in names:
         tid = os.path.basename(name)[:4]
         split = "test" if fnv(tid) % 10 == 0 else "train"
@@ -225,9 +226,9 @@ def fsl10k(out, limit):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("dataset"); ap.add_argument("out"); ap.add_argument("--limit", type=int, default=100); ap.add_argument("--stems", type=int, default=0)
+    ap.add_argument("dataset"); ap.add_argument("out"); ap.add_argument("--limit", type=int, default=100); ap.add_argument("--stems", type=int, default=0); ap.add_argument("--part", type=int, default=0)
     a = ap.parse_args()
     if a.dataset == "aam":
-        aam(a.out, a.limit, a.stems)
+        aam(a.out, a.limit, a.stems, a.part)
     else:
         {"gmd": gmd, "guitarset": guitarset, "candombe": candombe, "fsl10k": fsl10k}[a.dataset](a.out, a.limit)

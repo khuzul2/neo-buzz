@@ -39,19 +39,19 @@ def main():
                 continue
             rows[(it["set"], it["half"], method)].append(e)
             per.append((it["set"], it["half"], method, e))
-    out = ["# AW2 pilot: AW1 DSP against the beat model, held-out items\n",
-           "`aw1` is AW1's DSP tracker, `aw2` the pilot beat model through the same decoder path (AutoWarp). Beat F at +-70 ms, CMLt, AMLt, downbeat F (the first 5 s do not count), grid error (ms at 120 BPM). `test` = held out (never trained on), `train` rows are the training items for reference (not scored in gates).\n",
+    out = ["# AW2: AW1 DSP against the beat model (with the DSP-or-model choice), held-out items\n",
+           "`aw1` is AW1's DSP tracker, `aw2` the beat model through the same decoder path (AutoWarp), with AW2b's choice of the DSP track when it is steady and the model agrees. Beat F at +-70 ms, CMLt, AMLt, downbeat F (the first 5 s do not count), grid error (ms at 120 BPM). `test` = held out (never trained on), `val` = the validation split (thresholds were set on it), `dev` = training items, for reference (not scored in gates).\n",
            "| set | half | method | files | beat F | CMLt | AMLt | downbeat F | grid median ms | grid p95 ms |", "|---|---|---|---|---|---|---|---|---|---|"]
     name = {"auto": "aw1", "aw2": "aw2"}
     for s in sorted({k[0] for k in rows}):
-        for half in ("test", "dev"):
+        for half in ("test", "val", "dev"):
             for m in ("auto", "aw2"):
                 es = rows.get((s, half, m), [])
                 if not es:
                     continue
                 g = [e["grid"] for e in es]
-                out.append(f"| {s} | {'test' if half == 'test' else 'train'} | {name[m]} | {len(es)} | {fmt(mean([e['F'] for e in es]))} | {fmt(mean([e['CMLt'] for e in es]))} | {fmt(mean([e['AMLt'] for e in es]))} | {fmt(mean([e['down'] for e in es]))} | {fmt(pct(g, 50), 1)} | {fmt(pct(g, 95), 1)} |")
-    out += ["\n## Gates (held-out items, AW2 pilot model)\n", "| gate | AW1 | AW2 pilot | needed | met |", "|---|---|---|---|---|"]
+                out.append(f"| {s} | {half} | {name[m]} | {len(es)} | {fmt(mean([e['F'] for e in es]))} | {fmt(mean([e['CMLt'] for e in es]))} | {fmt(mean([e['AMLt'] for e in es]))} | {fmt(mean([e['down'] for e in es]))} | {fmt(pct(g, 50), 1)} | {fmt(pct(g, 95), 1)} |")
+    out += ["\n## Gates (test halves, AW2 model)\n", "| gate | AW1 | AW2 | needed | met |", "|---|---|---|---|---|"]
     for s, (bf, df) in GATES.items():
         e2, e1 = rows.get((s, "test", "aw2"), []), rows.get((s, "test", "auto"), [])
         if not e2:
@@ -70,7 +70,7 @@ def main():
     gen = [e for e in rows.get(("generated", "test", "aw2"), []) if e["name"].startswith(("drift", "step"))]
     if gen:
         out.append(f"Generated drift and step lines (held out), AW2 grid error p95: {pct([e['grid'] for e in gen], 95):.1f} ms (gate 20); drums and mix lines only: {pct([e['grid'] for e in gen if '-pad-' not in e['name']], 95):.1f} ms.")
-    out.append("\nThe pilot model is trained for under an hour on a few hours of audio: the gates are for AW2b's full training, these rows show what the pipeline does.")
+    
     open(a.out, "w").write("\n".join(out) + "\n")
     print("\n".join(out))
     if a.csv:

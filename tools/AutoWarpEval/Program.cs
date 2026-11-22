@@ -47,6 +47,9 @@ namespace NeoBuzz.AutoWarpEval
                     case "--parity": return Aw2Commands.Parity(Next());
                     case "--pulses": return Aw2Commands.Pulses();
                     case "--feat": return Aw2Commands.Feat(Next());
+                    case "--gen-train": { string gd = Next(); return Aw2Commands.GenTrain(gd, int.Parse(Next(), CultureInfo.InvariantCulture)); }
+                    case "--dsp-steady": BeatTracker.DspSteadyTolerance = double.Parse(Next(), CultureInfo.InvariantCulture); break;
+                    case "--dsp-agree": BeatTracker.DspAgreeTolerance = double.Parse(Next(), CultureInfo.InvariantCulture); break;
                     case "--bench": return Aw2Commands.Bench(Next(), args.Length > i + 1 ? args[i + 1] : "600");
                     case "--limit": limit = int.Parse(Next(), CultureInfo.InvariantCulture); break;
                     case "--beats-per-bar": bpb = int.Parse(Next(), CultureInfo.InvariantCulture); break;
@@ -133,7 +136,7 @@ namespace NeoBuzz.AutoWarpEval
                     int perBar = root.TryGetProperty("beats_per_bar", out var pb) ? pb.GetInt32() : bpb;
                     var (x, rate) = Wav.Read(wav);
                     string name = Path.GetFileNameWithoutExtension(wav);
-                    string half = root.TryGetProperty("split", out var sp) ? (sp.GetString() == "train" ? "dev" : "test") : HalfOf(name);
+                    string half = root.TryGetProperty("split", out var sp) ? (sp.GetString() == "train" ? "dev" : sp.GetString() == "val" ? "val" : "test") : HalfOf(name);
                     items.Add(Score(set ?? "data", name, half, x, rate, beats, downs, perBar));
                 }
             }

@@ -24,6 +24,37 @@ namespace NeoBuzz.AutoWarpEval
 
     internal static class Aw2Commands
     {
+        /// <summary>
+        /// AW2b training material from the repo's own signal generator (the test lines of AW1, with other seeds, tempi, drift periods, leads and pickups): <c>--gen-train DIR N</c>
+        /// writes NAME.wav (22.05 kHz) and NAME.json for N lines (steady, drift, step, ritardando; drums, mix, pad), with exact beats. Seeds 100 and up (the test lines use 1 and 2).
+        /// One in ten is validation. Code and output are ours (CC0): there is no third-party licence.
+        /// </summary>
+        public static int GenTrain(string dir, int n)
+        {
+            Directory.CreateDirectory(dir);
+            var tempos = Enum.GetValues<WarpSignals.Tempo>();
+            var styles = Enum.GetValues<WarpSignals.Style>();
+            var rng = new Random(20260);
+            using var lic = new StreamWriter(Path.Combine(dir, "licences.tsv"), true);
+            for (int k = 0; k < n; k++)
+            {
+                var tempo = tempos[k % tempos.Length];
+                var style = styles[(k / tempos.Length) % styles.Length];
+                double scale = 0.55 + 1.2 * rng.NextDouble();
+                var line = WarpSignals.Make(tempo, style, 64, rate: 22050, lead: rng.NextDouble() < 0.4 ? 0.5 + 2 * rng.NextDouble() : 0, pickup: rng.Next(0, 3),
+                    seed: 100 + k, scale: scale, period: 25 + 40 * rng.NextDouble(), phase: 6.28 * rng.NextDouble());
+                string name = $"gen_{tempo}_{style}_{k:000}".ToLowerInvariant();
+                Pack.WriteWav(Path.Combine(dir, name + ".wav"), line.Audio, line.Rate);
+                string split = k % 10 == 7 ? "val" : "train";
+                string J(double[] a) => "[" + string.Join(",", a.Select(v => v.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture))) + "]";
+                File.WriteAllText(Path.Combine(dir, name + ".json"),
+                    "{\"beats\":" + J(line.Beats) + ",\"downbeats\":" + J(line.Downbeats) + ",\"beats_per_bar\":4,\"split\":\"" + split + "\",\"dataset\":\"generated\",\"licence\":\"CC0\",\"source\":\"NeoBuzz test signal generator (WarpSignals), seed " + (100 + k) + "\"}");
+                lic.WriteLine($"{name}\tgenerated\tCC0\tNeoBuzz test signal generator, seed {100 + k}");
+            }
+            Console.WriteLine($"{n} generated lines");
+            return 0;
+        }
+
         public static int Feat(string list)
         {
             int n = 0;
@@ -92,9 +123,15 @@ namespace NeoBuzz.AutoWarpEval
                 net.Forward(q, frames, lg, ft);
                 double fwd = swp.Elapsed.TotalMilliseconds;
                 Console.WriteLine($"  front end {front:0} ms, forward {fwd:0} ms ({frames} frames)");
-                var res = AudioAnalysis.AutoWarp(src, 4);
-                proc.Refresh();
-                Console.WriteLine($"pass {pass}: {src.Seconds:0} s of audio, d={net.D}: decode {decode:0} ms, total {sw.Elapsed.TotalMilliseconds:0} ms wall, {(proc.TotalProcessorTime - cpu0).TotalMilliseconds:0} ms cpu, cores {Environment.ProcessorCount}, found {res.Found}, markers {res.Markers.Count}, bpm {res.Bpm:0.00}");
+                // The whole analysis as the app runs it, timed on its own (the stages above are not part of it): decoding, model, DSP, selection, markers.
+                var proc2 = Process.GetCurrentProcess(); var cpu1 = proc2.TotalProcessorTime;
+                var sw2 = Stopwatch.StartNew();
+                var (audio2, rate2) = Wav.Read(path);
+                var src2 = new AudioSource(audio2, audio2, rate2);
+                var res = AudioAnalysis.AutoWarp(src2, 4);
+                double total = sw2.Elapsed.TotalMilliseconds;
+                proc2.Refresh();
+                Console.WriteLine($"pass {pass}: {src.Seconds:0} s of audio, d={net.D}: decode {decode:0} ms, total (decoding, model, DSP check, markers) {total:0} ms wall, {(proc2.TotalProcessorTime - cpu1).TotalMilliseconds:0} ms cpu, cores {Environment.ProcessorCount}, found {res.Found}, markers {res.Markers.Count}, bpm {res.Bpm:0.00}");
             }
             File.Delete(path);
             return 0;
