@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace ReBuzz.Core.Clips
 {
-    internal static class AudioAnalysis
+    internal static partial class AudioAnalysis
     {
         const int FrameSize = 1024;
         const int FrameHop = 256;
@@ -131,9 +131,13 @@ namespace ReBuzz.Core.Clips
         /// The same, saying whether a tempo was found (<paramref name="found"/>): bars that fit, or transients that keep a beat. When not, the
         /// 120 returned is only a place to start from.
         /// </summary>
-        public static (double Bpm, double Beats) Tempo(AudioSource source, int beatsPerBar, out bool found)
+        public static (double Bpm, double Beats) Tempo(AudioSource source, int beatsPerBar, out bool found) => Tempo(source, beatsPerBar, out found, out _);
+
+        /// <summary>The same, saying too whether the tempo is the one a whole number of bars makes of the audio's length (<paramref name="fromBars"/>: a loop).</summary>
+        internal static (double Bpm, double Beats) Tempo(AudioSource source, int beatsPerBar, out bool found, out bool fromBars)
         {
             found = false;
+            fromBars = false;
             source = source.ForAnalysis();
             double seconds = source.Seconds;
             if (seconds <= 0) return (120, 1);
@@ -149,6 +153,7 @@ namespace ReBuzz.Core.Clips
             if (barsBpm > 0 && (ac <= 0 || confidence < 0.3 || Math.Abs(ac - barsBpm) / barsBpm < 0.04))
             {
                 found = true;
+                fromBars = true;
                 return (barsBpm, Math.Round(barsBpm * seconds / 60));
             }
             // No bars fit and nothing in the transients keeps a beat (silence, noise, a pad, a clip under a quarter of a

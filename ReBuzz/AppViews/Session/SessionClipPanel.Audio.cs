@@ -74,7 +74,7 @@ namespace ReBuzz.AppViews.Session
                               "The clip's length follows (without warp markers). Found when the file was dropped.", CommitFields);
                     var half = new FlatButton("÷2", () => Commit(a => { a.Bpm = Math.Max(1, a.Bpm / 2); a.Markers.Clear(); }), "Half the tempo: the clip is half as many beats long") { Margin = new Thickness(4, 0, 0, 0) };
                     var twice = new FlatButton("×2", () => Commit(a => { a.Bpm = Math.Min(999, a.Bpm * 2); a.Markers.Clear(); }), "Double the tempo: the clip is twice as many beats long") { Margin = new Thickness(2, 0, 0, 0) };
-                    var find = new FlatButton("Detect", () => { if (!loading) detect(); }, "Find the tempo again from the audio (its length in bars, and its transients); clears warp markers") { Margin = new Thickness(2, 0, 0, 0) };
+                    var find = new FlatButton("Auto-warp", () => { if (!loading) detect(); }, "Find the beats in the audio and follow its tempo where it moves: the warp markers and the tempo are replaced") { Margin = new Thickness(2, 0, 0, 0) };
                     var bpmRow = new StackPanel { Orientation = Orientation.Horizontal, Children = { bpm, half, twice, find } };
 
                     gain = Box("Clip gain in dB (−70 to +24)", CommitFields);

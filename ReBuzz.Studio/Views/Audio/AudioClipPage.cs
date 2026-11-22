@@ -107,7 +107,7 @@ namespace ReBuzz.Studio.Views.Audio
             tempo = Box("The audio's own tempo. Without warp markers the clip's length follows it: 4 beats at 120 BPM are 8 at 60.", CommitTempo, "Tempo");
             halve = Btn("÷2", "Half the tempo (the clip twice as long)", () => ScaleTempo(0.5), "Halve tempo");
             doubleIt = Btn("×2", "Double the tempo (the clip half as long)", () => ScaleTempo(2), "Double tempo");
-            detect = Btn("Detect", "Find the tempo again from the audio (the warp markers are cleared)", () => Apply(new AudioClipEdit { DetectTempo = true }, "Detect tempo"), "Detect tempo");
+            detect = Btn("Auto-warp", "Find the beats in the audio and follow its tempo where it moves: the warp markers and the tempo are replaced (one undo step). A steady tempo gives one tempo and the first downbeat; a tempo that drifts gives a marker on every bar.", () => Apply(new AudioClipEdit { AutoWarp = true }, "Auto-warp"), "Auto-warp");
             // Fork (docs/specs/pitch.md section 9): the clip's notes as MIDI on a new track; the page's right-click menu offers the same.
             var convertMenu = ConvertFlow.ButtonMenu(() => shown);
             convert = Btn("Convert to MIDI ▾", "Find the melody, the harmony or the drums in the audio and put them on a new MIDI track, in a clip where this one is", () => convertMenu.Open(convert), "Convert to MIDI");
@@ -167,7 +167,7 @@ namespace ReBuzz.Studio.Views.Audio
                 {
                     Section("Audio"),
                     Row("Warp", warp), preserveRow,
-                    Row("Tempo", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3, Children = { tempo, halve, doubleIt, detect } }),
+                    Row("Tempo", new StackPanel { Orientation = Orientation.Vertical, Spacing = 4, Children = { new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3, Children = { tempo, halve, doubleIt } }, detect } }),
                     Row("Transpose", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { transpose, Unit("semitones") } }),
                     Row("Detune", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { detune, Unit("cents") } }),
                     Row("Gain", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { gain, Unit("dB") } }),

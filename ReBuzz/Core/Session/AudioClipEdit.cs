@@ -19,6 +19,13 @@ namespace ReBuzz.Core
         public double? TempoBpm;
         /// <summary>Finds the tempo again from the audio (markers are cleared).</summary>
         public bool DetectTempo;
+        /// <summary>
+        /// Auto-warp (AW1): finds the beats of the audio, follows the tempo where it moves, and replaces the warp markers and the tempo with what it finds, as one step
+        /// (<see cref="FromSeconds"/> from later in the audio: the markers before stay). Nothing is changed when no beats are found.
+        /// </summary>
+        public bool AutoWarp;
+        /// <summary>Auto-warp from this many seconds into the audio (default: from its start).</summary>
+        public double? FromSeconds;
         public int? Transpose, Detune;
         public double? GainDb;
         /// <summary>The clip's fades in beats (0 none); they play in the arrangement.</summary>
@@ -35,6 +42,7 @@ namespace ReBuzz.Core
         {
             if (Warp != null && Find(SessionDocument.AudioSettings.WarpModes, Warp) == null) return $"warp: one of {string.Join(", ", SessionDocument.AudioSettings.WarpModes)}.";
             if (Preserve != null && Find(SessionDocument.AudioSettings.PreserveModes, Preserve) == null) return $"preserve: one of {string.Join(", ", SessionDocument.AudioSettings.PreserveModes)}.";
+            if (FromSeconds is double from && (!double.IsFinite(from) || from < 0)) return "from_seconds: 0 or more.";
             if (Markers != null && Markers.Count(x => double.IsFinite(x.Sample) && double.IsFinite(x.Beat)) == 1) return "warp_markers needs at least 2 markers (or [] for none).";
             return null;
         }
@@ -52,7 +60,7 @@ namespace ReBuzz.Core
                 a.Bpm = Math.Clamp(bpm, 1, 999);
                 if (a.Warp == "Off" && Warp == null) a.Warp = SessionDocument.AudioSettings.DefaultWarp;
             }
-            if (DetectTempo && a.Warp == "Off" && Warp == null) a.Warp = SessionDocument.AudioSettings.DefaultWarp;
+            if ((DetectTempo || AutoWarp) && a.Warp == "Off" && Warp == null) a.Warp = SessionDocument.AudioSettings.DefaultWarp;
             if (FadeIn is double fi) { a.FadeIn = Math.Max(0, fi); if (fi <= 0) a.CrossIn = false; }
             if (FadeOut is double fo) a.FadeOut = Math.Max(0, fo);
             if (Transpose is int tr) a.Transpose = Math.Clamp(tr, -48, 48);

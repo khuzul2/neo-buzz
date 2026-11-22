@@ -15,13 +15,13 @@ namespace ReBuzz.Core.Session
     internal sealed class WarpRequest
     {
         public const string Add = "add", Move = "move", MoveAlong = "move_along", SegmentTempo = "segment_tempo", HalveSegment = "halve_segment",
-            DoubleSegment = "double_segment", SetBarOne = "set_bar_one", WarpStraight = "warp_straight", WarpLoop = "warp_loop",
+            DoubleSegment = "double_segment", SetBarOne = "set_bar_one", WarpStraight = "warp_straight", WarpFollow = "warp_follow", WarpLoop = "warp_loop",
             InsertAtTransients = "insert_at_transients", InsertEveryBar = "insert_every_bar", Delete = "delete", RemoveAll = "remove_all",
             Quantize = "quantize", QuantizeStrength = "quantize_strength", List = "list";
 
         public static readonly string[] Actions =
         {
-            Add, Move, MoveAlong, SegmentTempo, HalveSegment, DoubleSegment, SetBarOne, WarpStraight, WarpLoop, InsertAtTransients, InsertEveryBar, Delete, RemoveAll,
+            Add, Move, MoveAlong, SegmentTempo, HalveSegment, DoubleSegment, SetBarOne, WarpStraight, WarpFollow, WarpLoop, InsertAtTransients, InsertEveryBar, Delete, RemoveAll,
             Quantize, QuantizeStrength, List,
         };
 
@@ -46,7 +46,7 @@ namespace ReBuzz.Core.Session
         public string Label => Action switch
         {
             Add => "Add warp marker", Move => "Move warp markers", MoveAlong => "Move warp marker along the audio", SegmentTempo => "Segment tempo",
-            HalveSegment => "Halve segment tempo", DoubleSegment => "Double segment tempo", SetBarOne => "Set bar 1 here", WarpStraight => "Warp from here, straight",
+            HalveSegment => "Halve segment tempo", DoubleSegment => "Double segment tempo", SetBarOne => "Set bar 1 here", WarpStraight => "Warp from here, straight", WarpFollow => "Warp from here",
             WarpLoop => "Warp as a loop", InsertAtTransients => "Insert markers at the transients", InsertEveryBar => "Insert a marker on every bar",
             Delete => "Delete warp markers", RemoveAll => "Remove all warp markers", Quantize => "Quantize warp markers", _ => "Warp markers",
         };
@@ -163,6 +163,18 @@ namespace ReBuzz.Core.Session
                     }
                     result = WarpMath.StraightFrom(m, at.Value, bpm, length, rate);
                     break;
+                }
+                case WarpRequest.WarpFollow:
+                {
+                    // Auto-warp (AW1) from here: the markers before stay, the beats after are found and followed. The same edit as audio_clip_set(auto_warp, from_seconds).
+                    if (reverse) return "Warp from here isn't offered for a reversed clip: turn reverse off first.";
+                    if (at == null) return "warp_follow needs a sample, or a beat.";
+                    string why = EditAudio(pattern, new AudioClipEdit { AutoWarp = true, FromSeconds = at.Value / rate }, editor, label ?? request.Label);
+                    if (why != null) return why;
+                    var now = WarpMarkersOf(pattern);
+                    result = new WarpResult { Markers = now, Count = now.Count(x => x.Sample >= at.Value - 1) };
+                    for (int i = 0; i < now.Count; i++) if (now[i].Sample >= at.Value - 1) result.Touched.Add(i);
+                    return null;
                 }
                 case WarpRequest.WarpLoop:
                 {

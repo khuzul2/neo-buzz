@@ -624,6 +624,14 @@ namespace ReBuzz.Studio.Views.Audio
             Ask(new WarpRequest { Action = WarpRequest.WarpStraight, Sample = s });
         }
 
+        /// <summary>Warp from here, following the tempo changes: auto-warp of the audio from this moment on (the markers before it stay).</summary>
+        public void WarpFollowHere()
+        {
+            double s = HereSample(out bool ok);
+            if (!ok) { SetHint("Point at the moment first, then warp from there."); return; }
+            Ask(new WarpRequest { Action = WarpRequest.WarpFollow, Sample = s });
+        }
+
         /// <summary>The range the next edit is about: the selected time range, else the span of the selected markers (two or more), else none (the clip's own region, or the whole clip).</summary>
         void FillRange(WarpRequest r)
         {
@@ -697,6 +705,7 @@ namespace ReBuzz.Studio.Views.Audio
                 return item;
             }
             m.Items.Add(Item("Set bar 1 here", "Cmd+B", SetBarOneHere, any && !reverse));
+            m.Items.Add(Item("Warp from here", null, WarpFollowHere, any && !reverse));
             m.Items.Add(Item("Warp from here, straight", null, WarpStraightHere, any && !reverse));
             m.Items.Add(Item($"Warp as a loop of {(any ? LoopBarsNow() : 1)} bar{(any && LoopBarsNow() == 1 ? "" : "s")}", "Cmd+L", WarpAsLoop, any));
             m.Items.Add(new Separator());

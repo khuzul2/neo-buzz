@@ -1,9 +1,9 @@
 ## How it sounds
 
-The audio track of the Session View and the arrangement: it plays audio clips (a WAV, AIFF, FLAC, OGG or MP3 file kept inside the song), warped to the song's tempo, and records takes from its input or from the master. It is silent until a clip plays. Two parameters: what you hear of the input, and what a take records.
+The audio track of the Session View and the arrangement: it plays audio clips (WAV, AIFF, FLAC, OGG or MP3, kept inside the song), warped to the song's tempo, and records takes from its input or from the master. Two parameters: what you hear of the input, and what a take records.
 
-- A clip warps in one of five modes: Off (its own speed), Repitch (a turntable: tempo and pitch move together), Beats (slices on the transients, for drums and loops), Complex (a phase vocoder, for anything) and Pro (the best quality stretch and pitch shift, for anything, at more CPU). Transpose is -48 to +48 semitones, detune is in cents, gain in dB.
-- The tempo of an imported file is found when it is imported (a loop is taken as whole bars, other audio by its transients). A file with no tempo to find plays at its own speed (warp Off) until one is set: `audio_clip_set(..., tempo_bpm=96)` or `detect_tempo=true` turns warp to Pro. A clip follows the song's tempo unless its warp is Off.
+- A clip warps in one of five modes: Off (its own speed), Repitch (a turntable: tempo and pitch move together), Beats (slices on the transients, for drums and loops), Complex (a phase vocoder, for anything) and Pro (the best stretch and pitch shift, for anything, at more CPU). Transpose is -48 to +48 semitones, detune is in cents, gain in dB.
+- An imported file's tempo is found at import (a loop is taken as whole bars, other audio by its transients). A file with no tempo to find plays at its own speed (warp Off) until one is set: `audio_clip_set(..., tempo_bpm=96)` or `detect_tempo=true` turns warp to Pro. A clip follows the song's tempo unless its warp is Off.
 
 ## Use it for
 
@@ -15,7 +15,7 @@ The audio track of the Session View and the arrangement: it plays audio clips (a
 - `Monitor` (auto): hear the input only while the track is armed; `in` always, `off` never.
 - `Input` (in): `in` records what is connected to the track; `master` records the song's output (resampling).
 - Each clip's warp: a new clip starts in Pro (songs saved earlier keep the mode they were saved with, Beats when none); Beats suits drums and loops. Off, Repitch, Beats, Complex or Pro; set it with `audio_clip_set`.
-- Each clip's tempo (found at import): the tempo of the audio, which sets the clip's length in beats; `detect_tempo` finds it again.
+- Each clip's tempo (found at import): the tempo of the audio, which sets the clip's length in beats; `detect_tempo` finds it again; `auto_warp=true` follows tempo changes (`from_seconds`: after it).
 - Each clip's transpose (-48 to +48 semitones) and detune (cents): pitch without changing speed in Beats, Complex and Pro.
 - Each clip's gain (0 dB): -70 to +24 dB.
 - Each clip's loop and region: where it starts and what part repeats.
@@ -25,7 +25,7 @@ The audio track of the Session View and the arrangement: it plays audio clips (a
 
 - Import a file: `audio_import(path="/music/loop.wav", track="Drums audio", slot=1)`; leave `track` out to get a new audio track named after the file.
 - Change it: `audio_clip_set(machine="Drums audio", pattern="loop", warp="Complex", transpose=-2, gain_db=-3)`; `audio_clip_get` reads it back.
-- Warp markers, as the Audio page edits them, one undo step each: `audio_warp_markers(machine="Drums audio", pattern="loop", action="insert_at_transients")`, then `action="quantize", markers=[1,2], grid_beats=0.5`; `list` shows each marker's segment tempo. The first and last markers (the audio's ends) stay.
+- Warp markers, as the Audio page edits them, one undo step each: `audio_warp_markers(machine="Drums audio", pattern="loop", action="insert_at_transients")`, then `action="quantize", markers=[1,2], grid_beats=0.5`; `list` shows segment tempos; `warp_follow`: auto-warp from a point. The first and last markers (the audio's ends) stay.
 - Split a clip (or a file) into stems on new tracks: `audio_separate(machine="Drums audio", pattern="loop", quality="Fast", stems=["drums", "bass"])` (or `path="/music/song.flac"`). Each stem gets a Neo Audio track named after it, with a clip in the same scene and at the same arrangement positions, one undo step. It needs a stem model installed (Gear/Models/Stems or Preferences > Stems; Install models takes the "NeoBuzz Live Stem Models" zip) and takes minutes for a song, longer for Balanced (four times Fast) and Best; a repeat on the same audio and quality is instant.
 - Turn a clip into MIDI on a new track: `audio_convert_to_midi(machine="Bass audio", pattern="line", mode="melody", quantize="1/16", strength=0.8)`. `mode` is `melody` (one note at a time: a voice, a lead, a bass line; `range` any, voice, guitar or bass; `pitch_bends=true` keeps a slide or vibrato as one note with bend events), `harmony` (chords and piano: several notes at once; `onset_threshold` and `frame_threshold`, lower finds more) or `drums` (kick, snare, closed and open hat, toms, cymbals as General MIDI notes; `drum_threshold`, lower finds more). The new track has Neo Poly (melody, harmony) or Neo Drums, and a clip of the same length in the same scene and at the same arrangement positions; one undo step; it takes seconds. `apply=false` lists the notes without changing anything: check a conversion before keeping it. The clip's transpose is added to the pitches; its warp markers place the notes. Melody and drums are strongest on a clean single line and on kick, snare and closed hat; open hats, toms and cymbals are weaker.
 - Best quality for vocals, pads and full mixes: `audio_clip_set(machine="Vocals audio", pattern="verse", warp="pro", tempo_bpm=96)`; `audio_clip_get` reports `pro`, and `warp_playing` too when the clip is playing as Complex because the native library is missing.

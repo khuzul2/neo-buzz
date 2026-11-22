@@ -2289,7 +2289,7 @@ namespace ReBuzz.Studio.Tests
                     Click(window, Centre(wave, window, 0, 0.6) + new Vector(wave.X(6.4), 0), MouseButton.Right);
                     menus.Add(wave.LastMenu!);
                     Settle();
-                    Shot(window, "464-warp-context-menu", "Warp markers (WM1): the waveform's menu (Set bar 1 here, Warp from here straight, Warp as a loop of N bars, markers at the transients or on every bar, Delete, Remove all, Quantize), each one undo step with its key beside it.", "Right-click the waveform.");
+                    Shot(window, "464-warp-context-menu", "Warp markers (WM1): the waveform's menu (Set bar 1 here, Warp from here (auto-warp from that moment: it follows the tempo changes, AW1), Warp from here, straight (one tempo), Warp as a loop of N bars, markers at the transients or on every bar, Delete, Remove all, Quantize), each one undo step with its key beside it.", "Right-click the waveform.");
                     CloseMenus();
                 });
             }
