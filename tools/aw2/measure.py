@@ -7,6 +7,7 @@ Nothing of it is trained on, committed or uploaded: items are written to a runne
     measure.py DATA_DIR [gtzan] [ballroom]       writes DATA_DIR/<set>/NAME.wav and NAME.json (split "test")
 """
 import json, os, re, subprocess, sys, tarfile, zipfile
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 
 AUDIO = {"gtzan": "https://huggingface.co/datasets/marsyas/gtzan/resolve/main/data/genres.tar.gz",
@@ -85,7 +86,14 @@ def run(name, root):
                 continue
             nm = f"{name}_{k}"
             wav = os.path.join(out, nm + ".wav")
-            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", os.path.join(d, f), "-ac", "1", "-ar", "22050", wav], check=True)
+            try:
+                import soundfile as sf
+                from common import to_mono22k, write_wav
+                x, r = sf.read(os.path.join(d, f), dtype="float32")
+                write_wav(wav, to_mono22k(x, r))
+            except Exception as e:  # noqa: BLE001
+                print(f"{name}: {f} could not be read ({type(e).__name__}: {e}); skipped", flush=True)
+                continue
             json.dump({"beats": beats, "downbeats": downs, "beats_per_bar": 4, "split": "test", "dataset": name, "licence": "measure-only", "source": name}, open(os.path.join(out, nm + ".json"), "w"))
             n += 1
     print(f"{name}: {n} items matched to annotations", flush=True)
