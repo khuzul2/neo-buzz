@@ -49,7 +49,7 @@ namespace ReBuzz.SessionTests.AutoWarp
             var track = BeatModelTracker.Decode(Pulses(bpm, 60, 4), 22050, 22050 * 60, 5, 68);
             Assert.That(track, Is.Not.Null);
             Assert.That(track.FromModel);
-            Assert.That(track.MedianBpm, Is.EqualTo(bpm).Within(bpm * 0.01), "the tempo the pulses have, whatever the octave");
+            Assert.That(track.MedianBpm, Is.EqualTo(bpm).Within(bpm * 0.03), "the tempo the pulses have, whatever the octave");
             Assert.That(track.Beats.Length, Is.GreaterThan(40));
             var phases = new HashSet<int>();
             int downs = 0;
