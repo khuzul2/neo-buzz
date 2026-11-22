@@ -2259,6 +2259,39 @@ namespace ReBuzz.Studio.Tests
                     }
                     Shot(window, "461-warp-marker-editing", "Editing warp markers on the Audio page (NA3): double-click adds a marker pinned to a transient when one is near, a drag warps the audio between markers and snaps to the beat grid (Shift is free), double-click or Del removes one.", "Double-click the waveform; drag a marker; Del.");
                 });
+                Try("462-warp-ghost-marker", () =>
+                {
+                    CloseMenus();
+                    var page = (ReBuzz.Studio.Views.Audio.AudioClipPage)window.Detail.AudioPage;
+                    var wave = page.Wave;
+                    Point Mid(double x) => Centre(wave, window, 0, 0.5) + new Vector(x - wave.Bounds.Width / 2 * 0, 0);
+                    var marked = Enumerable.Range(0, wave.Markers.Count).Select(k => wave.MarkerX(k)).ToList();
+                    var clear = layout.TransientsOf(inSession).Select(t => wave.TransientX(t)).Where(x => x > 30 && x < wave.Bounds.Width - 30 && marked.All(m => Math.Abs(m - x) > 40)).ToList();
+                    window.MouseMove(Mid(clear.Count > 0 ? clear[clear.Count / 2] : 200));
+                    Settle();
+                    Shot(window, "462-warp-ghost-marker", "Warp markers (WM1): hovering a transient shows a ghost marker; dragging it makes the marker and warps the audio in one undo step. The line under the tools names what a drag will do.", "Hover a transient on the waveform, then drag.");
+                });
+                Try("463-warp-selection-segment-tempo", () =>
+                {
+                    var page = (ReBuzz.Studio.Views.Audio.AudioClipPage)window.Detail.AudioPage;
+                    var wave = page.Wave;
+                    Point Mid(double x) => Centre(wave, window, 0, 0.5) + new Vector(x, 0);
+                    int n = wave.Markers.Count;
+                    Click(window, Mid(wave.MarkerX(Math.Min(1, n - 1))));
+                    if (n > 3) Click(window, Mid(wave.MarkerX(2)), MouseButton.Left, RawInputModifiers.Shift);
+                    Settle();
+                    Shot(window, "463-warp-selection-segment-tempo", "Warp markers (WM1): a click selects a marker, Shift or " + (OperatingSystem.IsMacOS() ? "Cmd" : "Ctrl") + "+click adds more (a drag on the waveform selects a time range); the tempo of the segments before and after it is shown, editable, with halve and double.", "Click a marker, Shift+click another.");
+                });
+                Try("464-warp-context-menu", () =>
+                {
+                    var page = (ReBuzz.Studio.Views.Audio.AudioClipPage)window.Detail.AudioPage;
+                    var wave = page.Wave;
+                    Click(window, Centre(wave, window, 0, 0.6) + new Vector(wave.X(6.4), 0), MouseButton.Right);
+                    menus.Add(wave.LastMenu!);
+                    Settle();
+                    Shot(window, "464-warp-context-menu", "Warp markers (WM1): the waveform's menu (Set bar 1 here, Warp from here straight, Warp as a loop of N bars, markers at the transients or on every bar, Delete, Remove all, Quantize), each one undo step with its key beside it.", "Right-click the waveform.");
+                    CloseMenus();
+                });
             }
             finally
             {

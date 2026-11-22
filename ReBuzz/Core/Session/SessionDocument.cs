@@ -370,6 +370,8 @@ namespace ReBuzz.Core.Session
         public int CountInBars { get => Settings.CountInBars; set => Settings.CountInBars = value; }
         /// <summary>The metronome clicks while the session plays (0.7).</summary>
         public bool Metronome { get => Settings.Metronome; set => Settings.Metronome = value; }
+        /// <summary>How far Quantize moves a warp marker toward the grid, in percent (WM1): the Audio page's field, kept with the song.</summary>
+        public int QuantizeStrength { get => Settings.QuantizeStrength; set => Settings.QuantizeStrength = value; }
 
         /// <summary>Made up from the song, not edited yet (0.6.1): not saved, so plain songs stay plain. Not serialized.</summary>
         internal bool AutoFilled { get; set; }
@@ -733,6 +735,7 @@ namespace ReBuzz.Core.Session
                 ShowClipPanel ? null : new XAttribute("showClipPanel", "false"),
                 FollowActionsEnabled ? null : new XAttribute("followActions", "false"),
                 ScenesStopOtherClips ? new XAttribute("scenesStopOtherClips", "true") : null,
+                QuantizeStrength == 100 ? null : new XAttribute("quantizeStrength", QuantizeStrength),
                 new XElement("Scenes", Scenes.Select(s =>
                 {
                     var e = new XElement("Scene");
@@ -818,6 +821,7 @@ namespace ReBuzz.Core.Session
                     ShowClipPanel = (string)root.Attribute("showClipPanel") != "false",
                     FollowActionsEnabled = (string)root.Attribute("followActions") != "false",
                     ScenesStopOtherClips = (string)root.Attribute("scenesStopOtherClips") == "true",
+                    QuantizeStrength = Math.Clamp(IntAttr(root, "quantizeStrength", 100), 0, 100),
                     SongMidi = root.Element("Midi") is XElement midi ? SessionMidiMap.FromXml(midi) : null,
                 };
                 if (root.Element("Record") is XElement record)
@@ -922,5 +926,6 @@ namespace ReBuzz.Core.Session
         public int RecordBars { get; set; }
         public int CountInBars { get; set; }
         public bool Metronome { get; set; }
+        public int QuantizeStrength { get; set; } = 100;
     }
 }
