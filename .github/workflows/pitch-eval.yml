@@ -1135,7 +1135,7 @@ jobs:
         retention-days: 14
 
   aw2c-measure:
-    if: ${{ github.event.inputs.aw2c_measure == 'true' }}
+    if: ${{ github.event.inputs.aw2c_measure == 'true' || github.event.inputs.aw2c_measure == 'check' }}
     needs: aw2-tools
     runs-on: ubuntu-latest
     timeout-minutes: 90
