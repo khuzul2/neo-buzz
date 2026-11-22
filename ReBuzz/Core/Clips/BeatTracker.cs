@@ -30,6 +30,10 @@ namespace ReBuzz.Core.Clips
         public double[] Low = Array.Empty<double>(), Full = Array.Empty<double>(), Change = Array.Empty<double>();
         /// <summary>The tempo over the whole piece: the median beat interval, in BPM (0 when there are no beats).</summary>
         public double MedianBpm;
+        /// <summary>From the beat model (AW2): the beats are at the model's own level (55 to 215 BPM), <see cref="Down"/> is the downbeat activation at each beat.</summary>
+        public bool FromModel;
+        public int ModelVersion;
+        public double[] Down;
         public bool Found => Beats.Length >= 4;
         /// <summary>Whether the audio is short enough to be one clip's worth of loop (kept for callers that ask).</summary>
         public double Seconds => Length / (double)Math.Max(1, Rate);
@@ -129,13 +133,33 @@ namespace ReBuzz.Core.Clips
         static readonly int[] Harmonics = { 1, 2, 4 };
         static readonly double[] HarmonicWeights = { 1.0, 0.6, 0.5 };
 
-        static readonly System.Runtime.CompilerServices.ConditionalWeakTable<AudioSource, Lazy<BeatTrack>> cache = new();
+        static readonly System.Runtime.CompilerServices.ConditionalWeakTable<AudioSource, Dictionary<int, Lazy<BeatTrack>>> cache = new();
 
-        /// <summary>The beats of the audio, once per source (also for a streamed one: it reads the file's exact samples). Never on the audio thread.</summary>
+        /// <summary>The beats of the audio, once per source and model version (also for a streamed one: it reads the file's exact samples). From the beat model when there is one and it is sure, else AW1's DSP tracker. Never on the audio thread.</summary>
         public static BeatTrack Of(AudioSource source)
         {
-            var lazy = cache.GetValue(source, s => new Lazy<BeatTrack>(() => Track(s.ForAnalysis()), System.Threading.LazyThreadSafetyMode.ExecutionAndPublication));
+            var net = BeatModel.Current;
+            int version = net?.Version ?? 0;
+            var perSource = cache.GetOrCreateValue(source);
+            Lazy<BeatTrack> lazy;
+            lock (perSource)
+            {
+                if (!perSource.TryGetValue(version, out lazy))
+                    perSource[version] = lazy = new Lazy<BeatTrack>(() => TrackBest(source, net), System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
+            }
             return lazy.Value;
+        }
+
+        static BeatTrack TrackBest(AudioSource source, BeatModelNet net)
+        {
+            if (net != null)
+            {
+                System.Threading.Interlocked.Increment(ref Runs);
+                BeatTrack t = null;
+                try { t = BeatModelTracker.Track(source, net); } catch (Exception) { t = null; }
+                if (t != null) return t;
+            }
+            return Track(source.ForAnalysis());
         }
 
         sealed class Frames
