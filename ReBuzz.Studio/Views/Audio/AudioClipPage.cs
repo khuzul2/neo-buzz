@@ -19,14 +19,16 @@ using BuzzGUI.Interfaces;
 using ReBuzz.Core;
 using ReBuzz.Core.Session;
 using ReBuzz.Studio.Shell;
+using ReBuzz.Studio.Shell.Commands;
 using ReBuzz.Studio.Shell.Design;
+using ReBuzz.Studio.Views;
 using ReBuzz.Studio.Views.Session;
 
 namespace ReBuzz.Studio.Views.Audio
 {
     using Control = Avalonia.Controls.Control;
 
-    internal sealed class AudioClipPage : Border
+    internal sealed class AudioClipPage : Border, IStudioEditTarget
     {
         /// <summary>Where the selected clip is edited from: a slot of the Session, a clip of the Arrangement, or just its pattern.</summary>
         internal enum Where { None, Session, Arrangement, Pattern }
@@ -56,12 +58,16 @@ namespace ReBuzz.Studio.Views.Audio
         readonly StudioSelection selection;
         readonly ClipEditor editor;
         readonly WarpEditor wave;
-        readonly TextBlock title, info, status, empty, markerInfo;
+        readonly TextBlock title, info, status, empty, markerInfo, hintText;
         readonly Grid body;
         readonly ComboBox warp, preserve;
         readonly Control preserveRow;
         readonly TextBox tempo, transpose, detune, gain, fadeIn, fadeOut, start, loopStart, loopEnd;
         readonly Button halve, doubleIt, detect, clear, fit, convert;
+        // Fork (WM1): segment tempo, quantize and follow.
+        readonly TextBox segBefore, segAfter, strength;
+        readonly Button segHalve, segDouble, quantize;
+        readonly CheckBox follow;
         readonly CheckBox loop, reverse;
         readonly TextBlock regionText;
         readonly DispatcherTimer playTimer;
@@ -121,9 +127,23 @@ namespace ReBuzz.Studio.Views.Audio
             wave = new WarpEditor { Margin = new Thickness(0, 4, 0, 0) };
             wave.MarkersCommitted += m => Apply(new AudioClipEdit { Markers = m.ToList() }, "Warp markers");
             wave.RegionCommitted += (s, ls, le) => CommitRegionTicks(s, ls, le);
-            fit = Btn("Fit", "Show the whole clip", () => wave.Fit(), "Fit");
+            wave.ActionRequested += (request, label) => ApplyWarp(request, label);
+            wave.SelectionChanged += UpdateSegments;
+            fit = Btn("Fit", "Zoom to show the whole clip", () => wave.Fit(), "Fit");
+            follow = Check("Follow", "Scroll the waveform to keep the playing position in view", () => wave.Follow = follow.IsChecked == true);
+            follow.Margin = new Thickness(4, 0, 4, 0);
             clear = Btn("Clear markers", "Back to straight, at the clip's tempo", () => Apply(new AudioClipEdit { Markers = new() }, "Clear warp markers"), "Clear markers");
+            quantize = Btn("Quantize", "Move the selected markers (or the markers, or transients, in the selected range) toward the nearest grid line by the strength beside it. " + (KeyText.IsMac ? "⌘U" : "Ctrl+U"), () => wave.Quantize(), "Quantize");
+            strength = Box("How far Quantize moves a marker toward the grid, 0 to 100 % (kept with the song)", CommitStrength, "Quantize strength");
+            strength.Width = 44;
+            segBefore = Box("The tempo of the segment before the selected marker, BPM. Type one: the marker moves and only that segment is stretched.", () => CommitSegment(false), "Segment tempo before");
+            segAfter = Box("The tempo of the segment after the selected marker, BPM. Type one: the next marker moves and only that segment is stretched.", () => CommitSegment(true), "Segment tempo after");
+            segBefore.Width = segAfter.Width = 62;
+            segHalve = Btn("÷2", "Halve the tempo of the segment after the selected marker (before it, for the last marker)", () => ScaleSegment(0.5), "Halve segment tempo");
+            segDouble = Btn("×2", "Double the tempo of the segment after the selected marker (before it, for the last marker)", () => ScaleSegment(2), "Double segment tempo");
             markerInfo = new TextBlock { FontSize = 11, Foreground = StudioTokens.TextSecondaryBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
+            hintText = new TextBlock { FontSize = 11, Foreground = StudioTokens.TextSecondaryBrush, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 2, 0, 0), Text = wave.Hint };
+            wave.HintChanged += t => hintText.Text = t;
 
             var clipColumn = new StackPanel
             {
@@ -161,10 +181,21 @@ namespace ReBuzz.Studio.Views.Audio
                 Focusable = false,
                 Content = new StackPanel { Orientation = Orientation.Horizontal, Children = { clipColumn, audioColumn } },
             };
-            var tools = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { fit, clear, markerInfo } };
+            var tools = new WrapPanel { Orientation = Orientation.Horizontal };
+            foreach (var c in new Control[]
+            {
+                fit, follow, clear, quantize, strength, Unit("%"), Label("  Segment", 62), segBefore, segAfter, segHalve, segDouble, markerInfo,
+            })
+            {
+                c.Margin = new Thickness(c.Margin.Left, c.Margin.Top, c.Margin.Right + 4, 2);
+                c.VerticalAlignment = VerticalAlignment.Center;
+                tools.Children.Add(c);
+            }
             var right = new DockPanel { LastChildFill = true };
             DockPanel.SetDock(tools, Dock.Top);
+            DockPanel.SetDock(hintText, Dock.Bottom);
             right.Children.Add(tools);
+            right.Children.Add(hintText);
             right.Children.Add(wave);
 
             body = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), Margin = new Thickness(12, 0, 12, 8) };
@@ -218,12 +249,29 @@ namespace ReBuzz.Studio.Views.Audio
         internal Button ClearButton => clear;
         internal Button FitButton => fit;
         internal Button ConvertButton => convert;
+        internal TextBox SegmentBeforeBox => segBefore;
+        internal TextBox SegmentAfterBox => segAfter;
+        internal Button SegmentHalveButton => segHalve;
+        internal Button SegmentDoubleButton => segDouble;
+        internal Button QuantizeButton => quantize;
+        internal TextBox StrengthBox => strength;
+        internal CheckBox FollowBox => follow;
+        internal string HintText => hintText.Text;
         internal string TitleText => title.Text;
         internal string InfoText => info.Text;
         internal string StatusText => status.Text;
         internal string RegionText => regionText.Text;
         internal string MarkerText => markerInfo.Text;
         internal bool EmptyShown => empty.IsVisible;
+
+        // Fork (WM1): the Edit commands of the window (Select All, Delete, Deselect All) are the waveform's markers' while it has the keyboard; undo and redo are the song's.
+        /// <summary>Whether the keyboard is in the waveform.</summary>
+        internal bool WaveFocused(object focused) => ReferenceEquals(focused, wave);
+        bool IStudioEditTarget.Undo() => false;
+        bool IStudioEditTarget.Redo() => false;
+        bool IStudioEditTarget.Delete() { if (wave.SelectedIndices.Count == 0) return false; wave.DeleteSelected(); return true; }
+        bool IStudioEditTarget.SelectAll() { if (!wave.HasClip) return false; wave.SelectAll(); return true; }
+        bool IStudioEditTarget.DeselectAll() { wave.ClearSelection(); return true; }
 
         /// <summary>Which view the window shows now ("Session", "Arrangement"…): a clip in both is edited as the view that is shown has it.</summary>
         public Func<string> ViewShown { get; set; }
@@ -241,6 +289,9 @@ namespace ReBuzz.Studio.Views.Audio
             else if (ReferenceEquals(box, transpose) || ReferenceEquals(box, detune)) CommitPitch();
             else if (ReferenceEquals(box, gain)) CommitGain();
             else if (ReferenceEquals(box, fadeIn) || ReferenceEquals(box, fadeOut)) CommitFades();
+            else if (ReferenceEquals(box, strength)) CommitStrength();
+            else if (ReferenceEquals(box, segAfter)) CommitSegment(true);
+            else if (ReferenceEquals(box, segBefore)) CommitSegment(false);
             else CommitRegion();
         }
 
@@ -387,7 +438,9 @@ namespace ReBuzz.Studio.Views.Audio
                 int markers = audio.Markers?.Count ?? 0;
                 markerInfo.Text = markers >= 2 ? $"{markers} warp markers" : $"straight at {audio.Bpm:0.##} BPM";
                 clear.IsEnabled = markers >= 2;
+                strength.Text = Layout.QuantizeStrength.ToString(CultureInfo.InvariantCulture);
                 wave.Load(view, Layout.TransientsOf(shown), TicksPerBeat, BeatsPerBar, length, (r.Start, r.LoopStart, r.LoopEnd, r.Loop));
+                UpdateSegments();
             }
             finally
             {
@@ -436,6 +489,74 @@ namespace ReBuzz.Studio.Views.Audio
             string why = Layout.EditAudio(shown, edit, editor, label);
             if (why != null) status.Text = why;
             Refresh(force: true);                  // the controls show what the model now holds (the layout's Changed event does it too)
+        }
+
+        /// <summary>A warp marker edit of the waveform (its menu, keys or buttons): one step, through the call the agent's audio_warp_markers makes. What it made stays selected.</summary>
+        void ApplyWarp(WarpRequest request, string label)
+        {
+            if (loading || shown == null) return;
+            status.Text = "";
+            string why = Layout.WarpEdit(shown, request, editor, out var result, label);
+            if (why != null) status.Text = why;
+            Refresh(force: true);
+            if (why != null) status.Text = why;                  // the refresh clears the line: say it after
+            bool keepSelection = request.Action is WarpRequest.SegmentTempo or WarpRequest.HalveSegment or WarpRequest.DoubleSegment;   // the marker whose segment it is stays the one selected
+            if (why == null && !keepSelection && result != null && result.Touched.Count > 0 && request.Action != WarpRequest.Delete && request.Action != WarpRequest.RemoveAll)
+                wave.SelectIndices(result.Touched);
+            else if (why == null && (request.Action == WarpRequest.Delete || request.Action == WarpRequest.RemoveAll))
+                wave.ClearSelection();
+            UpdateSegments();
+        }
+
+        /// <summary>The tempo boxes of the segments either side of the selected marker.</summary>
+        void UpdateSegments()
+        {
+            if (shown == null || Layout.AudioOf(shown) == null) return;
+            int p = wave.Selected;
+            var tempos = p >= 0 && wave.Markers.Count >= 2 ? Layout.SegmentTempos(shown) : new List<double>();
+            string Show(int i) => i >= 0 && i < tempos.Count && !double.IsNaN(tempos[i]) ? tempos[i].ToString("0.##", CultureInfo.InvariantCulture) : "";
+            bool reversed = Layout.AudioOf(shown).Reverse;
+            // The boxes read left to right as the waveform does: a reversed clip shows its later segment on the left.
+            segBefore.Text = Show(reversed ? p : p - 1);
+            segAfter.Text = Show(reversed ? p - 1 : p);
+            segBefore.IsEnabled = segBefore.Text.Length > 0;
+            segAfter.IsEnabled = segAfter.Text.Length > 0;
+            segHalve.IsEnabled = segDouble.IsEnabled = segBefore.Text.Length > 0 || segAfter.Text.Length > 0;
+        }
+
+        /// <summary>The marker a segment box is about: the segment from it to the next. "After" is the one starting at the selected marker (before it, in a reversed clip).</summary>
+        int SegmentMarker(bool after)
+        {
+            int p = wave.Selected;
+            bool reversed = Layout.AudioOf(shown)?.Reverse == true;
+            return after != reversed ? p : p - 1;
+        }
+
+        void CommitSegment(bool after)
+        {
+            if (loading || shown == null) return;
+            var box = after ? segAfter : segBefore;
+            int m = SegmentMarker(after);
+            if (m < 0 || !double.TryParse(box.Text?.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double bpm) || !double.IsFinite(bpm) || bpm < 1 || bpm > 999) { UpdateSegments(); return; }
+            var now = Layout.SegmentTempos(shown);
+            if (m < now.Count && Math.Abs(now[m] - bpm) < 5e-3) { UpdateSegments(); return; }
+            ApplyWarp(new WarpRequest { Action = WarpRequest.SegmentTempo, Markers = new[] { m }, Bpm = bpm }, "Segment tempo");
+        }
+
+        void ScaleSegment(double factor)
+        {
+            if (loading || shown == null || wave.Selected < 0) return;
+            int m = segAfter.IsEnabled ? SegmentMarker(true) : SegmentMarker(false);
+            ApplyWarp(new WarpRequest { Action = factor < 1 ? WarpRequest.HalveSegment : WarpRequest.DoubleSegment, Markers = new[] { m } }, factor < 1 ? "Halve segment tempo" : "Double segment tempo");
+        }
+
+        void CommitStrength()
+        {
+            if (loading || shown == null) return;
+            if (!int.TryParse(strength.Text?.Trim().TrimEnd('%'), NumberStyles.Integer, CultureInfo.InvariantCulture, out int pct)) { strength.Text = Layout.QuantizeStrength.ToString(CultureInfo.InvariantCulture); return; }
+            pct = Math.Clamp(pct, 0, 100);
+            if (pct != Layout.QuantizeStrength) Layout.SetQuantizeStrength(pct);
+            strength.Text = pct.ToString(CultureInfo.InvariantCulture);
         }
 
         void ScaleTempo(double factor)
