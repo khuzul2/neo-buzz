@@ -58,11 +58,94 @@ namespace ReBuzz.Core.Clips
             n.lnfw = T(d); n.lnfb = T(d);
             n.wh = T(2 * d); n.bh = T(2);
             n.wt = T(n.TempoBins * d); n.bt = T(n.TempoBins);
+            // AW2b: the pointwise and depthwise weights as rows of output values (input-major), so the multiply-adds run over the outputs in vectors.
+            n.wpT = TransposeMat(n.wp, d, f);
+            n.dwT = new float[B][]; n.p1T = new float[B][]; n.p2T = new float[B][];
+            for (int i = 0; i < B; i++)
+            {
+                n.dwT[i] = TransposeMat(n.dw[i], d, n.K);
+                n.p1T[i] = TransposeMat(n.p1w[i], d * n.Ratio, d);
+                n.p2T[i] = TransposeMat(n.p2w[i], d, d * n.Ratio);
+            }
             n.w1t = Transpose(n.w1, n.C1, 1); n.w2t = Transpose(n.w2, n.C2, n.C1); n.w3t = Transpose(n.w3, n.C3, n.C2);
             return n;
         }
 
-        float[] w1t, w2t, w3t;
+        float[] w1t, w2t, w3t, wpT;
+        float[][] dwT, p1T, p2T;
+
+        /// <summary>A matrix of rows x cols (row-major) as cols x rows.</summary>
+        static float[] TransposeMat(float[] w, int rows, int cols)
+        {
+            var t = new float[w.Length];
+            for (int r = 0; r < rows; r++)
+                for (int c = 0; c < cols; c++) t[c * rows + r] = w[r * cols + c];
+            return t;
+        }
+
+        /// <summary>y[0..nout) = bias + sum over i of x[i] * wT[i * nout ..], then (add: y += instead of y =) in vectors of Vector&lt;float&gt;, four at a time held in registers.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        static void MatVec(float[] wT, float[] bias, ReadOnlySpan<float> x, Span<float> y, int nout, bool add)
+        {
+            int vc = Vector<float>.Count, nin = x.Length, j = 0;
+            for (; j + 4 * vc <= nout; j += 4 * vc)
+            {
+                var a0 = new Vector<float>(bias, j); var a1 = new Vector<float>(bias, j + vc); var a2 = new Vector<float>(bias, j + 2 * vc); var a3 = new Vector<float>(bias, j + 3 * vc);
+                for (int i = 0; i < nin; i++)
+                {
+                    var xi = new Vector<float>(x[i]);
+                    int o = i * nout + j;
+                    a0 += new Vector<float>(wT, o) * xi; a1 += new Vector<float>(wT, o + vc) * xi; a2 += new Vector<float>(wT, o + 2 * vc) * xi; a3 += new Vector<float>(wT, o + 3 * vc) * xi;
+                }
+                if (add) { a0 += new Vector<float>(y.Slice(j)); a1 += new Vector<float>(y.Slice(j + vc)); a2 += new Vector<float>(y.Slice(j + 2 * vc)); a3 += new Vector<float>(y.Slice(j + 3 * vc)); }
+                a0.CopyTo(y.Slice(j)); a1.CopyTo(y.Slice(j + vc)); a2.CopyTo(y.Slice(j + 2 * vc)); a3.CopyTo(y.Slice(j + 3 * vc));
+            }
+            for (; j + vc <= nout; j += vc)
+            {
+                var a = new Vector<float>(bias, j);
+                for (int i = 0; i < nin; i++) a += new Vector<float>(wT, i * nout + j) * new Vector<float>(x[i]);
+                if (add) a += new Vector<float>(y.Slice(j));
+                a.CopyTo(y.Slice(j));
+            }
+            for (; j < nout; j++)
+            {
+                float s = bias[j];
+                for (int i = 0; i < nin; i++) s += wT[i * nout + j] * x[i];
+                y[j] = add ? y[j] + s : s;
+            }
+        }
+
+        /// <summary>GELU (tanh form) of every element in place, in vectors: tanh(u) = 1 - 2 / (exp(2u) + 1), exp by a range reduction and a polynomial (error under 1e-6).</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        static void GeluVec(Span<float> z)
+        {
+            int vc = Vector<float>.Count, i = 0;
+            if (Vector.IsHardwareAccelerated)
+            {
+                var half = new Vector<float>(0.5f); var one = new Vector<float>(1f); var two = new Vector<float>(2f);
+                var c0 = new Vector<float>(0.7978845608028654f); var c1 = new Vector<float>(0.044715f);
+                var log2e = new Vector<float>(1.4426950408889634f); var ln2hi = new Vector<float>(0.693359375f); var ln2lo = new Vector<float>(-2.12194440e-4f);
+                var p0 = new Vector<float>(1.9875691500E-4f); var p1 = new Vector<float>(1.3981999507E-3f); var p2 = new Vector<float>(8.3334519073E-3f);
+                var p3 = new Vector<float>(4.1665795894E-2f); var p4 = new Vector<float>(1.6666665459E-1f); var p5 = new Vector<float>(5.0000001201E-1f);
+                var lo = new Vector<float>(-20f); var hi = new Vector<float>(20f);
+                for (; i <= z.Length - vc; i += vc)
+                {
+                    var x = new Vector<float>(z.Slice(i));
+                    var u = c0 * (x + c1 * x * x * x);
+                    var e2 = Vector.Min(Vector.Max(two * u, lo), hi);                        // exp(e2)
+                    var fx = Vector.Floor(e2 * log2e + half);
+                    var r = e2 - fx * ln2hi - fx * ln2lo;
+                    var r2 = r * r;
+                    var poly = ((((p0 * r + p1) * r + p2) * r + p3) * r + p4) * r + p5;
+                    var ex = poly * r2 + r + one;
+                    var pow2 = Vector.ShiftLeft(Vector.ConvertToInt32(fx) + new Vector<int>(127), 23).As<int, float>();
+                    ex *= pow2;
+                    var tanh = one - two / (ex + one);
+                    (half * x * (one + tanh)).CopyTo(z.Slice(i));
+                }
+            }
+            for (; i < z.Length; i++) z[i] = Gelu(z[i]);
+        }
 
         /// <summary>Weights (out, in, 3 freq, 3 time) as ((in * 3 + freq) * 3 + time) rows of out values, so the output channels are one contiguous vector.</summary>
         static float[] Transpose(float[] w, int co, int ci)
@@ -167,7 +250,7 @@ namespace ReBuzz.Core.Clips
                     Conv3(p2, T, c2, f2, w3t, b3, c3, t, o);
                     for (int i = 0; i < flat; i++) o[i] = Gelu(o[i]);
                     var x = X.AsSpan((int)((long)t * d), d);
-                    for (int j = 0; j < d; j++) x[j] = Dot(wp.AsSpan(j * flat, flat), o) + bp[j];
+                    MatVec(wpT, bp, o, x, d, false);
                     LayerNorm(x, ln0w, ln0b);
                 }
             });
@@ -175,7 +258,7 @@ namespace ReBuzz.Core.Clips
             for (int b = 0; b < Blocks; b++)
             {
                 int dil = Dil[b], k = K, half = k / 2;
-                var dwb_ = dw[b]; var dwbias = dwb[b];
+                var dwT_ = dwT[b]; var dwbias = dwb[b];
                 Parallel.For(0, (T + 255) / 256, blk =>
                 {
                     for (int t = blk * 256; t < Math.Min(T, blk * 256 + 256); t++)
@@ -187,22 +270,27 @@ namespace ReBuzz.Core.Clips
                             int tt = t + (j - half) * dil;
                             if (tt < 0 || tt >= T) continue;
                             var xs = X.AsSpan((int)((long)tt * d), d);
-                            for (int c = 0; c < d; c++) y[c] += dwb_[c * k + j] * xs[c];
+                            var wj = dwT_.AsSpan(j * d, d);
+                            int c = 0;
+                            for (; c <= d - Vector<float>.Count; c += Vector<float>.Count)
+                                (new Vector<float>(y.Slice(c)) + new Vector<float>(wj.Slice(c)) * new Vector<float>(xs.Slice(c))).CopyTo(y.Slice(c));
+                            for (; c < d; c++) y[c] += wj[c] * xs[c];
                         }
                         LayerNorm(y, lnw[b], lnb[b]);
                     }
                 });
                 int h = d * Ratio;
-                var w1_ = p1w[b]; var b1_ = p1b[b]; var w2_ = p2w[b]; var b2_ = p2b[b];
+                var w1_ = p1T[b]; var b1_ = p1b[b]; var w2_ = p2T[b]; var b2_ = p2b[b];
                 Parallel.For(0, (T + 255) / 256, blk =>
                 {
                     var z = new float[h];
                     for (int t = blk * 256; t < Math.Min(T, blk * 256 + 256); t++)
                     {
                         var y = Y.AsSpan((int)((long)t * d), d);
-                        for (int j = 0; j < h; j++) z[j] = Gelu(Dot(w1_.AsSpan(j * d, d), y) + b1_[j]);
+                        MatVec(w1_, b1_, y, z, h, false);
+                        GeluVec(z);
                         var x = X.AsSpan((int)((long)t * d), d);
-                        for (int j = 0; j < d; j++) x[j] += Dot(w2_.AsSpan(j * h, h), z) + b2_[j];
+                        MatVec(w2_, b2_, z, x, d, true);
                     }
                 });
             }
