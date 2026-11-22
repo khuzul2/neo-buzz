@@ -112,6 +112,10 @@ on:
         description: 'AW2b: full data, chained training, tuning on validation, evaluation (with the tools; turn the other jobs off)'
         type: boolean
         default: false
+      aw2c_measure:
+        description: 'AW2c: the measure-only sets (GTZAN, Ballroom; RWC is skipped): "check" fetches and matches only (nothing is scored), "true" scores AW1 and the model compiled into this build (at most two such runs in all); metrics only leave the runner'
+        type: string
+        default: 'false'
       aw2b_pack:
         description: 'AW2b: the listening pack and the timing of the model compiled into this build (BeatModelData.cs), on a few held-out items'
         type: boolean
@@ -557,7 +561,7 @@ jobs:
         if-no-files-found: ignore
 
   aw2-tools:
-    if: ${{ github.event.inputs.aw2 == 'true' || github.event.inputs.aw2b == 'true' || github.event.inputs.aw2b_pack == 'true' }}
+    if: ${{ github.event.inputs.aw2 == 'true' || github.event.inputs.aw2b == 'true' || github.event.inputs.aw2b_pack == 'true' || github.event.inputs.aw2c_measure != 'false' && github.event.inputs.aw2c_measure != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -1128,4 +1132,49 @@ jobs:
         path: |
           aw2-pack/
           timing-shipped.txt
+        retention-days: 14
+
+  aw2c-measure:
+    if: ${{ github.event.inputs.aw2c_measure == 'true' }}
+    needs: aw2-tools
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+    - uses: actions/download-artifact@v7
+      with:
+        name: aw2-tools
+        path: aw2-tools
+    - name: Fetch the measure-only sets (runner only) and score AW1 and the model
+      run: |
+        set -euo pipefail
+        pip install --quiet numpy scipy soundfile mir_eval requests
+        sudo mkdir -p /mnt/aw2 && sudo chown "$USER" /mnt/aw2
+        python3 -u tools/aw2/measure.py /mnt/aw2/measure gtzan ballroom 2>&1 | tee measure-log.txt
+        if [ "${{ github.event.inputs.aw2c_measure }}" = "check" ]; then ls /mnt/aw2/measure/* | head -5 | tee -a measure-log.txt; exit 0; fi
+        mkdir -p results
+        for s in gtzan ballroom; do
+          if ls /mnt/aw2/measure/$s/*.json > /dev/null 2>&1; then
+            dotnet aw2-tools/AutoWarpEval.dll --dir /mnt/aw2/measure/$s --set $s --model embedded --out results/$s.json
+          else
+            echo "$s: no items (skipped)" | tee -a measure-log.txt
+          fi
+        done
+        if ls results/*.json > /dev/null 2>&1; then python3 tools/aw2/score2.py results/*.json --out measure-report.md; fi
+        # Only the metrics table is kept: no audio, no per-file results, no labels.
+        rm -rf /mnt/aw2/measure results
+    - name: Job summary
+      if: always()
+      run: |
+        for f in measure-log.txt measure-report.md; do [ -f $f ] && { echo "## $f"; tail -c 20000 $f; } >> "$GITHUB_STEP_SUMMARY"; done || true
+    - uses: actions/upload-artifact@v6
+      if: always()
+      with:
+        name: aw2c-measure-report
+        path: |
+          measure-report.md
+          measure-log.txt
         retention-days: 14
