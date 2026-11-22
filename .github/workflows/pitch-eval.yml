@@ -608,6 +608,7 @@ jobs:
         retention-days: 7
 
   aw2-prep:
+    if: ${{ github.event.inputs.aw2 == 'true' }}
     needs: aw2-tools
     runs-on: ubuntu-latest
     timeout-minutes: 180
@@ -694,6 +695,7 @@ jobs:
         retention-days: 7
 
   aw2-train:
+    if: ${{ github.event.inputs.aw2 == 'true' }}
     needs: [aw2-tools, aw2-prep]
     runs-on: ubuntu-latest
     timeout-minutes: 150
