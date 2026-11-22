@@ -141,7 +141,7 @@ def aam(out, limit, stems=0):
         if n[split] >= (limit if split == "train" else max(8, limit // 8)):
             continue
         try:
-            rows = [l.split(",") for l in ann.read(tid + "_beatinfo.arff").decode().split("@DATA")[1].strip().splitlines() if l.strip()]
+            rows = [l.split(",") for l in ann.read(tid + "_beatinfo.arff").decode().splitlines() if l.strip() and l[0] not in "@%"]
         except KeyError:
             continue
         beats = [float(r[0]) for r in rows]
