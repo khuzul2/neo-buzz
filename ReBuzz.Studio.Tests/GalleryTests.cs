@@ -681,6 +681,25 @@ namespace ReBuzz.Studio.Tests
                     window.Detail.Close();
                     Settle();
                 });
+                Try("029b-master-device-docked", () =>
+                {
+                    ReBuzz.Studio.Views.StudioSelection.For(Core).SelectMachine(demo.Master, window);
+                    window.Detail.ShowDevice();
+                    Settle();
+                    Shot(window, "029b-master-device-docked", "Detail > Device with the Master selected: what the Master shows today.", "Select the Master; Detail > Device.");
+                    window.Detail.Close();
+                    Settle();
+                });
+                Try("029c-master-floating", () =>
+                {
+                    var page = new ReBuzz.Studio.Views.Device.DevicePage(demo.Master, floating: true);
+                    page.SetEditor(false, remember: false);
+                    var w = new Window { Width = 900, Height = 620, Content = page };
+                    w.Show();
+                    Settle();
+                    Shot(w, "029c-master-floating", "The Master's parameters floating: what a double click or Parameters... opens today.", "Double-click the Master, or right-click it > Parameters...");
+                    w.Close();
+                });
                 Try("023-machines-amp", () =>
                 {
                     var wire = demo.Delay.Outputs.First(o => o.Destination == demo.Verb);
