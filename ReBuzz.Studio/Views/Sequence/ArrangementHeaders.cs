@@ -31,12 +31,20 @@ namespace ReBuzz.Studio.Views.Sequence
         readonly Dictionary<IMachine, (ToggleButton Mute, ToggleButton Solo)> switches = new();
         readonly List<(string Machine, ColumnKey Key, ToggleButton Record)> recorders = new();
         readonly Dictionary<IMachine, ToggleButton> arms = new();
+        // MX1: the mixer's header density under each track's first lane: the same fader, meter, pan and sends as the mixer's.
+        readonly ReBuzz.Studio.Views.Mixer.MixerHeaderHost mixerHost;
+        readonly List<ReBuzz.Studio.Views.Mixer.MixerStripView> mixerStrips = new();
+        IDisposable ticker;
         bool building;
+
+        /// <summary>The header mixer strips (tests and the gallery).</summary>
+        internal IReadOnlyList<ReBuzz.Studio.Views.Mixer.MixerStripView> MixerStrips => mixerStrips;
 
         public ArrangementHeaders(ReBuzzCore core, ArrangementCanvas timeline)
         {
             this.core = core;
             this.timeline = timeline;
+            mixerHost = new ReBuzz.Studio.Views.Mixer.MixerHeaderHost(core);
             ClipToBounds = true;
             Width = SequenceGeometry.HeaderWidth;
             timeline.ViewChanged += Reposition;
@@ -54,6 +62,8 @@ namespace ReBuzz.Studio.Views.Sequence
         {
             base.OnAttachedToVisualTree(e);
             StudioTheme.Changed += OnThemeChanged;
+            if (core.TrackColours is { } colours) colours.Changed += OnThemeChanged;
+            ticker ??= ReBuzz.Studio.Views.Mixer.MixerTicker.Add(f => { foreach (var m in mixerStrips) m.RefreshMeter(f); }, () => { foreach (var m in mixerStrips) m.Refresh(); });
             if (core.Arrangement?.Recorder is { } recorder) recorder.Changed += OnRecorderChanged;
             if (core.Arrangement?.Takes is { } takes) takes.Changed += OnRecorderChanged;
             if (core.SessionCore is { } session)
@@ -66,6 +76,9 @@ namespace ReBuzz.Studio.Views.Sequence
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
             StudioTheme.Changed -= OnThemeChanged;
+            if (core.TrackColours is { } colours) colours.Changed -= OnThemeChanged;
+            ticker?.Dispose();
+            ticker = null;
             if (core.Arrangement?.Recorder is { } recorder) recorder.Changed -= OnRecorderChanged;
             if (core.Arrangement?.Takes is { } takes) takes.Changed -= OnRecorderChanged;
             if (core.SessionCore is { } session)
@@ -98,6 +111,8 @@ namespace ReBuzz.Studio.Views.Sequence
                 switches.Clear();
                 recorders.Clear();
                 arms.Clear();
+                mixerStrips.Clear();
+                mixerHost.Refresh();
                 var look = StudioTheme.Sequence;
                 foreach (var row in timeline.Rows)
                 {
@@ -267,7 +282,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
             var machine = row.Machine;
             bool inputs = row.IsFirstLane && !row.Folded && SessionLayout.CanArm(machine);
-            var grid = new Grid { Margin = new Thickness(4, 2), RowDefinitions = new RowDefinitions(row.Folded ? "*" : inputs ? "*,*,Auto" : "*,*") };
+            var grid = new Grid { Margin = new Thickness(4, 2), RowDefinitions = new RowDefinitions(row.Folded ? "*" : inputs ? "*,*,Auto,Auto" : "*,*,Auto") };
             if (row.IsFirstLane)
             {
                 var fold = Toggle(row.Folded ? "▸" : "▾", $"Fold {machine.Name}", row.Folded ? "Show this track's lanes" : "Fold this track to one row");
@@ -295,8 +310,8 @@ namespace ReBuzz.Studio.Views.Sequence
                     var auto = PlainButton("A", $"Add automation lane for {machine.Name}", "Add an automation lane: a parameter of this machine");
                     auto.Flyout = AutomateFlyout(machine, auto);
                     foreach (var b in new TemplatedControl[] { mute, solo, add, auto }) Style(b, look);
-                    mute.Click += (s, e) => { if (!building) machine.IsMuted = mute.IsChecked == true; };
-                    solo.Click += (s, e) => { if (!building) machine.IsSoloed = solo.IsChecked == true; };
+                    mute.Click += (s, e) => { if (!building) ReBuzz.Studio.Views.Mixer.MixerEdits.SetMute(core, machine, mute.IsChecked == true); };
+                    solo.Click += (s, e) => { if (!building) ReBuzz.Studio.Views.Mixer.MixerEdits.SetSolo(core, machine, solo.IsChecked == true); };
                     add.Click += (s, e) => AddLaneRequested?.Invoke(machine);
                     switches[machine] = (mute, solo);
                     var bottom = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, 0), Children = { mute, solo, add, auto } };
@@ -310,12 +325,17 @@ namespace ReBuzz.Studio.Views.Sequence
                     }
                     Grid.SetRow(bottom, 1);
                     grid.Children.Add(bottom);
+                    var spec = new ReBuzz.Studio.Views.Mixer.StripSpec { Kind = ReBuzz.Studio.Views.Mixer.StripKind.Track, Id = "track:" + machine.Name, Machine = machine, Name = machine.Name, Subtitle = "track" };
+                    var strip = new ReBuzz.Studio.Views.Mixer.MixerStripView(mixerHost, spec, ReBuzz.Studio.Views.Mixer.MixerDensity.Header) { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 2, 0, 0) };
+                    mixerStrips.Add(strip);
+                    Grid.SetRow(strip, 2);
+                    grid.Children.Add(strip);
                 }
                 if (inputs)
                 {
                     // The input choosers and the meter (docs/specs/neo-audio.md "Inputs and arm"): one state with the other views'.
                     var input = new Views.Session.TrackInputView(core, machine, Views.Session.InputLayoutKind.Compact) { VerticalAlignment = VerticalAlignment.Bottom };
-                    Grid.SetRow(input, 2);
+                    Grid.SetRow(input, 3);
                     grid.Children.Add(input);
                 }
             }
@@ -328,7 +348,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 grid.Children.Add(text);
             }
             Control content = grid;
-            if (machine != null && !look.IsClassic && MachineIdentity.ColourOf(machine) is { } identity)
+            if (machine != null && !look.IsClassic && ReBuzz.Studio.Views.Mixer.TrackColour.Of(machine) is { } identity)
             {
                 // P3h: the machine's identity colour, a strip at the header's left edge.
                 var strip = new Border { Background = ReBuzz.Studio.Views.Session.SessionPalette.BrushOf(identity) };

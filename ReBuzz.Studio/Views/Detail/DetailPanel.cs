@@ -20,6 +20,7 @@ namespace ReBuzz.Studio.Views.Detail
         public const string RollTab = "Piano roll";
         public const string DeviceTab = "Device";
         public const string AudioTab = "Audio";
+        public const string MixerTab = "Mixer";
 
         internal const string RegistrySection = "Studio";
         internal const string OpenKey = "DetailOpen";
@@ -27,6 +28,7 @@ namespace ReBuzz.Studio.Views.Detail
         internal const string RollKey = "DetailPianoRoll";       // the Piano roll page is the one shown (P3b)
         internal const string DeviceKey = "DetailDevice";        // the Device page is the one shown (P3e)
         internal const string AudioKey = "DetailAudio";          // the Audio page is the one shown (NA3)
+        internal const string MixerKey = "DetailMixer";          // the Mixer page is the one shown (MX1)
 
         public const double DefaultHeight = 340;
         public const double MinPanelHeight = 120;
@@ -38,22 +40,25 @@ namespace ReBuzz.Studio.Views.Detail
         readonly Border grip;
         readonly Avalonia.Controls.Control device;
         readonly Avalonia.Controls.Control audio;
-        readonly Button trackerButton, rollButton, deviceButton, audioButton, maximiseButton, collapseButton;
+        readonly Mixer.MixerView mixer;
+        readonly Button trackerButton, rollButton, deviceButton, audioButton, mixerButton, maximiseButton, collapseButton;
         readonly Panel content;
-        bool open, maximised, rollPage, devicePage, audioPage;
+        bool open, maximised, rollPage, devicePage, audioPage, mixerPage;
         double height;
 
-        public DetailPanel(IRegistryEx registry, Avalonia.Controls.Control tracker, Avalonia.Controls.Control deviceView = null, Avalonia.Controls.Control audioView = null)
+        public DetailPanel(IRegistryEx registry, Avalonia.Controls.Control tracker, Avalonia.Controls.Control deviceView = null, Avalonia.Controls.Control audioView = null, Mixer.MixerView mixerView = null)
         {
             this.registry = registry;
             page = tracker;
             device = deviceView;
             audio = audioView;
+            mixer = mixerView;
             open = Read(OpenKey, false);
             height = Math.Clamp(Read(HeightKey, DefaultHeight), MinPanelHeight, MaxPanelHeight);
             rollPage = Read(RollKey, false);
             devicePage = device != null && Read(DeviceKey, false);
             audioPage = audio != null && !devicePage && Read(AudioKey, false);
+            mixerPage = mixer != null && !devicePage && !audioPage && Read(MixerKey, false);
 
             Background = StudioTokens.SurfacePanelBrush;
             BorderBrush = StudioTokens.SurfaceBorderBrush;
@@ -84,13 +89,19 @@ namespace ReBuzz.Studio.Views.Detail
             ToolTip.SetTip(audioButton, "The selected audio clip: warp, tempo, pitch, gain, fades, loop and the warp markers");
             audioButton.Click += (s, e) => ChooseAudio();
 
+            // Fork (ux-overhaul.md §11, MX1): the Mixer page: the one mixer, Compact in the panel and Full when the panel is maximised.
+            mixerButton = StudioButtons.KeepFocus(new Button { Content = MixerTab, BorderThickness = new Thickness(1), IsVisible = mixer != null });
+            AutomationProperties.SetName(mixerButton, MixerTab);
+            ToolTip.SetTip(mixerButton, Shell.Commands.StudioKeymap.Tip("view.detailmixer"));
+            mixerButton.Click += (s, e) => ChooseMixer();
+
             maximiseButton = Glyph("⤢", Shell.Commands.StudioKeymap.Tip("view.maximise"), "Maximise Tracker", ToggleMaximised);
             collapseButton = Glyph("⌄", "Hide the detail (" + Shell.Commands.StudioKeymap.Get("view.detail").KeyLabel() + ")", "Hide detail", Close);
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { maximiseButton, collapseButton } };
             var bar = new DockPanel { Height = BarHeight, Margin = new Thickness(8, 0, 6, 0), LastChildFill = true };
             DockPanel.SetDock(buttons, Dock.Right);
             bar.Children.Add(buttons);
-            var tabsRow = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Children = { trackerButton, rollButton, deviceButton, audioButton } };
+            var tabsRow = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Children = { trackerButton, rollButton, deviceButton, audioButton, mixerButton } };
             bar.Children.Add(tabsRow);
             Avalonia.Input.KeyboardNavigation.SetTabIndex(tabsRow, 0);
             Avalonia.Input.KeyboardNavigation.SetTabIndex(buttons, 1);
@@ -99,6 +110,7 @@ namespace ReBuzz.Studio.Views.Detail
             content = new Panel { Children = { page } };
             if (device != null) content.Children.Add(device);
             if (audio != null) content.Children.Add(audio);
+            if (mixer != null) content.Children.Add(mixer);
             var frame = new DockPanel { LastChildFill = true };
             frame.Children.Add(bar);
             frame.Children.Add(content);
@@ -116,9 +128,39 @@ namespace ReBuzz.Studio.Views.Detail
         /// <summary>A page's button: shows that page; clicking the page that is shown hides the panel.</summary>
         void Choose(bool roll)
         {
-            if (open && !devicePage && !audioPage && rollPage == roll) Close();
+            if (open && !devicePage && !audioPage && !mixerPage && rollPage == roll) Close();
             else ShowPage(roll, maximised);
         }
+
+        void ChooseMixer()
+        {
+            if (open && mixerPage) Close();
+            else ShowMixer(maximised);
+        }
+
+        /// <summary>Opens the panel on the Mixer page: Compact docked, Full when maximised.</summary>
+        public void ShowMixer(bool maximise = false)
+        {
+            if (mixer == null) return;
+            SetMixerPage(true);
+            Set(true, maximise);
+        }
+
+        void SetMixerPage(bool on)
+        {
+            if (mixerPage == on || on && mixer == null) return;
+            mixerPage = on;
+            if (on) { if (devicePage) { devicePage = false; Write(DeviceKey, false); } if (audioPage) { audioPage = false; Write(AudioKey, false); } }
+            Write(MixerKey, on);
+            Apply();
+        }
+
+        /// <summary>Whether the Mixer page is the one shown.</summary>
+        public bool IsMixer => mixerPage;
+
+        public Mixer.MixerView MixerPage => mixer;
+
+        internal Button MixerButton => mixerButton;
 
         void ChooseAudio()
         {
@@ -139,6 +181,7 @@ namespace ReBuzz.Studio.Views.Detail
             if (audioPage == on || on && audio == null) return;
             audioPage = on;
             if (on && devicePage) { devicePage = false; Write(DeviceKey, false); }
+            if (on && mixerPage) { mixerPage = false; Write(MixerKey, false); }
             Write(AudioKey, on);
             Apply();
         }
@@ -172,6 +215,7 @@ namespace ReBuzz.Studio.Views.Detail
             if (devicePage == on || on && device == null) return;
             devicePage = on;
             if (on && audioPage) { audioPage = false; Write(AudioKey, false); }
+            if (on && mixerPage) { mixerPage = false; Write(MixerKey, false); }
             Write(DeviceKey, on);
             Apply();
         }
@@ -195,6 +239,7 @@ namespace ReBuzz.Studio.Views.Detail
         {
             SetDevice(false);
             SetAudioPage(false);
+            SetMixerPage(false);
             if (rollPage == roll) return;
             rollPage = roll;
             Write(RollKey, roll);
@@ -202,7 +247,7 @@ namespace ReBuzz.Studio.Views.Detail
             Apply();
         }
 
-        public bool IsPianoRoll => rollPage && !devicePage && !audioPage;
+        public bool IsPianoRoll => rollPage && !devicePage && !audioPage && !mixerPage;
 
         /// <summary>The layout around it changed (shown, hidden, maximised, sized): the window rearranges its rows.</summary>
         public event Action Changed;
@@ -271,20 +316,28 @@ namespace ReBuzz.Studio.Views.Detail
         void Apply()
         {
             content.IsVisible = open;
-            page.IsVisible = !devicePage && !audioPage;
+            page.IsVisible = !devicePage && !audioPage && !mixerPage;
+            if (mixer != null)
+            {
+                mixer.IsVisible = mixerPage;
+                mixer.IsShown = mixerPage && open;
+                // The one mixer, Full where there is room for it (the panel maximised), else Compact.
+                mixer.Density = maximised ? Mixer.MixerDensity.Full : Mixer.MixerDensity.Compact;
+            }
             if (device != null) device.IsVisible = devicePage;
             if (audio != null) audio.IsVisible = audioPage;
             grip.IsVisible = open && !maximised;
             Height = !open ? BarHeight : maximised ? double.NaN : height;
             maximiseButton.Content = maximised ? "⤡" : "⤢";
             ToolTip.SetTip(maximiseButton, maximised ? "Back to the panel (" + Shell.Commands.StudioKeymap.Get("view.maximise").KeyLabel() + ")" : Shell.Commands.StudioKeymap.Tip("view.maximise"));
-            string what = audioPage ? "Audio" : devicePage ? "Device" : rollPage ? "Piano roll" : "Tracker";
+            string what = mixerPage ? "Mixer" : audioPage ? "Audio" : devicePage ? "Device" : rollPage ? "Piano roll" : "Tracker";
             AutomationProperties.SetName(maximiseButton, maximised ? "Restore " + what : "Maximise " + what);
             collapseButton.Content = "⌄";
-            Mark(trackerButton, open && !rollPage && !devicePage && !audioPage);
-            Mark(rollButton, open && rollPage && !devicePage && !audioPage);
+            Mark(trackerButton, open && !rollPage && !devicePage && !audioPage && !mixerPage);
+            Mark(rollButton, open && rollPage && !devicePage && !audioPage && !mixerPage);
             Mark(deviceButton, open && devicePage);
             Mark(audioButton, open && audioPage);
+            Mark(mixerButton, open && mixerPage);
             Changed?.Invoke();
         }
 

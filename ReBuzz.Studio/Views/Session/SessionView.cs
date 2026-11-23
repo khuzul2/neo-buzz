@@ -35,7 +35,7 @@ namespace ReBuzz.Studio.Views.Session
         public Control Create(StudioHost host) => new SessionView(host.Core);
     }
 
-    internal sealed partial class SessionView : UserControl, IStudioEditTarget
+    internal sealed partial class SessionView : UserControl, IStudioEditTarget, ReBuzz.Studio.Views.Mixer.IMixerHost
     {
         /// <summary>The least width the top bar keeps for its left group before the right group drops under it.</summary>
         const double NarrowBarLeft = 300;
@@ -351,7 +351,6 @@ namespace ReBuzz.Studio.Views.Session
             Content = root;
 
             timer.Tick += (s, e) => RefreshState();
-            meterTimer.Tick += (s, e) => OnMeterTick();
 
             AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
             AddHandler(KeyUpEvent, OnKeyUp, RoutingStrategies.Tunnel);
@@ -394,6 +393,7 @@ namespace ReBuzz.Studio.Views.Session
             attached = true;
             // Hidden views (another tab) don't follow the song: they rebuild when shown (0.6.3).
             layout.Changed += RebuildWhenSeen;
+            if (buzz.TrackColours is { } trackColours) trackColours.Changed += OnTrackColours;
             layout.RecordingChanged += OnRecordingChanged;
             StudioTheme.Changed += RebuildWhenSeen;       // P4b: the cells took their text colours from the old theme
             if (midi != null)
@@ -416,6 +416,7 @@ namespace ReBuzz.Studio.Views.Session
             StudioSelection.For(buzz).Changed -= FollowSelection;
             timer.Stop();
             layout.Changed -= RebuildWhenSeen;
+            if (buzz.TrackColours is { } trackColours) trackColours.Changed -= OnTrackColours;
             layout.RecordingChanged -= OnRecordingChanged;
             StudioTheme.Changed -= RebuildWhenSeen;
             if (midi != null)
@@ -491,6 +492,8 @@ namespace ReBuzz.Studio.Views.Session
         };
 
         // ------------------------------------------------------------------ structure
+
+        void OnTrackColours() => Dispatcher.UIThread.Post(RebuildWhenSeen);
 
         void RebuildWhenSeen()
         {

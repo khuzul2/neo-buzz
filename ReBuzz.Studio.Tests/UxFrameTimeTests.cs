@@ -56,6 +56,103 @@ namespace ReBuzz.Studio.Tests
             return times[times.Count / 2];
         }
 
+        /// <summary>
+        /// MX1 (ux-overhaul.md §11): 40 generators (a track each, one send return), the Session View drawn whole with its mixer under the
+        /// grid, and its state refresh, so the Session's numbers can be put against the ones from before the shared mixer.
+        /// </summary>
+        [AvaloniaTest]
+        public void FortyTrackSessionFrameTimes()
+        {
+            var lines = new List<string>();
+            var window = ForTy(lines);
+            try
+            {
+                window.ShowView("Session");
+                Settle();
+                var view = window.Tabs.Items.OfType<Avalonia.Controls.TabItem>().Select(t => t.Content).OfType<SessionView>().First();
+                using var target = new RenderTargetBitmap(new PixelSize(1440, 900));
+                for (int round = 1; round <= 2; round++)
+                {
+                    Settle();
+                    double ms = Median(30, () => { window.UpdateLayout(); target.Render(window); });
+                    lines.Add($"draw Session, 40 tracks, mixer shown (round {round}): {ms:0.00} ms  (load {Load()})");
+                }
+                lines.Add($"Session state refresh, 40 tracks: {Median(200, view.RefreshState):0.000} ms");
+                lines.Add($"Session meters, 40 tracks: {Median(200, () => view.RefreshMeters()):0.000} ms");
+            }
+            finally { Finish(window); }
+            foreach (var l in lines) TestContext.Out.WriteLine("[ux-measure] " + l);
+        }
+
+        static MainWindow ForTy(List<string> lines)
+        {
+            Dialogs.Responder = (m, c, b) => UserAnswer.No;
+            Core.Modified = false;
+            Core.ExecuteCommand(BuzzGUI.Interfaces.BuzzCommand.NewFile);
+            Settle();
+            var song = Core.SongCore;
+            var master = song.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+            song.CreateMachine("Neo Verb", null, "Verb", null, null, null, -1, 0.8f, 0.8f);
+            var verb = song.MachinesList.First(m => m.Name == "Verb");
+            song.ConnectMachines(verb, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            for (int i = 0; i < 40; i++)
+            {
+                string name = "T" + (i + 1);
+                song.CreateMachine("Neo Poly", null, name, null, null, null, -1, -0.9f + 0.05f * (i % 30), -0.8f + 0.1f * (i / 30));
+                var m = song.MachinesList.First(x => x.Name == name);
+                song.ConnectMachines(m, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                if (i % 4 == 0) song.ConnectMachines(m, verb, new[] { 0 }, new[] { 0 }, 0x2000, 0x4000);
+                song.AddSequence(m, song.SequencesList.Count);
+            }
+            Core.Modified = false;
+            var window = new MainWindow(Studio.Host) { Width = 1440, Height = 900 };
+            window.Show();
+            Settle();
+            lines.Add($"machines {song.MachinesList.Count}");
+            return window;
+        }
+
+        static void Finish(MainWindow window)
+        {
+            Core.Playing = false;
+            Core.Modified = false;
+            Dialogs.Responder = null;
+            window.Close();
+        }
+
+        /// <summary>MX1: the same 40 tracks in the Detail panel's mixer, Compact docked and Full over the window, and the meters' tick.</summary>
+        [AvaloniaTest]
+        public void FortyTrackMixerFrameTimes()
+        {
+            var lines = new List<string>();
+            var window = ForTy(lines);
+            try
+            {
+                window.ShowView("Machines");
+                using var target = new RenderTargetBitmap(new PixelSize(1440, 900));
+                window.Detail.ShowMixer();
+                Settle();
+                var mixer = window.Detail.MixerPage;
+                for (int round = 1; round <= 2; round++)
+                {
+                    Settle();
+                    lines.Add($"draw Detail > Mixer, Compact, {mixer.Strips.Count} strips (round {round}): {Median(30, () => { window.UpdateLayout(); target.Render(window); }):0.00} ms  (load {Load()})");
+                }
+                lines.Add($"mixer poll + meters, Compact: {Median(200, () => { mixer.Refresh(); mixer.RefreshMeters(); }):0.000} ms");
+                window.Detail.ShowMixer(maximise: true);
+                Settle();
+                for (int round = 1; round <= 2; round++)
+                {
+                    Settle();
+                    lines.Add($"draw Detail > Mixer, Full, {mixer.Strips.Count} strips (round {round}): {Median(30, () => { window.UpdateLayout(); target.Render(window); }):0.00} ms  (load {Load()})");
+                }
+                lines.Add($"mixer poll + meters, Full: {Median(200, () => { mixer.Refresh(); mixer.RefreshMeters(); }):0.000} ms");
+                lines.Add($"rebuild of the strips, Full: {Median(10, () => mixer.Rebuild(true)):0.00} ms");
+            }
+            finally { Finish(window); }
+            foreach (var l in lines) TestContext.Out.WriteLine("[ux-measure] " + l);
+        }
+
         [AvaloniaTest]
         public void MainWindowFrameTimes()
         {

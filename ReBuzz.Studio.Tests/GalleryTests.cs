@@ -810,6 +810,40 @@ namespace ReBuzz.Studio.Tests
                     }
                 });
 
+                Try("036-mixer-compact", () =>
+                {
+                    // MX1 (ux-overhaul.md §11): the one mixer. Compact below a view (Detail > Mixer), Full over the window.
+                    window.ShowView("Machines");
+                    window.Detail.ShowMixer();
+                    Settle();
+                    Shot(window, "036-mixer-compact", "Detail > Mixer, Compact (MX1): a strip for every track, group (members before it, ▾ folds them) and return, then the Master: name with its track colour, volume fader with meter, pan, On, Solo and Arm.",
+                        "Alt+Cmd+6, the Mixer button under the view, or a click on the Master.");
+                });
+                Try("036-mixer-full", () =>
+                {
+                    window.Detail.ShowMixer(maximise: true);
+                    window.Detail.MixerPage.Rebuild();
+                    Settle();
+                    Shot(window, "036-mixer-full", "The Full mixer (MX1): each strip with its colour bar, name and kind, inserts in signal order with + Effect, sends, pan, the fader in dB with a meter and peak hold, On, Solo, Arm and Cue; the Master's strip with its chain, its volume in dB and the peak.",
+                        "Shift+Cmd+F on Detail > Mixer, ⤢ in the detail bar, or a double click on the Master.");
+                    window.Detail.MixerPage.RevealMaster();
+                    Settle();
+                    Shot(window, "036-mixer-full-master", "The Full mixer scrolled to the Master (MX1): its chain's inserts, the volume in dB, the peak and the cue output.",
+                        "A double click on the Master in the Machines view.");
+                });
+                Try("036-master-device-db", () =>
+                {
+                    window.Detail.Close();
+                    var master = Core.SongCore.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+                    ReBuzz.Studio.Views.StudioSelection.For(Core).SelectMachine(master, window);
+                    window.Detail.ShowDevice();
+                    Settle();
+                    Shot(window, "036-master-device-db", "The Master's device page (MX1): its Volume in dB, as the mixer shows it (0.0 dB at full, -inf dB at the bottom).",
+                        "Select the Master, Alt+Cmd+5.");
+                    window.Detail.Close();
+                    Settle();
+                });
+
                 Try("030-sequence", () =>
                 {
                     window.ShowView("Sequence");
@@ -826,7 +860,7 @@ namespace ReBuzz.Studio.Tests
                 {
                     var seq = Tab<SequenceView>(window, "Arrangement");
                     seq.SetArrangementMode(true);
-                    Shot(window, "032-sequence-arrangement", "Sequence in Arrangement mode (daw-modes.md AR1): the Master's tempo and markers on top, a track for each machine with its lanes, clips with their previews, loop repeats and shared badges, the meter grid.", "The Sequence tab, then Arrange.");
+                    Shot(window, "032-sequence-arrangement", "Sequence in Arrangement mode (daw-modes.md AR1): the Master's tempo and markers on top, a track for each machine with its lanes (each track header holds the mixer's Header density, MX1: the fader, meter, pan and sends of the same strip), clips with their previews in the track's colour, loop repeats and shared badges, the meter grid.", "The Sequence tab, then Arrange.");
                     seq.SetArrangementMode(false);
                 });
                 Try("033-arrangement-piano-roll", () =>
@@ -843,7 +877,7 @@ namespace ReBuzz.Studio.Tests
                 Try("040-session", () =>
                 {
                     window.ShowView("Session");
-                    Shot(window, "040-session", "Session (stopped): the launch grid of the demo song's scenes (Intro, Verse, Drop, Break, Fill), clip colours, the Verb return, clip panel and mixer.", "Ctrl+Tab, or the Session tab.", notes: Headless);
+                    Shot(window, "040-session", "Session (stopped): the launch grid of the demo song's scenes (Intro, Verse, Drop, Break, Fill), clip colours, the Verb return, clip panel and the shared mixer under the grid (MX1: the Compact density with sends, the crossfader, Cue and groups, track colours on every header).", "Ctrl+Tab, or the Session tab.", notes: Headless);
                 });
                 var session = Tab<SessionView>(window, "Session");
                 Try("041-session-queued", () =>

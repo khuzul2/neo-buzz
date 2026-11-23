@@ -45,24 +45,24 @@ namespace ReBuzz.Studio.Tests
 
         // ------------------------------------------------------------------ building songs
 
-        static IMachine Put(string dll, string name, double x, double y)
+        internal static IMachine Put(string dll, string name, double x, double y)
         {
             Song.CreateMachine(dll, null, name, null, null, null, -1, (float)x, (float)y);
             return Song.MachinesList.Last(m => m.Name == name);
         }
 
-        static IMachine Master => Song.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+        internal static IMachine Master => Song.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
 
-        static IMachine M(string name) => name == "Master" ? Master : Song.MachinesList.First(m => m.Name == name);
+        internal static IMachine M(string name) => name == "Master" ? Master : Song.MachinesList.First(m => m.Name == name);
 
-        static void Wire(string chain, int amp = 0x4000)
+        internal static void Wire(string chain, int amp = 0x4000)
         {
             var names = chain.Split('>');
             for (int i = 0; i + 1 < names.Length; i++) Song.ConnectMachines(M(names[i]), M(names[i + 1]), new[] { 0 }, new[] { 0 }, amp, 0x4000);
         }
 
         /// <summary>A song with a drum group, two sends into one return, a chain and a control machine (no machine is moved by the view).</summary>
-        static void PopSong()
+        internal static void PopSong()
         {
             Put("Neo Poly", "Kick", -0.8, -0.65);
             Put("Neo Poly", "Snare", -0.8, -0.3);
@@ -383,12 +383,13 @@ namespace ReBuzz.Studio.Tests
                 PopSong();
                 Settle();
                 var canvas = view.Canvas;
-                var poly = StudioTokens.Identity(MachineCategory.Synth);
+                // MX1 (option A): a track's colour is its own (given when the generator was made), not its kind's.
+                var poly = ReBuzz.Studio.Views.Mixer.TrackColour.Of(M("Bass"))!.Value;
                 Assert.That(canvas.PaintOf(M("Bass")).Colour, Is.EqualTo(poly), "Bass takes its generator's colour");
                 Assert.That(canvas.PaintOf(M("Drive")).Colour, Is.EqualTo(poly), "and so does the effect it feeds");
                 Assert.That(canvas.PaintOf(M("Eq")).Colour, Is.EqualTo(poly));
                 Assert.That(canvas.PaintOf(M("Bus")).Colour, Is.EqualTo(MachineIdentity.ColourOf(M("Bus"))), "a group takes its machine's");
-                Assert.That(canvas.PaintOf(M("Bus")).Stripe, Is.EqualTo(new[] { poly, poly }), "with its members' colours as a stripe, one for each");
+                Assert.That(canvas.PaintOf(M("Bus")).Stripe, Is.EqualTo(new[] { ReBuzz.Studio.Views.Mixer.TrackColour.Of(M("Kick"))!.Value, ReBuzz.Studio.Views.Mixer.TrackColour.Of(M("Snare"))!.Value }), "with its members' colours as a stripe, one for each");
                 Assert.That(canvas.PaintOf(M("Verb")).Stripe, Is.Empty, "a return has no members");
                 Assert.That(canvas.PaintOf(M("Wobble")).Routed, Is.False, "an unrouted machine is dashed grey");
                 Assert.That(canvas.PaintOf(Master), Is.Null, "the Master keeps its own");
@@ -417,7 +418,8 @@ namespace ReBuzz.Studio.Tests
                 var positions = Song.Machines.ToDictionary(x => x, x => x.Position);
                 Assert.That(canvas.Lit, Is.Null);
                 Assert.That(Song.Machines.Any(canvas.IsDimmed), Is.False, "nothing is dimmed while nothing is lit");
-                var poly = StudioTokens.Identity(MachineCategory.Synth);
+                var poly = ReBuzz.Studio.Views.Mixer.TrackColour.Of(M("Bass"))!.Value;
+                var pad = ReBuzz.Studio.Views.Mixer.TrackColour.Of(M("Pad"))!.Value;
                 int lit = BorderDistance(window, view, M("Drive"), poly);
 
                 Chip(window, view, "Bass", click: false);          // the pointer on the chip
@@ -425,7 +427,7 @@ namespace ReBuzz.Studio.Tests
                 foreach (var name in new[] { "Bass", "Drive", "Eq", "Master" }) Assert.That(canvas.IsDimmed(M(name)), Is.False, name + " is on the lit path");
                 foreach (var name in new[] { "Kick", "Snare", "Bus", "Pad", "Filter", "Lead", "Verb", "Wobble" }) Assert.That(canvas.IsDimmed(M(name)), Is.True, name + " is dimmed");
                 Assert.That(BorderDistance(window, view, M("Drive"), poly), Is.EqualTo(lit), "the lit track keeps its colour");
-                Assert.That(BorderDistance(window, view, M("Filter"), poly), Is.GreaterThan(BorderDistance(window, view, M("Drive"), poly) + 30), "a dimmed box is faded towards the canvas");
+                Assert.That(BorderDistance(window, view, M("Filter"), pad), Is.GreaterThan(BorderDistance(window, view, M("Drive"), poly) + 30), "a dimmed box is faded towards the canvas");
                 Assert.That(view.Card.IsVisible, Is.True, "the card shows the lit track");
 
                 // A group lights its members and everything downstream; a return what is downstream, and the sends stay as they are.
