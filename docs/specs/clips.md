@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | **Proposal** (2026-11-23). Design only: no product code changed. Four decisions wait for the user (§12) |
+| Status | **Proposal** (2026-11-23, revised the same day). Design only: no product code changed. D1 decided **B** (code identifiers too; §9.4–9.7). D2 answered **B, pending the loss analysis** (§7.5); D3 and D4 open (§12) |
 | Decision (binding) | "Unify and only use one automation store for both tracker and clips. Tracker patterns should use the same exact store (also for notes, velocity, length as well as all parameters automation) as the clips and arrangement views. So effectively we unify patterns and clips which are used anywhere. We'll call them all 'Clips' everywhere." (the user, 2026-11-23) |
 | Also decided that day | EV1 (parallel branch): an envelope lane in the Detail panel, read-only curves on clips, writes the engine automation columns. T2 (waits for this plan): a vertical envelope lane beside the tracker's columns, with a show/hide toggle on each parameter column. MT1 (parallel): tracks in the Machines view |
 | Scope | Every store of clip content, every reader and writer of each, the one store, the tracker as a view of it, old songs, the rename, phases and gates |
@@ -22,8 +22,8 @@
   2. **A column has one player**, named in its metadata (`Play=engine` or `editor`). Migrated tracker columns keep the editor as player until a separate, gated wave moves them into the engine (D3). That makes "bit for bit" true by construction in the first waves.
   3. **The tracker stays MPE, adapted** (§6): its data layer reads and writes the store through a small seam; only view state (column set, order, rows per beat, mutes) stays in its blob. A new tracker costs 8–12 pw more and gains nothing the seam does not.
   4. **Old songs convert on open, in memory**, by one pure converter, with the original file untouched (§7). Classic built-in rows, MPE and PXP blobs convert exactly. MPE's MIDI lanes become notes with exact time (equal in music, proven by the null test, with a timing probe first). Foreign editors are not converted unless the user asks (D2).
-  5. **The rename:** UI, browser, MCP (aliases for two releases), guides, docs, tests. Code identifiers and file formats keep "pattern" (§9, D1).
-- **Effort:** 11–16 pw in seven waves (§10). The goldens come first (CU1), because the gate is "migrated songs render bit for bit as before". T2 can start after CU3.
+  5. **The rename (D1 B):** UI, browser, MCP (aliases for two releases), guides, docs, tests **and the code identifiers**, behind a compatibility layer: what a binary, a saved file or a reflection lookup stores keeps its name, the new names sit beside the old (§9.4–9.7). File formats keep "pattern".
+- **Effort:** 13–19 pw in seven waves (§10; 11–16 before D1 B). The goldens come first (CU1), because the gate is "migrated songs render bit for bit as before". T2 can start after CU3.
 
 ### 1.1 Words
 
@@ -246,7 +246,7 @@ One pure converter, `ClipMigration`, runs after all machines are loaded (as MPE'
 | MPE blob, **MIDI lanes** (Note, Velocity, Delay, Cut, Pitch Wheel, CC) | Phase CU3: kept as lanes (`Play=editor`), shown as notes by `EditorLaneNotes`. CU6 or *Convert to notes*: Notes lane, time = row start + delay, length from cut, off or next note, velocity, voice = lane track (`TrackerNotes.FromRows`, as `ExportClipNotes`) | Events yes; scheduling: the timing probe says (§5.6) |
 | MPE columns of **other machines** | Parameter lanes on that machine, same `Play` | Yes |
 | MPE column set, order, mutes, rows per beat of an empty clip | `ClipView` and `Grid` | View only |
-| **PatternXP and foreign editors (S5)** | Left as they are: the clip keeps `Owner=<editor>` and the blob. Other views show a read-only preview (`EditorPreviewNotes`) | n/a. *Convert to Clip* on demand through the bridges, reported as lossy (D2) |
+| **PatternXP-format editors and foreign editors (S5)** | D2 is open between conversion on open and leaving them alone; §7.5 lists exactly what each conversion keeps and loses. Until the user decides, the plan below keeps the clip with `Owner=<editor>` and the blob, and the other views show a read-only preview (`EditorPreviewNotes`) | See §7.5 per editor |
 | **Input columns** (S6) | Not converted (they are dropped today; converting changes the sound) | §11 |
 | Engine columns S1–S3 | Nothing to do | – |
 | `ClipSettings`, placements | Nothing to do | – |
@@ -279,6 +279,68 @@ One pure converter, `ClipMigration`, runs after all machines are loaded (as MPE'
 
 A `.nbl` saved before CU3 (`formatVersion` 2) carries MPE blobs: `NblMigrations` step 2 to 3 does nothing to the manifest and the open-time converter runs as for any legacy blob. The first save writes 3.
 
+### 7.5 D2 loss analysis: what a conversion keeps and loses, editor by editor
+
+Asked for by the user (2026-11-23): "Analyze which data is lost exactly on conversion". Evidence: the code (`BMXFile.cs`, `Gear.cs`, `ReBuzzCore.cs` `CreateEditor`, `ReBuzzPatternXP`'s `SetPatternEditorData` and its `patternxp` sources, `PatternEditorUtils.cs`, `Machines/ModernPianoroll`, `RunTime/Gear/gear.xml`) and one test on real data (below). **No audio was rendered**: every statement about sound is read from code and marked *unverified* until CU1's goldens.
+
+**What "convert" means.** The target is the clip's lanes (§5): a Note or parameter column per (machine, parameter, track), events at time = row × 240, `Play=editor|engine`. The converter is the same one old songs already go through when no editor DLL is present (§7.1).
+
+**Two facts that change the question.**
+
+1. **Conversion through MPE is already today's behaviour wherever the original editor is missing.** `BMXFile` (around line 474) replaces a missing pattern editor by the Modern Pattern Editor, and keeps the blob only if `Gear.HasSameDataFormat` says the formats match (all four editors named in `gear.xml` are marked `DataFormat="PatternXP"`, so they match); any other editor name has its blob **cleared**. The Studio, headless, macOS and Linux never have `ReBuzzPatternXP`'s DLL, so for them PatternXP songs are already read by MPE's `SetPatternEditorData` (v1–3 rows, MPE 255 v1). On Windows the same happens for *Jeskola Pattern XP* and *Jeskola Pattern XP mod* unless `ReBuzzPatternXP.NET` is built.
+2. **No repo song uses any pattern editor at all** (§3: 0 of 18 old songs have an editor blob, XTAP or TAP2; the two `.nbl` templates have MPE blobs with 0 events). So D2 decides how *the user's own songs* and old songs outside the repo behave, and nothing in the repo can show a difference. That is why the analysis below says "unverified" for audio.
+
+**The editors** (everything the package ships in `RunTime/Gear/gear.xml` plus what a song can name):
+
+| # | Editor (name in a song) | Data format | Ships? | Repo songs |
+|---|---|---|---|---|
+| E1 | none: Buzz's own pattern rows (`PATT`) | rows × parameters per track, plus input columns | in every song | 18 of 18 old songs (154 patterns) |
+| E2 | **Modern Pattern Editor** (MPE, WPF and portable) | MPE format `0xFF` v1 (exact times, per-beat rows, no durations) or PXP v3 | yes (`ModernPatternEditor`) | 0 (2 templates, empty) |
+| E3 | **Modern Pianoroll** (`Machines/ModernPianoroll`, upstream's prototype) | MPE-format copy; its `Editor.ExportMidiEvents` returns null; marked `PatternXP` in gear.xml | yes | 0 |
+| E4 | **Jeskola Pattern XP** (native, `ReBuzzPatternXP`) | PXP v1–3 (rows; v2 adds rows per beat; v3 the graphical flag), plus its SP columns | native build only | 0 |
+| E5 | **Jeskola Pattern XP mod** | the same format and DLL family | native build only | 0 |
+| E6 | Any other editor a song names (Buzz's own, third-party) | opaque | no | 0 |
+
+**Features, per editor (E4/E5 are the ones that lose something).**
+
+| Feature | E1 Built-in rows | E2 MPE | E3 Pianoroll | E4/E5 PatternXP | E6 other |
+|---|---|---|---|---|---|
+| Note, velocity and track-parameter cells | **Exact.** Same events the PXP v3 path makes now. Checked on real data: all 18 songs' patterns, **2,415 cells** compared PATT → PXP column mapping, **0 mismatches** (local script `pxp_check.py`; the rows→events step is the code the editor path already runs) | **Exact** (time, value) | Exact, if its data reads as MPE (same structures; **unverified** on a real blob: none exists) | **Exact** (rows; row × 240) | **Lost**: the blob is cleared today on open if the data format differs; the converter has nothing to read |
+| Global parameters, columns of other machines | Exact | Exact | Exact | Exact **if the machine's parameter layout is the one the blob was written for**: the index is positional; a changed machine misaligns, as it does today | Lost |
+| Event durations / ramps | n/a (none) | n/a (none in v1) | Pianoroll notes have lengths; **converted as note-on and off** (**unverified**) | none | Lost |
+| Rows per beat of a clip, column order, mutes | View state, kept as `ClipView` / `Grid` | Kept as view | Kept | v2/v3 rows per beat kept; column order kept | Lost |
+| Per-beat subdivisions | none | **Kept** as `BeatSubdivision` (MPE-only) | n/a | **PatternXP ignores them**: no data | Lost |
+| Delay and cut (MPE internal parameters −130, −131) | none | Kept in the lane; as notes: start + delay, length from cut (CU6) | Pianoroll: "Todo: delay & cut" in its export | PatternXP's own delay and cut (scale **96**) are *effect* data inside the SP columns, see next row | Lost |
+| **PatternXP SP columns** (internal parameters −10…−112: sub-pattern **triggers** and **play mode**, **offset**, **diatonic transpose**, **modulators**, loop and reverse) | none | none | none | **Lost, in every conversion, and already lost today** whenever MPE reads such a blob (`GetParameter` returns null for the SP indices; the columns are dropped). A pattern that is only a trigger for sub-patterns converts to **an empty clip** | Lost |
+| **Input columns** (connection amp and pan) | Lost today on open; **not converted** by design (§11) | – | – | – | – |
+| Chords | not data | not data | not data | not data | – |
+| Machine-side notes (MIDI machines: Note, Velocity, Delay, Cut, Pitch Wheel, CC) | n/a | Lanes kept; played as today until CU6 | n/a | n/a | – |
+
+**Sound after conversion, if the engine replaces the editor's own playing.** Applies to E4/E5 only (E1 and E2 already play as now, §5.6 and D3):
+
+| Playback detail of PatternXP (`patternxp/PatternXP.cpp`, `MachinePattern.h`) | What the engine would do instead | Status |
+|---|---|---|
+| **Subtick timing**: events fall on sub-tick boundaries by its own rounding | The engine puts an event at its exact 1/240-tick time inside the block | Differs by under a sub-tick; **unverified** by ear; CU1's probe measures the block |
+| **Delay and cut scale 96** vs the engine's note model (MPE: 95 in its own fields) | The store has the real time, so a delayed note starts where the row plus fraction says | Differs by 1/96 vs 1/95 of a tick on a delayed note; **unverified** |
+| **Monophonic note ordering**: a new note on a track ends the previous one at its subtick, in PatternXP's order within the tick | Note and Off are separate events; an Off and a Note on the same tick keep the order the store has | Edge case only (two events in one tick on one track); **unverified** |
+| Loop, reverse, play-mode of sub-patterns | Not in the store (they are the SP columns) | **Lost**, see above |
+
+**What each choice would do to the user's songs**
+
+| Choice | PatternXP songs (E4/E5) | Other editors (E6) | MPE (E2) and rows (E1) |
+|---|---|---|---|
+| Convert on open (D2 B) | Note and parameter content exact; SP columns lost; the sound shifts by the playback details above (**unverified**); the original blob is kept only inside the `.bmx` as a derived export (so a saved-back song loses the SP data for good) | Cleared as today (no change) | Converted (the rest of this design) |
+| Leave alone (D2 A) | No change of sound; the clip is visible only as a read-only preview outside the editor; **cannot be edited in the Studio** (no editor DLL there) | Cleared as today | – |
+| Convert on request (*Convert to Clip*) | Same as B, only when the user presses it, with the loss listed | Same | – |
+
+**Sub-choices for D2** (the user chose B; "after the analysis" means choosing among these, at most three):
+
+- **D2-a (recommended): convert on open, keep the original.** The converter runs in memory as for old songs. PatternXP's SP columns, and the blob, stay in the clip as an opaque, unplayed `Owner=<editor>` record so they are not destroyed on save; the loss report names each clip that had SP columns ("clip X: 3 sub-pattern triggers not converted; they stay in the song file, silent"). Nothing the user wrote is deleted; sound can differ by the details in the table above.
+- D2-b: convert on open, keep nothing. The simplest code; SP columns are gone on the next save. It is today's Studio behaviour for these songs, now made explicit.
+- D2-c: convert only when the clip has no SP columns (a pattern with only notes and parameters, which is exact in the data); a clip with SP columns stays as it is, read-only preview, no conversion.
+
+**Verified and unverified, in one list.** Verified: the PATT→PXP column mapping (2,415 cells, 0 mismatches); what `gear.xml`, `BMXFile.cs` and `Gear.cs` do with a missing editor and a data-format mismatch; that `PatternEditorUtils.GetParameter` drops the SP indices; that no repo song carries an editor blob. **Unverified** (no PatternXP song, no PatternXP DLL on this machine, no renders): every sound difference, the Pianoroll's blob, and a parameter-index misalignment on a real changed machine.
+
 ---
 
 ## 8. Readers and writers after
@@ -309,7 +371,8 @@ A `.nbl` saved before CU3 (`formatVersion` 2) carries MPE blobs: `NblMigrations`
 | Agent guides | 183 lines in `ReBuzz.Agent/Guides`, 81 markdown files mention "pattern" (guides, machine pages, docs) | Reword; the guide `concepts.md` gains the glossary line |
 | Tests keyed on labels | 482 string literals with "pattern" in `ReBuzz.Studio.Tests`, `ReBuzz.SessionTests`, `ReBuzz.AgentTests` | Change with the labels, one wave |
 | Specs | 34 docs | `clips.md` is the vocabulary; older specs get a one-line pointer, not an edit of history |
-| **Stays** | `IPattern`, `PatternCore`, `PatternColumnCore`, `.bmx` sections (`PATT`, `XTAP`, `TAP2`), `PatternEditorData`, MPE and PatternXP machine names and DLL names, Classic's UI, upstream-facing text (loss report categories, `Machine > Patterns` in Buzz's own dialogs) | D1 |
+| Code identifiers | `IPattern`, `IPatternColumn`, `PatternCore`, `PatternColumnCore`, `IMachine.Patterns`, `CreatePattern`, `PatternEvent`…: 650 `.cs` files, 33 `.cpp`, 42 `.h`, 27 `.xaml` mention "pattern" (D1 B) | Renamed, behind a compatibility layer, §9.4–9.7 |
+| **Stays (by interface or by file, not by choice)** | `.bmx` section names (`PATT`, `XTAP`, `TAP2`) and `.bmxml` element names; machine and DLL names a song stores (`Modern Pattern Editor`, `Jeskola Pattern XP`, `ReBuzzPatternXP`); the Buzz SDK header `MachineInterface.h` and the `CPattern` vtable; the reflection names the managed host looks up on a machine (§9.4); Classic's UI text (frozen); upstream-facing text (loss report categories) | §9.4 |
 
 ### 9.2 One new read
 
@@ -318,6 +381,48 @@ A `.nbl` saved before CU3 (`formatVersion` 2) carries MPE blobs: `NblMigrations`
 ### 9.3 Collisions to settle in the same wave
 
 `session_clip_set`, `audio_clip_*`, `ClipSettings`, `ClipNotes` already mean the content. `arrangement_clip` and `SequenceEvent.Clip` mean the placement. After the rename the UI says "clip" for both and the shared badge says "linked ×N" (the clips that share the content). The code and the MCP descriptions say **placement** for the run on a lane.
+
+### 9.4 D1 B: which renamed names an outside binary or source binds to
+
+D1 is decided **B** (2026-11-23): the code identifiers are renamed too. Four kinds of code that we do not build bind to names. For each: what breaks if the name changes, and the way to keep it working.
+
+| Interface | Bound by | Names that would change | What breaks if renamed | Keep working by |
+|---|---|---|---|---|
+| **`BuzzGUI.Interfaces.dll`** (managed API, `ReBuzzGUI/BuzzGUI.Interfaces`) | Managed machines compiled against it: the **7 shipped** (`Machines/AudioBlock`, `EnvelopeBlock`, `ModernPianoroll`, and others), every third-party managed machine, and any managed machine **cherry-picked from upstream** | `IPattern` (17 mentions in its file), `IPatternColumn` (11), `IMachine.Patterns`/`CreatePattern`/`GetPattern`, `ISequence`'s pattern members (13), `IBuzz`, `ISession` | A .NET binary references types and members by assembly, namespace and **name**. A renamed `IPattern` makes the machine fail with `TypeLoadException` or `MissingMethodException` the first time it touches it. **Type forwarders do not help**: they redirect a type that *moved to another assembly*, not one that was *renamed* | **Do not rename the public names in that assembly. Add the new names beside them** and make the old ones aliases: `interface IClip`, `IClipColumn`; `interface IPattern : IClip` (kept, marked `[Obsolete(error: false)]`); the old members stay on `IMachine` and forward to the new ones (default interface members, supported by the .NET runtime the engine uses). `PatternCore` becomes `ClipCore : IClip, IPattern`. The assembly keeps its name `BuzzGUI.Interfaces`, so the binaries load unchanged |
+| **Reflection names the host looks up** (`ManagedMachineHost.cs` lines 254–268) | A managed machine that *implements* them as plain methods: `PatternEditorControl`, `SetEditorPattern`, `CreatePatternCopy`, `SetPatternEditorData`, `GetPatternEditorData`, `GetPatternEditorMachineMIDIEvents`, `SetPatternEditorMachineMIDIEvents`, plus the fork's `ExportClipNotes`, `ImportClipNotes`, `EditTrackerEvents` | Those method names | The host finds them with `GetMethod("<name>")`; a renamed host lookup silently finds nothing and the editor stops working, with no error | The host probes the **new name first, the old name second**, for the whole list. The machine author's side does not change. Documented as the managed machine ABI in `docs/specs/` and covered by one test per name |
+| **Native machines** (`MachineInterface.h`, `NativeMachineFramework/`, `ReBuzzPatternXP/`) | Buzz's machine SDK: `CPattern`, `CMachineInterface`, `CMICallbacks::GetPatternName`, `CreatePattern`, `GetPatternLength`… | The **callbacks and `CPattern`**, if we renamed them | A native machine is bound by **vtable order and struct layout**, not names, so the binary would still run; but anyone recompiling a machine against our header breaks, and the header is Buzz's SDK, kept to stay compatible with every Buzz machine source | **Keep `MachineInterface.h` and the callback names as they are** (they are the SDK). Rename only our own wrapper classes (`PatternManager` in `NativeMachineFramework` and `ReBuzzPatternXP`: 189 + 52 mentions, 33 `.cpp`, 42 `.h` in all), internal to the DLL |
+| **Plugin export** (`PluginExport/`, CMake; 1 file mentions it) | The plugins we export (VST/CLAP descriptors, `plugins.json`), and any DAW state they saved | Descriptor and state keys, if any contain "pattern" | A host that saved plugin state under a key would lose it | Not renamed: state keys and descriptor ids are persisted names, like section names. Check in CU5 (**unverified**: the one mention was not read) |
+| **MCP and agent surface** | Agents, eval scenarios (`ReBuzz.AgentEval`), saved agent notes | `pattern_*` tools, 25 tools' `pattern` argument, 101 argument keys | Already settled in §9.1: **aliases for two releases**, both argument names accepted | §9.1 |
+| **File formats** | Every song ever saved; upstream ReBuzz reading our `.bmx` | Section and element names (`PATT`, `XTAP`, `TAP2`, `<Pattern>` in `.bmxml`), the TAP2 key names, `.nbl` manifest keys | Old files stop opening; upstream stops reading our exports | **Not renamed.** Readers accept old keys forever; a new field gets a new name and `.nbl` formatVersion rules (native-format.md) apply |
+
+**Rule.** *A name that a binary, a saved file or a reflection lookup stores stays; the new name is added next to it.* Everything else is renamed.
+
+### 9.5 The rename, re-estimated
+
+Counts (grep, 2026-11-23, `.cs`, `.cpp`, `.h`, `.xaml` that mention "pattern" in any case): **752 files** (650 `.cs`, 33 `.cpp`, 42 `.h`, 27 `.xaml`), plus 105 `.md`, 35 `.py`, 49 `.json`. By area: `ReBuzz` 131, `ReBuzzGUI` 100, `ModernPatternEditor` 80, `Machines` 77, `ReBuzz.Studio.Tests` 63, `ReBuzz.Studio` 61, `ReBuzzTests` 47, `ExternalMachines` 45, `ReBuzz.Agent` 17, the rest under 10 each. The earlier §9.1 estimate (UI, MCP, guides, tests: about 1–1.5 pw) was for a text change. The code rename is a **mechanical symbol rename** (a Roslyn rename, not a text replace, so strings and file formats are untouched) followed by review.
+
+| Wave | What | Files (about) | Size | Gate |
+|---|---|---|---|---|
+| **CU5a** compatibility layer first | New names beside old in `BuzzGUI.Interfaces`; `ClipCore : IClip, IPattern`; the host's two-name probe; a test machine compiled against the **old** assembly (a checked-in binary) that must load and play | 15 | 0.5–1 pw | Old binary machine loads; the 7 shipped machines pass; native framework unchanged |
+| **CU5b** engine and GUI interfaces | Core types and members inside the engine: `PatternCore`→`ClipCore`, `PatternColumnCore`, `WorkManager`, `BMXFile`, `ReBuzzCore`, `ReBuzzGUI` | about 230 | 1 pw | CI full; renders bit for bit (the CU1 goldens); `.bmx`, `.nbl`, `.bmxml` byte-equal round trips |
+| **CU5c** editors and machines | `ModernPatternEditor` (WPF, portable, Avalonia), the 7 shipped managed machines (they may keep using the old names: they are a test of the layer), `ExternalMachines`, native wrapper classes | about 200 | 0.5–1 pw | Same; Classic's tests unchanged |
+| **CU5d** Studio, agent, tests, text | UI strings (§9.1), MCP, guides, 482 test literals, specs | about 320 plus text | 1–1.5 pw | Studio tests, agent eval |
+| **Total** | | 752 files | **3–4.5 pw** (was 1–1.5) | |
+
+### 9.6 What it does to cherry-picking from upstream (the 2026-11-15 rule)
+
+The policy is: upstream is **cherry-picked, not merged** (`FORK.md`, last merge base `af162b9a`). Measured on the base: 2,384 files; of the 752 files that mention "pattern" today, **279 also exist in upstream's base**. After a rename, a cherry-pick of an upstream commit conflicts wherever its hunk touches a renamed line in those 279 files (new files are not affected).
+
+- **Machine fixes and new machines** (what the policy says to take) compile against `BuzzGUI.Interfaces`, which keeps the old names, so they apply and build **unchanged**. This is the strongest reason for the compatibility layer in §9.4.
+- **Loader and core fixes** (`BMXFile.cs`, `ReBuzzCore.cs`, `WorkManager.cs`) hit renamed names, and will conflict wherever they mention a pattern. Cost: the conflict is only names, so resolving takes minutes, but it is every such pick.
+- **Mitigation**: keep the identifier map as a file (`tools/clip-rename-map.txt`, old name → new name) and a small script that applies it to an upstream patch before `git am -3`. A pure identifier map is mechanical, so most picks apply with no hand work. Strings and format names are not in the map.
+- **The rule needs one sentence added** in `FORK.md`: *"Cherry-picks run through `tools/clip-rename-map` first; machines that compile against `BuzzGUI.Interfaces` need no change."*
+- **Decision cost.** The rename is paid once (3–4.5 pw). The cherry-pick cost is small per pick and stays for as long as the fork takes upstream's fixes. A fork that never takes upstream core fixes pays nothing more.
+
+### 9.7 Order and risks of the rename
+
+- **Order:** CU5a (layer) can start any time after CU1; CU5b–c should be a **quiet window**: no other branch open on `ReBuzz/`, `ReBuzzGUI/` and `ModernPatternEditor/`, because a rename touches 750 files and every open branch conflicts. Do it **after** EV1 and MT1 have merged (they add labels) and **before T2**, but **after CU4** if the readers and writers are being rewritten at the same time, so the rewrite is not made twice (§10).
+- **Risks:** a renamed reflection lookup that silently finds nothing (§9.4: the two-name probe and a test per name); a renamed string that a saved file or the agent eval depends on (the Roslyn rename leaves strings alone; the map lists the few string keys that do change); Classic is **frozen** but shares the sources: its tests run in every sub-wave.
 
 ---
 
@@ -331,11 +436,11 @@ Waves of about one branch. Gates in the second table apply to every wave from CU
 | **CU2** | The store learns what trackers need | Engine and `BuzzGUI.Common` only, no view, no behaviour change: `Play`, `Owner`, `Grid`, `Mute` metadata and `EnginePlays` honouring `Play`; explicit note-off events; `ClipMigration` (PATT / `BuiltInPattern`, PXP v1–3, MPE v1 → lanes); `ClipExport` (lanes → MPE blob and PXP, the double-play rule, the stamp). Round trips on the whole corpus: blob → store → blob has the same events | 2–3 pw | CU1 |
 | **CU3** | The tracker reads and writes the store | The seam (§6), migration on open in Studio and headless, `ClipView`, `.nbl` v3, derived blob in `.bmx`/`.bmxml`, EV1's and the arrangement reader's one source. Editor plays `Play=editor` lanes. Foreign editors untouched | 3–4 pw | CU2 |
 | **CU4** | One reader and writer layer | `SongNotes` for every machine; `Editor*Notes`, `ExportClipNotes` bridges and "Move notes" removed; `automation_read` and `notes_*` see all lanes; `clip_get`; clone, replace, snapshots on columns only | 1.5–2 pw | CU3 |
-| **CU5** | The rename | §9, one wave, mechanical. May start as soon as EV1 and MT1 have merged (they add labels) and **before T2** | 1–1.5 pw | EV1, MT1 |
+| **CU5** | The rename (D1 B: UI, MCP **and code identifiers**) | §9, four sub-waves: **a** compatibility layer (new names beside the old in `BuzzGUI.Interfaces`, host probes both names, an old-binary test machine), **b** engine, **c** editors and machines, **d** Studio, agent, tests, text. Mechanical (symbol rename) but 752 files: needs a quiet window. **a** can start after CU1. **b–d** after EV1 and MT1 have merged and after CU4 (the readers and writers are rewritten there, so the rename is not done twice), **before T2 starts its views** | **3–4.5 pw** (was 1–1.5) | a: CU1; b–d: EV1, MT1, CU4 |
 | **CU6** | One player (D3 A) | `Play=engine` for migrated lanes, with `Lag` if the probe says so; MIDI lanes become notes (*Convert to notes* by default); the editor's playing path deleted for the Studio build. Own goldens, own gate | 2–3 pw | CU4 |
 | **CU7** | Retire | The Studio's legacy list store, `PXPDataFormat` write, the blob's event section; *Convert to Clip* for foreign editors (D2) | 0.5–1 pw | CU6 |
 
-**T2 starts after CU3** (store-backed parameter columns) and runs in parallel with CU4–CU6.
+**T2 starts after CU3** (store-backed parameter columns) and runs in parallel with CU4–CU6. With D1 B, T2's new views use the **new names** from the start (`ClipCore`, `IClip`), so CU5a should have merged before T2 writes its first class; CU5b–d then rename what T2 added along with the rest.
 
 ### 10.1 Gates (every wave from CU3; CU1 sets them)
 
@@ -368,15 +473,14 @@ Waves of about one branch. Gates in the second table apply to every wave from CU
 
 ## 12. Decisions for the user
 
-**D1. How far does "Clips everywhere" go?**
-- **A (recommended):** everything a person or an agent sees: Studio, browser, MCP (new `clip_*` names, old names as aliases for two releases, both argument names accepted), guides, docs, tests. A placed clip is also "a clip" in the UI; the code and tool descriptions say "placement". Code identifiers (`IPattern`, `PatternCore`), file sections, editor machine names and Classic keep "pattern", because they are upstream's and renaming them makes every upstream merge a rewrite.
-- B: also the code identifiers and the interfaces (about 2,400 files; upstream merges end).
-- C: UI only; MCP keeps `pattern_*`.
+**D1. How far does "Clips everywhere" go?** **Decided B** (the user, 2026-11-23): "Rename the code identifiers too, not only the UI."
+- Plan in §9.4–9.7: a compatibility layer keeps what a binary, a saved file or a reflection lookup stores (the old `IPattern` and friends in `BuzzGUI.Interfaces` stay as aliases, file section names stay, the SDK header stays); everything else is renamed (752 files, 3–4.5 pw in four sub-waves, CU5a–d). Upstream cherry-picks keep working through an identifier map.
+- **One thing to confirm, because it follows from B** (not a new question): the old names stay forever as obsolete aliases in `BuzzGUI.Interfaces`. Without that, third-party managed machines and machines cherry-picked from upstream stop loading. If you would rather break them, say so; the plan then drops CU5a and the cost of every machine pick goes up.
 
-**D2. Songs whose clips use a foreign pattern editor (PatternXP and others)?**
-- **A (recommended):** they stay as they are: their editor plays them, the other views show a read-only preview, and *Convert to Clip* turns one into lanes on request (through the bridges, with the loss listed). No song changes sound.
-- B: convert on open (lossy; PatternXP's own playback is replaced by the engine's).
-- C: stop supporting them in the Studio.
+**D2. Songs whose clips use a foreign pattern editor (PatternXP and others)?** **Answered B (convert on open), after an exact analysis** (the user, 2026-11-23): "Analyze which data is lost exactly on conversion and ask me again for a more informed decision." The analysis is §7.5. Headline: no repo song uses any pattern editor; for PatternXP's four editors, notes and parameters convert **exactly**; PatternXP's **sub-pattern trigger and effect columns are lost in every conversion (and already today whenever MPE reads such a blob)**; sound differences are small, from code only, **unverified**; other editors are already cleared today. **Asking again, pick one:**
+- **D2-a (recommended):** convert on open and keep the original data in the clip, silent, so nothing is deleted (the loss report names the clips that had SP columns).
+- D2-b: convert on open, keep nothing (today's Studio behaviour made explicit; SP data gone on the next save).
+- D2-c: convert only clips with no SP columns; the others stay as they are, read-only.
 
 **D3. One player or two?**
 - **A (recommended):** two players until CU6: the editor keeps playing migrated tracker lanes (bit for bit by construction), then a gated wave moves them into the engine, using the CU1 probe.
