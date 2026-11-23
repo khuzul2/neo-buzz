@@ -318,7 +318,9 @@ namespace ReBuzz.Studio.Shell
                 mapLayer.Attach(this);
                 DockPanel.SetDock(mapLayer.Banner, Dock.Top);                       // the map-mode banner is a row under the top bar, so it hides nothing
                 root.Children.Insert(root.Children.IndexOf(body), mapLayer.Banner);
-                Views.Device.DeviceMenus.OpenMapPopover = (machine, p) => mapLayer?.OpenForTarget(ReBuzz.Core.MidiMapping.TargetOf(p.Parameter, p.Track));
+                Action<IMachine, Views.Device.DeviceParam> openPopover = (machine, p) => mapLayer?.OpenForTarget(ReBuzz.Core.MidiMapping.TargetOf(p.Parameter, p.Track));
+                Views.Device.DeviceMenus.OpenMapPopover = openPopover;
+                Closed += (s, e) => { if (Views.Device.DeviceMenus.OpenMapPopover == openPopover) Views.Device.DeviceMenus.OpenMapPopover = null; };   // a static must not keep the closed window
             }
             // Fork (ux-overhaul.md P4a): Tab reads the window as it is seen, not in the order the panels were docked.
             Avalonia.Input.KeyboardNavigation.SetTabIndex(transport, 1);
@@ -1139,6 +1141,7 @@ namespace ReBuzz.Studio.Shell
         protected override void OnClosed(EventArgs e)
         {
             refresh.Stop();
+            mapLayer?.Detach();
             inspector?.Dispose();
             browser?.Dispose();
             if (Platform.StudioMachineUiHost.DeviceOpener == (Func<IMachine, bool>)OpenDevice) Platform.StudioMachineUiHost.DeviceOpener = null;

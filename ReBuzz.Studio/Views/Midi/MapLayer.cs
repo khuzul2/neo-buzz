@@ -92,7 +92,7 @@ namespace ReBuzz.Studio.Views.Midi
             globalScope.IsCheckedChanged += (s, e) => { if (!updating && globalScope.IsChecked == true) mode.Scope = MapScope.Global; };
             done.Click += (s, e) => mode.Exit();
             mode.Changed += OnModeChanged;
-            if (core.MidiMapping is { } mm) mm.SelectionChanged += _ => OnModeChanged();
+            if (core.MidiMapping is { } mm) mm.SelectionChanged += OnSelectionMoved;
             Sync();
         }
 
@@ -106,6 +106,16 @@ namespace ReBuzz.Studio.Views.Midi
         public AvControl Hovered => hover;
 
         public MapPopover Popover => popover;
+
+        void OnSelectionMoved(object source) => OnModeChanged();
+
+        /// <summary>The window closed: the engine's long-lived mapping and map mode no longer reach the layer.</summary>
+        public void Detach()
+        {
+            mode.Changed -= OnModeChanged;
+            if (core.MidiMapping is { } mm) mm.SelectionChanged -= OnSelectionMoved;
+            popover?.Hide();
+        }
 
         void OnModeChanged()
         {

@@ -595,6 +595,7 @@ namespace ReBuzz.Studio.Views.Inspector
             disposed = true;
             selection.Changed -= OnSelectionChanged;
             historyPage.Dispose();
+            midiPage.Detach();
             if (core.SessionLayout != null) core.SessionLayout.Changed -= OnLayoutChanged;
         }
     }

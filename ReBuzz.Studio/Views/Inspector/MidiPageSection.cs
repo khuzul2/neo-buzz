@@ -180,9 +180,18 @@ namespace ReBuzz.Studio.Views.Inspector
             autoArm.IsCheckedChanged += (s, e) => { if (!updating && Mapping != null) Mapping.AutoArm = autoArm.IsChecked == true; };
             if (Mapping is { } m)
             {
-                m.Changed += () => signature = null;
-                m.TeachProgress += (d, n) => signature = null;
+                m.Changed += OnMappingChanged;
+                m.TeachProgress += OnTeachProgress;
             }
+        }
+
+        void OnMappingChanged() => signature = null;
+        void OnTeachProgress(string d, int n) => signature = null;
+
+        /// <summary>The window closed: the engine's mapping no longer reaches this section.</summary>
+        public void Detach()
+        {
+            if (Mapping is { } m) { m.Changed -= OnMappingChanged; m.TeachProgress -= OnTeachProgress; }
         }
 
         MidiMapping Mapping => core.MidiMapping;
