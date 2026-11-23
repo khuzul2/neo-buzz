@@ -920,6 +920,7 @@ namespace ReBuzz.Core
             global::ReBuzz.Core.Clips.NeoStretch.Log = line => DCWriteLine(line, DCLogLevel.Warning);   // fork (NA5): the Pro warp mode's missing library says so once
             UiEvents = UiEventQueue.For(dispatcher);    // fork (audio hygiene): with its signal, made here on the UI thread
             UiEvents.Reserve(1);                        // the transport's Playing event (StartPlaying)
+            midiInputTarget = new MidiInputEvents(this);    // fork (MM1): the UI half of a MIDI message
 
             midiActivityTimer = dispatcher.CreateTimer(TimeSpan.FromSeconds(0.5), () =>
             {
@@ -1960,11 +1961,28 @@ namespace ReBuzz.Core
 
             // Some UI components require MIDIInput.Invoke to be called from UI thread (Midi Keyboard)
             // Fork: posted rather than Invoke, so the MIDI thread never waits for the UI.
-            dispatcher.BeginInvoke(() =>
+            // Fork (MM1): the engine's queue of UI events, not a closure per message: nothing is allocated here for a message.
+            UiEvents.Enqueue(midiInputTarget, data, 0);
+        }
+
+        MidiInputEvents midiInputTarget;
+
+        /// <summary>The UI-thread half of a MIDI message: the activity light and the MIDIInput event.</summary>
+        sealed class MidiInputEvents : UiEventQueue.ITarget
+        {
+            readonly ReBuzzCore core;
+
+            public MidiInputEvents(ReBuzzCore core)
             {
-                MIDIActivity = true;
-                MIDIInput?.Invoke(data);
-            });
+                this.core = core;
+                core.UiEvents.Reserve(512);              // messages waiting for the UI thread (a burst of CCs); more only grows the queue
+            }
+
+            public void Deliver(int data, int kind)
+            {
+                core.MIDIActivity = true;
+                core.MIDIInput?.Invoke(data);
+            }
         }
 
         /// <summary>

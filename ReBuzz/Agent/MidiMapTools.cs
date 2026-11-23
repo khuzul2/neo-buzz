@@ -114,13 +114,15 @@ namespace ReBuzz.Agent
             },
         };
 
+        static double? Num(JsonNode? n) => Schema.TryNumber(n, out double d) ? d : null;
+
         static MapTarget TargetOf(ReBuzzCore core, JsonObject args, ToolContext? c = null)
         {
             string text(string n) => args[n] is JsonValue v && v.TryGetValue(out string? s) ? s! : "";
             string command = text("command");
             if (command.Length > 0)
             {
-                int index = args["index"] is JsonValue iv && iv.TryGetValue(out double d) ? (int)d : 1;
+                int index = (int?)Num(args["index"]) ?? 1;
                 return command.ToLowerInvariant() switch
                 {
                     "play" => MapTarget.Command(MapCommand.Play),
@@ -139,7 +141,7 @@ namespace ReBuzz.Agent
             string machine = text("machine"), parameter = text("parameter");
             if (machine.Length == 0 || parameter.Length == 0) throw new ToolError("Give a target: machine and parameter, or a command.");
             var m = SongModel.Machine(core, machine);
-            int track = args["track"] is JsonValue tv && tv.TryGetValue(out double td) ? (int)td : 0;
+            int track = (int?)Num(args["track"]) ?? 0;
             var p = SongModel.Param(m, SongModel.Params(m), parameter, track > 0);
             return MapTarget.Parameter(m.Name, p.IsTrack ? MapTarget.TrackPrefix + p.Name : p.Name, p.IsTrack ? track : 0);
         }
@@ -285,7 +287,7 @@ namespace ReBuzz.Agent
                             {
                                 string device = c.String("device") ?? throw new ToolError("knob_group: give the device (controller_list names them).");
                                 int ch = (c.Int("channel") ?? 1) - 1;
-                                var numbers = c.List("numbers")?.Select(n => (int)n!.GetValue<double>()).ToList()
+                                var numbers = c.List("numbers")?.Select(n => (int)(Num(n) ?? throw new ToolError("numbers: give whole numbers 0 to 127."))).ToList()
                                     ?? Enumerable.Range(c.Int("first_number") ?? throw new ToolError("knob_group: give numbers=[...] or first_number and count."), c.Int("count") ?? 8).ToList();
                                 if (numbers.Any(n => n < 0 || n > 127)) throw new ToolError("knob_group: controller numbers run from 0 to 127.");
                                 var enc = EncoderOf(c);
@@ -463,12 +465,12 @@ namespace ReBuzz.Agent
                         if (c.List("slots") is { } slots)
                             foreach (var s in slots.OfType<JsonObject>())
                             {
-                                int knob = s["knob"] is JsonValue kv && kv.TryGetValue(out double kd) ? (int)kd : throw new ToolError("slots: each needs a knob number from 1.");
+                                int knob = (int?)Num(s["knob"]) ?? throw new ToolError("slots: each needs a knob number from 1.");
                                 MapTarget target = s["machine"] == null ? null! : TargetOf(core, s);
                                 var drive = new MapDrive
                                 {
-                                    Min = s["min"] is JsonValue a && a.TryGetValue(out double lo) ? lo : 0,
-                                    Max = s["max"] is JsonValue b && b.TryGetValue(out double hi) ? hi : 1,
+                                    Min = Num(s["min"]) ?? 0,
+                                    Max = Num(s["max"]) ?? 1,
                                     Invert = s["invert"] is JsonValue iv && iv.TryGetValue(out bool inv) && inv,
                                     Takeover = s["takeover"] is JsonValue tv && tv.TryGetValue(out string? tk) ? (tk!.ToLowerInvariant() switch { "jump" => Takeover.Jump, "scale" => Takeover.Scale, _ => Takeover.Pickup }) : Takeover.Pickup,
                                 };

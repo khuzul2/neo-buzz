@@ -423,8 +423,11 @@ namespace ReBuzz.Core
             if (r == null || kind != MapKind.ControlChange || r.Source.Channel != channel || r.Source.Number != number) return;
             if (!r.Source.AnyDevice && !string.Equals(r.Source.Device, device.Id, StringComparison.OrdinalIgnoreCase)) return;
             if (Stopwatch.GetTimestamp() > r.Until) { refine = null; return; }
-            buzz.dispatcher.BeginInvoke(() => ObserveRefine(r, value));
+            PostRefine(r, value);
         }
+
+        // Its own method: a lambda that captures the parameters would allocate its closure on entry of the caller, for every message.
+        void PostRefine(Refine r, int value) => buzz.dispatcher.BeginInvoke(() => ObserveRefine(r, value));
 
         void ObserveRefine(Refine r, int value)
         {
@@ -516,11 +519,10 @@ namespace ReBuzz.Core
             return null;
         }
 
-        /// <summary>What a badge says for a control: "CC 21", with the device when more than one controller is in use.</summary>
+        /// <summary>What a badge says for a control: "CC 21", with the device when it names one.</summary>
         string BadgeText(MapSource source)
         {
-            bool several = computer.Groups.Count > 1 || (buzz.MidiInOutEngine?.OpenInputKeys().Count ?? 0) > 1;
-            return source.AnyDevice || !several ? source.ShortControl : source.Short();
+            return source.AnyDevice ? source.ShortControl : source.Short();
         }
 
         /// <summary>The mapping a target has in force (to edit its range), or null.</summary>
