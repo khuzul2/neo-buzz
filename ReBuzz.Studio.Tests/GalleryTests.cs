@@ -757,6 +757,58 @@ namespace ReBuzz.Studio.Tests
                     machines.ZoomSlider.Value = 0;
                     Settle();
                 });
+                Try("035-machines-tracks", () =>
+                {
+                    // MT1 (ux-overhaul.md §11): the Tracks mode on the demo song: the chip bar under the top bar, boxes and wires in their track's
+                    // colour, a split stripe on a machine that several tracks feed; then one track lit (the rest at about 35 %) with its card; then many chips.
+                    ReBuzz.Studio.Views.Machines.MachineTracksPreference.On = true;
+                    try
+                    {
+                        Settle();
+                        Shot(window, "035-machines-tracks", "Machines with Tracks on (MT1): a chip for each track, group and return under the top bar, every box and wire in its track's colour, a split stripe on a machine several tracks feed, the boxes where they were.",
+                            "Tracks, in the top bar of the Machines view.");
+                        var chip = machines.Tracks.ChipOf(demo.Lead);
+                        Assert.That(chip, Is.Not.Null, "a chip for Lead");
+                        machines.Canvas.Pin(ReBuzz.Studio.Views.Machines.TrackTarget.Entry(demo.Lead));
+                        Settle();
+                        Shot(window, "035-machines-track-lit", "Machines with Lead's track lit (MT1): its path in full colour, everything else dimmed to about 35 %, the card under its first machine with the chain, mute, solo, arm and a meter.",
+                            "Point at, focus or click a chip.");
+                        machines.Canvas.Pin(null);
+                        Settle();
+
+                        var song = Core.SongCore;
+                        var added = new List<MachineCore>();
+                        try
+                        {
+                            var master = song.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+                            for (int i = 0; i < 26; i++)
+                            {
+                                string name = "Track " + (i + 1);
+                                song.CreateMachine("Neo Poly", null, name, null, null, null, -1, -0.95f + 0.07f * (i % 6), 0.55f + 0.1f * (i / 6));
+                                var m = song.MachinesList.First(x => x.Name == name);
+                                added.Add(m);
+                                song.ConnectMachines(m, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                            }
+                            Settle();
+                            Shot(window, "035-machines-many-chips", "Machines with Tracks on and many chips (MT1): 26 more generators into the Master; the bar wraps to a second row and scrolls when it is taller than three rows, every chip reachable with Tab.",
+                                "Tracks, with many generators in the song.");
+                        }
+                        finally
+                        {
+                            foreach (var m in added)
+                            {
+                                Core.UiHost.ReleaseMachine(m);
+                                song.DeleteMachines(new[] { m });
+                            }
+                            Settle();
+                        }
+                    }
+                    finally
+                    {
+                        ReBuzz.Studio.Views.Machines.MachineTracksPreference.On = false;
+                        Settle();
+                    }
+                });
 
                 Try("030-sequence", () =>
                 {

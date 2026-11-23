@@ -45,6 +45,7 @@ FEATURES = [
     ("Samples (P5b)", "The Samples view: waves, import, from a render", "ux-overhaul.md §11 P5b", ["wave_list", "wave_import", "wave_from_render"], ""),
     ("Machine view (P6b)", "Clone with patterns, and Copy / Paste of machines (P6c)", "ux-overhaul.md §9 rows 4 and 14", ["machine_clone", "machine_remove"], "a cut is a clone, then machine_remove"),
     ("Machine view (P6b)", "Machine groups: make, fill, empty, fold, rename, delete", "ux-overhaul.md §9 row 12", ["machine_group"], "moving a group is the view's drag only"),
+    ("Machine view (MT1)", "Tracks: the song's tracks, groups and returns with their chains, and what is unrouted (the Machines view's Tracks mode)", "ux-overhaul.md §11 MT1", ["machine_tracks"], "a read; the model is worked out from the wires and never saved"),
     ("Machine view (P6b)", "Latency window: override and clear", "ux-overhaul.md §9 row 5", ["machine_latency"], ""),
     ("Machine view (P6c)", "Attributes", "ux-overhaul.md §9 row 14", ["machine_attributes"], ""),
     ("Machine view (P6c)", "A machine's own commands", "ux-overhaul.md §9 row 14", ["machine_command"], ""),

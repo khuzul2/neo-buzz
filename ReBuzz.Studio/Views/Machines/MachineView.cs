@@ -36,6 +36,9 @@ namespace ReBuzz.Studio.Views.Machines
 
         readonly Views.Browser.MachineBrowserPopup popup;
         readonly Border starters;
+        readonly Button tracksButton;
+        readonly TrackBar trackBar;
+        readonly TrackCard card;
 
         public MachineView(ReBuzzCore core, IRegistryEx registry = null)
         {
@@ -47,21 +50,34 @@ namespace ReBuzz.Studio.Views.Machines
             Canvas.Menus = Menus;
             Canvas.Amp = Amp;
 
+            // MT1 (ux-overhaul.md §11): the Tracks toggle, the bar of chips under the top bar, and the card of the lit track.
+            tracksButton = Shell.Design.StudioButtons.KeepFocus(new Button { Content = "Tracks", Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, BorderThickness = new Thickness(1), Padding = new Thickness(10, 2), FontSize = Shell.Design.StudioTokens.FontBody });
+            Avalonia.Automation.AutomationProperties.SetName(tracksButton, "Tracks");
+            ToolTip.SetTip(tracksButton, "Colour the machines by track: a generator and what only it feeds, up to the Master or a shared machine. Hover or click a chip to light one track");
+            tracksButton.Click += (s, e) => MachineTracksPreference.On = !MachineTracksPreference.On;
+            trackBar = new TrackBar(core, Canvas);
+            card = new TrackCard(core, Canvas);
+            Canvas.LitChanged += UpdateCard;
+            Canvas.ViewChanged += UpdateCard;
+            Canvas.LevelsTicked += card.Refresh;
+
             // The top bar (TopBorderStyle; 32 px, for Fluent's slider) with the zoom slider on the right.
             var bar = new Border
             {
                 Height = 32,
                 BorderThickness = new Thickness(0, 0, 0, 1),
                 BorderBrush = Shell.Design.StudioTokens.SurfaceBorderBrush,
-                Child = new DockPanel { LastChildFill = false, Children = { Right(zoom) } },
+                Child = new DockPanel { LastChildFill = false, Children = { Left(tracksButton), Right(zoom) } },
             };
             SetDock(bar, Dock.Top);
             Children.Add(bar);
+            SetDock(trackBar, Dock.Top);
+            Children.Add(trackBar);
 
             // The canvas fills the view; the amp control's layer is above it (WPF's ampCanvas).
             Canvas.Browser = Model;
             popup = new Views.Browser.MachineBrowserPopup(Model);
-            var layer = new Avalonia.Controls.Canvas { Children = { Amp, popup } };
+            var layer = new Avalonia.Controls.Canvas { Children = { Amp, popup, card } };
             starters = BuildStarters();
             Children.Add(new Panel { Children = { Canvas, starters, horizontal, vertical, layer } });
             Canvas.BrowseRequested += OnBrowse;
@@ -254,6 +270,8 @@ namespace ReBuzz.Studio.Views.Machines
             Model.Changed += UpdateStarters;
             popup.Attach();
             UpdateStarters();
+            MachineTracksPreference.Changed += ApplyTracks;
+            ApplyTracks(MachineTracksPreference.On);
         }
 
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -261,7 +279,51 @@ namespace ReBuzz.Studio.Views.Machines
             base.OnDetachedFromVisualTree(e);
             Model.Changed -= UpdateStarters;
             popup.Detach();
+            MachineTracksPreference.Changed -= ApplyTracks;
         }
+
+        // ------------------------------------------------------------------ Tracks (MT1)
+
+        /// <summary>The Tracks toggle changed (here or in another Machines view): the canvas, the bar and the button follow.</summary>
+        void ApplyTracks(bool on)
+        {
+            Canvas.TracksOn = on;
+            trackBar.IsVisible = on;
+            if (on) trackBar.Rebuild();
+            tracksButton.Background = on ? Shell.Design.StudioTokens.SelectionFillBrush : Avalonia.Media.Brushes.Transparent;
+            tracksButton.BorderBrush = on ? Shell.Design.StudioTokens.AccentBrush : Avalonia.Media.Brushes.Transparent;
+            tracksButton.Foreground = on ? Shell.Design.StudioTokens.TextPrimaryBrush : Shell.Design.StudioTokens.TextSecondaryBrush;
+            UpdateCard();
+        }
+
+        /// <summary>The card follows what is lit: under the lit track's first machine (above it when there is no room below).</summary>
+        void UpdateCard()
+        {
+            var entry = Canvas.TracksOn ? Canvas.LitEntry : null;
+            card.Show(entry);
+            if (entry?.Head.Tag is not IMachine head) return;
+            card.Measure(Size.Infinity);
+            var size = card.DesiredSize;
+            var box = Canvas.BoxOf(head);
+            var top = Canvas.ToView(box.TopLeft);
+            var bottom = Canvas.ToView(box.BottomLeft);
+            double w = Canvas.Bounds.Width, h = Canvas.Bounds.Height;
+            double x = Math.Clamp(top.X, 4, Math.Max(4, w - size.Width - 4));
+            double y = bottom.Y + 8;
+            if (y + size.Height > h - 4) y = top.Y - size.Height - 8;
+            y = Math.Clamp(y, 4, Math.Max(4, h - size.Height - 4));
+            Avalonia.Controls.Canvas.SetLeft(card, x);
+            Avalonia.Controls.Canvas.SetTop(card, y);
+        }
+
+        /// <summary>The Tracks toggle (tests).</summary>
+        public Button TracksButton => tracksButton;
+
+        /// <summary>The chips of the tracks, groups and returns, and Unrouted.</summary>
+        public TrackBar Tracks => trackBar;
+
+        /// <summary>The card of the lit track.</summary>
+        public TrackCard Card => card;
 
         void UpdateStarters()
         {
@@ -321,6 +383,12 @@ namespace ReBuzz.Studio.Views.Machines
         static Control Right(Control c)
         {
             DockPanel.SetDock(c, Dock.Right);
+            return c;
+        }
+
+        static Control Left(Control c)
+        {
+            DockPanel.SetDock(c, Dock.Left);
             return c;
         }
 

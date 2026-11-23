@@ -351,6 +351,50 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void MachineTracksListsTheEntriesTheirChainsAndWhatIsUnrouted()
+        {
+            // MT1 (ux-overhaul.md §11): the song's tracks as the Machines view's Tracks mode shows them; a read tool, built from the wires.
+            var window = Song(out var restore);
+            using var _ = restore;
+            foreach (var name in new[] { "Kick", "Snare", "Pad", "Lead" }) Call("machine_add", Args(("gear", "Neo Poly"), ("name", name), ("connect_to", "none")));
+            Call("machine_add", Args(("gear", "Neo Comp"), ("name", "Bus"), ("connect_to", "none")));
+            Call("machine_add", Args(("gear", "Neo Verb"), ("name", "Verb"), ("connect_to", "none")));
+            Call("machine_add", Args(("gear", "Neo Drive"), ("name", "Drive"), ("connect_to", "none")));
+            Call("machine_add", Args(("gear", "Neo LFO"), ("name", "Wobble"), ("connect_to", "none")));
+            void Wire(string from, string to) => Call("connect", Args(("from", from), ("to", to)));
+            Wire("Kick", "Bus"); Wire("Snare", "Bus"); Wire("Bus", "Master");
+            Wire("Bass", "Drive"); Wire("Drive", "Master");
+            Wire("Pad", "Master"); Wire("Lead", "Master"); Wire("Pad", "Verb"); Wire("Lead", "Verb"); Wire("Verb", "Master");
+            Settle(window);
+
+            var data = Call("machine_tracks");
+            var tracks = data["tracks"]!.AsArray();
+            string[] Ids(JsonNode n) => n!.AsArray().Select(x => x!.GetValue<string>()).ToArray();
+            JsonNode Entry(string id) => tracks.First(t => t!["id"]!.GetValue<string>() == id)!;
+            Assert.That(tracks.Select(t => t!["id"]!.GetValue<string>()), Is.EqualTo(new[] { "track:Bass", "track:Kick", "track:Snare", "track:Pad", "track:Lead", "group:Bus", "return:Verb" }));
+            Assert.That(Entry("track:Bass")["chain"]!.GetValue<string>(), Is.EqualTo("Bass → Drive → Master"));
+            Assert.That(Ids(Entry("track:Bass")["machines"]!), Is.EqualTo(new[] { "Bass", "Drive" }));
+            Assert.That(Ids(Entry("group:Bus")["members"]!), Is.EqualTo(new[] { "track:Kick", "track:Snare" }));
+            Assert.That(Entry("track:Kick")["member_of"]!.GetValue<string>(), Is.EqualTo("group:Bus"));
+            Assert.That(Entry("track:Kick")["chain"]!.GetValue<string>(), Is.EqualTo("Kick → Bus → Master"));
+            Assert.That(Ids(Entry("return:Verb")["receives_sends_from"]!), Is.EqualTo(new[] { "track:Pad", "track:Lead" }));
+            Assert.That(Ids(Entry("track:Pad")["sends_to"]!), Is.EqualTo(new[] { "return:Verb" }));
+            Assert.That(Entry("track:Pad")["chain"]!.GetValue<string>(), Is.EqualTo("Pad → Master"));
+            var unrouted = data["unrouted"]!.AsArray();
+            Assert.That(unrouted.Count, Is.EqualTo(1));
+            Assert.That(unrouted[0]!["machine"]!.GetValue<string>(), Is.EqualTo("Wobble"));
+            Assert.That(unrouted[0]!["why"]!.GetValue<string>(), Is.EqualTo("control only"));
+            Assert.That(data["master"]!.GetValue<string>(), Is.EqualTo("Master"));
+
+            // A read: no undo step, and the answer follows the wires.
+            int steps = Steps;
+            Call("disconnect", Args(("from", "Pad"), ("to", "Verb")));
+            var after = Call("machine_tracks")["tracks"]!.AsArray().Select(t => t!["id"]!.GetValue<string>()).ToList();
+            Assert.That(after, Does.Not.Contain("return:Verb"), "with one sender the Verb is a branch of Lead's track");
+            Assert.That(Steps, Is.EqualTo(steps + 1), "only the disconnect is a step");
+        }
+
+        [AvaloniaTest]
         public void MachinesAreClonedWithTheirPatternsAndGrouped()
         {
             var window = Song(out var restore);
