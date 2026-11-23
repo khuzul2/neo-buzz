@@ -2,8 +2,9 @@
 
 | | |
 |---|---|
-| Status | **Proposal** (2026-11-23, revised the same day). Design only: no product code changed. D1 decided **B** (code identifiers too; §9.4–9.7). D2 answered **B, pending the loss analysis** (§7.5); D3 and D4 open (§12) |
+| Status | **Decided** (the user, 2026-11-23): D1 **B** (code identifiers too, §9.4–9.7), D2 **B, drop** (convert on open, keep nothing that does not convert), D3 **one engine, direct**, D4 **A** (one store, one engine; real notes; old machines view-only). Design only: no product code changed. Phases re-cut in §10 |
 | Decision (binding) | "Unify and only use one automation store for both tracker and clips. Tracker patterns should use the same exact store (also for notes, velocity, length as well as all parameters automation) as the clips and arrangement views. So effectively we unify patterns and clips which are used anywhere. We'll call them all 'Clips' everywhere." (the user, 2026-11-23) |
+| Decided later that day | "I don't care about old songs compatibility that much. So: go with the unified engine (Direct) and we live with the consequences." (D3). "One store, one engine so let's go with A and add the 'one store one engine' as a design principle of NeoBuzz." (D4). "Make sure all new machines and our VST host take real notes." "The tracker also can play chords (given we unify everything) by allowing to add more 'notes + velocity' columns." "For old machines, make them read-only." (fully view-only, notes and automation, until the machine is converted to a Neo one). "...which ones is worth to rebuild as Neo native machines and which ones can be converted on load and mapped to existing Neo machines." (phase LM). Principles are in `FORK.md` ("Design principles", 2026-11-23) |
 | Also decided that day | EV1 (parallel branch): an envelope lane in the Detail panel, read-only curves on clips, writes the engine automation columns. T2 (waits for this plan): a vertical envelope lane beside the tracker's columns, with a show/hide toggle on each parameter column. MT1 (parallel): tracks in the Machines view |
 | Scope | Every store of clip content, every reader and writer of each, the one store, the tracker as a view of it, old songs, the rename, phases and gates |
 | Code baseline | fork `4f0beba5` (origin/main, 2026-11-23) |
@@ -19,11 +20,12 @@
 - **Every one of them is a list of `PatternEvent(time 1/240 tick, value, duration)`**, keyed by (machine, parameter, track). MPE's columns are the same type as the engine's. So the one store is the engine column list, and the work is mostly a change of owner, plus a few things the engine columns do not yet say (who plays a column, what a voice is, the row grid).
 - **Recommendation**
   1. **The store is the clip's column list.** Notes of MIDI machines: the MIDI column (time, length, velocity, channel; the column's `Track` is the voice). Everything else, notes of classic Buzz machines included: parameter columns, steps or ramps. No new file section: TAP2 already writes events, durations and metadata (§5).
-  2. **A column has one player**, named in its metadata (`Play=engine` or `editor`). Migrated tracker columns keep the editor as player until a separate, gated wave moves them into the engine (D3). That makes "bit for bit" true by construction in the first waves.
-  3. **The tracker stays MPE, adapted** (§6): its data layer reads and writes the store through a small seam; only view state (column set, order, rows per beat, mutes) stays in its blob. A new tracker costs 8–12 pw more and gains nothing the seam does not.
-  4. **Old songs convert on open, in memory**, by one pure converter, with the original file untouched (§7). Classic built-in rows, MPE and PXP blobs convert exactly. MPE's MIDI lanes become notes with exact time (equal in music, proven by the null test, with a timing probe first). Foreign editors are not converted unless the user asks (D2).
+  2. **One engine plays every lane** (D3, direct). There is no editor player in the Studio: the tracker is a view and an editor of the store, nothing more. New and migrated data use the engine's exact timing; no `Lag` emulation. Songs may therefore sound slightly different after migration: CU1 builds a **change report** (which songs, by how much, why) instead of a pass/fail gate for migrated tracker data (§10.1).
+  3. **The tracker stays MPE, adapted** (§6): its data layer reads and writes the store through a small seam; only view state (column set, order, rows per beat, mutes, which note column shows which voice) stays in its blob. A machine that takes notes can have **any number of note+velocity columns** (+ and −), all views of the one Notes lane, so a chord typed across columns is several notes at one time (§5.3). A new tracker costs 8–12 pw more and gains nothing the seam does not.
+  4. **Old songs convert on open, in memory** (D2 B, drop), by one pure converter, with the original file untouched (§7). Classic built-in rows, MPE and PXP blobs convert (the notes and parameters exactly). What does not convert (PatternXP's sub-pattern triggers, modulators, any other editor's data) is dropped, gone at the next save and named in the loss report.
+  4a. **Real notes; old machines view-only** (D4 A). The Notes lane is the store for every machine that takes real notes (note-on and note-off with velocity, any polyphony): every Neo machine, Neo Plug and exported plugins, which CU6 audits and fixes. The clips of an **old machine** (§5.7) are fully view-only, notes and automation alike, until the machine is converted to a Neo one (phase LM); they keep playing. No write-side voice allocation exists.
   5. **The rename (D1 B):** UI, browser, MCP (aliases for two releases), guides, docs, tests **and the code identifiers**, behind a compatibility layer: what a binary, a saved file or a reflection lookup stores keeps its name, the new names sit beside the old (§9.4–9.7). File formats keep "pattern".
-- **Effort:** 13–19 pw in seven waves (§10; 11–16 before D1 B). The goldens come first (CU1), because the gate is "migrated songs render bit for bit as before". T2 can start after CU3.
+- **Effort:** 14–20.5 pw in seven waves plus the LM track (§10; 11–16 before D1 B and the direct engine). CU1 builds the corpus and the change report first. T2 can start after CU3.
 
 ### 1.1 Words
 
@@ -137,9 +139,8 @@ A clip is `IPattern` (length in ticks) with its `Columns`. A **lane** is a `Patt
 
 | Key | Values | Meaning |
 |---|---|---|
-| `SessionAutomation` | `1` | **Kept as is.** The engine plays the column. Older builds and upstream read it the same way |
-| `Play` | `engine` (default for new), `editor` | **Who plays the column.** Absent on a parameter column: the editor that owns it (today's rule for unmarked columns). The engine skips `editor` columns, as it skips unmarked ones now. Exactly one player a column |
-| `Owner` | an editor machine's name | Which editor plays an `editor` column (MPE for migrated ones) |
+| `SessionAutomation` | `1` | **Kept as is.** Older builds and upstream read it the same way. After CU3 the Studio plays every column whether it is marked or not (the mark only tells an older build whether it may play it) |
+| `Play`, `Owner` | **Not built** (D3 direct) | An earlier draft named the editor as a second player. There is one player, the engine, so no column says who plays it. A column with no `SessionAutomation` mark is played by the engine from CU3 on (today the editor plays unmarked columns) |
 | `Grid` | `rpb=4;sub=3:6,7:3` | Rows per beat of the lane and the beats whose rows differ (MPE's `BeatRowsList`). View only: never changes a time |
 | `Mute` | `1` | The tracker's column mute (MPE `ParamterMuted`) |
 
@@ -152,9 +153,11 @@ One **note model** for every view and tool: `ClipNote` (time, length, pitch, vel
 | Route | Stored as | The roll's rules |
 |---|---|---|
 | **MIDI** (Neo machines, managed `MidiNote`, manifest note input) | Notes lane: exact time, length, velocity | no limit; the tracker draws virtual voices (AR3) |
-| **Tracks** (classic Buzz machines: a Note track parameter, no MIDI) | Note and velocity parameter columns, **voice = track**, allocated when written (§3.3 of daw-modes.md: lowest free track, refused beyond `MaxTracks` with the reason; a moved note keeps its track) | as D3 A today; `TrackerColumnNotes` |
+| **Tracks** (old machines: a Note track parameter, no real notes) | Note and velocity parameter columns, **voice = track**, as old songs have them. **Display and playback only**: no write (D4 A, old machines are view-only, §5.7). There is no voice allocation on write and no `MaxTracks` refusal, because nothing is written | read-only |
 
-This is D4 A (§12). D4 B (one list for every machine, the engine derives Note/Off/velocity at play) is the alternative with its costs.
+This is D4 A (§12). D4 B (one list for every machine, the engine derives Note/Off/velocity at play) was not chosen.
+
+**Note columns in the tracker (chords).** For a machine that takes real notes, the tracker shows **n note+velocity column pairs**, with + and − to add and remove a pair. A pair has **no data of its own**: it is a view of the one Notes lane. Notes that sound at the same time are spread over the pairs (a chord typed across three pairs is three notes at one time). Which pair shows which note is **view state** (`ClipView`; the default is the lowest free pair at that time, so a clip with no stored view looks the same every time). − refuses while it would hide notes ("4 notes would not be shown; keep at least 4 columns"). The Notes lane stores no voice. The derived blob for Classic and upstream (§7.2) gets no MIDI lanes for such a machine.
 
 ### 5.4 What a tracker needs that a note list does not
 
@@ -166,7 +169,7 @@ This is D4 A (§12). D4 B (one list for every machine, the engine derives Note/O
 | **Legato, retrigger** | Open length (negative duration); the next note on the voice is the end. Track machines: Note events with no Off between | yes |
 | **Velocity** | MIDI: in the message. Track machines: the machine's velocity column (by name, as `MachineNotes.For`) | yes |
 | **Effect commands** (Cmd/Arg, Effect/Effect Data) | Ordinary track parameter columns; stay aligned to the voice because the voice is the track | yes |
-| **Chords** | Several notes at one time; no data of their own | n/a |
+| **Chords** | Several notes at one time; no data of their own. Typed across note+velocity column pairs (§5.3); the pair a note shows in is view state | n/a |
 | **Pitch bend, CC** | S1 events | yes |
 | **Rows per beat, subdivisions** | `Grid` | view only |
 | **Values off the grid** (the agent's quarter-tick steps, ramps) | A row shows the last event in `[row start, next row start)` marked as "more"; an edit rewrites only the events of that cell | the AR3 rule, generalized |
@@ -180,22 +183,42 @@ This is D4 A (§12). D4 B (one list for every machine, the engine derives Note/O
 
 ### 5.6 What the engine plays
 
-**MIDI machines.** The clip's Notes lane, as today: `SendMidiInput` at the start of the block that holds the event, the note-off scheduled from `Duration`. Parameter lanes with `Play=engine`: `SetValue` before `CallTick`, ramps on tick and subtick (S3).
+**MIDI machines.** The clip's Notes lane, as today: `SendMidiInput` at the start of the block that holds the event, the note-off scheduled from `Duration`. Parameter lanes: `SetValue` before `CallTick`, ramps on tick and subtick (S3).
 
-**Classic Buzz machines.** The Note and velocity parameter columns, as parameter steps. There is no derivation at play: what the machine plays is what is stored (D4 A). Voice allocation onto `MaxTracks` happens when a note is written (§5.3), never in the audio path.
+**Old machines.** Their Note and velocity parameter columns and their parameter columns play as parameter steps, as now. Nothing is written to them from the Studio (§5.7), so there is no voice allocation anywhere, in or out of the audio path.
 
-**Migrated tracker lanes keep `Play=editor, Owner=MPE`.** MPE reads the events from the store instead of its own list (§6) and fires them as today. The sound is the same by construction: same events, same algorithm, same place in the block. The engine skips them.
+**One player.** Every lane of a clip, migrated or new, is played by the engine (D3, direct): parameter lanes before `CallTick` (steps, ramps), the Notes lane through `SendMidiInput` with exact time. MPE no longer plays anything in the Studio: its `Work`-side window and `PlayRecordManager`'s playing code are deleted from the Studio build in CU3. **Consequence the user accepted:** the timing of a migrated tracker song is the engine's, not MPE's, so a value that used to arrive in the next block, or a delayed note, may move by up to a block or a subtick. No `Lag` emulation.
 
-**Timing probe (CU1, before any migration).** A song whose parameter step and note sit on rows, played by (a) MPE, (b) the same events as `Play=engine` columns; record, for a classic machine and a MIDI machine, at which `Tick` and in which block the machine sees each value, and the null difference. Written into this section. What the probe decides:
-
-| Result | Consequence |
-|---|---|
-| Identical | CU6 (one player) is a flag flip, gated by the goldens |
-| A tick or block apart | The engine's player gets a per-column `Lag` that reproduces MPE's window, so a migrated lane can move to the engine and stay bit for bit; new lanes use exact timing |
+**The timing change report (CU1 builds the tool; CU3 runs it).** A song whose parameter step and note sit on rows, played by (a) MPE now and (b) the same events as engine columns. For each corpus song and each generated feature song: does the render differ, from which sample, by how much (peak and RMS of the difference, in dB against the signal), and the **cause** (a tag the converter writes while migrating: a delay or cut on a MIDI lane, a block shift, PatternXP's dropped SP columns, a subtick rounding, an input column). It is a report for the user to read, not a pass/fail gate for tracker data (§10.1). An unexplained difference is investigated before the wave merges.
 
 **Zero allocation.** The store's `GetEventsInto` is the audio path's read (already used). MPE's read after the seam is the same call. The seam adds no allocation per buffer; `AudioHygieneTests` and `EngineHardeningTests` get a migrated tracker song (§10 gate).
 
-### 5.7 Everything else a clip holds
+### 5.7 Old machines: view-only (D4 A)
+
+The user's words: "For old machines, make them read-only", and then **fully view-only, notes and automation alike, until the machine is converted to a Neo one. They keep playing.**
+
+**Definition (an explicit list, not a guess).** A machine is **writable** if any of these holds, and **old** if none does:
+
+1. It is a **Neo machine** (`Machines/Neo*`: the 60-odd generators, effects, utilities and `Neo Plug`/`Neo Plug FX`), or a **plugin loaded through Neo Plug**, or an **exported plugin** (`PluginExport`).
+2. It is an **effect or utility of ours** (built and owned in this repo for the fork, not vendored: for instance the fork's `ReBuzzGroove`, `MidiOutput`, `QuickNote`, `ConnectionMixer`, the mixer's sends, and the Master). 
+3. It takes **real notes** (note-on and note-off with velocity, any polyphony: a manifest note input or a managed `MidiNote`) and is listed.
+
+The list is a field in the machine's manifest (`clipEdit: true`; default: absent = old). It is data, so LM changes a machine's status by editing a manifest, not code. A machine with no manifest is old.
+
+**What view-only means.** The tracker, the roll, the lanes (EV1, T2) and the agent **show** the clip of an old machine (notes, steps, ramps, the track layout) and the engine **plays** it. They refuse every write to it: typing, recording (a take onto an old machine's track), paste, `notes_write`, `automation_write`, `clip_*` tools (the reason is in the message: "X is an old machine: convert it to a Neo one first"). Cut, copy and delete of the whole clip stay allowed (they are not edits of the machine's content). A machine whose manifest later turns writable unlocks its existing clips.
+
+**Borderline families** (status left to LM; until then they are **old** unless a rule above names them):
+
+| Family | Where | Why it is borderline |
+|---|---|---|
+| **Pedal** (19 machines: Chord, Chorus, Comp, DrumMatrix, EQ, FM, Filter, Gain, Gate, Juno106, LFO, M1, MComp, PeerControl, Plate, SH101, Shaper, Tracker) | `ExternalMachines/portable`, source `thepedal`, builds portable | Vendored third-party source, built by the fork; effects (ours?) and note generators (Juno106, SH101, FM, DrumMatrix, Chord, Tracker take notes in tracks) |
+| **R1 rebuilds** (the Buzztrax classics recompiled for arm64/Linux: FSM Infector, KickXP, PhatMan, PanzerDelay, Chorus2, WahMan, WahManPro, WahPro2 and others, cross-platform.md R1) | `ExternalMachines/source/buzztrax-buzzmachines` | Public-source classics, track-note machines; a rebuild, not a Neo machine |
+| **Jeskola rebuilds and classics** (Bass, Bass 2/3, Organ, Noise Generator, Trilok, Tracker, Arpeggiator, Relativion, Note Matrix, Loop Recorder, Live…) | `RunTime/Gear`, `jeskola-dev-examples` | Track-note generators and managed utilities; many have a Neo equivalent |
+| **Managed third-party** (AudioBlock, EnvelopeBlock, DAWControl, GuitarChordBox, Info, ModernPianoroll…) and **native third-party** (FSM, Oomek, Polac, KrimZon, Rout, Bigyo, BTDSys…) | `Machines/`, `RunTime/Gear` | Some ship in this repo (AudioBlock, EnvelopeBlock), some are users' own; no manifest |
+
+**Consequences to know** (they follow from the decision, none is hidden): (1) a song of old machines opens, plays and can be arranged, but its tracker cannot be edited in the Studio (the tracker stays a viewer for it); (2) recording a session take onto an old machine, EV1 envelopes and T2 lanes on an old machine's parameters are read-only too (EV1 is a parallel branch: its lane write must check the same flag); (3) Classic's WPF app is unchanged and still edits everything; (4) `MaxTracks` and the voice-allocation code in `TrackNotes.Allocate` are no longer written to by the Studio and can go with CU7.
+
+### 5.8 Everything else a clip holds
 
 - **Launch settings, audio settings, warp markers** stay in `ClipSettings` (S7), keyed by (machine, clip name). They are clip properties already. No change in CU.
 - **Placements** (S8) stay: `SequenceEvent` with `Offset`, `End`, `Gain`, the clip id of a run, lane roles, takes.
@@ -226,7 +249,7 @@ This is D4 A (§12). D4 B (one list for every machine, the engine derives Note/O
 Revisit (b) only if T2 or T3 shows that the grid code blocks the lane, not before. Under (a):
 
 - **What leaves MPE:** its event lists and `PlayRecordManager`'s *read* of them (it reads the store); `ExportMidiEvents`/`ImportMidiEvents`/`ExportClipNotes`/`ImportClipNotes` bridges and the 0.7.1 "Move notes" commands (CU4); the editor-side copy of notes in `NoteLaneColumns` (it keeps one display role).
-- **What stays:** playing of `Play=editor` lanes, recording (`RecordControlChange`, step input), chords in WPF, the digit and key code.
+- **What stays:** recording (`RecordControlChange`, step input), chords in WPF, the digit and key code. **What goes in the Studio build (CU3):** the playing code; the tracker only edits and shows.
 - **The seam in detail:** `GetEvents`, `GetEventsInto`, `SetEvents`, `Clear`, `HasEvents`, `EventsChanged`. The store's `EventsChanged` reaches the tracker, so a lane drawn by EV1, a take, or the agent shows at once; today only the AR3 note lanes poll.
 - **Columns that do not exist yet in the store** are created on first write (`SessionLayout.ColumnFor(create: true)`), so the 4,000 empty default columns of a template disappear.
 
@@ -240,18 +263,18 @@ One pure converter, `ClipMigration`, runs after all machines are loaded (as MPE'
 
 | Source | Converts to | Exact? |
 |---|---|---|
-| `PATT` rows (S6) and `BuiltInData` | Note and parameter lanes, `Play=editor, Owner=MPE`, event time = row × 240, `Grid rpb=4` | **Yes.** Same events the PXP v3 path makes now |
-| MPE blob (S4, MPE format v1), parameter and Note columns | The same lanes, exact times, `Play=editor` | **Yes** |
-| MPE blob, PXP v3 | The same, at the rows PXP holds | **Yes** (PXP is rows already) |
-| MPE blob, **MIDI lanes** (Note, Velocity, Delay, Cut, Pitch Wheel, CC) | Phase CU3: kept as lanes (`Play=editor`), shown as notes by `EditorLaneNotes`. CU6 or *Convert to notes*: Notes lane, time = row start + delay, length from cut, off or next note, velocity, voice = lane track (`TrackerNotes.FromRows`, as `ExportClipNotes`) | Events yes; scheduling: the timing probe says (§5.6) |
+| `PATT` rows (S6) and `BuiltInData` | Note and parameter lanes of the machine, event time = row × 240, `Grid rpb=4`. Played by the engine | **Yes** in the data (same events the PXP v3 path makes now); sound per the change report |
+| MPE blob (S4, MPE format v1), parameter and Note columns | The same lanes, exact times | **Yes** in the data |
+| MPE blob, PXP v3 | The same, at the rows PXP holds | **Yes** |
+| MPE blob, **MIDI lanes** (Note, Velocity, Delay, Cut, Pitch Wheel, CC) | **At migration they become the Notes lane** (`TrackerNotes.FromRows`, as `ExportClipNotes`): time = row start + delay, length from cut, off or next note, velocity. CC and pitch wheel become controller points. The tracker shows them as note+velocity column pairs (§5.3) | Events yes; sound per the change report |
 | MPE columns of **other machines** | Parameter lanes on that machine, same `Play` | Yes |
 | MPE column set, order, mutes, rows per beat of an empty clip | `ClipView` and `Grid` | View only |
-| **PatternXP-format editors and foreign editors (S5)** | D2 is open between conversion on open and leaving them alone; §7.5 lists exactly what each conversion keeps and loses. Until the user decides, the plan below keeps the clip with `Owner=<editor>` and the blob, and the other views show a read-only preview (`EditorPreviewNotes`) | See §7.5 per editor |
+| **PatternXP-format editors and foreign editors (S5)** (D2 B, drop) | Converted through the same reader MPE has (rows → lanes). **Everything that does not convert is dropped** and named in the loss report: PatternXP's SP columns (sub-pattern triggers, play mode, offset, diatonic transpose, modulators), any editor's data in a format we cannot read (cleared today already). The clip has no `Owner` and no blob afterwards. A song saved after this has lost them for good | Notes and parameters yes; the rest dropped (§7.5) |
 | **Input columns** (S6) | Not converted (they are dropped today; converting changes the sound) | §11 |
 | Engine columns S1–S3 | Nothing to do | – |
 | `ClipSettings`, placements | Nothing to do | – |
 
-**Order on open:** load machines → load engine columns (TAP2) → run `ClipMigration` for every machine whose editor is MPE or none → mark the song as migrated (in memory) → build the editor view from the store and `ClipView`. A clip whose lanes are already in the store (a song saved after CU3) skips its blob.
+**Order on open:** load machines → load engine columns (TAP2) → run `ClipMigration` for every machine whose editor is MPE, PatternXP-format or none → write the loss report lines → mark the song as migrated (in memory) → build the editor view from the store and `ClipView`. A clip whose lanes are already in the store (a song saved after CU3) skips its blob. **Old machines'** clips migrate the same way and open view-only (§5.7).
 
 ### 7.2 On save
 
@@ -273,6 +296,8 @@ One pure converter, `ClipMigration`, runs after all machines are loaded (as MPE'
 | Off-grid events | K events between rows | Rounded to the row before |
 | Notes of MIDI machines in the roll | clip: K notes | Played from the MIDI column (as now); not shown in upstream's tracker |
 | Voices | clip: K notes | Track kept as the column's `Track`; upstream ignores it |
+| Pattern editor data not converted | clip: K sub-pattern triggers, modulators, offsets, transposes (PatternXP); clip: editor data of an unknown editor | Dropped on open (D2 B); gone from the song at the next save; named in the Studio's open report |
+| Voices | note+velocity column of a chord | Not exported (MIDI machines stay in the MIDI column only) |
 | Unchanged | trims, gain, clip ids, roles, ramps (steps), subsections | as NF2 §11.2 |
 
 ### 7.4 Songs saved by builds before this
@@ -281,9 +306,11 @@ A `.nbl` saved before CU3 (`formatVersion` 2) carries MPE blobs: `NblMigrations`
 
 ### 7.5 D2 loss analysis: what a conversion keeps and loses, editor by editor
 
+**Decided 2026-11-23: D2 B, drop.** The user chose, after this analysis, to convert on open and keep nothing that does not convert (the earlier D2-b). The analysis stays as the record of exactly what is dropped. D2-a and D2-c below are **not chosen**; *Convert to Clip* is not built.
+
 Asked for by the user (2026-11-23): "Analyze which data is lost exactly on conversion". Evidence: the code (`BMXFile.cs`, `Gear.cs`, `ReBuzzCore.cs` `CreateEditor`, `ReBuzzPatternXP`'s `SetPatternEditorData` and its `patternxp` sources, `PatternEditorUtils.cs`, `Machines/ModernPianoroll`, `RunTime/Gear/gear.xml`) and one test on real data (below). **No audio was rendered**: every statement about sound is read from code and marked *unverified* until CU1's goldens.
 
-**What "convert" means.** The target is the clip's lanes (§5): a Note or parameter column per (machine, parameter, track), events at time = row × 240, `Play=editor|engine`. The converter is the same one old songs already go through when no editor DLL is present (§7.1).
+**What "convert" means.** The target is the clip's lanes (§5): a Note or parameter column per (machine, parameter, track), events at time = row × 240, no player field. The converter is the same one old songs already go through when no editor DLL is present (§7.1).
 
 **Two facts that change the question.**
 
@@ -310,13 +337,13 @@ Asked for by the user (2026-11-23): "Analyze which data is lost exactly on conve
 | Event durations / ramps | n/a (none) | n/a (none in v1) | Pianoroll notes have lengths; **converted as note-on and off** (**unverified**) | none | Lost |
 | Rows per beat of a clip, column order, mutes | View state, kept as `ClipView` / `Grid` | Kept as view | Kept | v2/v3 rows per beat kept; column order kept | Lost |
 | Per-beat subdivisions | none | **Kept** as `BeatSubdivision` (MPE-only) | n/a | **PatternXP ignores them**: no data | Lost |
-| Delay and cut (MPE internal parameters −130, −131) | none | Kept in the lane; as notes: start + delay, length from cut (CU6) | Pianoroll: "Todo: delay & cut" in its export | PatternXP's own delay and cut (scale **96**) are *effect* data inside the SP columns, see next row | Lost |
+| Delay and cut (MPE internal parameters −130, −131) | none | Becomes the note's start + delay and length from cut (the Notes lane, CU3) | Pianoroll: "Todo: delay & cut" in its export | PatternXP's own delay and cut (scale **96**) are *effect* data inside the SP columns, see next row | Lost |
 | **PatternXP SP columns** (internal parameters −10…−112: sub-pattern **triggers** and **play mode**, **offset**, **diatonic transpose**, **modulators**, loop and reverse) | none | none | none | **Lost, in every conversion, and already lost today** whenever MPE reads such a blob (`GetParameter` returns null for the SP indices; the columns are dropped). A pattern that is only a trigger for sub-patterns converts to **an empty clip** | Lost |
 | **Input columns** (connection amp and pan) | Lost today on open; **not converted** by design (§11) | – | – | – | – |
 | Chords | not data | not data | not data | not data | – |
-| Machine-side notes (MIDI machines: Note, Velocity, Delay, Cut, Pitch Wheel, CC) | n/a | Lanes kept; played as today until CU6 | n/a | n/a | – |
+| Machine-side notes (MIDI machines: Note, Velocity, Delay, Cut, Pitch Wheel, CC) | n/a | Become the Notes lane at migration (§7.1); played by the engine | n/a | n/a | – |
 
-**Sound after conversion, if the engine replaces the editor's own playing.** Applies to E4/E5 only (E1 and E2 already play as now, §5.6 and D3):
+**Sound after conversion, now that the engine replaces the editor's own playing (D3 direct).** Applies to E4/E5, and to E1 and E2 as the change report measures it (§5.6):
 
 | Playback detail of PatternXP (`patternxp/PatternXP.cpp`, `MachinePattern.h`) | What the engine would do instead | Status |
 |---|---|---|
@@ -331,9 +358,9 @@ Asked for by the user (2026-11-23): "Analyze which data is lost exactly on conve
 |---|---|---|---|
 | Convert on open (D2 B) | Note and parameter content exact; SP columns lost; the sound shifts by the playback details above (**unverified**); the original blob is kept only inside the `.bmx` as a derived export (so a saved-back song loses the SP data for good) | Cleared as today (no change) | Converted (the rest of this design) |
 | Leave alone (D2 A) | No change of sound; the clip is visible only as a read-only preview outside the editor; **cannot be edited in the Studio** (no editor DLL there) | Cleared as today | – |
-| Convert on request (*Convert to Clip*) | Same as B, only when the user presses it, with the loss listed | Same | – |
+| Convert on request (*Convert to Clip*) | Not built (D2 B) | – | – |
 
-**Sub-choices for D2** (the user chose B; "after the analysis" means choosing among these, at most three):
+**Sub-choices that were offered** (chosen: **D2-b**, "drop"):
 
 - **D2-a (recommended): convert on open, keep the original.** The converter runs in memory as for old songs. PatternXP's SP columns, and the blob, stay in the clip as an opaque, unplayed `Owner=<editor>` record so they are not destroyed on save; the loss report names each clip that had SP columns ("clip X: 3 sub-pattern triggers not converted; they stay in the song file, silent"). Nothing the user wrote is deleted; sound can differ by the details in the table above.
 - D2-b: convert on open, keep nothing. The simplest code; SP columns are gone on the next save. It is today's Studio behaviour for these songs, now made explicit.
@@ -347,10 +374,10 @@ Asked for by the user (2026-11-23): "Analyze which data is lost exactly on conve
 
 | Who | After |
 |---|---|
-| Playback | The engine plays `Play=engine` lanes; the editor plays `Play=editor` lanes (until CU6). One player a lane |
+| Playback | The engine plays every lane. There is no editor player in the Studio (D3). Classic's WPF build keeps MPE's own playing, unchanged |
 | Arrangement automation lanes, EV1, T2 | One reader: the lane's events, whoever wrote them (the "tracker columns" read-only source goes away) |
 | Piano roll | `SongNotes.For` for every machine; `Editor*Notes` and the roll's Tracker / MIDI lanes / Song lane switch go away (one store, one source) |
-| Tracker | MPE over the store (§6) |
+| Tracker | MPE over the store (§6), as a view and editor; note+velocity column pairs for machines that take notes; view-only for old machines |
 | Recorders | Unchanged (they write S1, S2) |
 | MCP | `notes_*`, `automation_*`, `arrangement_automation` see all lanes; `automation_read` lists tracker automation; one new read, `clip_get` (§9) |
 | Save, load, export, Classic, upstream | §7 |
@@ -432,24 +459,30 @@ Waves of about one branch. Gates in the second table apply to every wave from CU
 
 | # | Wave | What | Size | After |
 |---|---|---|---|---|
-| **CU1** | Goldens and the timing probe | Tests and tools only. (a) The **corpus**: every repo song, plus a **generated** song for each feature: classic multi-track Note + velocity + command columns; TPB 1, 4, 8; 1-row and 256-row patterns; rows per beat 4, 6, subdivided beats; MIDI lanes with delay and cut; a Note column with explicit Off and an Off with no note before it; a parameter column of another machine; 8 tracks; a track-count change; a looped session clip with automation. (b) Goldens: SHA-256 of each render, per platform, in `eval/clip-goldens.json` (hashes only, no audio committed), made by `tools/clip-null.py` (after `tools/null-test.py`). (c) The timing probe of §5.6, written into this spec | 1–1.5 pw | now; parallel to EV1 and MT1 |
-| **CU2** | The store learns what trackers need | Engine and `BuzzGUI.Common` only, no view, no behaviour change: `Play`, `Owner`, `Grid`, `Mute` metadata and `EnginePlays` honouring `Play`; explicit note-off events; `ClipMigration` (PATT / `BuiltInPattern`, PXP v1–3, MPE v1 → lanes); `ClipExport` (lanes → MPE blob and PXP, the double-play rule, the stamp). Round trips on the whole corpus: blob → store → blob has the same events | 2–3 pw | CU1 |
-| **CU3** | The tracker reads and writes the store | The seam (§6), migration on open in Studio and headless, `ClipView`, `.nbl` v3, derived blob in `.bmx`/`.bmxml`, EV1's and the arrangement reader's one source. Editor plays `Play=editor` lanes. Foreign editors untouched | 3–4 pw | CU2 |
+| **CU1** | Corpus, change report, timing measurement | Tests and tools only. (a) The **corpus**: every repo song, plus a **generated** song for each feature: classic multi-track Note + velocity + command columns; TPB 1, 4, 8; 1-row and 256-row patterns; rows per beat 4, 6, subdivided beats; MIDI lanes with delay and cut; a Note column with explicit Off and an Off with no note before it; a parameter column of another machine; 8 tracks; a track-count change; a looped session clip with automation; a PatternXP-format blob with SP columns (hand-built); a chord of 4 notes. (b) **Before-renders** of each, SHA-256 and audio, per platform, in `eval/clip-goldens.json` (hashes only). (c) `tools/clip-change-report.py`: after-render against before-render per song: identical or not, first differing sample, peak and RMS of the difference in dB, **cause tag** from the converter's migration log (§5.6). (d) The timing measurement of §5.6, so the first report is predicted | 1–1.5 pw | now; parallel to EV1 and MT1 |
+| **CU2** | The store learns what trackers need | Engine and `BuzzGUI.Common` only, no view, no behaviour change: `Grid` and `Mute` metadata; explicit note-off events; `ClipMigration` (PATT / `BuiltInPattern`, PXP v1–3, MPE v1 → lanes, MIDI lanes → the Notes lane, SP columns and foreign data dropped with a log line each); `ClipExport` (lanes → MPE blob and PXP, the double-play rule, the stamp). Round trips on the whole corpus: blob → store → blob has the same events | 2–3 pw | CU1 |
+| **CU3** | **One engine, direct** (was CU3 + CU6) | The seam (§6); migration on open in Studio and headless; the engine plays **every** lane; MPE's playing code and the editor-player path **deleted from the Studio build** (Classic's WPF build keeps its own); `ClipView` (column set, order, rows per beat, mutes, which note column shows which note); `.nbl` v3; derived blob in `.bmx`/`.bmxml`; the **old-machine view-only mode** (§5.7: the `clipEdit` manifest flag, the refusals in tracker, roll, agent); the open-time loss report; EV1's and the arrangement reader's one source; the change report run and read by the user | 4–5.5 pw | CU2 |
 | **CU4** | One reader and writer layer | `SongNotes` for every machine; `Editor*Notes`, `ExportClipNotes` bridges and "Move notes" removed; `automation_read` and `notes_*` see all lanes; `clip_get`; clone, replace, snapshots on columns only | 1.5–2 pw | CU3 |
 | **CU5** | The rename (D1 B: UI, MCP **and code identifiers**) | §9, four sub-waves: **a** compatibility layer (new names beside the old in `BuzzGUI.Interfaces`, host probes both names, an old-binary test machine), **b** engine, **c** editors and machines, **d** Studio, agent, tests, text. Mechanical (symbol rename) but 752 files: needs a quiet window. **a** can start after CU1. **b–d** after EV1 and MT1 have merged and after CU4 (the readers and writers are rewritten there, so the rename is not done twice), **before T2 starts its views** | **3–4.5 pw** (was 1–1.5) | a: CU1; b–d: EV1, MT1, CU4 |
-| **CU6** | One player (D3 A) | `Play=engine` for migrated lanes, with `Lag` if the probe says so; MIDI lanes become notes (*Convert to notes* by default); the editor's playing path deleted for the Studio build. Own goldens, own gate | 2–3 pw | CU4 |
-| **CU7** | Retire | The Studio's legacy list store, `PXPDataFormat` write, the blob's event section; *Convert to Clip* for foreign editors (D2) | 0.5–1 pw | CU6 |
+| **CU6** | **Real notes** | **(a) Audit and fix, start any time:** every Neo machine, Neo Plug and Neo Plug FX, and every exported plugin takes note-on and note-off **with velocity, any polyphony** (by a test per machine: chord of N notes, overlapping notes, velocity 1 and 127, note-off stops the right voice, legato; the profiler's `machine-profiler.py` extended), and the manifest says so. Fixes as found. **(b) Note columns in the tracker (after CU3):** + and − for note+velocity column pairs on a machine that takes notes; chords typed across pairs; `ClipView` keeps which pair shows which note; − refuses to hide notes | (a) 1–2 pw (the audit decides; unknown until run), (b) 1–1.5 pw | (a) CU1; (b) CU3 |
+| **CU7** | Retire | The Studio's legacy list store, `PXPDataFormat` write, the blob's event section, `TrackNotes.Allocate` and `MaxTracks` refusal, `EditorPreviewNotes` | 0.5–1 pw | CU4 |
+| **LM** | **Legacy machines** (its own track; the user's words: "analyze all of them and decide a. which ones is worth to rebuild as Neo native machines and which ones can be converted on load and mapped to existing Neo machines") | **LM0 analysis, a separate worker** (not this design): every machine in `RunTime/Gear`, `ExternalMachines`, the Pedal, R1 and Jeskola families (§5.7) and managed third-party: what it does, whether a Neo machine already covers it, the parameter mapping for a load-time conversion (Jeskola Verb → Neo Verb as the user's example), what the sound difference is, and the verdict per machine: **rebuild** as a Neo native machine / **convert on load** to an existing Neo machine / **stay old** (view-only). Output: a table the user decides from. **LM1** the load-time machine conversion (a `MachineMigration` step beside `ClipMigration`: maps a machine's name, parameters and its clips' columns to the Neo machine, in memory, with a loss report); **LM2..n** rebuilds, one wave a family, sized by LM0. Each converted machine gets `clipEdit: true`, which unlocks its clips | LM0 1 pw (estimate); LM1 2–3 pw; rebuilds sized by LM0 | LM0 now (parallel); LM1 after CU3 |
 
-**T2 starts after CU3** (store-backed parameter columns) and runs in parallel with CU4–CU6. With D1 B, T2's new views use the **new names** from the start (`ClipCore`, `IClip`), so CU5a should have merged before T2 writes its first class; CU5b–d then rename what T2 added along with the rest.
+**T2 starts after CU3** (store-backed parameter columns) and runs in parallel with CU4–CU7. With D1 B, T2's new views use the **new names** from the start (`ClipCore`, `IClip`), so CU5a should have merged before T2 writes its first class; CU5b–d then rename what T2 added along with the rest. T2 and EV1 must not write to an old machine's parameters (§5.7). **Sizes:** CU1–CU7 total **14–20.5 pw** (CU6a unknown until audited), LM on top.
 
 ### 10.1 Gates (every wave from CU3; CU1 sets them)
 
+Direct engine (D3) changes the first gate: for data the engine now plays differently **by design**, the goldens become a **change report**; for everything else they stay a hard gate.
+
 | Gate | How |
 |---|---|
-| **Migrated songs render bit for bit** | Every corpus song and generated song: open (migrated), render, SHA-256 equal to the CU1 golden. Windows package job for the real machines; Linux and macOS against their own goldens (placeholders). A difference fails the wave. The one allowed exception is a documented, probe-explained scheduling shift of a MIDI-lane clip, which needs the user's word (D3) |
-| **Open → save → open → save is stable** | `.nbl` A == B byte for byte; `.bmx` and `.bmxml` core sections byte-equal (`tools/song-roundtrip.py --compare`); the derived blob's events equal the original blob's events on the corpus |
-| **0 bytes per buffer** | `AudioHygieneTests` and `EngineHardeningTests` extended with a migrated tracker song (notes, automation, ramps, a 4-machine mix) playing, and a take recording over it |
-| **Undo and redo** | Each tracker, roll, lane and agent edit is one history step; undo restores events and `ClipView` exactly; a migration is not an undo step; undo across a clone and a delete keeps lanes (`EngineColumns`) |
+| **Unchanged by design: bit for bit** | Songs and clips with **no tracker data** (engine columns only: Session, Arrangement, takes, automation lanes, audio clips, a `.nbl` made before any pattern editor) and every generated song for those features: render, SHA-256 equal to the CU1 before-render. Windows package job for the real machines; Linux and macOS against their own goldens. A difference fails the wave |
+| **Migrated tracker data: change report, not a gate** | Every repo song with `PATT` or blob data (the 18 old songs, the templates) and every generated tracker song: `tools/clip-change-report.py` (CU1) lists identical or not, first differing sample, peak and RMS of the difference in dB, and the cause tag. The user reads it at CU3. Expected: most identical or a block-shift on one machine; PatternXP-style loss songs differ by what was dropped. **An unexplained difference (no cause tag) is investigated before the wave merges** |
+| **Open → save → open → save is stable** | `.nbl` A == B byte for byte; `.bmx` and `.bmxml` core sections byte-equal (`tools/song-roundtrip.py --compare`); the derived blob's events equal the migrated store's events on the corpus. (Unchanged) |
+| **0 bytes per buffer** | `AudioHygieneTests` and `EngineHardeningTests` extended with a migrated tracker song (notes, automation, ramps, a 4-machine mix, a chord on 6 note columns) playing, and a take recording over it. (Unchanged) |
+| **Undo and redo** | Each tracker, roll, lane and agent edit is one history step; undo restores events and `ClipView` exactly; a migration is not an undo step; undo across a clone and a delete keeps lanes. Adding or removing a note column is a `ClipView` step. (Unchanged) |
+| **Old machines stay view-only** | Every write path (typing, paste, record, `notes_write`, `automation_write`, `clip_*`, EV1, T2) refuses on an old machine and says why; a machine with `clipEdit: true` is writable. A test per path |
+| **Real notes** (CU6a) | Per Neo machine, Neo Plug, exported plugin: the note test of CU6a passes |
 | **Old behaviour kept** | Classic's tests pass unchanged; the loss report's old rows unchanged; CI full |
 | **Cost** | Open time of the largest song (Dye stress, FSM_Infector) within the NF1 measures ×1.3; the templates open faster (no empty columns) |
 
@@ -459,39 +492,35 @@ Waves of about one branch. Gates in the second table apply to every wave from CU
 
 | Risk | Handling |
 |---|---|
-| Timing (§2.3 item 2) differs between the players | CU1 probe first; `Lag` or a user decision (D3) |
+| Timing (§2.3 item 2): the engine's timing differs from MPE's for migrated songs | **Accepted by the user** (D3 direct). The change report (CU1, run at CU3) shows which songs and by how much; no `Lag` emulation |
 | The shared MPE sources change under Classic | `#if WINDOWS` keeps the list store; Classic's tests in every wave |
 | Pattern-name identity | Unchanged here. A stable clip id (`ClipView`, `ClipSettings`, TAP2 all key by name) is debt; do it with CU7 if renames still lose data |
 | A blob edited in Classic after a Studio save | The stamp (§7.2): the blob wins, with a message |
 | Notes doubled upstream | One-place rule for MIDI machines (§7.2); tested by the NF2 simulated upstream read |
 | Store size: a 12-byte event, a dense agent ramp is many events | Unchanged from today (S2); EV1 and the agent write ramps as single events |
 | Input columns (wire amp and pan): lost today on open, 2 of 18 songs | **Not part of CU.** Restoring them changes how those songs sound. A `Wire` lane kind, listed in §5.1, is the place for them; the user decides separately |
-| Chords | Stay WPF-only (`Chords/**`); a Studio chord tool is a feature, not a store question |
+| Chords | Solved in the store (D4): note+velocity column pairs in the tracker are views of the Notes lane (§5.3, CU6b). The WPF-only chord *tool* (`Chords/**`) stays out of the Studio |
 | TAP2 has no per-column version | `Play` and `Owner` are metadata, which TAP2 already stores, so no change |
+| Old machines become uneditable in the Studio (D4 A) | Accepted. Defined by one manifest flag (§5.7); LM decides which machines are converted or rebuilt first; Classic still edits everything |
+| A song of old machines loses PatternXP data and sounds different | Accepted (D2 B, D3). The open-time loss report and the change report name it; the original file is never overwritten (`LegacyOrigin`) |
+| EV1 (a parallel branch) writes automation to any machine | EV1's lane write must respect the old-machine flag; tell its owner (§5.7) |
 
 ---
 
 ## 12. Decisions for the user
 
-**D1. How far does "Clips everywhere" go?** **Decided B** (the user, 2026-11-23): "Rename the code identifiers too, not only the UI."
-- Plan in §9.4–9.7: a compatibility layer keeps what a binary, a saved file or a reflection lookup stores (the old `IPattern` and friends in `BuzzGUI.Interfaces` stay as aliases, file section names stay, the SDK header stays); everything else is renamed (752 files, 3–4.5 pw in four sub-waves, CU5a–d). Upstream cherry-picks keep working through an identifier map.
-- **One thing to confirm, because it follows from B** (not a new question): the old names stay forever as obsolete aliases in `BuzzGUI.Interfaces`. Without that, third-party managed machines and machines cherry-picked from upstream stop loading. If you would rather break them, say so; the plan then drops CU5a and the cost of every machine pick goes up.
+**D1. How far does "Clips everywhere" go?** **Decided B** (2026-11-23): "Rename the code identifiers too, not only the UI." Plan §9.4–9.7. The old names stay **permanently** as obsolete aliases in `BuzzGUI.Interfaces` (confirmed to the user), so third-party and upstream machines keep loading.
 
-**D2. Songs whose clips use a foreign pattern editor (PatternXP and others)?** **Answered B (convert on open), after an exact analysis** (the user, 2026-11-23): "Analyze which data is lost exactly on conversion and ask me again for a more informed decision." The analysis is §7.5. Headline: no repo song uses any pattern editor; for PatternXP's four editors, notes and parameters convert **exactly**; PatternXP's **sub-pattern trigger and effect columns are lost in every conversion (and already today whenever MPE reads such a blob)**; sound differences are small, from code only, **unverified**; other editors are already cleared today. **Asking again, pick one:**
-- **D2-a (recommended):** convert on open and keep the original data in the clip, silent, so nothing is deleted (the loss report names the clips that had SP columns).
-- D2-b: convert on open, keep nothing (today's Studio behaviour made explicit; SP data gone on the next save).
-- D2-c: convert only clips with no SP columns; the others stay as they are, read-only.
+**D2. Songs whose clips use a foreign pattern editor (PatternXP and others)?** **Decided B, drop** (2026-11-23): convert on open and keep nothing that does not convert (sub-pattern triggers, modulators and so on): gone at the next save, named in the loss report. §7.1, §7.5.
 
-**D3. One player or two?**
-- **A (recommended):** two players until CU6: the editor keeps playing migrated tracker lanes (bit for bit by construction), then a gated wave moves them into the engine, using the CU1 probe.
-- B: stay at two players for good (least risk, MPE's playing stays forever, EV1 and T2 still see one store).
-- C: one player from CU3 (fastest to one engine path; the MIDI-lane clips can shift by a block; needs your word that a shift is acceptable).
+**D3. One player or two?** **Decided: one engine, direct** (2026-11-23): "I don't care about old songs compatibility that much. So: go with the unified engine (Direct) and we live with the consequences." The engine plays every lane from CU3; no editor player in the Studio; no `Lag`; goldens become a change report for migrated tracker data and stay a hard gate for the rest (§10.1). The consequence: migrated tracker songs may sound slightly different.
 
-**D4. Notes for classic Buzz machines (tracks)?**
-- **A (recommended):** the Note and velocity columns are the store, one note model reads them (what plays is what is stored; no derivation in the audio path; the roll refuses more voices than tracks, with the reason).
-- B: one note list for every machine; the engine derives Note, Off and velocity onto tracks at play (voice allocation in the audio path, new code on it, stray offs and legato rows need markers). Polyphony beyond `MaxTracks` by voice stealing. Choose it only if you want chords bigger than the tracks on a classic machine.
+**D4. Notes for classic Buzz machines (tracks)?** **Decided A** (2026-11-23): "One store, one engine so let's go with A and add the 'one store one engine' as a design principle of NeoBuzz." Added to `FORK.md`. Extended by the user: all new machines and the plugin host take real notes (CU6a); the tracker plays chords through note+velocity column pairs (CU6b, §5.3); **old machines are fully view-only** until converted (§5.7); the write-side voice allocation is dropped. New track: **LM** (legacy machines, §10).
+
+**Principles** (written into `FORK.md`, "Design principles", 2026-11-23): (1) one store, one engine; (2) real notes everywhere; (3) a spiritual successor, not a ReBuzz-compatible fork.
 
 ---
+
 
 ## 13. Sources
 

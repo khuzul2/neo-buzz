@@ -2,6 +2,14 @@
 
 NeoBuzz Live is a fork of [ReBuzz](https://github.com/wasteddesign/ReBuzz) (MIT, by WDE and the ReBuzz contributors). The app is NeoBuzz Live wherever it shows: its windows, menus and dialogs, the Mac app `NeoBuzz Live.app` and its disk image, the Windows `NeoBuzzLive.exe` and its zip, the MCP server `neobuzz-live`. The code keeps ReBuzz's names (`ReBuzz.sln`, the `ReBuzz.*` projects, namespaces and assemblies), its file formats, the machine names songs save ("ReBuzz Audio In"…) and its settings folders, so old songs, settings and machines carry over. New songs save in the fork's own format, `.nbl` ([`docs/specs/native-format.md`](docs/specs/native-format.md)); `.bmx`, `.bmw` and `.bmxml` are read forever. It adds:
 
+## Design principles
+
+Decided 2026-11-23 by the project owner. They rank above compatibility with ReBuzz. Detail: [`docs/specs/clips.md`](docs/specs/clips.md).
+
+1. **One store, one engine.** Every clip's notes and automation live in one store (the clip's lanes), and one engine plays them. The tracker, the piano roll, the Session and Arrangement views, the envelope lanes and the agent are views and editors of that store. Nothing else plays a clip.
+2. **Real notes everywhere.** Every new machine and the plugin host (Neo Plug, exported plugins) take real notes: note-on and note-off with velocity, any polyphony. The tracker plays chords by adding more note and velocity columns, which are views of the one Notes lane.
+3. **A spiritual successor, not a ReBuzz-compatible fork.** "We're moving away from ReBuzz and actually crafting more a spiritual successor than a fully backwards compatible one. The goal with old songs is to load them, accepting conversions (e.g. from Jeskola Verb to our Neo Reverb)." Old songs load; their sound may change; old machines are view-only until converted to Neo ones.
+
 | What | Where |
 |---|---|
 | Third-party machines (sources + prebuilt drop-ins) in one place | [`ExternalMachines/`](ExternalMachines/README.md) |
@@ -102,4 +110,4 @@ No Windows machine at hand? Run the **Fork package** workflow from the Actions t
 - **Native format by default.** New songs save as `.nbl`. A song opened from `.bmx`, `.bmw` or `.bmxml` is saved as a new `.nbl` (Save asks for the name; the original is never overwritten silently). Every old format stays readable. File ▸ Export for Buzz/ReBuzz… (and the agent's `song_export`) writes a separate, lossy `.bmx` for upstream and lists what it loses (native-format.md NF2). The fork no longer keeps its new data inside files that upstream ReBuzz must play.
 - **Upstream is cherry-picked, not merged wholesale.** `git fetch upstream`, then `git cherry-pick` the commits worth having (machine fixes, loader fixes, new machines). No more `git merge upstream/main`. Last merge base: af162b9a.
 - **The Classic WPF app is frozen.** It gets fixes only: no new features, no `.nbl` in its dialogs (it saves `.bmx`). The studio is where the fork grows.
-- Fork-only changes still live in new files where that is natural; the engine keeps ReBuzz's names so cherry-picks apply.
+- Fork-only changes still live in new files where that is natural. **The engine no longer keeps ReBuzz's names for patterns** (2026-11-23, [`clips.md`](docs/specs/clips.md) §9): `IPattern`, `PatternCore` and the rest become `IClip`, `ClipCore`… The old names stay as obsolete aliases in `BuzzGUI.Interfaces`, so machines cherry-picked from upstream build unchanged. Core and loader picks run through `tools/clip-rename-map` (old name → new name, applied to the patch before `git am -3`) first; expect name-only conflicts in the files upstream and the fork both have.
