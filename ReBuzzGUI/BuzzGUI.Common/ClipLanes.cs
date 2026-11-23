@@ -69,6 +69,43 @@ namespace BuzzGUI.Common
         };
     }
 
+    /// <summary>The cause tags in plain words, for the open-time loss report and the change report (clips.md §5.6, §7.1).</summary>
+    public static class ClipWords
+    {
+        /// <summary>One line for a tag: what happened, said to a person (no tag names, no engine words).</summary>
+        public static string Say(string tag, int events)
+        {
+            string n = events == 1 ? "1 event" : events + " events";
+            switch (tag)
+            {
+                case ClipTags.PxpSpDropped: return $"PatternXP's sub-pattern triggers, effects and effect data are gone ({n}); only the notes and parameter values were kept.";
+                case ClipTags.InputColumn: return $"The amp and pan values stored for connections in patterns are gone ({n}); the connections themselves are unchanged.";
+                case ClipTags.CcLaneDropped: return $"Pitch wheel and controller lanes on a track that also has notes are gone ({n}); the old editor could not play them either.";
+                case ClipTags.ForeignDropped: return "Data of a pattern editor this app cannot read was dropped.";
+                case ClipTags.MachineMissing: return $"Pattern data of a machine that is not in the song was dropped ({n}).";
+                case ClipTags.ParamMissing: return $"Pattern data of a parameter the machine does not have was dropped ({n}).";
+                case ClipTags.TrackDropped: return $"Pattern data of a track the machine no longer has was dropped ({n}).";
+                case ClipTags.MidiLaneOrphan: return $"Velocity, delay or cut values with no note beside them were dropped ({n}).";
+                case ClipTags.NoteInvalid: return $"Notes that cannot be played were dropped ({n}).";
+                case ClipTags.PatternMissing: return $"Data of a pattern the song does not have was dropped ({n}).";
+                case ClipTags.EventPastEnd: return $"Events after the end of their pattern were dropped ({n}).";
+                case ClipTags.ExportQuantized: return $"Events between rows were moved onto their row ({n}).";
+                case ClipTags.RampSampled: return $"Ramps were written as steps ({n}).";
+                case ClipTags.MuteNotInBlob: return $"Column mutes are not kept for older programs ({n}).";
+                case ClipTags.LaneNotInBlob: return $"Data that older programs cannot hold was not written for them ({n}).";
+                case ClipTags.MidiDelay: return $"Delayed notes now start at their exact time ({n}).";
+                case ClipTags.MidiCut: return $"Notes with a cut now end at their exact time ({n}).";
+                case ClipTags.MidiTick: return $"Notes on a machine that takes MIDI now start on their row, a tick earlier than before ({n}).";
+                case ClipTags.BlockShift: return $"Parameter values now arrive at the start of their tick, a few milliseconds earlier than before ({n}).";
+                case ClipTags.Subtick: return $"Values between ticks are placed at their sub-tick ({n}).";
+                case ClipTags.NoteFixed: return $"Note values the old editor read as MIDI notes were converted ({n}).";
+                case ClipTags.CcLaneConverted: return $"Pitch wheel and controller lanes now play ({n}); the old editor ignored them.";
+                case ClipTags.OffNoteUnknown: return $"Note-offs with no earlier note in the pattern end note 0 ({n}).";
+                default: return tag + " (" + n + ")";
+            }
+        }
+    }
+
     /// <summary>What a log line says: a loss (something dropped), a change (the sound or the data moves), or information.</summary>
     public enum ClipLogKind { Loss, Change, Info }
 
@@ -295,5 +332,25 @@ namespace BuzzGUI.Common
         public static int PitchWheel(int value14, int channel = 0) => 0xE0 | (channel & 0x0F) | ((value14 & 0x7F) << 8) | (((value14 >> 7) & 0x7F) << 16);
 
         public static int ControlChange(int controller, int value, int channel = 0) => 0xB0 | (channel & 0x0F) | ((controller & 0x7F) << 8) | ((value & 0x7F) << 16);
+    }
+}
+
+namespace BuzzGUI.Common
+{
+    /// <summary>
+    /// The seam between a pattern editor and the store (clips.md §6, §7.2, CU3). Where the engine plays every lane, the song's clips are the
+    /// lanes in the pattern's columns and the editor only views them; the data it hands to a song file is then derived from the store, not its own.
+    /// The engine installs the provider; an editor built for Classic never asks.
+    /// </summary>
+    public static class ClipDerived
+    {
+        /// <summary>The blob for the machine whose pattern editor asks (its clips, as Classic and older builds read them), or null: the editor writes its own.</summary>
+        public static Func<IMachine, byte[]> Provider { get; set; }
+
+        /// <summary>True while a native song (.nbl) is written: its lanes are in the file, so the editor's data holds no events.</summary>
+        public static volatile bool Native;
+
+        /// <summary>Whether the engine plays every lane, and the clips are in the store: the editor does not play, and views the store.</summary>
+        public static volatile bool Direct;
     }
 }

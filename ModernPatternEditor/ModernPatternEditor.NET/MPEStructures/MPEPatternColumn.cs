@@ -3,7 +3,9 @@ using BuzzGUI.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if WINDOWS
 using static WDE.ModernPatternEditor.PlayRecordManager;
+#endif
 
 namespace WDE.ModernPatternEditor.MPEStructures
 {
@@ -51,14 +53,98 @@ namespace WDE.ModernPatternEditor.MPEStructures
         List<PatternEvent> patternEventsList = new List<PatternEvent>(0);
         PatternEvent[] emptyPatternEventList = Array.Empty<PatternEvent>();
         Lock patternEventsLock = new Lock();
+
+        // ---- Fork (docs/specs/clips.md §6, CU3): the seam. Where the song's clips are lanes in the pattern's columns (the Studio), this column is a view
+        // of one lane, the unmarked column of the pattern for its parameter and track: it reads and writes the lane's events, and keeps none of its
+        // own. The lane is made on the first write (a template's thousand empty columns are not in the song). Classic keeps its list.
+
+        /// <summary>The pattern editor views the store for this column: its parameter is a machine's (not one of the editor's own lanes).</summary>
+        internal bool Bound => MPEPattern?.Editor != null && MPEPattern.Editor.StoreAttached && Parameter != null && Parameter is not MPEInternalParameter;
+
+        IPatternColumn store;
+        Action<IEnumerable<PatternEvent>, bool> storeChanged;
+
+        /// <summary>The store's lane of this column (the pattern's unmarked parameter column for the parameter and track), made when asked to.</summary>
+        internal IPatternColumn StoreLane(bool create)
+        {
+            var pattern = MPEPattern.Pattern;
+            if (pattern == null) return null;
+            var s = store;
+            if (s != null && ReferenceEquals(s.Pattern, pattern) && pattern.Columns.Contains(s)) return s;
+            ReleaseStore();
+            foreach (var c in pattern.Columns)
+                if (c.Type == PatternColumnType.Parameter && ReferenceEquals(c.Parameter, Parameter) && c.Track == ParamTrack && !c.Metadata.ContainsKey(ClipMeta.SessionAutomation))
+                {
+                    Attach(c);
+                    return c;
+                }
+            if (!create) return null;
+            pattern.InsertColumn(pattern.Columns.Count, Parameter, ParamTrack);
+            foreach (var c in pattern.Columns.Reverse())
+                if (c.Type == PatternColumnType.Parameter && ReferenceEquals(c.Parameter, Parameter) && c.Track == ParamTrack && !c.Metadata.ContainsKey(ClipMeta.SessionAutomation))
+                {
+                    SyncGrid(c);
+                    Attach(c);
+                    return c;
+                }
+            return null;
+        }
+
+        void Attach(IPatternColumn c)
+        {
+            store = c;
+            // What others write into the lane (a take, the agent, an envelope, an undo) reaches the editor's view.
+            storeChanged = (events, set) => EventsChanged?.Invoke(events, set);
+            c.EventsChanged += storeChanged;
+        }
+
+        void ReleaseStore()
+        {
+            if (store != null && storeChanged != null) store.EventsChanged -= storeChanged;
+            store = null;
+            storeChanged = null;
+        }
+
+        /// <summary>The lane's Grid metadata says this column's rows per beat (view state kept with the lane).</summary>
+        void SyncGrid(IPatternColumn c)
+        {
+            if (BeatRowsList.Count == 0) return;
+            string grid = ClipGrid.Format(MPEPattern.RowsPerBeat > 0 ? MPEPattern.RowsPerBeat : BUZZ_TICKS_PER_BEAT, BeatRowsList);
+            if (!c.Metadata.TryGetValue(ClipMeta.Grid, out var have) || have != grid) c.Metadata[ClipMeta.Grid] = grid;
+        }
+
+        /// <summary>The editor starts viewing the store: what it held of its own is in the store already (the migration), so it is let go.</summary>
+        internal void LetGoOfOwnEvents()
+        {
+            lock (patternEventsLock) eventList.Clear();
+        }
+
+        /// <summary>Fork (clips.md §6): ask for the store's lane without making one, to read the lane's Grid and Mute into this column.</summary>
+        internal void TakeViewFromStore()
+        {
+            var lane = StoreLane(false);
+            if (lane == null) return;
+            if (lane.Metadata.TryGetValue(ClipMeta.Grid, out var grid) && ClipGrid.TryParse(grid, out int rpb, out _))
+            {
+                int beats = Math.Max(1, (MPEPattern.Pattern.Length + BUZZ_TICKS_PER_BEAT - 1) / BUZZ_TICKS_PER_BEAT);
+                BeatRowsList = ClipGrid.BeatRows(grid, beats, rpb);
+            }
+        }
+
         /// <summary>Fork (ux-overhaul.md P3c): whether the column holds any event (the editor hides columns that hold none).</summary>
         internal bool HasEvents
         {
-            get { lock (patternEventsLock) return eventList.Count > 0; }
+            get
+            {
+                if (Bound) { var lane = StoreLane(false); return lane != null && lane.GetEvents(int.MinValue, int.MaxValue).Any(); }
+                lock (patternEventsLock) return eventList.Count > 0;
+            }
         }
 
         public IEnumerable<PatternEvent> GetEvents(int start, int end)
         {
+            if (Bound)
+                return StoreLane(false)?.GetEvents(start, end) ?? emptyPatternEventList;
             if (eventList.Count == 0)
                 return emptyPatternEventList;
 
@@ -84,6 +170,12 @@ namespace WDE.ModernPatternEditor.MPEStructures
         internal List<PatternEvent> GetEventsInto(int start, int end, List<PatternEvent> into)
         {
             into.Clear();
+            if (Bound)
+            {
+                var lane = StoreLane(false);
+                if (lane != null) into.AddRange(lane.GetEvents(start, end));
+                return into;
+            }
             lock (patternEventsLock)
             {
                 for (int i = 0; i < eventList.Count; i++)
@@ -103,6 +195,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
             if (pattern != null)
                 patternLenght = pattern.Length * PatternEvent.TimeBase;
 
+            bool bound = Bound;
             lock (patternEventsLock)
             {
                 // Paste might introduce wrong numbers for notes, so check.
@@ -125,6 +218,16 @@ namespace WDE.ModernPatternEditor.MPEStructures
                     }
                 }
 
+                if (bound)
+                {
+                    // The lane takes the events; its own EventsChanged tells the view (and everyone else watching the lane).
+                    if (events == null || events.Length == 0) return;
+                    var lane = StoreLane(set);
+                    if (lane == null) return;
+                    var changing = set ? events.Where(e => e.Time < patternLenght).ToArray() : events;
+                    if (changing.Length > 0) lane.SetEvents(changing, set);
+                    return;
+                }
                 if (!set)
                 {
                     foreach (var e in events)
@@ -176,6 +279,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
             BeatRowsList = newBeatRows;
         }
 
+#if WINDOWS
         internal void PlayColumnEvents(IPattern pat, int start, int end, List<CollectedEventState> collectEvents)
         {
             // Fork (neo-buzz audio hygiene): straight from the column's list, under its lock as
@@ -191,6 +295,8 @@ namespace WDE.ModernPatternEditor.MPEStructures
                 }
             }
         }
+
+#endif
 
         internal void SetRPB(int rpb)
         {
@@ -210,6 +316,12 @@ namespace WDE.ModernPatternEditor.MPEStructures
 
         internal void ClearRegion(int regionLenght, int offsetFromTop, Digit topLeftDigit)
         {
+            if (Bound)
+            {
+                var gone = GetEvents(offsetFromTop, offsetFromTop + regionLenght).ToArray();
+                if (gone.Length > 0) StoreLane(false)?.SetEvents(gone, false);
+            }
+            else
             for (int i = 0; i < eventList.Count; i++)
             {
                 PatternEvent e = eventList[i];
@@ -357,7 +469,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
 
         internal IEnumerable<PatternEvent> GetEventsQuantized(int start, int end, int rpb)
         {
-            var events = eventList.Where(e => e.Time >= start && e.Time < end).ToArray();
+            var events = (Bound ? GetEvents(start, end) : eventList.Where(e => e.Time >= start && e.Time < end)).ToArray();
             for (int i = 0; i < events.Length; i++)
             {
                 events[i].Time = GetTimeQuantized(events[i].Time, rpb);
@@ -373,7 +485,13 @@ namespace WDE.ModernPatternEditor.MPEStructures
 
         internal void Clear()
         {
-            eventList.Clear();
+            if (Bound)
+            {
+                var all = GetEvents(int.MinValue, int.MaxValue).ToArray();
+                if (all.Length > 0) StoreLane(false)?.SetEvents(all, false);
+            }
+            else
+                eventList.Clear();
             MPEPattern.Editor.patternControl.InvalidateVisual();
         }
     }

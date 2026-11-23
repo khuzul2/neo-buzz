@@ -19,6 +19,36 @@ namespace ReBuzz.Core
     /// </summary>
     internal static class ClipStore
     {
+        /// <summary>
+        /// The host plays every lane from the engine (clips.md §5.6, CU3): the Studio and rebuzz-headless call this once, first. Classic's WPF app
+        /// does not, and keeps its editor's own playing and data.
+        /// </summary>
+        public static void UseDirectEngine()
+        {
+            PatternColumnCore.PlaysEveryLane = true;
+            ClipDerived.Direct = true;
+            ClipDerived.Provider = DerivedFor;
+        }
+
+        /// <summary>The blob a song file gets for a machine's pattern editor: the derived one (events from the store, with the stamp), or empty in a native song. Null: the editor's own.</summary>
+        static byte[] DerivedFor(IMachine machine)
+        {
+            if (machine is not MachineCore mc || !mc.ClipsAttached || mc.Graph?.Buzz is not ReBuzzCore buzz) return null;
+            if (ClipDerived.Native) return Array.Empty<byte>();
+            return Export(mc, buzz.SongCore, false, new ClipLog());
+        }
+
+        /// <summary>Whether the song holds anything an older build would not play from the lanes: tracker lanes or notes (a native song then needs a reader of format 3).</summary>
+        public static bool HoldsTrackerLanes(SongCore song)
+        {
+            foreach (var m in song.MachinesList)
+                foreach (var p in m.PatternsList)
+                    foreach (var c in p.ColumnsList.OfType<PatternColumnCore>())
+                        if (c.Type == PatternColumnType.Parameter && !c.IsMarkedAutomation && c.GetEvents(int.MinValue, int.MaxValue).Any())
+                            return true;
+            return false;
+        }
+
         // ------------------------------------------------------------------ machines
 
         /// <summary>What the converter needs to know of a machine.</summary>
@@ -102,7 +132,7 @@ namespace ReBuzz.Core
         /// (metadata first, as the engine reads the session mark while it plays). A lane that cannot be put (a machine or parameter the song
         /// lacks, a track past the machine's) is a log line. Returns the number of lanes written.
         /// </summary>
-        public static int Write(PatternCore pattern, ClipContent clip, SongCore song, ClipLog log)
+        public static int Write(PatternCore pattern, ClipContent clip, SongCore song, ClipLog log, bool mergeNotes = false)
         {
             var machines = MachinesOf(song);
             var existing = Read(pattern);
@@ -133,6 +163,16 @@ namespace ReBuzz.Core
                 else
                 {
                     var old = column.GetEvents(int.MinValue, int.MaxValue).ToArray();
+                    if (mergeNotes && lane.Kind == ClipLaneKind.Notes && old.Length > 0)
+                    {
+                        // An older build played the Notes lane (the song's) and the editor's own MIDI lanes together: both stay, once each.
+                        var have = new HashSet<(int, int, int)>(old.Select(e => (e.Time, e.Value, e.Duration)));
+                        var extra = lane.Events.Where(e => have.Add((e.Time, e.Value, e.Duration))).ToArray();
+                        if (extra.Length > 0) column.SetEvents(extra, true);
+                        foreach (var kv in lane.Meta) if (!column.Metadata.ContainsKey(kv.Key)) column.Metadata[kv.Key] = kv.Value;
+                        written++;
+                        continue;
+                    }
                     if (old.Length > 0) column.SetEvents(old, false);
                     foreach (var kv in lane.Meta) column.Metadata[kv.Key] = kv.Value;
                 }
@@ -179,7 +219,8 @@ namespace ReBuzz.Core
         /// <summary>The bytes of a machine's pattern editor data: its editor's, or the opaque data of a placeholder editor (PatternXP's format).</summary>
         public static byte[] EditorData(MachineCore machine)
         {
-            if (machine.EditorMachine != null) return machine.PatternEditorData;
+            // CU3: what the song file gave the editor (its stamp is the store's, a derived blob), else what the editor holds now.
+            if (machine.EditorMachine != null) return machine.EditorMachine.LoadedEditorData ?? machine.PatternEditorData;
             return machine.PlaceholderEditor?.Data;
         }
 
@@ -221,6 +262,57 @@ namespace ReBuzz.Core
                 result.EventsDropped += fromBlob.EventsDropped;
             }
             return result;
+        }
+
+        /// <summary>
+        /// The clips of a machine as lanes at open (clips.md §7.1): the built-in rows of its patterns (PATT, which the loaders also hand to the
+        /// default editor as PatternXP data: the rows are the source, not the editor's copy of them) and, for a pattern with none, the editor's
+        /// data. What the loaders dropped (the connections' amp and pan) is counted and logged. Reads and writes nothing in the song.
+        /// </summary>
+        public static ClipMigration.Result MigrateForOpen(MachineCore machine, SongCore song, ClipLog log, byte[] editorData = null)
+        {
+            var machines = MachinesOf(song);
+            var result = new ClipMigration.Result();
+            var model = machines.Find(machine.Name);
+            var builtIn = new HashSet<string>();
+            foreach (var pattern in machine.PatternsList)
+            {
+                if (pattern.BuiltInData == null) continue;
+                builtIn.Add(pattern.Name);
+                ClipMigration.FromBuiltIn(ToRows(pattern, machine), model, pattern.Length, log, result);
+            }
+            foreach (var pattern in machine.PatternsList)
+            {
+                if (pattern.BuiltInData != null || pattern.LostInputCells == null) continue;
+                foreach (var kv in pattern.LostInputCells)
+                {
+                    result.EventsIn += kv.Value;
+                    result.EventsDropped += kv.Value;
+                    log.Loss(ClipTags.InputColumn, machine.Name, pattern.Name, "input " + kv.Key, kv.Value, "a connection's amp and pan");
+                }
+            }
+            bool allBuiltIn = machine.PatternsList.Count > 0 && builtIn.Count == machine.PatternsList.Select(p => p.Name).Distinct().Count();
+            var data = editorData ?? EditorData(machine);
+            if (!allBuiltIn && data != null && data.Length > 0)
+            {
+                var lengths = machine.PatternsList.GroupBy(p => p.Name).ToDictionary(g => g.Key, g => g.First().Length);
+                var fromBlob = ClipMigration.FromBlob(data, machines, name => lengths.TryGetValue(name, out int l) ? l : 0, log, machine.Name);
+                result.Clips.AddRange(fromBlob.Clips.Where(c => !builtIn.Contains(c.Name)));
+                result.EventsIn += fromBlob.EventsIn;
+                result.EventsKept += fromBlob.EventsKept;
+                result.EventsMerged += fromBlob.EventsMerged;
+                result.EventsDropped += fromBlob.EventsDropped;
+            }
+            return result;
+        }
+
+        /// <summary>Whether a machine's editor blob is the derived one of the store as it is now (its stamp is the hash of the store's lanes): then the store is the truth and nothing migrates.</summary>
+        public static bool BlobIsCurrent(MachineCore machine, byte[] blob)
+        {
+            var stamp = ClipBlob.StampOf(blob);
+            if (stamp == null) return false;
+            var expect = ClipContent.Hash(machine.PatternsList.Select(Read));
+            return stamp.SequenceEqual(expect);
         }
 
         /// <summary>A built-in pattern as the converter reads it: its rows, and how many cells of each connection's amp and pan hold a value.</summary>

@@ -37,11 +37,13 @@ namespace ReBuzz.Studio.Tests
         static ReBuzzCore Core => Studio.Host.Core;
 
         enum What { Level, Note, Midi }
-        enum Who { Engine, Editor }
+        enum Who { Engine, Migrated }
 
         sealed class Landing
         {
             public int Sample = -1;             // the first sample where the output moved; -1: it never did
+            public float Peak;
+            public int Ons;                     // the MIDI note-ons the machine took (the probe counts them)
             public int[] TickStart;             // where each tick began (as the engine's tick lengths give them)
         }
 
@@ -51,7 +53,7 @@ namespace ReBuzz.Studio.Tests
             public int Bpm, Tpb, Block, Tick;
             public bool Edge;
             public double TickSamples;
-            public int Expected, Engine, Editor;
+            public int Expected, Engine;
         }
 
         /// <summary>The start of each tick, in samples, as the engine cuts them (WorkManager: whole samples, the fraction carried).</summary>
@@ -85,7 +87,7 @@ namespace ReBuzz.Studio.Tests
             // The editor reads its data when its machine is made, as on a song's load: Level is the first global parameter, Note
             // the first track parameter, which the editor counts after the globals (index 1).
             byte[] editorData = null;
-            if (who == Who.Editor)
+            if (who == Who.Migrated)
             {
                 var columns = what switch
                 {
@@ -95,7 +97,11 @@ namespace ReBuzz.Studio.Tests
                 };
                 editorData = EditorData("P", (ticks + 3) / 4, columns);
             }
-            song.CreateMachine("Clip Probe", null, "Probe", null, "Modern Pattern Editor", editorData, -1, 0.3f, 0.3f);
+            // A song's machine is made while it loads (the editor is given the data of the file, and keeps it for the migration).
+            bool outer = core.SongLoading;
+            core.SongLoading = who == Who.Migrated;
+            try { song.CreateMachine("Clip Probe", null, "Probe", null, "Modern Pattern Editor", editorData, -1, 0.3f, 0.3f); }
+            finally { core.SongLoading = outer; }
             var machine = song.MachinesList.First(m => m.Name == "Probe");
             song.ConnectMachines(machine, song.MachinesList[0], new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
             Assert.That(machine.EditorMachine, Is.Not.Null, "the probe has a pattern editor (the Modern Pattern Editor)");
@@ -123,8 +129,10 @@ namespace ReBuzz.Studio.Tests
             }
             else
             {
-                int held = pattern.PatternEditorMachineEvents.Sum(c => c.Events.Count());
-                Assert.That(held, Is.GreaterThan(0), $"the editor holds the data ({what}): {string.Join(", ", pattern.PatternEditorMachineEvents.Select(c => c.Parameter?.Name + ":" + c.Events.Count()))}");
+                // Migration on open: the editor's data becomes lanes of the pattern, and nothing else plays it.
+                ReBuzz.Core.ClipOpen.Run(core, false);
+                int held = pattern.Columns.Sum(c => c.GetEvents(int.MinValue, int.MaxValue).Count());
+                Assert.That(held, Is.GreaterThan(0), $"the lanes hold the data ({what}): {string.Join(", ", pattern.Columns.Select(c => c.Type + ":" + c.GetEvents(int.MinValue, int.MaxValue).Count()))}");
             }
 
             song.AddSequence(machine, song.Sequences.Count);
@@ -181,6 +189,8 @@ namespace ReBuzz.Studio.Tests
                 }
             }
 
+            landing.Ons = right.Count == 0 ? 0 : (int)Math.Round(right.Max() * 32768f / 100000f);       // the master scales the samples to the range -1..1
+            landing.Peak = right.Count == 0 ? 0 : right.Max();
             var channel = what == What.Level ? left : right;
             for (int i = 0; i < channel.Count; i++)
             {
@@ -247,8 +257,26 @@ namespace ReBuzz.Studio.Tests
             return (inside, edge);
         }
 
+        /// <summary>CU3 (clips.md §5.6, the double-play rule): a note in the MIDI column sounds once, whether it was written to the column or came from a song's editor data on open.</summary>
         [AvaloniaTest]
-        public void TheEngineAndTheEditorPlayARowAlignedValueAtTheSameSample()
+        public void ANoteInTheMidiColumnSoundsOnceWhetherWrittenOrMigrated()
+        {
+            foreach (var who in new[] { Who.Engine, Who.Migrated })
+                foreach (var block in new[] { 64, 512 })
+                {
+                    var landing = Play(What.Midi, who, 125, 4, 9, block, 15);
+                    Assert.That(landing.Ons, Is.EqualTo(1), $"the machine took the note-on once ({who}, {block} frames; peak {landing.Peak}, first sound at {landing.Sample})");
+                    Assert.That(landing.Sample, Is.GreaterThanOrEqualTo(0), $"and it sounded ({who})");
+                }
+            foreach (var what in new[] { What.Level, What.Note })
+            {
+                var migrated = Play(what, Who.Migrated, 125, 4, 9, 256, 15);
+                Assert.That(migrated.Sample, Is.GreaterThanOrEqualTo(0), $"a migrated {what} lane is played by the engine");
+            }
+        }
+
+        [AvaloniaTest]
+        public void TheEngineLandsARowAlignedValueOfEveryLaneAtItsTick()
         {
             Assert.That(Core.MachineDLLs.ContainsKey("Clip Probe"), Is.True, "the probe's machine is in the tests' gear (TestMachines/ClipProbe.csproj)");
             var rows = new List<Row>();
@@ -267,11 +295,10 @@ namespace ReBuzz.Studio.Tests
                         {
                             int ticks = tick + 6;
                             var engine = Play(what, Who.Engine, bpm, tpb, tick, block, ticks);
-                            var editor = Play(what, Who.Editor, bpm, tpb, tick, block, ticks);
                             rows.Add(new Row
                             {
                                 What = what, Bpm = bpm, Tpb = tpb, Block = block, Tick = tick, Edge = atEdge, TickSamples = average,
-                                Expected = engine.TickStart[tick], Engine = engine.Sample, Editor = editor.Sample,
+                                Expected = engine.TickStart[tick], Engine = engine.Sample,
                             });
                         }
                     }
@@ -281,11 +308,11 @@ namespace ReBuzz.Studio.Tests
             var text = new StringBuilder();
             text.AppendLine("Timing probe (docs/specs/clips.md §5.6): a row-aligned value, the engine's column against the editor's data");
             text.AppendLine($"sample rate {ReBuzzCore.masterInfo.SamplesPerSec} Hz, sub-tick timing {Core.EngineSettings.SubTickTiming}");
-            text.AppendLine("value | bpm/tpb | call | tick (start in call) | tick start | engine lands | editor lands | editor - engine (samples, ticks)");
+            text.AppendLine("value | bpm/tpb | call | tick (start in call) | tick start | engine lands | engine - tick start (samples, ticks)");
             foreach (var r in rows)
             {
-                string lag = r.Editor < 0 || r.Engine < 0 ? "never" : $"{r.Editor - r.Engine} ({(r.Editor - r.Engine) / r.TickSamples:0.00})";
-                text.AppendLine($"{r.What,-5} | {r.Bpm}/{r.Tpb} | {r.Block,4} | {r.Tick,3} ({(r.Edge ? "edge" : "inside")}) | {r.Expected,7} | {r.Engine,7} | {r.Editor,7} | {lag}");
+                string lag = r.Engine < 0 ? "never" : $"{r.Engine - r.Expected} ({(r.Engine - r.Expected) / r.TickSamples:0.00})";
+                text.AppendLine($"{r.What,-5} | {r.Bpm}/{r.Tpb} | {r.Block,4} | {r.Tick,3} ({(r.Edge ? "edge" : "inside")}) | {r.Expected,7} | {r.Engine,7} | {lag}");
             }
             TestContext.Out.WriteLine(text.ToString());
             string path = Environment.GetEnvironmentVariable("CLIP_PROBE_OUT");
@@ -295,7 +322,7 @@ namespace ReBuzz.Studio.Tests
             {
                 string at = $"{r.What} at {r.Bpm} BPM, {r.Block} frames, tick {r.Tick}";
                 Assert.That(r.Engine, Is.GreaterThanOrEqualTo(r.Expected), $"the engine's column lands at or after the tick's first sample ({at})");
-                Assert.That(r.Editor, Is.GreaterThanOrEqualTo(0), $"the editor's value arrives ({at})");
+                Assert.That(r.Engine, Is.LessThan(r.Expected + (int)r.TickSamples), $"and within the tick ({at}): CU3 plays every lane in the engine, so there is one landing to measure");
             }
         }
     }

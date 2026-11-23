@@ -14,7 +14,7 @@ namespace ReBuzz.Studio.Tests.TestMachines
     [MachineDecl(Name = "Clip Probe", ShortName = "Probe", Author = "neo-buzz", MaxTracks = 1, InputCount = 0, OutputCount = 1)]
     public class ClipProbeMachine : IBuzzMachine
     {
-        int level, midi, note;
+        int level, midi, note, ons;
 
         public ClipProbeMachine(IBuzzMachineHost host)
         {
@@ -37,11 +37,12 @@ namespace ReBuzz.Studio.Tests.TestMachines
         public void MidiNote(int channel, int value, int velocity)
         {
             midi = velocity > 0 ? value : 0;
+            if (velocity > 0) ons++;
         }
 
         public bool Work(Sample[] output, int n, WorkModes mode)
         {
-            float l = level, r = midi + 128 * note;
+            float l = level, r = midi + 128 * note + 100000f * ons;      // the note-ons it took, times 100000: a test counts the times a note sounded
             for (int i = 0; i < n; i++) output[i] = new Sample(l, r);
             return true;
         }
@@ -51,6 +52,7 @@ namespace ReBuzz.Studio.Tests.TestMachines
             level = 0;
             midi = 0;
             note = 0;
+            ons = 0;
         }
     }
 }

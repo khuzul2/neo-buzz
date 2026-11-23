@@ -422,7 +422,7 @@ namespace ReBuzz.Studio.Tests
             var column = pattern.ColumnsList.Single();
             Assert.That(column.Metadata.ContainsKey(PatternColumnCore.SessionAutomationKey), Is.False, "no session mark: the engine does not play a migrated parameter column (CU3 does)");
             Assert.That(ClipMeta.SessionAutomation, Is.EqualTo(PatternColumnCore.SessionAutomationKey));
-            Assert.That(((PatternColumnCore)column).EnginePlays, Is.False);
+            Assert.That(((PatternColumnCore)column).IsMarkedAutomation, Is.False);
         }
     }
 }
