@@ -1,6 +1,74 @@
 {
  "note": "SHA-256 of each corpus song's render, per platform (docs/specs/clips.md \u00a710.1). Made by tools/clip-null.py; no audio.",
  "open_ms": {
+  "linux-x64": {
+   "gen/rows256": {
+    "best_ms": 254,
+    "bytes": 293581
+   },
+   "gen/tracks8": {
+    "best_ms": 259,
+    "bytes": 297355
+   },
+   "repo/Bass House Template.nbl": {
+    "best_ms": 3575,
+    "bytes": 88303
+   },
+   "repo/FSM_Infector_Demo.bmx": {
+    "best_ms": 131,
+    "bytes": 378333
+   },
+   "repo/FrequencyUnknown_O-Delay_delaytest.bmx": {
+    "best_ms": 133,
+    "bytes": 109764
+   },
+   "repo/Jeskola_NiNjA_dElaY.bmx": {
+    "best_ms": 123,
+    "bytes": 73043
+   },
+   "repo/MadBrain_Dynamite6_Demo.bmx": {
+    "best_ms": 152,
+    "bytes": 59235
+   },
+   "repo/Tech House Template.nbl": {
+    "best_ms": 3155,
+    "bytes": 77783
+   }
+  },
+  "macos-arm64": {
+   "gen/rows256": {
+    "best_ms": 259,
+    "bytes": 293583
+   },
+   "gen/tracks8": {
+    "best_ms": 263,
+    "bytes": 297357
+   },
+   "repo/Bass House Template.nbl": {
+    "best_ms": 3558,
+    "bytes": 88303
+   },
+   "repo/FSM_Infector_Demo.bmx": {
+    "best_ms": 142,
+    "bytes": 378333
+   },
+   "repo/FrequencyUnknown_O-Delay_delaytest.bmx": {
+    "best_ms": 133,
+    "bytes": 109764
+   },
+   "repo/Jeskola_NiNjA_dElaY.bmx": {
+    "best_ms": 115,
+    "bytes": 73043
+   },
+   "repo/MadBrain_Dynamite6_Demo.bmx": {
+    "best_ms": 156,
+    "bytes": 59235
+   },
+   "repo/Tech House Template.nbl": {
+    "best_ms": 3078,
+    "bytes": 77783
+   }
+  },
   "windows-x64": {
    "gen/rows256": {
     "best_ms": 428,
