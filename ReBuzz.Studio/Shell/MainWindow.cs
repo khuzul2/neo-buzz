@@ -1103,6 +1103,7 @@ namespace ReBuzz.Studio.Shell
             inspector?.Dispose();
             browser?.Dispose();
             if (Platform.StudioMachineUiHost.DeviceOpener == (Func<IMachine, bool>)OpenDevice) Platform.StudioMachineUiHost.DeviceOpener = null;
+            if (Views.Detail.EnvelopeOpener.Open == (Func<IPattern, ReBuzz.Core.Session.ColumnKey, bool>)OpenEnvelope) Views.Detail.EnvelopeOpener.Open = null;
             if (audioPage != null)
             {
                 if (Views.Audio.AudioClipPage.Opener == (Func<IPattern, bool>)OpenAudio) Views.Audio.AudioClipPage.Opener = null;
