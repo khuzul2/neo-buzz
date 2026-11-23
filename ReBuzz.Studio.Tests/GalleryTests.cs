@@ -24,6 +24,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core.AudioLibrary.AudioToMidi;
 using ReBuzz.Audio;
@@ -2362,6 +2363,73 @@ namespace ReBuzz.Studio.Tests
                     Settle();
                     Shot(window, "464-warp-context-menu", "Warp markers (WM1): the waveform's menu (Set bar 1 here, Warp from here (auto-warp from that moment: it follows the tempo changes, AW1), Warp from here, straight (one tempo), Warp as a loop of N bars, markers at the transients or on every bar, Delete, Remove all, Quantize), each one undo step with its key beside it.", "Right-click the waveform.");
                     CloseMenus();
+                });
+            }
+            finally
+            {
+                Close(window);
+            }
+            AfterAll();
+        }
+
+        /// <summary>Clips CU3 (clips.md §5.7, §7.1): a song whose tracker data was moved into the store on open, the notice of what could not move, and an old machine's clip in view-only mode.</summary>
+        [AvaloniaTest, Order(8)]
+        public void ClipsOfOldSongs()
+        {
+            BeforeAll();
+            using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; });
+            NewSong();
+            var window = Open("Machines");
+            try
+            {
+                const string Song = "a song with one old machine (Clip Probe) whose pattern data was moved into the store on open";
+                var machine = ClipOpenTests.MigratedProbe();
+                window.RefreshNow();
+                Settle();
+                var pattern = machine.Patterns.First(p => p.Name == "P");
+                Try("590-clips-old-machine-tracker", () =>
+                {
+                    window.Detail.Show(true);
+                    PatternView.Edit(pattern);
+                    window.ShowView("Pattern");
+                    Wait(300);
+                    Shot(window, "590-clips-old-machine-tracker", "The Tracker on a song whose pattern data was moved into the store on open: the columns are views of the pattern's lanes (the Level step at row 16, the note at row 16); the machine is an old one, so its clip is view only.", "Open a song of old machines; F2.", Song);
+                });
+                Try("591-clips-old-machine-refused", () =>
+                {
+                    // Walk right and type a digit until a column of the machine refuses it (the Level column's lane is the old machine's).
+                    bool refused = false;
+                    var before = ClipDerived.Refused;
+                    ClipDerived.Refused = why => { refused = true; before?.Invoke(why); };
+                    try
+                    {
+                        for (int i = 0; i < 16 && !refused; i++)
+                        {
+                            Key(window, PhysicalKey.ArrowRight);
+                            Key(window, PhysicalKey.ArrowUp);
+                            Key(window, PhysicalKey.Digit1);
+                            Wait(50);
+                        }
+                    }
+                    finally { ClipDerived.Refused = before; }
+                    Assert.That(refused, Is.True, "a typed digit in an old machine's lane is refused");
+                    Wait(200);
+                    Wait(200);
+                    window.RefreshNow();
+                    Shot(window, "591-clips-old-machine-refused", "A key typed into the old machine's clip: the edit is refused and the status line says why in one line (\"Convert this machine to edit its clips\"); the machine still plays.", "Type in the Tracker on a machine without clipEdit.", Song);
+                });
+                Try("592-clips-loss-panel", () =>
+                {
+                    var report = new ReBuzz.Core.ClipOpenReport();
+                    report.Log.Loss(ClipTags.PxpSpDropped, "Probe", "P", null, 12);
+                    report.Log.Loss(ClipTags.InputColumn, "Probe", "P", null, 4);
+                    report.Log.Loss(ClipTags.CcLaneDropped, "Probe", "P", null, 3);
+                    report.Log.Change(ClipTags.BlockShift, "Probe", "P", null, 20);
+                    Core.SongCore.ClipOpen = report;
+                    window.RefreshProblems();
+                    window.ShowView("Machines");
+                    Wait(200);
+                    Shot(window, "592-clips-loss-panel", "The notice after opening a song that lost something in the move to the store: what was dropped and what changed, by cause, in plain words; × hides it. (The losses shown are made up for the picture.)", "Open an old song with PatternXP sub-pattern columns.", Song);
                 });
             }
             finally
