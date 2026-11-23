@@ -271,9 +271,9 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | machine_readings | 54 | 47 | yes |
 | machine_remove | 2 | 0 | yes |
 | machine_replace | 92 | 55 | yes |
-| machine_set | 10 | 12 | yes |
+| machine_set | 11 | 14 | yes |
 | machine_swap | 1 | 1 | yes |
-| machine_tracks | 1 | 1 | yes |
+| machine_tracks | 2 | 1 | yes |
 | master_record | 2 | 4 | yes |
 | meters_read | 10 | 12 | yes |
 | midi_bind | 4 | 3 | yes |

@@ -909,6 +909,8 @@ namespace ReBuzz.Studio.Shell
             if (detail.IsMixer && detail.IsOpen) { detail.MixerPage.RevealMaster(); return; }
             // The panel opens once the click is known not to be the first half of a double click: it takes room from the machine view,
             // and the Master would move from under the second click.
+            masterSource = source as Views.Machines.MachineCanvas;
+            masterAt = selected.Position;
             masterClick ??= new Avalonia.Threading.DispatcherTimer();
             masterClick.Stop();
             masterClick.Interval = MasterClickDelay;
@@ -921,12 +923,17 @@ namespace ReBuzz.Studio.Shell
         internal static TimeSpan MasterClickDelay { get; set; } = TimeSpan.FromMilliseconds(320);
 
         Avalonia.Threading.DispatcherTimer masterClick;
+        Views.Machines.MachineCanvas masterSource;
+        Tuple<float, float> masterAt;
 
         void OnMasterClickTimer(object sender, EventArgs e)
         {
             masterClick?.Stop();
+            if (masterSource?.IsDragging == true) { masterClick?.Start(); return; }     // the Master is being dragged: not a click yet
             if (detail?.MixerPage == null || host.Core == null) return;
-            if (StudioSelection.For(host.Core).Machine?.DLL?.Info?.Type != MachineType.Master) return;
+            var master = StudioSelection.For(host.Core).Machine;
+            if (master?.DLL?.Info?.Type != MachineType.Master) return;
+            if (!Equals(master.Position, masterAt)) return;                    // it was dragged, not clicked
             if (detail.IsMixer && detail.IsOpen) { detail.MixerPage.RevealMaster(); return; }
             detail.ShowMixer(detail.IsMaximised);
             detail.MixerPage.RevealMaster();
@@ -1149,6 +1156,8 @@ namespace ReBuzz.Studio.Shell
             if (Platform.StudioMachineUiHost.DeviceOpener == (Func<IMachine, bool>)OpenDevice) Platform.StudioMachineUiHost.DeviceOpener = null;
             if (Platform.StudioMachineUiHost.MasterOpener == (Func<IMachine, bool>)OpenMasterMixer) Platform.StudioMachineUiHost.MasterOpener = null;
             masterClick?.Stop();
+            masterSource = null;
+            if (Views.Mixer.MixerView.DeviceOpener != null) Views.Mixer.MixerView.DeviceOpener = null;
             if (host.Core != null) StudioSelection.For(host.Core).Changed -= FollowMasterSelection;
             if (audioPage != null)
             {

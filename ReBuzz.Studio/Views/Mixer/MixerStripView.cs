@@ -400,7 +400,7 @@ namespace ReBuzz.Studio.Views.Mixer
 
         // ------------------------------------------------------------------ parts
 
-        static TextBlock Label(string text) => new TextBlock { Text = text.ToUpperInvariant(), FontSize = 10, Foreground = SessionPalette.LabelText };
+        static TextBlock Label(string text) => new TextBlock { Text = text.ToUpperInvariant(), FontSize = 11, Foreground = SessionPalette.LabelText };
 
         static Control WithTop(Control c) => new Border { BorderBrush = StudioTokens.SurfaceBorderBrush, BorderThickness = new Thickness(0, 1, 0, 0), Margin = new Thickness(0, 2, 0, 0), Child = c };
 
