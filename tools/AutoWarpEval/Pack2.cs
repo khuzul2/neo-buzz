@@ -37,11 +37,11 @@ namespace NeoBuzz.AutoWarpEval
                 bool differ = r1.Found != r2.Found || (r1.Found && (r2.FromModel || Math.Abs(r1.Bpm - r2.Bpm) > 0.003 * r1.Bpm));
                 if (Environment.GetEnvironmentVariable("AW2_PACK_ALL") == "1")
                 {
-                    // AW2d: the same clips as an earlier pack, whatever AW1 gives: only the model's rendering, as NN-name--aw2d.wav
+                    // A fixed list of clips, whatever AW1 gives: only the model's rendering, as NN-name--model.wav
                     n++;
                     var oo = Render(w, rate, r2, song, warp);
-                    Pack.WriteWav(Path.Combine(outDir, $"{n:00}-{name}--aw2d.wav"), oo, rate);
-                    Console.WriteLine($"{n:00}-{name}--aw2d: {(r2.Found ? $"{r2.Bpm:0.0} BPM, {r2.Markers.Count} markers, {(r2.FromModel ? "model" : "AW1's DSP track kept")}" : "no beats found")}; song {song} BPM");
+                    Pack.WriteWav(Path.Combine(outDir, $"{n:00}-{name}--model.wav"), oo, rate);
+                    Console.WriteLine($"{n:00}-{name}--model: {(r2.Found ? $"{r2.Bpm:0.0} BPM, {r2.Markers.Count} markers, {(r2.FromModel ? "model" : "AW1's DSP track kept")}" : "no beats found")}; song {song} BPM");
                     continue;
                 }
                 if (!differ || have >= 2) { Console.WriteLine($"skipped {name}: {(differ ? "enough of its set" : "AW2 gives the same as AW1")}"); continue; }

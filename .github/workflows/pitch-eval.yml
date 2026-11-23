@@ -1111,7 +1111,7 @@ jobs:
         import glob, json, os
         want = [("gmd", "gmd_drummer5_session2_1", 100), ("gmd", "gmd_drummer5_session2_2", 110), ("guitarset", "gs_04_BN3-154-E_solo", 105), ("guitarset", "gs_04_Funk3-112-C#_comp", 115),
                 ("candombe", "cd_csic.1995_ansina2_03", 90), ("candombe", "cd_csic.1995_cuareim_03", 140), ("aam", "aam_1006", 105), ("aam", "aam_1066", 100)]
-        rows, readme = [], ["Auto-warp AW2d listening pack: the same eight held-out clips as the AW2c pack (never trained on), a 40 s window, played at the song tempo against a click on the song's grid", "(a higher, louder tick on each bar line), warped with Signalsmith Stretch (the library of the app's Pro warp, so the pitch stays put).", "--aw2d is the AW2d beat model (the one compiled into this build) with its DSP-or-model choice.", ""]
+        rows, readme = [], ["Auto-warp listening pack (fixed list): the same eight held-out clips as the AW2 blind test (never trained on), a 40 s window, played at the song tempo against a click on the song's grid", "(a higher, louder tick on each bar line), warped with Signalsmith Stretch (the library of the app's Pro warp, so the pitch stays put).", "--model is the beat model compiled into this build, with its DSP-or-model choice.", ""]
         for ds, name, bpm in want:
             j = f"/mnt/aw2/items-{ds}/{name}.json"
             m = json.load(open(j))
