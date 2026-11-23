@@ -405,12 +405,21 @@ namespace ReBuzz.Studio.Views.Detail
             double room = back ? g - 6 : 120;
             var hi = Text(env.Param.Describe(env.Param.Max), StudioTokens.TextSecondaryBrush, StudioTokens.FontCaption);
             var lo = Text(env.Param.Describe(env.Param.Min), StudioTokens.TextSecondaryBrush, StudioTokens.FontCaption);
-            hi.MaxTextWidth = lo.MaxTextWidth = room;
+            // A range too wide for the gutter ("20.0 kHz") is drawn whole just inside the lane, on a chip, rather than cut to "20.0 ...".
+            bool fits = Math.Max(hi.Width, lo.Width) <= room;
+            double x = fits ? (back ? 3 : 4) : g + 4;
+            double most = Math.Max(20, fits ? room : w - x - 4);
+            hi.MaxTextWidth = lo.MaxTextWidth = most;
             hi.MaxTextHeight = lo.MaxTextHeight = 14;
             hi.Trimming = lo.Trimming = TextTrimming.CharacterEllipsis;
-            double x = back ? 3 : 4;
-            dc.DrawText(hi, new Point(x, 2));
-            dc.DrawText(lo, new Point(x, h - lo.Height - 2));
+            Point top = new(x, 2), bottom = new(x, h - lo.Height - 2);
+            if (!fits)
+            {
+                dc.FillRectangle(StudioTokens.SurfacePanelBrush, new Rect(top.X - 2, top.Y - 1, hi.Width + 4, hi.Height + 2), 3);
+                dc.FillRectangle(StudioTokens.SurfacePanelBrush, new Rect(bottom.X - 2, bottom.Y - 1, lo.Width + 4, lo.Height + 2), 3);
+            }
+            dc.DrawText(hi, top);
+            dc.DrawText(lo, bottom);
             dc.DrawLine(PianoRoll.BarLine, new Point(0, 0.5), new Point(w, 0.5));
         }
 
