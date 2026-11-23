@@ -459,6 +459,9 @@ def sha256(path):
     return h.hexdigest()
 
 
+AUDIO_DIR = None      # --audio DIR: keep each render's WAV there as <label>.wav (for tools/clip-change-report.py; never committed)
+
+
 def render_song(exe, path, work, label):
     """Opens the song in a fresh process and renders it; the entry for the goldens."""
     c = nt.Client(exe, os.path.join(work, "run", label), label)
@@ -474,6 +477,9 @@ def render_song(exe, path, work, label):
         if beats <= 0:
             return {"status": "no length", "why": "the song has no end to render to"}
         r = c.call("render", **{"from": 0, "to": beats, "tail_seconds": TAIL, "name": label[:40]})
+        if AUDIO_DIR:
+            os.makedirs(AUDIO_DIR, exist_ok=True)
+            shutil.copyfile(r["file"], os.path.join(AUDIO_DIR, label.replace("-again", "") + ".wav"))
         return {"sha256": sha256(r["file"]), "seconds": r["seconds"], "silent": bool((r.get("measure") or {}).get("silent")),
                 "rate": r["sample_rate"], "open_ms": round(opened * 1000)}
     finally:
@@ -680,6 +686,8 @@ def main(argv):
     out = option(argv, "--out")
     goldens = option(argv, "--goldens", os.path.join(ROOT, "eval", "clip-goldens.json"))
     into = option(argv, "--into")
+    global AUDIO_DIR
+    AUDIO_DIR = option(argv, "--audio")
     baseline = option(argv, "--baseline", os.path.join(ROOT, "eval", "clip-goldens.json"))
     max_ratio = option(argv, "--max-ratio")
     if platform.system() != "Windows":
@@ -709,7 +717,7 @@ def main(argv):
         return merge(argv[1:], into)
     if len(argv) >= 3 and argv[0] == "opentime":
         return opentime(argv[1], argv[2], baseline, float(max_ratio) if max_ratio else None)
-    print(__doc__ if False else "usage: clip-null.py list | generate <exe> <out> | render <exe> <work> | check <exe> <work> | merge <observed.json>... --into <goldens> | opentime <exe> <work>")
+    print(__doc__ if False else "usage: clip-null.py [--audio DIR] list | generate <exe> <out> | render <exe> <work> | check <exe> <work> | merge <observed.json>... --into <goldens> | opentime <exe> <work>")
     return 2
 
 

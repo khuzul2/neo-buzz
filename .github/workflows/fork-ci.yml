@@ -281,6 +281,8 @@ jobs:
       shell: bash
       env:
         SCREENSHOTS_DIR: ${{ github.workspace }}/studio-screenshots
+        CLIP_ROUNDTRIP_OUT: ${{ github.workspace }}/clip-roundtrip/round-trips.txt
+        CLIP_MIGRATION_LOG: ${{ github.workspace }}/clip-roundtrip/migration-log.json
       run: dotnet test ReBuzz.Studio.Tests --logger "console;verbosity=normal" 2>&1 | tee studio-test.log
 
     # P3's exit (studio-mvp.md S9): the studio app itself, on Xvfb's display with the PulseAudio null
@@ -301,6 +303,15 @@ jobs:
       with:
         name: studio-screenshots
         path: studio-screenshots/
+
+    # CU2 (clips.md S10): the round trips over the corpus, and the migration log (every step with its cause tag) that
+    # tools/clip-change-report.py reads in CU3.
+    - name: Clip round trips and migration log
+      if: always() && hashFiles('clip-roundtrip/*') != ''
+      uses: actions/upload-artifact@v6
+      with:
+        name: clip-roundtrip
+        path: clip-roundtrip/
 
     - name: Annotate test log
       if: failure()
