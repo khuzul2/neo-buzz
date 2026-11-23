@@ -40,12 +40,19 @@ def egmd(out, limit):
     """E-GMD, the Expanded Groove MIDI Dataset (Callender, Hawthorne, Hawthorne; ICML 2020; Magenta; CC BY 4.0): the Groove MIDI Dataset's performances played on 43 drum-kit
     sounds of a Roland TD-17, so the same grooves (same MIDI, same beats) on many kits. AW2c uses a subset spread over the kits for training only: the drummers held out of GMD
     (drummer5 and drummer9) are left out altogether, so no held-out performance is trained on in another sound. 4/4 'beat' recordings, 8 to 120 s."""
+    import requests
+    page = retry(lambda: requests.get("https://magenta.tensorflow.org/datasets/e-gmd", timeout=60).text, what="e-gmd page")
+    lic = "CC-BY-4.0" if re.search(r"Creative Commons Attribution 4\.0 International \(CC BY 4\.0\)", page) else None
+    print("egmd licence on the dataset page:", lic, flush=True)
+    assert lic and licence_ok(lic), "E-GMD licence not confirmed on its page"
     z = Zip("https://storage.googleapis.com/magentadata/datasets/e-gmd/v1.0.0/e-gmd-v1.0.0.zip")
     names = z.names()
     csvn = next(n for n in names if n.endswith(".csv"))
     prefix = csvn.rsplit("/", 1)[0] + "/" if "/" in csvn else ""
     rows = list(csv.DictReader(io.TextIOWrapper(io.BytesIO(z.read(csvn)), "utf-8")))
     rows = [r for r in rows if r["audio_filename"] and r["time_signature"] == "4-4" and r["beat_type"] == "beat" and 8 < float(r["duration"]) < 120 and r["drummer"] not in ("drummer5", "drummer9")]
+    # AW2d: a performance that is in GMD's validation split (the hash of its GMD item name) is left out, so no validation groove is trained on in another sound
+    rows = [r for r in rows if fnv("gmd_" + r["id"].replace("/", "_")) % 8 != 1]
     rows.sort(key=lambda r: fnv(r["id"] + "e"))
     by_kit = collections.defaultdict(list)
     for r in rows:
@@ -64,7 +71,7 @@ def egmd(out, limit):
         bpm = float(r["bpm"])
         beats = [k * 60 / bpm for k in range(int(len(x) / RATE * bpm / 60) + 1)]
         name = "egmd_" + re.sub(r"[^A-Za-z0-9_.-]", "_", r["audio_filename"].rsplit(".", 1)[0])      # the id is the performance (shared by the kits): the audio file is per kit
-        save_item(out, name, x, beats, beats[::4], 4, "train", "gmd", "CC-BY-4.0", "E-GMD (Callender et al., Magenta), " + r["drummer"] + ", " + r["kit_name"], {"bpm": bpm})
+        save_item(out, name, x, beats, beats[::4], 4, "train", "egmd", lic, "E-GMD (Callender et al., Magenta), " + r["drummer"] + ", " + r["kit_name"], {"bpm": bpm})
         n += 1
     print("egmd:", n, "items over", len(kits), "kits", flush=True)
 

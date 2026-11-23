@@ -1104,32 +1104,26 @@ jobs:
         pip install --quiet numpy scipy soundfile remotezip requests
         sudo mkdir -p /mnt/aw2 && sudo chown "$USER" /mnt/aw2
         cd tools/aw2
-        for s in gmd guitarset candombe fsl10k; do python3 fetch.py $s /mnt/aw2/items-$s --limit 40; done
+        for s in gmd guitarset candombe; do python3 fetch.py $s /mnt/aw2/items-$s --limit 40; done
         python3 fetch.py aam /mnt/aw2/items-aam --limit 24 --part 1
         cd ../..
         python3 - <<'PY'
         import glob, json, os
-        pick = [("gmd", 6), ("guitarset", 5), ("candombe", 3), ("aam", 5), ("fsl10k", 5)]
-        bpms = [100, 110, 120, 128, 90, 140, 105, 115]
-        rows, readme = [], ["Auto-warp AW2c listening pack: only clips where AW1 and AW2 differ; each item is a held-out clip (never trained on), a 40 s window, played at its own song tempo against a click on the song's grid", "(a higher, louder tick on each bar line), warped with Signalsmith Stretch (the library of the app's Pro warp, so the pitch stays put).", "--aw1 is AW1's DSP tracker, --aw2 the shipped beat model with its DSP-or-model choice. Slakh2100 held-out items are not in the pack (the stream cannot be sampled by track); AAM stands in.", ""]
-        for ds, cnt in pick:
-            got = 0
-            for j in sorted(glob.glob(f"/mnt/aw2/items-{ds}/*.json")):
-                m = json.load(open(j))
-                if m["split"] != "test" or "__" in os.path.basename(j):
-                    continue
-                rows.append(f"{j[:-5]}.wav\t{bpms[len(rows) % 8]}")
-                readme.append(f"{os.path.basename(j)[:-5]}: {m['source']}; licence {m['licence']}; song tempo {bpms[(len(rows) - 1) % 8]} BPM")
-                got += 1
-                if got == cnt:
-                    break
+        want = [("gmd", "gmd_drummer5_session2_1", 100), ("gmd", "gmd_drummer5_session2_2", 110), ("guitarset", "gs_04_BN3-154-E_solo", 105), ("guitarset", "gs_04_Funk3-112-C#_comp", 115),
+                ("candombe", "cd_csic.1995_ansina2_03", 90), ("candombe", "cd_csic.1995_cuareim_03", 140), ("aam", "aam_1006", 105), ("aam", "aam_1066", 100)]
+        rows, readme = [], ["Auto-warp listening pack (fixed list): the same eight held-out clips as the AW2 blind test (never trained on), a 40 s window, played at the song tempo against a click on the song's grid", "(a higher, louder tick on each bar line), warped with Signalsmith Stretch (the library of the app's Pro warp, so the pitch stays put).", "--model is the beat model compiled into this build, with its DSP-or-model choice.", ""]
+        for ds, name, bpm in want:
+            j = f"/mnt/aw2/items-{ds}/{name}.json"
+            m = json.load(open(j))
+            assert m["split"] == "test", name
+            rows.append(f"{j[:-5]}.wav\t{bpm}")
+            readme.append(f"{len(rows):02d}-{name}: {m['source']}; licence {m['licence']}; song tempo {bpm} BPM")
         open("pack-list.txt", "w").write("\n".join(rows) + "\n")
         open("pack-readme.txt", "w").write("\n".join(readme) + "\n")
         PY
-        dotnet aw2-tools/AutoWarpEval.dll --pack2 aw2-pack embedded aw2-tools/aw2warp pack-list.txt 8 | tee pack-log.txt
-        head -4 pack-readme.txt > aw2-pack/README.txt
-        for f in aw2-pack/*--aw2.wav; do b=$(basename $f --aw2.wav); n=${b#*-}; grep "^$n:" pack-readme.txt | sed "s/^/${b%%-*}-/" >> aw2-pack/README.txt; done
-        grep -v '^skipped' pack-log.txt >> aw2-pack/README.txt
+        AW2_PACK_ALL=1 dotnet aw2-tools/AutoWarpEval.dll --pack2 aw2-pack embedded aw2-tools/aw2warp pack-list.txt 8 | tee pack-log.txt
+        cp pack-readme.txt aw2-pack/README.txt
+        cat pack-log.txt >> aw2-pack/README.txt
     - uses: actions/upload-artifact@v6
       if: always()
       with:
@@ -1195,15 +1189,15 @@ jobs:
       matrix:
         include:
           - { name: gmd, set: gmd, limit: 1000, args: '', variants: 2 }
-          - { name: egmd, set: egmd, limit: 450, args: '', variants: 1 }
-          - { name: guitarset, set: guitarset, limit: 1000, args: '', variants: 2 }
-          - { name: candombe, set: candombe, limit: 1000, args: '', variants: 2 }
-          - { name: fsl10k, set: fsl10k, limit: 300, args: '', variants: 2 }
+          - { name: egmd, set: egmd, limit: 860, args: '', variants: 1 }
+          - { name: guitarset, set: guitarset, limit: 500, args: '', variants: 2 }
+          - { name: candombe, set: candombe, limit: 400, args: '', variants: 2 }
+          - { name: fsl10k, set: fsl10k, limit: 160, args: '', variants: 2 }
           - { name: generated, set: generated, limit: 0, args: '', variants: 0 }
-          - { name: aamnew, set: aam, limit: 90, args: '--part 2 --offset 3 --stems 10', variants: 1 }
-          - { name: aamev0, set: aam, limit: 40, args: '--part 0 --offset 1 --eval-only', variants: 0 }
-          - { name: aamev1, set: aam, limit: 40, args: '--part 1 --offset 1 --eval-only', variants: 0 }
-          - { name: aamev2, set: aam, limit: 40, args: '--part 2 --offset 1 --eval-only', variants: 0 }
+          - { name: aamnew, set: aam, limit: 50, args: '--part 2 --offset 3 --stems 10', variants: 1 }
+          - { name: aamev0, set: aam, limit: 24, args: '--part 0 --offset 1 --eval-only', variants: 0 }
+          - { name: aamev1, set: aam, limit: 24, args: '--part 1 --offset 1 --eval-only', variants: 0 }
+          - { name: aamev2, set: aam, limit: 24, args: '--part 2 --offset 1 --eval-only', variants: 0 }
     steps:
     - uses: actions/checkout@v5
     - uses: actions/setup-python@v6
@@ -1276,7 +1270,7 @@ jobs:
         open("../../shipped.aw2m", "wb").write(base64.b64decode("".join(re.findall(r'^\s+"([A-Za-z0-9+/=]+)",$', d, re.M))))
         PY
         T=${{ github.event.inputs.aw2b_train }}
-        python3 -u train.py ../../prep/shards --out ../../ckpt.pt --init ../../shipped.aw2m --lr 6e-4 --minutes $T --total-minutes $(( 2 * T )) --seed 4321 | tee ../../train1.log
+        python3 -u train.py ../../prep/shards --out ../../ckpt.pt --init ../../shipped.aw2m --lr 3e-4 --minutes $T --total-minutes $(( 2 * T )) --seed 4321 | tee ../../train1.log
     - uses: actions/upload-artifact@v6
       with:
         name: aw2c-ckpt
@@ -1311,7 +1305,7 @@ jobs:
         cd tools/aw2
         cp ../../ck/ckpt.pt ../../ckpt.pt
         T=${{ github.event.inputs.aw2b_train }}
-        python3 -u train.py ../../prep/shards --out ../../ckpt.pt --resume --lr 6e-4 --minutes $T --total-minutes $(( 2 * T )) --seed 4321 | tee ../../train2.log
+        python3 -u train.py ../../prep/shards --out ../../ckpt.pt --resume --lr 3e-4 --minutes $T --total-minutes $(( 2 * T )) --seed 4321 | tee ../../train2.log
         python3 export.py --ckpt ../../ckpt.pt --out ../../cand.aw2m --version 3
     - uses: actions/upload-artifact@v6
       with:
