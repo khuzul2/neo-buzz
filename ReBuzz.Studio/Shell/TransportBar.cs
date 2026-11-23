@@ -79,6 +79,11 @@ namespace ReBuzz.Studio.Shell
             Lit(record, "ToggleButton", () => StudioTokens.Record, checkedOnly: true);
             Lit(loop, "ToggleButton", () => StudioTokens.TextPrimary, checkedOnly: true);
             Lit(metronome, "ToggleButton", () => StudioTokens.TextPrimary, checkedOnly: true);
+            // Fork (MM1): the transport's buttons are mappable commands (map mode outlines them; a controller's pad can play, stop, record, loop).
+            Views.Midi.MidiMap.SetTarget(play, () => ReBuzz.Midi.Mapping.MapTarget.Command(ReBuzz.Midi.Mapping.MapCommand.Play));
+            Views.Midi.MidiMap.SetTarget(stop, () => ReBuzz.Midi.Mapping.MapTarget.Command(ReBuzz.Midi.Mapping.MapCommand.Stop));
+            Views.Midi.MidiMap.SetTarget(record, () => ReBuzz.Midi.Mapping.MapTarget.Command(ReBuzz.Midi.Mapping.MapCommand.Record));
+            Views.Midi.MidiMap.SetTarget(loop, () => ReBuzz.Midi.Mapping.MapTarget.Command(ReBuzz.Midi.Mapping.MapCommand.Loop));
             start.Click += (s, e) => GoToStart();
             play.Click += (s, e) => Play();
             stop.Click += (s, e) => Stop();
@@ -101,12 +106,18 @@ namespace ReBuzz.Studio.Shell
             left.Children.Add(Pack(new Thickness(0, 2, 16, 2), metronome, signature, bpm,
                 new TextBlock { Text = "BPM", VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush }, tap));
             left.Children.Add(Pack(new Thickness(0, 2, 16, 2), position, minutes));
+            // Fork (MM1): "◀ Lead ▶", the track the controllers' knobs and keys drive.
+            Tracks = new TrackSelector(() => Core);
+            left.Children.Add(Tracks);
             left.Children.Add(meter);
             // Fork (ux-overhaul.md P6b): ReBuzz.exe's MIDI-focus functions, last, so they wrap first.
             MidiFocus = new Tools.MidiFocusBar(() => Core);
             left.Children.Add(MidiFocus);
             Child = left;
         }
+
+        /// <summary>The selected track and the controllers that follow it (MM1).</summary>
+        internal TrackSelector Tracks { get; }
 
         /// <summary>The MIDI focus machine, its lock and the MIDI light (P6b).</summary>
         internal Tools.MidiFocusBar MidiFocus { get; }
@@ -182,6 +193,7 @@ namespace ReBuzz.Studio.Shell
             var core = Core;
             if (core == null) return;
             MidiFocus.Refresh();
+            Tracks.Refresh();
             updating = true;
             try
             {

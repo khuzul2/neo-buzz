@@ -57,6 +57,7 @@ namespace ReBuzz.Studio.Views.Inspector
         readonly HistoryTab historyPage;
         readonly TextBlock heading, subtitle, hint;
         readonly InspectorDevice device;
+        readonly MidiPageSection midiPage;      // fork (MM1): the selected track's MIDI page
         // Fork (docs/specs/neo-audio.md "Inputs and arm"): the Input section of a machine that can be armed.
         readonly StackPanel inputSection = new() { Margin = new Thickness(0, 10, 0, 0), IsVisible = false };
         IMachine inputFor;
@@ -87,6 +88,9 @@ namespace ReBuzz.Studio.Views.Inspector
         }
 
         internal Avalonia.Controls.Control InputSection => inputSection;
+
+        /// <summary>The MIDI page of the selected track (MM1).</summary>
+        internal MidiPageSection MidiPage => midiPage;
 
         public InspectorPanel(ReBuzzCore core, IRegistryEx registry, Action<string> showView, SessionView session, SongNotesView notes)
         {
@@ -142,10 +146,11 @@ namespace ReBuzz.Studio.Views.Inspector
             };
             AutomationProperties.SetName(explain, "Explain");
             device = new InspectorDevice(core);
+            midiPage = new MidiPageSection(core);
             var top = new StackPanel
             {
                 Margin = new Thickness(12, 0, 12, 8),
-                Children = { heading, subtitle, facts, device, inputSection, explain, hint, patternButton, audioButton, notesButton },
+                Children = { heading, subtitle, facts, device, inputSection, midiPage, explain, hint, patternButton, audioButton, notesButton },
             };
             DockPanel.SetDock(top, Dock.Top);
             selectionPage = new DockPanel { LastChildFill = true };
@@ -443,6 +448,7 @@ namespace ReBuzz.Studio.Views.Inspector
 
             device.Show(machine);
             ShowInput(machine);
+            midiPage.Refresh();
             RefreshExplain(machine);
 
             if (clip != null)

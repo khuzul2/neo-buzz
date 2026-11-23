@@ -199,6 +199,14 @@ namespace ReBuzz.Studio.Shell
 
         public TransportBar Transport => transport;
 
+        Views.Midi.MapLayer mapLayer;
+
+        /// <summary>The MIDI map layer (MM1): map mode, badges, the MIDI button and the popover.</summary>
+        internal Views.Midi.MapLayer MapLayer => mapLayer;
+
+        /// <summary>Map mode on or off (Edit &gt; MIDI Map Mode).</summary>
+        internal void ToggleMapMode() => mapLayer?.Mode.Toggle();
+
         /// <summary>The window's own menu (null on a Mac, where the menu bar has it).</summary>
         public Menu WindowMenu => menu;
 
@@ -289,6 +297,19 @@ namespace ReBuzz.Studio.Shell
             body.Children.Add(inspector);
             body.Children.Add(centre);
             root.Children.Add(body);
+            // Fork (MM1): MIDI mapping drawn over the controls (map mode, badges, the MIDI button) and the studio's selection one with the mapping's track.
+            if (host.Core.MidiMapping != null)
+            {
+                Views.Midi.SelectionBridge.Attach(host.Core);
+                var shell = new Grid();
+                Content = null;
+                shell.Children.Add(root);
+                mapLayer = new Views.Midi.MapLayer(host.Core, root);
+                shell.Children.Add(mapLayer);
+                Content = shell;
+                mapLayer.Attach(this);
+                Views.Device.DeviceMenus.OpenMapPopover = (machine, p) => mapLayer?.OpenForTarget(ReBuzz.Core.MidiMapping.TargetOf(p.Parameter, p.Track));
+            }
             // Fork (ux-overhaul.md P4a): Tab reads the window as it is seen, not in the order the panels were docked.
             Avalonia.Input.KeyboardNavigation.SetTabIndex(transport, 1);
             Avalonia.Input.KeyboardNavigation.SetTabIndex(problems, 2);
@@ -467,6 +488,11 @@ namespace ReBuzz.Studio.Shell
             yield return Command("edit.deselect", mac, DeselectAll);
             yield return MenuEntry.Separator;
             yield return Command("edit.rename", mac, Rename);
+            yield return MenuEntry.Separator;
+            yield return Command("edit.mapmode", mac, ToggleMapMode, () => host.Core?.MidiMapping != null, () => mapLayer?.Mode.Active == true);
+            yield return Command("track.previous", mac, () => transport.Tracks.Step(-1), () => host.Core?.MidiMapping != null);
+            yield return Command("track.next", mac, () => transport.Tracks.Step(1), () => host.Core?.MidiMapping != null);
+            yield return MenuEntry.Separator;
             yield return Command("edit.songproperties", mac, () => _ = Tools.SongPropertiesDialog.Ask(host.Core), () => host.Core?.SongCore != null);
             if (!mac)
             {
@@ -742,6 +768,9 @@ namespace ReBuzz.Studio.Shell
             Bind("edit.selectall", SelectAll);
             Bind("edit.deselect", DeselectAll, Modified);
             Bind("edit.rename", Rename);
+            Bind("edit.mapmode", ToggleMapMode);
+            Bind("track.previous", () => transport.Tracks.Step(-1));
+            Bind("track.next", () => transport.Tracks.Step(1));
             Bind("transport.play", () => transport.Play());
             Bind("transport.stop", () => transport.Stop());
             Bind("transport.record", () => transport.ToggleRecord(), Modified2);
@@ -943,6 +972,7 @@ namespace ReBuzz.Studio.Shell
             if (core == null) return;
             transport.Refresh();
             inspector?.Refresh();
+            mapLayer?.Refresh();
             if (detail?.IsAudio == true && detail.IsOpen) audioPage?.Refresh();
             browser?.Refresh();
             undo.Refresh();
