@@ -18,6 +18,7 @@ using ReBuzz.Core;
 using ReBuzz.Core.Session;
 using ReBuzz.Midi;
 using ReBuzz.Midi.Mapping;
+using ReBuzz.Studio.Shell;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -116,7 +117,8 @@ namespace ReBuzz.Studio.Tests
             Assert.That(mm.IsListening, Is.False);
             var info = mm.Active().Single();
             Assert.That(info.Source, Is.EqualTo(new MapSource("Pads", MapKind.ControlChange, 2, 33)));
-            Assert.That(mm.BadgeOf(Target(lead, p)), Does.Contain("CC 33").And.Contain("Pads"));
+            Assert.That(mm.BadgeOf(Target(lead, p)), Is.EqualTo("CC33"), "the short form");
+            Assert.That(mm.BadgeFullOf(Target(lead, p)), Does.Contain("CC 33").And.Contain("Pads"));
             Send(rig, Pads, CC(2, 33, 0));                                          // the first value, 127, could be an encoder's step: this one says it is a knob
             Pump();
             Send(rig, Pads, CC(2, 33, 0));
@@ -527,7 +529,8 @@ namespace ReBuzz.Studio.Tests
             Assert.That(legacy.Source.AnyDevice, Is.True);
             Assert.That(legacy.Source.Number, Is.EqualTo(21));
             Assert.That(legacy.Source.Channel, Is.EqualTo(2));
-            Assert.That(mm.BadgeOf(Target(lead, p)), Does.StartWith("CC 21"));
+            Assert.That(mm.BadgeOf(Target(lead, p)), Is.EqualTo("CC21"));
+            Assert.That(mm.BadgeFullOf(Target(lead, p)), Does.StartWith("CC 21"));
             Assert.That(mm.All("global").Any(i => i.Legacy), Is.True, "midi_map_list shows it as global");
             Assert.That(mm.UnmapTarget(Target(lead, p), true), Is.True, "unmapping the control removes the old binding too");
             Assert.That(mm.All("global").Any(i => i.Legacy && i.Target?.Param == p.Name), Is.False);
@@ -550,6 +553,8 @@ namespace ReBuzz.Studio.Tests
             mm.MapControl(new MapSource("Pads", MapKind.Note, 9, 36), KnobEncoding.Absolute, MapTarget.Command(MapCommand.Play), MapScope.Global);
             mm.SetSongGlobal(true);
             string path = Path.Combine(Path.GetTempPath(), $"rebuzz-mm1-{Environment.ProcessId}{extension.Replace(".", "-")}{extension}");
+            // A dialog the app would show (unsaved changes, a missing machine) must not wait for a person in a headless run: answered No, and put back after.
+            Dialogs.Responder = (m, c, b) => UserAnswer.No;
             try
             {
                 rig.Core.SaveSongCopy(path);
@@ -575,6 +580,8 @@ namespace ReBuzz.Studio.Tests
             }
             finally
             {
+                Dialogs.Responder = null;
+                rig.Core.Modified = false;
                 File.Delete(path);
             }
         }
