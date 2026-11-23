@@ -856,7 +856,7 @@ namespace ReBuzz.Studio.Tests
                         window.MapLayer.ArmTarget(ReBuzz.Midi.Mapping.MapTarget.Parameter(demo.Lead.Name, ps[4].Name));
                         Settle();
                         window.MapLayer.Rescan();
-                        Shot(window, "036-midi-map-mode", "MIDI map mode (MM1): the banner under the top bar, every mappable control outlined, badges on the mapped ones (K1 to K3 from the Faders group, a pad's CC), one control listening, the track selector and the devices that follow it.",
+                        Shot(window, "036-midi-map-mode", "MIDI map mode (MM1): the banner under the top bar, every mappable control outlined, badges on the mapped ones (K1 to K3 from the Faders group, a pad's CC), one control listening, the track selector at the right of the view strip.",
                             "Edit, Map MIDI controls (Ctrl+Alt+K).");
                         // The Device panel scrolled so a card is half out of view: its outline stops at the panel's edge and none reaches the Inspector.
                         var devicePage = MidiMappingUiTests.DeviceViewOf(window);
@@ -876,8 +876,8 @@ namespace ReBuzz.Studio.Tests
                         window.MapLayer.Close();
                         Settle();
                         window.Transport.Refresh();
-                        Shot(window, "036-midi-top-bar", "The top bar's track selector with two devices following (MM1b): ◀ Lead ▶ and a muted \"2 devices\" chip (their names are its tooltip); the bar stays one row, with Lock, Keys and the device picker after it.",
-                            "The top bar, after the position and the minutes.");
+                        Shot(window, "036-midi-top-bar", "The track selector with two devices following (MM1b): ◀ Lead ▶ and a muted \"2 devices\" chip (their names are its tooltip), at the right end of the view strip's row under the top bar; the top bar keeps one row with Lock, Keys and the device picker.",
+                            "Right end of the row of Arrangement, Session, Machines.");
                         window.Inspector.MidiPage.Refresh();
                         Shot(window, "036-midi-track-page", "The Inspector's MIDI page for Lead's track (MM1): slots laid out as the knobs, the parameter and its value, a grey ring where the generator's pin answers, the controllers and their keys role.",
                             "Select a track; the Inspector's Selection tab.");
