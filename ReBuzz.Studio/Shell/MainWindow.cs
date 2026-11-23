@@ -69,6 +69,8 @@ namespace ReBuzz.Studio.Shell
         public MainWindow(StudioHost host)
         {
             this.host = host;
+            // The tracker refused an edit of an old machine's clips (clips.md §5.7): the status line says why, in one line.
+            BuzzGUI.Common.ClipDerived.Refused = why => Avalonia.Threading.Dispatcher.UIThread.Post(() => Notice(why));
             Title = StudioHost.AppTitle;
             Width = 1280;
             Height = 820;

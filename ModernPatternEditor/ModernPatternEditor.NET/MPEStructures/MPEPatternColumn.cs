@@ -90,6 +90,15 @@ namespace WDE.ModernPatternEditor.MPEStructures
             return null;
         }
 
+        /// <summary>An old machine's clips are view only (clips.md §5.7): the edit is refused, and the shell is told the one line that says why.</summary>
+        bool EditRefused()
+        {
+            string refused = ClipDerived.EditRefusal?.Invoke(Machine);
+            if (refused == null) return false;
+            ClipDerived.Refused?.Invoke(refused);
+            return true;
+        }
+
         void Attach(IPatternColumn c)
         {
             store = c;
@@ -222,6 +231,8 @@ namespace WDE.ModernPatternEditor.MPEStructures
                 {
                     // The lane takes the events; its own EventsChanged tells the view (and everyone else watching the lane).
                     if (events == null || events.Length == 0) return;
+                    // An old machine's clips are view only (clips.md §5.7): the edit is refused, with the one line that says why.
+                    if (EditRefused()) return;
                     var lane = StoreLane(set);
                     if (lane == null) return;
                     var changing = set ? events.Where(e => e.Time < patternLenght).ToArray() : events;
@@ -319,7 +330,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
             if (Bound)
             {
                 var gone = GetEvents(offsetFromTop, offsetFromTop + regionLenght).ToArray();
-                if (gone.Length > 0) StoreLane(false)?.SetEvents(gone, false);
+                if (gone.Length > 0 && !EditRefused()) StoreLane(false)?.SetEvents(gone, false);
             }
             else
             for (int i = 0; i < eventList.Count; i++)
@@ -488,7 +499,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
             if (Bound)
             {
                 var all = GetEvents(int.MinValue, int.MaxValue).ToArray();
-                if (all.Length > 0) StoreLane(false)?.SetEvents(all, false);
+                if (all.Length > 0 && !EditRefused()) StoreLane(false)?.SetEvents(all, false);
             }
             else
                 eventList.Clear();

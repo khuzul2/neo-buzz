@@ -37,8 +37,11 @@ namespace ReBuzz.Core
         static string Default(IMachine machine)
         {
             if (machine == null || !PatternColumnCore.PlaysEveryLane) return null;
-            return IsWritable(machine) ? null : AgentReason(machine);
+            return IsWritable(machine) ? null : UiReason;
         }
+
+        /// <summary>The agent's refusal for a write to the machine's clips, or null when it may write.</summary>
+        public static string AgentRefusal(IMachine machine) => CanEdit(machine, out var reason) ? null : (reason == UiReason ? AgentReason(machine) : reason);
 
         /// <summary>The definition of §5.7: a manifest that says clipEdit, or the Master. Anything else is old.</summary>
         public static bool IsWritable(IMachine machine)

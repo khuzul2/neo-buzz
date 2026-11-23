@@ -28,6 +28,7 @@ namespace ReBuzz.Core
             PatternColumnCore.PlaysEveryLane = true;
             ClipDerived.Direct = true;
             ClipDerived.Provider = DerivedFor;
+            ClipDerived.EditRefusal = m => ClipEditPolicy.CanEdit(m, out var why) ? null : why;
         }
 
         /// <summary>The blob a song file gets for a machine's pattern editor: the derived one (events from the store, with the stamp), or empty in a native song. Null: the editor's own.</summary>

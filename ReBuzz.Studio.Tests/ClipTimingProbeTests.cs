@@ -205,7 +205,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>The Modern Pattern Editor's data (PatternEditorUtils: 255, version 1, size, patterns) for one pattern at 4 rows a beat.</summary>
-        static byte[] EditorData(string pattern, int beats, IEnumerable<(string Machine, int Index, int Track, (int Time, int Value)[] Events)> columns)
+        internal static byte[] EditorData(string pattern, int beats, IEnumerable<(string Machine, int Index, int Track, (int Time, int Value)[] Events)> columns)
         {
             var body = new MemoryStream();
             using (var w = new BinaryWriter(body, Encoding.ASCII, leaveOpen: true))

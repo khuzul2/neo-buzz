@@ -155,6 +155,18 @@ namespace ReBuzz.Studio.Shell
                     "The song keeps their settings.",
                     new (string, Action)[] { (stopped.Count == 1 ? "Show It" : "Show Them", () => showMachines(stopped)) }, false));
 
+            // Clips CU3 (clips.md §7.1): what opening the song dropped or changed in its clips, by cause, in plain words. Never for a song with no loss.
+            if (core.SongCore.ClipOpen is { HasLoss: true } opened)
+            {
+                var lines = opened.Lines();
+                string shown = string.Join(" ", lines.Take(4).Select(l => l.Text));
+                if (lines.Count > 4) shown += $" And {lines.Count - 4} more.";
+                list.Add(new StudioProblem("clip-loss:" + System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(opened),
+                    "Opening this song changed how its patterns are stored, and some of it could not come along. " + shown +
+                    " The file on disk is unchanged until you save.",
+                    Array.Empty<(string, Action)>(), false));
+            }
+
             var missing = machines.Where(m => m.DLL?.IsMissing == true).ToList();
             if (missing.Count > 0)
             {

@@ -344,6 +344,10 @@ namespace BuzzGUI.Common
     /// </summary>
     public static class ClipDerived
     {
+        /// <summary>The reason an edit of the machine's clips is refused (the one line the UI shows), or null: set by the engine (ClipEditPolicy).</summary>
+        public static Func<IMachine, string> EditRefusal;
+        /// <summary>The tracker tells the shell that it refused an edit, with the reason (a toast or the status line).</summary>
+        public static Action<string> Refused;
         /// <summary>The blob for the machine whose pattern editor asks (its clips, as Classic and older builds read them), or null: the editor writes its own.</summary>
         public static Func<IMachine, byte[]> Provider { get; set; }
 

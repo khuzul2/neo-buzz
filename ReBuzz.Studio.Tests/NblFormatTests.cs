@@ -44,7 +44,7 @@ namespace ReBuzz.Studio.Tests
             return b;
         }
 
-        static JsonObject ManifestOf(string path)
+        internal static JsonObject ManifestOf(string path)
         {
             using var r = new NblContainer.Reader(path);
             return (JsonObject)JsonNode.Parse(r.Manifest);
