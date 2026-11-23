@@ -63,7 +63,7 @@ def egmd(out, limit):
         x = to_mono22k(x, rate)
         bpm = float(r["bpm"])
         beats = [k * 60 / bpm for k in range(int(len(x) / RATE * bpm / 60) + 1)]
-        name = "egmd_" + r["id"].replace("/", "_")
+        name = "egmd_" + re.sub(r"[^A-Za-z0-9_.-]", "_", r["audio_filename"].rsplit(".", 1)[0])      # the id is the performance (shared by the kits): the audio file is per kit
         save_item(out, name, x, beats, beats[::4], 4, "train", "gmd", "CC-BY-4.0", "E-GMD (Callender et al., Magenta), " + r["drummer"] + ", " + r["kit_name"], {"bpm": bpm})
         n += 1
     print("egmd:", n, "items over", len(kits), "kits", flush=True)
