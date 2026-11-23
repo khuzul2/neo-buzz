@@ -287,8 +287,15 @@ namespace ReBuzz.Studio.Shell
             };
             tabs.SelectionChanged += (s, e) => switcher.Select(SelectedTitle);
             switcher.Select(SelectedTitle);
-            DockPanel.SetDock(switcher, Dock.Top);
-            viewHost.Children.Add(switcher);
+            // Fork (MM1b): the track selector "◀ Lead ▶" sits at the right end of the view strip's row, where there is room: in the transport bar it
+            // pushed Lock, Keys and the device picker onto a second row of their own.
+            var strip = new Grid();
+            strip.Children.Add(switcher);
+            transport.Tracks.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right;
+            transport.Tracks.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center;
+            strip.Children.Add(transport.Tracks);
+            DockPanel.SetDock(strip, Dock.Top);
+            viewHost.Children.Add(strip);
             viewHost.Children.Add(tabs);
             Grid.SetRow(viewHost, 0);
             Grid.SetRow(detail, 1);

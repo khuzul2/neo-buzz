@@ -106,9 +106,8 @@ namespace ReBuzz.Studio.Shell
             left.Children.Add(Pack(new Thickness(0, 2, 16, 2), metronome, signature, bpm,
                 new TextBlock { Text = "BPM", VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush }, tap));
             left.Children.Add(Pack(new Thickness(0, 2, 16, 2), position, minutes));
-            // Fork (MM1): "◀ Lead ▶", the track the controllers' knobs and keys drive.
+            // Fork (MM1): "◀ Lead ▶", the track the controllers' knobs and keys drive; the main window puts it in the view strip's row (MM1b).
             Tracks = new TrackSelector(() => Core);
-            left.Children.Add(Tracks);
             left.Children.Add(meter);
             // Fork (ux-overhaul.md P6b): ReBuzz.exe's MIDI-focus functions, last, so they wrap first.
             MidiFocus = new Tools.MidiFocusBar(() => Core);
@@ -116,7 +115,7 @@ namespace ReBuzz.Studio.Shell
             Child = left;
         }
 
-        /// <summary>The selected track and the controllers that follow it (MM1).</summary>
+        /// <summary>The selected track and the controllers that follow it (MM1); the main window docks it at the right of the view strip.</summary>
         internal TrackSelector Tracks { get; }
 
         /// <summary>The MIDI focus machine, its lock and the MIDI light (P6b).</summary>

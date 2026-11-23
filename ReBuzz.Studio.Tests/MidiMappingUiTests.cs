@@ -219,11 +219,14 @@ namespace ReBuzz.Studio.Tests
         {
             using var st = new Stage();
             var layer = st.Layer;
-            var cell = st.Cells[0];
             Settle();
+            st.Window.UpdateLayout();
+            Settle();
+            var cell = st.Cells[0];                                          // the Inspector remakes its cells when it refreshes: take it after it settled
             st.Rescan();
             st.Window.MouseMove(Center(cell, st.Window) + new Vector(0, 4));
             Settle();
+            cell = st.Cells[0];
             st.Window.MouseMove(Center(cell, st.Window) + new Vector(1, 4));
             Settle();
             Assert.That(layer.Hovered, Is.Not.Null, "the pointer is over the cell");
@@ -406,11 +409,12 @@ namespace ReBuzz.Studio.Tests
                 st.Window.UpdateLayout();
                 Settle();
                 st.Window.UpdateLayout();
-                return transport.Bounds.Height;
+                return transport.Bounds.Height + ((Avalonia.Controls.Control)transport.Tracks.Parent).Bounds.Height * 1000;       // the top bar's, and the view strip's under it
             }
             transport.Tracks.IsVisible = false;
             double without = Height();                                      // the bar as origin/main has it: no selector
             Assert.That(without, Is.GreaterThan(20));
+            Assert.That(transport.Tracks.Parent, Is.Not.SameAs(transport.Child), "the selector is not in the top bar's wrapping row");
             Assert.That(st.Window.Bounds.Width, Is.EqualTo(1440));
             transport.Refresh();
             Assert.That(transport.Tracks.IsVisible, Is.True);
@@ -434,7 +438,40 @@ namespace ReBuzz.Studio.Tests
             transport.Refresh();
             Assert.That(transport.Tracks.NameText, Is.EqualTo(longName));
             Assert.That(Height(), Is.EqualTo(without), "a long name is cut, not wrapped: " + string.Join(", ", panel.Children.Select(c => c.GetType().Name + " " + (int)c.Bounds.Width + "@" + (int)c.Bounds.Y)) + " selector: " + string.Join(", ", ((Avalonia.Controls.Panel)transport.Tracks.Child).Children.Select(c => (int)c.Bounds.Width)));
-            Assert.That(transport.Tracks.Bounds.Width, Is.LessThan(160), "the selector is a compact group");
+            Assert.That(transport.Tracks.Bounds.Width, Is.LessThan(420), "the selector is a compact group");
+        }
+
+        [AvaloniaTest]
+        public void TheTopBarOfThe1280WideTestWindowsHasTheHeightItHadWithoutTheSelector()
+        {
+            using var st = new Stage();
+            MidiEngine.SimulatedInputs = new[] { "Faders", "Pads" };
+            var transport = st.Window.Transport;
+            double Height() { st.Window.UpdateLayout(); Settle(); st.Window.UpdateLayout(); return transport.Bounds.Height + ((Avalonia.Controls.Control)transport.Tracks.Parent).Bounds.Height * 1000; }
+            transport.Tracks.IsVisible = false;
+            double without = Height();
+            transport.Refresh();
+            var panel = (Avalonia.Controls.WrapPanel)transport.Child;
+            string widths = string.Join(", ", panel.Children.Select(c => c.GetType().Name + " " + (int)c.Bounds.Width + "@" + (int)c.Bounds.Y));
+            Assert.That(Height(), Is.EqualTo(without), "1280 wide: " + widths + " of " + (int)transport.Bounds.Width);
+        }
+
+        [AvaloniaTest]
+        public void AClickOnTheMiddleOfASmallTransportButtonActsAndDoesNotOpenThePopover()
+        {
+            using var st = new Stage();
+            var loop = st.Window.Transport.LoopButton;
+            st.Rescan();
+            var middle = Center(loop, st.Window);
+            st.Window.MouseMove(middle);
+            Settle();
+            Assert.That(st.Layer.Popover, Is.Null);
+            bool was = Core.Looping;
+            Click(st.Window, middle);
+            Settle();
+            Assert.That(st.Layer.Popover, Is.Null, "no popover: the button took its click");
+            Assert.That(Core.Looping, Is.Not.EqualTo(was), "Loop toggled");
+            Core.Looping = was;
         }
 
         [AvaloniaTest]

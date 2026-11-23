@@ -16,28 +16,28 @@ namespace ReBuzz.Studio.Shell
     internal sealed class TrackSelector : Border
     {
         readonly Func<ReBuzzCore> core;
-        readonly Button previous = new Button { Content = new TextBlock { Text = "◀" }, Padding = new Thickness(2, 2), MinWidth = 20 };
-        readonly Button next = new Button { Content = new TextBlock { Text = "▶" }, Padding = new Thickness(2, 2), MinWidth = 20 };
-        readonly TextBlock name = new TextBlock { VerticalAlignment = VerticalAlignment.Center, MinWidth = 0, MaxWidth = 40, TextTrimming = TextTrimming.CharacterEllipsis, FontWeight = Avalonia.Media.FontWeight.SemiBold };
+        readonly Button previous = new Button { Content = new TextBlock { Text = "◀" }, Padding = new Thickness(6, 1), MinWidth = 26 };
+        readonly Button next = new Button { Content = new TextBlock { Text = "▶" }, Padding = new Thickness(6, 1), MinWidth = 26 };
+        readonly TextBlock name = new TextBlock { VerticalAlignment = VerticalAlignment.Center, MinWidth = 40, MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis, FontWeight = Avalonia.Media.FontWeight.SemiBold };
         // A small muted chip: "2 devices" (who they are is its tooltip), so the bar keeps to one row; a "K7 is free on Drums" notice takes its place for a few seconds.
-        readonly TextBlock followers = new TextBlock { Text = "", VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush, FontSize = StudioTokens.FontCaption, MaxWidth = 52, TextTrimming = TextTrimming.CharacterEllipsis };
-        readonly TextBlock free = new TextBlock { Text = "", VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush, FontSize = StudioTokens.FontCaption, MaxWidth = 52, TextTrimming = TextTrimming.CharacterEllipsis, IsVisible = false };
+        readonly TextBlock followers = new TextBlock { Text = "", VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush, FontSize = StudioTokens.FontCaption, MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis };
+        readonly TextBlock free = new TextBlock { Text = "", VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush, FontSize = StudioTokens.FontCaption, MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis, IsVisible = false };
         int lastFree;
         long freeUntil;
 
         public TrackSelector(Func<ReBuzzCore> core)
         {
             this.core = core;
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
             row.Children.Add(previous);
             row.Children.Add(name);
             row.Children.Add(next);
-            var chip = new Grid { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(2, 0, 0, 0) };
+            var chip = new Grid { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 0, 0) };
             chip.Children.Add(followers);
             chip.Children.Add(free);
             row.Children.Add(chip);
             Child = row;
-            Margin = new Thickness(0, 2, 4, 2);
+            Margin = new Thickness(0, 2, 10, 2);
             AutomationProperties.SetName(this, "Selected track");
             AutomationProperties.SetName(previous, "Previous track");
             AutomationProperties.SetName(next, "Next track");

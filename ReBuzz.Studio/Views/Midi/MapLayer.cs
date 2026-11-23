@@ -199,6 +199,12 @@ namespace ReBuzz.Studio.Views.Midi
 
         Rect ButtonOf(Spot s) => new Rect(s.Bounds.X + 1, s.Bounds.Y + 1, ButtonW, ButtonH);
 
+        /// <summary>
+        /// Whether the hover MIDI button fits on a control without lying on the middle of it, where a click acts (a transport button 30 px high would lose
+        /// its click to the button): a small control is mapped in map mode, or from the Device menu, instead.
+        /// </summary>
+        bool HasButton(Spot s) => !ButtonOf(s).Inflate(4).Contains(new Point(s.Bounds.X + s.Bounds.Width / 2, s.Bounds.Y + s.Bounds.Height / 2)) && s.Bounds.Width >= 50 && s.Bounds.Height >= 20;
+
         const double BadgeH = 15;
 
         /// <summary>
@@ -298,7 +304,7 @@ namespace ReBuzz.Studio.Views.Midi
             foreach (var spot in spots)
             {
                 if (spot.Badge != null && BadgeOf(spot).Contains(pos) && props.IsRightButtonPressed) { ShowBadgeMenu(spot); e.Handled = true; return; }
-                if (props.IsLeftButtonPressed && ReferenceEquals(SpotAt(pos), spot) && ButtonOf(spot).Contains(pos) && popover == null) { Open(spot); e.Handled = true; return; }
+                if (props.IsLeftButtonPressed && HasButton(spot) && ReferenceEquals(SpotAt(pos), spot) && ButtonOf(spot).Contains(pos) && popover == null) { Open(spot); e.Handled = true; return; }
                 if (props.IsLeftButtonPressed && spot.Badge != null && BadgeOf(spot).Contains(pos)) { Open(spot); e.Handled = true; return; }
             }
         }
@@ -471,7 +477,7 @@ namespace ReBuzz.Studio.Views.Midi
                     else ctx.DrawRectangle(null, pen, r, 5, 5);
                 }
                 if (s.Badge != null) DrawChip(ctx, BadgeOf(s), s.Badge, armed);
-                if (!mode.Active && ReferenceEquals(s.Control, hover) && popover == null) DrawChip(ctx, ButtonOf(s), "MIDI", false);
+                if (!mode.Active && ReferenceEquals(s.Control, hover) && popover == null && HasButton(s)) DrawChip(ctx, ButtonOf(s), "MIDI", false);
             }
         }
 
