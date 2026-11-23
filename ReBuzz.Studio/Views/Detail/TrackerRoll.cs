@@ -46,6 +46,8 @@ namespace ReBuzz.Studio.Views.Detail
         readonly DispatcherTimer playTimer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(33) };
         readonly ToggleButton followBox;
         readonly Grid rollGrid = new Grid();
+        readonly EnvelopeStack envelopes;          // EV1: the clip's envelope lanes under the roll (the Detail panel's page, not the arrangement's roll panel)
+        readonly RollAxis axis;
         int shownPlay = int.MinValue;
         bool loopUndoable, loopRedoable;
         INoteSource source;
@@ -164,6 +166,17 @@ namespace ReBuzz.Studio.Views.Detail
             rollGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
             Grid.SetRow(body, 1);
             rollGrid.Children.Add(body);
+            if (!songOnly)
+            {
+                // Fork (daw-modes.md EV1): under the roll (and its velocity or controller lane), the clip's envelopes on the roll's time axis.
+                axis = new RollAxis(this);
+                envelopes = new EnvelopeStack(core, axis);
+                envelopes.LaneEdited += OnEnvelopeEdited;
+                rollGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+                Grid.SetRow(envelopes, 3);
+                rollGrid.Children.Add(envelopes);
+                SizeChanged += (s, e) => envelopes.MaxLanesHeight = e.NewSize.Height * 0.45;
+            }
             Children.Add(rollGrid);
 
             timer.Tick += (s, e) => Poll();
@@ -243,12 +256,14 @@ namespace ReBuzz.Studio.Views.Detail
             if (p == null)
             {
                 Say("No pattern. Choose one above, or make one with New pattern.");
+                ShowEnvelopes();
                 return;
             }
             choice = TrackerNoteSources.Open(core, p, wanted, songOnly);
             source = choice?.Source;
             if (choice == null)
             {
+                ShowEnvelopes();
                 laneBox.IsVisible = false;
                 if (songOnly)
                 {
@@ -291,7 +306,40 @@ namespace ReBuzz.Studio.Views.Detail
             scroll.Offset = new Vector(0, Math.Max(0, roll.FocusOffset()));
             UpdateViewport();
             RefreshGhosts(force: true);
+            ShowEnvelopes();
         }
+
+        // ---- Fork (daw-modes.md EV1): the envelope lanes
+
+        /// <summary>The envelopes of the clip the roll shows: under the roll's own time axis, or under a ruler of their own when the clip's machine takes no notes.</summary>
+        public EnvelopeStack Envelopes => envelopes;
+
+        void ShowEnvelopes(ColumnKey? focus = null)
+        {
+            if (envelopes == null) return;
+            envelopes.ShowRuler = roll == null;
+            envelopes.Show(pattern, focus);
+            axis.Raise();
+        }
+
+        /// <summary>Shows the clip with the lane of a parameter (a double click on a curve in the Arrangement or the Session).</summary>
+        internal void ShowEnvelope(IPattern p, ColumnKey key)
+        {
+            if (envelopes == null) return;
+            if (!ReferenceEquals(pattern, p)) Show(p);
+            ShowEnvelopes(key);
+            envelopes.LaneFor(key)?.Focus();
+        }
+
+        void OnEnvelopeEdited()
+        {
+            // The song's history holds the step: the roll's Undo goes there first (as for a loop drag).
+            loopUndoable = true;
+            loopRedoable = false;
+        }
+
+        /// <summary>Whether the keyboard is in an envelope lane (Undo and Redo are the song's then).</summary>
+        internal bool EnvelopesFocused => envelopes?.OwnsFocus == true;
 
         /// <summary>The key and scale the boxes name, and the fold, applied to the roll.</summary>
         void ApplyScale()
@@ -421,6 +469,7 @@ namespace ReBuzz.Studio.Views.Detail
                 3 => 1,
                 _ => rowTime,
             };
+            axis?.Raise();
         }
 
         void Zoom(double factor)
@@ -434,6 +483,7 @@ namespace ReBuzz.Studio.Views.Detail
             lane?.InvalidateVisual();
             ctrl?.InvalidateVisual();
             PlaceHead();
+            axis?.Raise();
         }
 
         void UpdateViewport()
@@ -445,11 +495,13 @@ namespace ReBuzz.Studio.Views.Detail
             if (lane != null) lane.OffsetX = scroll.Offset.X;
             if (ctrl != null) ctrl.OffsetX = scroll.Offset.X;
             PlaceHead();
+            axis?.Raise();
         }
 
         /// <summary>Follows what the Tracker (or an undo, or the agent) changed.</summary>
         internal void Poll()
         {
+            if (envelopes != null && IsEffectivelyVisible) envelopes.Refresh();
             if (roll == null || !IsEffectivelyVisible) return;       // a roll that isn't shown doesn't read the pattern
             if (!source.IsLive)
             {
@@ -500,13 +552,13 @@ namespace ReBuzz.Studio.Views.Detail
         }
 
         // The Edit commands, when the keyboard is in the roll.
-        internal bool Delete() { if (roll == null) return false; roll.DeleteSelected(); return true; }
-        internal bool SelectAll() { if (roll == null) return false; roll.SelectAll(); return true; }
-        internal bool DeselectAll() { if (roll == null) return false; roll.DeselectAll(); return true; }
+        internal bool Delete() { if (envelopes?.OwnsFocus == true) return envelopes.Delete(); if (roll == null) return false; roll.DeleteSelected(); return true; }
+        internal bool SelectAll() { if (envelopes?.OwnsFocus == true) return envelopes.SelectAll(); if (roll == null) return false; roll.SelectAll(); return true; }
+        internal bool DeselectAll() { if (envelopes?.OwnsFocus == true) return envelopes.DeselectAll(); if (roll == null) return false; roll.DeselectAll(); return true; }
         internal bool Duplicate() { if (roll == null) return false; roll.DuplicateSelected(); return true; }
-        internal bool Cut() { if (roll == null) return false; roll.CutSelected(); return true; }
-        internal bool Copy() { if (roll == null) return false; roll.CopySelected(); return true; }
-        internal bool Paste() { if (roll == null) return false; roll.Paste(); return true; }
+        internal bool Cut() { if (envelopes?.OwnsFocus == true) return envelopes.Cut(); if (roll == null) return false; roll.CutSelected(); return true; }
+        internal bool Copy() { if (envelopes?.OwnsFocus == true) return envelopes.Copy(); if (roll == null) return false; roll.CopySelected(); return true; }
+        internal bool Paste() { if (envelopes?.OwnsFocus == true) return envelopes.Paste(); if (roll == null) return false; roll.Paste(); return true; }
 
         // ---- Fork (P3b2): the ruler, the loop brace, the playhead and the velocity lane
 
@@ -607,6 +659,7 @@ namespace ReBuzz.Studio.Views.Detail
                 ruler.InvalidateVisual();
             }
             if (gridBox.SelectedIndex == 2) roll.Grid = roll.BarTime;
+            axis?.Raise();
         }
 
         /// <summary>The loop brace was dragged: the song's loop is these ticks of the pattern, one step on the song's history.</summary>
@@ -662,12 +715,20 @@ namespace ReBuzz.Studio.Views.Detail
         /// <summary>Moves the playhead with the pattern's own play position (Tracker's row marker), and the viewer with it when Follow is on.</summary>
         internal void UpdatePlayhead()
         {
-            if (roll == null || pattern == null) return;
+            if (pattern == null) return;
+            if (roll == null)
+            {
+                // No roll (the machine takes no notes): the envelope lanes draw the play position.
+                int at = pattern.PlayPosition;
+                if (at != shownPlay) { shownPlay = at; envelopes?.Invalidate(); }
+                return;
+            }
             int pos = pattern.PlayPosition;
             if (pos == shownPlay) return;
             shownPlay = pos;
             int time = pos == int.MinValue ? -1 : pos;
             roll.PlayheadTime = time;
+            envelopes?.Invalidate();
             if (ruler != null) { ruler.Playhead = time; ruler.InvalidateVisual(); }
             if (time >= 0 && followBox.IsChecked == true) Follow(time);
             PlaceHead();
@@ -690,5 +751,62 @@ namespace ReBuzz.Studio.Views.Detail
 
         /// <summary>Gives the keyboard to the roll.</summary>
         internal void FocusRoll() => roll?.Focus();
+
+        /// <summary>
+        /// The roll's time axis for the envelope lanes (EV1): its zoom, horizontal scroll, grid, bars and loop. Without a roll (a machine that takes no
+        /// notes) the axis has a zoom and a scroll of its own, and the ruler of the lanes.
+        /// </summary>
+        sealed class RollAxis : IEnvelopeAxis
+        {
+            readonly TrackerRoll host;
+            double ownWidth = 24, ownOffset;
+
+            public RollAxis(TrackerRoll host) => this.host = host;
+
+            public event Action Changed;
+
+            public void Raise() => Changed?.Invoke();
+
+            PianoRoll Roll => host.roll;
+
+            public double Gutter => PianoRoll.KeysWidth;
+
+            public double X(int time) => Roll != null ? Roll.X(time) - host.scroll.Offset.X : Gutter + time / (double)ClipNotes.TimeBase * ownWidth - ownOffset;
+
+            public int TimeAt(double x) => Roll != null
+                ? Roll.TimeAt(x + host.scroll.Offset.X)
+                : (int)Math.Round(Math.Max(0, x + ownOffset - Gutter) / ownWidth * ClipNotes.TimeBase);
+
+            public int GridUnits => Roll?.Grid ?? ClipNotes.TimeBase;
+
+            public int BeatUnits => Math.Max(1, host.core.TPB) * ClipNotes.TimeBase;
+
+            public int BarUnits => Roll != null ? Roll.BarTime : Math.Max(1, host.pattern == null ? 1 : BarLengthOf(host.core, host.pattern)) * ClipNotes.TimeBase;
+
+            public (int From, int To)? Loop =>
+                host.ruler is { LoopStartTick: >= 0 } r && r.LoopEndTick > r.LoopStartTick ? (r.LoopStartTick * ClipNotes.TimeBase, r.LoopEndTick * ClipNotes.TimeBase) : null;
+
+            public int Playhead => Roll != null ? Roll.PlayheadTime : host.pattern is { } p && p.PlayPosition != int.MinValue ? p.PlayPosition : -1;
+
+            public void Zoom(double factor)
+            {
+                if (Roll != null) host.Zoom(factor);
+                else
+                {
+                    ownWidth = Math.Clamp(ownWidth * factor, 3, 160);
+                    Raise();
+                }
+            }
+
+            public void ScrollBy(double pixels)
+            {
+                if (Roll != null) host.scroll.Offset = new Vector(Math.Max(0, host.scroll.Offset.X + pixels), host.scroll.Offset.Y);
+                else
+                {
+                    ownOffset = Math.Max(0, ownOffset + pixels);
+                    Raise();
+                }
+            }
+        }
     }
 }

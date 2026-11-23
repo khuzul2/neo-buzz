@@ -2696,6 +2696,79 @@ namespace ReBuzz.Studio.Tests
             AfterAll();
         }
 
+        // ------------------------------------------------------------------ 350-352: clip envelopes (daw-modes.md EV1)
+
+        [AvaloniaTest, Order(10)]
+        public void ClipEnvelopes()
+        {
+            BeforeAll();
+            var demo = LoadDemo();
+            var window = Open();
+            try
+            {
+                var lead = (MachineCore)Core.Song.Machines.First(m => m.Name == "Bass");
+                var hook = lead.Patterns.First(p => p.Name == "Line A");
+                var param = AutomationParams.List(lead).First(p => p.Name == "F1 cutoff");
+                var env = ReBuzz.Core.ClipEnvelopes.Read(hook, param.Key);
+                int span = param.Max - param.Min;
+                int V(double f) => param.Min + (int)(span * f);
+                var editor = new ReBuzz.Core.ClipEnvelopeEditor(Core);
+                // A cutoff that opens over the first bar, closes in steps, and opens again.
+                Assert.That(editor.Replace(env, new[]
+                {
+                    new AutoPoint(0, V(0.15), true), new AutoPoint(10 * 240, V(0.85), true), new AutoPoint(16 * 240, V(0.35), false),
+                    new AutoPoint(22 * 240, V(0.6), false), new AutoPoint(28 * 240, V(0.2), true),
+                }), Is.Null);
+                Settle();
+
+                Try("350-clip-envelope-lane", () =>
+                {
+                    window.Detail.ShowPage(true, true);
+                    Settle();
+                    Assert.That(ReBuzz.Studio.Views.Detail.EnvelopeOpener.Open(hook, param.Key), Is.True);
+                    Wait(250);
+                    var lane = PatternView.Page.Roll.Envelopes.LaneFor(param.Key);
+                    Assert.That(lane, Is.Not.Null);
+                    lane.SelectTimes(new[] { 16 * 240, 22 * 240 });
+                    Settle();
+                    // The pointer rests on the third point: its value tooltip.
+                    window.MouseMove(lane.TranslatePoint(lane.PointOf(10 * 240), window)!.Value);
+                    Wait(100);
+                    Shot(window, "350-clip-envelope-lane", "The Detail panel's envelope lane (EV1) under the piano roll of Bass's Line A clip: the Envelopes header (the parameter chooser, + Envelope, Ramp and Step for the selection, the count), the F1 cutoff curve on the piano roll's own time axis (ramps are circles, steps squares), two points selected, and the value tooltip on the point under the pointer.",
+                        "Double-click a curve on a clip; or Detail > Piano roll, then + Envelope.");
+                });
+
+                Try("351-arrangement-envelope-curves", () =>
+                {
+                    window.Detail.Close();
+                    var seq = Tab<SequenceView>(window, "Arrangement");
+                    window.ShowView("Sequence");
+                    seq.SetArrangementMode(true);
+                    seq.Arrangement.Envelopes = true;
+                    Settle();
+                    Shot(window, "351-arrangement-envelope-curves", "The Arrangement with the Envelopes toggle on (EV1, key E): each clip of a track draws the parameter its header chose (the ∿ button; here Bass's F1 cutoff, the first parameter with data), read only, the repeats of a looped clip fainter.",
+                        "The Arrangement, then the Envelopes button in the right panel (E).");
+                    seq.Arrangement.Envelopes = false;
+                    seq.SetArrangementMode(false);
+                });
+
+                Try("352-session-envelope-curves", () =>
+                {
+                    window.ShowView("Session");
+                    var session = Tab<SessionView>(window, "Session");
+                    session.Rebuild();
+                    Settle();
+                    Shot(window, "352-session-envelope-curves", "The Session View (EV1): a slot whose clip holds an envelope draws it as a mini curve along its bottom; the ∿ chip in the track header chooses the parameter.",
+                        "Draw an envelope in the Detail panel's lane, then look at the Session View.");
+                });
+            }
+            finally
+            {
+                Close(window);
+            }
+            AfterAll();
+        }
+
         // ------------------------------------------------------------------ 590-593: audio takes and comping (neo-audio.md "Takes and comping")
 
         [AvaloniaTest, Order(9)]

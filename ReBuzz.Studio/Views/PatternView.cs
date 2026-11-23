@@ -220,6 +220,14 @@ namespace ReBuzz.Studio.Views
             if (activate) Activate();
         }
 
+        /// <summary>Shows the clip in the piano roll with the lane of one parameter (EV1: a double click on a curve).</summary>
+        internal void EditEnvelope(IPattern p, ReBuzz.Core.Session.ColumnKey key)
+        {
+            SetRollMode(true);
+            Edit(p);
+            rollView.ShowEnvelope(p, key);
+        }
+
         public void Edit(IMachine m)
         {
             if (m == null) return;
@@ -244,7 +252,7 @@ namespace ReBuzz.Studio.Views
         public IEditContext EditContext => EditorControl?.GetType().GetProperty("EditContext")?.GetValue(EditorControl) as IEditContext;
 
         // Fork (daw-modes.md AR2): the roll on the song's notes edits the song's history, which the shell's Undo reaches when this says no.
-        bool SongHistory => rollMode && rollView.IsSongLane;
+        bool SongHistory => rollMode && (rollView.IsSongLane || rollView.EnvelopesFocused);
 
         public bool CanUndo => !SongHistory && (EditContext?.ActionStack.CanUndo == true || (rollMode && rollView.CanUndoLoop));
         public bool CanRedo => !SongHistory && (EditContext?.ActionStack.CanRedo == true || (rollMode && rollView.CanRedoLoop));

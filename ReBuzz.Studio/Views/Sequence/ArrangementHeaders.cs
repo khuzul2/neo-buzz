@@ -198,6 +198,26 @@ namespace ReBuzz.Studio.Views.Sequence
             return flyout;
         }
 
+        /// <summary>The picker of the last curve button pressed (EV1: the parameter a track's clips draw; tests drive it).</summary>
+        public ParameterPicker LastCurvePicker { get; private set; }
+
+        Flyout CurveFlyout(IMachine machine)
+        {
+            var flyout = new Flyout { Placement = PlacementMode.RightEdgeAlignedTop };
+            flyout.Opening += (s, e) =>
+            {
+                var picker = new ParameterPicker(machine, "Show");
+                picker.Chosen += param =>
+                {
+                    core.Arrangement?.SetEnvelopeChoice(machine.Name, param.Key);
+                    flyout.Hide();
+                };
+                LastCurvePicker = picker;
+                flyout.Content = picker;
+            };
+            return flyout;
+        }
+
         /// <summary>The track header's Takes menu (NA4b).</summary>
         MenuFlyout TakesMenu(IMachine machine)
         {
@@ -294,12 +314,15 @@ namespace ReBuzz.Studio.Views.Sequence
                     var add = PlainButton("+", $"Add lane for {machine.Name}", "Add a lane: another sequence for this machine");
                     var auto = PlainButton("A", $"Add automation lane for {machine.Name}", "Add an automation lane: a parameter of this machine");
                     auto.Flyout = AutomateFlyout(machine, auto);
-                    foreach (var b in new TemplatedControl[] { mute, solo, add, auto }) Style(b, look);
+                    var curve = PlainButton("\u223F", $"Clip curve of {machine.Name}", "The parameter this track's clips draw as a curve (the Envelopes toggle, key E)");
+                    curve.Flyout = CurveFlyout(machine);
+                    curve.Width = 22;
+                    foreach (var b in new TemplatedControl[] { mute, solo, add, auto, curve }) Style(b, look);
                     mute.Click += (s, e) => { if (!building) machine.IsMuted = mute.IsChecked == true; };
                     solo.Click += (s, e) => { if (!building) machine.IsSoloed = solo.IsChecked == true; };
                     add.Click += (s, e) => AddLaneRequested?.Invoke(machine);
                     switches[machine] = (mute, solo);
-                    var bottom = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, 0), Children = { mute, solo, add, auto } };
+                    var bottom = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, 0), Children = { mute, solo, add, auto, curve } };
                     if (row.Lanes.Any(l => core.Arrangement?.RoleOf(l) == LaneRole.Take))
                     {
                         // NA4b: the takes menu: show or collapse the take lanes, delete the takes the comp doesn't play, flatten the comp.
