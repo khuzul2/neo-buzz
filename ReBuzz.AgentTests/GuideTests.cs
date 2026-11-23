@@ -128,6 +128,7 @@ namespace ReBuzz.AgentTests
             // stem separation (stem-separation.md: ReBuzz/Agent/AudioClipTools.cs)
             ["audio_separate"] = new[] { "machine", "pattern", "path", "quality", "stems", "slot", "at_beats" },
             // Convert to MIDI (pitch.md section 9: ReBuzz/Agent/AudioClipTools.cs)
+            ["audio_slice_to_midi"] = new[] { "machine", "pattern", "slot", "by", "apply" },
             ["audio_convert_to_midi"] = new[] { "machine", "pattern", "mode", "range", "min_note_ms", "smooth_ms", "pitch_bends", "onset_threshold", "frame_threshold", "drum_threshold", "quantize", "strength", "apply" },
             ["session_scene_set"] = new[] { "scene", "insert", "name", "tempo_bpm", "beats_per_bar" },
             // A3 (origin/agent/a3-tools: ReBuzz.Agent/Model/CompositionTools.cs, Transforms.cs)

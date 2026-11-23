@@ -2276,6 +2276,43 @@ namespace ReBuzz.Studio.Tests
                     try { DialogShot(window, dialog, "049-convert-progress", "Convert to MIDI while the job runs (here: Harmony, 40 %): the options locked, a progress bar; Cancel stops it and changes nothing.", "Convert in the dialog."); }
                     finally { dialog.Close(); }
                 });
+                // Fork (docs/specs/audio-to-midi.md section 10): Slice to new MIDI track, from the same menu.
+                Try("049-slice-menu", () =>
+                {
+                    var session = Tab<SessionView>(window, "Session");
+                    window.ShowView("Session");
+                    Settle();
+                    Click(window, Centre(session.SlotAt(layout.FirstTrackOf(drums), 0), window, 0.6, 0.5), MouseButton.Right);
+                    var menu = session.LastMenu;
+                    Assert.That(menu?.IsOpen, Is.True, "a right click on an audio clip opens its menu");
+                    menus.Add(menu!);
+                    Hover(ItemOf(menu!, "Slice to new MIDI track"));
+                    Shot(window, "049-slice-menu", "Session: an audio clip's menu with Slice to new MIDI track... next to Convert to MIDI (audio-to-midi.md section 10); the Arrangement's clip menu and the Audio page offer it too.", "Right-click an audio clip ▸ Slice to new MIDI track….");
+                    CloseMenus();
+                });
+                Try("049-slice-dialog", () =>
+                {
+                    var source = layout.SliceSourceOfClip(inSession, out string error);
+                    Assert.That(source, Is.Not.Null, error);
+                    var dialog = new ReBuzz.Studio.Shell.SliceFlow.SliceWindow(layout, source);
+                    dialog.Show();
+                    for (int i = 0; i < 400 && dialog.Plans == null; i++) { System.Threading.Thread.Sleep(10); Dispatcher.UIThread.RunJobs(); }
+                    Settle();
+                    try { DialogShot(window, dialog, "049-slice-dialog", "Slice to new MIDI track...: what to slice by (Transients, Warp markers, 1 bar, 1/4, 1/8, 1/16), the number of slices (the limit is Neo Sampler's 16 zones; a grid that would make more is disabled, with its count in the tooltip) and the waves and keys it will use; Slice puts the waves, a Neo Sampler track and a MIDI clip in the song, one undo step.", "Right-click an audio clip ▸ Slice to new MIDI track…."); }
+                    finally { dialog.Close(); }
+                });
+                Try("049-slice-result", () =>
+                {
+                    var source = layout.SliceSourceOfClip(inSession, out string error);
+                    Assert.That(source, Is.Not.Null, error);
+                    var plan = source.Plan(ReBuzz.Core.Clips.SliceBy.Transients);
+                    Assert.That(plan.Ok, plan.Why);
+                    Assert.That(ReBuzz.Studio.Shell.SliceFlow.Apply(layout, source, plan), Is.True, ReBuzz.Studio.Shell.SliceFlow.LastSummary);
+                    window.ShowView("Session");
+                    Settle();
+                    try { Shot(window, "049-slice-result", "Session after Slice to new MIDI track (Transients): a new MIDI track \"" + ReBuzz.Studio.Shell.SliceFlow.LastOutcome.Machine.Name + "\" with a Neo Sampler in Kit mode and a MIDI clip of one note per slice in the source's scene; the slices are the first free song waves.", "Slice to new MIDI track… ▸ Slice."); }
+                    finally { Core.SongCore.ActionStack.Undo(); Settle(); }
+                });
                 Try("038-session-audio-page", () =>
                 {
                     var session = Tab<SessionView>(window, "Session");
