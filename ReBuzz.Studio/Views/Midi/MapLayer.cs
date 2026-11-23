@@ -142,7 +142,7 @@ namespace ReBuzz.Studio.Views.Midi
                     if (origin == null) continue;
                     var rect = new Rect(origin.Value, c.Bounds.Size);
                     if (rect.Right < 0 || rect.Bottom < 0 || rect.X > Bounds.Width || rect.Y > Bounds.Height) continue;
-                    if (!InsideClips(c, rect)) continue;
+                    if (!InsideClips(c, ref rect)) continue;
                     next.Add(new Spot(c, rect, target, mm.BadgeOf(target)));
                 }
             }
@@ -158,8 +158,9 @@ namespace ReBuzz.Studio.Views.Midi
         }
 
         /// <summary>Whether the control's rectangle is in view: not scrolled out of a scroll viewer (or any clipping panel) it sits in.</summary>
-        bool InsideClips(AvControl c, Rect rect)
+        bool InsideClips(AvControl c, ref Rect rect)
         {
+            var full = rect;
             foreach (var a in c.GetVisualAncestors())
             {
                 if (ReferenceEquals(a, scan)) break;
@@ -169,7 +170,8 @@ namespace ReBuzz.Studio.Views.Midi
                 var view = new Rect(at.Value, ac.Bounds.Size);
                 if (ac is ScrollViewer sv) view = new Rect(at.Value, sv.Viewport.Width > 0 ? new Size(Math.Min(sv.Viewport.Width, ac.Bounds.Width), Math.Min(sv.Viewport.Height, ac.Bounds.Height)) : ac.Bounds.Size);
                 var overlap = view.Intersect(rect);
-                if (overlap.Width < rect.Width * 0.6 || overlap.Height < rect.Height * 0.6) return false;
+                if (overlap.Width < full.Width * 0.6 || overlap.Height < full.Height * 0.6) return false;
+                rect = overlap;                                       // outlined as far as it is in view
             }
             return true;
         }
