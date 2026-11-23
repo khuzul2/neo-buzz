@@ -48,24 +48,30 @@ namespace ReBuzz.Studio.Views.Inspector
         {
             readonly MidiPageSection owner;
             readonly TextBlock knob = new TextBlock { FontSize = StudioTokens.FontCaption, FontWeight = FontWeight.SemiBold };
-            readonly TextBlock what = new TextBlock { FontSize = StudioTokens.FontCaption, TextTrimming = TextTrimming.CharacterEllipsis };
-            readonly TextBlock value = new TextBlock { FontSize = StudioTokens.FontCaption, Foreground = StudioTokens.TextSecondaryBrush, TextTrimming = TextTrimming.CharacterEllipsis };
+            // The parameter's name may take two lines (its full name is the tooltip); the knob's number and the value share the line above.
+            readonly TextBlock what = new TextBlock { FontSize = StudioTokens.FontCaption, TextWrapping = TextWrapping.Wrap, MaxLines = 2, TextTrimming = TextTrimming.CharacterEllipsis };
+            readonly TextBlock value = new TextBlock { FontSize = StudioTokens.FontCaption, Foreground = StudioTokens.TextSecondaryBrush, TextTrimming = TextTrimming.CharacterEllipsis, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 0, 0) };
             public int Index { get; }
+            /// <summary>The parameter's name as shown (up to two lines), for tests.</summary>
+            internal TextBlock NameBlock => what;
             public MapInfo Info { get; private set; }
 
             public SlotView(MidiPageSection owner, int index)
             {
                 this.owner = owner;
                 Index = index;
-                Height = 46;
+                Height = 56;
                 Margin = new Thickness(0, 0, 4, 4);
                 Padding = new Thickness(4, 2);
                 CornerRadius = new CornerRadius(6);
                 BorderThickness = new Thickness(1.5);
+                var head = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*") };
+                head.Children.Add(knob);
+                Grid.SetColumn(value, 1);
+                head.Children.Add(value);
                 var stack = new StackPanel();
-                stack.Children.Add(knob);
+                stack.Children.Add(head);
                 stack.Children.Add(what);
-                stack.Children.Add(value);
                 Child = stack;
                 AutomationProperties.SetName(this, "Knob " + (index + 1));
                 DragDrop.SetAllowDrop(this, true);
@@ -96,7 +102,6 @@ namespace ReBuzz.Studio.Views.Inspector
                 knob.Text = "K" + (Index + 1);
                 bool free = info.Target == null;
                 what.Text = free ? "free" : info.Target.ParamName;
-                ToolTip.SetTip(this, free ? null : info.Target.Machine + " · " + info.Target.ParamName);
                 value.Text = valueText ?? (free ? "" : info.Range == "full" ? "" : info.Range);
                 BorderBrush = free ? StudioTokens.SurfaceBorderBrush : info.Fallback ? StudioTokens.TextPlaceholderBrush : StudioTokens.AccentBrush;
                 BorderThickness = new Thickness(info.Fallback ? 1.5 : 1.5);
@@ -104,7 +109,7 @@ namespace ReBuzz.Studio.Views.Inspector
                 knob.Foreground = free ? StudioTokens.TextPlaceholderBrush : StudioTokens.TextPrimaryBrush;
                 what.Foreground = free || info.Fallback ? StudioTokens.TextSecondaryBrush : StudioTokens.TextPrimaryBrush;
                 Opacity = free ? 0.8 : 1;
-                string tip = free ? "Free: drop a parameter here, or map a knob in map mode" : info.Fallback ? $"The generator's pinned parameter of the same number ({info.Target.Machine} · {info.Target.ParamName}); drop another to take the slot" : $"{info.Target.Machine} · {info.Target.ParamName}";
+                string tip = free ? "Free: drop a parameter here, or map a knob in map mode" : info.Fallback ? $"The generator's pinned parameter of the same number ({info.Target.Machine} · {info.Target.ParamName}); drop another to take the slot" : $"{info.Target.Machine} · {info.Target.ParamName}" + (string.IsNullOrEmpty(value.Text) ? "" : " = " + value.Text);
                 ToolTip.SetTip(this, tip);
                 AutomationProperties.SetName(this, "Knob " + (Index + 1) + (free ? ", free" : info.Fallback ? ", pin " + info.Target.ParamName : ", " + info.Target.ParamName));
             }

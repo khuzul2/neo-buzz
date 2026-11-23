@@ -29,7 +29,7 @@ namespace ReBuzz.Studio.Views.Midi
     internal sealed class MapLayer : Grid
     {
         /// <summary>A mappable control now: where it is on the layer, what it maps to and what badge it shows.</summary>
-        internal sealed record Spot(AvControl Control, Rect Bounds, MapTarget Target, string Badge);
+        internal sealed record Spot(AvControl Control, Rect Bounds, MapTarget Target, string Badge, string BadgeFull = null);
 
         const double ButtonW = 34, ButtonH = 15;
 
@@ -38,7 +38,10 @@ namespace ReBuzz.Studio.Views.Midi
         readonly Visual scan;
         readonly Surface surface;
         readonly Border banner;
-        readonly TextBlock bannerText = new TextBlock { VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap, MaxWidth = 760 };
+        // One line (it is a row under the top bar): the text gives way, with an ellipsis, before the scope and Done do.
+        readonly TextBlock bannerText = new TextBlock { VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.NoWrap, TextTrimming = TextTrimming.CharacterEllipsis };
+        readonly Border tip = new Border { IsVisible = false, IsHitTestVisible = false, Padding = new Thickness(6, 3), CornerRadius = new CornerRadius(4), BorderThickness = new Thickness(1), BorderBrush = StudioTokens.SurfaceBorderBrush, Background = StudioTokens.SurfacePanelBrush, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
+        readonly TextBlock tipText = new TextBlock { FontSize = StudioTokens.FontCaption, Foreground = StudioTokens.TextPrimaryBrush };
         readonly RadioButton trackScope = new RadioButton { GroupName = "MapScope", VerticalAlignment = VerticalAlignment.Center };
         readonly RadioButton globalScope = new RadioButton { GroupName = "MapScope", Content = "Global", VerticalAlignment = VerticalAlignment.Center };
         readonly Button done = new Button { Content = "Done", VerticalAlignment = VerticalAlignment.Center };
@@ -59,11 +62,17 @@ namespace ReBuzz.Studio.Views.Midi
             AutomationProperties.SetName(this, "MIDI map layer");
             surface = new Surface(this);
             Children.Add(surface);
+            tip.Child = tipText;
+            Children.Add(tip);
 
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto,Auto"), ColumnSpacing = 10 };
+            AutomationProperties.SetName(tip, "Badge tooltip");
             AutomationProperties.SetName(trackScope, "Scope: This track");
             AutomationProperties.SetName(globalScope, "Scope: Global");
             AutomationProperties.SetName(done, "End map mode");
+            Grid.SetColumn(trackScope, 1);
+            Grid.SetColumn(globalScope, 2);
+            Grid.SetColumn(done, 3);
             row.Children.Add(bannerText);
             row.Children.Add(trackScope);
             row.Children.Add(globalScope);
@@ -143,7 +152,7 @@ namespace ReBuzz.Studio.Views.Midi
                     var rect = new Rect(origin.Value, c.Bounds.Size);
                     if (rect.Right < 0 || rect.Bottom < 0 || rect.X > Bounds.Width || rect.Y > Bounds.Height) continue;
                     if (!InsideClips(c, ref rect)) continue;
-                    next.Add(new Spot(c, rect, target, mm.BadgeOf(target)));
+                    next.Add(new Spot(c, rect, target, mm.BadgeOf(target), mm.BadgeFullOf(target)));
                 }
             }
             if (!next.SequenceEqual(spots))
@@ -190,15 +199,40 @@ namespace ReBuzz.Studio.Views.Midi
 
         Rect ButtonOf(Spot s) => new Rect(s.Bounds.X + 1, s.Bounds.Y + 1, ButtonW, ButtonH);
 
+        const double BadgeH = 15;
+
+        /// <summary>
+        /// The badge's rectangle: always inside the control's own bounds (it is the short form, "K3", "CC74", "N36"): on the top edge at the right of
+        /// a card or slider, on the lower edge of a small control (a transport button), so it never reaches a neighbour.
+        /// </summary>
         Rect BadgeOf(Spot s)
         {
             if (s.Badge == null) return default;
             var t = Text(s.Badge, StudioTokens.FontCaption, StudioTokens.TextPrimaryBrush);
-            // On the cell's top edge, half out of it, as wide as its text (the cell's width at most); a small control (a transport button) gets it below.
-            bool small = s.Bounds.Width < 64;
-            double w = Math.Min(t.Width + 10, small ? 120 : s.Bounds.Width);
-            return small ? new Rect(s.Bounds.X, s.Bounds.Bottom - 2, w, 14) : new Rect(s.Bounds.Right - w, s.Bounds.Y - 5, w, 14);
+            var b = s.Bounds;
+            double w = Math.Min(t.Width + 8, Math.Max(8, b.Width - 2));
+            double h = Math.Min(BadgeH, Math.Max(6, b.Height - 2));
+            bool small = b.Height < 40 || b.Width < 64;
+            return small ? new Rect(b.Right - w - 1, b.Bottom - h - 1, w, h) : new Rect(b.Right - w - 2, b.Y + 2, w, h);
         }
+
+        /// <summary>The "Listening…" chip: inside the card (never over a header above it), at its top left; on a small control a dot-sized one.</summary>
+        Rect ListeningOf(Spot s)
+        {
+            var b = s.Bounds;
+            double badge = s.Badge != null ? BadgeOf(s).Width + 4 : 0;
+            double w = Math.Min(74, b.Width - 4 - badge);
+            if (w < 30) w = Math.Min(16, Math.Max(8, b.Width - 4));
+            double h = Math.Min(15, Math.Max(6, b.Height - 2));
+            bool small = b.Height < 40 || b.Width < 64;
+            return small ? new Rect(b.X + 2, b.Y + 1, w, h) : new Rect(b.X + 3, b.Y + 2, w, h);
+        }
+
+        /// <summary>The "Listening…" chip's rectangle of a control, for tests.</summary>
+        internal Rect ListeningRect(AvControl control) => SpotOf(control) is { } s ? ListeningOf(s) : default;
+
+        /// <summary>The text of the badge's tooltip now (the full source), or null while the pointer is not on a badge.</summary>
+        internal string TipText => tip.IsVisible ? tipText.Text : null;
 
         /// <summary>The badge's rectangle of a control, for tests.</summary>
         internal Rect BadgeRect(AvControl control) => SpotOf(control) is { } s ? BadgeOf(s) : default;
@@ -218,6 +252,7 @@ namespace ReBuzz.Studio.Views.Midi
             if (mode.Mapping == null) return;
             lastPointer = OnLayer(e);
             if (dirty) Rescan();
+            UpdateTip();
             var spot = SpotAt(lastPointer);
             var now = spot?.Control;
             if (!ReferenceEquals(now, hover))
@@ -225,6 +260,20 @@ namespace ReBuzz.Studio.Views.Midi
                 hover = now;
                 surface.InvalidateVisual();
             }
+        }
+
+        /// <summary>The badge's tooltip: the full source (with the device) beside the badge the pointer is on.</summary>
+        void UpdateTip()
+        {
+            var on = spots.FirstOrDefault(s => s.Badge != null && BadgeOf(s).Contains(lastPointer));
+            if (on == null || on.BadgeFull == null) { tip.IsVisible = false; return; }
+            tipText.Text = on.BadgeFull;
+            tip.IsVisible = true;
+            var r = BadgeOf(on);
+            tip.Measure(Size.Infinity);
+            double x = Math.Max(0, Math.Min(r.X, Bounds.Width - tip.DesiredSize.Width - 2));
+            double y = r.Bottom + 4 + tip.DesiredSize.Height > Bounds.Height ? r.Y - tip.DesiredSize.Height - 4 : r.Bottom + 4;
+            tip.Margin = new Thickness(x, Math.Max(0, y), 0, 0);
         }
 
         void OnWindowPressed(object sender, PointerPressedEventArgs e)
@@ -382,13 +431,16 @@ namespace ReBuzz.Studio.Views.Midi
 
         string BannerText()
         {
-            if (mode.Mapping?.Listening is { Teach: true }) return "Map mode – turn the knobs of a controller, in order.";
-            if (mode.Armed != null) return $"Listening for {mode.Armed.Text}… move a knob or press a key on any controller. Delete unmaps it, Esc ends map mode.";
+            if (mode.Mapping?.Listening is { Teach: true }) return "Map mode · turn the knobs of a controller, in order · Esc: done";
+            if (mode.Armed != null) return $"Listening for {mode.Armed.Text}: move any control · Delete: unmap · Esc: done";
             string last = mode.LastMapped;
-            return (last != null ? last + ".  " : "") + "Map mode – click a control, then move a knob or press a key. Esc ends it.";
+            return (last != null ? last + " · " : "") + "Map mode: click a control, then move a knob or press a key · Esc: done";
         }
 
         public string BannerMessage => bannerText.Text;
+
+        /// <summary>The banner's one line of text (its height says whether it wrapped), for tests.</summary>
+        internal TextBlock BannerLine => bannerText;
 
         // ------------------------------------------------------------------ drawing
 
@@ -414,7 +466,7 @@ namespace ReBuzz.Studio.Views.Midi
                     if (armed)
                     {
                         ctx.DrawRectangle(new ImmutableSolidColorBrush(Color.FromArgb(0x30, accent.R, accent.G, accent.B)), armedPen, r, 5, 5);
-                        DrawChip(ctx, new Rect(r.X + 1, r.Y - 15, 74, 14), "Listening…", true);
+                        DrawChip(ctx, ListeningOf(s), ListeningOf(s).Width < 40 ? "…" : "Listening…", true);
                     }
                     else ctx.DrawRectangle(null, pen, r, 5, 5);
                 }
@@ -430,7 +482,6 @@ namespace ReBuzz.Studio.Views.Midi
             ctx.DrawRectangle(fill, new Pen(strong ? StudioTokens.AccentBrush : StudioTokens.SurfaceBorderBrush, 1), rect, 7, 7);
             var t = Text(text, StudioTokens.FontCaption, ink);
             t.MaxTextWidth = Math.Max(1, rect.Width - 6);
-            t.MaxTextHeight = rect.Height;
             t.Trimming = TextTrimming.CharacterEllipsis;
             ctx.DrawText(t, new Point(rect.X + Math.Max(3, (rect.Width - t.Width) / 2), rect.Y + (rect.Height - t.Height) / 2));
         }

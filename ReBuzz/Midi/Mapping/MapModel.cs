@@ -55,6 +55,15 @@ namespace ReBuzz.Midi.Mapping
             }
         }
 
+        /// <summary>The shortest form, for a badge on a small control: "CC21", "N36", "Bend", "PC5" (no channel, no device: the badge's tooltip and the popover say them).</summary>
+        public string Compact => Kind switch
+        {
+            MapKind.ControlChange => "CC" + Number.ToString(CultureInfo.InvariantCulture),
+            MapKind.Note => "N" + Number.ToString(CultureInfo.InvariantCulture),
+            MapKind.PitchBend => "Bend",
+            _ => "PC" + Number.ToString(CultureInfo.InvariantCulture),
+        };
+
         /// <summary>"CC 21 · Name": the control and, when it names one, the device.</summary>
         public string Short(string label = null) => (label ?? ShortControl) + (AnyDevice ? "" : " · " + Device);
 

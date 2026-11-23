@@ -27,8 +27,9 @@ namespace ReBuzz.Studio.Views.Midi
         readonly TextBlock state = new TextBlock { TextWrapping = TextWrapping.Wrap, MaxWidth = 250 };
         readonly Button listen = new Button { Content = "Listen" };
         readonly Button unmap = new Button { Content = "Unmap" };
-        readonly Slider low = new Slider { Minimum = 0, Maximum = 100, Value = 0, TickFrequency = 1 };
-        readonly Slider high = new Slider { Minimum = 0, Maximum = 100, Value = 100, TickFrequency = 1 };
+        // One row of two compact fields (from, to), in percent of the parameter's range; they read as one range, not two settings.
+        readonly NumericUpDown low = Field(0);
+        readonly NumericUpDown high = Field(100);
         readonly TextBlock rangeText = new TextBlock { Foreground = StudioTokens.TextSecondaryBrush };
         readonly CheckBox invert = new CheckBox { Content = "Invert" };
         readonly ComboBox takeover = new ComboBox { ItemsSource = new[] { "Pickup", "Jump", "Scale" }, SelectedIndex = 0, MinWidth = 90 };
@@ -36,6 +37,9 @@ namespace ReBuzz.Studio.Views.Midi
         readonly Button done = new Button { Content = "Done", HorizontalAlignment = HorizontalAlignment.Right };
         readonly StackPanel body;
         bool updating;
+
+        static NumericUpDown Field(decimal value) =>
+            new NumericUpDown { Minimum = 0, Maximum = 100, Increment = 1, Value = value, FormatString = "0", ShowButtonSpinner = false, Width = 56, MinHeight = 0, Height = 26, HorizontalContentAlignment = HorizontalAlignment.Center, FontSize = StudioTokens.FontBody, VerticalAlignment = VerticalAlignment.Center };
 
         public MapPopover(MapMode mode, MapTarget target, AvControl anchor, Rect? around = null)
         {
@@ -66,9 +70,13 @@ namespace ReBuzz.Studio.Views.Midi
             body.Children.Add(stateRow);
             if (!target.IsCommand)
             {
-                body.Children.Add(new TextBlock { Text = "Range", FontSize = StudioTokens.FontCaption, Foreground = StudioTokens.TextSecondaryBrush });
-                body.Children.Add(low);
-                body.Children.Add(high);
+                var range = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+                range.Children.Add(new TextBlock { Text = "Range", VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush, MinWidth = 40 });
+                range.Children.Add(low);
+                range.Children.Add(new TextBlock { Text = "to", VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush });
+                range.Children.Add(high);
+                range.Children.Add(new TextBlock { Text = "%", VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush });
+                body.Children.Add(range);
                 body.Children.Add(rangeText);
                 var shape = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
                 shape.Children.Add(invert);
@@ -104,8 +112,8 @@ namespace ReBuzz.Studio.Views.Midi
             listen.Click += (s, e) => ToggleListen();
             unmap.Click += (s, e) => { mode.Unmap(target); Fill(); };
             done.Click += (s, e) => Hide();
-            low.PropertyChanged += (s, e) => { if (e.Property == RangeBase.ValueProperty) Apply(); };
-            high.PropertyChanged += (s, e) => { if (e.Property == RangeBase.ValueProperty) Apply(); };
+            low.ValueChanged += (s, e) => Apply();
+            high.ValueChanged += (s, e) => Apply();
             invert.IsCheckedChanged += (s, e) => Apply();
             takeover.SelectionChanged += (s, e) => Apply();
             mode.Changed += OnChanged;
@@ -134,8 +142,8 @@ namespace ReBuzz.Studio.Views.Midi
         internal RadioButton GlobalScope => globalScope;
         internal Button ListenButton => listen;
         internal Button UnmapButton => unmap;
-        internal Slider Low => low;
-        internal Slider High => high;
+        internal NumericUpDown Low => low;
+        internal NumericUpDown High => high;
         internal CheckBox InvertBox => invert;
         internal ComboBox TakeoverBox => takeover;
         internal Button DoneButton => done;
@@ -144,6 +152,9 @@ namespace ReBuzz.Studio.Views.Midi
         public string StateText => state.Text;
 
         public string TitleText => title.Text;
+
+        /// <summary>"20% to 60% of the parameter's range", under the From and To fields.</summary>
+        public string RangeSentence => rangeText.Text;
 
         void OnChanged() => Fill();
 
@@ -168,15 +179,15 @@ namespace ReBuzz.Studio.Views.Midi
         {
             if (updating || mode.Mapping == null || target.IsCommand) return;
             if (mode.Mapping.InfoOf(target) == null) { RangeLabel(); return; }
-            double lo = low.Value / 100, hi = high.Value / 100;
-            if (lo > hi) { hi = lo; updating = true; high.Value = hi * 100; updating = false; }
+            double lo = (double)(low.Value ?? 0) / 100, hi = (double)(high.Value ?? 100) / 100;
+            if (lo > hi) { hi = lo; updating = true; high.Value = (decimal)(hi * 100); updating = false; }
             mode.Mapping.SetDrive(target, lo, hi, invert.IsChecked == true, TakeoverOf(takeover.SelectedIndex));
             RangeLabel();
         }
 
         static Takeover TakeoverOf(int index) => index == 1 ? Takeover.Jump : index == 2 ? Takeover.Scale : Takeover.Pickup;
 
-        void RangeLabel() => rangeText.Text = $"{(int)low.Value}% to {(int)high.Value}% of the parameter's range" + (invert.IsChecked == true ? ", inverted" : "");
+        void RangeLabel() => rangeText.Text = $"{(int)(low.Value ?? 0)}% to {(int)(high.Value ?? 100)}% of the parameter's range" + (invert.IsChecked == true ? ", inverted" : "");
 
         void Fill()
         {
@@ -195,8 +206,8 @@ namespace ReBuzz.Studio.Views.Midi
                 if (info != null && !target.IsCommand)
                 {
                     var (lo, hi) = MapMode.Range(info.Range);
-                    low.Value = lo * 100;
-                    high.Value = hi * 100;
+                    low.Value = (decimal)Math.Round(lo * 100);
+                    high.Value = (decimal)Math.Round(hi * 100);
                     invert.IsChecked = info.Invert;
                     takeover.SelectedIndex = info.Takeover == Takeover.Jump ? 1 : info.Takeover == Takeover.Scale ? 2 : 0;
                 }
@@ -211,7 +222,7 @@ namespace ReBuzz.Studio.Views.Midi
                 listen.Content = listening ? "Stop" : info != null ? "Listen again" : "Listen";
                 unmap.IsEnabled = info != null;
                 if (listening) state.Text = "Listening… move a knob or press a key on any controller.";
-                else if (info != null) state.Text = "Mapped to " + (mm.BadgeOf(target) ?? info.Control) + (info.Legacy ? " (an old Buzz binding)" : "") + ".";
+                else if (info != null) state.Text = "Mapped to " + (mm.BadgeFullOf(target) ?? info.Control) + (info.Legacy ? " (an old Buzz binding)" : "") + ".";
                 else state.Text = "Not mapped. Listen, then move a knob or press a key.";
             }
             finally

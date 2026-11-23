@@ -135,7 +135,8 @@ namespace ReBuzz.Studio.Tests
             Assert.That(layer.Mode.Armed, Is.Null, "it is mapped; map mode stays on for the next");
             Assert.That(layer.Mode.Active, Is.True);
             st.Rescan();
-            Assert.That(layer.Spots.First(s => s.Target.Equals(TargetOf(cell))).Badge, Does.Contain("CC 21").And.Contain("Pads"), "the badge says what it is mapped to");
+            Assert.That(layer.Spots.First(s => s.Target.Equals(TargetOf(cell))).Badge, Is.EqualTo("CC21"), "the badge says what it is mapped to, short");
+            Assert.That(layer.Spots.First(s => s.Target.Equals(TargetOf(cell))).BadgeFull, Does.Contain("CC 21").And.Contain("Pads"), "its tooltip says it in full, with the device");
 
             // The next control moved drives it.
             var p = cell.Param.Parameter;
@@ -191,7 +192,7 @@ namespace ReBuzz.Studio.Tests
             layer.ArmControl(other);
             Send(Pads, CC(0, 9, 10));
             st.Rescan();
-            Assert.That(layer.Spots.First(s => s.Target.Equals(TargetOf(other))).Badge, Is.EqualTo("CC 9 · Pads"));
+            Assert.That(layer.Spots.First(s => s.Target.Equals(TargetOf(other))).Badge, Is.EqualTo("CC9"));
             Assert.That(Mapping.GlobalEntries.Count, Is.EqualTo(1));
         }
 
@@ -207,7 +208,8 @@ namespace ReBuzz.Studio.Tests
             Send(Pads, 0x99 | (36 << 8) | (100 << 16));
             st.Rescan();
             Assert.That(Mapping.GlobalEntries.Single().Target.Cmd, Is.EqualTo(MapCommand.Play));
-            Assert.That(layer.Spots.First(s => ReferenceEquals(s.Control, play)).Badge, Does.StartWith("Note 36"));
+            Assert.That(layer.Spots.First(s => ReferenceEquals(s.Control, play)).Badge, Is.EqualTo("N36"));
+            Assert.That(layer.Spots.First(s => ReferenceEquals(s.Control, play)).BadgeFull, Is.EqualTo("Note 36 ch10 · Pads"));
         }
 
         // ------------------------------------------------------------------ the button and the popover
@@ -218,8 +220,11 @@ namespace ReBuzz.Studio.Tests
             using var st = new Stage();
             var layer = st.Layer;
             var cell = st.Cells[0];
+            Settle();
             st.Rescan();
             st.Window.MouseMove(Center(cell, st.Window) + new Vector(0, 4));
+            Settle();
+            st.Window.MouseMove(Center(cell, st.Window) + new Vector(1, 4));
             Settle();
             Assert.That(layer.Hovered, Is.Not.Null, "the pointer is over the cell");
             var rect = layer.ButtonRect(cell);
@@ -240,8 +245,8 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Mapping.GlobalEntries.Single().Source.Number, Is.EqualTo(30));
 
             // Range, invert and takeover edit the mapping.
-            pop.Low.Value = 25;
-            pop.High.Value = 75;
+            pop.Low.Value = 25m;
+            pop.High.Value = 75m;
             pop.InvertBox.IsChecked = true;
             pop.TakeoverBox.SelectedIndex = 2;
             var info = Mapping.InfoOf(MapTarget.Parameter("Lead", cell.Param.Parameter.Name));
@@ -268,7 +273,7 @@ namespace ReBuzz.Studio.Tests
             menu.Items.OfType<MenuItem>().First(i => i.Header?.ToString() == "_Bind to MIDI Controller").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(MenuItem.ClickEvent));
             Settle();
             Assert.That(st.Layer.Popover, Is.Not.Null);
-            Assert.That(st.Layer.Popover.StateText, Does.StartWith("Mapped to CC 5"));
+            Assert.That(st.Layer.Popover.StateText, Does.StartWith("Mapped to CC 5 · Pads"), "the popover says it in full");
             st.Layer.Close();
             Settle();
             // The badge's right click.
@@ -353,10 +358,12 @@ namespace ReBuzz.Studio.Tests
             st.Window.Transport.Refresh();
             var bar = st.Window.Transport.Tracks;
             Assert.That(bar.NameText, Is.EqualTo("Lead"));
-            Assert.That(bar.FollowersText, Is.EqualTo("Keys A follows"), "a controller left out of the keys role is not listed");
+            Assert.That(bar.FollowersText, Is.EqualTo("1 device"), "a controller left out of the keys role is not counted");
+            Assert.That(bar.FollowersTip, Is.EqualTo("Keys A follows this track"));
             Mapping.SetKeysRole("Pads B", true);
             st.Window.Transport.Refresh();
-            Assert.That(bar.FollowersText, Is.EqualTo("Keys A, Pads B follow"));
+            Assert.That(bar.FollowersText, Is.EqualTo("2 devices"));
+            Assert.That(bar.FollowersTip, Is.EqualTo("Keys A, Pads B follow this track"), "who they are is in the tooltip");
             bar.NextButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
             st.Window.Transport.Refresh();
             Assert.That(bar.NameText, Is.EqualTo("Bass"));
@@ -385,6 +392,189 @@ namespace ReBuzz.Studio.Tests
             Assert.That(st.Window.Transport.Tracks.FreeText, Is.EqualTo("K7 is free on Bass"));
         }
 
+        // ------------------------------------------------------------------ MM1b: the look the gallery showed
+
+        [AvaloniaTest]
+        public void TheTopBarKeepsItsHeightAt1440WideWhateverTheSelectorSays()
+        {
+            using var st = new Stage();
+            st.Window.Width = 1440;
+            MidiEngine.SimulatedInputs = new[] { "Faders", "Pads" };
+            var transport = st.Window.Transport;
+            double Height()
+            {
+                st.Window.UpdateLayout();
+                Settle();
+                st.Window.UpdateLayout();
+                return transport.Bounds.Height;
+            }
+            transport.Tracks.IsVisible = false;
+            double without = Height();                                      // the bar as origin/main has it: no selector
+            Assert.That(without, Is.GreaterThan(20));
+            Assert.That(st.Window.Bounds.Width, Is.EqualTo(1440));
+            transport.Refresh();
+            Assert.That(transport.Tracks.IsVisible, Is.True);
+            Assert.That(transport.Tracks.FollowersText, Is.EqualTo("2 devices"));
+            var panel = (Avalonia.Controls.WrapPanel)transport.Child;
+            string widths = string.Join(", ", panel.Children.Select(c => c.GetType().Name + " " + (int)c.Bounds.Width + "@" + (int)c.Bounds.Y));
+            Assert.That(Height(), Is.EqualTo(without), "two devices following: still one row: " + widths + " of " + (int)transport.Bounds.Width);
+            Mapping.SetSlot("track:Lead", 0, 0, MapTarget.Parameter("Lead", st.Params[0].Name), new MapDrive());
+            Mapping.SetKnobGroup("Faders", Enumerable.Range(21, 8).Select(n => new MapSource("Faders", MapKind.ControlChange, 0, n)));
+            st.Select(st.Bass);
+            Send(Faders, CC(0, 27, 50));
+            transport.Refresh();
+            Assert.That(transport.Tracks.FreeText, Is.Not.Empty, "the free notice is up");
+            Assert.That(Height(), Is.EqualTo(without), "and with the notice, the long track name and the arrows");
+            var song = Core.SongCore;
+            const string longName = "A very long track name that has to be cut with an ellipsis";
+            song.CreateMachine("Neo Poly", null, longName, null, null, null, -1, 0.1f, -0.3f);
+            var longOne = song.MachinesList.Last(q => q.Name == longName);
+            song.ConnectMachines(longOne, song.MachinesList.First(q => q.DLL.Info.Type == MachineType.Master), new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            st.Select(longOne);
+            transport.Refresh();
+            Assert.That(transport.Tracks.NameText, Is.EqualTo(longName));
+            Assert.That(Height(), Is.EqualTo(without), "a long name is cut, not wrapped: " + string.Join(", ", panel.Children.Select(c => c.GetType().Name + " " + (int)c.Bounds.Width + "@" + (int)c.Bounds.Y)) + " selector: " + string.Join(", ", ((Avalonia.Controls.Panel)transport.Tracks.Child).Children.Select(c => (int)c.Bounds.Width)));
+            Assert.That(transport.Tracks.Bounds.Width, Is.LessThan(160), "the selector is a compact group");
+        }
+
+        [AvaloniaTest]
+        public void BadgesAreShortAndLieInsideTheirControlWithTheFullSourceInTheTooltip()
+        {
+            using var st = new Stage();
+            Mapping.SetKnobGroup("Faders", Enumerable.Range(21, 8).Select(n => new MapSource("Faders", MapKind.ControlChange, 0, n)));
+            Mapping.SetSlot("track:Lead", 0, 2, MapTarget.Parameter("Lead", st.Params[2].Name), new MapDrive());
+            Mapping.MapControl(new MapSource("Pads", MapKind.ControlChange, 0, 74), KnobEncoding.Absolute, MapTarget.Parameter("Lead", st.Params[0].Name), MapScope.Global);
+            Mapping.MapControl(new MapSource("Pads", MapKind.Note, 9, 36), KnobEncoding.Absolute, MapTarget.Command(MapCommand.Play), MapScope.Global);
+            Mapping.MapControl(new MapSource("Pads", MapKind.Note, 9, 37), KnobEncoding.Absolute, MapTarget.Command(MapCommand.Stop), MapScope.Global);
+            var layer = st.Layer;
+            st.Window.ToggleMapMode();
+            st.Rescan();
+            var badged = layer.Spots.Where(s => s.Badge != null).ToList();
+            Assert.That(badged.Select(s => s.Badge), Is.SupersetOf(new[] { "K3", "CC74", "N36", "N37" }));
+            foreach (var spot in badged)
+            {
+                var rect = layer.BadgeRect(spot.Control);
+                Assert.That(spot.Badge.Length, Is.LessThanOrEqualTo(6), "a short form");
+                Assert.That(spot.Bounds.Contains(rect.TopLeft) && spot.Bounds.Contains(rect.BottomRight), Is.True,
+                    $"the badge '{spot.Badge}' {rect} lies inside its control {spot.Bounds}");
+            }
+            var play = layer.Spots.First(s => ReferenceEquals(s.Control, st.Window.Transport.PlayButton));
+            var stop = layer.Spots.First(s => ReferenceEquals(s.Control, st.Window.Transport.StopButton));
+            Assert.That(layer.BadgeRect(play.Control).Intersects(stop.Bounds), Is.False, "the Play button's badge does not reach the next button");
+            var slot = layer.Spots.First(s => s.Badge == "K3");
+            Assert.That(slot.BadgeFull, Does.StartWith("K3").And.Contain("Lead"));
+            // The tooltip says the full source.
+            var r = layer.BadgeRect(play.Control);
+            st.Window.MouseMove(new Point(r.X + r.Width / 2, r.Y + r.Height / 2));
+            Settle();
+            Assert.That(layer.TipText, Is.EqualTo("Note 36 ch10 · Pads"));
+            st.Window.MouseMove(new Point(1, 1));
+            Settle();
+            Assert.That(layer.TipText, Is.Null);
+        }
+
+        [AvaloniaTest]
+        public void TheListeningChipSitsInsideTheCardNotOverTheGroupHeaderAndTheBannerIsOneLine()
+        {
+            using var st = new Stage();
+            st.Window.Width = 1440;
+            var layer = st.Layer;
+            st.Window.ToggleMapMode();
+            st.Rescan();
+            var cell = st.Cells[0];
+            Assert.That(layer.ArmControl(cell), Is.True);
+            st.Rescan();
+            var spot = layer.Spots.First(s => ReferenceEquals(s.Control, cell));
+            var chip = layer.ListeningRect(cell);
+            Assert.That(spot.Bounds.Contains(chip.TopLeft) && spot.Bounds.Contains(chip.BottomRight), Is.True, $"the chip {chip} is inside the card {spot.Bounds}, below the header above it");
+            Assert.That(layer.BannerMessage, Does.StartWith("Listening for Lead").And.Contain("move any control").And.Contain("Delete: unmap").And.Contain("Esc: done"));
+            st.Window.UpdateLayout();
+            Assert.That(layer.BannerLine.Bounds.Height, Is.LessThan(24), "one line at 1440: " + layer.BannerMessage);
+            layer.Mode.Disarm();
+            st.Window.UpdateLayout();
+            Assert.That(layer.BannerLine.Bounds.Height, Is.LessThan(24), "and not listening: " + layer.BannerMessage);
+        }
+
+        [AvaloniaTest]
+        public void TheInspectorsSlotsShowTwoLinesOfTheParameterNameAndTheFullNameInTheTooltip()
+        {
+            using var st = new Stage();
+            Mapping.SetKnobGroup("Faders", Enumerable.Range(21, 8).Select(n => new MapSource("Faders", MapKind.ControlChange, 0, n)));
+            var page = st.Window.Inspector.MidiPage;
+            Mapping.SetSlot("track:Lead", 0, 4, MapTarget.Parameter("Lead", st.Params[5].Name), new MapDrive());
+            page.Refresh();
+            var slot = page.Slots[4];
+            Assert.That(slot.NameBlock.MaxLines, Is.EqualTo(2));
+            Assert.That(slot.NameBlock.TextWrapping, Is.EqualTo(Avalonia.Media.TextWrapping.Wrap));
+            Assert.That(slot.NameBlock.Text, Is.EqualTo(st.Params[5].Name));
+            Assert.That(ToolTip.GetTip(slot) as string, Does.Contain("Lead · " + st.Params[5].Name), "the full name is the tooltip");
+        }
+
+        [AvaloniaTest]
+        public void ThePopoversRangeIsOneRowOfTwoFieldsWithTheSentenceBelow()
+        {
+            using var st = new Stage();
+            var cell = st.Cells[0];
+            var pop = st.Layer.Open(cell);
+            Settle();
+            Assert.That(pop, Is.Not.Null);
+            Assert.That(pop.Low.Parent, Is.SameAs(pop.High.Parent), "from and to share a row");
+            Assert.That(pop.Low.Parent, Is.InstanceOf<StackPanel>().With.Property("Orientation").EqualTo(Avalonia.Layout.Orientation.Horizontal));
+            pop.Low.Value = 20m;
+            pop.High.Value = 60m;
+            Assert.That(pop.RangeSentence, Is.EqualTo("20% to 60% of the parameter's range"));
+            st.Layer.Close();
+        }
+
+        [AvaloniaTest]
+        public void OutlinesOfACardHalfOutOfTheDevicePanelStopAtItsEdgeAndNeverReachTheInspector()
+        {
+            using var st = new Stage();
+            st.Window.Width = 1440;
+            st.Window.Height = 900;
+            st.Window.Detail.ShowDevice();
+            Settle();
+            st.Window.UpdateLayout();
+            var page = DeviceViewOf(st.Window);
+            Assert.That(page, Is.Not.Null, "the Device panel is open");
+            var scroller = page.Cards.Scroller;
+            Assert.That(ScrollHalfACardOut(st.Window, scroller), Is.True, "the panel scrolls so a card is half out of view");
+            st.Window.ToggleMapMode();
+            st.Rescan();
+            var view = new Rect(scroller.TranslatePoint(default, st.Layer)!.Value, new Size(scroller.Viewport.Width, scroller.Viewport.Height));
+            var inspector = new Rect(st.Window.Inspector.TranslatePoint(default, st.Layer)!.Value, st.Window.Inspector.Bounds.Size);
+            var inPanel = st.Layer.Spots.Where(sp => scroller.IsVisualAncestorOf(sp.Control)).ToList();
+            Assert.That(inPanel, Is.Not.Empty);
+            foreach (var sp in inPanel)
+            {
+                Assert.That(view.Inflate(0.5).Contains(sp.Bounds.TopLeft) && view.Inflate(0.5).Contains(sp.Bounds.BottomRight), Is.True, $"outline {sp.Bounds} of {sp.Target.Text} stays in the Device panel's view {view}");
+                Assert.That(sp.Bounds.Intersects(inspector), Is.False, $"outline {sp.Bounds} does not spill over the Inspector {inspector}");
+            }
+        }
+
+        internal static ReBuzz.Studio.Views.Device.DeviceView DeviceViewOf(MainWindow window) =>
+            (window.Detail.DevicePage as ReBuzz.Studio.Views.Device.DeviceDock)?.Page?.Parameters;
+
+        /// <summary>Scrolls the Device panel (down, or sideways when the cards flow in columns) so a card is cut by its edge, about half in view. False when the panel does not scroll.</summary>
+        internal static bool ScrollHalfACardOut(MainWindow window, ScrollViewer scroller)
+        {
+            Settle();
+            double maxY = scroller.Extent.Height - scroller.Viewport.Height, maxX = scroller.Extent.Width - scroller.Viewport.Width;
+            if (maxY <= 8 && maxX <= 8) return false;
+            var page = DeviceViewOf(window);
+            var host = (Visual)scroller.Content;
+            foreach (var shown in page.Cards.Shown)
+            {
+                var at = shown.Control.TranslatePoint(default, host);
+                if (at == null) continue;
+                double my = at.Value.Y + shown.Control.Bounds.Height / 2, mx = at.Value.X + shown.Control.Bounds.Width / 2;
+                if (maxY > 8 && my > 4 && my <= maxY) { scroller.Offset = new Vector(0, my); break; }
+                if (maxX > 8 && mx > 4 && mx <= maxX) { scroller.Offset = new Vector(mx, 0); break; }
+            }
+            Settle();
+            return scroller.Offset.Y > 0 || scroller.Offset.X > 0;
+        }
+
         // ------------------------------------------------------------------ the screens (saved as pictures for the gallery's look)
 
         /// <summary>Draws the MM1 screens: map mode with badges and a control listening, the popover, the Inspector's page, the top bar. The gallery draws them on the demo song.</summary>
@@ -392,6 +582,8 @@ namespace ReBuzz.Studio.Tests
         public void TheScreensAreDrawn()
         {
             using var st = new Stage();
+            st.Window.Width = 1440;
+            st.Window.Height = 900;
             MidiEngine.SimulatedInputs = new[] { "Faders", "Pads" };
             Mapping.SetKnobGroup("Faders", Enumerable.Range(21, 8).Select(n => new MapSource("Faders", MapKind.ControlChange, 0, n)));
             Mapping.SetSlot("track:Lead", 0, 3, MapTarget.Parameter("Lead", st.Params[4].Name), new MapDrive { Takeover = Takeover.Jump });
@@ -408,10 +600,20 @@ namespace ReBuzz.Studio.Tests
             Settle();
             st.Rescan();
             Assert.That(Studio.Screenshot(st.Window, "mm1-2-map-mode"), Does.EndWith(".png"));
+            var scroller = DeviceViewOf(st.Window)?.Cards.Scroller;
+            if (scroller != null && ScrollHalfACardOut(st.Window, scroller))
+            {
+                st.Rescan();
+                Studio.Screenshot(st.Window, "mm1-2b-map-mode-scrolled");
+                scroller.Offset = default;
+                Settle();
+                st.Rescan();
+            }
             st.Layer.Mode.Exit();
             st.Layer.OpenForTarget(MapTarget.Parameter("Lead", st.Params[0].Name));
             Settle();
             Studio.Screenshot(st.Window, "mm1-3-popover");
+            st.Window.Transport.Refresh();
             st.Layer.Close();
             Settle();
             st.Window.Inspector.MidiPage.Refresh();

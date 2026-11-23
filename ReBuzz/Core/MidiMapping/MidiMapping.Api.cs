@@ -509,20 +509,24 @@ namespace ReBuzz.Core
             return list;
         }
 
-        /// <summary>The badge a control with this target shows: "K3" (a slot), or the control's name ("CC 21 · Device"); null when nothing maps to it.</summary>
+        /// <summary>The badge a control with this target shows, in its short form that fits a small control: "K3" (a slot), "CC74", "N36"; null when nothing maps to it.</summary>
         public string BadgeOf(MapTarget target)
         {
             if (target == null) return null;
             foreach (var i in Active())
                 if (i.Target != null && i.Target.Equals(target))
-                    return i.Slot >= 0 ? i.Short : BadgeText(i.Source);
+                    return i.Slot >= 0 ? i.Short : i.Source.Compact;
             return null;
         }
 
-        /// <summary>What a badge says for a control: "CC 21", with the device when it names one.</summary>
-        string BadgeText(MapSource source)
+        /// <summary>What the badge stands for in full, for its tooltip and the popover: "Note 36 ch10 · Pads", or "K3: knob 3 of Lead's page"; null when nothing maps to it.</summary>
+        public string BadgeFullOf(MapTarget target)
         {
-            return source.AnyDevice ? source.ShortControl : source.Short();
+            if (target == null) return null;
+            foreach (var i in Active())
+                if (i.Target != null && i.Target.Equals(target))
+                    return i.Slot >= 0 ? i.Short + ": knob " + (i.Slot + 1) + " of " + (SelectedTrack?.Name ?? "the track") + "'s page" : i.Source.Short();
+            return null;
         }
 
         /// <summary>The mapping a target has in force (to edit its range), or null.</summary>

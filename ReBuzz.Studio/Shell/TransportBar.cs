@@ -245,6 +245,7 @@ namespace ReBuzz.Studio.Shell
         public MasterMeter Meter => meter;
 
         internal Button PlayButton => play;
+        internal Button StopButton => stop;
         internal ToggleButton RecordButton => record;
         internal ToggleButton LoopButton => loop;
         internal ToggleButton MetronomeButton => metronome;
