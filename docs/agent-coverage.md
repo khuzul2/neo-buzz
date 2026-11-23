@@ -247,7 +247,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | browser_search | 1 | 1 | yes |
 | compare | 28 | 15 | yes |
 | connect | 13 | 13 | yes |
-| connection_set | 7 | 1 | yes |
+| connection_set | 6 | 1 | yes |
 | disconnect | 3 | 1 | yes |
 | drop_item | 1 | 1 | yes |
 | eq_fit | 4 | 5 | yes |
@@ -265,13 +265,13 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | machine_find | 2 | 2 | yes |
 | machine_group | 1 | 2 | yes |
 | machine_latency | 2 | 1 | yes |
-| machine_list | 13 | 2 | yes |
+| machine_list | 12 | 2 | yes |
 | machine_open_editor | 3 | 2 | yes |
 | machine_pin | 1 | 2 | yes |
 | machine_readings | 54 | 47 | yes |
 | machine_remove | 2 | 0 | yes |
 | machine_replace | 92 | 55 | yes |
-| machine_set | 11 | 14 | yes |
+| machine_set | 10 | 12 | yes |
 | machine_swap | 1 | 1 | yes |
 | machine_tracks | 2 | 1 | yes |
 | master_record | 2 | 4 | yes |
@@ -288,7 +288,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | notes_transform | 4 | 5 | no |
 | notes_write | 39 | 16 | yes |
 | panel_set | 1 | 3 | yes |
-| param_get | 103 | 111 | yes |
+| param_get | 102 | 111 | yes |
 | param_lock | 1 | 2 | yes |
 | param_randomize | 1 | 1 | yes |
 | param_set | 84 | 61 | yes |
