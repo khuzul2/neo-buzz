@@ -145,6 +145,15 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        /// <summary>What the track selector holds and where its parts are, for a shot's note (the Mac run lost its chip: said here what the layout did).</summary>
+        static string DescribeSelector(MainWindow window)
+        {
+            window.UpdateLayout();
+            var t = window.Transport.Tracks;
+            var parts = ((Avalonia.Controls.Panel)t.Child).Children.Select(c => $"{c.GetType().Name}[{(c as Avalonia.Controls.TextBlock)?.Text}] {c.Bounds.Width:0}x{c.Bounds.Height:0} vis {c.IsVisible}");
+            return $"Selector '{t.NameText}' / chip '{t.FollowersText}' / notice '{t.FreeText}', {t.Bounds.Width:0} wide at {t.Bounds.X:0}, visible {t.IsVisible}: {string.Join("; ", parts)}.";
+        }
+
         static void Record(string file, string what, string how, string size, string song, string notes)
         {
             rows.RemoveAll(r => r.File == file);
@@ -878,7 +887,7 @@ namespace ReBuzz.Studio.Tests
                         window.Transport.Refresh();
                         Shot(window, "036-midi-top-bar", "The track selector with two devices following (MM1b): ◀ Lead ▶ and a muted \"2 devices\" chip (their names are its tooltip), at the right end of the view strip's row under the top bar; the top bar keeps one row with Lock, Keys and the device picker.",
                             "Right end of the row of Arrangement, Session, Machines.",
-                            notes: $"Selector '{window.Transport.Tracks.NameText}' / chip '{window.Transport.Tracks.FollowersText}' / notice '{window.Transport.Tracks.FreeText}', {window.Transport.Tracks.Bounds.Width:0} wide, visible {window.Transport.Tracks.IsVisible}.");
+                            notes: DescribeSelector(window));
                         window.Inspector.MidiPage.Refresh();
                         Shot(window, "036-midi-track-page", "The Inspector's MIDI page for Lead's track (MM1): slots laid out as the knobs, the parameter and its value, a grey ring where the generator's pin answers, the controllers and their keys role.",
                             "Select a track; the Inspector's Selection tab.");
