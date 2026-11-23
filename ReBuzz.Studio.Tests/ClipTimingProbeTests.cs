@@ -275,6 +275,49 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        /// <summary>
+        /// CU3 (clips.md §5.6, the window floor): a host call that leaves fewer than about 22 samples (one 1/240 tick) at the start of a tick gives the
+        /// engine an empty window there, so a row-aligned value lands in the next call. This measures how late, in samples, over the tempos and call
+        /// sizes that make it happen, for the three kinds of lane. The decision (no floor) rests on the bound asserted here.
+        /// </summary>
+        [AvaloniaTest]
+        public void AValueOnATickThatStartsWithAShortFirstBlockWaitsAtMostOneSubTick()
+        {
+            var rows = new List<string>();
+            int worst = 0, cases = 0;
+            foreach (var (bpm, tpb) in new[] { (120, 4), (125, 4), (133, 4) })
+            {
+                double average = 60.0 * ReBuzzCore.masterInfo.SamplesPerSec / (bpm * tpb);
+                var starts = TickStarts(average, 700);
+                foreach (int block in new[] { 64, 128, 256 })
+                {
+                    int tick = -1;
+                    for (int t = 3; t < 690 && tick < 0; t++)
+                    {
+                        int left = block - starts[t] % block;           // samples of the call that belong to the new tick
+                        if (starts[t] % block != 0 && left >= 3 && left <= 18) tick = t;
+                    }
+                    if (tick < 0) continue;
+                    foreach (var what in new[] { What.Level, What.Note, What.Midi })
+                    {
+                        var landing = Play(what, Who.Engine, bpm, tpb, tick, block, tick + 6);
+                        int late = landing.Sample - landing.TickStart[tick];
+                        worst = Math.Max(worst, late);
+                        cases++;
+                        rows.Add($"{what} {bpm}/{tpb} call {block} tick {tick}: first block of the tick {block - landing.TickStart[tick] % block} samples, lands {late} samples after the tick start");
+                        Assert.That(late, Is.GreaterThanOrEqualTo(0));
+                    }
+                }
+            }
+            TestContext.Out.WriteLine(string.Join("\n", rows) + $"\nworst {worst} samples over {cases} cases");
+            string path = Environment.GetEnvironmentVariable("CLIP_WINDOW_OUT");
+            if (!string.IsNullOrEmpty(path)) File.WriteAllText(path, string.Join("\n", rows) + $"\nworst {worst} samples over {cases} cases\n");
+            Assert.That(cases, Is.GreaterThan(6), "the sweep found short first blocks");
+            // A parameter waits one sub-tick (262 to 264 samples, what the old editor's value always waited); a MIDI note waits less than the short block (under 22 samples).
+            Assert.That(worst, Is.LessThanOrEqualTo(270), "a short first block costs at most one sub-tick: the old editor was that late every time, so no window floor in CU3");
+            Assert.That(rows.Where(r => r.StartsWith("Midi")).All(r => int.Parse(r.Split("lands ")[1].Split(' ')[0]) < 22), Is.True, "a MIDI note lands inside the short block");
+        }
+
         [AvaloniaTest]
         public void TheEngineLandsARowAlignedValueOfEveryLaneAtItsTick()
         {
