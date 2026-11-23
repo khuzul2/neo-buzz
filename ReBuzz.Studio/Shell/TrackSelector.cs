@@ -16,8 +16,8 @@ namespace ReBuzz.Studio.Shell
     internal sealed class TrackSelector : Border
     {
         readonly Func<ReBuzzCore> core;
-        readonly Button previous = new Button { Content = new TextBlock { Text = "◀" }, Padding = new Thickness(6, 1), MinWidth = 26 };
-        readonly Button next = new Button { Content = new TextBlock { Text = "▶" }, Padding = new Thickness(6, 1), MinWidth = 26 };
+        readonly Button previous = new Button { Content = new TextBlock { Text = "◀" }, };
+        readonly Button next = new Button { Content = new TextBlock { Text = "▶" }, };
         readonly TextBlock name = new TextBlock { VerticalAlignment = VerticalAlignment.Center, MinWidth = 40, MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis, FontWeight = Avalonia.Media.FontWeight.SemiBold };
         // A small muted chip: "2 devices" (who they are is its tooltip), so the bar keeps to one row; a "K7 is free on Drums" notice takes its place for a few seconds.
         readonly TextBlock followers = new TextBlock { Text = "", VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush, FontSize = StudioTokens.FontCaption, MinWidth = 64, MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis };
@@ -28,6 +28,8 @@ namespace ReBuzz.Studio.Shell
         public TrackSelector(Func<ReBuzzCore> core)
         {
             this.core = core;
+            previous.Classes.Add("icon");                  // the style's icon button, no padding of its own
+            next.Classes.Add("icon");
             var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
             row.Children.Add(previous);
             row.Children.Add(name);

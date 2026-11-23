@@ -150,7 +150,7 @@ namespace ReBuzz.Studio.Views.Inspector
             var top = new StackPanel
             {
                 Margin = new Thickness(12, 0, 12, 8),
-                Children = { heading, subtitle, facts, device, inputSection, midiPage, explain, hint, patternButton, audioButton, notesButton },
+                Children = { heading, subtitle, facts, device, inputSection, explain, hint, patternButton, audioButton, notesButton, midiPage },
             };
             DockPanel.SetDock(top, Dock.Top);
             selectionPage = new DockPanel { LastChildFill = true };

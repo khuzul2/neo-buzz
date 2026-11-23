@@ -118,14 +118,14 @@ namespace ReBuzz.Studio.Views.Inspector
         readonly ReBuzzCore core;
         readonly TextBlock title = new TextBlock { Text = "MIDI PAGE", FontSize = StudioTokens.FontCaption, FontWeight = FontWeight.SemiBold, Foreground = StudioTokens.TextSecondaryBrush, Margin = new Thickness(0, 0, 0, 4) };
         readonly TextBlock track = new TextBlock { FontSize = StudioTokens.FontCaption, Foreground = StudioTokens.TextSecondaryBrush, Margin = new Thickness(0, 0, 0, 4) };
-        readonly Button previous = new Button { Content = "◀", Padding = new Thickness(6, 1) };
-        readonly Button next = new Button { Content = "▶", Padding = new Thickness(6, 1) };
-        readonly Button add = new Button { Content = "+", Padding = new Thickness(8, 1) };
-        readonly Button remove = new Button { Content = "−", Padding = new Thickness(8, 1) };
+        readonly Button previous = new Button { Content = "◀" };
+        readonly Button next = new Button { Content = "▶" };
+        readonly Button add = new Button { Content = "+" };
+        readonly Button remove = new Button { Content = "−" };
         readonly TextBlock pageName = new TextBlock { VerticalAlignment = VerticalAlignment.Center, MinWidth = 60, FontSize = StudioTokens.FontCaption };
         readonly UniformGrid slots = new UniformGrid { Columns = 4 };
         readonly TextBlock status = new TextBlock { FontSize = StudioTokens.FontCaption, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
-        readonly Button teach = new Button { Content = "Teach knobs", Padding = new Thickness(8, 2), Margin = new Thickness(0, 4, 8, 0) };
+        readonly Button teach = new Button { Content = "Teach knobs", Margin = new Thickness(0, 4, 8, 0) };
         readonly CheckBox autoArm = new CheckBox { Content = "Selecting a track arms it", FontSize = StudioTokens.FontCaption };
         readonly StackPanel controllers = new StackPanel { Spacing = 2, Margin = new Thickness(0, 4, 0, 0) };
         readonly List<SlotView> views = new List<SlotView>();
@@ -135,6 +135,7 @@ namespace ReBuzz.Studio.Views.Inspector
         public MidiPageSection(ReBuzzCore core)
         {
             this.core = core;
+            foreach (var b in new[] { previous, next, add, remove }) b.Classes.Add("icon");
             Margin = new Thickness(0, 10, 0, 0);
             IsVisible = false;
             AutomationProperties.SetName(this, "MIDI page");
