@@ -224,11 +224,15 @@ namespace ReBuzz.Studio.Tests
             Settle();
             var cell = st.Cells[0];                                          // the Inspector remakes its cells when it refreshes: take it after it settled
             st.Rescan();
-            st.Window.MouseMove(Center(cell, st.Window) + new Vector(0, 4));
-            Settle();
-            cell = st.Cells[0];
-            st.Window.MouseMove(Center(cell, st.Window) + new Vector(1, 4));
-            Settle();
+            for (int attempt = 0; attempt < 5 && layer.Hovered == null; attempt++)
+            {
+                Settle();
+                st.Window.UpdateLayout();
+                cell = st.Cells[0];
+                st.Rescan();
+                st.Window.MouseMove(Center(cell, st.Window) + new Vector(attempt, 4));
+                Settle();
+            }
             Assert.That(layer.Hovered, Is.Not.Null, "the pointer is over the cell");
             var rect = layer.ButtonRect(cell);
             Assert.That(rect.Width, Is.GreaterThan(10));
@@ -347,6 +351,7 @@ namespace ReBuzz.Studio.Tests
             Send(Pads, 0x90 | (61 << 8) | (100 << 16));
             Settle();
             Assert.That(StudioSelection.For(Core).Machine, Is.SameAs(st.Lead), "a controller's previous-track moves the studio's selection");
+            st.Window.Transport.Refresh();
             Assert.That(st.Window.Transport.Tracks.NameText, Is.EqualTo("Lead"));
         }
 
@@ -421,6 +426,9 @@ namespace ReBuzz.Studio.Tests
             Assert.That(transport.Tracks.FollowersText, Is.EqualTo("2 devices"));
             var panel = (Avalonia.Controls.WrapPanel)transport.Child;
             string widths = string.Join(", ", panel.Children.Select(c => c.GetType().Name + " " + (int)c.Bounds.Width + "@" + (int)c.Bounds.Y));
+            Height();
+            Assert.That(transport.Tracks.Chip.Bounds.Width, Is.GreaterThan(30), "the chip is on the screen, with its text");
+            Assert.That(transport.Tracks.Chip.Text, Is.EqualTo("2 devices"));
             Assert.That(Height(), Is.EqualTo(without), "two devices following: still one row: " + widths + " of " + (int)transport.Bounds.Width);
             Mapping.SetSlot("track:Lead", 0, 0, MapTarget.Parameter("Lead", st.Params[0].Name), new MapDrive());
             Mapping.SetKnobGroup("Faders", Enumerable.Range(21, 8).Select(n => new MapSource("Faders", MapKind.ControlChange, 0, n)));

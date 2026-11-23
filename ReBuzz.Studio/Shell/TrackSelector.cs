@@ -21,8 +21,8 @@ namespace ReBuzz.Studio.Shell
         readonly TextBlock name = new TextBlock { VerticalAlignment = VerticalAlignment.Center, MinWidth = 40, MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis, FontWeight = Avalonia.Media.FontWeight.SemiBold };
         // A small muted chip: "2 devices" (who they are is its tooltip), so the bar keeps to one row; a "K7 is free on Drums" notice takes its place for a few seconds.
         readonly TextBlock followers = new TextBlock { Text = "", VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush, FontSize = StudioTokens.FontCaption, MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis };
-        readonly TextBlock free = new TextBlock { Text = "", VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush, FontSize = StudioTokens.FontCaption, MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis, IsVisible = false };
-        int lastFree;
+        string followersText = "", freeText = "";
+        int lastFree = -1;
         long freeUntil;
 
         public TrackSelector(Func<ReBuzzCore> core)
@@ -32,10 +32,8 @@ namespace ReBuzz.Studio.Shell
             row.Children.Add(previous);
             row.Children.Add(name);
             row.Children.Add(next);
-            var chip = new Grid { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 0, 0) };
-            chip.Children.Add(followers);
-            chip.Children.Add(free);
-            row.Children.Add(chip);
+            followers.Margin = new Thickness(4, 0, 0, 0);
+            row.Children.Add(followers);
             Child = row;
             Margin = new Thickness(0, 2, 10, 2);
             AutomationProperties.SetName(this, "Selected track");
@@ -54,12 +52,15 @@ namespace ReBuzz.Studio.Shell
 
         public string NameText => name.Text;
 
-        public string FollowersText => followers.Text;
+        public string FollowersText => followersText;
 
-        public string FreeText => free.Text;
+        public string FreeText => freeText;
 
         /// <summary>Which controllers follow the track ("Faders, Pads follow"), the chip's tooltip.</summary>
         public string FollowersTip => ToolTip.GetTip(followers) as string;
+
+        /// <summary>The chip ("2 devices", or the free notice), for tests.</summary>
+        internal TextBlock Chip => followers;
 
         internal Button PreviousButton => previous;
         internal Button NextButton => next;
@@ -74,19 +75,21 @@ namespace ReBuzz.Studio.Shell
             name.Text = trackName ?? "No track";
             ToolTip.SetTip(name, (trackName != null ? trackName + ": the" : "The") + " track the knobs and keys of your MIDI controllers drive");
             var follow = mm.Controllers().Where(x => x.Connected && x.Keys).Select(x => x.Id).ToList();
-            followers.Text = follow.Count == 0 ? "" : follow.Count == 1 ? "1 device" : follow.Count + " devices";
-            ToolTip.SetTip(followers, follow.Count == 0 ? "No controller's keys follow this track" : string.Join(", ", follow) + (follow.Count == 1 ? " follows" : " follow") + " this track");
+            followersText = follow.Count == 0 ? "" : follow.Count == 1 ? "1 device" : follow.Count + " devices";
+            string followersTip = follow.Count == 0 ? "No controller's keys follow this track" : string.Join(", ", follow) + (follow.Count == 1 ? " follows" : " follow") + " this track";
             var (count, text) = mm.FreeNotice;
+            if (lastFree < 0) lastFree = count;                 // a notice from before this window was there is not news
             if (count != lastFree)
             {
                 lastFree = count;
                 if (count > 0) freeUntil = Environment.TickCount64 + 4000;
-                free.Text = text ?? "";
+                freeText = text ?? "";
             }
-            if (Environment.TickCount64 > freeUntil && !string.IsNullOrEmpty(free.Text)) free.Text = "";
-            free.IsVisible = !string.IsNullOrEmpty(free.Text);
-            followers.IsVisible = !free.IsVisible;
-            ToolTip.SetTip(free, free.Text);
+            if (Environment.TickCount64 > freeUntil && !string.IsNullOrEmpty(freeText)) freeText = "";
+            // One chip: the notice while there is one, else how many devices follow.
+            bool notice = !string.IsNullOrEmpty(freeText);
+            followers.Text = notice ? freeText : followersText;
+            ToolTip.SetTip(followers, notice ? freeText : followersTip);
             bool any = trackName != null || mm.Tracks.Count > 0;
             previous.IsEnabled = next.IsEnabled = mm.Tracks.Count > 0;
             IsVisible = any;
