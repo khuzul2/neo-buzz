@@ -811,12 +811,20 @@ namespace ReBuzz.Studio.Tests
                     Settle();
                     foreach (var v in window.GetVisualDescendants()) v.InvalidateVisual();
                     Settle();
+                    // The canvas's own pixels only: the window around it (top bar meters, focus on the toggle) may differ by platform.
                     byte[] Frame()
                     {
-                        using var bitmap = view.Canvas.TranslatePoint(default, window) is { } ? window.CaptureRenderedFrame() : null;
+                        var origin = view.Canvas.TranslatePoint(default, window) ?? default;
+                        using var bitmap = window.CaptureRenderedFrame();
                         using var fb = bitmap!.Lock();
-                        var data = new byte[fb.RowBytes * fb.Size.Height];
-                        System.Runtime.InteropServices.Marshal.Copy(fb.Address, data, 0, data.Length);
+                        double scale = window.RenderScaling;
+                        int x0 = Math.Max(0, (int)Math.Ceiling(origin.X * scale)), y0 = Math.Max(0, (int)Math.Ceiling(origin.Y * scale));
+                        int w = Math.Min((int)Math.Floor(view.Canvas.Bounds.Width * scale), fb.Size.Width - x0);
+                        int h = Math.Min((int)Math.Floor(view.Canvas.Bounds.Height * scale), fb.Size.Height - y0);
+                        Assert.That(w > 0 && h > 0, Is.True, "the canvas is on screen");
+                        var data = new byte[w * 4 * h];
+                        for (int y = 0; y < h; y++)
+                            System.Runtime.InteropServices.Marshal.Copy(fb.Address + (y0 + y) * fb.RowBytes + x0 * 4, data, y * w * 4, w * 4);
                         return data;
                     }
                     var before = Frame();
@@ -835,7 +843,8 @@ namespace ReBuzz.Studio.Tests
                     foreach (var v in window.GetVisualDescendants()) v.InvalidateVisual();
                     Settle();
                     var after = Frame();
-                    Assert.That(after.AsSpan().SequenceEqual(before), Is.True, $"{theme}: the Machines view is the same picture once the toggle is off again");
+                    int diff = after.AsSpan().CommonPrefixLength(before), cw = (int)Math.Floor(view.Canvas.Bounds.Width * window.RenderScaling);
+                    Assert.That(after.AsSpan().SequenceEqual(before), Is.True, $"{theme}: the Machines view is the same picture once the toggle is off again (first difference at canvas pixel {diff / 4 % Math.Max(1, cw)}, {diff / 4 / Math.Max(1, cw)})");
                 }
                 finally { Close(window); }
             }
