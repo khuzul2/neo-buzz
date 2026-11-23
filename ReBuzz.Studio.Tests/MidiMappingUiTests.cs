@@ -429,6 +429,10 @@ namespace ReBuzz.Studio.Tests
             Height();
             Assert.That(transport.Tracks.Chip.Bounds.Width, Is.GreaterThan(30), "the chip is on the screen, with its text");
             Assert.That(transport.Tracks.Chip.Text, Is.EqualTo("2 devices"));
+            var sel = transport.Tracks;
+            var strip = (Avalonia.Controls.Control)sel.Parent;
+            Assert.That(sel.Bounds.Width, Is.GreaterThanOrEqualTo(sel.Chip.Bounds.Right), "the chip lies inside the selector, not past it: selector " + sel.Bounds.Width + ", chip right " + sel.Chip.Bounds.Right);
+            Assert.That(sel.Bounds.Right, Is.LessThanOrEqualTo(strip.Bounds.Width + 0.5), "and the selector inside its row");
             Assert.That(Height(), Is.EqualTo(without), "two devices following: still one row: " + widths + " of " + (int)transport.Bounds.Width);
             Mapping.SetSlot("track:Lead", 0, 0, MapTarget.Parameter("Lead", st.Params[0].Name), new MapDrive());
             Mapping.SetKnobGroup("Faders", Enumerable.Range(21, 8).Select(n => new MapSource("Faders", MapKind.ControlChange, 0, n)));

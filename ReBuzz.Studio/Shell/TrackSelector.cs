@@ -92,7 +92,15 @@ namespace ReBuzz.Studio.Shell
             bool notice = !string.IsNullOrEmpty(freeText);
             followers.Text = notice ? freeText : followersText;
             ToolTip.SetTip(followers, notice ? freeText : followersTip);
-            followers.IsVisible = followers.Text.Length > 0;
+            bool show = followers.Text.Length > 0;
+            if (followers.IsVisible != show)
+            {
+                followers.IsVisible = show;
+                // The selector is sized by the row it sits in; make sure the chip that just appeared (or went) is part of that size (on a Mac the chip was drawn outside the selector, over the Inspector's tabs).
+                (Child as Layoutable)?.InvalidateMeasure();
+                InvalidateMeasure();
+                (Parent as Layoutable)?.InvalidateMeasure();
+            }
             bool any = trackName != null || mm.Tracks.Count > 0;
             previous.IsEnabled = next.IsEnabled = mm.Tracks.Count > 0;
             IsVisible = any;
