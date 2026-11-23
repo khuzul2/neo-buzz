@@ -253,6 +253,27 @@ jobs:
         REBUZZ_NATIVE_MACHINES: 'off'   # R1: the check is of placeholders; the rebuilt classics have tools/native-cross.py
       run: python3 tools/song-roundtrip.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/roundtrip"
 
+    # The clip goldens (docs/specs/clips.md §10.1, CU1): every song of the corpus (the repo's songs and one generated song a feature
+    # of a clip) renders to the hash in eval/clip-goldens.json for this platform, twice (deterministic). A difference fails the step and
+    # names the song. Placeholders stand in for the classic machines, as in the step above. The observed hashes are uploaded.
+    - name: Clip goldens on Linux (rebuzz-headless)
+      if: always()
+      env:
+        REBUZZ_NATIVE_MACHINES: 'off'
+      run: |
+        python3 tools/clip-null.py check ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/clip" --twice
+        python3 tools/clip-null.py opentime ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/clip-open"
+
+    - name: Upload the clip goldens observed
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: clip-goldens-linux
+        path: |
+          ${{ runner.temp }}/clip/observed.json
+          ${{ runner.temp }}/clip-open/open-times.json
+        if-no-files-found: ignore
+
     # The studio (docs/specs/studio-mvp.md): its views drawn headless (Avalonia.Headless with Skia)
     # and driven by simulated input; what they drew is uploaded with the run.
     - name: Studio (Avalonia, headless)
