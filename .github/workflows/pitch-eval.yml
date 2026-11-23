@@ -104,10 +104,6 @@ on:
         description: 'AW2: model width d (64 or 96)'
         type: string
         default: '64'
-      aw2_slakh:
-        description: 'AW2: test the Slakh2100 stream (first 5 GB, forced reconnect)'
-        type: string
-        default: 'true'
       aw2b:
         description: 'AW2b: full data, chained training, tuning on validation, evaluation (with the tools; turn the other jobs off)'
         type: boolean
@@ -141,25 +137,9 @@ on:
         type: string
         default: '120'
       aw3:
-        description: 'AW3: the sweep of the timing fixes (attack reach of the model beats, residual bounds of the steady test) on the validation halves, with the model compiled into this build (turn the other jobs off)'
-        type: boolean
-        default: false
-      aw3_half:
-        description: 'AW3: halves to score: val (choices are made on it) or val,test (the test halves, once, at the end)'
+        description: 'AW3 (turn the other jobs off): words "sweep" (the timing fixes on the halves of half=, default val; reach=0,25,35 is the attack reach in ms, resid=inf:inf,30:60 the residual bounds p95:max in ms) and/or "pack" (the listening pack v2)'
         type: string
-        default: 'val'
-      aw3_reach:
-        description: 'AW3: attack reach of the model beats in ms, comma list (0 = frame positions)'
-        type: string
-        default: '0,25,35'
-      aw3_resid:
-        description: 'AW3: residual bounds of the steady test, p95:max in ms, comma list (inf:inf = not checked)'
-        type: string
-        default: 'inf:inf,30:60,20:40,15:30'
-      aw3_pack:
-        description: 'AW3: the listening pack v2 (8 fixed items and 8 new held-out ones, AW1 and the build default), with the BPM of each'
-        type: boolean
-        default: false
+        default: ''
       guitarset_every:
         description: 'Neo Audio to MIDI: one GuitarSet solo take of the held-out players 03 to 05 in this many (the tuning used players 00 to 02)'
         type: string
@@ -706,7 +686,7 @@ jobs:
         retention-days: 1
 
   aw2-slakh:
-    if: ${{ github.event.inputs.aw2 == 'true' && github.event.inputs.aw2_slakh == 'true' }}
+    if: ${{ github.event.inputs.aw2 == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -1428,7 +1408,7 @@ jobs:
   # ---------------------------------------------------------------------------------------- AW3
   # The items of the validation and test halves of the AW2 sets (nothing else is fetched), kept in the Actions cache by set; no audio leaves the runner but as one-day artifacts.
   aw3-items:
-    if: ${{ github.event.inputs.aw3 == 'true' || github.event.inputs.aw3_pack == 'true' }}
+    if: ${{ github.event.inputs.aw3 != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 150
     strategy:
@@ -1474,7 +1454,7 @@ jobs:
         retention-days: 1
 
   aw3-eval:
-    if: ${{ github.event.inputs.aw3 == 'true' }}
+    if: ${{ contains(github.event.inputs.aw3, 'sweep') }}
     needs: aw3-items
     runs-on: ubuntu-latest
     timeout-minutes: 120
@@ -1500,8 +1480,13 @@ jobs:
         for set in gmd guitarset candombe aam; do mkdir -p sets/$set; done
         cp items/aw3-items-gmd/* sets/gmd/; cp items/aw3-items-guitarset/* sets/guitarset/; cp items/aw3-items-candombe/* sets/candombe/
         for p in 0 1 2; do cp items/aw3-items-aam$p/* sets/aam/; done
+        ARGS="${{ github.event.inputs.aw3 }}"
+        half=$(echo "$ARGS" | grep -o 'half=[^ ]*' | cut -d= -f2 || true); half=${half:-val}
+        reach=$(echo "$ARGS" | grep -o 'reach=[^ ]*' | cut -d= -f2 || true); reach=${reach:-0,25,35}
+        resid=$(echo "$ARGS" | grep -o 'resid=[^ ]*' | cut -d= -f2 || true); resid=${resid:-inf:inf,30:60,20:40,15:30}
+        echo "half $half reach $reach resid $resid"
         for set in gmd guitarset candombe aam; do
-          dotnet aw3-tool/AutoWarpEval.dll --aw3 sets/$set $set embedded results/$set.json --half "${{ github.event.inputs.aw3_half }}" --reach "${{ github.event.inputs.aw3_reach }}" --resid "${{ github.event.inputs.aw3_resid }}" --onsets
+          dotnet aw3-tool/AutoWarpEval.dll --aw3 sets/$set $set embedded results/$set.json --half "$half" --reach "$reach" --resid "$resid" --onsets
         done
         python3 tools/aw2/aw3score.py results/*.json --out aw3-report.md --csv aw3-per-file.csv --hist-sets gmd,guitarset,candombe,aam
     - name: Job summary
@@ -1519,7 +1504,7 @@ jobs:
         retention-days: 14
 
   aw3-pack:
-    if: ${{ github.event.inputs.aw3_pack == 'true' }}
+    if: ${{ contains(github.event.inputs.aw3, 'pack') }}
     needs: aw3-items
     runs-on: ubuntu-latest
     timeout-minutes: 90
