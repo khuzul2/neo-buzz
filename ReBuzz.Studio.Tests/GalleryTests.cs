@@ -877,7 +877,8 @@ namespace ReBuzz.Studio.Tests
                         Settle();
                         window.Transport.Refresh();
                         Shot(window, "036-midi-top-bar", "The track selector with two devices following (MM1b): ◀ Lead ▶ and a muted \"2 devices\" chip (their names are its tooltip), at the right end of the view strip's row under the top bar; the top bar keeps one row with Lock, Keys and the device picker.",
-                            "Right end of the row of Arrangement, Session, Machines.");
+                            "Right end of the row of Arrangement, Session, Machines.",
+                            notes: $"Selector '{window.Transport.Tracks.NameText}' / chip '{window.Transport.Tracks.FollowersText}' / notice '{window.Transport.Tracks.FreeText}', {window.Transport.Tracks.Bounds.Width:0} wide, visible {window.Transport.Tracks.IsVisible}.");
                         window.Inspector.MidiPage.Refresh();
                         Shot(window, "036-midi-track-page", "The Inspector's MIDI page for Lead's track (MM1): slots laid out as the knobs, the parameter and its value, a grey ring where the generator's pin answers, the controllers and their keys role.",
                             "Select a track; the Inspector's Selection tab.");
