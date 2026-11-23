@@ -20,7 +20,7 @@ namespace ReBuzz.Studio.Shell
         readonly Button next = new Button { Content = new TextBlock { Text = "▶" }, Padding = new Thickness(6, 1), MinWidth = 26 };
         readonly TextBlock name = new TextBlock { VerticalAlignment = VerticalAlignment.Center, MinWidth = 40, MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis, FontWeight = Avalonia.Media.FontWeight.SemiBold };
         // A small muted chip: "2 devices" (who they are is its tooltip), so the bar keeps to one row; a "K7 is free on Drums" notice takes its place for a few seconds.
-        readonly TextBlock followers = new TextBlock { Text = "", VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush, FontSize = StudioTokens.FontCaption, MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis };
+        readonly TextBlock followers = new TextBlock { Text = "", VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush, FontSize = StudioTokens.FontCaption, MinWidth = 64, MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis };
         string followersText = "", freeText = "";
         int lastFree = -1;
         long freeUntil;
@@ -90,6 +90,7 @@ namespace ReBuzz.Studio.Shell
             bool notice = !string.IsNullOrEmpty(freeText);
             followers.Text = notice ? freeText : followersText;
             ToolTip.SetTip(followers, notice ? freeText : followersTip);
+            followers.IsVisible = followers.Text.Length > 0;
             bool any = trackName != null || mm.Tracks.Count > 0;
             previous.IsEnabled = next.IsEnabled = mm.Tracks.Count > 0;
             IsVisible = any;
