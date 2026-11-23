@@ -39,8 +39,9 @@ namespace ReBuzz.Core
 
         static string Default(IMachine machine)
         {
-            if (machine == null || AllowAll || !PatternColumnCore.PlaysEveryLane) return null;
-            return IsWritable(machine) ? null : UiReason;
+            // Clean break (user decision C, 2026-11-23): old machines are removed in a later wave (CB1), so there is no view-only mode: every machine's clips may be edited.
+            // The manifest flag and IsWritable stay as data for CB1 to delete.
+            return null;
         }
 
         /// <summary>The agent's refusal for a write to the machine's clips, or null when it may write.</summary>

@@ -2372,14 +2372,12 @@ namespace ReBuzz.Studio.Tests
             AfterAll();
         }
 
-        /// <summary>Clips CU3 (clips.md §5.7, §7.1): a song whose tracker data was moved into the store on open, the notice of what could not move, and an old machine's clip in view-only mode.</summary>
+        /// <summary>Clips CU3 (clips.md §7.1): a song whose tracker data was moved into the store on open: the tracker views the lanes.</summary>
         [AvaloniaTest, Order(8)]
         public void ClipsOfOldSongs()
         {
             BeforeAll();
-            bool allowAll = ClipEditPolicy.AllowAll;
-            ClipEditPolicy.AllowAll = false;            // CI's switch for the song builders is off for this picture: an old machine is view only
-            using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; ClipEditPolicy.AllowAll = allowAll; });
+            using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; });
             NewSong();
             var window = Open("Machines");
             try
@@ -2395,43 +2393,7 @@ namespace ReBuzz.Studio.Tests
                     PatternView.Edit(pattern);
                     window.ShowView("Pattern");
                     Wait(300);
-                    Shot(window, "600-clips-old-machine-tracker", "The Tracker on a song whose pattern data was moved into the store on open: the columns are views of the pattern's lanes (the Level step at row 16, the note at row 16); the machine is an old one, so its clip is view only.", "Open a song of old machines; F2.", Song);
-                });
-                Try("601-clips-old-machine-refused", () =>
-                {
-                    // Walk right and type a digit until a column of the machine refuses it (the Level column's lane is the old machine's).
-                    bool refused = false;
-                    var before = ClipDerived.Refused;
-                    ClipDerived.Refused = why => { refused = true; before?.Invoke(why); };
-                    try
-                    {
-                        for (int i = 0; i < 16 && !refused; i++)
-                        {
-                            Key(window, PhysicalKey.ArrowRight);
-                            Key(window, PhysicalKey.ArrowUp);
-                            Key(window, PhysicalKey.Digit1);
-                            Wait(50);
-                        }
-                    }
-                    finally { ClipDerived.Refused = before; }
-                    Assert.That(refused, Is.True, "a typed digit in an old machine's lane is refused");
-                    Wait(200);
-                    Wait(200);
-                    window.RefreshNow();
-                    Shot(window, "601-clips-old-machine-refused", "A key typed into the old machine's clip: the edit is refused and the status line says why in one line (\"Convert this machine to edit its clips\"); the machine still plays.", "Type in the Tracker on a machine without clipEdit.", Song);
-                });
-                Try("602-clips-loss-panel", () =>
-                {
-                    var report = new ReBuzz.Core.ClipOpenReport();
-                    report.Log.Loss(ClipTags.PxpSpDropped, "Probe", "P", null, 12);
-                    report.Log.Loss(ClipTags.InputColumn, "Probe", "P", null, 4);
-                    report.Log.Loss(ClipTags.CcLaneDropped, "Probe", "P", null, 3);
-                    report.Log.Change(ClipTags.BlockShift, "Probe", "P", null, 20);
-                    Core.SongCore.ClipOpen = report;
-                    window.RefreshProblems();
-                    window.ShowView("Machines");
-                    Wait(200);
-                    Shot(window, "602-clips-loss-panel", "The notice after opening a song that lost something in the move to the store: what was dropped and what changed, by cause, in plain words; × hides it. (The losses shown are made up for the picture.)", "Open an old song with PatternXP sub-pattern columns.", Song);
+                    Shot(window, "600-clips-old-machine-tracker", "The Tracker on a song whose pattern data was moved into the store on open (the clip conversion): the columns are views of the pattern's lanes, the Level step and the note at row 4, the MIDI note at row 8 on the Notes lane.", "Open a song of old machines; F2.", Song);
                 });
             }
             finally

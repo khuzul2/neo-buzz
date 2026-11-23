@@ -15,10 +15,6 @@ on:
   pull_request:
   workflow_dispatch:
 
-# Clips CU3 (clips.md 5.7): the tools that build songs with the agent write notes into classic machines, which are view only for a person.
-env:
-  NEOBUZZ_CLIP_EDIT_ALL: '1'
-
 jobs:
   session-tests:
     runs-on: ubuntu-latest

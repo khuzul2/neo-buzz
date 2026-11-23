@@ -40,10 +40,6 @@ on:
   push:
     tags: [ 'fork-v*' ]
 
-# Clips CU3 (clips.md 5.7): the tools that build songs with the agent write notes into classic machines, which are view only for a person.
-env:
-  NEOBUZZ_CLIP_EDIT_ALL: '1'
-
 jobs:
   package:
     runs-on: windows-latest
