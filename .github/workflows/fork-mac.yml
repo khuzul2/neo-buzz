@@ -140,7 +140,7 @@ jobs:
     - name: Clip goldens on macOS
       if: always()
       run: |
-        python3 tools/clip-null.py check ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/clip" --twice
+        python3 tools/clip-null.py --audio "$RUNNER_TEMP/clip-audio" check ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/clip" --twice
         python3 tools/clip-null.py opentime ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/clip-open"
 
     - name: Upload the clip goldens observed
@@ -151,6 +151,17 @@ jobs:
         path: |
           ${{ runner.temp }}/clip/observed.json
           ${{ runner.temp }}/clip-open/open-times.json
+        if-no-files-found: ignore
+
+    # CU3: the renders themselves, for tools/clip-change-report.py (clip-change-report.yml). Never committed.
+    - name: Upload the clip renders (audio)
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: clip-audio-macos
+        path: ${{ runner.temp }}/clip-audio/*.wav
+        retention-days: 30
+        compression-level: 6
         if-no-files-found: ignore
 
     # R1: each rebuilt classic loads and renders its cases through the native host (finite, audible, no divergence), and the

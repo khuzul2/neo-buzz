@@ -360,7 +360,7 @@ jobs:
       run: |
         $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
         if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
-        python tools/clip-null.py check $exe.FullName clip-work --twice
+        python tools/clip-null.py --audio clip-audio check $exe.FullName clip-work --twice
         $code = $LASTEXITCODE
         python tools/clip-null.py opentime $exe.FullName clip-open
         exit $code
@@ -373,6 +373,17 @@ jobs:
         path: |
           clip-work/observed.json
           clip-open/open-times.json
+        if-no-files-found: ignore
+
+    # CU3: the renders themselves, for tools/clip-change-report.py (clip-change-report.yml). Never committed.
+    - name: Upload the clip renders (audio)
+      if: always() && hashFiles('clip-audio/*.wav') != ''
+      uses: actions/upload-artifact@v6
+      with:
+        name: clip-audio-windows
+        path: clip-audio/*.wav
+        retention-days: 30
+        compression-level: 6
         if-no-files-found: ignore
 
     # Screenshots rendered by UI tests, force-pushed as a single commit to the ci-artifacts

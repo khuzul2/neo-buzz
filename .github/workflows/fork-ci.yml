@@ -261,7 +261,7 @@ jobs:
       env:
         REBUZZ_NATIVE_MACHINES: 'off'
       run: |
-        python3 tools/clip-null.py check ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/clip" --twice
+        python3 tools/clip-null.py --audio "$RUNNER_TEMP/clip-audio" check ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/clip" --twice
         python3 tools/clip-null.py opentime ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/clip-open"
 
     - name: Upload the clip goldens observed
@@ -272,6 +272,17 @@ jobs:
         path: |
           ${{ runner.temp }}/clip/observed.json
           ${{ runner.temp }}/clip-open/open-times.json
+        if-no-files-found: ignore
+
+    # CU3: the renders themselves, for tools/clip-change-report.py (clip-change-report.yml). Never committed.
+    - name: Upload the clip renders (audio)
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: clip-audio-linux
+        path: ${{ runner.temp }}/clip-audio/*.wav
+        retention-days: 30
+        compression-level: 6
         if-no-files-found: ignore
 
     # The studio (docs/specs/studio-mvp.md): its views drawn headless (Avalonia.Headless with Skia)
