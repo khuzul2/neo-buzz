@@ -13,6 +13,7 @@ You can do what a person does in the app: change preferences, bind MIDI controll
 | Files | `export_audio`, `song_recent` | all |
 | Song properties | `song_set` (tempo, ticks per beat, speed, loop), `song_meter` (bars) | all |
 | The machine menu | `machine_clone`, `machine_group`, `machine_latency`, `machine_attributes`, `machine_command` | all |
+| The song's tracks | `machine_tracks` | all (a read) |
 | Recording the Master | `master_record` | studio, with an audio output open |
 | The app | `app_status` | all |
 
@@ -82,6 +83,7 @@ The browser panel on the left is one search over everything a person can drag in
 
 - `machine_clone(machines=["Lead"])` is Clone: a copy with its settings. `with_patterns=true` is Clone with patterns, and what Copy then Paste does: the copy gets the patterns, the arrangement rows and the wires between the clones. A cut is a clone and then `machine_remove`.
 - `machine_group(op="create", machines=["Kick", "Snare"], name="Drums")`; `op` is also `add`, `remove`, `rename`, `fold`, `unfold`, `delete` (the machines stay) and `list`. Each is one undo step.
+- `machine_tracks()` lists the song's tracks as the Machines view's Tracks button shows them, worked out from the wires and never saved. A **track** is a generator and the machines only it feeds, up to the Master or a shared machine (`"track:Bass"`, chain `Bass → Drive → Eq → Master`). A **shared machine** has feeders from several tracks: a **group** (`"group:Drums"`) when some of them reach the Master only through it (its `members`), a **return** (`"return:Hall"`) when none do; the others `send` to it (`receives_sends_from`, and `sends_to` on the sender), and a group can receive sends too. Groups nest (`member_of`). The machines every track passes through before the Master (an EQ and a limiter after the mix) are the **Master's own chain**: one entry `"master:Master"`, last in the list, chain `Eq → Limiter → Master`; a track's chain then ends `→ Master chain`. A bus that only one track sends to is a branch of that track, not a return. `unrouted` lists control machines and anything with no way to the Master, with the reason. Every machine is in exactly one place; a wire at zero volume, a muted machine and a bypassed one still count. Use it to see what a mix is made of before `analyze_mix`, and to find a send that was never wired. It is not the machine groups of `machine_group`, which are frames the person draws.
 - `machine_latency(machine="Lookahead", override_samples=512)` makes the delay compensation use that many samples; `clear=true` takes it off, `clear_all=true` takes every override off, and without arguments it lists machines that report a latency.
 - `machine_attributes(machine="Tracker")` lists a classic machine's attributes; add `set={"name": value}` to change them. `machine_command(machine="Tracker")` lists the commands in its menu and `command="About"` runs one: that is the machine's own action, undo does not take it back, so `snapshot_save` first if it matters.
 

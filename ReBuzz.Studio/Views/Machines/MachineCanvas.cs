@@ -22,7 +22,7 @@ namespace ReBuzz.Studio.Views.Machines
 {
     using Control = Avalonia.Controls.Control;
 
-    internal sealed class MachineCanvas : Control
+    internal sealed partial class MachineCanvas : Control
     {
         /// <summary>WPF's Zoomer: 2^(level/8), level -8..8.</summary>
         public const int ZoomLevels = 8;
@@ -265,6 +265,7 @@ namespace ReBuzz.Studio.Views.Machines
             core.PropertyChanged += OnCoreChanged;
             StudioSelection.For(core).Changed += FollowSelection;
             FollowSelection(null);                  // shown again: on the selection the other views made meanwhile
+            HoldLive(true);
         }
 
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -275,6 +276,7 @@ namespace ReBuzz.Studio.Views.Machines
             StopMeters();
             core.PropertyChanged -= OnCoreChanged;
             StudioSelection.For(core).Changed -= FollowSelection;
+            HoldLive(false);
             Watch(null);
             base.OnDetachedFromVisualTree(e);
         }
@@ -467,6 +469,7 @@ namespace ReBuzz.Studio.Views.Machines
                 foreach (var gone in wireLevels.Keys.Where(k => !live.Contains(k)).ToList()) wireLevels.Remove(gone);
             }
             if (changed) InvalidateVisual();
+            LevelsTicked?.Invoke();
 
             void Raise(IMachine m, double level)
             {
@@ -490,6 +493,7 @@ namespace ReBuzz.Studio.Views.Machines
         static Color MeterColour(double level) => level > 0.9 ? MeterYellow : MeterGreen;
 
         static readonly Dictionary<(int, uint, uint), (IPen Pen, IBrush Fill, IPen Edge)> litWires = new Dictionary<(int, uint, uint), (IPen, IBrush, IPen)>();
+        static readonly DashStyle SendDash = new DashStyle(new double[] { 4, 3 }, 0);
 
         /// <summary>
         /// How lit a level looks (0 to 1): the level is already on a dB scale (-60 to 0 dB is 0 to 1); the look is the square of it, so a path
@@ -501,13 +505,24 @@ namespace ReBuzz.Studio.Views.Machines
         internal const double LitLift = 0.30;
 
         /// <summary>The pen of a wire carrying a level, and the fill of its arrow: the line's colour and the arrow's, each towards the meter's colour.</summary>
-        static (IPen Pen, IBrush Fill, IPen Edge) LitWire(double level, Color track, Color arrow)
+        static (IPen Pen, IBrush Fill, IPen Edge) LitWire(double level, Color track, Color arrow, bool tinted = false, bool dashed = false)
         {
             int step = Math.Clamp((int)Math.Round(Glow(level) * 16), 1, 16);
-            var key = (step + (NeoBuzz.Editor.Tokens.IsLight ? 100 : 0), track.ToUInt32(), arrow.ToUInt32());
+            var key = (step + (NeoBuzz.Editor.Tokens.IsLight ? 100 : 0) + (tinted ? 200 : 0) + (dashed ? 400 : 0), track.ToUInt32(), arrow.ToUInt32());
             if (!litWires.TryGetValue(key, out var lit))
             {
                 double g = step / 16.0;
+                if (tinted)
+                {
+                    // MT1: a wire in its track's colour keeps its hue: the level thickens it and lifts it (towards white, towards black on the light canvas).
+                    var towards = NeoBuzz.Editor.Tokens.IsLight ? Colors.Black : Colors.White;
+                    var tb = new SolidColorBrush(Mix(track, towards, 0.45 * g)).ToImmutable();
+                    var tf = new SolidColorBrush(Mix(arrow, towards, 0.45 * g)).ToImmutable();
+                    lit = (new Pen(tb, 2 + 2 * g, dashed ? SendDash : null), tf, new Pen(tb, 1));
+                    if (litWires.Count > 512) litWires.Clear();
+                    litWires[key] = lit;
+                    return lit;
+                }
                 // P3j: the lit colour is the meter's colour lifted towards white as the level rises, so a loud wire is about 1.8 times as
                 // bright (relative luminance) as a silent one, not only another hue (UxP3jTests). P4b: on the light canvas the lift goes
                 // towards black, so a loud wire is the darker, stronger one (decision 103).
@@ -839,12 +854,33 @@ namespace ReBuzz.Studio.Views.Machines
             ctx.FillRectangle(colours["MV Background"], new Rect(Bounds.Size));
             var machines = Ordered();
             bool solo = machines.Any(m => m.IsSoloed);
+            bool tracks = tracksOn;
+            if (tracks) Prepare();
             using (ctx.PushTransform(Matrix.CreateScale(Zoom, Zoom) * Matrix.CreateTranslation(-offset.X, -offset.Y)))
             {
                 var line = new Pen(colours["MV Line"], 1);
                 DrawGroups(ctx);
                 foreach (var c in Wires)
-                    DrawWire(ctx, WireOf(c), colours, line, level: MetersShown ? WireLevel(c) : 0, track: colours.Colour("MV Line"));
+                {
+                    if (tracks && WireLook(c) is { } look)
+                    {
+                        // MT1: the wire in its track's colour (dashed when it is a send), dimmed when another track is lit.
+                        var pen = WirePen(look.Colour, look.Send);
+                        var brush = new SolidColorBrush(look.Colour).ToImmutable();
+                        if (WireDimmed(c))
+                            using (ctx.PushOpacity(DimOpacity))
+                                DrawWire(ctx, WireOf(c), colours, pen, level: MetersShown ? WireLevel(c) : 0, track: look.Colour, tinted: true, dashed: look.Send, arrowFill: brush);
+                        else
+                            DrawWire(ctx, WireOf(c), colours, pen, level: MetersShown ? WireLevel(c) : 0, track: look.Colour, tinted: true, dashed: look.Send, arrowFill: brush);
+                    }
+                    else if (tracks && litSet != null)
+                    {
+                        using (ctx.PushOpacity(DimOpacity))
+                            DrawWire(ctx, WireOf(c), colours, line, level: MetersShown ? WireLevel(c) : 0, track: colours.Colour("MV Line"));
+                    }
+                    else
+                        DrawWire(ctx, WireOf(c), colours, line, level: MetersShown ? WireLevel(c) : 0, track: colours.Colour("MV Line"));
+                }
 
                 DrawModulation(ctx);
 
@@ -858,7 +894,13 @@ namespace ReBuzz.Studio.Views.Machines
                 }
 
                 foreach (var m in machines)
-                    DrawMachine(ctx, m, colours, solo);
+                {
+                    if (tracks && litSet != null && !litSet.Contains(m))
+                        using (ctx.PushOpacity(DimOpacity))
+                            DrawMachine(ctx, m, colours, solo, paints != null && paints.TryGetValue(m, out var tp) ? tp : null);
+                    else
+                        DrawMachine(ctx, m, colours, solo, tracks && paints != null && paints.TryGetValue(m, out var tp2) ? tp2 : null);
+                }
 
                 DrawFoldedGroups(ctx, colours);
                 DrawPorts(ctx, machines);
@@ -950,6 +992,7 @@ namespace ReBuzz.Studio.Views.Machines
                 var box = FoldedBoxOf(g);
                 ctx.DrawRectangle(Shell.Design.StudioTokens.SurfaceBaseBrush, null, box);
                 ctx.DrawRectangle(Shell.Design.StudioTokens.BlockSelectionFill, new Pen(Shell.Design.StudioTokens.AccentBrush, 1.5, new DashStyle(new double[] { 4, 3 }, 0)), box.Deflate(1), 4, 4);
+                if (tracksOn && FoldedStripe(g) is { Length: > 0 } stripe) DrawStripe(ctx, box, stripe, 4);
                 int n = g.Machines.Count();
                 var name = GroupText(g.Name, colours["MV Machine Text"], 12);
                 name.MaxTextWidth = Math.Max(10, box.Width - 8);
@@ -1008,13 +1051,13 @@ namespace ReBuzz.Studio.Views.Machines
             }
         }
 
-        static void DrawWire(DrawingContext ctx, WireShape w, Palette colours, IPen line, bool arrow = true, double level = 0, Color track = default)
+        static void DrawWire(DrawingContext ctx, WireShape w, Palette colours, IPen line, bool arrow = true, double level = 0, Color track = default, bool tinted = false, bool dashed = false, IBrush arrowFill = null)
         {
             if (!w.Visible) return;
             if (level > 0.01)
             {
                 // The level lights the wire: its line colour towards the meter's colour, and a little thicker (sixteen steps, drawn with cached pens).
-                var (pen, fill, edge) = LitWire(level, track, colours.Colour("MV Arrow"));
+                var (pen, fill, edge) = LitWire(level, track, tinted ? track : colours.Colour("MV Arrow"), tinted, dashed);
                 ctx.DrawLine(pen, w.Start, w.End);
                 if (!arrow) return;
                 var tri = new StreamGeometry();
@@ -1038,10 +1081,10 @@ namespace ReBuzz.Studio.Views.Machines
                 gc.LineTo(w.Right);
                 gc.EndFigure(true);
             }
-            ctx.DrawGeometry(colours["MV Arrow"], line, g);
+            ctx.DrawGeometry(arrowFill ?? colours["MV Arrow"], line, g);
         }
 
-        void DrawMachine(DrawingContext ctx, IMachine m, Palette colours, bool solo)
+        void DrawMachine(DrawingContext ctx, IMachine m, Palette colours, bool solo, TrackPaint track = null)
         {
             var box = BoxOf(m);
             var type = m.DLL.Info.Type;
@@ -1049,12 +1092,20 @@ namespace ReBuzz.Studio.Views.Machines
             var look = Shell.Design.StudioTheme.Machines;
 
             // Shadow and body (MachineBackgroundColor = IMachine.GetThemeColor), border (MV Machine Border).
-            ctx.DrawRectangle(new SolidColorBrush(BackgroundOf(m, colours)), null, box, 0, 0, Shadow);
+            ctx.DrawRectangle(new SolidColorBrush(BackgroundOf(m, colours, track)), null, box, 0, 0, Shadow);
             ctx.DrawRectangle(null, new Pen(colours["MV Machine Border"], 1), box.Deflate(0.5));
+            // MT1: in the Tracks mode the border is the track's colour (dashed for a return and for what is unrouted).
+            if (track != null) ctx.DrawRectangle(null, track.Border, box.Deflate(1));
 
             // P3h (decision 85): in the dark theme the box wears its category's identity colour: a tint for the body (above) and the colour whole
             // along the top edge. The Master, a machine the guard muted and Classic Buzz keep theirs.
-            if (!look.IsClassic && !IsDiverged(m) && MachineIdentity.ColourOf(m) is { } identity)
+            if (track != null && track.Routed && !IsDiverged(m))
+            {
+                // MT1: the band is the track's colour; a shared machine shows its members' colours side by side.
+                if (track.Stripe.Length > 0) DrawStripe(ctx, box, track.Stripe, 5);
+                else ctx.FillRectangle(IdentityBand(MachineIdentity.BandOf(track.Colour, m.IsMuted)), new Rect(box.X + 1, box.Y + 1, box.Width - 2, 3));
+            }
+            else if (!look.IsClassic && !IsDiverged(m) && MachineIdentity.ColourOf(m) is { } identity)
                 ctx.FillRectangle(IdentityBand(MachineIdentity.BandOf(identity, m.IsMuted)), new Rect(box.X + 1, box.Y + 1, box.Width - 2, 3));
 
             // P3g: the level through it brightens the box and fills a strip along its foot, green, yellow from -6 dB.
@@ -1141,9 +1192,10 @@ namespace ReBuzz.Studio.Views.Machines
         public static Color DivergedColour => Shell.Design.StudioTokens.Diverged;
 
         /// <summary>IMachine.GetThemeColor (BuzzGUI.Common): by type, darker when muted; red when diverged (fork).</summary>
-        static Color BackgroundOf(IMachine m, Palette colours)
+        static Color BackgroundOf(IMachine m, Palette colours, TrackPaint track = null)
         {
             if (IsDiverged(m)) return DivergedColour;
+            if (track != null && track.Routed) return MachineIdentity.BodyOf(track.Colour, m.IsMuted);
             if (!Shell.Design.StudioTheme.Machines.IsClassic && MachineIdentity.ColourOf(m) is { } identity)
                 return MachineIdentity.BodyOf(identity, m.IsMuted);
             if (m.IsControlMachine) return colours.Colour("MV Control");
@@ -1199,6 +1251,7 @@ namespace ReBuzz.Studio.Views.Machines
             if (!add) selected.Clear();
             IMachine last = null;
             foreach (var m in machines) selected.Add(last = m);
+            if (tracksOn && pinnedLit != null && !following) Unpin(last);
             InvalidateVisual();
             PublishSelection(last);
         }
@@ -1218,6 +1271,7 @@ namespace ReBuzz.Studio.Views.Machines
         {
             if (source == this) return;
             var machine = StudioSelection.For(core).Machine;
+            if (tracksOn && pinnedLit != null) Unpin(machine);
             if (machine == null ? selected.Count == 0 : selected.Count == 1 && selected.Contains(machine)) return;
             following = true;
             try
