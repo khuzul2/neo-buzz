@@ -249,6 +249,7 @@ namespace ReBuzz.Studio.Tests
             "StudioTheme.cs",         // the two themes' colours
             "SessionPalette.cs",      // the Session View's colours (a clip's palette, saved in songs) and its design seed
             "PianoRoll.cs",           // code-drawn canvases with their own dark tables:
+            "EnvelopeLane.cs",        // the Detail panel's envelope lane (EV1): a code-drawn canvas with its own light and dark fills, like the roll's
             "AmpControl.cs",          // the wire's amp and pan popup (P3 gives it the tokens with the wire's redesign)
         };
 

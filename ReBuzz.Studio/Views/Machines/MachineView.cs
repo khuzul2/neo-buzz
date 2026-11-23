@@ -4,6 +4,7 @@
 // machines come from the canvas's context menu.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -36,6 +37,9 @@ namespace ReBuzz.Studio.Views.Machines
 
         readonly Views.Browser.MachineBrowserPopup popup;
         readonly Border starters;
+        readonly Button tracksButton;
+        readonly TrackBar trackBar;
+        readonly TrackCard card;
 
         public MachineView(ReBuzzCore core, IRegistryEx registry = null)
         {
@@ -47,21 +51,34 @@ namespace ReBuzz.Studio.Views.Machines
             Canvas.Menus = Menus;
             Canvas.Amp = Amp;
 
+            // MT1 (ux-overhaul.md §11): the Tracks toggle, the bar of chips under the top bar, and the card of the lit track.
+            tracksButton = Shell.Design.StudioButtons.KeepFocus(new Button { Content = "Tracks", Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, BorderThickness = new Thickness(1), Padding = new Thickness(10, 3), FontSize = Shell.Design.StudioTokens.FontBody });
+            Avalonia.Automation.AutomationProperties.SetName(tracksButton, "Tracks");
+            ToolTip.SetTip(tracksButton, "Colour the machines by track: a generator and what only it feeds, up to the Master or a shared machine. Hover or click a chip to light one track");
+            tracksButton.Click += (s, e) => MachineTracksPreference.On = !MachineTracksPreference.On;
+            trackBar = new TrackBar(core, Canvas);
+            card = new TrackCard(core, Canvas);
+            Canvas.LitChanged += UpdateCard;
+            Canvas.ViewChanged += UpdateCard;
+            Canvas.LevelsTicked += card.Refresh;
+
             // The top bar (TopBorderStyle; 32 px, for Fluent's slider) with the zoom slider on the right.
             var bar = new Border
             {
                 Height = 32,
                 BorderThickness = new Thickness(0, 0, 0, 1),
                 BorderBrush = Shell.Design.StudioTokens.SurfaceBorderBrush,
-                Child = new DockPanel { LastChildFill = false, Children = { Right(zoom) } },
+                Child = new DockPanel { LastChildFill = false, Children = { Left(tracksButton), Right(zoom) } },
             };
             SetDock(bar, Dock.Top);
             Children.Add(bar);
+            SetDock(trackBar, Dock.Top);
+            Children.Add(trackBar);
 
             // The canvas fills the view; the amp control's layer is above it (WPF's ampCanvas).
             Canvas.Browser = Model;
             popup = new Views.Browser.MachineBrowserPopup(Model);
-            var layer = new Avalonia.Controls.Canvas { Children = { Amp, popup } };
+            var layer = new Avalonia.Controls.Canvas { Children = { Amp, popup, card } };
             starters = BuildStarters();
             Children.Add(new Panel { Children = { Canvas, starters, horizontal, vertical, layer } });
             Canvas.BrowseRequested += OnBrowse;
@@ -254,6 +271,8 @@ namespace ReBuzz.Studio.Views.Machines
             Model.Changed += UpdateStarters;
             popup.Attach();
             UpdateStarters();
+            MachineTracksPreference.Changed += ApplyTracks;
+            ApplyTracks(MachineTracksPreference.On);
         }
 
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -261,7 +280,101 @@ namespace ReBuzz.Studio.Views.Machines
             base.OnDetachedFromVisualTree(e);
             Model.Changed -= UpdateStarters;
             popup.Detach();
+            MachineTracksPreference.Changed -= ApplyTracks;
         }
+
+        // ------------------------------------------------------------------ Tracks (MT1)
+
+        /// <summary>The Tracks toggle changed (here or in another Machines view): the canvas, the bar and the button follow.</summary>
+        void ApplyTracks(bool on)
+        {
+            Canvas.TracksOn = on;
+            trackBar.IsVisible = on;
+            if (on) trackBar.Rebuild();
+            tracksButton.Background = on ? Shell.Design.StudioTokens.SelectionFillBrush : Avalonia.Media.Brushes.Transparent;
+            tracksButton.BorderBrush = on ? Shell.Design.StudioTokens.AccentBrush : Avalonia.Media.Brushes.Transparent;
+            tracksButton.Foreground = on ? Shell.Design.StudioTokens.TextPrimaryBrush : Shell.Design.StudioTokens.TextSecondaryBrush;
+            UpdateCard();
+        }
+
+        /// <summary>
+        /// The card follows what is lit. It sits in a fixed spot that covers no box and no wire: a corner of the canvas (the one nearest the top
+        /// left that is free), then the edges and the middle of the sides; with no free spot, the one that covers least. It never follows the path.
+        /// </summary>
+        void UpdateCard()
+        {
+            var entry = Canvas.TracksOn ? Canvas.LitEntry : null;
+            card.Show(entry);
+            if (entry?.Head.Tag is not IMachine) return;
+            // One width and one reference height: the spot does not depend on the text, so it does not move from track to track.
+            card.Width = 280;
+            var size = new Size(280, 150);
+            double w = Canvas.Bounds.Width, h = Canvas.Bounds.Height;
+            const double Gap = 8;
+            var boxes = new List<Rect>();
+            foreach (var m in Canvas.Machines)
+            {
+                var b = Canvas.BoxOf(m);
+                boxes.Add(new Rect(Canvas.ToView(b.TopLeft), Canvas.ToView(b.BottomRight)).Inflate(4));
+            }
+            var wires = new List<(Point, Point)>();
+            foreach (var c in Canvas.Wires)
+            {
+                var from = Canvas.BoxOf(c.Source);
+                var to = Canvas.BoxOf(c.Destination);
+                wires.Add((Canvas.ToView(from.Center), Canvas.ToView(to.Center)));
+            }
+            double xs = Math.Max(Gap, w - size.Width - Gap), ys = Math.Max(Gap, h - size.Height - Gap);
+            var spots = new List<Point>
+            {
+                new Point(Gap, ys), new Point(xs, ys), new Point(xs, Gap), new Point(Gap, Gap),
+                new Point((xs + Gap) / 2, ys), new Point((xs + Gap) / 2, Gap), new Point(Gap, ys / 2), new Point(xs, ys / 2),
+            };
+            // Then every free place on a coarse grid, from the bottom left up.
+            for (double gy = ys; gy >= Gap; gy -= 24)
+                for (double gx = Gap; gx <= xs; gx += 24)
+                    spots.Add(new Point(gx, gy));
+            Point best = spots[0];
+            double bestCost = double.MaxValue;
+            foreach (var spot in spots)
+            {
+                var r = new Rect(spot, size);
+                double cost = 0;
+                foreach (var b in boxes)
+                {
+                    var i = r.Intersect(b);
+                    if (i.Width > 0 && i.Height > 0) cost += 1000 + i.Width * i.Height;
+                }
+                foreach (var (a, z) in wires)
+                    if (SegmentHits(r, a, z)) cost += 500;
+                if (cost < bestCost) { bestCost = cost; best = spot; }
+                if (cost == 0) break;
+            }
+            double x = best.X, y = best.Y;
+            Avalonia.Controls.Canvas.SetLeft(card, x);
+            Avalonia.Controls.Canvas.SetTop(card, y);
+        }
+
+        /// <summary>A line from a to z crosses the rectangle (it is inside it, or crosses one of its sides).</summary>
+        static bool SegmentHits(Rect r, Point a, Point z)
+        {
+            if (r.Contains(a) || r.Contains(z)) return true;
+            bool Cross(Point p1, Point p2, Point p3, Point p4)
+            {
+                double d(Point p, Point q, Point t) => (q.X - p.X) * (t.Y - p.Y) - (q.Y - p.Y) * (t.X - p.X);
+                return d(p1, p2, p3) * d(p1, p2, p4) < 0 && d(p3, p4, p1) * d(p3, p4, p2) < 0;
+            }
+            return Cross(a, z, r.TopLeft, r.TopRight) || Cross(a, z, r.TopRight, r.BottomRight) || Cross(a, z, r.BottomRight, r.BottomLeft) || Cross(a, z, r.BottomLeft, r.TopLeft);
+        }
+
+        /// <summary>The Tracks toggle (tests).</summary>
+        public Button TracksButton => tracksButton;
+
+        /// <summary>The chips of the tracks, groups and returns, and Unrouted.</summary>
+        public TrackBar Tracks => trackBar;
+
+        /// <summary>The card of the lit track.</summary>
+        public TrackCard Card => card;
 
         void UpdateStarters()
         {
@@ -321,6 +434,12 @@ namespace ReBuzz.Studio.Views.Machines
         static Control Right(Control c)
         {
             DockPanel.SetDock(c, Dock.Right);
+            return c;
+        }
+
+        static Control Left(Control c)
+        {
+            DockPanel.SetDock(c, Dock.Left);
             return c;
         }
 

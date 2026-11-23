@@ -22,7 +22,7 @@ namespace ReBuzz.Studio.Views.Sequence
         readonly ListBox list;
         readonly Button add;
 
-        public ParameterPicker(IMachine machine)
+        public ParameterPicker(IMachine machine, string addLabel = "Add lane")
         {
             all = AutomationParams.List(machine);
             Width = 260;
@@ -31,8 +31,8 @@ namespace ReBuzz.Studio.Views.Sequence
             AutomationProperties.SetName(filter, "Find a parameter");
             list = new ListBox { Height = 220 };
             AutomationProperties.SetName(list, "Parameters");
-            add = new Button { Content = "Add lane", HorizontalAlignment = HorizontalAlignment.Right, IsEnabled = false };
-            AutomationProperties.SetName(add, "Add lane");
+            add = new Button { Content = addLabel, HorizontalAlignment = HorizontalAlignment.Right, IsEnabled = false };
+            AutomationProperties.SetName(add, addLabel);
             Children.Add(filter);
             Children.Add(list);
             Children.Add(add);

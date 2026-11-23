@@ -91,13 +91,14 @@ namespace ReBuzz.Studio.Views.Sequence
         {
             lanes.Clear();
             var paramRows = rows.Where(r => r.Kind == ArrangementRowKind.Parameter).ToList();
-            if (paramRows.Count == 0) return;
+            if (paramRows.Count == 0 && !envelopesOn) return;
             // The patterns of the clips are watched whether or not they hold a curve yet: a curve put in later (a redo) redraws the lane.
             foreach (var item in items.Values.SelectMany(l => l))
             {
                 Watch(item.Pattern);
                 foreach (var column in item.Pattern.Columns) WatchColumn(column);
             }
+            if (paramRows.Count == 0) return;
             var read = AutomationReader.ReadAll(core, paramRows.Select(r => (r.Machine, r.Param.Key)));
             for (int i = 0; i < paramRows.Count; i++)
             {
@@ -123,6 +124,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
         void OnColumnEvents(IEnumerable<PatternEvent> events, bool set) => OnUi(() =>
         {
+            ClearCurves();
             RefreshLanes();
             InvalidateVisual();
         });
@@ -130,7 +132,7 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>The clip curves changed: the lanes are read again and redrawn.</summary>
         void RefreshLanes()
         {
-            if (!rows.Any(r => r.Kind == ArrangementRowKind.Parameter)) return;
+            if (!envelopesOn && !rows.Any(r => r.Kind == ArrangementRowKind.Parameter)) return;
             ReadLanes();
         }
 

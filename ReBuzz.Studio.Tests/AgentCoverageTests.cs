@@ -236,6 +236,68 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void ClipEnvelopesAreReadWrittenAndClearedForSessionAndArrangementClipsAsOneUndoStepEach()
+        {
+            var window = Song(out var restore);
+            using var _ = restore;
+            var core = Host.Core;
+            var machine = core.SongCore.MachinesList.Single(m => m.Name == "Bass");
+            var param = SongModel.Params(machine).First(p => !p.IsTrack && p.Parameter.MaxValue - p.Parameter.MinValue > 20 &&
+                AutomationParams.Find(machine, new ColumnKey(p.Group, p.Parameter.IndexInGroup, 0)) != null);
+            int lo = param.Parameter.MinValue, hi = param.Parameter.MaxValue;
+            var key = new ColumnKey(param.Group, param.Parameter.IndexInGroup, 0);
+            JsonArray Points(int a, int b) => new(new JsonObject { ["at"] = 0, ["value"] = $"raw:{a}" }, new JsonObject { ["at"] = 3, ["value"] = $"raw:{b}" });
+            Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("pattern", "Verse"), ("at", 0), ("length_beats", 8)));
+            var verse = machine.Patterns.Single(p => p.Name == "Verse");
+
+            // An arrangement clip, by a position inside it.
+            int steps = Steps;
+            var written = Call("clip_envelope", Args(("op", "write"), ("machine", "Bass"), ("lane", 0), ("at", 1), ("param", param.Name), ("points", Points(lo, hi))));
+            Assert.That(Steps, Is.EqualTo(steps + 1), "one undo step");
+            Assert.That(written["pattern"]!.GetValue<string>(), Is.EqualTo("Verse"));
+            Assert.That(written["envelopes"]![0]!["points"]!.AsArray(), Has.Count.EqualTo(2));
+            Assert.That(written["envelopes"]![0]!["points"]![0]!["ramp"]!.GetValue<bool>(), Is.True, "linear: a ramp to the next point");
+            // The lane's model holds the same points: what the agent wrote is what a person sees in the Detail lane.
+            var model = ClipEnvelopes.Read(verse, key);
+            Assert.That(model.Points.Select(p => p.Value), Is.EqualTo(new[] { lo, hi }));
+
+            // Read: by pattern, and the same envelope.
+            var read = Call("clip_envelope", Args(("op", "read"), ("machine", "Bass"), ("pattern", "Verse")));
+            Assert.That(read["envelopes"]!.AsArray(), Has.Count.EqualTo(1));
+            Assert.That(read["envelopes"]![0]!["param"]!.GetValue<string>(), Is.EqualTo(param.Parameter.Name));
+
+            // Steps, and a second write between the same beats replaces those points (no third).
+            Call("clip_envelope", Args(("op", "write"), ("machine", "Bass"), ("pattern", "Verse"), ("param", param.Name), ("shape", "step"), ("points", Points(hi, lo))));
+            model = ClipEnvelopes.Read(verse, key);
+            Assert.That(model.Points.Select(p => (p.Value, p.Ramp)), Is.EqualTo(new[] { (hi, false), (lo, false) }));
+
+            // A Session clip, by its scene.
+            var layout = core.SessionLayout;
+            layout.Ensure();
+            int track = Enumerable.Range(0, layout.TrackCount).First(t => layout.SequenceOf(t)?.Machine == machine);
+            var session = layout.CreateClip(track, 0);
+            Assert.That(session, Is.Not.Null);
+            var inSession = Call("clip_envelope", Args(("op", "write"), ("machine", "Bass"), ("scene", 1), ("param", param.Name), ("points", Points(lo, hi))));
+            Assert.That(inSession["pattern"]!.GetValue<string>(), Is.EqualTo(session.Name));
+            Assert.That(ClipEnvelopes.Read(session, key).Points, Has.Count.EqualTo(2));
+            Assert.That(ClipEnvelopes.Read(verse, key).Points.Select(p => p.Value), Is.EqualTo(new[] { hi, lo }), "the other clip is not touched");
+
+            // Clear is one step; undo brings the points back.
+            int before = Steps;
+            Call("clip_envelope", Args(("op", "clear"), ("machine", "Bass"), ("pattern", "Verse"), ("param", param.Name)));
+            Assert.That(Steps, Is.EqualTo(before + 1));
+            Assert.That(ClipEnvelopes.Read(verse, key).Points, Is.Empty);
+            core.SongCore.ActionStack.Undo();
+            Assert.That(ClipEnvelopes.Read(verse, key).Points, Has.Count.EqualTo(2), "undo");
+
+            // The same refusals as the lane's limits.
+            Assert.That(Err("clip_envelope", Args(("op", "write"), ("machine", "Bass"), ("pattern", "Verse"), ("param", param.Name), ("points", new JsonArray(new JsonObject { ["at"] = 9, ["value"] = $"raw:{lo}" })))), Does.Contain("outside the clip"));
+            Assert.That(Err("clip_envelope", Args(("op", "write"), ("machine", "Bass"), ("pattern", "Verse"), ("param", "No Such Knob"), ("points", Points(lo, hi)))), Does.Contain("No Such Knob"));
+            Assert.That(Err("clip_envelope", Args(("op", "read"), ("machine", "Bass"))), Does.Contain("Say which clip"));
+            Assert.That(Err("clip_envelope", Args(("op", "read"), ("machine", "Bass"), ("scene", 9))), Does.Contain("scene"));
+        }
+
+        [AvaloniaTest]
         public void ATakeIsCompedOntoTheMainLaneAndRecordingNeedsAnArmedTrack()
         {
             var window = Song(out var restore);
@@ -348,6 +410,50 @@ namespace ReBuzz.Studio.Tests
             Host.Core.SongCore.ActionStack.Undo();
             Assert.That(Host.Core.Speed, Is.EqualTo(0));
             Assert.That(Try("song_set", Args(("speed", 5000))).Error, Is.True, "the dialog's range is -1000 to 1000");
+        }
+
+        [AvaloniaTest]
+        public void MachineTracksListsTheEntriesTheirChainsAndWhatIsUnrouted()
+        {
+            // MT1 (ux-overhaul.md §11): the song's tracks as the Machines view's Tracks mode shows them; a read tool, built from the wires.
+            var window = Song(out var restore);
+            using var _ = restore;
+            foreach (var name in new[] { "Kick", "Snare", "Pad", "Lead" }) Call("machine_add", Args(("gear", "Neo Poly"), ("name", name), ("connect_to", "none")));
+            Call("machine_add", Args(("gear", "Neo Comp"), ("name", "Bus"), ("connect_to", "none")));
+            Call("machine_add", Args(("gear", "Neo Verb"), ("name", "Verb"), ("connect_to", "none")));
+            Call("machine_add", Args(("gear", "Neo Drive"), ("name", "Drive"), ("connect_to", "none")));
+            Call("machine_add", Args(("gear", "Neo LFO"), ("name", "Wobble"), ("connect_to", "none")));
+            void Wire(string from, string to) => Call("connect", Args(("from", from), ("to", to)));
+            Wire("Kick", "Bus"); Wire("Snare", "Bus"); Wire("Bus", "Master");
+            Wire("Bass", "Drive"); Wire("Drive", "Master");
+            Wire("Pad", "Master"); Wire("Lead", "Master"); Wire("Pad", "Verb"); Wire("Lead", "Verb"); Wire("Verb", "Master");
+            Settle(window);
+
+            var data = Call("machine_tracks");
+            var tracks = data["tracks"]!.AsArray();
+            string[] Ids(JsonNode n) => n!.AsArray().Select(x => x!.GetValue<string>()).ToArray();
+            JsonNode Entry(string id) => tracks.First(t => t!["id"]!.GetValue<string>() == id)!;
+            Assert.That(tracks.Select(t => t!["id"]!.GetValue<string>()), Is.EqualTo(new[] { "track:Bass", "track:Kick", "track:Snare", "track:Pad", "track:Lead", "group:Bus", "return:Verb" }));
+            Assert.That(Entry("track:Bass")["chain"]!.GetValue<string>(), Is.EqualTo("Bass → Drive → Master"));
+            Assert.That(Ids(Entry("track:Bass")["machines"]!), Is.EqualTo(new[] { "Bass", "Drive" }));
+            Assert.That(Ids(Entry("group:Bus")["members"]!), Is.EqualTo(new[] { "track:Kick", "track:Snare" }));
+            Assert.That(Entry("track:Kick")["member_of"]!.GetValue<string>(), Is.EqualTo("group:Bus"));
+            Assert.That(Entry("track:Kick")["chain"]!.GetValue<string>(), Is.EqualTo("Kick → Bus → Master"));
+            Assert.That(Ids(Entry("return:Verb")["receives_sends_from"]!), Is.EqualTo(new[] { "track:Pad", "track:Lead" }));
+            Assert.That(Ids(Entry("track:Pad")["sends_to"]!), Is.EqualTo(new[] { "return:Verb" }));
+            Assert.That(Entry("track:Pad")["chain"]!.GetValue<string>(), Is.EqualTo("Pad → Master"));
+            var unrouted = data["unrouted"]!.AsArray();
+            Assert.That(unrouted.Count, Is.EqualTo(1));
+            Assert.That(unrouted[0]!["machine"]!.GetValue<string>(), Is.EqualTo("Wobble"));
+            Assert.That(unrouted[0]!["why"]!.GetValue<string>(), Is.EqualTo("control only"));
+            Assert.That(data["master"]!.GetValue<string>(), Is.EqualTo("Master"));
+
+            // A read: no undo step, and the answer follows the wires.
+            int steps = Steps;
+            Call("disconnect", Args(("from", "Pad"), ("to", "Verb")));
+            var after = Call("machine_tracks")["tracks"]!.AsArray().Select(t => t!["id"]!.GetValue<string>()).ToList();
+            Assert.That(after, Does.Not.Contain("return:Verb"), "with one sender the Verb is a branch of Lead's track");
+            Assert.That(Steps, Is.EqualTo(steps + 1), "only the disconnect is a step");
         }
 
         [AvaloniaTest]
